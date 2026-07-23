@@ -1,0 +1,392 @@
+================================================================================
+ESKI — PROJECT CATCHUP  (read this first in a new chat)
+================================================================================
+Purpose of this file: bring a fresh session fully up to speed on what eski is,
+how every file works, the hard rules, how to test, and the pending work.
+Keep it updated as the project changes. Companion docs: TODO.txt (backlog),
+ICONS.txt (icon inventory), spec.html (the human-readable format spec).
+
+--------------------------------------------------------------------------------
+1. WHAT ESKI IS
+--------------------------------------------------------------------------------
+eski is a file format + web app for comics with a soundtrack. One ".eski" file
+(a plain zip) holds the page images, the audio, and the manifest that maps audio
+to pages. Turn a page and the music follows. Also supports user-triggered
+"one-shots" (per-page sounds for dubbing/SFX).
+
+Three apps, all vanilla JS, NO build step, NO frameworks. Only runtime dep is
+JSZip 3.10.1 from cdnjs. pdf.js 3.11.174 is lazy-loaded from cdnjs for PDF import.
+- index.html    = the READER (open + read an .eski)
+- composer.html = the COMPOSER (author/edit an .eski)
+- library.html  = the LIBRARY (grid of shareable eskis from the library/ folder)
+- spec.html     = the format spec (mostly text; hidden from nav, linked in footer)
+
+--------------------------------------------------------------------------------
+2. REPO LAYOUT
+--------------------------------------------------------------------------------
+index.html        reader (single file: HTML+CSS+JS inline)
+composer.html     composer (single file)
+library.html      library (single file; uses JSZip to read covers)
+spec.html         format spec (single file) — SOURCE OF THE GNOMON @font-face
+sw.js             service worker (offline shell; network-first HTML)
+manifest.json     PWA web app manifest (+ file_handlers for .eski)
+eski_logo.png     800x800 logo (favicon + PWA icon)
+library/          drop .eski files here; library.html lists them (README.txt inside)
+demo.eski         NOT in repo — owner drops it at root; reader fetches by filename
+tests/            Playwright smoke suite (smoke.js, make-fixtures.js, vendor-pdfjs.js, README.md)
+ICONS.txt         inventory of every Lucide icon used, per page
+TODO.txt          backlog / done log / deployment notes
+catchup.txt       this file
+
+--------------------------------------------------------------------------------
+3. HARD RULES / CONVENTIONS / GOTCHAS  (violate these and things break)
+--------------------------------------------------------------------------------
+* Vanilla JS only, no bundler, no framework. Each app is ONE self-contained HTML
+  file. New CDN libs only when a feature demands it (JSZip, pdf.js).
+* GNOMON FONT: the wordmark font is a base64 woff2 @font-face. It lives literally
+  in spec.html. The other 3 HTML files carry a "/*FONTFACE*/" placeholder that a
+  node one-liner replaces with spec.html's @font-face block. If you rewrite a
+  whole HTML file, re-inject the font:
+    node -e "const fs=require('fs');const src=fs.readFileSync('spec.html','utf8');
+    const m=src.match(/@font-face\{[\s\S]*?format\('woff2'\);\n  font-display:swap;\n\}/);
+    let s=fs.readFileSync('index.html','utf8');
+    fs.writeFileSync('index.html', s.replace('/*FONTFACE*/', m[0]));"
+  (node is at "C:\Program Files\nodejs\node.exe" on this machine; the `node`
+  alias may not be on PATH in the Bash tool — use the full path or add to PATH.)
+* ICONS: each page inlines a small `const ICONS = {name: "<svg inner>"}` map
+  (Lucide v1.25.0, ISC license) + a paintIcons() that fills every [data-ico]
+  element with an <svg class="ico">. Buttons keep their title text. To add an
+  icon, curl https://unpkg.com/lucide-static@1.25.0/icons/<name>.svg and paste
+  the inner markup into the map.
+* SERVICE WORKER STALENESS: sw.js is now network-first for HTML (deploys land on
+  a normal reload) and cache-first for assets (CACHE='eski-v4'). BUT an already-
+  installed OLD worker keeps controlling the page until its next navigation, so
+  during local dev after editing you often must unregister the SW or reload twice.
+  In the smoke tests we set serviceWorkers:'block' to avoid this entirely.
+* demo.eski is fetched by filename and is owner-swappable; NEVER hardcode its
+  contents. It is intentionally absent from the repo. The reader also accepts
+  ?read=<relative-path> to open a specific file (used by the library links).
+* DISCORD links are href="#" placeholders across index/composer/spec/library,
+  plus a DISCORD const in library.html. Owner must set the real invite once.
+* READER-SIDE OVERRIDES (reading mode, playback mode, direction, crossfade,
+  one-shot loop) change what the reader DOES but must NEVER mutate the manifest.
+  The composer writes exactly what the author authored. Smoke tests assert this.
+* POSITION MEMORY is keyed by comic TITLE (localStorage 'eski-pos-<title>').
+  Known weakness: two comics with the same title share a saved page. (backlog fix)
+* VERCEL has no directory autoindex, so library.html's "just drop files in
+  library/" auto-listing does NOT work there — on Vercel you must ship a
+  library/index.json. Locally / on autoindex hosts it works with zero config.
+* DON'T commit .eski files to git (repo bloat + Vercel bandwidth). Host media on
+  Cloudflare R2 (free egress) and point library/index.json at R2 URLs.
+* JS SCOPE GOTCHA when testing: top-level `let`/`const` (cState, os, zoom, audio,
+  oneshotsFor...) ARE reachable by bare name inside Playwright page.evaluate()
+  (they live in the global lexical env). They are NOT reachable via `window.` for
+  let/const; only `function foo(){}` declarations attach to window. The in-app
+  browser's javascript_tool eval canNOT see bare let/const at all — use
+  window.<fn> there and it only sees function declarations.
+* Copy style: lowercase headlines/labels, terse, plainspoken. Say "an .eski",
+  never "a .eski". NO em dashes anywhere. Keep the reader minimal.
+
+--------------------------------------------------------------------------------
+4. FILE FORMAT (manifest v2)  — full spec in spec.html
+--------------------------------------------------------------------------------
+An .eski is a plain zip:
+  001.png ... 047.png        pages, sorted by filename (numeric-aware)
+  audio/                     the audio files
+  .eski/cover.png            optional cover copy (reader samples it for the tint)
+  .eski/manifest.json        the map
+
+manifest.json (version 2):
+{
+  "version": 2, "created": "...ISO...", "app": "eski",
+  "meta": { "title": "", "creator": null, "description": null,
+            "direction": "ltr" | "rtl", "cover": "001.png" },
+  "player": { "volume": 80, "crossfade": 1.0, "loopMode": "loop" | "next",
+              "playbackMode": "sync" | "playlist", "readingMode": "pages" | "scroll",
+              "oneshotLoop": false },
+  "tracks": [
+    { "id":"t1","title":"","source":"local","file":"audio/01-x.mp3",
+      "type":"music","volume":100,"sync":{"from":3,"start":0} },
+    { "id":"t2","title":"quiet","source":"local","file":null,
+      "type":"silence","volume":100,"sync":{"from":5,"start":0} },
+    { "id":"o1","title":"line one","source":"local","file":"audio/03-o1.mp3",
+      "type":"oneshot","volume":100,"sync":{"from":4,"start":0} }
+  ],
+  "pages": { "count": 7, "naming": "auto" }
+}
+
+Rules:
+- TYPES: "music" and "silence" own PAGE RANGES; "oneshot" does NOT (reader triggers it).
+- OWNERSHIP: sort music/silence by sync.from; a track owns pages from its trigger
+  to the page before the next trigger (last owns to the end). Pages before the
+  first trigger are silent. One-shots are excluded from this computation.
+- QUEUES: music tracks sharing a sync.from form a queue in manifest order; when
+  one ends the next continues within the same range; after the last, loopMode
+  decides restart vs quiet.
+- ONE-SHOTS sharing a sync.from form an ordered list (manifest order) the reader
+  walks with a cursor. sync.start = in-point offset. sync.end (optional, music)
+  = out-point. player.oneshotLoop = default for cursor wrap.
+- v1 files with streaming tracks ("source":"yt"/"sc") load but those tracks are
+  unavailable/silent and dropped on re-export. Plain cbz/zip open as silent comics.
+
+--------------------------------------------------------------------------------
+5. READER  (index.html) — how it works
+--------------------------------------------------------------------------------
+Boot: sets theme, paintIcons, reads ?read= (else demo.eski), fetch -> JSZip ->
+comicFromZip -> openComic. body gets .needs-gesture until first user interaction
+(browsers hold audio).
+
+LAZY LOADING: pages keep their JSZip entry and decompress on demand
+(ensurePageUrl) with prefetchAround(+/-3). Scroll mode uses an IntersectionObserver
+to load pages as they approach the viewport.
+
+AUDIO ENGINE (const audio): dual <audio> elements a/b for equal-power-ish
+crossfades (fade()). No global play... EXCEPT space now pauses/resumes the
+soundtrack (owner override of the old "no pause" rule). audio.resolve(track)
+lazy-decompresses audio. loadSeq guards against stale async loads on fast turns.
+- checkPageTrack(): on page change picks the queue for audioPage() and plays
+  its first track (or continues if mid-queue). onTrackEnd() advances the queue /
+  loops / goes quiet per loopMode. Silence tracks fade the previous out.
+- audioPage(): in spread mode the LEFTMOST visible page decides the audio.
+- Playlist mode (effPlayback()==='playlist'): tracks advance on 'ended',
+  independent of page turns; page bar still shows ranges.
+
+READING MODES: effReadingMode() = 'pages' | 'scroll' (file default + reader
+override). Pages mode = one page (or two in spread). Scroll mode = vertical
+scroller; current page = the one crossing the viewport midline.
+
+PAGE ZOOM/PAN (pages mode only): wheel zooms toward cursor (1x-5x), drag pans
+when zoomed, double-click toggles, turning the page resets. Click-zones disable
+while zoomed. State: zoom/panX/panY, applyZoom(), zoomAt(), resetZoom().
+
+DIRECTION: isRTL() flips arrows, click zones, spread pairing, page bar direction.
+TINT ("colour match"): applyTint() samples the cover hue -> --hue/--tintsat CSS
+vars; toggleable; off = neutral grey. Dark theme derives from the same vars.
+
+FULLSCREEN FOCUS (toggleFocus): real requestFullscreen on documentElement, hides
+all chrome; mousemove "peeks" the player bar; settings popover stays usable.
+
+DEEP LINKS: #comic-title/page=N applied on load; hash updated via replaceState
+on nav. slugify(title) keys it.
+
+ONE-SHOTS (const os): os.list = one-shots for the current page (reset on page
+turn, monophonic os.el channel). Keys: DOWN = next, UP = previous (no wrap unless
+loop). shift+space = pause/resume the current one-shot. Corner indicator (#os-hint)
+shows only when the page has one-shots: speaker + "n/total" + up/down taps, and a
+.playing class (pulsing speaker + #os-prog progress bar) while audio plays.
+effOsLoop() from settings.osloop (seeded by player.oneshotLoop). First-run
+tutorial popup (#tut-os). Hotkeys panel (#keys-panel) toggled by "?" or #keys-btn.
+
+CONTROLS: player bar (bottom): now-playing, page bar (colored per track) + song
+progress bar, page jump, spread/focus/new-file/hotkeys/settings/mute/volume.
+The old < > nav arrow BUTTONS were removed; page turns via click zones + arrows.
+Settings popover (#settings): colour match, reading, playback, direction,
+crossfade (file/fixed/off), one-shots loop. Dark-mode toggle is currently a
+header button (contrast icon) — see PENDING #0.
+
+HOTKEYS: arrows/click = pages; space = soundtrack pause; down/up = one-shots;
+shift+space = one-shot pause; s spread; f focus; m mute; d dark; ? hotkeys; esc.
+
+--------------------------------------------------------------------------------
+6. COMPOSER  (composer.html) — how it works
+--------------------------------------------------------------------------------
+STATE: cState = { pages:[{name,blob,url,thumb}], tracks:[{tid,aud,type,title,
+from,start,volume}], meta:{title,creator,description,direction}, player:{...},
+coverIndex }. audioStore[aud] = {blob,url,fileName,peaks,duration}. audioPool =
+ordered aud ids for the bay. osBlocks = Set of pages with an (even empty) one-shot
+block. undoStack/redoStack snapshot (JSON) of tracks/meta/player/coverIndex.
+
+LAYOUT: layered surfaces --bg-0..--bg-3 + shadows (NOT the reader palette; the
+composer commits to depth over brand purity, by owner request). Header: add media,
+add folder, open .eski, settings, export, dark. Left = MEDIA BAY. Center = STAGE
+(preview on top, timeline below). Right = settings DRAWER (toggle).
+
+MEDIA BAY: images (page thumbnails) + audio blocks (with mini waveforms). Search
+box + filter (all/images/audio/unused) + audio sort (added/name/duration). Zoom
++/- for image chips. Blocks are draggable (dataTransfer text/eski-img, /-aud).
+Import: "add media" (images/cbz/pdf/audio), "add folder" (webkitdirectory input +
+recursive folder DROP via readEntryTree), "open .eski" (round-trip edit).
+
+TIMELINE has TWO modes (modeswitch): 'sound' and 'pages'.
+- SOUNDTRACK MODE: a ruler + a page-range row (one card per trigger page, with a
+  thumbnail) + track lanes. Bands: drag the top GRIP to move the trigger page
+  (snaps); drag the BODY to SLIP the in-point (waveform translates, pxPerSec
+  scales with zoom); 2s scrub preview on release. Queues stack in lanes. Minimap
+  zoom/pan bar with handles; "fit" zooms to the whole comic; ctrl+scroll zoom,
+  shift+scroll pan, ctrl+shift+scroll = lane height. Selecting a band shows a
+  compact CLIPBAR (name, volume, preview 2s, +queue, remove) in the toolbar.
+  "add silence" button (sound mode only). High-res waveforms (~120 buckets/sec).
+- PAGES MODE: every page as a thumbnail card (reorder by drag, remove via x,
+  drop images to add). Page zoom +/-. Each page can hold ONE one-shot BLOCK
+  (badge on the card with count); a draggable "one-shot" TOOL in the toolbar
+  drops onto a page to create the block; clicking the badge opens the QUEUE PANEL.
+
+ONE-SHOTS (composer): tracks with type 'oneshot'. oneshotsFor(page) = ordered
+list. QUEUE PANEL (#qp, currently a CENTER MODAL): lists one-shots as reorderable
+chips, drag audio from the bay to append, x removes, "remove this block" clears.
+moveOneshotBefore() handles reorder/move. Export packs one-shot audio + writes
+type:"oneshot"; soundtrack lanes ignore one-shots (soundTracks() filter).
+
+EXPORT (exportEski): packs pages as NNN.ext, unique audio once (music+oneshot),
+writes manifest v2 + cover, downloads. Opus/WebCodecs compression was REMOVED
+(too slow) — sources pack as-is.
+
+TRASH BAR (#trash-bar): drag any bay block / page card / timeline band toward it
+to delete (appears mid-drag, red when hovered). LOADING overlay (#loading) on
+import/export. Undo/redo (ctrl+z/y), copy/paste (ctrl+c/v), delete, esc.
+
+--------------------------------------------------------------------------------
+7. LIBRARY  (library.html)
+--------------------------------------------------------------------------------
+Lists the library/ folder: tries the directory autoindex first (zero-config on
+local dev / apache / nginx / python http.server / npx serve), falls back to
+library/index.json (needed on GitHub Pages / Vercel). For each .eski it fetches
+the file, JSZip-reads the manifest for title + cover (or first image), and builds
+a cover grid. Clicking a cover opens a modal: cover, title, "read it" (opens the
+reader via index.html?read=library/<file>), and a "discord" CTA
+("find all these eskis and more in the discord channel"). DISCORD const at top.
+
+--------------------------------------------------------------------------------
+8. SPEC / SW / PWA
+--------------------------------------------------------------------------------
+spec.html: field-by-field manifest v2 docs incl. oneshot + oneshotLoop; ownership
+rule, queues, silence, one-shots, v1 compat, deep links. Holds the real Gnomon
+@font-face (source for injection into the other files).
+sw.js: install caches the app shell (index/composer/library/spec/manifest/logo/
+demo/jszip via allSettled), network-first for HTML, cache-first+refresh for
+assets, CACHE='eski-v4'.
+manifest.json: PWA (standalone, theme #5B7A6B, file_handlers for .eski via
+launchQueue in the reader).
+
+--------------------------------------------------------------------------------
+9. TESTING  (Playwright smoke suite — ~135 assertions, zero-console-errors hard)
+--------------------------------------------------------------------------------
+The suite serves the project on localhost:8931, route-intercepts cdnjs (serves a
+local JSZip + vendored pdf.js) and Google Fonts (empty), BLOCKS the service
+worker, and drives the real UI. It also autoindexes a fixture library/ folder and
+serves /fx/<name> raw fixtures for ?read= tests.
+
+Setup (once), then run:
+  npm i playwright jszip
+  npx playwright install chromium
+  node tests/vendor-pdfjs.js      # vendors pdf.js for offline runs
+  node tests/make-fixtures.js     # builds test.eski/queue.eski/big.eski/oneshots.eski/cbz/pdf/wavs/library
+  node tests/smoke.js
+Generated fixtures/vendor/node_modules are NOT committed. Extend the suite per
+feature; keep "zero console errors" a hard assertion. On this machine node may
+need the full path: "C:\Program Files\nodejs\node.exe", and set
+NODE_PATH to a node_modules that has playwright+jszip if running outside tests/.
+
+Coverage today: reader boot/tint/deeplink/rtl/spread/jump/scroll/playlist/queue/
+fullscreen/one-shots(down-up-loop-pause-playing-indicator-tutorial-hotkeys)/
+big-page layout/zoom-pan/?read=; composer import(cbz/pdf/folderless)/default-
+silence/bay/waveform/slip/grip/queue/undo-redo-copy-paste/zoom-minimap-fit/range-
+select/pages reorder/settings drawer/export-as-is/icons/tray+page zoom/trash/
+one-shots(block+panel+reorder+export)/dock search+filter; library folder+covers+
+modal+read-it; service-worker not involved (blocked).
+
+--------------------------------------------------------------------------------
+10. DEPLOYMENT (currently GitHub + Vercel)
+--------------------------------------------------------------------------------
+- Ship the static app on Vercel. DO NOT put .eski media in the git repo.
+- Host eskis + cover thumbnails on Cloudflare R2 (free egress ~ $0.015/GB-mo);
+  point library/index.json entries at R2 URLs. (Storage is pennies; egress is the
+  cost — R2/B2-behind-Cloudflare keep it ~$0. S3-style egress is ~100x pricier.)
+- Vercel has NO autoindex: ship library/index.json (generate it in a build step
+  that scans the library folder or R2 and also emits cover thumbnails, so the
+  grid doesn't download whole eskis).
+- vercel.json headers: no-cache for HTML/JS so deploys land (pairs with the SW
+  fix); immutable 1y for content-addressed eskis/covers.
+- Run the Playwright smoke suite in GitHub Actions on each PR; gate deploys green.
+
+================================================================================
+11. PENDING — URGENT IMPROVEMENTS  (requested; NOT yet built)
+================================================================================
+Priority next-session work. Grouped by app. (#0 was in flight and unfinished.)
+
+#0 (in flight, reader): hide the standalone dark-mode toggle from the header and
+   move it INTO the settings popover (reader) / settings drawer (composer) as a
+   labeled toggle row; give it a different fitting icon (moon, not the contrast
+   half-circle). Keep the 'd' hotkey. Update any smoke refs to #dark-btn.
+
+READER:
+R1. One-shot tutorial: show it ONCE EVER then never again. Currently it re-shows
+    until dismissed and can reappear on later one-shot pages. Fix: set the
+    localStorage seen-flag the moment it's first shown (+ auto-hide after a few
+    seconds or on first one-shot trigger), not only on the X.
+R2. One-shot ducking: while a one-shot is playing, DUCK the soundtrack volume a
+    little (internal gain multiplier on audio.active), and restore when the
+    one-shot ends/pauses. The user's VOLUME SLIDER must NOT move — ducking is a
+    separate internal factor layered under audio.trackGain(), not the slider.
+
+COMPOSER (big streamline — the soundtrack timeline goes away):
+C1. Preview audio in the bay BEFORE dragging to the timeline: a play/stop control
+    on each audio block (full playback, not a 2s snippet).
+C2. Page INFO PANEL becomes the hub, and is PERSISTENT (a real docked panel, not
+    the temporary center modal #qp). It shows, for the selected page:
+      - the one-shot QUEUE (each row previewable end-to-end, full playback),
+      - whether a SONG is triggered on this page (and its details/volume),
+      - the page's SONG RANGE (which soundtrack owns it),
+      - the song QUEUE if multiple share the trigger.
+    Selecting a page in the grid shows its panel automatically — no need to click
+    a per-page one-shot button to summon it.
+C3. REMOVE soundtrack timeline mode entirely. Everything (one-shots AND songs)
+    is authored from each page's info panel. Drag songs/one-shots/samples into
+    the panel; set volumes there.
+C4. The one-shot BLOCK no longer needs to be dragged onto a page. Just click a
+    page -> its info panel -> drag in one-shots or audio samples. Remove the
+    draggable one-shot tool.
+C5. GRID (pages) view must show AT A GLANCE per page: has one-shots? triggers a
+    song? is inside a song's page range? (badges/overlays on each page card).
+C6. Composer PREVIEW pane needs ZOOM + PAN (reuse the reader's wheel-zoom /
+    drag-pan) so you can actually read the dialogue on a page.
+C7. Preview a page IN A READER inside the composer: actually hear the soundtrack
+    + one-shots for the current page so you can balance global volumes. (Embed a
+    minimal reader engine or reuse the reader's audio logic against cState.)
+C8. Remove the DELETE button from the mini song player (clipbar) — deletion now
+    happens in the page info panel.
+C9. RESIZABLE left media bay: drag its right edge to resize, with a max width cap.
+C10. 3-dots options menu on each media item in the bay. Must include TRIM for
+     imported audio clips (set in/out on the raw sample). Add other useful ops:
+     rename, duplicate, download, delete, "reveal usages".
+C11. MULTI-SELECT with shift/ctrl (media items and/or pages) for batch ops.
+
+(When building C2/C3: the manifest is unchanged — songs are still type music/
+silence with sync.from ranges; one-shots type oneshot. Only the AUTHORING UI
+changes. Keep the "reader overrides never mutate the manifest" rule. Keep
+soundTracks()/oneshotsFor()/queueGroups() helpers; they already model the data.)
+
+================================================================================
+12. BACKLOG (condensed from TODO.txt — lower priority)
+================================================================================
+- Wire the real Discord invite (DISCORD const + all href="#" placeholders).
+- Add a real demo.eski at the repo root.
+- OG/meta tags so shared links unfurl (title + cover) in Discord.
+- Externalize the Gnomon font to one gnomon.woff2 (it's base64-duplicated in 4
+  files) so it caches once and shrinks every page.
+- Library: pre-generated cover thumbnails + library/index.json metadata (title,
+  creator, cover, pages, size, tags, added) so the grid stops downloading whole
+  eskis; add search/sort; cache covers in IndexedDB.
+- Position memory keyed by filename+title (not title alone) to avoid collisions.
+- Reader loading spinner (parity with composer); global volume/mute memory.
+- Composer: autosave draft to IndexedDB; re-add a pre-export validation strip
+  (duplicate triggers, tracks past last page, zero pages); export progress %.
+- Perf: LRU-revoke off-screen blob URLs; createImageBitmap; blurhash placeholders.
+- Accessibility: aria-labels on icon-only buttons.
+- Later one-shot ideas: polyphonic mode (already have monophonic).
+
+--------------------------------------------------------------------------------
+DONE THIS PROJECT (so far), for context:
+split reader/composer/library into separate pages; layered UI + Lucide icons;
+colour-match tint toggle + neutral dark theme; real fullscreen; lazy page/audio
+loading; queues + silence + playlist; jump/spread audio correctness; deep links;
+?read=; RTL; page zoom/pan; big-page layout fix (min-height:0 on .viewer-col);
+fullscreen settings fix; composer rebuild (media bay, video-editor timeline,
+slip/grip, minimap, waveforms, clipbar, trash bar, undo/redo, folder upload,
+dock search/sort/filter, loading overlay); CBZ/PDF import; export packs as-is
+(opus removed); library folder auto-populate + cover extraction + read-it modal;
+one-shots end-to-end (manifest type, composer block+queue panel, reader down/up +
+soundtrack pause on space + one-shot pause on shift+space + loop setting + corner
+indicator with playing state + tutorial + hotkeys panel); service worker made
+network-first for HTML; ~135-assertion Playwright smoke suite, zero console errors.
+================================================================================

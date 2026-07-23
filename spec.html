@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>eski format spec</title>
+<meta name="description" content="the .eski file format, field by field. a plain zip with pages, audio, and a manifest.">
+<link rel="icon" type="image/png" href="eski_logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Jost:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+@font-face{
+  font-family:'Gnomon';
+  src:url(data:font/woff2;base64,d09GMgABAAAAAA/oAAwAAAAAIUgAAA+SAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAGhYGYD9TVEFUIgCBWAquEKJkATYCJAOCYAuBMgAEIAWDXAeHChsTGkVGho0DIJC2ZETFZLLg/zKBG0Pgb2hl2ojQYBW2WFujhQi6TzMJvvTYWT4jIgR8SoCfLr4iIc5af/kxkRtRDxkhyewPtK3+DWxiFIPFIMqsA8xICiqYRCtYjAu7i5F7d0az2wZcsJV6Ee1Gtlft/xvlpQS5sd2QRyykBM9/f7Fz71+CFVnAhSiwgJvA0lgCi6gmfO5IGleKMN47dC7fgb1SFT5J0qYfaYuur7Zs+u+u/VtmbMB/gXT39tmnyOkFVp8UdKYppdCG03EUhmLhnIWE7wsEI6Fm7JzY/82VduYQXLcKWdXZGjn5wckcJAvvkhwv3sIBsSsAOEC5WyBwZUekwPiqCmUKT3Wv/JN9dieWY4pQ3Zn9f/bSqnbPeGmAUQ9FEOLAtjarOUSM/N+2Zk3YWgLdgLEjer/r8wECIBzD/AwIBH31aTmbtaYDxqtVAOz42CI3ilDu/J8UrguF+DvG+P/MAGA+IC4a8nULAeCDnFkYToiFYMW1woDoRoZLeQXCdIM9ZjrZxEy2aQ6b0ZjqTrTyFPKYp9uiPZGPTU0lITa3QFFujZ44rj71B5r7pw6Xlxn/lvqWAAQbgMU90+TnhmIiOlnmyMNlopULU0BAKp8DLYeLE4VkZ0NQS2NVhCdZilS4dGIZJGTkFJQyqWTTKGRmUQIAUQUA4CMAWApmvMHswxMLF/MzMDAhkyEviYxBzZLAiPRawDQNjCWQQjAig3TrTzop8Lr5bRpc+anWA+kIC1hsFUwUhTr5uTl9q0QG0GoguydfSizr2GT5xH5KCbSsYd2H/kiZsS6zbM8wbNQR5fYguNcgsSV70tITlXAlyS727DNJUIjwI4m/eoHCSoNB5wh3xIKELX+kxOq3AVJ+rAqzfKFgJllQAfsYuSTnwpavKOi03ucyzN8ru7uQifyw6u1gVWIl5oD2gAXzx1ii0FduLAqqhkLbqUAhQFCVOiaVAloIpAjumGeSVW2xeR7WNWS92i7OMWCKhGrrbg652eVYjSquQE1ejgI8+aiskkOL6wGYw9N3yY7vBGRhE8L3vNKZDty2Sf5c6HFqVk9nxcYxUOJc2Zkwpuni9jaiMydO7JjYsKV2uUUzh6iIJPRg1VdfY0ilXnm3u8nc4Tzf7soEX/X241lEGYQTj/TaHQf3m5xVIzQ+EbacSeG4TPtkO3PuzIHILZRVt7WxsCapaQMbKU5Y0oSOolj6QfT8OaWqT+G4RL+ElAoVlfYlc5g3jMkj+SxwuWuEITS0/iY5SPlrYcs8TIJzv4e6RBRCn1j1Mc5uh3x87Ba1mhHisXAINIC+P45DsKoYdAX0Ncncw2M4OhzQMCPNzbQqRkoSVmpoXA8sQt5INvDqEIrD65DXKR88/aLC7uSBOVLqa9zmrnFq8Up72EkPQuxpf2lau6U2J9ps1dnTWpje4pDQkypNw88Vo9LuIZDz6QFZV/RST6Cgt9dOMZSZsZ93sKXi4RmNLFHQ9hfs6wgENDnmZTHo78tQof3cocoam/YYXZZC0soYOx3xBaERxxl4fxqzUu/YQvyuqKDllpohGSkNNJr60MkIKUMaUoqp126WNYtINjWFVkJZn1cKIy5MdStgReZaR2X44CpjmUyrPbnRbi+UImHZ6ZkdexdXPVDqs0VEKhW+z2AX9tIYr+mKdFiKANqbslySabKq2D3HT0Vz3aY16l/tDqVQZWJZHX7PV4ceuWktxrecjVnIf9eQ8qN5HAfSuKMcOjP7PaIQ6HRGJ352aAjHSWYNuLcW4Je/6R//aydM0ODEgOP0KyYcp+dQrBKz+/Qdemfn5SSoUe/mVEViHqE5Oy14fCE28k+e3KllyvBzFe13eydO7Jj6wDbldKe+K0fTy3/CvD3NoNfz6zpCe/mPO1xFwc9ciAHNFpehKqgJYuGSgUncbmL116SFymnPzo6vZFIf9EavmG946dATkLU55h6FjOZTRBjMa7MjXAGn4JTgtgBZ5s7GaVUrzrQlfXNR4eWb+8vAnmRf90/+f+2va9s9fUbddJ5g9uRmXsVRXsXmY/dfcj6b81I3UJO5/blVTUar+K3ltyJFRU2OqqzWrFvN6DYU3YS6PDs82C4U3YN54IN70jUfY5JCnpBY1mfD8ujlFqPfbjf6l1voPBvWRywTFvIk2MdrgJrMas0aXPFMezuqg6RtF7umuaR6rckUuVUxfXt9/XfsF7su2u90Kc50CL1+celFz53+21DiXd3iX2IpzutUN16/42s1z3o78aCF9k4coQcIlETcIQwzyFE04otxeXOZIUVBOAQKnTzW6vwTL/7x2Z74T2+98+LZcyE+bMnVmPZiBNBp5wDmDeG8PbnvPEBRALtnL/QvstA0knSsXXWOtTZp28cpKR+3SQEqqBN0aT1i5fCvpFKWeTK0Wa1ZFzqxBTjuw0xBwO7plW01dhOrY/j4tvWlye5n6Govt3fTnpfW7/cUFmoLlHYP/zDlbCd34zu4iavvAs7q+GpuwoZqBdF5sUliVXt5WZYC8rhuTlHyydhIBMWN0nHiKbu7Qe0WKPSy9DjD20YOxHVvXhJasrl/DMauckKcpo4Vvb0d/ta5aMqZJDkTZmLzymaAyXIToDr4v8093jbvS7nr3TcWP7l5j7uY+aD+4EtAT56eMTbxTt3yRHmHiTLe6duWLAPl7+0peKnumPISf/2fhcDpv0Ou+K8fiMW/A2OvuCBFU6LWyPVDXOI9XBi8Z3U4izRN1Cm58fK3kbiOdAq3n4tF/4sMrCjnCUg9kRVfEZMojscu4dkbYgwoWjNOzB29rE8iyRIeTybSYctOiLVaS1UamVHOWyDL12f6juNO2Kdqm1/Y9qwsEiLioKTVA8mrNSj564M3L1e6AuudNUa/zDtX2Wd+qmrVK4aOopx6TnE2Wesoyqi2FtJ8saQyXp9J0EXCcB0dGeZDHwZTFTO55KO0CpLklevU6uRf414+Kii056U2Y4mn/wrPt+L4NjT8r9NATAbFTbvS1A6l0KPV4rvhyFQbYCwYCPX+LMEDJDmMS+HApOr+gOo+LGPabI9PqcXupBKNz8piyC9xfIyMkT1LNKbewbQ+WbYH1v7Z0tySOZuH8V0AtWJlX2gATk7GBsfAoCrOTBe9WKlK29Uk/rv3ihQfzjYK4JJs+fWLHaKsqdDUQoen61Snc7QaYyZCEyN2m3b3domxgmxPtVSjLE95STtv8iN+fOreu1UqSZlbotF4ZUoPytqaE2MRJRbBi2tRDY5rUDQHx3PivkZ/QJ/xd7FX8lLcsj2JUrlS5xXsvxhPqVdJZz1vSrEQoqJSoSG4vKgIKhoDrQFTd1hwuR6Lf8kZ1d7/0dFJzF1foemIiXxjnKgLPPd7WrpNINPJmVQ9hUHhL8UJr41h6WtwyiIej1tyq5bUpBqjj/hkBbnO2jlry76c3UnBf7Qv5DO1mOyb7fWpJXFGTaehubNjEHIUBnICx5yceUTdqaZUDVkuUOvkbwcF/xhVFqWAVqkEtEWhShvjfN32zRoO/j2O/4Bz1gzy7d65HOKg68nLwXtWnbMoTU8O3whCxYyGKPpN9VcGddm+Bb6pF6z+QysTNGLqX6mE1fWd3g6qPP3+tftef/vbF198PRBICGpYLDrro0+EbPQeeTmYtyRPBlFR9h+RYiRe+dSdwb9eqwvWCVk6iW3oDzj+A7p5DTPZqky9nZea9LNXIbUr8TfGhS0XayUapVOuKkuullFopdzoEmmrmrwQ98RCdmdLxVxwNM0+OsK52KfTMl1NQxe8NoYr8Q1WRFsp0Co9HqVW65GyXlCgsAzJYEFrFPucEwh/zqaoHSt4NRqh16FU24YoarjNqvMeWjBaVobz0p7lWVuczkqY/ip/caWR8nLBSJe6yQHV/QHmvmxx7h7DpbB2fNep4oul/aH+pa2oDM75i1Jk0A9swxQ19KxvHG79rk+nzpZJaJ6qwe4mnho3SnHUEIM6cRNtp+9gSzJhFwaOXUBuSIhDZ6P9AhM2hP9+lcZT0uUD6dGMvujmckfKZ9m6VgbvnD4fyV30I1xpjt6ORjy+RcwtK0lSENbkMHlKQhKbHcXhRrwxTszVmZO46Ub2p3IcS2bHQUXhu7TdjP4mPpnY3n9/gaKIqkjuLgsg8wUDmfMzLQIjfLB9CrDZfft0EIeasCDmqnctDWiLTDB6QoEPYikDOO4Sj3/g/FbMEP3TGpn4xDJMJ+q256mAN5wy3+tF0Zh1vuQi0XnLJMPxiWgUtRZabfKyjED/wUd66WcO+NifxdnrqFRq6OZenBx5bsU6a7IreR0EJtcZztrPrntq4SEkUAZdDsiEdfBLms5d1JG1O7YfHXHUFteOMFEPMQKfxr8PB27FhKonracRUP8D8n/TXt/A9sYaP/N8oC8v9ddZiovrLFJZcLHKJLQRBOab8Di4J03N/Hvw0nfQwSJfVO5vFpP5KwC4cvaRAgD4eeXvMDU6M5jzVieAGRgAAJBPrXTmfRO6Dqr+m1utygOKGrDySEaZwCspI8eQHtSYRLJUPwcL5iwjgukeTz9JcUmkFi+/YL3MLcseEJVvsSsGan21K/okmlwsncPOJ9wxQ5BT21O6e57cJ8xpPRvd/AJC45DBBHT0yhZ2nodaCXqKjy1/QGJ+Nz2/oZs84Ki26IzmJ0LXMKWfA3AxJGgVNoZ2QMpKvwIvNYHx1PkCGnY/nSlJwOV98Jph3JZeQsbmYR2TSMnzDlIAOT09j8Un8dLWv4DVL0WxCchnK307pf+l0PMzq1gxV4N4KonwitmGFMIElbkgqkTMlG02vYVCSZAQXJ7EEKk3MSkMvU9zTdNxfJFm4Dtt0Vcw0YgR7q8zhAGczBAnJvDC/avXxlDj/9+W/lnzB9Br086vU4smzbrxCdURcaX43HCZhUq+cerToBWfUY1OT6JezOyObZ7SxibetCzXIq29XzYow2WTHtUONH5yPApaLdHqN3xqNVFYRmfd9N5FU7irTkPb0flEDwVfMrvclxWqFht/izWmR4Ma/o3WnFq9q/cdW3TpLpat6o6MGZ6aTo1S+N9VYEGVZEUVmm6Ylu24nhix4rChOOIlSJQkGReGJwVfqjQCuDnSEYRExEiUDBJSMnIKSplU1LJky6GhlStPvgKFiujoGRiZmFlY2dg5FCvh5FKqTLkKldxoVdHzW2QWjgEkSETRDIvN4fLkxzQcQIJEFM3ICvIIKT+xrHRyghi4MsweakJyysZ+N+5uiNRwKQSiRvn73igPdZcXOBH0L3oilGWAhnlinm8Qj/w1bBXmB7hKJzUtgDByU9r/Su8WRkCl88SIohlfvEsDAA==) format('woff2');
+  font-display:swap;
+}
+:root{
+  --hue:285;
+  --paper:hsl(var(--hue),9%,96%); --ink:#222222; --soft-ink:#4f4b4f; --muted:#746f72;
+  --accent:#5B7A6B; --accent-deep:#354D41; --accent-soft:#D1E1D9;
+  --line:rgba(34,34,34,0.14); --surface:#ffffff;
+  --band:#222222; --band-fg:#f6f5f7; --band-dim:#b9b5b9;
+  --max:820px;
+}
+[data-theme="dark"]{
+  --paper:hsl(var(--hue),9%,11%); --ink:#e9e7e9; --soft-ink:#bfbabf; --muted:#8b868b;
+  --accent:#7FA491; --accent-deep:#A9C6B8; --accent-soft:#3c5347;
+  --line:rgba(233,231,233,0.16); --surface:hsl(var(--hue),8%,15%);
+  --band:hsl(var(--hue),9%,7%);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);
+  font-family:'Jost','Avenir Next','Helvetica Neue',Arial,sans-serif;
+  font-weight:400;font-size:15px;line-height:1.5}
+h1,h2,h3,strong,b{font-weight:500}
+h2{margin:44px 0 12px;font-size:clamp(26px,4vw,38px);line-height:1;text-transform:lowercase}
+h3{margin:26px 0 8px;font-size:19px;text-transform:lowercase}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline;text-underline-offset:3px}
+.site-header{position:sticky;top:0;z-index:10;height:57px;background:var(--paper);
+  border-bottom:1px solid var(--line);display:flex;align-items:center;padding:0 18px;gap:18px}
+.brand{font-family:'Gnomon',sans-serif;font-size:27px;color:var(--accent);line-height:1;
+  text-decoration:none;letter-spacing:-0.01em;padding-top:2px}
+.brand:hover{text-decoration:none;color:var(--accent-deep)}
+.hdr-link{color:var(--muted);text-transform:lowercase;font-size:14px}
+.sp{flex:1}
+.wrap{width:min(var(--max),100%);margin:0 auto;padding:0 20px 70px}
+.kicker{font-size:12px;letter-spacing:.14em;color:var(--accent);text-transform:lowercase;
+  margin:56px 0 10px}
+.rule{width:200px;height:6px;background:var(--accent);margin:48px 0 22px}
+.body-lg{font-size:clamp(16px,1.8vw,20px);line-height:1.4;color:var(--soft-ink)}
+.filetree,pre{background:var(--surface);border:1px solid var(--line);padding:18px 22px;
+  font-family:ui-monospace,'SF Mono',Menlo,Consolas,monospace;font-size:13.5px;line-height:1.7;
+  color:var(--soft-ink);overflow-x:auto;margin:14px 0}
+.filetree b,pre b{color:var(--ink);font-weight:600}
+.filetree .c,pre .c{color:var(--muted)}
+table{border-collapse:collapse;width:100%;margin:12px 0;font-size:14px}
+th,td{border:1px solid var(--line);padding:7px 10px;text-align:left;vertical-align:top}
+th{font-weight:500;text-transform:lowercase;color:var(--muted);background:var(--surface)}
+td code{font-family:ui-monospace,'SF Mono',Menlo,Consolas,monospace;font-size:12.5px}
+footer{background:var(--band);color:var(--band-dim);padding:26px 20px;font-size:13.5px;margin-top:70px}
+footer .wrap{display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding:0 20px}
+footer .brand{font-size:22px;color:var(--band-fg)}
+footer a{color:var(--accent-soft)}
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <a class="brand" href="index.html">eski!</a>
+  <span class="hdr-link">format spec</span>
+  <span class="sp"></span>
+  <a class="hdr-link" href="index.html">back to the reader</a>
+</header>
+
+<div class="wrap">
+
+  <div class="rule"></div>
+  <h2>the .eski format</h2>
+  <p class="body-lg">an .eski is a plain zip archive. rename it to .zip and look inside.
+    any cbz reader opens it as a silent comic; an eski reader also plays the soundtrack.</p>
+
+  <div class="kicker">zip layout</div>
+  <div class="filetree"><b>my-comic.eski</b>            <span class="c">&#8592; a plain zip archive</span><br>
+&#9500;&#9472; 001.jpg &#8230; 047.jpg      <span class="c">&#8592; the pages, sorted by filename</span><br>
+&#9500;&#9472; audio/               <span class="c">&#8592; the soundtrack, opus or mp3</span><br>
+&#9500;&#9472; .eski/cover.jpg      <span class="c">&#8592; optional cover copy</span><br>
+&#9492;&#9472; .eski/manifest.json  <span class="c">&#8592; which track plays on which page</span></div>
+  <p>pages are every image outside <code>.eski/</code> and <code>audio/</code>, sorted by filename
+    with numeric awareness (<code>2.png</code> before <code>10.png</code>). readers must ignore
+    <code>__MACOSX/</code> and other junk entries.</p>
+
+  <div class="kicker">manifest v2</div>
+  <pre>{
+  "version": 2, "created": "2026-07-21T12:00:00Z", "app": "eski",
+  "meta": {
+    "title": "", "creator": null, "description": null,
+    "direction": "ltr", "cover": "001.png"
+  },
+  "player": {
+    "volume": 80, "crossfade": 2.0, "loopMode": "loop",
+    "playbackMode": "sync", "readingMode": "pages", "oneshotLoop": false
+  },
+  "tracks": [
+    { "id": "t1", "title": "", "source": "local", "file": "audio/01-x.mp3",
+      "type": "music", "volume": 100, "sync": { "from": 3, "start": 0 } },
+    { "id": "t2", "title": "quiet", "source": "local", "file": null,
+      "type": "silence", "volume": 100, "sync": { "from": 5, "start": 0 } },
+    { "id": "o1", "title": "line one", "source": "local", "file": "audio/03-o1.mp3",
+      "type": "oneshot", "volume": 100, "sync": { "from": 4, "start": 0 } }
+  ],
+  "pages": { "count": 7, "naming": "auto" }
+}</pre>
+
+  <h3>meta</h3>
+  <table>
+    <tr><th>field</th><th>type</th><th>meaning</th></tr>
+    <tr><td><code>title</code></td><td>string</td><td>display title. also keys the reader's position memory.</td></tr>
+    <tr><td><code>creator</code></td><td>string or null</td><td>who made it.</td></tr>
+    <tr><td><code>description</code></td><td>string or null</td><td>a sentence or two.</td></tr>
+    <tr><td><code>direction</code></td><td>"ltr" | "rtl"</td><td>reading direction. rtl flips page order presentation,
+      arrows, click zones, spread pairing, and the page bar. default "ltr".</td></tr>
+    <tr><td><code>cover</code></td><td>string</td><td>filename of the cover page. readers sample it for the ui tint.</td></tr>
+  </table>
+
+  <h3>player</h3>
+  <table>
+    <tr><th>field</th><th>type</th><th>meaning</th></tr>
+    <tr><td><code>volume</code></td><td>0&#8211;100</td><td>starting volume.</td></tr>
+    <tr><td><code>crossfade</code></td><td>seconds</td><td>overlap length when one track hands off to the next.</td></tr>
+    <tr><td><code>loopMode</code></td><td>"loop" | "next"</td><td>"loop": a track repeats until the page changes.
+      "next": it plays once and goes quiet.</td></tr>
+    <tr><td><code>playbackMode</code></td><td>"sync" | "playlist"</td><td>"sync": the page drives the music.
+      "playlist": tracks advance when a song ends, no looping, independent of page turns.</td></tr>
+    <tr><td><code>readingMode</code></td><td>"pages" | "scroll"</td><td>"pages": one page (or spread) at a time.
+      "scroll": pages stack in one vertical scroller; the page crossing the viewport midline is current. default "pages".</td></tr>
+    <tr><td><code>oneshotLoop</code></td><td>bool</td><td>default for whether the reader's one-shot
+      cursor wraps at the ends. default false; the reader can override it.</td></tr>
+  </table>
+  <p>readers may offer overrides for crossfade, playback mode, reading mode, direction, and one-shot
+    looping. overrides change what the reader does, never what the file says: a re-export writes what
+    the author put in the manifest.</p>
+
+  <h3>tracks</h3>
+  <table>
+    <tr><th>field</th><th>type</th><th>meaning</th></tr>
+    <tr><td><code>id</code></td><td>string</td><td>stable id, unique within the file.</td></tr>
+    <tr><td><code>title</code></td><td>string</td><td>shown in the player strip.</td></tr>
+    <tr><td><code>source</code></td><td>"local"</td><td>v2 audio always ships inside the archive.</td></tr>
+    <tr><td><code>file</code></td><td>string or null</td><td>path inside the zip, under <code>audio/</code>.
+      null for silence tracks.</td></tr>
+    <tr><td><code>type</code></td><td>"music" | "silence" | "oneshot"</td><td>music and silence own page
+      ranges (below). one-shots do not: they are triggered by the reader (below).</td></tr>
+    <tr><td><code>volume</code></td><td>0&#8211;100</td><td>per-track gain, multiplied with the player volume.</td></tr>
+    <tr><td><code>sync.from</code></td><td>page number, 1-indexed</td><td>the trigger page. the track starts when
+      the reader reaches this page.</td></tr>
+    <tr><td><code>sync.start</code></td><td>seconds</td><td>in point: offset into the audio where playback begins.</td></tr>
+    <tr><td><code>sync.end</code></td><td>seconds, optional</td><td>out point: the track is treated as finished
+      here. omitted means the full length plays.</td></tr>
+  </table>
+
+  <div class="kicker">the ownership rule</div>
+  <p class="body-lg">a track starts on its trigger page and owns every page until the next track's
+    trigger. the last track owns through the final page.</p>
+  <p>sort tracks by <code>sync.from</code>. a range runs from one trigger page to the page before
+    the next trigger; the last range runs through the final page. pages before the first trigger
+    are silent.</p>
+  <p>tracks that share a trigger page form a queue, in manifest order: when one finishes (naturally
+    or at its out point) the next continues, still inside the same page range. after the last track
+    in a queue, <code>loopMode</code> decides whether the queue restarts or goes quiet.</p>
+
+  <div class="kicker">silence tracks</div>
+  <p>silence is not the absence of a track; it is a track with <code>"type": "silence"</code> and
+    <code>"file": null</code>. it takes ownership the same way, which is how a soundtrack stops
+    mid-comic and hands off cleanly, crossfade included.</p>
+
+  <div class="kicker">one-shots</div>
+  <p>a <code>"type": "oneshot"</code> track does not own pages and does not play on a page turn. it
+    belongs to its <code>sync.from</code> page, and the reader triggers it by key or tap (down = next,
+    up = previous). one-shots sharing a page form an ordered list, in manifest order, walked by a
+    cursor. good for dubbing (a voice line per panel) and for sound effects.</p>
+  <p>one-shots play over the page soundtrack. the cursor resets when the page turns, so a one-shot
+    lives only on its page. <code>player.oneshotLoop</code> sets whether the cursor wraps at the ends.
+    they pack like any other track (audio under <code>audio/</code>, referenced by <code>file</code>).</p>
+
+  <div class="kicker">v1 compatibility</div>
+  <p>v1 manifests could reference streaming sources (<code>"source": "yt"</code> or
+    <code>"sc"</code>). readers accept v1 files but treat those tracks as unavailable: they stay
+    silent, get flagged in the ui, and are left out when the file is re-exported. local v1 tracks
+    keep working. plain cbz/zip archives with no manifest open as silent comics.</p>
+
+  <div class="kicker">deep links</div>
+  <p>readers may support <code>#page=12</code> and <code>#comic-title/page=12</code> in the url,
+    where the title is lowercased with runs of non-alphanumerics as dashes. the link applies once a
+    matching file is open.</p>
+
+</div>
+
+<footer>
+  <div class="wrap">
+    <span class="brand">eski!</span>
+    <span>a comic and its soundtrack, one file.</span>
+    <span class="sp"></span>
+    <a href="index.html">reader</a>
+    <a href="library.html">library</a>
+  </div>
+</footer>
+
+<script>
+try{
+  const s = JSON.parse(localStorage.getItem('eski-settings'))||{};
+  document.documentElement.dataset.theme = s.dark ? 'dark' : '';
+}catch(e){}
+</script>
+</body>
+</html>

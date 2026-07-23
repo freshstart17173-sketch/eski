@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>eski library</title>
+<meta name="description" content="a shelf of eskis. drop .eski files in the library folder to fill it.">
+<link rel="icon" type="image/png" href="eski_logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Jost:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<style>
+@font-face{
+  font-family:'Gnomon';
+  src:url(data:font/woff2;base64,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) format('woff2');
+  font-display:swap;
+}
+:root{
+  --hue:152;
+  --ink:#1c1c1c; --soft-ink:#4c4c4c; --muted:#7a7a7a;
+  --accent:hsl(var(--hue),24%,40%); --accent-deep:hsl(var(--hue),30%,28%);
+  --accent-soft:hsl(var(--hue),24%,88%);
+  --bg-0:#dcdddd; --bg-1:#ececed; --bg-2:#f7f7f8; --bg-3:#ffffff;
+  --edge:rgba(0,0,0,.13); --edge-strong:rgba(0,0,0,.26);
+  --shadow:0 1px 3px rgba(0,0,0,.12); --shadow-lg:0 8px 30px rgba(0,0,0,.22);
+  --max:1040px;
+}
+[data-theme="dark"]{
+  --ink:#eaeaea; --soft-ink:#c2c2c2; --muted:#8a8a8a;
+  --accent:hsl(var(--hue),22%,62%); --accent-deep:hsl(var(--hue),26%,74%);
+  --accent-soft:hsl(var(--hue),18%,30%);
+  --bg-0:#0f0f10; --bg-1:#191a1b; --bg-2:#232426; --bg-3:#2d2f31;
+  --edge:rgba(255,255,255,.12); --edge-strong:rgba(255,255,255,.26);
+  --shadow:0 1px 3px rgba(0,0,0,.4); --shadow-lg:0 10px 34px rgba(0,0,0,.55);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg-0);color:var(--ink);
+  font-family:'Jost','Avenir Next','Helvetica Neue',Arial,sans-serif;
+  font-weight:400;font-size:15px;line-height:1.5;min-height:100vh;display:flex;flex-direction:column}
+h2{margin:0 0 6px;font-size:clamp(26px,4vw,40px);line-height:1;text-transform:lowercase;font-weight:500}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline;text-underline-offset:3px}
+.ico{width:16px;height:16px;flex:none;stroke:currentColor;fill:none;stroke-width:2;
+  stroke-linecap:round;stroke-linejoin:round;display:block}
+.site-header{position:sticky;top:0;z-index:10;height:57px;background:var(--bg-1);
+  border-bottom:1px solid var(--edge-strong);display:flex;align-items:center;padding:0 18px;gap:16px;
+  box-shadow:var(--shadow)}
+.brand{font-family:'Gnomon',sans-serif;font-size:27px;color:var(--accent);line-height:1;
+  text-decoration:none;letter-spacing:-0.01em;padding-top:2px}
+.brand:hover{text-decoration:none;color:var(--accent-deep)}
+.hdr-label{color:var(--muted);text-transform:lowercase;font-size:13.5px;border-left:1px solid var(--edge);
+  padding-left:14px}
+.hdr-link{color:var(--muted);text-transform:lowercase;font-size:14px;display:inline-flex;
+  align-items:center;gap:6px}
+.hdr-link:hover{color:var(--accent);text-decoration:none}
+.sp{flex:1}
+.wrap{width:min(var(--max),100%);margin:0 auto;padding:34px 20px 70px;flex:1;width:100%}
+.head-row{display:flex;align-items:flex-end;gap:14px;margin-bottom:6px}
+.rule{width:200px;height:6px;background:var(--accent);border-radius:3px;margin:6px 0 20px}
+.sub{color:var(--muted);font-size:14px;margin:0 0 8px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:20px;margin-top:26px}
+.cover{border:1px solid var(--edge);border-radius:9px;background:var(--bg-2);cursor:pointer;padding:0;
+  transition:transform 140ms ease,border-color 140ms ease,box-shadow 140ms ease;display:block;width:100%;
+  text-align:left;overflow:hidden;box-shadow:var(--shadow)}
+.cover:hover{transform:translateY(-4px);border-color:var(--accent);box-shadow:var(--shadow-lg)}
+.cover .art{width:100%;aspect-ratio:2/3;background:var(--bg-1);display:flex;align-items:center;
+  justify-content:center;color:var(--muted)}
+.cover .art img{width:100%;height:100%;object-fit:cover;display:block}
+.cover .art .ico{width:34px;height:34px;opacity:.5}
+.cover .t{padding:9px 11px;font-size:13.5px;text-transform:lowercase;white-space:nowrap;
+  overflow:hidden;text-overflow:ellipsis;color:var(--soft-ink);border-top:1px solid var(--edge)}
+.state{border:1px dashed var(--edge);border-radius:10px;padding:40px 26px;text-align:center;
+  color:var(--muted);margin-top:26px;background:var(--bg-1)}
+.state code{background:var(--bg-3);border:1px solid var(--edge);border-radius:5px;padding:1px 7px;
+  font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px;color:var(--ink)}
+.spinner{width:34px;height:34px;border:4px solid var(--edge);border-top-color:var(--accent);
+  border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 14px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* modal */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:center;
+  justify-content:center;z-index:100;padding:20px}
+.overlay.open{display:flex}
+.modal{background:var(--bg-1);border:1px solid var(--edge-strong);border-radius:12px;max-width:360px;
+  width:100%;padding:22px;text-align:center;box-shadow:var(--shadow-lg)}
+.modal .art{width:150px;aspect-ratio:2/3;object-fit:cover;box-shadow:var(--shadow-lg);border-radius:6px;
+  margin:0 auto;display:block;background:var(--bg-2)}
+.modal .t{margin:14px 0 4px;font-weight:500;text-transform:lowercase;font-size:17px}
+.modal p{margin:6px 0 16px;color:var(--soft-ink);font-size:14px}
+.modal .actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;gap:7px;padding:8px 16px;border-radius:7px;
+  text-transform:lowercase;font-size:14px;border:1px solid var(--edge);background:var(--bg-3);
+  color:var(--soft-ink);cursor:pointer;box-shadow:var(--shadow)}
+.btn:hover{border-color:var(--accent);color:var(--accent);text-decoration:none}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.primary:hover{background:var(--accent-deep);color:#fff}
+footer{background:var(--bg-1);color:var(--muted);padding:24px 20px;font-size:13.5px;
+  border-top:1px solid var(--edge-strong)}
+footer .wrap{display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding:0 20px}
+footer .brand{font-size:22px;color:var(--accent)}
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <a class="brand" href="index.html">eski!</a>
+  <span class="hdr-label">library</span>
+  <span class="sp"></span>
+  <a class="hdr-link" id="hdr-discord" href="#" target="_blank" rel="noopener"><span data-ico="message-circle"></span>discord</a>
+  <a class="hdr-link" href="index.html"><span data-ico="arrow-left"></span>reader</a>
+</header>
+
+<div class="wrap">
+  <div class="rule"></div>
+  <h2>the library</h2>
+  <p class="sub">every eski dropped in the library folder, ready to read.</p>
+  <div id="grid">
+    <div class="state"><div class="spinner"></div>reading the library folder&#8230;</div>
+  </div>
+</div>
+
+<div class="overlay" id="overlay" onclick="if(event.target===this)close_()">
+  <div class="modal">
+    <img class="art" id="ov-img" alt="cover">
+    <div class="t" id="ov-title"></div>
+    <p>find all these eskis and more in the discord channel.</p>
+    <div class="actions">
+      <a class="btn primary" id="ov-read" href="#"><span data-ico="book-open"></span>read it</a>
+      <a class="btn" id="ov-discord" href="#" target="_blank" rel="noopener"><span data-ico="message-circle"></span>discord</a>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <div class="wrap">
+    <span class="brand">eski!</span>
+    <span>a comic and soundtrack format</span>
+    <span class="sp"></span>
+    <a href="index.html">reader</a>
+    <a href="composer.html">composer</a>
+  </div>
+</footer>
+
+<script>
+/* ================================================================
+   library. drop .eski files into the library/ folder to fill this.
+   covers + titles are read straight from each eski's manifest, so
+   there is nothing to edit by hand.
+   ================================================================ */
+const ICONS = {
+  "book-open": "<path d=\"M12 7v14\" /> <path d=\"M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z\" />",
+  "x": "<path d=\"M18 6 6 18\" /> <path d=\"m6 6 12 12\" />",
+  "image": "<rect width=\"18\" height=\"18\" x=\"3\" y=\"3\" rx=\"2\" ry=\"2\" /> <circle cx=\"9\" cy=\"9\" r=\"2\" /> <path d=\"m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21\" />",
+  "message-circle": "<path d=\"M7.9 20A9 9 0 1 0 4 16.1L2 22Z\" />",
+  "arrow-left": "<path d=\"m12 19-7-7 7-7\" /> <path d=\"M19 12H5\" />",
+};
+function paintIcons(root){
+  (root||document).querySelectorAll('[data-ico]').forEach(el=>{
+    if(el.querySelector(':scope > svg.ico')) return;
+    el.insertAdjacentHTML('afterbegin',
+      `<svg class="ico" viewBox="0 0 24 24" aria-hidden="true">${ICONS[el.getAttribute('data-ico')]||''}</svg>`);
+  });
+}
+try{
+  const s = JSON.parse(localStorage.getItem('eski-settings'))||{};
+  document.documentElement.dataset.theme = s.dark ? 'dark' : '';
+}catch(e){}
+
+const DISCORD = '#'; // owner: set the invite link here (also used by the reader/composer)
+const esc = s => (s??'').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;');
+const IMG_RE = /\.(jpe?g|png|gif|webp|bmp|avif)$/i;
+document.querySelectorAll('#hdr-discord,#ov-discord').forEach(a=>a.href=DISCORD);
+
+/* list the library/ folder. A directory autoindex listing is the zero-config path
+   (local dev servers, apache/nginx autoindex) and is tried first so nothing 404s
+   there. Hosts without directory listing (e.g. github pages) fall back to an
+   explicit library/index.json the owner adds. */
+async function listEskis(){
+  try{
+    const r = await fetch('library/', {cache:'no-store'});
+    if(r.ok){
+      const html = await r.text();
+      const files = [...html.matchAll(/href="([^"?]+\.eski)"/gi)].map(m=>m[1]);
+      if(files.length) return [...new Set(files)].map(f=>({
+        file: /^(https?:|\/)/.test(f) ? f : (f.includes('library/') ? f : 'library/'+f.replace(/^\.?\//,''))
+      }));
+    }
+  }catch(e){}
+  try{
+    const r = await fetch('library/index.json', {cache:'no-store'});
+    if(r.ok){
+      const j = await r.json();
+      const arr = Array.isArray(j) ? j : (j.entries||j.files||[]);
+      return arr.map(e=>typeof e==='string'?{file:e}:e)
+        .filter(e=>e.file)
+        .map(e=>({...e, file: /^(https?:|\/|library\/)/.test(e.file) ? e.file : 'library/'+e.file}));
+    }
+  }catch(e){}
+  return [];
+}
+/* keep slashes readable in ?read=, encode only the segments */
+function readHref(file){ return 'index.html?read=' + file.split('/').map(encodeURIComponent).join('/'); }
+
+async function coverFor(item){
+  const res = await fetch(item.file, {cache:'no-store'});
+  if(!res.ok) throw new Error(res.status);
+  const zip = await JSZip.loadAsync(await res.blob());
+  let title = item.title, coverBlob = null;
+  const mf = zip.file('.eski/manifest.json');
+  if(mf){
+    try{
+      const m = JSON.parse(await mf.async('string'));
+      title = title || m.meta?.title;
+      if(m.meta?.cover && zip.file(m.meta.cover)) coverBlob = await zip.file(m.meta.cover).async('blob');
+    }catch(e){}
+  }
+  if(!coverBlob){
+    const imgs = [];
+    zip.forEach((p,en)=>{ if(!en.dir && !p.startsWith('.eski/') && !p.startsWith('audio/') &&
+      !p.startsWith('__MACOSX/') && IMG_RE.test(p)) imgs.push({p,en}); });
+    imgs.sort((a,b)=>a.p.localeCompare(b.p, undefined, {numeric:true, sensitivity:'base'}));
+    if(imgs[0]) coverBlob = await imgs[0].en.async('blob');
+  }
+  return {
+    file: item.file,
+    title: title || item.file.split('/').pop().replace(/\.eski$/i,''),
+    cover: coverBlob ? URL.createObjectURL(coverBlob) : null
+  };
+}
+
+function open_(entry){
+  const o = $('overlay');
+  $('ov-img').src = entry.cover || '';
+  $('ov-img').style.visibility = entry.cover ? 'visible' : 'hidden';
+  $('ov-title').textContent = entry.title;
+  $('ov-read').href = readHref(entry.file);
+  o.classList.add('open');
+}
+function close_(){ $('overlay').classList.remove('open'); }
+const $ = id => document.getElementById(id);
+document.addEventListener('keydown', e=>{ if(e.key==='Escape') close_(); });
+
+(async ()=>{
+  const grid = $('grid');
+  let items;
+  try{ items = await listEskis(); }
+  catch(e){ items = []; }
+  if(!items.length){
+    grid.innerHTML = `<div class="state">
+      nothing here yet. drop <code>.eski</code> files into the
+      <code>library/</code> folder next to this page and reload.<br><br>
+      (on a host without directory listings, add a <code>library/index.json</code>
+      with an array of filenames.)</div>`;
+    paintIcons();
+    return;
+  }
+  grid.className = 'grid';
+  grid.innerHTML = '';
+  // build cards immediately, fill covers as each eski is read
+  const cards = items.map((it,i)=>{
+    const btn = document.createElement('button');
+    btn.className = 'cover';
+    btn.innerHTML = `<div class="art"><span data-ico="image"></span></div>
+      <div class="t">${esc(it.file.split('/').pop().replace(/\.eski$/i,''))}</div>`;
+    grid.appendChild(btn);
+    return btn;
+  });
+  paintIcons();
+  await Promise.all(items.map(async (it,i)=>{
+    try{
+      const entry = await coverFor(it);
+      const art = cards[i].querySelector('.art');
+      art.innerHTML = entry.cover ? `<img src="${entry.cover}" alt="cover">` : '';
+      cards[i].querySelector('.t').textContent = entry.title;
+      cards[i].onclick = ()=>open_(entry);
+    }catch(e){
+      cards[i].querySelector('.t').textContent += ' (unreadable)';
+    }
+  }));
+})();
+</script>
+</body>
+</html>

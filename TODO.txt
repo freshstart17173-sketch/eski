@@ -1,0 +1,223 @@
+eski — composer/reader work list
+================================================================
+
+STATUS KEY:  [ ] todo   [~] in progress   [x] done
+
+--- URGENT ---
+[x] "Reader is broken": could not reproduce. The reader works when served over http
+    with a demo.eski present (verified: page turns, track sync, tint, hash, focus).
+    The empty-looking state is simply that there is no demo.eski in the folder yet
+    (fetch('demo.eski') 404s -> drop screen). Boot code fetches it by filename, so
+    dropping your demo.eski at the project root will populate it. NOTE: if testing by
+    double-clicking the file (file://), fetch of the local demo is blocked by the
+    browser; serve the folder over http (any static server) to see the demo auto-load.
+
+--- COMPOSER v2 (this pass) ---
+[x] Media bay (left panel): imported images + audio as draggable blocks.
+    Audio blocks drag onto the soundtrack timeline to place a track; image blocks
+    drag into the pages timeline. Audio imports into the bay pool (not auto-placed).
+[x] Merged "add pages"/"add audio" into a single "+ add media" (one file input,
+    routes images/cbz/pdf to pages and audio to the bay).
+[x] Layered depth: surface levels --bg-0..--bg-3, borders, shadows; clear panel
+    separation (bay | stage | timeline | drawer), rounded raised controls.
+[x] Zoom out to fit the whole comic ("fit" button + min zoom scales to scroller width).
+[x] Thick minimap zoom+pan bar with handles on both ends (drag middle = pan,
+    drag a handle = zoom).
+[x] Page-range selection: click a range card OR drag on the ruler; highlighted band
+    + shown in the status line and preview badge.
+[x] Slip: drag the band BODY (center); the waveform visibly translates and the in
+    point changes. Move the trigger page by dragging the band's top GRIP instead.
+[x] High-quality waveform: peaks stored at ~120 buckets/sec and re-sampled to pixels,
+    so it stays crisp when zoomed in.
+[x] Removed the per-track in/out/crossfade numeric panel. Selecting a band shows a
+    compact clip bar (name, volume, preview, +queue, remove) in the timeline toolbar.
+[x] "add gap" renamed to "+ silence"; a silence element is created by default when a
+    comic has pages but no tracks.
+[x] Removed the OGG/opus "compress audio" feature entirely; export packs sources as-is.
+[x] Pages mode: toggle in the timeline toolbar; shows every page as a thumbnail with
+    drag-to-reorder, remove (x), and a drop target to add more images.
+[x] Settings (title/creator/dir/mode/crossfade/etc) moved into a toggleable right-side
+    drawer (opened by the header "settings" button, closes on scrim/esc/x).
+[x] Loading overlay (spinner + label) on import (extract/pdf/open) and on export.
+[x] Thumbnail hover-expand now grows downward from the range card (no top clipping).
+
+--- COMPOSER QoL + icons (this pass) ---
+[x] Drag-out trash bar: drag any bay block, page card, or timeline band toward the
+    "drop here to remove" bar (appears mid-drag, turns red when hovered) to delete it.
+    Bands delete via their grip drag; pages/audio blocks via native drag-and-drop.
+[x] Media-tray zoom: +/- magnifiers in the "images" heading resize the image blocks.
+[x] Pages-timeline zoom: +/- buttons (shown in pages mode) resize the page thumbnails.
+[x] Vertical lane zoom: ctrl+shift+scroll over the timeline changes band height.
+[x] Better headings: bay sections show an icon + live count ("images (6)", "audio (2)").
+[x] Full icon set: Lucide v1.25.0 (ISC), inlined as SVG (offline-safe), applied to every
+    button/control. Inventory in ICONS.txt.
+
+--- READER + LIBRARY restyle + library folder (this pass) ---
+[x] Reader (index.html): layered surfaces + shadows, rounded controls, Lucide icons on
+    every player-bar/header control (spread, focus, new file, settings, mute toggle,
+    dark, nav arrows, tap-for-sound). Stays minimal.
+[x] Reader accepts ?read=<path> to open a specific eski (used by the library links);
+    otherwise still loads demo.eski by filename.
+[x] Library (library.html): restyled to match the composer (cards, shadows, modal, icons).
+[x] Library auto-populates from the library/ folder: reads a directory autoindex listing
+    (zero config on local dev / apache / nginx / python http.server / npx serve), falls
+    back to a library/index.json on hosts without directory listing (e.g. GitHub Pages).
+    Covers + titles are pulled straight from each eski's manifest (JSZip) - nothing to
+    edit by hand. Just drop .eski files into library/ (see library/README.txt).
+[x] Clicking a cover opens a modal: the cover, its title, "read it" (opens it in the
+    reader via ?read=) and "discord" ("find all these eskis and more in the discord
+    channel").
+[x] Set the discord invite once: DISCORD const in library.html, and the href="#"
+    placeholders in index.html / composer.html / spec.html.
+
+--- READER FIXES (this pass) ---
+[x] BUG: pages ballooned to full natural size and pushed the controls off-screen.
+    Cause: .viewer-col had no min-height:0, so the flex column would not shrink below
+    the image's intrinsic height. Added min-height:0 -> pages fit, player bar visible.
+    Guarded by a big-page fixture (big.eski) + layout assertions in the smoke suite.
+[x] Fullscreen: the settings popover now opens on-screen above the focus bar (z-index 80,
+    fixed position) and the peeked controls stay up while settings is open, so the button
+    actually works in fullscreen.
+[x] Added page zoom + pan (pages mode): wheel zooms toward the cursor (1x-5x), drag pans
+    when zoomed, double-click toggles zoom, and turning the page resets it. Page-turn click
+    zones disable while zoomed so panning does not flip pages.
+[~] "opens on page 6": that is the position-memory feature (the reader remembers your last
+    page per comic title, per the design spec "your page is remembered"). It was showing a
+    stale page from earlier testing; a fresh comic opens on page 1. If you would rather it
+    always start on page 1, say so and I will drop the restore.
+
+--- notes / possible follow-ups ---
+- Library downloads each eski to extract its cover. Fine for a modest shelf; for a big
+  one, a library/index.json with pre-made cover thumbnails would avoid the downloads.
+- Slip uses the band body; moving uses the top grip. If you'd rather the whole band
+  move and slip live behind a modifier, easy to flip.
+- Per-track volume lives in the clip bar; global volume/crossfade in the drawer.
+
+================================================================
+FUTURE / BACKLOG  (not now — parking lot)
+================================================================
+
+--- FEATURE (DONE): user-triggered one-shots ---
+Built + smoke-tested (reader triggers, pause, loop, composer mode + round-trip export,
+spec documented). Design below is what shipped.
+
+LOCKED DESIGN (owner-approved). One-shots = a per-page ordered list of audio samples the
+reader triggers by key/tap. Great for dubbing (a voice line per panel) and SFX.
+
+Manifest:
+- New track type "oneshot": {id,title,source:"local",file,type:"oneshot",volume,sync:{from,start}}.
+- Queue order = manifest order among one-shots sharing the same sync.from page.
+- player.oneshotLoop (bool, default false): the reader's default loop setting.
+
+Reader controls (NOTE: this intentionally overrides the old "no play/pause / space=page"
+rules — owner decision):
+- down = next one-shot, up = previous one-shot. No wrap unless loop is on.
+- space = pause/resume the page SOUNDTRACK (space no longer turns the page).
+- shift+space = pause/resume the current one-shot.
+- pages turn by the click zones (left half = prev, right half = next) and the arrow keys;
+  the visible < > arrow buttons are REMOVED.
+- mobile: left/right tap = pages; the corner indicator's up/down taps = one-shots.
+- A one-shot, and the pause state, reset when the page turns (they live on that page only).
+- Small non-covering corner indicator (speaker + "n/total" + tiny up/down taps), shown only
+  when the current page has one-shots. No other reader UI.
+- Reader setting: "one-shots loop" on/off (seeded from player.oneshotLoop).
+- Toggleable hotkeys panel (a "?" toggle) listing all keys — separate from the player bar.
+- First-run tutorial popup (once) when opening an eski that has one-shots.
+
+Composer (REVISED per owner): no separate one-shots mode. In PAGES mode each page can hold
+a single one-shot BLOCK:
+- A draggable "one-shot" tool in the pages toolbar; drag it onto a page to add the block.
+- The block appears as a small badge on the page card (with its one-shot count); clicking it
+  opens a per-page QUEUE PANEL.
+- Queue panel: drag audio from the media dock into the list, drag chips to reorder, the x
+  removes one, "remove this block" clears the page. First-run tutorial on first open.
+- Export packs one-shot audio and writes type:"oneshot"; soundtrack lanes ignore one-shots.
+
+Reader indicator now also shows PLAYING vs idle (pulsing speaker + a thin progress bar),
+since a one-shot may contain a lot of silence.
+
+Also added (composer): "add folder" import (whole directory of images+sounds, incl. drag-drop
+of a folder), and a media-dock search + sort (name/duration/added) + filter (images/audio/unused).
+
+Open follow-ups (later): optional music ducking while a one-shot plays; polyphonic mode.
+
+--- PERFORMANCE / SPEED ---
+- [done, can extend] Pages already decode on demand + prefetch +/-3 and lazy-load in scroll
+  mode. Extend: cap memory by revoking off-screen blob URLs (LRU), decode with
+  createImageBitmap, and keep a downscaled display cache for very large scans.
+- Blurhash / low-res placeholder while a page decodes (no blank flash).
+- Library covers: cache extracted covers in IndexedDB so revisits are instant and cost no
+  egress. Better: don't download full eskis at all — read covers from index.json (below).
+- Externalize the Gnomon font: it is base64-inlined in all 4 HTML files (~5.5 KB each,
+  duplicated). Move it to one gnomon.woff2 + @font-face url() so it caches once. Shrinks
+  every page and de-duplicates.
+- Optional page transcode to webp/avif on export to shrink eskis (opt-in, like the old
+  audio-compress toggle we removed).
+
+--- LIBRARY ---
+- Search + filter (title, creator, tag) and sort (newest / title / size).
+- library/index.json with metadata: title, creator, cover-thumb path, pages, size, tags,
+  added-date. This is the big win: the grid renders from small thumbnails instead of
+  downloading every full eski (huge egress + speed saving), AND it works on Vercel (which
+  has no directory autoindex — see deployment).
+- Pre-generated cover thumbnails (small webp) referenced by index.json; <img loading=lazy>.
+- Pagination / infinite scroll for large shelves.
+- Per-cover "download" button next to "read it".
+
+--- READER polish ---
+- Touch: swipe to turn pages, pinch to zoom (today zoom is wheel-only; add touch).
+- Keyboard-help overlay (?), and aria-labels on the icon-only buttons.
+- Match the composer's loading spinner when opening an eski (reader just says "reading").
+- Global volume/mute memory (today volume is per-comic via player.volume).
+- FIX: position memory is keyed by comic *title*, so two same-titled comics share a page.
+  Key it by filename or a content hash instead.
+
+--- COMPOSER polish ---
+- Autosave the working draft to IndexedDB so a reload/crash does not lose work.
+- Re-add a lightweight pre-export validation strip (duplicate trigger pages, tracks past
+  the last page, zero pages) — we had this in the old single-file version.
+- Multi-select bands; keyboard nudge (arrows) for the selected band's trigger page.
+- Export progress % for big files.
+
+--- CURRENT FIXES / TECH DEBT ---
+[x] SERVICE WORKER STALENESS (fixed): sw.js is now network-first for HTML (deploys land on
+    a normal reload), cache-first + background refresh for other assets. CACHE bumped to v4.
+    Note: an already-installed OLD worker still controls the page until its next navigation,
+    so the very first load after this deploy may still be stale; after that it self-heals.
+- Discord: wire the real invite once — DISCORD const in library.html and the href="#"
+  placeholders in index.html / composer.html / spec.html.
+- Add a real demo.eski at the repo root (boot fetches it by filename; space is left for it).
+- Open-graph / meta tags (title + cover image) so shared links unfurl nicely in discord.
+- Icons map + shared CSS are copy-pasted across pages; if drift becomes a problem, factor
+  into a shared icons.js / styles.css (weigh against the no-build single-file ethos).
+
+--- DEPLOYMENT (GitHub + Vercel) ---
+- DO NOT commit eskis into the Git repo. Git + Vercel are for the static app, not tens/
+  hundreds of MB of binary media (repo bloat, Vercel deploy-size + 100 GB/mo bandwidth cap).
+- Host the eskis + cover thumbnails on Cloudflare R2 (free egress; ~$0.015/GB-month). Point
+  library/index.json entries at the R2 URLs. Vercel serves the app + index.json; eskis
+  stream from R2. Bandwidth cost stays ~$0 even at scale (see the storage-cost estimate).
+- IMPORTANT: Vercel has no directory autoindex, so the library's "just drop files in
+  library/" auto-listing does NOT work there — you must ship a library/index.json. Generate
+  it in a build step (a small script that scans the library folder or the R2 bucket and
+  also emits cover thumbnails).
+- Cache headers (vercel.json): index.html + the JS/CSS -> no-cache / must-revalidate so
+  deploys land immediately (pairs with the SW fix above); content-addressed eskis/covers ->
+  Cache-Control: immutable, max-age=1y.
+- CI: run the Playwright smoke suite in GitHub Actions on each PR (serve the folder, the
+  suite already mocks CDNs). Gate deploys on green.
+- Custom domain + HTTPS are automatic on Vercel.
+
+================================================================
+
+--- DONE (earlier pass, for reference) ---
+[x] Split reader (index.html) and composer (composer.html) into separate pages.
+[x] Library -> cover grid; click shows "find all these eskis and more in the discord channel."
+[x] Colour-match tint toggle + neutral dark grey theme (ambient-mode style, logo recolors).
+[x] Real fullscreen focus mode (hides everything; mouse nudge peeks controls).
+[x] Lazy loading of pages + audio in the reader (decompress on demand, scroll observer).
+[x] Queue playback (multiple songs per page range) + sync.end out points (reader side).
+[x] Jump-to-page plays the correct track; spread uses the leftmost page's track.
+[x] Title "eski", footer "a comic and soundtrack format", removed the no-accounts line.
+[x] Hid the spec page from nav (still reachable at spec.html), removed em dashes.
+[x] "what is eski?" copy set to the provided paragraph; discord links (href="#" placeholder).

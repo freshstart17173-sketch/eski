@@ -1,0 +1,41 @@
+eski composer — icon inventory
+================================================================
+Every icon the composer page uses, where it appears, and the pack it comes from.
+
+PACK: Lucide  (https://lucide.dev)  v1.25.0  — ISC license (embed/redistribute OK)
+Chosen because it is MIT/ISC, line-based (matches the minimal look), 24x24 stroke
+icons, and covers every glyph below. Icons are inlined as SVG (no CDN, stays offline).
+
+ICON               LUCIDE NAME       USED FOR
+------------------ ----------------- ------------------------------------------
+add                plus              "add media", pages drop-to-add, tray zoom +
+remove-small       minus             tray zoom -, page-zoom -
+open               folder-open       "open .eski"
+silence            volume-x          "silence" button
+settings           settings          settings drawer button
+export             download          "export .eski"
+theme              contrast          dark-mode toggle
+soundtrack         music             mode switch: soundtrack
+pages              book-open         mode switch: pages
+fit                maximize-2        timeline "fit whole comic"
+zoom-in            zoom-in           timeline zoom in, tray/page zoom in
+zoom-out           zoom-out          timeline zoom out
+preview            play              clip bar "preview 2s"
+queue              list-plus         clip bar "+queue"
+delete             trash-2           clip bar remove, page remove, drag-out bar
+prev               chevron-left      preview previous page
+next               chevron-right     preview next page
+close              x                 drawer close
+move-handle        grip-vertical     band move grip affordance
+image              image             media bay "images" heading
+
+All 20 verified present in Lucide v1.25.0. Inlined into composer.html as the ICONS
+map + icon(name,size) helper; buttons keep their title/aria-label text.
+
+READER + LIBRARY use the same inlined-Lucide approach:
+  reader (index.html):  contrast, chevron-left, chevron-right, columns-2 (spread),
+                        maximize-2 (focus), file-plus (new file), settings,
+                        volume-2 / volume-x (mute toggle)
+  library (library.html): message-circle (discord), arrow-left (back to reader),
+                        image (empty cover), book-open (read it), x (close)
+
