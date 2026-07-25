@@ -5,11 +5,11 @@ const CACHE = 'eski-v4';
 const ASSETS = [
   './',
   'index.html',
+  'read.html',
   'composer.html',
   'demo.eski',
   'manifest.json',
   'spec.html',
-  'library.html',
   'eski_logo.png',
   'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js'
 ];

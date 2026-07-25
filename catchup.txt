@@ -16,22 +16,22 @@ to pages. Turn a page and the music follows. Also supports user-triggered
 
 Three apps, all vanilla JS, NO build step, NO frameworks. Only runtime dep is
 JSZip 3.10.1 from cdnjs. pdf.js 3.11.174 is lazy-loaded from cdnjs for PDF import.
-- index.html    = the READER (open + read an .eski)
+- index.html    = the LIBRARY, and the HOME PAGE (grid of eskis from library/)
+- read.html     = the READER (open + read an .eski)
 - composer.html = the COMPOSER (author/edit an .eski)
-- library.html  = the LIBRARY (grid of shareable eskis from the library/ folder)
 - spec.html     = the format spec (mostly text; hidden from nav, linked in footer)
 
 --------------------------------------------------------------------------------
 2. REPO LAYOUT
 --------------------------------------------------------------------------------
-index.html        reader (single file: HTML+CSS+JS inline)
+index.html        library + home page (single file; uses JSZip to read covers)
+read.html         reader (single file: HTML+CSS+JS inline)
 composer.html     composer (single file)
-library.html      library (single file; uses JSZip to read covers)
 spec.html         format spec (single file) — SOURCE OF THE GNOMON @font-face
 sw.js             service worker (offline shell; network-first HTML)
 manifest.json     PWA web app manifest (+ file_handlers for .eski)
 eski_logo.png     800x800 logo (favicon + PWA icon)
-library/          drop .eski files here; library.html lists them (README.txt inside)
+library/          drop .eski files here; index.html lists them (README.txt inside)
 demo.eski         NOT in repo — owner drops it at root; reader fetches by filename
 tests/            Playwright smoke suite (smoke.js, make-fixtures.js, vendor-pdfjs.js, README.md)
 ICONS.txt         inventory of every Lucide icon used, per page
@@ -49,8 +49,8 @@ catchup.txt       this file
   whole HTML file, re-inject the font:
     node -e "const fs=require('fs');const src=fs.readFileSync('spec.html','utf8');
     const m=src.match(/@font-face\{[\s\S]*?format\('woff2'\);\n  font-display:swap;\n\}/);
-    let s=fs.readFileSync('index.html','utf8');
-    fs.writeFileSync('index.html', s.replace('/*FONTFACE*/', m[0]));"
+    let s=fs.readFileSync('read.html','utf8');
+    fs.writeFileSync('read.html', s.replace('/*FONTFACE*/', m[0]));"
   (node is at "C:\Program Files\nodejs\node.exe" on this machine; the `node`
   alias may not be on PATH in the Bash tool — use the full path or add to PATH.)
 * ICONS: each page inlines a small `const ICONS = {name: "<svg inner>"}` map
@@ -66,8 +66,11 @@ catchup.txt       this file
 * demo.eski is fetched by filename and is owner-swappable; NEVER hardcode its
   contents. It is intentionally absent from the repo. The reader also accepts
   ?read=<relative-path> to open a specific file (used by the library links).
-* DISCORD links are href="#" placeholders across index/composer/spec/library,
-  plus a DISCORD const in library.html. Owner must set the real invite once.
+* DISCORD invite is https://discord.gg/UFNpnHAbD (DISCORD const in index.html,
+  static hrefs in read.html header/footer). composer/spec have no discord link.
+* BUTTONS DO NOT INHERIT THE PAGE FONT. Every page needs
+  button,input,select,textarea{font-family:inherit;font-size:inherit} or
+  button-based UI (the library's .cover cards) silently renders in Arial.
 * READER-SIDE OVERRIDES (reading mode, playback mode, direction, crossfade,
   one-shot loop) change what the reader DOES but must NEVER mutate the manifest.
   The composer writes exactly what the author authored. Smoke tests assert this.
@@ -130,7 +133,7 @@ Rules:
   unavailable/silent and dropped on re-export. Plain cbz/zip open as silent comics.
 
 --------------------------------------------------------------------------------
-5. READER  (index.html) — how it works
+5. READER  (read.html) — how it works
 --------------------------------------------------------------------------------
 Boot: sets theme, paintIcons, reads ?read= (else demo.eski), fetch -> JSZip ->
 comicFromZip -> openComic. body gets .needs-gesture until first user interaction
@@ -236,14 +239,14 @@ to delete (appears mid-drag, red when hovered). LOADING overlay (#loading) on
 import/export. Undo/redo (ctrl+z/y), copy/paste (ctrl+c/v), delete, esc.
 
 --------------------------------------------------------------------------------
-7. LIBRARY  (library.html)
+7. LIBRARY  (index.html, the home page)
 --------------------------------------------------------------------------------
 Lists the library/ folder: tries the directory autoindex first (zero-config on
 local dev / apache / nginx / python http.server / npx serve), falls back to
 library/index.json (needed on GitHub Pages / Vercel). For each .eski it fetches
 the file, JSZip-reads the manifest for title + cover (or first image), and builds
 a cover grid. Clicking a cover opens a modal: cover, title, "read it" (opens the
-reader via index.html?read=library/<file>), and a "discord" CTA
+reader via read.html?read=library/<file>), and a "discord" CTA
 ("find all these eskis and more in the discord channel"). DISCORD const at top.
 
 --------------------------------------------------------------------------------
@@ -265,6 +268,16 @@ The suite serves the project on localhost:8931, route-intercepts cdnjs (serves a
 local JSZip + vendored pdf.js) and Google Fonts (empty), BLOCKS the service
 worker, and drives the real UI. It also autoindexes a fixture library/ folder and
 serves /fx/<name> raw fixtures for ?read= tests.
+
+INSTALLED 2026-07-25: node_modules/ is present (playwright + jszip + chromium)
+and .gitignore now keeps it, package.json, fixtures, vendor, dl, and *.eski out
+of git. Suite is at 156 assertions and passes clean.
+FIXED FLAKE: "reader: scroll mode" used to time out ~1 run in 4. Cause: it set
+scrollTop = scrollHeight ONCE, but pages lazy-load, so scrollHeight was still
+growing and the midline settled on an earlier page. The scroll is now re-applied
+inside the waitForFunction poll. Four consecutive green runs after the fix.
+If you write another scroll assertion, do the same: drive lazy-loaded scroll
+positions from inside the poll, never once up front.
 
 Setup (once), then run:
   npm i playwright jszip
@@ -359,7 +372,7 @@ soundTracks()/oneshotsFor()/queueGroups() helpers; they already model the data.)
 ================================================================================
 12. BACKLOG (condensed from TODO.txt — lower priority)
 ================================================================================
-- Wire the real Discord invite (DISCORD const + all href="#" placeholders).
+- [done] Discord invite wired: https://discord.gg/UFNpnHAbD
 - Add a real demo.eski at the repo root.
 - OG/meta tags so shared links unfurl (title + cover) in Discord.
 - Externalize the Gnomon font to one gnomon.woff2 (it's base64-duplicated in 4
@@ -374,6 +387,411 @@ soundTracks()/oneshotsFor()/queueGroups() helpers; they already model the data.)
 - Perf: LRU-revoke off-screen blob URLs; createImageBitmap; blurhash placeholders.
 - Accessibility: aria-labels on icon-only buttons.
 - Later one-shot ideas: polyphonic mode (already have monophonic).
+
+================================================================================
+14. THE PIVOT, DECIDED  (supersedes section 13's open questions; 2026-07-25)
+================================================================================
+Section 13 laid out the shape. This section is the settled version: decisions
+made, data model, build order. Where 13 and 14 disagree, 14 wins. Section 11
+(M1-M8, C1-C11) is unchanged and folded into the build order below.
+
+--------------------------------------------------------------------------------
+14.1 TERMINOLOGY (use these words, nothing else)
+--------------------------------------------------------------------------------
+BASE        the comic itself: pages, cast, slots, consent. Owned by the author.
+SLOT        an authored void on a page: a dialogue line or an SFX hit. No audio.
+VO          one voice actor's full set of clips for ONE character on one base.
+SOUNDTRACK  one musician's music/silence tracks + audio for the base's SFX slots.
+MIX         base + one VO per character (or muted) + one soundtrack (or none).
+            The thing a reader actually loads and a view is logged against.
+CANONICAL   the author-pinned default mix. Required at publish.
+
+Retired words: "cut" (now MIX), "performance" (now VO), "sound package" (now
+SOUNDTRACK), "one-shot" stays only as the reader-engine/manifest term.
+
+--------------------------------------------------------------------------------
+14.2 DECISIONS (settled, do not relitigate)
+--------------------------------------------------------------------------------
+D1  ORIGINAL WORK ONLY. eski hosts comics whose author is on the platform and
+    can actually grant consent. No fan-dub-of-third-party-manga business. The
+    copyright/DMCA exposure is what kills this project otherwise. (Absolute
+    Batman in library/ is local test content only, never published.)
+D2  BASE IS IMMUTABLE ONCE PUBLISHED. There is no version 2 of a comic. Only
+    errata: swap a page IMAGE in place, same page count, same slot ids. Reason:
+    any reflow destroys every VO and soundtrack built against it. This kills the
+    comic_versions table, the slot-migration story, and the orphan problem all
+    at once. If a comic genuinely needs restructuring it is a NEW base.
+D3  FULL COVERAGE VOs ONLY. A VO stays draft until every line slot for its
+    character has a clip. Publish is blocked below 100%. Composer shows a
+    coverage meter. Kills partial-VO ranking abuse.
+D4  NO LEADING DEAD AIR. Enforced at ingest, not left to the VA. decodePeaks
+    already decodes every file; find first sample above the noise floor and
+    auto-set trim_start_ms there. lead_ms clamped to 0-250. VA nudges inside
+    that window only.
+D5  NO AUTHOR APPROVAL GATE. VOs and soundtracks publish directly. Readers
+    combine freely. Quality is sorted by popularity; abuse is handled by reports
+    to mods. MODS = THE OWNER, SOLE MODERATOR, confirmed. Author still pins a
+    canonical mix, which is
+    also the cold-start default when nothing has plays.
+D6  CONSENT, TWO AXES, THREE MODES EACH:
+      voice_consent  : closed | allowlist | open
+      music_consent  : closed | allowlist | open
+    Allowlist is per-axis, per-user. Goal is that authors run open (more
+    exposure, and payouts later), but closed/allowlist exist.
+D7  REVOCATION IS PROSPECTIVE. Flipping open -> closed does NOT kill existing
+    published VOs/soundtracks. Only a moderator takedown removes work. Otherwise
+    nobody invests effort in a dub.
+D8  PAYOUTS AND SPLITS: DEFERRED. Not built, not designed. BUT log views and
+    resolved contributors from day one of multi-user; attribution history cannot
+    be backfilled.
+D9  CONTRIBUTORS SEE THE FULL ART. Accepted risk. Consent gates attaching work,
+    not redistribution. No technical fix exists.
+D10 COMPOSER MODES. See 14.4. Musicians see music + SFX. VAs see dialogue, and
+    ALSO SEE SFX SLOTS READ-ONLY (they hear canonical SFX for timing, they
+    cannot fill them). ASSUMPTION FLAG: "let VOs see the sfx" was read as
+    read-only context. One flag flips it to fill rights if that was wrong.
+D11 HOME IS THE LIBRARY, not the reader. The old eski explainer is gone,
+    replaced by a short once-ever onboarding popup explaining the platform.
+D14 LOCAL SHELF (owner staging, pre-backend). The library page accepts dropped
+    .eski files and keeps them in indexeddb (db 'eski-shelf', store 'files'),
+    showing them in the same grid with a "shelved" tag and a remove button.
+    They open as ?read=idb:<id>, which the reader resolves via shelfBlob().
+    This does NOT violate D13: the reader still only opens what the library
+    hands it. Replace with real uploads at step 11; the shelf is a local
+    staging area, not a feature to advertise.
+D13 CLOSED ECOSYSTEM. The reader opens ONLY what the library hands it via
+    ?read=. Removed: the paste-a-URL fetch box, "choose a file", drag-and-drop
+    onto the viewer, the "new file" player-bar button, and the PWA .eski
+    file_handlers in manifest.json. loadFile()/loadFromUrl() are gone; boot
+    fetches ?read= (or demo.eski) and nothing else. The empty state points at
+    the library. Every screen must keep reflecting this: no surface should
+    advertise opening arbitrary files. THE COMPOSER IS THE EXCEPTION, authors
+    obviously still import their own pages and audio.
+D12 THE THREE APPS STAY THREE APPS. No separate VO booth, no separate musician
+    tool. The composer in a MODE is both. It already has drag-drop import,
+    waveforms, trim, preview, undo.
+
+--------------------------------------------------------------------------------
+14.3 THE FOUR PEOPLE
+--------------------------------------------------------------------------------
+READER. Opens library (home). Picks a comic. Gets the canonical mix by default,
+  or opens the mix picker: choose a VO per character (or mute), choose a
+  soundtrack. VO preview lets them audition before committing (see 14.6). Read
+  loop is unchanged: pages turn, music follows, down/up walks the lines.
+  The reader never knows it assembled three sources.
+
+AUTHOR. Imports pages (existing composer import). Then two author-only jobs:
+  CAST, e.g. [{key:"aiko", name:"Aiko"}] - only the author knows who speaks.
+  SLOTS, marking every dialogue bubble and SFX hit: page + order + kind +
+  cast key + bubble rect + optional attachTo/offset. No audio attached.
+  Then sets consent, publishes, pins a canonical mix.
+
+MUSICIAN. Browses bases where music_consent allows. Sees page thumbnails, page
+  count, slot layout for timing. Drags music, sets trigger pages, fills the
+  author's SFX slots. Exports a soundtrack bound to that base.
+
+VOICE ACTOR. Browses bases where voice_consent allows. Picks ONE character.
+  Sees only that character's line slots, in page order. Per slot: a CROP of the
+  bubble rendered from the page image (this is why rect exists), the previous
+  line played back for pacing, drag-and-drop import of externally recorded audio,
+  trim, retake. Publishes at 100% coverage.
+  NOTE: this is why section 13's "no captions/transcripts" holds. Correct for
+  readers (the text is on the page). The VA gets the bubble crop instead of a
+  transcript field. Costs nothing, art is already loaded.
+
+--------------------------------------------------------------------------------
+14.4 COMPOSER MODES  (cState.editMode)
+--------------------------------------------------------------------------------
+Chosen when the composer opens. 'scratch' only when starting from nothing.
+
+                          scratch    vo        soundtrack
+  pages add/remove/order    yes      no          no
+  cast + slot marking       yes      no          no
+  consent settings          yes      no          no
+  fill LINE slots           yes      yes         no
+  see SFX slots             yes      read-only   yes
+  fill SFX slots            yes      no          yes
+  music/silence tracks      yes      no          yes
+  media bay shows           all      audio       audio
+  export target             base     vo          soundtrack
+
+scratch has no restrictions: that is how one person builds a complete demo eski
+end to end (base + VO + soundtrack in one pass) with nobody else involved.
+
+Post-C3 all authoring happens in ONE page info panel, so mode gating is mostly
+filtering that panel plus reusing the existing bayFilter. Not scattered.
+
+SECURITY: mode gating is UI only. The server must independently validate that a
+VO submission touches only line slots for its own character on the stated base.
+Never trust a client-side mode flag.
+
+--------------------------------------------------------------------------------
+14.5 DATABASE SCHEMA
+--------------------------------------------------------------------------------
+Postgres (Supabase: auth + db + row-level security, which kills the whole
+"build accounts" phase). Media bytes on Cloudflare R2 via presigned PUT,
+content-addressed keys, immutable cache headers. Metadata in Postgres, bytes in
+R2, never mixed. No comic_versions table: see D2.
+
+  users             (id, handle, display_name, created_at)
+
+  comics            (id, owner_id, title, slug, direction, page_count,
+                     cover_key, status, published_at, created_at)
+  pages             (id, comic_id, idx, image_key, w, h)
+  cast_members      (id, comic_id, cast_key, name, note)
+  slots             (id, comic_id, page_id, order_idx,
+                     kind 'line'|'sfx', cast_member_id,
+                     rect jsonb, attach_to_slot_id, offset_ms)
+
+  consents          (comic_id, axis 'voice'|'music',
+                     mode 'closed'|'allowlist'|'open', updated_at)
+  consent_allow     (comic_id, axis, user_id)
+
+  vos               (id, comic_id, artist_id, cast_member_id, title,
+                     gain_db, status 'draft'|'published', preview_key,
+                     plays, created_at)
+  vo_clips          (id, vo_id, slot_id, audio_key, duration_ms,
+                     trim_start_ms, trim_end_ms, lead_ms, gain_db)
+
+  soundtracks       (id, comic_id, artist_id, title, gain_db,
+                     status, plays, created_at)
+  soundtrack_tracks (id, soundtrack_id, order_idx, trigger_page_id,
+                     type 'music'|'silence', audio_key,
+                     volume, start_ms, end_ms, gain_db)
+  soundtrack_sfx    (id, soundtrack_id, slot_id, audio_key, gain_db)
+
+  mixes             (id, comic_id, combo_hash unique, soundtrack_id,
+                     is_canonical, plays, created_at)
+  mix_vos           (mix_id, cast_member_id, vo_id)   -- null vo_id = muted
+
+  reports           (id, target_type 'vo'|'soundtrack', target_id,
+                     reporter_id, reason, status, created_at)
+  takedowns         (id, target_type, target_id, mod_id, reason, created_at)
+
+  views             (id, mix_id, viewer_id, session_id,
+                     started_at, pages_read, completed)
+  view_contributors (view_id, user_id, role, weight)
+
+STORE OBJECT KEYS, NEVER FULL URLS. Every *_key column holds the R2 path
+("a/3f9c2e/01.mp3"), and the reader builds R2_PUBLIC_BASE_URL + '/' + key at
+request time. This keeps the media host a one-variable decision: ship on the
+rate-limited pub-<hash>.r2.dev dev domain now, move to cdn.eski.lol whenever
+the nameservers land on Cloudflare, flip one env var, migrate zero rows.
+Storing full URLs turns that same switch into a rewrite of every media row.
+(Nameserver note: an R2 custom domain REQUIRES the eski.lol zone on Cloudflare.
+That is the only real reason to move it. If you do, the apex and www records
+must stay DNS-only/grey-cloud pointing at Vercel; proxying Cloudflare in front
+of Vercel stacks two CDNs. Env vars are unaffected by any DNS change.)
+
+Three things worth defending:
+- SLOTS ARE REFERENCED BY ID, NEVER PAGE INDEX. Index-based references break the
+  moment anything shifts. (D2 means nothing shifts, but ids cost nothing and
+  survive the day D2 gets revisited.)
+- MIXES ARE UPSERTED BY combo_hash. Readers combine freely (D5), so a mix row is
+  materialized on demand, not curated. Popularity then accrues per VO, per
+  soundtrack, AND per whole combination independently.
+- view_contributors IS WRITTEN AT VIEW TIME, DENORMALIZED. Mix composition
+  changes later. Payout math must never re-resolve history.
+
+--------------------------------------------------------------------------------
+14.6 LOADING
+--------------------------------------------------------------------------------
+  GET /api/mix/:id  ->  base .eski url + resolved track list (audio URLs)
+
+One request, then:
+- PAGES: base stays a ZIP. Reuses the whole existing path: JSZip, lazy per-page
+  decompress, prefetchAround(+/-3). Already built, do not touch.
+- AUDIO: individual R2 objects, NEVER zipped. A VO zip forces downloading all
+  200 lines before page 1 renders. Individual objects prefetch per page the way
+  images already do. Lines are 50-200KB.
+
+THE REASON THIS IS CHEAP: audio.resolve() (index.html) already returns
+track.url when set and only falls back to a zip entry. Platform tracks simply
+arrive carrying a url. The reader audio engine needs ZERO structural change.
+The mix resolver is ~150 lines of fetch + manifest merge in front of the
+existing comicFromZip/openComic.
+
+VO PREVIEW: generated at ingest, not assembled at browse time. Take 3-5
+consecutive lines from the VO's densest page, concatenate to one clip, store as
+preview_key. Browsing a VO costs one small fetch instead of resolving a mix.
+
+EXPORT STILL WORKS: flatten a mix to a portable single .eski via the existing
+exportEski. Offline/sharing snapshot, no format schism.
+
+--------------------------------------------------------------------------------
+14.7 VOLUME NORMALIZATION
+--------------------------------------------------------------------------------
+Measured at INGEST, reusing composer's decodePeaks (it already runs
+decodeAudioData for waveforms, so this is nearly free). Store a gain. Never
+touch samples, never re-encode: there is no encoder left (opus was removed).
+
+NORMALIZE PER VO / PER SOUNDTRACK, NOT PER CLIP. Per-clip is the trap: a
+whisper and a scream both land at -16 LUFS and the performance is destroyed.
+Compute ONE gain from the artist's aggregate loudness. That matches VA to VA
+and soundtrack to soundtrack while preserving dynamics inside each one.
+
+TWO TARGETS, NOT ONE: dialogue ~-16 LUFS, music ~-20 LUFS. Music sits under by
+construction, so the duck has less work to do and pumps less.
+
+TRUE PEAK: after gain, check peak; if >0.99 clamp the gain down.
+
+RUNTIME CHAIN:
+  clip gain (manual) x vo/soundtrack norm x user volume x mute -> element.volume
+                                                              -> duckGain node
+                                                              -> peaking EQ
+                                                                 400Hz, 2kHz
+trackGain() in index.html is the single choke point; the norm multiplies there,
+one line, and covers soundtrack and one-shots both.
+
+--------------------------------------------------------------------------------
+14.8 TECH STACK
+--------------------------------------------------------------------------------
+  reader / composer / library     vanilla, no build. Unchanged. Works.
+  slot marking + soundtrack auth  INSIDE the existing composer (modes)
+  VO booth                        INSIDE the existing composer (vo mode)
+  dashboard (cast/consent/mixes)  DEFER THE FRAMEWORK
+  auth                            Supabase Auth, EMAIL MAGIC LINK. Discord OAuth
+                                  was considered and REJECTED by the owner.
+  db                              Supabase Postgres + RLS (RLS enforces consent
+                                  at the query layer, not in app code)
+  media                           R2, presigned PUT, content-addressed
+  host                            Vercel (already there)
+  domain                          eski.lol
+  supabase project                https://zidqagrmxeawpasurpwi.supabase.co
+  r2 bucket                       eski
+  media base url                  https://pub-b9e7c6b680ca415e9ffd5875bad0df03.r2.dev
+                                  (r2.dev dev domain, rate limited. swap to
+                                  https://cdn.eski.lol when the zone moves to
+                                  cloudflare: one env var, zero row migrations)
+  env vars                        see .env.example; r2 cors in r2-cors.json
+  discord                         https://discord.gg/UFNpnHAbD (wired in index.html
+                                  DISCORD const + read.html header/footer)
+
+Section 3's "vanilla JS only" rule stays SCOPED to the three apps. It is lifted
+for the platform layer. But do not pick a framework yet: Supabase's JS client
+plus vanilla covers everything until a second surface needs real routing.
+Picking Next/SvelteKit now buys nothing and costs the no-build-step property.
+
+--------------------------------------------------------------------------------
+14.9 BUILD ORDER  (biggest visible change first; multi-user work last)
+--------------------------------------------------------------------------------
+ 1. HOME BECOMES LIBRARY. git mv index.html read.html; git mv library.html
+    index.html. Font blocks travel with the files, no re-injection needed. Then
+    fix: sw.js ASSETS + offline fallback, manifest.json start_url/file_handlers,
+    library read-it links, spec.html footer, nav across all files, smoke URLs.
+ 2. ONBOARDING POPUP. Delete the reader's #about explainer. Once-ever modal on
+    the library: comic + soundtrack + VO, and how to contribute. Reuses the
+    existing #tut-os / #keys-panel CSS pattern.
+ 3. #0 dark toggle into settings; R1 one-shot tutorial once-ever.
+ 4. [DONE] AUDIO MIX, M1-M7. Shipped: graph built in unlockAudio (DUCK table,
+    buildGraph/resumeGraph in read.html), duck keyed on setOsPlaying with a
+    600ms release, per-one-shot "duck" override, "duck under voices" row in the
+    settings popover, volume-only fallback via duckMul in trackGain, and
+    gainDb normalization measured in composer decodePeaks + written by
+    normGains() at export (music per track, one-shots share one gain).
+    spec.html documents player.duck, track.duck, track.gainDb.
+    M8 DONE TOO: the suite asserts the graph is built on both elements, the
+    duck engages/holds across a requeue/releases on a debounce, the off switch,
+    the per-one-shot override, the no-web-audio fallback, and gainDb math.
+    (original scope, for reference) AUDIO MIX, M1-M8. Most audible change in the project. Web Audio graph on the
+    a/b elements ONLY (os.el stays unrouted so one-shots are never ducked).
+    CREATE THE SOURCE NODES IN unlockAudio(), NOT AT BOOT: createMediaElementSource
+    reroutes output exclusively into the graph, so a suspended context = silence.
+    Once-only still holds since a/b are never recreated. Duck keys on
+    setOsPlaying with a ~600ms release debounce, which gives "one duck per run
+    of queued lines" for free and also stops attached SFX double-ducking later.
+ 5. [DONE] COMPOSER PAGE PANEL: C1, C2, C5, C6, C9.
+    C2: #qp is now a DOCKED, PERSISTENT third column in .work (no scrim, no
+      modal). openQueue(page) is the "select this page" entry point and is
+      still the name every call site uses. renderInfo() paints the soundtrack
+      section (which queue owns the page, whether it triggers there, per-track
+      volume + preview + remove) and then renderQueue() for the one-shots.
+      groupOwning(page) is the new helper.
+    C1: previewEl, a single shared <audio>, gives full-length audition from
+      both the media bay chips and the panel rows. previewKey tracks what is
+      playing so a second press stops it.
+    C5: page cards show a "trig" badge (song starts here), an "inrange" colour
+      stripe (inside a song's range), the existing one-shot block, and .sel for
+      the selected page.
+    C6: pvZoom/pvX/pvY + pvZoomAt/pvApply on #preview, wheel + drag + dblclick,
+      reset on page change. Same feel as the reader.
+    C9: #bay-resize handle, pointer drag, clamped 160-420px.
+    GOTCHA HIT WHILE BUILDING THIS: renderPages() already had `const g` for the
+    grid element, so a `const g` for the owning group shadowed it and broke
+    g.appendChild. The group variable is `grp`.
+    STILL OPEN from the C list: C7, C8, C10, C11 (see step 9).
+ 6. [DONE] C3 + C4: THE SOUNDTRACK TIMELINE IS GONE. composer.html went from
+    1593 to ~1450 lines and the whole timeline vocabulary is deleted:
+    renderTimeline, pxPerSec, drawBandWave, attachGrip, attachSlip, scrub,
+    renderClipbar, minZoom, zoomFit, zoomStep, syncMinimap, the minimap drag,
+    setTLMode, pageAtClientX, laneOf, laneCount, laneH, and the tlMode / zoomX /
+    laneHeight / selRange state. The ruler, page row, lanes, bands, sel-band,
+    mode switch, clip bar and #os-tool markup and css all went with them.
+    WHAT REPLACED EACH AFFORDANCE (all in the page panel now):
+      grip drag (trigger page)  -> "starts p." number input, and the panel
+                                   follows the song to its new page
+      slip drag (in point)      -> "in" seconds number input
+      clip bar volume           -> "vol" slider on the song row
+      clip bar rename           -> the song row name is an input
+      clip bar +queue           -> drop a second audio on the same page
+      clip bar remove           -> trash button on the song row
+      add silence               -> button at the bottom of the soundtrack section
+      2s scrub preview          -> full-length preview (C1) on the row
+      band drag to trash        -> row trash button
+      ruler drag (page range)   -> gone; qpPage is the single selection concept
+    DROP TARGETS ARE NOW SCOPED: #info-song takes audio and starts/queues a
+    song, #qp-list takes audio and makes a one-shot, page cards still take
+    audio as one-shots so the common case needs no aiming.
+    sel survives as the copy/paste/delete selection, set by clicking a song row.
+    Suite rewritten to match and is at 163 assertions, green twice.
+ 7. CAST + SLOTS + COMPOSER MODES. Cast list, slot marking with bubble rects,
+    editMode gating, coverage meter (D3), leading-silence trim (D4). Still pure
+    local files, no backend.
+ 8. SEPARATE .eski PARTS + READER MIX PICKER. Base/VO/soundtrack as distinct
+    exports; reader loads a base and accepts VO/soundtrack files alongside,
+    merges manifests, plays the combination.
+
+    *** STOP AND LOOK HERE. After 8, with ZERO BACKEND, one person can author a
+    base, record a VO, score a soundtrack, and read the assembled mix. The
+    entire platform model is proven on files. Everything after this is hosting
+    and discovery, not architecture. If the model is wrong, it fails here,
+    cheaply. ***
+
+ 9. CLEANUP: C7 (iframe preview via read.html?read=<blobURL>#slug/page=N), C8,
+    C10 non-destructive trim, C11 multi-select.
+10. ADDITIVE MANIFEST: SFX-attach (role/attachTo/offset), meta.chapters,
+    meta.series, meta.credits. Credits gives real attribution with no backend.
+--- everything below needs a second human to mean anything ---
+11. BACKEND. Supabase auth + Postgres + RLS, R2 presigned upload, publish and
+    browse endpoints, server-side validation of submissions (see 14.4 SECURITY).
+    Library reads the API instead of index.json.
+12. CONSENT + MODERATION. Two axes, three modes, allowlist, reports.
+13. POPULARITY + VO PREVIEW + MIXES. Ranking, preview clips, combo_hash upsert,
+    canonical pin.
+14. VIEWS + view_contributors. Even with splits deferred (D8). One insert, and
+    it cannot be backfilled.
+
+--------------------------------------------------------------------------------
+14.10 KNOWN BLIND SPOTS (accepted or open)
+--------------------------------------------------------------------------------
+- Steps 1-2 make eski LOOK like a platform long before step 8 makes it BEHAVE
+  like one. Fine while it is one user. Do not announce at step 2.
+- Recording quality floor: MediaRecorder is webm/opus and iOS Safari is quirky;
+  untreated bedroom audio next to produced music sounds broken. D4's ingest pass
+  is the right place to also high-pass and check the noise floor, and warn.
+  Otherwise the duck and EQ get blamed for problems they cannot fix.
+- Line pacing: a VA records in isolation and the reader triggers manually, so
+  delivery can feel disjointed. Mitigation lives in the booth (play previous
+  line, show the page), not in the format.
+- SFX timing chicken-and-egg: a musician filling SFX slots that attach to a line
+  cannot hear that line if no VO exists yet. Either score against canonical, or
+  attach-offsets get authored blind. Decide before building SFX-attach (step 10).
+- Popularity ranking is gameable and rich-get-richer. Irrelevant at one user.
+- Reports need a mod queue eventually. Table is enough for now, skip the UI.
+- Storage: a 40-page comic + ~200 lines x 3 VOs + a soundtrack is roughly
+  200-400MB. R2 storage is pennies, egress free. Not a constraint.
+- Splits (D8) are the first thing contributors will ask about. The data model
+  makes it answerable; it does not answer it.
 
 --------------------------------------------------------------------------------
 DONE THIS PROJECT (so far), for context:

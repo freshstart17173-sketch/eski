@@ -1,6 +1,7 @@
 # eski smoke tests
 
-playwright drives the real `index.html` over localhost. cdn requests
+playwright drives the real pages over localhost: `index.html` (library +
+home), `read.html` (reader), `composer.html`. cdn requests
 (jszip, pdf.js, google fonts) are route-intercepted so the suite runs
 without egress. zero console errors is a hard assertion.
 

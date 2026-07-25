@@ -1,7 +1,7 @@
 eski library folder
 ===================
 
-Drop .eski files in here. The library page (library.html) reads this folder,
+Drop .eski files in here. The library page (index.html, the home page) reads this folder,
 pulls the cover + title straight out of each file's manifest, and shows them
 as a grid. Clicking a cover opens it in the reader.
 

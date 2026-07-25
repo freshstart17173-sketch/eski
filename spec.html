@@ -30,6 +30,8 @@
   --band:hsl(var(--hue),9%,7%);
 }
 *{box-sizing:border-box}
+button,input,select,textarea{font-family:inherit;font-size:inherit}
+button{cursor:pointer}
 body{margin:0;background:var(--paper);color:var(--ink);
   font-family:'Jost','Avenir Next','Helvetica Neue',Arial,sans-serif;
   font-weight:400;font-size:15px;line-height:1.5}
@@ -71,7 +73,7 @@ footer a{color:var(--accent-soft)}
   <a class="brand" href="index.html">eski!</a>
   <span class="hdr-link">format spec</span>
   <span class="sp"></span>
-  <a class="hdr-link" href="index.html">back to the reader</a>
+  <a class="hdr-link" href="read.html">back to the reader</a>
 </header>
 
 <div class="wrap">
@@ -100,15 +102,17 @@ footer a{color:var(--accent-soft)}
   },
   "player": {
     "volume": 80, "crossfade": 2.0, "loopMode": "loop",
-    "playbackMode": "sync", "readingMode": "pages", "oneshotLoop": false
+    "playbackMode": "sync", "readingMode": "pages", "oneshotLoop": false,
+    "duck": "medium"
   },
   "tracks": [
     { "id": "t1", "title": "", "source": "local", "file": "audio/01-x.mp3",
-      "type": "music", "volume": 100, "sync": { "from": 3, "start": 0 } },
+      "type": "music", "volume": 100, "gainDb": -3.2, "sync": { "from": 3, "start": 0 } },
     { "id": "t2", "title": "quiet", "source": "local", "file": null,
       "type": "silence", "volume": 100, "sync": { "from": 5, "start": 0 } },
     { "id": "o1", "title": "line one", "source": "local", "file": "audio/03-o1.mp3",
-      "type": "oneshot", "volume": 100, "sync": { "from": 4, "start": 0 } }
+      "type": "oneshot", "volume": 100, "gainDb": 1.4, "duck": "inherit",
+      "sync": { "from": 4, "start": 0 } }
   ],
   "pages": { "count": 7, "naming": "auto" }
 }</pre>
@@ -137,9 +141,12 @@ footer a{color:var(--accent-soft)}
       "scroll": pages stack in one vertical scroller; the page crossing the viewport midline is current. default "pages".</td></tr>
     <tr><td><code>oneshotLoop</code></td><td>bool</td><td>default for whether the reader's one-shot
       cursor wraps at the ends. default false; the reader can override it.</td></tr>
+    <tr><td><code>duck</code></td><td>"off" | "light" | "medium" | "strong"</td><td>how far the
+      soundtrack drops while a one-shot plays. omitted means "medium": ducking is on by default,
+      including for files written before this field existed. the reader can override it.</td></tr>
   </table>
-  <p>readers may offer overrides for crossfade, playback mode, reading mode, direction, and one-shot
-    looping. overrides change what the reader does, never what the file says: a re-export writes what
+  <p>readers may offer overrides for crossfade, playback mode, reading mode, direction, one-shot
+    looping, and ducking. overrides change what the reader does, never what the file says: a re-export writes what
     the author put in the manifest.</p>
 
   <h3>tracks</h3>
@@ -153,6 +160,13 @@ footer a{color:var(--accent-soft)}
     <tr><td><code>type</code></td><td>"music" | "silence" | "oneshot"</td><td>music and silence own page
       ranges (below). one-shots do not: they are triggered by the reader (below).</td></tr>
     <tr><td><code>volume</code></td><td>0&#8211;100</td><td>per-track gain, multiplied with the player volume.</td></tr>
+    <tr><td><code>gainDb</code></td><td>decibels, optional</td><td>loudness correction measured at
+      export so every track arrives at a comparable level. music is measured per track; one-shots
+      share one value across the file, so a whisper stays quieter than a shout. the audio itself is
+      never re-encoded. omitted or 0 means no correction; readers clamp to -24..+12.</td></tr>
+    <tr><td><code>duck</code></td><td>"inherit" | "off" | "light" | "medium" | "strong", optional</td>
+      <td>one-shots only. overrides <code>player.duck</code> for this one sound, so an ambient effect
+      need not shove the music aside the way a spoken line does. default "inherit".</td></tr>
     <tr><td><code>sync.from</code></td><td>page number, 1-indexed</td><td>the trigger page. the track starts when
       the reader reaches this page.</td></tr>
     <tr><td><code>sync.start</code></td><td>seconds</td><td>in point: offset into the audio where playback begins.</td></tr>
@@ -202,8 +216,8 @@ footer a{color:var(--accent-soft)}
     <span class="brand">eski!</span>
     <span>a comic and its soundtrack, one file.</span>
     <span class="sp"></span>
-    <a href="index.html">reader</a>
-    <a href="library.html">library</a>
+    <a href="read.html">reader</a>
+    <a href="index.html">library</a>
   </div>
 </footer>
 

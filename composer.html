@@ -127,69 +127,10 @@ h4{margin:0 0 8px;font-size:11px;letter-spacing:.13em;color:var(--muted);font-we
   display:flex;flex-direction:column;box-shadow:0 -2px 10px rgba(0,0,0,.08)}
 .tl-top{display:flex;align-items:center;gap:8px;padding:7px 12px;border-bottom:1px solid var(--edge);
   min-height:44px}
-.modeswitch{display:flex;background:var(--bg-0);border:1px solid var(--edge);border-radius:7px;padding:2px}
-.modeswitch button{border:0;background:transparent;color:var(--muted);padding:4px 11px;border-radius:5px;
-  font-size:12.5px;text-transform:lowercase;display:inline-flex;align-items:center;gap:5px}
-.modeswitch button.on{background:var(--accent);color:#fff;box-shadow:var(--shadow)}
 .tl-status{font-size:12.5px;color:var(--muted)}
-.clipbar{display:inline-flex;align-items:center;gap:8px;background:var(--bg-3);border:1px solid var(--edge);
-  border-radius:7px;padding:4px 8px;box-shadow:var(--shadow)}
-.clipbar .sw{width:11px;height:11px;border-radius:3px;flex:none}
-.clipbar input.name{border:0;background:transparent;padding:2px 3px;width:120px;font-size:13px;
-  text-transform:lowercase}
-.clipbar input.name:focus{border-bottom:1px solid var(--accent)}
-.clipbar input[type=range]{width:74px;accent-color:var(--accent)}
-.clipbar .mini{font-size:11px;color:var(--muted)}
-.clipbar button{border:0;background:transparent;color:var(--muted);padding:3px 6px;border-radius:4px;
-  font-size:12.5px;display:inline-flex;align-items:center;gap:4px}
-.clipbar button:hover{color:var(--accent);background:var(--bg-1)}
-.clipbar button.danger:hover{color:#c1362b}
 .pv-nav svg.ico{width:20px;height:20px}
 .drawer-head button svg.ico{width:18px;height:18px}
-
-/* minimap zoom + pan bar */
-.minimap{height:20px;margin:6px 12px 0;background:var(--bg-0);border:1px solid var(--edge);
-  border-radius:10px;position:relative;flex:none;user-select:none}
-.mm-window{position:absolute;top:0;bottom:0;background:var(--accent-soft);
-  border:1px solid var(--accent);border-radius:10px;cursor:grab;min-width:22px;opacity:.9}
-.mm-window:active{cursor:grabbing}
-.mm-handle{position:absolute;top:-3px;bottom:-3px;width:12px;cursor:ew-resize;display:flex;
-  align-items:center;justify-content:center}
-.mm-handle::before{content:'';width:4px;height:12px;border-radius:2px;background:var(--accent-deep)}
-.mm-handle.l{left:-2px} .mm-handle.r{right:-2px}
-
-/* timeline scroller */
-.tl-scroll{flex:1;overflow:auto;position:relative;margin-top:6px}
-.tl-inner{position:relative;min-width:100%}
-.tl-ruler{display:flex;height:18px;border-bottom:1px solid var(--edge);position:sticky;top:0;
-  background:var(--bg-1);z-index:6;cursor:crosshair}
-.tl-ruler .tick{flex:none;border-left:1px solid var(--edge);font-size:10px;color:var(--muted);
-  padding:2px 0 0 3px;overflow:hidden;white-space:nowrap}
-.sel-band{position:absolute;top:18px;bottom:0;background:hsla(var(--hue),40%,50%,.14);
-  border-left:1px solid var(--accent);border-right:1px solid var(--accent);pointer-events:none;z-index:2}
-.tl-pagerow{position:relative;height:70px;border-bottom:1px solid var(--edge);background:var(--bg-2)}
-.tl-range{position:absolute;top:6px;bottom:6px;border:1px solid var(--edge);border-radius:6px;
-  background:var(--bg-3);display:flex;align-items:center;gap:6px;padding:0 6px;overflow:visible;
-  cursor:pointer;box-shadow:var(--shadow);transition:border-color 120ms ease}
-.tl-range:hover{border-color:var(--accent)}
-.tl-range.selrange{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)}
-.tl-range .th{position:relative;height:48px;flex:none}
-.tl-range .th img{height:48px;width:auto;display:block;border-radius:3px;box-shadow:0 0 0 1px var(--edge);
-  background:#fff}
-.tl-range .rlab{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden}
-.tl-lanes{position:relative;background:var(--bg-1)}
-.tl-band{position:absolute;border-radius:6px;color:#fff;overflow:hidden;box-shadow:var(--shadow);
-  border:1px solid rgba(0,0,0,.15)}
-.tl-band .grip{position:absolute;top:0;left:0;right:0;height:15px;cursor:grab;
-  background:rgba(0,0,0,.22);display:flex;align-items:center;z-index:2}
-.tl-band .grip:active{cursor:grabbing}
-.tl-band .grip span{font-size:10.5px;padding:0 6px;white-space:nowrap;overflow:hidden;
-  text-overflow:ellipsis;pointer-events:none}
-.tl-band .body{position:absolute;top:15px;left:0;right:0;bottom:0;cursor:ew-resize}
-.tl-band canvas{position:absolute;top:15px;left:0;pointer-events:none}
-.tl-band.silence{background:repeating-linear-gradient(45deg,#8f8f8f,#8f8f8f 7px,#7f7f7f 7px,#7f7f7f 14px)!important}
-.tl-band.silence .grip{background:rgba(0,0,0,.18)}
-.tl-band.sel{outline:2px solid var(--ink);outline-offset:1px;z-index:5}
+.tl-scroll{flex:1;overflow:auto;position:relative}
 
 /* pages mode */
 .pagesgrid{display:flex;flex-wrap:wrap;gap:10px;padding:12px}
@@ -223,6 +164,7 @@ h4{margin:0 0 8px;font-size:11px;letter-spacing:.13em;color:var(--muted);font-we
 .drawer input[type=text],.drawer textarea,.drawer select{width:100%}
 .drawer textarea{resize:vertical;min-height:52px}
 .drawer .duo{display:flex;gap:10px}
+.drawer-sep{height:1px;background:var(--edge);margin:16px 0 14px}
 .drawer .duo>div{flex:1}
 .drawer-head{display:flex;align-items:center;margin-bottom:14px}
 .drawer-head h4{margin:0}
@@ -239,32 +181,64 @@ h4{margin:0 0 8px;font-size:11px;letter-spacing:.13em;color:var(--muted);font-we
 .sec-head .sort{margin-left:auto}
 
 /* one-shot tool + per-page one-shot block (pages mode) */
-.pill.os-tool{cursor:grab;background:var(--accent);border-color:var(--accent);color:#fff}
-.pill.os-tool:hover{background:var(--accent-deep);border-color:var(--accent-deep);color:#fff}
-.pill.os-tool:active{cursor:grabbing}
 .pgcard .osblock{position:absolute;left:4px;bottom:4px;display:flex;align-items:center;gap:3px;
   background:var(--accent);color:#fff;border-radius:9px;padding:1px 7px 1px 5px;font-size:10.5px;
   cursor:pointer;box-shadow:var(--shadow)}
 .pgcard .osblock svg{width:11px;height:11px;stroke:#fff}
 .pgcard.osdrop{outline:2px solid var(--accent);outline-offset:-2px}
 
-/* one-shot queue panel */
-.qp-scrim{position:fixed;inset:0;background:rgba(0,0,0,.4);display:none;z-index:170}
-.qp-scrim.open{display:block}
-.qp{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:171;display:none;
-  width:min(360px,92vw);max-height:80vh;background:var(--bg-1);border:1px solid var(--edge-strong);
-  border-radius:12px;box-shadow:var(--shadow-lg);padding:16px;flex-direction:column}
-.qp.open{display:flex}
+/* page info panel: docked, persistent, the hub for authoring a page */
+.qp{width:var(--info-w,300px);min-width:240px;max-width:460px;background:var(--bg-1);
+  border-left:1px solid var(--edge-strong);display:flex;flex-direction:column;min-height:0;
+  padding:14px;overflow-y:auto}
 .qp.dropping{outline:2px dashed var(--accent);outline-offset:-4px}
+.info-sec{margin-bottom:16px}
+.info-sec h5{margin:0 0 7px;font-size:11px;text-transform:uppercase;letter-spacing:.08em;
+  color:var(--muted);font-weight:500}
+.info-empty{color:var(--muted);font-size:12px;padding:8px 0}
+.songrow{display:flex;align-items:center;gap:7px;background:var(--bg-3);border:1px solid var(--edge);
+  border-radius:6px;padding:6px 7px;font-size:12px;margin-bottom:6px}
+.songrow .sw{width:8px;height:8px;border-radius:50%;flex:none}
+.songrow.sel{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)}
+.songrow input.nm{flex:1;min-width:0;border:0;background:transparent;font-size:12px;padding:2px 3px;
+  text-transform:lowercase;color:var(--ink)}
+.songrow input.nm:focus{border-bottom:1px solid var(--accent);outline:none}
+.songrow .pos{color:var(--muted);font-size:11px;flex:none}
+.songknobs{display:flex;flex-wrap:wrap;gap:8px;margin:-2px 0 10px;padding:0 7px}
+.songknobs label{display:flex;align-items:center;gap:4px;font-size:11px;color:var(--muted)}
+.songknobs input[type=range]{width:70px;accent-color:var(--accent)}
+.songknobs input[type=number]{width:48px;padding:1px 4px;font-size:11px}
+.songadd{margin-top:8px}
+.info-sec .dropping{outline:2px dashed var(--accent);outline-offset:2px;border-radius:8px}
+.songrow button{border:0;background:transparent;color:var(--muted);cursor:pointer;padding:2px;flex:none}
+.songrow button:hover{color:var(--accent)}
+.songrow button .ico{width:14px;height:14px}
+.songrow input[type=range]{width:64px}
+.rangenote{font-size:11.5px;color:var(--muted);display:flex;align-items:center;gap:6px;margin-top:4px}
+.rangenote .sw{width:8px;height:8px;border-radius:50%;flex:none}
+/* drag handle on the media bay */
+.bay{position:relative}
+.bay-resize{position:absolute;top:0;right:-3px;width:6px;height:100%;cursor:col-resize;z-index:5}
+.bay-resize:hover{background:var(--accent);opacity:.4}
 .qp-head{display:flex;align-items:center;gap:8px;font-weight:500;text-transform:lowercase;margin-bottom:6px}
 .qp-head .ico{width:17px;height:17px;color:var(--accent)}
 .qp-head button{margin-left:auto;border:0;background:transparent;color:var(--muted);cursor:pointer;padding:2px}
 .qp-head button .ico{width:17px;height:17px}
 .qp-hint{font-size:11.5px;color:var(--muted);margin-bottom:10px}
-.qp-list{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:6px;min-height:60px;
+.qp-list{display:flex;flex-direction:column;gap:6px;min-height:60px;
   border:1px dashed var(--edge);border-radius:8px;padding:8px}
 .qp-empty{color:var(--muted);font-size:12px;text-align:center;padding:14px 4px}
-.qp-foot{margin-top:12px;display:flex;justify-content:flex-end}
+.qp-foot{margin-top:10px;display:flex;justify-content:flex-end}
+/* preview zoom/pan on the stage */
+.preview.zoomed img{cursor:grab}
+.preview.panning img{cursor:grabbing}
+.preview img{transform-origin:center center}
+/* page card overlays: what is happening on this page, at a glance */
+.pgcard.sel{outline:2px solid var(--accent);outline-offset:-2px}
+.pgcard .trig{position:absolute;top:3px;right:22px;display:flex;align-items:center;gap:3px;
+  background:rgba(0,0,0,.62);color:#fff;border-radius:9px;padding:1px 6px;font-size:10px}
+.pgcard .trig svg{width:10px;height:10px;stroke:#fff}
+.pgcard .inrange{position:absolute;left:0;right:0;bottom:0;height:4px}
 .oschip{display:flex;align-items:center;gap:6px;background:var(--bg-3);border:1px solid var(--edge);
   border-radius:6px;padding:5px 7px;font-size:12px;cursor:grab;box-shadow:var(--shadow)}
 .oschip:hover{border-color:var(--accent)}
@@ -306,7 +280,7 @@ h4{margin:0 0 8px;font-size:11px;letter-spacing:.13em;color:var(--muted);font-we
 <body>
 
 <header class="site-header">
-  <a class="brand" href="index.html">eski!</a>
+  <a class="brand" href="index.html" title="library">eski!</a>
   <span class="hdr-label">composer</span>
   <button class="pill" data-ico="plus" onclick="document.getElementById('in-media').click()">add media</button>
   <button class="pill" data-ico="folder" onclick="document.getElementById('in-folder').click()"
@@ -315,7 +289,6 @@ h4{margin:0 0 8px;font-size:11px;letter-spacing:.13em;color:var(--muted);font-we
   <span class="sp"></span>
   <button class="pill" data-ico="settings" onclick="openSettings()">settings</button>
   <button class="pill primary" data-ico="download" id="export-btn" onclick="exportEski()">export .eski</button>
-  <button class="pill icon-btn" data-ico="contrast" id="dark-btn" onclick="toggleDark()" title="dark mode"></button>
 </header>
 
 <div class="work">
@@ -351,9 +324,10 @@ h4{margin:0 0 8px;font-size:11px;letter-spacing:.13em;color:var(--muted);font-we
         </select>
       </div>
       <div class="bay-grid" id="bay-auds" style="flex-direction:column"><div class="bay-empty">none yet</div></div>
-      <div class="bay-hint">drag an audio block onto a page in the soundtrack timeline to start a
-        track. drag any block to the trash bar to remove it.</div>
+      <div class="bay-hint">drag an audio block onto a page (here or in the timeline) to place it.
+        drag any block to the trash bar to remove it.</div>
     </div>
+    <div class="bay-resize" id="bay-resize" title="drag to resize"></div>
   </aside>
 
   <!-- stage -->
@@ -376,43 +350,33 @@ h4{margin:0 0 8px;font-size:11px;letter-spacing:.13em;color:var(--muted);font-we
 
     <div class="tl-panel">
       <div class="tl-top">
-        <div class="modeswitch" id="modeswitch">
-          <button data-m="sound" class="on" data-ico="music" onclick="setTLMode('sound')">soundtrack</button>
-          <button data-m="pages" data-ico="book-open" onclick="setTLMode('pages')">pages</button>
-        </div>
-        <button class="pill" id="silence-btn" data-ico="volume-x" onclick="addSilence()" title="silence for a page range">add silence</button>
         <span class="tl-status" id="tl-status">no pages yet</span>
         <span class="sp"></span>
-        <span id="clipbar-slot"></span>
-        <span class="zoom" id="zoom-ctrls">
-          <button class="pill" data-ico="maximize-2" onclick="zoomFit()" title="fit whole comic">fit</button>
-          <button class="pill icon-btn" data-ico="zoom-out" onclick="zoomStep(-1)" title="zoom out"></button>
-          <button class="pill icon-btn" data-ico="zoom-in" onclick="zoomStep(1)" title="zoom in"></button>
-        </span>
         <span class="zoom" id="pages-ctrls" style="display:none">
-          <button class="pill os-tool" id="os-tool" draggable="true" data-ico="list-music"
-                  title="drag onto a page to add a one-shot block">one-shot</button>
           <button class="pill icon-btn" data-ico="zoom-out" onclick="pageZoom(-1)" title="smaller pages"></button>
           <button class="pill icon-btn" data-ico="zoom-in" onclick="pageZoom(1)" title="bigger pages"></button>
         </span>
       </div>
-      <div class="minimap" id="minimap" style="display:none">
-        <div class="mm-window" id="mm-window">
-          <div class="mm-handle l" id="mm-l"></div>
-          <div class="mm-handle r" id="mm-r"></div>
-        </div>
-      </div>
       <div class="tl-scroll" id="tl-scroll">
-        <div class="tl-inner" id="tl-inner">
-          <div class="tl-ruler" id="tl-ruler"></div>
-          <div class="sel-band" id="sel-band" style="display:none"></div>
-          <div class="tl-pagerow" id="tl-pagerow"></div>
-          <div class="tl-lanes" id="tl-lanes"></div>
-        </div>
-        <div class="pagesgrid" id="pagesgrid" style="display:none"></div>
+        <div class="pagesgrid" id="pagesgrid"></div>
       </div>
     </div>
   </div>
+
+  <!-- page info panel: everything authored on the selected page -->
+  <aside class="qp" id="qp">
+    <div class="qp-head"><span data-ico="list-music"></span><span id="qp-title">page</span></div>
+    <div class="info-sec">
+      <h5>soundtrack</h5>
+      <div id="info-song"></div>
+    </div>
+    <div class="info-sec">
+      <h5>one-shots</h5>
+      <div class="qp-hint">drag audio from the dock into this list. drag to reorder; the &#10005; removes one.</div>
+      <div class="qp-list" id="qp-list"></div>
+      <div class="qp-foot"><button class="pill" id="qp-clear" onclick="clearQueueBlock()">remove this block</button></div>
+    </div>
+  </aside>
 </div>
 
 <!-- settings drawer -->
@@ -441,6 +405,10 @@ h4{margin:0 0 8px;font-size:11px;letter-spacing:.13em;color:var(--muted);font-we
     <div><label>crossfade (s)</label><input type="number" id="m-fade" min="0" max="10" step="0.5"></div>
     <div><label>volume</label><input type="number" id="m-vol" min="0" max="100"></div>
   </div>
+  <div class="drawer-sep"></div>
+  <div class="row"><label>this app</label>
+    <button class="pill" id="set-dark" onclick="toggleDark()"><span data-ico="moon"></span><span
+      id="set-dark-lbl">dark mode: off</span></button></div>
 </div>
 
 <input type="file" id="in-media" accept="image/*,audio/*,.cbz,.zip,.pdf" multiple style="display:none"
@@ -449,16 +417,6 @@ h4{margin:0 0 8px;font-size:11px;letter-spacing:.13em;color:var(--muted);font-we
        onchange="addFiles([...this.files]);this.value=''">
 <input type="file" id="in-eski" accept=".eski,.zip,.cbz" style="display:none"
        onchange="if(this.files[0])openEski(this.files[0]);this.value=''">
-
-<!-- per-page one-shot queue panel -->
-<div class="qp-scrim" id="qp-scrim" onclick="closeQueue()"></div>
-<div class="qp" id="qp">
-  <div class="qp-head"><span data-ico="list-music"></span><span id="qp-title">one-shots</span>
-    <button data-ico="x" onclick="closeQueue()" title="close"></button></div>
-  <div class="qp-hint">drag audio from the dock into this list. drag to reorder; the &#10005; removes one.</div>
-  <div class="qp-list" id="qp-list"></div>
-  <div class="qp-foot"><button class="pill" id="qp-clear" onclick="clearQueueBlock()">remove this block</button></div>
-</div>
 
 <div class="trash-bar" id="trash-bar"><span data-ico="trash-2" class="ico"></span><span>drop here to remove</span></div>
 <div class="loading" id="loading"><div class="spinner"></div><div class="lbl" id="loading-lbl">working</div></div>
@@ -481,24 +439,20 @@ const uid = p => p+Math.random().toString(36).slice(2,8);
 /* ---------------- icons (Lucide v1.25.0, ISC, inlined so it stays offline) ---------------- */
 const ICONS = {
   "plus": "<path d=\"M5 12h14\" /> <path d=\"M12 5v14\" />",
-  "minus": "<path d=\"M5 12h14\" />",
   "folder-open": "<path d=\"m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2\" />",
   "volume-x": "<path d=\"M11 4.702a.705.705 0 0 0-1.203-.498L6.413 7.587A1.4 1.4 0 0 1 5.416 8H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2.416a1.4 1.4 0 0 1 .997.413l3.383 3.384A.705.705 0 0 0 11 19.298z\" /> <line x1=\"22\" x2=\"16\" y1=\"9\" y2=\"15\" /> <line x1=\"16\" x2=\"22\" y1=\"9\" y2=\"15\" />",
   "settings": "<path d=\"M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915\" /> <circle cx=\"12\" cy=\"12\" r=\"3\" />",
   "download": "<path d=\"M12 15V3\" /> <path d=\"M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4\" /> <path d=\"m7 10 5 5 5-5\" />",
-  "contrast": "<circle cx=\"12\" cy=\"12\" r=\"10\" /> <path d=\"M12 18a6 6 0 0 0 0-12v12z\" />",
+  "moon": "<path d=\"M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401\" />",
   "music": "<path d=\"M9 18V5l12-2v13\" /> <circle cx=\"6\" cy=\"18\" r=\"3\" /> <circle cx=\"18\" cy=\"16\" r=\"3\" />",
-  "book-open": "<path d=\"M12 7v14\" /> <path d=\"M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z\" />",
-  "maximize-2": "<path d=\"M15 3h6v6\" /> <path d=\"m21 3-7 7\" /> <path d=\"m3 21 7-7\" /> <path d=\"M9 21H3v-6\" />",
   "zoom-in": "<circle cx=\"11\" cy=\"11\" r=\"8\" /> <line x1=\"21\" x2=\"16.65\" y1=\"21\" y2=\"16.65\" /> <line x1=\"11\" x2=\"11\" y1=\"8\" y2=\"14\" /> <line x1=\"8\" x2=\"14\" y1=\"11\" y2=\"11\" />",
   "zoom-out": "<circle cx=\"11\" cy=\"11\" r=\"8\" /> <line x1=\"21\" x2=\"16.65\" y1=\"21\" y2=\"16.65\" /> <line x1=\"8\" x2=\"14\" y1=\"11\" y2=\"11\" />",
   "play": "<path d=\"M5 5a2 2 0 0 1 3.008-1.728l11.997 6.998a2 2 0 0 1 .003 3.458l-12 7A2 2 0 0 1 5 19z\" />",
-  "list-plus": "<path d=\"M16 5H3\" /> <path d=\"M11 12H3\" /> <path d=\"M16 19H3\" /> <path d=\"M18 9v6\" /> <path d=\"M21 12h-6\" />",
+  "square": "<rect width=\"18\" height=\"18\" x=\"3\" y=\"3\" rx=\"2\" />",
   "trash-2": "<path d=\"M10 11v6\" /> <path d=\"M14 11v6\" /> <path d=\"M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6\" /> <path d=\"M3 6h18\" /> <path d=\"M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2\" />",
   "chevron-left": "<path d=\"m15 18-6-6 6-6\" />",
   "chevron-right": "<path d=\"m9 18 6-6-6-6\" />",
   "x": "<path d=\"M18 6 6 18\" /> <path d=\"m6 6 12 12\" />",
-  "grip-vertical": "<circle cx=\"9\" cy=\"12\" r=\"1\" /> <circle cx=\"9\" cy=\"5\" r=\"1\" /> <circle cx=\"9\" cy=\"19\" r=\"1\" /> <circle cx=\"15\" cy=\"12\" r=\"1\" /> <circle cx=\"15\" cy=\"5\" r=\"1\" /> <circle cx=\"15\" cy=\"19\" r=\"1\" />",
   "image": "<rect width=\"18\" height=\"18\" x=\"3\" y=\"3\" rx=\"2\" ry=\"2\" /> <circle cx=\"9\" cy=\"9\" r=\"2\" /> <path d=\"m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21\" />",
   "list-music": "<path d=\"M16 5H3\" /> <path d=\"M11 12H3\" /> <path d=\"M11 19H3\" /> <path d=\"M21 16V5\" /> <circle cx=\"18\" cy=\"16\" r=\"3\" />",
   "folder": "<path d=\"M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z\" />",
@@ -538,20 +492,15 @@ let cState = {
 };
 const audioStore = {};       // aud -> {blob, url, fileName, peaks, duration}
 let audioPool = [];          // ordered aud ids for the bay
-let tlMode = 'sound';        // 'sound' | 'pages'
-let zoomX = 90;              // px per page
-let laneHeight = 40;
 let bayImgW = 44;            // media-bay image chip width
 let pgW = 88;                // pages-mode thumbnail width
-let sel = null;              // selected track tid
-let selRange = null;         // {from,to} highlighted page range
+let sel = null;              // selected track tid (for copy / paste / delete)
 let previewPage = 0;
 let undoStack = [], redoStack = [], clipboard = null;
 
 const trackByTid = tid => cState.tracks.find(t=>t.tid===tid);
 const pageCount = () => cState.pages.length;
 const musicTracks = () => cState.tracks.filter(t=>t.type==='music');
-const laneH = () => laneHeight;
 
 /* ---------------- undo ---------------- */
 function snapObj(){ return JSON.stringify({tracks:cState.tracks, meta:cState.meta,
@@ -670,10 +619,15 @@ function importAudio(files){
 
 /* high-resolution peaks: ~120 buckets/sec so it stays crisp when zoomed in */
 let waveAC = null;
-async function decodePeaks(aud){
+/* returns the in-flight decode when one is already running, so export can
+   await every measurement instead of racing them */
+function decodePeaks(aud){
   const a = audioStore[aud];
-  if(!a || a.peaks || a._busy) return;
-  a._busy = true;
+  if(!a || a.rms != null) return Promise.resolve();
+  if(!a._p) a._p = decodePeaksNow(a);
+  return a._p;
+}
+async function decodePeaksNow(a){
   try{
     waveAC = waveAC || new (window.AudioContext||window.webkitAudioContext)();
     const buf = await waveAC.decodeAudioData(await a.blob.arrayBuffer());
@@ -682,15 +636,25 @@ async function decodePeaks(aud){
     const N = clamp(Math.round(buf.duration*120), 400, 40000);
     const peaks = new Float32Array(N);
     const step = ch.length/N;
+    /* the decode is already paid for by the waveform, so measure loudness in
+       the same pass: mean square over everything above a gate, which keeps
+       long silences from dragging a track's level down. */
+    let sq = 0, counted = 0, peak = 0;
     for(let i=0;i<N;i++){
       let m = 0;
       const s = Math.floor(i*step), e = Math.min(Math.floor((i+1)*step), ch.length);
-      for(let j=s; j<e; j++){ const v = Math.abs(ch[j]); if(v>m) m = v; }
+      for(let j=s; j<e; j++){
+        const v = Math.abs(ch[j]);
+        if(v>m) m = v;
+        if(v>0.0016){ sq += ch[j]*ch[j]; counted++; }   // gate at about -56 dBFS
+      }
       peaks[i] = m;
+      if(m>peak) peak = m;
     }
     a.peaks = peaks;
-  }catch(e){ a.peaks = null; }
-  a._busy = false;
+    a.peak  = peak;
+    a.rms   = counted ? Math.sqrt(sq/counted) : 0;
+  }catch(e){ a.peaks = null; a.peak = 0; a.rms = 0; }
   render();
 }
 
@@ -712,7 +676,7 @@ async function openEski(file){
     if(!imgs.length) throw new Error('no page images found');
     cState = {pages:[], tracks:[], meta:{title:'',creator:'',description:'',direction:'ltr'},
       player:{volume:80,crossfade:1,loopMode:'loop',playbackMode:'sync',readingMode:'pages'}, coverIndex:0};
-    audioPool = []; undoStack = []; redoStack = []; sel = null; selRange = null; previewPage = 0;
+    audioPool = []; undoStack = []; redoStack = []; sel = null; qpPage = null; previewPage = 0;
     osBlocks = new Set();
     for(const k in audioStore) delete audioStore[k];
     for(const im of imgs) pushPage(im.name, await im.entry.async('blob'));
@@ -785,7 +749,7 @@ function addSilence(){
   if(!pageCount()){ toast('add some pages first', 'error'); return; }
   snap();
   const t = {tid:uid('t'), aud:null, type:'silence', title:'silence',
-    from:clamp((selRange?selRange.from:previewPage+1), 1, pageCount()), start:0, volume:100};
+    from:clamp(qpPage || previewPage+1, 1, pageCount()), start:0, volume:100};
   cState.tracks.push(t);
   sel = t.tid;
   render();
@@ -854,43 +818,29 @@ function queueGroups(){
     tracks: st.filter(t=>t.from===from)
   })).filter(g=>g.to>=g.from);
 }
-const laneOf = t => soundTracks().filter(x=>x.from===t.from).indexOf(t);
-function laneCount(){ let m=1; for(const g of queueGroups()) m=Math.max(m,g.tracks.length); return m; }
 function colorOf(t){
   if(t.type==='silence') return '#8f8f8f';
   return TRACK_COLORS[musicTracks().indexOf(t)%TRACK_COLORS.length];
 }
-function pageAtClientX(clientX){
-  const sc = $('tl-scroll');
-  const x = clientX - sc.getBoundingClientRect().left + sc.scrollLeft;
-  return clamp(Math.floor(x/zoomX)+1, 1, Math.max(pageCount(),1));
-}
-
 /* ---------------- render ---------------- */
 function setStatus(){
   const el = $('tl-status');
   el.textContent = pageCount()
     ? `${pageCount()} page${pageCount()===1?'':'s'} · ${cState.tracks.length} track${cState.tracks.length===1?'':'s'}`
-      + (selRange ? ` · selected p.${selRange.from}${selRange.to>selRange.from?'–'+selRange.to:''}` : '')
+      + (qpPage ? ` · page ${qpPage} selected` : '')
     : 'no pages yet';
 }
 function render(){
   const has = pageCount()>0;
   $('empty-hint').style.display = has ? 'none' : 'flex';
   ['pv-img','pv-badge','pv-prev','pv-next'].forEach(id=>$(id).style.display = has ? '' : 'none');
-  $('minimap').style.display = (has && tlMode==='sound') ? 'block' : 'none';
-  $('zoom-ctrls').style.display = tlMode==='sound' ? '' : 'none';
-  $('pages-ctrls').style.display = (has && tlMode==='pages') ? '' : 'none';
-  $('silence-btn').style.display = tlMode==='sound' ? '' : 'none';
+  $('pages-ctrls').style.display = has ? '' : 'none';
+  $('qp').style.display = has ? '' : 'none';
   setStatus();
   renderBay();
   renderPreview();
-  $('tl-inner').style.display = tlMode==='sound' ? 'block' : 'none';
-  $('pagesgrid').style.display = tlMode==='pages' ? 'flex' : 'none';
-  if(tlMode==='sound') renderTimeline();
-  else renderPages();
-  renderClipbar();
-  syncMinimap();
+  renderPages();
+  renderInfo();
   paintIcons();
 }
 const bayFilter = { q:'', kind:'all', sort:'added' };
@@ -915,7 +865,7 @@ function renderBay(){
     el.innerHTML = (p.thumb ? `<img src="${p.thumb}">` : '') + `<span class="n">${i+1}</span>`;
     el.addEventListener('dragstart', e=>{ e.dataTransfer.setData('text/eski-img', i); showTrash(); });
     el.addEventListener('dragend', hideTrash);
-    el.addEventListener('click', ()=>{ sel=null; previewPage=i; selRange=null; render(); });
+    el.addEventListener('click', ()=>openQueue(i+1));
     gi.appendChild(el);
   });
   if(!imgShown) gi.innerHTML = `<div class="bay-empty">${pageCount()?'no match':'none yet'}</div>`;
@@ -931,9 +881,14 @@ function renderBay(){
     const used = cState.tracks.some(t=>t.aud===aud);
     const el = document.createElement('div');
     el.className = 'chip-aud' + (used?' used':''); el.draggable = true;
+    const playing = previewKey === 'aud:'+aud;
     el.innerHTML = `<div class="t">${esc((a.fileName||'audio').replace(/\.[^.]+$/,''))}</div>
       <canvas width="150" height="20"></canvas>
-      <div class="m">${a.duration?a.duration.toFixed(1)+'s':'…'}${used?' · placed':''}</div>`;
+      <div class="m"><button class="mini-btn" data-ico="${playing?'square':'play'}"
+        title="${playing?'stop':'listen'}"></button>${a.duration?a.duration.toFixed(1)+'s':'…'}${used?' · placed':''}</div>`;
+    el.querySelector('button').addEventListener('click', e=>{
+      e.stopPropagation(); previewAudio(aud, 'aud:'+aud, 0);
+    });
     el.addEventListener('dragstart', e=>{ e.dataTransfer.setData('text/eski-aud', aud); showTrash(); });
     el.addEventListener('dragend', hideTrash);
     if(a.peaks) drawChipWave(el.querySelector('canvas'), a);
@@ -941,6 +896,30 @@ function renderBay(){
   });
   if(!list.length) ga.innerHTML = `<div class="bay-empty">${audioPool.length?'no match':'none yet'}</div>`;
 }
+/* full-length audition, shared by the media bay and the page panel. one
+   element, so starting a second preview always stops the first. */
+const previewEl = new Audio();
+let previewKey = null;
+function previewRepaint(){ renderBay(); if(qpPage!=null) renderInfo(); }
+function previewStop(){ previewEl.pause(); previewKey = null; previewRepaint(); }
+previewEl.addEventListener('ended', ()=>{ previewKey = null; previewRepaint(); });
+function previewAudio(aud, key, startAt){
+  const a = audioStore[aud];
+  if(!a || !a.url) return;
+  if(previewKey === key){ previewStop(); return; }
+  previewEl.pause();
+  previewEl.src = a.url;
+  previewKey = key;
+  const go = ()=>{
+    if(startAt) try{ previewEl.currentTime = startAt; }catch(e){}
+    const p = previewEl.play(); if(p) p.catch(()=>{});
+  };
+  previewEl.onloadedmetadata = go;
+  if(previewEl.readyState > 0) go();
+  previewRepaint();
+}
+function previewTrack(t){ if(t && t.aud) previewAudio(t.aud, 'tid:'+t.tid, t.start||0); }
+
 function bayZoom(dir){ bayImgW = clamp(bayImgW + dir*12, 32, 96); renderBay(); }
 function pageZoom(dir){ pgW = clamp(pgW + dir*16, 56, 180); renderPages(); }
 function drawChipWave(cv, a){
@@ -954,222 +933,85 @@ function drawChipWave(cv, a){
     cx.fillRect(x, (H-h)/2, 1, h);
   }
 }
+let pvShown = null;
 function renderPreview(){
   if(!pageCount()) return;
   const i = clamp(previewPage, 0, pageCount()-1);
   previewPage = i;
+  if(pvShown !== i){ pvShown = i; pvReset(); }   // a new page always starts unzoomed
   $('pv-img').src = cState.pages[i].url;
-  $('pv-badge').textContent = selRange
-    ? `pages ${selRange.from}–${selRange.to}` : `page ${i+1} of ${pageCount()}`;
+  $('pv-badge').textContent = `page ${i+1} of ${pageCount()}`;
 }
-function stepPreview(d){ previewPage = clamp(previewPage+d, 0, pageCount()-1); renderPreview(); }
+function stepPreview(d){ openQueue(clamp(previewPage+d, 0, pageCount()-1) + 1); }
 
-function renderTimeline(){
-  const inner = $('tl-inner');
-  if(!pageCount()){
-    $('tl-ruler').innerHTML=''; $('tl-pagerow').innerHTML=''; $('tl-lanes').innerHTML='';
-    $('sel-band').style.display='none';
-    return;
-  }
-  const W = Math.max(pageCount()*zoomX, 1);
-  inner.style.width = W+'px';
-  /* ruler */
-  const ruler = $('tl-ruler');
-  ruler.innerHTML = '';
-  const step = zoomX>=40 ? 1 : Math.ceil(40/zoomX);
-  for(let p=1;p<=pageCount();p+=step){
-    const tick = document.createElement('div');
-    tick.className='tick'; tick.style.width=(zoomX*step)+'px'; tick.textContent=p;
-    ruler.appendChild(tick);
-  }
-  /* selection highlight */
-  const sb = $('sel-band');
-  if(selRange){
-    sb.style.display='block';
-    sb.style.left=((selRange.from-1)*zoomX)+'px';
-    sb.style.width=((selRange.to-selRange.from+1)*zoomX)+'px';
-  }else sb.style.display='none';
-  /* page ranges */
-  const prow = $('tl-pagerow');
-  prow.innerHTML = '';
-  const groups = queueGroups();
-  const ranges = [];
-  if(!groups.length || groups[0].from>1)
-    ranges.push({from:1, to: groups.length?groups[0].from-1:pageCount(), tracks:[]});
-  ranges.push(...groups);
-  for(const r of ranges){
-    const el = document.createElement('div');
-    el.className = 'tl-range' +
-      (selRange && selRange.from===r.from && selRange.to===r.to ? ' selrange' : '');
-    el.style.left=((r.from-1)*zoomX)+'px';
-    el.style.width=((r.to-r.from+1)*zoomX-2)+'px';
-    const pg = cState.pages[r.from-1];
-    if(pg && pg.thumb){
-      const th = document.createElement('div'); th.className='th';
-      th.innerHTML = `<img src="${pg.thumb}">`;
-      el.appendChild(th);
-    }
-    const lab = document.createElement('span');
-    lab.className='rlab'; lab.textContent = r.from===r.to?`p.${r.from}`:`p.${r.from}–${r.to}`;
-    el.appendChild(lab);
-    el.addEventListener('click', ()=>{ selRange={from:r.from,to:r.to}; sel=null; previewPage=r.from-1; render(); });
-    prow.appendChild(el);
-  }
-  /* lanes */
-  const lanes = $('tl-lanes');
-  lanes.innerHTML='';
-  lanes.style.height = (laneCount()*(laneH()+6)+10)+'px';
-  for(const g of groups){
-    g.tracks.forEach(t=>{
-      const w = Math.max((g.to-g.from+1)*zoomX-3, 10);
-      const band = document.createElement('div');
-      band.className='tl-band'+(t.type==='silence'?' silence':'')+(t.tid===sel?' sel':'');
-      band.style.background=colorOf(t);
-      band.style.left=((g.from-1)*zoomX)+'px';
-      band.style.width=w+'px';
-      band.style.top=(laneOf(t)*(laneH()+6)+5)+'px';
-      band.style.height=laneH()+'px';
-      const grip = document.createElement('div');
-      grip.className='grip'; grip.innerHTML=`<span>${esc(t.title)}</span>`;
-      band.appendChild(grip);
-      if(t.type==='music'){
-        const a = t.aud && audioStore[t.aud];
-        const cv = document.createElement('canvas');
-        cv.style.width=w+'px'; cv.style.height=(laneH()-15)+'px';
-        band.appendChild(cv);
-        const body = document.createElement('div'); body.className='body';
-        band.appendChild(body);
-        if(a && a.peaks) drawBandWave(cv, t, a, w, laneH()-15);
-        attachSlip(body, band, cv, t);
-      }
-      attachGrip(grip, band, t);
-      band.addEventListener('click', ()=>{ if(!band._moved){ sel=t.tid; selRange=null; render(); } });
-      lanes.appendChild(band);
-    });
-  }
+/* ---------------- preview zoom + pan ----------------
+   same feel as the reader: wheel zooms toward the cursor, drag pans once
+   zoomed, double click toggles. changing page resets it. */
+let pvZoom = 1, pvX = 0, pvY = 0;
+function pvApply(){
+  const img = $('pv-img');
+  img.style.transform = `translate(${pvX}px, ${pvY}px) scale(${pvZoom})`;
+  $('preview').classList.toggle('zoomed', pvZoom > 1);
 }
-/* waveform anchored so the in-point sits at the band's left edge; slipping
-   translates it. pxPerSec scales with zoom so it stays crisp. */
-function pxPerSec(){ return zoomX/3; }
-function drawBandWave(cv, t, a, wCss, hCss){
-  const dpr = window.devicePixelRatio||1;
-  cv.width = Math.max(1, Math.round(wCss*dpr));
-  cv.height = Math.max(1, Math.round(hCss*dpr));
-  const cx = cv.getContext('2d');
-  cx.scale(dpr,dpr);
-  cx.clearRect(0,0,wCss,hCss);
-  cx.fillStyle='rgba(255,255,255,.5)';
-  const pps = pxPerSec();
-  const N = a.peaks.length, dur = a.duration||1;
-  const bucketsPerPx = (N/dur)/pps;   // peaks covered by one screen px
-  for(let x=0;x<wCss;x++){
-    const sec = (t.start||0) + x/pps;
-    if(sec>=dur) break;
-    const i0 = Math.floor(sec/dur*N);
-    const i1 = Math.min(N, i0 + Math.max(1, Math.ceil(bucketsPerPx)));
-    let m=0; for(let i=i0;i<i1;i++){ const v=a.peaks[i]; if(v>m) m=v; }
-    const h = Math.max(1, m*(hCss-2));
-    cx.fillRect(x, (hCss-h)/2, 1, h);
-  }
+function pvReset(){ pvZoom = 1; pvX = pvY = 0; pvApply(); }
+function pvZoomAt(factor, cx, cy){
+  const r = $('preview').getBoundingClientRect();
+  const nz = clamp(pvZoom*factor, 1, 5);
+  if(nz === pvZoom) return;
+  if(nz === 1){ pvReset(); return; }
+  const ox = cx - (r.left + r.width/2), oy = cy - (r.top + r.height/2);
+  const k = nz/pvZoom;
+  pvX = ox - (ox - pvX)*k;
+  pvY = oy - (oy - pvY)*k;
+  pvZoom = nz;
+  pvApply();
 }
-
-/* grip drag = move the trigger page (snaps to pages) */
-function attachGrip(grip, band, t){
-  grip.addEventListener('pointerdown', e=>{
-    e.preventDefault(); e.stopPropagation();
-    grip.setPointerCapture(e.pointerId);
-    sel = t.tid; selRange = null;
-    const startX=e.clientX, origFrom=t.from;
-    let moved=false, snapped=false;
-    const move = ev=>{
-      if(Math.abs(ev.clientX-startX)>3){ if(!moved) showTrash(); moved=true; }
-      band._moved = moved;
-      if(!moved) return;
-      const hot = overTrash(ev.clientX, ev.clientY);
-      $('trash-bar').classList.toggle('hot', hot);
-      if(hot) return;                       // hovering the trash: don't also move it
-      if(!snapped){ snap(); snapped=true; }
-      const nf = clamp(origFrom+Math.round((ev.clientX-startX)/zoomX), 1, pageCount());
-      if(nf!==t.from){ t.from=nf; render(); }
-    };
-    const up = ev=>{
-      window.removeEventListener('pointermove', move);
-      window.removeEventListener('pointerup', up);
-      const hot = overTrash(ev.clientX, ev.clientY);
-      hideTrash();
-      setTimeout(()=>{ band._moved=false; }, 0);
-      if(hot){ removeTrack(t.tid); return; }
-      if(!moved) render();
-    };
-    window.addEventListener('pointermove', move);
-    window.addEventListener('pointerup', up);
+(function(){
+  const pv = $('preview');
+  pv.addEventListener('wheel', e=>{
+    if(!pageCount()) return;
+    e.preventDefault();
+    pvZoomAt(e.deltaY < 0 ? 1.18 : 1/1.18, e.clientX, e.clientY);
+  }, {passive:false});
+  pv.addEventListener('dblclick', e=>{
+    if(!pageCount()) return;
+    pvZoom > 1 ? pvReset() : pvZoomAt(2.4, e.clientX, e.clientY);
   });
-}
-/* body drag = slip: change the in point; the waveform visibly translates */
-function attachSlip(body, band, cv, t){
-  body.addEventListener('pointerdown', e=>{
-    e.preventDefault(); e.stopPropagation();
-    body.setPointerCapture(e.pointerId);
-    sel = t.tid; selRange = null; render();
-    const a = t.aud && audioStore[t.aud];
-    if(!a || !a.duration) return;
-    const bandRef = document.querySelector('.tl-band.sel') || band;
-    const startX=e.clientX, origStart=t.start||0;
-    let moved=false, snapped=false;
-    const move = ev=>{
-      if(Math.abs(ev.clientX-startX)>2) moved=true;
-      if(!moved) return;
-      if(!snapped){ snap(); snapped=true; }
-      // drag right reveals earlier audio (in point decreases), like grabbing film
-      t.start = clamp(origStart - (ev.clientX-startX)/pxPerSec(), 0, Math.max(a.duration-0.1,0));
-      const c = bandRef.querySelector('canvas');
-      const w = parseFloat(bandRef.style.width);
-      if(c) drawBandWave(c, t, a, w, laneH()-15);
-    };
-    const up = ()=>{
-      window.removeEventListener('pointermove', move);
-      window.removeEventListener('pointerup', up);
-      band._moved = moved;
-      setTimeout(()=>{ band._moved=false; }, 0);
-      if(moved){ scrub(t); render(); }
-    };
-    window.addEventListener('pointermove', move);
-    window.addEventListener('pointerup', up);
+  let drag = null;
+  pv.addEventListener('pointerdown', e=>{
+    if(pvZoom <= 1 || e.button !== 0) return;
+    drag = {x:e.clientX, y:e.clientY, px:pvX, py:pvY};
+    pv.classList.add('panning'); pv.setPointerCapture(e.pointerId);
   });
-}
-/* 2s scrub preview from the in point */
-let scrubEl=null, scrubTimer=0;
-function scrub(t){
-  const a = t && t.aud && audioStore[t.aud];
-  if(!a) return;
-  const el = scrubEl || (scrubEl = new Audio());
-  clearTimeout(scrubTimer);
-  const go = ()=>{ try{ el.currentTime=t.start||0; }catch(e){} el.volume=.85; el.play().catch(()=>{});
-    scrubTimer=setTimeout(()=>el.pause(), 2000); };
-  if(el.src!==a.url){ el.src=a.url; el.addEventListener('loadedmetadata', go, {once:true}); } else go();
-}
+  pv.addEventListener('pointermove', e=>{
+    if(!drag) return;
+    pvX = drag.px + (e.clientX - drag.x);
+    pvY = drag.py + (e.clientY - drag.y);
+    pvApply();
+  });
+  const end = ()=>{ drag = null; pv.classList.remove('panning'); };
+  pv.addEventListener('pointerup', end);
+  pv.addEventListener('pointercancel', end);
+})();
 
-/* ---------------- compact clip bar (selected track) ---------------- */
-function renderClipbar(){
-  const slot = $('clipbar-slot');
-  const t = sel && trackByTid(sel);
-  if(!t){ slot.innerHTML=''; return; }
-  slot.innerHTML = `<span class="clipbar">
-    <span class="sw" style="background:${colorOf(t)}"></span>
-    <input class="name" id="cb-name" value="${esc(t.title)}">
-    ${t.type==='music'?`<span class="mini">vol</span>
-      <input type="range" id="cb-vol" min="0" max="100" value="${t.volume}">
-      <button id="cb-scrub" data-ico="play" title="preview 2s"></button>
-      <button id="cb-queue" data-ico="list-plus" title="add another song to this page range">queue</button>`:''}
-    <button class="danger" id="cb-rm" data-ico="trash-2" title="remove"></button></span>`;
-  $('cb-name').addEventListener('input', e=>{ t.title=e.target.value; renderTimeline(); renderBay(); });
-  $('cb-rm').addEventListener('click', ()=>removeTrack(t.tid));
-  if(t.type==='music'){
-    $('cb-vol').addEventListener('input', e=>{ t.volume=parseInt(e.target.value); });
-    $('cb-scrub').addEventListener('click', ()=>scrub(t));
-    $('cb-queue').addEventListener('click', queueCopy);
-  }
-}
+/* ---------------- resizable media bay ---------------- */
+(function(){
+  const h = $('bay-resize'), bay = $('bay');
+  let start = null;
+  h.addEventListener('pointerdown', e=>{
+    start = {x:e.clientX, w:bay.getBoundingClientRect().width};
+    h.setPointerCapture(e.pointerId);
+    e.preventDefault();
+  });
+  h.addEventListener('pointermove', e=>{
+    if(!start) return;
+    const w = clamp(start.w + (e.clientX - start.x), 160, 420);
+    bay.style.width = w+'px'; bay.style.minWidth = w+'px';
+  });
+  const end = ()=>{ start = null; };
+  h.addEventListener('pointerup', end);
+  h.addEventListener('pointercancel', end);
+})();
 
 /* ---------------- pages mode ---------------- */
 let pageDragIdx = null;
@@ -1181,22 +1023,28 @@ function renderPages(){
     const el = document.createElement('div');
     el.className='pgcard'; el.draggable=true; el.style.width=pgW+'px';
     const nShots = oneshotsFor(page).length;
+    /* at a glance: does this page trigger a song, is it inside one's range,
+       does it carry one-shots, is it the selected page */
+    const grp = groupOwning(page);
+    const triggers = grp && grp.from === page;
+    if(page === qpPage) el.classList.add('sel');
     el.innerHTML = `<img src="${p.thumb||p.url}" style="height:${Math.round(pgW*1.28)}px"><span class="n">${page}</span>
       <button class="x" data-ico="x" title="remove page"></button>
+      ${triggers?`<span class="trig" title="${esc(grp.tracks[0].title)} starts here"><svg class="ico" viewBox="0 0 24 24">${ICONS['music']}</svg>${grp.tracks.length>1?grp.tracks.length:''}</span>`:''}
+      ${grp?`<span class="inrange" style="background:${colorOf(grp.tracks[0])}"></span>`:''}
       ${hasBlock(page)?`<span class="osblock" title="edit one-shots"><svg class="ico" viewBox="0 0 24 24">${ICONS['list-music']}</svg>${nShots}</span>`:''}`;
     el.querySelector('.x').addEventListener('click', ev=>{ ev.stopPropagation(); removePage(i); });
     const blk = el.querySelector('.osblock');
     if(blk) blk.addEventListener('click', ev=>{ ev.stopPropagation(); openQueue(page); });
-    el.addEventListener('click', ()=>{ previewPage=i; renderPreview(); });
+    el.addEventListener('click', ()=>openQueue(page));
     el.addEventListener('dragstart', e=>{ pageDragIdx=i; el.classList.add('dragging');
       e.dataTransfer.setData('text/eski-page', i); e.dataTransfer.effectAllowed='move'; showTrash(); });
     el.addEventListener('dragend', ()=>{ pageDragIdx=null; el.classList.remove('dragging'); hideTrash(); });
     el.addEventListener('dragover', e=>{ e.preventDefault();
-      el.classList.add(e.dataTransfer.types.includes('text/eski-ostool')||e.dataTransfer.types.includes('text/eski-aud')?'osdrop':'dragover'); });
+      el.classList.add(e.dataTransfer.types.includes('text/eski-aud')?'osdrop':'dragover'); });
     el.addEventListener('dragleave', ()=>el.classList.remove('dragover','osdrop'));
     el.addEventListener('drop', e=>{
       e.preventDefault(); e.stopPropagation(); el.classList.remove('dragover','osdrop');
-      if(e.dataTransfer.getData('text/eski-ostool')){ addBlock(page); return; }
       const aud = e.dataTransfer.getData('text/eski-aud');
       if(aud){ osBlocks.add(page); addOneshot(aud, page); openQueue(page); return; }
       const src = e.dataTransfer.getData('text/eski-page') || e.dataTransfer.getData('text/eski-img');
@@ -1235,11 +1083,6 @@ function removePage(i){
   if(!pageCount()) cState.tracks = [];
   render();
 }
-function setTLMode(m){
-  tlMode = m;
-  $('modeswitch').querySelectorAll('button').forEach(b=>b.classList.toggle('on', b.dataset.m===m));
-  render();
-}
 
 /* ---------------- one-shots (pages mode: one block per page + queue panel) ----------------
    osBlocks marks pages that have a one-shot block, even before any sample is added.
@@ -1251,7 +1094,7 @@ function removeOneshot(tid){
   const t = trackByTid(tid); if(!t) return;
   snap();
   cState.tracks.splice(cState.tracks.indexOf(t), 1);
-  renderQueue(); render();
+  render();
 }
 /* move a one-shot to `page`, inserted before `beforeTid` (append if null) */
 function moveOneshotBefore(tid, page, beforeTid){
@@ -1263,28 +1106,93 @@ function moveOneshotBefore(tid, page, beforeTid){
     const bi = cState.tracks.indexOf(trackByTid(beforeTid));
     cState.tracks.splice(bi<0?cState.tracks.length:bi, 0, t);
   }else cState.tracks.push(t);
-  renderQueue(); render();
+  render();
 }
 
-/* ---- queue panel ---- */
+/* ---- page info panel ----
+   the hub for authoring a page: which song owns it, what it triggers, and its
+   one-shots. docked and persistent, so selecting a page in the grid is enough
+   to see everything happening on it. */
 let qpPage = null;
-function openQueue(page){
-  qpPage = page; osBlocks.add(page);
-  $('qp-title').textContent = 'one-shots · page ' + page;
-  $('qp').classList.add('open'); $('qp-scrim').classList.add('open');
-  renderQueue();
+function openQueue(page){          // kept as the name every call site already uses
+  qpPage = clamp(page, 1, Math.max(pageCount(),1));
+  previewPage = qpPage - 1;
+  renderInfo(); renderPages(); renderPreview();
   if(!localStorage.getItem('eski-tut-os-composer')){
     toast('drag sounds from the dock into the list. readers trigger them with ↓ / ↑.');
     try{ localStorage.setItem('eski-tut-os-composer','1'); }catch(e){}
   }
 }
-function closeQueue(){ $('qp').classList.remove('open','dropping'); $('qp-scrim').classList.remove('open'); qpPage=null; }
+function closeQueue(){ $('qp').classList.remove('dropping'); }
 function clearQueueBlock(){
   if(qpPage==null) return;
   const shots = oneshotsFor(qpPage);
   if(shots.length){ snap(); cState.tracks = cState.tracks.filter(t=>!(t.type==='oneshot'&&t.from===qpPage)); }
   osBlocks.delete(qpPage);
-  closeQueue(); render();
+  render();
+}
+/* which queue owns this page, and does the page itself trigger one */
+function groupOwning(page){ return queueGroups().find(g=>page>=g.from && page<=g.to) || null; }
+
+function renderInfo(){
+  const box = $('info-song');
+  if(!pageCount()){ $('qp-title').textContent = 'page'; box.innerHTML=''; $('qp-list').innerHTML=''; return; }
+  if(qpPage==null) qpPage = 1;
+  $('qp-title').textContent = 'page ' + qpPage + ' of ' + pageCount();
+
+  const g = groupOwning(qpPage);
+  box.innerHTML = '';
+  if(!g){
+    box.innerHTML = '<div class="info-empty">silent. drag audio here to start a song on this page.</div>';
+  }else{
+    const triggersHere = g.from === qpPage;
+    g.tracks.forEach((t,i)=>{
+      const row = document.createElement('div');
+      row.className = 'songrow' + (t.tid===sel ? ' sel' : '');
+      row.innerHTML = `<span class="sw" style="background:${colorOf(t)}"></span>
+        <input class="nm" value="${esc(t.title)}" title="name">
+        ${g.tracks.length>1?`<span class="pos">${i+1}/${g.tracks.length}</span>`:''}
+        ${t.type==='music'?`<button data-ico="play" title="listen"></button>`:''}
+        <button data-ico="trash-2" title="remove"></button>`;
+      row.addEventListener('pointerdown', ()=>{ sel = t.tid; });
+      row.querySelector('input.nm').addEventListener('input', e=>{ t.title = e.target.value; renderBay(); });
+      const btns = [...row.querySelectorAll('button')];
+      if(t.type==='music') btns.shift().addEventListener('click', ()=>previewTrack(t));
+      btns[0].addEventListener('click', ()=>removeTrack(t.tid));
+      box.appendChild(row);
+
+      if(t.type==='music'){
+        // the numbers the timeline's grip and slip drags used to set
+        const knobs = document.createElement('div');
+        knobs.className = 'songknobs';
+        knobs.innerHTML = `<label>vol<input type="range" min="0" max="100" value="${t.volume}"></label>
+          <label>starts p.<input type="number" class="pg" min="1" max="${pageCount()}" value="${t.from}"></label>
+          <label>in<input type="number" class="inp" min="0" step="0.5" value="${t.start||0}">s</label>`;
+        const [vol, pg, inp] = knobs.querySelectorAll('input');
+        vol.addEventListener('input', e=>{ t.volume = parseInt(e.target.value); });
+        pg.addEventListener('change', e=>{
+          snap(); t.from = clamp(parseInt(e.target.value)||1, 1, pageCount()); openQueue(t.from);
+        });
+        inp.addEventListener('change', e=>{ snap(); t.start = Math.max(0, parseFloat(e.target.value)||0); render(); });
+        box.appendChild(knobs);
+      }
+    });
+    const note = document.createElement('div');
+    note.className = 'rangenote';
+    note.innerHTML = `<span class="sw" style="background:${colorOf(g.tracks[0])}"></span>`
+      + (triggersHere
+        ? `starts on this page, runs to page ${g.to}`
+        : `inside the range from page ${g.from} to ${g.to}`);
+    box.appendChild(note);
+  }
+  const add = document.createElement('div');
+  add.className = 'songadd';
+  add.innerHTML = `<button class="pill" id="silence-btn" data-ico="volume-x"
+    title="go quiet from this page on">add silence</button>`;
+  add.querySelector('button').addEventListener('click', addSilence);
+  box.appendChild(add);
+  paintIcons(box);
+  renderQueue();
 }
 let qpDrag = null;
 function renderQueue(){
@@ -1297,10 +1205,13 @@ function renderQueue(){
     const chip = document.createElement('div');
     chip.className = 'oschip'; chip.draggable = true;
     chip.innerHTML = `<span class="ord">${idx+1}</span>
-      <svg class="ico" viewBox="0 0 24 24">${ICONS['list-music']}</svg>
       <span class="nm">${esc(t.title)}</span>
+      <button data-ico="play" title="preview"></button>
       <button data-ico="x" title="remove"></button>`;
-    chip.querySelector('button').addEventListener('click', e=>{ e.stopPropagation(); removeOneshot(t.tid); });
+    const btns = chip.querySelectorAll('button');
+    btns[0].addEventListener('click', e=>{ e.stopPropagation(); previewTrack(t); });
+    btns[1].addEventListener('click', e=>{ e.stopPropagation(); removeOneshot(t.tid); });
+    paintIcons(chip);
     chip.addEventListener('dragstart', e=>{ qpDrag=t.tid; chip.classList.add('dragging');
       e.dataTransfer.setData('text/eski-os', t.tid); e.dataTransfer.effectAllowed='move'; });
     chip.addEventListener('dragend', ()=>{ qpDrag=null; chip.classList.remove('dragging'); });
@@ -1314,109 +1225,32 @@ function renderQueue(){
   });
   paintIcons(box);
 }
+/* two drop zones, one per section: audio dropped on "soundtrack" starts (or
+   queues) a song on this page, audio dropped on "one-shots" becomes a one-shot.
+   the page cards themselves still take one-shots, so the common case is a
+   single drag with no aiming. */
 (function(){
-  const qp = $('qp');
-  qp.addEventListener('dragover', e=>{ e.preventDefault(); qp.classList.add('dropping'); });
-  qp.addEventListener('dragleave', e=>{ if(!qp.contains(e.relatedTarget)) qp.classList.remove('dropping'); });
-  qp.addEventListener('drop', e=>{
-    e.preventDefault(); qp.classList.remove('dropping');
-    if(qpPage==null) return;
-    const aud = e.dataTransfer.getData('text/eski-aud');
-    const tid = e.dataTransfer.getData('text/eski-os');
-    if(aud) addOneshot(aud, qpPage);
-    else if(tid) moveOneshotBefore(tid, qpPage, null);
-    renderQueue();
-  });
-})();
-$('os-tool').addEventListener('dragstart', e=>{
-  e.dataTransfer.setData('text/eski-ostool','1'); e.dataTransfer.effectAllowed='copy';
-});
-
-/* ---------------- zoom + pan ---------------- */
-function minZoom(){
-  // small enough to fit the whole comic in the visible scroller
-  const w = $('tl-scroll').clientWidth || 600;
-  return Math.max(3, Math.floor(w/Math.max(pageCount(),1)));
-}
-function zoomFit(){ zoomX = minZoom(); renderTimeline(); $('tl-scroll').scrollLeft=0; syncMinimap(); }
-function zoomStep(dir, cx){
-  const sc = $('tl-scroll');
-  const anchor = cx!==undefined ? cx : sc.clientWidth/2;
-  const pageAt = (sc.scrollLeft+anchor)/zoomX;
-  zoomX = clamp(Math.round(zoomX*(dir>0?1.3:1/1.3)), minZoom(), 320);
-  renderTimeline();
-  sc.scrollLeft = pageAt*zoomX - anchor;
-  syncMinimap();
-}
-function syncMinimap(){
-  if(tlMode!=='sound' || !pageCount()) return;
-  const sc = $('tl-scroll'), win = $('mm-window');
-  const content = pageCount()*zoomX;
-  const viewFrac = clamp(sc.clientWidth/content, 0, 1);
-  const maxScroll = Math.max(content - sc.clientWidth, 0);
-  const posFrac = maxScroll>0 ? sc.scrollLeft/maxScroll : 0;
-  win.style.width = (viewFrac*100)+'%';
-  win.style.left = (posFrac*(100-viewFrac*100))+'%';
-}
-$('tl-scroll').addEventListener('scroll', syncMinimap);
-(function minimapDrag(){
-  const mm=$('minimap'), win=$('mm-window'), sc=$('tl-scroll');
-  const setPanFromFrac = posFrac=>{
-    const content = pageCount()*zoomX;
-    sc.scrollLeft = clamp(posFrac,0,1)*Math.max(content-sc.clientWidth,0);
-    syncMinimap();
-  };
-  win.addEventListener('pointerdown', e=>{
-    if(e.target.classList.contains('mm-handle')) return;
-    e.preventDefault(); win.setPointerCapture(e.pointerId);
-    const rect=mm.getBoundingClientRect();
-    const startX=e.clientX, startLeft=win.offsetLeft, wpx=win.offsetWidth;
-    const move=ev=>{
-      const nl = clamp(startLeft+(ev.clientX-startX), 0, rect.width-wpx);
-      setPanFromFrac((rect.width-wpx)>0 ? nl/(rect.width-wpx) : 0);
-    };
-    const up=()=>{ window.removeEventListener('pointermove',move); window.removeEventListener('pointerup',up); };
-    window.addEventListener('pointermove',move); window.addEventListener('pointerup',up);
-  });
-  function handleDrag(handle, side){
-    handle.addEventListener('pointerdown', e=>{
-      e.preventDefault(); e.stopPropagation(); handle.setPointerCapture(e.pointerId);
-      const rect=mm.getBoundingClientRect();
-      const move=ev=>{
-        const frac = clamp((ev.clientX-rect.left)/rect.width, 0.02, 1);
-        const curLeftFrac = win.offsetLeft/rect.width;
-        const curRightFrac = (win.offsetLeft+win.offsetWidth)/rect.width;
-        const viewFrac = side==='r' ? clamp(frac-curLeftFrac, 0.03, 1)
-                                    : clamp(curRightFrac-frac, 0.03, 1);
-        const content = sc.clientWidth/viewFrac;
-        zoomX = clamp(Math.round(content/Math.max(pageCount(),1)), minZoom(), 320);
-        const anchorFrac = side==='r' ? curLeftFrac : curRightFrac;
-        renderTimeline();
-        const newContent = pageCount()*zoomX;
-        sc.scrollLeft = clamp(anchorFrac*newContent - (side==='r'?0:sc.clientWidth), 0,
-          Math.max(newContent-sc.clientWidth,0));
-        syncMinimap();
-      };
-      const up=()=>{ window.removeEventListener('pointermove',move); window.removeEventListener('pointerup',up); };
-      window.addEventListener('pointermove',move); window.addEventListener('pointerup',up);
+  const dz = (el, onAud, onOs)=>{
+    el.addEventListener('dragover', e=>{
+      if(qpPage==null) return;
+      e.preventDefault(); e.stopPropagation(); el.classList.add('dropping');
     });
-  }
-  handleDrag($('mm-l'),'l'); handleDrag($('mm-r'),'r');
-})();
-
-/* ---------------- ruler drag = select a page range ---------------- */
-$('tl-ruler').addEventListener('pointerdown', e=>{
-  const startPage = pageAtClientX(e.clientX);
-  selRange = {from:startPage, to:startPage}; sel=null; renderTimeline(); setStatus();
-  const move = ev=>{
-    const cur = pageAtClientX(ev.clientX);
-    selRange = {from:Math.min(startPage,cur), to:Math.max(startPage,cur)};
-    renderTimeline(); setStatus();
+    el.addEventListener('dragleave', e=>{ if(!el.contains(e.relatedTarget)) el.classList.remove('dropping'); });
+    el.addEventListener('drop', e=>{
+      e.preventDefault(); e.stopPropagation(); el.classList.remove('dropping');
+      if(qpPage==null) return;
+      const aud = e.dataTransfer.getData('text/eski-aud');
+      const tid = e.dataTransfer.getData('text/eski-os');
+      if(aud) onAud(aud);
+      else if(tid && onOs) onOs(tid);
+      render();
+    });
   };
-  const up = ()=>{ document.removeEventListener('pointermove',move); document.removeEventListener('pointerup',up);
-    previewPage = selRange.from-1; renderPreview(); };
-  document.addEventListener('pointermove',move); document.addEventListener('pointerup',up);
-});
+  dz($('info-song'), aud=>addTrackFromPool(aud, qpPage));
+  dz($('qp-list'),
+    aud=>{ osBlocks.add(qpPage); addOneshot(aud, qpPage); },
+    tid=>moveOneshotBefore(tid, qpPage, null));
+})();
 
 /* ---------------- hotkeys ---------------- */
 document.addEventListener('keydown', e=>{
@@ -1428,24 +1262,23 @@ document.addEventListener('keydown', e=>{
   if(mod && (e.key==='v'||e.key==='V')){ pasteClip(); return; }
   if(mod && (e.key==='e'||e.key==='E')){ e.preventDefault(); exportEski(); return; }
   if(e.key==='Delete'||e.key==='Backspace'){ if(sel) removeTrack(sel); return; }
-  if(e.key==='Escape'){ sel=null; selRange=null; closeSettings(); render(); return; }
+  if(e.key==='Escape'){ sel=null; closeSettings(); render(); return; }
   if(e.key==='ArrowLeft'){ stepPreview(-1); }
   if(e.key==='ArrowRight'){ stepPreview(1); }
 });
 function pasteClip(){
   if(!clipboard || !pageCount()) return;
   snap();
-  const c = {...clipboard, tid:uid('t'), from:clamp((selRange?selRange.from:clipboard.from),1,pageCount())};
+  const c = {...clipboard, tid:uid('t'), from:clamp(qpPage || clipboard.from, 1, pageCount())};
   cState.tracks.push(c); sel=c.tid; render();
 }
 $('tl-scroll').addEventListener('wheel', e=>{
-  const sc=$('tl-scroll');
-  if(e.ctrlKey && e.shiftKey){ e.preventDefault(); laneHeight = clamp(laneHeight+(e.deltaY<0?4:-4), 22, 72); renderTimeline(); }
-  else if(e.ctrlKey){ e.preventDefault(); zoomStep(e.deltaY<0?1:-1, e.clientX-sc.getBoundingClientRect().left); }
-  else if(e.shiftKey){ e.preventDefault(); sc.scrollLeft += e.deltaY; }
+  if(!e.ctrlKey) return;
+  e.preventDefault();
+  pageZoom(e.deltaY<0 ? 1 : -1);
 }, {passive:false});
 
-/* ---------------- drag & drop of external files onto stage / timeline ---------------- */
+/* ---------------- drag & drop of external files onto the page grid ---------------- */
 (function(){
   const sc=$('tl-scroll');
   document.addEventListener('dragover', e=>e.preventDefault());
@@ -1453,11 +1286,9 @@ $('tl-scroll').addEventListener('wheel', e=>{
   sc.addEventListener('dragleave', e=>{ if(!sc.contains(e.relatedTarget)) sc.classList.remove('dropping'); });
   document.addEventListener('drop', e=>{
     const sc=$('tl-scroll'); sc.classList.remove('dropping');
-    // internal bay -> timeline drag (audio) is handled here since the drop lands on the scroller
-    const aud = e.dataTransfer.getData('text/eski-aud');
-    if(aud){ e.preventDefault(); if(sc.contains(e.target) && tlMode==='sound') addTrackFromPool(aud, pageAtClientX(e.clientX)); return; }
-    if(e.dataTransfer.getData('text/eski-img')!=='' || e.dataTransfer.getData('text/eski-page')!=='' ||
-       e.dataTransfer.getData('text/eski-os')!=='' || e.dataTransfer.getData('text/eski-ostool')!==''){ return; }
+    // internal bay drags land on their own targets (page cards, panel sections)
+    if(e.dataTransfer.getData('text/eski-aud')!=='' || e.dataTransfer.getData('text/eski-img')!=='' ||
+       e.dataTransfer.getData('text/eski-page')!=='' || e.dataTransfer.getData('text/eski-os')!==''){ return; }
     // dropped folders: read them recursively via the entries API
     const items = e.dataTransfer.items ? [...e.dataTransfer.items] : [];
     const dirs = items.map(it=>it.webkitGetAsEntry && it.webkitGetAsEntry()).filter(en=>en && en.isDirectory);
@@ -1473,12 +1304,7 @@ $('tl-scroll').addEventListener('wheel', e=>{
     const files=[...e.dataTransfer.files];
     if(!files.length) return;
     e.preventDefault();
-    const auds = files.filter(f=>f.type.startsWith('audio/')||AUD_RE.test(f.name));
-    const overTL = sc.contains(e.target);
-    if(overTL && tlMode==='sound' && auds.length && auds.length===files.length){
-      importAudio(auds);
-      addTrackFromPool(audioPool[audioPool.length-1], pageAtClientX(e.clientX));
-    }else addFiles(files);
+    addFiles(files);
   });
 })();
 /* recursively collect files from a dropped directory entry */
@@ -1528,6 +1354,45 @@ $('m-vol').addEventListener('change', e=>cState.player.volume=clamp(parseInt(e.t
 
 /* ---------------- export (packs sources as-is) ---------------- */
 function extOf(name, fb){ const m=/\.([a-z0-9]+)$/i.exec(name||''); return m?m[1].toLowerCase():fb; }
+
+/* ---------------- loudness normalization (export time) ----------------
+   sources arrive at wildly different levels, which makes the reader's duck
+   feel inconsistent from track to track. measure each one and store a
+   correction in dB; the audio itself is never re-encoded.
+
+   music is normalized PER TRACK. one-shots get ONE shared gain across the
+   whole file: they are a performance, and normalizing a whisper and a shout
+   to the same level individually would flatten the acting out of it. */
+const NORM_MUSIC = -20;   // dBFS rms
+const NORM_VOICE = -16;   // voices sit above the bed by construction
+function dbOf(rms){ return 20*Math.log10(Math.max(rms, 1e-6)); }
+function gainDbFor(rms, peak, target){
+  if(!rms) return 0;
+  let g = target - dbOf(rms);
+  // never let the correction clip: leave the true peak just under full scale
+  if(peak > 0) g = Math.min(g, 20*Math.log10(0.99/peak));
+  return Math.round(clamp(g, -24, 12)*10)/10;
+}
+function normGains(){
+  const out = {};
+  const os = cState.tracks.filter(t=>t.type==='oneshot' && t.aud && audioStore[t.aud]);
+  // one aggregate measurement for every one-shot in the file
+  let sq = 0, n = 0, peak = 0;
+  for(const t of os){
+    const a = audioStore[t.aud];
+    if(!a || !a.rms) continue;
+    sq += a.rms*a.rms; n++;
+    if(a.peak > peak) peak = a.peak;
+  }
+  const voiceGain = n ? gainDbFor(Math.sqrt(sq/n), peak, NORM_VOICE) : 0;
+  for(const t of cState.tracks){
+    if(!t.aud) continue;
+    const a = audioStore[t.aud];
+    if(!a || !a.rms){ out[t.tid] = 0; continue; }
+    out[t.tid] = t.type==='oneshot' ? voiceGain : gainDbFor(a.rms, a.peak, NORM_MUSIC);
+  }
+  return out;
+}
 async function exportEski(){
   if(!pageCount()){ toast('add some pages first', 'error'); return; }
   try{
@@ -1540,6 +1405,9 @@ async function exportEski(){
       const name=String(i+1).padStart(3,'0')+'.'+extOf(p.name,'jpg');
       pageNames.push(name); zip.file(name, p.blob);
     });
+    // every audio file must be decoded before its loudness can be measured
+    await Promise.all(Object.keys(audioStore).map(aud=>decodePeaks(aud)));
+    const gains = normGains();
     const packed={}; let ai=0;
     const ordered=[...cState.tracks].sort((x,y)=>x.from-y.from || cState.tracks.indexOf(x)-cState.tracks.indexOf(y));
     const hasAudio = t => (t.type==='music' || t.type==='oneshot') && t.aud;
@@ -1559,6 +1427,7 @@ async function exportEski(){
       player:{...cState.player},
       tracks: ordered.map(t=>({ id:t.tid, title:t.title, source:'local',
         file: hasAudio(t)?(packed[t.aud]||null):null, type:t.type, volume:t.volume,
+        gainDb: gains[t.tid] || 0,
         sync:{from:t.from, start:t.start} })),
       pages:{ count:pageCount(), naming:'auto' }
     };
@@ -1579,14 +1448,20 @@ async function exportEski(){
 
 /* ---------------- theme ---------------- */
 const settings=(()=>{ try{ return JSON.parse(localStorage.getItem('eski-settings'))||{}; }catch(e){ return {}; } })();
+function paintDark(){
+  const b=$('set-dark'), l=$('set-dark-lbl');
+  if(b) b.classList.toggle('on', !!settings.dark);
+  if(l) l.textContent = 'dark mode: ' + (settings.dark?'on':'off');
+}
 function toggleDark(){
   settings.dark=!settings.dark;
   try{ localStorage.setItem('eski-settings', JSON.stringify(settings)); }catch(e){}
   document.documentElement.dataset.theme=settings.dark?'dark':'';
+  paintDark();
   render();
 }
 document.documentElement.dataset.theme=settings.dark?'dark':'';
-window.addEventListener('resize', ()=>{ if(tlMode==='sound') syncMinimap(); });
+paintDark();
 render();
 </script>
 </body>

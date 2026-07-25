@@ -1,0 +1,22 @@
+[
+  {
+    "AllowedOrigins": [
+      "https://eski.lol",
+      "https://www.eski.lol",
+      "http://localhost:8940",
+      "http://localhost:8931"
+    ],
+    "AllowedMethods": ["GET", "HEAD", "PUT"],
+    "AllowedHeaders": [
+      "content-type",
+      "content-length",
+      "content-md5",
+      "authorization",
+      "x-amz-content-sha256",
+      "x-amz-date",
+      "x-amz-acl"
+    ],
+    "ExposeHeaders": ["etag", "content-length", "content-type"],
+    "MaxAgeSeconds": 3600
+  }
+]

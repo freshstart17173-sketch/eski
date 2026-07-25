@@ -29,13 +29,24 @@ close              x                 drawer close
 move-handle        grip-vertical     band move grip affordance
 image              image             media bay "images" heading
 
-All 20 verified present in Lucide v1.25.0. Inlined into composer.html as the ICONS
-map + icon(name,size) helper; buttons keep their title/aria-label text.
+Inlined into composer.html as the ICONS map + paintIcons(); buttons keep their
+title/aria-label text. All Lucide v1.25.0.
+
+RETIRED with the soundtrack timeline (2026-07-25): book-open, maximize-2,
+list-plus, grip-vertical, minus. ADDED: moon (dark mode in the drawer),
+square (stop an audio preview).
+CAUTION: "square" is referenced through a template literal
+(data-ico="${playing?'square':'play'}"), so grepping for a literal
+data-ico="square" will not find it. Check dynamic uses before pruning icons.
 
 READER + LIBRARY use the same inlined-Lucide approach:
-  reader (index.html):  contrast, chevron-left, chevron-right, columns-2 (spread),
-                        maximize-2 (focus), file-plus (new file), settings,
-                        volume-2 / volume-x (mute toggle)
-  library (library.html): message-circle (discord), arrow-left (back to reader),
-                        image (empty cover), book-open (read it), x (close)
+  reader (read.html):   moon (dark mode, in settings), chevron-left, chevron-right,
+                        columns-2 (spread), maximize-2 (focus), library (back to
+                        the library), settings, volume-2 / volume-x (mute toggle),
+                        list-music, chevron-up / chevron-down, keyboard
+  library (index.html): message-circle (discord), book-open (reader + read it),
+                        image (empty cover), x (close), arrow-left (unused, kept)
+
+  "contrast" is retired: the dark toggle moved into the reader settings popover
+  and the composer settings drawer, both using "moon".
 
