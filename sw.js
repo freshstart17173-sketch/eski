@@ -6,7 +6,7 @@ const ASSETS = [
   './',
   'index.html',
   'read.html',
-  'composer.html',
+  'studio.html',
   'demo.eski',
   'manifest.json',
   'spec.html',

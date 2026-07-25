@@ -18,7 +18,7 @@ Three apps, all vanilla JS, NO build step, NO frameworks. Only runtime dep is
 JSZip 3.10.1 from cdnjs. pdf.js 3.11.174 is lazy-loaded from cdnjs for PDF import.
 - index.html    = the LIBRARY, and the HOME PAGE (grid of eskis from library/)
 - read.html     = the READER (open + read an .eski)
-- composer.html = the COMPOSER (author/edit an .eski)
+- studio.html   = the STUDIO (author/edit an .eski)
 - spec.html     = the format spec (mostly text; hidden from nav, linked in footer)
 
 --------------------------------------------------------------------------------
@@ -26,7 +26,7 @@ JSZip 3.10.1 from cdnjs. pdf.js 3.11.174 is lazy-loaded from cdnjs for PDF impor
 --------------------------------------------------------------------------------
 index.html        library + home page (single file; uses JSZip to read covers)
 read.html         reader (single file: HTML+CSS+JS inline)
-composer.html     composer (single file)
+studio.html       studio: the authoring app (single file)
 spec.html         format spec (single file) — SOURCE OF THE GNOMON @font-face
 sw.js             service worker (offline shell; network-first HTML)
 manifest.json     PWA web app manifest (+ file_handlers for .eski)
@@ -191,7 +191,7 @@ HOTKEYS: arrows/click = pages; space = soundtrack pause; down/up = one-shots;
 shift+space = one-shot pause; s spread; f focus; m mute; d dark; ? hotkeys; esc.
 
 --------------------------------------------------------------------------------
-6. COMPOSER  (composer.html) — how it works
+6. STUDIO  (studio.html) — how it works
 --------------------------------------------------------------------------------
 STATE: cState = { pages:[{name,blob,url,thumb}], tracks:[{tid,aud,type,title,
 from,start,volume}], meta:{title,creator,description,direction}, player:{...},
@@ -399,10 +399,9 @@ made, data model, build order. Where 13 and 14 disagree, 14 wins. Section 11
 14.1 TERMINOLOGY (use these words, nothing else)
 --------------------------------------------------------------------------------
 COMPOSER    the person who scores a comic. Was "musician" in earlier drafts.
-            *** NAME COLLISION, OPEN: composer.html is also the authoring app,
-            and "open the composer" now means two things. Recommend renaming
-            the APP to "studio" (a composer is a person, the studio is a tool).
-            Cheap now, everywhere later. Not acted on yet. ***
+STUDIO      the authoring app, studio.html. Renamed from composer.html on
+            2026-07-25 to free the word "composer" for the person. A composer
+            is a human, the studio is a tool. Never call the app a composer.
 BASE        the comic itself: pages, cast, slots, consent. Owned by the author.
 SLOT        an authored void on a page: a dialogue line or an SFX hit. No audio.
 VO          one voice actor's full set of clips for ONE character on one base.
@@ -979,7 +978,7 @@ BUG - SPREAD MODE HIDES HALF THE DIALOGUE. refreshOneshots() builds os.list
 16. SCREEN PLAN  (every surface the platform needs; 2026-07-25)
 ================================================================================
 Today there are four surfaces: index.html (library + home), read.html (reader),
-composer.html (authoring), spec.html. Ten more are needed. Nothing here is
+studio.html (authoring), spec.html. Ten more are needed. Nothing here is
 built. Order of construction is in 14.9, not here.
 
 --------------------------------------------------------------------------------
@@ -1036,8 +1035,13 @@ PLUS A FLOW, NOT A SCREEN: publish from the authoring app. Export, upload,
 attach to a comic as a VO or a soundtrack. Lands with step 11.
 
 --------------------------------------------------------------------------------
-16.3 SOCIAL FEATURES (chosen to drive collaboration, not engagement)
+16.3 SOCIAL FEATURES  (ACCEPTED 2026-07-25, build them)
 --------------------------------------------------------------------------------
+All four below are decided, not suggestions. They exist to drive collaboration,
+not engagement metrics.
+REJECTED: the credits roll at the end of a comic. Also dropping meta.credits
+from step 10, since a display-only credits field with no surface to display it
+on is dead weight; real attribution comes from mixes.
 KUDOS. AO3 model: one per account per VO or soundtrack, no removal, no
   numeric gaming surface beyond the count. Cheapest possible way to let a
   reader thank a contributor.
@@ -1047,9 +1051,6 @@ CASTING CALLS / OPEN ROLES. THE HIGHEST-VALUE ONE, and nearly free: a comic
   visiting and is the main lever against the cold-start problem in D-note 5.
 FOLLOW A CONTRIBUTOR, notify on publish. How a VA builds an audience that
   comes back, rather than one that happened to click once.
-CREDITS ROLL at the end of a comic, listing everyone in the mix just read.
-  Satisfying, and it is real attribution with no backend beyond what mixes
-  already store.
 FILLER BADGE on comics that carry reference tracks (15.4). Directly lowers the
   barrier for the next VA, which is the entire point of filler VOs.
 

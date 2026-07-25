@@ -1,6 +1,6 @@
-eski composer — icon inventory
+eski studio — icon inventory
 ================================================================
-Every icon the composer page uses, where it appears, and the pack it comes from.
+Every icon the studio page uses, where it appears, and the pack it comes from.
 
 PACK: Lucide  (https://lucide.dev)  v1.25.0  — ISC license (embed/redistribute OK)
 Chosen because it is MIT/ISC, line-based (matches the minimal look), 24x24 stroke
@@ -29,7 +29,7 @@ close              x                 drawer close
 move-handle        grip-vertical     band move grip affordance
 image              image             media bay "images" heading
 
-Inlined into composer.html as the ICONS map + paintIcons(); buttons keep their
+Inlined into studio.html as the ICONS map + paintIcons(); buttons keep their
 title/aria-label text. All Lucide v1.25.0.
 
 RETIRED with the soundtrack timeline (2026-07-25): book-open, maximize-2,
@@ -48,5 +48,5 @@ READER + LIBRARY use the same inlined-Lucide approach:
                         image (empty cover), x (close), arrow-left (unused, kept)
 
   "contrast" is retired: the dark toggle moved into the reader settings popover
-  and the composer settings drawer, both using "moon".
+  and the studio settings drawer, both using "moon".
 

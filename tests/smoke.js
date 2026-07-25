@@ -1,5 +1,5 @@
 /* eski smoke tests: serve the project over localhost, intercept CDNs, drive the UI.
-   covers the reader (index.html), the composer (composer.html), and the library. */
+   covers the reader (index.html), the studio (studio.html), and the library. */
 const { chromium } = require('playwright');
 const JSZip = require('jszip');
 const http = require('http');
@@ -387,7 +387,7 @@ function ok(cond, name, extra) {
   console.log('composer: import media (merged)');
   const comp = await ctx.newPage();
   wire(comp);
-  await comp.goto('http://localhost:8931/composer.html');
+  await comp.goto('http://localhost:8931/studio.html');
   ok(await comp.isVisible('#empty-hint'), 'empty hint shows');
   await comp.setInputFiles('#in-media', path.join(FIX, 'test.cbz'));
   await comp.waitForFunction(() => cState.pages.length === 3);
@@ -540,7 +540,7 @@ function ok(cond, name, extra) {
   console.log('composer: one-shots (pages-mode block + queue panel)');
   const oc = await ctx.newPage();
   wire(oc);
-  await oc.goto('http://localhost:8931/composer.html');
+  await oc.goto('http://localhost:8931/studio.html');
   await oc.setInputFiles('#in-eski', path.join(FIX, 'oneshots.eski'));
   await oc.waitForFunction(() => cState.tracks.filter(t => t.type === 'oneshot').length === 2);
   ok(await oc.evaluate(() => cState.tracks.filter(t => t.type === 'music').length) === 1,
