@@ -210,6 +210,20 @@ h4{margin:0 0 8px;font-size:11px;letter-spacing:.13em;color:var(--muted);font-we
 .songknobs input[type=number]{width:48px;padding:1px 4px;font-size:11px}
 .songadd{margin-top:8px}
 .info-sec .dropping{outline:2px dashed var(--accent);outline-offset:2px;border-radius:8px}
+.oschip.empty{border-style:dashed;color:var(--muted)}
+.oschip .await{color:var(--muted);font-style:italic}
+.oschip .castsel{max-width:96px;font-size:11px;padding:1px 3px}
+.castrow{display:flex;align-items:center;gap:6px;font-size:12px;padding:4px 0}
+.castrow .nm{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.castrow .cov{color:var(--muted);font-size:11px;flex:none}
+.castrow button{border:0;background:transparent;color:var(--muted);cursor:pointer;padding:2px}
+.castrow button:hover{color:#c1362b}
+.castadd{display:flex;gap:6px;margin-top:8px}
+.castadd input{flex:1;min-width:0}
+.modebar{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted)}
+.modebar select{font-size:12px}
+.covbar{height:4px;border-radius:2px;background:var(--edge);overflow:hidden;flex:none;width:52px}
+.covbar span{display:block;height:100%;background:var(--accent)}
 .songrow button{border:0;background:transparent;color:var(--muted);cursor:pointer;padding:2px;flex:none}
 .songrow button:hover{color:var(--accent)}
 .songrow button .ico{width:14px;height:14px}
@@ -351,6 +365,13 @@ h4{margin:0 0 8px;font-size:11px;letter-spacing:.13em;color:var(--muted);font-we
     <div class="tl-panel">
       <div class="tl-top">
         <span class="tl-status" id="tl-status">no pages yet</span>
+        <span class="modebar">working as
+          <select id="mode-sel" title="what this session may edit">
+            <option value="scratch">the author (everything)</option>
+            <option value="vo">a voice actor (dialogue only)</option>
+            <option value="soundtrack">a composer (music + sfx)</option>
+          </select>
+        </span>
         <span class="sp"></span>
         <span class="zoom" id="pages-ctrls" style="display:none">
           <button class="pill icon-btn" data-ico="zoom-out" onclick="pageZoom(-1)" title="smaller pages"></button>
@@ -370,11 +391,16 @@ h4{margin:0 0 8px;font-size:11px;letter-spacing:.13em;color:var(--muted);font-we
       <h5>soundtrack</h5>
       <div id="info-song"></div>
     </div>
-    <div class="info-sec">
-      <h5>one-shots</h5>
-      <div class="qp-hint">drag audio from the dock into this list. drag to reorder; the &#10005; removes one.</div>
+    <div class="info-sec" id="sec-lines">
+      <h5>dialogue</h5>
+      <div class="qp-hint">one slot per run of speech, not per balloon. drop audio on a slot to fill it.</div>
       <div class="qp-list" id="qp-list"></div>
-      <div class="qp-foot"><button class="pill" id="qp-clear" onclick="clearQueueBlock()">remove this block</button></div>
+      <div class="qp-foot"><button class="pill" id="slot-add" data-ico="plus"
+        onclick="addSlot(qpPage)">someone speaks here</button></div>
+    </div>
+    <div class="info-sec" id="sec-sfx">
+      <h5>sound effects</h5>
+      <div class="qp-list" id="qp-sfx"></div>
     </div>
   </aside>
 </div>
@@ -404,6 +430,22 @@ h4{margin:0 0 8px;font-size:11px;letter-spacing:.13em;color:var(--muted);font-we
   <div class="row duo">
     <div><label>crossfade (s)</label><input type="number" id="m-fade" min="0" max="10" step="0.5"></div>
     <div><label>volume</label><input type="number" id="m-vol" min="0" max="100"></div>
+  </div>
+  <div class="drawer-sep"></div>
+  <div class="row" id="cast-row">
+    <label>cast</label>
+    <div class="qp-hint">who speaks in this comic. only the author can set this,
+      because only they know who is in which balloon.</div>
+    <div id="cast-list"></div>
+    <div class="castadd">
+      <input type="text" id="cast-name" placeholder="character name"
+             onkeydown="if(event.key==='Enter')addCastFromInput()">
+      <select id="cast-kind">
+        <option value="character">character</option>
+        <option value="narrator">narrator</option>
+      </select>
+      <button class="pill" onclick="addCastFromInput()" data-ico="plus">add</button>
+    </div>
   </div>
   <div class="drawer-sep"></div>
   <div class="row"><label>this app</label>
@@ -483,9 +525,28 @@ function loading(on, label){
 }
 
 /* ---------------- state ---------------- */
+/* editMode gates what this session is allowed to touch. 'scratch' is the
+   author working on their own comic with no restrictions, which is how one
+   person builds a complete eski end to end. 'vo' and 'soundtrack' are
+   contributors working against someone else's published base.
+   THIS IS UI GATING ONLY. The server must revalidate every submission. */
+let editMode = 'scratch';           // 'scratch' | 'vo' | 'soundtrack'
+const canPages   = () => editMode==='scratch';
+const canCast    = () => editMode==='scratch';
+const canLines   = () => editMode==='scratch' || editMode==='vo';
+const canMusic   = () => editMode==='scratch' || editMode==='soundtrack';
+const canSfx     = () => editMode==='scratch' || editMode==='soundtrack';
+
 let cState = {
   pages: [],   // {name, blob, url, thumb}
-  tracks: [],  // {tid, aud|null, type:'music'|'silence', title, from, start, volume}
+  /* tracks are the whole audio model:
+       type music|silence  -> page-triggered soundtrack
+       type oneshot        -> user-triggered. role 'line' is dialogue and
+                              carries a character (a cast key); role 'sfx' is
+                              everything else. aud may be null, which makes it
+                              an authored SLOT waiting for a contributor. */
+  tracks: [],  // {tid, aud|null, type, role, character, title, from, start, volume}
+  cast: [],    // {cid, key, name, kind:'character'|'narrator'}
   meta: {title:'', creator:'', description:'', direction:'ltr'},
   player: {volume:80, crossfade:1, loopMode:'loop', playbackMode:'sync', readingMode:'pages'},
   coverIndex: 0
@@ -504,11 +565,12 @@ const musicTracks = () => cState.tracks.filter(t=>t.type==='music');
 
 /* ---------------- undo ---------------- */
 function snapObj(){ return JSON.stringify({tracks:cState.tracks, meta:cState.meta,
-  player:cState.player, coverIndex:cState.coverIndex}); }
+  player:cState.player, coverIndex:cState.coverIndex, cast:cState.cast}); }
 function snap(){ undoStack.push(snapObj()); if(undoStack.length>80) undoStack.shift(); redoStack=[]; }
 function restore(s){
   const d = JSON.parse(s);
   cState.tracks=d.tracks; cState.meta=d.meta; cState.player=d.player; cState.coverIndex=d.coverIndex;
+  cState.cast = d.cast || [];
   if(sel && !trackByTid(sel)) sel=null;
   render();
 }
@@ -639,7 +701,7 @@ async function decodePeaksNow(a){
     /* the decode is already paid for by the waveform, so measure loudness in
        the same pass: mean square over everything above a gate, which keeps
        long silences from dragging a track's level down. */
-    let sq = 0, counted = 0, peak = 0;
+    let sq = 0, counted = 0, peak = 0, firstSound = -1;
     for(let i=0;i<N;i++){
       let m = 0;
       const s = Math.floor(i*step), e = Math.min(Math.floor((i+1)*step), ch.length);
@@ -650,11 +712,15 @@ async function decodePeaksNow(a){
       }
       peaks[i] = m;
       if(m>peak) peak = m;
+      if(firstSound<0 && m>0.01) firstSound = i;
     }
     a.peaks = peaks;
     a.peak  = peak;
     a.rms   = counted ? Math.sqrt(sq/counted) : 0;
-  }catch(e){ a.peaks = null; a.peak = 0; a.rms = 0; }
+    /* D4: no dead air before a line. where the audio actually starts, so a
+       slot filled with this clip can skip straight to it. */
+    a.leadTrim = firstSound > 0 ? Math.max(0, (firstSound/N)*buf.duration - 0.05) : 0;
+  }catch(e){ a.peaks = null; a.peak = 0; a.rms = 0; a.leadTrim = 0; }
   render();
 }
 
@@ -674,7 +740,7 @@ async function openEski(file){
     });
     imgs.sort((a,b)=>a.name.localeCompare(b.name, undefined, {numeric:true, sensitivity:'base'}));
     if(!imgs.length) throw new Error('no page images found');
-    cState = {pages:[], tracks:[], meta:{title:'',creator:'',description:'',direction:'ltr'},
+    cState = {pages:[], tracks:[], cast:[], meta:{title:'',creator:'',description:'',direction:'ltr'},
       player:{volume:80,crossfade:1,loopMode:'loop',playbackMode:'sync',readingMode:'pages'}, coverIndex:0};
     audioPool = []; undoStack = []; redoStack = []; sel = null; qpPage = null; previewPage = 0;
     osBlocks = new Set();
@@ -684,6 +750,10 @@ async function openEski(file){
       cState.meta = Object.assign(cState.meta, manifest.meta||{});
       cState.meta.direction = cState.meta.direction==='rtl' ? 'rtl' : 'ltr';
       cState.player = Object.assign(cState.player, manifest.player||{});
+      cState.cast = (manifest.meta?.cast || []).map(c=>({
+        cid: uid('c'), key: c.key, name: c.name || c.key, kind: c.kind==='narrator'?'narrator':'character'
+      }));
+      delete cState.meta.cast;
       let dropped = 0;
       for(const t of (manifest.tracks||[])){
         const type = t.type==='oneshot' ? 'oneshot'
@@ -693,16 +763,23 @@ async function openEski(file){
             from:t.sync?.from??1, start:0, volume:t.volume??100});
         }else{
           const f = t.file && zip.file(t.file);
-          if(!f){ dropped++; continue; }
-          const aud = uid('a');
-          const blob = await f.async('blob');
-          audioStore[aud] = {blob, url:URL.createObjectURL(blob),
-            fileName:t.file.split('/').pop(), peaks:null, duration:0};
-          audioPool.push(aud);
+          const isSlot = type==='oneshot' && !t.file;   // an authored, unfilled slot
+          if(!f && !isSlot){ dropped++; continue; }
+          let aud = null;
+          if(f){
+            aud = uid('a');
+            const blob = await f.async('blob');
+            audioStore[aud] = {blob, url:URL.createObjectURL(blob),
+              fileName:t.file.split('/').pop(), peaks:null, duration:0};
+            audioPool.push(aud);
+          }
           cState.tracks.push({tid:t.id||uid('t'), aud, type,
-            title:t.title||(type==='oneshot'?'sound':'untitled track'),
+            role: type==='oneshot' ? (t.role==='sfx' ? 'sfx' : 'line') : undefined,
+            character: t.character || null,
+            title:t.title||(type==='oneshot'? (isSlot?'':'sound') :'untitled track'),
             from:t.sync?.from??1, start:t.sync?.start??0, volume:t.volume??100});
-          decodePeaks(aud);
+          if(type==='oneshot') osBlocks.add(t.sync?.from??1);
+          if(aud) decodePeaks(aud);
         }
       }
       cState.meta.title = cState.meta.title || file.name.replace(/\.[^.]+$/,'');
@@ -725,15 +802,68 @@ function ensureDefaultSilence(){
     cState.tracks.push({tid:uid('t'), aud:null, type:'silence', title:'silence',
       from:1, start:0, volume:100});
 }
-function addOneshot(aud, page){
+function addOneshot(aud, page, role, character){
   if(!pageCount()) return;
   snap();
   const a = audioStore[aud];
-  osBlocks.add(clamp(page||1,1,pageCount()));
+  const p = clamp(page||1, 1, pageCount());
+  osBlocks.add(p);
   cState.tracks.push({tid:uid('t'), aud, type:'oneshot',
+    role: role || 'line', character: character || null,
     title:(a?.fileName||'sound').replace(/\.[^.]+$/,'').toLowerCase(),
-    from:clamp(page||1, 1, pageCount()), start:0, volume:100});
-  renderQueue(); render();
+    from:p, start:0, volume:100});
+  render();
+}
+
+/* ---------------- cast + dialogue slots ----------------
+   a SLOT is a one-shot with no audio yet: an authored void a voice actor
+   fills later. that is why aud is nullable. section 15.1 is the rule for what
+   counts as one slot: a RUN of speech by one character on one page, not one
+   balloon. twenty consecutive bubbles from the same character are one slot. */
+const castByKey = k => cState.cast.find(c=>c.key===k) || null;
+const castName  = k => (castByKey(k)||{}).name || 'unassigned';
+const linesFor  = page => oneshotsFor(page).filter(t=>t.role==='line');
+const sfxFor    = page => oneshotsFor(page).filter(t=>t.role!=='line');
+
+function castKeyFrom(name){
+  const base = (name||'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'') || 'cast';
+  let k = base, n = 2;
+  while(cState.cast.some(c=>c.key===k)) k = base+'-'+(n++);
+  return k;
+}
+function addCast(name, kind){
+  snap();
+  const c = {cid:uid('c'), key:castKeyFrom(name), name:(name||'').trim()||'unnamed', kind:kind||'character'};
+  cState.cast.push(c);
+  render();
+  return c;
+}
+function removeCast(cid){
+  const c = cState.cast.find(x=>x.cid===cid); if(!c) return;
+  snap();
+  cState.cast = cState.cast.filter(x=>x.cid!==cid);
+  // slots keep their order; they just go back to unassigned
+  cState.tracks.forEach(t=>{ if(t.character===c.key) t.character = null; });
+  render();
+}
+/* add an empty dialogue slot on a page. the author is saying "someone speaks
+   here, in this position", nothing more. */
+function addSlot(page, character){
+  if(!pageCount()) return;
+  snap();
+  const p = clamp(page||1, 1, pageCount());
+  osBlocks.add(p);
+  cState.tracks.push({tid:uid('t'), aud:null, type:'oneshot', role:'line',
+    character: character || (cState.cast[0] ? cState.cast[0].key : null),
+    title:'', from:p, start:0, volume:100});
+  render();
+}
+/* coverage for one character across the whole comic (D3: a VO cannot publish
+   below 100%). counts LINE slots only, never sfx. */
+function coverageFor(key){
+  const slots = cState.tracks.filter(t=>t.type==='oneshot' && t.role==='line' && t.character===key);
+  const filled = slots.filter(t=>t.aud).length;
+  return {filled, total:slots.length, pct: slots.length ? Math.round(filled/slots.length*100) : 100};
 }
 function addTrackFromPool(aud, page){
   if(!pageCount()) return;
@@ -830,8 +960,41 @@ function setStatus(){
       + (qpPage ? ` · page ${qpPage} selected` : '')
     : 'no pages yet';
 }
+function addCastFromInput(){
+  const n = $('cast-name').value.trim();
+  if(!n) return;
+  addCast(n, $('cast-kind').value);
+  $('cast-name').value = '';
+}
+function setEditMode(m){
+  editMode = m;
+  render();
+}
+function renderCast(){
+  const box = $('cast-list');
+  if(!box) return;
+  if(!cState.cast) cState.cast = [];
+  box.innerHTML = '';
+  if(!cState.cast.length){
+    box.innerHTML = '<div class="qp-empty">no cast yet.</div>';
+  }
+  cState.cast.forEach(c=>{
+    const cov = coverageFor(c.key);
+    const row = document.createElement('div');
+    row.className = 'castrow';
+    row.innerHTML = `<span class="nm">${esc(c.name)}${c.kind==='narrator'?' <span class="cov">(narrator)</span>':''}</span>
+      <span class="covbar"><span style="width:${cov.pct}%"></span></span>
+      <span class="cov">${cov.filled}/${cov.total}</span>
+      <button data-ico="x" title="remove from cast"></button>`;
+    row.querySelector('button').addEventListener('click', ()=>removeCast(c.cid));
+    box.appendChild(row);
+  });
+  $('cast-row').style.display = canCast() ? '' : 'none';
+  paintIcons(box);
+}
 function render(){
   const has = pageCount()>0;
+  $('mode-sel').value = editMode;
   $('empty-hint').style.display = has ? 'none' : 'flex';
   ['pv-img','pv-badge','pv-prev','pv-next'].forEach(id=>$(id).style.display = has ? '' : 'none');
   $('pages-ctrls').style.display = has ? '' : 'none';
@@ -841,6 +1004,7 @@ function render(){
   renderPreview();
   renderPages();
   renderInfo();
+  renderCast();
   paintIcons();
 }
 const bayFilter = { q:'', kind:'all', sort:'added' };
@@ -848,7 +1012,8 @@ function bayMatch(name){ return !bayFilter.q || (name||'').toLowerCase().include
 function renderBay(){
   $('img-count').textContent = pageCount() ? '('+pageCount()+')' : '';
   $('aud-count').textContent = audioPool.length ? '('+audioPool.length+')' : '';
-  const showImgs = bayFilter.kind==='all' || bayFilter.kind==='images';
+  // contributors work against someone else's pages: no image tools at all
+  const showImgs = canPages() && (bayFilter.kind==='all' || bayFilter.kind==='images');
   const showAuds = bayFilter.kind!=='images';
   document.querySelector('.bay-sec.imgs').style.display = showImgs ? '' : 'none';
   document.querySelector('.bay-sec.auds').style.display = showAuds ? '' : 'none';
@@ -1066,13 +1231,14 @@ function renderPages(){
   g.appendChild(drop);
 }
 function movePage(from, to){
-  if(from===to) return;
+  if(from===to || !canPages()) return;
   snap();
   const moved = cState.pages.splice(from,1)[0];
   cState.pages.splice(to,0,moved);
   render();
 }
 function removePage(i){
+  if(!canPages()) return;
   snap();
   URL.revokeObjectURL(cState.pages[i].url);
   cState.pages.splice(i,1);
@@ -1195,35 +1361,71 @@ function renderInfo(){
   renderQueue();
 }
 let qpDrag = null;
+/* one chip per one-shot. dialogue slots and sfx render the same way; a slot
+   with no audio yet shows as empty and, in vo mode, is the thing to fill. */
+function osChip(t, idx, showCast){
+  const chip = document.createElement('div');
+  chip.className = 'oschip' + (t.aud ? '' : ' empty'); chip.draggable = true;
+  const label = t.aud ? esc(t.title) : '<span class="await">empty</span>';
+  chip.innerHTML = `<span class="ord">${idx+1}</span>
+    ${showCast ? `<select class="castsel" title="who speaks"></select>` : ''}
+    <span class="nm">${label}</span>
+    ${t.aud ? '<button data-ico="play" title="listen"></button>' : ''}
+    <button data-ico="x" title="remove"></button>`;
+  if(showCast){
+    const sel2 = chip.querySelector('.castsel');
+    sel2.innerHTML = '<option value="">unassigned</option>' + cState.cast.map(c=>
+      `<option value="${esc(c.key)}"${c.key===t.character?' selected':''}>${esc(c.name)}</option>`).join('');
+    sel2.disabled = !canCast();
+    sel2.addEventListener('change', e=>{ snap(); t.character = e.target.value || null; render(); });
+  }
+  const btns = [...chip.querySelectorAll('button')];
+  if(t.aud) btns.shift().addEventListener('click', e=>{ e.stopPropagation(); previewTrack(t); });
+  btns[0].addEventListener('click', e=>{ e.stopPropagation(); removeOneshot(t.tid); });
+  paintIcons(chip);
+  chip.addEventListener('dragstart', e=>{ qpDrag=t.tid; chip.classList.add('dragging');
+    e.dataTransfer.setData('text/eski-os', t.tid); e.dataTransfer.effectAllowed='move'; });
+  chip.addEventListener('dragend', ()=>{ qpDrag=null; chip.classList.remove('dragging'); });
+  chip.addEventListener('dragover', e=>{ e.preventDefault(); e.stopPropagation(); });
+  chip.addEventListener('drop', e=>{
+    e.preventDefault(); e.stopPropagation();
+    const aud = e.dataTransfer.getData('text/eski-aud');
+    const tid = e.dataTransfer.getData('text/eski-os');
+    if(aud) fillSlot(t, aud);                     // dropping audio ON a slot fills it
+    else if(tid) moveOneshotBefore(tid, qpPage, t.tid);
+    render();
+  });
+  return chip;
+}
+/* filling a slot skips whatever dead air the recording starts with (D4) */
+function fillSlot(t, aud){
+  const a = audioStore[aud]; if(!a) return;
+  snap();
+  t.aud = aud;
+  t.title = (a.fileName||'line').replace(/\.[^.]+$/,'').toLowerCase();
+  t.start = a.leadTrim || 0;
+}
 function renderQueue(){
   if(qpPage==null) return;
-  const list = oneshotsFor(qpPage);
-  const box = $('qp-list');
-  box.innerHTML = '';
-  if(!list.length) box.innerHTML = '<div class="qp-empty">no sounds yet. drag audio from the dock into here.</div>';
-  list.forEach((t,idx)=>{
-    const chip = document.createElement('div');
-    chip.className = 'oschip'; chip.draggable = true;
-    chip.innerHTML = `<span class="ord">${idx+1}</span>
-      <span class="nm">${esc(t.title)}</span>
-      <button data-ico="play" title="preview"></button>
-      <button data-ico="x" title="remove"></button>`;
-    const btns = chip.querySelectorAll('button');
-    btns[0].addEventListener('click', e=>{ e.stopPropagation(); previewTrack(t); });
-    btns[1].addEventListener('click', e=>{ e.stopPropagation(); removeOneshot(t.tid); });
-    paintIcons(chip);
-    chip.addEventListener('dragstart', e=>{ qpDrag=t.tid; chip.classList.add('dragging');
-      e.dataTransfer.setData('text/eski-os', t.tid); e.dataTransfer.effectAllowed='move'; });
-    chip.addEventListener('dragend', ()=>{ qpDrag=null; chip.classList.remove('dragging'); });
-    chip.addEventListener('dragover', e=>e.preventDefault());
-    chip.addEventListener('drop', e=>{
-      e.preventDefault(); e.stopPropagation();
-      const tid = e.dataTransfer.getData('text/eski-os');
-      if(tid) moveOneshotBefore(tid, qpPage, t.tid);
-    });
-    box.appendChild(chip);
-  });
-  paintIcons(box);
+  const lines = linesFor(qpPage), sfx = sfxFor(qpPage);
+
+  const lbox = $('qp-list');
+  lbox.innerHTML = '';
+  if(!lines.length){
+    lbox.innerHTML = canLines()
+      ? '<div class="qp-empty">nobody speaks on this page yet.</div>'
+      : '<div class="qp-empty">no dialogue marked on this page.</div>';
+  }
+  lines.forEach((t,i)=>lbox.appendChild(osChip(t, i, true)));
+
+  const sbox = $('qp-sfx');
+  sbox.innerHTML = '';
+  if(!sfx.length) sbox.innerHTML = '<div class="qp-empty">no sound effects here.</div>';
+  sfx.forEach((t,i)=>sbox.appendChild(osChip(t, i, false)));
+
+  $('slot-add').style.display = canCast() ? '' : 'none';
+  $('sec-sfx').style.display  = canSfx() || sfx.length ? '' : 'none';
+  paintIcons(lbox); paintIcons(sbox);
 }
 /* two drop zones, one per section: audio dropped on "soundtrack" starts (or
    queues) a song on this page, audio dropped on "one-shots" becomes a one-shot.
@@ -1246,10 +1448,15 @@ function renderQueue(){
       render();
     });
   };
-  dz($('info-song'), aud=>addTrackFromPool(aud, qpPage));
+  dz($('info-song'), aud=>{ if(canMusic()) addTrackFromPool(aud, qpPage); });
+  // dropping on empty space in the dialogue list makes a new filled line slot
   dz($('qp-list'),
-    aud=>{ osBlocks.add(qpPage); addOneshot(aud, qpPage); },
+    aud=>{ if(!canLines()) return; osBlocks.add(qpPage);
+           addOneshot(aud, qpPage, 'line', cState.cast[0] ? cState.cast[0].key : null);
+           const t = linesFor(qpPage).slice(-1)[0];
+           if(t) t.start = (audioStore[aud] || {}).leadTrim || 0; },
     tid=>moveOneshotBefore(tid, qpPage, null));
+  dz($('qp-sfx'), aud=>{ if(canSfx()){ osBlocks.add(qpPage); addOneshot(aud, qpPage, 'sfx'); } });
 })();
 
 /* ---------------- hotkeys ---------------- */
@@ -1423,12 +1630,23 @@ async function exportEski(){
       meta:{ title:cState.meta.title||'untitled', creator:cState.meta.creator||null,
         description:cState.meta.description||null,
         direction:cState.meta.direction==='rtl'?'rtl':'ltr',
-        cover:pageNames[clamp(cState.coverIndex,0,pageNames.length-1)] },
+        cover:pageNames[clamp(cState.coverIndex,0,pageNames.length-1)],
+        // the cast is the one thing only the author can supply
+        cast: cState.cast.length
+          ? cState.cast.map(c=>({key:c.key, name:c.name, kind:c.kind||'character'}))
+          : undefined },
       player:{...cState.player},
-      tracks: ordered.map(t=>({ id:t.tid, title:t.title, source:'local',
-        file: hasAudio(t)?(packed[t.aud]||null):null, type:t.type, volume:t.volume,
-        gainDb: gains[t.tid] || 0,
-        sync:{from:t.from, start:t.start} })),
+      tracks: ordered.map(t=>{
+        const o = { id:t.tid, title:t.title, source:'local',
+          file: hasAudio(t)?(packed[t.aud]||null):null, type:t.type, volume:t.volume,
+          gainDb: gains[t.tid] || 0,
+          sync:{from:t.from, start:t.start} };
+        if(t.type==='oneshot'){
+          o.role = t.role || 'line';
+          if(o.role==='line') o.character = t.character || null;
+        }
+        return o;
+      }),
       pages:{ count:pageCount(), naming:'auto' }
     };
     zip.file('.eski/manifest.json', JSON.stringify(manifest,null,2));
@@ -1462,6 +1680,7 @@ function toggleDark(){
 }
 document.documentElement.dataset.theme=settings.dark?'dark':'';
 paintDark();
+$('mode-sel').addEventListener('change', e=>setEditMode(e.target.value));
 render();
 </script>
 </body>

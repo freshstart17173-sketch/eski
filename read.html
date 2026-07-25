@@ -844,8 +844,11 @@ function queueGroups(comic){
     };
   }).filter(g=>g.to>=g.from);
 }
+/* authored slots with nothing in them yet (a base with no VO attached) are
+   real tracks but have nothing to play, so they stay out of the cursor. */
 function oneshotsForPage(comic, pageIdx){
-  return comic.tracks.filter(t=>t.type==='oneshot' && !t.external && t.from===pageIdx+1);
+  return comic.tracks.filter(t=>t.type==='oneshot' && !t.external && t.from===pageIdx+1
+    && (t.url || t.entry));
 }
 function queueForPage(comic, pageIdx){
   const p = pageIdx+1;

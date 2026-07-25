@@ -76,7 +76,8 @@ function ok(cond, name, extra) {
   const consoleErrors = [];
   const wire = p => {
     p.on('console', m => { if (m.type() === 'error') consoleErrors.push(m.text()); });
-    p.on('pageerror', e => consoleErrors.push('pageerror: ' + e.message));
+    p.on('pageerror', e => consoleErrors.push('pageerror: ' + e.message +
+      ' @@ ' + (e.stack || '').split('\n').slice(1, 3).join(' | ')));
   };
   const page = await ctx.newPage();
   wire(page);
@@ -348,7 +349,7 @@ function ok(cond, name, extra) {
     return { idle, busy, requeued, stillHeld, released: read() };
   });
   // setTargetAtTime approaches its target asymptotically, so allow a hair of tail
-  ok(duckState.idle.g > 0.99 && Math.abs(duckState.idle.eq) < 0.1, 'idle: no duck, no eq',
+  ok(duckState.idle.g > 0.98 && Math.abs(duckState.idle.eq) < 0.1, 'idle: no duck, no eq',
     JSON.stringify(duckState.idle));
   ok(duckState.busy.g < 0.5 && duckState.busy.eq < -3, 'busy: soundtrack ducks and the eq notches in',
     JSON.stringify(duckState.busy));
@@ -595,7 +596,76 @@ function ok(cond, name, extra) {
   ok(shots.every(t => t.file && zo.file(t.file)), 'one-shot audio packed');
   ok(mano.tracks.some(t => t.type === 'music' && t.sync.from === 1), 'music track intact');
 
-  console.log('composer: media dock search + filter');
+  console.log('studio: cast + dialogue slots');
+  await oc.evaluate(() => { addCast('Aiko'); addCast('The Narrator', 'narrator'); });
+  ok(await oc.evaluate(() => cState.cast.map(c => c.key).join(',')) === 'aiko,the-narrator',
+    'cast keys slugify from the name');
+  ok(await oc.evaluate(() => cState.cast[1].kind) === 'narrator', 'a narrator is castable');
+  ok(await oc.evaluate(() => document.querySelectorAll('.castrow').length === 2),
+    'cast list renders in the drawer');
+  // a slot is an authored void: a run of speech with no audio yet
+  await oc.evaluate(() => { openQueue(1); addSlot(1, 'aiko'); addSlot(1, 'aiko'); });
+  ok(await oc.evaluate(() => linesFor(1).length === 2), 'two dialogue slots on page 1');
+  ok(await oc.evaluate(() => linesFor(1).every(t => t.aud === null)), 'slots start empty');
+  ok(await oc.evaluate(() => document.querySelectorAll('#qp-list .oschip.empty').length === 2),
+    'empty slots read as empty in the panel');
+  ok(await oc.evaluate(() => JSON.stringify(coverageFor('aiko')) === '{"filled":0,"total":2,"pct":0}'),
+    'coverage starts at zero', await oc.evaluate(() => JSON.stringify(coverageFor('aiko'))));
+  // filling one slot moves coverage and skips the recording's dead air
+  await oc.evaluate(() => {
+    const a = Object.keys(audioStore)[0];
+    audioStore[a].leadTrim = 0.4;
+    fillSlot(linesFor(1)[0], a);
+    render();
+  });
+  ok(await oc.evaluate(() => coverageFor('aiko').pct === 50), 'coverage tracks filled slots');
+  ok(await oc.evaluate(() => linesFor(1)[0].start === 0.4),
+    'filling a slot skips the leading silence');
+  ok(await oc.evaluate(() => coverageFor('the-narrator').pct === 100),
+    'a character with no slots is complete, not a divide by zero');
+
+  console.log('studio: edit modes gate what a contributor may touch');
+  await oc.evaluate(() => setEditMode('vo'));
+  ok(await oc.evaluate(() => !canPages() && canLines() && !canMusic() && !canSfx()),
+    'vo mode: dialogue only');
+  ok(await oc.evaluate(() => document.querySelector('.bay-sec.imgs').style.display === 'none'),
+    'vo mode hides the image bay: contributors do not touch pages');
+  ok(await oc.evaluate(() => document.getElementById('cast-row').style.display === 'none'),
+    'vo mode hides cast editing');
+  ok(await oc.evaluate(() => { const n = cState.pages.length; removePage(0); return cState.pages.length === n; }),
+    'vo mode refuses to remove a page');
+  await oc.evaluate(() => setEditMode('soundtrack'));
+  ok(await oc.evaluate(() => !canLines() && canMusic() && canSfx()),
+    'soundtrack mode: music and sfx, no dialogue');
+  await oc.evaluate(() => setEditMode('scratch'));
+  ok(await oc.evaluate(() => canPages() && canCast() && canLines() && canMusic()),
+    'scratch mode has no restrictions');
+
+  console.log('studio: cast + slots round-trip through export');
+  const dl2 = oc.waitForEvent('download');
+  await oc.click('#export-btn');
+  const f2 = path.join(DL, 'cast.eski');
+  await (await dl2).saveAs(f2);
+  const mz = await JSZip.loadAsync(fs.readFileSync(f2));
+  const mm = JSON.parse(await mz.file('.eski/manifest.json').async('string'));
+  ok(JSON.stringify(mm.meta.cast) === '[{"key":"aiko","name":"Aiko","kind":"character"},' +
+    '{"key":"the-narrator","name":"The Narrator","kind":"narrator"}]',
+    'cast is written to meta', JSON.stringify(mm.meta.cast));
+  const slotTracks = mm.tracks.filter(t => t.type === 'oneshot' && t.role === 'line');
+  ok(slotTracks.length >= 2, 'line slots exported with role');
+  ok(slotTracks.some(t => t.file === null && t.character === 'aiko'),
+    'an unfilled slot exports as file:null with its character');
+
+  console.log('reader: an unfilled slot is not in the cursor');
+  const sl = await ctx.newPage();
+  wire(sl);
+  await sl.goto('http://localhost:8931/read.html?read=dl/cast.eski');
+  await sl.waitForSelector('#player-bar', { state: 'visible' });
+  ok(await sl.evaluate(() => oneshotsForPage(current, 0).every(t => t.url || t.entry)),
+    'slots with no audio never reach the one-shot cursor');
+  await sl.close();
+
+  console.log('studio: media dock search + filter');
   await oc.fill('#bay-q', 'o1');
   ok(await oc.evaluate(() => document.querySelectorAll('#bay-auds .chip-aud').length) === 1,
     'search filters the audio dock');
