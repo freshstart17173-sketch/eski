@@ -25,6 +25,15 @@ function ok(cond, name, extra) {
   const server = http.createServer((req, res) => {
     let p = decodeURIComponent(req.url.split('?')[0].split('#')[0]);
     if (p === '/') p = '/index.html';
+    // the production path: an explicit index.json, which is what Vercel needs
+    // since it does not autoindex. Listed without covers so the grid still
+    // exercises reading a manifest out of the zip.
+    if (p === '/library/index.json') {
+      const files = fs.readdirSync(path.join(FIX, 'library')).filter(f => f.endsWith('.eski'));
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ entries: files }));
+      return;
+    }
     // serve the fixture library folder: autoindex listing + the eski files themselves
     if (p === '/library/' || p === '/library') {
       const files = fs.readdirSync(path.join(FIX, 'library')).filter(f => f.endsWith('.eski'));
@@ -844,6 +853,14 @@ function ok(cond, name, extra) {
     'covers extracted from the eski manifests');
   const titles = await lib.evaluate(() => [...document.querySelectorAll('.cover .t')].map(t => t.textContent));
   ok(titles.some(t => /test comic|queue comic/.test(t)), 'titles read from manifest', titles.join(','));
+  // index.json wins over the autoindex, because Vercel has no autoindex at all
+  ok(await lib.evaluate(async () => {
+    const r = await fetch('library/index.json', { cache: 'no-store' });
+    return r.ok;
+  }), 'the library reads library/index.json');
+  ok(await lib.evaluate(() => coverFor({ file: 'x.eski', title: 'given', cover: 'c.jpg' })
+    .then(e => e.title === 'given' && e.cover === 'c.jpg')),
+    'an entry that already carries a title and cover is not downloaded');
   await lib.click('.cover');
   await lib.waitForSelector('.overlay.open');
   ok((await lib.textContent('#overlay .modal p')).includes('browse and share more eskis in the discord'),

@@ -259,11 +259,25 @@ const esc = s => (s??'').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;');
 const IMG_RE = /\.(jpe?g|png|gif|webp|bmp|avif)$/i;
 document.querySelectorAll('#hdr-discord,#ov-discord,#ob-discord').forEach(a=>a.href=DISCORD);
 
-/* list the library/ folder. A directory autoindex listing is the zero-config path
-   (local dev servers, apache/nginx autoindex) and is tried first so nothing 404s
-   there. Hosts without directory listing (e.g. github pages) fall back to an
-   explicit library/index.json the owner adds. */
+/* where the library comes from, in order:
+   1. library/index.json, if present. It is authoritative: it can point at
+      media anywhere (R2) and carry a title and a small cover, which means the
+      grid never downloads a whole comic just to read its manifest.
+   2. a directory autoindex listing, the zero-config path for local dev and
+      apache/nginx. Vercel and GitHub Pages do not autoindex, which is exactly
+      why index.json comes first. */
 async function listEskis(){
+  try{
+    const r = await fetch('library/index.json', {cache:'no-store'});
+    if(r.ok){
+      const j = await r.json();
+      const arr = Array.isArray(j) ? j : (j.entries||j.files||[]);
+      const out = arr.map(e=>typeof e==='string'?{file:e}:e)
+        .filter(e=>e.file)
+        .map(e=>({...e, file: /^(https?:|\/|library\/)/.test(e.file) ? e.file : 'library/'+e.file}));
+      if(out.length) return out;
+    }
+  }catch(e){}
   try{
     const r = await fetch('library/', {cache:'no-store'});
     if(r.ok){
@@ -272,16 +286,6 @@ async function listEskis(){
       if(files.length) return [...new Set(files)].map(f=>({
         file: /^(https?:|\/)/.test(f) ? f : (f.includes('library/') ? f : 'library/'+f.replace(/^\.?\//,''))
       }));
-    }
-  }catch(e){}
-  try{
-    const r = await fetch('library/index.json', {cache:'no-store'});
-    if(r.ok){
-      const j = await r.json();
-      const arr = Array.isArray(j) ? j : (j.entries||j.files||[]);
-      return arr.map(e=>typeof e==='string'?{file:e}:e)
-        .filter(e=>e.file)
-        .map(e=>({...e, file: /^(https?:|\/|library\/)/.test(e.file) ? e.file : 'library/'+e.file}));
     }
   }catch(e){}
   return [];
@@ -356,6 +360,13 @@ async function blobFor(item){
 }
 
 async function coverFor(item){
+  /* if the index already told us the cover and title, trust it and do NOT
+     download the comic. an eski is tens of megabytes; opening the library
+     should not pull every one of them just to read a manifest. */
+  if(item.cover && item.title){
+    return {file:item.file, baseId:item.id || null, series:item.series || null,
+            title:item.title, cover:item.cover};
+  }
   const zip = await JSZip.loadAsync(await blobFor(item));
   let title = item.title, coverBlob = null, baseId = item.baseId || null, series = null;
   const mf = zip.file('.eski/manifest.json');
