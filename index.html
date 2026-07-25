@@ -111,6 +111,11 @@ a:hover{text-decoration:underline;text-underline-offset:3px}
 .mixrow .k{font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:#fff;
   background:var(--accent);border-radius:9px;padding:1px 7px;flex:none}
 .mixrow .n{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chaps{display:flex;gap:6px;flex-wrap:wrap}
+.chap{width:30px;height:30px;border-radius:7px;border:1px solid var(--edge);background:var(--bg-3);
+  color:var(--soft-ink);font-size:12.5px}
+.chap:hover{border-color:var(--accent);color:var(--accent)}
+.chap.on{background:var(--accent);border-color:var(--accent);color:#fff}
 .btn{display:inline-flex;align-items:center;gap:7px;padding:8px 16px;border-radius:7px;
   text-transform:lowercase;font-size:14px;border:1px solid var(--edge);background:var(--bg-3);
   color:var(--soft-ink);cursor:pointer;box-shadow:var(--shadow)}
@@ -331,13 +336,14 @@ async function blobFor(item){
 
 async function coverFor(item){
   const zip = await JSZip.loadAsync(await blobFor(item));
-  let title = item.title, coverBlob = null, baseId = item.baseId || null;
+  let title = item.title, coverBlob = null, baseId = item.baseId || null, series = null;
   const mf = zip.file('.eski/manifest.json');
   if(mf){
     try{
       const m = JSON.parse(await mf.async('string'));
       title = title || m.meta?.title;
       baseId = m.meta?.id || baseId;
+      series = m.meta?.series || null;
       if(m.meta?.cover && zip.file(m.meta.cover)) coverBlob = await zip.file(m.meta.cover).async('blob');
     }catch(e){}
   }
@@ -349,10 +355,20 @@ async function coverFor(item){
     if(imgs[0]) coverBlob = await imgs[0].en.async('blob');
   }
   return {
-    file: item.file, baseId,
+    file: item.file, baseId, series,
     title: title || item.file.split('/').pop().replace(/\.eski$/i,''),
     cover: coverBlob ? URL.createObjectURL(coverBlob) : null
   };
+}
+
+/* every comic whose manifest has been read, so the modal can find the rest of
+   a series without opening every file again */
+let resolved = [];
+function seriesSiblings(entry){
+  if(!entry.series || !entry.series.title) return [];
+  return resolved
+    .filter(e=>e.series && e.series.title === entry.series.title)
+    .sort((a,b)=>(a.series.index||0)-(b.series.index||0));
 }
 
 /* the mix picker: which voices and which score to read this comic with.
@@ -360,18 +376,38 @@ async function coverFor(item){
 function paintMix(entry){
   const box = $('ov-mix');
   const parts = partsForBase(entry.baseId);
-  if(!parts.length){ box.innerHTML = ''; $('ov-read').href = readHref(entry.file); return; }
-  box.innerHTML = '<div class="mix-h">mix</div>' + parts.map(p=>`
-    <label class="mixrow">
-      <input type="checkbox" value="${p.id}" checked>
-      <span class="k">${p.kind === 'vo' ? 'voice' : 'score'}</span>
-      <span class="n">${esc(p.character || p.title || p.name || 'untitled')}</span>
-    </label>`).join('');
+  const sibs = seriesSiblings(entry);
+  const next = sibs[sibs.findIndex(e=>e.file === entry.file) + 1] || null;
+
+  let html = '';
+  if(sibs.length > 1){
+    html += `<div class="mix-h">${esc(entry.series.title)}</div><div class="chaps">` +
+      sibs.map(e=>`<button class="chap${e.file===entry.file?' on':''}" data-f="${esc(e.file)}"
+        title="${esc(e.title)}">${e.series.index||'?'}</button>`).join('') + '</div>';
+  }
+  if(parts.length){
+    html += '<div class="mix-h">mix</div>' + parts.map(p=>`
+      <label class="mixrow">
+        <input type="checkbox" value="${p.id}" checked>
+        <span class="k">${p.kind === 'vo' ? 'voice' : 'score'}</span>
+        <span class="n">${esc(p.character || p.title || p.name || 'untitled')}</span>
+      </label>`).join('');
+  }
+  box.innerHTML = html;
+
   const sync = ()=>{
     const on = [...box.querySelectorAll('input:checked')].map(i=>'idb:'+i.value);
-    $('ov-read').href = readHref(entry.file) + (on.length ? '&with=' + on.map(encodeURIComponent).join(',') : '');
+    // the reader is closed: it cannot look up the library, so hand it the next
+    // chapter's path up front and it can offer "next" at the last page
+    $('ov-read').href = readHref(entry.file)
+      + (on.length ? '&with=' + on.map(encodeURIComponent).join(',') : '')
+      + (next ? '&next=' + encodeURIComponent(next.file) + '&nextTitle=' + encodeURIComponent(next.title) : '');
   };
   box.querySelectorAll('input').forEach(i=>i.addEventListener('change', sync));
+  box.querySelectorAll('.chap').forEach(b=>b.addEventListener('click', ()=>{
+    const e = resolved.find(x=>x.file === b.dataset.f);
+    if(e) open_(e);
+  }));
   sync();
 }
 function open_(entry){
@@ -455,6 +491,7 @@ async function renderGrid(){
     try{
       const entry = await coverFor(it);
       entry.baseId = it.baseId || entry.baseId || null;
+      resolved.push(entry);
       const art = cards[i].querySelector('.art');
       art.innerHTML = entry.cover ? `<img src="${entry.cover}" alt="cover">` : '';
       cards[i].querySelector('.t').textContent = entry.title;

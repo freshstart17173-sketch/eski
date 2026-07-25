@@ -98,7 +98,6 @@ body.focus .settings{position:fixed;right:12px;bottom:72px;z-index:80}
   padding:14px 60px;position:relative;transform-origin:center center;will-change:transform;touch-action:none}
 .pages img{max-height:100%;max-width:100%;object-fit:contain;background:var(--page-bg);
   box-shadow:0 0 0 1px var(--line)}
-.pages.spread img{max-width:calc(50% - 2px)}
 .click-zones{position:absolute;inset:0;display:flex;z-index:8}
 .cz{flex:1;cursor:pointer}
 .nav-arrow{position:absolute;top:50%;transform:translateY(-50%);z-index:9;background:var(--surface);
@@ -344,8 +343,9 @@ footer a{color:var(--accent-soft)}
                onkeydown="if(event.key==='Enter'){goToPage(parseInt(this.value)-1,true);this.blur()}">
       </span>
       <div class="pb-right">
-        <button class="pill" id="spread-btn" data-ico="columns-2" onclick="toggleSpread()" title="two-page spread (s)">spread</button>
         <button class="pill" data-ico="maximize-2" onclick="toggleFocus()" title="fullscreen (f)">focus</button>
+        <a class="pill" id="next-chapter" data-ico="chevron-right" href="#"
+           style="display:none" title="next in this series">next</a>
         <a class="pill" data-ico="library" href="index.html" title="back to the library">library</a>
         <button class="pill icon-btn" id="keys-btn" data-ico="keyboard" onclick="toggleKeys()" title="hotkeys (?)"></button>
         <button class="pill" id="settings-btn" data-ico="settings" onclick="toggleSettings()" title="reader settings">settings</button>
@@ -379,7 +379,6 @@ footer a{color:var(--accent-soft)}
     <kbd>&#8595;</kbd><span>next one-shot on this page</span>
     <kbd>&#8593;</kbd><span>previous one-shot</span>
     <kbd>shift+space</kbd><span>pause / resume the current one-shot</span>
-    <kbd>s</kbd><span>two-page spread</span>
     <kbd>f</kbd><span>fullscreen</span>
     <kbd>m</kbd><span>mute</span>
     <kbd>d</kbd><span>dark mode</span>
@@ -437,7 +436,6 @@ function paintIcons(root){
 
 let current = null;
 let currentPage = 0;
-let spread = false;
 let showSeq = 0;
 
 function toast(msg, kind){
@@ -620,8 +618,6 @@ function openComic(comic){
   const prev = current;
   current = comic;
   if(prev) cleanupComic(prev);
-  spread = false;
-  $('spread-btn').classList.remove('on');
   currentPage = clamp(restorePos(comic), 0, comic.pages.length-1);
   const dl = takeDeepLink(comic);
   if(dl!==null) currentPage = clamp(dl, 0, comic.pages.length-1);
@@ -641,11 +637,9 @@ let scrollBuiltFor = null, scrollRaf = 0, scrollJumping = false, scrollObserver 
 function applyReadingMode(){
   if(!current) return;
   const scroll = effReadingMode()==='scroll';
-  if(scroll && spread){ spread = false; $('spread-btn').classList.remove('on'); }
   $('pages').style.display = scroll ? 'none' : 'flex';
   $('scroll-pages').style.display = scroll ? 'block' : 'none';
   $('click-zones').style.display = scroll ? 'none' : 'flex';
-  $('spread-btn').disabled = scroll;
   if(scroll){
     buildScroller();
     scrollToPage(currentPage, true);
@@ -731,19 +725,10 @@ async function showPage(idx, instant, force){
   }
   const my = ++showSeq;
   const L = $('page-left'), R = $('page-right');
-  const wantSecond = spread && currentPage+1 < current.pages.length;
-  const urls = await Promise.all([ensurePageUrl(currentPage),
-    wantSecond ? ensurePageUrl(currentPage+1) : null]);
+  const urls = await Promise.all([ensurePageUrl(currentPage)]);
   if(my!==showSeq) return; // a newer page turn superseded this one
-  if(wantSecond){
-    L.src = isRTL() ? urls[1] : urls[0];   /* rtl: the earlier page sits on the right */
-    R.src = isRTL() ? urls[0] : urls[1];
-    R.style.display='block';
-    $('pages').classList.add('spread');
-  }else{
-    L.src = urls[0];
-    R.style.display='none'; $('pages').classList.remove('spread');
-  }
+  L.src = urls[0];
+  R.style.display='none';
   prefetchAround(currentPage);
   resetZoom();
   updatePageChrome();
@@ -802,12 +787,12 @@ function zoomAt(factor, cx, cy){
 
 function updatePageChrome(){
   if(!current) return;
-  const shown = spread && effReadingMode()==='pages' && current.pages[currentPage+1]
-    ? `${currentPage+1}–${currentPage+2}` : `${currentPage+1}`;
+  const shown = `${currentPage+1}`;
   $('vt-info-text').textContent = `page ${shown} of ${current.pages.length}`;
   $('page-jump').value = currentPage+1;
   $('page-jump').max = current.pages.length;
   paintChapters();
+  paintNextChapter();
   updateTimelineCursor();
   savePos();
   updateHash();
@@ -828,17 +813,28 @@ function paintChapters(){
   }
   sel.value = here.page;
 }
-function nextPage(){ showPage(currentPage + (spread?2:1)); }
-function prevPage(){ showPage(currentPage - (spread?2:1)); }
+/* the library hands the next chapter's path in ?next=, because the reader is
+   closed and cannot go looking for siblings itself. it only surfaces near the
+   end, where it is actually wanted. */
+function paintNextChapter(){
+  const b = $('next-chapter');
+  if(!b || !current) return;
+  const q = new URLSearchParams(location.search);
+  const nx = q.get('next');
+  const near = currentPage >= current.pages.length - 2;
+  if(!nx || !near){ b.style.display = 'none'; return; }
+  b.style.display = '';
+  b.textContent = q.get('nextTitle') || 'next';
+  b.insertAdjacentHTML('afterbegin', iconSvg('chevron-right'));
+  b.href = 'read.html?read=' + encodeURIComponent(nx);
+}
+function nextPage(){ showPage(currentPage + 1); }
+function prevPage(){ showPage(currentPage - 1); }
 function goToPage(i, force){ if(!isNaN(i)) showPage(i, false, force); }
 function navLeft(){ if(isRTL()) nextPage(); else prevPage(); }
 function navRight(){ if(isRTL()) prevPage(); else nextPage(); }
 function czLeft(){ navLeft(); }
 function czRight(){ navRight(); }
-function toggleSpread(){
-  if(effReadingMode()==='scroll') return;
-  spread = !spread; $('spread-btn').classList.toggle('on', spread); showPage(currentPage);
-}
 function toggleFocus(){
   const on = !document.body.classList.contains('focus');
   document.body.classList.toggle('focus', on);
@@ -927,12 +923,8 @@ function colorFor(comic, track){
   const music = comic.tracks.filter(t=>t.type==='music');
   return TRACK_COLORS[music.indexOf(track) % TRACK_COLORS.length];
 }
-/* in spread the leftmost visible page decides the audio */
-function audioPage(){
-  if(spread && effReadingMode()==='pages' && isRTL() && currentPage+1 < current.pages.length)
-    return currentPage+1;
-  return currentPage;
-}
+/* one page is visible at a time, so it owns the audio outright */
+function audioPage(){ return currentPage; }
 
 /* ---------------- page bar ---------------- */
 function buildTimeline(){
@@ -1616,7 +1608,6 @@ document.addEventListener('keydown', e=>{
     case 'ArrowRight': navRight(); break;
     case 'ArrowLeft': navLeft(); break;
     case 'm': case 'M': toggleMute(); break;
-    case 's': case 'S': toggleSpread(); break;
     case 'f': case 'F': toggleFocus(); break;
     case 'Home': goToPage(0, true); break;
     case 'End': goToPage(current.pages.length-1, true); break;

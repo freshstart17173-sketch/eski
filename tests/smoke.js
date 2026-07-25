@@ -133,17 +133,15 @@ function ok(cond, name, extra) {
   ok(await page.evaluate(() => document.getElementById('pb-tl').classList.contains('rtl')),
     'page bar flipped');
 
-  console.log('reader: spread precedence (leftmost page wins)');
-  await page.evaluate(() => goToPage(2, true)); // pages 3 and 4; page 4 triggers track 2
-  await page.evaluate(() => { if (!document.getElementById('spread-btn').classList.contains('on')) toggleSpread(); });
-  await page.waitForFunction(() => document.getElementById('pb-track').textContent.includes('second song'));
-  ok(true, 'rtl spread: leftmost (page 4) track plays');
+  console.log('reader: spread mode is gone');
+  ok(await page.evaluate(() => !document.getElementById('spread-btn') &&
+    typeof window.toggleSpread === 'undefined'),
+    'no spread button and no toggleSpread');
+  ok(await page.evaluate(() => audioPage() === currentPage),
+    'one visible page owns the audio outright');
   await page.click('#settings-btn');
   await page.click('#set-dir button[data-m="ltr"]');
   await page.click('#settings-btn');
-  await page.waitForFunction(() => document.getElementById('pb-track').textContent.includes('first song'));
-  ok(true, 'ltr spread: leftmost (page 3) track plays');
-  await page.evaluate(() => { if (document.getElementById('spread-btn').classList.contains('on')) toggleSpread(); });
   await page.click('#settings-btn');
   await page.click('#set-dir button[data-m="file"]');
   await page.click('#settings-btn');
@@ -164,7 +162,6 @@ function ok(cond, name, extra) {
   await page.click('#settings-btn');
   ok(await page.isVisible('#scroll-pages'), 'scroller visible');
   ok(await page.isHidden('#click-zones'), 'click zones off');
-  ok(await page.evaluate(() => document.getElementById('spread-btn').disabled), 'spread disabled');
   // pages lazy-load, so scrollHeight grows as images arrive: re-apply the scroll
   // on every poll instead of once, or the midline can settle on an earlier page
   await page.waitForFunction(() => {

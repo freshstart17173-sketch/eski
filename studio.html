@@ -176,6 +176,39 @@ h4{margin:0 0 8px;font-size:11px;letter-spacing:.13em;color:var(--muted);font-we
 .rp-note{color:var(--muted);font-size:11.5px}
 .rp-head button{margin-left:auto;border:0;background:transparent;color:var(--muted);padding:2px}
 .readerprev iframe{flex:1;border:0;width:100%;background:var(--bg-0)}
+/* multi-select + per-item menu */
+.chip-aud, .chip-img{position:relative}
+.chip-aud.picked, .chip-img.picked, .pgcard.picked{outline:2px solid var(--accent);outline-offset:-2px}
+.chip-aud .dots{position:absolute;top:3px;right:3px;width:18px;height:18px;border:0;border-radius:4px;
+  background:var(--bg-1);color:var(--muted);opacity:0;display:flex;align-items:center;
+  justify-content:center;padding:0;font-size:13px;line-height:1}
+.chip-aud:hover .dots{opacity:1}
+.chip-aud .dots:hover{color:var(--accent)}
+.menu{position:fixed;z-index:210;background:var(--bg-1);border:1px solid var(--edge-strong);
+  border-radius:8px;box-shadow:var(--shadow-lg);padding:4px;display:none;min-width:150px}
+.menu.open{display:block}
+.menu button{display:flex;align-items:center;gap:7px;width:100%;border:0;background:transparent;
+  color:var(--soft-ink);font-size:12.5px;padding:6px 9px;border-radius:5px;text-align:left}
+.menu button:hover{background:var(--bg-3);color:var(--accent)}
+.menu button.danger:hover{color:#c1362b}
+.menu .sep{height:1px;background:var(--edge);margin:4px 2px}
+/* trim */
+.trim{position:fixed;inset:auto;left:50%;top:50%;transform:translate(-50%,-50%);z-index:215;
+  width:min(520px,92vw);background:var(--bg-1);border:1px solid var(--edge-strong);border-radius:12px;
+  box-shadow:var(--shadow-lg);padding:16px;display:none}
+.trim.open{display:block}
+.trim h4{margin:0 0 4px}
+.trim .sub{font-size:11.5px;color:var(--muted);margin-bottom:12px}
+.trim-wave{position:relative;height:92px;background:var(--bg-0);border:1px solid var(--edge);
+  border-radius:8px;overflow:hidden;cursor:ew-resize}
+.trim-wave canvas{width:100%;height:100%;display:block}
+.trim-mask{position:absolute;top:0;bottom:0;background:rgba(0,0,0,.45);pointer-events:none}
+.trim-handle{position:absolute;top:0;bottom:0;width:9px;margin-left:-4px;cursor:ew-resize;
+  display:flex;align-items:center;justify-content:center}
+.trim-handle::before{content:'';width:3px;height:100%;background:var(--accent)}
+.trim-foot{display:flex;align-items:center;gap:10px;margin-top:12px}
+.trim-foot .nums{font-size:12px;color:var(--muted);flex:1}
+.trim-foot .nums b{color:var(--ink);font-weight:500}
 .drawer .duo>div{flex:1}
 .drawer-head{display:flex;align-items:center;margin-bottom:14px}
 .drawer-head h4{margin:0}
@@ -484,6 +517,26 @@ h4{margin:0 0 8px;font-size:11px;letter-spacing:.13em;color:var(--muted);font-we
 <input type="file" id="in-eski" accept=".eski,.zip,.cbz" style="display:none"
        onchange="if(this.files[0])openEski(this.files[0]);this.value=''">
 
+<div class="menu" id="bay-menu"></div>
+
+<div class="trim" id="trim">
+  <h4>trim</h4>
+  <div class="sub" id="trim-name"></div>
+  <div class="trim-wave" id="trim-wave">
+    <canvas id="trim-cv" width="1000" height="184"></canvas>
+    <div class="trim-mask" id="trim-mask-l"></div>
+    <div class="trim-mask" id="trim-mask-r"></div>
+    <div class="trim-handle" id="trim-h-l"></div>
+    <div class="trim-handle" id="trim-h-r"></div>
+  </div>
+  <div class="trim-foot">
+    <span class="nums" id="trim-nums"></span>
+    <button class="pill" onclick="trimPreview()" data-ico="play">listen</button>
+    <button class="pill" onclick="closeTrim()">cancel</button>
+    <button class="pill primary" onclick="applyTrim()">apply</button>
+  </div>
+</div>
+
 <div class="readerprev" id="readerprev">
   <div class="rp-head">
     <span data-ico="play"></span>preview
@@ -524,6 +577,9 @@ const ICONS = {
   "zoom-out": "<circle cx=\"11\" cy=\"11\" r=\"8\" /> <line x1=\"21\" x2=\"16.65\" y1=\"21\" y2=\"16.65\" /> <line x1=\"8\" x2=\"14\" y1=\"11\" y2=\"11\" />",
   "play": "<path d=\"M5 5a2 2 0 0 1 3.008-1.728l11.997 6.998a2 2 0 0 1 .003 3.458l-12 7A2 2 0 0 1 5 19z\" />",
   "square": "<rect width=\"18\" height=\"18\" x=\"3\" y=\"3\" rx=\"2\" />",
+  "scissors": "<circle cx=\"6\" cy=\"6\" r=\"3\" /> <path d=\"M8.12 8.12 12 12\" /> <path d=\"M20 4 8.12 15.88\" /> <circle cx=\"6\" cy=\"18\" r=\"3\" /> <path d=\"M14.8 14.8 20 20\" />",
+  "pencil": "<path d=\"M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z\" /> <path d=\"m15 5 4 4\" />",
+  "copy": "<rect width=\"14\" height=\"14\" x=\"8\" y=\"8\" rx=\"2\" ry=\"2\" /> <path d=\"M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2\" />",
   "trash-2": "<path d=\"M10 11v6\" /> <path d=\"M14 11v6\" /> <path d=\"M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6\" /> <path d=\"M3 6h18\" /> <path d=\"M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2\" />",
   "chevron-left": "<path d=\"m15 18-6-6 6-6\" />",
   "chevron-right": "<path d=\"m9 18 6-6-6-6\" />",
@@ -1089,13 +1145,21 @@ function renderBay(){
     const el = document.createElement('div');
     el.className = 'chip-aud' + (used?' used':''); el.draggable = true;
     const playing = previewKey === 'aud:'+aud;
-    el.innerHTML = `<div class="t">${esc((a.fileName||'audio').replace(/\.[^.]+$/,''))}</div>
+    if(pickedAud.has(aud)) el.classList.add('picked');
+    el.innerHTML = `<button class="dots" title="options">&#8942;</button>
+      <div class="t">${esc((a.fileName||'audio').replace(/\.[^.]+$/,''))}</div>
       <canvas width="150" height="20"></canvas>
       <div class="m"><button class="mini-btn" data-ico="${playing?'square':'play'}"
         title="${playing?'stop':'listen'}"></button>${a.duration?a.duration.toFixed(1)+'s':'…'}${used?' · placed':''}</div>`;
-    el.querySelector('button').addEventListener('click', e=>{
+    el.querySelector('.dots').addEventListener('click', e=>{
+      e.stopPropagation();
+      const r = e.target.getBoundingClientRect();
+      openBayMenu(aud, r.right, r.bottom+4);
+    });
+    el.querySelector('.mini-btn').addEventListener('click', e=>{
       e.stopPropagation(); previewAudio(aud, 'aud:'+aud, 0);
     });
+    el.addEventListener('click', e=>{ if(!e.target.closest('button')) pickAud(aud, e); });
     el.addEventListener('dragstart', e=>{ e.dataTransfer.setData('text/eski-aud', aud); showTrash(); });
     el.addEventListener('dragend', hideTrash);
     if(a.peaks) drawChipWave(el.querySelector('canvas'), a);
@@ -1126,6 +1190,165 @@ function previewAudio(aud, key, startAt){
   previewRepaint();
 }
 function previewTrack(t){ if(t && t.aud) previewAudio(t.aud, 'tid:'+t.tid, t.start||0); }
+
+/* ---------------- multi-select ----------------
+   click picks one, ctrl adds, shift takes a range. batch delete then works on
+   the whole picked set instead of one item at a time. */
+let pickedAud = new Set(), pickedPage = new Set(), lastAud = null, lastPage = null;
+function clearPicks(){ pickedAud.clear(); pickedPage.clear(); }
+function pickFrom(list, set, last, id, e){
+  if(e.shiftKey && last != null){
+    const a = list.indexOf(last), b = list.indexOf(id);
+    if(a >= 0 && b >= 0){
+      for(let i = Math.min(a,b); i <= Math.max(a,b); i++) set.add(list[i]);
+      return last;
+    }
+  }
+  if(e.ctrlKey || e.metaKey){ set.has(id) ? set.delete(id) : set.add(id); return id; }
+  set.clear(); set.add(id); return id;
+}
+function pickAud(aud, e){ lastAud = pickFrom(audioPool, pickedAud, lastAud, aud, e); pickedPage.clear(); render(); }
+function pickPage(i, e){
+  const all = cState.pages.map((p,ix)=>ix);
+  lastPage = pickFrom(all, pickedPage, lastPage, i, e); pickedAud.clear(); render();
+}
+function deletePicked(){
+  if(pickedAud.size){
+    snap();
+    [...pickedAud].forEach(a=>removePoolAudio(a));
+    pickedAud.clear();
+    return true;
+  }
+  if(pickedPage.size && canPages()){
+    snap();
+    [...pickedPage].sort((a,b)=>b-a).forEach(i=>removePage(i));
+    pickedPage.clear();
+    return true;
+  }
+  return false;
+}
+
+/* ---------------- per-item menu ---------------- */
+let menuAud = null;
+function openBayMenu(aud, x, y){
+  menuAud = aud;
+  const a = audioStore[aud];
+  const used = cState.tracks.filter(t=>t.aud===aud);
+  const m = $('bay-menu');
+  m.innerHTML = `
+    <button data-a="trim"><span data-ico="scissors"></span>trim</button>
+    <button data-a="rename"><span data-ico="pencil"></span>rename</button>
+    <button data-a="dup"><span data-ico="copy"></span>duplicate</button>
+    <button data-a="dl"><span data-ico="download"></span>download</button>
+    <button data-a="uses"><span data-ico="search"></span>reveal usages (${used.length})</button>
+    <div class="sep"></div>
+    <button data-a="del" class="danger"><span data-ico="trash-2"></span>delete</button>`;
+  m.style.left = Math.min(x, innerWidth-170) + 'px';
+  m.style.top  = Math.min(y, innerHeight-220) + 'px';
+  m.classList.add('open');
+  paintIcons(m);
+  m.querySelectorAll('button').forEach(b=>b.addEventListener('click', ()=>{
+    const act = b.dataset.a;
+    closeBayMenu();
+    if(act==='trim') openTrim(aud);
+    else if(act==='rename'){
+      const n = prompt('name for this clip', a.fileName || '');
+      if(n){ a.fileName = n; cState.tracks.forEach(t=>{ if(t.aud===aud) t.title = n.replace(/\.[^.]+$/,'').toLowerCase(); }); render(); }
+    }else if(act==='dup'){
+      const id = uid('a');
+      audioStore[id] = {...a, url:URL.createObjectURL(a.blob), fileName:'copy of '+(a.fileName||'clip')};
+      audioPool.push(id); render();
+    }else if(act==='dl'){
+      const el = document.createElement('a');
+      el.href = a.url; el.download = a.fileName || 'clip'; el.click();
+    }else if(act==='uses'){
+      if(!used.length) return toast('not placed anywhere yet');
+      openQueue(used[0].from);
+      toast(`used on page${used.length>1?'s':''} ` + [...new Set(used.map(t=>t.from))].join(', '));
+    }else if(act==='del') removePoolAudio(aud);
+  }));
+}
+function closeBayMenu(){ $('bay-menu').classList.remove('open'); menuAud = null; }
+document.addEventListener('pointerdown', e=>{
+  if(!e.target.closest('#bay-menu') && !e.target.closest('.dots')) closeBayMenu();
+});
+
+/* ---------------- trim (non-destructive) ----------------
+   sets an in and an out point on the SAMPLE. every track already using the
+   clip picks the new points up, because "trim this clip" is what the user
+   means. the audio is never re-encoded: there is no encoder in the project. */
+let trimAud = null, trimIn = 0, trimOut = 0;
+function openTrim(aud){
+  const a = audioStore[aud];
+  if(!a || !a.peaks){ toast('still decoding that clip', 'error'); return; }
+  trimAud = aud;
+  trimIn = a.trimStart || 0;
+  trimOut = a.trimEnd || a.duration || 0;
+  $('trim-name').textContent = a.fileName || 'clip';
+  $('trim').classList.add('open');
+  drawTrim();
+}
+function closeTrim(){ $('trim').classList.remove('open'); trimAud = null; previewStop(); }
+function drawTrim(){
+  const a = audioStore[trimAud]; if(!a) return;
+  const cv = $('trim-cv'), cx = cv.getContext('2d');
+  cx.clearRect(0,0,cv.width,cv.height);
+  cx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#5B7A6B';
+  const N = a.peaks.length, W = cv.width, H = cv.height;
+  for(let x=0;x<W;x++){
+    const h = Math.max(2, a.peaks[Math.floor(x/W*N)]*(H-6));
+    cx.fillRect(x, (H-h)/2, 1, h);
+  }
+  const dur = a.duration || 1;
+  const pct = t => clamp(t/dur*100, 0, 100);
+  $('trim-mask-l').style.left = '0%';
+  $('trim-mask-l').style.width = pct(trimIn)+'%';
+  $('trim-mask-r').style.left = pct(trimOut)+'%';
+  $('trim-mask-r').style.width = (100-pct(trimOut))+'%';
+  $('trim-h-l').style.left = pct(trimIn)+'%';
+  $('trim-h-r').style.left = pct(trimOut)+'%';
+  $('trim-nums').innerHTML = `in <b>${trimIn.toFixed(2)}s</b> · out <b>${trimOut.toFixed(2)}s</b> · keeps <b>${Math.max(0,trimOut-trimIn).toFixed(2)}s</b>`;
+}
+function trimPreview(){ if(trimAud) previewAudio(trimAud, 'trim', trimIn); }
+function applyTrim(){
+  const a = audioStore[trimAud]; if(!a) return;
+  snap();
+  a.trimStart = trimIn;
+  a.trimEnd = trimOut < (a.duration||0) ? trimOut : null;
+  cState.tracks.forEach(t=>{
+    if(t.aud !== trimAud) return;
+    t.start = trimIn;
+    t.end = a.trimEnd;
+  });
+  closeTrim(); render();
+  toast('trimmed ' + (a.fileName||'clip'));
+}
+(function(){
+  const wave = $('trim-wave');
+  const at = e =>{
+    const a = audioStore[trimAud]; if(!a) return 0;
+    const r = wave.getBoundingClientRect();
+    return clamp((e.clientX-r.left)/r.width, 0, 1) * (a.duration||1);
+  };
+  let drag = null;
+  const down = side => e =>{
+    e.preventDefault(); e.stopPropagation();
+    drag = side; wave.setPointerCapture(e.pointerId);
+  };
+  $('trim-h-l').addEventListener('pointerdown', down('l'));
+  $('trim-h-r').addEventListener('pointerdown', down('r'));
+  wave.addEventListener('pointerdown', e=>{ if(!drag){ drag = 'l'; trimIn = at(e); drawTrim(); } });
+  wave.addEventListener('pointermove', e=>{
+    if(!drag) return;
+    const t = at(e);
+    if(drag==='l') trimIn = Math.min(t, trimOut-0.05);
+    else trimOut = Math.max(t, trimIn+0.05);
+    drawTrim();
+  });
+  const up = ()=>{ drag = null; };
+  wave.addEventListener('pointerup', up);
+  wave.addEventListener('pointercancel', up);
+})();
 
 function bayZoom(dir){ bayImgW = clamp(bayImgW + dir*12, 32, 96); renderBay(); }
 function pageZoom(dir){ pgW = clamp(pgW + dir*16, 56, 180); renderPages(); }
@@ -1243,7 +1466,12 @@ function renderPages(){
     el.querySelector('.x').addEventListener('click', ev=>{ ev.stopPropagation(); removePage(i); });
     const blk = el.querySelector('.osblock');
     if(blk) blk.addEventListener('click', ev=>{ ev.stopPropagation(); openQueue(page); });
-    el.addEventListener('click', ()=>openQueue(page));
+    if(pickedPage.has(i)) el.classList.add('picked');
+    el.addEventListener('click', e=>{
+      if(e.shiftKey || e.ctrlKey || e.metaKey){ pickPage(i, e); return; }
+      pickedPage.clear();
+      openQueue(page);
+    });
     el.addEventListener('dragstart', e=>{ pageDragIdx=i; el.classList.add('dragging');
       e.dataTransfer.setData('text/eski-page', i); e.dataTransfer.effectAllowed='move'; showTrash(); });
     el.addEventListener('dragend', ()=>{ pageDragIdx=null; el.classList.remove('dragging'); hideTrash(); });
@@ -1537,8 +1765,17 @@ document.addEventListener('keydown', e=>{
   if(mod && (e.key==='c'||e.key==='C')){ if(sel) clipboard={...trackByTid(sel)}; return; }
   if(mod && (e.key==='v'||e.key==='V')){ pasteClip(); return; }
   if(mod && (e.key==='e'||e.key==='E')){ e.preventDefault(); exportEski(); return; }
-  if(e.key==='Delete'||e.key==='Backspace'){ if(sel) removeTrack(sel); return; }
-  if(e.key==='Escape'){ sel=null; closeSettings(); render(); return; }
+  if(e.key==='Delete'||e.key==='Backspace'){
+    if(deletePicked()) return;          // a multi-selection wins over a track
+    if(sel) removeTrack(sel);
+    return;
+  }
+  if(e.key==='Escape'){
+    if($('trim').classList.contains('open')){ closeTrim(); return; }
+    if($('readerprev').classList.contains('open')){ closePreview(); return; }
+    closeBayMenu(); clearPicks();
+    sel=null; closeSettings(); render(); return;
+  }
   if(e.key==='ArrowLeft'){ stepPreview(-1); }
   if(e.key==='ArrowRight'){ stepPreview(1); }
 });
