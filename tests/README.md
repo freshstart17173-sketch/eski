@@ -5,6 +5,9 @@ home), `read.html` (reader), `composer.html`. cdn requests
 (jszip, pdf.js, google fonts) are route-intercepted so the suite runs
 without egress. zero console errors is a hard assertion.
 
+fixtures, vendor output and `dl/` are generated and gitignored. if a branch
+switch or merge ever wipes `tests/fixtures/`, just re-run `make-fixtures.js`.
+
 ## setup (once)
 
 ```

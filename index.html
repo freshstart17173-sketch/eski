@@ -116,11 +116,9 @@ a:hover{text-decoration:underline;text-underline-offset:3px}
 .modal.wide{max-width:460px;text-align:left}
 .modal.wide .t{margin:0 0 4px;font-size:20px}
 .ob-sub{color:var(--muted);font-size:13.5px;margin:0 0 18px}
-.ob-list{display:grid;gap:14px;margin:0 0 20px}
-.ob-item{display:flex;gap:12px;align-items:flex-start}
-.ob-num{flex:none;width:22px;height:22px;border-radius:50%;background:var(--accent);color:#fff;
-  font-size:12px;display:flex;align-items:center;justify-content:center;margin-top:1px}
-.ob-item b{font-weight:500;text-transform:lowercase}
+.ob-list{display:grid;gap:16px;margin:0 0 22px}
+.ob-item{border-left:2px solid var(--accent);padding-left:12px}
+.ob-item b{display:block;font-weight:500;text-transform:lowercase;margin-bottom:2px}
 .ob-item span{display:block;color:var(--soft-ink);font-size:13.5px;line-height:1.45}
 .modal.wide .actions{justify-content:flex-start}
 footer{background:var(--bg-1);color:var(--muted);padding:24px 20px;font-size:13.5px;
@@ -170,18 +168,14 @@ footer .brand{font-size:22px;color:var(--accent)}
     <div class="t">how eski works</div>
     <p class="ob-sub">comics, scored and voiced.</p>
     <div class="ob-list">
-      <div class="ob-item"><span class="ob-num">1</span>
-        <div><b>the soundtrack follows the page</b>
-          <span>music is mapped to page ranges, so turning a page changes the score.</span></div></div>
-      <div class="ob-item"><span class="ob-num">2</span>
-        <div><b>dialogue is voiced</b>
-          <span>each character is performed by a voice actor. sound effects sit alongside them.</span></div></div>
-      <div class="ob-item"><span class="ob-num">3</span>
-        <div><b>you pick the mix</b>
-          <span>swap in a different voice cast or a different soundtrack, or read it silent.</span></div></div>
-      <div class="ob-item"><span class="ob-num">4</span>
-        <div><b>anyone can contribute</b>
-          <span>open the composer to score a comic, voice a character, or publish your own.</span></div></div>
+      <div class="ob-item"><b>the soundtrack follows the page</b>
+        <span>music is mapped to page ranges, so turning a page changes the score.</span></div>
+      <div class="ob-item"><b>dialogue is voiced</b>
+        <span>each character is performed by a voice actor. sound effects sit alongside them.</span></div>
+      <div class="ob-item"><b>you pick the mix</b>
+        <span>swap in a different cast or a different soundtrack, or read it silent.</span></div>
+      <div class="ob-item"><b>anyone can contribute</b>
+        <span>voice a character, score a comic, or publish your own.</span></div>
     </div>
     <div class="actions">
       <button class="btn primary" onclick="closeOnboarding()">start reading</button>
