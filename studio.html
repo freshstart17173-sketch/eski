@@ -165,6 +165,17 @@ h4{margin:0 0 8px;font-size:11px;letter-spacing:.13em;color:var(--muted);font-we
 .drawer textarea{resize:vertical;min-height:52px}
 .drawer .duo{display:flex;gap:10px}
 .drawer-sep{height:1px;background:var(--edge);margin:16px 0 14px}
+/* reader preview */
+.readerprev{position:fixed;inset:24px;z-index:200;display:none;flex-direction:column;
+  background:var(--bg-1);border:1px solid var(--edge-strong);border-radius:12px;
+  box-shadow:var(--shadow-lg);overflow:hidden}
+.readerprev.open{display:flex}
+.rp-head{display:flex;align-items:center;gap:8px;padding:9px 12px;border-bottom:1px solid var(--edge);
+  font-size:13px;text-transform:lowercase}
+.rp-head .ico{width:16px;height:16px;color:var(--accent)}
+.rp-note{color:var(--muted);font-size:11.5px}
+.rp-head button{margin-left:auto;border:0;background:transparent;color:var(--muted);padding:2px}
+.readerprev iframe{flex:1;border:0;width:100%;background:var(--bg-0)}
 .drawer .duo>div{flex:1}
 .drawer-head{display:flex;align-items:center;margin-bottom:14px}
 .drawer-head h4{margin:0}
@@ -307,6 +318,7 @@ h4{margin:0 0 8px;font-size:11px;letter-spacing:.13em;color:var(--muted);font-we
   <button class="pill" data-ico="folder-open" onclick="document.getElementById('in-eski').click()">open .eski</button>
   <span class="sp"></span>
   <button class="pill" data-ico="settings" onclick="openSettings()">settings</button>
+  <button class="pill" data-ico="play" id="preview-btn" onclick="previewInReader()">preview</button>
   <button class="pill primary" data-ico="download" id="export-btn" onclick="exportCurrent()">export</button>
 </header>
 
@@ -471,6 +483,15 @@ h4{margin:0 0 8px;font-size:11px;letter-spacing:.13em;color:var(--muted);font-we
        onchange="addFiles([...this.files]);this.value=''">
 <input type="file" id="in-eski" accept=".eski,.zip,.cbz" style="display:none"
        onchange="if(this.files[0])openEski(this.files[0]);this.value=''">
+
+<div class="readerprev" id="readerprev">
+  <div class="rp-head">
+    <span data-ico="play"></span>preview
+    <span class="rp-note">the real reader, on a snapshot of this eski</span>
+    <button data-ico="x" onclick="closePreview()" title="close"></button>
+  </div>
+  <iframe id="rp-frame" src="about:blank" title="reader preview"></iframe>
+</div>
 
 <div class="trash-bar" id="trash-bar"><span data-ico="trash-2" class="ico"></span><span>drop here to remove</span></div>
 <div class="loading" id="loading"><div class="spinner"></div><div class="lbl" id="loading-lbl">working</div></div>
@@ -795,7 +816,8 @@ async function openEski(file){
             character: t.character || null,
             attachTo: t.attachTo || null, offset: t.offset || 0,
             title:t.title||(type==='oneshot'? (isSlot?'':'sound') :'untitled track'),
-            from:t.sync?.from??1, start:t.sync?.start??0, volume:t.volume??100});
+            from:t.sync?.from??1, start:t.sync?.start??0, end:t.sync?.end||null,
+            volume:t.volume??100});
           if(type==='oneshot') osBlocks.add(t.sync?.from??1);
           if(aud) decodePeaks(aud);
         }
@@ -829,7 +851,7 @@ function addOneshot(aud, page, role, character){
   cState.tracks.push({tid:uid('t'), aud, type:'oneshot',
     role: role || 'line', character: character || null, attachTo:null, offset:0,
     title:(a?.fileName||'sound').replace(/\.[^.]+$/,'').toLowerCase(),
-    from:p, start:0, volume:100});
+    from:p, start:0, end:null, volume:100});
   render();
 }
 
@@ -1353,8 +1375,15 @@ function renderInfo(){
         knobs.className = 'songknobs';
         knobs.innerHTML = `<label>vol<input type="range" min="0" max="100" value="${t.volume}"></label>
           <label>starts p.<input type="number" class="pg" min="1" max="${pageCount()}" value="${t.from}"></label>
-          <label>in<input type="number" class="inp" min="0" step="0.5" value="${t.start||0}">s</label>`;
-        const [vol, pg, inp] = knobs.querySelectorAll('input');
+          <label>in<input type="number" class="inp" min="0" step="0.5" value="${t.start||0}">s</label>
+          <label>out<input type="number" class="outp" min="0" step="0.5"
+                 placeholder="end" value="${t.end||''}">s</label>`;
+        const [vol, pg, inp, outp] = knobs.querySelectorAll('input');
+        outp.addEventListener('change', e=>{
+          snap();
+          const v = parseFloat(e.target.value);
+          t.end = (isFinite(v) && v > 0) ? v : null;
+        });
         vol.addEventListener('input', e=>{ t.volume = parseInt(e.target.value); });
         pg.addEventListener('change', e=>{
           snap(); t.from = clamp(parseInt(e.target.value)||1, 1, pageCount()); openQueue(t.from);
@@ -1755,7 +1784,7 @@ async function exportPart(kind){
         const o = { id: t.tid, title: t.title, source: 'local',
           file: t.aud ? (packed[t.aud]||null) : null, type: t.type,
           volume: t.volume, gainDb: gains[t.tid] || 0,
-          sync: {from: t.from, start: t.start} };
+          sync: {from: t.from, start: t.start, end: t.end || undefined} };
         if(t.type === 'oneshot'){
           o.role = t.role || 'line';
           if(o.role === 'line') o.character = t.character || null;
@@ -1780,10 +1809,10 @@ function exportCurrent(){
   if(editMode === 'soundtrack') return exportPart('soundtrack');
   return exportEski();
 }
-async function exportEski(){
+async function exportEski(asBlob){
   if(!pageCount()){ toast('add some pages first', 'error'); return; }
   try{
-    loading(true, 'packing your eski');
+    loading(true, asBlob ? 'building preview' : 'packing your eski');
     $('export-btn').disabled=true;
     await new Promise(r=>setTimeout(r,30)); // let the overlay paint before the heavy zip work
     const zip = new JSZip();
@@ -1823,7 +1852,7 @@ async function exportEski(){
         const o = { id:t.tid, title:t.title, source:'local',
           file: hasAudio(t)?(packed[t.aud]||null):null, type:t.type, volume:t.volume,
           gainDb: gains[t.tid] || 0,
-          sync:{from:t.from, start:t.start} };
+          sync:{from:t.from, start:t.start, end:t.end || undefined} };
         if(t.type==='oneshot'){
           o.role = t.role || 'line';
           if(o.role==='line') o.character = t.character || null;
@@ -1837,6 +1866,7 @@ async function exportEski(){
     const ci=clamp(cState.coverIndex,0,pageCount()-1);
     zip.file('.eski/cover.'+extOf(pageNames[ci],'jpg'), cState.pages[ci].blob);
     const blob=await zip.generateAsync({type:'blob', compression:'DEFLATE'});
+    if(asBlob) return blob;
     const aEl=document.createElement('a');
     aEl.href=URL.createObjectURL(blob);
     aEl.download=((cState.meta.title||'untitled').toLowerCase().replace(/[^a-z0-9]+/g,'-')
@@ -1846,6 +1876,30 @@ async function exportEski(){
     toast('exported '+aEl.download);
   }catch(err){ toast('export failed: '+err.message, 'error'); }
   finally{ $('export-btn').disabled=false; loading(false); }
+}
+
+/* ---------------- preview in the real reader ----------------
+   pack the current state to a blob and hand it to read.html in an iframe.
+   the reader already accepts ?read=<url> and blob: urls are fetchable, so this
+   is the actual reader engine (ducking, chains, queues and all) rather than a
+   second implementation that would drift. */
+let previewUrl = null;
+async function previewInReader(){
+  if(!pageCount()){ toast('add some pages first', 'error'); return; }
+  const blob = await exportEski(true);
+  if(!blob) return;
+  if(previewUrl) URL.revokeObjectURL(previewUrl);
+  previewUrl = URL.createObjectURL(blob);
+  const slug = (cState.meta.title||'untitled').toLowerCase()
+    .replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'') || 'untitled';
+  $('rp-frame').src = 'read.html?read=' + encodeURIComponent(previewUrl)
+    + '#' + slug + '/page=' + ((qpPage||1));
+  $('readerprev').classList.add('open');
+}
+function closePreview(){
+  $('readerprev').classList.remove('open');
+  $('rp-frame').src = 'about:blank';       // stop its audio
+  if(previewUrl){ URL.revokeObjectURL(previewUrl); previewUrl = null; }
 }
 
 /* ---------------- theme ---------------- */

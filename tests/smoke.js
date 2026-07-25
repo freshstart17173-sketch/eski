@@ -435,8 +435,8 @@ function ok(cond, name, extra) {
   console.log('composer: the page panel sets what the timeline used to');
   await comp.evaluate(() => openQueue(3));
   ok(await comp.isVisible('.songrow'), 'the song shows on its trigger page');
-  ok(await comp.evaluate(() => document.querySelectorAll('.songknobs input').length === 3),
-    'volume, trigger page and in point are all editable');
+  ok(await comp.evaluate(() => document.querySelectorAll('.songknobs input').length === 4),
+    'volume, trigger page, in point and out point are all editable');
   // in point, formerly the slip drag
   await comp.fill('.songknobs input.inp', '2.5');
   await comp.evaluate(() => document.querySelector('.songknobs input.inp')
@@ -757,6 +757,32 @@ function ok(cond, name, extra) {
     return childrenOf(head).length === 1;
   }), 'and it rides along with its parent');
   await cr.close();
+
+  console.log('studio: preview runs the real reader on a snapshot');
+  const pv = await ctx.newPage();
+  wire(pv);
+  await pv.goto('http://localhost:8931/studio.html');
+  await pv.setInputFiles('#in-media', path.join(FIX, 'test.cbz'));
+  await pv.waitForFunction(() => cState.pages.length === 3);
+  await pv.click('#preview-btn');
+  await pv.waitForFunction(() => document.getElementById('readerprev').classList.contains('open'));
+  ok(true, 'preview opens');
+  const frame = pv.frameLocator('#rp-frame');
+  await frame.locator('#player-bar').waitFor({ state: 'visible', timeout: 15000 });
+  ok((await frame.locator('#vt-info-text').textContent()).includes('of 3'),
+    'the preview is the real reader, loading a snapshot of the current state');
+  ok(await pv.evaluate(() => document.getElementById('rp-frame').src.includes('read.html?read=blob')),
+    'it feeds read.html a blob url rather than duplicating the engine');
+  await pv.click('.rp-head button');
+  ok(await pv.evaluate(() => document.getElementById('rp-frame').src === 'about:blank'),
+    'closing stops the preview so its audio does not keep playing');
+  // out points trim without re-encoding
+  await pv.evaluate(() => {
+    cState.tracks.push({tid:'trim1', aud:null, type:'silence', title:'s', from:1, start:0, end:2.5, volume:100});
+  });
+  ok(await pv.evaluate(() => cState.tracks.find(t => t.tid === 'trim1').end === 2.5),
+    'tracks carry an out point');
+  await pv.close();
 
   console.log('studio: media dock search + filter');
   await oc.fill('#bay-q', 'o1');

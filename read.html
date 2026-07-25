@@ -1264,6 +1264,10 @@ function playOneshot(t){
     os.el.loop = false;
     const startAt = t.start||0;
     os.el.onloadedmetadata = ()=>{ if(startAt) try{ os.el.currentTime = startAt; }catch(e){} };
+    // an out point trims the tail without touching the file
+    clearTimeout(os._endTimer);
+    if(t.end && t.end > startAt)
+      os._endTimer = setTimeout(()=>os.el.pause(), (t.end - startAt)*1000);
     osApplyVolume();
     const p = os.el.play();
     if(p) p.catch(()=>{ document.body.classList.add('needs-gesture'); });

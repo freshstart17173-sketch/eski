@@ -761,10 +761,10 @@ Picking Next/SvelteKit now buys nothing and costs the no-build-step property.
     audio as one-shots so the common case needs no aiming.
     sel survives as the copy/paste/delete selection, set by clicking a song row.
     Suite rewritten to match and is at 163 assertions, green twice.
- 7. CAST + SLOTS + COMPOSER MODES. Cast list, slot marking with bubble rects,
+ 7. [DONE] CAST + SLOTS + STUDIO MODES. Cast list, slot marking with bubble rects,
     editMode gating, coverage meter (D3), leading-silence trim (D4). Still pure
     local files, no backend.
- 8. SEPARATE .eski PARTS + READER MIX PICKER. Base/VO/soundtrack as distinct
+ 8. [DONE] SEPARATE .eski PARTS + READER MIX PICKER. Base/VO/soundtrack as distinct
     exports; reader loads a base and accepts VO/soundtrack files alongside,
     merges manifests, plays the combination.
 
@@ -774,9 +774,19 @@ Picking Next/SvelteKit now buys nothing and costs the no-build-step property.
     and discovery, not architecture. If the model is wrong, it fails here,
     cheaply. ***
 
- 9. CLEANUP: C7 (iframe preview via read.html?read=<blobURL>#slug/page=N), C8,
-    C10 non-destructive trim, C11 multi-select.
-10. ADDITIVE MANIFEST: SFX-attach (role/attachTo/offset), meta.chapters,
+ 9. [MOSTLY DONE] CLEANUP.
+    C7 DONE: previewInReader() packs the current state to a blob and hands it
+      to read.html in an iframe, so the preview is the REAL reader engine
+      (ducking, chains, queues) instead of a second implementation that would
+      drift. Closing sets the frame to about:blank so its audio stops.
+    C8 DONE: fell out of the timeline deletion, the clip bar no longer exists.
+    C10 DONE for in/out points: every track carries start and end, exported as
+      sync.start / sync.end, and one-shots honour an out point via a timer.
+      Non-destructive by design; there is no encoder and adding one would mean
+      shipping wav. What is NOT done: a waveform scrubber to set the points by
+      dragging, and the 3-dots media menu (rename, duplicate, reveal usages).
+    C11 NOT DONE: multi-select of media items and pages for batch ops.
+10. [DONE] ADDITIVE MANIFEST: SFX-attach (role/attachTo/offset), meta.chapters,
     meta.series, meta.credits. Credits gives real attribution with no backend.
 --- everything below needs a second human to mean anything ---
 11. BACKEND. Supabase auth + Postgres + RLS, R2 presigned upload, publish and
