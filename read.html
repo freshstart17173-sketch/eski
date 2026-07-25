@@ -338,6 +338,8 @@ footer a{color:var(--accent-soft)}
       </div>
       <span class="vt-info">
         <span id="vt-info-text"></span>
+        <select id="chapter-sel" title="jump to a chapter" style="display:none"
+                onchange="goToPage(parseInt(this.value)-1, true)"></select>
         <input type="number" id="page-jump" min="1" title="go to page"
                onkeydown="if(event.key==='Enter'){goToPage(parseInt(this.value)-1,true);this.blur()}">
       </span>
@@ -552,6 +554,10 @@ async function comicFromZip(zip, fileName){
         gainDb: (typeof t.gainDb === 'number' && isFinite(t.gainDb)) ? t.gainDb : 0,
         // optional per-one-shot duck override: inherit | off | light | medium | strong
         duck: typeof t.duck === 'string' ? t.duck : null,
+        role: t.role === 'sfx' ? 'sfx' : 'line',
+        // a chain: this fires off another one-shot instead of off a keypress
+        attachTo: t.attachTo || null,
+        offset: typeof t.offset === 'number' ? t.offset : 0,
         file: t.file || null, entry: null, blob: null, url: null, external: false
       };
       if(tr.type==='music' || tr.type==='oneshot'){
@@ -573,7 +579,9 @@ async function comicFromZip(zip, fileName){
     creator: meta.creator, description: meta.description,
     direction: meta.direction==='rtl' ? 'rtl' : 'ltr',
     coverEntry, coverUrl: null, pages, tracks, player, fileName, isEski: !!manifest,
-    baseId: meta.id || null, cast: Array.isArray(meta.cast) ? meta.cast : []
+    baseId: meta.id || null, cast: Array.isArray(meta.cast) ? meta.cast : [],
+    chapters: Array.isArray(meta.chapters) ? meta.chapters : [],
+    series: meta.series || null
   };
 }
 
@@ -799,10 +807,26 @@ function updatePageChrome(){
   $('vt-info-text').textContent = `page ${shown} of ${current.pages.length}`;
   $('page-jump').value = currentPage+1;
   $('page-jump').max = current.pages.length;
+  paintChapters();
   updateTimelineCursor();
   savePos();
   updateHash();
   refreshOneshots();
+}
+/* chapter jump. only appears when the file actually declares chapters, so
+   short comics keep the bar uncluttered. */
+function paintChapters(){
+  const sel = $('chapter-sel');
+  if(!sel) return;
+  const ch = (current && current.chapters) || [];
+  if(!ch.length){ sel.style.display = 'none'; return; }
+  sel.style.display = '';
+  const here = ch.filter(c=>c.page <= currentPage+1).pop() || ch[0];
+  if(sel.dataset.for !== current.id){
+    sel.dataset.for = current.id;
+    sel.innerHTML = ch.map(c=>`<option value="${c.page}">${esc(c.title)}</option>`).join('');
+  }
+  sel.value = here.page;
 }
 function nextPage(){ showPage(currentPage + (spread?2:1)); }
 function prevPage(){ showPage(currentPage - (spread?2:1)); }
@@ -890,7 +914,7 @@ function queueGroups(comic){
    real tracks but have nothing to play, so they stay out of the cursor. */
 function oneshotsForPage(comic, pageIdx){
   return comic.tracks.filter(t=>t.type==='oneshot' && !t.external && t.from===pageIdx+1
-    && (t.url || t.entry));
+    && (t.url || t.entry) && !t.attachTo);   // chain heads only: children ride along
 }
 function queueForPage(comic, pageIdx){
   const p = pageIdx+1;
@@ -1172,6 +1196,7 @@ function effOsLoop(){
 }
 function refreshOneshots(){
   os.el.pause();
+  clearChain();
   os.list = current ? oneshotsForPage(current, audioPage()) : [];
   os.cursor = -1;
   paintOsHint();
@@ -1197,8 +1222,41 @@ function osApplyVolume(){
   if(os.cur) os.el.volume = clamp((os.cur.volume??100)/100 * normGain(os.cur)
     * audio.volume * (audio.muted?0:1), 0, 1);
 }
+/* ---------------- chains ----------------
+   sfx and layered lines hang off a parent one-shot with an offset, so a punch
+   lands mid-line without the reader having to time anything. children play on
+   their own element, which is why no polyphony pool is needed: the voice
+   channel stays monophonic and overlapping VOICES are prerendered upstream. */
+const sfxEl = new Audio();
+let chainTimers = [];
+function clearChain(){
+  chainTimers.forEach(clearTimeout);
+  chainTimers = [];
+  sfxEl.pause();
+}
+function childrenOf(t){
+  if(!current) return [];
+  return current.tracks.filter(x=>x.attachTo === t.id && (x.url || x.entry));
+}
+function scheduleChain(parent){
+  clearChain();
+  for(const child of childrenOf(parent)){
+    chainTimers.push(setTimeout(()=>{
+      audio.resolve(child).then(url=>{
+        if(!url) return;
+        sfxEl.src = url;
+        sfxEl.currentTime = 0;
+        sfxEl.volume = clamp((child.volume??100)/100 * normGain(child)
+          * audio.volume * (audio.muted?0:1), 0, 1);
+        const p = sfxEl.play(); if(p) p.catch(()=>{});
+      });
+    }, Math.max(0, (child.offset||0) * 1000)));
+  }
+}
+
 function playOneshot(t){
   os.cur = t;
+  scheduleChain(t);
   const seq = ++audio.loadSeq;   // share the loader guard so a page turn cancels it
   audio.resolve(t).then(url=>{
     if(!url || seq!==audio.loadSeq) return;

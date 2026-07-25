@@ -213,6 +213,11 @@ h4{margin:0 0 8px;font-size:11px;letter-spacing:.13em;color:var(--muted);font-we
 .oschip.empty{border-style:dashed;color:var(--muted)}
 .oschip .await{color:var(--muted);font-style:italic}
 .oschip .castsel{max-width:96px;font-size:11px;padding:1px 3px}
+.oschip{flex-wrap:wrap}
+.attachrow{flex-basis:100%;display:flex;align-items:center;gap:5px;font-size:11px;
+  color:var(--muted);margin-top:4px}
+.attachrow select{font-size:11px;padding:1px 3px}
+.attachrow input{width:46px;font-size:11px;padding:1px 4px}
 .castrow{display:flex;align-items:center;gap:6px;font-size:12px;padding:4px 0}
 .castrow .nm{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .castrow .cov{color:var(--muted);font-size:11px;flex:none}
@@ -413,6 +418,13 @@ h4{margin:0 0 8px;font-size:11px;letter-spacing:.13em;color:var(--muted);font-we
   <div class="row"><label>creator</label><input type="text" id="m-creator" placeholder="you"></div>
   <div class="row"><label>description</label><textarea id="m-desc"></textarea></div>
   <div class="row"><label>cover page</label><select id="m-cover"></select></div>
+  <div class="row duo">
+    <div><label>series</label><input type="text" id="m-series" placeholder="none"></div>
+    <div><label>part no.</label><input type="number" id="m-seriesidx" min="1" placeholder="1"></div>
+  </div>
+  <div class="row"><label>chapters</label>
+    <div class="qp-hint">one per line, as <code>page: title</code>. lets long comics be navigated.</div>
+    <textarea id="m-chapters" placeholder="1: the arrival&#10;24: nightfall"></textarea></div>
   <div class="row"><label>reading direction</label>
     <select id="m-dir"><option value="ltr">left to right</option><option value="rtl">right to left</option></select></div>
   <div class="row"><label>reading mode</label>
@@ -781,6 +793,7 @@ async function openEski(file){
           cState.tracks.push({tid:t.id||uid('t'), aud, type,
             role: type==='oneshot' ? (t.role==='sfx' ? 'sfx' : 'line') : undefined,
             character: t.character || null,
+            attachTo: t.attachTo || null, offset: t.offset || 0,
             title:t.title||(type==='oneshot'? (isSlot?'':'sound') :'untitled track'),
             from:t.sync?.from??1, start:t.sync?.start??0, volume:t.volume??100});
           if(type==='oneshot') osBlocks.add(t.sync?.from??1);
@@ -814,7 +827,7 @@ function addOneshot(aud, page, role, character){
   const p = clamp(page||1, 1, pageCount());
   osBlocks.add(p);
   cState.tracks.push({tid:uid('t'), aud, type:'oneshot',
-    role: role || 'line', character: character || null,
+    role: role || 'line', character: character || null, attachTo:null, offset:0,
     title:(a?.fileName||'sound').replace(/\.[^.]+$/,'').toLowerCase(),
     from:p, start:0, volume:100});
   render();
@@ -1390,6 +1403,26 @@ function osChip(t, idx, showCast){
   if(t.aud) btns.shift().addEventListener('click', e=>{ e.stopPropagation(); previewTrack(t); });
   btns[0].addEventListener('click', e=>{ e.stopPropagation(); removeOneshot(t.tid); });
   paintIcons(chip);
+  /* an sfx can hang off a line so it fires automatically at an offset instead
+     of needing its own keypress. hand-triggering an effect kills the timing. */
+  if(t.role !== 'line'){
+    const lines = linesFor(t.from);
+    if(lines.length){
+      const at = document.createElement('div');
+      at.className = 'attachrow';
+      at.innerHTML = `<span>fires</span>
+        <select><option value="">on its own</option>${lines.map((l,i)=>
+          `<option value="${l.tid}"${l.tid===t.attachTo?' selected':''}>with line ${i+1}</option>`).join('')}</select>
+        <input type="number" step="0.1" min="0" value="${t.offset||0}"
+               title="seconds after that line starts"${t.attachTo?'':' disabled'}>s`;
+      const [sel2, off] = [at.querySelector('select'), at.querySelector('input')];
+      sel2.addEventListener('change', e=>{
+        snap(); t.attachTo = e.target.value || null; if(!t.attachTo) t.offset = 0; render();
+      });
+      off.addEventListener('change', e=>{ snap(); t.offset = Math.max(0, parseFloat(e.target.value)||0); });
+      chip.appendChild(at);
+    }
+  }
   chip.addEventListener('dragstart', e=>{ qpDrag=t.tid; chip.classList.add('dragging');
     e.dataTransfer.setData('text/eski-os', t.tid); e.dataTransfer.effectAllowed='move'; });
   chip.addEventListener('dragend', ()=>{ qpDrag=null; chip.classList.remove('dragging'); });
@@ -1552,6 +1585,9 @@ function openSettings(){
   $('m-playback').value=s.player.playbackMode==='playlist'?'playlist':'sync';
   $('m-loop').value=s.player.loopMode==='next'?'next':'loop';
   $('m-fade').value=s.player.crossfade; $('m-vol').value=s.player.volume;
+  $('m-series').value = s.meta.series?.title || '';
+  $('m-seriesidx').value = s.meta.series?.index || '';
+  $('m-chapters').value = (s.meta.chapters||[]).map(c=>`${c.page}: ${c.title}`).join('\n');
   $('drawer').classList.add('open'); $('drawer-scrim').classList.add('open');
 }
 function closeSettings(){ $('drawer').classList.remove('open'); $('drawer-scrim').classList.remove('open'); }
@@ -1565,6 +1601,22 @@ $('m-playback').addEventListener('change', e=>cState.player.playbackMode=e.targe
 $('m-loop').addEventListener('change', e=>cState.player.loopMode=e.target.value);
 $('m-fade').addEventListener('change', e=>cState.player.crossfade=clamp(parseFloat(e.target.value)||0,0,10));
 $('m-vol').addEventListener('change', e=>cState.player.volume=clamp(parseInt(e.target.value)||0,0,100));
+/* chapters are authored as plain text because that is faster than any widget:
+   "page: title" per line, anything unparseable is ignored. */
+function parseChapters(text){
+  return (text||'').split('\n').map(l=>{
+    const m = /^\s*(\d+)\s*:\s*(.+?)\s*$/.exec(l);
+    return m ? {page: clamp(parseInt(m[1]),1,Math.max(pageCount(),1)), title: m[2]} : null;
+  }).filter(Boolean).sort((a,b)=>a.page-b.page);
+}
+$('m-chapters').addEventListener('change', e=>{ cState.meta.chapters = parseChapters(e.target.value); });
+function syncSeries(){
+  const title = $('m-series').value.trim();
+  const idx = parseInt($('m-seriesidx').value) || null;
+  cState.meta.series = title ? {title, index: idx || 1} : null;
+}
+$('m-series').addEventListener('change', syncSeries);
+$('m-seriesidx').addEventListener('change', syncSeries);
 
 /* ---------------- export (packs sources as-is) ---------------- */
 function extOf(name, fb){ const m=/\.([a-z0-9]+)$/i.exec(name||''); return m?m[1].toLowerCase():fb; }
@@ -1704,8 +1756,11 @@ async function exportPart(kind){
           file: t.aud ? (packed[t.aud]||null) : null, type: t.type,
           volume: t.volume, gainDb: gains[t.tid] || 0,
           sync: {from: t.from, start: t.start} };
-        if(t.type === 'oneshot') o.role = t.role || 'line';
-        if(o.role === 'line') o.character = t.character || null;
+        if(t.type === 'oneshot'){
+          o.role = t.role || 'line';
+          if(o.role === 'line') o.character = t.character || null;
+          if(t.attachTo){ o.attachTo = t.attachTo; o.offset = t.offset || 0; }
+        }
         return o;
       })
     };
@@ -1757,6 +1812,8 @@ async function exportEski(){
         direction:cState.meta.direction==='rtl'?'rtl':'ltr',
         cover:pageNames[clamp(cState.coverIndex,0,pageNames.length-1)],
         id: baseRef().id,
+        chapters: (cState.meta.chapters||[]).length ? cState.meta.chapters : undefined,
+        series: cState.meta.series || undefined,
         // the cast is the one thing only the author can supply
         cast: cState.cast.length
           ? cState.cast.map(c=>({key:c.key, name:c.name, kind:c.kind||'character'}))
@@ -1770,6 +1827,7 @@ async function exportEski(){
         if(t.type==='oneshot'){
           o.role = t.role || 'line';
           if(o.role==='line') o.character = t.character || null;
+          if(t.attachTo){ o.attachTo = t.attachTo; o.offset = t.offset || 0; }
         }
         return o;
       }),

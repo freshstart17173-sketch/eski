@@ -711,6 +711,53 @@ function ok(cond, name, extra) {
     'a mismatched part does not corrupt the comic');
   await mx.close();
 
+  console.log('studio + reader: sfx chains, chapters, series');
+  const ch = await ctx.newPage();
+  wire(ch);
+  await ch.goto('http://localhost:8931/studio.html');
+  await ch.setInputFiles('#in-eski', path.join(FIX, 'oneshots.eski'));
+  await ch.waitForFunction(() => cState.tracks.filter(t => t.type === 'oneshot').length === 2);
+  // hang one one-shot off the other: it should stop being separately triggerable
+  await ch.evaluate(() => {
+    const os = cState.tracks.filter(t => t.type === 'oneshot');
+    os[1].role = 'sfx'; os[1].attachTo = os[0].tid; os[1].offset = 0.3;
+    cState.meta.chapters = [{page:1, title:'one'}, {page:2, title:'two'}];
+    cState.meta.series = {title:'a series', index:2};
+    render();
+  });
+  const dl4 = ch.waitForEvent('download');
+  await ch.click('#export-btn');
+  const f4 = path.join(DL, 'chain.eski');
+  await (await dl4).saveAs(f4);
+  const cz = await JSZip.loadAsync(fs.readFileSync(f4));
+  const cm = JSON.parse(await cz.file('.eski/manifest.json').async('string'));
+  const child = cm.tracks.find(t => t.attachTo);
+  ok(!!child, 'an attached sfx exports with attachTo');
+  ok(child.offset === 0.3, 'and with its offset', String(child && child.offset));
+  ok(JSON.stringify(cm.meta.chapters) === '[{"page":1,"title":"one"},{"page":2,"title":"two"}]',
+    'chapters export', JSON.stringify(cm.meta.chapters));
+  ok(cm.meta.series.title === 'a series' && cm.meta.series.index === 2, 'series exports');
+  ok(await ch.evaluate(() => parseChapters('3: hello\nrubbish\n1: start').map(c => c.page).join(',')) === '1,3',
+    'chapter text parses and sorts, ignoring junk');
+  await ch.close();
+
+  const cr = await ctx.newPage();
+  wire(cr);
+  await cr.goto('http://localhost:8931/read.html?read=dl/chain.eski');
+  await cr.waitForSelector('#player-bar', { state: 'visible' });
+  ok(await cr.evaluate(() => current.chapters.length === 2), 'reader reads chapters');
+  ok(await cr.evaluate(() => current.series.index === 2), 'reader reads series');
+  ok(await cr.isVisible('#chapter-sel'), 'chapter jump appears when a comic has chapters');
+  await cr.evaluate(() => goToPage(1, true));
+  ok(await cr.evaluate(() => oneshotsForPage(current, 1).length === 1),
+    'an attached sfx is not separately triggerable: the chain head owns it',
+    String(await cr.evaluate(() => oneshotsForPage(current, 1).length)));
+  ok(await cr.evaluate(() => {
+    const head = oneshotsForPage(current, 1)[0];
+    return childrenOf(head).length === 1;
+  }), 'and it rides along with its parent');
+  await cr.close();
+
   console.log('studio: media dock search + filter');
   await oc.fill('#bay-q', 'o1');
   ok(await oc.evaluate(() => document.querySelectorAll('#bay-auds .chip-aud').length) === 1,
