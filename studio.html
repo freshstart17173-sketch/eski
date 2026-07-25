@@ -74,7 +74,7 @@ h4{margin:0 0 8px;font-size:11px;letter-spacing:.13em;color:var(--muted);font-we
 .work{flex:1;display:flex;min-height:0}
 
 /* media bay */
-.bay{width:184px;min-width:184px;background:var(--bg-1);border-right:1px solid var(--edge-strong);
+.bay{width:184px;min-width:184px;position:relative;background:var(--bg-1);border-right:1px solid var(--edge-strong);
   display:flex;flex-direction:column;min-height:0}
 .bay-sec{padding:12px;border-bottom:1px solid var(--edge);overflow-y:auto}
 .bay-sec.imgs{flex:0 0 auto;max-height:42%}
@@ -209,6 +209,8 @@ h4{margin:0 0 8px;font-size:11px;letter-spacing:.13em;color:var(--muted);font-we
 .trim-foot{display:flex;align-items:center;gap:10px;margin-top:12px}
 .trim-foot .nums{font-size:12px;color:var(--muted);flex:1}
 .trim-foot .nums b{color:var(--ink);font-weight:500}
+
+}
 .drawer .duo>div{flex:1}
 .drawer-head{display:flex;align-items:center;margin-bottom:14px}
 .drawer-head h4{margin:0}
@@ -280,7 +282,6 @@ h4{margin:0 0 8px;font-size:11px;letter-spacing:.13em;color:var(--muted);font-we
 .rangenote{font-size:11.5px;color:var(--muted);display:flex;align-items:center;gap:6px;margin-top:4px}
 .rangenote .sw{width:8px;height:8px;border-radius:50%;flex:none}
 /* drag handle on the media bay */
-.bay{position:relative}
 .bay-resize{position:absolute;top:0;right:-3px;width:6px;height:100%;cursor:col-resize;z-index:5}
 .bay-resize:hover{background:var(--accent);opacity:.4}
 .qp-head{display:flex;align-items:center;gap:8px;font-weight:500;text-transform:lowercase;margin-bottom:6px}
@@ -338,6 +339,48 @@ h4{margin:0 0 8px;font-size:11px;letter-spacing:.13em;color:var(--muted);font-we
   box-shadow:var(--shadow-lg)}
 .toast.show{opacity:1;transform:translate(-50%,0)}
 .toast.error{background:#a1362b}
+/* ---------------- touch + narrow screens ----------------
+   the three-column desk cannot survive 9:16, so the bay and the page panel
+   become off-canvas drawers and the stage keeps the whole width. */
+.mob-only{display:none}
+.drawer-back{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:44;display:none}
+.drawer-back.on{display:block}
+@media (max-width:900px){
+  .mob-only{display:inline-flex}
+  .site-header{padding:0 10px;gap:8px;overflow-x:auto;scrollbar-width:none}
+  .site-header::-webkit-scrollbar{display:none}
+  .hdr-label{display:none}
+  .bay, .qp{position:fixed;top:57px;bottom:0;z-index:45;width:min(84vw,340px);
+    transform:translateX(-102%);transition:transform 200ms ease;box-shadow:var(--shadow-lg)}
+  .qp{right:0;left:auto;transform:translateX(102%);border-left:1px solid var(--edge-strong)}
+  .bay.open, .qp.open{transform:translateX(0)}
+  .bay-resize{display:none}
+  .tl-panel{height:auto;flex:1;min-height:0}
+  .stage{min-height:0}
+  .preview{flex:0 0 42vh}
+  /* touch targets: 40px minimum on anything you tap */
+  .pill{min-height:40px;padding:8px 14px}
+  .pill.icon-btn{width:40px;padding:0;justify-content:center}
+  .mini-btn{width:34px;height:34px}
+  .oschip{padding:9px 8px}
+  .oschip button, .songrow button{padding:8px}
+  .oschip .castsel{max-width:none;flex:1;min-height:34px}
+  .pgcard .x{opacity:1;width:26px;height:26px}
+  .cell .rm{display:flex}
+  .menu button{padding:11px 12px;font-size:13.5px}
+  .trim{width:94vw;padding:14px}
+  .trim-wave{height:112px}
+  .trim-foot{flex-wrap:wrap}
+  .readerprev{inset:8px}
+  .modebar{font-size:11px}
+  .drawer{width:min(92vw,340px)}
+}
+@media (max-width:560px){
+  .preview{flex:0 0 34vh;padding:8px}
+  .tl-top{flex-wrap:wrap;gap:6px;padding:6px 8px}
+  .modebar{order:3;width:100%}
+  .modebar select{flex:1}
+
 </style>
 </head>
 <body>
@@ -349,6 +392,10 @@ h4{margin:0 0 8px;font-size:11px;letter-spacing:.13em;color:var(--muted);font-we
   <button class="pill" data-ico="folder" onclick="document.getElementById('in-folder').click()"
           title="import a whole folder of images and sounds">add folder</button>
   <button class="pill" data-ico="folder-open" onclick="document.getElementById('in-eski').click()">open .eski</button>
+  <button class="pill icon-btn mob-only" id="bay-toggle" data-ico="folder"
+          onclick="toggleDrawer('bay')" title="media"></button>
+  <button class="pill icon-btn mob-only" id="panel-toggle" data-ico="list-music"
+          onclick="toggleDrawer('qp')" title="this page"></button>
   <span class="sp"></span>
   <button class="pill" data-ico="settings" onclick="openSettings()">settings</button>
   <button class="pill" data-ico="play" id="preview-btn" onclick="previewInReader()">preview</button>
@@ -517,6 +564,7 @@ h4{margin:0 0 8px;font-size:11px;letter-spacing:.13em;color:var(--muted);font-we
 <input type="file" id="in-eski" accept=".eski,.zip,.cbz" style="display:none"
        onchange="if(this.files[0])openEski(this.files[0]);this.value=''">
 
+<div class="drawer-back" id="drawer-back" onclick="closeDrawers()"></div>
 <div class="menu" id="bay-menu"></div>
 
 <div class="trim" id="trim">
@@ -1066,6 +1114,19 @@ function setEditMode(m){
   editMode = m;
   render();
 }
+/* on narrow screens the bay and the page panel slide over the stage */
+function toggleDrawer(which){
+  const el = $(which), other = $(which === 'bay' ? 'qp' : 'bay');
+  const open = !el.classList.contains('open');
+  other.classList.remove('open');
+  el.classList.toggle('open', open);
+  $('drawer-back').classList.toggle('on', open);
+}
+function closeDrawers(){
+  $('bay').classList.remove('open');
+  $('qp').classList.remove('open');
+  $('drawer-back').classList.remove('on');
+}
 function renderCast(){
   const box = $('cast-list');
   if(!box) return;
@@ -1429,6 +1490,7 @@ function pvZoomAt(factor, cx, cy){
   const h = $('bay-resize'), bay = $('bay');
   let start = null;
   h.addEventListener('pointerdown', e=>{
+    if(matchMedia('(max-width:900px)').matches) return;   // it is a drawer there
     start = {x:e.clientX, w:bay.getBoundingClientRect().width};
     h.setPointerCapture(e.pointerId);
     e.preventDefault();
@@ -1471,6 +1533,8 @@ function renderPages(){
       if(e.shiftKey || e.ctrlKey || e.metaKey){ pickPage(i, e); return; }
       pickedPage.clear();
       openQueue(page);
+      // on a phone the panel is off-canvas, so picking a page has to reveal it
+      if(matchMedia('(max-width:900px)').matches) toggleDrawer('qp');
     });
     el.addEventListener('dragstart', e=>{ pageDragIdx=i; el.classList.add('dragging');
       e.dataTransfer.setData('text/eski-page', i); e.dataTransfer.effectAllowed='move'; showTrash(); });
@@ -1773,7 +1837,7 @@ document.addEventListener('keydown', e=>{
   if(e.key==='Escape'){
     if($('trim').classList.contains('open')){ closeTrim(); return; }
     if($('readerprev').classList.contains('open')){ closePreview(); return; }
-    closeBayMenu(); clearPicks();
+    closeBayMenu(); closeDrawers(); clearPicks();
     sel=null; closeSettings(); render(); return;
   }
   if(e.key==='ArrowLeft'){ stepPreview(-1); }

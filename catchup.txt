@@ -785,7 +785,42 @@ Picking Next/SvelteKit now buys nothing and costs the no-build-step property.
       Non-destructive by design; there is no encoder and adding one would mean
       shipping wav. What is NOT done: a waveform scrubber to set the points by
       dragging, and the 3-dots media menu (rename, duplicate, reveal usages).
-    C11 NOT DONE: multi-select of media items and pages for batch ops.
+    C10 FULLY DONE 2026-07-25: 3-dots menu on every media item (trim, rename,
+      duplicate, download, reveal usages, delete) plus a waveform trim popover
+      with draggable in/out handles. Trim sets points on the SAMPLE and every
+      track already using that clip picks them up, because that is what a user
+      means by "trim this clip". Still no re-encode, ever.
+    C11 DONE: shift/ctrl multi-select over media items and page cards,
+      Delete acts on the whole picked set.
+
+D15 NO SPREAD MODE (2026-07-25). Removed entirely: the button, the 's' hotkey,
+    the two-image layout, toggleSpread, and the leftmost-page audio rule.
+    Reason: eski is original-work-only (D1) and digital-first, so a two-page
+    spread is an ARTWORK decision the artist exports as one wide page, not a
+    reading mode the app has to model. Scanned print comics were the only real
+    use and they are not what this platform hosts.
+    This also deletes the bug where a spread hid half the dialogue, because
+    os.list was built from the leftmost visible page only. audioPage() is now
+    literally `return currentPage`. Do not reintroduce it.
+
+D16 MOBILE IS A FIRST-CLASS TARGET (2026-07-25). Every surface must be fully
+    usable at 9:16 (tested at 390x693), no horizontal scrolling anywhere, and
+    every tap target at least 40px.
+    - LIBRARY: two-column grid, icon-only nav, modal scrolls and fits, remove
+      buttons always visible since there is no hover on touch.
+    - READER: the player bar wraps and its pills go icon-only (the labels are
+      bare text nodes, so font-size:0 on the button and a restored size on the
+      .ico is what collapses them; title= still reads out). Settings and the
+      hotkeys panel become bottom sheets. THE SHEET COVERS THE BUTTON THAT
+      OPENED IT, so it carries its own close row (.sheet-head, hidden on
+      desktop). Click zones are 22vw for thumbs.
+    - STUDIO: the three-column desk cannot survive 9:16, so the media bay and
+      the page panel become off-canvas drawers behind a scrim, toggled from the
+      header, and the stage keeps the full width. Selecting a page auto-opens
+      the panel. The bay resize handle is disabled there.
+    CSS ORDER GOTCHA, COST AN HOUR: the mobile @media block MUST sit at the END
+    of the stylesheet. Put it earlier and later plain rules with equal
+    specificity win, so drawers silently refuse to slide in.
 10. [DONE] ADDITIVE MANIFEST: SFX-attach (role/attachTo/offset), meta.chapters,
     meta.series, meta.credits. Credits gives real attribution with no backend.
 --- everything below needs a second human to mean anything ---

@@ -881,6 +881,66 @@ function ok(cond, name, extra) {
   ok(true, 'unshelving removes it again');
   await lib.close();
 
+  console.log('mobile: every surface usable at 9:16');
+  const phone = await ctx.newPage();
+  wire(phone);
+  await phone.setViewportSize({ width: 390, height: 693 });
+  const noSideScroll = async p =>
+    p.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1);
+
+  // the onboarding flag is already set from the library section: this context
+  // is shared, so just dismiss whatever is there rather than expecting it
+  await phone.goto('http://localhost:8931/index.html');
+  await phone.waitForSelector('.cover img', { timeout: 12000 });
+  await phone.evaluate(() => closeOnboarding());
+  ok(await noSideScroll(phone), 'library does not scroll sideways on a phone');
+  ok(await phone.evaluate(() => document.querySelectorAll('#grid .cell').length >= 1 &&
+    getComputedStyle(document.getElementById('grid')).gridTemplateColumns.split(' ').length === 2),
+    'library grid drops to two columns');
+  await phone.click('.cover');
+  await phone.waitForSelector('.overlay.open');
+  ok(await phone.evaluate(() => {
+    const m = document.querySelector('#overlay .modal');
+    return m.getBoundingClientRect().width <= window.innerWidth;
+  }), 'the comic modal fits the screen');
+  await phone.keyboard.press('Escape');
+
+  await phone.goto('http://localhost:8931/read.html?read=fx/oneshots.eski');
+  await phone.waitForSelector('#player-bar', { state: 'visible' });
+  ok(await noSideScroll(phone), 'reader does not scroll sideways on a phone');
+  ok(await phone.evaluate(() =>
+    [...document.querySelectorAll('.player-bar .pill')].every(p => p.offsetHeight === 0 || p.offsetHeight >= 40)),
+    'player bar buttons are at least 40px tall for thumbs');
+  await phone.click('#settings-btn');
+  ok(await phone.evaluate(() => {
+    const s = getComputedStyle(document.getElementById('settings'));
+    return s.position === 'fixed' && s.left === '0px' && s.bottom === '0px';
+  }), 'settings becomes a bottom sheet, not a corner popover');
+  // the sheet covers the button that opened it, so it carries its own close
+  await phone.click('.sheet-head button');
+  ok(await phone.evaluate(() => !document.getElementById('settings').classList.contains('open')),
+    'the sheet can be closed from inside itself');
+
+  await phone.goto('http://localhost:8931/studio.html');
+  await phone.setInputFiles('#in-media', path.join(FIX, 'test.cbz'));
+  await phone.waitForFunction(() => cState.pages.length === 3);
+  ok(await noSideScroll(phone), 'studio does not scroll sideways on a phone');
+  ok(await phone.evaluate(() => document.querySelector('.stage').offsetWidth >= window.innerWidth - 1),
+    'the stage keeps the full width: the bay and panel are off-canvas');
+  ok(await phone.evaluate(() => document.querySelectorAll('.mob-only').length === 2 &&
+    getComputedStyle(document.getElementById('bay-toggle')).display !== 'none'),
+    'drawer toggles appear only on narrow screens');
+  await phone.click('#bay-toggle');
+  await phone.waitForTimeout(320);
+  ok(await phone.evaluate(() => document.getElementById('bay').getBoundingClientRect().left >= -1),
+    'the media bay slides in');
+  // the drawer covers most of the scrim, so aim at the strip beside it
+  await phone.click('#drawer-back', { position: { x: 375, y: 420 } });
+  await phone.waitForTimeout(320);
+  ok(await phone.evaluate(() => document.getElementById('bay').getBoundingClientRect().left < 0),
+    'tapping the scrim closes it');
+  await phone.close();
+
   console.log('console errors');
   ok(consoleErrors.length === 0, 'zero console errors', consoleErrors.join(' | '));
 

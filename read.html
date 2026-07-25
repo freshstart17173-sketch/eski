@@ -152,6 +152,7 @@ body.needs-gesture .sound-gate{display:inline-flex}
 @keyframes dots{0%{content:''}25%{content:'.'}50%{content:'..'}75%{content:'...'}100%{content:''}}
 
 /* ---------- settings ---------- */
+.sheet-head{display:none}
 .settings{display:none;position:absolute;right:10px;bottom:64px;z-index:40;background:var(--surface);
   border:1px solid var(--line);border-radius:10px;min-width:250px;padding:6px 0;box-shadow:var(--shadow-lg)}
 .settings.open{display:block}
@@ -228,16 +229,50 @@ footer .brand{font-size:22px;color:var(--band-fg)}
 footer .sp{flex:1}
 footer a{color:var(--accent-soft)}
 
-@media (max-width:640px){
-  .hdr-link{display:none}
-  .site-header{gap:10px}
-}
 @media (max-width:900px){
   .pb-now{display:none}
-  .pages{padding:10px 44px}
+  .pages{padding:10px 8px}
 }
 @media (max-width:760px){
   .pb-right input[type=range]{display:none}
+}
+/* ---------------- touch + narrow screens ----------------
+   the player bar is the only chrome on a phone, so it wraps into two rows
+   instead of scrolling sideways, and the popovers become bottom sheets. */
+@media (max-width:640px){
+  .hdr-link{display:none}
+  .site-header{gap:10px;padding:0 12px}
+  .player-bar{flex-wrap:wrap;gap:8px;padding:8px 10px}
+  .bars{order:1;width:100%}
+  .vt-info{order:2}
+  .pb-right{order:3;margin-left:auto;gap:6px}
+  /* icon-only pills in the bar: the label is a bare text node, so zero the
+     font size on the button and restore it on the icon. title= still reads. */
+  .player-bar .pill{min-height:42px;width:42px;padding:0;justify-content:center;font-size:0}
+  .player-bar .pill .ico{width:19px;height:19px}
+  .pill{min-height:42px;padding:9px 14px}
+  #page-jump{min-height:42px;width:56px}
+  #chapter-sel{min-height:42px;max-width:36vw}
+  .settings, .keys-panel{position:fixed;left:0;right:0;bottom:0;top:auto;width:100%;
+    max-height:74vh;overflow-y:auto;border-radius:14px 14px 0 0}
+  /* the sheet covers its own toggle, so it needs its own way out */
+  .sheet-head{display:flex;align-items:center;justify-content:space-between;
+    padding:12px 16px 8px;font-size:15px;text-transform:lowercase;
+    border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--surface)}
+  .sheet-head button{border:0;background:transparent;color:var(--muted);padding:6px;min-height:40px}
+  .sheet-head button .ico{width:20px;height:20px}
+  .set-row{padding:12px 16px;font-size:15px}
+  .seg button{padding:9px 12px;min-height:40px}
+  .tgl{min-height:40px;padding:6px 16px}
+  .keys-grid{grid-template-columns:auto 1fr;gap:10px 12px}
+  .os-hint{padding:10px 12px;gap:10px;bottom:96px}
+  .os-hint .os-step{width:38px;height:38px}
+  .os-hint .os-step .ico{width:18px;height:18px}
+  .cz{min-width:22vw}                                   /* thumb-sized page turns */
+  .tut{left:10px;right:10px;bottom:88px;max-width:none}
+}
+@media (max-width:420px){
+  .pb-right{flex-wrap:wrap;justify-content:flex-end}
 }
 @media (prefers-reduced-motion:reduce){
   *{transition:none!important;animation:none!important}
@@ -283,6 +318,8 @@ footer a{color:var(--accent-soft)}
     </div>
 
     <div class="settings" id="settings">
+      <div class="sheet-head"><span>settings</span>
+        <button data-ico="x" onclick="toggleSettings()" title="close"></button></div>
       <div class="set-row"><span>colour match</span>
         <button class="tgl" id="set-tint" onclick="toggleTint()">on</button></div>
       <div class="set-row"><span>reading</span>
