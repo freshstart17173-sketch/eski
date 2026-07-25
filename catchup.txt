@@ -537,11 +537,16 @@ R2, never mixed. No comic_versions table: see D2.
 
   comics            (id, owner_id, title, slug, direction, page_count,
                      cover_key, status, published_at, created_at)
-  pages             (id, comic_id, idx, image_key, w, h)
-  cast_members      (id, comic_id, cast_key, name, note)
+  pages             (id, comic_id, idx, image_key, w, h,
+                     note text)            -- author direction for this page
+  cast_members      (id, comic_id, cast_key, name, note,
+                     kind 'character'|'narrator')
   slots             (id, comic_id, page_id, order_idx,
-                     kind 'line'|'sfx', cast_member_id,
-                     rect jsonb, attach_to_slot_id, offset_ms)
+                     kind 'line'|'sfx',
+                     trigger 'user'|'page'|'attached',
+                     cast_member_id,
+                     rects jsonb,          -- OPTIONAL, see 15.1
+                     attach_to_slot_id, offset_ms)
 
   consents          (comic_id, axis 'voice'|'music',
                      mode 'closed'|'allowlist'|'open', updated_at)
@@ -549,16 +554,21 @@ R2, never mixed. No comic_versions table: see D2.
 
   vos               (id, comic_id, artist_id, cast_member_id, title,
                      gain_db, status 'draft'|'published', preview_key,
+                     filler bool,          -- timing reference only, see 15.4
+                     explicit bool,        -- uncensored delivery, see 15.6
                      plays, created_at)
   vo_clips          (id, vo_id, slot_id, audio_key, duration_ms,
                      trim_start_ms, trim_end_ms, lead_ms, gain_db)
 
   soundtracks       (id, comic_id, artist_id, title, gain_db,
                      status, plays, created_at)
-  soundtrack_tracks (id, soundtrack_id, order_idx, trigger_page_id,
+  soundtrack_tracks (id, soundtrack_id, order_idx,
+                     trigger_page_id, trigger_slot_id,   -- one or the other
                      type 'music'|'silence', audio_key,
                      volume, start_ms, end_ms, gain_db)
-  soundtrack_sfx    (id, soundtrack_id, slot_id, audio_key, gain_db)
+  soundtrack_cues   (id, soundtrack_id, audio_key, gain_db,
+                     slot_id,                    -- fills an author sfx slot
+                     attach_to_slot_id, offset_ms) -- or the musician's own cue
 
   mixes             (id, comic_id, combo_hash unique, soundtrack_id,
                      is_canonical, plays, created_at)
@@ -611,9 +621,11 @@ arrive carrying a url. The reader audio engine needs ZERO structural change.
 The mix resolver is ~150 lines of fetch + manifest merge in front of the
 existing comicFromZip/openComic.
 
-VO PREVIEW: generated at ingest, not assembled at browse time. Take 3-5
-consecutive lines from the VO's densest page, concatenate to one clip, store as
-preview_key. Browsing a VO costs one small fetch instead of resolving a mix.
+VO PREVIEW: generated at ingest, not assembled at browse time. Take the VO's
+FIRST 3 SLOTS in the comic, concatenate to one clip, store as preview_key.
+Deterministic, needs no "densest page" computation, and the opening lines are
+what a reader wants to audition anyway. Browsing a VO then costs one small
+fetch instead of resolving a whole mix.
 
 EXPORT STILL WORKS: flatten a mix to a portable single .eski via the existing
 exportEski. Offline/sharing snapshot, no format schism.
@@ -792,6 +804,154 @@ Picking Next/SvelteKit now buys nothing and costs the no-build-step property.
   200-400MB. R2 storage is pennies, egress free. Not a constraint.
 - Splits (D8) are the first thing contributors will ask about. The data model
   makes it answerable; it does not answer it.
+
+================================================================================
+15. DIALOGUE MODEL  (how comic dialogue actually maps onto slots; 2026-07-25)
+================================================================================
+Worked through the real conventions of comic lettering and what each one demands
+of the schema, the reader engine, and the composer. Section 14's schema block is
+already updated to match. Decisions here are settled unless marked OPEN.
+
+--------------------------------------------------------------------------------
+15.1 THE CENTRAL RULE: A SLOT IS A RUN OF SPEECH, NOT A BALLOON
+--------------------------------------------------------------------------------
+Twenty consecutive thought bubbles from one character on one page are ONE slot,
+not twenty. A slot ends when the speaker changes, or when the page ends. A run
+that spills onto the next page becomes two slots, one per page, because
+one-shots are page-scoped and reset on a page turn.
+
+The author marks WHO SPEAKS AND IN WHAT ORDER. Nothing else. A page with 30
+balloons is often 5 or 6 slots.
+
+Consequences, all simplifications:
+- rects is OPTIONAL. The VA sees the page and knows they are Aiko on run 3.
+  The author draws boxes only to disambiguate a genuinely confusing page.
+- "linked balloons" (one sentence split across two balloons) is not an edge
+  case at all. It was never two things.
+- unison (one balloon, several tails) is NOT a multi-cast slot. It is two
+  slots chained at offset 0. No array column needed.
+- authoring effort drops enormously, which is the real reason this is right:
+  the owner has to mark every page of every comic by hand.
+
+--------------------------------------------------------------------------------
+15.2 CHAINS ABSORB EVERY OVERLAP CASE
+--------------------------------------------------------------------------------
+Section 13 gave SFX an attach_to_slot_id + offset_ms. GENERALIZE IT TO EVERY
+SLOT. Any slot may hang off any other. The reader's manual cursor exposes only
+CHAIN HEADS (slots with no parent); one keypress fires a head and everything
+attached to it, scheduled against its real start time.
+
+That single mechanism covers:
+  interruption (B starts before A ends)   crosstalk / people talking over
+  unison (offset 0)                       a bleep landing over a word
+  laughter or a gasp under a line         SFX landing on a punch
+  a music cue firing off a specific line  (see 15.5)
+
+THE MODEL IS UNCHANGED. Still exactly two triggers: page-triggered and
+user-triggered. A chain is ONE user trigger.
+
+COST: this requires POLYPHONY in the reader. os.el is currently a single Audio
+element, so two voices cannot sound at once. A small pool of elements replaces
+it. This is the one unavoidable engine change and it is already in the backlog.
+
+--------------------------------------------------------------------------------
+15.3 BALLOON STYLE IS NOT MODELLED
+--------------------------------------------------------------------------------
+Thought vs whisper vs shout vs radio vs telepathy: NO style enum, no per-slot
+picker. Rejected as busywork for the author and noise in the schema.
+Instead:
+  - a short standing reminder in the VO booth that balloon shape carries
+    delivery, and the art already says which is which
+  - pages.note: optional author direction for a whole page ("this scene is
+    a phone call", "she is barely conscious here")
+  - LATER, optional: built-in reader effects (a radio filter and so on). Store
+    nothing for it now. A VA performing it is usually better than a filter.
+
+--------------------------------------------------------------------------------
+15.4 FILLER VOs (the timing-reference problem)
+--------------------------------------------------------------------------------
+A VA often plays several characters, and should be encouraged to record scratch
+"filler" for the OTHER characters in a scene so later VAs have something to time
+against. Without it, everyone performs into a vacuum and the scene never locks.
+
+vos.filler = true means: hidden from reader mix selection, excluded from
+rankings, but SURFACED IN THE BOOTH as a timing reference track. It does not
+disturb the full-coverage rule (D3) because a filler VO is not competing.
+
+A VA covering several characters simply submits several VOs. That already works.
+
+--------------------------------------------------------------------------------
+15.5 MUSICIANS GET CUES TOO
+--------------------------------------------------------------------------------
+Previously only the author could define SFX slots and only music could be
+page-triggered. Both restrictions lift:
+- soundtrack_tracks.trigger_slot_id: a music track can start when a specific
+  LINE fires, not only when a page turns ("the theme swells when he says her
+  name"). Still user-triggered, because the reader fires the line.
+- soundtrack_cues: a musician can attach their OWN audio to any slot with an
+  offset, without the author having pre-marked an SFX slot for it. The same
+  table also fills author-defined SFX slots (slot_id set instead).
+
+--------------------------------------------------------------------------------
+15.6 THE REST OF THE CATALOGUE, AND WHERE EACH LANDS
+--------------------------------------------------------------------------------
+NARRATION        cast_members.kind='narrator'. Castable and dubbable, just
+                 never has a balloon tail. First-person retrospective captions
+                 are the character's own cast id.
+BACKGROUND SOUND slots.trigger='page' on an sfx slot: it fires on page arrival.
+                 This is page-triggered audio, the same class as music, NOT a
+                 third ambient layer (which section 13 rejected and still does).
+CROWD / WALLA    THE RULE: if a specific named character says it, it is VO. If
+                 nobody does, it is SFX. Settles most attribution arguments.
+LAUGHS, SCREAMS, GRUNTS, CRYING
+                 VO, not SFX. It is that character's voice, and it counts
+                 toward coverage, which is correct.
+EFFORT NOISES with no balloon    sfx slot.
+EXPLETIVES / GRAWLIX (@#$%!)
+                 NOT solved in the mix. vos.explicit lets a VA deliver censored
+                 or uncensored, and competing VOs already exist, so a clean dub
+                 and a filthy dub are simply two VOs. Zero new machinery.
+FOREIGN LANGUAGE Left entirely to the VA. They will read what is written.
+                 No schema, no translation slots.
+FLASHBACK / AGED VOICE / POSSESSION
+                 A SEPARATE CAST MEMBER ("young aiko"). No schema change, and
+                 it lets the author cast a different VA for it.
+CHARACTER WHO NEVER SPEAKS       coverage counts SLOTS, not cast members, so a
+                 silent character is simply skipped. Avoids a divide by zero.
+MYSTERY SPEAKER  the author names the cast entry "???" . No schema.
+SIGNAGE, ENVIRONMENTAL TEXT      not a slot.
+BOLD / ITALIC EMPHASIS           nothing. The art carries it.
+A PAGE WITH 20 RUNS              a reader-side auto-advance setting, which per
+                 the section 3 rule must never touch the manifest.
+
+--------------------------------------------------------------------------------
+15.7 COMPOSER / BOOTH UI THIS IMPLIES
+--------------------------------------------------------------------------------
+1. Numbered reading-order overlay on the page, draggable to reorder. Order is
+   the one thing only the author can get right and it is currently invisible.
+2. Chain authoring: drag one slot onto another to attach it, plus an offset
+   scrubber. This single control IS the SFX-attach UI, the crosstalk UI, the
+   interruption UI and the music-cue UI.
+3. Optional rect drawing, not required to author a page.
+4. pages.note field.
+5. Coverage meter counts line slots for one character, excluding sfx.
+6. Booth: previous slot plays before recording, filler VOs available as
+   reference, drag-and-drop import of externally recorded audio (D-list).
+
+--------------------------------------------------------------------------------
+15.8 OPEN / BUGS
+--------------------------------------------------------------------------------
+OPEN - SINGING. A sung line has to sit in the soundtrack's key and tempo, but
+  the VA and the musician are independent contributors. This is the ONLY place
+  where contributor independence genuinely breaks. Three options, undecided:
+  forbid sung lines; treat singing as SFX owned by the musician; or accept that
+  sung comics only work in an author-blessed canonical mix.
+BUG - SPREAD MODE HIDES HALF THE DIALOGUE. refreshOneshots() builds os.list
+  from audioPage(), and audioPage() returns only the leftmost visible page
+  (rightmost in RTL). In a two-page spread the other page's lines cannot be
+  triggered at all. Fix: merge one-shots from both visible pages in reading
+  order. Pre-existing, unrelated to the pivot, will bite the first dubbed
+  spread.
 
 --------------------------------------------------------------------------------
 DONE THIS PROJECT (so far), for context:
