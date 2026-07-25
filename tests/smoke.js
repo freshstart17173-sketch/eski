@@ -665,6 +665,52 @@ function ok(cond, name, extra) {
     'slots with no audio never reach the one-shot cursor');
   await sl.close();
 
+  console.log('studio: a vo exports as a part, not a whole comic');
+  // the base above shipped with slot 2 still empty; record it now so the vo
+  // covers something the base cannot play on its own
+  await oc.evaluate(() => { fillSlot(linesFor(1)[1], Object.keys(audioStore)[0]); render(); });
+  ok(await oc.evaluate(() => coverageFor('aiko').pct === 100), 'aiko is fully covered');
+  await oc.evaluate(() => setEditMode('vo'));
+  const dl3 = oc.waitForEvent('download');
+  await oc.click('#export-btn');
+  const f3 = path.join(DL, 'vo.eski');
+  await (await dl3).saveAs(f3);
+  const vz = await JSZip.loadAsync(fs.readFileSync(f3));
+  const vm = JSON.parse(await vz.file('.eski/manifest.json').async('string'));
+  ok(vm.kind === 'vo', 'part is tagged as a vo');
+  ok(vm.character === 'aiko', 'a vo names the one character it covers', String(vm.character));
+  ok(!!vm.base && !!vm.base.id, 'a vo names the base it was built against');
+  ok(vz.file(/^\d+\.(png|jpg)/).length === 0, 'a vo ships no pages');
+  ok(vm.tracks.every(t => t.role === 'line' && t.file), 'a vo ships only recorded lines');
+  const slotIds = await oc.evaluate(() =>
+    cState.tracks.filter(t => t.type === 'oneshot' && t.role === 'line').map(t => t.tid));
+  ok(vm.tracks.every(t => slotIds.includes(t.id)),
+    'clips are keyed by the base slot id, which is what makes casts swappable');
+  await oc.evaluate(() => setEditMode('scratch'));
+
+  console.log('reader: base + vo mix');
+  const mx = await ctx.newPage();
+  wire(mx);
+  // the base alone: the slot exists but has nothing to play
+  await mx.goto('http://localhost:8931/read.html?read=dl/cast.eski');
+  await mx.waitForSelector('#player-bar', { state: 'visible' });
+  const soloLines = await mx.evaluate(() => oneshotsForPage(current, 0).length);
+  // now layer the vo over the same base
+  await mx.goto('http://localhost:8931/read.html?read=dl/cast.eski&with=dl/vo.eski');
+  await mx.waitForSelector('#player-bar', { state: 'visible' });
+  const mixedLines = await mx.evaluate(() => oneshotsForPage(current, 0).length);
+  ok(mixedLines > soloLines, 'the vo fills slots the base left empty',
+    `${soloLines} -> ${mixedLines}`);
+  ok(await mx.evaluate(() => current.baseId), 'the base carries an id parts can match on');
+  ok(await mx.evaluate(() => current.cast.some(c => c.key === 'aiko')),
+    'cast survives into the reader');
+  // a part built for a different comic is refused, not silently mixed in
+  await mx.goto('http://localhost:8931/read.html?read=fx/oneshots.eski&with=dl/vo.eski');
+  await mx.waitForSelector('#player-bar', { state: 'visible' });
+  ok(await mx.evaluate(() => current.tracks.every(t => !String(t.id).startsWith('slotmismatch'))),
+    'a mismatched part does not corrupt the comic');
+  await mx.close();
+
   console.log('studio: media dock search + filter');
   await oc.fill('#bay-q', 'o1');
   ok(await oc.evaluate(() => document.querySelectorAll('#bay-auds .chip-aud').length) === 1,

@@ -302,7 +302,7 @@ h4{margin:0 0 8px;font-size:11px;letter-spacing:.13em;color:var(--muted);font-we
   <button class="pill" data-ico="folder-open" onclick="document.getElementById('in-eski').click()">open .eski</button>
   <span class="sp"></span>
   <button class="pill" data-ico="settings" onclick="openSettings()">settings</button>
-  <button class="pill primary" data-ico="download" id="export-btn" onclick="exportEski()">export .eski</button>
+  <button class="pill primary" data-ico="download" id="export-btn" onclick="exportCurrent()">export</button>
 </header>
 
 <div class="work">
@@ -732,6 +732,11 @@ async function openEski(file){
     let manifest = null;
     const mf = zip.file('.eski/manifest.json');
     if(mf){ try{ manifest = JSON.parse(await mf.async('string')); }catch(e){} }
+    if(manifest && manifest.kind && manifest.kind !== 'base'){
+      // a vo or soundtrack carries no pages: attach it to an open base instead
+      await attachPart(zip, manifest, file.name);
+      return;
+    }
     const imgs = [];
     zip.forEach((path, entry)=>{
       if(entry.dir || path.startsWith('.eski/') || path.startsWith('audio/') ||
@@ -995,6 +1000,8 @@ function renderCast(){
 function render(){
   const has = pageCount()>0;
   $('mode-sel').value = editMode;
+  $('export-btn').lastChild.textContent =
+    editMode==='vo' ? 'export vo' : editMode==='soundtrack' ? 'export soundtrack' : 'export .eski';
   $('empty-hint').style.display = has ? 'none' : 'flex';
   ['pv-img','pv-badge','pv-prev','pv-next'].forEach(id=>$(id).style.display = has ? '' : 'none');
   $('pages-ctrls').style.display = has ? '' : 'none';
@@ -1600,6 +1607,124 @@ function normGains(){
   }
   return out;
 }
+/* ---------------- part exports ----------------
+   a contributor does not ship pages. a VO is that artist's clips for ONE
+   character, keyed by the base's slot ids; a soundtrack is music, silence and
+   sfx. both name the base they were built against so the reader can refuse a
+   mismatch instead of silently playing nonsense. */
+/* opening a vo or soundtrack while a base is loaded merges it in, so an author
+   can audition a contribution, and a contributor can pick their own work back
+   up. matching is by SLOT ID, which is why base track ids must stay stable. */
+async function attachPart(zip, manifest, fileName){
+  if(!pageCount()){
+    toast('open the comic first, then attach this ' + manifest.kind, 'error');
+    return;
+  }
+  if(manifest.base && cState.meta.id && manifest.base.id !== cState.meta.id){
+    toast('that ' + manifest.kind + ' was made for a different comic', 'error');
+    return;
+  }
+  let filled = 0, added = 0;
+  for(const t of (manifest.tracks || [])){
+    const f = t.file && zip.file(t.file);
+    let aud = null;
+    if(f){
+      aud = uid('a');
+      const blob = await f.async('blob');
+      audioStore[aud] = {blob, url:URL.createObjectURL(blob),
+        fileName:t.file.split('/').pop(), peaks:null, duration:0};
+      audioPool.push(aud);
+      decodePeaks(aud);
+    }
+    const slot = trackByTid(t.id);
+    if(slot && slot.type==='oneshot'){          // fills an authored slot
+      slot.aud = aud; slot.title = t.title || slot.title;
+      slot.start = t.sync?.start ?? 0;
+      filled++;
+    }else{                                       // brand new track from a contributor
+      cState.tracks.push({tid:t.id||uid('t'), aud, type:t.type||'music',
+        role: t.type==='oneshot' ? (t.role==='sfx'?'sfx':'line') : undefined,
+        character: t.character || null,
+        title: t.title || 'untitled', from: t.sync?.from ?? 1,
+        start: t.sync?.start ?? 0, volume: t.volume ?? 100});
+      if(t.type==='oneshot') osBlocks.add(t.sync?.from ?? 1);
+      added++;
+    }
+  }
+  render();
+  toast(`attached ${fileName}: ${filled} slot${filled===1?'':'s'} filled, ${added} new`);
+}
+
+function baseRef(){
+  if(!cState.meta.id) cState.meta.id = uid('b') + Date.now().toString(36);
+  return {id: cState.meta.id, title: cState.meta.title || 'untitled'};
+}
+function partFileName(kind, extra){
+  const slug = s => (s||'untitled').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');
+  return slug(cState.meta.title) + '-' + kind + (extra ? '-' + slug(extra) : '') + '.eski';
+}
+async function exportPart(kind){
+  const isVo = kind === 'vo';
+  const tracks = isVo
+    ? cState.tracks.filter(t=>t.type==='oneshot' && t.role==='line' && t.aud)
+    : cState.tracks.filter(t=>t.type!=='oneshot' || t.role!=='line').filter(t=>t.type==='silence' || t.aud);
+  if(!tracks.length){
+    toast(isVo ? 'no lines recorded yet' : 'nothing to score yet', 'error');
+    return;
+  }
+  let character = null;
+  if(isVo){
+    const keys = [...new Set(tracks.map(t=>t.character).filter(Boolean))];
+    if(keys.length > 1){ toast('a vo covers one character. this has ' + keys.length, 'error'); return; }
+    character = keys[0] || null;
+    const cov = coverageFor(character);
+    if(cov.pct < 100) toast(`heads up: ${cov.filled}/${cov.total} lines. a vo needs every line to publish.`);
+  }
+  try{
+    loading(true, 'packing');
+    $('export-btn').disabled = true;
+    await new Promise(r=>setTimeout(r,30));
+    await Promise.all(Object.keys(audioStore).map(aud=>decodePeaks(aud)));
+    const gains = normGains();
+    const zip = new JSZip();
+    const packed = {}; let ai = 0;
+    for(const t of tracks){
+      if(!t.aud || packed[t.aud]) continue;
+      const a = audioStore[t.aud]; if(!a) continue;
+      ai++;
+      const p = 'audio/'+String(ai).padStart(2,'0')+'-'+(a.fileName||'clip').replace(/[^a-z0-9._-]+/gi,'_');
+      zip.file(p, a.blob); packed[t.aud] = p;
+    }
+    const manifest = {
+      version: 2, kind, created: new Date().toISOString(), app: 'eski',
+      base: baseRef(),
+      character: isVo ? character : undefined,
+      tracks: tracks.map(t=>{
+        const o = { id: t.tid, title: t.title, source: 'local',
+          file: t.aud ? (packed[t.aud]||null) : null, type: t.type,
+          volume: t.volume, gainDb: gains[t.tid] || 0,
+          sync: {from: t.from, start: t.start} };
+        if(t.type === 'oneshot') o.role = t.role || 'line';
+        if(o.role === 'line') o.character = t.character || null;
+        return o;
+      })
+    };
+    zip.file('.eski/manifest.json', JSON.stringify(manifest, null, 2));
+    const blob = await zip.generateAsync({type:'blob', compression:'DEFLATE'});
+    const aEl = document.createElement('a');
+    aEl.href = URL.createObjectURL(blob);
+    aEl.download = partFileName(kind, character);
+    aEl.click();
+    setTimeout(()=>URL.revokeObjectURL(aEl.href), 4000);
+    toast('exported ' + aEl.download);
+  }catch(err){ toast('export failed: '+err.message, 'error'); }
+  finally{ $('export-btn').disabled = false; loading(false); }
+}
+function exportCurrent(){
+  if(editMode === 'vo') return exportPart('vo');
+  if(editMode === 'soundtrack') return exportPart('soundtrack');
+  return exportEski();
+}
 async function exportEski(){
   if(!pageCount()){ toast('add some pages first', 'error'); return; }
   try{
@@ -1626,11 +1751,12 @@ async function exportEski(){
       zip.file(path, a.blob); packed[t.aud]=path;
     }
     const manifest={
-      version:2, created:new Date().toISOString(), app:'eski',
+      version:2, kind:'base', created:new Date().toISOString(), app:'eski',
       meta:{ title:cState.meta.title||'untitled', creator:cState.meta.creator||null,
         description:cState.meta.description||null,
         direction:cState.meta.direction==='rtl'?'rtl':'ltr',
         cover:pageNames[clamp(cState.coverIndex,0,pageNames.length-1)],
+        id: baseRef().id,
         // the cast is the one thing only the author can supply
         cast: cState.cast.length
           ? cState.cast.map(c=>({key:c.key, name:c.name, kind:c.kind||'character'}))

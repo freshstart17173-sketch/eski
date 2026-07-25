@@ -473,6 +473,47 @@ function shelfBlob(id){
   });
 }
 
+/* ---------------- mixing in parts ----------------
+   a vo or a soundtrack ships without pages: just audio plus the base's slot
+   ids. merging is therefore id matching, and anything unmatched is a track the
+   contributor added themselves. this is what makes casts hot-swappable: drop a
+   different vo over the same base and only that character changes. */
+async function mergePart(comic, zip){
+  const mf = zip.file('.eski/manifest.json');
+  if(!mf) return 0;
+  let m; try{ m = JSON.parse(await mf.async('string')); }catch(e){ return 0; }
+  if(!m.kind || m.kind === 'base') return 0;
+  if(m.base && comic.baseId && m.base.id !== comic.baseId){
+    toast('skipped a part built for a different comic', 'error');
+    return 0;
+  }
+  let n = 0;
+  for(const t of (m.tracks || [])){
+    const entry = t.file ? zip.file(t.file) : null;
+    const existing = comic.tracks.find(x=>x.id === t.id);
+    if(existing){
+      existing.entry = entry; existing.url = null; existing.blob = null;
+      existing.title = t.title || existing.title;
+      existing.start = t.sync?.start ?? existing.start;
+      existing.gainDb = typeof t.gainDb === 'number' ? t.gainDb : 0;
+      existing.volume = t.volume ?? existing.volume;
+    }else{
+      comic.tracks.push({
+        id: t.id || ('m'+Math.random().toString(36).slice(2,8)),
+        title: t.title || 'untitled',
+        type: t.type === 'oneshot' ? 'oneshot' : (t.type === 'silence' ? 'silence' : 'music'),
+        volume: t.volume ?? 100, from: t.sync?.from ?? 1, start: t.sync?.start ?? 0, end: null,
+        gainDb: typeof t.gainDb === 'number' ? t.gainDb : 0,
+        duck: typeof t.duck === 'string' ? t.duck : null,
+        file: t.file || null, entry, blob: null, url: null, external: false
+      });
+    }
+    n++;
+  }
+  comic.tracks.sort((a,b)=>a.from-b.from);
+  return n;
+}
+
 async function comicFromZip(zip, fileName){
   let manifest = null;
   const mf = zip.file('.eski/manifest.json');
@@ -531,7 +572,8 @@ async function comicFromZip(zip, fileName){
     title: (meta.title||'untitled').toString(),
     creator: meta.creator, description: meta.description,
     direction: meta.direction==='rtl' ? 'rtl' : 'ltr',
-    coverEntry, coverUrl: null, pages, tracks, player, fileName, isEski: !!manifest
+    coverEntry, coverUrl: null, pages, tracks, player, fileName, isEski: !!manifest,
+    baseId: meta.id || null, cast: Array.isArray(meta.cast) ? meta.cast : []
   };
 }
 
@@ -1538,9 +1580,17 @@ if('serviceWorker' in navigator && location.protocol.startsWith('http')){
   const src = (readParam && !/^https?:/i.test(readParam)) ? readParam : (readParam || 'demo.eski');
   try{
     showBusy(true);
-    const blob = src.startsWith('idb:') ? await shelfBlob(src.slice(4)) : await fetchBlob(src);
+    const grab = s => s.startsWith('idb:') ? shelfBlob(s.slice(4)) : fetchBlob(s);
+    const blob = await grab(src);
     const zip = await JSZip.loadAsync(blob);
     const comic = await comicFromZip(zip, src.split('/').pop() || 'comic.eski');
+    // ?with=<part>,<part> layers a vo and/or a soundtrack over the base
+    const parts = (new URLSearchParams(location.search).get('with') || '')
+      .split(',').map(s=>s.trim()).filter(Boolean);
+    for(const p of parts){
+      try{ await mergePart(comic, await JSZip.loadAsync(await grab(p))); }
+      catch(e){ console.warn('part failed: ' + p, e); }
+    }
     openComic(comic);
     document.body.classList.add('needs-gesture'); // browsers hold audio until a tap
   }catch(err){

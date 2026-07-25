@@ -105,6 +105,12 @@ a:hover{text-decoration:underline;text-underline-offset:3px}
 .modal .t{margin:14px 0 4px;font-weight:500;text-transform:lowercase;font-size:17px}
 .modal p{margin:6px 0 16px;color:var(--soft-ink);font-size:14px}
 .modal .actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.mix-h{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);
+  margin:12px 0 5px;text-align:left}
+.mixrow{display:flex;align-items:center;gap:7px;font-size:13px;padding:3px 0;text-align:left;cursor:pointer}
+.mixrow .k{font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:#fff;
+  background:var(--accent);border-radius:9px;padding:1px 7px;flex:none}
+.mixrow .n{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .btn{display:inline-flex;align-items:center;gap:7px;padding:8px 16px;border-radius:7px;
   text-transform:lowercase;font-size:14px;border:1px solid var(--edge);background:var(--bg-3);
   color:var(--soft-ink);cursor:pointer;box-shadow:var(--shadow)}
@@ -155,6 +161,7 @@ footer .brand{font-size:22px;color:var(--accent)}
   <div class="modal">
     <img class="art" id="ov-img" alt="cover">
     <div class="t" id="ov-title"></div>
+    <div id="ov-mix"></div>
     <p>browse and share more eskis in the discord.</p>
     <div class="actions">
       <a class="btn primary" id="ov-read" href="#"><span data-ico="book-open"></span>read it</a>
@@ -281,9 +288,28 @@ function shelfTx(mode, fn){
 const shelfList = ()=>shelfTx('readonly', s=>s.getAll()).catch(()=>[]);
 const shelfGet  = id=>shelfTx('readonly', s=>s.get(id));
 const shelfDel  = id=>shelfTx('readwrite', s=>s.delete(id));
-function shelfAdd(file){
+/* read enough of the manifest at shelve time to know what this file IS: a
+   whole comic, or one contributor's voice or score for one. parts never get
+   their own grid card; they attach to the base they name. */
+async function shelfMeta(file){
+  try{
+    const zip = await JSZip.loadAsync(file);
+    const mf = zip.file('.eski/manifest.json');
+    if(!mf) return {kind:'base'};
+    const m = JSON.parse(await mf.async('string'));
+    return {
+      kind: m.kind || 'base',
+      baseId: (m.base && m.base.id) || (m.meta && m.meta.id) || null,
+      character: m.character || null,
+      title: (m.meta && m.meta.title) || (m.base && m.base.title) || null
+    };
+  }catch(e){ return {kind:'base'}; }
+}
+async function shelfAdd(file){
   const id = 'e' + Date.now().toString(36) + Math.random().toString(36).slice(2,6);
-  return shelfTx('readwrite', s=>s.put({id, name:file.name, blob:file, added:Date.now()})).then(()=>id);
+  const meta = await shelfMeta(file);
+  await shelfTx('readwrite', s=>s.put({id, name:file.name, blob:file, added:Date.now(), ...meta}));
+  return id;
 }
 
 /* keep slashes readable in ?read=, encode only the segments */
@@ -305,12 +331,13 @@ async function blobFor(item){
 
 async function coverFor(item){
   const zip = await JSZip.loadAsync(await blobFor(item));
-  let title = item.title, coverBlob = null;
+  let title = item.title, coverBlob = null, baseId = item.baseId || null;
   const mf = zip.file('.eski/manifest.json');
   if(mf){
     try{
       const m = JSON.parse(await mf.async('string'));
       title = title || m.meta?.title;
+      baseId = m.meta?.id || baseId;
       if(m.meta?.cover && zip.file(m.meta.cover)) coverBlob = await zip.file(m.meta.cover).async('blob');
     }catch(e){}
   }
@@ -322,18 +349,37 @@ async function coverFor(item){
     if(imgs[0]) coverBlob = await imgs[0].en.async('blob');
   }
   return {
-    file: item.file,
+    file: item.file, baseId,
     title: title || item.file.split('/').pop().replace(/\.eski$/i,''),
     cover: coverBlob ? URL.createObjectURL(coverBlob) : null
   };
 }
 
+/* the mix picker: which voices and which score to read this comic with.
+   parts are opt-in, so an unmixed base still opens as a silent comic. */
+function paintMix(entry){
+  const box = $('ov-mix');
+  const parts = partsForBase(entry.baseId);
+  if(!parts.length){ box.innerHTML = ''; $('ov-read').href = readHref(entry.file); return; }
+  box.innerHTML = '<div class="mix-h">mix</div>' + parts.map(p=>`
+    <label class="mixrow">
+      <input type="checkbox" value="${p.id}" checked>
+      <span class="k">${p.kind === 'vo' ? 'voice' : 'score'}</span>
+      <span class="n">${esc(p.character || p.title || p.name || 'untitled')}</span>
+    </label>`).join('');
+  const sync = ()=>{
+    const on = [...box.querySelectorAll('input:checked')].map(i=>'idb:'+i.value);
+    $('ov-read').href = readHref(entry.file) + (on.length ? '&with=' + on.map(encodeURIComponent).join(',') : '');
+  };
+  box.querySelectorAll('input').forEach(i=>i.addEventListener('change', sync));
+  sync();
+}
 function open_(entry){
   const o = $('overlay');
   $('ov-img').src = entry.cover || '';
   $('ov-img').style.visibility = entry.cover ? 'visible' : 'hidden';
   $('ov-title').textContent = entry.title;
-  $('ov-read').href = readHref(entry.file);
+  paintMix(entry);
   o.classList.add('open');
 }
 function close_(){ $('overlay').classList.remove('open'); }
@@ -356,13 +402,17 @@ async function allItems(){
   try{ folder = await listEskis(); }catch(e){}
   let shelf = [];
   try{
-    shelf = (await shelfList())
-      .sort((a,b)=>b.added-a.added)
-      .map(r=>({ file:'idb:'+r.id, id:r.id, local:true,
-                 title:(r.name||'untitled').replace(/\.(eski|cbz|zip)$/i,'') }));
+    const rows = (await shelfList()).sort((a,b)=>b.added-a.added);
+    shelfParts = rows.filter(r=>r.kind && r.kind!=='base');
+    shelf = rows.filter(r=>!r.kind || r.kind==='base')
+      .map(r=>({ file:'idb:'+r.id, id:r.id, local:true, baseId:r.baseId||null,
+                 title:(r.title||r.name||'untitled').replace(/\.(eski|cbz|zip)$/i,'') }));
   }catch(e){}
   return [...shelf, ...folder];
 }
+/* vos and soundtracks sitting on the shelf, indexed while building the grid */
+let shelfParts = [];
+const partsForBase = baseId => shelfParts.filter(p=>!p.baseId || !baseId || p.baseId===baseId);
 
 const EMPTY_HTML = `<div class="state">
   nothing here yet. drop an <code>.eski</code> anywhere on this page to shelve it,
@@ -404,6 +454,7 @@ async function renderGrid(){
   await Promise.all(items.map(async (it,i)=>{
     try{
       const entry = await coverFor(it);
+      entry.baseId = it.baseId || entry.baseId || null;
       const art = cards[i].querySelector('.art');
       art.innerHTML = entry.cover ? `<img src="${entry.cover}" alt="cover">` : '';
       cards[i].querySelector('.t').textContent = entry.title;
