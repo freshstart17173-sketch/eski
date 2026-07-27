@@ -14,6 +14,7 @@ open               folder-open       "open .eski"
 silence            volume-x          "silence" button
 settings           settings          settings drawer button
 export             download          "export .eski"
+publish            upload-cloud      "publish" (signed in only)
 theme              contrast          dark-mode toggle
 soundtrack         music             mode switch: soundtrack
 pages              book-open         mode switch: pages

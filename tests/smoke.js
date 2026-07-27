@@ -6,6 +6,12 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 
+/* run at the lowest scheduler priority. the suite drives a real headless
+   chromium for two minutes, and on windows the browser it spawns inherits this
+   priority class, so the whole run yields to whatever you are actually doing.
+   it costs a few seconds of wall clock and stops the machine crawling. */
+try { require('os').setPriority(19); } catch (e) { /* not permitted, run normally */ }
+
 const ROOT = path.join(__dirname, '..');
 const FIX = path.join(__dirname, 'fixtures');
 const VENDOR = path.join(__dirname, 'vendor');
@@ -13,6 +19,7 @@ const DL = path.join(__dirname, 'dl');
 fs.mkdirSync(DL, { recursive: true });
 
 const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.json': 'application/json',
+  '.css': 'text/css',   // without this the browser refuses tokens.css and every layout assertion lies
   '.png': 'image/png', '.eski': 'application/x-eski' };
 
 let failures = 0;
@@ -79,6 +86,12 @@ function ok(cond, name, extra) {
     else if (local) route.continue();
     else route.fulfill({ status: 404, body: '' });
   });
+  // platform.js imports the supabase client from esm.sh. the suite runs signed
+  // out, so hand it a module that throws: platform.js catches it and paints no
+  // auth ui, which is the same path a blocked cdn takes in the wild.
+  await ctx.route('https://esm.sh/**', r => r.fulfill({
+    contentType: 'text/javascript', body: 'export const createClient=()=>{throw new Error("offline")}'
+  }));
   await ctx.route('https://fonts.googleapis.com/**', r => r.fulfill({ contentType: 'text/css', body: '' }));
   await ctx.route('https://fonts.gstatic.com/**', r => r.fulfill({ status: 404, body: '' }));
 
@@ -957,6 +970,24 @@ function ok(cond, name, extra) {
   ok(await phone.evaluate(() => document.getElementById('bay').getBoundingClientRect().left < 0),
     'tapping the scrim closes it');
   await phone.close();
+
+  // the contract is fail-soft: with the auth client unreachable (the esm.sh
+  // route above throws), no auth ui is painted and the page is untouched.
+  // if this ever fails, a broken cdn takes the whole site with it.
+  console.log('platform: sign in degrades to nothing');
+  const plat = await ctx.newPage();
+  wire(plat);
+  await plat.goto('http://localhost:8931/index.html');
+  await plat.waitForSelector('.cell');
+  ok(await plat.evaluate(() => !document.querySelector('.auth-btn')),
+    'no auth ui when the client cannot load');
+  ok(await plat.evaluate(() => document.querySelectorAll('.cell').length > 0),
+    'the library still renders without it');
+  await plat.goto('http://localhost:8931/studio.html');
+  ok(await plat.evaluate(() => {
+    const b = document.getElementById('publish-btn');
+    return b && b.offsetParent === null;      // [hidden] must beat .pill's display
+  }), 'publish is not offered to a signed-out studio');
 
   console.log('console errors');
   ok(consoleErrors.length === 0, 'zero console errors', consoleErrors.join(' | '));

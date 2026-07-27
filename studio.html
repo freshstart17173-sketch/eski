@@ -10,45 +10,26 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Jost:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script type="module" src="platform.js"></script>
+<link rel="stylesheet" href="tokens.css">
 <style>
-@font-face{
-  font-family:'Gnomon';
-  src:url(data:font/woff2;base64,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) format('woff2');
-  font-display:swap;
-}
-:root{
-  --hue:152;
-  --ink:#1c1c1c; --soft-ink:#4c4c4c; --muted:#7a7a7a;
-  --accent:hsl(var(--hue),24%,40%); --accent-deep:hsl(var(--hue),30%,28%);
-  --accent-soft:hsl(var(--hue),24%,88%);
-  /* layered surfaces: 0 = deepest shell, 3 = raised/interactive */
-  --bg-0:#dcdddd; --bg-1:#ececed; --bg-2:#f7f7f8; --bg-3:#ffffff;
-  --edge:rgba(0,0,0,.13); --edge-strong:rgba(0,0,0,.26);
-  --shadow:0 1px 3px rgba(0,0,0,.12); --shadow-lg:0 8px 30px rgba(0,0,0,.22);
-  --hdr:56px;
-}
-[data-theme="dark"]{
-  --ink:#eaeaea; --soft-ink:#c2c2c2; --muted:#8a8a8a;
-  --accent:hsl(var(--hue),22%,62%); --accent-deep:hsl(var(--hue),26%,74%);
-  --accent-soft:hsl(var(--hue),18%,30%);
-  --bg-0:#0f0f10; --bg-1:#191a1b; --bg-2:#232426; --bg-3:#2d2f31;
-  --edge:rgba(255,255,255,.12); --edge-strong:rgba(255,255,255,.26);
-  --shadow:0 1px 3px rgba(0,0,0,.4); --shadow-lg:0 10px 34px rgba(0,0,0,.55);
-}
 *{box-sizing:border-box}
+/* .pill sets display:inline-flex, which outranks the ua stylesheet's
+   [hidden]{display:none}. without this, hiding a pill does nothing. */
+[hidden]{display:none!important}
 body{margin:0;background:var(--bg-0);color:var(--ink);
   font-family:'Jost','Avenir Next','Helvetica Neue',Arial,sans-serif;
   font-weight:400;font-size:14.5px;line-height:1.4;height:100vh;display:flex;
   flex-direction:column;overflow:hidden}
 button{font-family:inherit;font-size:inherit;cursor:pointer}
 input,textarea,select{font-family:inherit;font-size:13.5px;color:var(--ink);background:var(--bg-3);
-  border:1px solid var(--edge);border-radius:5px;padding:6px 8px;outline:none}
+  border:1px solid var(--edge);border-radius:0;padding:6px 8px;outline:none}
 input:focus,textarea:focus,select:focus{border-color:var(--accent)}
 a{color:var(--accent);text-decoration:none}
 h4{margin:0 0 8px;font-size:11px;letter-spacing:.13em;color:var(--muted);font-weight:600;
   text-transform:uppercase}
 .pill{display:inline-flex;align-items:center;gap:6px;background:var(--bg-3);border:1px solid var(--edge);
-  color:var(--soft-ink);padding:6px 12px;border-radius:6px;text-transform:lowercase;
+  color:var(--soft-ink);padding:6px 12px;border-radius:0;text-transform:lowercase;
   transition:all 140ms ease;font-size:13px;box-shadow:var(--shadow)}
 .pill:hover{border-color:var(--accent);color:var(--accent);transform:translateY(-1px)}
 .pill:active{transform:translateY(0)}
@@ -80,18 +61,18 @@ h4{margin:0 0 8px;font-size:11px;letter-spacing:.13em;color:var(--muted);font-we
 .bay-sec.imgs{flex:0 0 auto;max-height:42%}
 .bay-sec.auds{flex:1;min-height:0}
 .bay-grid{display:flex;flex-wrap:wrap;gap:7px}
-.chip-img{width:44px;height:58px;border:1px solid var(--edge);border-radius:4px;overflow:hidden;
+.chip-img{width:44px;height:58px;border:1px solid var(--edge);border-radius:0;overflow:hidden;
   background:var(--bg-3);cursor:grab;position:relative;box-shadow:var(--shadow)}
 .chip-img img{width:100%;height:100%;object-fit:cover;display:block;pointer-events:none}
 .chip-img .n{position:absolute;bottom:0;left:0;right:0;font-size:9px;text-align:center;
   background:rgba(0,0,0,.55);color:#fff;line-height:1.4}
-.chip-aud{width:100%;border:1px solid var(--edge);border-radius:6px;background:var(--bg-3);
+.chip-aud{width:100%;border:1px solid var(--edge);border-radius:0;background:var(--bg-3);
   padding:6px 8px;cursor:grab;box-shadow:var(--shadow);transition:border-color 140ms ease}
 .chip-aud:hover{border-color:var(--accent)}
 .chip-aud.used{opacity:.55}
 .chip-aud .t{font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
   text-transform:lowercase}
-.chip-aud canvas{display:block;width:100%;height:20px;margin-top:4px;border-radius:3px}
+.chip-aud canvas{display:block;width:100%;height:20px;margin-top:4px;border-radius:0}
 .chip-aud .m{font-size:10px;color:var(--muted);margin-top:2px}
 .bay-hint{font-size:11px;color:var(--muted);margin-top:8px;line-height:1.5}
 .bay-empty{font-size:12px;color:var(--muted)}
@@ -99,7 +80,7 @@ h4{margin:0 0 8px;font-size:11px;letter-spacing:.13em;color:var(--muted);font-we
 .sec-head h4{margin:0;display:flex;align-items:center;gap:5px}
 .sec-head .count{color:var(--muted);font-size:11px}
 .sec-head .zoomers{margin-left:auto;display:flex;gap:2px}
-.mini-btn{width:22px;height:20px;border:1px solid var(--edge);border-radius:5px;background:var(--bg-3);
+.mini-btn{width:22px;height:20px;border:1px solid var(--edge);border-radius:0;background:var(--bg-3);
   color:var(--soft-ink);display:inline-flex;align-items:center;justify-content:center;padding:0}
 .mini-btn:hover{border-color:var(--accent);color:var(--accent)}
 
@@ -109,9 +90,9 @@ h4{margin:0 0 8px;font-size:11px;letter-spacing:.13em;color:var(--muted);font-we
   padding:16px;background:radial-gradient(circle at 50% 38%, var(--bg-1), var(--bg-0))}
 .preview img{max-height:100%;max-width:100%;object-fit:contain;box-shadow:var(--shadow-lg);background:#fff}
 .pv-badge{position:absolute;top:12px;left:50%;transform:translateX(-50%);font-size:12.5px;
-  color:var(--soft-ink);background:var(--bg-2);border:1px solid var(--edge);border-radius:20px;
+  color:var(--soft-ink);background:var(--bg-2);border:1px solid var(--edge);border-radius:0;
   padding:3px 14px;box-shadow:var(--shadow)}
-.pv-nav{position:absolute;top:50%;transform:translateY(-50%);width:34px;height:48px;border-radius:8px;
+.pv-nav{position:absolute;top:50%;transform:translateY(-50%);width:34px;height:48px;border-radius:0;
   background:var(--bg-2);border:1px solid var(--edge);color:var(--soft-ink);font-size:18px;
   display:flex;align-items:center;justify-content:center;box-shadow:var(--shadow)}
 .pv-nav:hover{color:var(--accent);border-color:var(--accent)}
@@ -134,18 +115,18 @@ h4{margin:0 0 8px;font-size:11px;letter-spacing:.13em;color:var(--muted);font-we
 
 /* pages mode */
 .pagesgrid{display:flex;flex-wrap:wrap;gap:10px;padding:12px}
-.pgcard{width:88px;position:relative;border:1px solid var(--edge);border-radius:6px;overflow:hidden;
+.pgcard{width:88px;position:relative;border:1px solid var(--edge);border-radius:0;overflow:hidden;
   background:var(--bg-3);cursor:grab;box-shadow:var(--shadow)}
 .pgcard img{width:100%;height:112px;object-fit:cover;display:block;pointer-events:none}
 .pgcard .n{position:absolute;top:3px;left:4px;font-size:10px;background:rgba(0,0,0,.6);color:#fff;
-  padding:0 5px;border-radius:3px}
-.pgcard .x{position:absolute;top:2px;right:2px;width:18px;height:18px;border:0;border-radius:4px;
+  padding:0 5px;border-radius:0}
+.pgcard .x{position:absolute;top:2px;right:2px;width:18px;height:18px;border:0;border-radius:0;
   background:rgba(0,0,0,.6);color:#fff;font-size:12px;display:flex;align-items:center;
   justify-content:center;opacity:0;transition:opacity 120ms ease}
 .pgcard:hover .x{opacity:1}
 .pgcard.dragover{outline:2px dashed var(--accent);outline-offset:-2px}
 .pgcard.dragging{opacity:.4}
-.pages-drop{width:88px;height:114px;border:1px dashed var(--edge);border-radius:6px;display:flex;
+.pages-drop{width:88px;height:114px;border:1px dashed var(--edge);border-radius:0;display:flex;
   align-items:center;justify-content:center;color:var(--muted);font-size:12px;text-align:center;
   cursor:pointer;padding:6px}
 .pages-drop:hover{border-color:var(--accent);color:var(--accent)}
@@ -167,7 +148,7 @@ h4{margin:0 0 8px;font-size:11px;letter-spacing:.13em;color:var(--muted);font-we
 .drawer-sep{height:1px;background:var(--edge);margin:16px 0 14px}
 /* reader preview */
 .readerprev{position:fixed;inset:24px;z-index:200;display:none;flex-direction:column;
-  background:var(--bg-1);border:1px solid var(--edge-strong);border-radius:12px;
+  background:var(--bg-1);border:1px solid var(--edge-strong);border-radius:0;
   box-shadow:var(--shadow-lg);overflow:hidden}
 .readerprev.open{display:flex}
 .rp-head{display:flex;align-items:center;gap:8px;padding:9px 12px;border-bottom:1px solid var(--edge);
@@ -179,28 +160,28 @@ h4{margin:0 0 8px;font-size:11px;letter-spacing:.13em;color:var(--muted);font-we
 /* multi-select + per-item menu */
 .chip-aud, .chip-img{position:relative}
 .chip-aud.picked, .chip-img.picked, .pgcard.picked{outline:2px solid var(--accent);outline-offset:-2px}
-.chip-aud .dots{position:absolute;top:3px;right:3px;width:18px;height:18px;border:0;border-radius:4px;
+.chip-aud .dots{position:absolute;top:3px;right:3px;width:18px;height:18px;border:0;border-radius:0;
   background:var(--bg-1);color:var(--muted);opacity:0;display:flex;align-items:center;
   justify-content:center;padding:0;font-size:13px;line-height:1}
 .chip-aud:hover .dots{opacity:1}
 .chip-aud .dots:hover{color:var(--accent)}
 .menu{position:fixed;z-index:210;background:var(--bg-1);border:1px solid var(--edge-strong);
-  border-radius:8px;box-shadow:var(--shadow-lg);padding:4px;display:none;min-width:150px}
+  border-radius:0;box-shadow:var(--shadow-lg);padding:4px;display:none;min-width:150px}
 .menu.open{display:block}
 .menu button{display:flex;align-items:center;gap:7px;width:100%;border:0;background:transparent;
-  color:var(--soft-ink);font-size:12.5px;padding:6px 9px;border-radius:5px;text-align:left}
+  color:var(--soft-ink);font-size:12.5px;padding:6px 9px;border-radius:0;text-align:left}
 .menu button:hover{background:var(--bg-3);color:var(--accent)}
 .menu button.danger:hover{color:#c1362b}
 .menu .sep{height:1px;background:var(--edge);margin:4px 2px}
 /* trim */
 .trim{position:fixed;inset:auto;left:50%;top:50%;transform:translate(-50%,-50%);z-index:215;
-  width:min(520px,92vw);background:var(--bg-1);border:1px solid var(--edge-strong);border-radius:12px;
+  width:min(520px,92vw);background:var(--bg-1);border:1px solid var(--edge-strong);border-radius:0;
   box-shadow:var(--shadow-lg);padding:16px;display:none}
 .trim.open{display:block}
 .trim h4{margin:0 0 4px}
 .trim .sub{font-size:11.5px;color:var(--muted);margin-bottom:12px}
 .trim-wave{position:relative;height:92px;background:var(--bg-0);border:1px solid var(--edge);
-  border-radius:8px;overflow:hidden;cursor:ew-resize}
+  border-radius:0;overflow:hidden;cursor:ew-resize}
 .trim-wave canvas{width:100%;height:100%;display:block}
 .trim-mask{position:absolute;top:0;bottom:0;background:rgba(0,0,0,.45);pointer-events:none}
 .trim-handle{position:absolute;top:0;bottom:0;width:9px;margin-left:-4px;cursor:ew-resize;
@@ -222,13 +203,13 @@ h4{margin:0 0 8px;font-size:11px;letter-spacing:.13em;color:var(--muted);font-we
   background:var(--bg-2)}
 .bay-search .ico{width:14px;height:14px;color:var(--muted);flex:none}
 .bay-search input{flex:1;min-width:0;padding:5px 7px;font-size:12.5px}
-.bay-search select,.sec-head .sort{font-size:11.5px;padding:3px 5px;border-radius:5px;
+.bay-search select,.sec-head .sort{font-size:11.5px;padding:3px 5px;border-radius:0;
   background:var(--bg-3);border:1px solid var(--edge);color:var(--soft-ink)}
 .sec-head .sort{margin-left:auto}
 
 /* one-shot tool + per-page one-shot block (pages mode) */
 .pgcard .osblock{position:absolute;left:4px;bottom:4px;display:flex;align-items:center;gap:3px;
-  background:var(--accent);color:#fff;border-radius:9px;padding:1px 7px 1px 5px;font-size:10.5px;
+  background:var(--accent);color:#fff;border-radius:0;padding:1px 7px 1px 5px;font-size:10.5px;
   cursor:pointer;box-shadow:var(--shadow)}
 .pgcard .osblock svg{width:11px;height:11px;stroke:#fff}
 .pgcard.osdrop{outline:2px solid var(--accent);outline-offset:-2px}
@@ -243,7 +224,7 @@ h4{margin:0 0 8px;font-size:11px;letter-spacing:.13em;color:var(--muted);font-we
   color:var(--muted);font-weight:500}
 .info-empty{color:var(--muted);font-size:12px;padding:8px 0}
 .songrow{display:flex;align-items:center;gap:7px;background:var(--bg-3);border:1px solid var(--edge);
-  border-radius:6px;padding:6px 7px;font-size:12px;margin-bottom:6px}
+  border-radius:0;padding:6px 7px;font-size:12px;margin-bottom:6px}
 .songrow .sw{width:8px;height:8px;border-radius:50%;flex:none}
 .songrow.sel{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)}
 .songrow input.nm{flex:1;min-width:0;border:0;background:transparent;font-size:12px;padding:2px 3px;
@@ -255,7 +236,7 @@ h4{margin:0 0 8px;font-size:11px;letter-spacing:.13em;color:var(--muted);font-we
 .songknobs input[type=range]{width:70px;accent-color:var(--accent)}
 .songknobs input[type=number]{width:48px;padding:1px 4px;font-size:11px}
 .songadd{margin-top:8px}
-.info-sec .dropping{outline:2px dashed var(--accent);outline-offset:2px;border-radius:8px}
+.info-sec .dropping{outline:2px dashed var(--accent);outline-offset:2px;border-radius:0}
 .oschip.empty{border-style:dashed;color:var(--muted)}
 .oschip .await{color:var(--muted);font-style:italic}
 .oschip .castsel{max-width:96px;font-size:11px;padding:1px 3px}
@@ -273,7 +254,7 @@ h4{margin:0 0 8px;font-size:11px;letter-spacing:.13em;color:var(--muted);font-we
 .castadd input{flex:1;min-width:0}
 .modebar{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted)}
 .modebar select{font-size:12px}
-.covbar{height:4px;border-radius:2px;background:var(--edge);overflow:hidden;flex:none;width:52px}
+.covbar{height:4px;border-radius:0;background:var(--edge);overflow:hidden;flex:none;width:52px}
 .covbar span{display:block;height:100%;background:var(--accent)}
 .songrow button{border:0;background:transparent;color:var(--muted);cursor:pointer;padding:2px;flex:none}
 .songrow button:hover{color:var(--accent)}
@@ -290,7 +271,7 @@ h4{margin:0 0 8px;font-size:11px;letter-spacing:.13em;color:var(--muted);font-we
 .qp-head button .ico{width:17px;height:17px}
 .qp-hint{font-size:11.5px;color:var(--muted);margin-bottom:10px}
 .qp-list{display:flex;flex-direction:column;gap:6px;min-height:60px;
-  border:1px dashed var(--edge);border-radius:8px;padding:8px}
+  border:1px dashed var(--edge);border-radius:0;padding:8px}
 .qp-empty{color:var(--muted);font-size:12px;text-align:center;padding:14px 4px}
 .qp-foot{margin-top:10px;display:flex;justify-content:flex-end}
 /* preview zoom/pan on the stage */
@@ -300,11 +281,11 @@ h4{margin:0 0 8px;font-size:11px;letter-spacing:.13em;color:var(--muted);font-we
 /* page card overlays: what is happening on this page, at a glance */
 .pgcard.sel{outline:2px solid var(--accent);outline-offset:-2px}
 .pgcard .trig{position:absolute;top:3px;right:22px;display:flex;align-items:center;gap:3px;
-  background:rgba(0,0,0,.62);color:#fff;border-radius:9px;padding:1px 6px;font-size:10px}
+  background:rgba(0,0,0,.62);color:#fff;border-radius:0;padding:1px 6px;font-size:10px}
 .pgcard .trig svg{width:10px;height:10px;stroke:#fff}
 .pgcard .inrange{position:absolute;left:0;right:0;bottom:0;height:4px}
 .oschip{display:flex;align-items:center;gap:6px;background:var(--bg-3);border:1px solid var(--edge);
-  border-radius:6px;padding:5px 7px;font-size:12px;cursor:grab;box-shadow:var(--shadow)}
+  border-radius:0;padding:5px 7px;font-size:12px;cursor:grab;box-shadow:var(--shadow)}
 .oschip:hover{border-color:var(--accent)}
 .oschip.dragging{opacity:.4}
 .oschip .ord{color:var(--muted);font-size:10px;min-width:12px}
@@ -324,7 +305,7 @@ h4{margin:0 0 8px;font-size:11px;letter-spacing:.13em;color:var(--muted);font-we
 
 /* drag-out trash bar */
 .trash-bar{position:fixed;left:50%;bottom:16px;transform:translate(-50%,24px);opacity:0;
-  pointer-events:none;background:var(--bg-2);border:1px dashed var(--edge-strong);border-radius:10px;
+  pointer-events:none;background:var(--bg-2);border:1px dashed var(--edge-strong);border-radius:0;
   padding:9px 20px;display:flex;align-items:center;gap:8px;color:var(--muted);z-index:150;
   transition:opacity 160ms ease,transform 160ms ease,background 160ms ease,border-color 160ms ease,color 160ms ease;
   box-shadow:var(--shadow-lg);text-transform:lowercase;font-size:13px}
@@ -334,7 +315,7 @@ h4{margin:0 0 8px;font-size:11px;letter-spacing:.13em;color:var(--muted);font-we
 
 /* toast */
 .toast{position:fixed;bottom:22px;left:50%;transform:translate(-50%,12px);background:#202020;
-  color:#f4f4f4;padding:9px 18px;border-radius:8px;opacity:0;pointer-events:none;
+  color:#f4f4f4;padding:9px 18px;border-radius:0;opacity:0;pointer-events:none;
   transition:all 220ms ease;z-index:900;font-size:14px;max-width:86vw;text-align:center;
   box-shadow:var(--shadow-lg)}
 .toast.show{opacity:1;transform:translate(-50%,0)}
@@ -345,7 +326,19 @@ h4{margin:0 0 8px;font-size:11px;letter-spacing:.13em;color:var(--muted);font-we
 .mob-only{display:none}
 .drawer-back{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:44;display:none}
 .drawer-back.on{display:block}
-@media (max-width:900px){
+
+/* ---------------- facelift: swiss grid in sage ----------------
+   the desk is three compartments divided by hairlines, which is what the
+   removed shadow stack was trying to say. density comes from the tokens. */
+.work{gap:var(--bw);background:var(--line)}
+.pill{font-size:var(--fs-sm)}
+.pill:hover{transform:none;background:var(--accent-soft);border-color:var(--accent);color:var(--accent-deep)}
+.pill.primary,.pill.on{background:var(--accent);border-color:var(--accent);color:var(--white)}
+.sec-head{font-size:var(--fs-micro);letter-spacing:.12em;font-weight:500;color:var(--muted);
+  text-transform:lowercase}
+.bay-search input,.bay-search select{font-size:var(--fs-sm)}
+.tl-status,.pg-num,.qp-count,.count{font-variant-numeric:var(--num)}
+input[type=number],input[type=range]+span{font-variant-numeric:var(--num)}@media (max-width:900px){
   .mob-only{display:inline-flex}
   .site-header{padding:0 10px;gap:8px;overflow-x:auto;scrollbar-width:none}
   .site-header::-webkit-scrollbar{display:none}
@@ -399,6 +392,8 @@ h4{margin:0 0 8px;font-size:11px;letter-spacing:.13em;color:var(--muted);font-we
   <span class="sp"></span>
   <button class="pill" data-ico="settings" onclick="openSettings()">settings</button>
   <button class="pill" data-ico="play" id="preview-btn" onclick="previewInReader()">preview</button>
+  <button class="pill" data-ico="upload-cloud" id="publish-btn" onclick="publishComic()"
+          title="put this comic in the library" hidden>publish</button>
   <button class="pill primary" data-ico="download" id="export-btn" onclick="exportCurrent()">export</button>
 </header>
 
@@ -619,6 +614,7 @@ const ICONS = {
   "volume-x": "<path d=\"M11 4.702a.705.705 0 0 0-1.203-.498L6.413 7.587A1.4 1.4 0 0 1 5.416 8H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2.416a1.4 1.4 0 0 1 .997.413l3.383 3.384A.705.705 0 0 0 11 19.298z\" /> <line x1=\"22\" x2=\"16\" y1=\"9\" y2=\"15\" /> <line x1=\"16\" x2=\"22\" y1=\"9\" y2=\"15\" />",
   "settings": "<path d=\"M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915\" /> <circle cx=\"12\" cy=\"12\" r=\"3\" />",
   "download": "<path d=\"M12 15V3\" /> <path d=\"M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4\" /> <path d=\"m7 10 5 5 5-5\" />",
+  "upload-cloud": "<path d=\"M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242\" /> <path d=\"M12 12v9\" /> <path d=\"m16 16-4-4-4 4\" />",
   "moon": "<path d=\"M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401\" />",
   "music": "<path d=\"M9 18V5l12-2v13\" /> <circle cx=\"6\" cy=\"18\" r=\"3\" /> <circle cx=\"18\" cy=\"16\" r=\"3\" />",
   "zoom-in": "<circle cx=\"11\" cy=\"11\" r=\"8\" /> <line x1=\"21\" x2=\"16.65\" y1=\"21\" y2=\"16.65\" /> <line x1=\"11\" x2=\"11\" y1=\"8\" y2=\"14\" /> <line x1=\"8\" x2=\"14\" y1=\"11\" y2=\"11\" />",
@@ -2178,6 +2174,149 @@ async function exportEski(asBlob){
   }catch(err){ toast('export failed: '+err.message, 'error'); }
   finally{ $('export-btn').disabled=false; loading(false); }
 }
+
+/* ---------------- publish to the platform ----------------
+   D17: pages and clips go up as loose CONTENT-ADDRESSED objects, straight from
+   this tab to R2 through a presigned PUT. no zip is uploaded and nothing
+   streams through the server.
+
+   the comic row is inserted as a DRAFT and only flipped to published once every
+   page and track row has landed, so a failure halfway leaves an invisible draft
+   instead of a half-built public comic. */
+const sbc = () => (window.eski && window.eski.sb) || null;
+
+async function sha256(blob){
+  const buf = await crypto.subtle.digest('SHA-256', await blob.arrayBuffer());
+  return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
+}
+/* n at a time. hashing and uploading 40 pages serially is slow, and all at once
+   is rude to the browser's connection pool. */
+async function pool(items, n, fn){
+  const it = items[Symbol.iterator]();
+  await Promise.all(Array.from({ length: Math.min(n, items.length) }, async () => {
+    for(let x = it.next(); !x.done; x = it.next()) await fn(x.value);
+  }));
+}
+const slugify = s => (s || '').toLowerCase().replace(/[^a-z0-9]+/g, '-')
+  .replace(/^-+|-+$/g, '') || 'untitled';
+
+async function publishComic(){
+  const sb = sbc();
+  if(!sb) return toast('sign in to publish', 'error');
+  const { data: { user } } = await sb.auth.getUser();
+  if(!user) return toast('sign in to publish', 'error');
+  if(!pageCount()) return toast('add some pages first', 'error');
+  if(!(cState.meta.title || '').trim()) return toast('give it a title in settings first', 'error');
+
+  const say = t => { $('loading-lbl').textContent = t; };
+  try{
+    loading(true, 'measuring audio');
+    $('publish-btn').disabled = true;
+    await Promise.all(Object.keys(audioStore).map(aud => decodePeaks(aud)));
+    const gains = normGains();
+
+    // one entry per blob that has to exist in the bucket. the cover is just a
+    // page, so it never uploads twice.
+    const parts = cState.pages.map(p => ({ blob: p.blob, ext: extOf(p.name, 'jpg') }));
+    for(const aud of [...new Set(cState.tracks.filter(t => t.aud).map(t => t.aud))]){
+      const a = audioStore[aud];
+      if(a) parts.push({ blob: a.blob, ext: extOf(a.fileName || '', 'mp3'), aud });
+    }
+
+    say('hashing ' + parts.length + ' files');
+    await pool(parts, 4, async p => { p.hash = await sha256(p.blob); });
+
+    // identical bytes share a key, so they are signed and uploaded once
+    const uniq = [...new Map(parts.map(p => [p.hash + '.' + p.ext, p])).values()];
+    say('asking for upload urls');
+    const token = (await sb.auth.getSession()).data.session.access_token;
+    const r = await fetch('/api/sign', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', authorization: 'Bearer ' + token },
+      body: JSON.stringify({ files: uniq.map(p => ({ hash: p.hash, ext: p.ext })) })
+    });
+    if(!r.ok) throw new Error((await r.json().catch(() => ({}))).error || 'could not sign the upload');
+    (await r.json()).files.forEach((f, i) => { uniq[i].key = f.key; uniq[i].url = f.url; });
+    const keyOf = new Map(uniq.map(p => [p.hash + '.' + p.ext, p.key]));
+    parts.forEach(p => { p.key = keyOf.get(p.hash + '.' + p.ext); });
+
+    let done = 0;
+    await pool(uniq, 4, async p => {
+      const put = await fetch(p.url, { method: 'PUT', body: p.blob,
+        headers: { 'content-type': p.blob.type || 'application/octet-stream' } });
+      if(!put.ok) throw new Error('upload failed (' + put.status + ')');
+      say(`uploading ${++done}/${uniq.length}`);
+    });
+
+    say('writing the library entry');
+    const meta = user.user_metadata || {};
+    const row = {
+      owner_id: user.id,
+      owner_name: meta.full_name || meta.name || meta.user_name ||
+                  (user.email || '').split('@')[0] || 'anonymous',
+      title: cState.meta.title.trim(),
+      slug: slugify(cState.meta.title),
+      direction: cState.meta.direction === 'rtl' ? 'rtl' : 'ltr',
+      cover_key: parts[clamp(cState.coverIndex, 0, pageCount() - 1)].key,
+      series_title: (cState.meta.series || {}).title || null,
+      series_index: (cState.meta.series || {}).index || null,
+      status: 'draft'
+    };
+    let ins = await sb.from('comics').insert(row).select('id').single();
+    if(ins.error && ins.error.code === '23505'){          // slug already taken
+      row.slug += '-' + Math.random().toString(36).slice(2, 6);
+      ins = await sb.from('comics').insert(row).select('id').single();
+    }
+    if(ins.error) throw new Error(ins.error.message);
+    const comicId = ins.data.id;
+
+    const pe = await sb.from('pages').insert(
+      cState.pages.map((p, i) => ({ comic_id: comicId, idx: i + 1, image_key: parts[i].key })));
+    if(pe.error) throw new Error(pe.error.message);
+
+    const audKey = {};
+    parts.filter(p => p.aud).forEach(p => { audKey[p.aud] = p.key; });
+    const ordered = [...cState.tracks]
+      .sort((x, y) => x.from - y.from || cState.tracks.indexOf(x) - cState.tracks.indexOf(y));
+    // mint the row ids here so a chain's attach_to can point at its parent
+    // without a second pass to read the inserted ids back
+    const idFor = new Map(ordered.map(t => [t.tid, crypto.randomUUID()]));
+    const te = await sb.from('tracks').insert(ordered.map((t, i) => ({
+      id: idFor.get(t.tid), comic_id: comicId, order_idx: i + 1, type: t.type,
+      audio_key: t.type === 'silence' ? null : (audKey[t.aud] || null),
+      title: t.title || null,
+      from_page: t.from,
+      start_ms: Math.round((t.start || 0) * 1000),
+      end_ms: t.end ? Math.round(t.end * 1000) : null,
+      volume: t.volume ?? 100,
+      gain_db: gains[t.tid] || 0,
+      duck: t.duck || null,
+      attach_to: t.attachTo ? (idFor.get(t.attachTo) || null) : null,
+      offset_ms: Math.round((t.offset || 0) * 1000),
+      role: t.type === 'oneshot' ? (t.role || 'line') : null
+    })));
+    if(te.error) throw new Error(te.error.message);
+
+    const pub = await sb.from('comics')
+      .update({ status: 'published', published_at: new Date().toISOString() })
+      .eq('id', comicId);
+    if(pub.error) throw new Error(pub.error.message);
+
+    toast('published as ' + row.slug);
+    // phase 1 has no cast or slots table, so that work stays in the file
+    if(cState.cast.length) toast('cast and slots stay local for now', 'error');
+  }catch(err){
+    toast('publish failed: ' + err.message, 'error');
+  }finally{
+    $('publish-btn').disabled = false;
+    loading(false);
+  }
+}
+// the button only means anything signed in. platform.js fires this on boot too
+document.addEventListener('eski-auth', e => {
+  const b = $('publish-btn');
+  if(b) b.hidden = !e.detail.user;
+});
 
 /* ---------------- preview in the real reader ----------------
    pack the current state to a blob and hand it to read.html in an iframe.

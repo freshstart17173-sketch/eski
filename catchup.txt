@@ -41,16 +41,15 @@ catchup.txt       this file
 --------------------------------------------------------------------------------
 3. HARD RULES / CONVENTIONS / GOTCHAS  (violate these and things break)
 --------------------------------------------------------------------------------
-* Vanilla JS only, no bundler, no framework. Each app is ONE self-contained HTML
-  file. New CDN libs only when a feature demands it (JSZip, pdf.js).
-* GNOMON FONT: the wordmark font is a base64 woff2 @font-face. It lives literally
-  in spec.html. The other 3 HTML files carry a "/*FONTFACE*/" placeholder that a
-  node one-liner replaces with spec.html's @font-face block. If you rewrite a
-  whole HTML file, re-inject the font:
-    node -e "const fs=require('fs');const src=fs.readFileSync('spec.html','utf8');
-    const m=src.match(/@font-face\{[\s\S]*?format\('woff2'\);\n  font-display:swap;\n\}/);
-    let s=fs.readFileSync('read.html','utf8');
-    fs.writeFileSync('read.html', s.replace('/*FONTFACE*/', m[0]));"
+* Vanilla JS only, no bundler, no framework. New CDN libs only when a feature
+  demands it (JSZip, pdf.js). The "one self-contained HTML file per app" rule
+  now has TWO deliberate exceptions, both shared: platform.js (auth, 14.8) and
+  tokens.css (the design system, D18). Component CSS still lives per page.
+* GNOMON FONT + DESIGN TOKENS: both live in tokens.css at the repo root, which
+  all four pages link. The old "/*FONTFACE*/ placeholder + node one-liner to
+  re-inject from spec.html" ritual is GONE, along with the 5.5 KB of base64
+  that used to be duplicated in all four files. To restyle anything, edit
+  tokens.css first and only add a page rule if the token cannot express it.
   (node is at "C:\Program Files\nodejs\node.exe" on this machine; the `node`
   alias may not be on PATH in the Bash tool — use the full path or add to PATH.)
 * ICONS: each page inlines a small `const ICONS = {name: "<svg inner>"}` map
@@ -475,6 +474,48 @@ D13 CLOSED ECOSYSTEM. The reader opens ONLY what the library hands it via
 D12 THE THREE APPS STAY THREE APPS. No separate VO booth, no separate musician
     tool. The composer in a MODE is both. It already has drag-drop import,
     waveforms, trim, preview, undo.
+D18 THE UI IS SWISS GRID IN SAGE (2026-07-28). One hue, square corners,
+    hairline dividers instead of shadows, Jost only with tabular figures for
+    readouts, Gnomon for display above 32px, and density treated as a feature
+    because this is a content platform. Tokens live in tokens.css; the full
+    system, the product vocabulary and the tripwire list live in the
+    .claude/skills/eski-brand skill, which REPLACES the old sage marketing
+    guide (that one had no product vocabulary: no table, toolbar, panel or
+    dense list, and a block rhythm built for a landing page).
+    Structure borrowed from the brutalist skill: grid-gap hairlines, square
+    geometry, bimodal density. Its red accent, uppercase type, ASCII framing
+    and scanline/noise filters were rejected: the content here is other
+    people's artwork and nothing may sit on top of it.
+    THIS REVERSES the studio's "depth over brand purity, by owner request"
+    (section 6). --shadow and --shadow-lg are now `none` everywhere.
+    HOW IT WAS DONE CHEAPLY: the four pages had grown two colour vocabularies
+    (--bg-0..3/--edge/--shadow vs --paper/--surface/--line). Both are defined
+    in tokens.css in terms of the sage ramp, so all four repainted at once
+    without touching 847 lines of component CSS.
+D17 THE ZIP IS A TRANSPORT FORMAT, NOT THE BACKEND'S STORAGE UNIT (2026-07-27).
+    Platform content lives as LOOSE CONTENT-ADDRESSED OBJECTS on R2 (one object
+    per page image, per audio clip, per cover) with metadata in Postgres. The
+    .eski zip survives everywhere it is already good: studio export, offline
+    reading, handing someone a file in Discord, the local shelf, studio
+    round-trip import. The reader keeps BOTH loaders permanently.
+    WHY: the zip's "lazy loading" is lazy DECOMPRESSION, not lazy DOWNLOAD.
+    Boot fetches the entire blob before JSZip.loadAsync, so a 66MB comic is
+    ~25s of blank screen on a 20Mbps line before page 1 paints. Loose objects
+    make that one image. It also makes D2 errata a one-object swap instead of a
+    66MB re-upload that busts every cache, gives covers to the library without
+    downloading whole comics (kills that backlog item), makes
+    Cache-Control:immutable honest because keys are content-addressed, and lets
+    a VO's ~200 clips upload browser->R2 by presigned PUT with no server-side
+    unzip (R2 has no compute).
+    COST: N requests instead of 1 (noise over HTTP/2 to a CDN), and the "a base
+    is one atomic file" property, which the comic row replaces and does better:
+    a half-uploaded zip is corrupt, a half-uploaded object set is just a row
+    that never flipped to published.
+    THE PORT IS NEARLY FREE: ensurePageUrl() short-circuits on p.url
+    (read.html:634) and audio.resolve() on track.url (read.html:1030), so
+    platform content that arrives as urls needs no engine change. All that is
+    needed is a comicFromApi() sibling of comicFromZip() filling the same
+    object shape with urls instead of zip entries.
 
 --------------------------------------------------------------------------------
 14.3 THE FOUR PEOPLE
@@ -611,20 +652,26 @@ Three things worth defending:
 --------------------------------------------------------------------------------
 14.6 LOADING
 --------------------------------------------------------------------------------
-  GET /api/mix/:id  ->  base .eski url + resolved track list (audio URLs)
+  GET /api/mix/:id  ->  ordered page urls + resolved track list (audio urls)
 
-One request, then:
-- PAGES: base stays a ZIP. Reuses the whole existing path: JSZip, lazy per-page
-  decompress, prefetchAround(+/-3). Already built, do not touch.
+REVISED BY D17: there is no base zip on the platform. One request returns both
+lists, built from R2_PUBLIC_BASE_URL + the object keys held in Postgres.
+- PAGES: individual R2 objects in pages.idx order. The reader keeps
+  prefetchAround(+/-3); only the source of each url changes.
 - AUDIO: individual R2 objects, NEVER zipped. A VO zip forces downloading all
   200 lines before page 1 renders. Individual objects prefetch per page the way
   images already do. Lines are 50-200KB.
 
-THE REASON THIS IS CHEAP: audio.resolve() (index.html) already returns
-track.url when set and only falls back to a zip entry. Platform tracks simply
-arrive carrying a url. The reader audio engine needs ZERO structural change.
-The mix resolver is ~150 lines of fetch + manifest merge in front of the
-existing comicFromZip/openComic.
+THE REASON THIS IS CHEAP: ensurePageUrl() returns p.url when set
+(read.html:634) and audio.resolve() returns track.url when set
+(read.html:1030); both only fall back to a zip entry. Platform content simply
+arrives carrying urls. The reader engine needs ZERO structural change. The mix
+resolver is comicFromApi(), a ~40 line sibling of comicFromZip() that fills the
+same object shape, in front of the existing openComic().
+
+The manifest stops being a file and becomes a response. Same shape, new source.
+comicFromZip() stays forever for export, offline, the local shelf and studio
+round-trip import.
 
 VO PREVIEW: generated at ingest, not assembled at browse time. Take the VO's
 FIRST 3 SLOTS in the comic, concatenate to one clip, store as preview_key.
@@ -667,8 +714,16 @@ one line, and covers soundtrack and one-shots both.
   slot marking + soundtrack auth  INSIDE the existing composer (modes)
   VO booth                        INSIDE the existing composer (vo mode)
   dashboard (cast/consent/mixes)  DEFER THE FRAMEWORK
-  auth                            Supabase Auth, EMAIL MAGIC LINK. Discord OAuth
-                                  was considered and REJECTED by the owner.
+  auth                            Supabase Auth, GOOGLE + DISCORD OAUTH
+                                  (owner decision 2026-07-27, supersedes the
+                                  earlier email-magic-link call and the earlier
+                                  rejection of Discord). No email path at all,
+                                  so no SMTP dependency and no "check your
+                                  email" screen: P-6 in 16.2 is dead.
+                                  Lives in platform.js, loaded by index/read/
+                                  studio. Fails soft: no client, no auth ui,
+                                  page unchanged. The smoke suite takes that
+                                  path via an esm.sh route that throws.
   db                              Supabase Postgres + RLS (RLS enforces consent
                                   at the query layer, not in app code)
   media                           R2, presigned PUT, content-addressed

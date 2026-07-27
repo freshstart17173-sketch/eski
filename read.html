@@ -12,30 +12,30 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Jost:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script type="module" src="platform.js"></script>
+<link rel="stylesheet" href="tokens.css">
 <style>
-@font-face{
-  font-family:'Gnomon';
-  src:url(data:font/woff2;base64,d09GMgABAAAAAA/oAAwAAAAAIUgAAA+SAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAGhYGYD9TVEFUIgCBWAquEKJkATYCJAOCYAuBMgAEIAWDXAeHChsTGkVGho0DIJC2ZETFZLLg/zKBG0Pgb2hl2ojQYBW2WFujhQi6TzMJvvTYWT4jIgR8SoCfLr4iIc5af/kxkRtRDxkhyewPtK3+DWxiFIPFIMqsA8xICiqYRCtYjAu7i5F7d0az2wZcsJV6Ee1Gtlft/xvlpQS5sd2QRyykBM9/f7Fz71+CFVnAhSiwgJvA0lgCi6gmfO5IGleKMN47dC7fgb1SFT5J0qYfaYuur7Zs+u+u/VtmbMB/gXT39tmnyOkFVp8UdKYppdCG03EUhmLhnIWE7wsEI6Fm7JzY/82VduYQXLcKWdXZGjn5wckcJAvvkhwv3sIBsSsAOEC5WyBwZUekwPiqCmUKT3Wv/JN9dieWY4pQ3Zn9f/bSqnbPeGmAUQ9FEOLAtjarOUSM/N+2Zk3YWgLdgLEjer/r8wECIBzD/AwIBH31aTmbtaYDxqtVAOz42CI3ilDu/J8UrguF+DvG+P/MAGA+IC4a8nULAeCDnFkYToiFYMW1woDoRoZLeQXCdIM9ZjrZxEy2aQ6b0ZjqTrTyFPKYp9uiPZGPTU0lITa3QFFujZ44rj71B5r7pw6Xlxn/lvqWAAQbgMU90+TnhmIiOlnmyMNlopULU0BAKp8DLYeLE4VkZ0NQS2NVhCdZilS4dGIZJGTkFJQyqWTTKGRmUQIAUQUA4CMAWApmvMHswxMLF/MzMDAhkyEviYxBzZLAiPRawDQNjCWQQjAig3TrTzop8Lr5bRpc+anWA+kIC1hsFUwUhTr5uTl9q0QG0GoguydfSizr2GT5xH5KCbSsYd2H/kiZsS6zbM8wbNQR5fYguNcgsSV70tITlXAlyS727DNJUIjwI4m/eoHCSoNB5wh3xIKELX+kxOq3AVJ+rAqzfKFgJllQAfsYuSTnwpavKOi03ucyzN8ru7uQifyw6u1gVWIl5oD2gAXzx1ii0FduLAqqhkLbqUAhQFCVOiaVAloIpAjumGeSVW2xeR7WNWS92i7OMWCKhGrrbg652eVYjSquQE1ejgI8+aiskkOL6wGYw9N3yY7vBGRhE8L3vNKZDty2Sf5c6HFqVk9nxcYxUOJc2Zkwpuni9jaiMydO7JjYsKV2uUUzh6iIJPRg1VdfY0ilXnm3u8nc4Tzf7soEX/X241lEGYQTj/TaHQf3m5xVIzQ+EbacSeG4TPtkO3PuzIHILZRVt7WxsCapaQMbKU5Y0oSOolj6QfT8OaWqT+G4RL+ElAoVlfYlc5g3jMkj+SxwuWuEITS0/iY5SPlrYcs8TIJzv4e6RBRCn1j1Mc5uh3x87Ba1mhHisXAINIC+P45DsKoYdAX0Ncncw2M4OhzQMCPNzbQqRkoSVmpoXA8sQt5INvDqEIrD65DXKR88/aLC7uSBOVLqa9zmrnFq8Up72EkPQuxpf2lau6U2J9ps1dnTWpje4pDQkypNw88Vo9LuIZDz6QFZV/RST6Cgt9dOMZSZsZ93sKXi4RmNLFHQ9hfs6wgENDnmZTHo78tQof3cocoam/YYXZZC0soYOx3xBaERxxl4fxqzUu/YQvyuqKDllpohGSkNNJr60MkIKUMaUoqp126WNYtINjWFVkJZn1cKIy5MdStgReZaR2X44CpjmUyrPbnRbi+UImHZ6ZkdexdXPVDqs0VEKhW+z2AX9tIYr+mKdFiKANqbslySabKq2D3HT0Vz3aY16l/tDqVQZWJZHX7PV4ceuWktxrecjVnIf9eQ8qN5HAfSuKMcOjP7PaIQ6HRGJ352aAjHSWYNuLcW4Je/6R//aydM0ODEgOP0KyYcp+dQrBKz+/Qdemfn5SSoUe/mVEViHqE5Oy14fCE28k+e3KllyvBzFe13eydO7Jj6wDbldKe+K0fTy3/CvD3NoNfz6zpCe/mPO1xFwc9ciAHNFpehKqgJYuGSgUncbmL116SFymnPzo6vZFIf9EavmG946dATkLU55h6FjOZTRBjMa7MjXAGn4JTgtgBZ5s7GaVUrzrQlfXNR4eWb+8vAnmRf90/+f+2va9s9fUbddJ5g9uRmXsVRXsXmY/dfcj6b81I3UJO5/blVTUar+K3ltyJFRU2OqqzWrFvN6DYU3YS6PDs82C4U3YN54IN70jUfY5JCnpBY1mfD8ujlFqPfbjf6l1voPBvWRywTFvIk2MdrgJrMas0aXPFMezuqg6RtF7umuaR6rckUuVUxfXt9/XfsF7su2u90Kc50CL1+celFz53+21DiXd3iX2IpzutUN16/42s1z3o78aCF9k4coQcIlETcIQwzyFE04otxeXOZIUVBOAQKnTzW6vwTL/7x2Z74T2+98+LZcyE+bMnVmPZiBNBp5wDmDeG8PbnvPEBRALtnL/QvstA0knSsXXWOtTZp28cpKR+3SQEqqBN0aT1i5fCvpFKWeTK0Wa1ZFzqxBTjuw0xBwO7plW01dhOrY/j4tvWlye5n6Govt3fTnpfW7/cUFmoLlHYP/zDlbCd34zu4iavvAs7q+GpuwoZqBdF5sUliVXt5WZYC8rhuTlHyydhIBMWN0nHiKbu7Qe0WKPSy9DjD20YOxHVvXhJasrl/DMauckKcpo4Vvb0d/ta5aMqZJDkTZmLzymaAyXIToDr4v8093jbvS7nr3TcWP7l5j7uY+aD+4EtAT56eMTbxTt3yRHmHiTLe6duWLAPl7+0peKnumPISf/2fhcDpv0Ou+K8fiMW/A2OvuCBFU6LWyPVDXOI9XBi8Z3U4izRN1Cm58fK3kbiOdAq3n4tF/4sMrCjnCUg9kRVfEZMojscu4dkbYgwoWjNOzB29rE8iyRIeTybSYctOiLVaS1UamVHOWyDL12f6juNO2Kdqm1/Y9qwsEiLioKTVA8mrNSj564M3L1e6AuudNUa/zDtX2Wd+qmrVK4aOopx6TnE2Wesoyqi2FtJ8saQyXp9J0EXCcB0dGeZDHwZTFTO55KO0CpLklevU6uRf414+Kii056U2Y4mn/wrPt+L4NjT8r9NATAbFTbvS1A6l0KPV4rvhyFQbYCwYCPX+LMEDJDmMS+HApOr+gOo+LGPabI9PqcXupBKNz8piyC9xfIyMkT1LNKbewbQ+WbYH1v7Z0tySOZuH8V0AtWJlX2gATk7GBsfAoCrOTBe9WKlK29Uk/rv3ihQfzjYK4JJs+fWLHaKsqdDUQoen61Snc7QaYyZCEyN2m3b3domxgmxPtVSjLE95STtv8iN+fOreu1UqSZlbotF4ZUoPytqaE2MRJRbBi2tRDY5rUDQHx3PivkZ/QJ/xd7FX8lLcsj2JUrlS5xXsvxhPqVdJZz1vSrEQoqJSoSG4vKgIKhoDrQFTd1hwuR6Lf8kZ1d7/0dFJzF1foemIiXxjnKgLPPd7WrpNINPJmVQ9hUHhL8UJr41h6WtwyiIej1tyq5bUpBqjj/hkBbnO2jlry76c3UnBf7Qv5DO1mOyb7fWpJXFGTaehubNjEHIUBnICx5yceUTdqaZUDVkuUOvkbwcF/xhVFqWAVqkEtEWhShvjfN32zRoO/j2O/4Bz1gzy7d65HOKg68nLwXtWnbMoTU8O3whCxYyGKPpN9VcGddm+Bb6pF6z+QysTNGLqX6mE1fWd3g6qPP3+tftef/vbF198PRBICGpYLDrro0+EbPQeeTmYtyRPBlFR9h+RYiRe+dSdwb9eqwvWCVk6iW3oDzj+A7p5DTPZqky9nZea9LNXIbUr8TfGhS0XayUapVOuKkuullFopdzoEmmrmrwQ98RCdmdLxVxwNM0+OsK52KfTMl1NQxe8NoYr8Q1WRFsp0Co9HqVW65GyXlCgsAzJYEFrFPucEwh/zqaoHSt4NRqh16FU24YoarjNqvMeWjBaVobz0p7lWVuczkqY/ip/caWR8nLBSJe6yQHV/QHmvmxx7h7DpbB2fNep4oul/aH+pa2oDM75i1Jk0A9swxQ19KxvHG79rk+nzpZJaJ6qwe4mnho3SnHUEIM6cRNtp+9gSzJhFwaOXUBuSIhDZ6P9AhM2hP9+lcZT0uUD6dGMvujmckfKZ9m6VgbvnD4fyV30I1xpjt6ORjy+RcwtK0lSENbkMHlKQhKbHcXhRrwxTszVmZO46Ub2p3IcS2bHQUXhu7TdjP4mPpnY3n9/gaKIqkjuLgsg8wUDmfMzLQIjfLB9CrDZfft0EIeasCDmqnctDWiLTDB6QoEPYikDOO4Sj3/g/FbMEP3TGpn4xDJMJ+q256mAN5wy3+tF0Zh1vuQi0XnLJMPxiWgUtRZabfKyjED/wUd66WcO+NifxdnrqFRq6OZenBx5bsU6a7IreR0EJtcZztrPrntq4SEkUAZdDsiEdfBLms5d1JG1O7YfHXHUFteOMFEPMQKfxr8PB27FhKonracRUP8D8n/TXt/A9sYaP/N8oC8v9ddZiovrLFJZcLHKJLQRBOab8Di4J03N/Hvw0nfQwSJfVO5vFpP5KwC4cvaRAgD4eeXvMDU6M5jzVieAGRgAAJBPrXTmfRO6Dqr+m1utygOKGrDySEaZwCspI8eQHtSYRLJUPwcL5iwjgukeTz9JcUmkFi+/YL3MLcseEJVvsSsGan21K/okmlwsncPOJ9wxQ5BT21O6e57cJ8xpPRvd/AJC45DBBHT0yhZ2nodaCXqKjy1/QGJ+Nz2/oZs84Ki26IzmJ0LXMKWfA3AxJGgVNoZ2QMpKvwIvNYHx1PkCGnY/nSlJwOV98Jph3JZeQsbmYR2TSMnzDlIAOT09j8Un8dLWv4DVL0WxCchnK307pf+l0PMzq1gxV4N4KonwitmGFMIElbkgqkTMlG02vYVCSZAQXJ7EEKk3MSkMvU9zTdNxfJFm4Dtt0Vcw0YgR7q8zhAGczBAnJvDC/avXxlDj/9+W/lnzB9Br086vU4smzbrxCdURcaX43HCZhUq+cerToBWfUY1OT6JezOyObZ7SxibetCzXIq29XzYow2WTHtUONH5yPApaLdHqN3xqNVFYRmfd9N5FU7irTkPb0flEDwVfMrvclxWqFht/izWmR4Ma/o3WnFq9q/cdW3TpLpat6o6MGZ6aTo1S+N9VYEGVZEUVmm6Ylu24nhix4rChOOIlSJQkGReGJwVfqjQCuDnSEYRExEiUDBJSMnIKSplU1LJky6GhlStPvgKFiujoGRiZmFlY2dg5FCvh5FKqTLkKldxoVdHzW2QWjgEkSETRDIvN4fLkxzQcQIJEFM3ICvIIKT+xrHRyghi4MsweakJyysZ+N+5uiNRwKQSiRvn73igPdZcXOBH0L3oilGWAhnlinm8Qj/w1bBXmB7hKJzUtgDByU9r/Su8WRkCl88SIohlfvEsDAA==) format('woff2');
-  font-display:swap;
+/* colour match. the chrome is re-derived from the cover's hue only while
+   html.tint is set; without it the reader is the same sage as every other
+   surface. --hdr and the rest of the scale come from tokens.css. */
+html.tint{
+  --paper:hsl(var(--hue),var(--tintsat),96%);
+  --surface:hsl(var(--hue),var(--tintsat),100%);
+  --accent:hsl(var(--hue),22%,38%);
+  --accent-deep:hsl(var(--hue),28%,26%);
+  --accent-soft:hsl(var(--hue),22%,86%);
+  --band:hsl(var(--hue),var(--tintsat),12%);
+  --line:hsl(var(--hue),12%,84%);
 }
-:root{
-  /* --hue + --tintsat come from the cover when colour match is on; neutral otherwise */
-  --hue:152; --tintsat:0%;
-  --paper:hsl(var(--hue),var(--tintsat),96%); --ink:#222222; --soft-ink:#4f4b4f; --muted:#767276;
-  --accent:hsl(var(--hue),22%,42%); --accent-deep:hsl(var(--hue),28%,30%); --accent-soft:hsl(var(--hue),22%,85%);
-  --line:rgba(34,34,34,0.14); --surface:#ffffff;
-  --band:#202020; --band-fg:#f4f4f4; --band-dim:#b9b9b9; --page-bg:#ffffff;
-  --shadow:0 1px 3px rgba(0,0,0,.12); --shadow-lg:0 10px 30px rgba(0,0,0,.2);
-  --max:1160px; --hdr:57px;
+html.tint[data-theme="dark"]{
+  --paper:hsl(var(--hue),var(--tintsat),10%);
+  --surface:hsl(var(--hue),var(--tintsat),14%);
+  --accent:hsl(var(--hue),20%,66%);
+  --accent-deep:hsl(var(--hue),24%,78%);
+  --accent-soft:hsl(var(--hue),18%,28%);
+  --band:hsl(var(--hue),var(--tintsat),7%);
+  --line:hsl(var(--hue),12%,26%);
 }
-[data-theme="dark"]{
-  --paper:hsl(var(--hue),var(--tintsat),10%); --ink:#e9e9e9; --soft-ink:#c0c0c0; --muted:#8b8b8b;
-  --accent:hsl(var(--hue),20%,64%); --accent-deep:hsl(var(--hue),24%,74%); --accent-soft:hsl(var(--hue),18%,30%);
-  --line:rgba(233,233,233,0.16); --surface:hsl(var(--hue),var(--tintsat),14%);
-  --band:hsl(var(--hue),var(--tintsat),7%); --page-bg:#f2f2f2;
-  --shadow:0 1px 3px rgba(0,0,0,.4); --shadow-lg:0 12px 34px rgba(0,0,0,.55);
-}
-*{box-sizing:border-box}
 html{scroll-behavior:smooth}
 body{margin:0;background:var(--paper);color:var(--ink);
   font-family:'Jost','Avenir Next','Helvetica Neue',Arial,sans-serif;
@@ -45,7 +45,7 @@ h1,h2,h3,strong{font-weight:500}
 h2{margin:0 0 14px;font-size:clamp(34px,5vw,60px);line-height:.98;text-transform:lowercase}
 button{font-family:inherit;font-size:inherit;cursor:pointer}
 input,select{font-family:inherit;font-size:14px;color:var(--ink);background:var(--surface);
-  border:1px solid var(--line);border-radius:6px;padding:7px 10px;outline:none}
+  border:1px solid var(--line);border-radius:0;padding:7px 10px;outline:none}
 input:focus,select:focus{border-color:var(--accent)}
 ::selection{background:var(--accent-soft);color:var(--accent-deep)}
 .wrap{width:min(var(--max),100%);margin:0 auto;padding:0 20px}
@@ -64,7 +64,7 @@ a:hover{text-decoration:underline;text-underline-offset:3px}
 .hdr-link{color:var(--muted);text-transform:lowercase;font-size:14px}
 .hdr-link:hover{color:var(--accent)}
 .pill{display:inline-flex;align-items:center;gap:6px;background:var(--surface);border:1px solid var(--line);
-  color:var(--soft-ink);padding:5px 12px;border-radius:6px;text-transform:lowercase;
+  color:var(--soft-ink);padding:5px 12px;border-radius:0;text-transform:lowercase;
   transition:all 160ms ease;font-size:13.5px;box-shadow:var(--shadow)}
 .pill:hover{border-color:var(--accent);color:var(--accent);transform:translateY(-1px)}
 .pill.primary{background:var(--accent);border-color:var(--accent);color:#fff}
@@ -101,7 +101,7 @@ body.focus .settings{position:fixed;right:12px;bottom:72px;z-index:80}
 .click-zones{position:absolute;inset:0;display:flex;z-index:8}
 .cz{flex:1;cursor:pointer}
 .nav-arrow{position:absolute;top:50%;transform:translateY(-50%);z-index:9;background:var(--surface);
-  border:1px solid var(--line);border-radius:9px;width:40px;height:58px;color:var(--soft-ink);
+  border:1px solid var(--line);border-radius:0;width:40px;height:58px;color:var(--soft-ink);
   transition:all 160ms ease;display:flex;align-items:center;justify-content:center;box-shadow:var(--shadow)}
 .nav-arrow:hover{border-color:var(--accent);color:var(--accent)}
 .nav-arrow .ico{width:22px;height:22px}
@@ -143,7 +143,7 @@ body.focus .settings{position:fixed;right:12px;bottom:72px;z-index:80}
 .pb-tl{flex:1;min-width:80px;position:relative}
 .pb-right{display:flex;align-items:center;gap:8px;flex:none}
 .pb-right input[type=range]{width:90px;accent-color:var(--accent)}
-.sound-gate{background:var(--accent);color:#fff;border:0;border-radius:6px;padding:6px 12px;
+.sound-gate{background:var(--accent);color:#fff;border:0;border-radius:0;padding:6px 12px;
   text-transform:lowercase;display:none;align-items:center;gap:6px;box-shadow:var(--shadow)}
 body.needs-gesture .sound-gate{display:inline-flex}
 
@@ -154,15 +154,15 @@ body.needs-gesture .sound-gate{display:inline-flex}
 /* ---------- settings ---------- */
 .sheet-head{display:none}
 .settings{display:none;position:absolute;right:10px;bottom:64px;z-index:40;background:var(--surface);
-  border:1px solid var(--line);border-radius:10px;min-width:250px;padding:6px 0;box-shadow:var(--shadow-lg)}
+  border:1px solid var(--line);border-radius:0;min-width:250px;padding:6px 0;box-shadow:var(--shadow-lg)}
 .settings.open{display:block}
 .set-row{display:flex;align-items:center;gap:12px;padding:8px 14px;font-size:13.5px}
 .set-row>span:first-child{flex:1;color:var(--soft-ink);text-transform:lowercase;
   display:flex;align-items:center;gap:7px}
-.tgl{border:1px solid var(--line);border-radius:6px;background:transparent;color:var(--muted);padding:2px 11px;
+.tgl{border:1px solid var(--line);border-radius:0;background:transparent;color:var(--muted);padding:2px 11px;
   font-size:12.5px;text-transform:lowercase;transition:all 160ms ease}
 .tgl.on{background:var(--accent);border-color:var(--accent);color:#fff}
-.seg{display:flex;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.seg{display:flex;border:1px solid var(--line);border-radius:0;overflow:hidden}
 .seg button{border:0;background:transparent;color:var(--muted);padding:3px 9px;font-size:12.5px;
   text-transform:lowercase}
 .seg button.on{background:var(--ink);color:var(--paper)}
@@ -170,7 +170,7 @@ body.needs-gesture .sound-gate{display:inline-flex}
 
 /* ---------- one-shot indicator ---------- */
 .os-hint{position:absolute;left:12px;bottom:12px;z-index:12;display:flex;align-items:center;gap:6px;
-  background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:4px 6px 4px 11px;
+  background:var(--surface);border:1px solid var(--line);border-radius:0;padding:4px 6px 4px 11px;
   box-shadow:var(--shadow);color:var(--soft-ink);font-size:13px;overflow:hidden}
 body.focus .os-hint{bottom:16px}
 .os-hint .ico{width:15px;height:15px;color:var(--muted);transition:color 160ms ease}
@@ -190,7 +190,7 @@ body.focus .os-hint{bottom:16px}
 .keys-scrim{position:fixed;inset:0;background:rgba(0,0,0,.4);display:none;z-index:500}
 .keys-scrim.open{display:block}
 .keys-panel{position:fixed;left:50%;top:50%;transform:translate(-50%,-46%);z-index:501;display:none;
-  background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow-lg);
+  background:var(--surface);border:1px solid var(--line);border-radius:0;box-shadow:var(--shadow-lg);
   padding:18px 20px;width:min(380px,92vw)}
 .keys-panel.open{display:block}
 .keys-head{display:flex;align-items:center;gap:8px;font-weight:500;text-transform:lowercase;
@@ -200,18 +200,18 @@ body.focus .os-hint{bottom:16px}
 .keys-head button .ico{width:18px;height:18px}
 .keys-grid{display:grid;grid-template-columns:auto 1fr;gap:8px 12px;align-items:center;font-size:13.5px}
 .keys-grid kbd{justify-self:start;background:var(--paper);border:1px solid var(--line);border-bottom-width:2px;
-  border-radius:5px;padding:1px 7px;font-family:inherit;font-size:12px;color:var(--ink);white-space:nowrap}
+  border-radius:0;padding:1px 7px;font-family:inherit;font-size:12px;color:var(--ink);white-space:nowrap}
 .keys-grid span{color:var(--soft-ink);text-transform:lowercase}
 
 /* ---------- tutorial popup ---------- */
 .tut{position:fixed;left:12px;bottom:64px;z-index:520;display:none;align-items:flex-start;gap:10px;
-  max-width:340px;background:var(--surface);border:1px solid var(--accent);border-radius:12px;
+  max-width:340px;background:var(--surface);border:1px solid var(--accent);border-radius:0;
   padding:12px 14px;box-shadow:var(--shadow-lg);font-size:13px;line-height:1.45}
 .tut.show{display:flex}
 .tut>span .ico,.tut>span{color:var(--accent)}
 .tut .ico{width:20px;height:20px;flex:none}
 .tut b{font-weight:500}
-.tut kbd{background:var(--paper);border:1px solid var(--line);border-radius:4px;padding:0 5px;font-size:11px}
+.tut kbd{background:var(--paper);border:1px solid var(--line);border-radius:0;padding:0 5px;font-size:11px}
 .tut button{margin-left:2px;border:0;background:transparent;color:var(--muted);cursor:pointer;padding:2px;flex:none}
 .tut button .ico{width:16px;height:16px}
 
@@ -229,7 +229,27 @@ footer .brand{font-size:22px;color:var(--band-fg)}
 footer .sp{flex:1}
 footer a{color:var(--accent-soft)}
 
-@media (max-width:900px){
+
+/* ---------------- facelift: swiss grid in sage ----------------
+   hover is a ground or colour step, never a lift. panels are hairline boxes
+   on a flat ground. every readout gets tabular figures. */
+.pill{padding:5px 10px;font-size:var(--fs-sm)}
+.pill:hover{transform:none;background:var(--accent-soft);border-color:var(--accent);color:var(--accent-deep)}
+.pill.on{background:var(--accent);border-color:var(--accent);color:var(--white)}
+.pill:disabled{opacity:.4}
+.player-bar{padding:var(--s2) var(--s3);gap:var(--s3);background:var(--surface)}
+.vt-info{font-size:var(--fs-sm);font-variant-numeric:var(--num)}
+.vt-info input,#page-jump{font-variant-numeric:var(--num);text-align:center}
+.pb-right{gap:var(--s2)}
+.settings,.keys-panel,.tut{border:var(--bw) solid var(--line);background:var(--surface)}
+.keys-panel kbd,.tut kbd{font-variant-numeric:var(--num)}
+.os-hint{background:var(--surface);border:var(--bw) solid var(--line)}
+.os-hint .os-step{border-radius:0;background:var(--surface)}
+.os-hint .os-count{font-variant-numeric:var(--num)}
+/* the empty state is the one place the display face belongs in the reader */
+.drop-overlay .big{font-family:var(--font-display);font-weight:400;color:var(--accent);
+  letter-spacing:-0.01em;line-height:.92}
+.drop-overlay p{font-size:var(--fs-sm)}@media (max-width:900px){
   .pb-now{display:none}
   .pages{padding:10px 8px}
 }
@@ -254,7 +274,7 @@ footer a{color:var(--accent-soft)}
   #page-jump{min-height:42px;width:56px}
   #chapter-sel{min-height:42px;max-width:36vw}
   .settings, .keys-panel{position:fixed;left:0;right:0;bottom:0;top:auto;width:100%;
-    max-height:74vh;overflow-y:auto;border-radius:14px 14px 0 0}
+    max-height:74vh;overflow-y:auto;border-radius:0 0 0}
   /* the sheet covers its own toggle, so it needs its own way out */
   .sheet-head{display:flex;align-items:center;justify-content:space-between;
     padding:12px 16px 8px;font-size:15px;text-transform:lowercase;
@@ -1574,9 +1594,15 @@ function setFadeSecs(v){ settings.fadeSecs = clamp(parseFloat(v)||0, 0, 10); sav
 /* ---------------- colour match (ambient tint) ----------------
    samples the cover, tints the whole chrome including the wordmark.
    toggleable; off (or no comic) leaves a neutral grey with sage accents. */
+/* the palette is fixed sage in tokens.css, so the tint cannot just live in
+   :root any more. it sets the hue and flips html.tint, and the css below the
+   token link re-derives the chrome from it. dropping the class falls straight
+   back to sage, and light/dark stays css's problem rather than this
+   function's. */
 function setTintVars(hue, sat){
   document.documentElement.style.setProperty('--hue', hue);
   document.documentElement.style.setProperty('--tintsat', sat+'%');
+  document.documentElement.classList.toggle('tint', sat > 0);
 }
 async function applyTint(){
   if(!settings.tint || !current){ setTintVars(152, 0); return; }

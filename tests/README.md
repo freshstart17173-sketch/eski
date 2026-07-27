@@ -23,6 +23,13 @@ node tests/make-fixtures.js    # builds test.eski / test.cbz / test.pdf / wavs
 node tests/smoke.js
 ```
 
+`api/sign.mjs` guards a trust boundary and needs neither a browser nor a
+network, so it has its own check with dummy credentials:
+
+```
+node tests/check-sign.mjs
+```
+
 ## what it covers
 
 - boot: demo.eski (served from fixtures) opens, track names, page count
