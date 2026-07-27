@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>eski library</title>
-<meta name="description" content="a shelf of eskis. drop .eski files in the library folder to fill it.">
+<title>eski</title>
+<meta name="description" content="comics scored with music and voice.">
 <link rel="icon" type="image/png" href="eski_logo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -35,6 +35,21 @@ a:hover{text-decoration:underline;text-underline-offset:3px}
   display:inline-flex;align-items:center;gap:var(--s2)}
 .hdr-link:hover{color:var(--accent);text-decoration:none}
 .sp{flex:1}
+/* search: an icon until you ask for it. the input animates its width rather
+   than appearing, so the header never jumps. */
+.search{display:flex;align-items:center}
+.search .btn.icon{width:var(--ctl);padding:0;justify-content:center}
+.search input{width:0;padding:0;border:0;background:transparent;color:inherit;
+  font-size:var(--fs-sm);opacity:0;pointer-events:none;
+  transition:width var(--t-mid) var(--ease),opacity var(--t-fast) var(--ease),padding var(--t-mid) var(--ease)}
+.search.open input{width:min(260px,42vw);opacity:1;pointer-events:auto;
+  padding:0 var(--s3);border:var(--bw) solid var(--line);border-left:0;height:var(--ctl)}
+.search.open input:focus{outline:none;border-color:var(--accent)}
+.search.open .btn.icon{border-right:0;color:var(--accent)}
+.search input::-webkit-search-cancel-button{filter:grayscale(1)}
+/* no match is a state, not an empty page */
+.no-match{grid-column:1/-1;padding:var(--s7) var(--s5);text-align:center;color:var(--muted);
+  font-size:var(--fs-sm)}
 .wrap{width:min(var(--max),100%);margin:0 auto;padding:var(--s6) var(--s5) var(--s8);flex:1}
 .head-row{display:flex;align-items:flex-end;gap:var(--s4);margin-bottom:var(--s1)}
 .rule{margin:0 0 var(--s4)}
@@ -132,7 +147,14 @@ footer .brand{font-size:20px}
 
 /* ---------------- touch and narrow screens. KEEP THIS BLOCK LAST ---------------- */
 @media (max-width:640px){
-  .site-header{padding:0 var(--s3);gap:var(--s3)}
+  /* the header scrolls itself rather than making the whole page scroll, the
+     same treatment the studio header already uses. adding search pushed the
+     row past the viewport on a phone. */
+  .site-header{padding:0 var(--s3);gap:var(--s3);overflow-x:auto;scrollbar-width:none}
+  .site-header::-webkit-scrollbar{display:none}
+  .site-header>*{flex:none}
+  .search .btn.icon{width:42px;height:42px}
+  .search.open input{width:min(200px,38vw);height:42px}
   .hdr-label{display:none}
   /* the label hides, so the link would collapse to the icon's 20px. */
   .hdr-link{min-height:42px;min-width:42px;justify-content:center}
@@ -157,8 +179,15 @@ footer .brand{font-size:20px}
 
 <header class="site-header">
   <a class="brand" href="index.html">eski!</a>
-  <span class="hdr-label">library</span>
+  <span class="hdr-label">home</span>
   <span class="sp"></span>
+  <!-- collapsed to its icon until clicked, so the shelf keeps the width -->
+  <div class="search" id="search">
+    <button class="btn icon" id="search-btn" data-ico="search" title="search (/)"
+            onclick="toggleSearch()"></button>
+    <input type="search" id="search-q" placeholder="search by title or author"
+           oninput="applySearch()" onkeydown="if(event.key==='Escape')closeSearch()">
+  </div>
   <a class="hdr-link" id="hdr-discord" href="#" target="_blank" rel="noopener"><span data-ico="message-circle"></span>discord</a>
   <a class="hdr-link" href="studio.html"><span data-ico="file-plus"></span>make an eski</a>
   <button class="btn" onclick="document.getElementById('shelf-input').click()"><span
@@ -170,7 +199,7 @@ footer .brand{font-size:20px}
 
 <div class="wrap">
   <div class="rule"></div>
-  <h2>library</h2>
+  <h2>home</h2>
   <p class="sub">comics scored with music and voice. pick a cover to start.</p>
   <div id="grid">
     <div class="state"><div class="spinner"></div>loading library&#8230;</div>
@@ -235,6 +264,7 @@ const ICONS = {
   "image": "<rect width=\"18\" height=\"18\" x=\"3\" y=\"3\" rx=\"2\" ry=\"2\" /> <circle cx=\"9\" cy=\"9\" r=\"2\" /> <path d=\"m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21\" />",
   "message-circle": "<path d=\"M7.9 20A9 9 0 1 0 4 16.1L2 22Z\" />",
   "arrow-left": "<path d=\"m12 19-7-7 7-7\" /> <path d=\"M19 12H5\" />",
+  "search": "<circle cx=\"11\" cy=\"11\" r=\"8\" /> <path d=\"m21 21-4.3-4.3\" />",
 };
 function paintIcons(root){
   (root||document).querySelectorAll('[data-ico]').forEach(el=>{
@@ -359,15 +389,17 @@ async function coverFor(item){
      should not pull every one of them just to read a manifest. */
   if(item.cover && item.title){
     return {file:item.file, baseId:item.id || null, series:item.series || null,
-            title:item.title, cover:item.cover};
+            title:item.title, creator:item.creator || null, cover:item.cover};
   }
   const zip = await JSZip.loadAsync(await blobFor(item));
-  let title = item.title, coverBlob = null, baseId = item.baseId || null, series = null;
+  let title = item.title, coverBlob = null, baseId = item.baseId || null, series = null,
+      creator = item.creator || null;
   const mf = zip.file('.eski/manifest.json');
   if(mf){
     try{
       const m = JSON.parse(await mf.async('string'));
       title = title || m.meta?.title;
+      creator = m.meta?.creator || null;
       baseId = m.meta?.id || baseId;
       series = m.meta?.series || null;
       if(m.meta?.cover && zip.file(m.meta.cover)) coverBlob = await zip.file(m.meta.cover).async('blob');
@@ -381,7 +413,7 @@ async function coverFor(item){
     if(imgs[0]) coverBlob = await imgs[0].en.async('blob');
   }
   return {
-    file: item.file, baseId, series,
+    file: item.file, baseId, series, creator,
     title: title || item.file.split('/').pop().replace(/\.eski$/i,''),
     cover: coverBlob ? URL.createObjectURL(coverBlob) : null
   };
@@ -446,6 +478,45 @@ function open_(entry){
 }
 function close_(){ $('overlay').classList.remove('open'); }
 const $ = id => document.getElementById(id);
+
+/* ---------------- search ----------------
+   filters the shelf in place rather than reloading it. covers resolve
+   asynchronously, so each cell carries its own searchable string as soon as
+   its title and author are known. */
+function toggleSearch(){
+  $('search').classList.contains('open') ? closeSearch() : openSearch();
+}
+function openSearch(){ $('search').classList.add('open'); $('search-q').focus(); }
+function closeSearch(){
+  $('search').classList.remove('open');
+  const q = $('search-q');
+  if(q.value){ q.value = ''; applySearch(); }
+  q.blur();
+}
+function applySearch(){
+  const q = ($('search-q').value || '').trim().toLowerCase();
+  let shown = 0;
+  document.querySelectorAll('#grid .cell').forEach(cell=>{
+    const hit = !q || (cell.dataset.search || '').includes(q);
+    cell.hidden = !hit;
+    if(hit) shown++;
+  });
+  let msg = $('no-match');
+  if(!shown && q){
+    if(!msg){
+      msg = document.createElement('div');
+      msg.className = 'no-match'; msg.id = 'no-match';
+      $('grid').appendChild(msg);
+    }
+    msg.textContent = 'nothing here matches ' + q + '.';
+  }else if(msg){ msg.remove(); }
+}
+// "/" is the shelf's search key, unless you are already typing somewhere
+document.addEventListener('keydown', e=>{
+  if(e.key === '/' && !/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName)){
+    e.preventDefault(); openSearch();
+  }
+});
 
 /* onboarding: shown once ever. the flag is set the moment it opens, so a
    closed tab or a reload never brings it back. */
@@ -522,6 +593,11 @@ async function renderGrid(){
       art.innerHTML = entry.cover ? `<img src="${entry.cover}" alt="cover">` : '';
       cards[i].querySelector('.t').textContent = entry.title;
       cards[i].onclick = ()=>open_(entry);
+      // the cell carries what it can be found by, so search never re-reads a zip
+      cards[i].parentElement.dataset.search =
+        [entry.title, entry.creator, entry.series && entry.series.title]
+          .filter(Boolean).join(' ').toLowerCase();
+      applySearch();   // a late arrival must respect a query already typed
     }catch(e){
       cards[i].querySelector('.t').textContent += ' (unreadable)';
     }

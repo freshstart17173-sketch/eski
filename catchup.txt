@@ -24,7 +24,10 @@ JSZip 3.10.1 from cdnjs. pdf.js 3.11.174 is lazy-loaded from cdnjs for PDF impor
 --------------------------------------------------------------------------------
 2. REPO LAYOUT
 --------------------------------------------------------------------------------
-index.html        library + home page (single file; uses JSZip to read covers)
+index.html        HOME (renamed from "library" in the ui on 2026-07-28; the
+                  library/ FOLDER keeps its name). the shelf, plus a search
+                  that stays collapsed to its icon until clicked, matching on
+                  title, author and series. "/" focuses it.
 read.html         reader (single file: HTML+CSS+JS inline)
 studio.html       studio: the authoring app (single file)
 spec.html         format spec (single file) — SOURCE OF THE GNOMON @font-face

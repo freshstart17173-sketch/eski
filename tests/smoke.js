@@ -994,6 +994,36 @@ function ok(cond, name, extra) {
     'no auth ui when the client cannot load');
   ok(await plat.evaluate(() => document.querySelectorAll('.cell').length > 0),
     'the library still renders without it');
+
+  console.log('home: search');
+  ok(await plat.evaluate(() => document.querySelector('.hdr-label').textContent === 'home' &&
+    document.querySelector('h2').textContent === 'home'), 'the shelf is called home');
+  await plat.waitForSelector('.cell[data-search]');
+  ok(await plat.evaluate(() => getComputedStyle(document.getElementById('search-q')).width === '0px'),
+    'search is collapsed to its icon until asked for');
+  await plat.click('#search-btn');
+  await plat.waitForFunction(() =>
+    parseFloat(getComputedStyle(document.getElementById('search-q')).width) > 40);
+  ok(true, 'clicking the icon expands the field');
+  const total = await plat.evaluate(() => document.querySelectorAll('#grid .cell').length);
+  const one = await plat.evaluate(() => {
+    const t = document.querySelector('.cell[data-search]').dataset.search.split(' ')[0];
+    const q = document.getElementById('search-q');
+    q.value = t; applySearch();
+    return [...document.querySelectorAll('#grid .cell')].filter(c => !c.hidden).length;
+  });
+  ok(one > 0 && one <= total, 'typing filters the shelf', `${one} of ${total}`);
+  ok(await plat.evaluate(() => {
+    const q = document.getElementById('search-q');
+    q.value = 'zzzznotathing'; applySearch();
+    return [...document.querySelectorAll('#grid .cell')].every(c => c.hidden) &&
+           !!document.getElementById('no-match');
+  }), 'no match says so instead of showing an empty page');
+  ok(await plat.evaluate(() => {
+    closeSearch();
+    return [...document.querySelectorAll('#grid .cell')].every(c => !c.hidden) &&
+           !document.getElementById('no-match');
+  }), 'closing search restores the whole shelf');
   await plat.goto('http://localhost:8931/studio.html');
   // publish stays visible signed out and explains itself on click, rather than
   // vanishing and leaving no trace of the flow
