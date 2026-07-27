@@ -657,6 +657,57 @@ async function comicFromZip(zip, fileName){
   };
 }
 
+/* ---------------- a published comic (D17) ----------------
+   pages and clips arrive as loose content-addressed objects on R2, not a zip.
+   this fills exactly the shape comicFromZip returns, with urls where the zip
+   version puts entries. that is the whole port: ensurePageUrl() short circuits
+   on p.url and audio.resolve() on track.url, so the reader engine, the queues,
+   the ducking and the chains all work untouched.
+   times are integer milliseconds in the database and float seconds here, so
+   they convert at this boundary and nowhere else. */
+async function comicFromApi(id){
+  const sb = window.eski && await window.eski.ready;
+  if(!sb) throw new Error('cannot reach the library');
+  const [c, pg, tk] = await Promise.all([
+    sb.from('comics').select('*').eq('id', id).single(),
+    sb.from('pages').select('idx,image_key').eq('comic_id', id).order('idx'),
+    sb.from('tracks').select('*').eq('comic_id', id).order('order_idx')
+  ]);
+  if(c.error || !c.data) throw new Error('comic not found');
+  if(pg.error || !pg.data || !pg.data.length) throw new Error('no page images found');
+  const u = k => window.eski.mediaUrl(k);
+  const pages = pg.data.map(p=>({name:'p'+p.idx, entry:null, blob:null, url:u(p.image_key), _loading:null}));
+  const tracks = (tk.data || []).map(t=>({
+    id: t.id,
+    title: t.title || 'untitled track',
+    type: t.type === 'oneshot' ? 'oneshot' : t.type === 'silence' ? 'silence' : 'music',
+    volume: t.volume ?? 100,
+    from: t.from_page ?? 1,
+    start: (t.start_ms || 0) / 1000,
+    end: t.end_ms ? t.end_ms / 1000 : null,
+    gainDb: (typeof t.gain_db === 'number' && isFinite(t.gain_db)) ? t.gain_db : 0,
+    duck: t.duck || null,
+    role: t.role === 'sfx' ? 'sfx' : 'line',
+    attachTo: t.attach_to || null,
+    offset: (t.offset_ms || 0) / 1000,
+    file: t.audio_key || null, entry: null, blob: null,
+    url: t.audio_key ? u(t.audio_key) : null, external: false
+  })).sort((a,b)=>a.from-b.from);
+  return {
+    id: 'c'+String(id).slice(0,8),
+    title: c.data.title || 'untitled',
+    creator: c.data.owner_name || null,
+    description: null,
+    direction: c.data.direction === 'rtl' ? 'rtl' : 'ltr',
+    coverEntry: null, coverUrl: u(c.data.cover_key),
+    pages, tracks,
+    player: {volume:80, crossfade:1.5, loopMode:'loop', playbackMode:'sync'},
+    fileName: (c.data.slug || 'comic') + '.eski', isEski: true,
+    baseId: id, cast: [], chapters: [],
+    series: c.data.series_title ? {title:c.data.series_title, index:c.data.series_index} : null
+  };
+}
+
 function cleanupComic(c){
   if(!c) return;
   c.pages.forEach(p=>{ if(p.url) URL.revokeObjectURL(p.url); });
@@ -1714,15 +1765,22 @@ if('serviceWorker' in navigator && location.protocol.startsWith('http')){
   try{
     showBusy(true);
     const grab = s => s.startsWith('idb:') ? shelfBlob(s.slice(4)) : fetchBlob(s);
-    const blob = await grab(src);
-    const zip = await JSZip.loadAsync(blob);
-    const comic = await comicFromZip(zip, src.split('/').pop() || 'comic.eski');
-    // ?with=<part>,<part> layers a vo and/or a soundtrack over the base
-    const parts = (new URLSearchParams(location.search).get('with') || '')
-      .split(',').map(s=>s.trim()).filter(Boolean);
-    for(const p of parts){
-      try{ await mergePart(comic, await JSZip.loadAsync(await grab(p))); }
-      catch(e){ console.warn('part failed: ' + p, e); }
+    let comic;
+    if(src.startsWith('db:')){
+      // a published comic: rows plus loose objects, no zip anywhere
+      comic = await comicFromApi(src.slice(3));
+    }else{
+      const blob = await grab(src);
+      const zip = await JSZip.loadAsync(blob);
+      comic = await comicFromZip(zip, src.split('/').pop() || 'comic.eski');
+      // ?with=<part>,<part> layers a vo and/or a soundtrack over the base.
+      // parts are files, so this is a file-only path for now.
+      const parts = (new URLSearchParams(location.search).get('with') || '')
+        .split(',').map(s=>s.trim()).filter(Boolean);
+      for(const p of parts){
+        try{ await mergePart(comic, await JSZip.loadAsync(await grab(p))); }
+        catch(e){ console.warn('part failed: ' + p, e); }
+      }
     }
     openComic(comic);
     document.body.classList.add('needs-gesture'); // browsers hold audio until a tap

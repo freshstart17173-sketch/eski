@@ -75,6 +75,8 @@ a:hover{text-decoration:underline;text-underline-offset:3px}
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--soft-ink);
   border-top:var(--bw) solid var(--line)}
 .cover:hover .t{color:var(--accent-deep)}
+.cover .a{padding:0 var(--s3) var(--s2);font-size:var(--fs-micro);color:var(--muted);
+  text-transform:lowercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .cell .tag{position:absolute;top:0;left:0;background:var(--accent);color:var(--white);
   font-size:var(--fs-micro);padding:2px 6px;text-transform:lowercase;pointer-events:none;
   font-weight:500;letter-spacing:.04em}
@@ -107,6 +109,7 @@ a:hover{text-decoration:underline;text-underline-offset:3px}
   background:var(--paper-1);border:var(--bw) solid var(--line)}
 .modal .t{margin:var(--s4) 0 var(--s1);font-weight:500;text-transform:lowercase;font-size:var(--fs-lg)}
 .modal p{margin:var(--s2) 0 var(--s4);color:var(--soft-ink);font-size:var(--fs-sm)}
+.modal .by{color:var(--muted);font-size:var(--fs-sm);text-transform:lowercase;margin-bottom:var(--s2)}
 .modal .actions{display:flex;gap:var(--bw);justify-content:center;flex-wrap:wrap}
 .mix-h{font-size:var(--fs-micro);text-transform:lowercase;letter-spacing:.14em;color:var(--muted);
   margin:var(--s4) 0 var(--s2);text-align:left;font-weight:500}
@@ -210,6 +213,7 @@ footer .brand{font-size:20px}
   <div class="modal">
     <img class="art" id="ov-img" alt="cover">
     <div class="t" id="ov-title"></div>
+    <div class="by" id="ov-by" hidden></div>
     <div id="ov-mix"></div>
     <p>browse and share more eskis in the discord.</p>
     <div class="actions">
@@ -368,12 +372,39 @@ async function shelfAdd(file){
 
 /* keep slashes readable in ?read=, encode only the segments */
 function readHref(file){
-  if(file.startsWith('idb:')) return 'read.html?read=' + encodeURIComponent(file);
+  if(file.startsWith('idb:') || file.startsWith('db:'))
+    return 'read.html?read=' + encodeURIComponent(file);
   return 'read.html?read=' + file.split('/').map(encodeURIComponent).join('/');
 }
 
+/* published comics, straight from the database. these cost no download at all:
+   the row already carries the title, the author and the cover key, so the grid
+   never opens a comic just to look at it. */
+let platformDown = false;
+async function platformComics(){
+  try{
+    const sb = window.eski && await window.eski.ready;
+    // no client means the auth module could not load. that is a connection
+    // problem, and saying "nothing here yet" would blame the shelf for it.
+    if(!sb){ platformDown = true; return []; }
+    const { data, error } = await sb.from('comics')
+      .select('id,title,owner_name,cover_key,series_title,series_index,published_at')
+      .eq('status', 'published')
+      .order('published_at', { ascending: false })
+      .limit(200);
+    if(error){ platformDown = true; return []; }
+    if(!data) return [];
+    return data.map(c=>({
+      file: 'db:'+c.id, dbId: c.id, title: c.title, creator: c.owner_name,
+      cover: window.eski.mediaUrl(c.cover_key),
+      series: c.series_title ? {title:c.series_title, index:c.series_index} : null
+    }));
+  }catch(e){ platformDown = true; return []; }
+}
+
 async function blobFor(item){
-  if(item.id){
+  // only shelved items live in indexeddb. a published comic has no blob at all.
+  if(item.local && item.id){
     const rec = await shelfGet(item.id);
     if(!rec) throw new Error('missing from the shelf');
     return rec.blob;
@@ -473,6 +504,9 @@ function open_(entry){
   $('ov-img').src = entry.cover || '';
   $('ov-img').style.visibility = entry.cover ? 'visible' : 'hidden';
   $('ov-title').textContent = entry.title;
+  const by = $('ov-by');
+  by.textContent = entry.creator ? 'by ' + entry.creator : '';
+  by.hidden = !entry.creator;
   paintMix(entry);
   o.classList.add('open');
 }
@@ -541,7 +575,10 @@ async function allItems(){
       .map(r=>({ file:'idb:'+r.id, id:r.id, local:true, baseId:r.baseId||null,
                  title:(r.title||r.name||'untitled').replace(/\.(eski|cbz|zip)$/i,'') }));
   }catch(e){}
-  return [...shelf, ...folder];
+  // published first: it is the real shelf. the local shelf is owner staging
+  // and the folder is the zero-config local dev path.
+  const published = await platformComics();
+  return [...published, ...shelf, ...folder];
 }
 /* vos and soundtracks sitting on the shelf, indexed while building the grid */
 let shelfParts = [];
@@ -558,7 +595,10 @@ async function renderGrid(){
   const items = await allItems();
   if(!items.length){
     grid.className = '';
-    grid.innerHTML = EMPTY_HTML;
+    grid.innerHTML = platformDown
+      ? `<div class="state">could not reach the shelf. check your connection and reload.<br><br>
+           anything you drop here still works offline.</div>`
+      : EMPTY_HTML;
     paintIcons();
     return;
   }
@@ -570,7 +610,8 @@ async function renderGrid(){
     const btn = document.createElement('button');
     btn.className = 'cover';
     btn.innerHTML = `<div class="art"><span data-ico="image"></span></div>
-      <div class="t">${esc(it.title || it.file.split('/').pop().replace(/\.eski$/i,''))}</div>`;
+      <div class="t">${esc(it.title || it.file.split('/').pop().replace(/\.eski$/i,''))}</div>
+      <div class="a"></div>`;
     cell.appendChild(btn);
     if(it.local){
       cell.insertAdjacentHTML('beforeend', '<span class="tag">shelved</span>');
@@ -592,6 +633,8 @@ async function renderGrid(){
       const art = cards[i].querySelector('.art');
       art.innerHTML = entry.cover ? `<img src="${entry.cover}" alt="cover">` : '';
       cards[i].querySelector('.t').textContent = entry.title;
+      const by = cards[i].querySelector('.a');
+      if(by){ by.textContent = entry.creator ? 'by ' + entry.creator : ''; by.hidden = !entry.creator; }
       cards[i].onclick = ()=>open_(entry);
       // the cell carries what it can be found by, so search never re-reads a zip
       cards[i].parentElement.dataset.search =

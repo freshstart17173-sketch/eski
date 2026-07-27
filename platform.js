@@ -13,6 +13,11 @@
 const SUPABASE_URL = 'https://zidqagrmxeawpasurpwi.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_cZuZnUhWmEGESYb7BR1Kzg_nPjR8CZR';   // public, safe to commit
 
+/* where published media is served from. the database stores object KEYS, never
+   urls, so moving off the rate-limited r2.dev domain to cdn.eski.lol is this
+   one line and zero row migrations. */
+const R2_BASE = 'https://pub-b9e7c6b680ca415e9ffd5875bad0df03.r2.dev';
+
 // add 'discord' back once it is enabled in the supabase dashboard. a provider
 // offered here but not enabled there fails at the redirect with a raw error
 // page, so this is the list that actually works, not the list we want.
@@ -98,7 +103,18 @@ function setUser(u){
 document.addEventListener('click',
   () => document.querySelectorAll('.auth-menu.open').forEach(m => m.classList.remove('open')));
 
-window.eski = { get user(){ return user; }, get sb(){ return sb; } };
+/* pages are classic scripts and cannot import this module, so the surface they
+   get is window.eski plus the eski-auth event. `ready` resolves once boot has
+   settled either way, so a page can await the client instead of polling for it
+   or racing it. */
+let markReady;
+window.eski = {
+  get user(){ return user; },
+  get sb(){ return sb; },
+  mediaBase: R2_BASE,
+  mediaUrl: key => key ? R2_BASE + '/' + key : null,
+  ready: new Promise(res => { markReady = res; })
+};
 
 (async function boot(){
   if(SUPABASE_KEY.includes('REPLACE_ME')) console.warn('platform: set SUPABASE_KEY before deploying');
@@ -115,4 +131,5 @@ window.eski = { get user(){ return user; }, get sb(){ return sb; } };
     sb = null;
     setUser(null);
   }
+  markReady(sb);
 })();
