@@ -20,13 +20,13 @@ const PROVIDERS = ['google'];
 
 const CSS = `
 .auth{position:relative;display:flex;align-items:center}
-.auth-btn{display:inline-flex;align-items:center;gap:7px;padding:6px 12px;border-radius:7px;
+.auth-btn{display:inline-flex;align-items:center;gap:7px;padding:6px 12px;border-radius:0;
   border:1px solid rgba(128,128,128,.4);background:transparent;color:inherit;font:inherit;
   text-transform:lowercase;cursor:pointer;line-height:1.2;white-space:nowrap}
 .auth-btn:hover{border-color:currentColor}
 .auth-btn img{width:22px;height:22px;border-radius:50%;display:block}
 .auth-menu{position:absolute;top:calc(100% + 8px);right:0;min-width:190px;z-index:500;
-  display:none;flex-direction:column;gap:6px;padding:10px;border-radius:9px;
+  display:none;flex-direction:column;gap:6px;padding:10px;border-radius:0;
   border:1px solid rgba(128,128,128,.4);color:inherit;
   background:var(--bg-1,var(--surface,var(--paper,#fff)));
   box-shadow:0 8px 30px rgba(0,0,0,.28)}
@@ -109,6 +109,10 @@ window.eski = { get user(){ return user; }, get sb(){ return sb; } };
     setUser((data && data.session && data.session.user) || null);
     sb.auth.onAuthStateChange((_e, s) => setUser((s && s.user) || null));
   }catch(e){
-    sb = null;                                     // signed out, silently
+    // no client. still announce the signed-out state, so a page listening for
+    // eski-auth gets a definitive answer instead of silence and can render its
+    // signed-out ui once rather than guessing.
+    sb = null;
+    setUser(null);
   }
 })();

@@ -265,6 +265,12 @@ h4{margin:0 0 8px;font-size:11px;letter-spacing:.13em;color:var(--muted);font-we
 /* drag handle on the media bay */
 .bay-resize{position:absolute;top:0;right:-3px;width:6px;height:100%;cursor:col-resize;z-index:5}
 .bay-resize:hover{background:var(--accent);opacity:.4}
+/* the page panel and the bottom panel drag the same way the bay does */
+.pane-resize{position:absolute;z-index:6}
+.pane-resize:hover{background:var(--accent);opacity:.4}
+.pane-resize.col{top:0;width:6px;height:100%;cursor:col-resize}
+.pane-resize.col.left{left:-3px}
+.pane-resize.row{left:0;top:-3px;width:100%;height:6px;cursor:row-resize}
 .qp-head{display:flex;align-items:center;gap:8px;font-weight:500;text-transform:lowercase;margin-bottom:6px}
 .qp-head .ico{width:17px;height:17px;color:var(--accent)}
 .qp-head button{margin-left:auto;border:0;background:transparent;color:var(--muted);cursor:pointer;padding:2px}
@@ -280,10 +286,16 @@ h4{margin:0 0 8px;font-size:11px;letter-spacing:.13em;color:var(--muted);font-we
 .preview img{transform-origin:center center}
 /* page card overlays: what is happening on this page, at a glance */
 .pgcard.sel{outline:2px solid var(--accent);outline-offset:-2px}
-.pgcard .trig{position:absolute;top:3px;right:22px;display:flex;align-items:center;gap:3px;
-  background:rgba(0,0,0,.62);color:#fff;border-radius:0;padding:1px 6px;font-size:10px}
-.pgcard .trig svg{width:10px;height:10px;stroke:#fff}
-.pgcard .inrange{position:absolute;left:0;right:0;bottom:0;height:4px}
+/* the state of a page, read as two stacked bars instead of icons.
+   top bar    = one-shots: nothing, or --pg-lines.
+   bottom bar = soundtrack: nothing, --pg-song where it starts,
+                --pg-song-cont where it carries over.
+   the two soundtrack states share a hue so the pair reads as one idea. */
+.pgcard .pgstate{position:absolute;left:0;right:0;bottom:0;display:flex;flex-direction:column}
+.pgcard .pgstate i{display:block;height:8px;background:transparent}
+.pgcard .pgstate i.lines.on{background:var(--pg-lines)}
+.pgcard .pgstate i.song.starts{background:var(--pg-song)}
+.pgcard .pgstate i.song.cont{background:var(--pg-song-cont)}
 .oschip{display:flex;align-items:center;gap:6px;background:var(--bg-3);border:1px solid var(--edge);
   border-radius:0;padding:5px 7px;font-size:12px;cursor:grab;box-shadow:var(--shadow)}
 .oschip:hover{border-color:var(--accent)}
@@ -381,20 +393,25 @@ input[type=number],input[type=range]+span{font-variant-numeric:var(--num)}@media
 <header class="site-header">
   <a class="brand" href="index.html" title="library">eski!</a>
   <span class="hdr-label">studio</span>
-  <button class="pill" data-ico="plus" onclick="document.getElementById('in-media').click()">add media</button>
-  <button class="pill" data-ico="folder" onclick="document.getElementById('in-folder').click()"
+  <!-- "open .eski" folded in here: addFiles() already routes a dropped .eski
+       to openEski(), so a separate button was the same action twice. -->
+  <button class="pill" id="add-media-btn" data-ico="plus"
+          onclick="document.getElementById('in-media').click()"
+          title="images, audio, a cbz, a pdf, or an existing .eski">add media</button>
+  <button class="pill" id="add-folder-btn" data-ico="folder" onclick="document.getElementById('in-folder').click()"
           title="import a whole folder of images and sounds">add folder</button>
-  <button class="pill" data-ico="folder-open" onclick="document.getElementById('in-eski').click()">open .eski</button>
   <button class="pill icon-btn mob-only" id="bay-toggle" data-ico="folder"
           onclick="toggleDrawer('bay')" title="media"></button>
   <button class="pill icon-btn mob-only" id="panel-toggle" data-ico="list-music"
           onclick="toggleDrawer('qp')" title="this page"></button>
+  <span class="hdr-label" id="mode-label" title="what this session may edit"></span>
   <span class="sp"></span>
-  <button class="pill" data-ico="settings" onclick="openSettings()">settings</button>
+  <button class="pill" id="settings-btn" data-ico="settings" onclick="openSettings()">settings</button>
   <button class="pill" data-ico="play" id="preview-btn" onclick="previewInReader()">preview</button>
-  <button class="pill" data-ico="upload-cloud" id="publish-btn" onclick="publishComic()"
-          title="put this comic in the library" hidden>publish</button>
-  <button class="pill primary" data-ico="download" id="export-btn" onclick="exportCurrent()">export</button>
+  <button class="pill primary" data-ico="upload-cloud" id="publish-btn" onclick="publishComic()"
+          title="put this in the library">publish</button>
+  <button class="pill" data-ico="download" id="export-btn" onclick="exportCurrent()"
+          title="save a portable .eski file">export</button>
 </header>
 
 <div class="work">
@@ -441,11 +458,11 @@ input[type=number],input[type=range]+span{font-variant-numeric:var(--num)}@media
     <div class="preview" id="preview">
       <div class="empty-hint" id="empty-hint">
         <div class="big">compose an .eski</div>
-        <p>drop images, a .cbz, or a .pdf to lay out pages. then drop audio onto the timeline where
-          it should start. pages with no track stay silent.</p>
+        <p>drop images, a .cbz, a .pdf, or an existing .eski to start. then pick a page and add
+          its sound in the panel on the right. pages with no track stay silent.</p>
         <div class="drops">
           <button class="pill primary" onclick="document.getElementById('in-media').click()">add media</button>
-          <button class="pill" onclick="document.getElementById('in-eski').click()">open an .eski</button>
+          <button class="pill" onclick="document.getElementById('in-folder').click()">add a folder</button>
         </div>
       </div>
       <button class="pv-nav prev" id="pv-prev" data-ico="chevron-left" onclick="stepPreview(-1)" style="display:none" title="previous page"></button>
@@ -454,7 +471,8 @@ input[type=number],input[type=range]+span{font-variant-numeric:var(--num)}@media
       <div class="pv-badge" id="pv-badge" style="display:none"></div>
     </div>
 
-    <div class="tl-panel">
+    <div class="tl-panel" id="tl-panel">
+      <div class="pane-resize row" id="tl-resize" title="drag to resize"></div>
       <div class="tl-top">
         <span class="tl-status" id="tl-status">no pages yet</span>
         <span class="modebar">working as
@@ -478,6 +496,7 @@ input[type=number],input[type=range]+span{font-variant-numeric:var(--num)}@media
 
   <!-- page info panel: everything authored on the selected page -->
   <aside class="qp" id="qp">
+    <div class="pane-resize col left" id="qp-resize" title="drag to resize"></div>
     <div class="qp-head"><span data-ico="list-music"></span><span id="qp-title">page</span></div>
     <div class="info-sec">
       <h5>soundtrack</h5>
@@ -552,7 +571,7 @@ input[type=number],input[type=range]+span{font-variant-numeric:var(--num)}@media
       id="set-dark-lbl">dark mode: off</span></button></div>
 </div>
 
-<input type="file" id="in-media" accept="image/*,audio/*,.cbz,.zip,.pdf" multiple style="display:none"
+<input type="file" id="in-media" accept="image/*,audio/*,.cbz,.zip,.pdf,.eski" multiple style="display:none"
        onchange="addFiles([...this.files]);this.value=''">
 <input type="file" id="in-folder" webkitdirectory directory multiple style="display:none"
        onchange="addFiles([...this.files]);this.value=''">
@@ -716,9 +735,15 @@ function addFiles(files){
   const eskis = files.filter(f=>/\.eski$/i.test(f.name));
   const zips = files.filter(f=>/\.(cbz|zip)$/i.test(f.name));
   const auds = files.filter(f=>(f.type.startsWith('audio/') || AUD_RE.test(f.name)));
-  const imgs = files.filter(f=>(f.type.startsWith('image/') || IMG_RE.test(f.name)) &&
+  let imgs = files.filter(f=>(f.type.startsWith('image/') || IMG_RE.test(f.name)) &&
     !pdfs.includes(f) && !zips.includes(f));
   if(eskis.length){ openEski(eskis[0]); return; }
+  // contributors bring audio. the pages belong to the author.
+  if(!canPages() && (imgs.length || pdfs.length || zips.length)){
+    if(!auds.length){ toast('pages are the author’s. bring audio instead.', 'error'); return; }
+    toast('added the audio. pages are the author’s.');
+    imgs = []; pdfs.length = 0; zips.length = 0;
+  }
   (async ()=>{
     if(auds.length) importAudio(auds);
     for(const z of zips) await addPagesFromZip(z);
@@ -1106,9 +1131,59 @@ function addCastFromInput(){
   addCast(n, $('cast-kind').value);
   $('cast-name').value = '';
 }
+/* ---------------- authoring modes ----------------
+   the mode decides what this session may touch. the author owns the comic and
+   edits everything. a composer scores it and a voice actor performs it: both
+   SEE and PREVIEW every page but cannot restructure them, and neither may do
+   the other's job.
+
+   opening the studio on its own lets you pick, and change your mind. arriving
+   from somebody else's comic (?base=<id>, once the library hands it over) locks
+   the choice to the two contributor roles, because the author role is not
+   yours to take. mode gating is UI ONLY: the server revalidates every
+   submission. */
+let modeLocked = false;
 function setEditMode(m){
+  if(modeLocked && m === 'scratch') m = 'vo';
   editMode = m;
+  const pick = $('mode-sel');
+  if(pick && pick.value !== m) pick.value = m;
+  applyMode();
   render();
+}
+function applyMode(){
+  const author = editMode === 'scratch';
+  // only the author owns the comic's settings, cast, consent and metadata
+  const setBtn = $('settings-btn');
+  if(setBtn) setBtn.hidden = !author;
+  // contributors bring audio, not pages
+  const folder = $('add-folder-btn');
+  if(folder) folder.hidden = !author;
+  const add = $('add-media-btn');
+  if(add) add.title = author
+    ? 'images, audio, a cbz, a pdf, or an existing .eski'
+    : 'audio for your ' + (editMode === 'vo' ? 'voice work' : 'soundtrack');
+  const lbl = $('mode-label');
+  if(lbl) lbl.textContent = author ? '' :
+    (editMode === 'vo' ? 'voicing, pages are read only' : 'scoring, pages are read only');
+  const pick = $('mode-sel');
+  if(pick){
+    pick.disabled = modeLocked;
+    // the author option disappears entirely on someone else's comic
+    const opt = pick.querySelector('option[value="scratch"]');
+    if(opt) opt.hidden = modeLocked;
+  }
+}
+/* the library will hand over ?base=<id>&as=vo|soundtrack for a comic that is
+   not yours. until that flow exists the studio just honours the params. */
+function initMode(){
+  const q = new URLSearchParams(location.search);
+  if(q.get('base')){
+    modeLocked = true;
+    setEditMode(q.get('as') === 'soundtrack' ? 'soundtrack' : 'vo');
+  }else{
+    setEditMode(q.get('as') || 'scratch');
+  }
 }
 /* on narrow screens the bay and the page panel slide over the stage */
 function toggleDrawer(which){
@@ -1481,25 +1556,36 @@ function pvZoomAt(factor, cx, cy){
   pv.addEventListener('pointercancel', end);
 })();
 
-/* ---------------- resizable media bay ---------------- */
-(function(){
-  const h = $('bay-resize'), bay = $('bay');
+/* ---------------- resizable panes ----------------
+   the media bay, the page panel and the bottom pages panel all drag the same
+   way. `sign` is -1 for a handle on a pane's leading edge, where moving right
+   makes the pane smaller. below 900px every pane is a drawer or full width,
+   so dragging is off. */
+function makeResizer(handleId, paneId, axis, min, max, sign){
+  const h = $(handleId), pane = $(paneId);
+  if(!h || !pane) return;
   let start = null;
   h.addEventListener('pointerdown', e=>{
-    if(matchMedia('(max-width:900px)').matches) return;   // it is a drawer there
-    start = {x:e.clientX, w:bay.getBoundingClientRect().width};
+    if(matchMedia('(max-width:900px)').matches) return;
+    const r = pane.getBoundingClientRect();
+    start = {p: axis === 'x' ? e.clientX : e.clientY, size: axis === 'x' ? r.width : r.height};
     h.setPointerCapture(e.pointerId);
     e.preventDefault();
   });
   h.addEventListener('pointermove', e=>{
     if(!start) return;
-    const w = clamp(start.w + (e.clientX - start.x), 160, 420);
-    bay.style.width = w+'px'; bay.style.minWidth = w+'px';
+    const now = axis === 'x' ? e.clientX : e.clientY;
+    const size = clamp(start.size + (now - start.p) * sign, min, max);
+    if(axis === 'x'){ pane.style.width = size+'px'; pane.style.minWidth = size+'px'; }
+    else { pane.style.height = size+'px'; pane.style.flex = '0 0 '+size+'px'; }
   });
   const end = ()=>{ start = null; };
   h.addEventListener('pointerup', end);
   h.addEventListener('pointercancel', end);
-})();
+}
+makeResizer('bay-resize', 'bay', 'x', 160, 420,  1);   // handle on the right edge
+makeResizer('qp-resize',  'qp',  'x', 220, 520, -1);   // handle on the left edge
+makeResizer('tl-resize',  'tl-panel', 'y', 120, 620, -1);  // handle on the top edge
 
 /* ---------------- pages mode ---------------- */
 let pageDragIdx = null;
@@ -1511,19 +1597,26 @@ function renderPages(){
     const el = document.createElement('div');
     el.className='pgcard'; el.draggable=true; el.style.width=pgW+'px';
     const nShots = oneshotsFor(page).length;
-    /* at a glance: does this page trigger a song, is it inside one's range,
-       does it carry one-shots, is it the selected page */
+    /* two stacked bars under the thumbnail carry the whole state of a page,
+       with no icons to decode. bottom = soundtrack: absent, starting here, or
+       carried over from an earlier page. top = one-shots: absent or present.
+       icons were worse than nothing here, because audio implied dialogue. */
     const grp = groupOwning(page);
     const triggers = grp && grp.from === page;
+    const songState = !grp ? '' : (triggers ? 'starts' : 'cont');
+    const songTitle = !grp ? 'no soundtrack'
+      : (triggers ? `soundtrack starts here: ${grp.tracks[0].title}`
+                  : `soundtrack carried over: ${grp.tracks[0].title}`);
     if(page === qpPage) el.classList.add('sel');
+    el.draggable = canPages();
     el.innerHTML = `<img src="${p.thumb||p.url}" style="height:${Math.round(pgW*1.28)}px"><span class="n">${page}</span>
-      <button class="x" data-ico="x" title="remove page"></button>
-      ${triggers?`<span class="trig" title="${esc(grp.tracks[0].title)} starts here"><svg class="ico" viewBox="0 0 24 24">${ICONS['music']}</svg>${grp.tracks.length>1?grp.tracks.length:''}</span>`:''}
-      ${grp?`<span class="inrange" style="background:${colorOf(grp.tracks[0])}"></span>`:''}
-      ${hasBlock(page)?`<span class="osblock" title="edit one-shots"><svg class="ico" viewBox="0 0 24 24">${ICONS['list-music']}</svg>${nShots}</span>`:''}`;
-    el.querySelector('.x').addEventListener('click', ev=>{ ev.stopPropagation(); removePage(i); });
-    const blk = el.querySelector('.osblock');
-    if(blk) blk.addEventListener('click', ev=>{ ev.stopPropagation(); openQueue(page); });
+      ${canPages()?'<button class="x" data-ico="x" title="remove page"></button>':''}
+      <span class="pgstate">
+        <i class="lines${nShots?' on':''}" title="${nShots?nShots+' one-shot'+(nShots===1?'':'s')+' on this page':'no one-shots'}"></i>
+        <i class="song ${esc(songState)}" title="${esc(songTitle)}"></i>
+      </span>`;
+    const rm = el.querySelector('.x');
+    if(rm) rm.addEventListener('click', ev=>{ ev.stopPropagation(); removePage(i); });
     if(pickedPage.has(i)) el.classList.add('picked');
     el.addEventListener('click', e=>{
       if(e.shiftKey || e.ctrlKey || e.metaKey){ pickPage(i, e); return; }
@@ -1535,18 +1628,27 @@ function renderPages(){
     el.addEventListener('dragstart', e=>{ pageDragIdx=i; el.classList.add('dragging');
       e.dataTransfer.setData('text/eski-page', i); e.dataTransfer.effectAllowed='move'; showTrash(); });
     el.addEventListener('dragend', ()=>{ pageDragIdx=null; el.classList.remove('dragging'); hideTrash(); });
-    el.addEventListener('dragover', e=>{ e.preventDefault();
-      el.classList.add(e.dataTransfer.types.includes('text/eski-aud')?'osdrop':'dragover'); });
-    el.addEventListener('dragleave', ()=>el.classList.remove('dragover','osdrop'));
+    /* audio no longer drops onto a page thumbnail. a bare drop could not say
+       whether the clip was a soundtrack or a one-shot, and it silently chose
+       one-shot, which is where the "audio automatically becomes dialogue"
+       confusion came from. audio goes to the page panel, where the target
+       states what it is. reordering pages by dragging still works. */
+    el.addEventListener('dragover', e=>{
+      if(e.dataTransfer.types.includes('text/eski-aud')) return;
+      e.preventDefault(); el.classList.add('dragover'); });
+    el.addEventListener('dragleave', ()=>el.classList.remove('dragover'));
     el.addEventListener('drop', e=>{
-      e.preventDefault(); e.stopPropagation(); el.classList.remove('dragover','osdrop');
-      const aud = e.dataTransfer.getData('text/eski-aud');
-      if(aud){ osBlocks.add(page); addOneshot(aud, page); openQueue(page); return; }
+      if(e.dataTransfer.types.includes('text/eski-aud')){
+        toast('drop audio in the page panel, so you can say what it is', 'error');
+        return;
+      }
+      e.preventDefault(); e.stopPropagation(); el.classList.remove('dragover');
       const src = e.dataTransfer.getData('text/eski-page') || e.dataTransfer.getData('text/eski-img');
       if(src!=='' && parseInt(src)!==i) movePage(parseInt(src), i);
     });
     g.appendChild(el);
   });
+  if(!canPages()) return;      // contributors see the pages, they do not add any
   const drop = document.createElement('div');
   drop.className='pages-drop';
   drop.style.width=pgW+'px'; drop.style.height=Math.round(pgW*1.3)+'px';
@@ -2312,10 +2414,12 @@ async function publishComic(){
     loading(false);
   }
 }
-// the button only means anything signed in. platform.js fires this on boot too
+/* publish stays visible signed out. publishComic() already says "sign in to
+   publish", which teaches the flow; a button that simply is not there does
+   not. the title carries the state for anyone hovering. */
 document.addEventListener('eski-auth', e => {
   const b = $('publish-btn');
-  if(b) b.hidden = !e.detail.user;
+  if(b) b.title = e.detail.user ? 'put this in the library' : 'sign in to publish';
 });
 
 /* ---------------- preview in the real reader ----------------
@@ -2359,7 +2463,7 @@ function toggleDark(){
 document.documentElement.dataset.theme=settings.dark?'dark':'';
 paintDark();
 $('mode-sel').addEventListener('change', e=>setEditMode(e.target.value));
-render();
+initMode();          // sets the mode, applies the ui gating, and renders
 </script>
 </body>
 </html>

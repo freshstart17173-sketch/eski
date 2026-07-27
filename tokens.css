@@ -32,6 +32,15 @@
 
   --success:#486356; --warning:#8A5A12; --danger:#A33028;
 
+  /* page state bars in the studio. two stacked bars under every page card.
+     the two soundtrack states are shades of ONE colour on purpose, so the
+     reading is "same thing, different intensity" rather than two arbitrary
+     colours to memorise. dialogue is a different hue because it is a
+     different kind of thing. */
+  --pg-song:#354D41;        /* a soundtrack starts on this page */
+  --pg-song-cont:#ABC4B8;   /* the same soundtrack, carried over */
+  --pg-lines:#8A5A12;       /* this page has one-shots */
+
   /* ---------- type. jost only, weight and colour carry the hierarchy ---------- */
   --font-body:'Jost','Avenir Next','Helvetica Neue',Arial,sans-serif;
   --font-display:'Gnomon',var(--font-body);

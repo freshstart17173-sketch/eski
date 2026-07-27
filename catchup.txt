@@ -381,6 +381,11 @@ soundTracks()/oneshotsFor()/queueGroups() helpers; they already model the data.)
   eskis; add search/sort; cache covers in IndexedDB.
 - Position memory keyed by filename+title (not title alone) to avoid collisions.
 - Reader loading spinner (parity with composer); global volume/mute memory.
+- SAVE DRAFTS (owner asked for this 2026-07-28): a work in progress should
+  survive closing the tab. Local first (IndexedDB, the autosave below), then
+  server side once accounts exist, so a draft follows you between machines.
+  The comics row already has status 'draft', so the server half is mostly a
+  publish flow that stops before flipping status.
 - Composer: autosave draft to IndexedDB; re-add a pre-export validation strip
   (duplicate triggers, tracks past last page, zero pages); export progress %.
 - Perf: LRU-revoke off-screen blob URLs; createImageBitmap; blurhash placeholders.

@@ -6,11 +6,14 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 
-/* run at the lowest scheduler priority. the suite drives a real headless
-   chromium for two minutes, and on windows the browser it spawns inherits this
-   priority class, so the whole run yields to whatever you are actually doing.
-   it costs a few seconds of wall clock and stops the machine crawling. */
-try { require('os').setPriority(19); } catch (e) { /* not permitted, run normally */ }
+/* run below normal priority. the suite drives a real headless chromium for
+   ~90s and on windows the browser it spawns inherits this priority class, so
+   the run yields to whatever you are actually doing.
+   BELOW_NORMAL (10), NOT IDLE (19): idle starves the browser badly enough that
+   the audio waits ("track ended quietly", "jump restarts the range track")
+   start timing out, because they assert on real playback against a wall
+   clock. That cost two false failures before it was tracked down. */
+try { require('os').setPriority(10); } catch (e) { /* not permitted, run normally */ }
 
 const ROOT = path.join(__dirname, '..');
 const FIX = path.join(__dirname, 'fixtures');
@@ -566,26 +569,34 @@ function ok(cond, name, extra) {
   ok(await oc.evaluate(() => cState.tracks.filter(t => t.type === 'music').length) === 1,
     'opened: 1 music + 2 one-shots');
   await oc.waitForSelector('.pgcard');
-  // the page with one-shots shows a single block with the count
-  ok(await oc.evaluate(() => document.querySelectorAll('.pgcard .osblock').length) === 1,
-    'exactly one page shows a one-shot block');
-  ok((await oc.textContent('.pgcard .osblock')).includes('2'), 'the block shows the one-shot count');
+  // page state is two stacked bars, no icons: top = one-shots, bottom = soundtrack
+  ok(await oc.evaluate(() => document.querySelectorAll('.pgcard .pgstate i.lines.on').length) === 1,
+    'exactly one page is marked as carrying one-shots');
+  ok(await oc.evaluate(() => !document.querySelector('.pgcard .osblock, .pgcard .trig')),
+    'the old one-shot and trigger icons are gone');
   // the page panel is docked and persistent, not a modal over the stage
   ok(await oc.isVisible('#qp'), 'page panel is always present');
   ok(await oc.evaluate(() => !document.getElementById('qp-scrim')), 'the modal scrim is gone');
   ok(await oc.evaluate(() => getComputedStyle(document.getElementById('qp')).position === 'static'),
     'page panel is docked in the layout, not floating');
   // selecting a page is enough to see everything on it
-  await oc.click('.pgcard .osblock');
+  await oc.evaluate(() => openQueue(cState.tracks.find(t => t.type === 'oneshot').from));
   ok(await oc.evaluate(() => document.querySelectorAll('#qp-list .oschip').length) === 2,
     'panel lists both one-shots for the selected page');
   ok((await oc.textContent('#info-song')).length > 0, 'panel says which song owns the page');
   ok(await oc.evaluate(() => document.querySelectorAll('.pgcard.sel').length === 1),
     'the selected page is marked in the grid');
-  ok(await oc.evaluate(() => document.querySelectorAll('.pgcard .inrange').length > 0),
-    'pages inside a song range are marked');
-  ok(await oc.evaluate(() => document.querySelectorAll('.pgcard .trig').length > 0),
-    'pages that trigger a song are marked');
+  // the two soundtrack states are distinguishable: where it starts, and where
+  // it is carried over. that distinction is the whole point of the pair.
+  ok(await oc.evaluate(() => document.querySelectorAll('.pgcard .pgstate i.song.starts').length > 0),
+    'the page a soundtrack starts on is marked');
+  ok(await oc.evaluate(() => document.querySelectorAll('.pgcard .pgstate i.song.cont').length > 0),
+    'pages carrying that soundtrack over are marked differently');
+  ok(await oc.evaluate(() => {
+    const s = getComputedStyle(document.querySelector('.pgcard .pgstate i.song.starts'));
+    const c = getComputedStyle(document.querySelector('.pgcard .pgstate i.song.cont'));
+    return s.backgroundColor !== c.backgroundColor && parseFloat(s.height) >= 8;
+  }), 'the two soundtrack shades differ and the bars are the taller size');
   ok(await oc.evaluate(() => { openQueue(1); return document.getElementById('qp-title').textContent; })
     === 'page 1 of 3', 'clicking a page retargets the panel');
   await oc.evaluate(() => openQueue(2));
@@ -984,10 +995,12 @@ function ok(cond, name, extra) {
   ok(await plat.evaluate(() => document.querySelectorAll('.cell').length > 0),
     'the library still renders without it');
   await plat.goto('http://localhost:8931/studio.html');
+  // publish stays visible signed out and explains itself on click, rather than
+  // vanishing and leaving no trace of the flow
   ok(await plat.evaluate(() => {
     const b = document.getElementById('publish-btn');
-    return b && b.offsetParent === null;      // [hidden] must beat .pill's display
-  }), 'publish is not offered to a signed-out studio');
+    return b && b.offsetParent !== null && /sign in/i.test(b.title);
+  }), 'publish is visible signed out and says it needs a sign in');
 
   console.log('console errors');
   ok(consoleErrors.length === 0, 'zero console errors', consoleErrors.join(' | '));
