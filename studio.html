@@ -346,8 +346,26 @@ h4{margin:0 0 8px;font-size:11px;letter-spacing:.13em;color:var(--muted);font-we
 .pill{font-size:var(--fs-sm)}
 .pill:hover{transform:none;background:var(--accent-soft);border-color:var(--accent);color:var(--accent-deep)}
 .pill.primary,.pill.on{background:var(--accent);border-color:var(--accent);color:var(--white)}
-.sec-head{font-size:var(--fs-micro);letter-spacing:.12em;font-weight:500;color:var(--muted);
+/* RECOMPOSED BAY: a dock, not a page. section heads are sticky eyebrow bars,
+   images form a contact sheet whose hairlines are the grid gaps, and audio is
+   a list of full width rows divided by one border each. no chip owns a box,
+   which is what made the old bay read as loose cards floating in padding.
+   image hairlines are outlines, not a container background, because a wrapped
+   last row would otherwise paint its leftover space as a slab. */
+.bay-sec{padding:0;border-bottom:0}
+.sec-head{position:sticky;top:0;z-index:2;margin:0;padding:var(--s2) var(--s3);gap:var(--s2);
+  background:var(--bg-1);border-bottom:var(--bw) solid var(--line)}
+.sec-head h4{font-size:var(--fs-micro);letter-spacing:.12em;font-weight:500;color:var(--muted);
   text-transform:lowercase}
+.sec-head .count{font-variant-numeric:var(--num);font-size:var(--fs-micro)}
+.bay-grid{padding:var(--s2)}
+#bay-imgs{gap:var(--bw)}
+.chip-img{border:0;outline:var(--bw) solid var(--line)}
+#bay-auds{gap:0;padding:0}
+.chip-aud{border:0;border-bottom:var(--bw) solid var(--line);padding:var(--s2) var(--s3)}
+.bay-hint{margin:0;padding:var(--s3);border-top:var(--bw) solid var(--line);font-size:var(--fs-micro)}
+.bay-empty{padding:var(--s3)}
+.bay-search{padding:var(--s2) var(--s3);border-bottom:var(--bw) solid var(--line)}
 .bay-search input,.bay-search select{font-size:var(--fs-sm)}
 .tl-status,.pg-num,.qp-count,.count{font-variant-numeric:var(--num)}
 input[type=number],input[type=range]+span{font-variant-numeric:var(--num)}@media (max-width:900px){
@@ -447,8 +465,8 @@ input[type=number],input[type=range]+span{font-variant-numeric:var(--num)}@media
         </select>
       </div>
       <div class="bay-grid" id="bay-auds" style="flex-direction:column"><div class="bay-empty">none yet</div></div>
-      <div class="bay-hint">drag an audio block onto a page (here or in the timeline) to place it.
-        drag any block to the trash bar to remove it.</div>
+      <div class="bay-hint">pick a page, then drag audio into the panel on the right and drop it on
+        soundtrack or on one-shots. drag any block to the trash bar to remove it.</div>
     </div>
     <div class="bay-resize" id="bay-resize" title="drag to resize"></div>
   </aside>

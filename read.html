@@ -237,7 +237,24 @@ footer a{color:var(--accent-soft)}
 .pill:hover{transform:none;background:var(--accent-soft);border-color:var(--accent);color:var(--accent-deep)}
 .pill.on{background:var(--accent);border-color:var(--accent);color:var(--white)}
 .pill:disabled{opacity:.4}
-.player-bar{padding:var(--s2) var(--s3);gap:var(--s3);background:var(--surface)}
+.player-bar{padding:var(--s2) var(--s3);gap:var(--s3);background:var(--surface);box-shadow:none}
+/* RECOMPOSED: the bar is compartments divided by hairlines, the same grammar
+   as the library grid, instead of chunks floating in one padded row. the gap
+   IS the divider, so nothing needs its own border. below 641px the existing
+   mobile rules take over and the bar wraps, where hairlines would only add
+   noise. */
+@media (min-width:641px){
+  .player-bar{padding:0;gap:var(--bw);background:var(--line);align-items:stretch;flex-wrap:nowrap;
+    border-top:var(--bw) solid var(--line)}
+  .player-bar>*:not(.sound-gate){background:var(--surface);display:flex;align-items:center;
+    padding:var(--s2) var(--s3)}
+  .pb-now{flex:0 1 240px;flex-direction:column;align-items:flex-start;justify-content:center;gap:1px}
+  .bars{flex:1 1 auto;min-width:140px;flex-direction:column;align-items:stretch;
+    justify-content:center;gap:var(--s1)}
+  .vt-info{gap:var(--s2);flex:none}
+  .pb-right{gap:var(--s2);flex:none}
+  body.needs-gesture .sound-gate{padding:var(--s2) var(--s3)}
+}
 .vt-info{font-size:var(--fs-sm);font-variant-numeric:var(--num)}
 .vt-info input,#page-jump{font-variant-numeric:var(--num);text-align:center}
 .pb-right{gap:var(--s2)}
