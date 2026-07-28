@@ -33,8 +33,8 @@ h4{margin:0 0 8px;font-size:11px;letter-spacing:.13em;color:var(--muted);font-we
   transition:all 140ms ease;font-size:13px;box-shadow:var(--shadow)}
 .pill:hover{border-color:var(--accent);color:var(--accent);transform:translateY(-1px)}
 .pill:active{transform:translateY(0)}
-.pill.primary{background:var(--accent);border-color:var(--accent);color:#fff}
-.pill.primary:hover{background:var(--accent-deep);border-color:var(--accent-deep);color:#fff}
+.pill.primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.pill.primary:hover{background:var(--accent-deep);border-color:var(--accent-deep);color:var(--on-accent)}
 .pill:disabled{opacity:.45;cursor:default;transform:none;box-shadow:none}
 .icon-btn{width:30px;height:28px;display:inline-flex;align-items:center;justify-content:center;padding:0;gap:0}
 .ico{width:16px;height:16px;flex:none;stroke:currentColor;fill:none;stroke-width:2;
@@ -209,7 +209,7 @@ h4{margin:0 0 8px;font-size:11px;letter-spacing:.13em;color:var(--muted);font-we
 
 /* one-shot tool + per-page one-shot block (pages mode) */
 .pgcard .osblock{position:absolute;left:4px;bottom:4px;display:flex;align-items:center;gap:3px;
-  background:var(--accent);color:#fff;border-radius:0;padding:1px 7px 1px 5px;font-size:10.5px;
+  background:var(--accent);color:var(--on-accent);border-radius:0;padding:1px 7px 1px 5px;font-size:10.5px;
   cursor:pointer;box-shadow:var(--shadow)}
 .pgcard .osblock svg{width:11px;height:11px;stroke:#fff}
 .pgcard.osdrop{outline:2px solid var(--accent);outline-offset:-2px}
@@ -345,7 +345,7 @@ h4{margin:0 0 8px;font-size:11px;letter-spacing:.13em;color:var(--muted);font-we
 .work{gap:var(--bw);background:var(--line)}
 .pill{font-size:var(--fs-sm)}
 .pill:hover{transform:none;background:var(--accent-soft);border-color:var(--accent);color:var(--accent-deep)}
-.pill.primary,.pill.on{background:var(--accent);border-color:var(--accent);color:var(--white)}
+.pill.primary,.pill.on{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
 /* RECOMPOSED BAY: a dock, not a page. section heads are sticky eyebrow bars,
    images form a contact sheet whose hairlines are the grid gaps, and audio is
    a list of full width rows divided by one border each. no chip owns a box,

@@ -98,6 +98,13 @@
   --accent:var(--sage-500);
   --accent-deep:var(--sage-700);
   --accent-soft:var(--sage-200);
+  /* what goes ON an accent fill. this MUST flip with the theme: in dark mode
+     the accent steps up the ramp to sage-300, and white text on sage-300 is
+     about 1.9:1, which is both unreadable and the source of the glare. */
+  --on-accent:var(--white);
+  /* borders on things you can click. --line is for dividers, which may be
+     quiet; an interactive boundary needs to be seen. */
+  --line-strong:#7F948A;
 
   --paper:var(--paper-0);
   --surface:var(--white);
@@ -130,6 +137,9 @@
   --accent:var(--sage-300);
   --accent-deep:var(--sage-200);
   --accent-soft:var(--surf-3);
+  /* dark accents are light, so what sits on them must be dark */
+  --on-accent:var(--sage-900);
+  --line-strong:var(--sage-400);
 
   --paper:var(--surf-1);
   --surface:var(--surf-2);

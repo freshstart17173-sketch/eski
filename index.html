@@ -77,7 +77,7 @@ a:hover{text-decoration:underline;text-underline-offset:3px}
 .cover:hover .t{color:var(--accent-deep)}
 .cover .a{padding:0 var(--s3) var(--s2);font-size:var(--fs-micro);color:var(--muted);
   text-transform:lowercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.cell .tag{position:absolute;top:0;left:0;background:var(--accent);color:var(--white);
+.cell .tag{position:absolute;top:0;left:0;background:var(--accent);color:var(--on-accent);
   font-size:var(--fs-micro);padding:2px 6px;text-transform:lowercase;pointer-events:none;
   font-weight:500;letter-spacing:.04em}
 .cell .rm{position:absolute;top:0;right:0;width:26px;height:26px;border:0;
@@ -116,22 +116,25 @@ a:hover{text-decoration:underline;text-underline-offset:3px}
 .mixrow{display:flex;align-items:center;gap:var(--s2);font-size:var(--fs-sm);padding:var(--s1) 0;
   text-align:left;cursor:pointer}
 .mixrow .k{font-size:var(--fs-micro);text-transform:lowercase;letter-spacing:.05em;
-  color:var(--white);background:var(--accent);padding:1px 6px;flex:none;font-weight:500}
+  color:var(--on-accent);background:var(--accent);padding:1px 6px;flex:none;font-weight:500}
 .mixrow .n{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .chaps{display:grid;grid-template-columns:repeat(auto-fill,minmax(30px,1fr));gap:var(--bw);
   background:var(--line);border:var(--bw) solid var(--line)}
 .chap{height:30px;border:0;background:var(--surface);color:var(--soft-ink);font-size:var(--fs-xs);
   font-variant-numeric:var(--num)}
 .chap:hover{background:var(--sage-100);color:var(--accent-deep)}
-.chap.on{background:var(--accent);color:var(--white)}
+.chap.on{background:var(--accent);color:var(--on-accent)}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:var(--s2);
   min-height:var(--ctl);padding:0 var(--s4);border-radius:var(--r);text-transform:lowercase;
-  font-size:var(--fs-sm);border:var(--bw) solid var(--line);background:var(--surface);
+  font-size:var(--fs-sm);border:var(--bw) solid var(--line-strong);background:var(--surface);
   color:var(--soft-ink);cursor:pointer;transition:background var(--t-fast) var(--ease),
   color var(--t-fast) var(--ease),border-color var(--t-fast) var(--ease)}
-.btn:hover{border-color:var(--accent);color:var(--accent);text-decoration:none}
-.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--white);font-weight:500}
-.btn.primary:hover{background:var(--accent-deep);border-color:var(--accent-deep);color:var(--white)}
+/* hover darkens toward the accent instead of washing out. accent-soft is the
+   ground and accent-deep the text, which stays legible in both themes. */
+.btn:hover{border-color:var(--accent);background:var(--accent-soft);
+  color:var(--accent-deep);text-decoration:none}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent);font-weight:500}
+.btn.primary:hover{background:var(--accent-deep);border-color:var(--accent-deep);color:var(--on-accent)}
 
 /* onboarding, first visit only */
 .modal.wide{max-width:460px;text-align:left}
@@ -191,6 +194,7 @@ footer .brand{font-size:20px}
     <input type="search" id="search-q" placeholder="search by title or author"
            oninput="applySearch()" onkeydown="if(event.key==='Escape')closeSearch()">
   </div>
+  <button class="btn icon" id="theme-btn" onclick="toggleTheme()"></button>
   <a class="hdr-link" id="hdr-discord" href="#" target="_blank" rel="noopener"><span data-ico="message-circle"></span>discord</a>
   <a class="hdr-link" href="studio.html"><span data-ico="file-plus"></span>make an eski</a>
   <button class="btn" onclick="document.getElementById('shelf-input').click()"><span
@@ -269,6 +273,8 @@ const ICONS = {
   "message-circle": "<path d=\"M7.9 20A9 9 0 1 0 4 16.1L2 22Z\" />",
   "arrow-left": "<path d=\"m12 19-7-7 7-7\" /> <path d=\"M19 12H5\" />",
   "search": "<circle cx=\"11\" cy=\"11\" r=\"8\" /> <path d=\"m21 21-4.3-4.3\" />",
+  "moon": "<path d=\"M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401\" />",
+  "sun": "<circle cx=\"12\" cy=\"12\" r=\"4\" /> <path d=\"M12 2v2\" /> <path d=\"M12 20v2\" /> <path d=\"m4.93 4.93 1.41 1.41\" /> <path d=\"m17.66 17.66 1.41 1.41\" /> <path d=\"M2 12h2\" /> <path d=\"M20 12h2\" /> <path d=\"m6.34 17.66-1.41 1.41\" /> <path d=\"m19.07 4.93-1.41 1.41\" />",
 };
 function paintIcons(root){
   (root||document).querySelectorAll('[data-ico]').forEach(el=>{
@@ -277,10 +283,27 @@ function paintIcons(root){
       `<svg class="ico" viewBox="0 0 24 24" aria-hidden="true">${ICONS[el.getAttribute('data-ico')]||''}</svg>`);
   });
 }
-try{
-  const s = JSON.parse(localStorage.getItem('eski-settings'))||{};
-  document.documentElement.dataset.theme = s.dark ? 'dark' : '';
-}catch(e){}
+/* theme. the same 'eski-settings' key the reader and the studio use, so the
+   choice follows you between the three surfaces instead of being per page.
+   the icon shows what you would switch TO, which is the convention that
+   confuses people least. */
+const themeSettings = (()=>{ try{ return JSON.parse(localStorage.getItem('eski-settings'))||{}; }
+  catch(e){ return {}; } })();
+function paintTheme(){
+  document.documentElement.dataset.theme = themeSettings.dark ? 'dark' : '';
+  const b = document.getElementById('theme-btn');
+  if(!b) return;
+  b.setAttribute('data-ico', themeSettings.dark ? 'sun' : 'moon');
+  b.title = themeSettings.dark ? 'light mode' : 'dark mode';
+  b.innerHTML = '';
+  paintIcons(b.parentElement);
+}
+function toggleTheme(){
+  themeSettings.dark = !themeSettings.dark;
+  try{ localStorage.setItem('eski-settings', JSON.stringify(themeSettings)); }catch(e){}
+  paintTheme();
+}
+paintTheme();
 
 const DISCORD = 'https://discord.gg/UFNpnHAbD';
 const esc = s => (s??'').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;');
