@@ -3,6 +3,8 @@
     "aws4fetch": "^1.0.20"
   },
   "devDependencies": {
+    "@supabase/supabase-js": "^2.110.9",
+    "esbuild": "^0.28.1",
     "jszip": "^3.10.1",
     "playwright": "^1.62.0"
   }

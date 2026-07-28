@@ -89,13 +89,14 @@ function ok(cond, name, extra) {
     else if (local) route.continue();
     else route.fulfill({ status: 404, body: '' });
   });
-  // platform.js imports the supabase client from esm.sh. the suite runs signed
-  // out, so hand it a module that throws: platform.js catches it and paints no
-  // auth ui, which is the same path a blocked cdn takes in the wild.
-  await ctx.route('https://esm.sh/**', r => r.fulfill({
-    contentType: 'text/javascript', body: 'export const createClient=()=>{throw new Error("offline")}'
-  }));
-  await ctx.route('https://fonts.googleapis.com/**', r => r.fulfill({ contentType: 'text/css', body: '' }));
+  // the auth client is vendored now, so it loads from localhost like any other
+  // asset. what must not happen is the suite reaching the real project, so the
+  // supabase origin is stubbed: no session, and an empty shelf.
+  await ctx.route('https://*.supabase.co/**', r => {
+    const u = r.request().url();
+    if(u.includes('/auth/v1/')) return r.fulfill({ status: 401, contentType: 'application/json', body: '{}' });
+    return r.fulfill({ status: 200, contentType: 'application/json', body: '[]' });
+  });  await ctx.route('https://fonts.googleapis.com/**', r => r.fulfill({ contentType: 'text/css', body: '' }));
   await ctx.route('https://fonts.gstatic.com/**', r => r.fulfill({ status: 404, body: '' }));
 
   const consoleErrors = [];
@@ -994,8 +995,12 @@ function ok(cond, name, extra) {
   wire(plat);
   await plat.goto('http://localhost:8931/index.html');
   await plat.waitForSelector('.cell');
-  ok(await plat.evaluate(() => !document.querySelector('.auth-btn')),
-    'no auth ui when the client cannot load');
+  // the client is vendored, so it is present here rather than absent: the auth
+  // ui paints and offers a sign in. the fail-soft path is still real, it is
+  // just no longer the common case.
+  await plat.waitForSelector('.auth-btn');
+  ok(await plat.evaluate(() => /sign in/i.test(document.querySelector('.auth-btn').textContent)),
+    'the vendored client loads and offers a sign in');
   ok(await plat.evaluate(() => document.querySelectorAll('.cell').length > 0),
     'the library still renders without it');
 

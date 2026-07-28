@@ -412,7 +412,7 @@ async function platformComics(){
     // problem, and saying "nothing here yet" would blame the shelf for it.
     if(!sb){ platformDown = true; return []; }
     const { data, error } = await sb.from('comics')
-      .select('id,title,description,owner_name,cover_key,series_title,series_index,published_at')
+      .select('*')   /* not a column list: a schema one migration behind should not blank the shelf */
       .eq('status', 'published')
       .order('published_at', { ascending: false })
       .limit(200);
@@ -420,7 +420,7 @@ async function platformComics(){
     if(!data) return [];
     return data.map(c=>({
       file: 'db:'+c.id, dbId: c.id, title: c.title, creator: c.owner_name, description: c.description,
-      cover: window.eski.mediaUrl(c.cover_key),
+      cover: window.eski.mediaUrl(c.thumb_key || c.cover_key),
       series: c.series_title ? {title:c.series_title, index:c.series_index} : null
     }));
   }catch(e){ platformDown = true; return []; }

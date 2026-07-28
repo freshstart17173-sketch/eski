@@ -2338,6 +2338,31 @@ async function pool(items, n, fn){
 const slugify = s => (s || '').toLowerCase().replace(/[^a-z0-9]+/g, '-')
   .replace(/^-+|-+$/g, '') || 'untitled';
 
+/* the shelf used to render the ORIGINAL page scan into a 150px cell, so home
+   downloaded megabytes to draw a thumbnail and the browser's own downscaling
+   made it look bad. generate a real one instead: a comic page is tall, so fit
+   the WIDTH and crop the height to 2:3 from the top, which is where a cover's
+   subject almost always is. webp, and png only if the source was png with
+   transparency worth keeping. */
+async function makeCoverThumb(blob, width = 420){
+  const bmp = await createImageBitmap(blob);
+  const w = Math.min(width, bmp.width);
+  const h = Math.round(w * 3 / 2);
+  const cv = document.createElement('canvas');
+  cv.width = w; cv.height = h;
+  const cx = cv.getContext('2d');
+  cx.imageSmoothingQuality = 'high';
+  // cover-fit: scale to the width, then take the top of the page
+  const scale = w / bmp.width;
+  const drawH = bmp.height * scale;
+  cx.drawImage(bmp, 0, 0, bmp.width, bmp.height, 0, 0, w, drawH);
+  bmp.close();
+  const out = await new Promise(res => cv.toBlob(res, 'image/webp', 0.82));
+  // very old browsers hand back null for webp; a null thumb just means the
+  // full cover gets used, which is the old behaviour rather than a failure
+  return out;
+}
+
 /* a draft and a publish are the SAME upload. the only difference is whether
    the comic row ends at 'draft' or 'published', which is why this is one
    function: a draft that took a different path would not be the thing you
@@ -2369,6 +2394,18 @@ async function saveComic(finalStatus){
     for(const aud of [...new Set(cState.tracks.filter(t => t.aud).map(t => t.aud))]){
       const a = audioStore[aud];
       if(a) parts.push({ blob: a.blob, ext: extOf(a.fileName || '', 'mp3'), aud });
+    }
+    /* plus a small cover thumbnail, so the shelf never downloads a full page
+       scan to fill a 150px cell. it is content addressed like everything else,
+       so republishing an unchanged cover re-uses the same object. */
+    const coverIdx = clamp(cState.coverIndex, 0, pageCount() - 1);
+    let thumbPart = null;
+    try{
+      say('making a thumbnail');
+      const tb = await makeCoverThumb(cState.pages[coverIdx].blob);
+      if(tb) parts.push(thumbPart = { blob: tb, ext: 'webp', thumb: true });
+    }catch(e){
+      console.warn('thumbnail failed, falling back to the full cover', e);
     }
 
     say('hashing ' + parts.length + ' files');
@@ -2415,7 +2452,8 @@ async function saveComic(finalStatus){
       description: (cState.meta.description || '').trim() || null,
       slug: slugify(cState.meta.title),
       direction: cState.meta.direction === 'rtl' ? 'rtl' : 'ltr',
-      cover_key: parts[clamp(cState.coverIndex, 0, pageCount() - 1)].key,
+      cover_key: parts[coverIdx].key,
+      thumb_key: thumbPart ? thumbPart.key : null,
       series_title: (cState.meta.series || {}).title || null,
       series_index: (cState.meta.series || {}).index || null,
       status: 'draft'

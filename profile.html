@@ -248,7 +248,7 @@ async function load(){
      owner also sees drafts. no status filter is needed here, and adding one
      would just be a second place to get it wrong. */
   const r = await sb.from('comics')
-    .select('id,title,status,cover_key,created_at,published_at')
+    .select('*')
     .eq('owner_id', subject.id)
     .order('created_at', { ascending: false });
   comics = r.data || [];
@@ -350,7 +350,7 @@ function paintShelf(){
   }
   box.className = 'rows';
   box.innerHTML = rows.map(c=>{
-    const cover = c.cover_key ? window.eski.mediaUrl(c.cover_key) : '';
+    const cover = (c.thumb_key || c.cover_key) ? window.eski.mediaUrl(c.thumb_key || c.cover_key) : '';
     const published = c.status === 'published';
     return `<div class="row" data-id="${esc(c.id)}">
       ${cover ? `<img class="art" src="${esc(cover)}" alt="">` : '<span class="art"></span>'}

@@ -123,7 +123,11 @@ window.eski = {
 (async function boot(){
   if(SUPABASE_KEY.includes('REPLACE_ME')) console.warn('platform: set SUPABASE_KEY before deploying');
   try{
-    const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2');
+    /* vendored, same origin, cached with the rest of the app. it used to come
+       from esm.sh, whose entry point is a 458 byte re-export, so every page
+       waited on two chained requests to someone else's host before it could
+       run a single query. rebuild with `node tests/vendor-supabase.js`. */
+    const { createClient } = await import('./vendor/supabase.js');
     sb = createClient(SUPABASE_URL, SUPABASE_KEY);
     const { data } = await sb.auth.getSession();
     setUser((data && data.session && data.session.user) || null);
