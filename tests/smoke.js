@@ -1027,10 +1027,14 @@ function ok(cond, name, extra) {
   await plat.goto('http://localhost:8931/studio.html');
   // publish stays visible signed out and explains itself on click, rather than
   // vanishing and leaving no trace of the flow
-  ok(await plat.evaluate(() => {
+  // the title is set by the eski-auth event, which fires only once the dynamic
+  // import of the auth client settles. sampling it straight after goto() is a
+  // race, so wait for the condition rather than reading it once.
+  await plat.waitForFunction(() => {
     const b = document.getElementById('publish-btn');
     return b && b.offsetParent !== null && /sign in/i.test(b.title);
-  }), 'publish is visible signed out and says it needs a sign in');
+  }, null, { timeout: 10000 });
+  ok(true, 'publish is visible signed out and says it needs a sign in');
 
   console.log('console errors');
   ok(consoleErrors.length === 0, 'zero console errors', consoleErrors.join(' | '));

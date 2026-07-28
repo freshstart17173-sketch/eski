@@ -332,6 +332,13 @@ h4{margin:0 0 8px;font-size:11px;letter-spacing:.13em;color:var(--muted);font-we
   box-shadow:var(--shadow-lg)}
 .toast.show{opacity:1;transform:translate(-50%,0)}
 .toast.error{background:#a1362b}
+/* an error exists to be read and copied, so it stays until dismissed, accepts
+   pointer events, and its text is selectable. success messages still fade. */
+.toast.error{pointer-events:auto;user-select:text;text-align:left;padding-right:34px;
+  white-space:pre-wrap;word-break:break-word}
+.toast-x{position:absolute;top:1px;right:5px;border:0;background:transparent;color:inherit;
+  font-size:19px;line-height:1;cursor:pointer;padding:2px 5px}
+.toast-x:hover{opacity:.7}
 /* ---------------- touch + narrow screens ----------------
    the three-column desk cannot survive 9:16, so the bay and the page panel
    become off-canvas drawers and the stage keeps the whole width. */
@@ -680,13 +687,24 @@ function paintIcons(root){
   });
 }
 
+/* errors do NOT auto-dismiss. the useful thing to do with an error is copy it
+   somewhere, and a message that vanishes in three seconds cannot be copied.
+   click the x or press escape. success messages still fade. */
 function toast(msg, kind){
   const t = $('toast');
+  const err = kind === 'error';
   t.textContent = msg;
-  t.className = 'toast show' + (kind==='error' ? ' error' : '');
+  t.className = 'toast show' + (err ? ' error' : '');
   clearTimeout(t._h);
-  t._h = setTimeout(()=>t.classList.remove('show'), 3200);
+  if(!err){ t._h = setTimeout(()=>t.classList.remove('show'), 3200); return; }
+  const x = document.createElement('button');
+  x.className = 'toast-x'; x.type = 'button'; x.title = 'dismiss'; x.textContent = '×';
+  x.addEventListener('click', ()=>t.classList.remove('show'));
+  t.appendChild(x);
 }
+document.addEventListener('keydown', e=>{
+  if(e.key === 'Escape'){ const t = $('toast'); if(t) t.classList.remove('show'); }
+});
 function esc(s){ return (s??'').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;'); }
 let loadDepth = 0;
 function loading(on, label){
