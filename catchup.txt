@@ -385,6 +385,102 @@ soundTracks()/oneshotsFor()/queueGroups() helpers; they already model the data.)
 - Position memory keyed by filename+title (not title alone) to avoid collisions.
 - Reader loading spinner (parity with composer); global volume/mute memory.
 ================================================================
+17. PERFORMANCE PLAN (2026-07-28). Measured, not guessed.
+================================================================
+The brief was "make the site fast: search, saving, loading, everything, and a
+framework is fine if that is what it takes".
+
+VERDICT ON A FRAMEWORK: no, and not close. Nothing slow here is caused by
+hand-written DOM code. The pages are small (index 34 KB, studio 128 KB, tokens
+13 KB) and render immediately. What is missing is a 20-line BUILD STEP, which
+is a different thing from a framework. Revisit only if a second surface needs
+real routing, or if the studio's state outgrows plain objects. Adopting React
+today would add a toolchain and change nothing below.
+
+WHAT IS ACTUALLY SLOW, in order of measured cost:
+
+E1. THE AUTH CLIENT IS ON A THIRD-PARTY CDN, AND IT IS A SHIM.
+    https://esm.sh/@supabase/supabase-js@2 returns 458 BYTES: a re-export that
+    points at the real bundle. So every page that touches data makes two
+    CHAINED requests to an origin we do not control before the first query can
+    start, and platform.js gates everything behind that (window.eski.ready).
+    This is why home feels slow with one comic on it: the wait is constant and
+    has nothing to do with how much is on the shelf. It is also why the in-app
+    browser shows "could not reach the shelf" whenever that host is blocked.
+    FIX: vendor it. `npx esbuild --bundle --format=esm --minify` the client to
+    vendor/supabase.js, import it relatively, and let it be cached with the
+    rest of the app. One command in package.json, no framework, no dev server.
+    This is the single biggest win and it also removes a third-party
+    dependency from the critical path of every signed-in action.
+
+E2. COVERS ARE FULL-SIZE PAGE SCANS.
+    publish sets cover_key = parts[coverIndex].key, and parts are the ORIGINAL
+    page blobs. Home then draws that multi-megabyte image into a 150px cell,
+    and the reader's modal into 150px too. Two symptoms, one cause: the shelf
+    is slow, and the cover looks bad because the browser is downscaling a tall
+    page and object-fit:cover is cropping it to 2:3.
+    FIX: generate a thumbnail at publish time in a canvas (about 400px wide,
+    webp, quality ~0.82), upload it as its own content-addressed object, and
+    store thumb_key alongside cover_key. Home and the modal use thumb_key; the
+    comic page can use the full cover. Costs one extra small upload per comic
+    and turns the shelf from megabytes into kilobytes.
+    NOTE: this is also the honest fix for "the cover is low quality". Do not
+    reach for a different crop until the thumbnail exists.
+
+E3. HASHING BLOCKS THE MAIN THREAD.
+    saveComic() runs crypto.subtle.digest over every page blob on the UI
+    thread, then uploads four at a time. On a 40-page comic that is where the
+    freeze comes from, before a single byte is sent.
+    FIX: move hashing into a Web Worker, keep a real progress bar fed by
+    completed bytes rather than file count, and let the UI stay live. True
+    background upload that survives navigation needs a Service Worker with
+    Background Fetch, which is Chrome-only; do not promise it cross-browser.
+    Keeping the tab open with a responsive UI and a progress bar covers the
+    actual complaint.
+
+E4. NO AUTOSAVE, SO A CLOSED TAB LOSES EVERYTHING.
+    FIX: snapshot cState plus the media blobs to IndexedDB on a debounce, and
+    offer to restore on open. This is worth doing right after E3 because the
+    same record makes an interrupted upload RESUMABLE: content-addressed keys
+    mean an object already in the bucket never needs sending twice.
+
+E5. NO CACHE HEADERS.
+    Media keys are already content-addressed, so they can be immutable for a
+    year, and HTML must stay no-cache so deploys land. vercel.json has an
+    installCommand and nothing else.
+
+E6. URLS.
+    A comic and a profile have no addresses of their own (B3, B4). Vercel
+    rewrites can give /c/<slug> and /@<handle> without a router.
+
+E7. SEARCH IS NOT A PROBLEM YET, and saying so is part of the plan. It filters
+    an already-loaded array client side, which is instant into the thousands.
+    When the shelf outgrows one query, move to Postgres full text or trigram
+    and paginate. Do not build that now.
+
+ORDER: E1, E2, E3, E4, E5. E1 and E2 are most of the felt slowness and neither
+touches architecture. E6 rides along with the comic page.
+
+================================================================
+RECENT WORK NOT PREVIOUSLY RECORDED HERE (2026-07-28)
+================================================================
+- Sign in is live (Google). Discord is enabled per-provider in supabase and is
+  one word in PROVIDERS (platform.js) once it is switched on there.
+- Publishing works end to end: studio -> presigned R2 PUTs -> comics/pages/
+  tracks rows -> home. schema.sql is applied.
+- profile.html: handles, bio, avatar, share link, and four shelves (published,
+  drafts, contributed to, saved). schema-profiles.sql adds profiles and the
+  comics.description column. Contributed and saved are honest empty states
+  until the parts and saves tables exist.
+- Drafts: saveComic(status) is one path; a draft simply does not flip status.
+  A server draft CANNOT be reopened in the studio yet (see E4).
+- The export button is gone from the studio; exportEski() remains for the
+  preview pane and the suite. Home no longer shelves files.
+- Error reporting: toasts stay until dismissed, api/sign.mjs answers in json
+  and sanitises env vars pasted as whole KEY=value lines, comicFromApi names
+  which step failed, and a page image that 404s names its url.
+
+================================================================
 BEFORE A SECOND PERSON ARRIVES (added 2026-07-28, owner approved)
 ================================================================
 These are not features. They are the things that break, cost money, or create
