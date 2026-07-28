@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>eski profile</title>
-<meta name="description" content="your comics, drafts and published.">
+<meta name="description" content="a reader, a voice, or a composer on eski.">
 <link rel="icon" type="image/png" href="eski_logo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -15,7 +15,7 @@
 body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--font-body);
   font-weight:400;font-size:var(--fs);line-height:1.5;min-height:100vh;display:flex;flex-direction:column}
 h2{margin:0;font-size:var(--fs-display);line-height:.92;text-transform:lowercase;font-weight:400;
-  font-family:var(--font-display);color:var(--accent);letter-spacing:-0.01em}
+  font-family:var(--font-display);color:var(--accent);letter-spacing:-0.01em;word-break:break-word}
 a{color:var(--accent-deep);text-decoration:none}
 a:hover{text-decoration:underline;text-underline-offset:3px}
 .ico{width:15px;height:15px;flex:none;stroke:currentColor;fill:none;stroke-width:2;
@@ -32,8 +32,6 @@ a:hover{text-decoration:underline;text-underline-offset:3px}
 .hdr-link:hover{color:var(--accent);text-decoration:none}
 .sp{flex:1}
 .wrap{width:min(var(--max),100%);margin:0 auto;padding:var(--s6) var(--s5) var(--s8);flex:1;width:100%}
-.rule{margin:0 0 var(--s4)}
-.sub{color:var(--muted);font-size:var(--fs-sm);margin:0}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:var(--s2);min-height:var(--ctl);
   padding:0 var(--s4);border-radius:var(--r);text-transform:lowercase;font-size:var(--fs-sm);
   border:var(--bw) solid var(--line-strong);background:var(--surface);color:var(--soft-ink);cursor:pointer;
@@ -46,8 +44,36 @@ a:hover{text-decoration:underline;text-underline-offset:3px}
 .btn.icon{width:var(--ctl);padding:0}
 .btn.danger:hover{border-color:var(--danger);background:transparent;color:var(--danger)}
 
-/* the shelf of your own work: one row per comic, divided by hairlines */
-.rows{margin-top:var(--s5);border:var(--bw) solid var(--line)}
+/* ---------- identity ---------- */
+.who{display:flex;gap:var(--s5);align-items:flex-start;border:var(--bw) solid var(--line);
+  background:var(--surface);padding:var(--s5)}
+.who .pic{width:96px;height:96px;flex:none;object-fit:cover;background:var(--paper-1);
+  border:var(--bw) solid var(--line)}
+.who .pic.ph{display:flex;align-items:center;justify-content:center;color:var(--muted);
+  font-family:var(--font-display);font-size:40px;line-height:1}
+.who .id{min-width:0;flex:1}
+.handle{color:var(--muted);font-size:var(--fs-sm);margin-top:var(--s1)}
+.bio{margin:var(--s3) 0 0;color:var(--soft-ink);font-size:var(--fs-sm);max-width:62ch;
+  white-space:pre-wrap;word-break:break-word}
+.who .acts{display:flex;gap:var(--s2);margin-top:var(--s4);flex-wrap:wrap}
+.edit{display:none;margin-top:var(--s4);gap:var(--s3);flex-direction:column;max-width:520px}
+.edit.on{display:flex}
+.edit label{font-size:var(--fs-micro);letter-spacing:.12em;color:var(--muted);text-transform:lowercase;
+  font-weight:500}
+.edit input,.edit textarea{width:100%;padding:var(--s2) var(--s3);border:var(--bw) solid var(--line-strong);
+  border-radius:var(--r);background:var(--paper);color:var(--ink);font:inherit}
+.edit input:focus,.edit textarea:focus{outline:none;border-color:var(--accent)}
+.edit textarea{min-height:88px;resize:vertical}
+.err{color:var(--danger);font-size:var(--fs-sm)}
+
+/* ---------- shelves ---------- */
+.tabs{display:flex;gap:var(--bw);margin-top:var(--s6);border-bottom:var(--bw) solid var(--line)}
+.tab{background:transparent;border:0;border-bottom:2px solid transparent;padding:var(--s2) var(--s3);
+  font:inherit;font-size:var(--fs-sm);text-transform:lowercase;color:var(--muted);cursor:pointer}
+.tab:hover{color:var(--accent-deep)}
+.tab.on{color:var(--accent-deep);border-bottom-color:var(--accent);font-weight:500}
+.tab .n{font-variant-numeric:var(--num);opacity:.75;margin-left:var(--s1)}
+.rows{border:var(--bw) solid var(--line);border-top:0}
 .row{display:flex;align-items:center;gap:var(--s4);padding:var(--s3);
   border-bottom:var(--bw) solid var(--line);background:var(--surface)}
 .row:last-child{border-bottom:0}
@@ -61,8 +87,8 @@ a:hover{text-decoration:underline;text-underline-offset:3px}
   padding:2px 7px;flex:none}
 .chip.draft{background:var(--paper-1);color:var(--muted);border:var(--bw) solid var(--line)}
 .chip.published{background:var(--accent);color:var(--on-accent)}
-.state{border:var(--bw) solid var(--line);padding:var(--s7) var(--s5);text-align:center;
-  color:var(--muted);margin-top:var(--s5);background:var(--surface);font-size:var(--fs-sm)}
+.state{border:var(--bw) solid var(--line);border-top:0;padding:var(--s7) var(--s5);text-align:center;
+  color:var(--muted);background:var(--surface);font-size:var(--fs-sm)}
 .spinner{width:28px;height:28px;border:2px solid var(--line);border-top-color:var(--accent);
   border-radius:var(--r-round);animation:spin .8s linear infinite;margin:0 auto var(--s3)}
 @keyframes spin{to{transform:rotate(360deg)}}
@@ -79,6 +105,11 @@ footer .brand{font-size:20px}
   .hdr-label{display:none}
   .wrap{padding:var(--s5) var(--s3) var(--s7)}
   .btn{min-height:42px}
+  .who{flex-direction:column;gap:var(--s4)}
+  .who .pic{width:72px;height:72px}
+  .tabs{overflow-x:auto;scrollbar-width:none}
+  .tabs::-webkit-scrollbar{display:none}
+  .tab{min-height:42px;white-space:nowrap}
   .row{flex-wrap:wrap}
   .row .acts{width:100%;justify-content:flex-start}
 }
@@ -95,11 +126,8 @@ footer .brand{font-size:20px}
   <button class="btn icon" id="theme-btn" onclick="toggleTheme()"></button>
 </header>
 
-<div class="wrap">
-  <div class="rule"></div>
-  <h2 id="who">profile</h2>
-  <p class="sub" id="sub">your comics, published and in progress.</p>
-  <div id="rows"><div class="state"><div class="spinner"></div>loading&#8230;</div></div>
+<div class="wrap" id="page">
+  <div class="state"><div class="spinner"></div>loading&#8230;</div>
 </div>
 
 <footer>
@@ -114,18 +142,23 @@ footer .brand{font-size:20px}
 
 <script>
 /* ================================================================
-   profile: everything you have made. a DRAFT is a comic whose media is
-   already uploaded and whose rows already exist, but whose status has not
-   been flipped to published, so row level security shows it to you and
-   nobody else. publishing is therefore one column change, not another
-   upload.
+   profile. two views from one file: your own, which can edit and shows
+   drafts, and anyone else's, which is what a shared link opens.
+
+   ?u=<handle> addresses a person. without it you get your own.
+
+   a HANDLE is the identity and comics.owner_name is the byline. renaming
+   yourself does not rewrite work you already published, which is the correct
+   behaviour for attribution, so the two are deliberately not the same field.
    ================================================================ */
 const ICONS = {
   "book-open": "<path d=\"M12 7v14\" /> <path d=\"M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z\" />",
   "moon": "<path d=\"M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401\" />",
   "sun": "<circle cx=\"12\" cy=\"12\" r=\"4\" /> <path d=\"M12 2v2\" /> <path d=\"M12 20v2\" /> <path d=\"m4.93 4.93 1.41 1.41\" /> <path d=\"m17.66 17.66 1.41 1.41\" /> <path d=\"M2 12h2\" /> <path d=\"M20 12h2\" /> <path d=\"m6.34 17.66-1.41 1.41\" /> <path d=\"m19.07 4.93-1.41 1.41\" />",
   "trash-2": "<path d=\"M10 11v6\" /> <path d=\"M14 11v6\" /> <path d=\"M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6\" /> <path d=\"M3 6h18\" /> <path d=\"M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2\" />",
-  "upload-cloud": "<path d=\"M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242\" /> <path d=\"M12 12v9\" /> <path d=\"m16 16-4-4-4 4\" />"
+  "upload-cloud": "<path d=\"M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242\" /> <path d=\"M12 12v9\" /> <path d=\"m16 16-4-4-4 4\" />",
+  "link": "<path d=\"M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71\" /> <path d=\"M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71\" />",
+  "pencil": "<path d=\"M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z\" /> <path d=\"m15 5 4 4\" />"
 };
 const $ = id => document.getElementById(id);
 const esc = s => (s ?? '').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
@@ -136,7 +169,6 @@ function paintIcons(root){
       `<svg class="ico" viewBox="0 0 24 24" aria-hidden="true">${ICONS[el.getAttribute('data-ico')]||''}</svg>`);
   });
 }
-/* the same settings key the other three surfaces use, so the theme follows you */
 const themeSettings = (()=>{ try{ return JSON.parse(localStorage.getItem('eski-settings'))||{}; }
   catch(e){ return {}; } })();
 function paintTheme(){
@@ -145,8 +177,7 @@ function paintTheme(){
   if(!b) return;
   b.setAttribute('data-ico', themeSettings.dark ? 'sun' : 'moon');
   b.title = themeSettings.dark ? 'light mode' : 'dark mode';
-  b.innerHTML = '';
-  paintIcons(b.parentElement);
+  b.innerHTML = ''; paintIcons(b.parentElement);
 }
 function toggleTheme(){
   themeSettings.dark = !themeSettings.dark;
@@ -156,41 +187,169 @@ function toggleTheme(){
 paintTheme();
 
 const fmt = d => d ? new Date(d).toISOString().slice(0,10) : '';
+let sb = null, me = null, subject = null, isMe = false, comics = [], tab = 'published';
+
+/* a handle has to be unique, so a first guess can collide. try the obvious one,
+   then widen, rather than making a new user invent a name before they can do
+   anything. */
+function handleSeed(user){
+  const m = user.user_metadata || {};
+  const raw = m.user_name || m.name || m.full_name || (user.email||'').split('@')[0] || 'reader';
+  const base = raw.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,24);
+  return base.length >= 3 ? base : 'reader';
+}
+async function ensureProfile(user){
+  const got = await sb.from('profiles').select('*').eq('id', user.id).maybeSingle();
+  if(got.data) return got.data;
+  const m = user.user_metadata || {};
+  const seed = handleSeed(user);
+  for(let i = 0; i < 5; i++){
+    const handle = i ? seed.slice(0,24) + '-' + Math.random().toString(36).slice(2,6) : seed;
+    const ins = await sb.from('profiles').insert({
+      id: user.id, handle,
+      display_name: m.full_name || m.name || m.user_name || null,
+      avatar_url: m.avatar_url || null
+    }).select('*').single();
+    if(!ins.error) return ins.data;
+    if(ins.error.code !== '23505') throw new Error(ins.error.message);  // not a collision
+  }
+  throw new Error('could not pick a handle');
+}
 
 async function load(){
-  const box = $('rows');
-  const sb = window.eski && await window.eski.ready;
+  const page = $('page');
+  sb = window.eski && await window.eski.ready;
   if(!sb){
-    box.innerHTML = '<div class="state">could not reach the server. check your connection and reload.</div>';
+    page.innerHTML = '<div class="state">could not reach the server. check your connection and reload.</div>';
     return;
   }
-  const { data: { user } } = await sb.auth.getUser();
-  if(!user){
-    $('who').textContent = 'profile';
-    box.innerHTML = '<div class="state">sign in to see your comics, and to keep drafts.</div>';
-    return;
+  const wanted = new URLSearchParams(location.search).get('u');
+  me = (await sb.auth.getUser()).data.user || null;
+
+  if(wanted){
+    const r = await sb.from('profiles').select('*').eq('handle', wanted.toLowerCase()).maybeSingle();
+    subject = r.data || null;
+    if(!subject){
+      page.innerHTML = `<h2>not found</h2><p class="bio">no one here goes by
+        ${esc(wanted)}. <a href="index.html">back home</a>.</p>`;
+      return;
+    }
+  }else{
+    if(!me){
+      page.innerHTML = '<div class="state">sign in to see your profile, your drafts and what you have saved.</div>';
+      return;
+    }
+    try{ subject = await ensureProfile(me); }
+    catch(e){ page.innerHTML = '<div class="state">could not set up your profile: '+esc(e.message)+'</div>'; return; }
   }
-  const m = user.user_metadata || {};
-  $('who').textContent = (m.full_name || m.name || m.user_name || 'you').toLowerCase();
-  /* rls already limits this to rows you own, so no owner filter is needed
-     here. that is the point of enforcing it at the query layer. */
-  const { data, error } = await sb.from('comics')
-    .select('id,title,slug,status,cover_key,created_at,published_at')
+  isMe = !!(me && subject && me.id === subject.id);
+
+  /* rls decides what comes back: a visitor sees published rows only, and the
+     owner also sees drafts. no status filter is needed here, and adding one
+     would just be a second place to get it wrong. */
+  const r = await sb.from('comics')
+    .select('id,title,status,cover_key,created_at,published_at')
+    .eq('owner_id', subject.id)
     .order('created_at', { ascending: false });
-  if(error){
-    box.innerHTML = '<div class="state">could not load your comics: ' + esc(error.message) + '</div>';
+  comics = r.data || [];
+  paint();
+}
+
+function shelf(name){
+  if(name === 'published') return comics.filter(c=>c.status === 'published');
+  if(name === 'drafts')    return comics.filter(c=>c.status !== 'published');
+  return [];   // contributed and saved have no data model yet
+}
+
+function paint(){
+  const p = subject;
+  const initial = (p.display_name || p.handle || '?').trim().charAt(0).toLowerCase();
+  const pub = shelf('published').length, dr = shelf('drafts').length;
+  $('page').innerHTML = `
+    <div class="who">
+      ${p.avatar_url
+        ? `<img class="pic" src="${esc(p.avatar_url)}" alt="">`
+        : `<span class="pic ph">${esc(initial)}</span>`}
+      <div class="id">
+        <h2>${esc(p.display_name || p.handle)}</h2>
+        <div class="handle">@${esc(p.handle)}</div>
+        ${p.bio ? `<p class="bio">${esc(p.bio)}</p>`
+                : (isMe ? '<p class="bio">no bio yet.</p>' : '')}
+        <div class="acts">
+          <button class="btn" id="share" data-ico="link">copy link</button>
+          ${isMe ? '<button class="btn" id="editbtn" data-ico="pencil">edit profile</button>' : ''}
+        </div>
+        ${isMe ? `<div class="edit" id="edit">
+          <div>
+            <label for="f-name">display name</label>
+            <input id="f-name" maxlength="60" value="${esc(p.display_name||'')}">
+          </div>
+          <div>
+            <label for="f-handle">handle</label>
+            <input id="f-handle" maxlength="30" value="${esc(p.handle)}">
+          </div>
+          <div>
+            <label for="f-bio">bio</label>
+            <textarea id="f-bio" maxlength="400"
+              placeholder="what you make, or what you want to be cast in.">${esc(p.bio||'')}</textarea>
+          </div>
+          <div class="err" id="f-err"></div>
+          <div class="acts">
+            <button class="btn primary" id="save">save</button>
+            <button class="btn" id="cancel">cancel</button>
+          </div>
+        </div>` : ''}
+      </div>
+    </div>
+
+    <div class="tabs">
+      <button class="tab${tab==='published'?' on':''}" data-tab="published">published<span class="n">${pub}</span></button>
+      ${isMe ? `<button class="tab${tab==='drafts'?' on':''}" data-tab="drafts">drafts<span class="n">${dr}</span></button>` : ''}
+      <button class="tab${tab==='contributed'?' on':''}" data-tab="contributed">contributed to</button>
+      ${isMe ? `<button class="tab${tab==='saved'?' on':''}" data-tab="saved">saved</button>` : ''}
+    </div>
+    <div id="shelf"></div>`;
+  paintIcons($('page'));
+  paintShelf();
+
+  $('share').addEventListener('click', async e=>{
+    const url = location.origin + location.pathname.replace(/[^/]*$/, 'profile.html') + '?u=' + p.handle;
+    try{ await navigator.clipboard.writeText(url); e.target.lastChild.textContent = 'link copied'; }
+    catch(err){ prompt('copy this link', url); }
+  });
+  if(isMe){
+    $('editbtn').addEventListener('click', ()=>$('edit').classList.toggle('on'));
+    $('cancel').addEventListener('click', ()=>$('edit').classList.remove('on'));
+    $('save').addEventListener('click', saveProfile);
+  }
+  $('page').querySelectorAll('.tab').forEach(b=>b.addEventListener('click', ()=>{
+    tab = b.dataset.tab; paint();
+  }));
+}
+
+function paintShelf(){
+  const box = $('shelf');
+  const rows = shelf(tab);
+  if(tab === 'contributed'){
+    box.className = '';
+    box.innerHTML = `<div class="state">voice work and soundtracks made for other people's
+      comics will show up here. nothing yet.</div>`;
     return;
   }
-  if(!data.length){
-    box.innerHTML = '<div class="state">nothing yet. make something in the ' +
-      '<a href="studio.html">studio</a>, then save it as a draft or publish it.</div>';
+  if(tab === 'saved'){
+    box.className = '';
+    box.innerHTML = '<div class="state">saving comics is not built yet.</div>';
     return;
   }
-  const drafts = data.filter(c=>c.status !== 'published').length;
-  $('sub').textContent = data.length + (data.length === 1 ? ' comic' : ' comics') +
-    (drafts ? ', ' + drafts + ' still a draft' : '');
+  if(!rows.length){
+    box.className = '';
+    box.innerHTML = isMe
+      ? `<div class="state">nothing here. make one in the <a href="studio.html">studio</a>.</div>`
+      : '<div class="state">nothing published yet.</div>';
+    return;
+  }
   box.className = 'rows';
-  box.innerHTML = data.map(c=>{
+  box.innerHTML = rows.map(c=>{
     const cover = c.cover_key ? window.eski.mediaUrl(c.cover_key) : '';
     const published = c.status === 'published';
     return `<div class="row" data-id="${esc(c.id)}">
@@ -202,9 +361,9 @@ async function load(){
       <span class="chip ${published?'published':'draft'}">${published?'published':'draft'}</span>
       <span class="acts">
         <a class="btn" data-ico="book-open" href="read.html?read=db:${encodeURIComponent(c.id)}">read</a>
-        <button class="btn ${published?'':'primary'}" data-ico="upload-cloud"
+        ${isMe ? `<button class="btn ${published?'':'primary'}" data-ico="upload-cloud"
                 data-act="${published?'unpublish':'publish'}">${published?'unpublish':'publish'}</button>
-        <button class="btn danger icon" data-ico="trash-2" data-act="delete" title="delete"></button>
+        <button class="btn danger icon" data-ico="trash-2" data-act="delete" title="delete"></button>` : ''}
       </span>
     </div>`;
   }).join('');
@@ -212,16 +371,33 @@ async function load(){
   box.querySelectorAll('[data-act]').forEach(b=>b.addEventListener('click', ()=>act(b)));
 }
 
+async function saveProfile(){
+  const handle = $('f-handle').value.trim().toLowerCase();
+  const err = $('f-err');
+  err.textContent = '';
+  if(!/^[a-z0-9](?:[a-z0-9_-]{1,28}[a-z0-9])$/.test(handle)){
+    err.textContent = 'handles are 3 to 30 characters: letters, numbers, - and _, not at the ends.';
+    return;
+  }
+  const up = await sb.from('profiles').update({
+    handle,
+    display_name: $('f-name').value.trim() || null,
+    bio: $('f-bio').value.trim() || null
+  }).eq('id', me.id).select('*').single();
+  if(up.error){
+    err.textContent = up.error.code === '23505' ? 'that handle is taken.' : up.error.message;
+    return;
+  }
+  subject = up.data;
+  paint();
+}
+
 async function act(btn){
-  const sb = window.eski.sb;
   const row = btn.closest('.row');
   const id = row.dataset.id;
   const what = btn.dataset.act;
   const title = row.querySelector('.t').textContent;
-  if(what === 'delete'){
-    // deleting is not reversible, and the media stays in the bucket
-    if(!confirm(`delete "${title}"? this cannot be undone.`)) return;
-  }
+  if(what === 'delete' && !confirm(`delete "${title}"? this cannot be undone.`)) return;
   btn.disabled = true;
   let err = null;
   if(what === 'delete'){
