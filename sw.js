@@ -1,7 +1,7 @@
 /* eski service worker.
    HTML is network-first so a deploy lands immediately (no hard-reload needed);
    other assets are cache-first with a background refresh. */
-const CACHE = 'eski-v7';
+const CACHE = 'eski-v8';
 const ASSETS = [
   './',
   'index.html',
@@ -9,6 +9,7 @@ const ASSETS = [
   'studio.html',
   'profile.html',
   'platform.js',
+  'hash-worker.js',
   'vendor/supabase.js',
   'tokens.css',
   'demo.eski',

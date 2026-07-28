@@ -314,6 +314,22 @@ h4{margin:0 0 8px;font-size:11px;letter-spacing:.13em;color:var(--muted);font-we
   border-radius:50%;animation:spin .8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 .loading .lbl{color:#fff;font-size:15px;text-transform:lowercase}
+/* a determinate bar beats a list of internal steps: it answers "how long",
+   which is the only question being asked while waiting. */
+.loading .bar{width:min(320px,64vw);height:6px;background:rgba(255,255,255,.2)}
+.loading .bar i{display:block;height:100%;width:0;background:#fff;
+  transition:width 200ms var(--ease)}
+/* the done state: the spinner is swapped for a tick that draws itself once */
+.loading .tick{display:none;width:52px;height:52px;fill:none;stroke:#fff;stroke-width:3;
+  stroke-linecap:round;stroke-linejoin:round}
+.loading.done .tick{display:block}
+.loading.done .spinner,.loading.done .bar{display:none}
+.loading .tick circle{stroke-dasharray:145;stroke-dashoffset:145;
+  animation:tick-ring 420ms var(--ease) forwards}
+.loading .tick path{stroke-dasharray:36;stroke-dashoffset:36;
+  animation:tick-mark 260ms var(--ease) 300ms forwards}
+@keyframes tick-ring{to{stroke-dashoffset:0}}
+@keyframes tick-mark{to{stroke-dashoffset:0}}
 
 /* drag-out trash bar */
 .trash-bar{position:fixed;left:50%;bottom:16px;transform:translate(-50%,24px);opacity:0;
@@ -634,7 +650,14 @@ input[type=number],input[type=range]+span{font-variant-numeric:var(--num)}@media
 </div>
 
 <div class="trash-bar" id="trash-bar"><span data-ico="trash-2" class="ico"></span><span>drop here to remove</span></div>
-<div class="loading" id="loading"><div class="spinner"></div><div class="lbl" id="loading-lbl">working</div></div>
+<div class="loading" id="loading">
+  <div class="spinner" id="loading-spin"></div>
+  <svg class="tick" id="loading-tick" viewBox="0 0 52 52" aria-hidden="true">
+    <circle cx="26" cy="26" r="23"/><path d="M15 27l8 8 15-16"/>
+  </svg>
+  <div class="lbl" id="loading-lbl">working</div>
+  <div class="bar" id="loading-bar" hidden><i id="loading-fill"></i></div>
+</div>
 <div class="toast" id="toast"></div>
 
 <script>
@@ -706,11 +729,33 @@ document.addEventListener('keydown', e=>{
   if(e.key === 'Escape'){ const t = $('toast'); if(t) t.classList.remove('show'); }
 });
 function esc(s){ return (s??'').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;'); }
+/* a determinate bar, driven by BYTES rather than file count: forty small pages
+   and one huge audio file are not forty-one equal steps. */
+function progress(frac){
+  const bar = $('loading-bar'), fill = $('loading-fill');
+  if(!bar || !fill) return;
+  if(frac == null){ bar.hidden = true; fill.style.width = '0'; return; }
+  bar.hidden = false;
+  fill.style.width = Math.max(0, Math.min(1, frac)) * 100 + '%';
+}
+/* show the tick, let it draw, then get out of the way */
+function loadingDone(label){
+  const el = $('loading');
+  if(!el || !el.classList.contains('on')) return;
+  $('loading-lbl').textContent = label || 'done';
+  el.classList.add('done');
+  setTimeout(() => { el.classList.remove('on','done'); loadDepth = 0; progress(null); }, 900);
+}
 let loadDepth = 0;
 function loading(on, label){
+  const el = $('loading');
+  // while the done tick is drawing, loadingDone() owns the teardown. a finally
+  // block calling loading(false) would otherwise cut the animation instantly.
+  if(!on && el.classList.contains('done')) return;
   loadDepth = Math.max(0, loadDepth + (on?1:-1));
   if(label) $('loading-lbl').textContent = label;
-  $('loading').classList.toggle('on', loadDepth>0);
+  el.classList.toggle('on', loadDepth>0);
+  if(loadDepth === 0) progress(null);
 }
 
 /* ---------------- state ---------------- */
@@ -2323,10 +2368,46 @@ async function exportEski(asBlob){
    instead of a half-built public comic. */
 const sbc = () => (window.eski && window.eski.sb) || null;
 
-async function sha256(blob){
+/* hashing runs in workers so the desk stays usable while a comic is prepared.
+   two is enough: this is memory-bound, not cpu-bound, and more workers just
+   means more copies of a page in flight at once. falls back to the main
+   thread if workers are unavailable, which keeps file:// working. */
+const hashPool = (() => {
+  let workers = null, next = 0, seq = 0;
+  const waiting = new Map();
+  function boot(){
+    if(workers) return workers;
+    try{
+      workers = [0, 1].map(() => {
+        const w = new Worker('hash-worker.js');
+        w.onmessage = e => {
+          const done = waiting.get(e.data.id);
+          if(!done) return;
+          waiting.delete(e.data.id);
+          e.data.error ? done.reject(new Error(e.data.error)) : done.resolve(e.data.hex);
+        };
+        w.onerror = () => { workers = null; };   // fall back on the next call
+        return w;
+      });
+    }catch(e){ workers = null; }
+    return workers;
+  }
+  return blob => {
+    const ws = boot();
+    if(!ws) return sha256Main(blob);
+    const id = ++seq;
+    const w = ws[next++ % ws.length];
+    return new Promise((resolve, reject) => {
+      waiting.set(id, { resolve, reject });
+      w.postMessage({ id, blob });
+    });
+  };
+})();
+async function sha256Main(blob){
   const buf = await crypto.subtle.digest('SHA-256', await blob.arrayBuffer());
   return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
 }
+const sha256 = blob => hashPool(blob);
 /* n at a time. hashing and uploading 40 pages serially is slow, and all at once
    is rude to the browser's connection pool. */
 async function pool(items, n, fn){
@@ -2408,8 +2489,15 @@ async function saveComic(finalStatus){
       console.warn('thumbnail failed, falling back to the full cover', e);
     }
 
-    say('hashing ' + parts.length + ' files');
-    await pool(parts, 4, async p => { p.hash = await sha256(p.blob); });
+    say('preparing');
+    const totalBytes = parts.reduce((n, p) => n + p.blob.size, 0) || 1;
+    let hashed = 0;
+    progress(0);
+    await pool(parts, 2, async p => {
+      p.hash = await sha256(p.blob);
+      hashed += p.blob.size;
+      progress(hashed / totalBytes * 0.25);   // hashing is the first quarter
+    });
 
     // identical bytes share a key, so they are signed and uploaded once
     const uniq = [...new Map(parts.map(p => [p.hash + '.' + p.ext, p])).values()];
@@ -2434,12 +2522,15 @@ async function saveComic(finalStatus){
     const keyOf = new Map(uniq.map(p => [p.hash + '.' + p.ext, p.key]));
     parts.forEach(p => { p.key = keyOf.get(p.hash + '.' + p.ext); });
 
-    let done = 0;
+    say('uploading');
+    const upBytes = uniq.reduce((n, p) => n + p.blob.size, 0) || 1;
+    let sent = 0;
     await pool(uniq, 4, async p => {
       const put = await fetch(p.url, { method: 'PUT', body: p.blob,
         headers: { 'content-type': p.blob.type || 'application/octet-stream' } });
       if(!put.ok) throw new Error('upload failed (' + put.status + ')');
-      say(`uploading ${++done}/${uniq.length}`);
+      sent += p.blob.size;
+      progress(0.25 + sent / upBytes * 0.7);
     });
 
     say('writing the library entry');
@@ -2502,6 +2593,8 @@ async function saveComic(finalStatus){
       if(pub.error) throw new Error(pub.error.message);
     }
 
+    progress(1);
+    loadingDone(draft ? 'saved' : 'published');
     toast(draft ? 'saved as a draft on your profile' : 'published as ' + row.slug);
     // phase 1 has no cast or slots table, so that work stays in the file
     if(cState.cast.length) toast('cast and slots stay local for now', 'error');
