@@ -93,6 +93,9 @@ body.focus .settings{position:fixed;right:12px;bottom:72px;z-index:80}
   justify-content:center;gap:14px;text-align:center;padding:24px;z-index:5}
 .drop-overlay .big{font-size:clamp(26px,3.4vw,40px);font-weight:500;text-transform:lowercase;line-height:1.05}
 .drop-overlay p{margin:0;color:var(--muted);max-width:420px}
+/* the reason it failed, selectable so it can be pasted into a bug report */
+.drop-overlay p.why{color:var(--danger);max-width:70ch;user-select:text;
+  font-size:var(--fs-sm);white-space:pre-wrap;word-break:break-word}
 .drop-overlay .pill{text-decoration:none}
 .pages{display:flex;align-items:center;justify-content:center;gap:2px;height:100%;width:100%;
   padding:14px 60px;position:relative;transform-origin:center center;will-change:transform;touch-action:none}
@@ -339,6 +342,7 @@ footer a{color:var(--accent-soft)}
     <div class="viewer" id="viewer">
       <div class="drop-overlay" id="drop-overlay">
         <div class="big" id="drop-big">nothing loaded</div>
+        <p class="why" id="drop-sub" hidden></p>
         <p>pick a comic to start reading.</p>
         <a class="pill primary" href="index.html">go home</a>
       </div>
@@ -693,9 +697,18 @@ async function comicFromApi(id){
     sb.from('pages').select('idx,image_key').eq('comic_id', id).order('idx'),
     sb.from('tracks').select('*').eq('comic_id', id).order('order_idx')
   ]);
-  if(c.error || !c.data) throw new Error('comic not found');
-  if(pg.error || !pg.data || !pg.data.length) throw new Error('no page images found');
+  /* say which step failed and what the server said. "could not load" is not a
+     diagnosis, and every one of these has a different cause: a bad id, row
+     level security hiding a draft, or the tables not existing yet. */
+  if(c.error) throw new Error('comics query failed: ' + c.error.message +
+    (c.error.code ? ' [' + c.error.code + ']' : ''));
+  if(!c.data) throw new Error('no comic with id ' + id + '. it may be a draft you do not own, or deleted.');
+  if(pg.error) throw new Error('pages query failed: ' + pg.error.message);
+  if(!pg.data || !pg.data.length) throw new Error('comic "' + (c.data.title||id) + '" has no page rows');
+  if(tk.error) throw new Error('tracks query failed: ' + tk.error.message);
   const u = k => window.eski.mediaUrl(k);
+  const missingKey = pg.data.find(p => !p.image_key);
+  if(missingKey) throw new Error('page ' + missingKey.idx + ' has no image key');
   const pages = pg.data.map(p=>({name:'p'+p.idx, entry:null, blob:null, url:u(p.image_key), _loading:null}));
   const tracks = (tk.data || []).map(t=>({
     id: t.id,
@@ -717,7 +730,7 @@ async function comicFromApi(id){
     id: 'c'+String(id).slice(0,8),
     title: c.data.title || 'untitled',
     creator: c.data.owner_name || null,
-    description: null,
+    description: c.data.description || null,
     direction: c.data.direction === 'rtl' ? 'rtl' : 'ltr',
     coverEntry: null, coverUrl: u(c.data.cover_key),
     pages, tracks,
@@ -734,6 +747,22 @@ function cleanupComic(c){
   c.tracks.forEach(t=>{ if(t.url) URL.revokeObjectURL(t.url); });
   if(c.coverUrl) URL.revokeObjectURL(c.coverUrl);
 }
+
+/* a page that 404s from R2 leaves a silently broken image, which looks exactly
+   like a comic with blank pages. name the url that failed instead. */
+(function watchPageImages(){
+  const report = e => {
+    const src = e.target && e.target.src;
+    if(!src || src.startsWith('blob:')) return;   // zip-backed pages cannot 404
+    toast('a page image did not load. check the bucket is public and CORS allows GET:\n' + src, 'error');
+  };
+  document.addEventListener('DOMContentLoaded', ()=>{
+    ['page-left','page-right'].forEach(id=>{
+      const el = document.getElementById(id);
+      if(el) el.addEventListener('error', report);
+    });
+  });
+})();
 
 function ensurePageUrl(i){
   const p = current && current.pages[i];
@@ -752,10 +781,18 @@ function prefetchAround(i){
     if(k>=0 && k<current.pages.length) ensurePageUrl(k);
 }
 
+/* `failed` may be a message. an empty state that only says "could not load"
+   tells you nothing you did not already know from the blank screen. */
 function showBusy(on, failed){
   const b = $('drop-big');
   b.textContent = on ? 'loading' : (failed ? 'could not load that comic' : 'nothing loaded');
   b.classList.toggle('busy', on);
+  const p = $('drop-sub');
+  if(p){
+    const detail = (typeof failed === 'string' && failed) ? failed : '';
+    p.textContent = detail;
+    p.hidden = !detail;
+  }
 }
 
 /* ---------------- reader ---------------- */
@@ -1808,7 +1845,9 @@ if('serviceWorker' in navigator && location.protocol.startsWith('http')){
     console.warn(src + ' not reachable:', err);
     // only call it a failure if a specific comic was asked for; a bare visit
     // with no ?read= just shows the empty state
-    showBusy(false, !!readParam);
+    const detail = (err && err.message) ? err.message : String(err);
+    showBusy(false, readParam ? (detail + '  (source: ' + src + ')') : false);
+    if(readParam) toast(detail, 'error');   // errors stay put now, so it can be copied
   }
 })();
 </script>

@@ -2412,6 +2412,7 @@ async function saveComic(finalStatus){
       owner_name: meta.full_name || meta.name || meta.user_name ||
                   (user.email || '').split('@')[0] || 'anonymous',
       title: cState.meta.title.trim(),
+      description: (cState.meta.description || '').trim() || null,
       slug: slugify(cState.meta.title),
       direction: cState.meta.direction === 'rtl' ? 'rtl' : 'ltr',
       cover_key: parts[clamp(cState.coverIndex, 0, pageCount() - 1)].key,

@@ -12,6 +12,10 @@
 -- live identity, the byline is the historical one, and the link between them
 -- is owner_id.
 
+-- the modal shows a comic's description, and comics had nowhere to put one.
+-- idempotent, so it is safe whether or not you have already run this file.
+alter table comics add column if not exists description text;
+
 create table if not exists profiles (
   id           uuid primary key references auth.users(id) on delete cascade,
   -- the address. lowercase, url safe, and the one thing that must be unique.

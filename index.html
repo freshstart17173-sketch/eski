@@ -105,6 +105,8 @@ a:hover{text-decoration:underline;text-underline-offset:3px}
 .modal .t{margin:var(--s4) 0 var(--s1);font-weight:500;text-transform:lowercase;font-size:var(--fs-lg)}
 .modal p{margin:var(--s2) 0 var(--s4);color:var(--soft-ink);font-size:var(--fs-sm)}
 .modal .by{color:var(--muted);font-size:var(--fs-sm);text-transform:lowercase;margin-bottom:var(--s2)}
+.modal .desc{color:var(--soft-ink);font-size:var(--fs-sm);text-align:left;margin:var(--s3) 0;
+  max-width:62ch;white-space:pre-wrap}
 .modal .actions{display:flex;gap:var(--bw);justify-content:center;flex-wrap:wrap}
 .mix-h{font-size:var(--fs-micro);text-transform:lowercase;letter-spacing:.14em;color:var(--muted);
   margin:var(--s4) 0 var(--s2);text-align:left;font-weight:500}
@@ -215,11 +217,12 @@ footer .brand{font-size:20px}
     <img class="art" id="ov-img" alt="cover">
     <div class="t" id="ov-title"></div>
     <div class="by" id="ov-by" hidden></div>
+    <p class="desc" id="ov-desc" hidden></p>
+    <div id="ov-credits"></div>
     <div id="ov-mix"></div>
-    <p>browse and share more eskis in the discord.</p>
     <div class="actions">
       <a class="btn primary" id="ov-read" href="#"><span data-ico="book-open"></span>read it</a>
-      <a class="btn" id="ov-discord" href="#" target="_blank" rel="noopener"><span data-ico="message-circle"></span>discord</a>
+      <button class="btn" id="ov-later"><span data-ico="bookmark"></span>read later</button>
     </div>
   </div>
 </div>
@@ -270,6 +273,7 @@ const ICONS = {
   "message-circle": "<path d=\"M7.9 20A9 9 0 1 0 4 16.1L2 22Z\" />",
   "arrow-left": "<path d=\"m12 19-7-7 7-7\" /> <path d=\"M19 12H5\" />",
   "search": "<circle cx=\"11\" cy=\"11\" r=\"8\" /> <path d=\"m21 21-4.3-4.3\" />",
+  "bookmark": "<path d=\"m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z\" />",
   "moon": "<path d=\"M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401\" />",
   "sun": "<circle cx=\"12\" cy=\"12\" r=\"4\" /> <path d=\"M12 2v2\" /> <path d=\"M12 20v2\" /> <path d=\"m4.93 4.93 1.41 1.41\" /> <path d=\"m17.66 17.66 1.41 1.41\" /> <path d=\"M2 12h2\" /> <path d=\"M20 12h2\" /> <path d=\"m6.34 17.66-1.41 1.41\" /> <path d=\"m19.07 4.93-1.41 1.41\" />",
 };
@@ -305,7 +309,7 @@ paintTheme();
 const DISCORD = 'https://discord.gg/UFNpnHAbD';
 const esc = s => (s??'').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;');
 const IMG_RE = /\.(jpe?g|png|gif|webp|bmp|avif)$/i;
-document.querySelectorAll('#hdr-discord,#ov-discord,#ob-discord').forEach(a=>a.href=DISCORD);
+document.querySelectorAll('#hdr-discord,#ob-discord').forEach(a=>a.href=DISCORD);
 
 /* where the library comes from, in order:
    1. library/index.json, if present. It is authoritative: it can point at
@@ -408,14 +412,14 @@ async function platformComics(){
     // problem, and saying "nothing here yet" would blame the shelf for it.
     if(!sb){ platformDown = true; return []; }
     const { data, error } = await sb.from('comics')
-      .select('id,title,owner_name,cover_key,series_title,series_index,published_at')
+      .select('id,title,description,owner_name,cover_key,series_title,series_index,published_at')
       .eq('status', 'published')
       .order('published_at', { ascending: false })
       .limit(200);
     if(error){ platformDown = true; return []; }
     if(!data) return [];
     return data.map(c=>({
-      file: 'db:'+c.id, dbId: c.id, title: c.title, creator: c.owner_name,
+      file: 'db:'+c.id, dbId: c.id, title: c.title, creator: c.owner_name, description: c.description,
       cover: window.eski.mediaUrl(c.cover_key),
       series: c.series_title ? {title:c.series_title, index:c.series_index} : null
     }));
@@ -440,7 +444,8 @@ async function coverFor(item){
      should not pull every one of them just to read a manifest. */
   if(item.cover && item.title){
     return {file:item.file, baseId:item.id || null, series:item.series || null,
-            title:item.title, creator:item.creator || null, cover:item.cover};
+            title:item.title, creator:item.creator || null, description:item.description || null,
+            cover:item.cover};
   }
   const zip = await JSZip.loadAsync(await blobFor(item));
   let title = item.title, coverBlob = null, baseId = item.baseId || null, series = null,
@@ -527,6 +532,34 @@ function open_(entry){
   const by = $('ov-by');
   by.textContent = entry.creator ? 'by ' + entry.creator : '';
   by.hidden = !entry.creator;
+  const desc = $('ov-desc');
+  desc.textContent = entry.description || '';
+  desc.hidden = !entry.description;
+  /* contributors other than the voice cast and the composer. those two are
+     chosen in the mix picker below, so listing them twice would be noise.
+     nothing writes this yet: it arrives with the parts table. */
+  const cred = $('ov-credits');
+  cred.innerHTML = (entry.credits && entry.credits.length)
+    ? '<div class="mix-h">also</div>' + entry.credits
+        .map(c=>`<div class="mixrow"><span class="n">${esc(c.role ? c.role + ': ' : '')}${esc(c.name)}</span></div>`)
+        .join('')
+    : '';
+  /* read later is a local list until the saves table exists, so it survives a
+     reload on this device and nothing more. */
+  const later = $('ov-later');
+  later.onclick = ()=>{
+    const key = 'eski-later';
+    let list = [];
+    try{ list = JSON.parse(localStorage.getItem(key)) || []; }catch(e){}
+    const on = list.includes(entry.file);
+    list = on ? list.filter(f=>f !== entry.file) : [...list, entry.file];
+    try{ localStorage.setItem(key, JSON.stringify(list)); }catch(e){}
+    later.lastChild.textContent = on ? 'read later' : 'saved for later';
+  };
+  later.lastChild.textContent = (()=>{
+    try{ return (JSON.parse(localStorage.getItem('eski-later'))||[]).includes(entry.file)
+      ? 'saved for later' : 'read later'; }catch(e){ return 'read later'; }
+  })();
   paintMix(entry);
   o.classList.add('open');
 }

@@ -887,8 +887,12 @@ function ok(cond, name, extra) {
     'an entry that already carries a title and cover is not downloaded');
   await lib.click('.cover');
   await lib.waitForSelector('.overlay.open');
-  ok((await lib.textContent('#overlay .modal p')).includes('browse and share more eskis in the discord'),
-    'discord message in the modal');
+  // the modal is about the comic now: read it, save it for later, and what it
+  // is. the discord pitch moved out of the way of the decision.
+  ok(await lib.evaluate(() => !document.querySelector('#ov-discord')),
+    'no discord button competing with read it');
+  ok(await lib.evaluate(() => !!document.getElementById('ov-later')),
+    'read later sits beside read it');
   ok((await lib.getAttribute('#ov-read', 'href')).startsWith('read.html?read=library/'),
     'read-it opens the eski in the reader');
   await lib.keyboard.press('Escape');
