@@ -42,7 +42,7 @@ const CSS = `
 @media(max-width:640px){.auth-btn .lbl{display:none}.auth-btn{min-height:42px}}
 `;
 
-let sb = null, user = null;
+let sb = null, user = null, bootError = null;
 const esc = s => (s ?? '').toString().replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
 
 function nameOf(u){
@@ -115,6 +115,7 @@ let markReady;
 window.eski = {
   get user(){ return user; },
   get sb(){ return sb; },
+  get bootError(){ return bootError; },
   mediaBase: R2_BASE,
   mediaUrl: key => key ? R2_BASE + '/' + key : null,
   ready: new Promise(res => { markReady = res; })
@@ -133,6 +134,7 @@ window.eski = {
     setUser((data && data.session && data.session.user) || null);
     sb.auth.onAuthStateChange((_e, s) => setUser((s && s.user) || null));
   }catch(e){
+    bootError = (e && e.message) || String(e);
     // no client. still announce the signed-out state, so a page listening for
     // eski-auth gets a definitive answer instead of silence and can render its
     // signed-out ui once rather than guessing.

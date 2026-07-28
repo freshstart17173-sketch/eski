@@ -220,7 +220,9 @@ async function load(){
   const page = $('page');
   sb = window.eski && await window.eski.ready;
   if(!sb){
-    page.innerHTML = '<div class="state">could not reach the server. check your connection and reload.</div>';
+    const why = (window.eski && window.eski.bootError) || 'the auth client did not load';
+    page.innerHTML = '<div class="state">could not reach the server.<br><br>' + esc(why) +
+      '<br><br>if this persists, hard reload once: an old service worker can keep serving a stale page.</div>';
     return;
   }
   const wanted = new URLSearchParams(location.search).get('u');

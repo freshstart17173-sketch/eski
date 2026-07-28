@@ -2526,9 +2526,32 @@ async function saveComic(finalStatus){
     const upBytes = uniq.reduce((n, p) => n + p.blob.size, 0) || 1;
     let sent = 0;
     await pool(uniq, 4, async p => {
-      const put = await fetch(p.url, { method: 'PUT', body: p.blob,
-        headers: { 'content-type': p.blob.type || 'application/octet-stream' } });
-      if(!put.ok) throw new Error('upload failed (' + put.status + ')');
+      /* a 5xx on a presigned PUT is usually transient: the object store hiccups
+         or the edge in front of it does. give it three goes with backoff before
+         failing a whole publish over one bad request. a 4xx is a real answer
+         (expired signature, CORS, bad key) so it fails immediately. */
+      let put = null, lastErr = '';
+      for(let attempt = 1; attempt <= 3; attempt++){
+        try{
+          put = await fetch(p.url, { method: 'PUT', body: p.blob,
+            headers: { 'content-type': p.blob.type || 'application/octet-stream' } });
+        }catch(netErr){
+          // a thrown fetch here is CORS or connectivity, never a status
+          lastErr = 'network/CORS: ' + ((netErr && netErr.message) || netErr);
+          put = null;
+        }
+        if(put && put.ok) break;
+        if(put && put.status < 500){
+          const body = await put.text().catch(()=>'');
+          throw new Error(`upload failed (${put.status}) for ${p.ext} object ${p.hash.slice(0,8)}: `
+            + (body.slice(0, 180) || 'no response body'));
+        }
+        if(put) lastErr = 'status ' + put.status + ': ' + (await put.text().catch(()=>'')).slice(0, 140);
+        if(attempt < 3) await new Promise(r => setTimeout(r, attempt * 800));
+      }
+      if(!put || !put.ok)
+        throw new Error(`upload failed after 3 tries for ${p.ext} object ${p.hash.slice(0,8)} `
+          + `(${(p.blob.size/1048576).toFixed(1)} MB): ${lastErr}`);
       sent += p.blob.size;
       progress(0.25 + sent / upBytes * 0.7);
     });

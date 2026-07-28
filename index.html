@@ -647,7 +647,7 @@ async function renderGrid(){
   if(!items.length){
     grid.className = '';
     grid.innerHTML = platformDown
-      ? `<div class="state">could not reach the shelf. check your connection and reload.<br><br>
+      ? `<div class="state">could not reach the shelf. ${esc((window.eski && window.eski.bootError) || '')}<br><br>
            anything you drop here still works offline.</div>`
       : EMPTY_HTML;
     paintIcons();
