@@ -18,7 +18,24 @@ const EXT = new Set(['png', 'jpg', 'jpeg', 'webp', 'gif', 'avif',
                      'mp3', 'm4a', 'ogg', 'opus', 'wav', 'flac', 'aac']);
 
 export default async function handler(req, res){
+  try{
+    return await sign(req, res);
+  }catch(e){
+    // an uncaught throw would return vercel's html error page, which the studio
+    // cannot parse and reports as a blank failure. always answer in json.
+    return res.status(500).json({ error: 'signer crashed: ' + (e && e.message || String(e)) });
+  }
+}
+
+async function sign(req, res){
   if(req.method !== 'POST') return res.status(405).json({ error: 'post only' });
+
+  // a missing env var is the most common deploy mistake here, and it otherwise
+  // shows up as a confusing auth failure much further down
+  const missing = ['SUPABASE_URL','SUPABASE_PUBLISHABLE_KEY','R2_ACCOUNT_ID',
+    'R2_ACCESS_KEY_ID','R2_SECRET_ACCESS_KEY','R2_BUCKET'].filter(k => !process.env[k]);
+  if(missing.length)
+    return res.status(500).json({ error: 'server is missing env vars: ' + missing.join(', ') });
 
   const jwt = (req.headers.authorization || '').replace(/^Bearer /, '');
   if(!jwt) return res.status(401).json({ error: 'sign in first' });

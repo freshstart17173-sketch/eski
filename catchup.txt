@@ -384,6 +384,41 @@ soundTracks()/oneshotsFor()/queueGroups() helpers; they already model the data.)
   eskis; add search/sort; cache covers in IndexedDB.
 - Position memory keyed by filename+title (not title alone) to avoid collisions.
 - Reader loading spinner (parity with composer); global volume/mute memory.
+================================================================
+BEFORE A SECOND PERSON ARRIVES (added 2026-07-28, owner approved)
+================================================================
+These are not features. They are the things that break, cost money, or create
+liability the moment someone who is not the owner uses the site. Ranked: the
+first two get materially harder to add after people have published.
+
+B1. UPLOAD QUOTA ON THE SIGNER. api/sign.mjs will sign up to 500 urls per call
+    for ANY signed-in user, with no per-user limit and no size cap, and a
+    presigned PUT cannot enforce content-length. One script fills the bucket
+    and the bill. Minimum: a per-user daily object count and a max page count
+    per comic, checked in the function before signing.
+B2. HANDLES. comics.owner_name is a denormalized display name from Google. Two
+    people called "Alex" are indistinguishable and there is no stable string
+    for a profile url. Any identity beyond one user needs a unique handle, and
+    retrofitting one after publishing is worse than adding it now.
+B3. COMIC PAGE (P-1). A comic has no url of its own: home opens a modal, so a
+    link shared in the discord lands on the shelf instead of the thing. This is
+    the arrival path for every new reader, and it is where the OG tags belong.
+    The modal already holds the content.
+B4. PUBLIC PROFILE. profile.html is the OWNER's dashboard (drafts, delete,
+    unpublish). There is no page for "who made this", so clicking an author
+    name does nothing and attribution is just a string. Same file can serve
+    both, split on whether the visitor owns it. Needs B2.
+B5. TERMS, PRIVACY, TAKEDOWN CONTACT. The moment someone else uploads, the
+    owner is a host rather than an author. Google's OAuth consent screen wants
+    a privacy policy link for a published app (unverified caps around 100 users
+    and shows a warning), and safe harbour depends on a stated way to receive
+    infringement notices. Not legal advice; "no page at all" is still clearly
+    wrong once D1 exposure moves to other people's work.
+B6. REPORT NOTIFICATION. The owner is the sole moderator and nothing announces
+    a new row, so reports rot until someone looks. One discord webhook.
+B7. ACCOUNT DELETION. Supabase gives users no self-delete, so today it is a
+    manual dashboard job. Someone will ask.
+
 - SAVE DRAFTS (owner asked for this 2026-07-28): a work in progress should
   survive closing the tab. Local first (IndexedDB, the autosave below), then
   server side once accounts exist, so a draft follows you between machines.

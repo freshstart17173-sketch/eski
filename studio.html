@@ -2365,7 +2365,16 @@ async function saveComic(finalStatus){
       headers: { 'content-type': 'application/json', authorization: 'Bearer ' + token },
       body: JSON.stringify({ files: uniq.map(p => ({ hash: p.hash, ext: p.ext })) })
     });
-    if(!r.ok) throw new Error((await r.json().catch(() => ({}))).error || 'could not sign the upload');
+    /* say what actually happened. a 404 here almost always means the page is
+       being served by a plain static server, where /api/sign does not exist:
+       functions only run on vercel or under `vercel dev`. */
+    if(!r.ok){
+      const body = await r.text();
+      let detail = body.slice(0, 140);
+      try{ detail = JSON.parse(body).error || detail; }catch(e){}
+      if(r.status === 404) detail = 'no /api/sign here. functions do not run on a static server.';
+      throw new Error(`upload signing failed (${r.status}): ${detail}`);
+    }
     (await r.json()).files.forEach((f, i) => { uniq[i].key = f.key; uniq[i].url = f.url; });
     const keyOf = new Map(uniq.map(p => [p.hash + '.' + p.ext, p.key]));
     parts.forEach(p => { p.key = keyOf.get(p.hash + '.' + p.ext); });
