@@ -86,11 +86,6 @@ a:hover{text-decoration:underline;text-underline-offset:3px}
 .cell:hover .rm{display:flex}
 .cell .rm:hover{background:var(--danger);color:var(--white)}
 
-.dropzone{position:fixed;inset:0;z-index:200;display:none;align-items:center;
-  justify-content:center;background:rgba(20,34,27,.72);pointer-events:none}
-.dropzone.on{display:flex}
-.dropzone>div{border:var(--bw) solid var(--sage-300);padding:var(--s6) var(--s8);
-  color:var(--sage-100);font-size:26px;text-transform:lowercase;font-family:var(--font-display)}
 .state{border:var(--bw) solid var(--line);padding:var(--s7) var(--s5);text-align:center;
   color:var(--muted);margin-top:var(--s5);background:var(--surface);font-size:var(--fs-sm)}
 .state code{background:var(--paper-1);border:var(--bw) solid var(--line);padding:1px 6px;
@@ -197,12 +192,14 @@ footer .brand{font-size:20px}
   <button class="btn icon" id="theme-btn" onclick="toggleTheme()"></button>
   <a class="hdr-link" id="hdr-discord" href="#" target="_blank" rel="noopener"><span data-ico="message-circle"></span>discord</a>
   <a class="hdr-link" href="studio.html"><span data-ico="file-plus"></span>make an eski</a>
-  <button class="btn" onclick="document.getElementById('shelf-input').click()"><span
-    data-ico="plus"></span>add eski</button>
+  <!-- the local shelf was owner staging until publishing existed (D14). it does
+       now, so home no longer offers to shelve: you publish from the studio, or
+       save a draft to your profile. the input stays as the only remaining
+       programmatic path, which the smoke suite drives to keep the idb: reader
+       route covered until the shelf is retired for good. -->
   <input type="file" id="shelf-input" accept=".eski,.cbz,.zip" multiple style="display:none"
          onchange="shelveFiles(this.files);this.value=''">
 </header>
-<div class="dropzone" id="dropzone"><div>drop to shelve</div></div>
 
 <div class="wrap">
   <div class="rule"></div>
@@ -608,10 +605,8 @@ let shelfParts = [];
 const partsForBase = baseId => shelfParts.filter(p=>!p.baseId || !baseId || p.baseId===baseId);
 
 const EMPTY_HTML = `<div class="state">
-  nothing here yet. drop an <code>.eski</code> anywhere on this page to shelve it,
-  or build one in the <a href="studio.html">studio</a>.<br><br>
-  files published with the site live in the <code>library/</code> folder
-  (or <code>library/index.json</code> on a host without directory listings).</div>`;
+  nothing published yet. build one in the <a href="studio.html">studio</a>,
+  then publish it or keep it as a draft on your <a href="profile.html">profile</a>.</div>`;
 
 async function renderGrid(){
   const grid = $('grid');
@@ -679,21 +674,6 @@ async function shelveFiles(files){
   }
   await renderGrid();
 }
-(function(){
-  let depth = 0;
-  const z = $('dropzone');
-  document.addEventListener('dragover', e=>{ e.preventDefault(); });
-  document.addEventListener('dragenter', e=>{
-    if(![...e.dataTransfer.types].includes('Files')) return;
-    depth++; z.classList.add('on');
-  });
-  document.addEventListener('dragleave', ()=>{ if(--depth<=0){ depth=0; z.classList.remove('on'); } });
-  document.addEventListener('drop', e=>{
-    e.preventDefault(); depth = 0; z.classList.remove('on');
-    if(e.dataTransfer.files.length) shelveFiles(e.dataTransfer.files);
-  });
-})();
-
 maybeOnboarding();
 renderGrid();
 </script>

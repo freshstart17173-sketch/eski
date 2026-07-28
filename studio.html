@@ -426,10 +426,10 @@ input[type=number],input[type=range]+span{font-variant-numeric:var(--num)}@media
   <span class="sp"></span>
   <button class="pill" id="settings-btn" data-ico="settings" onclick="openSettings()">settings</button>
   <button class="pill" data-ico="play" id="preview-btn" onclick="previewInReader()">preview</button>
+  <button class="pill" data-ico="save" id="draft-btn" onclick="saveDraft()"
+          title="save to your profile without publishing">save draft</button>
   <button class="pill primary" data-ico="upload-cloud" id="publish-btn" onclick="publishComic()"
           title="put this on the shelf">publish</button>
-  <button class="pill" data-ico="download" id="export-btn" onclick="exportCurrent()"
-          title="save a portable .eski file">export</button>
 </header>
 
 <div class="work">
@@ -650,6 +650,7 @@ const ICONS = {
   "folder-open": "<path d=\"m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2\" />",
   "volume-x": "<path d=\"M11 4.702a.705.705 0 0 0-1.203-.498L6.413 7.587A1.4 1.4 0 0 1 5.416 8H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2.416a1.4 1.4 0 0 1 .997.413l3.383 3.384A.705.705 0 0 0 11 19.298z\" /> <line x1=\"22\" x2=\"16\" y1=\"9\" y2=\"15\" /> <line x1=\"16\" x2=\"22\" y1=\"9\" y2=\"15\" />",
   "settings": "<path d=\"M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915\" /> <circle cx=\"12\" cy=\"12\" r=\"3\" />",
+  "save": "<path d=\"M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z\" /> <path d=\"M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7\" /> <path d=\"M7 3v4a1 1 0 0 0 1 1h7\" />",
   "download": "<path d=\"M12 15V3\" /> <path d=\"M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4\" /> <path d=\"m7 10 5 5 5-5\" />",
   "upload-cloud": "<path d=\"M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242\" /> <path d=\"M12 12v9\" /> <path d=\"m16 16-4-4-4 4\" />",
   "moon": "<path d=\"M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401\" />",
@@ -1241,8 +1242,9 @@ function renderCast(){
 function render(){
   const has = pageCount()>0;
   $('mode-sel').value = editMode;
-  $('export-btn').lastChild.textContent =
-    editMode==='vo' ? 'export vo' : editMode==='soundtrack' ? 'export soundtrack' : 'export .eski';
+  // publish names what you are actually shipping in this mode
+  $('publish-btn').lastChild.textContent =
+    editMode==='vo' ? 'publish vo' : editMode==='soundtrack' ? 'publish soundtrack' : 'publish';
   $('empty-hint').style.display = has ? 'none' : 'flex';
   ['pv-img','pv-badge','pv-prev','pv-next'].forEach(id=>$(id).style.display = has ? '' : 'none');
   $('pages-ctrls').style.display = has ? '' : 'none';
@@ -2180,7 +2182,6 @@ async function exportPart(kind){
   }
   try{
     loading(true, 'packing');
-    $('export-btn').disabled = true;
     await new Promise(r=>setTimeout(r,30));
     await Promise.all(Object.keys(audioStore).map(aud=>decodePeaks(aud)));
     const gains = normGains();
@@ -2219,7 +2220,7 @@ async function exportPart(kind){
     setTimeout(()=>URL.revokeObjectURL(aEl.href), 4000);
     toast('exported ' + aEl.download);
   }catch(err){ toast('export failed: '+err.message, 'error'); }
-  finally{ $('export-btn').disabled = false; loading(false); }
+  finally{ loading(false); }
 }
 function exportCurrent(){
   if(editMode === 'vo') return exportPart('vo');
@@ -2230,8 +2231,7 @@ async function exportEski(asBlob){
   if(!pageCount()){ toast('add some pages first', 'error'); return; }
   try{
     loading(true, asBlob ? 'building preview' : 'packing your eski');
-    $('export-btn').disabled=true;
-    await new Promise(r=>setTimeout(r,30)); // let the overlay paint before the heavy zip work
+        await new Promise(r=>setTimeout(r,30)); // let the overlay paint before the heavy zip work
     const zip = new JSZip();
     const pageNames=[];
     cState.pages.forEach((p,i)=>{
@@ -2292,7 +2292,7 @@ async function exportEski(asBlob){
     setTimeout(()=>URL.revokeObjectURL(aEl.href), 4000);
     toast('exported '+aEl.download);
   }catch(err){ toast('export failed: '+err.message, 'error'); }
-  finally{ $('export-btn').disabled=false; loading(false); }
+  finally{ loading(false); }
 }
 
 /* ---------------- publish to the platform ----------------
@@ -2320,11 +2320,20 @@ async function pool(items, n, fn){
 const slugify = s => (s || '').toLowerCase().replace(/[^a-z0-9]+/g, '-')
   .replace(/^-+|-+$/g, '') || 'untitled';
 
-async function publishComic(){
+/* a draft and a publish are the SAME upload. the only difference is whether
+   the comic row ends at 'draft' or 'published', which is why this is one
+   function: a draft that took a different path would not be the thing you
+   later publish. */
+const publishComic = () => saveComic('published');
+const saveDraft    = () => saveComic('draft');
+
+async function saveComic(finalStatus){
+  const draft = finalStatus === 'draft';
+  const verb = draft ? 'save' : 'publish';
   const sb = sbc();
-  if(!sb) return toast('sign in to publish', 'error');
+  if(!sb) return toast('sign in to ' + verb, 'error');
   const { data: { user } } = await sb.auth.getUser();
-  if(!user) return toast('sign in to publish', 'error');
+  if(!user) return toast('sign in to ' + verb, 'error');
   if(!pageCount()) return toast('add some pages first', 'error');
   if(!(cState.meta.title || '').trim()) return toast('give it a title in settings first', 'error');
 
@@ -2332,6 +2341,7 @@ async function publishComic(){
   try{
     loading(true, 'measuring audio');
     $('publish-btn').disabled = true;
+    { const d = $('draft-btn'); if(d) d.disabled = true; }
     await Promise.all(Object.keys(audioStore).map(aud => decodePeaks(aud)));
     const gains = normGains();
 
@@ -2417,18 +2427,23 @@ async function publishComic(){
     })));
     if(te.error) throw new Error(te.error.message);
 
-    const pub = await sb.from('comics')
-      .update({ status: 'published', published_at: new Date().toISOString() })
-      .eq('id', comicId);
-    if(pub.error) throw new Error(pub.error.message);
+    // a draft simply stops here: the row exists, the media is uploaded, and
+    // only the owner can see it until it is published from the profile page
+    if(!draft){
+      const pub = await sb.from('comics')
+        .update({ status: 'published', published_at: new Date().toISOString() })
+        .eq('id', comicId);
+      if(pub.error) throw new Error(pub.error.message);
+    }
 
-    toast('published as ' + row.slug);
+    toast(draft ? 'saved as a draft on your profile' : 'published as ' + row.slug);
     // phase 1 has no cast or slots table, so that work stays in the file
     if(cState.cast.length) toast('cast and slots stay local for now', 'error');
   }catch(err){
-    toast('publish failed: ' + err.message, 'error');
+    toast(verb + ' failed: ' + err.message, 'error');
   }finally{
     $('publish-btn').disabled = false;
+    const d = $('draft-btn'); if(d) d.disabled = false;
     loading(false);
   }
 }

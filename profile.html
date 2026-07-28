@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>eski profile</title>
+<meta name="description" content="your comics, drafts and published.">
+<link rel="icon" type="image/png" href="eski_logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Jost:wght@400;500;600&display=swap" rel="stylesheet">
+<script type="module" src="platform.js"></script>
+<link rel="stylesheet" href="tokens.css">
+<style>
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--font-body);
+  font-weight:400;font-size:var(--fs);line-height:1.5;min-height:100vh;display:flex;flex-direction:column}
+h2{margin:0;font-size:var(--fs-display);line-height:.92;text-transform:lowercase;font-weight:400;
+  font-family:var(--font-display);color:var(--accent);letter-spacing:-0.01em}
+a{color:var(--accent-deep);text-decoration:none}
+a:hover{text-decoration:underline;text-underline-offset:3px}
+.ico{width:15px;height:15px;flex:none;stroke:currentColor;fill:none;stroke-width:2;
+  stroke-linecap:round;stroke-linejoin:round;display:block}
+.site-header{position:sticky;top:0;z-index:10;height:var(--hdr);background:var(--surface);
+  border-bottom:var(--bw) solid var(--line);display:flex;align-items:center;padding:0 var(--s4);gap:var(--s4)}
+.brand{font-family:var(--font-display);font-size:25px;color:var(--accent);line-height:1;
+  text-decoration:none;letter-spacing:-0.01em;padding-top:2px}
+.brand:hover{text-decoration:none;color:var(--accent-deep)}
+.hdr-label{color:var(--muted);text-transform:lowercase;font-size:var(--fs-sm);
+  border-left:var(--bw) solid var(--line);padding-left:var(--s4)}
+.hdr-link{color:var(--muted);text-transform:lowercase;font-size:var(--fs-sm);
+  display:inline-flex;align-items:center;gap:var(--s2)}
+.hdr-link:hover{color:var(--accent);text-decoration:none}
+.sp{flex:1}
+.wrap{width:min(var(--max),100%);margin:0 auto;padding:var(--s6) var(--s5) var(--s8);flex:1;width:100%}
+.rule{margin:0 0 var(--s4)}
+.sub{color:var(--muted);font-size:var(--fs-sm);margin:0}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:var(--s2);min-height:var(--ctl);
+  padding:0 var(--s4);border-radius:var(--r);text-transform:lowercase;font-size:var(--fs-sm);
+  border:var(--bw) solid var(--line-strong);background:var(--surface);color:var(--soft-ink);cursor:pointer;
+  transition:background var(--t-fast) var(--ease),color var(--t-fast) var(--ease),
+  border-color var(--t-fast) var(--ease)}
+.btn:hover{border-color:var(--accent);background:var(--accent-soft);color:var(--accent-deep);
+  text-decoration:none}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent);font-weight:500}
+.btn.primary:hover{background:var(--accent-deep);border-color:var(--accent-deep);color:var(--on-accent)}
+.btn.icon{width:var(--ctl);padding:0}
+.btn.danger:hover{border-color:var(--danger);background:transparent;color:var(--danger)}
+
+/* the shelf of your own work: one row per comic, divided by hairlines */
+.rows{margin-top:var(--s5);border:var(--bw) solid var(--line)}
+.row{display:flex;align-items:center;gap:var(--s4);padding:var(--s3);
+  border-bottom:var(--bw) solid var(--line);background:var(--surface)}
+.row:last-child{border-bottom:0}
+.row .art{width:44px;height:66px;object-fit:cover;background:var(--paper-1);
+  border:var(--bw) solid var(--line);flex:none}
+.row .meta{min-width:0;flex:1}
+.row .t{font-weight:500;text-transform:lowercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .d{color:var(--muted);font-size:var(--fs-sm);font-variant-numeric:var(--num)}
+.row .acts{display:flex;gap:var(--s2);flex:none;flex-wrap:wrap;justify-content:flex-end}
+.chip{font-size:var(--fs-micro);text-transform:lowercase;letter-spacing:.06em;font-weight:500;
+  padding:2px 7px;flex:none}
+.chip.draft{background:var(--paper-1);color:var(--muted);border:var(--bw) solid var(--line)}
+.chip.published{background:var(--accent);color:var(--on-accent)}
+.state{border:var(--bw) solid var(--line);padding:var(--s7) var(--s5);text-align:center;
+  color:var(--muted);margin-top:var(--s5);background:var(--surface);font-size:var(--fs-sm)}
+.spinner{width:28px;height:28px;border:2px solid var(--line);border-top-color:var(--accent);
+  border-radius:var(--r-round);animation:spin .8s linear infinite;margin:0 auto var(--s3)}
+@keyframes spin{to{transform:rotate(360deg)}}
+footer{background:var(--surface);color:var(--muted);padding:var(--s5) 0;font-size:var(--fs-sm);
+  border-top:var(--bw) solid var(--line)}
+footer .wrap{display:flex;align-items:center;gap:var(--s4);flex-wrap:wrap;padding:0 var(--s5);flex:none}
+footer .brand{font-size:20px}
+
+/* ---------------- touch and narrow screens. KEEP THIS BLOCK LAST ---------------- */
+@media (max-width:640px){
+  .site-header{padding:0 var(--s3);gap:var(--s3);overflow-x:auto;scrollbar-width:none}
+  .site-header::-webkit-scrollbar{display:none}
+  .site-header>*{flex:none}
+  .hdr-label{display:none}
+  .wrap{padding:var(--s5) var(--s3) var(--s7)}
+  .btn{min-height:42px}
+  .row{flex-wrap:wrap}
+  .row .acts{width:100%;justify-content:flex-start}
+}
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <a class="brand" href="index.html">eski!</a>
+  <span class="hdr-label">profile</span>
+  <span class="sp"></span>
+  <a class="hdr-link" href="index.html">home</a>
+  <a class="hdr-link" href="studio.html">studio</a>
+  <button class="btn icon" id="theme-btn" onclick="toggleTheme()"></button>
+</header>
+
+<div class="wrap">
+  <div class="rule"></div>
+  <h2 id="who">profile</h2>
+  <p class="sub" id="sub">your comics, published and in progress.</p>
+  <div id="rows"><div class="state"><div class="spinner"></div>loading&#8230;</div></div>
+</div>
+
+<footer>
+  <div class="wrap">
+    <span class="brand">eski!</span>
+    <span>comics with soundtracks and voice</span>
+    <span class="sp"></span>
+    <a href="index.html">home</a>
+    <a href="studio.html">studio</a>
+  </div>
+</footer>
+
+<script>
+/* ================================================================
+   profile: everything you have made. a DRAFT is a comic whose media is
+   already uploaded and whose rows already exist, but whose status has not
+   been flipped to published, so row level security shows it to you and
+   nobody else. publishing is therefore one column change, not another
+   upload.
+   ================================================================ */
+const ICONS = {
+  "book-open": "<path d=\"M12 7v14\" /> <path d=\"M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z\" />",
+  "moon": "<path d=\"M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401\" />",
+  "sun": "<circle cx=\"12\" cy=\"12\" r=\"4\" /> <path d=\"M12 2v2\" /> <path d=\"M12 20v2\" /> <path d=\"m4.93 4.93 1.41 1.41\" /> <path d=\"m17.66 17.66 1.41 1.41\" /> <path d=\"M2 12h2\" /> <path d=\"M20 12h2\" /> <path d=\"m6.34 17.66-1.41 1.41\" /> <path d=\"m19.07 4.93-1.41 1.41\" />",
+  "trash-2": "<path d=\"M10 11v6\" /> <path d=\"M14 11v6\" /> <path d=\"M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6\" /> <path d=\"M3 6h18\" /> <path d=\"M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2\" />",
+  "upload-cloud": "<path d=\"M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242\" /> <path d=\"M12 12v9\" /> <path d=\"m16 16-4-4-4 4\" />"
+};
+const $ = id => document.getElementById(id);
+const esc = s => (s ?? '').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
+function paintIcons(root){
+  (root||document).querySelectorAll('[data-ico]').forEach(el=>{
+    if(el.querySelector(':scope > svg.ico')) return;
+    el.insertAdjacentHTML('afterbegin',
+      `<svg class="ico" viewBox="0 0 24 24" aria-hidden="true">${ICONS[el.getAttribute('data-ico')]||''}</svg>`);
+  });
+}
+/* the same settings key the other three surfaces use, so the theme follows you */
+const themeSettings = (()=>{ try{ return JSON.parse(localStorage.getItem('eski-settings'))||{}; }
+  catch(e){ return {}; } })();
+function paintTheme(){
+  document.documentElement.dataset.theme = themeSettings.dark ? 'dark' : '';
+  const b = $('theme-btn');
+  if(!b) return;
+  b.setAttribute('data-ico', themeSettings.dark ? 'sun' : 'moon');
+  b.title = themeSettings.dark ? 'light mode' : 'dark mode';
+  b.innerHTML = '';
+  paintIcons(b.parentElement);
+}
+function toggleTheme(){
+  themeSettings.dark = !themeSettings.dark;
+  try{ localStorage.setItem('eski-settings', JSON.stringify(themeSettings)); }catch(e){}
+  paintTheme();
+}
+paintTheme();
+
+const fmt = d => d ? new Date(d).toISOString().slice(0,10) : '';
+
+async function load(){
+  const box = $('rows');
+  const sb = window.eski && await window.eski.ready;
+  if(!sb){
+    box.innerHTML = '<div class="state">could not reach the server. check your connection and reload.</div>';
+    return;
+  }
+  const { data: { user } } = await sb.auth.getUser();
+  if(!user){
+    $('who').textContent = 'profile';
+    box.innerHTML = '<div class="state">sign in to see your comics, and to keep drafts.</div>';
+    return;
+  }
+  const m = user.user_metadata || {};
+  $('who').textContent = (m.full_name || m.name || m.user_name || 'you').toLowerCase();
+  /* rls already limits this to rows you own, so no owner filter is needed
+     here. that is the point of enforcing it at the query layer. */
+  const { data, error } = await sb.from('comics')
+    .select('id,title,slug,status,cover_key,created_at,published_at')
+    .order('created_at', { ascending: false });
+  if(error){
+    box.innerHTML = '<div class="state">could not load your comics: ' + esc(error.message) + '</div>';
+    return;
+  }
+  if(!data.length){
+    box.innerHTML = '<div class="state">nothing yet. make something in the ' +
+      '<a href="studio.html">studio</a>, then save it as a draft or publish it.</div>';
+    return;
+  }
+  const drafts = data.filter(c=>c.status !== 'published').length;
+  $('sub').textContent = data.length + (data.length === 1 ? ' comic' : ' comics') +
+    (drafts ? ', ' + drafts + ' still a draft' : '');
+  box.className = 'rows';
+  box.innerHTML = data.map(c=>{
+    const cover = c.cover_key ? window.eski.mediaUrl(c.cover_key) : '';
+    const published = c.status === 'published';
+    return `<div class="row" data-id="${esc(c.id)}">
+      ${cover ? `<img class="art" src="${esc(cover)}" alt="">` : '<span class="art"></span>'}
+      <span class="meta">
+        <span class="t">${esc(c.title)}</span>
+        <span class="d">${esc(fmt(c.published_at || c.created_at))}</span>
+      </span>
+      <span class="chip ${published?'published':'draft'}">${published?'published':'draft'}</span>
+      <span class="acts">
+        <a class="btn" data-ico="book-open" href="read.html?read=db:${encodeURIComponent(c.id)}">read</a>
+        <button class="btn ${published?'':'primary'}" data-ico="upload-cloud"
+                data-act="${published?'unpublish':'publish'}">${published?'unpublish':'publish'}</button>
+        <button class="btn danger icon" data-ico="trash-2" data-act="delete" title="delete"></button>
+      </span>
+    </div>`;
+  }).join('');
+  paintIcons(box);
+  box.querySelectorAll('[data-act]').forEach(b=>b.addEventListener('click', ()=>act(b)));
+}
+
+async function act(btn){
+  const sb = window.eski.sb;
+  const row = btn.closest('.row');
+  const id = row.dataset.id;
+  const what = btn.dataset.act;
+  const title = row.querySelector('.t').textContent;
+  if(what === 'delete'){
+    // deleting is not reversible, and the media stays in the bucket
+    if(!confirm(`delete "${title}"? this cannot be undone.`)) return;
+  }
+  btn.disabled = true;
+  let err = null;
+  if(what === 'delete'){
+    ({ error: err } = await sb.from('comics').delete().eq('id', id));
+  }else{
+    const published = what === 'publish';
+    ({ error: err } = await sb.from('comics').update({
+      status: published ? 'published' : 'draft',
+      published_at: published ? new Date().toISOString() : null
+    }).eq('id', id));
+  }
+  btn.disabled = false;
+  if(err){ alert('that did not work: ' + err.message); return; }
+  load();
+}
+
+load();
+</script>
+</body>
+</html>

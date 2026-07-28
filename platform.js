@@ -74,6 +74,10 @@ function paint(){
     btn.title = name;
     btn.innerHTML = (av ? `<img src="${esc(av)}" alt="">` : '') + `<span class="lbl">${esc(name)}</span>`;
     menu.innerHTML = `<b>${esc(name)}</b>`;
+    const prof = document.createElement('a');
+    prof.className = 'auth-btn'; prof.href = 'profile.html'; prof.textContent = 'your comics';
+    prof.style.textDecoration = 'none';
+    menu.appendChild(prof);
     const out = document.createElement('button');
     out.type = 'button'; out.className = 'auth-btn'; out.textContent = 'sign out';
     out.onclick = () => sb.auth.signOut();

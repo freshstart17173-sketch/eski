@@ -522,7 +522,7 @@ function ok(cond, name, extra) {
   console.log('composer: export packs sources as-is (no opus)');
   await comp.evaluate(() => { sel = null; render(); });
   const dl1 = comp.waitForEvent('download');
-  await comp.click('#export-btn');
+  await comp.evaluate(() => exportCurrent());
   const f1 = path.join(DL, 'plain.eski');
   await (await dl1).saveAs(f1);
   const z1 = await JSZip.loadAsync(fs.readFileSync(f1));
@@ -615,7 +615,7 @@ function ok(cond, name, extra) {
   await oc.evaluate(() => closeQueue());
   // export and check the manifest
   const dlo = oc.waitForEvent('download');
-  await oc.click('#export-btn');
+  await oc.evaluate(() => exportCurrent());
   const fo = path.join(DL, 'oneshots.eski');
   await (await dlo).saveAs(fo);
   const zo = await JSZip.loadAsync(fs.readFileSync(fo));
@@ -673,7 +673,7 @@ function ok(cond, name, extra) {
 
   console.log('studio: cast + slots round-trip through export');
   const dl2 = oc.waitForEvent('download');
-  await oc.click('#export-btn');
+  await oc.evaluate(() => exportCurrent());
   const f2 = path.join(DL, 'cast.eski');
   await (await dl2).saveAs(f2);
   const mz = await JSZip.loadAsync(fs.readFileSync(f2));
@@ -702,7 +702,7 @@ function ok(cond, name, extra) {
   ok(await oc.evaluate(() => coverageFor('aiko').pct === 100), 'aiko is fully covered');
   await oc.evaluate(() => setEditMode('vo'));
   const dl3 = oc.waitForEvent('download');
-  await oc.click('#export-btn');
+  await oc.evaluate(() => exportCurrent());
   const f3 = path.join(DL, 'vo.eski');
   await (await dl3).saveAs(f3);
   const vz = await JSZip.loadAsync(fs.readFileSync(f3));
@@ -756,7 +756,7 @@ function ok(cond, name, extra) {
     render();
   });
   const dl4 = ch.waitForEvent('download');
-  await ch.click('#export-btn');
+  await ch.evaluate(() => exportCurrent());
   const f4 = path.join(DL, 'chain.eski');
   await (await dl4).saveAs(f4);
   const cz = await JSZip.loadAsync(fs.readFileSync(f4));
