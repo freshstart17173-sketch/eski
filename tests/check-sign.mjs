@@ -62,4 +62,24 @@ assert.equal(u.searchParams.get('X-Amz-Expires'), '3600');
 assert.match(u.searchParams.get('X-Amz-Credential') || '',
   /^AKIADUMMY\/\d{8}\/auto\/s3\/aws4_request$/);
 
+/* the real deploy arrived with whole KEY=value lines pasted into vercel's value
+   box, plus a trailing slash. that produced "Failed to parse URL from
+   SUPABASE_URL=https://...". the signer cleans its own env, so the same
+   mangled input must still work. */
+let seen = null;
+global.fetch = async (url) => { seen = String(url); return { ok: userOk }; };
+process.env.SUPABASE_URL = 'SUPABASE_URL=https://example.supabase.co/';
+process.env.SUPABASE_PUBLISHABLE_KEY = 'SUPABASE_PUBLISHABLE_KEY=sb_publishable_dummy';
+process.env.R2_BUCKET = '"eski"';
+process.env.R2_ACCOUNT_ID = ' acct123\n';
+
+r = await call({ method: 'POST', headers: { authorization: 'Bearer ok' },
+  body: { files: [{ hash: HASH, ext: 'png' }] } });
+assert.equal(r.code, 200, 'a pasted KEY=value env still signs');
+assert.equal(seen, 'https://example.supabase.co/auth/v1/user',
+  'the name prefix and the trailing slash are stripped from the auth url');
+const u2 = new URL(r.body.files[0].url);
+assert.equal(u2.host, 'acct123.r2.cloudflarestorage.com', 'whitespace is trimmed from the account id');
+assert.equal(u2.pathname, '/eski/aa/' + HASH + '.png', 'quotes are stripped from the bucket name');
+
 console.log('sign.mjs: all checks passed');

@@ -27,13 +27,26 @@ export default async function handler(req, res){
   }
 }
 
+/* vercel's editor wants a VALUE, but the natural thing to copy is the whole
+   KEY=value line out of .env.example, which then arrives with its own name
+   glued to the front. surrounding quotes and a stray newline are the same class
+   of mistake. clean them here, because the alternative is a url parse error
+   three calls deeper that names the wrong thing. */
+function env(name){
+  return (process.env[name] || '')
+    .trim()
+    .replace(new RegExp('^' + name + '\\s*=\\s*'), '')
+    .replace(/^["']|["']$/g, '')
+    .trim();
+}
+
 async function sign(req, res){
   if(req.method !== 'POST') return res.status(405).json({ error: 'post only' });
 
   // a missing env var is the most common deploy mistake here, and it otherwise
   // shows up as a confusing auth failure much further down
   const missing = ['SUPABASE_URL','SUPABASE_PUBLISHABLE_KEY','R2_ACCOUNT_ID',
-    'R2_ACCESS_KEY_ID','R2_SECRET_ACCESS_KEY','R2_BUCKET'].filter(k => !process.env[k]);
+    'R2_ACCESS_KEY_ID','R2_SECRET_ACCESS_KEY','R2_BUCKET'].filter(k => !env(k));
   if(missing.length)
     return res.status(500).json({ error: 'server is missing env vars: ' + missing.join(', ') });
 
@@ -41,8 +54,8 @@ async function sign(req, res){
   if(!jwt) return res.status(401).json({ error: 'sign in first' });
 
   // ask supabase who this is rather than trusting anything in the token
-  const who = await fetch(process.env.SUPABASE_URL + '/auth/v1/user', {
-    headers: { Authorization: 'Bearer ' + jwt, apikey: process.env.SUPABASE_PUBLISHABLE_KEY }
+  const who = await fetch(env('SUPABASE_URL').replace(/\/+$/, '') + '/auth/v1/user', {
+    headers: { Authorization: 'Bearer ' + jwt, apikey: env('SUPABASE_PUBLISHABLE_KEY') }
   });
   if(!who.ok) return res.status(401).json({ error: 'not signed in' });
 
@@ -51,12 +64,12 @@ async function sign(req, res){
     return res.status(400).json({ error: 'files must be 1 to 500 entries' });
 
   const aws = new AwsClient({
-    accessKeyId: process.env.R2_ACCESS_KEY_ID,
-    secretAccessKey: process.env.R2_SECRET_ACCESS_KEY,
+    accessKeyId: env('R2_ACCESS_KEY_ID'),
+    secretAccessKey: env('R2_SECRET_ACCESS_KEY'),
     service: 's3',
     region: 'auto'
   });
-  const base = `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com/${process.env.R2_BUCKET}`;
+  const base = `https://${env('R2_ACCOUNT_ID')}.r2.cloudflarestorage.com/${env('R2_BUCKET')}`;
 
   const out = [];
   for(const f of files){
