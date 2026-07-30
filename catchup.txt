@@ -4,7 +4,8 @@ ESKI — PROJECT CATCHUP  (read this first in a new chat)
 Purpose of this file: bring a fresh session fully up to speed on what eski is,
 how every file works, the hard rules, how to test, and the pending work.
 Keep it updated as the project changes. Companion docs: TODO.txt (backlog),
-ICONS.txt (icon inventory), spec.html (the human-readable format spec).
+ERRORS.txt (the ESK-#### failure codes), ICONS.txt (icon inventory),
+spec.html (the human-readable format spec).
 
 --------------------------------------------------------------------------------
 1. WHAT ESKI IS
@@ -525,6 +526,38 @@ B7. ACCOUNT DELETION. Supabase gives users no self-delete, so today it is a
 - Perf: LRU-revoke off-screen blob URLs; createImageBitmap; blurhash placeholders.
 - Accessibility: aria-labels on icon-only buttons.
 - Later one-shot ideas: polyphonic mode (already have monophonic).
+
+================================================================
+18. ERROR CODES (2026-07-30). Every external-service failure names itself.
+================================================================
+Full table: ERRORS.txt. Guarded by tests/errors.js.
+
+Anything that talks to supabase, vercel, R2 or the browser's own storage now
+answers with an ESK-#### code first: 1xxx boot, 2xxx auth, 3xxx the signer and
+its env vars, 4xxx uploading, 5xxx the database, 6xxx reading media back, 7xxx
+local storage. The code names the exact call site, so a pasted toast is enough
+to find it. Codes are stable; retire one rather than renumber it.
+
+Three things carry the design:
+- api/sign.mjs answers { code, error } on every refusal, and the error string
+  starts with the code, so both a machine and a person can read it.
+- platform.js owns DB_HINTS, which translates the postgres and postgrest codes
+  worth knowing (42P01 table missing, 42703 column missing, 42501 RLS, PGRST301
+  expired jwt, 23505 taken) into the fix. It lives there because platform.js is
+  on all four pages; window.eski.dbError(code, what, err) is the shared call.
+- boot failures are separated: 1001 the vendored client did not load, 1002
+  createClient threw, 1003 the url or key is unset, 1004 supabase is
+  unreachable. Each has a different fix and they used to be one message.
+
+FIXED WHILE WIRING THIS, and it was a real bug: platform.js is a MODULE, so it
+executes AFTER a classic script has parsed. profile.html called load() at parse
+time, read window.eski before it existed, and told everyone "could not reach the
+server" on a perfectly healthy site. index.html and read.html were racing the
+same thing and only won by accident (an awaited indexeddb call happened to yield
+first). All three now wait for the module: modules run before DOMContentLoaded,
+so that event is the gate. studio.html awaits window.eski.ready in saveComic
+rather than reading a client that may not have booted yet.
+If the reported auth flakiness had one cause, this was it.
 
 ================================================================================
 14. THE PIVOT, DECIDED  (supersedes section 13's open questions; 2026-07-25)

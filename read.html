@@ -547,8 +547,12 @@ function esc(s){ return (s??'').toString().replace(/&/g,'&amp;').replace(/</g,'&
 
 /* ---------------- zip loading (lazy) ---------------- */
 async function fetchBlob(src){
-  const res = await fetch(src);
-  if(!res.ok) throw new Error(res.status);
+  let res;
+  try{ res = await fetch(src); }
+  catch(e){ throw new Error('ESK-6003 could not fetch ' + src + ': ' + ((e && e.message) || e)
+    + '. offline, or CORS does not allow GET from this origin.'); }
+  if(!res.ok) throw new Error((res.status === 404 ? 'ESK-6001' :
+    res.status === 403 ? 'ESK-6002' : 'ESK-6000') + ' ' + res.status + ' fetching ' + src);
   return res.blob();
 }
 /* the library can shelve eskis locally (indexeddb) and link here as
@@ -617,7 +621,7 @@ async function comicFromZip(zip, fileName){
   const mf = zip.file('.eski/manifest.json');
   if(mf){
     try{ manifest = JSON.parse(await mf.async('string')); }
-    catch(e){ toast('manifest is damaged, loading pages only', 'error'); }
+    catch(e){ toast('ESK-7003 manifest is damaged, loading pages only', 'error'); }
   }
   /* pages stay compressed until shown */
   const imgs = [];
@@ -628,7 +632,7 @@ async function comicFromZip(zip, fileName){
     if(IMG_RE.test(path)) imgs.push({path, entry, name: path.split('/').pop()});
   });
   imgs.sort((a,b)=>a.name.localeCompare(b.name, undefined, {numeric:true, sensitivity:'base'}));
-  if(!imgs.length) throw new Error('no page images found');
+  if(!imgs.length) throw new Error('ESK-7004 no page images found in that file');
   const pages = imgs.map(im=>({name:im.name, entry:im.entry, blob:null, url:null, _loading:null}));
   const tracks = [];
   let player = {volume:80, crossfade:1.5, loopMode:'loop', playbackMode:'sync'};
@@ -690,8 +694,14 @@ async function comicFromZip(zip, fileName){
    times are integer milliseconds in the database and float seconds here, so
    they convert at this boundary and nowhere else. */
 async function comicFromApi(id){
+  /* platform.js is a MODULE, so it executes after this classic script and
+     window.eski does not exist while the page is still parsing. wait for that
+     point instead of racing it. modules run before DOMContentLoaded. */
+  if(!window.eski && document.readyState === 'loading')
+    await new Promise(r => document.addEventListener('DOMContentLoaded', r, { once: true }));
   const sb = window.eski && await window.eski.ready;
-  if(!sb) throw new Error('cannot reach the library');
+  if(!sb) throw new Error('ESK-1005 cannot reach the library. ' +
+    ((window.eski && window.eski.bootError) || 'platform.js did not load at all'));
   const [c, pg, tk] = await Promise.all([
     sb.from('comics').select('*').eq('id', id).single(),
     sb.from('pages').select('idx,image_key').eq('comic_id', id).order('idx'),
@@ -700,15 +710,17 @@ async function comicFromApi(id){
   /* say which step failed and what the server said. "could not load" is not a
      diagnosis, and every one of these has a different cause: a bad id, row
      level security hiding a draft, or the tables not existing yet. */
-  if(c.error) throw new Error('comics query failed: ' + c.error.message +
-    (c.error.code ? ' [' + c.error.code + ']' : ''));
-  if(!c.data) throw new Error('no comic with id ' + id + '. it may be a draft you do not own, or deleted.');
-  if(pg.error) throw new Error('pages query failed: ' + pg.error.message);
-  if(!pg.data || !pg.data.length) throw new Error('comic "' + (c.data.title||id) + '" has no page rows');
-  if(tk.error) throw new Error('tracks query failed: ' + tk.error.message);
+  const dbe = window.eski.dbError;
+  if(c.error) throw new Error(dbe('ESK-5006', 'the comic could not be read', c.error));
+  if(!c.data) throw new Error('ESK-5007 no comic with id ' + id +
+    '. it may be a draft you do not own, or deleted.');
+  if(pg.error) throw new Error(dbe('ESK-5008', 'the pages could not be read', pg.error));
+  if(!pg.data || !pg.data.length)
+    throw new Error('ESK-5009 comic "' + (c.data.title||id) + '" has no page rows');
+  if(tk.error) throw new Error(dbe('ESK-5010', 'the tracks could not be read', tk.error));
   const u = k => window.eski.mediaUrl(k);
   const missingKey = pg.data.find(p => !p.image_key);
-  if(missingKey) throw new Error('page ' + missingKey.idx + ' has no image key');
+  if(missingKey) throw new Error('ESK-5011 page ' + missingKey.idx + ' has no image key');
   const pages = pg.data.map(p=>({name:'p'+p.idx, entry:null, blob:null, url:u(p.image_key), _loading:null}));
   const tracks = (tk.data || []).map(t=>({
     id: t.id,
@@ -754,7 +766,8 @@ function cleanupComic(c){
   const report = e => {
     const src = e.target && e.target.src;
     if(!src || src.startsWith('blob:')) return;   // zip-backed pages cannot 404
-    toast('a page image did not load. check the bucket is public and CORS allows GET:\n' + src, 'error');
+    toast('ESK-6001 a page image did not load. check the bucket is public and CORS allows GET:\n'
+      + src, 'error');
   };
   document.addEventListener('DOMContentLoaded', ()=>{
     ['page-left','page-right'].forEach(id=>{

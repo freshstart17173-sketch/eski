@@ -2454,10 +2454,16 @@ const saveDraft    = () => saveComic('draft');
 async function saveComic(finalStatus){
   const draft = finalStatus === 'draft';
   const verb = draft ? 'save' : 'publish';
+  // publish can be clicked before boot has settled, so await it rather than
+  // reading a client that may not exist yet
+  if(window.eski) await window.eski.ready;
   const sb = sbc();
-  if(!sb) return toast('sign in to ' + verb, 'error');
-  const { data: { user } } = await sb.auth.getUser();
-  if(!user) return toast('sign in to ' + verb, 'error');
+  if(!sb) return toast('ESK-1005 cannot reach the account service, so ' + verb +
+    ' is not possible. ' + ((window.eski && window.eski.bootError) || ''), 'error');
+  const { data: { user }, error: uerr } = await sb.auth.getUser();
+  if(uerr) return toast('ESK-2002 your session could not be read: ' + uerr.message +
+    '. sign out and back in.', 'error');
+  if(!user) return toast('ESK-2001 sign in to ' + verb, 'error');
   if(!pageCount()) return toast('add some pages first', 'error');
   if(!(cState.meta.title || '').trim()) return toast('give it a title in settings first', 'error');
 
@@ -2486,7 +2492,7 @@ async function saveComic(finalStatus){
       const tb = await makeCoverThumb(cState.pages[coverIdx].blob);
       if(tb) parts.push(thumbPart = { blob: tb, ext: 'webp', thumb: true });
     }catch(e){
-      console.warn('thumbnail failed, falling back to the full cover', e);
+      console.warn('ESK-4005 thumbnail failed, falling back to the full cover', e);
     }
 
     say('preparing');
@@ -2502,23 +2508,48 @@ async function saveComic(finalStatus){
     // identical bytes share a key, so they are signed and uploaded once
     const uniq = [...new Map(parts.map(p => [p.hash + '.' + p.ext, p])).values()];
     say('asking for upload urls');
-    const token = (await sb.auth.getSession()).data.session.access_token;
-    const r = await fetch('/api/sign', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json', authorization: 'Bearer ' + token },
-      body: JSON.stringify({ files: uniq.map(p => ({ hash: p.hash, ext: p.ext })) })
-    });
+    const sess = (await sb.auth.getSession()).data.session;
+    const token = sess && sess.access_token;
+    if(!token) throw new Error('ESK-2004 your session has no access token. sign out and back in.');
+    let r;
+    try{
+      r = await fetch('/api/sign', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', authorization: 'Bearer ' + token },
+        body: JSON.stringify({ files: uniq.map(p => ({ hash: p.hash, ext: p.ext })) })
+      });
+    }catch(netErr){
+      throw new Error('ESK-3009 could not reach /api/sign at all (offline, or the deploy is down): '
+        + ((netErr && netErr.message) || netErr));
+    }
     /* say what actually happened. a 404 here almost always means the page is
        being served by a plain static server, where /api/sign does not exist:
        functions only run on vercel or under `vercel dev`. */
     if(!r.ok){
       const body = await r.text();
-      let detail = body.slice(0, 140);
-      try{ detail = JSON.parse(body).error || detail; }catch(e){}
-      if(r.status === 404) detail = 'no /api/sign here. functions do not run on a static server.';
-      throw new Error(`upload signing failed (${r.status}): ${detail}`);
+      let detail = body.slice(0, 140), code = '';
+      try{
+        const j = JSON.parse(body);
+        detail = j.error || detail;
+        code = j.code || '';
+      }catch(e){
+        // an html body means vercel answered, not the function: a routing or
+        // build failure, so the json contract never got a chance to apply
+        if(/^\s*</.test(body))
+          code = 'ESK-3008', detail = 'vercel returned an html page, not the function. '
+            + 'the deploy failed, or /api/sign is not routed.';
+      }
+      if(r.status === 404 && !code)
+        code = 'ESK-3008', detail = 'no /api/sign here. functions do not run on a static server.';
+      throw new Error(`${code || 'ESK-3000'} upload signing failed (${r.status}): ${detail}`);
     }
-    (await r.json()).files.forEach((f, i) => { uniq[i].key = f.key; uniq[i].url = f.url; });
+    let signed;
+    try{ signed = await r.json(); }
+    catch(e){ throw new Error('ESK-3009 the signer answered with something that is not json'); }
+    if(!signed.files || signed.files.length !== uniq.length)
+      throw new Error(`ESK-3013 the signer returned ${(signed.files || []).length} urls for `
+        + `${uniq.length} files`);
+    signed.files.forEach((f, i) => { uniq[i].key = f.key; uniq[i].url = f.url; });
     const keyOf = new Map(uniq.map(p => [p.hash + '.' + p.ext, p.key]));
     parts.forEach(p => { p.key = keyOf.get(p.hash + '.' + p.ext); });
 
@@ -2537,21 +2568,26 @@ async function saveComic(finalStatus){
             headers: { 'content-type': p.blob.type || 'application/octet-stream' } });
         }catch(netErr){
           // a thrown fetch here is CORS or connectivity, never a status
-          lastErr = 'network/CORS: ' + ((netErr && netErr.message) || netErr);
+          lastErr = 'ESK-4001 network/CORS: ' + ((netErr && netErr.message) || netErr)
+            + '. apply r2-cors.json to the bucket and allow PUT from this origin.';
           put = null;
         }
         if(put && put.ok) break;
         if(put && put.status < 500){
           const body = await put.text().catch(()=>'');
-          throw new Error(`upload failed (${put.status}) for ${p.ext} object ${p.hash.slice(0,8)}: `
-            + (body.slice(0, 180) || 'no response body'));
+          /* 403 is the one worth separating: the signature is arithmetic over
+             the secret and the clock, so it means the wrong secret, the wrong
+             bucket, or an hour of skew. the other 4xx are genuinely rare. */
+          const code = put.status === 403 ? 'ESK-4002' : 'ESK-4003';
+          throw new Error(`${code} upload failed (${put.status}) for ${p.ext} object `
+            + `${p.hash.slice(0,8)}: ` + (body.slice(0, 180) || 'no response body'));
         }
         if(put) lastErr = 'status ' + put.status + ': ' + (await put.text().catch(()=>'')).slice(0, 140);
         if(attempt < 3) await new Promise(r => setTimeout(r, attempt * 800));
       }
       if(!put || !put.ok)
-        throw new Error(`upload failed after 3 tries for ${p.ext} object ${p.hash.slice(0,8)} `
-          + `(${(p.blob.size/1048576).toFixed(1)} MB): ${lastErr}`);
+        throw new Error(`ESK-4004 upload failed after 3 tries for ${p.ext} object `
+          + `${p.hash.slice(0,8)} (${(p.blob.size/1048576).toFixed(1)} MB): ${lastErr}`);
       sent += p.blob.size;
       progress(0.25 + sent / upBytes * 0.7);
     });
@@ -2572,17 +2608,18 @@ async function saveComic(finalStatus){
       series_index: (cState.meta.series || {}).index || null,
       status: 'draft'
     };
+    const dbe = window.eski.dbError;
     let ins = await sb.from('comics').insert(row).select('id').single();
     if(ins.error && ins.error.code === '23505'){          // slug already taken
       row.slug += '-' + Math.random().toString(36).slice(2, 6);
       ins = await sb.from('comics').insert(row).select('id').single();
     }
-    if(ins.error) throw new Error(ins.error.message);
+    if(ins.error) throw new Error(dbe('ESK-5001', 'could not write the comic row', ins.error));
     const comicId = ins.data.id;
 
     const pe = await sb.from('pages').insert(
       cState.pages.map((p, i) => ({ comic_id: comicId, idx: i + 1, image_key: parts[i].key })));
-    if(pe.error) throw new Error(pe.error.message);
+    if(pe.error) throw new Error(dbe('ESK-5002', 'the media uploaded but the page rows did not', pe.error));
 
     const audKey = {};
     parts.filter(p => p.aud).forEach(p => { audKey[p.aud] = p.key; });
@@ -2605,7 +2642,7 @@ async function saveComic(finalStatus){
       offset_ms: Math.round((t.offset || 0) * 1000),
       role: t.type === 'oneshot' ? (t.role || 'line') : null
     })));
-    if(te.error) throw new Error(te.error.message);
+    if(te.error) throw new Error(dbe('ESK-5003', 'the track rows did not save', te.error));
 
     // a draft simply stops here: the row exists, the media is uploaded, and
     // only the owner can see it until it is published from the profile page
@@ -2613,7 +2650,8 @@ async function saveComic(finalStatus){
       const pub = await sb.from('comics')
         .update({ status: 'published', published_at: new Date().toISOString() })
         .eq('id', comicId);
-      if(pub.error) throw new Error(pub.error.message);
+      if(pub.error) throw new Error(dbe('ESK-5004',
+        'everything saved but it stayed a draft. publish it from your profile', pub.error));
     }
 
     progress(1);

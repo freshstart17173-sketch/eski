@@ -90,6 +90,10 @@ a:hover{text-decoration:underline;text-underline-offset:3px}
   color:var(--muted);margin-top:var(--s5);background:var(--surface);font-size:var(--fs-sm)}
 .state code{background:var(--paper-1);border:var(--bw) solid var(--line);padding:1px 6px;
   font-family:ui-monospace,Menlo,Consolas,monospace;font-size:var(--fs-xs);color:var(--ink)}
+/* the failure code is meant to be copied into a bug report, so let it wrap and
+   let it be selected even where the surrounding empty state is not */
+.state code.why{user-select:text;display:inline-block;max-width:46ch;text-align:left;
+  white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.5}
 .spinner{width:28px;height:28px;border:2px solid var(--line);border-top-color:var(--accent);
   border-radius:var(--r-round);animation:spin .8s linear infinite;margin:0 auto var(--s3)}
 @keyframes spin{to{transform:rotate(360deg)}}
@@ -356,7 +360,11 @@ function shelfOpen(){
       if(!db.objectStoreNames.contains(SHELF_STORE)) db.createObjectStore(SHELF_STORE, {keyPath:'id'});
     };
     r.onsuccess = ()=>res(r.result);
-    r.onerror = ()=>rej(r.error);
+    // private windows and locked-down profiles refuse indexeddb outright, and
+    // the local shelf is the one feature that cannot degrade without it
+    r.onerror = ()=>rej(new Error('ESK-7001 the local shelf could not open: ' +
+      ((r.error && r.error.message) || 'indexeddb refused') +
+      '. private browsing blocks it.'));
   });
 }
 function shelfTx(mode, fn){
@@ -404,33 +412,57 @@ function readHref(file){
 /* published comics, straight from the database. these cost no download at all:
    the row already carries the title, the author and the cover key, so the grid
    never opens a comic just to look at it. */
-let platformDown = false;
+/* platform.js is a MODULE, so it executes after this classic script has run, and
+   window.eski does not exist yet while the page is still parsing. anything that
+   needs it has to wait for that point rather than race it: a page that read
+   window.eski too early reported "could not reach the shelf" on a perfectly
+   healthy site. modules run before DOMContentLoaded, so this is the gate. */
+async function platform(){
+  if(!window.eski && document.readyState === 'loading')
+    await new Promise(r => document.addEventListener('DOMContentLoaded', r, { once: true }));
+  return window.eski || null;
+}
+
+let platformDown = false, platformWhy = '';
 async function platformComics(){
   try{
-    const sb = window.eski && await window.eski.ready;
+    const eski = await platform();
+    const sb = eski && await eski.ready;
     // no client means the auth module could not load. that is a connection
     // problem, and saying "nothing here yet" would blame the shelf for it.
-    if(!sb){ platformDown = true; return []; }
+    if(!sb){
+      platformDown = true;
+      platformWhy = (eski && eski.bootError) || 'ESK-1005 platform.js did not load at all';
+      return [];
+    }
     const { data, error } = await sb.from('comics')
       .select('*')   /* not a column list: a schema one migration behind should not blank the shelf */
       .eq('status', 'published')
       .order('published_at', { ascending: false })
       .limit(200);
-    if(error){ platformDown = true; return []; }
+    if(error){
+      platformDown = true;
+      platformWhy = eski.dbError('ESK-5005', 'the shelf query failed', error);
+      return [];
+    }
     if(!data) return [];
     return data.map(c=>({
       file: 'db:'+c.id, dbId: c.id, title: c.title, creator: c.owner_name, description: c.description,
       cover: window.eski.mediaUrl(c.thumb_key || c.cover_key),
       series: c.series_title ? {title:c.series_title, index:c.series_index} : null
     }));
-  }catch(e){ platformDown = true; return []; }
+  }catch(e){
+    platformDown = true;
+    platformWhy = 'ESK-5000 the shelf could not be read: ' + ((e && e.message) || e);
+    return [];
+  }
 }
 
 async function blobFor(item){
   // only shelved items live in indexeddb. a published comic has no blob at all.
   if(item.local && item.id){
     const rec = await shelfGet(item.id);
-    if(!rec) throw new Error('missing from the shelf');
+    if(!rec) throw new Error('ESK-7002 missing from the shelf');
     return rec.blob;
   }
   const res = await fetch(item.file, {cache:'no-store'});
@@ -647,7 +679,8 @@ async function renderGrid(){
   if(!items.length){
     grid.className = '';
     grid.innerHTML = platformDown
-      ? `<div class="state">could not reach the shelf. ${esc((window.eski && window.eski.bootError) || '')}<br><br>
+      ? `<div class="state">could not reach the shelf.
+           <br><br><code class="why">${esc(platformWhy)}</code><br><br>
            anything you drop here still works offline.</div>`
       : EMPTY_HTML;
     paintIcons();

@@ -1,0 +1,275 @@
+eski — error codes
+================================================================================
+Every failure that involves something outside this repo (supabase, vercel,
+cloudflare R2, the browser's own storage) now names itself with an ESK-#### code
+before it says anything else. Copy the whole toast or empty-state line and paste
+it; the code alone is enough to find the site in the source, and the table below
+is the fix.
+
+Codes are stable. Do not renumber one. Retire it and take the next free number.
+
+WHERE THEY COME FROM
+  1xxx  boot: loading the account client at all            platform.js
+  2xxx  auth and session                                   platform.js, studio.html
+  3xxx  the signer function and its env vars               api/sign.mjs, studio.html
+  4xxx  uploading to R2                                    studio.html
+  5xxx  the database (postgres + row level security)       all four pages
+  6xxx  reading media back out of R2                       read.html
+  7xxx  local: the browser's storage and the file itself   index.html, read.html
+
+A 5xxx message also carries the raw postgres or postgrest code in [brackets] and,
+when it is one we recognise, the translation. That mapping lives once, in
+platform.js DB_HINTS, and every page shares it.
+
+================================================================================
+1xxx — BOOT
+================================================================================
+ESK-1001  vendor/supabase.js did not load.
+          The vendored client is missing from the deploy or 404s.
+          FIX: `node tests/vendor-supabase.js`, commit vendor/supabase.js, redeploy.
+          It is a build artifact, so check .gitignore is not eating it.
+
+ESK-1002  vendor/supabase.js loaded but createClient() threw.
+          The url or the key is malformed (not the wrong project: the wrong shape).
+          FIX: check SUPABASE_URL and SUPABASE_KEY at the top of platform.js. The
+          url is https://<ref>.supabase.co with no trailing path.
+
+ESK-1003  SUPABASE_URL / SUPABASE_KEY are not set in platform.js.
+          FIX: paste the project url and the publishable (anon) key. Both are
+          public and belong in the file. The SECRET key never does.
+
+ESK-1004  createClient() worked but getSession() threw.
+          The browser cannot reach supabase: offline, DNS, a corporate proxy, an
+          extension blocking the host, or the project is paused.
+          FIX: open <SUPABASE_URL>/auth/v1/health in a tab. If that fails too,
+          it is the network or the project, not the app. Paused free projects
+          resume from the supabase dashboard.
+
+ESK-1005  A page needed the account client and there is none.
+          Always accompanied by the real 1001-1004 cause. Read that one.
+
+================================================================================
+2xxx — AUTH AND SESSION
+================================================================================
+ESK-2001  Not signed in, and the action needs an account.
+          FIX: sign in. If the button does nothing, see ESK-2003.
+
+ESK-2002  There is a session but it could not be read.
+          Usually a token that expired while the tab sat open, or localStorage
+          was cleared underneath it.
+          FIX: sign out and back in.
+
+ESK-2003  OAuth did not even start.
+          The provider is listed in PROVIDERS (platform.js) but is not enabled
+          for this project in the supabase dashboard.
+          FIX: Authentication > Providers, enable it, paste its client id and
+          secret. Discord is the one currently switched off.
+
+ESK-2004  The session has no access token.
+          Rare: a half-written session in storage.
+          FIX: sign out, clear the site's storage, sign in.
+
+NOT AN ESK CODE, but the same family — an OAuth round trip that fails on the
+PROVIDER's side never reaches our code, so it shows their error page, not ours:
+  "redirect_uri_mismatch" (google)      the callback url is not on the allowed
+                                        list. It must be
+                                        <SUPABASE_URL>/auth/v1/callback in the
+                                        google cloud console, NOT the site url.
+  "requested path is invalid" (supabase) Site URL / Redirect URLs in supabase
+                                        Authentication > URL Configuration do
+                                        not include the deployed origin. Every
+                                        vercel preview url is a separate origin.
+  lands back signed out, no error        third-party cookies blocked, or the
+                                        site was opened in an in-app browser
+                                        (instagram, discord). Open in a real
+                                        browser.
+
+================================================================================
+3xxx — THE SIGNER (/api/sign) AND VERCEL ENV VARS
+================================================================================
+This function is the only server code in the project. Everything here is a
+vercel configuration answer.
+
+ESK-3001  The server is missing env vars. The message names exactly which.
+          FIX: vercel dashboard > Settings > Environment Variables. Add the named
+          ones from .env.example, tick Production AND Preview, then REDEPLOY —
+          env vars are baked at build time, so an existing deploy will keep
+          failing until it is rebuilt.
+          Note: pasting a whole `KEY=value` line, or a value in quotes, is
+          already cleaned up by env() in api/sign.mjs. That specific mistake is
+          not what is failing here; the variable genuinely is not set on this
+          environment.
+
+ESK-3002  Something sent a GET to /api/sign. Only the studio calls this. If you
+          see it from a browser address bar, that is expected.
+
+ESK-3003  No bearer token reached the signer.
+          The request left the browser without an Authorization header. Usually
+          a proxy or an aggressive extension stripping it.
+
+ESK-3004  Supabase rejected the session (its /auth/v1/user said no).
+          THE COMMON CAUSE IS A MISMATCH: SUPABASE_URL / SUPABASE_PUBLISHABLE_KEY
+          on vercel point at a DIFFERENT project than SUPABASE_URL /
+          SUPABASE_KEY in platform.js. The token is then valid, just not for the
+          project being asked.
+          FIX: make the two agree. Compare the project ref in both urls.
+          Second cause: the token genuinely expired. Sign out and back in.
+
+ESK-3005  The studio asked for 0 or more than 500 objects in one call.
+          500 is the hard cap in api/sign.mjs. A comic that big has to be split.
+
+ESK-3006  A hash or extension the signer will not sign.
+          Keys are derived server-side from a sha256 and an allowlisted
+          extension (EXT in api/sign.mjs). A file type outside that set, or a
+          hash that did not compute, produces this.
+
+ESK-3007  The signer crashed with an unhandled error. The message carries the
+          throw. This is a bug in api/sign.mjs; the other 3xxx codes are the
+          expected refusals.
+
+ESK-3008  Vercel answered but the function did not.
+          Either a 404 (no /api/sign at this origin: a plain static server, or
+          `python -m http.server`, does not run functions — use `vercel dev`),
+          or an html error page, which means the deploy or the build failed.
+          FIX: check the vercel deployment log. If running locally, `vercel dev`.
+
+ESK-3009  /api/sign could not be reached at all, or answered with something that
+          is not json. Offline, or the deploy is down.
+
+ESK-3010  The FUNCTION could not reach supabase.
+          Different from ESK-3004: supabase never answered. Wrong project ref in
+          SUPABASE_URL on vercel, or the project is paused.
+
+ESK-3011  R2 url signing failed.
+          Signing is local arithmetic over the secret, so this is a malformed
+          credential, never a network fault.
+          FIX: re-copy R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY and R2_ACCOUNT_ID
+          from the cloudflare R2 API-token screen. The account id is the 32 hex
+          characters in the R2 endpoint, not the bucket name.
+
+ESK-3012  SUPABASE_URL on vercel is not a url.
+          A typo, a missing https://, or the anon key pasted into the url slot.
+
+ESK-3013  The signer returned a different number of urls than files asked for.
+          A contract violation between studio.html and api/sign.mjs. A bug, not
+          a configuration problem.
+
+================================================================================
+4xxx — UPLOADING TO R2
+================================================================================
+ESK-4001  The PUT threw before any status came back: CORS or connectivity.
+          A presigned PUT from the browser is a cross-origin write, so the
+          bucket must allow it.
+          FIX: apply r2-cors.json to the bucket (cloudflare dashboard > R2 >
+          the bucket > Settings > CORS policy). AllowedOrigins must contain the
+          deployed origin and http://localhost:3000 if you develop there;
+          AllowedMethods must contain PUT.
+
+ESK-4002  403 on the PUT. The signature was refused.
+          Causes, in order of likelihood: R2_SECRET_ACCESS_KEY is wrong or was
+          rotated; the token does not have write access to that bucket;
+          R2_BUCKET names a bucket that does not exist; the signature expired
+          (they last one hour, so this only happens if a publish sat paused);
+          the machine's clock is off by more than fifteen minutes.
+
+ESK-4003  Another 4xx on the PUT. The message carries R2's own xml explanation,
+          which is usually specific.
+
+ESK-4004  Three attempts, all 5xx or all network failures. Genuinely transient
+          on R2's side, or the upload is being cut off by something in the
+          middle. The message names the object size: very large single files are
+          the usual victims.
+
+ESK-4005  (console warning only, never fatal) The cover thumbnail could not be
+          generated, so the full-size cover is used instead. The comic publishes
+          normally; the shelf just loads that one cover slowly.
+
+================================================================================
+5xxx — THE DATABASE
+================================================================================
+Every 5xxx message ends with the postgres code in [brackets]. The most common
+ones and what they mean:
+
+  [42P01] the table does not exist        schema.sql was never applied
+  [42703] the column does not exist       the database is behind the app
+  [PGRST204] postgrest has not seen it    re-apply the schema, then reload the
+                                          schema cache in supabase
+  [42501] row level security refused      the policy is missing or too narrow
+  [PGRST301] the jwt expired              sign out and back in
+  [PGRST116] no row came back             it is a draft you do not own, or gone
+  [23505] a unique value is taken         a slug or a handle collided
+  [23503] the parent row is missing       an earlier insert failed
+  [23502] a required column was empty
+  [22P02] that id is not a valid uuid
+
+The call sites:
+
+ESK-5000  The shelf query threw. Generic; the message carries the throw.
+ESK-5001  studio: the comic row could not be written. Nothing was published, but
+          the MEDIA IS ALREADY IN THE BUCKET. Republishing costs no re-upload:
+          keys are content-addressed, so the same bytes get the same key.
+ESK-5002  studio: the media uploaded and the comic row exists, but the page rows
+          did not save. The comic is in the database with no pages. Delete it
+          from your profile and publish again.
+ESK-5003  studio: the track rows did not save. Same shape as 5002.
+ESK-5004  studio: everything saved but the status never flipped to published.
+          Nothing is lost — publish it from your profile page.
+ESK-5005  home: the shelf query was refused. With [42P01] this is the one that
+          means schema.sql has not been applied to this project at all.
+ESK-5006  reader: the comic row could not be read.
+ESK-5007  reader: no comic with that id. A draft you do not own, or deleted.
+ESK-5008  reader: the page rows could not be read.
+ESK-5009  reader: the comic exists but has no page rows (see ESK-5002).
+ESK-5010  reader: the track rows could not be read.
+ESK-5011  reader: a page row has no image key. The publish was interrupted.
+ESK-5012  profile: your profile row could not be read.
+ESK-5013  profile: your profile row could not be created. With [42P01], apply
+          schema-profiles.sql; it is a separate file from schema.sql.
+ESK-5014  profile: five handle attempts all collided. Effectively impossible;
+          suspect the unique index is on the wrong column.
+ESK-5015  profile: the shelves query was refused.
+ESK-5016  profile: your profile edits did not save.
+ESK-5017  profile: a delete was refused. [42501] means the delete policy is
+          missing — RLS denies by default, so a table with no delete policy
+          refuses every delete, including the owner's.
+ESK-5018  profile: publish or unpublish was refused. Same shape as 5017.
+
+================================================================================
+6xxx — READING MEDIA BACK
+================================================================================
+ESK-6000  An unexpected status fetching media. The message names the url.
+ESK-6001  404. The object is not in the bucket under that key. Either the
+          publish half-finished (see ESK-5002), or R2_BASE in platform.js points
+          at a different bucket than the signer wrote to.
+ESK-6002  403. The bucket is not public.
+          FIX: cloudflare R2 > the bucket > Settings > Public access. Either
+          enable the r2.dev subdomain or attach a custom domain, then set
+          R2_BASE in platform.js to match.
+ESK-6003  The fetch threw: offline, or CORS does not allow GET from this origin.
+          Same r2-cors.json as ESK-4001, but the GET half.
+
+Also worth knowing: the r2.dev public subdomain is RATE LIMITED by cloudflare
+and is not meant for production traffic. Under load it starts refusing. Moving
+to a custom domain is one line — R2_BASE in platform.js — because the database
+stores keys, never urls.
+
+================================================================================
+7xxx — LOCAL, NOT A SERVICE
+================================================================================
+ESK-7001  indexeddb would not open, so the local shelf is unavailable. Private
+          browsing blocks it. Published comics still work; dropped files do not
+          persist.
+ESK-7002  A shelved file is referenced but its record is gone. Storage was
+          cleared between page loads.
+ESK-7003  The .eski manifest inside the file is damaged. The pages still load;
+          the soundtrack does not.
+ESK-7004  No page images inside that file. It is not an eski, or it is an empty
+          zip.
+
+================================================================================
+HOW TO REPORT ONE
+================================================================================
+Paste the whole line. It already contains the code, what step failed, and
+whatever the service itself said. If it is a 3xxx, say whether it happened on
+the deployed site or on `vercel dev`, because that changes which set of env
+vars was in play.

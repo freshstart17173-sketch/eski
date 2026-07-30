@@ -89,7 +89,18 @@ function paint(){
     for(const p of PROVIDERS){
       const b = document.createElement('button');
       b.type = 'button'; b.className = 'auth-btn'; b.textContent = p;
-      b.onclick = () => sb.auth.signInWithOAuth({ provider: p, options: { redirectTo: location.href } });
+      /* a provider listed here but not enabled in the supabase dashboard fails
+         BEFORE the redirect, and silently: the menu just does nothing. say so. */
+      b.onclick = async () => {
+        const { error } = await sb.auth.signInWithOAuth(
+          { provider: p, options: { redirectTo: location.href } });
+        if(error){
+          menu.innerHTML = `<small>ESK-2003 ${esc(p)} sign in did not start: ` +
+            `${esc(error.message)}. it is probably not enabled for this project ` +
+            `in the supabase dashboard.</small>`;
+          menu.classList.add('open');
+        }
+      };
       menu.appendChild(b);
     }
   }
@@ -111,6 +122,30 @@ document.addEventListener('click',
    get is window.eski plus the eski-auth event. `ready` resolves once boot has
    settled either way, so a page can await the client instead of polling for it
    or racing it. */
+/* postgres and postgrest already say precisely what went wrong, in codes nobody
+   memorises. translate the handful we can actually hit into the fix, so a
+   pasted toast carries the answer with it rather than just the symptom. every
+   page shares this: it lives here because platform.js is on all four. */
+const DB_HINTS = {
+  '42P01': 'that table does not exist. apply schema.sql (and schema-profiles.sql) in the supabase sql editor.',
+  '42703': 'that column does not exist. the database is a migration behind the app; re-apply schema.sql.',
+  'PGRST204': 'postgrest does not know that column yet. re-apply the schema, then reload the schema cache in supabase.',
+  '42501': 'row level security refused this. the policy for that table is missing or does not cover this user.',
+  'PGRST301': 'your session expired. sign out and back in.',
+  'PGRST116': 'no row came back. it may be a draft you do not own, or it was deleted.',
+  '23505': 'something unique is taken (a slug or a handle).',
+  '23503': 'this points at a row that does not exist. a parent insert failed earlier.',
+  '23502': 'a required column arrived empty.',
+  '22P02': 'that id is not a valid uuid.'
+};
+
+/* eskiCode: which call site refused. e: whatever supabase handed back. */
+function dbError(eskiCode, what, e){
+  const code = (e && e.code) || '';
+  const hint = DB_HINTS[code] ? ' ' + DB_HINTS[code] : '';
+  return `${eskiCode} ${what}: ${(e && e.message) || e}${code ? ' [' + code + ']' : ''}.${hint}`;
+}
+
 let markReady;
 window.eski = {
   get user(){ return user; },
@@ -118,23 +153,32 @@ window.eski = {
   get bootError(){ return bootError; },
   mediaBase: R2_BASE,
   mediaUrl: key => key ? R2_BASE + '/' + key : null,
+  dbError,
   ready: new Promise(res => { markReady = res; })
 };
 
+/* boot has four distinct ways to fail and they need four different fixes, so
+   each one carries its own code into bootError. every page that renders
+   bootError therefore names the actual cause. see ERRORS.txt. */
 (async function boot(){
-  if(SUPABASE_KEY.includes('REPLACE_ME')) console.warn('platform: set SUPABASE_KEY before deploying');
+  let stage = 'ESK-1001';
   try{
+    if(!SUPABASE_URL || SUPABASE_KEY.includes('REPLACE_ME') || !SUPABASE_KEY)
+      throw new Error('ESK-1003 SUPABASE_URL / SUPABASE_KEY are not set in platform.js');
     /* vendored, same origin, cached with the rest of the app. it used to come
        from esm.sh, whose entry point is a 458 byte re-export, so every page
        waited on two chained requests to someone else's host before it could
        run a single query. rebuild with `node tests/vendor-supabase.js`. */
     const { createClient } = await import('./vendor/supabase.js');
+    stage = 'ESK-1002';
     sb = createClient(SUPABASE_URL, SUPABASE_KEY);
+    stage = 'ESK-1004';
     const { data } = await sb.auth.getSession();
     setUser((data && data.session && data.session.user) || null);
     sb.auth.onAuthStateChange((_e, s) => setUser((s && s.user) || null));
   }catch(e){
-    bootError = (e && e.message) || String(e);
+    const msg = (e && e.message) || String(e);
+    bootError = /^ESK-/.test(msg) ? msg : stage + ' ' + msg;
     // no client. still announce the signed-out state, so a page listening for
     // eski-auth gets a definitive answer instead of silence and can render its
     // signed-out ui once rather than guessing.

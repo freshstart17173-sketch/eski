@@ -199,7 +199,9 @@ function handleSeed(user){
   return base.length >= 3 ? base : 'reader';
 }
 async function ensureProfile(user){
+  const dbe = window.eski.dbError;
   const got = await sb.from('profiles').select('*').eq('id', user.id).maybeSingle();
+  if(got.error) throw new Error(dbe('ESK-5012', 'your profile row could not be read', got.error));
   if(got.data) return got.data;
   const m = user.user_metadata || {};
   const seed = handleSeed(user);
@@ -211,16 +213,29 @@ async function ensureProfile(user){
       avatar_url: m.avatar_url || null
     }).select('*').single();
     if(!ins.error) return ins.data;
-    if(ins.error.code !== '23505') throw new Error(ins.error.message);  // not a collision
+    // not a collision
+    if(ins.error.code !== '23505')
+      throw new Error(dbe('ESK-5013', 'your profile could not be created', ins.error));
   }
-  throw new Error('could not pick a handle');
+  throw new Error('ESK-5014 could not pick a free handle after 5 tries');
+}
+
+/* platform.js is a MODULE and runs after this classic script, so window.eski is
+   not there yet while the page is parsing. this page used to read it straight
+   away and told everyone the server was unreachable. modules execute before
+   DOMContentLoaded, so waiting for that is enough. */
+async function platform(){
+  if(!window.eski && document.readyState === 'loading')
+    await new Promise(r => document.addEventListener('DOMContentLoaded', r, { once: true }));
+  return window.eski || null;
 }
 
 async function load(){
   const page = $('page');
-  sb = window.eski && await window.eski.ready;
+  const eski = await platform();
+  sb = eski && await eski.ready;
   if(!sb){
-    const why = (window.eski && window.eski.bootError) || 'the auth client did not load';
+    const why = (eski && eski.bootError) || 'ESK-1005 platform.js did not load at all';
     page.innerHTML = '<div class="state">could not reach the server.<br><br>' + esc(why) +
       '<br><br>if this persists, hard reload once: an old service worker can keep serving a stale page.</div>';
     return;
@@ -253,6 +268,11 @@ async function load(){
     .select('*')
     .eq('owner_id', subject.id)
     .order('created_at', { ascending: false });
+  if(r.error){
+    page.innerHTML = '<div class="state">' +
+      esc(window.eski.dbError('ESK-5015', 'your shelves could not be read', r.error)) + '</div>';
+    return;
+  }
   comics = r.data || [];
   paint();
 }
@@ -387,7 +407,8 @@ async function saveProfile(){
     bio: $('f-bio').value.trim() || null
   }).eq('id', me.id).select('*').single();
   if(up.error){
-    err.textContent = up.error.code === '23505' ? 'that handle is taken.' : up.error.message;
+    err.textContent = up.error.code === '23505' ? 'that handle is taken.'
+      : window.eski.dbError('ESK-5016', 'your profile did not save', up.error);
     return;
   }
   subject = up.data;
@@ -412,7 +433,11 @@ async function act(btn){
     }).eq('id', id));
   }
   btn.disabled = false;
-  if(err){ alert('that did not work: ' + err.message); return; }
+  if(err){
+    alert(window.eski.dbError(what === 'delete' ? 'ESK-5017' : 'ESK-5018',
+      'that did not work', err));
+    return;
+  }
   load();
 }
 

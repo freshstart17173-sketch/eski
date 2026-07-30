@@ -11,7 +11,11 @@
    ponytail: we do not verify that the uploaded bytes actually hash to the key
    they were signed for. a signed-in user could store junk under a wrong hash.
    the fix is signing an x-amz-checksum-sha256 header so R2 rejects the
-   mismatch itself; worth doing when uploads come from people you do not know. */
+   mismatch itself; worth doing when uploads come from people you do not know.
+
+   every failure answer carries an ESK-#### code. the code names the exact line
+   that refused, so a pasted toast is enough to find it. the table of causes and
+   fixes is ERRORS.txt; keep the two in step. */
 import { AwsClient } from 'aws4fetch';
 
 const EXT = new Set(['png', 'jpg', 'jpeg', 'webp', 'gif', 'avif',
@@ -23,7 +27,9 @@ export default async function handler(req, res){
   }catch(e){
     // an uncaught throw would return vercel's html error page, which the studio
     // cannot parse and reports as a blank failure. always answer in json.
-    return res.status(500).json({ error: 'signer crashed: ' + (e && e.message || String(e)) });
+    return res.status(500).json({
+      code: 'ESK-3007',
+      error: 'ESK-3007 signer crashed: ' + (e && e.message || String(e)) });
   }
 }
 
@@ -40,28 +46,53 @@ function env(name){
     .trim();
 }
 
+const fail = (res, status, code, error) => res.status(status).json({ code, error: code + ' ' + error });
+
 async function sign(req, res){
-  if(req.method !== 'POST') return res.status(405).json({ error: 'post only' });
+  if(req.method !== 'POST') return fail(res, 405, 'ESK-3002', 'post only');
 
   // a missing env var is the most common deploy mistake here, and it otherwise
   // shows up as a confusing auth failure much further down
   const missing = ['SUPABASE_URL','SUPABASE_PUBLISHABLE_KEY','R2_ACCOUNT_ID',
     'R2_ACCESS_KEY_ID','R2_SECRET_ACCESS_KEY','R2_BUCKET'].filter(k => !env(k));
   if(missing.length)
-    return res.status(500).json({ error: 'server is missing env vars: ' + missing.join(', ') });
+    return fail(res, 500, 'ESK-3001', 'server is missing env vars: ' + missing.join(', '));
+
+  /* a url that is not a url fails deep inside fetch with "Failed to parse URL",
+     which reads like a network problem and is not one. it is a pasted value
+     with a typo, or the anon key pasted into the url slot. */
+  let authUrl;
+  try{
+    authUrl = new URL('/auth/v1/user', env('SUPABASE_URL')).toString();
+  }catch(e){
+    return fail(res, 500, 'ESK-3012',
+      'SUPABASE_URL is not a url: ' + JSON.stringify(env('SUPABASE_URL').slice(0, 60)));
+  }
 
   const jwt = (req.headers.authorization || '').replace(/^Bearer /, '');
-  if(!jwt) return res.status(401).json({ error: 'sign in first' });
+  if(!jwt) return fail(res, 401, 'ESK-3003', 'sign in first (no bearer token reached the signer)');
 
   // ask supabase who this is rather than trusting anything in the token
-  const who = await fetch(env('SUPABASE_URL').replace(/\/+$/, '') + '/auth/v1/user', {
-    headers: { Authorization: 'Bearer ' + jwt, apikey: env('SUPABASE_PUBLISHABLE_KEY') }
-  });
-  if(!who.ok) return res.status(401).json({ error: 'not signed in' });
+  let who;
+  try{
+    who = await fetch(authUrl, {
+      headers: { Authorization: 'Bearer ' + jwt, apikey: env('SUPABASE_PUBLISHABLE_KEY') }
+    });
+  }catch(e){
+    // the function could not reach supabase at all: wrong project ref, dns, or
+    // the project is paused. distinct from supabase answering "no".
+    return fail(res, 502, 'ESK-3010', 'the signer could not reach supabase at ' +
+      env('SUPABASE_URL') + ': ' + ((e && e.message) || e));
+  }
+  if(!who.ok)
+    return fail(res, 401, 'ESK-3004', 'supabase rejected the session (auth/v1/user said ' +
+      who.status + '). the token is expired, or SUPABASE_URL/SUPABASE_PUBLISHABLE_KEY ' +
+      'on vercel belong to a different project than platform.js');
 
   const files = (req.body && req.body.files) || [];
   if(!Array.isArray(files) || !files.length || files.length > 500)
-    return res.status(400).json({ error: 'files must be 1 to 500 entries' });
+    return fail(res, 400, 'ESK-3005', 'files must be 1 to 500 entries, got ' +
+      (Array.isArray(files) ? files.length : typeof files));
 
   const aws = new AwsClient({
     accessKeyId: env('R2_ACCESS_KEY_ID'),
@@ -76,11 +107,20 @@ async function sign(req, res){
     const hash = String(f.hash || '').toLowerCase();
     const ext  = String(f.ext  || '').toLowerCase();
     if(!/^[0-9a-f]{64}$/.test(hash) || !EXT.has(ext))
-      return res.status(400).json({ error: 'bad hash or extension' });
+      return fail(res, 400, 'ESK-3006', 'bad hash or extension: ' +
+        JSON.stringify({ hash: hash.slice(0, 12), ext }));
     const key = `${hash.slice(0, 2)}/${hash}.${ext}`;
-    const signed = await aws.sign(`${base}/${key}?X-Amz-Expires=3600`,
-      { method: 'PUT', aws: { signQuery: true } });
-    out.push({ key, url: signed.url });
+    try{
+      const signed = await aws.sign(`${base}/${key}?X-Amz-Expires=3600`,
+        { method: 'PUT', aws: { signQuery: true } });
+      out.push({ key, url: signed.url });
+    }catch(e){
+      // signing is local arithmetic over the secret, so a throw here is a
+      // malformed credential, never a network fault
+      return fail(res, 500, 'ESK-3011',
+        'could not sign an R2 url. check R2_ACCESS_KEY_ID / R2_SECRET_ACCESS_KEY / ' +
+        'R2_ACCOUNT_ID: ' + ((e && e.message) || e));
+    }
   }
   res.status(200).json({ files: out });
 }

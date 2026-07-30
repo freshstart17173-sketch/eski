@@ -30,6 +30,16 @@ network, so it has its own check with dummy credentials:
 node tests/check-sign.mjs
 ```
 
+the ESK-#### codes (see `ERRORS.txt`) have their own runner. it calls the
+signer directly with broken env vars, then loads the pages with
+`vendor/supabase.js` 404ing to prove the boot failure is named rather than
+swallowed, and finally checks the healthy case: no page may claim a service is
+unreachable when it is not.
+
+```
+node tests/errors.js
+```
+
 ## what it covers
 
 - boot: demo.eski (served from fixtures) opens, track names, page count
