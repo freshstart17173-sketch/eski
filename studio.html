@@ -516,7 +516,7 @@ input[type=number],input[type=range]+span{font-variant-numeric:var(--num)}@media
       <div class="pane-resize row" id="tl-resize" title="drag to resize"></div>
       <div class="tl-top">
         <span class="tl-status" id="tl-status">no pages yet</span>
-        <span class="modebar">working as
+        <span class="modebar" id="modebar" style="display:none">working as
           <select id="mode-sel" title="what this session may edit">
             <option value="scratch">the author (everything)</option>
             <option value="vo">a voice actor (dialogue only)</option>
@@ -1037,6 +1037,12 @@ async function openEski(file){
       toast(`opened ${file.name}: ${imgs.length} silent pages`);
     }
     ensureDefaultSilence();
+    // an existing comic is now open, so the role picker becomes meaningful: the
+    // file may be yours, so all three stay on offer here. a FILE has no database
+    // row behind it, so a part made against it can only be exported.
+    baseOpened = true;
+    baseComicId = null; baseTrackIds = new Set(); baseSlotIds = new Set();
+    applyMode();
     render();
   }catch(err){ toast('could not open that file: '+err.message, 'error'); }
   finally{ loading(false); }
@@ -1219,14 +1225,27 @@ function addCastFromInput(){
    SEE and PREVIEW every page but cannot restructure them, and neither may do
    the other's job.
 
-   opening the studio on its own lets you pick, and change your mind. arriving
-   from somebody else's comic (?base=<id>, once the library hands it over) locks
-   the choice to the two contributor roles, because the author role is not
-   yours to take. mode gating is UI ONLY: the server revalidates every
-   submission. */
-let modeLocked = false;
+   WHO GETS THE CHOICE AT ALL:
+   - a blank studio is a NEW comic, so you are its author by definition. no
+     picker is shown, because there is nothing to pick: the other two roles only
+     mean something relative to somebody else's pages.
+   - arriving from the library (?base=<id>) is somebody else's comic. the picker
+     appears with the author role REMOVED, and both contributor roles stay
+     switchable, because "voice it or score it" is exactly the question being
+     asked at that moment.
+   - opening an .eski file locally is the ambiguous case and keeps all three:
+     the file may well be your own.
+   mode gating is UI ONLY: the server revalidates every submission. */
+let modeLocked = false;     // ?base=: the author role is not yours to take
+let baseOpened = false;     // an existing comic is loaded, from anywhere
+/* a part can only be published against a comic that exists in the database, so
+   these are set by loadBase and by nothing else. baseTrackIds is what tells a
+   contributor's OWN work apart from the author's at publish time, and
+   baseSlotIds is the subset that was an empty slot waiting to be filled. */
+let baseComicId = null, baseTrackIds = new Set(), baseSlotIds = new Set();
 function setEditMode(m){
   if(modeLocked && m === 'scratch') m = 'vo';
+  if(!baseOpened) m = 'scratch';      // a new comic has exactly one role
   editMode = m;
   const pick = $('mode-sel');
   if(pick && pick.value !== m) pick.value = m;
@@ -1241,6 +1260,11 @@ function applyMode(){
   // contributors bring audio, not pages
   const folder = $('add-folder-btn');
   if(folder) folder.hidden = !author;
+  // a part drafts exactly like a comic does: the rows exist, the status simply
+  // has not flipped, so the button means the same thing in every mode
+  const dbtn = $('draft-btn');
+  if(dbtn) dbtn.title = author ? 'save to your profile without publishing'
+    : 'save this ' + (editMode === 'vo' ? 'voice track' : 'soundtrack') + ' without publishing it';
   const add = $('add-media-btn');
   if(add) add.title = author
     ? 'images, audio, a cbz, a pdf, or an existing .eski'
@@ -1248,23 +1272,166 @@ function applyMode(){
   const lbl = $('mode-label');
   if(lbl) lbl.textContent = author ? '' :
     (editMode === 'vo' ? 'voicing, pages are read only' : 'scoring, pages are read only');
+  const bar = $('modebar');
+  // no comic open means a new one, and a new one has no roles to choose between
+  if(bar) bar.style.display = baseOpened ? '' : 'none';
   const pick = $('mode-sel');
   if(pick){
-    pick.disabled = modeLocked;
+    // both contributor roles stay switchable: locking the select would pin a
+    // visitor to whichever one the link happened to name
+    pick.disabled = false;
     // the author option disappears entirely on someone else's comic
     const opt = pick.querySelector('option[value="scratch"]');
     if(opt) opt.hidden = modeLocked;
   }
 }
-/* the library will hand over ?base=<id>&as=vo|soundtrack for a comic that is
-   not yours. until that flow exists the studio just honours the params. */
+/* the library hands over ?base=<id>&as=vo|soundtrack for a comic that is not
+   yours. loading it is a straight port of the reader's comicFromApi, except
+   that the studio needs BLOBS rather than urls: it re-packs everything on
+   export, and an object url cannot be zipped.
+
+   this downloads the whole comic, which the reader deliberately does not do.
+   that is the honest cost of authoring against someone else's pages: you
+   cannot voice a page you have not seen, and export has to hold the bytes. */
+async function loadBase(id, as){
+  loading(true, 'opening the comic');
+  try{
+    // platform.js is a module and runs after this script, so wait for it rather
+    // than reading window.eski while the page is still parsing
+    if(!window.eski && document.readyState === 'loading')
+      await new Promise(r => document.addEventListener('DOMContentLoaded', r, { once: true }));
+    if(!window.eski) throw new Error('ESK-1005 platform.js did not load at all');
+    const sb = await window.eski.ready;
+    if(!sb) throw new Error('ESK-1005 cannot reach the library. ' +
+      (window.eski.bootError || ''));
+    const dbe = window.eski.dbError;
+    const [c, pg, tk] = await Promise.all([
+      sb.from('comics').select('*').eq('id', id).single(),
+      sb.from('pages').select('idx,image_key').eq('comic_id', id).order('idx'),
+      sb.from('tracks').select('*').eq('comic_id', id).order('order_idx')
+    ]);
+    if(c.error)  throw new Error(dbe('ESK-5006', 'the comic could not be read', c.error));
+    if(!c.data)  throw new Error('ESK-5007 no comic with id ' + id +
+      '. it may be a draft you do not own, or deleted.');
+    if(pg.error) throw new Error(dbe('ESK-5008', 'the pages could not be read', pg.error));
+    if(!pg.data || !pg.data.length)
+      throw new Error('ESK-5009 that comic has no page rows');
+    if(tk.error) throw new Error(dbe('ESK-5010', 'the tracks could not be read', tk.error));
+
+    cState = {pages:[], tracks:[], cast:[],
+      meta:{title:'', creator:'', description:'', direction:'ltr'},
+      player:{volume:80, crossfade:1, loopMode:'loop', playbackMode:'sync', readingMode:'pages'},
+      coverIndex:0};
+    audioPool = []; undoStack = []; redoStack = []; sel = null; qpPage = null; previewPage = 0;
+    osBlocks = new Set();
+    for(const k in audioStore) delete audioStore[k];
+
+    cState.meta.title = c.data.title || 'untitled';
+    cState.meta.creator = c.data.owner_name || null;
+    cState.meta.description = c.data.description || null;
+    cState.meta.direction = c.data.direction === 'rtl' ? 'rtl' : 'ltr';
+    // the base id a part points back at IS the comic's row id, so an exported
+    // vo or soundtrack can only ever be attached to the comic it was made for
+    cState.meta.id = id;
+    if(c.data.series_title)
+      cState.meta.series = {title: c.data.series_title, index: c.data.series_index || null};
+    // the author's cast, so a voice actor sees names rather than bare keys
+    cState.cast = (c.data.cast_list || []).map(x => ({
+      cid: uid('c'), key: x.key, name: x.name || x.key,
+      kind: x.kind === 'narrator' ? 'narrator' : 'character'
+    }));
+
+    // one list, so the bar measures pages and audio on the same scale
+    const audKeys = [...new Set((tk.data || [])
+      .map(t => t.audio_key).filter(Boolean))];
+    let done = 0;
+    const total = pg.data.length + audKeys.length;
+    const step = () => progress(++done / total);
+    progress(0);
+
+    const grab = async key => {
+      const url = window.eski.mediaUrl(key);
+      let r;
+      try{ r = await fetch(url); }
+      catch(e){ throw new Error('ESK-6003 could not fetch ' + url + ': ' +
+        ((e && e.message) || e) + '. CORS does not allow GET from this origin.'); }
+      if(!r.ok) throw new Error((r.status === 404 ? 'ESK-6001' :
+        r.status === 403 ? 'ESK-6002' : 'ESK-6000') + ' ' + r.status + ' fetching ' + url);
+      return r.blob();
+    };
+
+    $('loading-lbl').textContent = 'downloading pages';
+    for(const p of pg.data){
+      if(!p.image_key) throw new Error('ESK-5011 page ' + p.idx + ' has no image key');
+      pushPage('p' + String(p.idx).padStart(3, '0') + '.jpg', await grab(p.image_key));
+      step();
+    }
+
+    $('loading-lbl').textContent = 'downloading the soundtrack';
+    const audFor = {};
+    for(const key of audKeys){
+      const blob = await grab(key);
+      const aud = uid('a');
+      audioStore[aud] = {blob, url: URL.createObjectURL(blob),
+        fileName: key.split('/').pop(), peaks: null, duration: 0};
+      audioPool.push(aud);
+      audFor[key] = aud;
+      decodePeaks(aud);
+      step();
+    }
+
+    for(const t of (tk.data || [])){
+      const type = t.type === 'oneshot' ? 'oneshot' : t.type === 'silence' ? 'silence' : 'music';
+      const aud = t.audio_key ? (audFor[t.audio_key] || null) : null;
+      cState.tracks.push({
+        tid: t.id, aud, type,
+        role: type === 'oneshot' ? (t.role === 'sfx' ? 'sfx' : 'line') : undefined,
+        character: t.character_key || null,
+        attachTo: t.attach_to || null, offset: (t.offset_ms || 0) / 1000,
+        title: t.title || (type === 'oneshot' ? '' : type === 'silence' ? 'silence' : 'untitled track'),
+        from: t.from_page ?? 1,
+        start: (t.start_ms || 0) / 1000,
+        end: t.end_ms ? t.end_ms / 1000 : null,
+        volume: t.volume ?? 100
+      });
+      if(type === 'oneshot') osBlocks.add(t.from_page ?? 1);
+    }
+
+    baseComicId = id;
+    baseTrackIds = new Set((tk.data || []).map(t => t.id));
+    // an empty slot is a oneshot the author wrote with no recording behind it
+    baseSlotIds = new Set((tk.data || [])
+      .filter(t => t.type === 'oneshot' && !t.audio_key).map(t => t.id));
+    modeLocked = true;
+    baseOpened = true;
+    setEditMode(as === 'soundtrack' ? 'soundtrack' : 'vo');
+    progress(1);
+    loadingDone('opened');
+    toast('opened ' + cState.meta.title + ' by ' + (cState.meta.creator || 'someone') +
+      '. the pages are theirs; bring audio.');
+  }catch(err){
+    // a failed base load must not leave a half comic that could be exported as
+    // if it were whole
+    cState.pages = []; cState.tracks = [];
+    toast('could not open that comic: ' + err.message, 'error');
+    setEditMode('scratch');
+    render();
+  }finally{
+    loading(false);
+  }
+}
+
 function initMode(){
   const q = new URLSearchParams(location.search);
-  if(q.get('base')){
+  const base = q.get('base');
+  if(base){
+    // somebody else's comic: a base is open, and the author role is not offered
     modeLocked = true;
+    baseOpened = true;
     setEditMode(q.get('as') === 'soundtrack' ? 'soundtrack' : 'vo');
+    loadBase(base, q.get('as'));
   }else{
-    setEditMode(q.get('as') || 'scratch');
+    setEditMode('scratch');
   }
 }
 /* on narrow screens the bay and the page panel slide over the stage */
@@ -2448,12 +2615,269 @@ async function makeCoverThumb(blob, width = 420){
    the comic row ends at 'draft' or 'published', which is why this is one
    function: a draft that took a different path would not be the thing you
    later publish. */
+/* hash, sign and upload a list of {blob, ext}, setting .key on each one.
+   shared by a comic publish and a part publish, because the two differ only in
+   what they upload, never in how. content addressing means an object already in
+   the bucket is still re-PUT, but a repeated publish of unchanged bytes lands on
+   the same key and costs nothing downstream. */
+async function uploadObjects(sb, items, say){
+  say('preparing');
+  const totalBytes = items.reduce((n, p) => n + p.blob.size, 0) || 1;
+  let hashed = 0;
+  progress(0);
+  await pool(items, 2, async p => {
+    p.hash = await sha256(p.blob);
+    hashed += p.blob.size;
+    progress(hashed / totalBytes * 0.25);   // hashing is the first quarter
+  });
+
+  // identical bytes share a key, so they are signed and uploaded once
+  const uniq = [...new Map(items.map(p => [p.hash + '.' + p.ext, p])).values()];
+  say('asking for upload urls');
+  const sess = (await sb.auth.getSession()).data.session;
+  const token = sess && sess.access_token;
+  if(!token) throw new Error('ESK-2004 your session has no access token. sign out and back in.');
+  let r;
+  try{
+    r = await fetch('/api/sign', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', authorization: 'Bearer ' + token },
+      body: JSON.stringify({ files: uniq.map(p => ({ hash: p.hash, ext: p.ext })) })
+    });
+  }catch(netErr){
+    throw new Error('ESK-3009 could not reach /api/sign at all (offline, or the deploy is down): '
+      + ((netErr && netErr.message) || netErr));
+  }
+  /* say what actually happened. a 404 here almost always means the page is
+     being served by a plain static server, where /api/sign does not exist:
+     functions only run on vercel or under `vercel dev`. */
+  if(!r.ok){
+    const body = await r.text();
+    let detail = body.slice(0, 140), code = '';
+    try{
+      const j = JSON.parse(body);
+      detail = j.error || detail;
+      code = j.code || '';
+    }catch(e){
+      // an html body means vercel answered, not the function: a routing or
+      // build failure, so the json contract never got a chance to apply
+      if(/^\s*</.test(body))
+        code = 'ESK-3008', detail = 'vercel returned an html page, not the function. '
+          + 'the deploy failed, or /api/sign is not routed.';
+    }
+    if(r.status === 404 && !code)
+      code = 'ESK-3008', detail = 'no /api/sign here. functions do not run on a static server.';
+    throw new Error(`${code || 'ESK-3000'} upload signing failed (${r.status}): ${detail}`);
+  }
+  let signed;
+  try{ signed = await r.json(); }
+  catch(e){ throw new Error('ESK-3009 the signer answered with something that is not json'); }
+  if(!signed.files || signed.files.length !== uniq.length)
+    throw new Error(`ESK-3013 the signer returned ${(signed.files || []).length} urls for `
+      + `${uniq.length} files`);
+  signed.files.forEach((f, i) => { uniq[i].key = f.key; uniq[i].url = f.url; });
+  const keyOf = new Map(uniq.map(p => [p.hash + '.' + p.ext, p.key]));
+  items.forEach(p => { p.key = keyOf.get(p.hash + '.' + p.ext); });
+
+  say('uploading');
+  const upBytes = uniq.reduce((n, p) => n + p.blob.size, 0) || 1;
+  let sent = 0;
+  await pool(uniq, 4, async p => {
+    /* a 5xx on a presigned PUT is usually transient: the object store hiccups
+       or the edge in front of it does. give it three goes with backoff before
+       failing a whole publish over one bad request. a 4xx is a real answer
+       (expired signature, CORS, bad key) so it fails immediately. */
+    let put = null, lastErr = '';
+    for(let attempt = 1; attempt <= 3; attempt++){
+      try{
+        put = await fetch(p.url, { method: 'PUT', body: p.blob,
+          headers: { 'content-type': p.blob.type || 'application/octet-stream' } });
+      }catch(netErr){
+        // a thrown fetch here is CORS or connectivity, never a status
+        lastErr = 'ESK-4001 network/CORS: ' + ((netErr && netErr.message) || netErr)
+          + '. apply r2-cors.json to the bucket and allow PUT from this origin.';
+        put = null;
+      }
+      if(put && put.ok) break;
+      if(put && put.status < 500){
+        const body = await put.text().catch(()=>'');
+        /* 403 is the one worth separating: the signature is arithmetic over
+           the secret and the clock, so it means the wrong secret, the wrong
+           bucket, or an hour of skew. the other 4xx are genuinely rare. */
+        const code = put.status === 403 ? 'ESK-4002' : 'ESK-4003';
+        throw new Error(`${code} upload failed (${put.status}) for ${p.ext} object `
+          + `${p.hash.slice(0,8)}: ` + (body.slice(0, 180) || 'no response body'));
+      }
+      if(put) lastErr = 'status ' + put.status + ': ' + (await put.text().catch(()=>'')).slice(0, 140);
+      if(attempt < 3) await new Promise(r => setTimeout(r, attempt * 800));
+    }
+    if(!put || !put.ok)
+      throw new Error(`ESK-4004 upload failed after 3 tries for ${p.ext} object `
+        + `${p.hash.slice(0,8)} (${(p.blob.size/1048576).toFixed(1)} MB): ${lastErr}`);
+    sent += p.blob.size;
+    progress(0.25 + sent / upBytes * 0.7);
+  });
+}
+
+/* ---------------- publishing a PART ----------------
+   a vo or a soundtrack made for somebody else's comic. it is the same upload as
+   a comic publish and a different set of rows: a parts header that says who made
+   it and for which comic, plus track rows carrying part_id.
+
+   WHICH TRACKS ARE MINE. loadBase remembers every track id the base arrived
+   with. a track is the contributor's if the base never had it, OR if the base
+   had it as an EMPTY SLOT that now holds audio, which is what filling a slot
+   means. anything else belongs to the author and is never re-uploaded or
+   re-inserted. */
+function myPartTracks(kind){
+  const mine = t => !baseTrackIds.has(t.tid) || (baseSlotIds.has(t.tid) && t.aud);
+  const of = kind === 'vo'
+    ? cState.tracks.filter(t => t.type === 'oneshot' && t.role === 'line' && t.aud)
+    : cState.tracks.filter(t => t.type !== 'oneshot' || t.role !== 'line')
+                   .filter(t => t.type === 'silence' || t.aud);
+  return of.filter(mine);
+}
+
+async function publishPart(finalStatus){
+  const draft = finalStatus === 'draft';
+  const kind = editMode === 'vo' ? 'vo' : 'soundtrack';
+  const noun = kind === 'vo' ? 'voice track' : 'soundtrack';
+  const verb = draft ? 'save' : 'publish';
+
+  if(window.eski) await window.eski.ready;
+  const sb = sbc();
+  if(!sb) return toast('ESK-1005 cannot reach the account service, so ' + verb +
+    ' is not possible. ' + ((window.eski && window.eski.bootError) || ''), 'error');
+  const { data: { user }, error: uerr } = await sb.auth.getUser();
+  if(uerr) return toast('ESK-2002 your session could not be read: ' + uerr.message +
+    '. sign out and back in.', 'error');
+  if(!user) return toast('ESK-2001 sign in to ' + verb + ' a ' + noun, 'error');
+  /* a part hangs off a comic ROW. a comic opened from a file has no row to hang
+     off, so exporting is the only honest thing to offer there. */
+  if(!baseComicId){
+    toast('this comic was opened from a file, not the library, so there is nothing to '
+      + 'attach a ' + noun + ' to. exporting it as a file instead.', 'error');
+    return exportPart(kind);
+  }
+
+  const tracks = myPartTracks(kind);
+  if(!tracks.length)
+    return toast(kind === 'vo' ? 'no lines recorded yet' : 'nothing to score yet', 'error');
+
+  let characterKey = null;
+  if(kind === 'vo'){
+    const keys = [...new Set(tracks.map(t => t.character).filter(Boolean))];
+    if(keys.length > 1)
+      return toast('a voice track covers one character. this has ' + keys.length, 'error');
+    characterKey = keys[0] || null;
+    // the database requires it: a vo nobody can attribute to a character cannot
+    // be swapped in against that character later
+    if(!characterKey)
+      return toast('say which character these lines are for before you ' + verb +
+        ' them. pick one on each line in the page panel.', 'error');
+    const cov = coverageFor(characterKey);
+    if(cov.pct < 100 && !draft)
+      toast(`heads up: ${cov.filled}/${cov.total} lines are recorded.`);
+  }
+
+  const say = t => { $('loading-lbl').textContent = t; };
+  try{
+    loading(true, 'measuring audio');
+    $('publish-btn').disabled = true;
+    await Promise.all(Object.keys(audioStore).map(aud => decodePeaks(aud)));
+    const gains = normGains();
+
+    // only the audio this part introduces. the author's pages and the author's
+    // music are already in the bucket and are not mine to re-upload.
+    const objs = [];
+    const forAud = {};
+    for(const aud of [...new Set(tracks.map(t => t.aud).filter(Boolean))]){
+      const a = audioStore[aud];
+      if(a) objs.push(forAud[aud] = { blob: a.blob, ext: extOf(a.fileName || '', 'mp3') });
+    }
+    if(objs.length) await uploadObjects(sb, objs, say);
+
+    say('writing the ' + noun);
+    const dbe = window.eski.dbError;
+    const meta = user.user_metadata || {};
+    const ins = await sb.from('parts').insert({
+      comic_id: baseComicId,
+      owner_id: user.id,
+      owner_name: meta.full_name || meta.name || meta.user_name ||
+                  (user.email || '').split('@')[0] || 'anonymous',
+      kind,
+      title: (cState.meta.partTitle || '').trim() || null,
+      character_key: characterKey,
+      status: 'draft'
+    }).select('id').single();
+    /* the consent policy lives in the database, so a closed axis surfaces here
+       as a plain refusal. say what it means rather than quoting postgres. */
+    if(ins.error && (ins.error.code === '42501' || /row-level security/i.test(ins.error.message || '')))
+      throw new Error('ESK-5019 the author has not opened this comic to ' +
+        (kind === 'vo' ? 'voice work' : 'music') + ', so a ' + noun + ' cannot be attached to it.');
+    if(ins.error) throw new Error(dbe('ESK-5020', 'the ' + noun + ' row could not be written', ins.error));
+    const partId = ins.data.id;
+
+    const idFor = new Map(tracks.map(t => [t.tid, crypto.randomUUID()]));
+    const te = await sb.from('tracks').insert(tracks.map((t, i) => ({
+      id: idFor.get(t.tid),
+      comic_id: baseComicId,
+      part_id: partId,
+      // a filled slot points back at the author's empty one, and the reader
+      // swaps it in rather than playing both
+      fills: baseSlotIds.has(t.tid) ? t.tid : null,
+      order_idx: i + 1,
+      type: t.type,
+      audio_key: t.type === 'silence' ? null : ((forAud[t.aud] || {}).key || null),
+      title: t.title || null,
+      from_page: t.from,
+      start_ms: Math.round((t.start || 0) * 1000),
+      end_ms: t.end ? Math.round(t.end * 1000) : null,
+      volume: t.volume ?? 100,
+      gain_db: gains[t.tid] || 0,
+      duck: t.duck || null,
+      // a chain inside a part points at a row in the same part
+      attach_to: t.attachTo ? (idFor.get(t.attachTo) || null) : null,
+      offset_ms: Math.round((t.offset || 0) * 1000),
+      role: t.type === 'oneshot' ? (t.role || 'line') : null,
+      character_key: t.type === 'oneshot' && (t.role || 'line') === 'line' ? (t.character || null) : null
+    })));
+    if(te.error){
+      // a part header with no tracks is worse than no part at all
+      await sb.from('parts').delete().eq('id', partId);
+      throw new Error(dbe('ESK-5021', 'the ' + noun + "'s tracks did not save", te.error));
+    }
+
+    if(!draft){
+      const pub = await sb.from('parts')
+        .update({ status: 'published', published_at: new Date().toISOString() })
+        .eq('id', partId);
+      if(pub.error) throw new Error(dbe('ESK-5022',
+        'everything saved but the ' + noun + ' stayed a draft', pub.error));
+    }
+    progress(1);
+    loadingDone(draft ? 'saved' : 'published');
+    toast(draft
+      ? 'saved as a draft. it is on your profile until you publish it.'
+      : 'published. readers can pick your ' + noun + ' on ' + (cState.meta.title || 'this comic') + '.');
+  }catch(err){
+    toast(verb + ' failed: ' + err.message, 'error');
+  }finally{
+    $('publish-btn').disabled = false;
+    loading(false);
+  }
+}
+
 const publishComic = () => saveComic('published');
 const saveDraft    = () => saveComic('draft');
 
 async function saveComic(finalStatus){
   const draft = finalStatus === 'draft';
   const verb = draft ? 'save' : 'publish';
+  /* a vo and a soundtrack are PARTS of somebody else's comic, never a comic of
+     their own. publishing one here would insert a second comics row owned by the
+     contributor, which is exactly the wrong thing. */
+  if(editMode !== 'scratch') return publishPart(finalStatus);
   // publish can be clicked before boot has settled, so await it rather than
   // reading a client that may not exist yet
   if(window.eski) await window.eski.ready;
@@ -2495,102 +2919,7 @@ async function saveComic(finalStatus){
       console.warn('ESK-4005 thumbnail failed, falling back to the full cover', e);
     }
 
-    say('preparing');
-    const totalBytes = parts.reduce((n, p) => n + p.blob.size, 0) || 1;
-    let hashed = 0;
-    progress(0);
-    await pool(parts, 2, async p => {
-      p.hash = await sha256(p.blob);
-      hashed += p.blob.size;
-      progress(hashed / totalBytes * 0.25);   // hashing is the first quarter
-    });
-
-    // identical bytes share a key, so they are signed and uploaded once
-    const uniq = [...new Map(parts.map(p => [p.hash + '.' + p.ext, p])).values()];
-    say('asking for upload urls');
-    const sess = (await sb.auth.getSession()).data.session;
-    const token = sess && sess.access_token;
-    if(!token) throw new Error('ESK-2004 your session has no access token. sign out and back in.');
-    let r;
-    try{
-      r = await fetch('/api/sign', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json', authorization: 'Bearer ' + token },
-        body: JSON.stringify({ files: uniq.map(p => ({ hash: p.hash, ext: p.ext })) })
-      });
-    }catch(netErr){
-      throw new Error('ESK-3009 could not reach /api/sign at all (offline, or the deploy is down): '
-        + ((netErr && netErr.message) || netErr));
-    }
-    /* say what actually happened. a 404 here almost always means the page is
-       being served by a plain static server, where /api/sign does not exist:
-       functions only run on vercel or under `vercel dev`. */
-    if(!r.ok){
-      const body = await r.text();
-      let detail = body.slice(0, 140), code = '';
-      try{
-        const j = JSON.parse(body);
-        detail = j.error || detail;
-        code = j.code || '';
-      }catch(e){
-        // an html body means vercel answered, not the function: a routing or
-        // build failure, so the json contract never got a chance to apply
-        if(/^\s*</.test(body))
-          code = 'ESK-3008', detail = 'vercel returned an html page, not the function. '
-            + 'the deploy failed, or /api/sign is not routed.';
-      }
-      if(r.status === 404 && !code)
-        code = 'ESK-3008', detail = 'no /api/sign here. functions do not run on a static server.';
-      throw new Error(`${code || 'ESK-3000'} upload signing failed (${r.status}): ${detail}`);
-    }
-    let signed;
-    try{ signed = await r.json(); }
-    catch(e){ throw new Error('ESK-3009 the signer answered with something that is not json'); }
-    if(!signed.files || signed.files.length !== uniq.length)
-      throw new Error(`ESK-3013 the signer returned ${(signed.files || []).length} urls for `
-        + `${uniq.length} files`);
-    signed.files.forEach((f, i) => { uniq[i].key = f.key; uniq[i].url = f.url; });
-    const keyOf = new Map(uniq.map(p => [p.hash + '.' + p.ext, p.key]));
-    parts.forEach(p => { p.key = keyOf.get(p.hash + '.' + p.ext); });
-
-    say('uploading');
-    const upBytes = uniq.reduce((n, p) => n + p.blob.size, 0) || 1;
-    let sent = 0;
-    await pool(uniq, 4, async p => {
-      /* a 5xx on a presigned PUT is usually transient: the object store hiccups
-         or the edge in front of it does. give it three goes with backoff before
-         failing a whole publish over one bad request. a 4xx is a real answer
-         (expired signature, CORS, bad key) so it fails immediately. */
-      let put = null, lastErr = '';
-      for(let attempt = 1; attempt <= 3; attempt++){
-        try{
-          put = await fetch(p.url, { method: 'PUT', body: p.blob,
-            headers: { 'content-type': p.blob.type || 'application/octet-stream' } });
-        }catch(netErr){
-          // a thrown fetch here is CORS or connectivity, never a status
-          lastErr = 'ESK-4001 network/CORS: ' + ((netErr && netErr.message) || netErr)
-            + '. apply r2-cors.json to the bucket and allow PUT from this origin.';
-          put = null;
-        }
-        if(put && put.ok) break;
-        if(put && put.status < 500){
-          const body = await put.text().catch(()=>'');
-          /* 403 is the one worth separating: the signature is arithmetic over
-             the secret and the clock, so it means the wrong secret, the wrong
-             bucket, or an hour of skew. the other 4xx are genuinely rare. */
-          const code = put.status === 403 ? 'ESK-4002' : 'ESK-4003';
-          throw new Error(`${code} upload failed (${put.status}) for ${p.ext} object `
-            + `${p.hash.slice(0,8)}: ` + (body.slice(0, 180) || 'no response body'));
-        }
-        if(put) lastErr = 'status ' + put.status + ': ' + (await put.text().catch(()=>'')).slice(0, 140);
-        if(attempt < 3) await new Promise(r => setTimeout(r, attempt * 800));
-      }
-      if(!put || !put.ok)
-        throw new Error(`ESK-4004 upload failed after 3 tries for ${p.ext} object `
-          + `${p.hash.slice(0,8)} (${(p.blob.size/1048576).toFixed(1)} MB): ${lastErr}`);
-      sent += p.blob.size;
-      progress(0.25 + sent / upBytes * 0.7);
-    });
+    await uploadObjects(sb, parts, say);
 
     say('writing the library entry');
     const meta = user.user_metadata || {};
@@ -2606,6 +2935,11 @@ async function saveComic(finalStatus){
       thumb_key: thumbPart ? thumbPart.key : null,
       series_title: (cState.meta.series || {}).title || null,
       series_index: (cState.meta.series || {}).index || null,
+      // the cast is the author's alone, and a voice actor needs it to know who
+      // speaks which slot. one list in, one list out.
+      cast_list: cState.cast.length
+        ? cState.cast.map(c => ({ key: c.key, name: c.name, kind: c.kind || 'character' }))
+        : null,
       status: 'draft'
     };
     const dbe = window.eski.dbError;
@@ -2640,7 +2974,8 @@ async function saveComic(finalStatus){
       duck: t.duck || null,
       attach_to: t.attachTo ? (idFor.get(t.attachTo) || null) : null,
       offset_ms: Math.round((t.offset || 0) * 1000),
-      role: t.type === 'oneshot' ? (t.role || 'line') : null
+      role: t.type === 'oneshot' ? (t.role || 'line') : null,
+      character_key: t.type === 'oneshot' && (t.role || 'line') === 'line' ? (t.character || null) : null
     })));
     if(te.error) throw new Error(dbe('ESK-5003', 'the track rows did not save', te.error));
 

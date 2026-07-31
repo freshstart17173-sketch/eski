@@ -188,6 +188,7 @@ paintTheme();
 
 const fmt = d => d ? new Date(d).toISOString().slice(0,10) : '';
 let sb = null, me = null, subject = null, isMe = false, comics = [], tab = 'published';
+let parts = [], partsError = '';
 
 /* a handle has to be unique, so a first guess can collide. try the obvious one,
    then widen, rather than making a new user invent a name before they can do
@@ -274,13 +275,27 @@ async function load(){
     return;
   }
   comics = r.data || [];
+
+  /* what they have made for OTHER people's comics. the same rls split applies:
+     a visitor sees published parts, the owner also sees their drafts. the comic
+     is joined in because a voice track with no comic beside it is unreadable as
+     a list entry. */
+  const pr = await sb.from('parts')
+    .select('*, comics(id,title,slug,cover_key,thumb_key,owner_name)')
+    .eq('owner_id', subject.id)
+    .order('created_at', { ascending: false });
+  // a missing parts table is not a reason to blank a profile: everything else
+  // on this page is still true, so the shelf just stays empty
+  parts = pr.error ? [] : (pr.data || []);
+  partsError = pr.error ? window.eski.dbError('ESK-5024', 'contributions could not be read', pr.error) : '';
   paint();
 }
 
 function shelf(name){
-  if(name === 'published') return comics.filter(c=>c.status === 'published');
-  if(name === 'drafts')    return comics.filter(c=>c.status !== 'published');
-  return [];   // contributed and saved have no data model yet
+  if(name === 'published')   return comics.filter(c=>c.status === 'published');
+  if(name === 'drafts')      return comics.filter(c=>c.status !== 'published');
+  if(name === 'contributed') return parts;
+  return [];   // saved has no data model yet
 }
 
 function paint(){
@@ -353,9 +368,39 @@ function paintShelf(){
   const box = $('shelf');
   const rows = shelf(tab);
   if(tab === 'contributed'){
-    box.className = '';
-    box.innerHTML = `<div class="state">voice work and soundtracks made for other people's
-      comics will show up here. nothing yet.</div>`;
+    if(!rows.length){
+      box.className = '';
+      box.innerHTML = partsError
+        ? `<div class="state">${esc(partsError)}</div>`
+        : `<div class="state">voice work and soundtracks made for other people's
+           comics show up here. nothing yet.</div>`;
+      return;
+    }
+    box.className = 'rows';
+    box.innerHTML = rows.map(p=>{
+      const c = p.comics || {};
+      const cover = (c.thumb_key || c.cover_key) ? window.eski.mediaUrl(c.thumb_key || c.cover_key) : '';
+      const published = p.status === 'published';
+      const what = p.kind === 'vo' ? 'voice' : 'score';
+      const who = p.character_key ? what + ': ' + p.character_key : what;
+      return `<div class="row" data-id="${esc(p.id)}" data-kind="part">
+        ${cover ? `<img class="art" src="${esc(cover)}" alt="">` : '<span class="art"></span>'}
+        <span class="meta">
+          <span class="t">${esc(p.title || c.title || 'untitled')}</span>
+          <span class="d">${esc(who)} &#183; ${esc(fmt(p.published_at || p.created_at))}</span>
+        </span>
+        <span class="chip ${published?'published':'draft'}">${published?'published':'draft'}</span>
+        <span class="acts">
+          <a class="btn" data-ico="book-open" href="read.html?read=db:${encodeURIComponent(c.id||'')}${
+            '&with=part:' + encodeURIComponent(p.id)}">read</a>
+          ${isMe ? `<button class="btn ${published?'':'primary'}" data-ico="upload-cloud"
+                  data-act="${published?'unpublish':'publish'}">${published?'unpublish':'publish'}</button>
+          <button class="btn danger icon" data-ico="trash-2" data-act="delete" title="delete"></button>` : ''}
+        </span>
+      </div>`;
+    }).join('');
+    paintIcons(box);
+    box.querySelectorAll('[data-act]').forEach(b=>b.addEventListener('click', ()=>act(b)));
     return;
   }
   if(tab === 'saved'){
@@ -420,14 +465,17 @@ async function act(btn){
   const id = row.dataset.id;
   const what = btn.dataset.act;
   const title = row.querySelector('.t').textContent;
+  // a part row and a comic row carry the same three actions against different
+  // tables. the shape is identical, so only the table name changes.
+  const table = row.dataset.kind === 'part' ? 'parts' : 'comics';
   if(what === 'delete' && !confirm(`delete "${title}"? this cannot be undone.`)) return;
   btn.disabled = true;
   let err = null;
   if(what === 'delete'){
-    ({ error: err } = await sb.from('comics').delete().eq('id', id));
+    ({ error: err } = await sb.from(table).delete().eq('id', id));
   }else{
     const published = what === 'publish';
-    ({ error: err } = await sb.from('comics').update({
+    ({ error: err } = await sb.from(table).update({
       status: published ? 'published' : 'draft',
       published_at: published ? new Date().toISOString() : null
     }).eq('id', id));

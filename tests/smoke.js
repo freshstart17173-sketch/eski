@@ -188,13 +188,16 @@ function ok(cond, name, extra) {
   await page.click('#settings-btn');
   ok(await page.isVisible('#scroll-pages'), 'scroller visible');
   ok(await page.isHidden('#click-zones'), 'click zones off');
-  // pages lazy-load, so scrollHeight grows as images arrive: re-apply the scroll
-  // on every poll instead of once, or the midline can settle on an earlier page
+  /* pages lazy-load, so scrollHeight grows as images arrive: re-apply the scroll
+     on every poll instead of once, or the midline can settle on an earlier page.
+     the whole comic has to decode before the last page can be the midline one,
+     which on a cold run is slower than it looks: 20s was tight enough to fail
+     roughly one run in three. */
   await page.waitForFunction(() => {
     const sc = document.getElementById('scroll-pages');
     sc.scrollTop = sc.scrollHeight;
     return document.getElementById('page-jump').value === '6';
-  }, null, { timeout: 20000 });
+  }, null, { timeout: 60000 });
   ok(true, 'midline page tracks scroll (page 6)');
   await page.waitForFunction(() => document.getElementById('pb-track').textContent.includes('second song'));
   ok(true, 'scroll changed the track');
@@ -672,6 +675,34 @@ function ok(cond, name, extra) {
   ok(await oc.evaluate(() => canPages() && canCast() && canLines() && canMusic()),
     'scratch mode has no restrictions');
 
+  console.log('studio: the role picker only appears when there is a role to pick');
+  const solo = await ctx.newPage();
+  wire(solo);
+  await solo.goto('http://localhost:8931/studio.html');
+  await solo.waitForSelector('#tl-panel');
+  ok(await solo.evaluate(() => document.getElementById('modebar').style.display === 'none'),
+    'a new comic shows no role picker: you are its author');
+  ok(await solo.evaluate(() => editMode === 'scratch'), 'a new comic is authored');
+  ok(await solo.evaluate(() => { setEditMode('vo'); return editMode === 'scratch'; }),
+    'a new comic cannot be switched into a contributor role');
+
+  // the library hands over ?base=<id>. the id does not resolve against the
+  // stubbed supabase, which is fine: the picker policy is what is under test.
+  await solo.goto('http://localhost:8931/studio.html?base=00000000-0000-0000-0000-000000000000&as=vo');
+  await solo.waitForSelector('#tl-panel');
+  ok(await solo.evaluate(() => document.getElementById('modebar').style.display !== 'none'),
+    "somebody else's comic shows the picker");
+  ok(await solo.evaluate(() =>
+    document.querySelector('#mode-sel option[value="scratch"]').hidden),
+    'the author role is not offered on somebody else\'s comic');
+  ok(await solo.evaluate(() => !document.getElementById('mode-sel').disabled),
+    'voice actor and composer both stay selectable');
+  ok(await solo.evaluate(() => { setEditMode('soundtrack'); return editMode === 'soundtrack'; }),
+    'a contributor may switch between the two roles');
+  ok(await solo.evaluate(() => { setEditMode('scratch'); return editMode !== 'scratch'; }),
+    'a contributor cannot take the author role');
+  await solo.close();
+
   console.log('studio: cast + slots round-trip through export');
   const dl2 = oc.waitForEvent('download');
   await oc.evaluate(() => exportCurrent());
@@ -741,6 +772,105 @@ function ok(cond, name, extra) {
   ok(await mx.evaluate(() => current.tracks.every(t => !String(t.id).startsWith('slotmismatch'))),
     'a mismatched part does not corrupt the comic');
   await mx.close();
+
+  /* the database twin of the mix above. no network: comicFromApi is handed a
+     fake supabase client, so what is under test is the merge rule (a row with
+     `fills` REPLACES the author's empty slot, anything else is appended) and
+     the fact that the base query never picks up other people's tracks. */
+  console.log('reader: parts merge from the database the same way files do');
+  const api = await ctx.newPage();
+  wire(api);
+  await api.goto('http://localhost:8931/read.html');
+  await api.waitForSelector('#player-bar');
+  const merged = await api.evaluate(async () => {
+    const rows = {
+      comics: { id: 'c1', title: 'db comic', owner_name: 'author', direction: 'ltr',
+                cover_key: 'aa/cover.jpg', cast_list: [{ key: 'aiko', name: 'Aiko' }] },
+      pages: [{ idx: 1, image_key: 'aa/1.jpg' }, { idx: 2, image_key: 'aa/2.jpg' }],
+      base: [
+        { id: 'slot-1', type: 'oneshot', role: 'line', character_key: 'aiko',
+          audio_key: null, from_page: 1, order_idx: 1, volume: 100, start_ms: 0 },
+        { id: 'song-1', type: 'music', audio_key: 'aa/song.mp3', from_page: 1,
+          order_idx: 2, volume: 100, start_ms: 0 }
+      ],
+      part: [
+        { id: 'clip-1', type: 'oneshot', role: 'line', character_key: 'aiko',
+          audio_key: 'bb/line.mp3', fills: 'slot-1', part_id: 'p1',
+          from_page: 1, order_idx: 1, volume: 100, start_ms: 0 },
+        { id: 'extra-1', type: 'oneshot', role: 'sfx', audio_key: 'bb/sfx.mp3',
+          fills: null, part_id: 'p1', from_page: 2, order_idx: 2, volume: 100, start_ms: 0 }
+      ]
+    };
+    // the smallest thing that answers like postgrest: every filter returns the
+    // builder, and awaiting it resolves to whatever the table was asked for
+    const q = table => {
+      const st = { table, isNull: false, inParts: false };
+      const b = {
+        select: () => b, eq: () => b, order: () => b,
+        is: (col, v) => { if (col === 'part_id' && v === null) st.isNull = true; return b; },
+        in: () => { st.inParts = true; return b; },
+        single: () => ({ then: r => r({ data: rows.comics, error: null }) }),
+        then: r => r({
+          data: st.table === 'pages' ? rows.pages
+              : st.inParts ? rows.part
+              : rows.base,
+          error: null
+        })
+      };
+      return b;
+    };
+    window.eski = { ready: Promise.resolve({ from: q }), mediaUrl: k => 'https://r2.test/' + k,
+                    dbError: (c, w, e) => c + ' ' + w };
+    const c = await comicFromApi('c1', ['p1']);
+    return {
+      total: c.tracks.length,
+      slot: c.tracks.find(t => t.id === 'slot-1'),
+      appended: c.tracks.find(t => t.id === 'extra-1'),
+      cast: c.cast.map(x => x.key)
+    };
+  });
+  ok(merged.total === 3, 'a filled slot replaces the base row instead of doubling it',
+    'tracks: ' + merged.total);
+  ok(merged.slot && merged.slot.url === 'https://r2.test/bb/line.mp3',
+    'the empty slot now plays the contributor\'s recording',
+    merged.slot && merged.slot.url);
+  ok(merged.slot && merged.slot.character === 'aiko',
+    'the slot keeps the character it was written for');
+  ok(!!merged.appended, 'a part track that fills nothing is appended');
+  ok(merged.cast.join() === 'aiko', 'the cast comes back with the comic');
+  await api.close();
+
+  console.log('studio: a contributor publishes only their own work');
+  const cw = await ctx.newPage();
+  wire(cw);
+  await cw.goto('http://localhost:8931/studio.html');
+  // the base exported a few steps up: it has both a recorded line and an empty slot
+  await cw.setInputFiles('#in-eski', path.join(DL, 'cast.eski'));
+  // pages are pushed before the manifest's tracks, so waiting on pages alone
+  // catches the import half way through
+  await cw.waitForFunction(() =>
+    cState.tracks.filter(t => t.type === 'oneshot' && t.role === 'line').length >= 2);
+  const split = await cw.evaluate(() => {
+    // stand in for loadBase: the author's rows arrived, one of them an empty slot
+    const lines = cState.tracks.filter(t => t.type === 'oneshot' && t.role === 'line');
+    baseTrackIds = new Set(cState.tracks.map(t => t.tid));
+    baseSlotIds = new Set(lines.filter(t => !t.aud).map(t => t.tid));
+    const filled = [...baseSlotIds][0];
+    if (filled) fillSlot(cState.tracks.find(t => t.tid === filled), Object.keys(audioStore)[0]);
+    editMode = 'vo';
+    const mine = myPartTracks('vo');
+    return {
+      mine: mine.map(t => t.tid),
+      filled,
+      authorLines: lines.filter(t => t.aud && !baseSlotIds.has(t.tid)).map(t => t.tid)
+    };
+  });
+  ok(split.filled && split.mine.includes(split.filled),
+    'a slot the contributor filled counts as theirs', JSON.stringify(split));
+  ok(split.authorLines.every(id => !split.mine.includes(id)),
+    'lines the author already recorded are never re-published by a contributor',
+    JSON.stringify(split));
+  await cw.close();
 
   console.log('studio + reader: sfx chains, chapters, series');
   const ch = await ctx.newPage();
@@ -899,6 +1029,21 @@ function ok(cond, name, extra) {
   await lib.keyboard.press('Escape');
   ok(await lib.evaluate(() => !document.getElementById('overlay').classList.contains('open')),
     'escape closes the overlay');
+
+  console.log('library: published comics offer a contribute route, files do not');
+  ok(await lib.evaluate(() => {
+    open_({ file: 'db:abc-123', dbId: 'abc-123', title: 'x' });
+    const a = document.getElementById('ov-contrib');
+    const shown = !a.hidden && /studio\.html\?base=abc-123/.test(a.getAttribute('href'));
+    close_();
+    return shown;
+  }), 'a published comic links into the studio as a contributor');
+  ok(await lib.evaluate(() => {
+    open_({ file: 'library/one.eski', title: 'x' });
+    const hidden = document.getElementById('ov-contrib').hidden;
+    close_();
+    return hidden;
+  }), 'a plain file offers no contribute route: the studio needs rows to open');
 
   console.log('library: local shelf (drop your own eskis in)');
   const beforeShelf = await lib.evaluate(() => document.querySelectorAll('.cell').length);

@@ -693,7 +693,19 @@ async function comicFromZip(zip, fileName){
    the ducking and the chains all work untouched.
    times are integer milliseconds in the database and float seconds here, so
    they convert at this boundary and nowhere else. */
-async function comicFromApi(id){
+/* the author's tracks, which is every track until parts exist. a project that
+   has not run schema-parts.sql yet has no part_id column, and filtering on a
+   column that is not there fails the whole query: reading would break on the
+   deploy rather than on the migration. so ask for the filtered set, and fall
+   back to the unfiltered one when the column is the thing that is missing. */
+async function baseTracks(sb, id){
+  const q = () => sb.from('tracks').select('*').eq('comic_id', id).order('order_idx');
+  const r = await q().is('part_id', null);
+  if(r.error && (r.error.code === '42703' || r.error.code === 'PGRST204')) return q();
+  return r;
+}
+
+async function comicFromApi(id, partIds){
   /* platform.js is a MODULE, so it executes after this classic script and
      window.eski does not exist while the page is still parsing. wait for that
      point instead of racing it. modules run before DOMContentLoaded. */
@@ -705,7 +717,10 @@ async function comicFromApi(id){
   const [c, pg, tk] = await Promise.all([
     sb.from('comics').select('*').eq('id', id).single(),
     sb.from('pages').select('idx,image_key').eq('comic_id', id).order('idx'),
-    sb.from('tracks').select('*').eq('comic_id', id).order('order_idx')
+    // part_id null is the AUTHOR's own tracks. everyone else's arrive only when
+    // the reader asked for them, below, so a comic with fifty voice tracks on it
+    // still opens as the author intended.
+    baseTracks(sb, id)
   ]);
   /* say which step failed and what the server said. "could not load" is not a
      diagnosis, and every one of these has a different cause: a bad id, row
@@ -722,7 +737,7 @@ async function comicFromApi(id){
   const missingKey = pg.data.find(p => !p.image_key);
   if(missingKey) throw new Error('ESK-5011 page ' + missingKey.idx + ' has no image key');
   const pages = pg.data.map(p=>({name:'p'+p.idx, entry:null, blob:null, url:u(p.image_key), _loading:null}));
-  const tracks = (tk.data || []).map(t=>({
+  const rowToTrack = t=>({
     id: t.id,
     title: t.title || 'untitled track',
     type: t.type === 'oneshot' ? 'oneshot' : t.type === 'silence' ? 'silence' : 'music',
@@ -733,11 +748,34 @@ async function comicFromApi(id){
     gainDb: (typeof t.gain_db === 'number' && isFinite(t.gain_db)) ? t.gain_db : 0,
     duck: t.duck || null,
     role: t.role === 'sfx' ? 'sfx' : 'line',
+    character: t.character_key || null,
     attachTo: t.attach_to || null,
     offset: (t.offset_ms || 0) / 1000,
     file: t.audio_key || null, entry: null, blob: null,
     url: t.audio_key ? u(t.audio_key) : null, external: false
-  })).sort((a,b)=>a.from-b.from);
+  });
+  const tracks = (tk.data || []).map(rowToTrack);
+
+  /* PARTS. a vo or a soundtrack somebody else made for this comic, layered on
+     only when the reader picked it. this is the database twin of mergePart():
+     a row carrying `fills` replaces the author's empty slot, anything else is
+     appended. the reader engine downstream cannot tell the difference. */
+  const want = (partIds || []).filter(Boolean);
+  if(want.length){
+    const pt = await sb.from('tracks').select('*')
+      .eq('comic_id', id).in('part_id', want).order('order_idx');
+    // a part that will not load is not a reason to refuse the comic: the base
+    // is still readable, so say it and carry on
+    if(pt.error) toast(dbe('ESK-5023', 'a chosen voice or soundtrack could not be loaded', pt.error), 'error');
+    for(const row of (pt.data || [])){
+      const t = rowToTrack(row);
+      const slot = row.fills ? tracks.find(x => x.id === row.fills) : null;
+      if(slot) Object.assign(slot, {url: t.url, file: t.file, entry: null, blob: null,
+        title: t.title, start: t.start, end: t.end, gainDb: t.gainDb, volume: t.volume});
+      else tracks.push(t);
+    }
+  }
+  tracks.sort((a,b)=>a.from-b.from);
   return {
     id: 'c'+String(id).slice(0,8),
     title: c.data.title || 'untitled',
@@ -748,7 +786,7 @@ async function comicFromApi(id){
     pages, tracks,
     player: {volume:80, crossfade:1.5, loopMode:'loop', playbackMode:'sync'},
     fileName: (c.data.slug || 'comic') + '.eski', isEski: true,
-    baseId: id, cast: [], chapters: [],
+    baseId: id, cast: c.data.cast_list || [], chapters: [],
     series: c.data.series_title ? {title:c.data.series_title, index:c.data.series_index} : null
   };
 }
@@ -1835,18 +1873,21 @@ if('serviceWorker' in navigator && location.protocol.startsWith('http')){
   try{
     showBusy(true);
     const grab = s => s.startsWith('idb:') ? shelfBlob(s.slice(4)) : fetchBlob(s);
+    /* ?with=<part>,<part> layers a vo and/or a soundtrack over the base. a part
+       is either a FILE on the shelf (idb:<id>, or a path) or a ROW in the
+       database (part:<uuid>). the library decides which, and hands over whole
+       references so the reader never has to look anything up. */
+    const parts = (new URLSearchParams(location.search).get('with') || '')
+      .split(',').map(s => s.trim()).filter(Boolean);
     let comic;
     if(src.startsWith('db:')){
       // a published comic: rows plus loose objects, no zip anywhere
-      comic = await comicFromApi(src.slice(3));
+      comic = await comicFromApi(src.slice(3),
+        parts.filter(p => p.startsWith('part:')).map(p => p.slice(5)));
     }else{
       const blob = await grab(src);
       const zip = await JSZip.loadAsync(blob);
       comic = await comicFromZip(zip, src.split('/').pop() || 'comic.eski');
-      // ?with=<part>,<part> layers a vo and/or a soundtrack over the base.
-      // parts are files, so this is a file-only path for now.
-      const parts = (new URLSearchParams(location.search).get('with') || '')
-        .split(',').map(s=>s.trim()).filter(Boolean);
       for(const p of parts){
         try{ await mergePart(comic, await JSZip.loadAsync(await grab(p))); }
         catch(e){ console.warn('part failed: ' + p, e); }

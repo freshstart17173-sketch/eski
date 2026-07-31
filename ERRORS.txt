@@ -233,6 +233,22 @@ ESK-5017  profile: a delete was refused. [42501] means the delete policy is
           missing — RLS denies by default, so a table with no delete policy
           refuses every delete, including the owner's.
 ESK-5018  profile: publish or unpublish was refused. Same shape as 5017.
+ESK-5019  studio: the author has not opened this comic to voice work (or to
+          music), so a part cannot be attached. Consent lives in the database,
+          not the ui: comics.voice_consent / music_consent must be 'open', and
+          the policy in schema-parts.sql is what enforces it. Not a bug.
+ESK-5020  studio: the part row could not be written. With [42P01], apply
+          schema-parts.sql — it is a third file, after schema.sql and
+          schema-profiles.sql.
+ESK-5021  studio: the part's track rows did not save, so the part header was
+          deleted again rather than left behind empty. The audio is already in
+          the bucket, so retrying costs no re-upload.
+ESK-5022  studio: the part saved but stayed a draft. Publish it from your
+          profile, under "contributed to".
+ESK-5023  reader: a chosen voice track or soundtrack could not be loaded. The
+          comic still opens; only that layer is missing.
+ESK-5024  profile: the contributions shelf could not be read. With [42P01],
+          schema-parts.sql has not been applied to this project.
 
 ================================================================================
 6xxx — READING MEDIA BACK

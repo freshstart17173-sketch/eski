@@ -560,6 +560,80 @@ rather than reading a client that may not have booted yet.
 If the reported auth flakiness had one cause, this was it.
 
 ================================================================================
+19. CONTRIBUTE FLOW + THE THUMB_KEY MIGRATION (2026-07-31)
+================================================================
+SQL FILES, IN ORDER: schema.sql, schema-profiles.sql, schema-thumbs.sql,
+schema-parts.sql. All idempotent, all safe to re-run.
+
+schema-thumbs.sql is new. thumb_key was added to schema-profiles.sql AFTER that
+file had already been applied to the live project, so publish was writing a
+column that did not exist. The symptom is ESK-5001 with [PGRST204] or [42703].
+The file is the one alter plus a postgrest schema reload, and re-running
+schema-profiles.sql does the same work.
+
+WHO MAY EDIT WHAT, settled:
+- a blank studio is a NEW comic, so you are its author. THE ROLE PICKER IS NOT
+  SHOWN AT ALL, and setEditMode() refuses anything but 'scratch'. The other two
+  roles only mean something relative to somebody else's pages.
+- ?base=<id> from the library is somebody else's comic: the picker appears with
+  the author option removed and the select ENABLED, because voice-or-score is
+  exactly the question being asked. It used to be disabled, which pinned a
+  visitor to whichever role the link happened to name.
+- opening an .eski file locally keeps all three, because the file may be yours.
+
+studio.html loadBase(id, as) is new and makes ?base= real: a port of the
+reader's comicFromApi that downloads BLOBS rather than urls, because export
+re-packs everything and an object url cannot be zipped. It pulls every page and
+every audio object, which the reader deliberately does not do; that is the
+honest cost of authoring against pages you did not draw. cState.meta.id is set
+to the comic's row id, so an exported part can only attach to the comic it was
+made for.
+
+index.html's modal has a third action, "voice or score it", shown only for
+published comics (the studio opens rows, not files) and hidden on your own work.
+
+PARTS ARE WIRED (schema-parts.sql, same day). A vo or a soundtrack made for
+somebody else's comic is now a row, not only a file.
+
+The shape is deliberately smaller than 14.5's six tables. tracks already models
+every row a vo or a soundtrack needs; what it lacked was an OWNER. So:
+  parts (id, comic_id, owner_id, owner_name, kind 'vo'|'soundtrack', title,
+         character_key, status, created_at, published_at)
+  tracks + part_id      -- null means the author's own, so nothing backfills
+  tracks + fills        -- points at the empty slot this recording fills
+  tracks + character_key-- the manifest has always carried it, the db dropped it
+  comics + cast_list jsonb  -- so those keys have names ("cast" is reserved sql)
+vos and soundtracks can become views over parts later, and mixes can sit on top,
+without rewriting a row.
+
+CONSENT IS ENFORCED IN THE POLICY, not the studio. parts_insert checks
+eski_part_allowed(comic_id, kind), which reads voice_consent or music_consent on
+the comic. A closed axis surfaces as ESK-5019 with a sentence, not a postgres
+code. tracks_write splits on part_id: the author owns rows where it is null, a
+contributor owns rows where it points at their part.
+
+WHICH TRACKS ARE MINE, the one genuinely subtle bit: loadBase() remembers every
+track id the base arrived with, and which of those were EMPTY SLOTS. A track is
+the contributor's if the base never had it, or if it was an empty slot that now
+holds audio. myPartTracks() is that rule and it is what stops a voice actor from
+re-publishing the author's own lines.
+
+The reader merge is the database twin of mergePart(): a part row carrying
+`fills` REPLACES the author's empty slot, anything else is appended. The base
+query gained .is('part_id', null), without which a comic with fifty voice tracks
+would play all of them at once.
+
+Surfaces: the library modal lists published parts under "mix" (off by default,
+because a stranger's voice should be chosen rather than autoplayed) and hands
+the reader ?with=part:<uuid>. The profile's "contributed to" shelf is real, with
+publish, unpublish and delete against the parts table using the same row markup
+as comics. saveComic() dispatches to publishPart() in contributor mode; a comic
+opened from a FILE has no row to attach to, so that case still exports.
+
+The upload pipeline (hash, sign, PUT with retries) is now uploadObjects(), shared
+by both publishes, because they differ in what they upload and never in how.
+
+================================================================
 14. THE PIVOT, DECIDED  (supersedes section 13's open questions; 2026-07-25)
 ================================================================================
 Section 13 laid out the shape. This section is the settled version: decisions

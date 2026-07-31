@@ -227,6 +227,8 @@ footer .brand{font-size:20px}
     <div class="actions">
       <a class="btn primary" id="ov-read" href="#"><span data-ico="book-open"></span>read it</a>
       <button class="btn" id="ov-later"><span data-ico="bookmark"></span>read later</button>
+      <!-- published comics only: the studio needs rows to open, not a file -->
+      <a class="btn" id="ov-contrib" href="#" hidden><span data-ico="mic"></span>voice or score it</a>
     </div>
   </div>
 </div>
@@ -278,6 +280,7 @@ const ICONS = {
   "arrow-left": "<path d=\"m12 19-7-7 7-7\" /> <path d=\"M19 12H5\" />",
   "search": "<circle cx=\"11\" cy=\"11\" r=\"8\" /> <path d=\"m21 21-4.3-4.3\" />",
   "bookmark": "<path d=\"m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z\" />",
+  "mic": "<path d=\"M12 19v3\" /> <path d=\"M19 10v2a7 7 0 0 1-14 0v-2\" /> <rect x=\"9\" y=\"2\" width=\"6\" height=\"13\" rx=\"3\" />",
   "moon": "<path d=\"M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401\" />",
   "sun": "<circle cx=\"12\" cy=\"12\" r=\"4\" /> <path d=\"M12 2v2\" /> <path d=\"M12 20v2\" /> <path d=\"m4.93 4.93 1.41 1.41\" /> <path d=\"m17.66 17.66 1.41 1.41\" /> <path d=\"M2 12h2\" /> <path d=\"M20 12h2\" /> <path d=\"m6.34 17.66-1.41 1.41\" /> <path d=\"m19.07 4.93-1.41 1.41\" />",
 };
@@ -447,7 +450,8 @@ async function platformComics(){
     }
     if(!data) return [];
     return data.map(c=>({
-      file: 'db:'+c.id, dbId: c.id, title: c.title, creator: c.owner_name, description: c.description,
+      file: 'db:'+c.id, dbId: c.id, ownerId: c.owner_id,
+      title: c.title, creator: c.owner_name, description: c.description,
       cover: window.eski.mediaUrl(c.thumb_key || c.cover_key),
       series: c.series_title ? {title:c.series_title, index:c.series_index} : null
     }));
@@ -476,6 +480,7 @@ async function coverFor(item){
      should not pull every one of them just to read a manifest. */
   if(item.cover && item.title){
     return {file:item.file, baseId:item.id || null, series:item.series || null,
+            dbId:item.dbId || null, ownerId:item.ownerId || null,
             title:item.title, creator:item.creator || null, description:item.description || null,
             cover:item.cover};
   }
@@ -517,10 +522,34 @@ function seriesSiblings(entry){
     .sort((a,b)=>(a.series.index||0)-(b.series.index||0));
 }
 
+/* published parts for a database comic: the voice tracks and soundtracks other
+   people have made for it. one small query per modal open, cached, and only for
+   comics that live in the database. a shelf file's parts are files. */
+const dbPartCache = new Map();
+async function dbPartsFor(comicId){
+  if(dbPartCache.has(comicId)) return dbPartCache.get(comicId);
+  let rows = [];
+  try{
+    const eski = await platform();
+    const sb = eski && await eski.ready;
+    if(sb){
+      const r = await sb.from('parts')
+        .select('id,kind,title,character_key,owner_name')
+        .eq('comic_id', comicId).eq('status', 'published')
+        .order('created_at', { ascending: true });
+      if(!r.error) rows = r.data || [];
+    }
+  }catch(e){ /* the base still reads without them */ }
+  dbPartCache.set(comicId, rows);
+  return rows;
+}
+
 /* the mix picker: which voices and which score to read this comic with.
    parts are opt-in, so an unmixed base still opens as a silent comic. */
+let mixToken = 0;
 function paintMix(entry){
   const box = $('ov-mix');
+  const token = ++mixToken;          // the modal may move on while a query flies
   const parts = partsForBase(entry.baseId);
   const sibs = seriesSiblings(entry);
   const next = sibs[sibs.findIndex(e=>e.file === entry.file) + 1] || null;
@@ -534,7 +563,7 @@ function paintMix(entry){
   if(parts.length){
     html += '<div class="mix-h">mix</div>' + parts.map(p=>`
       <label class="mixrow">
-        <input type="checkbox" value="${p.id}" checked>
+        <input type="checkbox" data-ref="idb:${esc(p.id)}" checked>
         <span class="k">${p.kind === 'vo' ? 'voice' : 'score'}</span>
         <span class="n">${esc(p.character || p.title || p.name || 'untitled')}</span>
       </label>`).join('');
@@ -542,19 +571,42 @@ function paintMix(entry){
   box.innerHTML = html;
 
   const sync = ()=>{
-    const on = [...box.querySelectorAll('input:checked')].map(i=>'idb:'+i.value);
+    const on = [...box.querySelectorAll('input:checked')].map(i=>i.dataset.ref);
     // the reader is closed: it cannot look up the library, so hand it the next
     // chapter's path up front and it can offer "next" at the last page
     $('ov-read').href = readHref(entry.file)
       + (on.length ? '&with=' + on.map(encodeURIComponent).join(',') : '')
       + (next ? '&next=' + encodeURIComponent(next.file) + '&nextTitle=' + encodeURIComponent(next.title) : '');
   };
-  box.querySelectorAll('input').forEach(i=>i.addEventListener('change', sync));
-  box.querySelectorAll('.chap').forEach(b=>b.addEventListener('click', ()=>{
-    const e = resolved.find(x=>x.file === b.dataset.f);
-    if(e) open_(e);
-  }));
-  sync();
+  const wire = ()=>{
+    box.querySelectorAll('input').forEach(i=>{ i.onchange = sync; });
+    box.querySelectorAll('.chap').forEach(b=>b.addEventListener('click', ()=>{
+      const e = resolved.find(x=>x.file === b.dataset.f);
+      if(e) open_(e);
+    }));
+    sync();
+  };
+  wire();
+
+  /* database parts arrive a moment later. they are appended rather than
+     re-rendered so a chapter strip does not flicker, and OFF by default: a
+     stranger's voice should be something a reader chooses, not something that
+     starts playing because it exists. */
+  const dbId = entry.dbId || (entry.file.startsWith('db:') ? entry.file.slice(3) : null);
+  if(!dbId) return;
+  dbPartsFor(dbId).then(rows=>{
+    if(!rows.length || token !== mixToken) return;
+    const wrap = document.createElement('div');
+    wrap.innerHTML = '<div class="mix-h">mix</div>' + rows.map(p=>`
+      <label class="mixrow">
+        <input type="checkbox" data-ref="part:${esc(p.id)}">
+        <span class="k">${p.kind === 'vo' ? 'voice' : 'score'}</span>
+        <span class="n">${esc(p.character_key || p.title || 'untitled')}
+          <small>by ${esc(p.owner_name || 'someone')}</small></span>
+      </label>`).join('');
+    box.append(...wrap.childNodes);
+    wire();
+  });
 }
 function open_(entry){
   const o = $('overlay');
@@ -592,6 +644,17 @@ function open_(entry){
     try{ return (JSON.parse(localStorage.getItem('eski-later'))||[]).includes(entry.file)
       ? 'saved for later' : 'read later'; }catch(e){ return 'read later'; }
   })();
+  /* voice or score it. only for PUBLISHED comics, because the studio opens a
+     base from database rows and R2 objects: a file on your own shelf has
+     neither. hidden on your own work, where the answer is the studio's own
+     author mode rather than a contributor role. */
+  const contrib = $('ov-contrib');
+  const dbId = entry.dbId || (entry.file.startsWith('db:') ? entry.file.slice(3) : null);
+  const mine = !!(window.eski && window.eski.user && entry.ownerId &&
+                  window.eski.user.id === entry.ownerId);
+  contrib.hidden = !dbId || mine;
+  if(dbId) contrib.href = 'studio.html?base=' + encodeURIComponent(dbId) + '&as=vo';
+  paintIcons(contrib);
   paintMix(entry);
   o.classList.add('open');
 }
