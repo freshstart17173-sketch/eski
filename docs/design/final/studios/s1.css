@@ -1,0 +1,194 @@
+/* ============================================================
+   skin 1 — "press". minimal change.
+
+   the broadsheet the rest of the site uses, with three additions and
+   nothing else: role colour as a cap and a swatch, an icon on every
+   control that has one, and page thumbnails in the strip. hairlines,
+   square corners, near-black rules and near-white ground all stay.
+
+   the bet: the studios only ever needed a legend, not a new look.
+   ============================================================ */
+:root{
+  --paper:#FCFDFC; --surface:#FFFFFF; --sunk:#F4F7F5;
+  --rule:#141A17; --hair:var(--line-1);
+  --ink:var(--sage-900); --soft:#45544D; --label:var(--sage-600);
+  --accent:var(--sage-600); --mark:#141A17;
+  --bar-h:44px; --sub-h:26px; --foot-h:0; --ctl-h:26px; --lane-h:28px;
+  --thumb-w:44px; --head-w:168px; --clip-m:2px;
+}
+[data-theme="dark"]{
+  --paper:var(--void); --surface:var(--surf-1); --sunk:var(--surf-2);
+  --rule:#C8D2CC; --hair:var(--line-dark);
+  --ink:#EAF0EC; --soft:var(--sage-200); --label:var(--sage-300);
+  --accent:var(--sage-300); --mark:#EAF0EC;
+}
+body{background:var(--paper);color:var(--ink);font-size:var(--fs-sm);line-height:1.5}
+
+.bar{border-bottom:1px solid var(--rule);background:var(--paper)}
+.bar .mark{color:var(--ink)}
+.bar .mark i{color:var(--accent)}
+.what .ttl{color:var(--ink)}
+.what .sub{color:var(--label)}
+.subbar{border-bottom:1px solid var(--rule);color:var(--label);
+  letter-spacing:.1em;text-transform:uppercase}
+.subbar b{color:var(--ink);font-weight:500}
+.subbar .track{background:var(--hair)}
+.subbar .track i{background:var(--mark)}
+
+.pane{background:var(--paper)}
+.body-split > .pane:first-child,
+.body-board > .pane:first-child,
+.body-board > .pane:nth-child(2){border-right:1px solid var(--rule)}
+.panehead{border-bottom:1px solid var(--rule);color:var(--label);background:var(--paper)}
+.panehead b{color:var(--ink);font-weight:500}
+.pagebar{border-top:1px solid var(--rule);color:var(--label)}
+.pagebar .n{color:var(--ink)}
+.plate{border:1px solid var(--hair);background:var(--paper-1)}
+[data-theme="dark"] .plate{background:var(--surf-2)}
+.strip{border-top:1px solid var(--rule)}
+.strip .pg[aria-current="true"] .plate{border-color:var(--mark);box-shadow:inset 0 0 0 1px var(--mark)}
+.strip .pg .cap{color:var(--label)}
+.strip .pg[aria-current="true"] .cap{color:var(--ink)}
+
+/* controls: hairline boxes, now with an icon in them */
+.btn{border:1px solid var(--rule);background:none;color:var(--ink)}
+.btn:hover{background:var(--rule);color:var(--paper)}
+.btn.p{background:var(--mark);border-color:var(--mark);color:var(--paper)}
+[data-theme="dark"] .btn.p{color:var(--sage-900)}
+.btn.q{border-color:var(--hair);color:var(--label)}
+.btn.q:hover{border-color:var(--rule);background:var(--rule);color:var(--paper)}
+.btn[aria-pressed="true"]{background:var(--mark);border-color:var(--mark);color:var(--paper)}
+[data-theme="dark"] .btn[aria-pressed="true"]{color:var(--sage-900)}
+.seg{border:1px solid var(--rule)}
+.seg button{background:none;border:0;border-left:1px solid var(--rule);color:var(--label)}
+.seg button:first-child{border-left:0}
+.seg button[aria-selected="true"]{background:var(--mark);color:var(--paper)}
+[data-theme="dark"] .seg button[aria-selected="true"]{color:var(--sage-900)}
+.field .k{color:var(--label)}
+.field input,.field select{border:1px solid var(--hair);background:var(--surface);color:var(--ink)}
+
+/* bay */
+.bay{border-top:1px solid var(--rule)}
+.cliprow{border-bottom:1px solid var(--hair)}
+.cliprow:hover{background:var(--surface)}
+.cliprow .meta{color:var(--label)}
+.cliprow[aria-grabbed="true"]{box-shadow:inset 3px 0 0 var(--mark)}
+.bayempty{border:1px dashed var(--line-strong);color:var(--label)}
+.bayempty b{color:var(--ink)}
+.cue{border-bottom:1px solid var(--hair);color:var(--soft)}
+.cue:hover{background:var(--surface)}
+.cue .letter{color:var(--c,var(--ink))}
+
+/* board */
+.heads{border-right:1px solid var(--rule)}
+.rulerspacer{border-bottom:1px solid var(--rule)}
+.ruler{border-bottom:1px solid var(--rule);background:var(--paper)}
+.rulercell{color:var(--label);border-left:1px solid var(--hair)}
+.rulercell:hover{background:var(--surface);color:var(--ink)}
+.rulercell[aria-current="true"]{background:var(--mark);color:var(--paper)}
+[data-theme="dark"] .rulercell[aria-current="true"]{color:var(--sage-900)}
+.lane{border-bottom:1px solid var(--hair)}
+.lane.first{border-top:1px solid var(--rule)}
+.lanehead{border-bottom:1px solid var(--hair);background:var(--paper)}
+.lanehead.first{border-top:1px solid var(--rule)}
+.lanehead .kind{font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--label)}
+.lanehead .mini{color:var(--label)}
+.lanehead .mini:hover{color:var(--ink)}
+.lanehead .mini[aria-pressed="true"]{background:var(--rule);color:var(--paper)}
+.cell{border-left:1px solid var(--hair)}
+.lane.dropping{background:var(--surface)}
+
+/* the one real addition: a clip carries its role's colour as a cap and a
+   faint wash, so a lane reads as a kind before it reads as a name. */
+.clip{border:1px solid var(--rule);background:var(--surface);color:var(--ink);
+  box-shadow:inset 3px 0 0 var(--c,var(--mark))}
+.clip:hover{background:color-mix(in srgb,var(--c,var(--mark)) 10%,var(--surface))}
+.clip .rng{color:var(--label)}
+.clip[aria-selected="true"]{background:color-mix(in srgb,var(--c,var(--mark)) 18%,var(--surface));
+  border-color:var(--c,var(--mark))}
+.clip.locked{background:none;border-style:dotted;color:var(--muted);cursor:default}
+.grip::after{content:"";position:absolute;top:3px;bottom:3px;left:4px;width:1px;
+  background:currentColor;opacity:0}
+.clip:hover .grip::after{opacity:.45}
+.playhead{background:var(--mark);opacity:.5}
+.playhead::before{background:var(--mark)}
+
+/* lines */
+.line{border-bottom:1px solid var(--hair)}
+.line:hover{background:var(--surface)}
+.line.on{background:var(--surface);box-shadow:inset 3px 0 0 var(--c,var(--mark))}
+.line .num{color:var(--label)}
+.line .who{color:var(--c,var(--label))}
+.line .who .sw{background:var(--c,var(--label))}
+.line .dir{color:var(--muted)}
+.line .say{color:var(--ink)}
+.line.other{color:var(--muted)}
+.line.other .say{color:var(--muted);font-size:var(--fs-sm)}
+.line.sfx{background:color-mix(in srgb,var(--c) 6%,transparent)}
+.line.sfx .note{color:var(--soft)}
+.line .state{font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--label)}
+.line .state.done{color:var(--accent)}
+
+.takes{background:var(--surface);border-bottom:1px solid var(--hair)}
+.take{border-bottom:1px solid var(--hair)}
+.take:last-of-type{border-bottom:0}
+.take .dot{border:1px solid var(--line-strong)}
+.take[aria-checked="true"] .dot{border-color:var(--mark)}
+.take[aria-checked="true"] .dot::after{content:"";position:absolute;inset:2px;border-radius:50%;
+  background:var(--mark)}
+.take .meta{color:var(--label)}
+.wave{border:1px solid var(--hair);background:var(--paper)}
+.wave .bar{background:var(--sage-300)}
+[data-theme="dark"] .wave .bar{background:var(--sage-700)}
+.wave .bar.in{background:var(--mark)}
+.wave .mask{background:var(--paper);opacity:.72}
+.wave .handle::before{content:"";position:absolute;top:3px;bottom:3px;left:5px;width:1px;
+  background:var(--mark)}
+.wave .handle::after{content:"";position:absolute;top:0;left:0;width:11px;height:6px;
+  background:var(--mark)}
+.trimfoot{color:var(--label)}
+.trimfoot b{color:var(--ink)}
+
+.prev{border:1px solid var(--hair);background:none;color:var(--ink)}
+.prev:hover{border-color:var(--ink);background:var(--rule);color:var(--paper)}
+.prev i{background:var(--accent)}
+.rec{border:1px solid var(--rule);background:none;color:var(--ink)}
+.rec:hover{background:var(--rule);color:var(--paper)}
+.rec .bead{background:#A33028}
+.rec.on{background:#A33028;border-color:#A33028;color:#fff}
+.rec.on .bead{background:#fff}
+
+/* inspector, cast, overlays */
+.insp{border-left:1px solid var(--rule)}
+.insp .none{color:var(--label)}
+.char{border-bottom:1px solid var(--rule)}
+.charhead .sw{background:var(--c,var(--mark))}
+.frow{border-top:1px solid var(--hair)}
+.frow .k{color:var(--label)}
+.frow .v{color:var(--soft)}
+.frow .v:hover,.frow .v:focus{outline:0;box-shadow:inset 0 -1px 0 var(--hair)}
+.mirror{border:1px solid var(--hair);background:var(--surface)}
+.mirror .bl{color:var(--soft)}
+.mirrorlabel{color:var(--label)}
+
+.ov{background:rgba(12,19,15,.55)}
+.sheet{background:var(--paper);border:1px solid var(--rule)}
+.sheethead{border-bottom:1px solid var(--rule);color:var(--label)}
+.sheethead .ttl{font-family:var(--font-display);font-size:16px;letter-spacing:0;
+  text-transform:none;color:var(--ink)}
+.pickrow{border-bottom:1px solid var(--hair);background:none;border-left:0;border-right:0;
+  border-top:0;color:inherit}
+.pickrow:hover{background:var(--surface)}
+.pickrow .sw{background:var(--c,var(--mark))}
+.pickrow .bl,.pickrow .meta{color:var(--soft)}
+.pickrow .meta{color:var(--label)}
+
+.droplayer{background:rgba(252,253,252,.9);border:2px solid var(--rule)}
+[data-theme="dark"] .droplayer{background:rgba(12,19,15,.9)}
+.droplayer span{color:var(--label)}
+.toast{background:var(--rule);color:var(--paper)}
+[data-theme="dark"] .toast{color:var(--sage-900)}
+.legend{color:var(--label)}
+.legend .sw{background:var(--c)}
+.compare a{border:1px solid var(--rule);background:var(--paper);color:var(--ink)}
+.compare a[aria-current]{background:var(--mark);color:var(--paper)}
