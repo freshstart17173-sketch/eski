@@ -34,38 +34,21 @@ function render(){
       ${legend(['voice','sfx'])}
     </div>
 
-    <div class="body-split">
+    <div class="frame nobay">
+      ${pageHtml(page, `<span>${dialogueOn(page).length} lines · ${sfxOn(page).length} effects</span>`)}
       <div class="pane">
-        ${stageHtml(page)}
-        <div class="pagebar">
-          ${btn('','left','q sq','id="prev"' + (page === 1 ? ' disabled' : ''))}
-          <span class="n">page ${page} of ${COMIC.pages.length}</span>
-          <span class="sp"></span>
-          <span>${dialogueOn(page).length} lines · ${sfxOn(page).length} effects</span>
-          ${btn('','right','q sq','id="next"' +
-            (page === COMIC.pages.length ? ' disabled' : ''))}
-        </div>
-        ${stripHtml(page, dots)}
-      </div>
-
-      <div class="pane">
-        <div class="panehead">
-          <b>${mode === 'script' ? 'page ' + page : 'cast'}</b>
-          <span>${mode === 'script' ? 'dialogue and sound' : CAST.length + ' characters'}</span>
-          <span class="sp"></span>
+        <div class="panehead">${mode === 'script' ? icon('type') : icon('user')}
+          <b>${mode === 'script' ? 'page ' + page : 'cast'}</b><span class="sp"></span>
           <span>${mode === 'script'
-            ? 'what a performer reads, and what a composer fills'
-            : 'what a performer reads before they take a part'}</span>
-        </div>
-        <div class="lines" id="work">${mode === 'script' ? scriptHtml() : castHtml()}</div>
+            ? dialogueOn(page).length + ' lines · ' + sfxOn(page).length + ' effects'
+            : CAST.length + ' characters'}</span></div>
+        <div class="panel" id="work">${mode === 'script' ? scriptHtml() : castHtml()}</div>
       </div>
     </div>
-    ${HAS.foot ? `<div class="footbar">
-      <span>page <b>${page}</b> / ${COMIC.pages.length}</span>
-      <span class="sp"></span>
-      <span>enter — new line · [ ] — turn the page · i — import</span></div>` : ''}
-    ${dropLayerHtml('pages')}
-    ${compareStrip('author')}`;
+
+    ${timelineHtml(page, dots)}
+    ${dropLayerHtml('pages')}`;
+  scrollTimeline();
 }
 
 /* ---------- the script: two element types, one column ---------- */

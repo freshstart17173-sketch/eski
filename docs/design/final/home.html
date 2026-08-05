@@ -8,7 +8,7 @@
 <link rel="stylesheet" href="broadsheet.css">
 <style>
 /* ============================================================
-   eski — home, browse, voiceover needed, shelf, studio, profile.
+   eski — home, browse, needed (voiceover + score), shelf, studio, profile.
 
    broadsheet: near-white ground, near-black rules edge to edge,
    art at comic proportions with a hairline round it, the title set
@@ -267,7 +267,7 @@ section + section{margin-top:var(--s6)}
 <!-- ================= BROWSE ================= -->
 <main class="pane" id="pane-browse"><div class="wrap">
   <div class="head"><h2>browse</h2><span class="n" id="browse-n"></span>
-    <span class="sp"></span><a href="#" data-go="roles">voiceover needed →</a></div>
+    <span class="sp"></span><a href="#" data-go="roles">what needs work →</a></div>
   <div class="bar">
     <input type="search" id="b-q" placeholder="search titles, credits, and tags">
     <span class="lbl">sort</span>
@@ -278,8 +278,7 @@ section + section{margin-top:var(--s6)}
       <option value="short">shortest</option>
     </select>
     <div class="chips" id="b-filters">
-      <button class="chip" data-f="missing" aria-pressed="false">needs a voice</button>
-      <button class="chip" data-f="cast" aria-pressed="false">fully cast</button>
+      <button class="chip" data-f="cast" aria-pressed="false">fully voiced</button>
       <button class="chip" data-f="scored" aria-pressed="false">has a score</button>
     </div>
   </div>
@@ -287,29 +286,25 @@ section + section{margin-top:var(--s6)}
   <div class="empty" id="browse-empty" hidden>nothing matches that.</div>
 </div></main>
 
-<!-- ================= VOICEOVER NEEDED ================= -->
+<!-- ================= NEEDED — voiceover and score, one place ================= -->
 <main class="pane" id="pane-roles"><div class="wrap">
-  <div class="head"><h2>voiceover needed</h2><span class="n" id="rolelist-n"></span>
+  <div class="head"><h2>needed</h2><span class="n" id="rolelist-n"></span>
     <span class="sp"></span><a href="#" data-go="browse">← all comics</a></div>
   <div class="bar">
-    <input type="search" id="r-q" placeholder="search characters, comics, authors, description">
-    <span class="lbl">sort</span>
-    <select id="r-sort">
-      <option value="lines-desc">most lines</option>
-      <option value="lines-asc">fewest lines</option>
-      <option value="name">character a–z</option>
-      <option value="comic">comic a–z</option>
-      <option value="author">author a–z</option>
-    </select>
-    <div class="chips" id="r-filters">
-      <button class="chip" data-f="lead" aria-pressed="false">lead</button>
-      <button class="chip" data-f="supporting" aria-pressed="false">supporting</button>
-      <button class="chip" data-f="narration" aria-pressed="false">narration</button>
-      <button class="chip" data-f="short" aria-pressed="false">under 50 lines</button>
+    <div class="chips" id="need-tabs">
+      <button class="chip" data-need="voice" aria-pressed="true">voiceover needed</button>
+      <button class="chip" data-need="score" aria-pressed="false">score needed</button>
     </div>
+    <span class="sp" style="flex:1"></span>
+  </div>
+  <div class="bar">
+    <input type="search" id="r-q" placeholder="search">
+    <span class="lbl">sort</span>
+    <select id="r-sort"></select>
+    <div class="chips" id="r-filters"></div>
   </div>
   <div class="rolelist" id="rolelist"></div>
-  <div class="empty" id="roles-empty" hidden>nothing needs a voice that matches that.</div>
+  <div class="empty" id="roles-empty" hidden>nothing matches that.</div>
 </div></main>
 
 <!-- ================= SHELF ================= -->
@@ -334,7 +329,7 @@ section + section{margin-top:var(--s6)}
         line carries a character and a direction, and every character carries
         the note a performer reads before they take the part.</p>
       <div class="acts" style="padding:var(--s3) 0 0;border:0">
-        <a class="btn p" href="studio-author.html" style="display:grid;place-items:center">open the author studio</a>
+        <a class="btn p" href="studios/author.html" style="display:grid;place-items:center">open the author studio</a>
         <button class="btn" data-act="drafts">your chapters</button>
       </div>
     </div>
@@ -344,7 +339,7 @@ section + section{margin-top:var(--s6)}
         them page ranges — a rain bed under the whole comic, a score that
         changes at page twelve, a door that slams on page fourteen.</p>
       <div class="acts" style="padding:var(--s3) 0 0;border:0">
-        <a class="btn p" href="studio-score.html" style="display:grid;place-items:center">open the composer studio</a>
+        <a class="btn p" href="studios/score.html" style="display:grid;place-items:center">open the composer studio</a>
         <button class="btn" data-go="browse">find a comic with no score</button>
       </div>
     </div>
@@ -353,7 +348,7 @@ section + section{margin-top:var(--s6)}
       <p>Pick a character, work a page at a time. Record in the browser or drop
         files in, keep the take you want, trim it, publish the part.</p>
       <div class="acts" style="padding:var(--s3) 0 0;border:0">
-        <a class="btn p" href="studio-voice.html" style="display:grid;place-items:center">open the voiceover studio</a>
+        <a class="btn p" href="studios/voice.html" style="display:grid;place-items:center">open the voiceover studio</a>
         <button class="btn" data-go="roles">parts that need a voice</button>
       </div>
     </div>
@@ -972,7 +967,6 @@ function renderBrowse(){
     if(bState.q && !hay.includes(bState.q)) return false;
     for(const f of bState.filters){
       const v = voicesOf(c);
-      if(f === 'missing' && !v.cls) return false;
       if(f === 'cast' && v.cls) return false;
       if(f === 'scored' && !c.scores.length) return false;
     }
@@ -1003,42 +997,145 @@ document.getElementById('b-filters').addEventListener('click', e => {
   renderBrowse();
 });
 
-/* ---------- voiceover needed ---------- */
-const rState = {q:'', sort:'lines-desc', filters:new Set()};
-function renderRoles(){
-  const list = ROLES.filter(r => {
-    const c = byId(r.comic);
-    const hay = (r.name + ' ' + c.title + ' ' + c.by + ' ' + r.blurb).toLowerCase();
-    if(rState.q && !hay.includes(rState.q)) return false;
-    const kinds = [...rState.filters].filter(f => f !== 'short');
-    if(kinds.length && !kinds.includes(r.kind)) return false;
-    if(rState.filters.has('short') && r.lines >= 50) return false;
-    return true;
-  });
-  const sorts = {
-    'lines-desc':(a,b) => b.lines - a.lines,
-    'lines-asc':(a,b) => a.lines - b.lines,
-    'name':(a,b) => a.name.localeCompare(b.name),
-    'comic':(a,b) => byId(a.comic).title.localeCompare(byId(b.comic).title),
-    'author':(a,b) => byId(a.comic).by.localeCompare(byId(b.comic).by)
-  };
-  list.sort(sorts[rState.sort]);
-  fill(document.getElementById('rolelist'), list.map(r => roleRowEl(r)));
-  document.getElementById('rolelist-n').textContent =
-    `${list.length} of ${ROLES.length} characters with no voice`;
-  document.getElementById('roles-empty').hidden = list.length > 0;
+/* ============================================================
+   needed. one page, two tabs: characters with no voice, and comics
+   with no score. they are the same question asked of two crafts, so
+   they share a search box, a sort and a row shape — and browse no
+   longer carries a "needs a voice" filter, because this is where that
+   lives.
+   ============================================================ */
+const rState = {tab:'voice', q:'',
+  sort:{voice:'lines-desc', score:'need'},
+  filters:{voice:new Set(), score:new Set()}};
+
+const NEED_SORTS = {
+  voice:[['lines-desc','most lines'],['lines-asc','fewest lines'],['name','character a–z'],
+         ['comic','comic a–z'],['author','author a–z']],
+  score:[['need','most needed'],['kudos','most kudos'],['new','newest'],
+         ['long','longest'],['title','title a–z']]
+};
+const NEED_FILTERS = {
+  voice:[['lead','lead'],['supporting','supporting'],['narration','narration'],
+         ['short','under 50 lines']],
+  /* a comic with a score can still take another one, the same way a character
+     already voiced can still be voiced again. "no score yet" is a filter, not
+     the whole list. */
+  score:[['none','no score yet'],['more','wants another'],['short','under 150 pp']]
+};
+
+function paintNeedBar(){
+  const t = rState.tab;
+  document.getElementById('r-q').placeholder = t === 'voice'
+    ? 'search characters, comics, authors, description'
+    : 'search comics, authors, tags';
+  document.getElementById('r-sort').innerHTML = NEED_SORTS[t].map(([v, label]) =>
+    `<option value="${v}" ${v === rState.sort[t] ? 'selected' : ''}>${label}</option>`).join('');
+  document.getElementById('r-filters').innerHTML = NEED_FILTERS[t].map(([f, label]) =>
+    `<button class="chip" data-f="${f}" aria-pressed="${rState.filters[t].has(f)}">${label}</button>`
+  ).join('');
+  document.querySelectorAll('#need-tabs .chip').forEach(b =>
+    b.setAttribute('aria-pressed', b.dataset.need === t));
 }
+
+function scoreRowEl(c){
+  const b = document.createElement('button');
+  b.className = 'rolerow';
+  b.type = 'button';
+  const n = c.scores.length;
+  b.innerHTML =
+    `<span class="portrait"><img src="${esc(c.cover)}" alt="" loading="lazy"
+       style="object-position:50% 22%"></span>
+     <div class="who">
+       <div class="rolename">${mq(c.title)}</div>
+       <div class="rolein">${mq(c.by)}</div>
+     </div>
+     <div class="where">
+       <div class="ttl">${mq(`${c.pp} pp · ch${c.ch} of ${c.chOf}`)}</div>
+       <div>${mq(c.tags.slice(0, 4).join(' · '))}</div>
+     </div>
+     <p class="blurb">${esc(c.desc)}</p>
+     <div class="lines"><b class="n">${n ? n + (n === 1 ? ' score' : ' scores') : 'no score'}</b>
+       ${nfmt(c.kudos)} kudos</div>
+     <div class="go"><span class="btn sm">${n ? 'add another' : 'score this'}</span></div>`;
+  b.addEventListener('click', () => openDetails(c));
+  return b;
+}
+
+function renderRoles(){
+  paintNeedBar();
+  const t = rState.tab, q = rState.q, f = rState.filters[t];
+  let list, total, count, empty;
+
+  if(t === 'voice'){
+    list = ROLES.filter(r => {
+      const c = byId(r.comic);
+      const hay = (r.name + ' ' + c.title + ' ' + c.by + ' ' + r.blurb).toLowerCase();
+      if(q && !hay.includes(q)) return false;
+      const kinds = [...f].filter(x => x !== 'short');
+      if(kinds.length && !kinds.includes(r.kind)) return false;
+      if(f.has('short') && r.lines >= 50) return false;
+      return true;
+    });
+    const sorts = {
+      'lines-desc':(a,b) => b.lines - a.lines,
+      'lines-asc':(a,b) => a.lines - b.lines,
+      'name':(a,b) => a.name.localeCompare(b.name),
+      'comic':(a,b) => byId(a.comic).title.localeCompare(byId(b.comic).title),
+      'author':(a,b) => byId(a.comic).by.localeCompare(byId(b.comic).by)
+    };
+    list.sort(sorts[rState.sort.voice]);
+    total = ROLES.length;
+    count = `${list.length} of ${total} characters with no voice`;
+    empty = 'nothing needs a voice that matches that.';
+    fill(document.getElementById('rolelist'), list.map(r => roleRowEl(r)));
+  }else{
+    list = COMICS.filter(c => {
+      const hay = (c.title + ' ' + c.by + ' ' + c.tags.join(' ')).toLowerCase();
+      if(q && !hay.includes(q)) return false;
+      if(f.has('none') && c.scores.length) return false;
+      if(f.has('more') && !c.scores.length) return false;
+      if(f.has('short') && c.pp >= 150) return false;
+      return true;
+    });
+    const sorts = {
+      need:(a,b) => (a.scores.length - b.scores.length) || (b.kudos - a.kudos),
+      kudos:(a,b) => b.kudos - a.kudos,
+      new:(a,b) => b.added.localeCompare(a.added),
+      long:(a,b) => b.pp - a.pp,
+      title:(a,b) => a.title.localeCompare(b.title)
+    };
+    list.sort(sorts[rState.sort.score]);
+    const bare = COMICS.filter(c => !c.scores.length).length;
+    count = `${list.length} of ${COMICS.length} comics · ${bare} with no score at all`;
+    empty = 'no comic matches that.';
+    fill(document.getElementById('rolelist'), list.map(scoreRowEl));
+  }
+
+  document.getElementById('rolelist-n').textContent = count;
+  const e = document.getElementById('roles-empty');
+  e.textContent = empty;
+  e.hidden = list.length > 0;
+}
+
+document.getElementById('need-tabs').addEventListener('click', e => {
+  const t = e.target.closest('[data-need]');
+  if(!t || t.dataset.need === rState.tab) return;
+  rState.tab = t.dataset.need;
+  rState.q = '';
+  document.getElementById('r-q').value = '';
+  renderRoles();
+});
 document.getElementById('r-q').addEventListener('input', e => {
   rState.q = e.target.value.trim().toLowerCase(); renderRoles();
 });
 document.getElementById('r-sort').addEventListener('change', e => {
-  rState.sort = e.target.value; renderRoles();
+  rState.sort[rState.tab] = e.target.value; renderRoles();
 });
 document.getElementById('r-filters').addEventListener('click', e => {
-  const chip = e.target.closest('.chip'); if(!chip) return;
-  const f = chip.dataset.f, on = chip.getAttribute('aria-pressed') === 'true';
-  chip.setAttribute('aria-pressed', on ? 'false' : 'true');
-  on ? rState.filters.delete(f) : rState.filters.add(f);
+  const chip = e.target.closest('.chip');
+  if(!chip) return;
+  const f = chip.dataset.f, set = rState.filters[rState.tab];
+  set.has(f) ? set.delete(f) : set.add(f);
   renderRoles();
 });
 

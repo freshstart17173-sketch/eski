@@ -42,7 +42,7 @@ else, so they are three pages fit for their own purpose.
 
 | | Author studio | Composer studio | Voiceover studio |
 |---|---|---|---|
-| File | `studio-author.html` | `studio-score.html` | `studio-voice.html` |
+| File | `studios/author.html` | `studios/score.html` | `studios/voice.html` |
 | Who | the person who drew it | a composer or sound designer | a voice actor |
 | Makes | pages, cast, transcript | layers of sound over page ranges | one character's lines |
 | Shape | page beside its script | page ruler with stacked lanes | page beside its lines |
@@ -286,10 +286,13 @@ than play the first layer and call it the score.
 
 ## 5. Surfaces
 
-Broadsheet is the house style: near-white ground, near-black rules, hairlines
-inside a block, micro caps for labels, gnomon on titles only, art at comic
-proportions, sage as the single accent. Shared chrome lives in
-`docs/design/final/broadsheet.css`; per-surface CSS stays with its surface.
+Two styles, one for each half of the product. **Broadsheet** dresses everything
+you read — near-white ground, near-black rules, hairlines, micro caps, gnomon on
+titles only, art at comic proportions, sage as the single accent
+(`docs/design/final/broadsheet.css`). **Workbench** dresses the three studios:
+the same palette and square corners, but hierarchy from surfaces rather than
+hairlines, and colour that means something — four kinds of sound, four hues, one
+legend (`docs/design/final/studios/studio.css`, geometry in `base.css`).
 
 | surface | file | what it is |
 |---|---|---|

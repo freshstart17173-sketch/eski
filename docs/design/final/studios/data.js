@@ -1,5 +1,5 @@
 /* ============================================================
-   one chapter, shared by all three studios and all three skins.
+   one chapter, shared by all three studios.
    what the author writes here is what the composer and the
    performer see: characters, dialogue, and — new — sound effects.
    ============================================================ */
@@ -116,7 +116,6 @@ const BAY = [
 const openCues = () => SCRIPT.filter(l => l.kind === 'sfx' &&
   !LAYERS.some(L => L.clips.some(c => c.cue === l.id)));
 
-const STYLE = document.documentElement.dataset.style || '1';
 const esc = s => String(s).replace(/[&<>"]/g, m =>
   ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
 const clock1 = s => `${Math.floor(s/60)}:${(s%60).toFixed(1).padStart(4,'0')}`;

@@ -1,22 +1,15 @@
 /* ============================================================
-   the parts every studio shares: the bar, the page pane, the
-   filmstrip, the bay, the legend, the drop layer, the style picker.
-   what differs between skins is declared once, here, by STYLE.
-   ============================================================ */
+   the parts every studio shares: the bar, the page in the middle,
+   the timeline along the foot, the bay, the legend, the drop layer.
 
-/* skin 1 keeps the ruler numeric and the frame static. skins 2 and 3 add
-   thumbnails, a playhead and a filmstrip; skin 3 adds the transport foot. */
-const HAS = {
-  thumbs: STYLE !== '1',
-  playhead: STYLE !== '1',
-  strip: STYLE !== '1',
-  foot: STYLE === '3',
-  labels: STYLE !== '3'      /* icon + word, except in the console */
-};
+   the frame is the same in all three tools —
+     bay (when there are files) · page · panel
+   with a row of pages under it. only the panel differs by studio.
+   ============================================================ */
 
 const btn = (label, ico, cls = '', attrs = '') =>
   `<button class="btn ${cls}" ${attrs}>${ico ? icon(ico) : ''}${
-    label && (HAS.labels || cls.includes('keep')) ? `<span>${label}</span>` : ''}</button>`;
+    label ? `<span>${label}</span>` : ''}</button>`;
 
 function topBar(opts){
   return `<header class="bar">
@@ -36,21 +29,32 @@ function legend(kinds){
     `<span style="--c:${roleColor(k)}"><span class="sw"></span>${ROLE[k].label}</span>`).join('')}</div>`;
 }
 
-function stageHtml(page){
-  return `<div class="stage">
-    <div class="plate"><img src="${esc(COMIC.pages[page - 1].src)}" alt="page ${page}"></div>
+/* the page, centred, at the size you would actually look at it */
+function pageHtml(page, bar){
+  return `<div class="pane centre">
+    <div class="stage">
+      <div class="plate"><img src="${esc(COMIC.pages[page - 1].src)}" alt="page ${page}"></div>
+    </div>
+    <div class="pagebar">
+      ${btn('', 'left', 'q sq', 'id="prev"' + (page === 1 ? ' disabled' : ''))}
+      <span class="n">page ${page} of ${COMIC.pages.length}</span>
+      <span class="sp"></span>
+      ${bar || ''}
+      ${btn('', 'right', 'q sq', 'id="next"' +
+        (page === COMIC.pages.length ? ' disabled' : ''))}
+    </div>
   </div>`;
 }
 
-/* the filmstrip. dots under a page say what is on it without opening it:
-   one per line of dialogue, one per sound effect, in their role colours. */
-function stripHtml(current, dotsFor){
-  if(!HAS.strip) return '';
-  return `<div class="strip" id="strip">${COMIC.pages.map(p => `
-    <button class="pg" data-page="${p.n}" aria-current="${p.n === current}">
+/* the timeline. a row of pages, nothing under it, and the page you are on
+   takes a border. the dots under a thumbnail say what is on that page
+   without opening it — one per line, one per effect, in their role colour. */
+function timelineHtml(current, dotsFor){
+  return `<div class="timeline" id="timeline">${COMIC.pages.map(p => `
+    <button class="tl-pg" data-page="${p.n}" aria-current="${p.n === current}">
       <span class="plate"><img src="${esc(p.src)}" alt=""></span>
       <span class="cap"><span class="n">${p.n}</span>
-        <span class="dots">${(dotsFor ? dotsFor(p.n) : []).map(c =>
+        <span class="dots">${(dotsFor ? dotsFor(p.n) : []).slice(0, 6).map(c =>
           `<span class="d" style="background:${c}"></span>`).join('')}</span></span>
     </button>`).join('')}</div>`;
 }
@@ -71,16 +75,6 @@ function dropLayerHtml(what){
   </div></div>`;
 }
 
-/* mockup furniture: jump between the three skins of the studio you are in */
-function compareStrip(studio){
-  const name = {author:'author', score:'composer', voice:'voiceover'}[studio];
-  return `<div class="compare">
-    <a href="index.html">all nine</a>
-    ${['1','2','3'].map(s => `<a href="${studio}-${s}.html"
-      ${s === STYLE ? 'aria-current="page"' : ''}>${name} ${s}</a>`).join('')}
-  </div>`;
-}
-
 /* files dropped anywhere on the window land in one place */
 function wireDrop(onFiles){
   let depth = 0;
@@ -98,6 +92,12 @@ function wireDrop(onFiles){
     e.preventDefault(); depth = 0; layer().classList.remove('on');
     onFiles(e.dataTransfer.files);
   });
+}
+
+/* keep the page you are on in view in the timeline */
+function scrollTimeline(){
+  const el = document.querySelector('.tl-pg[aria-current="true"]');
+  if(el) el.scrollIntoView({inline:'center', block:'nearest', behavior:'smooth'});
 }
 
 /* one waveform generator, used by every take and every trim editor */

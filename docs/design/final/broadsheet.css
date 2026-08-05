@@ -257,6 +257,21 @@ img{display:block;max-width:100%}
 .seemore.in{border-bottom:1px solid var(--rule-hair);padding:3px;font-size:10px;
   letter-spacing:.12em}
 
+/* ---------- the slide list ----------
+   a row of links that nudges right under the cursor. cheap, quiet, and it
+   turns a plain list into something that feels like a control surface —
+   worth keeping for any index, credit list or filmography we build later. */
+.slide-list{list-style:none;margin:0;padding:0}
+.slide-list li{border-bottom:1px solid var(--rule-hair)}
+.slide-list a{display:flex;align-items:baseline;gap:var(--s3);padding:var(--s2) 0;
+  text-decoration:none;color:var(--ink);
+  transition:padding-left var(--t-fast) var(--ease),color var(--t-fast) var(--ease)}
+.slide-list a:hover{padding-left:var(--s2)}
+.slide-list a b{font-weight:500;white-space:nowrap}
+.slide-list a span{color:var(--soft-ink);font-size:var(--fs-xs);min-width:0}
+.slide-list a .go{margin-left:auto;color:var(--label);font-size:var(--fs-micro)}
+.slide-list a:hover .go{color:var(--ink)}
+
 /* ---------- empty states and notes ---------- */
 .empty{padding:var(--s7) var(--s4);text-align:center;color:var(--label);
   font-size:var(--fs-xs);letter-spacing:.08em}

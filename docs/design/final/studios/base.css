@@ -1,11 +1,17 @@
 /* ============================================================
    eski studios — structure.
 
-   this file is layout and geometry only: the shape every studio has
-   in every skin. colour, weight, density and decoration live in
-   s1.css / s2.css / s3.css, which are swapped to compare them.
+   one shape for all three tools, and it is the shape the working
+   studio already had: the page in the middle at the size you would
+   actually look at it, a bay on the left when there are files to
+   place, the panel on the right where the work happens, and a row of
+   pages along the bottom to move between them.
 
-   loaded after tokens.css, before a skin.
+   the timeline is a row of pages and nothing else. no tracks, no
+   lanes, no clips laid over it — the selected page takes a border,
+   and what is on a page is read in the panel, not under the strip.
+
+   colour, weight and density live in studio.css.
    ============================================================ */
 
 *{box-sizing:border-box}
@@ -32,63 +38,64 @@ img{display:block;max-width:100%}
 .subbar .track{flex:1;height:3px;position:relative;min-width:60px}
 .subbar .track i{position:absolute;inset:0 auto 0 0;transition:width var(--t-mid) var(--ease)}
 
-.footbar{display:flex;align-items:center;gap:var(--s3);padding:0 var(--s3);
-  height:var(--foot-h,0);overflow:hidden}
-
-/* ---------- panes ---------- */
-.body-split{display:grid;grid-template-columns:minmax(300px,var(--left,42%)) minmax(0,1fr);
+/* bay · page · panel. the bay column collapses when a studio has no files. */
+.frame{display:grid;grid-template-columns:var(--bay-w,236px) minmax(0,1fr) var(--panel-w,330px);
   min-height:0}
-.body-board{display:grid;grid-template-columns:var(--bay-w,240px) minmax(0,1fr) var(--insp-w,250px);
-  min-height:0}
+.frame.nobay{grid-template-columns:minmax(0,1fr) var(--panel-w,330px)}
 .pane{display:flex;flex-direction:column;min-height:0;min-width:0}
-.pane > .scroll{overflow:auto;min-height:0}
 .panehead{display:flex;align-items:center;gap:var(--s2);padding:var(--s2) var(--s3);
-  font-size:var(--fs-micro);letter-spacing:.1em;text-transform:uppercase;flex:none}
+  font-size:var(--fs-micro);letter-spacing:.1em;text-transform:uppercase;flex:none;
+  white-space:nowrap}
+.panehead .sp{flex:1}
+/* the trailing hint gives way rather than wrapping the header onto two lines */
+.panehead > span:last-child{min-width:0;overflow:hidden;text-overflow:ellipsis}
 
-/* the page. the plate gets a definite height so object-fit can letterbox:
-   a percentage height on the image alone has nothing to resolve against and
-   tall pages spill out of the frame. */
+/* the page, centred, as big as the pane allows. the plate takes a definite
+   height so object-fit can letterbox — a percentage height on the image alone
+   has nothing to resolve against and tall pages spill out of the frame. */
 .stage{display:grid;grid-template-rows:minmax(0,1fr);place-items:center;
-  padding:var(--s3);min-height:0;overflow:hidden}
+  padding:var(--s4);min-height:0;overflow:hidden}
 .stage .plate{height:100%;display:grid;place-items:center;overflow:hidden}
 .stage img{height:100%;width:auto;max-width:100%;object-fit:contain}
 .pagebar{display:flex;align-items:center;gap:var(--s2);padding:var(--s2) var(--s3);
   font-size:var(--fs-micro);letter-spacing:.08em;text-transform:uppercase;flex:none}
 .pagebar .n{letter-spacing:0}
 
-/* the filmstrip: pages as pictures, because nobody navigates a comic by number */
-.strip{display:flex;gap:var(--s2);overflow-x:auto;padding:var(--s2);align-items:flex-start;
-  flex:none;scrollbar-width:thin}
-.strip .pg{flex:none;width:var(--thumb-w,46px);padding:0;border:0;background:none;
-  color:inherit;font:inherit;cursor:pointer}
-.strip .pg .plate{aspect-ratio:2/3;overflow:hidden}
-.strip .pg img{width:100%;height:100%;object-fit:cover}
-.strip .pg .cap{display:flex;align-items:center;justify-content:center;gap:3px;
-  font-size:9px;padding-top:2px}
-.strip .pg .cap .dots{display:flex;gap:2px}
-.strip .pg .cap .d{width:4px;height:4px;border-radius:50%}
+/* ---------- the timeline: a row of pages ---------- */
+.timeline{display:flex;gap:var(--s2);align-items:flex-start;overflow-x:auto;
+  padding:var(--s2) var(--s3);height:var(--tl-h,88px);flex:none;scrollbar-width:thin}
+.tl-pg{flex:none;width:var(--tl-w,44px);padding:0;border:0;background:none;color:inherit;
+  font:inherit;cursor:pointer;display:flex;flex-direction:column;gap:3px}
+.tl-pg .plate{aspect-ratio:2/3;overflow:hidden}
+.tl-pg img{width:100%;height:100%;object-fit:cover}
+.tl-pg .cap{display:flex;align-items:center;justify-content:center;gap:3px;font-size:9px;
+  font-variant-numeric:tabular-nums}
+.tl-pg .dots{display:flex;gap:2px}
+.tl-pg .d{width:4px;height:4px;border-radius:50%}
 
 /* ---------- controls ---------- */
-.btn{display:inline-flex;align-items:center;gap:6px;height:var(--ctl-h,26px);padding:0 var(--s2);
+.btn{display:inline-flex;align-items:center;gap:6px;height:var(--ctl-h,28px);padding:0 var(--s2);
   font:inherit;font-size:var(--fs-xs);white-space:nowrap;cursor:pointer;
   transition:background var(--t-fast) var(--ease),color var(--t-fast) var(--ease),
   border-color var(--t-fast) var(--ease)}
 .btn:active{transform:translateY(1px)}
 .btn:disabled{opacity:.4;pointer-events:none}
-.btn.sq{padding:0;width:var(--ctl-h,26px);justify-content:center}
+.btn.sq{padding:0;width:var(--ctl-h,28px);justify-content:center}
 .seg{display:flex}
-.seg button{display:inline-flex;align-items:center;gap:5px;height:var(--ctl-h,26px);
+.seg button{display:inline-flex;align-items:center;gap:5px;height:var(--ctl-h,28px);
   padding:0 var(--s2);font:inherit;font-size:var(--fs-xs);cursor:pointer}
 .field{display:flex;flex-direction:column;gap:2px;min-width:0}
 .field .k{font-size:9px;letter-spacing:.12em;text-transform:uppercase}
-.field input,.field select{height:22px;font:inherit;font-size:var(--fs-xs);padding:0 4px;
+.field input,.field select{height:24px;font:inherit;font-size:var(--fs-xs);padding:0 4px;
   min-width:0}
 .field input[type=range]{padding:0}
+.row{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:var(--s2)}
 
 /* ---------- the bay ---------- */
 .bay{display:flex;flex-direction:column;min-height:0}
 .baylist{overflow:auto;min-height:0;flex:1}
-.cliprow{display:grid;grid-template-columns:22px 1fr auto;gap:var(--s2);align-items:center;
+.cliprow{display:grid;grid-template-columns:24px 1fr auto;gap:var(--s2);align-items:center;
   padding:var(--s2) var(--s3);cursor:grab;user-select:none}
 .cliprow:active{cursor:grabbing}
 .cliprow .nm{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
@@ -98,45 +105,36 @@ img{display:block;max-width:100%}
   font-size:var(--fs-xs);line-height:1.6}
 .bayempty b{display:block;margin-bottom:4px}
 
-/* the cue list: sound the author asked for that has no file yet */
-.cue{display:grid;grid-template-columns:18px 1fr auto;gap:var(--s2);align-items:center;
-  padding:5px var(--s3);font-size:var(--fs-xs)}
+/* ---------- the panel: rows of things that are on this page ---------- */
+.panel{overflow:auto;min-height:0;flex:1}
+.section{padding:var(--s3)}
+.sectionhead{display:flex;align-items:center;gap:var(--s2);padding:var(--s2) var(--s3);
+  font-size:var(--fs-micro);letter-spacing:.12em;text-transform:uppercase;flex:none}
+.sectionhead .sp{flex:1}
+
+/* one piece of sound, on this page */
+.item{display:grid;grid-template-columns:24px 1fr auto;gap:var(--s2);align-items:center;
+  padding:var(--s2) var(--s3)}
+.item .nm{min-width:0;font-size:var(--fs-xs)}
+.item .nm b{font-weight:500}
+.item .sub{display:block;font-size:9px;letter-spacing:.06em;text-transform:uppercase;
+  margin-top:1px}
+.item .tools{display:flex;gap:4px;align-items:center}
+.item.open{padding-bottom:var(--s3)}
+.itembody{grid-column:1/-1;display:grid;gap:var(--s2);padding-top:var(--s2)}
+.spanbar{display:flex;align-items:center;gap:6px;font-size:9px;
+  font-variant-numeric:tabular-nums;letter-spacing:.06em;text-transform:uppercase}
+.spanbar .len{flex:1;height:4px;position:relative}
+.spanbar .len i{position:absolute;top:0;bottom:0}
+
+/* the author's cue: a page and a description waiting for a file */
+.cue{display:grid;grid-template-columns:auto 1fr auto;gap:var(--s2);align-items:center;
+  padding:var(--s2) var(--s3);font-size:var(--fs-xs)}
 .cue .letter{font-family:var(--font-display);font-size:12px}
 
-/* ---------- the board ---------- */
-.board{display:grid;grid-template-columns:var(--head-w,168px) minmax(0,1fr);min-height:0}
-.heads{overflow:hidden;display:flex;flex-direction:column}
-.hscroll{overflow:auto;min-width:0;position:relative}
-.rulerspacer{flex:none}
-.ruler{display:grid;position:relative}
-.rulercell{padding:0;border:0;background:none;font:inherit;font-size:9px;cursor:pointer;
-  display:flex;flex-direction:column;align-items:center;gap:2px;padding-bottom:2px;
-  font-variant-numeric:tabular-nums}
-.rulercell .plate{width:100%;aspect-ratio:2/3;overflow:hidden}
-.rulercell img{width:100%;height:100%;object-fit:cover}
-.lane{display:grid;height:var(--lane-h,28px);position:relative}
-.lanehead{display:flex;align-items:center;gap:6px;padding:0 var(--s2);height:var(--lane-h,28px);
-  min-width:0}
-.lanehead .nm{font-size:var(--fs-xs);min-width:0;overflow:hidden;text-overflow:ellipsis;
-  white-space:nowrap}
-.lanehead .sw{width:8px;height:8px;flex:none}
-.lanehead .mini{width:18px;height:18px;display:grid;place-items:center;border:0;
-  background:none;color:inherit;cursor:pointer;padding:0}
-.cell{min-height:100%}
-.clip{position:relative;display:flex;align-items:center;gap:5px;padding:0 5px;min-width:0;
-  font-size:var(--fs-xs);cursor:grab;user-select:none;grid-row:1;
-  margin:var(--clip-m,2px) 1px;height:calc(var(--lane-h,28px) - var(--clip-m,2px) * 2)}
-.clip .nm{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.clip .rng{margin-left:auto;font-size:9px;font-variant-numeric:tabular-nums;white-space:nowrap}
-.grip{position:absolute;top:0;bottom:0;width:8px;cursor:ew-resize;z-index:2}
-.grip.l{left:-1px}.grip.r{right:-1px}
-/* the playhead: one line across every lane, at the page you are looking at */
-.playhead{position:absolute;top:0;bottom:0;width:1px;pointer-events:none;z-index:5}
-.playhead::before{content:"";position:absolute;top:0;left:-4px;width:9px;height:5px}
-
 /* ---------- lines (author + voiceover) ---------- */
-.lines{overflow:auto;min-height:0}
-.line{display:grid;grid-template-columns:22px 1fr auto;gap:var(--s2);align-items:baseline;
+.lines{overflow:auto;min-height:0;flex:1}
+.line{display:grid;grid-template-columns:20px 1fr auto;gap:var(--s2);align-items:baseline;
   padding:var(--s2) var(--s3);position:relative}
 .line .num{font-size:9px;font-variant-numeric:tabular-nums;padding-top:3px}
 .line .body{min-width:0}
@@ -146,73 +144,66 @@ img{display:block;max-width:100%}
 .line .who .sw{width:7px;height:7px;flex:none}
 .line .dir{font-size:var(--fs-xs);font-style:italic;min-width:5ch}
 .line .dir:empty::before{content:attr(data-ph);opacity:.55}
-/* selects inside a line are part of the sentence, not a form control */
-.line select{font:inherit;font-size:var(--fs-micro);letter-spacing:.08em;
-  text-transform:uppercase;color:inherit;background:none;border:0;padding:0 14px 0 0;
-  appearance:none;cursor:pointer;
+.line select{font:inherit;font-size:var(--fs-micro);letter-spacing:.08em;text-transform:uppercase;
+  color:inherit;background:none;border:0;padding:0 14px 0 0;appearance:none;cursor:pointer;
   background-image:linear-gradient(45deg,transparent 50%,currentColor 50%),
                    linear-gradient(135deg,currentColor 50%,transparent 50%);
   background-position:right 5px center,right 1px center;
   background-size:4px 4px,4px 4px;background-repeat:no-repeat}
 .line select:focus{outline:0}
-.line .say{display:block;font-size:var(--fs);line-height:1.5;max-width:56ch}
+.line .say{display:block;font-size:var(--fs-sm);line-height:1.5}
+.line .say:empty::before{content:"type the line";opacity:.5}
 .line .side{display:flex;align-items:center;gap:6px;white-space:nowrap}
 .line.sfx .say{font-family:var(--font-display);letter-spacing:.02em}
 .line.sfx .note{font-size:var(--fs-xs);font-style:italic}
+.line .state{font-size:9px;letter-spacing:.08em;text-transform:uppercase}
 
 /* takes */
-.takes{padding:var(--s2) var(--s3) var(--s2) calc(var(--s3) + 22px + var(--s2))}
-.take{display:grid;grid-template-columns:14px 1fr auto auto;gap:var(--s2);align-items:center;
+.takes{padding:var(--s2) var(--s3) var(--s2) calc(var(--s3) + 20px + var(--s2))}
+.take{display:grid;grid-template-columns:14px 1fr auto;gap:var(--s2);align-items:center;
   padding:3px 0}
 .take .dot{width:11px;height:11px;border-radius:50%;position:relative}
-.take .lbl{font-size:var(--fs-xs)}
+.take .lbl{font-size:var(--fs-xs);min-width:0;overflow:hidden;text-overflow:ellipsis;
+  white-space:nowrap}
 .take .meta{font-size:9px;font-variant-numeric:tabular-nums}
-.take .tools{display:flex;gap:4px;align-items:center}
-.trim{grid-column:1/-1;padding:var(--s2) 0;max-width:520px}
-.wave{position:relative;height:34px;display:flex;align-items:center;gap:1px;padding:0 1px;
+.take .tools{display:flex;gap:4px;align-items:center;grid-column:1/-1;padding-left:22px}
+.trim{grid-column:1/-1;padding:var(--s2) 0}
+.wave{position:relative;height:30px;display:flex;align-items:center;gap:1px;padding:0 1px;
   margin:0 5px;touch-action:none;user-select:none}
 .wave .bar{flex:1;min-width:1px}
 .wave .mask{position:absolute;top:0;bottom:0;pointer-events:none}
 .wave .mask.l{left:0}.wave .mask.r{right:0}
 .wave .handle{position:absolute;top:-3px;bottom:-3px;width:11px;margin-left:-5px;padding:0;
   border:0;background:none;cursor:ew-resize;z-index:3}
-.trimfoot{display:flex;align-items:center;gap:var(--s3);padding-top:var(--s2);
-  font-size:9px;font-variant-numeric:tabular-nums}
+.trimfoot{display:flex;align-items:center;gap:var(--s2);padding-top:var(--s2);
+  font-size:9px;font-variant-numeric:tabular-nums;flex-wrap:wrap}
 
-/* transport / preview buttons */
-.prev{width:var(--prev-h,22px);height:var(--prev-h,22px);display:grid;place-items:center;
+/* transport */
+.prev{width:var(--prev-h,24px);height:var(--prev-h,24px);display:grid;place-items:center;
   position:relative;overflow:hidden;cursor:pointer;padding:0;font:inherit}
 .prev i{position:absolute;left:0;bottom:0;height:2px;width:0}
 .prev.playing i{width:100%;transition:width var(--prev-t,8s) linear}
 .rec{display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 var(--s2);
-  font-size:10px;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;font:inherit;
-  font-size:10px}
+  font-size:10px;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;font:inherit}
 .rec .bead{width:7px;height:7px;border-radius:50%}
 .rec.on .bead{animation:pulse 1s steps(2,end) infinite}
 @keyframes pulse{50%{opacity:.15}}
-
-/* ---------- inspector ---------- */
-.insp{display:flex;flex-direction:column;min-height:0}
-.inspbody{overflow:auto;min-height:0;padding:var(--s3);display:grid;gap:var(--s3);
-  align-content:start}
-.insp .none{font-size:var(--fs-xs);line-height:1.6}
-.grid2{display:grid;grid-template-columns:1fr 1fr;gap:var(--s2)}
 
 /* ---------- cast editor ---------- */
 .char{padding:var(--s3)}
 .charhead{display:flex;align-items:center;gap:var(--s2)}
 .charhead .nm{font-family:var(--font-display);font-size:16px;min-width:6ch}
 .charhead .sw{width:10px;height:10px;flex:none}
-.frow{display:grid;grid-template-columns:96px 1fr;gap:var(--s2);padding:var(--s2) 0}
+.frow{display:grid;grid-template-columns:80px 1fr;gap:var(--s2);padding:var(--s2) 0}
 .frow .k{font-size:9px;letter-spacing:.12em;text-transform:uppercase}
 .frow .v{font-size:var(--fs-xs);line-height:1.5}
 .frow .v:empty::before{content:attr(data-ph);opacity:.5}
-.mirror{display:grid;grid-template-columns:40px 1fr auto;gap:var(--s2);align-items:center;
+.mirror{display:grid;grid-template-columns:36px 1fr;gap:var(--s2);align-items:center;
   padding:var(--s2);margin-top:var(--s2)}
-.mirror .plate{width:40px;height:40px;overflow:hidden}
+.mirror .plate{width:36px;height:36px;overflow:hidden}
 .mirror img{width:100%;height:100%;object-fit:cover}
-.mirror .nm{font-family:var(--font-display);font-size:14px}
-.mirror .bl{font-size:var(--fs-xs);line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;
+.mirror .nm{font-family:var(--font-display);font-size:13px}
+.mirror .bl{font-size:9px;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;
   -webkit-box-orient:vertical;overflow:hidden}
 .mirrorlabel{font-size:9px;letter-spacing:.14em;text-transform:uppercase;margin-top:var(--s3)}
 
@@ -239,24 +230,21 @@ img{display:block;max-width:100%}
 .droplayer span{display:block;text-align:center;font-size:var(--fs-micro);letter-spacing:.12em;
   text-transform:uppercase;margin-top:6px}
 
-.toast{position:fixed;left:50%;bottom:var(--s5);transform:translateX(-50%);z-index:90;
-  padding:var(--s2) var(--s4);font-size:var(--fs-xs);opacity:0;pointer-events:none;
+.toast{position:fixed;left:50%;bottom:calc(var(--tl-h,88px) + var(--s3));
+  transform:translateX(-50%);z-index:90;padding:var(--s2) var(--s4);font-size:var(--fs-xs);
+  opacity:0;pointer-events:none;
   transition:opacity var(--t-fast) var(--ease),transform var(--t-fast) var(--ease)}
 .toast.on{opacity:1;transform:translateX(-50%) translateY(-4px)}
 
-/* the legend: four kinds of sound, named once, in every studio */
+/* four kinds of sound, named once */
 .legend{display:flex;align-items:center;gap:var(--s3);font-size:9px;letter-spacing:.1em;
   text-transform:uppercase}
 .legend span{display:inline-flex;align-items:center;gap:4px}
 .legend .sw{width:8px;height:8px}
 
-/* a style-picker strip, mockup furniture only */
-.compare{position:fixed;right:8px;bottom:calc(var(--foot-h,0px) + 8px);z-index:95;display:flex;gap:4px;
-  font-size:10px;letter-spacing:.1em;text-transform:uppercase}
-.compare a{padding:4px 8px;text-decoration:none}
-
-@media(max-width:1080px){
+@media(max-width:1100px){
   body{overflow:auto}
   .app{height:auto}
-  .body-split,.body-board{grid-template-columns:1fr}
+  .frame,.frame.nobay{grid-template-columns:1fr}
+  .stage{height:60vh}
 }

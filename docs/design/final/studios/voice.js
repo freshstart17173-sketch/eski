@@ -6,10 +6,10 @@
    grey for cueing, takes are trimmed rather than cut, and audio
    arrives either from the browser or from the bay.
 
-   what the skins change is how much colour does the work — the
-   character's own colour marks their lines, and sound effects the
-   author wrote show in the effects colour so a performer knows what
-   is about to happen over them.
+   colour does more of the work here than it used to: the character's
+   own colour marks their lines, and sound effects the author wrote
+   show in the effects colour so a performer knows what is about to
+   happen over them.
    ============================================================ */
 let ME = null;
 let page = 1;
@@ -49,39 +49,24 @@ function render(){
       ${legend(['voice','sfx'])}
     </div>
 
-    <div class="body-split">
-      <div class="pane">
-        ${stageHtml(page)}
-        <div class="pagebar">
-          ${btn('','left','q sq','id="prev"' + (page === 1 ? ' disabled' : ''))}
-          <span class="n">page ${page} of ${COMIC.pages.length}</span>
-          <span class="sp"></span>
-          <span>${mineOn(page).filter(l => !st(l.id).takes.length).length} to record here</span>
-          ${btn('','right','q sq','id="next"' +
-            (page === COMIC.pages.length ? ' disabled' : ''))}
-        </div>
-        ${stripHtml(page, dots)}
-        <div class="bay" style="flex:1;min-height:120px">
-          <div class="panehead">${icon('music')}<b>audio bay</b><span class="sp"></span>
-            <span>${BAY_V.length ? BAY_V.length + ' files' : 'drop or record'}</span></div>
-          <div class="baylist" id="baylist"></div>
-        </div>
+    <div class="frame">
+      <div class="pane bay">
+        <div class="panehead">${icon('music')}<b>audio bay</b><span class="sp"></span>
+          <span>${BAY_V.length ? BAY_V.length + ' files' : 'drop or record'}</span></div>
+        <div class="baylist" id="baylist"></div>
       </div>
 
+      ${pageHtml(page, `<span>${mineOn(page).filter(l => !st(l.id).takes.length).length} to record here</span>`)}
+
       <div class="pane">
-        <div class="panehead"><b>page ${page}</b>
-          <span>${dialogueOn(page).length} lines · ${sfxOn(page).length} effects</span>
-          <span class="sp"></span>
-          <span>space record · ↑↓ move · enter play</span></div>
-        <div class="lines" id="lines">${linesHtml()}</div>
+        <div class="panehead">${icon('mic')}<b>page ${page}</b><span class="sp"></span>
+          <span>space · ↑↓ · enter</span></div>
+        <div class="panel lines" id="lines">${linesHtml()}</div>
       </div>
     </div>
-    ${HAS.foot ? `<div class="footbar">
-      <span>${ME ? esc(castById(ME).name) : '—'}</span><span class="sp"></span>
-      <span>page <b>${page}</b> / ${COMIC.pages.length} · <b>${done}</b>/<b>${myLines().length}</b> lines</span>
-    </div>` : ''}
+
+    ${timelineHtml(page, dots)}
     ${dropLayerHtml('audio')}
-    ${compareStrip('voice')}
     <div class="ov${ME ? '' : ' on'}" id="pick"><div class="sheet">
       <div class="sheethead"><span>voicing</span><span class="ttl">${esc(COMIC.title)}</span>
         <span class="sp"></span><span>${esc(COMIC.by)}</span></div>
@@ -97,6 +82,7 @@ function render(){
       </div>
     </div></div>`;
   renderBay();
+  scrollTimeline();
 }
 
 function linesHtml(){
