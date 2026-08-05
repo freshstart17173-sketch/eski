@@ -7,40 +7,38 @@
 <link rel="stylesheet" href="../../tokens.css">
 <style>
 /* ============================================================
-   eski — home, browse (comics + open roles), shelf, profile.
-   broadsheet ruling, with one flat colour field per cover sampled
-   from the artwork at runtime (see analyse() in the script below).
+   eski — home, browse, open roles, shelf, studio, profile.
 
-   every card is the same shape and every metadata row sits on the
-   same baseline as the row beside it: labels are a fixed column,
-   values are right aligned, and anything too long scrolls on hover
-   instead of wrapping and pushing the rows below it out of line.
+   broadsheet: near-white ground, near-black rules edge to edge,
+   art at comic proportions with a hairline round it, the title set
+   in gnomon centred over its column, and the credits stacked under
+   the plate as a caption. the art is the only colour on the page.
+
+   every card is the same shape and every caption row sits on the
+   same baseline as the row beside it: the plate is a fixed 2:3, the
+   title and tag block are fixed height, labels are a fixed column,
+   values are right aligned. anything too long scrolls on hover
+   rather than wrapping and pushing the rows below it out of true.
    ============================================================ */
 :root{
   --paper:#FCFDFC;
   --surface:#FFFFFF;
   --rule:#141A17;
   --rule-hair:var(--line-1);
+  --label:var(--sage-600);
   --ink:var(--sage-900);
   --soft-ink:#45544D;
   --muted:#62746B;
-  --accent:var(--sage-700);
+  --accent:var(--sage-600);
   --mark:#141A17;
-
-  /* per card, set by javascript from the cover art. these are the
-     fallbacks for a tainted canvas or a cover that has not loaded. */
-  --blk:var(--sage-300);
-
-  --field-pad:clamp(10px,1.6vw,20px);
-  --gutter:26px;
-  --row:22px;            /* one metadata row. fixed, so columns align. */
+  --row:19px;            /* one caption row. fixed, so columns align. */
 }
 [data-theme="dark"]{
   --paper:var(--void); --surface:var(--surf-1);
   --rule:#C8D2CC; --rule-hair:var(--line-dark);
+  --label:var(--sage-300); --accent:var(--sage-300);
   --ink:#EAF0EC; --soft-ink:var(--sage-200); --muted:var(--muted-dark);
-  --accent:var(--sage-300); --mark:#EAF0EC;
-  --blk:var(--sage-700);
+  --mark:#EAF0EC;
 }
 html{background:var(--paper)}
 body{margin:0;background:var(--paper);color:var(--ink);
@@ -49,96 +47,94 @@ body{margin:0;background:var(--paper);color:var(--ink);
 img{display:block;max-width:100%}
 .n{font-variant-numeric:tabular-nums}
 
-/* ---------- chrome: wordmark top left, four words on the right ---------- */
+/* ---------- chrome: wordmark top left, the words on the right ---------- */
 .top{position:sticky;top:0;z-index:30;display:flex;align-items:center;gap:var(--s5);
-  padding:var(--s3) var(--s5);border-bottom:1px solid var(--rule);
-  background:var(--paper)}
+  padding:var(--s2) var(--s4);border-bottom:1px solid var(--rule);background:var(--paper)}
 .mark{font-family:var(--font-display);font-size:21px;letter-spacing:-.01em;
   color:var(--ink);text-decoration:none;line-height:1}
 .mark i{font-style:normal;color:var(--accent);transition:color var(--t-fast) var(--ease)}
 .mark:hover i{color:var(--ink)}
-.top nav{display:flex;gap:var(--s4);margin-left:auto;font-size:var(--fs-sm)}
-.top nav button{background:none;border:0;padding:2px 0;color:var(--muted);
-  border-bottom:1px solid transparent;transition:color var(--t-fast) var(--ease),
-  border-color var(--t-fast) var(--ease)}
-.top nav button:hover{color:var(--ink);border-bottom-color:var(--rule-hair)}
-.top nav button[aria-current="page"]{color:var(--ink);border-bottom-color:var(--ink)}
-.top .ico{width:var(--ctl);height:var(--ctl);border:1px solid var(--rule-hair);
-  background:none;color:var(--muted);font-size:var(--fs-xs);letter-spacing:.08em;
-  transition:background var(--t-fast) var(--ease),color var(--t-fast) var(--ease)}
-.top .ico:hover{background:var(--rule);color:var(--paper);border-color:var(--rule)}
+.top nav{display:flex;gap:var(--s4);margin-left:auto;
+  font-size:var(--fs-micro);letter-spacing:.14em;text-transform:uppercase}
+.top nav button{background:none;border:0;padding:3px 0;color:var(--ink);opacity:.55;
+  box-shadow:inset 0 -2px 0 transparent;
+  transition:opacity var(--t-fast) var(--ease),box-shadow var(--t-fast) var(--ease)}
+.top nav button:hover{opacity:1;box-shadow:inset 0 -2px 0 var(--rule-hair)}
+.top nav button[aria-current="page"]{opacity:1;box-shadow:inset 0 -2px 0 var(--accent)}
 
-.wrap{max-width:1280px;margin:0 auto;padding:var(--s5) var(--s5) var(--s8)}
+.wrap{max-width:1280px;margin:0 auto;padding:0 var(--s4) var(--s7)}
 .pane{display:none}
 .pane.on{display:block}
 
 /* ---------- section heads ---------- */
-.head{display:flex;align-items:baseline;gap:var(--s3);padding-bottom:var(--s2);
+.head{display:flex;align-items:baseline;gap:var(--s3);padding:var(--s3) 0 var(--s2);
   border-bottom:1px solid var(--rule)}
 .head h2{margin:0;font-size:var(--fs-micro);letter-spacing:.16em;text-transform:uppercase;
   font-weight:400;color:var(--ink)}
-.head .n{font-size:var(--fs-micro);letter-spacing:.1em;color:var(--muted)}
+.head .n{font-size:var(--fs-micro);letter-spacing:.1em;color:var(--label)}
 .head .sp{flex:1}
-.head a{font-size:var(--fs-xs);color:var(--muted);text-decoration:none;
-  border-bottom:1px solid transparent;transition:color var(--t-fast) var(--ease),
-  border-color var(--t-fast) var(--ease)}
-.head a:hover{color:var(--ink);border-bottom-color:var(--ink)}
-section + section{margin-top:var(--s7)}
+.head a,.head button.link{font-size:var(--fs-micro);letter-spacing:.1em;color:var(--label);
+  text-decoration:none;background:none;border:0;padding:0;
+  box-shadow:inset 0 -1px 0 transparent;text-transform:uppercase;
+  transition:color var(--t-fast) var(--ease),box-shadow var(--t-fast) var(--ease)}
+.head a:hover,.head button.link:hover{color:var(--ink);box-shadow:inset 0 -1px 0 var(--ink)}
+section + section{margin-top:var(--s6)}
 
-/* ---------- the grid. five up, then four, then two. ----------
-   gap:0 with per cell rules, so a short last row shows paper and not
-   a stray length of rule. */
-.grid{display:grid;grid-template-columns:repeat(5,1fr);
-  border-left:1px solid var(--rule)}
+/* ---------- the grid: five up, then four, three, two ---------- */
+.grid{display:grid;grid-template-columns:repeat(5,1fr);border-left:1px solid var(--rule)}
 @media(max-width:1180px){.grid{grid-template-columns:repeat(4,1fr)}}
 @media(max-width:900px){.grid{grid-template-columns:repeat(3,1fr)}}
 @media(max-width:640px){.grid{grid-template-columns:repeat(2,1fr)}}
 
-/* ---------- a card ---------- */
+/* ---------- a card: plate, title, tags, caption ---------- */
 .card{display:flex;flex-direction:column;background:var(--paper);text-align:left;
   border:0;border-right:1px solid var(--rule);border-bottom:1px solid var(--rule);
-  padding:0;color:inherit;font:inherit;min-width:0;
+  padding:var(--s3);color:inherit;font:inherit;min-width:0;
   transition:background var(--t-fast) var(--ease)}
 .card:hover{background:var(--surface)}
 .card:active{transform:translateY(1px)}
-/* the block is a fixed square, never grows, never shrinks: two cards side by
-   side must put their titles on the same line. the cover is positioned rather than laid out in flow: a square block
-   rather than laid out in flow, because a square whose height comes from
-   aspect-ratio leaves a percentage height nothing definite to resolve
-   against and tall covers spill straight out of the block. */
-.card .field{flex:none;position:relative;aspect-ratio:1/1;overflow:hidden;
-  background:var(--blk);transition:filter var(--t-fast) var(--ease)}
-.card:hover .field{filter:saturate(1.12) brightness(1.03)}
-.card .field img{position:absolute;top:0;left:0;width:100%;height:100%;
-  padding:var(--field-pad);object-fit:contain;
+/* comic proportions, not a square. the plate is the whole column width. */
+.plate{position:relative;overflow:hidden;border:1px solid var(--rule-hair);
+  aspect-ratio:2/3;background:var(--paper-1)}
+[data-theme="dark"] .plate{background:var(--surf-2)}
+.plate img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;
   transition:transform var(--t-mid) var(--ease)}
-.card:hover .field img{transform:scale(1.03)}
-.card:active .field img{transform:scale(.995)}
+.card:hover .plate img{transform:scale(1.025)}
+.card:active .plate img{transform:scale(.998)}
+.card:hover .plate{border-color:var(--rule)}
 
-.cardbody{padding:var(--s3);display:flex;flex-direction:column;flex:1;min-width:0;
-  border-top:1px solid var(--rule)}
-/* the title is one line, always. never two, never hyphenated. */
-.title{font-weight:500;font-size:var(--fs-sm);line-height:var(--row);height:var(--row)}
+.title{font-family:var(--font-display);font-weight:400;font-size:17px;line-height:24px;
+  height:24px;text-align:center;margin-top:var(--s3)}
 .card:hover .title{box-shadow:inset 0 -1px 0 var(--rule)}
-/* the note line is always in the markup, empty or not, so a card that has one
-   does not push its neighbours' metadata a row out of true. */
+/* the note line is in the markup whether or not it has anything in it, so a
+   card that carries one does not push its neighbours a row out of true. */
 .note{height:var(--row);line-height:var(--row);font-size:var(--fs-micro);
-  color:var(--muted);margin-bottom:var(--s2)}
+  color:var(--label);text-align:center;letter-spacing:.04em}
 
-/* ---------- metadata rows. fixed height, label column, tabular values ---------- */
-.meta{display:grid;gap:0;margin-top:auto}
-.meta .r{display:grid;grid-template-columns:44px 1fr;align-items:center;gap:var(--s2);
+/* ---------- tags. ao3 order: the five that matter, then the count. ---------- */
+/* exactly three rows of 16px chips with a 3px gap, which is what the top five
+   need at this column width. fitTags() hides whatever does not fit and rolls
+   it into the count. */
+.tags{display:flex;flex-wrap:wrap;gap:3px;height:54px;overflow:hidden;
+  margin:var(--s1) 0 var(--s2);align-content:flex-start}
+.tag{font-size:10px;line-height:16px;letter-spacing:.04em;padding:0 5px;
+  border:1px solid var(--rule-hair);color:var(--soft-ink);background:none;
+  white-space:nowrap;transition:all var(--t-fast) var(--ease)}
+.tag:hover{border-color:var(--ink);color:var(--ink)}
+.tag.more{border-style:dashed;color:var(--label)}
+
+/* ---------- caption rows: tight, hairline separated, right aligned ---------- */
+.cap{margin-top:auto;font-size:var(--fs-xs);color:var(--soft-ink)}
+.cap .r{display:grid;grid-template-columns:42px 1fr;align-items:center;gap:var(--s2);
   height:var(--row);border-top:1px solid var(--rule-hair);min-width:0}
-.meta .r:first-child{border-top:0}
-.meta .k{font-size:var(--fs-micro);letter-spacing:.08em;color:var(--muted);
+.cap .r:first-child{border-top:0}
+.cap .k{color:var(--label);letter-spacing:.06em;font-size:var(--fs-micro);
   text-transform:uppercase;white-space:nowrap}
-.meta .v{font-size:var(--fs-xs);color:var(--soft-ink);text-align:right;
-  font-variant-numeric:tabular-nums;min-width:0}
-.meta .v.want{color:var(--ink);font-weight:500}
-.meta .v.none{color:var(--muted);font-style:italic}
+.cap .v{text-align:right;font-variant-numeric:tabular-nums;min-width:0}
+.cap .v.want{color:var(--ink);font-weight:500}
+.cap .v.none{color:var(--muted);font-style:italic}
 
-/* ---------- the scroller. anything too long slides on hover instead of
-   wrapping. the shift and the duration are measured in fitScrollers(). ---------- */
+/* ---------- the scroller. too long slides on hover, never wraps. ---------- */
 .mq{display:block;overflow:hidden;white-space:nowrap;min-width:0}
 .mq > span{display:inline-block;transform:translateX(0);
   transition:transform var(--mq-t,0ms) linear}
@@ -148,126 +144,179 @@ section + section{margin-top:var(--s7)}
 .rolerow:hover .mq[data-over="1"] > span,
 .mq[data-over="1"]:hover > span{transform:translateX(var(--mq-x,0))}
 
-/* ---------- open roles ---------- */
+/* ---------- see more: one more row of whatever you are looking at ---------- */
+.seemore{width:100%;background:none;border:0;border-bottom:1px solid var(--rule);
+  padding:var(--s2);font-size:var(--fs-micro);letter-spacing:.16em;text-transform:uppercase;
+  color:var(--label);transition:background var(--t-fast) var(--ease),
+  color var(--t-fast) var(--ease)}
+.seemore:hover{background:var(--rule);color:var(--paper)}
+.seemore:active{transform:translateY(1px)}
+
+/* ---------- open roles on the home page ---------- */
 .rolecard{display:flex;flex-direction:column;background:var(--paper);text-align:left;
   border:0;border-right:1px solid var(--rule);border-bottom:1px solid var(--rule);
-  padding:var(--s3);color:inherit;font:inherit;min-width:0;gap:var(--s2);
+  padding:var(--s3);color:inherit;font:inherit;min-width:0;
   transition:background var(--t-fast) var(--ease)}
 .rolecard:hover{background:var(--surface)}
 .rolecard:active{transform:translateY(1px)}
-.rolehead{display:flex;gap:var(--s3);align-items:flex-start;min-width:0}
-/* the character's picture, printed as a single ink over the comic's own
-   colour block: a rack of ten different artists still reads as one rack. */
-.portrait{width:52px;height:52px;flex:none;display:block;overflow:hidden;
-  background:var(--blk);border:1px solid var(--rule-hair);
-  transition:filter var(--t-fast) var(--ease)}
-.portrait img{width:100%;height:100%;object-fit:cover;mix-blend-mode:luminosity;
-  filter:contrast(1.08);opacity:.94;transition:transform var(--t-mid) var(--ease)}
-.rolecard:hover .portrait,.rolerow:hover .portrait{filter:saturate(1.2) brightness(1.04)}
+.rolehead{display:flex;gap:var(--s2);align-items:flex-start;min-width:0}
+.portrait{width:46px;height:46px;flex:none;display:block;overflow:hidden;
+  border:1px solid var(--rule-hair);background:var(--paper-1)}
+[data-theme="dark"] .portrait{background:var(--surf-2)}
+.portrait img{width:100%;height:100%;object-fit:cover;
+  transition:transform var(--t-mid) var(--ease)}
 .rolecard:hover .portrait img,.rolerow:hover .portrait img{transform:scale(1.06)}
-.rolename{font-weight:500;font-size:var(--fs-sm);line-height:var(--row);height:var(--row);
-  text-transform:uppercase;letter-spacing:.04em}
-.rolein{font-size:var(--fs-micro);color:var(--muted);line-height:var(--row);height:var(--row)}
-.blurb{font-size:var(--fs-xs);color:var(--soft-ink);line-height:1.45;
-  height:calc(1.45em * 3);overflow:hidden;
+.rolename{font-family:var(--font-display);font-size:15px;line-height:20px;height:20px}
+.rolein{font-size:var(--fs-micro);color:var(--label);line-height:var(--row);height:var(--row)}
+.blurb{font-size:var(--fs-xs);color:var(--soft-ink);line-height:1.4;margin:var(--s2) 0;
+  height:calc(1.4em * 3);overflow:hidden;
   display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical}
 .rolefoot{display:flex;align-items:center;justify-content:space-between;gap:var(--s2);
-  margin-top:auto;padding-top:var(--s2);border-top:1px solid var(--rule-hair);
-  font-size:var(--fs-micro);letter-spacing:.06em;color:var(--muted);
+  margin-top:auto;padding-top:var(--s1);border-top:1px solid var(--rule-hair);
+  height:var(--row);font-size:var(--fs-micro);letter-spacing:.06em;color:var(--label);
   font-variant-numeric:tabular-nums}
 
 /* ---------- controls ---------- */
-.btn{font-size:var(--fs-xs);letter-spacing:.06em;height:var(--ctl);padding:0 var(--s3);
+.btn{font-size:var(--fs-xs);letter-spacing:.08em;height:var(--ctl);padding:0 var(--s3);
   border:1px solid var(--rule);background:none;color:var(--ink);
   transition:background var(--t-fast) var(--ease),color var(--t-fast) var(--ease),
   border-color var(--t-fast) var(--ease)}
 .btn:hover{background:var(--rule);color:var(--paper)}
 .btn:active{transform:translateY(1px)}
 .btn.p{background:var(--mark);border-color:var(--mark);color:var(--paper)}
-.btn.p:hover{background:var(--sage-700);border-color:var(--sage-700);color:#fff}
+.btn.p:hover{background:var(--accent);border-color:var(--accent)}
 [data-theme="dark"] .btn.p{color:var(--sage-900)}
 .btn[aria-pressed="true"]{background:var(--mark);border-color:var(--mark);color:var(--paper)}
 [data-theme="dark"] .btn[aria-pressed="true"]{color:var(--sage-900)}
-.btn.sm{height:24px;font-size:var(--fs-micro);padding:0 var(--s2)}
+.btn.sm{height:22px;font-size:10px;padding:0 var(--s2);letter-spacing:.1em}
 
 .bar{display:flex;gap:var(--s2);align-items:center;flex-wrap:wrap;
-  padding:var(--s3) 0;border-bottom:1px solid var(--rule)}
+  padding:var(--s2) 0;border-bottom:1px solid var(--rule)}
 .bar input[type=search],.bar select{height:var(--ctl);border:1px solid var(--rule-hair);
   background:var(--surface);color:var(--ink);padding:0 var(--s2);font-size:var(--fs-xs);
   transition:border-color var(--t-fast) var(--ease)}
 .bar input[type=search]{flex:1;min-width:180px}
 .bar input[type=search]:hover,.bar select:hover{border-color:var(--line-strong)}
-.bar .lbl{font-size:var(--fs-micro);letter-spacing:.12em;color:var(--muted);
+.bar .lbl{font-size:var(--fs-micro);letter-spacing:.12em;color:var(--label);
   text-transform:uppercase}
 .chips{display:flex;gap:var(--s1);flex-wrap:wrap}
-.chip{font-size:var(--fs-micro);letter-spacing:.08em;text-transform:uppercase;
-  height:24px;padding:0 var(--s2);border:1px solid var(--rule-hair);background:none;
-  color:var(--muted);transition:all var(--t-fast) var(--ease)}
+.chip{font-size:10px;letter-spacing:.1em;text-transform:uppercase;height:22px;
+  padding:0 var(--s2);border:1px solid var(--rule-hair);background:none;color:var(--label);
+  transition:all var(--t-fast) var(--ease)}
 .chip:hover{color:var(--ink);border-color:var(--ink)}
 .chip[aria-pressed="true"]{background:var(--mark);border-color:var(--mark);color:var(--paper)}
 [data-theme="dark"] .chip[aria-pressed="true"]{color:var(--sage-900)}
 
-/* ---------- roles browse: one row per character ---------- */
+/* ---------- open roles browse: one dense row per character ---------- */
 .rolelist{border-top:1px solid var(--rule)}
-.rolerow{display:grid;grid-template-columns:56px 200px 1fr 90px 130px;gap:var(--s3);
-  align-items:center;padding:var(--s2) var(--s2);width:100%;text-align:left;
-  background:none;border:0;border-bottom:1px solid var(--rule-hair);color:inherit;
-  font:inherit;min-width:0;transition:background var(--t-fast) var(--ease)}
+.rolerow{display:grid;grid-template-columns:46px 196px 210px 1fr 84px 104px;gap:var(--s3);
+  align-items:center;padding:5px var(--s2);width:100%;text-align:left;background:none;
+  border:0;border-bottom:1px solid var(--rule-hair);color:inherit;font:inherit;
+  min-width:0;transition:background var(--t-fast) var(--ease)}
 .rolerow:hover{background:var(--surface)}
-.rolerow .portrait{width:56px;height:56px}
-.rolerow .who{min-width:0}
-.rolerow .lines{text-align:right;font-size:var(--fs-xs);color:var(--muted);
-  font-variant-numeric:tabular-nums}
+.rolerow .who,.rolerow .where{min-width:0}
+.rolerow .where{font-size:var(--fs-micro);color:var(--label);line-height:var(--row)}
+.rolerow .where .ttl{color:var(--soft-ink)}
+.rolerow .blurb{margin:0;height:auto;-webkit-line-clamp:2;font-size:var(--fs-xs)}
+.rolerow .lines{text-align:right;font-size:var(--fs-micro);color:var(--label);
+  font-variant-numeric:tabular-nums;line-height:1.35}
+.rolerow .lines b{display:block;color:var(--ink);font-weight:500;font-size:var(--fs-xs)}
 .rolerow .go{display:flex;justify-content:flex-end}
-.rolerow .go .btn{opacity:.55;transition:opacity var(--t-fast) var(--ease),
+.rolerow .go .btn{opacity:.5;transition:opacity var(--t-fast) var(--ease),
   background var(--t-fast) var(--ease),color var(--t-fast) var(--ease)}
 .rolerow:hover .go .btn{opacity:1}
-@media(max-width:820px){
-  .rolerow{grid-template-columns:44px 1fr auto;row-gap:var(--s1)}
+@media(max-width:1080px){
+  .rolerow{grid-template-columns:46px 1fr 1fr auto}
   .rolerow .blurb,.rolerow .lines{display:none}
 }
-.empty{padding:var(--s7) var(--s4);text-align:center;color:var(--muted);
+.empty{padding:var(--s7) var(--s4);text-align:center;color:var(--label);
   font-size:var(--fs-xs);letter-spacing:.08em}
 
-/* ---------- details (the comic page. not the shelf.) ---------- */
-.ov{position:fixed;inset:0;z-index:60;background:rgba(12,19,15,.55);
-  display:none;place-items:center;padding:var(--s5);
-  animation:fade var(--t-fast) var(--ease)}
+/* ============================================================
+   details. click outside or press escape to go back.
+   ============================================================ */
+.ov{position:fixed;inset:0;z-index:60;background:rgba(12,19,15,.55);display:none;
+  place-items:center;padding:var(--s5);animation:fade var(--t-fast) var(--ease)}
 .ov.on{display:grid}
 @keyframes fade{from{opacity:0}to{opacity:1}}
-.sheet{background:var(--paper);border:1px solid var(--rule);width:min(760px,100%);
-  max-height:86vh;overflow:auto;animation:rise var(--t-mid) var(--ease)}
+.sheet{background:var(--paper);border:1px solid var(--rule);width:min(880px,100%);
+  max-height:88vh;overflow:auto;animation:rise var(--t-mid) var(--ease)}
 @keyframes rise{from{transform:translateY(8px);opacity:0}to{transform:none;opacity:1}}
-.sheethead{display:flex;align-items:center;gap:var(--s3);padding:var(--s3) var(--s4);
-  border-bottom:1px solid var(--rule);position:sticky;top:0;background:var(--paper)}
-.sheethead .lbl{font-size:var(--fs-micro);letter-spacing:.16em;color:var(--muted);
-  text-transform:uppercase}
-.sheethead .sp{flex:1}
-.sheetbody{display:grid;grid-template-columns:240px 1fr}
-@media(max-width:680px){.sheetbody{grid-template-columns:1fr}}
+.sheetbody{display:grid;grid-template-columns:270px 1fr}
+@media(max-width:720px){.sheetbody{grid-template-columns:1fr}}
 .sheetbody .left{padding:var(--s4);border-right:1px solid var(--rule)}
-.sheetbody .left .field{background:var(--blk);position:relative;
-  aspect-ratio:1/1;overflow:hidden}
-.sheetbody .left .field img{position:absolute;top:0;left:0;width:100%;height:100%;
-  padding:var(--field-pad);object-fit:contain}
 .sheetbody .right{padding:var(--s4);min-width:0}
 .sheetbody h3{font-family:var(--font-display);font-weight:400;font-size:var(--fs-title);
   margin:0 0 var(--s2);line-height:1.05}
-.sheetbody p.desc{margin:0 0 var(--s4);color:var(--soft-ink);line-height:1.6;max-width:56ch}
-.acts{display:flex;gap:var(--s2);flex-wrap:wrap;padding:var(--s4);
-  border-top:1px solid var(--rule)}
-.castrow{display:grid;grid-template-columns:1fr auto;gap:var(--s3);align-items:center;
-  height:var(--row);border-top:1px solid var(--rule-hair);font-size:var(--fs-xs)}
-.castrow span:last-child{color:var(--muted);font-variant-numeric:tabular-nums;
+.sheetbody p.desc{margin:0 0 var(--s4);color:var(--soft-ink);line-height:1.55;
+  font-size:var(--fs-xs);max-width:60ch}
+.subhead{display:flex;align-items:baseline;gap:var(--s3);margin:var(--s5) 0 var(--s2);
+  padding-bottom:3px;border-bottom:1px solid var(--rule);
+  font-size:var(--fs-micro);letter-spacing:.16em;text-transform:uppercase}
+.subhead .sp{flex:1}
+.subhead .n{color:var(--label);letter-spacing:.1em}
+.charhead{display:flex;align-items:baseline;gap:var(--s2);margin:var(--s3) 0 2px;
+  font-size:var(--fs-micro);letter-spacing:.1em;text-transform:uppercase;color:var(--label)}
+.charhead b{color:var(--ink);font-weight:500;letter-spacing:.06em}
+.charhead .sp{flex:1}
+
+/* one take, one score: a radio row you can audition before you pick it */
+.pick{display:grid;grid-template-columns:14px 22px 1fr auto auto;gap:var(--s2);
+  align-items:center;width:100%;text-align:left;background:none;color:inherit;font:inherit;
+  border:0;border-bottom:1px solid var(--rule-hair);padding:4px var(--s1);
+  transition:background var(--t-fast) var(--ease)}
+.pick:hover{background:var(--surface)}
+.pick .dot{width:11px;height:11px;border:1px solid var(--line-strong);border-radius:50%;
+  position:relative}
+.pick[aria-checked="true"] .dot{border-color:var(--mark)}
+.pick[aria-checked="true"] .dot::after{content:"";position:absolute;inset:2px;
+  border-radius:50%;background:var(--mark)}
+.pick .who{font-size:var(--fs-xs);min-width:0}
+.pick .who b{font-weight:500}
+.pick .who span{color:var(--label)}
+.pick .meta{font-size:var(--fs-micro);color:var(--label);font-variant-numeric:tabular-nums;
   white-space:nowrap}
+.pick[aria-checked="true"] .who b{color:var(--ink)}
+.pfp{width:22px;height:22px;border:1px solid var(--rule-hair);display:grid;place-items:center;
+  font-size:9px;letter-spacing:.04em;color:var(--label);background:var(--paper-1);
+  text-transform:uppercase}
+[data-theme="dark"] .pfp{background:var(--surf-2)}
+.prev{width:22px;height:22px;border:1px solid var(--rule-hair);background:none;
+  color:var(--ink);font-size:9px;display:grid;place-items:center;position:relative;
+  overflow:hidden;transition:all var(--t-fast) var(--ease)}
+.prev:hover{border-color:var(--ink);background:var(--rule);color:var(--paper)}
+.prev i{position:absolute;left:0;bottom:0;height:2px;width:0;background:var(--accent)}
+.prev.playing i{width:100%;transition:width var(--prev-t,8s) linear}
+.openline{display:grid;grid-template-columns:14px 22px 1fr auto;gap:var(--s2);
+  align-items:center;padding:4px var(--s1);border-bottom:1px solid var(--rule-hair);
+  font-size:var(--fs-xs);color:var(--label)}
+.mixline{font-size:var(--fs-micro);color:var(--label);letter-spacing:.06em;
+  padding:var(--s2) 0 0}
+.mixline b{color:var(--ink);font-weight:500}
+.acts{display:flex;gap:var(--s2);flex-wrap:wrap;padding:var(--s3) var(--s4);
+  border-top:1px solid var(--rule);position:sticky;bottom:0;background:var(--paper)}
+.alltags{display:flex;flex-wrap:wrap;gap:3px}
 
 /* ---------- shelf ---------- */
 .progress{height:3px;background:var(--rule-hair);margin-top:var(--s2)}
 .progress i{display:block;height:100%;background:var(--mark)}
 
-.foot{margin-top:var(--s8);padding-top:var(--s3);border-top:1px solid var(--rule);
+/* ---------- studio ---------- */
+.studio{display:grid;grid-template-columns:repeat(2,1fr);border-left:1px solid var(--rule)}
+@media(max-width:760px){.studio{grid-template-columns:1fr}}
+.studio > div{border-right:1px solid var(--rule);border-bottom:1px solid var(--rule);
+  padding:var(--s4)}
+.studio h3{font-family:var(--font-display);font-weight:400;font-size:var(--fs-lg);margin:0}
+.studio p{color:var(--soft-ink);font-size:var(--fs-xs);line-height:1.55;max-width:46ch}
+
+/* ---------- settings, where the theme switch lives now ---------- */
+.setrow{display:flex;align-items:center;gap:var(--s3);padding:var(--s2) 0;
+  border-bottom:1px solid var(--rule-hair);font-size:var(--fs-xs)}
+.setrow .sp{flex:1}
+
+.foot{margin-top:var(--s7);padding-top:var(--s3);border-top:1px solid var(--rule);
   display:flex;justify-content:space-between;gap:var(--s3);flex-wrap:wrap;
-  font-size:var(--fs-micro);letter-spacing:.1em;color:var(--muted)}
+  font-size:var(--fs-micro);letter-spacing:.1em;color:var(--label)}
 .foot a{color:inherit;text-decoration:none}
 .foot a:hover{color:var(--ink)}
 
@@ -275,6 +324,7 @@ section + section{margin-top:var(--s7)}
   background:var(--rule);color:var(--paper);font-size:var(--fs-xs);letter-spacing:.06em;
   padding:var(--s2) var(--s4);z-index:70;opacity:0;pointer-events:none;
   transition:opacity var(--t-fast) var(--ease),transform var(--t-fast) var(--ease)}
+[data-theme="dark"] .toast{color:var(--sage-900)}
 .toast.on{opacity:1;transform:translateX(-50%) translateY(-4px)}
 </style>
 </head>
@@ -286,36 +336,33 @@ section + section{margin-top:var(--s7)}
     <button data-go="home" aria-current="page">home</button>
     <button data-go="browse">browse</button>
     <button data-go="shelf">shelf</button>
+    <button data-go="studio">studio</button>
     <button data-go="profile">profile</button>
   </nav>
-  <button class="ico" id="theme" title="light / dark">◐</button>
 </header>
 
 <!-- ================= HOME ================= -->
 <main class="pane on" id="pane-home"><div class="wrap">
 
   <section>
-    <div class="head">
-      <h2>new comics</h2><span class="n" id="new-n"></span>
-      <span class="sp"></span><a href="#" data-go="browse">all comics</a>
-    </div>
+    <div class="head"><h2>new comics</h2><span class="n" id="new-n"></span>
+      <span class="sp"></span><a href="#" data-go="browse">all comics</a></div>
     <div class="grid" id="grid-new"></div>
+    <button class="seemore" data-more="new">see more</button>
   </section>
 
   <section>
-    <div class="head">
-      <h2>from people you follow</h2><span class="n" id="follow-n"></span>
-      <span class="sp"></span><a href="#" data-go="profile">who you follow</a>
-    </div>
+    <div class="head"><h2>from people you follow</h2><span class="n" id="follow-n"></span>
+      <span class="sp"></span><a href="#" data-go="profile">who you follow</a></div>
     <div class="grid" id="grid-follow"></div>
+    <button class="seemore" data-more="follow">see more</button>
   </section>
 
   <section>
-    <div class="head">
-      <h2>open roles</h2><span class="n" id="roles-n"></span>
-      <span class="sp"></span><a href="#" data-go="roles">every open role</a>
-    </div>
+    <div class="head"><h2>open roles</h2><span class="n" id="roles-n"></span>
+      <span class="sp"></span><a href="#" data-go="roles">every open role</a></div>
     <div class="grid" id="grid-roles"></div>
+    <button class="seemore" data-more="roles">see more</button>
   </section>
 
   <div class="foot"><span>EST. 2026</span>
@@ -327,7 +374,7 @@ section + section{margin-top:var(--s7)}
   <div class="head"><h2>browse</h2><span class="n" id="browse-n"></span>
     <span class="sp"></span><a href="#" data-go="roles">open roles →</a></div>
   <div class="bar">
-    <input type="search" id="b-q" placeholder="search titles and credits">
+    <input type="search" id="b-q" placeholder="search titles, credits, and tags">
     <span class="lbl">sort</span>
     <select id="b-sort">
       <option value="new">newest</option>
@@ -345,18 +392,19 @@ section + section{margin-top:var(--s7)}
   <div class="empty" id="browse-empty" hidden>nothing matches that.</div>
 </div></main>
 
-<!-- ================= OPEN ROLES (browse → characters) ================= -->
+<!-- ================= OPEN ROLES ================= -->
 <main class="pane" id="pane-roles"><div class="wrap">
   <div class="head"><h2>open roles</h2><span class="n" id="rolelist-n"></span>
     <span class="sp"></span><a href="#" data-go="browse">← all comics</a></div>
   <div class="bar">
-    <input type="search" id="r-q" placeholder="search characters, comics, or description">
+    <input type="search" id="r-q" placeholder="search characters, comics, authors, description">
     <span class="lbl">sort</span>
     <select id="r-sort">
       <option value="lines-desc">most lines</option>
       <option value="lines-asc">fewest lines</option>
       <option value="name">character a–z</option>
       <option value="comic">comic a–z</option>
+      <option value="author">author a–z</option>
     </select>
     <div class="chips" id="r-filters">
       <button class="chip" data-f="lead" aria-pressed="false">lead</button>
@@ -381,12 +429,46 @@ section + section{margin-top:var(--s7)}
   </section>
 </div></main>
 
+<!-- ================= STUDIO ================= -->
+<main class="pane" id="pane-studio"><div class="wrap">
+  <div class="head"><h2>studio</h2><span class="n">2 drafts · 1 submitted</span></div>
+  <div class="studio">
+    <div>
+      <h3>score a comic</h3>
+      <p>Lay a soundtrack under the pages and drop one-shots where they land.
+        Pages are rows, layers are columns, every cell is a clip.</p>
+      <div class="acts" style="padding:var(--s3) 0 0;border:0">
+        <button class="btn p" data-act="new-score">start a score</button>
+        <button class="btn" data-go="roles">find a comic that needs one</button>
+      </div>
+    </div>
+    <div>
+      <h3>voice a role</h3>
+      <p>The script is the timeline. Record line by line, stack takes, and
+        submit the part when every line is green.</p>
+      <div class="acts" style="padding:var(--s3) 0 0;border:0">
+        <button class="btn p" data-go="roles">pick an open role</button>
+        <button class="btn" data-act="drafts">open your drafts</button>
+      </div>
+    </div>
+  </div>
+</div></main>
+
 <!-- ================= PROFILE ================= -->
 <main class="pane" id="pane-profile"><div class="wrap">
   <div class="head"><h2>imogen ash</h2><span class="n">performer · cork, ireland</span></div>
   <section>
-    <div class="head"><h2>parts performed</h2><span class="n">14</span></div>
+    <div class="head"><h2>parts performed</h2><span class="n" id="parts-n"></span></div>
     <div class="rolelist" id="profile-parts"></div>
+  </section>
+  <section>
+    <div class="head"><h2>settings</h2></div>
+    <div class="setrow"><span>dark mode</span><span class="sp"></span>
+      <button class="btn sm" id="theme" aria-pressed="false">off</button></div>
+    <div class="setrow"><span>autoplay previews</span><span class="sp"></span>
+      <button class="btn sm" aria-pressed="true">on</button></div>
+    <div class="setrow"><span>email me when a role i watch is cast</span><span class="sp"></span>
+      <button class="btn sm" aria-pressed="false">off</button></div>
   </section>
 </div></main>
 
@@ -398,79 +480,123 @@ section + section{margin-top:var(--s7)}
 
 <script>
 /* ============================================================
-   data. the shapes here are the ones the live site already has
-   (library/index.json entries plus the cast rows from the api),
-   so this renders straight off the real catalogue once wired.
+   data. cast is the mix: every character carries the takes that
+   have been recorded for it, every score carries its composer, and
+   an open role is simply a character with no takes yet.
    ============================================================ */
 const COMICS = [
   {id:'jigoku', title:'falling in love on the path to hell', by:'duggan & brown',
-   pp:152, ch:1, chOf:6, voices:{done:6,total:6}, scores:3, kudos:1104,
-   cover:'covers/jigoku.jpg', added:'2026-04-02', tags:['horror'],
+   pp:152, ch:1, chOf:6, kudos:1104, cover:'covers/jigoku.jpg', added:'2026-04-02',
+   tags:['horror','romance','demons','slow burn','hell','found family','body horror',
+         'workplace','mutual pining','no happy ending','period','folklore'],
    desc:'Two demons work the same stretch of the eighth hell and keep finding reasons to walk it together. Duggan writes it dry, Brown draws it hot.',
-   cast:[['MACRAITH','imogen ash',92],['HIROKO','samuel opoku',140],['THE CLERK','j. wren',31]],
+   cast:[
+     {char:'macraith', takes:[{who:'imogen ash',lines:92,dur:'4:12'},{who:'r. mbeki',lines:92,dur:'4:40'}]},
+     {char:'hiroko', takes:[{who:'samuel opoku',lines:140,dur:'6:02'}]},
+     {char:'the clerk', takes:[{who:'j. wren',lines:31,dur:'1:48'}]}],
+   scores:[{title:'net terminal',by:'a. varga',dur:'52:10'},
+           {title:'eighth circle, slowed',by:'kit lundgren',dur:'48:33'},
+           {title:'organ only',by:'p. delacroix',dur:'44:07'}],
    follow:null, shelf:'reading', progress:.42},
 
   {id:'blame', title:'blame! master edition', by:'tsutomu nihei',
-   pp:368, ch:1, chOf:12, voices:{done:3,total:4}, scores:2, kudos:842,
-   cover:'covers/concrete-sky.jpg', added:'2026-04-01', tags:['scifi'],
+   pp:368, ch:1, chOf:12, kudos:842, cover:'covers/concrete-sky.jpg', added:'2026-04-01',
+   tags:['scifi','cyberpunk','megastructure','silent','body horror','architecture',
+         'slow','no dialogue','post-human','manga'],
    desc:'Killy walks a megastructure that outgrew its builders. Nihei draws silence better than anyone, so the score is doing most of the work.',
-   cast:[['KILLY','imogen ash',148],['CIBO','samuel opoku',96],['SANAKAN','r. mbeki',44]],
+   cast:[
+     {char:'killy', takes:[{who:'imogen ash',lines:148,dur:'7:20'}]},
+     {char:'cibo', takes:[{who:'samuel opoku',lines:96,dur:'5:11'},{who:'a. varga',lines:96,dur:'5:35'}]},
+     {char:'sanakan', takes:[{who:'r. mbeki',lines:44,dur:'2:26'}]}],
+   scores:[{title:'concrete sky',by:'kit lundgren',dur:'1:12:40'},
+           {title:'gravitational beam',by:'a. varga',dur:'58:14'}],
    follow:'tsutomu nihei', shelf:'reading', progress:.11},
 
   {id:'barbaric', title:'barbaric: axe to grind', by:'moreci, gooden, duke & campbell',
-   pp:128, ch:2, chOf:5, voices:{done:1,total:5}, scores:0, kudos:377,
-   cover:'covers/talking-axe.jpg', added:'2026-03-28', tags:['comedy'],
+   pp:128, ch:2, chOf:5, kudos:377, cover:'covers/talking-axe.jpg', added:'2026-03-28',
+   tags:['comedy','fantasy','cursed objects','gore','banter','anti-hero','swords',
+         'talking weapons','road trip'],
    desc:'A cursed barbarian, a talking axe with a drinking problem, and a body count the axe insists is load-bearing.',
-   cast:[['OWEN','samuel opoku',204]], follow:null, shelf:null},
+   cast:[{char:'owen', takes:[{who:'samuel opoku',lines:204,dur:'9:48'}]}],
+   scores:[], follow:null, shelf:null},
 
   {id:'dkr', title:'the dark knight returns', by:'miller, janson & varley',
-   pp:224, ch:1, chOf:4, voices:{done:5,total:5}, scores:1, kudos:2310,
-   cover:'covers/second-dark.jpg', added:'2026-03-24', tags:['crime'],
+   pp:224, ch:1, chOf:4, kudos:2310, cover:'covers/second-dark.jpg', added:'2026-03-24',
+   tags:['crime','noir','vigilante','gotham','media satire','age','rain','classic'],
    desc:'Ten years retired, one bad night, and a city that never stopped asking. The score runs on television static.',
-   cast:[['BRUCE','r. mbeki',310],['CARRIE','imogen ash',61],['GORDON','a. varga',88]],
+   cast:[
+     {char:'bruce', takes:[{who:'r. mbeki',lines:310,dur:'14:02'}]},
+     {char:'carrie', takes:[{who:'imogen ash',lines:61,dur:'3:18'}]},
+     {char:'gordon', takes:[{who:'a. varga',lines:88,dur:'4:44'}]}],
+   scores:[{title:'static and sirens',by:'p. delacroix',dur:'1:04:22'}],
    follow:'imogen ash', shelf:'read', progress:1},
 
   {id:'sunbound', title:'all-star superman', by:'morrison, quitely & grant',
-   pp:288, ch:1, chOf:12, voices:{done:0,total:3}, scores:0, kudos:1890,
-   cover:'covers/sunbound.jpg', added:'2026-03-20', tags:['scifi'],
+   pp:288, ch:1, chOf:12, kudos:1890, cover:'covers/sunbound.jpg', added:'2026-03-20',
+   tags:['scifi','superhero','kindness','death','sun','twelve labours','myth','optimism'],
    desc:'Twelve labours and a year to live. Quitely draws kindness as a physical force, which is a hard thing to score and a harder thing to voice.',
-   cast:[], follow:'j. wren', shelf:null},
+   cast:[], scores:[], follow:'j. wren', shelf:null},
 
   {id:'noise', title:'noise', by:'tsutomu nihei',
-   pp:52, ch:1, chOf:1, voices:{done:2,total:3}, scores:1, kudos:214,
-   cover:'covers/concrete-sky.jpg', added:'2026-03-18', tags:['scifi','horror'],
+   pp:52, ch:1, chOf:1, kudos:214, cover:'covers/concrete-sky.jpg', added:'2026-03-18',
+   tags:['scifi','horror','prologue','one shot','detective','surface','net terminal'],
    desc:'The prologue to the megastructure. Fifty-two pages, one detective, and the last quiet year on the surface.',
-   cast:[['NARRATION','imogen ash',210],['SUSONO','a. varga',77]],
+   cast:[
+     {char:'narration', takes:[{who:'imogen ash',lines:210,dur:'11:30'}]},
+     {char:'susono', takes:[{who:'a. varga',lines:77,dur:'4:02'}]}],
+   scores:[{title:'surface year',by:'kit lundgren',dur:'39:55'}],
    follow:'tsutomu nihei', shelf:'read', progress:1},
 
   {id:'jigoku2', title:'falling in love on the path to hell, book two', by:'duggan & brown',
-   pp:88, ch:2, chOf:6, voices:{done:7,total:7}, scores:2, kudos:640,
-   cover:'covers/jigoku.jpg', added:'2026-03-15', tags:['horror'],
+   pp:88, ch:2, chOf:6, kudos:640, cover:'covers/jigoku.jpg', added:'2026-03-15',
+   tags:['horror','romance','demons','hell','slow burn','rain','sequel'],
    desc:'The second stretch of the walk. Same two demons, worse weather.',
-   cast:[['MACRAITH','imogen ash',110]], follow:'imogen ash', shelf:'reading', progress:.78},
+   cast:[{char:'macraith', takes:[{who:'imogen ash',lines:110,dur:'5:20'}]}],
+   scores:[{title:'worse weather',by:'p. delacroix',dur:'31:12'},
+           {title:'eighth circle, slowed',by:'kit lundgren',dur:'33:40'}],
+   follow:'imogen ash', shelf:'reading', progress:.78},
 
   {id:'murderable', title:'barbaric: murderable offenses', by:'moreci, gooden, duke & campbell',
-   pp:130, ch:3, chOf:5, voices:{done:0,total:4}, scores:0, kudos:298,
-   cover:'covers/talking-axe.jpg', added:'2026-03-12', tags:['comedy'],
+   pp:130, ch:3, chOf:5, kudos:298, cover:'covers/talking-axe.jpg', added:'2026-03-12',
+   tags:['comedy','fantasy','witches','gore','banter','bureaucracy','sequel'],
    desc:'The axe gets a subplot. Nobody asked for this and everybody wanted it.',
-   cast:[], follow:null, shelf:null},
+   cast:[], scores:[], follow:null, shelf:null},
 
   {id:'sunbound2', title:'all-star superman, book two', by:'morrison, quitely & grant',
-   pp:96, ch:2, chOf:12, voices:{done:3,total:3}, scores:4, kudos:1502,
-   cover:'covers/sunbound.jpg', added:'2026-03-09', tags:['scifi'],
+   pp:96, ch:2, chOf:12, kudos:1502, cover:'covers/sunbound.jpg', added:'2026-03-09',
+   tags:['scifi','superhero','the sun','keys','quiet','myth'],
    desc:'The one with the key, the sun, and the long walk down.',
-   cast:[['CLARK','r. mbeki',180]], follow:'j. wren', shelf:null},
+   cast:[{char:'clark', takes:[{who:'r. mbeki',lines:180,dur:'8:30'}]}],
+   scores:[{title:'solar',by:'a. varga',dur:'46:18'},{title:'the long walk down',by:'kit lundgren',dur:'51:02'},
+           {title:'piano, one take',by:'j. wren',dur:'40:11'},{title:'choir',by:'p. delacroix',dur:'44:50'}],
+   follow:'j. wren', shelf:null},
 
   {id:'dkr2', title:'the dark knight falls', by:'miller, janson & varley',
-   pp:64, ch:4, chOf:4, voices:{done:4,total:6}, scores:1, kudos:988,
-   cover:'covers/second-dark.jpg', added:'2026-03-05', tags:['crime'],
+   pp:64, ch:4, chOf:4, kudos:988, cover:'covers/second-dark.jpg', added:'2026-03-05',
+   tags:['crime','noir','mud','finale','television','gotham'],
    desc:'The last chapter, the mud fight, and the funeral that is not one.',
-   cast:[['BRUCE','r. mbeki',150]], follow:'imogen ash', shelf:null}
+   cast:[{char:'bruce', takes:[{who:'r. mbeki',lines:150,dur:'7:05'}]}],
+   scores:[{title:'mud',by:'p. delacroix',dur:'28:44'}],
+   follow:'imogen ash', shelf:null},
+
+  {id:'jigoku3', title:'falling in love on the path to hell, book three', by:'duggan & brown',
+   pp:104, ch:3, chOf:6, kudos:512, cover:'covers/jigoku.jpg', added:'2026-03-02',
+   tags:['horror','romance','demons','hell','betrayal','sequel'],
+   desc:'The walk ends at a gate neither of them wants to open.',
+   cast:[{char:'macraith', takes:[{who:'imogen ash',lines:98,dur:'4:55'}]}],
+   scores:[{title:'the gate',by:'a. varga',dur:'36:20'}],
+   follow:'imogen ash', shelf:null},
+
+  {id:'secondark', title:'the second dark', by:'okonkwo & lai',
+   pp:176, ch:1, chOf:3, kudos:436, cover:'covers/second-dark.jpg', added:'2026-02-27',
+   tags:['horror','folk horror','village','winter','slow','debut'],
+   desc:'A village agrees to one night without light. Somebody counts wrong.',
+   cast:[], scores:[{title:'one night without light',by:'kit lundgren',dur:'55:30'}],
+   follow:null, shelf:null}
 ];
 
-/* one row per character that still has no performer. `pic` is a portrait
-   crop; until artwork is uploaded it is generated from the comic's own
-   sampled colour, so the roles rail matches the shelf beside it. */
+/* an open role is a character with nobody on it yet. `pic` is the character
+   portrait when one has been uploaded; until then a crop of the comic's art. */
 const ROLES = [
   {id:'dhomo', name:'dhomochevsky', comic:'blame', kind:'supporting', lines:9,
    blurb:'Safeguard agent in white armour. Speaks like a court record being read aloud, never raises its voice, and has exactly one joke.'},
@@ -491,124 +617,55 @@ const ROLES = [
   {id:'anchor', name:'news anchor', comic:'dkr2', kind:'narration', lines:38,
    blurb:'Television voice. Bright, level, and completely unbothered by what it is reporting.'},
   {id:'clerk2', name:'the second clerk', comic:'murderable', kind:'supporting', lines:24,
-   blurb:'Hell has a queue and this is the person at the desk. Bored, bureaucratic, faintly kind.'}
+   blurb:'Hell has a queue and this is the person at the desk. Bored, bureaucratic, faintly kind.'},
+  {id:'gwen', name:'gwen', comic:'secondark', kind:'lead', lines:188,
+   blurb:'The one who agreed to count. Village accent, careful with numbers, unravels quietly across three chapters.'},
+  {id:'mother', name:'the mother', comic:'secondark', kind:'supporting', lines:74,
+   blurb:'Speaks in proverbs and means every one of them as a threat.'},
+  {id:'narr-sd', name:'narration', comic:'secondark', kind:'narration', lines:96,
+   blurb:'A folklorist reading her own field notes back, thirty years too late to help.'},
+  {id:'jonn', name:'jonn', comic:'barbaric', kind:'supporting', lines:57,
+   blurb:'The witch hunter who keeps losing arguments to a piece of farm equipment.'},
+  {id:'hell-choir', name:'the choir', comic:'jigoku3', kind:'narration', lines:31,
+   blurb:'Six voices that only ever speak in unison, one line at a time, and never about anything good.'}
 ];
 
 const byId = id => COMICS.find(c => c.id === id);
+const rolesFor = id => ROLES.filter(r => r.comic === id);
 const esc = s => String(s).replace(/[&<>"]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
 const nfmt = n => n.toLocaleString('en-US');
+const initials = name => name.split(/[\s.]+/).filter(Boolean).map(w => w[0]).join('').slice(0,2);
 
-/* ============================================================
-   cover colour. sampled from the artwork, not invented.
-
-   the cover is drawn into a 32×32 canvas, pixels are bucketed into
-   24 hue bins weighted by chroma, the heaviest bin wins, and its mean
-   is pulled onto a fixed saturation and lightness so a shelf of very
-   different covers still reads as one shelf. a monochrome cover keeps
-   its neutral and falls back to sage.
-   ============================================================ */
-const COLOR_CACHE = new Map();
-
-function rgb2hsl(r,g,b){
-  r/=255; g/=255; b/=255;
-  const mx=Math.max(r,g,b), mn=Math.min(r,g,b), l=(mx+mn)/2, c=mx-mn;
-  if(!c) return [0,0,l*100];
-  const s = c / (1 - Math.abs(2*l - 1));
-  let h;
-  if(mx===r) h=((g-b)/c)%6; else if(mx===g) h=(b-r)/c+2; else h=(r-g)/c+4;
-  h*=60; if(h<0) h+=360;
-  return [h, s*100, l*100];
-}
-
-/* returns {light, dark, ink} or null when the cover has no usable hue */
-function analyse(img){
-  const W=32, H=32, cv=document.createElement('canvas');
-  cv.width=W; cv.height=H;
-  const cx=cv.getContext('2d', {willReadFrequently:true});
-  cx.drawImage(img, 0, 0, W, H);
-  const d = cx.getImageData(0,0,W,H).data;
-
-  const BINS=24, w=new Array(BINS).fill(0), sum=new Array(BINS).fill(null).map(()=>[0,0,0]);
-  let chromatic=0;
-  for(let i=0;i<d.length;i+=4){
-    if(d[i+3]<128) continue;
-    const [h,s,l] = rgb2hsl(d[i],d[i+1],d[i+2]);
-    if(s<14 || l<8 || l>94) continue;          // greys and blown highlights do not vote
-    const weight = (s/100) * (1 - Math.abs(l-50)/70);
-    const b = Math.floor(h/360*BINS) % BINS;
-    w[b] += weight; chromatic += weight;
-    sum[b][0]+=d[i]*weight; sum[b][1]+=d[i+1]*weight; sum[b][2]+=d[i+2]*weight;
+/* ---------- the mix. what the reader has picked, per comic. ----------
+   defaults to the first take of every character and the first score,
+   which is exactly what the reader gets if they never open this pane. */
+const MIX = {};
+function mixOf(c){
+  if(!MIX[c.id]){
+    const voices = {};
+    c.cast.forEach(ch => { voices[ch.char] = 0; });
+    MIX[c.id] = {voices, score: c.scores.length ? 0 : -1};
   }
-  if(chromatic < 8) return null;               // effectively monochrome art
-  let top=0; for(let i=1;i<BINS;i++) if(w[i]>w[top]) top=i;
-  const [h, satRaw] = rgb2hsl(sum[top][0]/w[top], sum[top][1]/w[top], sum[top][2]/w[top]);
-  // hue is the cover's own. saturation and lightness are pulled onto a fixed
-  // step so a neon cover cannot out-shout the page and a muddy one still reads.
-  const s = Math.max(30, Math.min(62, satRaw * 0.9));
-  return {
-    light:`hsl(${h.toFixed(0)} ${s.toFixed(0)}% 72%)`,
-    dark:`hsl(${h.toFixed(0)} ${(s*0.62).toFixed(0)}% 24%)`
-  };
+  return MIX[c.id];
 }
 
-function paint(el, c){
-  const dark = document.documentElement.dataset.theme === 'dark';
-  el.style.setProperty('--blk', dark ? c.dark : c.light);
-}
-
-/* every element that carries a colour block registers here, so a theme
-   flip repaints from the cached sample instead of resampling. */
-const TINTED = [];
-function tint(el, comic){
-  TINTED.push([el, comic.id]);
-  const done = COLOR_CACHE.get(comic.id);
-  if(done){ if(done !== 'none') paint(el, done); return; }
-  const img = new Image();
-  img.decoding = 'async';
-  img.onload = () => {
-    let c = null;
-    try{ c = analyse(img); }catch(e){ c = null; }   // tainted canvas on file://
-    COLOR_CACHE.set(comic.id, c || 'none');
-    if(!c) return;
-    TINTED.filter(t => t[1] === comic.id).forEach(t => paint(t[0], c));
-  };
-  img.onerror = () => COLOR_CACHE.set(comic.id, 'none');
-  img.src = comic.cover;
-}
-function repaintAll(){
-  TINTED.forEach(([el,id]) => {
-    const c = COLOR_CACHE.get(id);
-    if(c && c !== 'none') paint(el, c);
-    else el.style.removeProperty('--blk');
-  });
-}
-
-/* the character picture. r.pic when the role has one uploaded; until then a
-   crop of the comic's own art, framed differently per character so a comic
-   with four open roles does not show the same square four times. */
-function portrait(role){
-  const c = byId(role.comic);
-  let seed = 0; for(const ch of role.id) seed = (seed*31 + ch.charCodeAt(0)) & 255;
-  const x = 20 + (seed % 60), y = 6 + (seed % 34);
-  return `<span class="portrait"><img src="${esc(role.pic || c.cover)}"
-    alt="${esc(role.name)}" loading="lazy" style="object-position:${x}% ${y}%"></span>`;
-}
-
-/* ============================================================
-   the metadata block. one shape, every card, every time.
-   ============================================================ */
-const voicesOf = c => c.voices.done >= c.voices.total
-  ? {t:`${c.voices.done} of ${c.voices.total}`, cls:''}
-  : {t:`missing ${c.voices.total - c.voices.done}`, cls:'want'};
-const scoreOf = c => c.scores > 0
-  ? {t:`${c.scores} available`, cls:''}
+/* ---------- the five caption rows, identical on every card ---------- */
+const voicesOf = c => {
+  const total = c.cast.length + rolesFor(c.id).length;
+  const done = c.cast.length;
+  return done >= total && total > 0
+    ? {t:`${done} of ${total}`, cls:''}
+    : {t:`missing ${total - done}`, cls:'want'};
+};
+const scoreOf = c => c.scores.length
+  ? {t:`${c.scores.length} available`, cls:''}
   : {t:'empty', cls:'none'};
 
 const mq = s => `<span class="mq"><span>${esc(s)}</span></span>`;
 
-function metaRows(c){
+function capRows(c){
   const v = voicesOf(c), s = scoreOf(c);
-  return `<div class="meta">
+  return `<div class="cap">
     <div class="r"><span class="k">by</span><span class="v">${mq(c.by)}</span></div>
     <div class="r"><span class="k">extent</span><span class="v">${mq(`${c.pp} pp · ch${c.ch} of ${c.chOf}`)}</span></div>
     <div class="r"><span class="k">voices</span><span class="v ${v.cls}">${esc(v.t)}</span></div>
@@ -617,20 +674,58 @@ function metaRows(c){
   </div>`;
 }
 
+/* top five tags, then the count. the full list is in the details pane.
+   every tag is in the markup; fitTags() decides how many of the five
+   actually fit in two rows once the count chip is allowed for. */
+const TAGS_SHOWN = 5;
+function tagRow(c){
+  return `<div class="tags">${c.tags.map(t =>
+    `<span class="tag" data-tag="${esc(t)}">${esc(t)}</span>`).join('')
+    }<span class="tag more">+${c.tags.length - TAGS_SHOWN} more</span></div>`;
+}
+
+function fitTags(root){
+  root.querySelectorAll('.tags').forEach(box => {
+    const chips = [...box.querySelectorAll('.tag:not(.more)')];
+    const more = box.querySelector('.tag.more');
+    if(!more || !chips.length) return;
+    chips.forEach((chip, i) => { chip.hidden = i >= TAGS_SHOWN; });
+    more.hidden = false;
+    let vis = Math.min(TAGS_SHOWN, chips.length);
+    const limit = chips[0].offsetTop + 39;      // rows two and three are fine, four is not
+    while(vis > 1 && more.offsetTop > limit) chips[--vis].hidden = true;
+    const rest = chips.length - vis;
+    if(rest <= 0) more.hidden = true; else more.textContent = `+${rest} more`;
+  });
+}
+
 function cardEl(c, note){
   const b = document.createElement('button');
   b.className = 'card';
   b.type = 'button';
   b.innerHTML =
-    `<div class="field"><img src="${esc(c.cover)}" alt="" loading="lazy"></div>
-     <div class="cardbody">
-       <div class="title">${mq(c.title)}</div>
-       <div class="note">${note ? mq(note) : ''}</div>
-       ${metaRows(c)}
-     </div>`;
-  b.addEventListener('click', () => openDetails(c));
-  tint(b, c);
+    `<div class="plate"><img src="${esc(c.cover)}" alt="" loading="lazy"></div>
+     <div class="title">${mq(c.title)}</div>
+     <div class="note">${note ? mq(note) : ''}</div>
+     ${tagRow(c)}
+     ${capRows(c)}`;
+  b.addEventListener('click', e => {
+    const tag = e.target.closest('[data-tag]');
+    if(tag){ e.stopPropagation(); searchTag(tag.dataset.tag); return; }
+    openDetails(c);
+  });
   return b;
+}
+
+/* the character picture: r.pic when one is uploaded, otherwise a crop of the
+   comic's own art, framed per character so one comic's four open roles do
+   not show the same square four times. */
+function portrait(role){
+  const c = byId(role.comic);
+  let seed = 0; for(const ch of role.id) seed = (seed*31 + ch.charCodeAt(0)) & 255;
+  const x = 20 + (seed % 60), y = 6 + (seed % 34);
+  return `<span class="portrait"><img src="${esc(role.pic || c.cover)}"
+    alt="${esc(role.name)}" loading="lazy" style="object-position:${x}% ${y}%"></span>`;
 }
 
 function roleCardEl(r){
@@ -643,15 +738,17 @@ function roleCardEl(r){
       <div style="min-width:0;flex:1">
         <div class="rolename">${mq(r.name)}</div>
         <div class="rolein">${mq(c.title)}</div>
+        <div class="rolein">${mq(c.by)}</div>
       </div></div>
      <p class="blurb">${esc(r.blurb)}</p>
      <div class="rolefoot"><span>${esc(r.kind)}</span><span class="n">${nfmt(r.lines)} lines</span></div>`;
   b.addEventListener('click', () => openDetails(c, r));
-  tint(b, c);
   return b;
 }
 
-function roleRowEl(r, cast){
+/* the browse row. density is the point: character, comic, author, series
+   position, description, length, and the way in — all on one line. */
+function roleRowEl(r, performed){
   const c = byId(r.comic);
   const b = document.createElement('button');
   b.className = 'rolerow';
@@ -660,20 +757,21 @@ function roleRowEl(r, cast){
     `${portrait(r)}
      <div class="who">
        <div class="rolename">${mq(r.name)}</div>
-       <div class="rolein">${mq(c.title)}</div>
+       <div class="rolein">${mq(r.kind)}</div>
      </div>
-     <p class="blurb" style="height:auto;-webkit-line-clamp:2">${esc(r.blurb)}</p>
-     <div class="lines"><span class="n">${nfmt(r.lines)}</span> lines<br>${esc(r.kind)}</div>
-     <div class="go"><span class="btn sm">${cast ? 'listen' : 'voice this'}</span></div>`;
+     <div class="where">
+       <div class="ttl">${mq(c.title)}</div>
+       <div>${mq(c.by)}</div>
+     </div>
+     <p class="blurb">${esc(r.blurb)}</p>
+     <div class="lines"><b class="n">${nfmt(r.lines)} lines</b>
+       ${c.pp} pp · ch${c.ch}/${c.chOf}</div>
+     <div class="go"><span class="btn sm">${performed ? 'listen' : 'voice this'}</span></div>`;
   b.addEventListener('click', () => openDetails(c, r));
-  tint(b, c);
   return b;
 }
 
-function fill(node, els){
-  node.replaceChildren(...els);
-  fitScrollers(node);
-}
+function fill(node, els){ node.replaceChildren(...els); fitScrollers(node); fitTags(node); }
 
 /* ---------- overflow: measure once, scroll on hover ---------- */
 function fitScrollers(root){
@@ -693,57 +791,140 @@ function fitScrollers(root){
 let fitTimer;
 addEventListener('resize', () => {
   clearTimeout(fitTimer);
-  fitTimer = setTimeout(() => fitScrollers(document), 150);
+  fitTimer = setTimeout(() => { fitScrollers(document); fitTags(document); }, 150);
 });
 
+/* ---------- preview. one at a time, anywhere on the page. ---------- */
+let playing = null, playTimer;
+function preview(btn, secs){
+  if(playing && playing !== btn){ playing.classList.remove('playing'); playing.textContent = '▶'; }
+  clearTimeout(playTimer);
+  if(btn.classList.contains('playing')){
+    btn.classList.remove('playing'); btn.innerHTML = '▶'; playing = null; return;
+  }
+  btn.style.setProperty('--prev-t', secs + 's');
+  btn.innerHTML = '❙❙<i></i>';
+  requestAnimationFrame(() => btn.classList.add('playing'));
+  playing = btn;
+  playTimer = setTimeout(() => {
+    btn.classList.remove('playing'); btn.innerHTML = '▶'; playing = null;
+  }, secs * 1000);
+}
+
 /* ============================================================
-   details. the comic page — this is where details live, not the shelf.
+   details. the mix is picked here: a take per character and one
+   score, both auditionable before you commit to them.
+   click outside or press escape to go back.
    ============================================================ */
 const ov = document.getElementById('ov'), sheet = document.getElementById('sheet');
 let lastFocus = null;
 
+function mixSummary(c){
+  const m = mixOf(c), sc = m.score >= 0 ? c.scores[m.score] : null;
+  const cast = Object.keys(m.voices).length;
+  return `<b>${cast}</b> ${cast === 1 ? 'voice' : 'voices'} · ` +
+    (sc ? `<b>${esc(sc.title)}</b> by ${esc(sc.by)}` : 'no score');
+}
+
 function openDetails(c, role){
-  const v = voicesOf(c), s = scoreOf(c);
-  const open = ROLES.filter(r => r.comic === c.id);
+  const v = voicesOf(c), open = rolesFor(c.id), m = mixOf(c);
+
+  const castHtml = c.cast.map(ch => `
+    <div class="charhead"><b>${esc(ch.char)}</b><span class="sp"></span>
+      <span>${ch.takes.length} ${ch.takes.length === 1 ? 'take' : 'takes'}</span></div>
+    ${ch.takes.map((t, i) => `
+      <div class="pick" role="radio" tabindex="0" aria-checked="${m.voices[ch.char] === i}"
+           data-char="${esc(ch.char)}" data-i="${i}">
+        <span class="dot"></span>
+        <span class="pfp">${esc(initials(t.who))}</span>
+        <span class="who"><b>${esc(t.who)}</b></span>
+        <span class="meta">${nfmt(t.lines)} lines · ${esc(t.dur)}</span>
+        <button class="prev" data-dur="14" title="preview">▶</button>
+      </div>`).join('')}`).join('');
+
+  const openHtml = open.map(r => `
+    <div class="charhead"><b>${esc(r.name)}</b><span class="sp"></span>
+      <span>${esc(r.kind)}</span></div>
+    <div class="openline"><span></span><span class="pfp">—</span>
+      <span>nobody has voiced this yet · ${nfmt(r.lines)} lines</span>
+      <button class="btn sm" data-voice="${esc(r.id)}">voice this</button></div>`).join('');
+
+  const scoreHtml = c.scores.length ? c.scores.map((s, i) => `
+    <div class="pick" role="radio" tabindex="0" aria-checked="${m.score === i}" data-score="${i}">
+      <span class="dot"></span>
+      <span class="pfp">${esc(initials(s.by))}</span>
+      <span class="who"><b>${esc(s.title)}</b> <span>by ${esc(s.by)}</span></span>
+      <span class="meta">${esc(s.dur)}</span>
+      <button class="prev" data-dur="20" title="preview">▶</button>
+    </div>`).join('') + `
+    <div class="pick" role="radio" tabindex="0" aria-checked="${m.score === -1}" data-score="-1">
+      <span class="dot"></span><span class="pfp">—</span>
+      <span class="who"><b>read it silent</b></span><span class="meta"></span><span></span>
+    </div>`
+    : `<div class="openline"><span></span><span class="pfp">—</span>
+        <span>no score yet</span>
+        <button class="btn sm" data-act="new-score">score it</button></div>`;
+
   sheet.innerHTML =
-   `<div class="sheethead"><span class="lbl">details</span><span class="sp"></span>
-      <button class="btn sm" id="d-close">close ✕</button></div>
-    <div class="sheetbody">
-      <div class="left"><div class="field"><img src="${esc(c.cover)}" alt=""></div>
-        ${metaRows(c)}</div>
+   `<div class="sheetbody">
+      <div class="left">
+        <div class="plate"><img src="${esc(c.cover)}" alt=""></div>
+        ${capRows(c)}
+      </div>
       <div class="right">
         <h3>${esc(c.title)}</h3>
         <p class="desc">${esc(c.desc)}</p>
-        <div class="head" style="border-bottom:1px solid var(--rule)"><h2>cast</h2>
-          <span class="n">${esc(v.t)}</span></div>
-        ${c.cast.map(([who, perf, lines]) =>
-          `<div class="castrow"><span><b>${esc(who)}</b> · ${esc(perf)}</span>
-             <span>${nfmt(lines)} lines</span></div>`).join('') ||
-          `<div class="castrow"><span style="color:var(--muted)">nobody cast yet</span><span></span></div>`}
-        ${open.map(r =>
-          `<div class="castrow"><span><b>${esc(r.name)}</b> ·
-             <span style="color:var(--muted)">open</span></span>
-             <span>${nfmt(r.lines)} lines</span></div>`).join('')}
-        <div class="head" style="border-bottom:1px solid var(--rule);margin-top:var(--s5)">
-          <h2>score</h2><span class="n">${esc(s.t)}</span></div>
-        <div class="castrow"><span>${c.scores ? 'pick a mix when you open it' : 'no score yet'}</span>
-          <span>${nfmt(c.kudos)} kudos</span></div>
+        <div class="subhead"><span>tags</span><span class="sp"></span>
+          <span class="n">${c.tags.length}</span></div>
+        <div class="alltags">${c.tags.map(t =>
+          `<span class="tag" data-tag="${esc(t)}">${esc(t)}</span>`).join('')}</div>
+
+        <div class="subhead"><span>the mix</span><span class="sp"></span>
+          <span class="n" id="mix-sum">${mixSummary(c)}</span></div>
+        <div class="charhead" style="margin-top:var(--s2)"><span>voices</span>
+          <span class="sp"></span><span>${esc(v.t)}</span></div>
+        ${castHtml || ''}
+        ${openHtml}
+        <div class="charhead" style="margin-top:var(--s5)"><span>score</span>
+          <span class="sp"></span><span>${c.scores.length} available</span></div>
+        ${scoreHtml}
+        <div class="mixline">your mix is saved to this comic and travels with your shelf.</div>
       </div>
     </div>
     <div class="acts">
-      <button class="btn p" id="d-read">read it</button>
+      <button class="btn p" id="d-read">read it with this mix</button>
       <button class="btn" id="d-shelf" aria-pressed="${c.shelf ? 'true' : 'false'}">
         ${c.shelf ? 'on your shelf' : 'add to shelf'}</button>
       <button class="btn" id="d-kudos" aria-pressed="false">kudos ${nfmt(c.kudos)}</button>
-      ${open.length ? `<button class="btn" id="d-voice">voice ${esc(role ? role.name : open[0].name)}</button>` : ''}
     </div>`;
 
-  const left = sheet.querySelector('.left');
-  tint(left, c);
-  const cached = COLOR_CACHE.get(c.id);
-  if(cached && cached !== 'none') paint(left, cached);
+  /* picking a take or a score */
+  sheet.addEventListener('click', e => {
+    const prev = e.target.closest('.prev');
+    if(prev){ e.stopPropagation(); preview(prev, +prev.dataset.dur); return; }
+    const tag = e.target.closest('[data-tag]');
+    if(tag){ closeDetails(); searchTag(tag.dataset.tag); return; }
+    const voice = e.target.closest('[data-voice]');
+    if(voice){ toast('opening the recording booth'); return; }
+    const pick = e.target.closest('.pick');
+    if(!pick) return;
+    if(pick.dataset.score !== undefined){
+      m.score = +pick.dataset.score;
+      sheet.querySelectorAll('[data-score]').forEach(p =>
+        p.setAttribute('aria-checked', +p.dataset.score === m.score));
+    }else{
+      m.voices[pick.dataset.char] = +pick.dataset.i;
+      sheet.querySelectorAll(`[data-char="${pick.dataset.char}"]`).forEach(p =>
+        p.setAttribute('aria-checked', +p.dataset.i === m.voices[pick.dataset.char]));
+    }
+    sheet.querySelector('#mix-sum').innerHTML = mixSummary(c);
+  });
+  sheet.addEventListener('keydown', e => {
+    if(e.key !== 'Enter' && e.key !== ' ') return;
+    const pick = e.target.closest('.pick');
+    if(pick){ e.preventDefault(); pick.click(); }
+  });
 
-  sheet.querySelector('#d-close').onclick = closeDetails;
   sheet.querySelector('#d-read').onclick = () => toast(`opening ${c.title}`);
   const sh = sheet.querySelector('#d-shelf');
   sh.onclick = () => {
@@ -761,18 +942,23 @@ function openDetails(c, role){
     kb.textContent = `kudos ${nfmt(c.kudos)}`;
     renderAll();
   };
-  const vb = sheet.querySelector('#d-voice');
-  if(vb) vb.onclick = () => toast('opening the recording booth');
 
   lastFocus = document.activeElement;
   ov.classList.add('on');
   document.body.style.overflow = 'hidden';
   fitScrollers(sheet);
-  sheet.querySelector('#d-close').focus();
+  sheet.scrollTop = 0;
+  /* jumped in from an open role: put that character in view */
+  if(role){
+    const target = [...sheet.querySelectorAll('[data-voice]')]
+      .find(el => el.dataset.voice === role.id);
+    if(target) target.closest('.openline').scrollIntoView({block:'center'});
+  }
 }
 function closeDetails(){
   ov.classList.remove('on');
   document.body.style.overflow = '';
+  if(playing){ playing.classList.remove('playing'); playing.textContent = '▶'; playing = null; }
   if(lastFocus) lastFocus.focus();
 }
 ov.addEventListener('click', e => { if(e.target === ov) closeDetails(); });
@@ -790,42 +976,66 @@ function go(name){
     if(active) b.setAttribute('aria-current','page'); else b.removeAttribute('aria-current');
   });
   scrollTo(0,0);
-  fitScrollers(document);
+  fitScrollers(document); fitTags(document);
 }
 document.addEventListener('click', e => {
   const t = e.target.closest('[data-go]');
-  if(!t) return;
-  e.preventDefault();
-  go(t.dataset.go);
+  if(t){ e.preventDefault(); go(t.dataset.go); return; }
+  const act = e.target.closest('[data-act]');
+  if(act) toast(act.dataset.act === 'drafts' ? 'opening your drafts' : 'new score in the studio');
 });
 
-/* ---------- home ---------- */
-function renderHome(){
-  const fresh = [...COMICS].sort((a,b) => b.added.localeCompare(a.added)).slice(0,5);
-  fill(document.getElementById('grid-new'), fresh.map(c => cardEl(c)));
-  document.getElementById('new-n').textContent = `${fresh.length} this week`;
+/* a tag anywhere on the page is a search */
+function searchTag(tag){
+  bState.q = tag;
+  document.getElementById('b-q').value = tag;
+  renderBrowse();
+  go('browse');
+  toast(`tagged “${tag}”`);
+}
 
-  const follows = COMICS.filter(c => c.follow).slice(0,5);
+/* ---------- home. see more adds one more row of whatever it sits under. ---------- */
+const STEP = 5;
+const shown = {new:STEP, follow:STEP, roles:STEP};
+
+function renderHome(){
+  const fresh = [...COMICS].sort((a,b) => b.added.localeCompare(a.added));
+  fill(document.getElementById('grid-new'), fresh.slice(0, shown.new).map(c => cardEl(c)));
+  document.getElementById('new-n').textContent = `${fresh.length} this month`;
+
+  const follows = COMICS.filter(c => c.follow);
   fill(document.getElementById('grid-follow'),
-    follows.map(c => cardEl(c, `you follow ${c.follow}`)));
+    follows.slice(0, shown.follow).map(c => cardEl(c, `you follow ${c.follow}`)));
   document.getElementById('follow-n').textContent = `${follows.length} from 3 people`;
 
-  const roles = [...ROLES].sort((a,b) => b.lines - a.lines).slice(0,5);
-  fill(document.getElementById('grid-roles'), roles.map(roleCardEl));
+  const roles = [...ROLES].sort((a,b) => b.lines - a.lines);
+  fill(document.getElementById('grid-roles'), roles.slice(0, shown.roles).map(roleCardEl));
   document.getElementById('roles-n').textContent =
     `${ROLES.length} across ${new Set(ROLES.map(r => r.comic)).size} comics`;
+
+  const totals = {new:fresh.length, follow:follows.length, roles:roles.length};
+  document.querySelectorAll('[data-more]').forEach(b => {
+    const k = b.dataset.more, left = totals[k] - shown[k];
+    b.hidden = left <= 0;
+    b.textContent = `see more · ${left} left`;
+  });
 }
+document.querySelectorAll('[data-more]').forEach(b => b.addEventListener('click', () => {
+  shown[b.dataset.more] += STEP;
+  renderHome();
+}));
 
 /* ---------- browse ---------- */
 const bState = {q:'', sort:'new', filters:new Set()};
 function renderBrowse(){
-  let list = COMICS.filter(c => {
+  const list = COMICS.filter(c => {
     const hay = (c.title + ' ' + c.by + ' ' + c.tags.join(' ')).toLowerCase();
     if(bState.q && !hay.includes(bState.q)) return false;
     for(const f of bState.filters){
-      if(f === 'missing' && c.voices.done >= c.voices.total) return false;
-      if(f === 'cast' && c.voices.done < c.voices.total) return false;
-      if(f === 'scored' && !c.scores) return false;
+      const v = voicesOf(c);
+      if(f === 'missing' && !v.cls) return false;
+      if(f === 'cast' && v.cls) return false;
+      if(f === 'scored' && !c.scores.length) return false;
     }
     return true;
   });
@@ -837,8 +1047,7 @@ function renderBrowse(){
   };
   list.sort(sorts[bState.sort]);
   fill(document.getElementById('grid-browse'), list.map(c => cardEl(c)));
-  document.getElementById('browse-n').textContent =
-    `${list.length} of ${COMICS.length} comics`;
+  document.getElementById('browse-n').textContent = `${list.length} of ${COMICS.length} comics`;
   document.getElementById('browse-empty').hidden = list.length > 0;
 }
 document.getElementById('b-q').addEventListener('input', e => {
@@ -858,7 +1067,7 @@ document.getElementById('b-filters').addEventListener('click', e => {
 /* ---------- open roles ---------- */
 const rState = {q:'', sort:'lines-desc', filters:new Set()};
 function renderRoles(){
-  let list = ROLES.filter(r => {
+  const list = ROLES.filter(r => {
     const c = byId(r.comic);
     const hay = (r.name + ' ' + c.title + ' ' + c.by + ' ' + r.blurb).toLowerCase();
     if(rState.q && !hay.includes(rState.q)) return false;
@@ -871,7 +1080,8 @@ function renderRoles(){
     'lines-desc':(a,b) => b.lines - a.lines,
     'lines-asc':(a,b) => a.lines - b.lines,
     'name':(a,b) => a.name.localeCompare(b.name),
-    'comic':(a,b) => byId(a.comic).title.localeCompare(byId(b.comic).title)
+    'comic':(a,b) => byId(a.comic).title.localeCompare(byId(b.comic).title),
+    'author':(a,b) => byId(a.comic).by.localeCompare(byId(b.comic).by)
   };
   list.sort(sorts[rState.sort]);
   fill(document.getElementById('rolelist'), list.map(r => roleRowEl(r)));
@@ -893,44 +1103,48 @@ document.getElementById('r-filters').addEventListener('click', e => {
   renderRoles();
 });
 
-/* ---------- shelf: what you are reading and what you have read ---------- */
+/* ---------- shelf: what you are reading, what you have read ---------- */
 function renderShelf(){
-  const reading = COMICS.filter(c => c.shelf === 'reading');
-  const read = COMICS.filter(c => c.shelf === 'read');
   const withBar = c => {
     const el = cardEl(c);
     if(c.progress != null){
       const bar = document.createElement('div');
       bar.className = 'progress';
       bar.innerHTML = `<i style="width:${Math.round(c.progress*100)}%"></i>`;
-      el.querySelector('.cardbody').appendChild(bar);
+      el.appendChild(bar);
     }
     return el;
   };
+  const reading = COMICS.filter(c => c.shelf === 'reading');
+  const read = COMICS.filter(c => c.shelf === 'read');
   fill(document.getElementById('grid-reading'), reading.map(withBar));
   fill(document.getElementById('grid-read'), read.map(withBar));
   document.getElementById('reading-n').textContent = `${reading.length} comics`;
   document.getElementById('read-n').textContent = `${read.length} comics`;
 }
 
-/* ---------- profile: parts this person has performed ---------- */
+/* ---------- profile: the parts this person has performed ---------- */
+const ME = 'imogen ash';
 function renderProfile(){
   const parts = [];
-  COMICS.forEach(c => c.cast.forEach(([who, perf, lines]) => {
-    if(perf === 'imogen ash')
-      parts.push({id:'p-'+c.id+who, name:who.toLowerCase(), comic:c.id, kind:'performed',
-                  lines, blurb:c.desc});
-  }));
+  COMICS.forEach(c => c.cast.forEach(ch => ch.takes.forEach(t => {
+    if(t.who === ME)
+      parts.push({id:'p-'+c.id+ch.char, name:ch.char, comic:c.id, kind:'performed',
+                  lines:t.lines, blurb:c.desc});
+  })));
   fill(document.getElementById('profile-parts'), parts.map(p => roleRowEl(p, true)));
+  document.getElementById('parts-n').textContent = `${parts.length}`;
 }
 
 function renderAll(){ renderHome(); renderBrowse(); renderRoles(); renderShelf(); renderProfile(); }
 
-/* ---------- theme ---------- */
-document.getElementById('theme').addEventListener('click', () => {
+/* ---------- settings ---------- */
+document.getElementById('theme').addEventListener('click', e => {
   const root = document.documentElement;
-  root.dataset.theme = root.dataset.theme === 'dark' ? 'light' : 'dark';
-  repaintAll();
+  const dark = root.dataset.theme !== 'dark';
+  root.dataset.theme = dark ? 'dark' : 'light';
+  e.currentTarget.setAttribute('aria-pressed', dark);
+  e.currentTarget.textContent = dark ? 'on' : 'off';
 });
 
 /* ---------- toast ---------- */
@@ -944,7 +1158,8 @@ function toast(msg){
 
 renderAll();
 /* webfonts land after first paint and change every measurement */
-if(document.fonts && document.fonts.ready) document.fonts.ready.then(() => fitScrollers(document));
+if(document.fonts && document.fonts.ready)
+  document.fonts.ready.then(() => { fitScrollers(document); fitTags(document); });
 </script>
 </body>
 </html>
