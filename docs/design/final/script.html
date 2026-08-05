@@ -14,10 +14,16 @@
    on the comic's title. the page and the script sit either side of one
    full-height rule, and nothing else competes with them.
 
-   you pick one character on the way in and record only that character.
-   everyone else's lines stay on the page in grey, because a line is
-   unreadable without the line before it, and can be played back as
-   reference when somebody has already voiced them.
+   two rules this surface holds to:
+
+   any character can be voiced by anyone, as many times as people want
+   to record it. no character is ever shown as taken, and no performer
+   is named anywhere on this page — a reading you can hear is a
+   reference, not a claim on the part.
+
+   one page at a time. the column shows the lines on the page beside
+   it and nothing else, because a page is the unit a performer
+   actually works in.
    ============================================================ */
 :root{
   --paper:#FCFDFC;
@@ -79,15 +85,15 @@ img{display:block;max-width:100%}
 [data-theme="dark"] .btn[aria-pressed="true"]{color:var(--sage-900)}
 
 /* the shortcut list is a tooltip and nothing more */
-.keys{position:relative}
-.keys .pop{position:absolute;right:0;top:calc(100% + 6px);z-index:20;display:none;
+.hotkeys{position:relative}
+.hotkeys .pop{position:absolute;right:0;top:calc(100% + 6px);z-index:20;display:none;
   background:var(--paper);border:1px solid var(--rule);padding:var(--s2) var(--s3);
   white-space:nowrap;font-size:var(--fs-micro);letter-spacing:.06em;color:var(--soft-ink)}
-.keys:hover .pop,.keys:focus-within .pop{display:block}
-.keys .pop div{display:flex;gap:var(--s3);padding:2px 0}
-.keys .pop kbd{font:inherit;color:var(--ink);border:1px solid var(--rule-hair);
+.hotkeys:hover .pop,.hotkeys:focus-within .pop{display:block}
+.hotkeys .pop div{display:flex;gap:var(--s3);padding:2px 0}
+.hotkeys .pop kbd{font:inherit;color:var(--ink);border:1px solid var(--rule-hair);
   padding:0 4px;min-width:16px;text-align:center}
-.keys .pop span{flex:1;text-align:right;color:var(--muted)}
+.hotkeys .pop span{flex:1;text-align:right;color:var(--muted)}
 
 /* ---------- progress. words first, the bar underneath. ---------- */
 .prog{height:var(--prog);display:flex;align-items:center;gap:var(--s3);
@@ -98,19 +104,17 @@ img{display:block;max-width:100%}
 .prog .track i{position:absolute;inset:0 auto 0 0;background:var(--mark);
   transition:width var(--t-mid) var(--ease)}
 
-/* ---------- the split: page on the left, script on the right ---------- */
+/* ---------- the split: page on the left, that page's lines on the right ---------- */
 .split{display:grid;grid-template-columns:minmax(320px,42%) 1fr;
   height:calc(100vh - var(--hdr) - var(--prog))}
 @media(max-width:860px){
   body{overflow:auto}
   .split{grid-template-columns:1fr;height:auto}
 }
-
 .page{border-right:1px solid var(--rule);display:grid;
   grid-template-rows:1fr auto;min-height:0;background:var(--paper)}
 .stage{display:grid;place-items:center;padding:var(--s4);min-height:0;overflow:hidden}
-.stage .plate{border:1px solid var(--rule-hair);background:var(--paper-1);
-  max-height:100%;position:relative}
+.stage .plate{border:1px solid var(--rule-hair);background:var(--paper-1);max-height:100%}
 [data-theme="dark"] .stage .plate{background:var(--surf-2)}
 .stage img{max-height:100%;width:auto;object-fit:contain}
 .pagebar{display:flex;align-items:center;gap:var(--s3);padding:var(--s2) var(--s4);
@@ -119,13 +123,12 @@ img{display:block;max-width:100%}
 .pagebar .sp{flex:1}
 .pagebar .n{color:var(--ink);font-variant-numeric:tabular-nums;letter-spacing:0}
 
-/* ---------- the script column ---------- */
+/* ---------- the script column: one page of lines ---------- */
 .script{overflow:auto;min-height:0;padding:0 0 var(--s8)}
 .pagemark{position:sticky;top:0;z-index:5;background:var(--paper);
   display:flex;align-items:baseline;gap:var(--s3);padding:var(--s2) var(--s4);
-  border-bottom:1px solid var(--rule);border-top:1px solid var(--rule);
+  border-bottom:1px solid var(--rule);
   font-size:var(--fs-micro);letter-spacing:.16em;text-transform:uppercase;color:var(--label)}
-.pagemark:first-child{border-top:0}
 .pagemark b{color:var(--ink);font-weight:500}
 .pagemark .sp{flex:1}
 .pagemark .n{font-variant-numeric:tabular-nums}
@@ -146,7 +149,6 @@ img{display:block;max-width:100%}
   text-wrap:pretty}
 .line .paren{font-style:italic;color:var(--muted);font-size:var(--fs-xs);display:block}
 .line .side{display:flex;align-items:center;gap:var(--s2);white-space:nowrap}
-
 .line.mine{box-shadow:inset 2px 0 0 var(--rule-hair)}
 .line.mine.on{background:var(--surface);box-shadow:inset 3px 0 0 var(--mark)}
 .line.mine.done .cue{color:var(--accent)}
@@ -154,21 +156,19 @@ img{display:block;max-width:100%}
 .line.other .say{font-size:var(--fs-sm);max-width:52ch}
 .line.other .cue{color:var(--muted)}
 
-/* status sits in the cue row as a word, not a colour swatch */
-.state{font-size:var(--fs-micro);letter-spacing:.1em;text-transform:uppercase;
-  color:var(--label)}
+.state{font-size:var(--fs-micro);letter-spacing:.1em;text-transform:uppercase;color:var(--label)}
 .state.done{color:var(--accent)}
-.state.rec{color:var(--rec)}
 
 /* ---------- takes ---------- */
 .takes{padding:0 var(--s4) var(--s3) calc(var(--s4) + 26px + var(--s3));
   border-bottom:1px solid var(--rule-hair);background:var(--surface)}
 .take{display:grid;grid-template-columns:14px 1fr auto auto;gap:var(--s2);
-  align-items:center;width:100%;text-align:left;background:none;border:0;color:inherit;
-  font:inherit;padding:3px 0;border-bottom:1px solid var(--rule-hair);
-  transition:background var(--t-fast) var(--ease)}
-.take:last-child{border-bottom:0}
-.take:hover{background:var(--paper)}
+  align-items:center;padding:3px 0;border-bottom:1px solid var(--rule-hair)}
+.take:last-of-type{border-bottom:0}
+.take .pickpart{display:grid;grid-template-columns:14px 1fr;gap:var(--s2);align-items:center;
+  background:none;border:0;color:inherit;font:inherit;text-align:left;padding:0;
+  grid-column:1 / span 2;transition:opacity var(--t-fast) var(--ease)}
+.take .pickpart:hover{opacity:.7}
 .take .dot{width:11px;height:11px;border:1px solid var(--line-strong);border-radius:50%;
   position:relative}
 .take[aria-checked="true"] .dot{border-color:var(--mark)}
@@ -177,6 +177,7 @@ img{display:block;max-width:100%}
 .take .lbl{font-size:var(--fs-xs)}
 .take[aria-checked="true"] .lbl{font-weight:500}
 .take .meta{font-size:var(--fs-micro);color:var(--label);font-variant-numeric:tabular-nums}
+.take .tools{display:flex;gap:var(--s1);align-items:center}
 .takehead{font-size:var(--fs-micro);letter-spacing:.12em;text-transform:uppercase;
   color:var(--label);padding:var(--s2) 0 2px}
 
@@ -200,7 +201,36 @@ img{display:block;max-width:100%}
 @keyframes pulse{50%{opacity:.15}}
 .rec .n{font-variant-numeric:tabular-nums;letter-spacing:0}
 
-/* ---------- the way in: pick one character ---------- */
+/* ---------- trim: in and out points on one take ---------- */
+.trim{grid-column:1 / -1;padding:var(--s2) 0 var(--s3);max-width:560px}
+.wave{position:relative;height:34px;border:1px solid var(--rule-hair);background:var(--paper);
+  display:flex;align-items:center;gap:1px;padding:0 1px;margin:0 5px;
+  touch-action:none;user-select:none}
+.wave .bar{flex:1;background:var(--sage-300);min-width:1px}
+[data-theme="dark"] .wave .bar{background:var(--sage-700)}
+.wave .bar.in{background:var(--mark)}
+/* everything outside the in and out points is dimmed, not deleted: trimming
+   is a decision you can take back. */
+.wave .mask{position:absolute;top:0;bottom:0;background:var(--paper);opacity:.72;
+  pointer-events:none}
+.wave .mask.l{left:0}.wave .mask.r{right:0}
+.wave .handle{position:absolute;top:-4px;bottom:-4px;width:11px;margin-left:-5px;padding:0;
+  background:none;border:0;cursor:ew-resize;z-index:3}
+.wave .handle::before{content:"";position:absolute;top:4px;bottom:4px;left:5px;width:1px;
+  background:var(--mark)}
+/* the grip sits proud of the waveform at both ends so neither one can be
+   mistaken for a loud bar */
+.wave .handle::after{content:"";position:absolute;top:0;left:0;width:11px;height:7px;
+  background:var(--mark)}
+.wave .handle[data-h="out"]::after{top:auto;bottom:0}
+.wave .handle:hover::after,.wave .handle:focus-visible::after{background:var(--accent)}
+.trimfoot{display:flex;align-items:center;gap:var(--s3);padding-top:var(--s2);
+  font-size:var(--fs-micro);letter-spacing:.06em;color:var(--label);
+  font-variant-numeric:tabular-nums}
+.trimfoot b{color:var(--ink);font-weight:500}
+.trimfoot .sp{flex:1}
+
+/* ---------- the way in: pick a character. every one of them is available. ---------- */
 .ov{position:fixed;inset:0;z-index:60;background:rgba(12,19,15,.55);display:none;
   place-items:center;padding:var(--s5);animation:fade var(--t-fast) var(--ease)}
 .ov.on{display:grid}
@@ -225,11 +255,10 @@ img{display:block;max-width:100%}
 [data-theme="dark"] .portrait{background:var(--surf-2)}
 .portrait img{width:100%;height:100%;object-fit:cover}
 .pickrow .name{display:block;font-family:var(--font-display);font-size:15px;line-height:20px}
-.pickrow .blurb{display:-webkit-box;font-size:var(--fs-xs);color:var(--soft-ink);line-height:1.4;
-  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.pickrow .blurb{display:-webkit-box;font-size:var(--fs-xs);color:var(--soft-ink);
+  line-height:1.4;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .pickrow .meta{font-size:var(--fs-micro);color:var(--label);text-align:right;
   font-variant-numeric:tabular-nums;white-space:nowrap}
-.pickrow .taken{color:var(--muted);font-style:italic}
 .pickfoot{padding:var(--s3) var(--s4);border-top:1px solid var(--rule);
   font-size:var(--fs-micro);color:var(--label);letter-spacing:.06em}
 
@@ -252,12 +281,13 @@ img{display:block;max-width:100%}
   </div>
   <span class="sp"></span>
   <button class="btn quiet" id="ref" aria-pressed="false">reference off</button>
-  <div class="keys">
-    <button class="btn quiet" aria-label="keyboard shortcuts">keys</button>
+  <div class="hotkeys">
+    <button class="btn quiet" aria-label="keyboard shortcuts">hotkeys</button>
     <div class="pop">
       <div><kbd>space</kbd><span>record / stop</span></div>
       <div><kbd>↑</kbd><kbd>↓</kbd><span>move between lines</span></div>
       <div><kbd>enter</kbd><span>play the take</span></div>
+      <div><kbd>[</kbd><kbd>]</kbd><span>turn the page</span></div>
     </div>
   </div>
   <button class="btn p" id="publish" disabled>publish voiceover</button>
@@ -283,15 +313,15 @@ img{display:block;max-width:100%}
   <div class="script" id="script"></div>
 </div>
 
-<!-- the way in: one character, one part -->
+<!-- the way in -->
 <div class="ov on" id="ov" role="dialog" aria-modal="true" aria-label="pick a character">
   <div class="sheet">
     <div class="sheethead"><span>voicing</span>
       <span class="ttl">the dark knight falls</span><span class="sp"></span>
       <span>miller, janson &amp; varley</span></div>
     <div id="picklist"></div>
-    <div class="pickfoot">one character at a time. finish this part and the rest
-      will still be here.</div>
+    <div class="pickfoot">one character at a time, and any of them, however many
+      people have read it before you.</div>
   </div>
 </div>
 <div class="toast" id="toast"></div>
@@ -299,8 +329,8 @@ img{display:block;max-width:100%}
 <script>
 /* ============================================================
    data. one comic, its pages, and every line on them. a line
-   belongs to a character; a character is either cast (somebody has
-   already voiced it, so it can be played as reference) or open.
+   belongs to a character. `ref` marks the lines a reference reading
+   exists for — whose reading it is never appears on this page.
    ============================================================ */
 const COMIC = {
   title:'the dark knight falls',
@@ -310,77 +340,81 @@ const COMIC = {
 };
 
 const CHARACTERS = [
-  {id:'narration', name:'narration', kind:'narration', voicedBy:null,
+  {id:'narration', name:'narration', kind:'narration',
    blurb:'Interior monologue in the second person, delivered like a man arguing with his own doctor.'},
-  {id:'anchor', name:'news anchor', kind:'narration', voicedBy:null,
+  {id:'anchor', name:'news anchor', kind:'narration',
    blurb:'Television voice. Bright, level, and completely unbothered by what it is reporting.'},
-  {id:'bruce', name:'bruce', kind:'lead', voicedBy:'r. mbeki',
+  {id:'bruce', name:'bruce', kind:'lead',
    blurb:'Ten years retired and out of patience with the argument.'},
-  {id:'gordon', name:'gordon', kind:'supporting', voicedBy:'a. varga',
+  {id:'gordon', name:'gordon', kind:'supporting',
    blurb:'Tired, decent, and about to hand in his badge.'}
 ];
 const charById = id => CHARACTERS.find(c => c.id === id);
 
-/* page, character, the line, and an optional parenthetical */
 const LINES = [
-  {p:1, c:'narration', t:'The rain on my chest is a baptism. I am born again.'},
-  {p:1, c:'bruce',     t:'Not yet.', paren:'to himself'},
-  {p:1, c:'narration', t:'The city screams. It always screams. Tonight it screams my name.'},
-  {p:1, c:'gordon',    t:'You look like hell.'},
-  {p:1, c:'bruce',     t:'You should see the other guy.'},
+  {p:1, c:'narration', t:'The rain on my chest is a baptism. I am born again.', ref:true},
+  {p:1, c:'bruce',     t:'Not yet.', paren:'to himself', ref:true},
+  {p:1, c:'narration', t:'The city screams. It always screams. Tonight it screams my name.', ref:true},
+  {p:1, c:'gordon',    t:'You look like hell.', ref:true},
+  {p:1, c:'bruce',     t:'You should see the other guy.', ref:true},
   {p:1, c:'narration', t:'He is seventy years old and he still stands like a man expecting a fight.'},
 
   {p:2, c:'anchor',    t:'—reports of a masked figure downtown, and police are asking residents to stay indoors—'},
-  {p:2, c:'narration', t:'They have been asking that for thirty years. Nobody has ever listened.'},
-  {p:2, c:'bruce',     t:'Move.'},
+  {p:2, c:'narration', t:'They have been asking that for thirty years. Nobody has ever listened.', ref:true},
+  {p:2, c:'bruce',     t:'Move.', ref:true},
   {p:2, c:'anchor',    t:'—we go now to our correspondent at the scene, who tells us the National Guard has been mobilised—'},
-  {p:2, c:'narration', t:'The mud takes my weight. It takes his too. That is the whole plan.'},
-  {p:2, c:'gordon',    t:'Thirty years. I never once asked who you were.'},
+  {p:2, c:'narration', t:'The mud takes my weight. It takes his too. That is the whole plan.', ref:true},
+  {p:2, c:'gordon',    t:'Thirty years. I never once asked who you were.', ref:true},
 
-  {p:3, c:'narration', t:'There is a moment, before the fall, when everything is very quiet and very clear.'},
-  {p:3, c:'bruce',     t:'This is the sound of somebody who has finally stopped pretending.'},
+  {p:3, c:'narration', t:'There is a moment, before the fall, when everything is very quiet and very clear.', ref:true},
+  {p:3, c:'bruce',     t:'This is the sound of somebody who has finally stopped pretending.', ref:true},
   {p:3, c:'anchor',    t:'—no confirmation yet, though sources describe the scene as, and I quote, a war—'},
   {p:3, c:'narration', t:'I want them to remember the sound. I want them to remember that it was not a gun.'},
-  {p:3, c:'gordon',    t:'Put it down. Please.'},
+  {p:3, c:'gordon',    t:'Put it down. Please.', ref:true},
 
-  {p:4, c:'narration', t:'This will be a good death. Good enough.'},
-  {p:4, c:'bruce',     t:'Not good enough. Not yet.'},
+  {p:4, c:'narration', t:'This will be a good death. Good enough.', ref:true},
+  {p:4, c:'bruce',     t:'Not good enough. Not yet.', ref:true},
   {p:4, c:'narration', t:'Somewhere below the city, an old man laughs, and a boy starts running.'},
   {p:4, c:'anchor',    t:'—and we are being told the funeral will be private, at the family’s request—'},
   {p:4, c:'narration', t:'Let them bury the cape. The rest of it was never mine to keep.'}
 ];
 
-/* recording state, per line index: takes and which one is picked */
-const STATE = LINES.map(() => ({takes:[], chosen:null, open:false}));
-let ME = null;            // the character being voiced
-let focused = -1;         // index into LINES
+/* recording state per line: the takes and which one is kept */
+const STATE = LINES.map(() => ({takes:[], chosen:null}));
+let ME = null;
+let focused = -1;
 let page = 1;
 let reference = false;
+let trimOpen = null;      // "lineIndex:takeIndex" while a trim editor is open
 
 const esc = s => String(s).replace(/[&<>"]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
 const mine = i => LINES[i].c === ME;
+const onPage = p => LINES.map((l, i) => i).filter(i => LINES[i].p === p);
 const myLines = () => LINES.map((l, i) => i).filter(mine);
+const myLinesOn = p => onPage(p).filter(mine);
 const clock = s => `${Math.floor(s/60)}:${String(Math.floor(s%60)).padStart(2,'0')}`;
+const clock1 = s => `${Math.floor(s/60)}:${(s%60).toFixed(1).padStart(4,'0')}`;
 
 const PLAY = '<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M3.5 2 10 6l-6.5 4z"/></svg>';
 const PAUSE = '<svg viewBox="0 0 12 12" aria-hidden="true">'
   + '<rect x="3" y="2.5" width="2.4" height="7"/><rect x="6.6" y="2.5" width="2.4" height="7"/></svg>';
 
-/* ---------- the way in ---------- */
+/* ============================================================
+   the way in. every character is offered, always. how many people
+   have already read a part is not this page's business.
+   ============================================================ */
 function renderPicker(){
-  document.getElementById('picklist').innerHTML = CHARACTERS.map(ch => {
+  document.getElementById('picklist').innerHTML = CHARACTERS.map((ch, k) => {
     const n = LINES.filter(l => l.c === ch.id).length;
-    return `<button class="pickrow" type="button" data-pick="${esc(ch.id)}"
-      ${ch.voicedBy ? 'disabled' : ''}>
+    return `<button class="pickrow" type="button" data-pick="${esc(ch.id)}">
       <span class="portrait"><img src="${esc(COMIC.cover)}" alt=""
-        style="object-position:${20 + n*3}% ${10 + n*2}%"></span>
+        style="object-position:${22 + k*17}% ${12 + k*9}%"></span>
       <span>
         <span class="name">${esc(ch.name)}</span>
         <span class="blurb">${esc(ch.blurb)}</span>
       </span>
       <span class="meta">${n} lines<br>${esc(ch.kind)}</span>
-      <span class="meta ${ch.voicedBy ? 'taken' : ''}">${ch.voicedBy
-        ? 'voiced by ' + esc(ch.voicedBy) : '<span class="btn sm">voice this</span>'}</span>
+      <span class="meta"><span class="btn sm">voice this</span></span>
     </button>`;
   }).join('');
 }
@@ -390,61 +424,56 @@ document.getElementById('picklist').addEventListener('click', e => {
   ME = row.dataset.pick;
   document.getElementById('ov').classList.remove('on');
   document.getElementById('w-char').textContent = charById(ME).name;
-  render();
   const first = myLines()[0];
+  if(first !== undefined) page = LINES[first].p;
+  render();
   if(first !== undefined) focus(first);
 });
 document.getElementById('w-char').addEventListener('click', () => {
-  if(recording) stopRecording();
+  if(recording !== null) stopRecording();
   document.getElementById('ov').classList.add('on');
 });
 
-/* ---------- the script ---------- */
+/* ============================================================
+   the script column. one page, and only that page.
+   ============================================================ */
 function render(){
-  const box = document.getElementById('script');
-  let html = '';
-  let lastPage = null;
-  LINES.forEach((l, i) => {
-    if(l.p !== lastPage){
-      lastPage = l.p;
-      const onPage = LINES.filter((x, j) => x.p === l.p && mine(j));
-      const left = onPage.filter((x, j) => !STATE[LINES.indexOf(x)].takes.length).length;
-      html += `<div class="pagemark" data-page="${l.p}"><b>page ${l.p}</b>
-        <span class="sp"></span>
-        <span class="n">${!ME ? '' : left ? left + ' to record'
-          : onPage.length ? 'page done' : 'nothing here'}</span></div>`;
-    }
-    html += lineHtml(l, i);
-  });
-  box.innerHTML = html;
+  const left = myLinesOn(page).filter(i => !STATE[i].takes.length).length;
+  const count = myLinesOn(page).length;
+  document.getElementById('script').innerHTML =
+    `<div class="pagemark"><b>page ${page}</b><span class="sp"></span>
+       <span class="n">${!ME ? `${onPage(page).length} lines`
+        : count ? (left ? `${left} of ${count} to record` : `all ${count} recorded`)
+        : 'nothing for you on this page'}</span></div>`
+    + onPage(page).map(i => lineHtml(LINES[i], i)).join('');
   paintProgress();
-  showPage(page);
+  paintPagebar();
 }
 
 function lineHtml(l, i){
   const ch = charById(l.c), st = STATE[i], is = mine(i);
-  const state = st.takes.length
-    ? `<span class="state done">${st.takes.length} take${st.takes.length === 1 ? '' : 's'}</span>`
-    : `<span class="state">to record</span>`;
 
-  /* somebody else's line. grey, and playable when they have recorded it
-     and reference is switched on. */
+  /* another character's line. grey, kept for cueing, and playable as a
+     reference when a reading exists. no performer is named. */
   if(!is) return `
-    <div class="line other" data-i="${i}" data-page="${l.p}">
+    <div class="line other" data-i="${i}">
       <span class="num n">${i + 1}</span>
       <span class="body">
-        <span class="cue">${esc(ch.name)}${ch.voicedBy ? ' · ' + esc(ch.voicedBy) : ''}</span>
+        <span class="cue">${esc(ch.name)}</span>
         ${l.paren ? `<span class="paren">(${esc(l.paren)})</span>` : ''}
         <span class="say">${esc(l.t)}</span>
       </span>
-      <span class="side">${reference && ch.voicedBy
-        ? `<button class="prev" data-play="${i}" data-dur="6" title="hear ${esc(ch.voicedBy)}">${PLAY}</button>`
-        : reference ? `<button class="prev ghost" disabled title="not voiced yet">${PLAY}</button>` : ''}</span>
+      <span class="side">${!reference ? '' : l.ref
+        ? `<button class="prev" data-play="${i}" data-dur="6" title="hear a reference reading">${PLAY}</button>`
+        : `<button class="prev ghost" disabled title="no reading to reference yet">${PLAY}</button>`}</span>
     </div>`;
 
+  const state = st.takes.length
+    ? `<span class="state done">${st.takes.length} take${st.takes.length === 1 ? '' : 's'}</span>`
+    : `<span class="state">to record</span>`;
   return `
     <button class="line mine${st.takes.length ? ' done' : ''}${i === focused ? ' on' : ''}"
-            type="button" data-i="${i}" data-page="${l.p}">
+            type="button" data-i="${i}">
       <span class="num n">${i + 1}</span>
       <span class="body">
         <span class="cue">${esc(ch.name)}</span>
@@ -452,84 +481,124 @@ function lineHtml(l, i){
         <span class="say">${esc(l.t)}</span>
       </span>
       <span class="side">${state}
+        ${reference && l.ref
+          ? `<button class="prev" data-play="${i}" data-dur="6" title="hear a reference reading">${PLAY}</button>`
+          : ''}
         <span class="rec" data-rec="${i}"><span class="bead"></span>
           <span class="lbl">rec</span></span></span>
     </button>
     ${st.takes.length ? takesHtml(i) : ''}`;
 }
 
-/* the takes on one line. record as many as you like, keep one. */
+/* ---------- takes, with trim on each one ---------- */
 function takesHtml(i){
   const st = STATE[i];
-  return `<div class="takes" data-takes="${i}">
+  return `<div class="takes">
     <div class="takehead">takes · keep one</div>
-    ${st.takes.map((t, k) => `
-      <div class="take" role="radio" tabindex="0" aria-checked="${st.chosen === k}"
-           data-take="${i}" data-k="${k}">
-        <span class="dot"></span>
-        <span class="lbl">take ${k + 1}</span>
-        <span class="meta">${clock(t.dur)}</span>
-        <button class="prev" data-playtake="${i}" data-k="${k}"
-          data-dur="${t.dur}" title="play take ${k + 1}">${PLAY}</button>
-      </div>`).join('')}
+    ${st.takes.map((t, k) => {
+      const open = trimOpen === i + ':' + k;
+      return `<div class="take" role="radio" aria-checked="${st.chosen === k}"
+                   data-take="${i}" data-k="${k}">
+        <button class="pickpart" type="button" data-keep="${i}" data-k="${k}">
+          <span class="dot"></span><span class="lbl">take ${k + 1}</span>
+        </button>
+        <span class="meta">${clock1(t.out - t.in)}${t.in || t.out < t.raw
+          ? ` · trimmed` : ''}</span>
+        <span class="tools">
+          <button class="prev" data-playtake="${i}" data-k="${k}"
+            data-dur="${(t.out - t.in).toFixed(1)}" title="play take ${k + 1}">${PLAY}</button>
+          <button class="btn sm" data-auto="${i}" data-k="${k}">autotrim</button>
+          <button class="btn sm" data-trim="${i}" data-k="${k}"
+            aria-pressed="${open}">trim</button>
+        </span>
+        ${open ? trimHtml(i, k, t) : ''}
+      </div>`;
+    }).join('')}
+  </div>`;
+}
+
+/* the waveform is the take's own envelope. the in and out points are
+   dragged on it, and everything outside them is dimmed rather than cut,
+   so trimming stays a decision you can take back. */
+function trimHtml(i, k, t){
+  const L = t.in / t.raw * 100, R = (1 - t.out / t.raw) * 100;
+  return `<div class="trim">
+    <div class="wave" data-wave="${i}:${k}">
+      ${t.wave.map((a, n) => {
+        const at = (n + .5) / t.wave.length * t.raw;
+        return `<span class="bar${at >= t.in && at <= t.out ? ' in' : ''}"
+          style="height:${Math.round(6 + a * 30)}px"></span>`;
+      }).join('')}
+      <span class="mask l" style="width:${L}%"></span>
+      <span class="mask r" style="width:${R}%"></span>
+      <button class="handle" data-h="in" style="left:${L}%" aria-label="in point"></button>
+      <button class="handle" data-h="out" style="left:${100 - R}%" aria-label="out point"></button>
+    </div>
+    <div class="trimfoot">
+      <span>in <b>${clock1(t.in)}</b></span>
+      <span>out <b>${clock1(t.out)}</b></span>
+      <span>keeps <b>${clock1(t.out - t.in)}</b> of ${clock1(t.raw)}</span>
+      <span class="sp"></span>
+      <button class="btn sm" data-reset="${i}" data-k="${k}">reset</button>
+      <button class="btn sm" data-done="${i}" data-k="${k}">done</button>
+    </div>
   </div>`;
 }
 
 /* ---------- progress ---------- */
 function paintProgress(){
+  const pub = document.getElementById('publish');
   if(!ME){
     document.getElementById('p-words').textContent = 'pick a character to start';
     document.getElementById('p-bar').style.width = '0';
     document.getElementById('p-pages').textContent = `${LINES.length} lines in this chapter`;
-    document.getElementById('publish').textContent = 'publish voiceover';
-    document.getElementById('publish').disabled = true;
+    pub.textContent = 'publish voiceover';
+    pub.disabled = true;
     return;
   }
   const ids = myLines();
   const done = ids.filter(i => STATE[i].takes.length).length;
-  document.getElementById('p-words').innerHTML =
-    `<b>${done}</b> of <b>${ids.length}</b> lines`;
-  document.getElementById('p-bar').style.width =
-    (ids.length ? (done / ids.length * 100) : 0) + '%';
+  document.getElementById('p-words').innerHTML = `<b>${done}</b> of <b>${ids.length}</b> lines`;
+  document.getElementById('p-bar').style.width = (ids.length ? done / ids.length * 100 : 0) + '%';
   const pagesLeft = new Set(ids.filter(i => !STATE[i].takes.length).map(i => LINES[i].p));
   document.getElementById('p-pages').textContent = pagesLeft.size
     ? `${pagesLeft.size} page${pagesLeft.size === 1 ? '' : 's'} left`
     : 'every line recorded';
-  const pub = document.getElementById('publish');
   pub.disabled = !ids.length || done < ids.length;
-  pub.textContent = pub.disabled
-    ? `publish voiceover · ${ids.length - done} left`
-    : 'publish voiceover';
+  pub.textContent = pub.disabled ? `publish voiceover · ${ids.length - done} left`
+                                 : 'publish voiceover';
 }
 
 /* ---------- the page beside the script ---------- */
-function showPage(p){
-  page = Math.min(Math.max(p, COMIC.pages[0]), COMIC.pages[COMIC.pages.length - 1]);
+function paintPagebar(){
   document.getElementById('pg-n').textContent = `page ${page} of ${COMIC.pages.length}`;
-  /* one image stands in for every page here; the real pages come out of
-     the .eski file the same way the reader loads them. */
+  /* one image stands in for every page here; the real pages come out of the
+     .eski file the same way the reader loads them. */
   document.getElementById('pageimg').src = COMIC.cover;
-  const left = LINES.filter((l, i) => l.p === page && mine(i) && !STATE[i].takes.length).length;
+  const left = myLinesOn(page).filter(i => !STATE[i].takes.length).length;
   document.getElementById('pg-left').textContent = !ME ? ''
     : left ? `${left} line${left === 1 ? '' : 's'} to record` : 'nothing left here';
   document.getElementById('pg-prev').disabled = page === COMIC.pages[0];
   document.getElementById('pg-next').disabled = page === COMIC.pages[COMIC.pages.length - 1];
 }
+function goPage(p, land){
+  const first = COMIC.pages[0], last = COMIC.pages[COMIC.pages.length - 1];
+  if(p < first || p > last) return;
+  if(recording !== null) stopRecording();
+  page = p;
+  trimOpen = null;
+  const ids = myLinesOn(page);
+  focused = ids.length ? (land === 'last' ? ids[ids.length - 1] : ids[0]) : -1;
+  render();
+  document.getElementById('script').scrollTop = 0;
+}
 document.getElementById('pg-prev').addEventListener('click', () => goPage(page - 1));
 document.getElementById('pg-next').addEventListener('click', () => goPage(page + 1));
-function goPage(p){
-  showPage(p);
-  const first = LINES.findIndex((l, i) => l.p === page && mine(i));
-  if(first >= 0) focus(first); else scrollToPage(page);
-}
-function scrollToPage(p){
-  const mark = document.querySelector(`.pagemark[data-page="${p}"]`);
-  if(mark) mark.scrollIntoView({block:'start', behavior:'smooth'});
-}
 
 /* ---------- focus ---------- */
 function focus(i){
   if(i < 0 || i >= LINES.length || !mine(i)) return;
+  if(LINES[i].p !== page){ page = LINES[i].p; focused = i; render(); return; }
   focused = i;
   document.querySelectorAll('.line.mine').forEach(el =>
     el.classList.toggle('on', +el.dataset.i === i));
@@ -540,13 +609,15 @@ function focus(i){
     if(r.top < b.top + 60 || r.bottom > b.bottom - 60)
       el.scrollIntoView({block:'center', behavior:'smooth'});
   }
-  if(LINES[i].p !== page) showPage(LINES[i].p);
 }
+/* arrows walk this page's lines, and step onto the next page at the end of
+   one — the column still only ever shows a single page. */
 function step(dir){
-  const ids = myLines();
+  const ids = myLinesOn(page);
   const at = ids.indexOf(focused);
-  const next = ids[Math.min(Math.max(at + dir, 0), ids.length - 1)];
-  if(next !== undefined) focus(next);
+  const next = ids[at + dir];
+  if(next !== undefined){ focus(next); return; }
+  goPage(page + dir, dir < 0 ? 'last' : 'first');
 }
 
 /* ---------- recording ---------- */
@@ -560,24 +631,95 @@ function startRecording(i){
   if(!btn) return;
   btn.classList.add('on');
   recTimer = setInterval(() => {
-    const s = (Date.now() - recStart) / 1000;
-    btn.querySelector('.lbl').innerHTML = `<span class="n">${clock(s)}</span>`;
+    btn.querySelector('.lbl').innerHTML =
+      `<span class="n">${clock((Date.now() - recStart) / 1000)}</span>`;
   }, 100);
 }
 function stopRecording(){
   if(recording === null) return;
-  const i = recording, dur = Math.max(1, Math.round((Date.now() - recStart) / 1000));
+  const i = recording;
+  const raw = Math.max(1.2, (Date.now() - recStart) / 1000);
   clearInterval(recTimer);
   recording = null;
   const st = STATE[i];
-  st.takes.push({dur});
+  st.takes.push(makeTake(raw, i * 7 + st.takes.length));
   st.chosen = st.takes.length - 1;      // the newest take is the one you keep
   render();
   focus(i);
-  toast(`take ${st.takes.length} · ${clock(dur)}`);
+  toast(`take ${st.takes.length} · ${clock1(raw)}`);
 }
 
-/* ---------- playback. one at a time, same as everywhere else. ---------- */
+/* a take carries its raw length, its envelope, and its in and out points.
+   the envelope stands in for the real one until there is audio to read. */
+function makeTake(raw, seed){
+  const n = 48, wave = [];
+  let s = seed * 9301 + 49297;
+  const rnd = () => { s = (s * 9301 + 49297) % 233280; return s / 233280; };
+  for(let k = 0; k < n; k++){
+    const x = k / (n - 1);
+    /* quiet at the head and the tail, which is what autotrim is for */
+    const gate = x < .12 || x > .88 ? .05 : 1;
+    wave.push(Math.min(1, (0.35 + rnd() * 0.65) * gate * (0.6 + 0.4 * Math.sin(x * 9))));
+  }
+  return {raw, wave, in:0, out:raw};
+}
+
+/* ---------- trim ---------- */
+const SILENCE = 0.18;
+function autotrim(i, k){
+  const t = STATE[i].takes[k], n = t.wave.length;
+  let a = t.wave.findIndex(v => v > SILENCE);
+  let b = n - 1 - [...t.wave].reverse().findIndex(v => v > SILENCE);
+  if(a < 0){ toast('nothing to trim'); return; }
+  a = Math.max(0, a - 1); b = Math.min(n - 1, b + 1);
+  const before = t.out - t.in;
+  t.in = a / n * t.raw;
+  t.out = (b + 1) / n * t.raw;
+  render();
+  const cut = before - (t.out - t.in);
+  toast(cut > 0.05 ? `trimmed ${cut.toFixed(1)}s` : 'nothing to trim');
+}
+function resetTrim(i, k){
+  const t = STATE[i].takes[k];
+  t.in = 0; t.out = t.raw;
+  render();
+}
+
+/* dragging an in or out point. the handle moves live and the state is
+   written on the way up, so a drag never fights a re-render. */
+let drag = null;
+document.getElementById('script').addEventListener('pointerdown', e => {
+  const h = e.target.closest('.handle');
+  if(!h) return;
+  e.preventDefault();
+  const wave = h.closest('.wave');
+  const [i, k] = wave.dataset.wave.split(':').map(Number);
+  drag = {h, wave, i, k, which:h.dataset.h};
+  h.setPointerCapture(e.pointerId);
+});
+document.getElementById('script').addEventListener('pointermove', e => {
+  if(!drag) return;
+  const r = drag.wave.getBoundingClientRect();
+  const t = STATE[drag.i].takes[drag.k];
+  let pct = Math.min(1, Math.max(0, (e.clientX - r.left) / r.width));
+  const secs = pct * t.raw;
+  const min = 0.2;
+  if(drag.which === 'in') t.in = Math.min(secs, t.out - min);
+  else t.out = Math.max(secs, t.in + min);
+  /* live: move the handle and the mask without rebuilding the take */
+  const L = t.in / t.raw * 100, R = (1 - t.out / t.raw) * 100;
+  drag.wave.querySelector('.mask.l').style.width = L + '%';
+  drag.wave.querySelector('.mask.r').style.width = R + '%';
+  drag.wave.querySelector('[data-h="in"]').style.left = L + '%';
+  drag.wave.querySelector('[data-h="out"]').style.left = (100 - R) + '%';
+  const foot = drag.wave.parentElement.querySelector('.trimfoot');
+  foot.children[0].innerHTML = `in <b>${clock1(t.in)}</b>`;
+  foot.children[1].innerHTML = `out <b>${clock1(t.out)}</b>`;
+  foot.children[2].innerHTML = `keeps <b>${clock1(t.out - t.in)}</b> of ${clock1(t.raw)}`;
+});
+addEventListener('pointerup', () => { if(drag){ drag = null; render(); } });
+
+/* ---------- playback. one at a time. ---------- */
 let playing = null, playTimer;
 function stopPlay(){
   if(!playing) return;
@@ -596,7 +738,7 @@ function play(btn, secs){
   playTimer = setTimeout(stopPlay, secs * 1000);
 }
 
-/* ---------- one click handler for the whole script column ---------- */
+/* ---------- one click handler for the whole column ---------- */
 document.getElementById('script').addEventListener('click', e => {
   const rec = e.target.closest('[data-rec]');
   if(rec){
@@ -609,34 +751,47 @@ document.getElementById('script').addEventListener('click', e => {
   if(pt){ e.preventDefault(); play(pt, +pt.dataset.dur); return; }
   const pl = e.target.closest('[data-play]');
   if(pl){ e.preventDefault(); play(pl, +pl.dataset.dur); return; }
-  const take = e.target.closest('[data-take]');
-  if(take){
-    const i = +take.dataset.take, k = +take.dataset.k;
+  const keep = e.target.closest('[data-keep]');
+  if(keep){
+    e.preventDefault();
+    const i = +keep.dataset.keep, k = +keep.dataset.k;
     STATE[i].chosen = k;
-    document.querySelectorAll(`[data-take="${i}"]`).forEach(el =>
-      el.setAttribute('aria-checked', +el.dataset.k === k));
+    render();
     toast(`keeping take ${k + 1}`);
     return;
   }
+  const auto = e.target.closest('[data-auto]');
+  if(auto){ e.preventDefault(); autotrim(+auto.dataset.auto, +auto.dataset.k); return; }
+  const trim = e.target.closest('[data-trim]');
+  if(trim){
+    e.preventDefault();
+    const key = trim.dataset.trim + ':' + trim.dataset.k;
+    trimOpen = trimOpen === key ? null : key;
+    render();
+    return;
+  }
+  const done = e.target.closest('[data-done]');
+  if(done){ e.preventDefault(); trimOpen = null; render(); return; }
+  const reset = e.target.closest('[data-reset]');
+  if(reset){ e.preventDefault(); resetTrim(+reset.dataset.reset, +reset.dataset.k); return; }
   const line = e.target.closest('.line.mine');
   if(line) focus(+line.dataset.i);
 });
 
-/* ---------- reference: hear what the other performers did ---------- */
+/* ---------- reference ---------- */
 document.getElementById('ref').addEventListener('click', e => {
   reference = !reference;
   e.currentTarget.setAttribute('aria-pressed', reference);
   e.currentTarget.textContent = reference ? 'reference on' : 'reference off';
   stopPlay();
   render();
-  if(focused >= 0) focus(focused);
 });
 
 document.getElementById('publish').addEventListener('click', () => {
   toast(`${charById(ME).name} submitted for review`);
 });
 
-/* ---------- keys. the tooltip in the bar is the only documentation. ---------- */
+/* ---------- hotkeys. the tooltip in the bar is the only documentation. ---------- */
 addEventListener('keydown', e => {
   if(document.getElementById('ov').classList.contains('on')) return;
   if(e.target.matches('input,textarea,select')) return;
@@ -648,6 +803,8 @@ addEventListener('keydown', e => {
   }
   if(e.key === 'ArrowDown'){ e.preventDefault(); step(1); return; }
   if(e.key === 'ArrowUp'){ e.preventDefault(); step(-1); return; }
+  if(e.key === '['){ e.preventDefault(); goPage(page - 1); return; }
+  if(e.key === ']'){ e.preventDefault(); goPage(page + 1); return; }
   if(e.key === 'Enter'){
     e.preventDefault();
     const st = STATE[focused];
