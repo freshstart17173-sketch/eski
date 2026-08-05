@@ -62,7 +62,11 @@ td.no{color:var(--danger)}
 
 <span class="mark">eski<i>!</i></span>
 <h1>design work in progress</h1>
-<p class="lead">Working comps, not the live site. Two separate passes: sitewide visual styles
+<p class="lead"><b>Broadsheet is the chosen base style</b>, and the surfaces in
+  <b>docs/design/final/</b> are the agreed designs; they share
+  <b>final/broadsheet.css</b>. The audio and script model behind them is written up in
+  <b>SPEC.md</b> at the repository root. Everything else on this page is exploratory.
+  Working comps, not the live site. Two separate passes: sitewide visual styles
   (how eski should look) and interaction directions (how eski should work). Each one is written
   up as a skill in <b>.claude/skills/</b> and applied to real surfaces with the real catalogue.</p>
 <hr class="rule">
@@ -78,8 +82,14 @@ td.no{color:var(--danger)}
         <tr><td><a href="final/home.html"><b>final — home</b>, browse, voiceover needed, shelf, studio, profile</a></td>
             <td>broadsheet. the mix is picked in details. hover, click and keyboard are live.</td>
             <td>eski-broadsheet</td></tr>
-        <tr><td><a href="final/script.html"><b>final — script</b>, the voiceover booth</a></td>
-            <td>broadsheet. pick a character, page beside the lines, takes, publish.</td>
+        <tr><td><a href="final/studio-author.html"><b>final — author studio</b></a></td>
+            <td>import pages, write the cast, transcribe with directions.</td>
+            <td>eski-broadsheet</td></tr>
+        <tr><td><a href="final/studio-score.html"><b>final — composer studio</b></a></td>
+            <td>layers of sound over page ranges. audio stacks.</td>
+            <td>eski-broadsheet + eski-session</td></tr>
+        <tr><td><a href="final/studio-voice.html"><b>final — voiceover studio</b></a></td>
+            <td>pick a character, page beside the lines, takes, trim, publish.</td>
             <td>eski-broadsheet + eski-script</td></tr>
         <tr><td><a href="style-press.html"><b>press</b> — the combined house style</a></td>
             <td>Screen Slate + Breakdown Press + Standards Manual + Le Cinéma Club</td>

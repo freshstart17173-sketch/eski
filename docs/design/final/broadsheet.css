@@ -1,0 +1,272 @@
+/* ============================================================
+   eski — broadsheet. the house style, shared by every final surface.
+
+   near-white ground, near-black rules, hairlines inside a block,
+   micro caps for labels, gnomon on titles only, art at comic
+   proportions, sage as the single accent. no shadows, no radii, no
+   second hue, and no ornament that is not doing work.
+
+   this file is chrome only: tokens, type, buttons, rules, plates,
+   sheets, bays. anything that is the shape of one particular surface
+   stays in that surface's own <style>.
+
+   loaded after tokens.css.
+   ============================================================ */
+
+:root{
+  --paper:#FCFDFC;
+  --surface:#FFFFFF;
+  --rule:#141A17;
+  --rule-hair:var(--line-1);
+  --label:var(--sage-600);
+  --ink:var(--sage-900);
+  --soft-ink:#45544D;
+  --muted:#62746B;
+  --accent:var(--sage-600);
+  --mark:#141A17;
+  --rec:#A33028;
+  --row:19px;            /* one metadata row. fixed, so columns align. */
+  --hdr:44px;
+}
+[data-theme="dark"]{
+  --paper:var(--void); --surface:var(--surf-1);
+  --rule:#C8D2CC; --rule-hair:var(--line-dark);
+  --label:var(--sage-300); --accent:var(--sage-300);
+  --ink:#EAF0EC; --soft-ink:var(--sage-200); --muted:var(--muted-dark);
+  --mark:#EAF0EC; --rec:#D4736A;
+}
+
+html{background:var(--paper)}
+body{margin:0;background:var(--paper);color:var(--ink);
+  font-family:var(--font-body);font-size:var(--fs-sm);line-height:1.5;
+  -webkit-font-smoothing:antialiased}
+img{display:block;max-width:100%}
+.n{font-variant-numeric:tabular-nums}
+
+/* ---------- chrome: wordmark top left, the words on the right ---------- */
+.top{display:flex;align-items:center;gap:var(--s4);padding:var(--s2) var(--s4);
+  border-bottom:1px solid var(--rule);background:var(--paper)}
+.mark{font-family:var(--font-display);font-size:21px;letter-spacing:-.01em;
+  color:var(--ink);text-decoration:none;line-height:1}
+.mark i{font-style:normal;color:var(--accent);transition:color var(--t-fast) var(--ease)}
+.mark:hover i{color:var(--ink)}
+.top .sp{flex:1}
+.top nav{display:flex;gap:var(--s4);margin-left:auto;
+  font-size:var(--fs-micro);letter-spacing:.14em;text-transform:uppercase}
+.top nav a,.top nav button{background:none;border:0;padding:3px 0;color:var(--ink);
+  opacity:.55;text-decoration:none;box-shadow:inset 0 -2px 0 transparent;
+  transition:opacity var(--t-fast) var(--ease),box-shadow var(--t-fast) var(--ease)}
+.top nav a:hover,.top nav button:hover{opacity:1;box-shadow:inset 0 -2px 0 var(--rule-hair)}
+.top nav a[aria-current],.top nav button[aria-current]{opacity:1;
+  box-shadow:inset 0 -2px 0 var(--accent)}
+
+/* what you are working on, in the bar, next to the wordmark */
+.what{display:flex;align-items:baseline;gap:var(--s2);min-width:0;
+  font-size:var(--fs-micro);letter-spacing:.12em;text-transform:uppercase;color:var(--label)}
+.what .ttl{font-family:var(--font-display);font-size:15px;letter-spacing:0;
+  text-transform:none;color:var(--ink)}
+
+/* ---------- section heads ---------- */
+.head{display:flex;align-items:baseline;gap:var(--s3);padding:var(--s3) 0 var(--s2);
+  border-bottom:1px solid var(--rule)}
+.head h2{margin:0;font-size:var(--fs-micro);letter-spacing:.16em;text-transform:uppercase;
+  font-weight:400;color:var(--ink)}
+.head .n{font-size:var(--fs-micro);letter-spacing:.1em;color:var(--label)}
+.head .sp{flex:1}
+.head a,.head button.link{font-size:var(--fs-micro);letter-spacing:.1em;color:var(--label);
+  text-decoration:none;background:none;border:0;padding:0;text-transform:uppercase;
+  box-shadow:inset 0 -1px 0 transparent;
+  transition:color var(--t-fast) var(--ease),box-shadow var(--t-fast) var(--ease)}
+.head a:hover,.head button.link:hover{color:var(--ink);box-shadow:inset 0 -1px 0 var(--ink)}
+
+/* ---------- controls ---------- */
+.btn{font-size:var(--fs-xs);letter-spacing:.08em;height:var(--ctl);padding:0 var(--s3);
+  border:1px solid var(--rule);background:none;color:var(--ink);white-space:nowrap;
+  transition:background var(--t-fast) var(--ease),color var(--t-fast) var(--ease),
+  border-color var(--t-fast) var(--ease),opacity var(--t-fast) var(--ease)}
+.btn:hover{background:var(--rule);color:var(--paper)}
+.btn:active{transform:translateY(1px)}
+.btn.p{background:var(--mark);border-color:var(--mark);color:var(--paper)}
+.btn.p:hover{background:var(--accent);border-color:var(--accent)}
+[data-theme="dark"] .btn.p{color:var(--sage-900)}
+.btn:disabled{opacity:.35;pointer-events:none}
+.btn.sm{height:22px;font-size:10px;padding:0 var(--s2);letter-spacing:.1em}
+.btn.quiet{border-color:var(--rule-hair);color:var(--label)}
+.btn.quiet:hover{border-color:var(--rule);background:var(--rule);color:var(--paper)}
+.btn[aria-pressed="true"]{background:var(--mark);border-color:var(--mark);color:var(--paper)}
+[data-theme="dark"] .btn[aria-pressed="true"]{color:var(--sage-900)}
+
+.bar{display:flex;gap:var(--s2);align-items:center;flex-wrap:wrap;
+  padding:var(--s2) 0;border-bottom:1px solid var(--rule)}
+.bar input[type=search],.bar input[type=text],.bar select{height:var(--ctl);
+  border:1px solid var(--rule-hair);background:var(--surface);color:var(--ink);
+  padding:0 var(--s2);font-size:var(--fs-xs);
+  transition:border-color var(--t-fast) var(--ease)}
+.bar input[type=search]{flex:1;min-width:180px}
+.bar input:hover,.bar select:hover{border-color:var(--line-strong)}
+.bar .lbl{font-size:var(--fs-micro);letter-spacing:.12em;color:var(--label);
+  text-transform:uppercase}
+
+.chips{display:flex;gap:var(--s1);flex-wrap:wrap}
+.chip{font-size:10px;letter-spacing:.1em;text-transform:uppercase;height:22px;
+  padding:0 var(--s2);border:1px solid var(--rule-hair);background:none;color:var(--label);
+  transition:all var(--t-fast) var(--ease)}
+.chip:hover{color:var(--ink);border-color:var(--ink)}
+.chip[aria-pressed="true"]{background:var(--mark);border-color:var(--mark);color:var(--paper)}
+[data-theme="dark"] .chip[aria-pressed="true"]{color:var(--sage-900)}
+
+/* a segmented switch: two or three words, one of them filled */
+.seg{display:flex;border:1px solid var(--rule)}
+.seg button{background:none;border:0;border-left:1px solid var(--rule);padding:0 var(--s3);
+  height:24px;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--label);
+  transition:all var(--t-fast) var(--ease)}
+.seg button:first-child{border-left:0}
+.seg button:hover{color:var(--ink)}
+.seg button[aria-selected="true"]{background:var(--mark);color:var(--paper)}
+[data-theme="dark"] .seg button[aria-selected="true"]{color:var(--sage-900)}
+
+/* ---------- art ---------- */
+.plate{position:relative;overflow:hidden;border:1px solid var(--rule-hair);
+  background:var(--paper-1)}
+[data-theme="dark"] .plate{background:var(--surf-2)}
+.portrait{display:block;overflow:hidden;border:1px solid var(--rule-hair);
+  background:var(--paper-1)}
+[data-theme="dark"] .portrait{background:var(--surf-2)}
+.portrait img{width:100%;height:100%;object-fit:cover}
+.pfp{border:1px solid var(--rule-hair);display:grid;place-items:center;
+  font-size:9px;letter-spacing:.04em;color:var(--label);background:var(--paper-1);
+  text-transform:uppercase}
+[data-theme="dark"] .pfp{background:var(--surf-2)}
+
+/* ---------- tags ---------- */
+.tag{font-size:10px;line-height:16px;letter-spacing:.04em;padding:0 5px;
+  border:1px solid var(--rule-hair);color:var(--soft-ink);background:none;
+  white-space:nowrap;transition:all var(--t-fast) var(--ease)}
+.tag:hover{border-color:var(--ink);color:var(--ink)}
+.tag.more{border-style:dashed;color:var(--label)}
+
+/* ---------- the scroller: too long slides on hover, never wraps ---------- */
+.mq{display:block;overflow:hidden;white-space:nowrap;min-width:0}
+.mq > span{display:inline-block;transform:translateX(0);
+  transition:transform var(--mq-t,0ms) linear}
+.mq[data-over="1"]{-webkit-mask-image:linear-gradient(90deg,#000 86%,transparent 100%);
+  mask-image:linear-gradient(90deg,#000 86%,transparent 100%)}
+.mq[data-over="1"]:hover > span{transform:translateX(var(--mq-x,0))}
+
+/* ---------- transport: one preview at a time, anywhere ---------- */
+.prev{width:22px;height:22px;border:1px solid var(--rule-hair);background:none;
+  color:var(--ink);display:grid;place-items:center;position:relative;overflow:hidden;
+  transition:all var(--t-fast) var(--ease)}
+.prev:hover{border-color:var(--ink);background:var(--rule);color:var(--paper)}
+.prev svg{width:10px;height:10px;fill:currentColor;display:block}
+.prev i{position:absolute;left:0;bottom:0;height:2px;width:0;background:var(--accent)}
+.prev.playing i{width:100%;transition:width var(--prev-t,8s) linear}
+.prev.ghost{border-style:dashed;color:var(--muted)}
+
+/* ---------- progress. words first, the bar underneath. ---------- */
+.prog{display:flex;align-items:center;gap:var(--s3);padding:var(--s1) var(--s4);
+  border-bottom:1px solid var(--rule);font-size:var(--fs-micro);letter-spacing:.1em;
+  text-transform:uppercase;color:var(--label)}
+.prog b{color:var(--ink);font-weight:500;font-variant-numeric:tabular-nums}
+.prog .track{flex:1;height:3px;background:var(--rule-hair);position:relative}
+.prog .track i{position:absolute;inset:0 auto 0 0;background:var(--mark);
+  transition:width var(--t-mid) var(--ease)}
+
+/* ---------- the shortcut list is a tooltip and nothing more ---------- */
+.hotkeys{position:relative}
+.hotkeys .pop{position:absolute;right:0;top:calc(100% + 6px);z-index:20;display:none;
+  background:var(--paper);border:1px solid var(--rule);padding:var(--s2) var(--s3);
+  white-space:nowrap;font-size:var(--fs-micro);letter-spacing:.06em;color:var(--soft-ink)}
+.hotkeys:hover .pop,.hotkeys:focus-within .pop{display:block}
+.hotkeys .pop div{display:flex;gap:var(--s3);padding:2px 0}
+.hotkeys .pop kbd{font:inherit;color:var(--ink);border:1px solid var(--rule-hair);
+  padding:0 4px;min-width:16px;text-align:center}
+.hotkeys .pop span{flex:1;text-align:right;color:var(--muted)}
+
+/* ---------- the bay: where dropped audio lives before it is placed ----------
+   every studio has one, in the same corner, with the same behaviour:
+   drop files anywhere on the page, they land here, and you place them
+   from here. dashed is reserved for "nothing here yet". */
+.bay{display:flex;flex-direction:column;min-height:0;border-top:1px solid var(--rule)}
+.bayhead{display:flex;align-items:baseline;gap:var(--s2);padding:var(--s2) var(--s3);
+  border-bottom:1px solid var(--rule-hair);font-size:var(--fs-micro);letter-spacing:.16em;
+  text-transform:uppercase;color:var(--label)}
+.bayhead .sp{flex:1}
+.baylist{overflow:auto;min-height:0}
+.bayempty{margin:var(--s3);padding:var(--s5) var(--s3);border:1px dashed var(--line-strong);
+  text-align:center;color:var(--label);font-size:var(--fs-xs);line-height:1.6}
+.bayempty b{display:block;color:var(--ink);font-weight:500;letter-spacing:.06em}
+.cliprow{display:grid;grid-template-columns:22px 1fr auto;gap:var(--s2);align-items:center;
+  padding:var(--s2) var(--s3);border-bottom:1px solid var(--rule-hair);cursor:grab;
+  transition:background var(--t-fast) var(--ease)}
+.cliprow:hover{background:var(--surface)}
+.cliprow:active{cursor:grabbing}
+.cliprow .nm{font-size:var(--fs-xs);min-width:0}
+.cliprow .meta{font-size:var(--fs-micro);color:var(--label);font-variant-numeric:tabular-nums;
+  white-space:nowrap}
+.cliprow.used{color:var(--muted)}
+.cliprow[aria-grabbed="true"]{background:var(--surface);box-shadow:inset 3px 0 0 var(--mark)}
+
+/* the page-wide drop state. one rule, one word, no animation. */
+.droplayer{position:fixed;inset:0;z-index:80;display:none;place-items:center;
+  background:rgba(252,253,252,.86);border:2px solid var(--rule)}
+[data-theme="dark"] .droplayer{background:rgba(12,19,15,.86)}
+.droplayer.on{display:grid}
+.droplayer b{font-family:var(--font-display);font-size:26px;font-weight:400}
+.droplayer span{display:block;text-align:center;font-size:var(--fs-micro);
+  letter-spacing:.16em;text-transform:uppercase;color:var(--label);margin-top:var(--s2)}
+
+/* ---------- sheets ---------- */
+.ov{position:fixed;inset:0;z-index:60;background:rgba(12,19,15,.55);display:none;
+  place-items:center;padding:var(--s5);animation:fade var(--t-fast) var(--ease)}
+.ov.on{display:grid}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+.sheet{background:var(--paper);border:1px solid var(--rule);width:min(680px,100%);
+  max-height:86vh;overflow:auto;animation:rise var(--t-mid) var(--ease)}
+@keyframes rise{from{transform:translateY(8px);opacity:0}to{transform:none;opacity:1}}
+.sheethead{display:flex;align-items:baseline;gap:var(--s3);padding:var(--s3) var(--s4);
+  border-bottom:1px solid var(--rule);font-size:var(--fs-micro);letter-spacing:.16em;
+  text-transform:uppercase;color:var(--label)}
+.sheethead .ttl{font-family:var(--font-display);font-size:16px;letter-spacing:0;
+  text-transform:none;color:var(--ink)}
+.sheethead .sp{flex:1}
+.sheetfoot{padding:var(--s3) var(--s4);border-top:1px solid var(--rule);
+  font-size:var(--fs-micro);color:var(--label);letter-spacing:.06em}
+
+/* ---------- disclosure ---------- */
+.fold{width:100%;display:flex;align-items:baseline;gap:var(--s2);background:none;
+  border:0;border-bottom:1px solid var(--rule);padding:3px 0;margin-top:var(--s3);
+  color:var(--ink);font-size:var(--fs-micro);letter-spacing:.16em;text-transform:uppercase;
+  transition:color var(--t-fast) var(--ease)}
+.fold:hover{color:var(--accent)}
+.fold .sp{flex:1}
+.fold .n{color:var(--label);letter-spacing:.1em;text-transform:none}
+.fold .caret{width:0;height:0;border-left:4px solid transparent;border-right:4px solid transparent;
+  border-top:5px solid currentColor;transform-origin:50% 30%;align-self:center;
+  transition:transform var(--t-fast) var(--ease)}
+.fold[aria-expanded="false"] .caret{transform:rotate(-90deg)}
+.fold[aria-expanded="false"] + .folded{display:none}
+
+/* ---------- see more ---------- */
+.seemore{width:100%;background:none;border:0;border-bottom:1px solid var(--rule);
+  padding:var(--s2);font-size:var(--fs-micro);letter-spacing:.16em;text-transform:uppercase;
+  color:var(--label);transition:background var(--t-fast) var(--ease),
+  color var(--t-fast) var(--ease)}
+.seemore:hover{background:var(--rule);color:var(--paper)}
+.seemore:active{transform:translateY(1px)}
+.seemore.in{border-bottom:1px solid var(--rule-hair);padding:3px;font-size:10px;
+  letter-spacing:.12em}
+
+/* ---------- empty states and notes ---------- */
+.empty{padding:var(--s7) var(--s4);text-align:center;color:var(--label);
+  font-size:var(--fs-xs);letter-spacing:.08em}
+.note-line{font-size:var(--fs-micro);color:var(--label);letter-spacing:.06em}
+.note-line b{color:var(--ink);font-weight:500}
+
+/* ---------- toast ---------- */
+.toast{position:fixed;left:50%;bottom:var(--s5);transform:translateX(-50%);
+  background:var(--rule);color:var(--paper);font-size:var(--fs-xs);letter-spacing:.06em;
+  padding:var(--s2) var(--s4);z-index:90;opacity:0;pointer-events:none;
+  transition:opacity var(--t-fast) var(--ease),transform var(--t-fast) var(--ease)}
+[data-theme="dark"] .toast{color:var(--sage-900)}
+.toast.on{opacity:1;transform:translateX(-50%) translateY(-4px)}

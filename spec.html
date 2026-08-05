@@ -75,6 +75,15 @@ code{font-variant-numeric:var(--num)}
   <p class="body-lg">an .eski is a plain zip archive. rename it to .zip and look inside.
     any cbz reader opens it as a silent comic; an eski reader also plays the soundtrack.</p>
 
+  <div class="kicker">v3 is being drafted</div>
+  <p class="body-lg">everything below describes <b>manifest v2</b>, which is what the
+    reader ships today. <b>v3 replaces the ownership rule with layers</b>: audio stacks,
+    so a rain bed can run the whole comic while the score changes underneath it and an
+    effect fires on one page, and the transcript (characters, lines, directions) moves
+    into the file so voiceovers can point at it. the model, the v3 manifest and the
+    v2 migration are written up in <code>SPEC.md</code> at the root of this repository,
+    which is the master document. this page follows once v3 lands in the reader.</p>
+
   <div class="kicker">zip layout</div>
   <div class="filetree"><b>my-comic.eski</b>            <span class="c">&#8592; a plain zip archive</span><br>
 &#9500;&#9472; 001.jpg &#8230; 047.jpg      <span class="c">&#8592; the pages, sorted by filename</span><br>

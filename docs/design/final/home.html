@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>eski — home</title>
 <link rel="stylesheet" href="../../../tokens.css">
+<link rel="stylesheet" href="broadsheet.css">
 <style>
 /* ============================================================
    eski — home, browse, voiceover needed, shelf, studio, profile.
@@ -20,65 +21,23 @@
    values are right aligned. anything too long scrolls on hover
    rather than wrapping and pushing the rows below it out of true.
    ============================================================ */
-:root{
-  --paper:#FCFDFC;
-  --surface:#FFFFFF;
-  --rule:#141A17;
-  --rule-hair:var(--line-1);
-  --label:var(--sage-600);
-  --ink:var(--sage-900);
-  --soft-ink:#45544D;
-  --muted:#62746B;
-  --accent:var(--sage-600);
-  --mark:#141A17;
-  --row:19px;            /* one caption row. fixed, so columns align. */
-}
-[data-theme="dark"]{
-  --paper:var(--void); --surface:var(--surf-1);
-  --rule:#C8D2CC; --rule-hair:var(--line-dark);
-  --label:var(--sage-300); --accent:var(--sage-300);
-  --ink:#EAF0EC; --soft-ink:var(--sage-200); --muted:var(--muted-dark);
-  --mark:#EAF0EC;
-}
-html{background:var(--paper)}
-body{margin:0;background:var(--paper);color:var(--ink);
-  font-family:var(--font-body);font-size:var(--fs-sm);line-height:1.5;
-  -webkit-font-smoothing:antialiased}
-img{display:block;max-width:100%}
-.n{font-variant-numeric:tabular-nums}
 
-/* ---------- chrome: wordmark top left, the words on the right ---------- */
-.top{position:sticky;top:0;z-index:30;display:flex;align-items:center;gap:var(--s5);
-  padding:var(--s2) var(--s4);border-bottom:1px solid var(--rule);background:var(--paper)}
-.mark{font-family:var(--font-display);font-size:21px;letter-spacing:-.01em;
-  color:var(--ink);text-decoration:none;line-height:1}
-.mark i{font-style:normal;color:var(--accent);transition:color var(--t-fast) var(--ease)}
-.mark:hover i{color:var(--ink)}
-.top nav{display:flex;gap:var(--s4);margin-left:auto;
-  font-size:var(--fs-micro);letter-spacing:.14em;text-transform:uppercase}
-.top nav button{background:none;border:0;padding:3px 0;color:var(--ink);opacity:.55;
-  box-shadow:inset 0 -2px 0 transparent;
-  transition:opacity var(--t-fast) var(--ease),box-shadow var(--t-fast) var(--ease)}
-.top nav button:hover{opacity:1;box-shadow:inset 0 -2px 0 var(--rule-hair)}
-.top nav button[aria-current="page"]{opacity:1;box-shadow:inset 0 -2px 0 var(--accent)}
+
+
+
+
 
 .wrap{max-width:1280px;margin:0 auto;padding:0 var(--s4) var(--s7)}
 .pane{display:none}
 .pane.on{display:block}
 
-/* ---------- section heads ---------- */
-.head{display:flex;align-items:baseline;gap:var(--s3);padding:var(--s3) 0 var(--s2);
-  border-bottom:1px solid var(--rule)}
-.head h2{margin:0;font-size:var(--fs-micro);letter-spacing:.16em;text-transform:uppercase;
-  font-weight:400;color:var(--ink)}
-.head .n{font-size:var(--fs-micro);letter-spacing:.1em;color:var(--label)}
-.head .sp{flex:1}
-.head a,.head button.link{font-size:var(--fs-micro);letter-spacing:.1em;color:var(--label);
-  text-decoration:none;background:none;border:0;padding:0;
-  box-shadow:inset 0 -1px 0 transparent;text-transform:uppercase;
-  transition:color var(--t-fast) var(--ease),box-shadow var(--t-fast) var(--ease)}
-.head a:hover,.head button.link:hover{color:var(--ink);box-shadow:inset 0 -1px 0 var(--ink)}
+
 section + section{margin-top:var(--s6)}
+
+:root{ --row:19px; }
+.top{position:sticky;top:0;z-index:30}
+.portrait{width:46px;height:46px}
+.pfp{width:22px;height:22px}
 
 /* ---------- the grid: five up, then four, three, two ---------- */
 .grid{display:grid;grid-template-columns:repeat(5,1fr);border-left:1px solid var(--rule)}
@@ -117,11 +76,7 @@ section + section{margin-top:var(--s6)}
    it into the count. */
 .tags{display:flex;flex-wrap:wrap;gap:3px;height:54px;overflow:hidden;
   margin:var(--s1) 0 var(--s2);align-content:flex-start}
-.tag{font-size:10px;line-height:16px;letter-spacing:.04em;padding:0 5px;
-  border:1px solid var(--rule-hair);color:var(--soft-ink);background:none;
-  white-space:nowrap;transition:all var(--t-fast) var(--ease)}
-.tag:hover{border-color:var(--ink);color:var(--ink)}
-.tag.more{border-style:dashed;color:var(--label)}
+
 
 /* ---------- caption rows: tight, hairline separated, right aligned ---------- */
 .cap{margin-top:auto;font-size:var(--fs-xs);color:var(--soft-ink)}
@@ -134,23 +89,9 @@ section + section{margin-top:var(--s6)}
 .cap .v.want{color:var(--ink);font-weight:500}
 .cap .v.none{color:var(--muted);font-style:italic}
 
-/* ---------- the scroller. too long slides on hover, never wraps. ---------- */
-.mq{display:block;overflow:hidden;white-space:nowrap;min-width:0}
-.mq > span{display:inline-block;transform:translateX(0);
-  transition:transform var(--mq-t,0ms) linear}
-.mq[data-over="1"]{-webkit-mask-image:linear-gradient(90deg,#000 86%,transparent 100%);
-  mask-image:linear-gradient(90deg,#000 86%,transparent 100%)}
-.card:hover .mq[data-over="1"] > span,
-.rolerow:hover .mq[data-over="1"] > span,
-.mq[data-over="1"]:hover > span{transform:translateX(var(--mq-x,0))}
 
-/* ---------- see more: one more row of whatever you are looking at ---------- */
-.seemore{width:100%;background:none;border:0;border-bottom:1px solid var(--rule);
-  padding:var(--s2);font-size:var(--fs-micro);letter-spacing:.16em;text-transform:uppercase;
-  color:var(--label);transition:background var(--t-fast) var(--ease),
-  color var(--t-fast) var(--ease)}
-.seemore:hover{background:var(--rule);color:var(--paper)}
-.seemore:active{transform:translateY(1px)}
+
+
 
 /* ---------- voiceover needed, on the home page ---------- */
 .rolecard{display:flex;flex-direction:column;background:var(--paper);text-align:left;
@@ -176,36 +117,7 @@ section + section{margin-top:var(--s6)}
   height:var(--row);font-size:var(--fs-micro);letter-spacing:.06em;color:var(--label);
   font-variant-numeric:tabular-nums}
 
-/* ---------- controls ---------- */
-.btn{font-size:var(--fs-xs);letter-spacing:.08em;height:var(--ctl);padding:0 var(--s3);
-  border:1px solid var(--rule);background:none;color:var(--ink);
-  transition:background var(--t-fast) var(--ease),color var(--t-fast) var(--ease),
-  border-color var(--t-fast) var(--ease)}
-.btn:hover{background:var(--rule);color:var(--paper)}
-.btn:active{transform:translateY(1px)}
-.btn.p{background:var(--mark);border-color:var(--mark);color:var(--paper)}
-.btn.p:hover{background:var(--accent);border-color:var(--accent)}
-[data-theme="dark"] .btn.p{color:var(--sage-900)}
-.btn[aria-pressed="true"]{background:var(--mark);border-color:var(--mark);color:var(--paper)}
-[data-theme="dark"] .btn[aria-pressed="true"]{color:var(--sage-900)}
-.btn.sm{height:22px;font-size:10px;padding:0 var(--s2);letter-spacing:.1em}
 
-.bar{display:flex;gap:var(--s2);align-items:center;flex-wrap:wrap;
-  padding:var(--s2) 0;border-bottom:1px solid var(--rule)}
-.bar input[type=search],.bar select{height:var(--ctl);border:1px solid var(--rule-hair);
-  background:var(--surface);color:var(--ink);padding:0 var(--s2);font-size:var(--fs-xs);
-  transition:border-color var(--t-fast) var(--ease)}
-.bar input[type=search]{flex:1;min-width:180px}
-.bar input[type=search]:hover,.bar select:hover{border-color:var(--line-strong)}
-.bar .lbl{font-size:var(--fs-micro);letter-spacing:.12em;color:var(--label);
-  text-transform:uppercase}
-.chips{display:flex;gap:var(--s1);flex-wrap:wrap}
-.chip{font-size:10px;letter-spacing:.1em;text-transform:uppercase;height:22px;
-  padding:0 var(--s2);border:1px solid var(--rule-hair);background:none;color:var(--label);
-  transition:all var(--t-fast) var(--ease)}
-.chip:hover{color:var(--ink);border-color:var(--ink)}
-.chip[aria-pressed="true"]{background:var(--mark);border-color:var(--mark);color:var(--paper)}
-[data-theme="dark"] .chip[aria-pressed="true"]{color:var(--sage-900)}
 
 /* ---------- voiceover needed: one dense row per character ---------- */
 .rolelist{border-top:1px solid var(--rule)}
@@ -229,19 +141,13 @@ section + section{margin-top:var(--s6)}
   .rolerow{grid-template-columns:46px 1fr 1fr auto}
   .rolerow .blurb,.rolerow .lines{display:none}
 }
-.empty{padding:var(--s7) var(--s4);text-align:center;color:var(--label);
-  font-size:var(--fs-xs);letter-spacing:.08em}
+
 
 /* ============================================================
    details. click outside or press escape to go back.
    ============================================================ */
-.ov{position:fixed;inset:0;z-index:60;background:rgba(12,19,15,.55);display:none;
-  place-items:center;padding:var(--s5);animation:fade var(--t-fast) var(--ease)}
-.ov.on{display:grid}
-@keyframes fade{from{opacity:0}to{opacity:1}}
-.sheet{background:var(--paper);border:1px solid var(--rule);width:min(880px,100%);
-  max-height:88vh;overflow:auto;animation:rise var(--t-mid) var(--ease)}
-@keyframes rise{from{transform:translateY(8px);opacity:0}to{transform:none;opacity:1}}
+/* the details sheet is wider than the shared one: it carries the mix */
+.sheet{width:min(880px,100%);max-height:88vh}
 .sheetbody{display:grid;grid-template-columns:270px 1fr}
 @media(max-width:720px){.sheetbody{grid-template-columns:1fr}}
 .sheetbody .left{padding:var(--s4);border-right:1px solid var(--rule)}
@@ -275,38 +181,14 @@ section + section{margin-top:var(--s6)}
 .pick .who b{font-weight:500}
 .pick .who span{color:var(--label)}
 .pick[aria-checked="true"] .who b{color:var(--ink)}
-.pfp{width:22px;height:22px;border:1px solid var(--rule-hair);display:grid;place-items:center;
-  font-size:9px;letter-spacing:.04em;color:var(--label);background:var(--paper-1);
-  text-transform:uppercase}
-[data-theme="dark"] .pfp{background:var(--surf-2)}
-.prev{width:22px;height:22px;border:1px solid var(--rule-hair);background:none;
-  color:var(--ink);display:grid;place-items:center;position:relative;
-  overflow:hidden;transition:all var(--t-fast) var(--ease)}
-.prev svg{width:10px;height:10px;fill:currentColor;display:block}
-.prev:hover{border-color:var(--ink);background:var(--rule);color:var(--paper)}
-.prev i{position:absolute;left:0;bottom:0;height:2px;width:0;background:var(--accent)}
-.prev.playing i{width:100%;transition:width var(--prev-t,8s) linear}
+
+
 .openline{display:grid;grid-template-columns:14px 22px 1fr auto;gap:var(--s2);
   align-items:center;padding:4px var(--s1);border-bottom:1px solid var(--rule-hair);
   font-size:var(--fs-xs);color:var(--label)}
-/* the two halves of the mix are open on arrival and fold away if you are
-   only here for one of them. */
-.fold{width:100%;display:flex;align-items:baseline;gap:var(--s2);background:none;
-  border:0;border-bottom:1px solid var(--rule);padding:3px 0;margin-top:var(--s3);
-  color:var(--ink);font-size:var(--fs-micro);letter-spacing:.16em;text-transform:uppercase;
-  transition:color var(--t-fast) var(--ease)}
-.fold:hover{color:var(--accent)}
-.fold .sp{flex:1}
-.fold .n{color:var(--label);letter-spacing:.1em;text-transform:none}
-.fold .caret{width:0;height:0;border-left:4px solid transparent;border-right:4px solid transparent;
-  border-top:5px solid currentColor;transform-origin:50% 30%;align-self:center;
-  transition:transform var(--t-fast) var(--ease)}
-.fold[aria-expanded="false"] .caret{transform:rotate(-90deg)}
-.fold[aria-expanded="false"] + .folded{display:none}
 
-/* see more inside a list: same idea as the home rows, quieter */
-.seemore.in{border-bottom:1px solid var(--rule-hair);padding:3px;font-size:10px;
-  letter-spacing:.12em}
+
+
 
 .mixline{font-size:var(--fs-micro);color:var(--label);letter-spacing:.06em;
   padding:var(--s2) 0 0}
@@ -320,8 +202,8 @@ section + section{margin-top:var(--s6)}
 .progress i{display:block;height:100%;background:var(--mark)}
 
 /* ---------- studio ---------- */
-.studio{display:grid;grid-template-columns:repeat(2,1fr);border-left:1px solid var(--rule)}
-@media(max-width:760px){.studio{grid-template-columns:1fr}}
+.studio{display:grid;grid-template-columns:repeat(3,1fr);border-left:1px solid var(--rule)}
+@media(max-width:980px){.studio{grid-template-columns:1fr}}
 .studio > div{border-right:1px solid var(--rule);border-bottom:1px solid var(--rule);
   padding:var(--s4)}
 .studio h3{font-family:var(--font-display);font-weight:400;font-size:var(--fs-lg);margin:0}
@@ -338,12 +220,7 @@ section + section{margin-top:var(--s6)}
 .foot a{color:inherit;text-decoration:none}
 .foot a:hover{color:var(--ink)}
 
-.toast{position:fixed;left:50%;bottom:var(--s5);transform:translateX(-50%);
-  background:var(--rule);color:var(--paper);font-size:var(--fs-xs);letter-spacing:.06em;
-  padding:var(--s2) var(--s4);z-index:70;opacity:0;pointer-events:none;
-  transition:opacity var(--t-fast) var(--ease),transform var(--t-fast) var(--ease)}
-[data-theme="dark"] .toast{color:var(--sage-900)}
-.toast.on{opacity:1;transform:translateX(-50%) translateY(-4px)}
+
 </style>
 </head>
 <body>
@@ -452,21 +329,32 @@ section + section{margin-top:var(--s6)}
   <div class="head"><h2>studio</h2><span class="n">2 drafts · 1 submitted</span></div>
   <div class="studio">
     <div>
-      <h3>score a comic</h3>
-      <p>Lay a soundtrack under the pages and drop one-shots where they land.
-        Pages are rows, layers are columns, every cell is a clip.</p>
+      <h3>author</h3>
+      <p>Import finished art, write the cast, and transcribe the pages. Every
+        line carries a character and a direction, and every character carries
+        the note a performer reads before they take the part.</p>
       <div class="acts" style="padding:var(--s3) 0 0;border:0">
-        <button class="btn p" data-act="new-score">start a score</button>
-        <button class="btn" data-go="roles">find a comic that needs one</button>
+        <a class="btn p" href="studio-author.html" style="display:grid;place-items:center">open the author studio</a>
+        <button class="btn" data-act="drafts">your chapters</button>
       </div>
     </div>
     <div>
-      <h3>voice a role</h3>
-      <p>The script is the timeline. Record line by line, stack takes, and
-        submit the part when every line is green.</p>
+      <h3>composer</h3>
+      <p>Sound stacks. Drop music, ambience and effects onto layers and give
+        them page ranges — a rain bed under the whole comic, a score that
+        changes at page twelve, a door that slams on page fourteen.</p>
       <div class="acts" style="padding:var(--s3) 0 0;border:0">
-        <button class="btn p" data-go="roles">pick a part that needs a voice</button>
-        <button class="btn" data-act="drafts">open your drafts</button>
+        <a class="btn p" href="studio-score.html" style="display:grid;place-items:center">open the composer studio</a>
+        <button class="btn" data-go="browse">find a comic with no score</button>
+      </div>
+    </div>
+    <div>
+      <h3>voiceover</h3>
+      <p>Pick a character, work a page at a time. Record in the browser or drop
+        files in, keep the take you want, trim it, publish the part.</p>
+      <div class="acts" style="padding:var(--s3) 0 0;border:0">
+        <a class="btn p" href="studio-voice.html" style="display:grid;place-items:center">open the voiceover studio</a>
+        <button class="btn" data-go="roles">parts that need a voice</button>
       </div>
     </div>
   </div>

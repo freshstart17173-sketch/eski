@@ -1,0 +1,544 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>eski — author studio</title>
+<link rel="stylesheet" href="../../../tokens.css">
+<link rel="stylesheet" href="broadsheet.css">
+<style>
+/* ============================================================
+   eski — the author studio. where finished art becomes a comic
+   other people can work on. chrome comes from broadsheet.css.
+
+   the author does three things here and nothing else:
+
+   imports the pages, in order.
+   writes the cast — who they are and how they sound. that copy is not
+     decoration: it is what a performer reads in voiceover needed, so it
+     is edited here against a live preview of that row.
+   transcribes the pages into lines, each with a character and a
+     direction, because "sad" and "choking" are the difference between
+     a reading that fits the panel and one that does not.
+
+   same split as the voiceover studio: the page on the left, what is
+   written on it on the right. an author and a performer should be
+   looking at the same shape.
+   ============================================================ */
+:root{ --prog:26px; --bay:150px; }
+html,body{height:100%}
+body{overflow:hidden}
+.top{height:var(--hdr)}
+.prog{height:var(--prog)}
+
+.split{display:grid;grid-template-columns:minmax(300px,38%) 1fr;
+  height:calc(100vh - var(--hdr) - var(--prog))}
+@media(max-width:900px){ body{overflow:auto} .split{grid-template-columns:1fr;height:auto} }
+
+.page{border-right:1px solid var(--rule);display:grid;
+  grid-template-rows:1fr auto var(--bay);min-height:0}
+.stage{display:grid;place-items:center;padding:var(--s4);min-height:0;overflow:hidden}
+.stage .plate{max-height:100%;max-width:100%}
+.stage img{max-height:100%;max-width:100%;width:auto;object-fit:contain}
+.stage .none{border:1px dashed var(--line-strong);padding:var(--s7) var(--s5);
+  text-align:center;color:var(--label);font-size:var(--fs-xs);line-height:1.6;max-width:36ch}
+.stage .none b{display:block;color:var(--ink);font-family:var(--font-display);
+  font-size:17px;font-weight:400;margin-bottom:var(--s2)}
+.pagebar{display:flex;align-items:center;gap:var(--s3);padding:var(--s2) var(--s4);
+  border-top:1px solid var(--rule);font-size:var(--fs-micro);letter-spacing:.1em;
+  text-transform:uppercase;color:var(--label)}
+.pagebar .sp{flex:1}
+.pagebar .n{color:var(--ink);font-variant-numeric:tabular-nums;letter-spacing:0}
+
+/* the imported pages, in order, as a strip you can scroll and reorder */
+.strip{display:flex;gap:var(--s2);overflow-x:auto;padding:var(--s2) var(--s3);align-items:flex-start}
+.thumb{flex:none;width:52px;background:none;border:0;padding:0;color:inherit;text-align:center;
+  transition:opacity var(--t-fast) var(--ease)}
+.thumb .plate{aspect-ratio:2/3}
+.thumb img{width:100%;height:100%;object-fit:cover}
+.thumb span{display:block;font-size:10px;color:var(--label);padding-top:2px;
+  font-variant-numeric:tabular-nums}
+.thumb:hover{opacity:.75}
+.thumb[aria-current="true"] .plate{border-color:var(--mark);box-shadow:inset 0 0 0 1px var(--mark)}
+.thumb[aria-current="true"] span{color:var(--ink)}
+
+/* ---------- the right column ---------- */
+.work{overflow:auto;min-height:0;padding:0 0 var(--s8)}
+.workhead{position:sticky;top:0;z-index:5;background:var(--paper);
+  display:flex;align-items:center;gap:var(--s3);padding:var(--s2) var(--s4);
+  border-bottom:1px solid var(--rule);
+  font-size:var(--fs-micro);letter-spacing:.16em;text-transform:uppercase;color:var(--label)}
+.workhead b{color:var(--ink);font-weight:500}
+.workhead .sp{flex:1}
+.mode{display:none}
+.mode.on{display:block}
+
+/* ---------- a line, written the way a performer will read it ---------- */
+.line{display:grid;grid-template-columns:26px 1fr 22px;gap:var(--s3);align-items:baseline;
+  padding:var(--s2) var(--s4);border-bottom:1px solid var(--rule-hair);
+  transition:background var(--t-fast) var(--ease)}
+.line:hover{background:var(--surface)}
+.line.on{background:var(--surface);box-shadow:inset 3px 0 0 var(--mark)}
+.line .num{font-size:var(--fs-micro);color:var(--label);font-variant-numeric:tabular-nums}
+.line .body{min-width:0}
+.cuerow{display:flex;align-items:baseline;gap:var(--s2);margin-bottom:2px}
+.cast-select{background:none;border:0;border-bottom:1px solid transparent;color:var(--label);
+  font:inherit;font-size:var(--fs-micro);letter-spacing:.12em;text-transform:uppercase;
+  padding:0 14px 1px 0;appearance:none;
+  background-image:linear-gradient(45deg,transparent 50%,currentColor 50%),
+                   linear-gradient(135deg,currentColor 50%,transparent 50%);
+  background-position:right 5px center,right 1px center;
+  background-size:4px 4px,4px 4px;background-repeat:no-repeat;
+  transition:color var(--t-fast) var(--ease),border-color var(--t-fast) var(--ease)}
+.cast-select:hover,.cast-select:focus{color:var(--ink);border-bottom-color:var(--rule-hair);outline:0}
+
+/* the direction is the author's instruction to the performer. it reads as a
+   parenthetical because that is what it is. */
+.dir{font-style:italic;color:var(--muted);font-size:var(--fs-xs);
+  border-bottom:1px solid transparent;min-width:6ch;
+  transition:border-color var(--t-fast) var(--ease),color var(--t-fast) var(--ease)}
+.dir:hover,.dir:focus{border-bottom-color:var(--rule-hair);color:var(--soft-ink);outline:0}
+.dir:empty::before{content:"direction";color:var(--label);opacity:.55}
+.say{display:block;font-size:var(--fs);line-height:1.55;max-width:54ch;text-wrap:pretty;
+  border-bottom:1px solid transparent;
+  transition:border-color var(--t-fast) var(--ease)}
+.say:hover,.say:focus{border-bottom-color:var(--rule-hair);outline:0}
+.say:empty::before{content:"type the line";color:var(--label)}
+.kill{width:20px;height:20px;border:1px solid transparent;background:none;color:var(--muted);
+  font-size:11px;line-height:1;opacity:0;transition:all var(--t-fast) var(--ease)}
+.line:hover .kill{opacity:1}
+.kill:hover{border-color:var(--rec);color:var(--rec)}
+.addline{width:100%;background:none;border:0;border-bottom:1px solid var(--rule-hair);
+  padding:var(--s2);font-size:var(--fs-micro);letter-spacing:.16em;text-transform:uppercase;
+  color:var(--label);transition:all var(--t-fast) var(--ease)}
+.addline:hover{background:var(--rule);color:var(--paper)}
+
+/* ---------- the cast ---------- */
+.char{border-bottom:1px solid var(--rule);padding:var(--s3) var(--s4)}
+.charhead{display:flex;align-items:baseline;gap:var(--s3)}
+.charhead .nm{font-family:var(--font-display);font-size:17px;line-height:24px;
+  border-bottom:1px solid transparent;min-width:8ch}
+.charhead .nm:hover,.charhead .nm:focus{border-bottom-color:var(--rule-hair);outline:0}
+.charhead .sp{flex:1}
+.charhead .n{font-size:var(--fs-micro);color:var(--label);font-variant-numeric:tabular-nums;
+  letter-spacing:.06em}
+.field{display:grid;grid-template-columns:104px 1fr;gap:var(--s3);align-items:baseline;
+  padding:var(--s2) 0;border-top:1px solid var(--rule-hair)}
+.field .k{font-size:var(--fs-micro);letter-spacing:.1em;text-transform:uppercase;
+  color:var(--label)}
+.field .v{font-size:var(--fs-xs);line-height:1.5;color:var(--soft-ink);
+  border-bottom:1px solid transparent;transition:border-color var(--t-fast) var(--ease)}
+.field .v:hover,.field .v:focus{border-bottom-color:var(--rule-hair);outline:0}
+.field .v:empty::before{content:attr(data-ph);color:var(--label);opacity:.6}
+
+/* what the performer sees. the same row as the voiceover needed browser,
+   built from the fields above it, live. */
+.asrow{display:grid;grid-template-columns:46px 1fr auto;gap:var(--s3);align-items:center;
+  margin-top:var(--s3);padding:var(--s2);border:1px solid var(--rule-hair);
+  background:var(--surface)}
+.asrow .portrait{width:46px;height:46px}
+.asrow .name{font-family:var(--font-display);font-size:15px;line-height:20px}
+.asrow .sub{font-size:var(--fs-micro);color:var(--label)}
+.asrow .blurb{font-size:var(--fs-xs);color:var(--soft-ink);line-height:1.4;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.asrow .meta{font-size:var(--fs-micro);color:var(--label);text-align:right;
+  font-variant-numeric:tabular-nums;white-space:nowrap}
+.aslabel{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--label);
+  margin-top:var(--s3)}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <a class="mark" href="home.html">eski<i>!</i></a>
+  <div class="what">
+    <span class="ttl" id="w-title">the second dark</span>
+    <span id="w-sub">chapter 1 · draft</span>
+  </div>
+  <span class="sp"></span>
+  <div class="seg" id="mode-seg">
+    <button data-mode="script" aria-selected="true">script</button>
+    <button data-mode="cast" aria-selected="false">cast</button>
+  </div>
+  <div class="hotkeys">
+    <button class="btn quiet" aria-label="keyboard shortcuts">hotkeys</button>
+    <div class="pop">
+      <div><kbd>enter</kbd><span>new line under this one</span></div>
+      <div><kbd>[</kbd><kbd>]</kbd><span>turn the page</span></div>
+      <div><kbd>i</kbd><span>import pages</span></div>
+    </div>
+  </div>
+  <button class="btn p" id="publish">publish chapter</button>
+</header>
+
+<div class="prog">
+  <span id="p-words">— pages</span>
+  <span class="track"><i id="p-bar" style="width:0"></i></span>
+  <span id="p-right">—</span>
+</div>
+
+<div class="split">
+  <div class="page">
+    <div class="stage" id="stage"></div>
+    <div class="pagebar">
+      <button class="btn sm" id="pg-prev">← prev</button>
+      <span class="n" id="pg-n">page — of —</span>
+      <span class="sp"></span>
+      <span id="pg-lines">—</span>
+      <button class="btn sm" id="pg-next">next →</button>
+    </div>
+    <div class="bay">
+      <div class="bayhead"><span>pages</span><span class="sp"></span>
+        <span class="n" id="bay-n"></span>
+        <button class="btn sm" id="import">import</button></div>
+      <div class="baylist"><div class="strip" id="strip"></div></div>
+    </div>
+  </div>
+
+  <div class="work">
+    <div class="workhead" id="workhead"></div>
+    <div class="mode on" id="mode-script"></div>
+    <div class="mode" id="mode-cast"></div>
+  </div>
+</div>
+
+<input type="file" id="filein" accept="image/*" multiple hidden>
+<div class="droplayer" id="droplayer"><div>
+  <b>drop pages here</b>
+  <span>they import in filename order · drop audio in the composer studio instead</span>
+</div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============================================================
+   the chapter being authored. this is the same object the export
+   writes into the manifest: pages, cast, and the script.
+   ============================================================ */
+const ART = ['../covers/second-dark.jpg','../covers/jigoku.jpg',
+             '../covers/concrete-sky.jpg','../covers/talking-axe.jpg'];
+
+const CHAPTER = {
+  title:'the second dark',
+  pages:[
+    {n:1, src:'../covers/second-dark.jpg', file:'001.jpg'},
+    {n:2, src:'../covers/second-dark.jpg', file:'002.jpg'},
+    {n:3, src:'../covers/second-dark.jpg', file:'003.jpg'}
+  ],
+  cast:[
+    {id:'gwen', name:'gwen', kind:'lead',
+     desc:'The one who agreed to count. Keeps the village’s tally of the night, and is the last to admit the number is wrong.',
+     voice:'Village accent, careful with numbers. Starts level and unravels quietly across three chapters. Never shouts; the fear arrives as precision.'},
+    {id:'mother', name:'the mother', kind:'supporting',
+     desc:'Gwen’s mother, who has lived through this before and will not say so.',
+     voice:'Speaks in proverbs and means every one of them as a threat. Low, slow, no warmth in the vowels.'},
+    {id:'narration', name:'narration', kind:'narration',
+     desc:'A folklorist reading her own field notes back, thirty years too late to help.',
+     voice:'Dry, academic, faintly guilty. Reads the horror as though it were a footnote.'}
+  ],
+  lines:[
+    {id:'l1', p:1, c:'narration', dir:'flat, reading aloud',
+     t:'The village agreed to one night without light. They had done it before, and nothing had come of it.'},
+    {id:'l2', p:1, c:'gwen', dir:'', t:'Forty-one. That’s everyone.'},
+    {id:'l3', p:1, c:'mother', dir:'not looking up', t:'Count again.'},
+    {id:'l4', p:2, c:'gwen', dir:'worried', t:'Forty-two.'},
+    {id:'l5', p:2, c:'narration', dir:'', t:'She counted a third time, and got forty-one, and did not say so.'},
+    {id:'l6', p:3, c:'mother', dir:'sad', t:'It isn’t your fault. It was always going to be one of you.'},
+    {id:'l7', p:3, c:'gwen', dir:'choking', t:'Mam—'}
+  ]
+};
+
+let page = 1;
+let mode = 'script';
+let focusedLine = null;
+
+const esc = s => String(s).replace(/[&<>"]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
+const charById = id => CHAPTER.cast.find(c => c.id === id);
+const linesOn = p => CHAPTER.lines.filter(l => l.p === p);
+const uid = p => p + Math.random().toString(36).slice(2, 7);
+
+/* ---------- the page column ---------- */
+function renderPage(){
+  const pg = CHAPTER.pages.find(p => p.n === page);
+  document.getElementById('stage').innerHTML = pg
+    ? `<div class="plate"><img src="${esc(pg.src)}" alt="page ${pg.n}"></div>`
+    : `<div class="none"><b>no pages yet</b>
+        drop finished art anywhere on this window, or use import. pages take
+        their order from their filenames, the same way the reader reads them.</div>`;
+  document.getElementById('pg-n').textContent = CHAPTER.pages.length
+    ? `page ${page} of ${CHAPTER.pages.length}` : 'no pages';
+  const n = linesOn(page).length;
+  document.getElementById('pg-lines').textContent = n
+    ? `${n} line${n === 1 ? '' : 's'} written` : 'nothing written here';
+  document.getElementById('pg-prev').disabled = page <= 1;
+  document.getElementById('pg-next').disabled = page >= CHAPTER.pages.length;
+
+  document.getElementById('strip').innerHTML = CHAPTER.pages.map(p => `
+    <button class="thumb" type="button" data-page="${p.n}" aria-current="${p.n === page}">
+      <span class="plate"><img src="${esc(p.src)}" alt=""></span>
+      <span class="n">${p.n}</span>
+    </button>`).join('')
+    || `<div class="bayempty" style="margin:0"><b>drop pages here</b>
+         jpg, png or webp · they land in filename order</div>`;
+  document.getElementById('bay-n').textContent = CHAPTER.pages.length
+    ? `${CHAPTER.pages.length} pages` : '';
+}
+
+/* ---------- the script ---------- */
+function renderScript(){
+  const rows = linesOn(page);
+  document.getElementById('mode-script').innerHTML = rows.map((l, k) => `
+    <div class="line${focusedLine === l.id ? ' on' : ''}" data-line="${l.id}">
+      <span class="num n">${k + 1}</span>
+      <span class="body">
+        <span class="cuerow">
+          <select class="cast-select" data-char="${l.id}">
+            ${CHAPTER.cast.map(c => `<option value="${esc(c.id)}"
+              ${c.id === l.c ? 'selected' : ''}>${esc(c.name)}</option>`).join('')}
+          </select>
+          <span class="dir" contenteditable="true" data-dir="${l.id}"
+            >${esc(l.dir)}</span>
+        </span>
+        <span class="say" contenteditable="true" data-say="${l.id}">${esc(l.t)}</span>
+      </span>
+      <button class="kill" data-kill="${l.id}" title="delete line">✕</button>
+    </div>`).join('')
+    + `<button class="addline" id="addline">+ line on page ${page}</button>`;
+}
+
+/* ---------- the cast ----------
+   every field here is read by somebody else: the description and the voice
+   note are what a performer sees in voiceover needed, so they are edited
+   against a live copy of that row. */
+function renderCast(){
+  document.getElementById('mode-cast').innerHTML = CHAPTER.cast.map(c => {
+    const n = CHAPTER.lines.filter(l => l.c === c.id).length;
+    const pages = [...new Set(CHAPTER.lines.filter(l => l.c === c.id).map(l => l.p))];
+    return `<div class="char" data-char-block="${esc(c.id)}">
+      <div class="charhead">
+        <span class="nm" contenteditable="true" data-name="${esc(c.id)}">${esc(c.name)}</span>
+        <span class="sp"></span>
+        <select class="cast-select" data-kind="${esc(c.id)}">
+          ${['lead','supporting','narration'].map(k =>
+            `<option ${k === c.kind ? 'selected' : ''}>${k}</option>`).join('')}
+        </select>
+        <span class="n">${n} lines · ${pages.length} page${pages.length === 1 ? '' : 's'}</span>
+      </div>
+      <div class="field"><span class="k">who they are</span>
+        <span class="v" contenteditable="true" data-desc="${esc(c.id)}"
+          data-ph="a sentence a stranger could cast from">${esc(c.desc)}</span></div>
+      <div class="field"><span class="k">voice</span>
+        <span class="v" contenteditable="true" data-voice="${esc(c.id)}"
+          data-ph="register, accent, pace, mannerisms">${esc(c.voice)}</span></div>
+      <div class="aslabel">as it appears in voiceover needed</div>
+      <div class="asrow">
+        <span class="portrait"><img src="${esc(CHAPTER.pages[0] ? CHAPTER.pages[0].src : ART[0])}"
+          alt="" style="object-position:40% 20%"></span>
+        <span>
+          <span class="name" data-mirror-name="${esc(c.id)}">${esc(c.name)}</span>
+          <span class="sub">${esc(CHAPTER.title)} · ${esc(c.kind)}</span>
+          <span class="blurb" data-mirror-blurb="${esc(c.id)}">${esc(c.desc)} ${esc(c.voice)}</span>
+        </span>
+        <span class="meta">${n} lines<br>voiceover needed</span>
+      </div>
+    </div>`;
+  }).join('')
+  + `<button class="addline" id="addchar">+ character</button>`;
+}
+
+function renderHead(){
+  const h = document.getElementById('workhead');
+  h.innerHTML = mode === 'script'
+    ? `<b>page ${page}</b><span>script</span><span class="sp"></span>
+       <span>${linesOn(page).length} lines · ${CHAPTER.cast.length} characters</span>`
+    : `<b>cast</b><span>${CHAPTER.cast.length} characters</span><span class="sp"></span>
+       <span>what a performer reads before they take a part</span>`;
+}
+
+function paintProgress(){
+  const pagesWith = new Set(CHAPTER.lines.map(l => l.p)).size;
+  document.getElementById('p-words').innerHTML =
+    `<b>${CHAPTER.pages.length}</b> pages · <b>${CHAPTER.lines.length}</b> lines`;
+  document.getElementById('p-bar').style.width =
+    (CHAPTER.pages.length ? pagesWith / CHAPTER.pages.length * 100 : 0) + '%';
+  const missing = CHAPTER.pages.length - pagesWith;
+  document.getElementById('p-right').textContent = !CHAPTER.pages.length ? 'nothing imported'
+    : missing > 0 ? `${missing} page${missing === 1 ? '' : 's'} with no lines`
+    : 'every page transcribed';
+  document.getElementById('publish').disabled = !CHAPTER.pages.length || !CHAPTER.lines.length;
+}
+
+function render(){
+  renderPage(); renderScript(); renderCast(); renderHead(); paintProgress();
+}
+
+/* ---------- editing ---------- */
+document.getElementById('mode-script').addEventListener('input', e => {
+  const say = e.target.closest('[data-say]');
+  if(say){ CHAPTER.lines.find(l => l.id === say.dataset.say).t = say.textContent.trim(); return; }
+  const dir = e.target.closest('[data-dir]');
+  if(dir){ CHAPTER.lines.find(l => l.id === dir.dataset.dir).dir = dir.textContent.trim(); }
+});
+document.getElementById('mode-script').addEventListener('change', e => {
+  const sel = e.target.closest('[data-char]');
+  if(!sel) return;
+  CHAPTER.lines.find(l => l.id === sel.dataset.char).c = sel.value;
+  renderCast(); renderHead();
+});
+document.getElementById('mode-script').addEventListener('click', e => {
+  const kill = e.target.closest('[data-kill]');
+  if(kill){
+    const i = CHAPTER.lines.findIndex(l => l.id === kill.dataset.kill);
+    CHAPTER.lines.splice(i, 1);
+    render();
+    toast('line deleted');
+    return;
+  }
+  if(e.target.closest('#addline')){ addLine(); return; }
+  const line = e.target.closest('[data-line]');
+  if(line) focusedLine = line.dataset.line;
+});
+function addLine(after){
+  const last = linesOn(page).slice(-1)[0];
+  const l = {id:uid('l'), p:page, c:(after && after.c) || (last && last.c) || CHAPTER.cast[0].id,
+             dir:'', t:''};
+  const at = after ? CHAPTER.lines.indexOf(after) + 1 : CHAPTER.lines.length;
+  CHAPTER.lines.splice(at, 0, l);
+  focusedLine = l.id;
+  render();
+  const el = document.querySelector(`[data-say="${l.id}"]`);
+  if(el) el.focus();
+}
+
+/* cast edits write through to the mirror row as you type, because the two
+   are the same words. */
+document.getElementById('mode-cast').addEventListener('input', e => {
+  const t = e.target;
+  const set = (key, apply) => {
+    const id = t.dataset[key];
+    if(!id) return false;
+    apply(charById(id), t.textContent.trim(), id);
+    return true;
+  };
+  if(set('name', (c, v, id) => {
+    c.name = v;
+    const m = document.querySelector(`[data-mirror-name="${id}"]`);
+    if(m) m.textContent = v;
+  })) return;
+  if(set('desc', (c, v, id) => {
+    c.desc = v;
+    const m = document.querySelector(`[data-mirror-blurb="${id}"]`);
+    if(m) m.textContent = `${v} ${c.voice}`;
+  })) return;
+  set('voice', (c, v, id) => {
+    c.voice = v;
+    const m = document.querySelector(`[data-mirror-blurb="${id}"]`);
+    if(m) m.textContent = `${c.desc} ${v}`;
+  });
+});
+document.getElementById('mode-cast').addEventListener('change', e => {
+  const sel = e.target.closest('[data-kind]');
+  if(!sel) return;
+  charById(sel.dataset.kind).kind = sel.value;
+  renderCast();
+});
+document.getElementById('mode-cast').addEventListener('click', e => {
+  if(!e.target.closest('#addchar')) return;
+  CHAPTER.cast.push({id:uid('c'), name:'new character', kind:'supporting', desc:'', voice:''});
+  renderCast(); renderHead();
+  const el = document.querySelector('[data-name]:last-of-type');
+  if(el) el.focus();
+});
+
+/* ---------- modes and pages ---------- */
+document.getElementById('mode-seg').addEventListener('click', e => {
+  const b = e.target.closest('[data-mode]');
+  if(!b) return;
+  mode = b.dataset.mode;
+  document.querySelectorAll('#mode-seg button').forEach(x =>
+    x.setAttribute('aria-selected', x === b));
+  document.getElementById('mode-script').classList.toggle('on', mode === 'script');
+  document.getElementById('mode-cast').classList.toggle('on', mode === 'cast');
+  renderHead();
+});
+function goPage(p){
+  if(p < 1 || p > CHAPTER.pages.length) return;
+  page = p;
+  render();
+}
+document.getElementById('pg-prev').addEventListener('click', () => goPage(page - 1));
+document.getElementById('pg-next').addEventListener('click', () => goPage(page + 1));
+document.getElementById('strip').addEventListener('click', e => {
+  const t = e.target.closest('[data-page]');
+  if(t) goPage(+t.dataset.page);
+});
+
+/* ---------- importing pages ---------- */
+function importPages(files){
+  const imgs = [...files].filter(f => !f.type || f.type.startsWith('image'));
+  if(!imgs.length) return;
+  imgs.sort((a, b) => a.name.localeCompare(b.name, undefined, {numeric:true}));
+  imgs.forEach(f => {
+    CHAPTER.pages.push({n:CHAPTER.pages.length + 1, src:URL.createObjectURL(f), file:f.name});
+  });
+  render();
+  toast(`${imgs.length} page${imgs.length === 1 ? '' : 's'} imported`);
+}
+document.getElementById('import').addEventListener('click', () =>
+  document.getElementById('filein').click());
+document.getElementById('filein').addEventListener('change', e => {
+  importPages(e.target.files);
+  e.target.value = '';
+});
+let dragDepth = 0;
+addEventListener('dragenter', e => {
+  if(![...(e.dataTransfer.types || [])].includes('Files')) return;
+  dragDepth++;
+  document.getElementById('droplayer').classList.add('on');
+});
+addEventListener('dragover', e => {
+  if([...(e.dataTransfer.types || [])].includes('Files')) e.preventDefault();
+});
+addEventListener('dragleave', () => {
+  if(--dragDepth <= 0){ dragDepth = 0; document.getElementById('droplayer').classList.remove('on'); }
+});
+addEventListener('drop', e => {
+  if(![...(e.dataTransfer.types || [])].includes('Files')) return;
+  e.preventDefault();
+  dragDepth = 0;
+  document.getElementById('droplayer').classList.remove('on');
+  importPages(e.dataTransfer.files);
+});
+
+document.getElementById('publish').addEventListener('click', () => {
+  const noVoice = CHAPTER.cast.filter(c => !c.desc || !c.voice).length;
+  toast(noVoice
+    ? `published · ${noVoice} character${noVoice === 1 ? '' : 's'} still need a voice note`
+    : 'chapter published · every part is now listed in voiceover needed');
+});
+
+/* ---------- hotkeys ---------- */
+addEventListener('keydown', e => {
+  const editing = e.target.isContentEditable || e.target.matches('input,textarea,select');
+  if(e.key === 'Enter' && editing && e.target.dataset.say){
+    e.preventDefault();
+    addLine(CHAPTER.lines.find(l => l.id === e.target.dataset.say));
+    return;
+  }
+  if(editing) return;
+  if(e.key === '['){ e.preventDefault(); goPage(page - 1); return; }
+  if(e.key === ']'){ e.preventDefault(); goPage(page + 1); return; }
+  if(e.key === 'i' || e.key === 'I'){ e.preventDefault(); document.getElementById('filein').click(); }
+});
+
+let toastTimer;
+function toast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('on');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('on'), 1800);
+}
+
+render();
+</script>
+</body>
+</html>
