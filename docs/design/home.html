@@ -1,0 +1,950 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>eski — home</title>
+<link rel="stylesheet" href="../../tokens.css">
+<style>
+/* ============================================================
+   eski — home, browse (comics + open roles), shelf, profile.
+   broadsheet ruling, with one flat colour field per cover sampled
+   from the artwork at runtime (see analyse() in the script below).
+
+   every card is the same shape and every metadata row sits on the
+   same baseline as the row beside it: labels are a fixed column,
+   values are right aligned, and anything too long scrolls on hover
+   instead of wrapping and pushing the rows below it out of line.
+   ============================================================ */
+:root{
+  --paper:#FCFDFC;
+  --surface:#FFFFFF;
+  --rule:#141A17;
+  --rule-hair:var(--line-1);
+  --ink:var(--sage-900);
+  --soft-ink:#45544D;
+  --muted:#62746B;
+  --accent:var(--sage-700);
+  --mark:#141A17;
+
+  /* per card, set by javascript from the cover art. these are the
+     fallbacks for a tainted canvas or a cover that has not loaded. */
+  --blk:var(--sage-300);
+
+  --field-pad:clamp(10px,1.6vw,20px);
+  --gutter:26px;
+  --row:22px;            /* one metadata row. fixed, so columns align. */
+}
+[data-theme="dark"]{
+  --paper:var(--void); --surface:var(--surf-1);
+  --rule:#C8D2CC; --rule-hair:var(--line-dark);
+  --ink:#EAF0EC; --soft-ink:var(--sage-200); --muted:var(--muted-dark);
+  --accent:var(--sage-300); --mark:#EAF0EC;
+  --blk:var(--sage-700);
+}
+html{background:var(--paper)}
+body{margin:0;background:var(--paper);color:var(--ink);
+  font-family:var(--font-body);font-size:var(--fs-sm);line-height:1.5;
+  -webkit-font-smoothing:antialiased}
+img{display:block;max-width:100%}
+.n{font-variant-numeric:tabular-nums}
+
+/* ---------- chrome: wordmark top left, four words on the right ---------- */
+.top{position:sticky;top:0;z-index:30;display:flex;align-items:center;gap:var(--s5);
+  padding:var(--s3) var(--s5);border-bottom:1px solid var(--rule);
+  background:var(--paper)}
+.mark{font-family:var(--font-display);font-size:21px;letter-spacing:-.01em;
+  color:var(--ink);text-decoration:none;line-height:1}
+.mark i{font-style:normal;color:var(--accent);transition:color var(--t-fast) var(--ease)}
+.mark:hover i{color:var(--ink)}
+.top nav{display:flex;gap:var(--s4);margin-left:auto;font-size:var(--fs-sm)}
+.top nav button{background:none;border:0;padding:2px 0;color:var(--muted);
+  border-bottom:1px solid transparent;transition:color var(--t-fast) var(--ease),
+  border-color var(--t-fast) var(--ease)}
+.top nav button:hover{color:var(--ink);border-bottom-color:var(--rule-hair)}
+.top nav button[aria-current="page"]{color:var(--ink);border-bottom-color:var(--ink)}
+.top .ico{width:var(--ctl);height:var(--ctl);border:1px solid var(--rule-hair);
+  background:none;color:var(--muted);font-size:var(--fs-xs);letter-spacing:.08em;
+  transition:background var(--t-fast) var(--ease),color var(--t-fast) var(--ease)}
+.top .ico:hover{background:var(--rule);color:var(--paper);border-color:var(--rule)}
+
+.wrap{max-width:1280px;margin:0 auto;padding:var(--s5) var(--s5) var(--s8)}
+.pane{display:none}
+.pane.on{display:block}
+
+/* ---------- section heads ---------- */
+.head{display:flex;align-items:baseline;gap:var(--s3);padding-bottom:var(--s2);
+  border-bottom:1px solid var(--rule)}
+.head h2{margin:0;font-size:var(--fs-micro);letter-spacing:.16em;text-transform:uppercase;
+  font-weight:400;color:var(--ink)}
+.head .n{font-size:var(--fs-micro);letter-spacing:.1em;color:var(--muted)}
+.head .sp{flex:1}
+.head a{font-size:var(--fs-xs);color:var(--muted);text-decoration:none;
+  border-bottom:1px solid transparent;transition:color var(--t-fast) var(--ease),
+  border-color var(--t-fast) var(--ease)}
+.head a:hover{color:var(--ink);border-bottom-color:var(--ink)}
+section + section{margin-top:var(--s7)}
+
+/* ---------- the grid. five up, then four, then two. ----------
+   gap:0 with per cell rules, so a short last row shows paper and not
+   a stray length of rule. */
+.grid{display:grid;grid-template-columns:repeat(5,1fr);
+  border-left:1px solid var(--rule)}
+@media(max-width:1180px){.grid{grid-template-columns:repeat(4,1fr)}}
+@media(max-width:900px){.grid{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:640px){.grid{grid-template-columns:repeat(2,1fr)}}
+
+/* ---------- a card ---------- */
+.card{display:flex;flex-direction:column;background:var(--paper);text-align:left;
+  border:0;border-right:1px solid var(--rule);border-bottom:1px solid var(--rule);
+  padding:0;color:inherit;font:inherit;min-width:0;
+  transition:background var(--t-fast) var(--ease)}
+.card:hover{background:var(--surface)}
+.card:active{transform:translateY(1px)}
+/* the block is a fixed square, never grows, never shrinks: two cards side by
+   side must put their titles on the same line. the cover is positioned rather than laid out in flow: a square block
+   rather than laid out in flow, because a square whose height comes from
+   aspect-ratio leaves a percentage height nothing definite to resolve
+   against and tall covers spill straight out of the block. */
+.card .field{flex:none;position:relative;aspect-ratio:1/1;overflow:hidden;
+  background:var(--blk);transition:filter var(--t-fast) var(--ease)}
+.card:hover .field{filter:saturate(1.12) brightness(1.03)}
+.card .field img{position:absolute;top:0;left:0;width:100%;height:100%;
+  padding:var(--field-pad);object-fit:contain;
+  transition:transform var(--t-mid) var(--ease)}
+.card:hover .field img{transform:scale(1.03)}
+.card:active .field img{transform:scale(.995)}
+
+.cardbody{padding:var(--s3);display:flex;flex-direction:column;flex:1;min-width:0;
+  border-top:1px solid var(--rule)}
+/* the title is one line, always. never two, never hyphenated. */
+.title{font-weight:500;font-size:var(--fs-sm);line-height:var(--row);height:var(--row)}
+.card:hover .title{box-shadow:inset 0 -1px 0 var(--rule)}
+/* the note line is always in the markup, empty or not, so a card that has one
+   does not push its neighbours' metadata a row out of true. */
+.note{height:var(--row);line-height:var(--row);font-size:var(--fs-micro);
+  color:var(--muted);margin-bottom:var(--s2)}
+
+/* ---------- metadata rows. fixed height, label column, tabular values ---------- */
+.meta{display:grid;gap:0;margin-top:auto}
+.meta .r{display:grid;grid-template-columns:44px 1fr;align-items:center;gap:var(--s2);
+  height:var(--row);border-top:1px solid var(--rule-hair);min-width:0}
+.meta .r:first-child{border-top:0}
+.meta .k{font-size:var(--fs-micro);letter-spacing:.08em;color:var(--muted);
+  text-transform:uppercase;white-space:nowrap}
+.meta .v{font-size:var(--fs-xs);color:var(--soft-ink);text-align:right;
+  font-variant-numeric:tabular-nums;min-width:0}
+.meta .v.want{color:var(--ink);font-weight:500}
+.meta .v.none{color:var(--muted);font-style:italic}
+
+/* ---------- the scroller. anything too long slides on hover instead of
+   wrapping. the shift and the duration are measured in fitScrollers(). ---------- */
+.mq{display:block;overflow:hidden;white-space:nowrap;min-width:0}
+.mq > span{display:inline-block;transform:translateX(0);
+  transition:transform var(--mq-t,0ms) linear}
+.mq[data-over="1"]{-webkit-mask-image:linear-gradient(90deg,#000 86%,transparent 100%);
+  mask-image:linear-gradient(90deg,#000 86%,transparent 100%)}
+.card:hover .mq[data-over="1"] > span,
+.rolerow:hover .mq[data-over="1"] > span,
+.mq[data-over="1"]:hover > span{transform:translateX(var(--mq-x,0))}
+
+/* ---------- open roles ---------- */
+.rolecard{display:flex;flex-direction:column;background:var(--paper);text-align:left;
+  border:0;border-right:1px solid var(--rule);border-bottom:1px solid var(--rule);
+  padding:var(--s3);color:inherit;font:inherit;min-width:0;gap:var(--s2);
+  transition:background var(--t-fast) var(--ease)}
+.rolecard:hover{background:var(--surface)}
+.rolecard:active{transform:translateY(1px)}
+.rolehead{display:flex;gap:var(--s3);align-items:flex-start;min-width:0}
+/* the character's picture, printed as a single ink over the comic's own
+   colour block: a rack of ten different artists still reads as one rack. */
+.portrait{width:52px;height:52px;flex:none;display:block;overflow:hidden;
+  background:var(--blk);border:1px solid var(--rule-hair);
+  transition:filter var(--t-fast) var(--ease)}
+.portrait img{width:100%;height:100%;object-fit:cover;mix-blend-mode:luminosity;
+  filter:contrast(1.08);opacity:.94;transition:transform var(--t-mid) var(--ease)}
+.rolecard:hover .portrait,.rolerow:hover .portrait{filter:saturate(1.2) brightness(1.04)}
+.rolecard:hover .portrait img,.rolerow:hover .portrait img{transform:scale(1.06)}
+.rolename{font-weight:500;font-size:var(--fs-sm);line-height:var(--row);height:var(--row);
+  text-transform:uppercase;letter-spacing:.04em}
+.rolein{font-size:var(--fs-micro);color:var(--muted);line-height:var(--row);height:var(--row)}
+.blurb{font-size:var(--fs-xs);color:var(--soft-ink);line-height:1.45;
+  height:calc(1.45em * 3);overflow:hidden;
+  display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical}
+.rolefoot{display:flex;align-items:center;justify-content:space-between;gap:var(--s2);
+  margin-top:auto;padding-top:var(--s2);border-top:1px solid var(--rule-hair);
+  font-size:var(--fs-micro);letter-spacing:.06em;color:var(--muted);
+  font-variant-numeric:tabular-nums}
+
+/* ---------- controls ---------- */
+.btn{font-size:var(--fs-xs);letter-spacing:.06em;height:var(--ctl);padding:0 var(--s3);
+  border:1px solid var(--rule);background:none;color:var(--ink);
+  transition:background var(--t-fast) var(--ease),color var(--t-fast) var(--ease),
+  border-color var(--t-fast) var(--ease)}
+.btn:hover{background:var(--rule);color:var(--paper)}
+.btn:active{transform:translateY(1px)}
+.btn.p{background:var(--mark);border-color:var(--mark);color:var(--paper)}
+.btn.p:hover{background:var(--sage-700);border-color:var(--sage-700);color:#fff}
+[data-theme="dark"] .btn.p{color:var(--sage-900)}
+.btn[aria-pressed="true"]{background:var(--mark);border-color:var(--mark);color:var(--paper)}
+[data-theme="dark"] .btn[aria-pressed="true"]{color:var(--sage-900)}
+.btn.sm{height:24px;font-size:var(--fs-micro);padding:0 var(--s2)}
+
+.bar{display:flex;gap:var(--s2);align-items:center;flex-wrap:wrap;
+  padding:var(--s3) 0;border-bottom:1px solid var(--rule)}
+.bar input[type=search],.bar select{height:var(--ctl);border:1px solid var(--rule-hair);
+  background:var(--surface);color:var(--ink);padding:0 var(--s2);font-size:var(--fs-xs);
+  transition:border-color var(--t-fast) var(--ease)}
+.bar input[type=search]{flex:1;min-width:180px}
+.bar input[type=search]:hover,.bar select:hover{border-color:var(--line-strong)}
+.bar .lbl{font-size:var(--fs-micro);letter-spacing:.12em;color:var(--muted);
+  text-transform:uppercase}
+.chips{display:flex;gap:var(--s1);flex-wrap:wrap}
+.chip{font-size:var(--fs-micro);letter-spacing:.08em;text-transform:uppercase;
+  height:24px;padding:0 var(--s2);border:1px solid var(--rule-hair);background:none;
+  color:var(--muted);transition:all var(--t-fast) var(--ease)}
+.chip:hover{color:var(--ink);border-color:var(--ink)}
+.chip[aria-pressed="true"]{background:var(--mark);border-color:var(--mark);color:var(--paper)}
+[data-theme="dark"] .chip[aria-pressed="true"]{color:var(--sage-900)}
+
+/* ---------- roles browse: one row per character ---------- */
+.rolelist{border-top:1px solid var(--rule)}
+.rolerow{display:grid;grid-template-columns:56px 200px 1fr 90px 130px;gap:var(--s3);
+  align-items:center;padding:var(--s2) var(--s2);width:100%;text-align:left;
+  background:none;border:0;border-bottom:1px solid var(--rule-hair);color:inherit;
+  font:inherit;min-width:0;transition:background var(--t-fast) var(--ease)}
+.rolerow:hover{background:var(--surface)}
+.rolerow .portrait{width:56px;height:56px}
+.rolerow .who{min-width:0}
+.rolerow .lines{text-align:right;font-size:var(--fs-xs);color:var(--muted);
+  font-variant-numeric:tabular-nums}
+.rolerow .go{display:flex;justify-content:flex-end}
+.rolerow .go .btn{opacity:.55;transition:opacity var(--t-fast) var(--ease),
+  background var(--t-fast) var(--ease),color var(--t-fast) var(--ease)}
+.rolerow:hover .go .btn{opacity:1}
+@media(max-width:820px){
+  .rolerow{grid-template-columns:44px 1fr auto;row-gap:var(--s1)}
+  .rolerow .blurb,.rolerow .lines{display:none}
+}
+.empty{padding:var(--s7) var(--s4);text-align:center;color:var(--muted);
+  font-size:var(--fs-xs);letter-spacing:.08em}
+
+/* ---------- details (the comic page. not the shelf.) ---------- */
+.ov{position:fixed;inset:0;z-index:60;background:rgba(12,19,15,.55);
+  display:none;place-items:center;padding:var(--s5);
+  animation:fade var(--t-fast) var(--ease)}
+.ov.on{display:grid}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+.sheet{background:var(--paper);border:1px solid var(--rule);width:min(760px,100%);
+  max-height:86vh;overflow:auto;animation:rise var(--t-mid) var(--ease)}
+@keyframes rise{from{transform:translateY(8px);opacity:0}to{transform:none;opacity:1}}
+.sheethead{display:flex;align-items:center;gap:var(--s3);padding:var(--s3) var(--s4);
+  border-bottom:1px solid var(--rule);position:sticky;top:0;background:var(--paper)}
+.sheethead .lbl{font-size:var(--fs-micro);letter-spacing:.16em;color:var(--muted);
+  text-transform:uppercase}
+.sheethead .sp{flex:1}
+.sheetbody{display:grid;grid-template-columns:240px 1fr}
+@media(max-width:680px){.sheetbody{grid-template-columns:1fr}}
+.sheetbody .left{padding:var(--s4);border-right:1px solid var(--rule)}
+.sheetbody .left .field{background:var(--blk);position:relative;
+  aspect-ratio:1/1;overflow:hidden}
+.sheetbody .left .field img{position:absolute;top:0;left:0;width:100%;height:100%;
+  padding:var(--field-pad);object-fit:contain}
+.sheetbody .right{padding:var(--s4);min-width:0}
+.sheetbody h3{font-family:var(--font-display);font-weight:400;font-size:var(--fs-title);
+  margin:0 0 var(--s2);line-height:1.05}
+.sheetbody p.desc{margin:0 0 var(--s4);color:var(--soft-ink);line-height:1.6;max-width:56ch}
+.acts{display:flex;gap:var(--s2);flex-wrap:wrap;padding:var(--s4);
+  border-top:1px solid var(--rule)}
+.castrow{display:grid;grid-template-columns:1fr auto;gap:var(--s3);align-items:center;
+  height:var(--row);border-top:1px solid var(--rule-hair);font-size:var(--fs-xs)}
+.castrow span:last-child{color:var(--muted);font-variant-numeric:tabular-nums;
+  white-space:nowrap}
+
+/* ---------- shelf ---------- */
+.progress{height:3px;background:var(--rule-hair);margin-top:var(--s2)}
+.progress i{display:block;height:100%;background:var(--mark)}
+
+.foot{margin-top:var(--s8);padding-top:var(--s3);border-top:1px solid var(--rule);
+  display:flex;justify-content:space-between;gap:var(--s3);flex-wrap:wrap;
+  font-size:var(--fs-micro);letter-spacing:.1em;color:var(--muted)}
+.foot a{color:inherit;text-decoration:none}
+.foot a:hover{color:var(--ink)}
+
+.toast{position:fixed;left:50%;bottom:var(--s5);transform:translateX(-50%);
+  background:var(--rule);color:var(--paper);font-size:var(--fs-xs);letter-spacing:.06em;
+  padding:var(--s2) var(--s4);z-index:70;opacity:0;pointer-events:none;
+  transition:opacity var(--t-fast) var(--ease),transform var(--t-fast) var(--ease)}
+.toast.on{opacity:1;transform:translateX(-50%) translateY(-4px)}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <a class="mark" href="#" data-go="home">eski<i>!</i></a>
+  <nav id="nav">
+    <button data-go="home" aria-current="page">home</button>
+    <button data-go="browse">browse</button>
+    <button data-go="shelf">shelf</button>
+    <button data-go="profile">profile</button>
+  </nav>
+  <button class="ico" id="theme" title="light / dark">◐</button>
+</header>
+
+<!-- ================= HOME ================= -->
+<main class="pane on" id="pane-home"><div class="wrap">
+
+  <section>
+    <div class="head">
+      <h2>new comics</h2><span class="n" id="new-n"></span>
+      <span class="sp"></span><a href="#" data-go="browse">all comics</a>
+    </div>
+    <div class="grid" id="grid-new"></div>
+  </section>
+
+  <section>
+    <div class="head">
+      <h2>from people you follow</h2><span class="n" id="follow-n"></span>
+      <span class="sp"></span><a href="#" data-go="profile">who you follow</a>
+    </div>
+    <div class="grid" id="grid-follow"></div>
+  </section>
+
+  <section>
+    <div class="head">
+      <h2>open roles</h2><span class="n" id="roles-n"></span>
+      <span class="sp"></span><a href="#" data-go="roles">every open role</a>
+    </div>
+    <div class="grid" id="grid-roles"></div>
+  </section>
+
+  <div class="foot"><span>EST. 2026</span>
+    <span><a href="#">TERMS</a> · <a href="#">PRIVACY</a> · <a href="#">TAKEDOWN</a></span></div>
+</div></main>
+
+<!-- ================= BROWSE ================= -->
+<main class="pane" id="pane-browse"><div class="wrap">
+  <div class="head"><h2>browse</h2><span class="n" id="browse-n"></span>
+    <span class="sp"></span><a href="#" data-go="roles">open roles →</a></div>
+  <div class="bar">
+    <input type="search" id="b-q" placeholder="search titles and credits">
+    <span class="lbl">sort</span>
+    <select id="b-sort">
+      <option value="new">newest</option>
+      <option value="kudos">most kudos</option>
+      <option value="title">title a–z</option>
+      <option value="short">shortest</option>
+    </select>
+    <div class="chips" id="b-filters">
+      <button class="chip" data-f="missing" aria-pressed="false">needs a voice</button>
+      <button class="chip" data-f="cast" aria-pressed="false">fully cast</button>
+      <button class="chip" data-f="scored" aria-pressed="false">has a score</button>
+    </div>
+  </div>
+  <div class="grid" id="grid-browse"></div>
+  <div class="empty" id="browse-empty" hidden>nothing matches that.</div>
+</div></main>
+
+<!-- ================= OPEN ROLES (browse → characters) ================= -->
+<main class="pane" id="pane-roles"><div class="wrap">
+  <div class="head"><h2>open roles</h2><span class="n" id="rolelist-n"></span>
+    <span class="sp"></span><a href="#" data-go="browse">← all comics</a></div>
+  <div class="bar">
+    <input type="search" id="r-q" placeholder="search characters, comics, or description">
+    <span class="lbl">sort</span>
+    <select id="r-sort">
+      <option value="lines-desc">most lines</option>
+      <option value="lines-asc">fewest lines</option>
+      <option value="name">character a–z</option>
+      <option value="comic">comic a–z</option>
+    </select>
+    <div class="chips" id="r-filters">
+      <button class="chip" data-f="lead" aria-pressed="false">lead</button>
+      <button class="chip" data-f="supporting" aria-pressed="false">supporting</button>
+      <button class="chip" data-f="narration" aria-pressed="false">narration</button>
+      <button class="chip" data-f="short" aria-pressed="false">under 50 lines</button>
+    </div>
+  </div>
+  <div class="rolelist" id="rolelist"></div>
+  <div class="empty" id="roles-empty" hidden>no open roles match that.</div>
+</div></main>
+
+<!-- ================= SHELF ================= -->
+<main class="pane" id="pane-shelf"><div class="wrap">
+  <section>
+    <div class="head"><h2>reading</h2><span class="n" id="reading-n"></span></div>
+    <div class="grid" id="grid-reading"></div>
+  </section>
+  <section>
+    <div class="head"><h2>read</h2><span class="n" id="read-n"></span></div>
+    <div class="grid" id="grid-read"></div>
+  </section>
+</div></main>
+
+<!-- ================= PROFILE ================= -->
+<main class="pane" id="pane-profile"><div class="wrap">
+  <div class="head"><h2>imogen ash</h2><span class="n">performer · cork, ireland</span></div>
+  <section>
+    <div class="head"><h2>parts performed</h2><span class="n">14</span></div>
+    <div class="rolelist" id="profile-parts"></div>
+  </section>
+</div></main>
+
+<!-- ================= DETAILS ================= -->
+<div class="ov" id="ov" role="dialog" aria-modal="true" aria-label="details">
+  <div class="sheet" id="sheet"></div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============================================================
+   data. the shapes here are the ones the live site already has
+   (library/index.json entries plus the cast rows from the api),
+   so this renders straight off the real catalogue once wired.
+   ============================================================ */
+const COMICS = [
+  {id:'jigoku', title:'falling in love on the path to hell', by:'duggan & brown',
+   pp:152, ch:1, chOf:6, voices:{done:6,total:6}, scores:3, kudos:1104,
+   cover:'covers/jigoku.jpg', added:'2026-04-02', tags:['horror'],
+   desc:'Two demons work the same stretch of the eighth hell and keep finding reasons to walk it together. Duggan writes it dry, Brown draws it hot.',
+   cast:[['MACRAITH','imogen ash',92],['HIROKO','samuel opoku',140],['THE CLERK','j. wren',31]],
+   follow:null, shelf:'reading', progress:.42},
+
+  {id:'blame', title:'blame! master edition', by:'tsutomu nihei',
+   pp:368, ch:1, chOf:12, voices:{done:3,total:4}, scores:2, kudos:842,
+   cover:'covers/concrete-sky.jpg', added:'2026-04-01', tags:['scifi'],
+   desc:'Killy walks a megastructure that outgrew its builders. Nihei draws silence better than anyone, so the score is doing most of the work.',
+   cast:[['KILLY','imogen ash',148],['CIBO','samuel opoku',96],['SANAKAN','r. mbeki',44]],
+   follow:'tsutomu nihei', shelf:'reading', progress:.11},
+
+  {id:'barbaric', title:'barbaric: axe to grind', by:'moreci, gooden, duke & campbell',
+   pp:128, ch:2, chOf:5, voices:{done:1,total:5}, scores:0, kudos:377,
+   cover:'covers/talking-axe.jpg', added:'2026-03-28', tags:['comedy'],
+   desc:'A cursed barbarian, a talking axe with a drinking problem, and a body count the axe insists is load-bearing.',
+   cast:[['OWEN','samuel opoku',204]], follow:null, shelf:null},
+
+  {id:'dkr', title:'the dark knight returns', by:'miller, janson & varley',
+   pp:224, ch:1, chOf:4, voices:{done:5,total:5}, scores:1, kudos:2310,
+   cover:'covers/second-dark.jpg', added:'2026-03-24', tags:['crime'],
+   desc:'Ten years retired, one bad night, and a city that never stopped asking. The score runs on television static.',
+   cast:[['BRUCE','r. mbeki',310],['CARRIE','imogen ash',61],['GORDON','a. varga',88]],
+   follow:'imogen ash', shelf:'read', progress:1},
+
+  {id:'sunbound', title:'all-star superman', by:'morrison, quitely & grant',
+   pp:288, ch:1, chOf:12, voices:{done:0,total:3}, scores:0, kudos:1890,
+   cover:'covers/sunbound.jpg', added:'2026-03-20', tags:['scifi'],
+   desc:'Twelve labours and a year to live. Quitely draws kindness as a physical force, which is a hard thing to score and a harder thing to voice.',
+   cast:[], follow:'j. wren', shelf:null},
+
+  {id:'noise', title:'noise', by:'tsutomu nihei',
+   pp:52, ch:1, chOf:1, voices:{done:2,total:3}, scores:1, kudos:214,
+   cover:'covers/concrete-sky.jpg', added:'2026-03-18', tags:['scifi','horror'],
+   desc:'The prologue to the megastructure. Fifty-two pages, one detective, and the last quiet year on the surface.',
+   cast:[['NARRATION','imogen ash',210],['SUSONO','a. varga',77]],
+   follow:'tsutomu nihei', shelf:'read', progress:1},
+
+  {id:'jigoku2', title:'falling in love on the path to hell, book two', by:'duggan & brown',
+   pp:88, ch:2, chOf:6, voices:{done:7,total:7}, scores:2, kudos:640,
+   cover:'covers/jigoku.jpg', added:'2026-03-15', tags:['horror'],
+   desc:'The second stretch of the walk. Same two demons, worse weather.',
+   cast:[['MACRAITH','imogen ash',110]], follow:'imogen ash', shelf:'reading', progress:.78},
+
+  {id:'murderable', title:'barbaric: murderable offenses', by:'moreci, gooden, duke & campbell',
+   pp:130, ch:3, chOf:5, voices:{done:0,total:4}, scores:0, kudos:298,
+   cover:'covers/talking-axe.jpg', added:'2026-03-12', tags:['comedy'],
+   desc:'The axe gets a subplot. Nobody asked for this and everybody wanted it.',
+   cast:[], follow:null, shelf:null},
+
+  {id:'sunbound2', title:'all-star superman, book two', by:'morrison, quitely & grant',
+   pp:96, ch:2, chOf:12, voices:{done:3,total:3}, scores:4, kudos:1502,
+   cover:'covers/sunbound.jpg', added:'2026-03-09', tags:['scifi'],
+   desc:'The one with the key, the sun, and the long walk down.',
+   cast:[['CLARK','r. mbeki',180]], follow:'j. wren', shelf:null},
+
+  {id:'dkr2', title:'the dark knight falls', by:'miller, janson & varley',
+   pp:64, ch:4, chOf:4, voices:{done:4,total:6}, scores:1, kudos:988,
+   cover:'covers/second-dark.jpg', added:'2026-03-05', tags:['crime'],
+   desc:'The last chapter, the mud fight, and the funeral that is not one.',
+   cast:[['BRUCE','r. mbeki',150]], follow:'imogen ash', shelf:null}
+];
+
+/* one row per character that still has no performer. `pic` is a portrait
+   crop; until artwork is uploaded it is generated from the comic's own
+   sampled colour, so the roles rail matches the shelf beside it. */
+const ROLES = [
+  {id:'dhomo', name:'dhomochevsky', comic:'blame', kind:'supporting', lines:9,
+   blurb:'Safeguard agent in white armour. Speaks like a court record being read aloud, never raises its voice, and has exactly one joke.'},
+  {id:'axe', name:'the axe', comic:'barbaric', kind:'lead', lines:214,
+   blurb:'A talking axe that only shuts up while drinking blood. Loud, delighted, permanently one drink past the line.'},
+  {id:'superman', name:'superman', comic:'sunbound', kind:'lead', lines:340,
+   blurb:'Dying, and unhurried about it. Warm low register, never strains, and gets quieter the worse things get.'},
+  {id:'leo', name:'leo quintum', comic:'sunbound', kind:'supporting', lines:61,
+   blurb:'The scientist in the white coat who believes the future is a solvable problem. Fast, bright, talks over himself.'},
+  {id:'lois', name:'lois lane', comic:'sunbound', kind:'supporting', lines:88,
+   blurb:'Sharp, suspicious, and right. Reads best flat and unimpressed, with the affection buried two lines deep.'},
+  {id:'sonja', name:'sonja', comic:'murderable', kind:'lead', lines:176,
+   blurb:'Witch, negotiator, and the only person in the book with a plan. Dry delivery, clipped consonants.'},
+  {id:'steel', name:'steel', comic:'murderable', kind:'supporting', lines:42,
+   blurb:'Muscle for hire who would rather be gardening. Slow, gentle, and enormous.'},
+  {id:'narr-dkr', name:'narration', comic:'dkr2', kind:'narration', lines:212,
+   blurb:'Interior monologue in the second person, delivered like a man arguing with his own doctor.'},
+  {id:'anchor', name:'news anchor', comic:'dkr2', kind:'narration', lines:38,
+   blurb:'Television voice. Bright, level, and completely unbothered by what it is reporting.'},
+  {id:'clerk2', name:'the second clerk', comic:'murderable', kind:'supporting', lines:24,
+   blurb:'Hell has a queue and this is the person at the desk. Bored, bureaucratic, faintly kind.'}
+];
+
+const byId = id => COMICS.find(c => c.id === id);
+const esc = s => String(s).replace(/[&<>"]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
+const nfmt = n => n.toLocaleString('en-US');
+
+/* ============================================================
+   cover colour. sampled from the artwork, not invented.
+
+   the cover is drawn into a 32×32 canvas, pixels are bucketed into
+   24 hue bins weighted by chroma, the heaviest bin wins, and its mean
+   is pulled onto a fixed saturation and lightness so a shelf of very
+   different covers still reads as one shelf. a monochrome cover keeps
+   its neutral and falls back to sage.
+   ============================================================ */
+const COLOR_CACHE = new Map();
+
+function rgb2hsl(r,g,b){
+  r/=255; g/=255; b/=255;
+  const mx=Math.max(r,g,b), mn=Math.min(r,g,b), l=(mx+mn)/2, c=mx-mn;
+  if(!c) return [0,0,l*100];
+  const s = c / (1 - Math.abs(2*l - 1));
+  let h;
+  if(mx===r) h=((g-b)/c)%6; else if(mx===g) h=(b-r)/c+2; else h=(r-g)/c+4;
+  h*=60; if(h<0) h+=360;
+  return [h, s*100, l*100];
+}
+
+/* returns {light, dark, ink} or null when the cover has no usable hue */
+function analyse(img){
+  const W=32, H=32, cv=document.createElement('canvas');
+  cv.width=W; cv.height=H;
+  const cx=cv.getContext('2d', {willReadFrequently:true});
+  cx.drawImage(img, 0, 0, W, H);
+  const d = cx.getImageData(0,0,W,H).data;
+
+  const BINS=24, w=new Array(BINS).fill(0), sum=new Array(BINS).fill(null).map(()=>[0,0,0]);
+  let chromatic=0;
+  for(let i=0;i<d.length;i+=4){
+    if(d[i+3]<128) continue;
+    const [h,s,l] = rgb2hsl(d[i],d[i+1],d[i+2]);
+    if(s<14 || l<8 || l>94) continue;          // greys and blown highlights do not vote
+    const weight = (s/100) * (1 - Math.abs(l-50)/70);
+    const b = Math.floor(h/360*BINS) % BINS;
+    w[b] += weight; chromatic += weight;
+    sum[b][0]+=d[i]*weight; sum[b][1]+=d[i+1]*weight; sum[b][2]+=d[i+2]*weight;
+  }
+  if(chromatic < 8) return null;               // effectively monochrome art
+  let top=0; for(let i=1;i<BINS;i++) if(w[i]>w[top]) top=i;
+  const [h, satRaw] = rgb2hsl(sum[top][0]/w[top], sum[top][1]/w[top], sum[top][2]/w[top]);
+  // hue is the cover's own. saturation and lightness are pulled onto a fixed
+  // step so a neon cover cannot out-shout the page and a muddy one still reads.
+  const s = Math.max(30, Math.min(62, satRaw * 0.9));
+  return {
+    light:`hsl(${h.toFixed(0)} ${s.toFixed(0)}% 72%)`,
+    dark:`hsl(${h.toFixed(0)} ${(s*0.62).toFixed(0)}% 24%)`
+  };
+}
+
+function paint(el, c){
+  const dark = document.documentElement.dataset.theme === 'dark';
+  el.style.setProperty('--blk', dark ? c.dark : c.light);
+}
+
+/* every element that carries a colour block registers here, so a theme
+   flip repaints from the cached sample instead of resampling. */
+const TINTED = [];
+function tint(el, comic){
+  TINTED.push([el, comic.id]);
+  const done = COLOR_CACHE.get(comic.id);
+  if(done){ if(done !== 'none') paint(el, done); return; }
+  const img = new Image();
+  img.decoding = 'async';
+  img.onload = () => {
+    let c = null;
+    try{ c = analyse(img); }catch(e){ c = null; }   // tainted canvas on file://
+    COLOR_CACHE.set(comic.id, c || 'none');
+    if(!c) return;
+    TINTED.filter(t => t[1] === comic.id).forEach(t => paint(t[0], c));
+  };
+  img.onerror = () => COLOR_CACHE.set(comic.id, 'none');
+  img.src = comic.cover;
+}
+function repaintAll(){
+  TINTED.forEach(([el,id]) => {
+    const c = COLOR_CACHE.get(id);
+    if(c && c !== 'none') paint(el, c);
+    else el.style.removeProperty('--blk');
+  });
+}
+
+/* the character picture. r.pic when the role has one uploaded; until then a
+   crop of the comic's own art, framed differently per character so a comic
+   with four open roles does not show the same square four times. */
+function portrait(role){
+  const c = byId(role.comic);
+  let seed = 0; for(const ch of role.id) seed = (seed*31 + ch.charCodeAt(0)) & 255;
+  const x = 20 + (seed % 60), y = 6 + (seed % 34);
+  return `<span class="portrait"><img src="${esc(role.pic || c.cover)}"
+    alt="${esc(role.name)}" loading="lazy" style="object-position:${x}% ${y}%"></span>`;
+}
+
+/* ============================================================
+   the metadata block. one shape, every card, every time.
+   ============================================================ */
+const voicesOf = c => c.voices.done >= c.voices.total
+  ? {t:`${c.voices.done} of ${c.voices.total}`, cls:''}
+  : {t:`missing ${c.voices.total - c.voices.done}`, cls:'want'};
+const scoreOf = c => c.scores > 0
+  ? {t:`${c.scores} available`, cls:''}
+  : {t:'empty', cls:'none'};
+
+const mq = s => `<span class="mq"><span>${esc(s)}</span></span>`;
+
+function metaRows(c){
+  const v = voicesOf(c), s = scoreOf(c);
+  return `<div class="meta">
+    <div class="r"><span class="k">by</span><span class="v">${mq(c.by)}</span></div>
+    <div class="r"><span class="k">extent</span><span class="v">${mq(`${c.pp} pp · ch${c.ch} of ${c.chOf}`)}</span></div>
+    <div class="r"><span class="k">voices</span><span class="v ${v.cls}">${esc(v.t)}</span></div>
+    <div class="r"><span class="k">score</span><span class="v ${s.cls}">${esc(s.t)}</span></div>
+    <div class="r"><span class="k">kudos</span><span class="v">${nfmt(c.kudos)}</span></div>
+  </div>`;
+}
+
+function cardEl(c, note){
+  const b = document.createElement('button');
+  b.className = 'card';
+  b.type = 'button';
+  b.innerHTML =
+    `<div class="field"><img src="${esc(c.cover)}" alt="" loading="lazy"></div>
+     <div class="cardbody">
+       <div class="title">${mq(c.title)}</div>
+       <div class="note">${note ? mq(note) : ''}</div>
+       ${metaRows(c)}
+     </div>`;
+  b.addEventListener('click', () => openDetails(c));
+  tint(b, c);
+  return b;
+}
+
+function roleCardEl(r){
+  const c = byId(r.comic);
+  const b = document.createElement('button');
+  b.className = 'rolecard';
+  b.type = 'button';
+  b.innerHTML =
+    `<div class="rolehead">${portrait(r)}
+      <div style="min-width:0;flex:1">
+        <div class="rolename">${mq(r.name)}</div>
+        <div class="rolein">${mq(c.title)}</div>
+      </div></div>
+     <p class="blurb">${esc(r.blurb)}</p>
+     <div class="rolefoot"><span>${esc(r.kind)}</span><span class="n">${nfmt(r.lines)} lines</span></div>`;
+  b.addEventListener('click', () => openDetails(c, r));
+  tint(b, c);
+  return b;
+}
+
+function roleRowEl(r, cast){
+  const c = byId(r.comic);
+  const b = document.createElement('button');
+  b.className = 'rolerow';
+  b.type = 'button';
+  b.innerHTML =
+    `${portrait(r)}
+     <div class="who">
+       <div class="rolename">${mq(r.name)}</div>
+       <div class="rolein">${mq(c.title)}</div>
+     </div>
+     <p class="blurb" style="height:auto;-webkit-line-clamp:2">${esc(r.blurb)}</p>
+     <div class="lines"><span class="n">${nfmt(r.lines)}</span> lines<br>${esc(r.kind)}</div>
+     <div class="go"><span class="btn sm">${cast ? 'listen' : 'voice this'}</span></div>`;
+  b.addEventListener('click', () => openDetails(c, r));
+  tint(b, c);
+  return b;
+}
+
+function fill(node, els){
+  node.replaceChildren(...els);
+  fitScrollers(node);
+}
+
+/* ---------- overflow: measure once, scroll on hover ---------- */
+function fitScrollers(root){
+  root.querySelectorAll('.mq').forEach(m => {
+    const inner = m.firstElementChild;
+    const over = inner.scrollWidth - m.clientWidth;
+    if(over > 1){
+      m.dataset.over = '1';
+      m.style.setProperty('--mq-x', `-${over + 4}px`);
+      m.style.setProperty('--mq-t', `${Math.round((over + 4) / 40 * 1000)}ms`);
+    }else{
+      m.removeAttribute('data-over');
+      m.style.removeProperty('--mq-x');
+    }
+  });
+}
+let fitTimer;
+addEventListener('resize', () => {
+  clearTimeout(fitTimer);
+  fitTimer = setTimeout(() => fitScrollers(document), 150);
+});
+
+/* ============================================================
+   details. the comic page — this is where details live, not the shelf.
+   ============================================================ */
+const ov = document.getElementById('ov'), sheet = document.getElementById('sheet');
+let lastFocus = null;
+
+function openDetails(c, role){
+  const v = voicesOf(c), s = scoreOf(c);
+  const open = ROLES.filter(r => r.comic === c.id);
+  sheet.innerHTML =
+   `<div class="sheethead"><span class="lbl">details</span><span class="sp"></span>
+      <button class="btn sm" id="d-close">close ✕</button></div>
+    <div class="sheetbody">
+      <div class="left"><div class="field"><img src="${esc(c.cover)}" alt=""></div>
+        ${metaRows(c)}</div>
+      <div class="right">
+        <h3>${esc(c.title)}</h3>
+        <p class="desc">${esc(c.desc)}</p>
+        <div class="head" style="border-bottom:1px solid var(--rule)"><h2>cast</h2>
+          <span class="n">${esc(v.t)}</span></div>
+        ${c.cast.map(([who, perf, lines]) =>
+          `<div class="castrow"><span><b>${esc(who)}</b> · ${esc(perf)}</span>
+             <span>${nfmt(lines)} lines</span></div>`).join('') ||
+          `<div class="castrow"><span style="color:var(--muted)">nobody cast yet</span><span></span></div>`}
+        ${open.map(r =>
+          `<div class="castrow"><span><b>${esc(r.name)}</b> ·
+             <span style="color:var(--muted)">open</span></span>
+             <span>${nfmt(r.lines)} lines</span></div>`).join('')}
+        <div class="head" style="border-bottom:1px solid var(--rule);margin-top:var(--s5)">
+          <h2>score</h2><span class="n">${esc(s.t)}</span></div>
+        <div class="castrow"><span>${c.scores ? 'pick a mix when you open it' : 'no score yet'}</span>
+          <span>${nfmt(c.kudos)} kudos</span></div>
+      </div>
+    </div>
+    <div class="acts">
+      <button class="btn p" id="d-read">read it</button>
+      <button class="btn" id="d-shelf" aria-pressed="${c.shelf ? 'true' : 'false'}">
+        ${c.shelf ? 'on your shelf' : 'add to shelf'}</button>
+      <button class="btn" id="d-kudos" aria-pressed="false">kudos ${nfmt(c.kudos)}</button>
+      ${open.length ? `<button class="btn" id="d-voice">voice ${esc(role ? role.name : open[0].name)}</button>` : ''}
+    </div>`;
+
+  const left = sheet.querySelector('.left');
+  tint(left, c);
+  const cached = COLOR_CACHE.get(c.id);
+  if(cached && cached !== 'none') paint(left, cached);
+
+  sheet.querySelector('#d-close').onclick = closeDetails;
+  sheet.querySelector('#d-read').onclick = () => toast(`opening ${c.title}`);
+  const sh = sheet.querySelector('#d-shelf');
+  sh.onclick = () => {
+    c.shelf = c.shelf ? null : 'reading';
+    sh.setAttribute('aria-pressed', c.shelf ? 'true' : 'false');
+    sh.textContent = c.shelf ? 'on your shelf' : 'add to shelf';
+    renderShelf();
+    toast(c.shelf ? 'added to your shelf' : 'removed from your shelf');
+  };
+  const kb = sheet.querySelector('#d-kudos');
+  kb.onclick = () => {
+    const on = kb.getAttribute('aria-pressed') === 'true';
+    c.kudos += on ? -1 : 1;
+    kb.setAttribute('aria-pressed', on ? 'false' : 'true');
+    kb.textContent = `kudos ${nfmt(c.kudos)}`;
+    renderAll();
+  };
+  const vb = sheet.querySelector('#d-voice');
+  if(vb) vb.onclick = () => toast('opening the recording booth');
+
+  lastFocus = document.activeElement;
+  ov.classList.add('on');
+  document.body.style.overflow = 'hidden';
+  fitScrollers(sheet);
+  sheet.querySelector('#d-close').focus();
+}
+function closeDetails(){
+  ov.classList.remove('on');
+  document.body.style.overflow = '';
+  if(lastFocus) lastFocus.focus();
+}
+ov.addEventListener('click', e => { if(e.target === ov) closeDetails(); });
+addEventListener('keydown', e => { if(e.key === 'Escape' && ov.classList.contains('on')) closeDetails(); });
+
+/* ============================================================
+   panes
+   ============================================================ */
+function go(name){
+  const pane = name === 'roles' ? 'roles' : name;
+  document.querySelectorAll('.pane').forEach(p => p.classList.remove('on'));
+  document.getElementById('pane-' + pane).classList.add('on');
+  document.querySelectorAll('#nav button').forEach(b => {
+    const active = b.dataset.go === (name === 'roles' ? 'browse' : name);
+    if(active) b.setAttribute('aria-current','page'); else b.removeAttribute('aria-current');
+  });
+  scrollTo(0,0);
+  fitScrollers(document);
+}
+document.addEventListener('click', e => {
+  const t = e.target.closest('[data-go]');
+  if(!t) return;
+  e.preventDefault();
+  go(t.dataset.go);
+});
+
+/* ---------- home ---------- */
+function renderHome(){
+  const fresh = [...COMICS].sort((a,b) => b.added.localeCompare(a.added)).slice(0,5);
+  fill(document.getElementById('grid-new'), fresh.map(c => cardEl(c)));
+  document.getElementById('new-n').textContent = `${fresh.length} this week`;
+
+  const follows = COMICS.filter(c => c.follow).slice(0,5);
+  fill(document.getElementById('grid-follow'),
+    follows.map(c => cardEl(c, `you follow ${c.follow}`)));
+  document.getElementById('follow-n').textContent = `${follows.length} from 3 people`;
+
+  const roles = [...ROLES].sort((a,b) => b.lines - a.lines).slice(0,5);
+  fill(document.getElementById('grid-roles'), roles.map(roleCardEl));
+  document.getElementById('roles-n').textContent =
+    `${ROLES.length} across ${new Set(ROLES.map(r => r.comic)).size} comics`;
+}
+
+/* ---------- browse ---------- */
+const bState = {q:'', sort:'new', filters:new Set()};
+function renderBrowse(){
+  let list = COMICS.filter(c => {
+    const hay = (c.title + ' ' + c.by + ' ' + c.tags.join(' ')).toLowerCase();
+    if(bState.q && !hay.includes(bState.q)) return false;
+    for(const f of bState.filters){
+      if(f === 'missing' && c.voices.done >= c.voices.total) return false;
+      if(f === 'cast' && c.voices.done < c.voices.total) return false;
+      if(f === 'scored' && !c.scores) return false;
+    }
+    return true;
+  });
+  const sorts = {
+    new:(a,b) => b.added.localeCompare(a.added),
+    kudos:(a,b) => b.kudos - a.kudos,
+    title:(a,b) => a.title.localeCompare(b.title),
+    short:(a,b) => a.pp - b.pp
+  };
+  list.sort(sorts[bState.sort]);
+  fill(document.getElementById('grid-browse'), list.map(c => cardEl(c)));
+  document.getElementById('browse-n').textContent =
+    `${list.length} of ${COMICS.length} comics`;
+  document.getElementById('browse-empty').hidden = list.length > 0;
+}
+document.getElementById('b-q').addEventListener('input', e => {
+  bState.q = e.target.value.trim().toLowerCase(); renderBrowse();
+});
+document.getElementById('b-sort').addEventListener('change', e => {
+  bState.sort = e.target.value; renderBrowse();
+});
+document.getElementById('b-filters').addEventListener('click', e => {
+  const chip = e.target.closest('.chip'); if(!chip) return;
+  const f = chip.dataset.f, on = chip.getAttribute('aria-pressed') === 'true';
+  chip.setAttribute('aria-pressed', on ? 'false' : 'true');
+  on ? bState.filters.delete(f) : bState.filters.add(f);
+  renderBrowse();
+});
+
+/* ---------- open roles ---------- */
+const rState = {q:'', sort:'lines-desc', filters:new Set()};
+function renderRoles(){
+  let list = ROLES.filter(r => {
+    const c = byId(r.comic);
+    const hay = (r.name + ' ' + c.title + ' ' + c.by + ' ' + r.blurb).toLowerCase();
+    if(rState.q && !hay.includes(rState.q)) return false;
+    const kinds = [...rState.filters].filter(f => f !== 'short');
+    if(kinds.length && !kinds.includes(r.kind)) return false;
+    if(rState.filters.has('short') && r.lines >= 50) return false;
+    return true;
+  });
+  const sorts = {
+    'lines-desc':(a,b) => b.lines - a.lines,
+    'lines-asc':(a,b) => a.lines - b.lines,
+    'name':(a,b) => a.name.localeCompare(b.name),
+    'comic':(a,b) => byId(a.comic).title.localeCompare(byId(b.comic).title)
+  };
+  list.sort(sorts[rState.sort]);
+  fill(document.getElementById('rolelist'), list.map(r => roleRowEl(r)));
+  document.getElementById('rolelist-n').textContent =
+    `${list.length} of ${ROLES.length} characters with no voice`;
+  document.getElementById('roles-empty').hidden = list.length > 0;
+}
+document.getElementById('r-q').addEventListener('input', e => {
+  rState.q = e.target.value.trim().toLowerCase(); renderRoles();
+});
+document.getElementById('r-sort').addEventListener('change', e => {
+  rState.sort = e.target.value; renderRoles();
+});
+document.getElementById('r-filters').addEventListener('click', e => {
+  const chip = e.target.closest('.chip'); if(!chip) return;
+  const f = chip.dataset.f, on = chip.getAttribute('aria-pressed') === 'true';
+  chip.setAttribute('aria-pressed', on ? 'false' : 'true');
+  on ? rState.filters.delete(f) : rState.filters.add(f);
+  renderRoles();
+});
+
+/* ---------- shelf: what you are reading and what you have read ---------- */
+function renderShelf(){
+  const reading = COMICS.filter(c => c.shelf === 'reading');
+  const read = COMICS.filter(c => c.shelf === 'read');
+  const withBar = c => {
+    const el = cardEl(c);
+    if(c.progress != null){
+      const bar = document.createElement('div');
+      bar.className = 'progress';
+      bar.innerHTML = `<i style="width:${Math.round(c.progress*100)}%"></i>`;
+      el.querySelector('.cardbody').appendChild(bar);
+    }
+    return el;
+  };
+  fill(document.getElementById('grid-reading'), reading.map(withBar));
+  fill(document.getElementById('grid-read'), read.map(withBar));
+  document.getElementById('reading-n').textContent = `${reading.length} comics`;
+  document.getElementById('read-n').textContent = `${read.length} comics`;
+}
+
+/* ---------- profile: parts this person has performed ---------- */
+function renderProfile(){
+  const parts = [];
+  COMICS.forEach(c => c.cast.forEach(([who, perf, lines]) => {
+    if(perf === 'imogen ash')
+      parts.push({id:'p-'+c.id+who, name:who.toLowerCase(), comic:c.id, kind:'performed',
+                  lines, blurb:c.desc});
+  }));
+  fill(document.getElementById('profile-parts'), parts.map(p => roleRowEl(p, true)));
+}
+
+function renderAll(){ renderHome(); renderBrowse(); renderRoles(); renderShelf(); renderProfile(); }
+
+/* ---------- theme ---------- */
+document.getElementById('theme').addEventListener('click', () => {
+  const root = document.documentElement;
+  root.dataset.theme = root.dataset.theme === 'dark' ? 'light' : 'dark';
+  repaintAll();
+});
+
+/* ---------- toast ---------- */
+let toastTimer;
+function toast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('on');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('on'), 1800);
+}
+
+renderAll();
+/* webfonts land after first paint and change every measurement */
+if(document.fonts && document.fonts.ready) document.fonts.ready.then(() => fitScrollers(document));
+</script>
+</body>
+</html>
