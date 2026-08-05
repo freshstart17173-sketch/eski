@@ -1,0 +1,332 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>eski — rack — browse &amp; contribute</title>
+<link rel="stylesheet" href="../../tokens.css">
+<style>
+/* ============================================================
+   eski-rack. browsing is listening.
+   reference: bandcamp's persistent player, nts radio's fixed bar.
+   every name on this page plays. the bar never stops.
+   ============================================================ */
+:root{
+  --rack-h:72px;
+  --rack-bg:var(--sage-900);
+  --rack-ink:var(--sage-100);
+  --playing:var(--sage-400);
+  --rule:var(--line-1);
+  --tag-bg:var(--paper-1);
+}
+[data-theme="dark"]{
+  --rule:var(--line-dark);
+  --rack-bg:#080D0A;
+  --tag-bg:var(--surf-2);
+}
+html{background:var(--paper)}
+body{
+  margin:0;background:var(--paper);color:var(--ink);
+  font-family:var(--font-body);font-size:var(--fs-sm);line-height:1.5;
+  padding-bottom:calc(var(--rack-h) + var(--s5));
+  -webkit-font-smoothing:antialiased;
+}
+.n{font-variant-numeric:tabular-nums}
+
+.top{
+  height:var(--hdr);border-bottom:1px solid var(--rule);background:var(--surface);
+  display:flex;align-items:center;gap:var(--s5);padding:0 var(--s5);
+  position:sticky;top:0;z-index:5;
+}
+.mark{font-family:var(--font-display);font-size:20px}
+.mark i{font-style:normal;color:var(--accent)}
+.top nav{display:flex;gap:var(--s4);color:var(--muted)}
+.top nav a{color:inherit;text-decoration:none}
+.top nav a[aria-current]{color:var(--ink);box-shadow:inset 0 -2px 0 var(--accent)}
+.top .sp{flex:1}
+
+.wrap{max-width:var(--max);margin:0 auto;padding:var(--s5)}
+
+/* ---- tags are the taxonomy. lowercase, wrapping, clickable ---- */
+.tags{display:flex;flex-wrap:wrap;gap:var(--s1)}
+.tag{
+  font-size:var(--fs-xs);padding:3px var(--s2);border:1px solid var(--rule);
+  background:var(--tag-bg);color:var(--soft-ink);
+}
+.tag:hover{border-color:var(--line-strong);color:var(--ink)}
+.tag[aria-pressed="true"]{background:var(--sage-700);border-color:var(--sage-700);color:var(--white);order:-1}
+[data-theme="dark"] .tag[aria-pressed="true"]{background:var(--sage-300);border-color:var(--sage-300);color:var(--sage-900)}
+
+.split{display:grid;grid-template-columns:1fr 340px;gap:var(--s6);margin-top:var(--s5);align-items:start}
+@media(max-width:900px){.split{grid-template-columns:1fr}}
+
+h2.sec{
+  font-size:var(--fs-xs);letter-spacing:.1em;color:var(--muted);font-weight:400;
+  margin:0 0 var(--s2);padding-bottom:var(--s2);border-bottom:1px solid var(--sage-300);
+  display:flex;justify-content:space-between;
+}
+[data-theme="dark"] h2.sec{border-color:var(--sage-700)}
+.sec + .sec{margin-top:var(--s6)}
+section + section{margin-top:var(--s6)}
+
+/* ---- the play row. the one component this style repeats everywhere ---- */
+.rows{display:flex;flex-direction:column}
+.row{
+  display:grid;grid-template-columns:32px 30px 1fr auto auto;
+  gap:var(--s3);align-items:center;
+  min-height:48px;padding:var(--s2) var(--s2) var(--s2) 0;
+  border-bottom:1px solid var(--rule);
+  border-left:2px solid transparent;
+}
+.row:hover{background:var(--surface)}
+.row.on{border-left-color:var(--playing);background:var(--surface)}
+
+.tri{
+  width:26px;height:26px;border:1px solid var(--line-strong);background:none;
+  color:var(--soft-ink);font-size:9px;line-height:1;margin-left:var(--s2);
+}
+.tri:hover{border-color:var(--accent);color:var(--accent-deep)}
+.row.on .tri{background:var(--sage-700);border-color:var(--sage-700);color:var(--white)}
+[data-theme="dark"] .row.on .tri{background:var(--sage-300);border-color:var(--sage-300);color:var(--sage-900)}
+
+.pic{width:30px;height:30px;object-fit:cover;border:1px solid var(--rule);display:block}
+.disc{width:30px;height:30px;border-radius:var(--r-round);background:var(--sage-300);
+  color:var(--sage-900);font-size:12px;display:grid;place-items:center}
+.disc.b{background:var(--sage-500);color:#fff}
+.disc.c{background:var(--sage-700);color:var(--sage-100)}
+
+.txt{min-width:0}
+.txt b{font-weight:500;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.txt span{color:var(--muted);font-size:var(--fs-xs);display:block;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dur{color:var(--muted);font-size:var(--fs-xs);white-space:nowrap;font-variant-numeric:tabular-nums}
+
+.act{
+  font-size:var(--fs-xs);padding:4px var(--s3);border:1px solid var(--line-strong);
+  background:none;color:var(--ink);white-space:nowrap;
+  opacity:0;transition:opacity var(--t-fast) var(--ease);
+}
+.row:hover .act,.act:focus-visible{opacity:1}
+@media(pointer:coarse){.act{opacity:1}}
+.act:hover{border-color:var(--accent);color:var(--accent-deep)}
+.act.hot{opacity:1;border-color:var(--sage-600);background:var(--sage-600);color:#fff}
+.act.hot:hover{background:var(--sage-700)}
+[data-theme="dark"] .act.hot{background:var(--sage-300);border-color:var(--sage-300);color:var(--sage-900)}
+
+/* an open role is the same row with an empty performer slot */
+.row.open .txt b{color:var(--muted);font-style:italic;font-weight:400}
+
+/* ---- right rail: what a comic looks like in this style ---- */
+.aside{border:1px solid var(--rule);background:var(--surface);padding:var(--s4)}
+.aside img{width:100%;display:block;border:1px solid var(--rule)}
+.aside h3{font-family:var(--font-display);font-weight:400;font-size:var(--fs-title);
+  margin:var(--s3) 0 0;line-height:1}
+.aside .by{color:var(--muted);font-size:var(--fs-xs);margin:var(--s2) 0 0}
+.aside p{color:var(--soft-ink);margin:var(--s3) 0 0;line-height:1.6}
+.aside .meta{margin-top:var(--s3);padding-top:var(--s3);border-top:1px solid var(--rule);
+  font-size:var(--fs-xs);color:var(--muted)}
+.buy{width:100%;height:var(--ctl);margin-top:var(--s3);border:1px solid var(--sage-600);
+  background:var(--sage-600);color:#fff;font-size:var(--fs-sm)}
+.buy:hover{background:var(--sage-700)}
+[data-theme="dark"] .buy{background:var(--sage-300);border-color:var(--sage-300);color:var(--sage-900)}
+.terms{font-size:var(--fs-micro);color:var(--muted);margin-top:var(--s2);line-height:1.5}
+
+/* ---- the rack itself. fixed, dark in both themes, survives navigation ---- */
+.rack{
+  position:fixed;left:0;right:0;bottom:0;height:var(--rack-h);z-index:20;
+  background:var(--rack-bg);color:var(--rack-ink);border-top:1px solid #000;
+  display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);
+  align-items:center;gap:var(--s4);padding:0 var(--s4);
+}
+.rack .now{display:flex;align-items:center;gap:var(--s3);min-width:0}
+.rack .now img{width:44px;height:44px;object-fit:cover;border:1px solid #000;flex:none}
+.rack .now .t{min-width:0}
+.rack .now b{display:block;font-size:var(--fs-sm);font-weight:500;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rack .now span{display:block;font-size:var(--fs-xs);color:var(--sage-400);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rack .now a{color:inherit;text-decoration:none;border-bottom:1px solid transparent}
+.rack .now a:hover{border-color:var(--sage-400)}
+
+.transport{display:flex;align-items:center;gap:var(--s3)}
+.tbtn{width:34px;height:34px;border:1px solid var(--sage-700);background:none;color:var(--sage-100);font-size:11px}
+.tbtn.main{width:40px;height:40px;background:var(--sage-100);color:var(--sage-900);border-color:var(--sage-100)}
+.scrub{width:min(34vw,300px);display:flex;align-items:center;gap:var(--s2);font-size:var(--fs-micro);
+  color:var(--sage-400);font-variant-numeric:tabular-nums}
+.track{flex:1;height:3px;background:var(--sage-700);border-radius:var(--r-track);position:relative}
+.track i{position:absolute;inset:0 62% 0 0;background:var(--sage-300);border-radius:var(--r-track);display:block}
+.rack .rt{display:flex;justify-content:flex-end;align-items:center;gap:var(--s3);
+  font-size:var(--fs-xs);color:var(--sage-400)}
+@media(max-width:760px){
+  .rack{grid-template-columns:1fr auto}
+  .rack .rt{display:none}
+  .scrub{display:none}
+}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <span class="mark">eski<i>!</i></span>
+  <nav>
+    <a href="#">browse</a>
+    <a href="#" aria-current="page">contribute</a>
+    <a href="#">shelf</a>
+  </nav>
+  <span class="sp"></span>
+  <a href="#" style="color:var(--muted);text-decoration:none">imogen ash</a>
+</header>
+
+<div class="wrap">
+
+  <div class="tags">
+    <button class="tag" aria-pressed="true">needs a voice</button>
+    <button class="tag">horror</button>
+    <button class="tag">slice of life</button>
+    <button class="tag">no dialogue</button>
+    <button class="tag">under 40 pages</button>
+    <button class="tag">full cast</button>
+    <button class="tag">field recordings</button>
+    <button class="tag">low strings</button>
+    <button class="tag">near-silent</button>
+    <button class="tag">fan score</button>
+    <button class="tag">one-shot heavy</button>
+  </div>
+
+  <div class="split">
+    <div>
+
+      <!-- open roles. the contribute hub, built from the same row as everything else -->
+      <section>
+        <h2 class="sec"><span>OPEN ROLES</span><span class="n">18 across 9 comics</span></h2>
+        <div class="rows">
+          <div class="row open">
+            <button class="tri" title="play the filler track">▶</button>
+            <img class="pic" src="covers/concrete-sky.jpg" alt="">
+            <div class="txt"><b>dhomochevsky — not yet voiced</b><span>blame! master edition · 9 lines · chapters 3 and 5</span></div>
+            <span class="dur">0:41 filler</span>
+            <button class="act hot">record this</button>
+          </div>
+          <div class="row open">
+            <button class="tri" title="play the filler track">▶</button>
+            <img class="pic" src="covers/talking-axe.jpg" alt="">
+            <div class="txt"><b>axe — not yet voiced</b><span>barbaric: axe to grind · 214 lines · never shuts up</span></div>
+            <span class="dur">1:02 filler</span>
+            <button class="act hot">record this</button>
+          </div>
+          <div class="row open">
+            <button class="tri" title="no reference track">▶</button>
+            <img class="pic" src="covers/sunbound.jpg" alt="">
+            <div class="txt"><b>three roles — not yet voiced</b><span>all-star superman · 320 pages · no reference tracks yet</span></div>
+            <span class="dur">—</span>
+            <button class="act hot">record this</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- the cast of one comic. hear both readings before choosing either -->
+      <section>
+        <h2 class="sec"><span>KILLY — 2 READINGS</span><span class="n">blame! master edition</span></h2>
+        <div class="rows">
+          <div class="row on">
+            <button class="tri" title="stop">■</button>
+            <span class="disc">I</span>
+            <div class="txt"><b>imogen ash</b><span>stage actor out of cork. low, tired warmth.</span></div>
+            <span class="dur">0:08 · 31 ✓</span>
+            <button class="act">use this mix</button>
+          </div>
+          <div class="row">
+            <button class="tri" title="preview 8s">▶</button>
+            <span class="disc b">R</span>
+            <div class="txt"><b>r. vale</b><span>submitted through the studio. brighter, younger read.</span></div>
+            <span class="dur">0:08 · 12 ✓</span>
+            <button class="act">use this mix</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- scores, same row again -->
+      <section>
+        <h2 class="sec"><span>SCORES FOR BLAME! MASTER EDITION</span><span class="n">2</span></h2>
+        <div class="rows">
+          <div class="row">
+            <button class="tri" title="preview 8s">▶</button>
+            <span class="disc c">M</span>
+            <div class="txt"><b>net terminal</b><span>y. tamura · low drones, structural hum</span></div>
+            <span class="dur">31:04 · 120 ✓</span>
+            <button class="act">use this mix</button>
+          </div>
+          <div class="row">
+            <button class="tri" title="preview 8s">▶</button>
+            <span class="disc b">J</span>
+            <div class="txt"><b>silicon creature (fan score)</b><span>j. wren · field recordings, metal and one piano</span></div>
+            <span class="dur">29:47 · 63 ✓</span>
+            <button class="act">use this mix</button>
+          </div>
+        </div>
+      </section>
+
+    </div>
+
+    <!-- the comic itself is a small sidebar here. the performances are the page -->
+    <aside class="aside">
+      <img src="covers/concrete-sky.jpg" alt="cover of blame! master edition">
+      <h3>blame! master edition</h3>
+      <p class="by">tsutomu nihei · 368 pages · 12 chapters</p>
+      <p>Killy walks a megastructure that outgrew its builders, hunting anyone who still carries the Net Terminal Gene. Nihei draws silence better than anyone, so the score is doing most of the work here.</p>
+      <div class="meta n">3 mixes · 212 kudos · published 2016</div>
+      <button class="buy">read it</button>
+      <p class="terms">free to read. performers keep their track and their credit, and can
+        pull it at any time.</p>
+    </aside>
+  </div>
+</div>
+
+<!-- the rack. fixed furniture. it does not stop when you navigate. -->
+<div class="rack">
+  <div class="now">
+    <img src="covers/concrete-sky.jpg" alt="">
+    <div class="t">
+      <b><a href="#">killy</a></b>
+      <span><a href="#">imogen ash</a> in <a href="#">blame! master edition</a></span>
+    </div>
+  </div>
+  <div class="transport">
+    <button class="tbtn" title="previous">◀◀</button>
+    <button class="tbtn main" title="pause">❚❚</button>
+    <button class="tbtn" title="next">▶▶</button>
+    <div class="scrub"><span>0:05</span><span class="track"><i></i></span><span>0:08</span></div>
+  </div>
+  <div class="rt">
+    <span>next: r. vale, same role</span>
+    <button class="tbtn" title="queue">☰</button>
+  </div>
+</div>
+
+<script>
+// one thing sounds at a time. starting a preview stops whatever was sounding.
+document.querySelectorAll('.row').forEach(function(row){
+  row.querySelector('.tri').addEventListener('click', function(){
+    var was = row.classList.contains('on');
+    document.querySelectorAll('.row.on').forEach(function(r){
+      r.classList.remove('on');
+      r.querySelector('.tri').textContent = '▶';
+    });
+    if(!was){
+      row.classList.add('on');
+      row.querySelector('.tri').textContent = '■';
+      var t = row.querySelector('.txt b').textContent;
+      var s = row.querySelector('.txt span').textContent;
+      document.querySelector('.rack .now b a').textContent = t;
+      document.querySelector('.rack .now .t span').textContent = s;
+    }
+  });
+});
+document.querySelectorAll('.tag').forEach(function(t){
+  t.addEventListener('click', function(){
+    t.setAttribute('aria-pressed', t.getAttribute('aria-pressed') === 'true' ? 'false' : 'true');
+  });
+});
+</script>
+</body>
+</html>

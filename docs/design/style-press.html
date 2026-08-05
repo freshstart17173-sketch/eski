@@ -1,0 +1,461 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>eski — press — the house style — five surfaces</title>
+<link rel="stylesheet" href="../../tokens.css">
+<style>
+/* ============================================================
+   eski-press — the combined house style.
+   near-white ground, near-black rules, flat sage fields behind
+   covers, wordmark-only Gnomon, three-word nav, right-aligned
+   tabular metadata, cover-tinted reader, one solid mark per screen.
+   sources: screen slate (rules), breakdown press (fields),
+   standards manual (chrome + accent discipline), le cinema club (reader).
+   ============================================================ */
+:root{
+  --paper:#FCFDFC;
+  --paper-2:var(--paper-1);
+  --surface:#FFFFFF;
+
+  --rule:#141A17;
+  --rule-hair:var(--line-1);
+
+  --ink:var(--sage-900);
+  --soft-ink:#45544D;
+  --muted:#62746B;
+
+  /* no second hue. the one state mark per screen is a SOLID FILL of the rule
+     colour — loud because everything else on the page is a 1px line. */
+  --accent:var(--sage-700);
+  --accent-ink:var(--sage-700);
+  --mark:#141A17;
+
+  --field-1:var(--sage-200); --field-2:var(--sage-300); --field-3:var(--sage-400);
+  --field-4:var(--sage-500); --field-5:var(--sage-700); --field-6:var(--sage-800);
+  --field-pad:clamp(12px,2vw,26px);
+  --gutter:30px;
+}
+[data-theme="dark"]{
+  --paper:var(--void); --paper-2:var(--surf-1); --surface:var(--surf-1);
+  --rule:#C8D2CC; --rule-hair:var(--line-dark);
+  --ink:#EAF0EC; --soft-ink:var(--sage-200); --muted:var(--muted-dark);
+  --accent:var(--sage-300); --accent-ink:var(--sage-300); --mark:#EAF0EC;
+}
+html{background:var(--paper)}
+body{margin:0;background:var(--paper);color:var(--ink);
+  font-family:var(--font-body);font-size:var(--fs-sm);line-height:1.5;
+  -webkit-font-smoothing:antialiased}
+.n{font-variant-numeric:tabular-nums}
+img{display:block;max-width:100%}
+/* links stay ink with a hairline. emphasis is reserved for the one state mark,
+   otherwise a page of credits is emphasis end to end and none of it reads. */
+a{color:var(--ink);text-decoration:none;border-bottom:1px solid var(--rule-hair)}
+a:hover{color:var(--accent-ink);border-bottom-color:var(--accent-ink)}
+
+.sw{position:sticky;top:0;z-index:50;background:var(--rule);color:var(--paper);
+  display:flex;font-size:var(--fs-micro);letter-spacing:.12em}
+.sw b{padding:10px 14px;font-weight:400;opacity:.6}
+.sw button{background:none;border:0;color:inherit;font-size:inherit;letter-spacing:inherit;
+  padding:10px 14px;opacity:.55}
+.sw button[aria-selected="true"]{opacity:1;background:var(--paper);color:var(--rule)}
+.pane{display:none}.pane.on{display:block}
+
+/* ---- chrome: three words, one rule, nothing pinned ---- */
+.top{display:flex;align-items:center;gap:var(--s5);padding:var(--s3) var(--s5);
+  border-bottom:1px solid var(--rule)}
+.mark{font-family:var(--font-display);font-size:20px;letter-spacing:-.01em;
+  border:0;color:var(--ink)}
+.mark i{font-style:normal;color:var(--accent)}   
+.top nav{display:flex;gap:var(--s4);font-size:var(--fs-sm);margin-left:auto}
+.top nav a{color:var(--soft-ink);border-bottom:1px solid transparent}
+.top nav a[aria-current],.top nav a:hover{color:var(--ink);border-bottom-color:var(--ink)}
+
+.wrap{max-width:1200px;margin:0 auto;padding:var(--s5)}
+.head{display:flex;justify-content:space-between;align-items:baseline;gap:var(--s4);
+  padding-bottom:var(--s2);border-bottom:1px solid var(--rule);margin-bottom:var(--s4)}
+.head h2{margin:0;font-size:var(--fs-lg);font-weight:500}
+.head .n{font-size:var(--fs-xs);color:var(--muted)}
+section + section{margin-top:var(--s7)}
+
+/* ---- device 1: near-black rules. vertical ones run full height. ---- */
+.ruled{display:grid}
+.ruled > *{border-left:1px solid var(--rule);min-width:0;padding:var(--s4)}
+.ruled > *:first-child{border-left:0;padding-left:0}
+.r3{grid-template-columns:repeat(3,1fr)}
+.r2{grid-template-columns:1fr 320px}
+.r2a{grid-template-columns:300px 1fr}
+@media(max-width:880px){
+  .r3,.r2,.r2a{grid-template-columns:1fr}
+  .ruled > *{border-left:0;border-top:1px solid var(--rule);padding-left:0}
+  .ruled > *:first-child{border-top:0}
+}
+
+/* ---- device 2: flat colour fields. covers only, one per field. ---- */
+/* gap:0 plus per-cell borders, so empty tracks in the last row show paper
+   rather than the container's rule colour */
+.shelf{display:grid;grid-template-columns:repeat(auto-fill,minmax(196px,1fr));
+  gap:0;background:var(--paper);border-top:1px solid var(--rule);
+  border-left:1px solid var(--rule)}
+.cell{background:var(--paper);display:flex;flex-direction:column;
+  border-right:1px solid var(--rule);border-bottom:1px solid var(--rule)}
+.field{padding:var(--field-pad);display:grid;place-items:center;aspect-ratio:1/1}
+.field img{max-height:100%;width:auto;object-fit:contain}
+.f1{background:var(--field-1)}.f2{background:var(--field-2)}.f3{background:var(--field-3)}
+.f4{background:var(--field-4)}.f5{background:var(--field-5)}.f6{background:var(--field-6)}
+.cap{padding:var(--s2) var(--s3) var(--s3);border-top:1px solid var(--rule);
+  display:grid;gap:3px;flex:1}
+.cap b{font-weight:500}
+.cap span{font-size:var(--fs-xs);color:var(--muted)}
+.cap .row{display:flex;justify-content:space-between;gap:var(--s2);
+  font-size:var(--fs-xs);color:var(--muted);font-variant-numeric:tabular-nums;margin-top:auto}
+
+/* ---- metadata: right-aligned, tabular, always ---- */
+table{width:100%;border-collapse:collapse}
+th,td{text-align:left;padding:var(--s2) var(--s3);border-bottom:1px solid var(--rule-hair)}
+thead th{border-bottom:1px solid var(--rule);font-size:var(--fs-micro);
+  letter-spacing:.12em;color:var(--muted);font-weight:400}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;color:var(--muted);white-space:nowrap}
+tbody tr:hover{background:var(--surface)}
+.thumb{width:24px;height:34px;object-fit:cover;display:inline-block;vertical-align:-11px;
+  margin-right:var(--s2)}
+
+/* the one state mark per screen: a solid fill in a page made of hairlines */
+.mark-open{background:var(--mark);color:var(--paper);padding:1px 7px;border-bottom:0}
+.rowmark{box-shadow:inset 3px 0 0 var(--mark)}
+
+.btn{font-size:var(--fs-xs);letter-spacing:.06em;height:var(--ctl);padding:0 var(--s4);
+  border:1px solid var(--rule);background:none;color:var(--ink)}
+.btn:hover{background:var(--rule);color:var(--paper)}
+.btn.p{background:var(--mark);border-color:var(--mark);color:var(--paper)}
+.btn.p:hover{background:var(--sage-700);border-color:var(--sage-700);color:#fff}
+.acts{display:flex;gap:var(--s2);flex-wrap:wrap;margin-top:var(--s4)}
+
+.gutcol{display:grid;grid-template-columns:var(--gutter) 1fr;gap:0}
+.gut{border-right:1px solid var(--rule-hair);display:flex;justify-content:center;
+  padding:var(--s3) 0}
+.gut span{writing-mode:vertical-rl;font-size:var(--fs-micro);letter-spacing:.16em;
+  color:var(--muted);white-space:nowrap}
+
+/* ---- reader: the one exception. ground tints from the cover. ---- */
+.rd{--hue:200;--tintsat:16%;
+  background:hsl(var(--hue) var(--tintsat) 84%);
+  color:hsl(var(--hue) 22% 14%);
+  min-height:80vh;display:grid;grid-template-rows:auto 1fr auto}
+[data-theme="dark"] .rd{background:hsl(var(--hue) var(--tintsat) 11%);color:#E7EDEA}
+.rdbar{display:flex;align-items:center;gap:var(--s4);padding:var(--s3) var(--s5);
+  border-bottom:1px solid hsl(var(--hue) 14% 62%);font-size:var(--fs-xs)}
+.rdbar .sp{flex:1}
+.rdstage{display:grid;place-items:center;padding:var(--s6) var(--s5)}
+.rdpage{max-height:74vh;width:auto}
+.rdfoot{padding:var(--s4) var(--s5);border-top:1px solid hsl(var(--hue) 14% 62%);
+  display:flex;gap:var(--s4);align-items:center;flex-wrap:wrap}
+.rdfoot .btn{border-color:currentColor}
+.rdfoot .btn:hover{background:currentColor;color:hsl(var(--hue) var(--tintsat) 84%)}
+.tintpick{display:flex;gap:var(--s2);align-items:center;font-size:var(--fs-micro);
+  letter-spacing:.1em;color:var(--muted);padding:var(--s2) var(--s5);
+  border-bottom:1px solid var(--rule)}
+.tintpick button{width:22px;height:22px;border:1px solid var(--rule);padding:0}
+
+/* ---- studio: same rules, denser, dark half of the ramp ---- */
+
+.foot{padding:var(--s4) var(--s5);border-top:1px solid var(--rule);font-size:var(--fs-micro);
+  letter-spacing:.08em;color:var(--muted);display:flex;justify-content:space-between;
+  flex-wrap:wrap;gap:var(--s3)}
+.avatar{width:100%;aspect-ratio:1/1;display:grid;place-items:center;font-size:56px;
+  background:var(--field-4);color:#fff}
+.lede{max-width:64ch;line-height:1.6;color:var(--soft-ink);font-size:var(--fs)}
+</style>
+</head>
+<body>
+
+<nav class="sw" role="tablist" aria-label="surface">
+  <b>PRESS — HOUSE STYLE</b>
+  <button role="tab" aria-selected="true" data-p="home">HOME</button>
+  <button role="tab" aria-selected="false" data-p="browse">BROWSE</button>
+  <button role="tab" aria-selected="false" data-p="detail">DETAIL</button>
+  <button role="tab" aria-selected="false" data-p="reader">READER</button>
+  <button role="tab" aria-selected="false" data-p="profile">PROFILE</button>
+</nav>
+
+<!-- ============ HOME ============ -->
+<div class="pane on" id="home">
+  <header class="top">
+    <span class="mark">eski<i>!</i></span>
+    <nav><a href="#" aria-current="page">browse</a><a href="#">shelf</a><a href="#">studio</a></nav>
+  </header>
+  <div class="wrap">
+    <div class="ruled r2">
+      <div style="padding-top:0">
+        <p class="lede" style="margin-top:0">Seven comics this week. Every page turn moves the
+          score, every line is performed by a real person, and you choose the mix. Three are
+          still missing a voice.</p>
+      </div>
+      <div class="gutcol" style="padding-top:0">
+        <div class="gut"><span>WEEK OF 3 AUG 2026</span></div>
+        <div>
+          <table>
+            <tbody>
+              <tr><td>comics</td><td class="num">48</td></tr>
+              <tr><td>fully cast</td><td class="num">21</td></tr>
+              <tr><td>open roles</td><td class="num">18</td></tr>
+              <tr><td>performers</td><td class="num">63</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <section>
+      <div class="head"><h2>this week</h2><span class="n">7 comics</span></div>
+      <div class="shelf">
+        <article class="cell"><div class="field f5"><img src="covers/concrete-sky.jpg" alt=""></div>
+          <div class="cap"><b>blame! master edition</b><span>tsutomu nihei</span>
+            <div class="row"><span>368 pp · 12 ch</span><span>3 of 4</span></div></div></article>
+        <article class="cell"><div class="field f2"><img src="covers/jigoku.jpg" alt=""></div>
+          <div class="cap"><b>falling in love on the path to hell</b><span>duggan &amp; brown</span>
+            <div class="row"><span>152 pp · 6 ch</span><span>6 of 6</span></div></div></article>
+        <article class="cell"><div class="field f3"><img src="covers/talking-axe.jpg" alt=""></div>
+          <div class="cap"><b>barbaric: axe to grind</b><span>moreci, gooden, duke &amp; campbell</span>
+            <div class="row"><span>128 pp · 5 ch</span><span>4 casts</span></div></div></article>
+        <article class="cell"><div class="field f1"><img src="covers/second-dark.jpg" alt=""></div>
+          <div class="cap"><b>the dark knight returns</b><span>miller, janson &amp; varley</span>
+            <div class="row"><span>224 pp · 4 ch</span><span>5 of 5</span></div></div></article>
+        <article class="cell"><div class="field f6"><img src="covers/sunbound.jpg" alt=""></div>
+          <div class="cap"><b>all-star superman</b><span>morrison, quitely &amp; grant</span>
+            <div class="row"><span>320 pp · 12 ch</span><span>0 of 3</span></div></div></article>
+        <article class="cell"><div class="field f4"><img src="covers/concrete-sky.jpg" alt=""></div>
+          <div class="cap"><b>noise</b><span>tsutomu nihei</span>
+            <div class="row"><span>224 pp · 1 ch</span><span>2 of 3</span></div></div></article>
+      </div>
+    </section>
+
+    <section>
+      <div class="ruled r2">
+        <div style="padding-left:0">
+          <div class="head"><h2>the back catalogue</h2><span class="n">41 comics</span></div>
+          <table>
+            <thead><tr><th>title</th><th>by</th><th class="num">pages</th><th class="num">voiced</th><th class="num">kudos</th></tr></thead>
+            <tbody>
+              <tr><td><img class="thumb" src="covers/jigoku.jpg" alt="">falling in love, book two</td><td>duggan &amp; brown</td><td class="num">88</td><td class="num">7 of 7</td><td class="num">188</td></tr>
+              <tr><td><img class="thumb" src="covers/second-dark.jpg" alt="">the dark knight strikes again</td><td>miller, janson &amp; varley</td><td class="num">38</td><td class="num">3 of 3</td><td class="num">121</td></tr>
+              <tr><td><img class="thumb" src="covers/talking-axe.jpg" alt="">barbaric: murderable offenses</td><td>moreci, gooden, duke &amp; campbell</td><td class="num">30</td><td class="num">0 of 4</td><td class="num">64</td></tr>
+              <tr><td><img class="thumb" src="covers/jigoku.jpg" alt="">all-star superman, book two</td><td>duggan &amp; brown</td><td class="num">72</td><td class="num">4 of 6</td><td class="num">74</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="gutcol">
+          <div class="gut"><span>NEEDS A VOICE</span></div>
+          <div>
+            <table>
+              <tbody>
+                <tr class="rowmark"><td>dhomochevsky<br><span style="color:var(--muted);font-size:var(--fs-micro)">blame! master edition</span></td><td class="num">9 lines</td></tr>
+                <tr><td>axe<br><span style="color:var(--muted);font-size:var(--fs-micro)">barbaric: axe to grind</span></td><td class="num">214 lines</td></tr>
+                <tr><td>three roles<br><span style="color:var(--muted);font-size:var(--fs-micro)">all-star superman</span></td><td class="num">61 lines</td></tr>
+              </tbody>
+            </table>
+            <div class="acts"><button class="btn">see all 18</button></div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+  <div class="foot"><span>ESKI! — COMICS YOU CAN HEAR</span><span>TERMS · PRIVACY · TAKEDOWN</span></div>
+</div>
+
+<!-- ============ BROWSE ============ -->
+<div class="pane" id="browse">
+  <header class="top">
+    <span class="mark">eski<i>!</i></span>
+    <nav><a href="#" aria-current="page">browse</a><a href="#">shelf</a><a href="#">studio</a></nav>
+  </header>
+  <div class="wrap">
+    <div class="ruled r3" style="margin-bottom:var(--s5)">
+      <div style="padding-top:0"><h4>SHOWING</h4><div class="n" style="font-size:var(--fs-lg)">48 comics</div></div>
+      <div><h4>NEEDS A VOICE</h4><div class="n" style="font-size:var(--fs-lg)">18</div></div>
+      <div><h4>FULLY CAST</h4><div class="n" style="font-size:var(--fs-lg)">21</div></div>
+    </div>
+    <div class="head"><h2>everything on the shelf</h2><span class="n">sorted by date added</span></div>
+    <div class="shelf">
+      <article class="cell"><div class="field f1"><img src="covers/second-dark.jpg" alt=""></div>
+        <div class="cap"><b>the dark knight returns</b><span>miller, janson &amp; varley</span><div class="row"><span>224 pp</span><span>5 of 5</span></div></div></article>
+      <article class="cell"><div class="field f6"><img src="covers/sunbound.jpg" alt=""></div>
+        <div class="cap"><b>all-star superman</b><span>morrison, quitely &amp; grant</span><div class="row"><span>320 pp</span><span>0 of 3</span></div></div></article>
+      <article class="cell"><div class="field f3"><img src="covers/talking-axe.jpg" alt=""></div>
+        <div class="cap"><b>barbaric: murderable offenses</b><span>moreci, gooden, duke &amp; campbell</span><div class="row"><span>112 pp</span><span>0 of 4</span></div></div></article>
+      <article class="cell"><div class="field f5"><img src="covers/concrete-sky.jpg" alt=""></div>
+        <div class="cap"><b>noise</b><span>tsutomu nihei</span><div class="row"><span>224 pp</span><span>2 of 3</span></div></div></article>
+      <article class="cell"><div class="field f2"><img src="covers/jigoku.jpg" alt=""></div>
+        <div class="cap"><b>falling in love, book two</b><span>duggan &amp; brown</span><div class="row"><span>184 pp</span><span>7 of 7</span></div></div></article>
+      <article class="cell"><div class="field f4"><img src="covers/talking-axe.jpg" alt=""></div>
+        <div class="cap"><b>barbaric: hell to pay</b><span>moreci, gooden, duke &amp; campbell</span><div class="row"><span>128 pp</span><span>1 of 5</span></div></div></article>
+      <article class="cell"><div class="field f2"><img src="covers/second-dark.jpg" alt=""></div>
+        <div class="cap"><b>the dark knight strikes again</b><span>miller &amp; varley</span><div class="row"><span>256 pp</span><span>3 of 3</span></div></div></article>
+      <article class="cell"><div class="field f6"><img src="covers/jigoku.jpg" alt=""></div>
+        <div class="cap"><b>all-star superman, book two</b><span>morrison, quitely &amp; grant</span><div class="row"><span>320 pp</span><span>4 of 6</span></div></div></article>
+    </div>
+    <div class="acts"><button class="btn p">contribute a voice</button><button class="btn">load 40 more</button></div>
+  </div>
+  <div class="foot"><span>PAGE 1 OF 6</span><span>FIELDS ARE SAMPLED FROM COVER LIGHTNESS AND SNAPPED TO THE SAGE RAMP</span></div>
+</div>
+
+<!-- ============ DETAIL ============ -->
+<div class="pane" id="detail">
+  <header class="top">
+    <span class="mark">eski<i>!</i></span>
+    <nav><a href="#">browse</a><a href="#" aria-current="page">shelf</a><a href="#">studio</a></nav>
+  </header>
+  <div class="wrap">
+    <div class="ruled r2a">
+      <div style="padding-top:0;padding-left:0">
+        <div class="field f5" style="aspect-ratio:auto"><img src="covers/concrete-sky.jpg" alt="cover of blame! master edition"></div>
+        <table style="margin-top:var(--s3)">
+          <tbody>
+            <tr><td>pages</td><td class="num">48</td></tr>
+            <tr><td>chapters</td><td class="num">6</td></tr>
+            <tr><td>published</td><td class="num">2016</td></tr>
+            <tr><td>kudos</td><td class="num">212</td></tr>
+            <tr><td>mixes</td><td class="num">3</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="gutcol" style="padding-top:0">
+        <div class="gut"><span>CHAPTER 1 OF 6</span></div>
+        <div style="padding-left:var(--s4)">
+          <h2 style="margin:0;font-size:var(--fs-title);font-weight:500">blame! master edition</h2>
+          <p style="margin:var(--s1) 0 var(--s4);color:var(--muted)">written and drawn by
+            <a href="#">tsutomu nihei</a></p>
+          <p class="lede">Killy walks a megastructure that outgrew its builders, hunting anyone who still carries the Net Terminal Gene. Nihei draws silence better than anyone, so the score is doing most of the work here.</p>
+
+          <div class="head" style="margin-top:var(--s5)"><h2 style="font-size:var(--fs-sm)">the cast</h2><span class="n">3 of 4 voiced</span></div>
+          <table>
+            <thead><tr><th>role</th><th>performed by</th><th class="num">preview</th><th class="num">vouches</th></tr></thead>
+            <tbody>
+              <tr><td>killy</td><td><a href="#">imogen ash</a></td><td class="num">0:08</td><td class="num">31</td></tr>
+              <tr><td>cibo</td><td><a href="#">samuel opoku</a></td><td class="num">0:08</td><td class="num">44</td></tr>
+              <tr><td>sanakan</td><td><a href="#">tsutomu nihei</a></td><td class="num">0:06</td><td class="num">88</td></tr>
+              <tr class="rowmark"><td>dhomochevsky</td><td class="mark-open">not yet voiced</td><td class="num">—</td><td class="num">9 lines</td></tr>
+            </tbody>
+          </table>
+
+          <div class="head" style="margin-top:var(--s5)"><h2 style="font-size:var(--fs-sm)">the score</h2><span class="n">2 available</span></div>
+          <table>
+            <thead><tr><th>title</th><th>composed by</th><th class="num">length</th><th class="num">vouches</th></tr></thead>
+            <tbody>
+              <tr><td>net terminal</td><td><a href="#">tsutomu nihei</a></td><td class="num">31:04</td><td class="num">120</td></tr>
+              <tr><td>silicon creature</td><td><a href="#">j. wren</a></td><td class="num">29:47</td><td class="num">63</td></tr>
+            </tbody>
+          </table>
+
+          <div class="acts">
+            <button class="btn">read it</button><button class="btn">read later</button><button class="btn">voice dhomochevsky</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="foot"><span>ENTRY EDITED 2 APR 2026</span><span>REPORT THIS COMIC</span></div>
+</div>
+
+<!-- ============ READER ============ -->
+<div class="pane" id="reader">
+  <div class="tintpick">
+    <span>GROUND TINTED FROM THE COVER — THE ONE SURFACE THAT CHANGES IDENTITY PER COMIC</span>
+    <span style="flex:1"></span>
+    <button data-h="200" style="background:hsl(200 16% 84%)" aria-label="blame! master edition"></button>
+    <button data-h="12" style="background:hsl(12 16% 84%)" aria-label="barbaric: axe to grind"></button>
+    <button data-h="151" style="background:hsl(151 16% 84%)" aria-label="falling in love on the path to hell"></button>
+    <button data-h="45" style="background:hsl(45 16% 84%)" aria-label="all-star superman"></button>
+  </div>
+  <div class="rd" id="rd">
+    <div class="rdbar"><a href="#" style="color:inherit">← shelf</a><span class="sp"></span>
+      <span>blame! master edition · tsutomu nihei</span><span class="sp"></span><span class="n">page 15 of 368</span></div>
+    <div class="rdstage"><img class="rdpage" src="covers/concrete-sky.jpg" alt="page 15"></div>
+    <div class="rdfoot">
+      <span><b>killy</b> — imogen ash · <b>cibo</b> — samuel opoku</span>
+      <span style="opacity:.7">net terminal · 2 one-shots</span>
+      <span class="sp" style="flex:1"></span>
+      <button class="btn">◀</button><button class="btn">▶</button>
+      <button class="btn">swap mix</button><button class="btn">settings</button>
+    </div>
+  </div>
+  <div class="foot"><span>NO DISPLAY TYPE · TABULAR NUMBERS · SQUARE CORNERS — EVERY OTHER RULE STILL HOLDS HERE</span><span>CHAPTER 2 OF 6</span></div>
+</div>
+
+<!-- ============ PROFILE ============ -->
+<div class="pane" id="profile">
+  <header class="top">
+    <span class="mark">eski<i>!</i></span>
+    <nav><a href="#">browse</a><a href="#">shelf</a><a href="#">studio</a></nav>
+  </header>
+  <div class="wrap">
+    <div class="ruled r2a">
+      <div style="padding-top:0;padding-left:0">
+        <div class="avatar">I</div>
+        <table style="margin-top:var(--s3)">
+          <tbody>
+            <tr><td>parts</td><td class="num">14</td></tr>
+            <tr><td>lines read</td><td class="num">1,842</td></tr>
+            <tr><td>vouches</td><td class="num">412</td></tr>
+            <tr><td>comics</td><td class="num">9</td></tr>
+            <tr><td>joined</td><td class="num">jan 2026</td></tr>
+          </tbody>
+        </table>
+        <div class="acts"><button class="btn p">follow</button><button class="btn">invite</button></div>
+      </div>
+      <div class="gutcol" style="padding-top:0">
+        <div class="gut"><span>PERFORMER · CORK, IRELAND</span></div>
+        <div style="padding-left:var(--s4)">
+          <h2 style="margin:0;font-size:var(--fs-title);font-weight:500">imogen ash</h2>
+          <p class="lede" style="margin-top:var(--s3)">Stage actor out of Cork. Low, tired warmth,
+            and a preference for anything set near water. Open to unpaid parts under thirty lines.</p>
+
+          <div class="head" style="margin-top:var(--s5)"><h2 style="font-size:var(--fs-sm)">performances</h2><span class="n">14 parts</span></div>
+          <table>
+            <thead><tr><th>role</th><th>in</th><th class="num">lines</th><th class="num">vouches</th></tr></thead>
+            <tbody>
+              <tr><td>killy</td><td><a href="#">blame! master edition</a></td><td class="num">148</td><td class="num">31</td></tr>
+              <tr><td>macraith</td><td><a href="#">falling in love on the path to hell</a></td><td class="num">92</td><td class="num">77</td></tr>
+              <tr><td>carrie kelley</td><td><a href="#">the dark knight returns</a></td><td class="num">61</td><td class="num">44</td></tr>
+              <tr><td>narration</td><td><a href="#">noise</a></td><td class="num">210</td><td class="num">108</td></tr>
+            </tbody>
+          </table>
+
+          <div class="head" style="margin-top:var(--s5)"><h2 style="font-size:var(--fs-sm)">their comics</h2><span class="n">4</span></div>
+          <div class="shelf" style="grid-template-columns:repeat(auto-fill,minmax(140px,1fr))">
+            <article class="cell"><div class="field f5"><img src="covers/concrete-sky.jpg" alt=""></div>
+              <div class="cap"><b>blame! master edition</b><div class="row"><span>killy</span><span>31 ✓</span></div></div></article>
+            <article class="cell"><div class="field f2"><img src="covers/jigoku.jpg" alt=""></div>
+              <div class="cap"><b>falling in love on the path to hell</b><div class="row"><span>macraith</span><span>77 ✓</span></div></div></article>
+            <article class="cell"><div class="field f1"><img src="covers/second-dark.jpg" alt=""></div>
+              <div class="cap"><b>the dark knight returns</b><div class="row"><span>carrie kelley</span><span>44 ✓</span></div></div></article>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="foot"><span>14 PARTS · 412 VOUCHES</span><span>OPEN TO UNPAID PARTS UNDER 30 LINES</span></div>
+</div>
+
+<script>
+
+// the reader's ground follows the cover
+document.querySelectorAll('.tintpick button').forEach(function(b){
+  b.addEventListener('click', function(){
+    document.getElementById('rd').style.setProperty('--hue', b.dataset.h);
+  });
+});
+
+document.querySelectorAll('.sw button').forEach(function(b){
+  b.addEventListener('click', function(){
+    document.querySelectorAll('.sw button').forEach(function(o){ o.setAttribute('aria-selected','false'); });
+    document.querySelectorAll('.pane').forEach(function(p){ p.classList.remove('on'); });
+    b.setAttribute('aria-selected','true');
+    document.getElementById(b.dataset.p).classList.add('on');
+    window.scrollTo(0,0);
+  });
+});
+</script>
+</body>
+</html>

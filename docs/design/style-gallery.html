@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>eski — gallery — five surfaces</title>
+<link rel="stylesheet" href="../../tokens.css">
+<style>
+/* ============================================================
+   eski-gallery applied to the five public surfaces.
+   reference: lecinemaclub.com, mubi.com, uniteditions.com
+   a mid-tone wall. art in a field, never scrimmed. no display type.
+   ============================================================ */
+:root{
+  --paper:#C9D3CE;
+  --paper-2:#BFCAC4;
+  --ink:var(--sage-900);
+  --soft-ink:var(--sage-700);
+  --muted:#5E6E67;
+  --rule:var(--sage-400);
+  --accent:var(--sage-700);
+  --ticker-h:34px;
+  --frame:clamp(28px,6vw,110px);
+}
+[data-theme="dark"]{
+  --paper:var(--surf-2); --paper-2:var(--surf-1);
+  --ink:#EAF0EC; --soft-ink:var(--sage-200); --muted:var(--muted-dark);
+  --rule:var(--line-dark); --accent:var(--sage-300);
+}
+html{background:var(--paper)}
+body{margin:0;background:var(--paper);color:var(--ink);
+  font-family:var(--font-body);font-size:var(--fs);line-height:1.6;
+  padding-bottom:var(--ticker-h);-webkit-font-smoothing:antialiased}
+.n{font-variant-numeric:tabular-nums}
+img{display:block;max-width:100%}
+a{color:inherit;text-decoration:none;border-bottom:1px solid var(--rule)}
+a:hover{border-bottom-color:var(--ink)}
+
+.sw{position:sticky;top:0;z-index:40;background:var(--sage-900);color:var(--sage-100);
+  display:flex;font-size:var(--fs-micro);letter-spacing:.12em}
+.sw b{padding:10px 14px;font-weight:400;opacity:.6}
+.sw button{background:none;border:0;color:inherit;font-size:inherit;letter-spacing:inherit;
+  padding:10px 14px;opacity:.55}
+.sw button[aria-selected="true"]{opacity:1;background:var(--paper);color:var(--ink)}
+.pane{display:none}.pane.on{display:block}
+
+/* three words. nothing else. */
+.top{display:flex;align-items:center;gap:var(--s5);padding:var(--s4) var(--frame)}
+.mark{font-family:var(--font-display);font-size:19px;border:0}
+.mark i{font-style:normal;color:var(--accent)}
+.top nav{display:flex;gap:var(--s4);font-size:var(--fs-sm);margin-left:auto}
+.top nav a{border-bottom:1px solid transparent;color:var(--soft-ink)}
+.top nav a[aria-current],.top nav a:hover{color:var(--ink);border-bottom-color:var(--ink)}
+
+.stage{padding:0 var(--frame) var(--s8)}
+.work{display:grid;place-items:center;padding:var(--s6) 0}
+.work img{max-height:74vh;width:auto;object-fit:contain}
+/* no border, no shadow, no scrim. the wall does the framing. */
+
+.credit{max-width:64ch;font-size:var(--fs);line-height:1.7;margin:0}
+.credit b{font-weight:500}
+.credit + .acts{margin-top:var(--s4)}
+
+.btn{font-size:var(--fs-sm);height:var(--ctl);padding:0 var(--s4);
+  border:1px solid var(--ink);background:none;color:var(--ink)}
+.btn:hover{background:var(--ink);color:var(--paper)}
+.btn.p{background:var(--ink);color:var(--paper)}
+.btn.p:hover{background:var(--accent);border-color:var(--accent)}
+.acts{display:flex;gap:var(--s2);flex-wrap:wrap}
+
+hr{border:0;border-top:1px solid var(--rule);margin:var(--s8) 0 var(--s5)}
+h2.sec{font-size:var(--fs-micro);letter-spacing:.14em;color:var(--muted);font-weight:400;
+  margin:0 0 var(--s3);display:flex;justify-content:space-between}
+
+/* the plain index. does the work the emptiness upstairs cannot. */
+table{width:100%;border-collapse:collapse;font-size:var(--fs-sm)}
+th,td{text-align:left;padding:var(--s3) var(--s2);border-bottom:1px solid var(--rule);vertical-align:baseline}
+th{font-size:var(--fs-micro);letter-spacing:.11em;color:var(--muted);font-weight:400}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;color:var(--muted);white-space:nowrap}
+tbody tr:hover{background:var(--paper-2)}
+td a{border:0}
+td a:hover{border-bottom:1px solid var(--ink)}
+
+/* the ticker: text only, no controls */
+.ticker{position:fixed;left:0;right:0;bottom:0;height:var(--ticker-h);z-index:30;
+  background:var(--sage-900);color:var(--sage-200);display:flex;align-items:center;
+  gap:var(--s5);padding:0 var(--frame);font-size:var(--fs-micro);letter-spacing:.12em;
+  overflow:hidden;white-space:nowrap}
+.ticker .sp{flex:1}
+
+.two{display:grid;grid-template-columns:1fr 1fr;gap:var(--s7);align-items:start}
+@media(max-width:860px){.two{grid-template-columns:1fr}}
+
+/* reader: the wall, and the page. this is the style's best surface. */
+.rd{min-height:calc(100vh - var(--ticker-h));display:grid;grid-template-rows:auto 1fr auto;
+  background:var(--paper)}
+.rdbar{display:flex;align-items:center;gap:var(--s4);padding:var(--s3) var(--frame);
+  font-size:var(--fs-sm);color:var(--muted)}
+.rdbar .sp{flex:1}
+.rdstage{display:grid;place-items:center;padding:var(--s5) var(--frame)}
+.rdpage{max-height:76vh;width:auto}
+.rdfoot{padding:var(--s4) var(--frame) var(--s6)}
+
+.avatar{width:130px;height:130px;border-radius:50%;background:var(--sage-500);color:#fff;
+  display:grid;place-items:center;font-size:46px}
+</style>
+</head>
+<body>
+
+<nav class="sw" role="tablist" aria-label="surface">
+  <b>GALLERY</b>
+  <button role="tab" aria-selected="true" data-p="home">HOME</button>
+  <button role="tab" aria-selected="false" data-p="browse">BROWSE</button>
+  <button role="tab" aria-selected="false" data-p="detail">DETAIL</button>
+  <button role="tab" aria-selected="false" data-p="reader">READER</button>
+  <button role="tab" aria-selected="false" data-p="profile">PROFILE</button>
+</nav>
+
+<!-- ============ HOME ============ -->
+<div class="pane on" id="home">
+  <header class="top">
+    <span class="mark">eski<i>!</i></span>
+    <nav><a href="#" aria-current="page">browse</a><a href="#">shelf</a><a href="#">studio</a></nav>
+  </header>
+  <div class="stage">
+    <div class="work"><img src="covers/concrete-sky.jpg" alt="blame! master edition"></div>
+    <p class="credit"><b>blame! master edition</b> by <a href="#">tsutomu nihei</a>. 2016. 368 pages, six
+      chapters. Voiced by <a href="#">imogen ash</a>, <a href="#">samuel opoku</a> and r. vale; scored by y. tamura as <a href="#">net terminal</a>. One part, dhomochevsky, is still
+      unvoiced.</p>
+    <div class="acts">
+      <button class="btn p">read it</button>
+      <button class="btn">voice dhomochevsky</button>
+    </div>
+
+    <hr>
+    <h2 class="sec"><span>ALSO SHOWING</span><span class="n">6 THIS WEEK</span></h2>
+    <table>
+      <tbody>
+        <tr><td><a href="#">falling in love on the path to hell</a></td><td>duggan &amp; brown</td><td class="num">152 pp</td><td class="num">fully cast</td></tr>
+        <tr><td><a href="#">barbaric: axe to grind</a></td><td>moreci, gooden, duke &amp; campbell</td><td class="num">128 pp</td><td class="num">4 casts</td></tr>
+        <tr><td><a href="#">the dark knight returns</a></td><td>miller, janson &amp; varley</td><td class="num">224 pp</td><td class="num">fully cast</td></tr>
+        <tr><td><a href="#">all-star superman</a></td><td>morrison, quitely &amp; grant</td><td class="num">320 pp</td><td class="num">needs 3 voices</td></tr>
+        <tr><td><a href="#">noise</a></td><td>tsutomu nihei</td><td class="num">224 pp</td><td class="num">needs 1 voice</td></tr>
+        <tr><td><a href="#">falling in love, book two</a></td><td>duggan &amp; brown</td><td class="num">184 pp</td><td class="num">fully cast</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ============ BROWSE ============ -->
+<div class="pane" id="browse">
+  <header class="top">
+    <span class="mark">eski<i>!</i></span>
+    <nav><a href="#" aria-current="page">browse</a><a href="#">shelf</a><a href="#">studio</a></nav>
+  </header>
+  <div class="stage">
+    <div class="two">
+      <div>
+        <div class="work" style="padding-top:0"><img src="covers/jigoku.jpg" alt="falling in love on the path to hell" style="max-height:52vh"></div>
+        <p class="credit"><b>falling in love on the path to hell</b> by <a href="#">duggan &amp; brown</a>. 152 pages.
+          Fully cast, three separate scores, and the only comic here that has been rescored twice.</p>
+      </div>
+      <div>
+        <div class="work" style="padding-top:0"><img src="covers/talking-axe.jpg" alt="barbaric: axe to grind" style="max-height:52vh"></div>
+        <p class="credit"><b>barbaric: axe to grind</b> by <a href="#">moreci, gooden, duke &amp; campbell</a>.
+          128 pages. Four casts submitted, no two alike. Leaves Sunday.</p>
+      </div>
+    </div>
+
+    <hr>
+    <h2 class="sec"><span>THE FULL INDEX</span><span class="n">48 COMICS</span></h2>
+    <table>
+      <thead><tr><th>title</th><th>by</th><th class="num">pages</th><th class="num">voices</th><th class="num">added</th></tr></thead>
+      <tbody>
+        <tr><td><a href="#">blame! master edition</a></td><td>tsutomu nihei</td><td class="num">48</td><td class="num">3 of 4</td><td class="num">2016</td></tr>
+        <tr><td><a href="#">the dark knight returns</a></td><td>miller, janson &amp; varley</td><td class="num">64</td><td class="num">5 of 5</td><td class="num">1986</td></tr>
+        <tr><td><a href="#">all-star superman</a></td><td>morrison, quitely &amp; grant</td><td class="num">28</td><td class="num">0 of 3</td><td class="num">2005</td></tr>
+        <tr><td><a href="#">noise</a></td><td>tsutomu nihei</td><td class="num">52</td><td class="num">2 of 3</td><td class="num">1998</td></tr>
+        <tr><td><a href="#">barbaric: murderable offenses</a></td><td>moreci, gooden, duke &amp; campbell</td><td class="num">30</td><td class="num">0 of 4</td><td class="num">2021</td></tr>
+        <tr><td><a href="#">falling in love, book two</a></td><td>duggan &amp; brown</td><td class="num">88</td><td class="num">7 of 7</td><td class="num">2024</td></tr>
+        <tr><td><a href="#">the dark knight strikes again</a></td><td>miller, janson &amp; varley</td><td class="num">38</td><td class="num">3 of 3</td><td class="num">2001</td></tr>
+        <tr><td><a href="#">all-star superman, book two</a></td><td>duggan &amp; brown</td><td class="num">72</td><td class="num">4 of 6</td><td class="num">2008</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ============ DETAIL ============ -->
+<div class="pane" id="detail">
+  <header class="top">
+    <span class="mark">eski<i>!</i></span>
+    <nav><a href="#">browse</a><a href="#" aria-current="page">shelf</a><a href="#">studio</a></nav>
+  </header>
+  <div class="stage">
+    <div class="work"><img src="covers/concrete-sky.jpg" alt="blame! master edition"></div>
+    <p class="credit"><b>blame! master edition</b> by <a href="#">tsutomu nihei</a>. 2016. 368 pages, six
+      chapters, published 14 March. Killy walks a megastructure that outgrew its builders.</p>
+    <div class="acts"><button class="btn p">read it</button><button class="btn">read later</button></div>
+
+    <hr>
+    <h2 class="sec"><span>THE CAST</span><span class="n">3 OF 4 VOICED</span></h2>
+    <table>
+      <tbody>
+        <tr><td>killy</td><td><a href="#">imogen ash</a></td><td class="num">0:08</td><td class="num">31 ✓</td></tr>
+        <tr><td>cibo</td><td><a href="#">samuel opoku</a></td><td class="num">0:08</td><td class="num">44 ✓</td></tr>
+        <tr><td>sanakan</td><td><a href="#">tsutomu nihei</a></td><td class="num">0:06</td><td class="num">88 ✓</td></tr>
+        <tr><td>dhomochevsky</td><td style="color:var(--muted)">nobody yet, nine lines</td><td class="num">—</td><td class="num"><a href="#">voice this</a></td></tr>
+      </tbody>
+    </table>
+
+    <h2 class="sec" style="margin-top:var(--s6)"><span>THE SCORE</span><span class="n">2 AVAILABLE</span></h2>
+    <table>
+      <tbody>
+        <tr><td>net terminal</td><td><a href="#">tsutomu nihei</a>, the original</td><td class="num">31:04</td><td class="num">120 ✓</td></tr>
+        <tr><td>silicon creature</td><td><a href="#">j. wren</a>, metal and one piano</td><td class="num">29:47</td><td class="num">63 ✓</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ============ READER ============ -->
+<div class="pane" id="reader">
+  <div class="rd">
+    <div class="rdbar"><a href="#">← shelf</a><span class="sp"></span>
+      <span>blame! master edition, by tsutomu nihei</span><span class="sp"></span><span class="n">page 15 of 368</span></div>
+    <div class="rdstage"><img class="rdpage" src="covers/concrete-sky.jpg" alt="page 15"></div>
+    <div class="rdfoot">
+      <p class="credit"><b>killy</b> read by <a href="#">imogen ash</a> and <b>cibo</b> by
+        <a href="#">samuel opoku</a>, over <a href="#">net terminal</a>. Two one-shots on this
+        page.</p>
+      <div class="acts" style="margin-top:var(--s3)">
+        <button class="btn">◀ previous</button><button class="btn">next ▶</button>
+        <button class="btn">swap the mix</button><button class="btn">settings</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ PROFILE ============ -->
+<div class="pane" id="profile">
+  <header class="top">
+    <span class="mark">eski<i>!</i></span>
+    <nav><a href="#">browse</a><a href="#">shelf</a><a href="#">studio</a></nav>
+  </header>
+  <div class="stage">
+    <div class="work"><span class="avatar">I</span></div>
+    <p class="credit"><b>imogen ash</b>. Stage actor out of Cork, on eski since January 2026.
+      Fourteen parts, 412 vouches. Low, tired warmth; reads for horror and for anything set near
+      water. Open to unpaid parts under thirty lines.</p>
+    <div class="acts"><button class="btn p">follow</button><button class="btn">invite to a part</button></div>
+
+    <hr>
+    <h2 class="sec"><span>PERFORMANCES</span><span class="n">14 PARTS</span></h2>
+    <table>
+      <thead><tr><th>role</th><th>in</th><th class="num">lines</th><th class="num">vouches</th></tr></thead>
+      <tbody>
+        <tr><td>killy</td><td><a href="#">blame! master edition</a></td><td class="num">148</td><td class="num">31</td></tr>
+        <tr><td>macraith</td><td><a href="#">falling in love on the path to hell</a></td><td class="num">92</td><td class="num">77</td></tr>
+        <tr><td>carrie kelley</td><td><a href="#">the dark knight returns</a></td><td class="num">61</td><td class="num">44</td></tr>
+        <tr><td>narration</td><td><a href="#">noise</a></td><td class="num">210</td><td class="num">108</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="ticker">
+  <span>NEXT WEEK — ALL-STAR SUPERMAN, BOOK TWO, BY MORRISON &AMP; QUITELY</span>
+  <span class="sp"></span>
+  <span>PROGRAMME CHANGES MONDAYS</span>
+</div>
+
+<script>
+document.querySelectorAll('.sw button').forEach(function(b){
+  b.addEventListener('click', function(){
+    document.querySelectorAll('.sw button').forEach(function(o){ o.setAttribute('aria-selected','false'); });
+    document.querySelectorAll('.pane').forEach(function(p){ p.classList.remove('on'); });
+    b.setAttribute('aria-selected','true');
+    document.getElementById(b.dataset.p).classList.add('on');
+    window.scrollTo(0,0);
+  });
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>eski — marquee — home</title>
+<link rel="stylesheet" href="../../tokens.css">
+<style>
+/* ============================================================
+   eski-marquee. the home page as a programme, not a catalogue.
+   reference: mubi's thirty films, the criterion channel.
+   commits to dark in both themes: the art is the only colour.
+   ============================================================ */
+:root{
+  --ground:var(--void);
+  --ground-2:var(--surf-1);
+  --ink:#EAF0EC;
+  --muted:var(--muted-dark);
+  --rule:var(--line-dark);
+  --accent:var(--sage-300);
+}
+html{background:var(--ground)}
+body{
+  margin:0;background:var(--ground);color:var(--ink);
+  font-family:var(--font-body);font-size:var(--fs);line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+}
+.n{font-variant-numeric:tabular-nums}
+
+/* ---- chrome. four words, small ---- */
+.top{
+  position:sticky;top:0;z-index:9;height:var(--hdr);
+  display:flex;align-items:center;gap:var(--s5);padding:0 var(--s6);
+  background:rgba(12,19,15,.86);backdrop-filter:blur(10px);
+  border-bottom:1px solid var(--rule);
+}
+.mark{font-family:var(--font-display);font-size:21px;letter-spacing:-.01em}
+.mark i{font-style:normal;color:var(--accent)}
+.top nav{display:flex;gap:var(--s4);font-size:var(--fs-sm);color:var(--muted);margin-left:auto}
+.top nav a{color:inherit;text-decoration:none}
+.top nav a:hover{color:var(--ink)}
+
+/* ---- the programme header ---- */
+.prog{padding:var(--s8) var(--s6) var(--s6);max-width:var(--max);margin:0 auto}
+.prog .eyebrow{font-size:var(--fs-micro);letter-spacing:.16em;color:var(--muted)}
+.prog h1{
+  font-family:var(--font-display);font-weight:400;font-size:var(--fs-display);
+  line-height:.92;letter-spacing:-.015em;margin:var(--s3) 0 0;max-width:14ch;
+  text-wrap:balance;
+}
+.prog p{max-width:56ch;color:var(--muted);margin:var(--s4) 0 0;font-size:var(--fs-lg)}
+
+/* ---- a band. one comic, one screen ---- */
+.band{
+  position:relative;min-height:78vh;display:flex;align-items:flex-end;
+  overflow:hidden;border-top:1px solid var(--rule);
+}
+.band img{
+  position:absolute;inset:0;width:100%;height:100%;object-fit:cover;
+  object-position:var(--pos,center 22%);
+}
+.band::after{
+  content:"";position:absolute;inset:0;
+  background:linear-gradient(180deg,rgba(12,19,15,.22) 0%,rgba(12,19,15,.58) 52%,rgba(12,19,15,.95) 100%);
+}
+.band .in{
+  position:relative;z-index:2;max-width:var(--max);margin:0 auto;width:100%;
+  padding:var(--s7) var(--s6) var(--s7);
+}
+.band h2{
+  font-family:var(--font-display);font-weight:400;font-size:var(--fs-display);
+  line-height:.92;letter-spacing:-.015em;margin:0;max-width:12ch;text-wrap:balance;
+}
+.band .who{margin:var(--s3) 0 0;font-size:var(--fs-sm);color:var(--sage-300);letter-spacing:.04em}
+.band .ed{max-width:62ch;color:#C8D6CE;margin:var(--s4) 0 0;line-height:1.65}
+.band .acts{display:flex;gap:var(--s2);margin-top:var(--s5);flex-wrap:wrap}
+
+.btn{
+  height:38px;padding:0 var(--s5);font-size:var(--fs-sm);border:1px solid var(--sage-200);
+  background:var(--sage-200);color:var(--sage-900);
+}
+.btn:hover{background:var(--white);border-color:var(--white)}
+.btn.g{background:transparent;color:var(--ink);border-color:rgba(234,240,236,.4)}
+.btn.g:hover{border-color:var(--ink)}
+
+/* ---- the rotation caption. the numbering earns its numbers:
+       the programme is genuinely ordered and genuinely dated. ---- */
+.cap{
+  display:flex;gap:var(--s4);align-items:baseline;flex-wrap:wrap;
+  max-width:var(--max);margin:0 auto;width:100%;
+  padding:var(--s3) var(--s6);font-size:var(--fs-micro);letter-spacing:.13em;color:var(--muted);
+  border-top:1px solid var(--rule);background:var(--ground);
+}
+.cap .no{color:var(--sage-300)}
+.cap .need{color:var(--sage-200)}
+.cap .sp{flex:1}
+
+/* ---- the back catalogue. deliberately unglamorous ---- */
+.idx{max-width:var(--max);margin:0 auto;padding:var(--s8) var(--s6) var(--s9)}
+.idx h3{
+  font-size:var(--fs-xs);letter-spacing:.14em;color:var(--muted);font-weight:400;margin:0 0 var(--s3);
+  padding-bottom:var(--s3);border-bottom:1px solid var(--rule);
+  display:flex;justify-content:space-between;
+}
+table{width:100%;border-collapse:collapse;font-size:var(--fs-sm)}
+tr{border-bottom:1px solid var(--rule)}
+tbody tr:hover{background:var(--ground-2)}
+td{padding:var(--s3) var(--s2);vertical-align:baseline}
+td.t{color:var(--ink)}
+td.a{color:var(--muted)}
+td.p,td.s{text-align:right;color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums}
+td.s{color:var(--sage-300)}
+@media(max-width:640px){td.a{display:none}}
+.thumb{width:26px;height:38px;object-fit:cover;margin-right:var(--s3);vertical-align:-13px;
+  border:1px solid var(--rule)}
+
+.foot{border-top:1px solid var(--rule);padding:var(--s5) var(--s6);max-width:var(--max);
+  margin:0 auto;font-size:var(--fs-micro);letter-spacing:.1em;color:var(--muted);
+  display:flex;justify-content:space-between;flex-wrap:wrap;gap:var(--s3)}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <span class="mark">eski<i>!</i></span>
+  <nav>
+    <a href="#">this week</a>
+    <a href="#">index</a>
+    <a href="#">contribute</a>
+    <a href="#">sign in</a>
+  </nav>
+</header>
+
+<section class="prog">
+  <div class="eyebrow">programme 14 · week of 3 august 2026</div>
+  <h1>comics you can hear</h1>
+  <p>seven comics this week. every page turn moves the score, every line is performed
+    by a real person, and you choose who performs it. three of the seven are still
+    missing a voice.</p>
+</section>
+
+<!-- band 1 -->
+<article class="band" style="--pos:center 18%">
+  <img src="covers/concrete-sky.jpg" alt="">
+  <div class="in">
+    <h2>blame! master edition</h2>
+    <p class="who">tsutomu nihei · 368 pages · 12 chapters</p>
+    <p class="ed">nihei lets the architecture do the work: corridors that run for chapters, stairs that go nowhere, and almost nobody talking. the score carries it, which is exactly the case eski was built for. one part, dhomochevsky, is still open.</p>
+    <div class="acts">
+      <button class="btn">read it</button>
+      <button class="btn g">voice a part</button>
+    </div>
+  </div>
+</article>
+<div class="cap">
+  <span class="no n">no. 01</span><span>added monday</span>
+  <span class="need">needs one voice — dhomochevsky, 9 lines</span>
+  <span class="sp"></span><span class="n">212 kudos</span>
+</div>
+
+<!-- band 2 -->
+<article class="band" style="--pos:center 30%">
+  <img src="covers/jigoku.jpg" alt="">
+  <div class="in">
+    <h2>falling in love on the path to hell</h2>
+    <p class="who">duggan &amp; brown · 152 pages · 12 chapters</p>
+    <p class="ed">asami dies an onna-musha and macraith dies a gunslinger, a world and three centuries apart, and they wake in the same purgatory. duggan writes them talking their way through it, which makes it the most dialogue-heavy thing on the shelf. three mixes exist; start with the first.</p>
+    <div class="acts">
+      <button class="btn">read it</button>
+      <button class="btn g">compare the three mixes</button>
+    </div>
+  </div>
+</article>
+<div class="cap">
+  <span class="no n">no. 02</span><span>added monday</span>
+  <span class="need">fully cast · 3 mixes</span>
+  <span class="sp"></span><span class="n">1,104 kudos</span>
+</div>
+
+<!-- band 3 -->
+<article class="band" style="--pos:center 26%">
+  <img src="covers/talking-axe.jpg" alt="">
+  <div class="in">
+    <h2>barbaric: axe to grind</h2>
+    <p class="who">moreci, gooden, duke &amp; campbell· 128 pages</p>
+    <p class="ed">a sentient weapon that will not shut up, which turns out to be the ideal
+      test case for the whole platform: axe is voiced separately from everyone it talks
+      over, so the mix you pick genuinely changes the joke. four submitted casts so far and
+      no two are alike.</p>
+    <div class="acts">
+      <button class="btn">read it</button>
+      <button class="btn g">voice axe</button>
+    </div>
+  </div>
+</article>
+<div class="cap">
+  <span class="no n">no. 03</span><span>leaving sunday</span>
+  <span class="need">4 casts submitted</span>
+  <span class="sp"></span><span class="n">640 kudos</span>
+</div>
+
+<!-- the back catalogue -->
+<section class="idx">
+  <h3><span>EVERYTHING ELSE</span><span class="n">41 comics</span></h3>
+  <table>
+    <tbody>
+      <tr>
+        <td class="t"><img class="thumb" src="covers/second-dark.jpg" alt="">the dark knight returns</td>
+        <td class="a">miller, janson &amp; varley</td>
+        <td class="p n">224 pp</td>
+        <td class="s">fully cast</td>
+      </tr>
+      <tr>
+        <td class="t"><img class="thumb" src="covers/sunbound.jpg" alt="">all-star superman</td>
+        <td class="a">morrison, quitely &amp; grant</td>
+        <td class="p n">320 pp</td>
+        <td class="s">needs 3 voices</td>
+      </tr>
+      <tr>
+        <td class="t"><img class="thumb" src="covers/talking-axe.jpg" alt="">barbaric: murderable offenses</td>
+        <td class="a">moreci, gooden, duke &amp; campbell</td>
+        <td class="p n">112 pp</td>
+        <td class="s">score only</td>
+      </tr>
+      <tr>
+        <td class="t"><img class="thumb" src="covers/concrete-sky.jpg" alt="">noise</td>
+        <td class="a">tsutomu nihei</td>
+        <td class="p n">224 pp</td>
+        <td class="s">needs 1 voice</td>
+      </tr>
+      <tr>
+        <td class="t"><img class="thumb" src="covers/jigoku.jpg" alt="">falling in love, book two</td>
+        <td class="a">duggan &amp; brown</td>
+        <td class="p n">184 pp</td>
+        <td class="s">fully cast</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<footer class="foot">
+  <span>eski! — comics you can hear</span>
+  <span>programme changes mondays · terms · privacy · takedown</span>
+</footer>
+
+</body>
+</html>

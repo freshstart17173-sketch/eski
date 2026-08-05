@@ -1,0 +1,360 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>eski — five design directions</title>
+<link rel="stylesheet" href="../../tokens.css">
+<style>
+:root{--rule:var(--line-1)}
+[data-theme="dark"]{--rule:var(--line-dark)}
+html{background:var(--paper)}
+body{margin:0;background:var(--paper);color:var(--ink);
+  font-family:var(--font-body);font-size:var(--fs);line-height:1.6;
+  -webkit-font-smoothing:antialiased}
+.n{font-variant-numeric:tabular-nums}
+.wrap{max-width:var(--max);margin:0 auto;padding:var(--s7) var(--s5) var(--s9)}
+.mark{font-family:var(--font-display);font-size:22px}
+.mark i{font-style:normal;color:var(--accent)}
+h1{font-family:var(--font-display);font-weight:400;font-size:var(--fs-display);
+  line-height:.95;letter-spacing:-.015em;margin:var(--s5) 0 0;max-width:16ch;text-wrap:balance}
+.lead{max-width:66ch;color:var(--soft-ink);margin:var(--s4) 0 0;font-size:var(--fs-lg)}
+.rule{width:min(50%,220px);height:5px;background:var(--accent);border:0;margin:var(--s6) 0 0}
+
+.dir{margin-top:var(--s8);padding-top:var(--s5);border-top:1px solid var(--sage-300)}
+[data-theme="dark"] .dir{border-top-color:var(--sage-700)}
+.dhead{display:flex;gap:var(--s4);align-items:baseline;flex-wrap:wrap}
+.dhead h2{font-family:var(--font-display);font-weight:400;font-size:var(--fs-title);
+  margin:0;line-height:1}
+.dhead .skill{font-size:var(--fs-xs);letter-spacing:.08em;color:var(--muted);
+  border:1px solid var(--rule);padding:2px 8px}
+.dhead .sp{flex:1}
+.dhead a.open{font-size:var(--fs-sm);color:var(--accent-deep);text-decoration:none;
+  border-bottom:1px solid var(--accent)}
+[data-theme="dark"] .dhead a.open{color:var(--sage-300)}
+.one{font-size:var(--fs-lg);color:var(--ink);max-width:62ch;margin:var(--s3) 0 0}
+
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--rule);
+  border:1px solid var(--rule);margin-top:var(--s5)}
+@media(max-width:760px){.grid3{grid-template-columns:1fr}}
+.cellx{background:var(--surface);padding:var(--s4)}
+.cellx h3{font-size:var(--fs-xs);letter-spacing:.09em;color:var(--muted);font-weight:400;margin:0 0 var(--s2)}
+.cellx p{margin:0;font-size:var(--fs-sm);line-height:1.55;color:var(--soft-ink)}
+.cellx p + p{margin-top:var(--s2)}
+.cellx b{color:var(--ink);font-weight:500}
+
+.surf{margin-top:var(--s3);font-size:var(--fs-xs);color:var(--muted);letter-spacing:.05em}
+
+table{width:100%;border-collapse:collapse;margin-top:var(--s4);font-size:var(--fs-sm)}
+th,td{text-align:left;padding:var(--s3) var(--s2);border-bottom:1px solid var(--rule);vertical-align:baseline}
+th{font-size:var(--fs-xs);letter-spacing:.08em;color:var(--muted);font-weight:400}
+td.no{color:var(--danger)}
+.scroll{overflow-x:auto}
+
+.note{margin-top:var(--s8);padding:var(--s5);border:1px solid var(--rule);background:var(--surface)}
+.note h3{font-size:var(--fs-xs);letter-spacing:.09em;color:var(--muted);font-weight:400;margin:0 0 var(--s3)}
+.note p{margin:0 0 var(--s3);max-width:70ch;color:var(--soft-ink);font-size:var(--fs-sm);line-height:1.6}
+.note p:last-child{margin-bottom:0}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<span class="mark">eski<i>!</i></span>
+<h1>design work in progress</h1>
+<p class="lead">Working comps, not the live site. Two separate passes: sitewide visual styles
+  (how eski should look) and interaction directions (how eski should work). Each one is written
+  up as a skill in <b>.claude/skills/</b> and applied to real surfaces with the real catalogue.</p>
+<hr class="rule">
+
+<!-- the hub index -->
+<section class="dir" style="border-top:0;padding-top:0">
+  <div class="dhead"><h2>sitewide styles</h2>
+    <span class="skill">five surfaces each: home, browse, detail, reader, profile</span></div>
+  <div class="scroll">
+    <table>
+      <thead><tr><th>style</th><th>built from</th><th>skill</th></tr></thead>
+      <tbody>
+        <tr><td><a href="style-press.html"><b>press</b> — the combined house style</a></td>
+            <td>Screen Slate + Breakdown Press + Standards Manual + Le Cinéma Club</td>
+            <td>eski-press</td></tr>
+        <tr><td><a href="style-broadsheet.html">broadsheet</a></td>
+            <td>Screen Slate, Fonts In Use</td><td>eski-broadsheet</td></tr>
+        <tr><td><a href="style-repertory.html">repertory</a></td>
+            <td>Metrograph, It's Nice That</td><td>eski-repertory</td></tr>
+        <tr><td><a href="style-flatfield.html">flat field</a></td>
+            <td>Breakdown Press, Standards Manual, Hato Press</td><td>eski-flatfield</td></tr>
+        <tr><td><a href="style-station.html">station</a></td>
+            <td>NTS Radio, Shonen Jump+</td><td>eski-station</td></tr>
+        <tr><td><a href="style-gallery.html">gallery</a></td>
+            <td>Le Cinéma Club, MUBI, Unit Editions</td><td>eski-gallery</td></tr>
+        <tr><td><a href="styles.html">the reference board</a></td>
+            <td>screenshots of all of the above, with the argument for each</td><td>—</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="dir">
+  <div class="dhead"><h2>interaction directions</h2>
+    <span class="skill">one surface each, detailed below</span></div>
+  <div class="scroll">
+    <table>
+      <tbody>
+        <tr><td><a href="ledger.html">the ledger</a> — comic detail as a discography</td><td>Discogs</td><td>eski-ledger</td></tr>
+        <tr><td><a href="marquee.html">the marquee</a> — home as a programme</td><td>MUBI</td><td>eski-marquee</td></tr>
+        <tr><td><a href="rack.html">the rack</a> — browsing is listening</td><td>Bandcamp</td><td>eski-rack</td></tr>
+        <tr><td><a href="session.html">the session</a> — scoring as a clip grid</td><td>Ableton</td><td>eski-session</td></tr>
+        <tr><td><a href="script.html">the script</a> — voicing as a document</td><td>Descript</td><td>eski-script</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<hr class="rule" style="margin-top:var(--s8)">
+
+<!-- 1 -->
+<section class="dir">
+  <div class="dhead">
+    <h2>the ledger</h2>
+    <span class="skill">.claude/skills/eski-ledger</span>
+    <span class="sp"></span>
+    <a class="open" href="ledger.html">open the mockup →</a>
+  </div>
+  <p class="one">A comic is a release, a mix is a pressing, and every person who touched it
+    gets a row.</p>
+  <div class="grid3">
+    <div class="cellx">
+      <h3>THE REFERENCE</h3>
+      <p><b>Discogs release pages</b>, plus Genius credits and the liner-note tradition behind both.</p>
+      <p>Discogs is the only mainstream product that treats "one work, many versions, dozens of
+        humans who each did one job" as the primary UI problem. No cards, no hero, no marketing
+        copy — a masthead and a credits block where every line reads role, then person.</p>
+    </div>
+    <div class="cellx">
+      <h3>WHY IT FITS</h3>
+      <p>The current detail page shows a cast as off-by-default checkboxes, which frames credit
+        as a settings panel. It isn't one. Credit is the whole economy — contributors show up
+        because their name lands somewhere permanent.</p>
+      <p>The version bar replaces the mix picker: you are always looking at one mix, and
+        switching is one click.</p>
+    </div>
+    <div class="cellx">
+      <h3>WHAT IT MOVES</h3>
+      <p><b>Roadmap 5</b> — the comic page with real urls; this is what lives at /c/&lt;slug&gt;.</p>
+      <p><b>Roadmap 6</b> — an uncast character is just an empty row with a "voice this" action.
+        The contribute hub becomes a query rendered inline, not a second page.</p>
+      <p><b>Roadmap 12</b> — kudos and vouches already have a right-aligned number column.</p>
+    </div>
+  </div>
+  <p class="surf">owns: comic detail, cast bar, contribute hub, profiles</p>
+</section>
+
+<!-- 2 -->
+<section class="dir">
+  <div class="dhead">
+    <h2>the marquee</h2>
+    <span class="skill">.claude/skills/eski-marquee</span>
+    <span class="sp"></span>
+    <a class="open" href="marquee.html">open the mockup →</a>
+  </div>
+  <p class="one">With twenty comics, a grid advertises an empty library and a marquee advertises
+    taste.</p>
+  <div class="grid3">
+    <div class="cellx">
+      <h3>THE REFERENCE</h3>
+      <p><b>MUBI</b>, and behind it the Criterion Channel.</p>
+      <p>MUBI's founding constraint was thirty films, one added and one removed daily. That
+        forced a UI most streaming design refuses: no rows of rows, one title per screen, and a
+        paragraph of real writing under it. The scarcity is the pitch.</p>
+    </div>
+    <div class="cellx">
+      <h3>WHY IT FITS</h3>
+      <p>Cold start is the actual product problem. A grid of twelve covers makes the platform
+        look abandoned; "seven comics this week, three still need voices" makes the same
+        catalogue look programmed.</p>
+      <p>It commits to dark in both themes so the cover art is the only saturated thing on
+        screen — which is what tokens.css already argues for.</p>
+    </div>
+    <div class="cellx">
+      <h3>WHAT IT MOVES</h3>
+      <p><b>Roadmap 5</b> — a marquee entry <i>is</i> the open-graph card: cover, title, one
+        sentence, cast status.</p>
+      <p><b>Roadmap 6</b> — "needs one voice, dhomochevsky, 9 lines" sits in the rotation caption, so
+        recruiting happens on the home page rather than a page nobody visits.</p>
+    </div>
+  </div>
+  <p class="surf">owns: signed-out home, browse, collections, share previews</p>
+</section>
+
+<!-- 3 -->
+<section class="dir">
+  <div class="dhead">
+    <h2>the rack</h2>
+    <span class="skill">.claude/skills/eski-rack</span>
+    <span class="sp"></span>
+    <a class="open" href="rack.html">open the mockup →</a>
+  </div>
+  <p class="one">You cannot judge a voice actor from their name, so every name on the site should
+    play.</p>
+  <div class="grid3">
+    <div class="cellx">
+      <h3>THE REFERENCE</h3>
+      <p><b>Bandcamp</b>, with NTS Radio for the chrome.</p>
+      <p>Bandcamp's structural decision is that the player is part of the page, not a
+        destination. Play affordances live on list rows, tags are the taxonomy, and the audio
+        never stops when you navigate. The plainness is why the music reads as the point.</p>
+    </div>
+    <div class="cellx">
+      <h3>WHY IT FITS</h3>
+      <p>Checkboxes ask you to choose between two names you have never heard. A rack lets you
+        hear both in eight seconds without leaving the page.</p>
+      <p>Open roles and cast members become the same component — a row with a play triangle —
+        so the contribute hub costs almost no new UI.</p>
+    </div>
+    <div class="cellx">
+      <h3>WHAT IT MOVES</h3>
+      <p><b>Roadmap 8</b> — preview clips are the whole thesis, not a nice-to-have.</p>
+      <p><b>Roadmap 6</b> — the contribute hub is one list of the same row.</p>
+      <p><b>Roadmap 7</b> — swapping mixes mid-read is the same rack, docked in the reader.</p>
+    </div>
+  </div>
+  <p class="surf">owns: browse, contribute hub, profiles, previews everywhere</p>
+</section>
+
+<!-- 4 -->
+<section class="dir">
+  <div class="dhead">
+    <h2>the session</h2>
+    <span class="skill">.claude/skills/eski-session</span>
+    <span class="sp"></span>
+    <a class="open" href="session.html">open the mockup →</a>
+  </div>
+  <p class="one">A comic scored page by page is a matrix, not a timeline, and musicians have read
+    that matrix since 2001.</p>
+  <div class="grid3">
+    <div class="cellx">
+      <h3>THE REFERENCE</h3>
+      <p><b>Ableton Live's Session View</b>, with Splice for browse-and-audition.</p>
+      <p>Live has two views of one song: a timeline, and a grid where columns are tracks, rows
+        are scenes, and firing a scene launches everything in that row. When a piece is built
+        from discrete triggered chunks, the grid beats the timeline.</p>
+    </div>
+    <div class="cellx">
+      <h3>WHY IT FITS</h3>
+      <p>The roadmap already says the soundtrack timeline goes away and each page's panel
+        becomes where you author that page. That is a description of Session View — and an eski
+        page turn <i>is</i> a scene launch.</p>
+      <p>Status colour stays exactly where tokens.css put it: two shades of one hue for the
+        soundtrack states, a different hue for one-shots.</p>
+    </div>
+    <div class="cellx">
+      <h3>WHAT IT MOVES</h3>
+      <p><b>Roadmap 10</b> — the whole composer streamline, in one shape rather than eleven
+        separate fixes.</p>
+      <p><b>Roadmap 11</b> — pre-export validation stops being an error message. Two starts in
+        one column, tracks past the last page and empty rows are all visible on the grid.</p>
+    </div>
+  </div>
+  <p class="surf">owns: composer studio, page grid, media bay, export checks</p>
+</section>
+
+<!-- 5 -->
+<section class="dir">
+  <div class="dhead">
+    <h2>the script</h2>
+    <span class="skill">.claude/skills/eski-script</span>
+    <span class="sp"></span>
+    <a class="open" href="script.html">open the mockup →</a>
+  </div>
+  <p class="one">The dialogue is already written down, so the script is the timeline and nobody
+    should have to scrub a waveform to find line 14.</p>
+  <div class="grid3">
+    <div class="cellx">
+      <h3>THE REFERENCE</h3>
+      <p><b>Descript</b>, with screenplay format for the page furniture.</p>
+      <p>Descript's move is that the transcript is the edit. It works because speech already has
+        a canonical textual form, so the text view loses almost nothing and gains random access,
+        search and readability. Screenplay format contributes character cues and parentheticals.</p>
+    </div>
+    <div class="cellx">
+      <h3>WHY IT FITS</h3>
+      <p>A contributor's job is: read these lines, as this character, in order. Handing them a
+        DAW is a category error and the most likely reason a casual contributor bounces.</p>
+      <p>It also makes author review tractable. Reading a script with a play triangle per line
+        is a two-minute job; auditing a forty-minute continuous track is not.</p>
+    </div>
+    <div class="cellx">
+      <h3>WHAT IT MOVES</h3>
+      <p><b>Roadmap 1</b> — consent is legible here: a performer sees whose comic and which role
+        before recording a word.</p>
+      <p><b>Roadmap 3</b> — per-line takes give moderation something specific to act on instead
+        of a whole track.</p>
+      <p><b>Roadmap 9</b> — take stacks are the natural unit for autosave and resumable upload.</p>
+    </div>
+  </div>
+  <p class="surf">owns: voiceover studio, recording flow, author review of submitted parts</p>
+</section>
+
+<!-- what changes vs. the current docs -->
+<section class="dir">
+  <div class="dhead"><h2>against the current design docs</h2></div>
+  <div class="scroll">
+    <table>
+      <thead>
+        <tr><th>In the .dc.html mockups</th><th>What these directions do instead</th><th>Why</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Pink accent marking "the human layer"</td>
+          <td class="no">Dropped in all five</td>
+          <td>A second brand hue buys one signal and costs the rule that made the system
+            coherent — one hue, art is the only colour. The human layer is better marked by
+            an avatar, a name and a play triangle, all of which are already there.</td>
+        </tr>
+        <tr>
+          <td>Mix as a checkbox list</td>
+          <td>A version bar (ledger) or an auditionable row (rack)</td>
+          <td>Checkboxes ask you to choose between names you have never heard, and imply a
+            mix is a setting rather than a credited performance.</td>
+        </tr>
+        <tr>
+          <td>Comic detail as a right-hand drawer</td>
+          <td>A page with an address</td>
+          <td>A drawer cannot be linked, previewed, or arrived at, which is exactly what
+            roadmap item 5 exists to fix.</td>
+        </tr>
+        <tr>
+          <td>One studio split into three role-locked mockups</td>
+          <td>Two shapes: a grid for scoring, a document for voicing</td>
+          <td>Roles differ by the kind of work, not by permissions. Composing is placement;
+            voicing is reading aloud. Those want genuinely different surfaces.</td>
+        </tr>
+        <tr>
+          <td>VOICED / SCORED badges on covers</td>
+          <td>Words in a caption: "needs one voice, dhomochevsky, 9 lines"</td>
+          <td>A badge says a state. A sentence says a state and asks for something.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<div class="note">
+  <h3>HOW TO USE THESE</h3>
+  <p>Each direction is a skill in <b>.claude/skills/</b>, so you can say "build the contribute
+    hub with eski-rack" and get the whole rule set applied rather than a screenshot copied. The
+    skills are additive to <b>eski-brand</b> — they inherit tokens.css and override only what
+    the style needs.</p>
+  <p>They are not mutually exclusive. The ledger and the rack are the same information at two
+    densities and would ship together. The session and the script cover different halves of the
+    studio and both are needed. The marquee is the only one that competes with anything — it
+    replaces the cover grid on the home page and nothing else.</p>
+  <p>If you want one to start with: <b>the ledger</b>. It is the comic page from roadmap item 5,
+    it is the highest-traffic surface you do not yet have, and it absorbs the contribute hub for
+    free.</p>
+</div>
+
+</div>
+</body>
+</html>
