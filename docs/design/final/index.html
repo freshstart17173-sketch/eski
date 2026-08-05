@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>eski — final design</title>
+<link rel="stylesheet" href="../../../tokens.css">
+<link rel="stylesheet" href="broadsheet.css">
+<style>
+body{overflow:auto}
+.wrap{max-width:760px;margin:0 auto;padding:var(--s6) var(--s4) var(--s8)}
+h1{font-family:var(--font-display);font-weight:400;font-size:var(--fs-title);margin:0}
+.sub{color:var(--label);font-size:var(--fs-xs);margin:var(--s2) 0 0;letter-spacing:.04em}
+h2{font-size:var(--fs-micro);letter-spacing:.16em;text-transform:uppercase;font-weight:400;
+  color:var(--label);margin:var(--s6) 0 0;padding-bottom:var(--s2);
+  border-bottom:1px solid var(--rule)}
+ul{list-style:none;margin:0;padding:0}
+li{border-bottom:1px solid var(--rule-hair)}
+li a{display:flex;align-items:baseline;gap:var(--s3);padding:var(--s2) 0;text-decoration:none;
+  color:var(--ink);transition:padding var(--t-fast) var(--ease)}
+li a:hover{padding-left:var(--s2)}
+li a b{font-weight:500;white-space:nowrap}
+li a span{color:var(--soft-ink);font-size:var(--fs-xs);min-width:0}
+li a .go{margin-left:auto;color:var(--label);font-size:var(--fs-micro)}
+li a:hover .go{color:var(--ink)}
+</style>
+</head>
+<body>
+<header class="top">
+  <a class="mark" href="../../../index.html">eski<i>!</i></a>
+  <nav><a href="../index.html">all design work</a><a href="../../../index.html">site</a></nav>
+</header>
+
+<div class="wrap">
+  <h1>final design</h1>
+  <p class="sub">The agreed surfaces. Broadsheet is the base style; the studios are
+    still being picked from three skins.</p>
+
+  <h2>the site</h2>
+  <ul>
+    <li><a href="home.html"><b>home</b>
+      <span>home, browse, voiceover needed, shelf, studio, profile, and the details
+        pane where the mix is picked</span><span class="go">open</span></a></li>
+  </ul>
+
+  <h2>studios · agreed</h2>
+  <ul>
+    <li><a href="studio-author.html"><b>author</b>
+      <span>import pages, write the cast, transcribe</span><span class="go">open</span></a></li>
+    <li><a href="studio-score.html"><b>composer</b>
+      <span>layers of sound over page ranges</span><span class="go">open</span></a></li>
+    <li><a href="studio-voice.html"><b>voiceover</b>
+      <span>one character, page by page, takes and trim</span><span class="go">open</span></a></li>
+  </ul>
+
+  <h2>studios · nine to pick from</h2>
+  <ul>
+    <li><a href="studios/index.html"><b>the picker</b>
+      <span>three studios × three skins, side by side</span><span class="go">open</span></a></li>
+    <li><a href="studios/author-1.html"><b>author 1</b><span>press</span><span class="go">open</span></a></li>
+    <li><a href="studios/author-2.html"><b>author 2</b><span>workbench</span><span class="go">open</span></a></li>
+    <li><a href="studios/author-3.html"><b>author 3</b><span>console</span><span class="go">open</span></a></li>
+    <li><a href="studios/score-1.html"><b>composer 1</b><span>press</span><span class="go">open</span></a></li>
+    <li><a href="studios/score-2.html"><b>composer 2</b><span>workbench</span><span class="go">open</span></a></li>
+    <li><a href="studios/score-3.html"><b>composer 3</b><span>console</span><span class="go">open</span></a></li>
+    <li><a href="studios/voice-1.html"><b>voiceover 1</b><span>press</span><span class="go">open</span></a></li>
+    <li><a href="studios/voice-2.html"><b>voiceover 2</b><span>workbench</span><span class="go">open</span></a></li>
+    <li><a href="studios/voice-3.html"><b>voiceover 3</b><span>console</span><span class="go">open</span></a></li>
+  </ul>
+
+  <h2>written down</h2>
+  <ul>
+    <li><a href="../../../SPEC.md"><b>SPEC.md</b>
+      <span>the master doc: the three roles, the layered audio model, manifest v3</span>
+      <span class="go">open</span></a></li>
+    <li><a href="TODO.md"><b>TODO.md</b>
+      <span>what is agreed, what is next</span><span class="go">open</span></a></li>
+  </ul>
+</div>
+</body>
+</html>
