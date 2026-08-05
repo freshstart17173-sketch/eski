@@ -24,11 +24,6 @@ function topBar(opts){
   </header>`;
 }
 
-function legend(kinds){
-  return `<div class="legend">${kinds.map(k =>
-    `<span style="--c:${roleColor(k)}"><span class="sw"></span>${ROLE[k].label}</span>`).join('')}</div>`;
-}
-
 /* the page, centred, at the size you would actually look at it */
 function pageHtml(page, bar){
   return `<div class="pane centre">
@@ -48,7 +43,7 @@ function pageHtml(page, bar){
 
 /* the timeline. a row of pages, nothing under it, and the page you are on
    takes a border. the dots under a thumbnail say what is on that page
-   without opening it — one per line, one per effect, in their role colour. */
+   without opening it — one per thing, in its own colour. */
 function timelineHtml(current, dotsFor){
   return `<div class="timeline" id="timeline">${COMIC.pages.map(p => `
     <button class="tl-pg" data-page="${p.n}" aria-current="${p.n === current}">

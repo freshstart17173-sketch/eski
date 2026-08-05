@@ -1,51 +1,55 @@
 /* ============================================================
    the composer studio.
 
-   the model is unchanged — sound stacks in layers, and a clip owns a
-   page range — but the surface is no longer a board of lanes. the
-   page is the subject, and the panel on the right answers the only
-   question a composer actually asks at any moment: what is playing
-   on this page, and does it start or stop here.
+   the model underneath still has kinds — a bed, a score, an effect, a
+   voice — because the reader and the manifest need them. the composer
+   does not, and is never shown them. to a composer it is all audio:
+   drop a file, say where it starts, say where it stops, make it as
+   short or as long as you like. the colour on a row is theirs to
+   assign, not a category they have to learn.
 
-   a range is still a range. you set it by standing on a page and
-   saying "starts here" or "ends here", which is how you would
-   describe it out loud, and the row shows the span it produced.
+   the page is the subject. the panel answers the only question there
+   is at any moment: what is playing here, and does it start or stop
+   on this page.
    ============================================================ */
 const PAGES = COMIC.pageCount;
 let page = 1;
 let selected = null;
 let bayPick = null;
 
-const clipsOf = () => LAYERS.flatMap(l => l.clips.map(c => ({c, l})));
-const findClip = id => clipsOf().find(x => x.c.id === id);
-const onPage = p => LAYERS.filter(l => !l.muted || true).flatMap(l =>
-  l.clips.filter(c => p >= c.from && p <= c.to).map(c => ({c, l})));
+/* one flat list of audio, built from the layered model at load. the layer a
+   clip belongs to is still tracked so an export can write the manifest, but
+   it never surfaces. */
+const AUDIO = LAYERS.flatMap(l => l.clips.map(c => ({
+  id:c.id, name:c.name, from:c.from, to:c.to, gain:c.gain, loop:c.loop, dur:c.dur,
+  cue:c.cue, layer:l.id, kind:l.kind, locked:!!l.locked,
+  color:c.color || roleColor(l.kind)
+})));
+const find = id => AUDIO.find(a => a.id === id);
+const onPage = p => AUDIO.filter(a => p >= a.from && p <= a.to);
 const covered = () => COMIC.pages.filter(p =>
-  LAYERS.some(l => l.kind !== 'voice' && !l.muted &&
-    l.clips.some(c => p.n >= c.from && p.n <= c.to))).length;
-const cuesOn = p => openCues().filter(q => q.p === p);
-
-/* the dots under a page in the timeline: one per thing audible there */
-const dots = p => onPage(p).map(({l}) => roleColor(l.kind));
+  AUDIO.some(a => !a.locked && p.n >= a.from && p.n <= a.to)).length;
+const cuesOn = p => openCues().filter(q => q.p === p)
+  .filter(q => !AUDIO.some(a => a.cue === q.id));
+const dots = p => onPage(p).map(a => a.color);
 
 function render(){
   const here = onPage(page);
   document.getElementById('app').innerHTML = `
     ${topBar({
       sub:`${PAGES} pages · scoring`,
-      mid:legend(['bed','score','sfx','voice']),
-      actions:`${btn('add files','upload','q','id="add"')}
-               ${btn('publish score','check','p','id="publish"')}`
+      actions:`${btn('add files','','q','id="add"')}
+               ${btn('publish score','','p','id="publish"')}`
     })}
     <div class="subbar">
       <span><b>${covered()}</b> of <b>${PAGES}</b> pages have sound</span>
       <span class="track"><i style="width:${covered() / PAGES * 100}%"></i></span>
-      <span>${LAYERS.length} layers · ${clipsOf().length} clips</span>
+      <span><b>${AUDIO.filter(a => !a.locked).length}</b> pieces of audio</span>
     </div>
 
     <div class="frame">
       <div class="pane bay">
-        <div class="panehead">${icon('music')}<b>sound bay</b><span class="sp"></span>
+        <div class="panehead"><b>sound bay</b><span class="sp"></span>
           <span>${BAY.length} files</span></div>
         <div class="baylist" id="baylist"></div>
       </div>
@@ -53,7 +57,7 @@ function render(){
       ${pageHtml(page, `<span>${here.length} playing here</span>`)}
 
       <div class="pane">
-        <div class="panehead">${icon('layers')}<b>on page ${page}</b><span class="sp"></span>
+        <div class="panehead"><b>on page ${page}</b><span class="sp"></span>
           <span>${here.length ? here.length + ' playing' : 'silent'}</span></div>
         <div class="panel" id="panel"></div>
       </div>
@@ -71,61 +75,59 @@ function paintPanel(){
   const here = onPage(page), cues = cuesOn(page);
   document.getElementById('panel').innerHTML =
     (here.length ? here.map(itemHtml).join('')
-      : `<div class="section">Nothing plays on this page. Arm a file in the bay and
-          start it here, or drop one onto the page.</div>`)
+      : `<div class="section">Nothing plays on this page. Pick a file in the bay
+          and start it here.</div>`)
 
-    + `<div class="sectionhead">${icon('plus')}<b>start something here</b>
-        <span class="sp"></span>
-        <span>${bayPick ? esc(BAY.find(b => b.id === bayPick).name) : 'nothing armed'}</span></div>`
-    + `<div class="section row">${LAYERS.filter(l => !l.locked).map(l =>
-        `<button class="btn q" data-start="${l.id}" ${bayPick ? '' : 'disabled'}
-          style="--c:${roleColor(l.kind)}">
-          <span class="glyph" style="color:${roleColor(l.kind)}">${icon(ROLE[l.kind].icon)}</span>
-          ${esc(l.name)}</button>`).join('')}
-        ${btn('new layer','plus','q','id="newlayer"')}</div>`
+    + `<div class="sectionhead"><b>start something here</b><span class="sp"></span>
+        <span>${bayPick ? esc(BAY.find(b => b.id === bayPick).name) : 'pick a file first'}</span></div>`
+    + `<div class="section row">
+        ${btn('start on page ' + page, '', 'p', 'id="start"' + (bayPick ? '' : ' disabled'))}
+        ${btn('just this page', '', 'q', 'id="start1"' + (bayPick ? '' : ' disabled'))}
+      </div>`
 
-    + (cues.length ? `<div class="sectionhead">${icon('zap')}<b>the author asked for</b>
+    + (cues.length ? `<div class="sectionhead"><b>the author asked for</b>
         <span class="sp"></span><span>on this page</span></div>`
       + cues.map(q => `<div class="cue" style="--c:${roleColor('sfx')}">
           <span class="letter">${esc(q.letter || '—')}</span>
           <span>${esc(q.t)}</span>
-          ${btn('fill','plus','q',`data-fill="${q.id}" ${bayPick ? '' : 'disabled'}`)}
+          ${btn('fill', '', 'q', `data-fill="${q.id}"${bayPick ? '' : ' disabled'}`)}
         </div>`).join('') : '')
 
-    + `<div class="sectionhead">${icon('sliders')}<b>everything, page by page</b></div>`
-    + `<div class="section">${openCues().length} effect${openCues().length === 1 ? '' : 's'}
-        still unfilled · ${PAGES - covered()} page${PAGES - covered() === 1 ? '' : 's'}
-        with nothing under them</div>`;
+    + `<div class="sectionhead"><b>the chapter</b></div>`
+    + `<div class="section">${openCues().length} thing${openCues().length === 1 ? '' : 's'}
+        the author asked for still unfilled · <b class="hot">${PAGES - covered()}</b>
+        page${PAGES - covered() === 1 ? '' : 's'} with nothing under them</div>`;
 }
 
-function itemHtml({c, l}){
-  const sel = selected === c.id, span = c.to - c.from + 1;
-  return `<div class="item${sel ? ' sel' : ''}${l.locked ? ' locked' : ''}"
-    data-clip="${c.id}" style="--c:${roleColor(l.kind)}">
-    <span class="glyph">${icon(ROLE[l.kind].icon)}</span>
-    <span class="nm"><b>${esc(c.name)}</b>
-      <span class="sub">${ROLE[l.kind].label} · ${esc(l.name)}${
-        span > 1 ? ` · pages ${c.from}–${c.to}` : ` · page ${c.from}`}${
-        c.loop ? ' · loops' : ''}</span></span>
+function itemHtml(a){
+  const sel = selected === a.id, span = a.to - a.from + 1;
+  return `<div class="item${sel ? ' sel' : ''}${a.locked ? ' locked' : ''}"
+    data-clip="${a.id}" style="--c:${a.color}">
+    <span class="nm"><b>${esc(a.name)}</b>
+      <span class="sub">${span > 1 ? `pages ${a.from}–${a.to}` : `page ${a.from}`}${
+        a.loop ? ' · loops' : ''}${a.locked ? ' · from a performer' : ''}</span></span>
     <span class="tools">
-      <button class="prev" data-playclip="${c.id}" data-dur="8">${icon('play')}</button>
-      ${l.locked ? icon('lock') : btn('', sel ? 'x' : 'sliders', 'q sq',
-        `data-open="${c.id}" title="${sel ? 'close' : 'adjust'}"`)}
+      <button class="prev" data-playclip="${a.id}" data-dur="8">${icon('play')}</button>
+      ${a.locked ? '' : btn(sel ? 'close' : 'edit', '', 'q', `data-open="${a.id}"`)}
     </span>
-    ${sel && !l.locked ? `
+    ${sel && !a.locked ? `
       <div class="itembody">
-        <div class="spanbar"><span>from <b>${c.from}</b></span>
-          <span class="len"><i style="left:${(c.from - 1) / PAGES * 100}%;
+        <div class="spanbar"><span>from <b>${a.from}</b></span>
+          <span class="len"><i style="left:${(a.from - 1) / PAGES * 100}%;
             width:${span / PAGES * 100}%"></i></span>
-          <span>to <b>${c.to}</b></span></div>
+          <span>to <b>${a.to}</b></span></div>
         <div class="row">
-          ${btn('starts here','left','q',`data-from-here="${c.id}"`)}
-          ${btn('ends here','right','q',`data-to-here="${c.id}"`)}
-          ${btn('loop','dot','q',`data-loop="${c.id}" aria-pressed="${c.loop}"`)}
-          ${btn('remove','trash','q',`data-del="${c.id}"`)}
+          ${btn('starts here', '', 'q', `data-from-here="${a.id}"`)}
+          ${btn('ends here', '', 'q', `data-to-here="${a.id}"`)}
+          ${btn('loop', '', 'q', `data-loop="${a.id}" aria-pressed="${a.loop}"`)}
+          ${btn('remove', '', 'q', `data-del="${a.id}"`)}
         </div>
-        <label class="field"><span class="k">gain ${c.gain > 0 ? '+' : ''}${c.gain} db</span>
-          <input type="range" min="-24" max="12" value="${c.gain}" data-gain="${c.id}"></label>
+        <label class="field"><span class="k">gain ${a.gain > 0 ? '+' : ''}${a.gain} db</span>
+          <input type="range" min="-24" max="12" value="${a.gain}" data-gain="${a.id}"></label>
+        <div class="swatches">${SWATCHES.map(c =>
+          `<button class="sw" data-color="${a.id}" data-c="${c}" style="background:${c}"
+            aria-pressed="${c.toLowerCase() === a.color.toLowerCase()}"
+            title="colour this row"></button>`).join('')}</div>
       </div>` : ''}
   </div>`;
 }
@@ -133,24 +135,23 @@ function itemHtml({c, l}){
 function renderBay(){
   document.getElementById('baylist').innerHTML = BAY.length
     ? BAY.map(b => bayRow(b, bayPick)).join('')
-    : `<div class="bayempty"><b>drop sound here</b>music, ambience, effects</div>`;
+    : `<div class="bayempty"><b>drop sound here</b>anything: music, ambience, a door</div>`;
 }
 
 /* ---------- placing ---------- */
-function startHere(layerId, cue){
+function startHere(len, cue){
   const b = BAY.find(x => x.id === bayPick);
-  const l = LAYERS.find(x => x.id === layerId);
-  if(!b || !l) return;
-  const span = l.kind === 'sfx' ? 0 : l.kind === 'bed' ? Math.min(PAGES - page, 9) : 5;
-  const c = {id:'c' + Math.random().toString(36).slice(2,6),
+  if(!b) return;
+  const a = {id:'c' + Math.random().toString(36).slice(2,6),
     name:b.name.replace(/\.[a-z0-9]+$/i, ''), from:page,
-    to:Math.min(PAGES, page + span), gain:l.kind === 'bed' ? -8 : 0,
-    loop:l.kind !== 'sfx', dur:b.dur, cue};
-  l.clips.push(c);
+    to:Math.min(PAGES, page + len), gain:0, loop:len > 0, dur:b.dur, cue,
+    layer:'L2', kind:cue ? 'sfx' : 'score', locked:false,
+    color:cue ? roleColor('sfx') : SWATCHES[AUDIO.length % SWATCHES.length]};
+  AUDIO.push(a);
   bayPick = null;
-  selected = c.id;
+  selected = a.id;
   render();
-  toast(`${c.name} starts on page ${page}`);
+  toast(len ? `${a.name} · pages ${a.from}–${a.to}` : `${a.name} · page ${a.from}`);
 }
 
 document.addEventListener('click', e => {
@@ -158,28 +159,17 @@ document.addEventListener('click', e => {
   const pl = t.closest('[data-playbay],[data-playclip]');
   if(pl){ play_(pl, +(pl.dataset.dur || 6)); return; }
 
-  const bayRowEl = t.closest('[data-bay]');
-  if(bayRowEl){
-    bayPick = bayPick === bayRowEl.dataset.bay ? null : bayRowEl.dataset.bay;
+  const row = t.closest('[data-bay]');
+  if(row){
+    bayPick = bayPick === row.dataset.bay ? null : row.dataset.bay;
     render();
-    toast(bayPick ? 'now say where it starts' : 'nothing armed');
+    toast(bayPick ? 'now say where it starts' : 'nothing picked');
     return;
   }
-  const start = t.closest('[data-start]');
-  if(start){ startHere(start.dataset.start); return; }
+  if(t.closest('#start')){ startHere(5); return; }
+  if(t.closest('#start1')){ startHere(0); return; }
   const fill = t.closest('[data-fill]');
-  if(fill){
-    const fx = LAYERS.find(l => l.kind === 'sfx');
-    startHere(fx.id, fill.dataset.fill);
-    return;
-  }
-  if(t.closest('#newlayer')){
-    const kind = 'bed';
-    LAYERS.splice(LAYERS.length - 1, 0, {id:'L' + Math.random().toString(36).slice(2,5),
-      name:`${ROLE[kind].label} ${LAYERS.filter(l => l.kind === kind).length + 1}`,
-      kind, volume:40, muted:false, clips:[]});
-    render(); toast('layer added'); return;
-  }
+  if(fill){ startHere(0, fill.dataset.fill); return; }
 
   const open = t.closest('[data-open]');
   if(open){
@@ -188,26 +178,25 @@ document.addEventListener('click', e => {
   }
   const fh = t.closest('[data-from-here]');
   if(fh){
-    const {c, l} = findClip(fh.dataset.fromHere);
-    c.from = Math.min(page, c.to);
-    if(l.kind === 'sfx') c.to = c.from;
-    render(); toast(`starts on page ${c.from}`); return;
+    const a = find(fh.dataset.fromHere);
+    a.from = Math.min(page, a.to);
+    render(); toast(`starts on page ${a.from}`); return;
   }
   const th = t.closest('[data-to-here]');
   if(th){
-    const {c, l} = findClip(th.dataset.toHere);
-    c.to = Math.max(page, c.from);
-    if(l.kind === 'sfx') c.from = c.to;
-    render(); toast(`ends on page ${c.to}`); return;
+    const a = find(th.dataset.toHere);
+    a.to = Math.max(page, a.from);
+    render(); toast(`ends on page ${a.to}`); return;
   }
   const lp = t.closest('[data-loop]');
-  if(lp){ findClip(lp.dataset.loop).c.loop = !findClip(lp.dataset.loop).c.loop;
-    paintPanel(); return; }
+  if(lp){ const a = find(lp.dataset.loop); a.loop = !a.loop; paintPanel(); return; }
+  const col = t.closest('[data-color]');
+  if(col){ find(col.dataset.color).color = col.dataset.c; render(); return; }
   const del = t.closest('[data-del]');
   if(del){
-    const {c, l} = findClip(del.dataset.del);
-    l.clips.splice(l.clips.indexOf(c), 1);
-    selected = null; render(); toast(`${c.name} removed`); return;
+    const a = find(del.dataset.del);
+    AUDIO.splice(AUDIO.indexOf(a), 1);
+    selected = null; render(); toast(`${a.name} removed`); return;
   }
   const item = t.closest('[data-clip]');
   if(item && !t.closest('.tools')){
@@ -230,11 +219,11 @@ document.addEventListener('click', e => {
 document.addEventListener('input', e => {
   const g = e.target.closest('[data-gain]');
   if(!g) return;
-  findClip(g.dataset.gain).c.gain = +g.value;
+  find(g.dataset.gain).gain = +g.value;
   paintPanel();
 });
 
-/* dragging a bay row onto the page places it here too */
+/* dragging a bay row onto the page starts it here */
 document.addEventListener('dragstart', e => {
   const row = e.target.closest('[data-bay]');
   if(!row) return;
@@ -251,8 +240,7 @@ document.addEventListener('drop', e => {
   if(!id || !BAY.some(b => b.id === id)) return;
   e.preventDefault();
   bayPick = id;
-  const score = LAYERS.find(l => l.kind === 'score' && !l.locked) || LAYERS[0];
-  startHere(score.id);
+  startHere(5);
 });
 
 addEventListener('keydown', e => {
@@ -277,7 +265,7 @@ function bayAdd(files){
     a.src = URL.createObjectURL(f);
   });
   renderBay();
-  if(n) toast(`${n} file${n === 1 ? '' : 's'} in the bay · arm one and say where it starts`);
+  if(n) toast(`${n} file${n === 1 ? '' : 's'} in the bay · pick one and say where it starts`);
 }
 
 render();

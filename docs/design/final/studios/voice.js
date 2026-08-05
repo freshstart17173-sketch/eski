@@ -34,24 +34,22 @@ function render(){
   document.getElementById('app').innerHTML = `
     ${topBar({
       sub:ME ? '' : 'pick a character',
-      mid:ME ? `<button class="btn q" id="who" style="--c:${meColor()}">
-          <span class="sw" style="width:8px;height:8px;background:${meColor()}"></span>
+      mid:ME ? `<button class="btn q" id="who" style="color:${meColor()}">
           voicing ${esc(castById(ME).name)}</button>` : '',
-      actions:`${btn('reference','eye','q keep','id="ref" aria-pressed="' + reference + '"')}
-        ${btn('add files','upload','q keep','id="add"')}
+      actions:`${btn('reference','','q','id="ref" aria-pressed="' + reference + '"')}
+        ${btn('add files','','q','id="add"')}
         ${btn(done && done === myLines().length ? 'publish voiceover'
-          : `publish · ${myLines().length - done} left`, 'check', 'p keep',
+          : `publish · ${myLines().length - done} left`, '', 'p',
           'id="publish"' + (done < myLines().length ? ' disabled' : ''))}`
     })}
     <div class="subbar">
       <span><b>${done}</b> of <b>${myLines().length}</b> lines</span>
       <span class="track"><i style="width:${myLines().length ? done / myLines().length * 100 : 0}%"></i></span>
-      ${legend(['voice','sfx'])}
     </div>
 
     <div class="frame">
       <div class="pane bay">
-        <div class="panehead">${icon('music')}<b>audio bay</b><span class="sp"></span>
+        <div class="panehead"><b>audio bay</b><span class="sp"></span>
           <span>${BAY_V.length ? BAY_V.length + ' files' : 'drop or record'}</span></div>
         <div class="baylist" id="baylist"></div>
       </div>
@@ -59,7 +57,7 @@ function render(){
       ${pageHtml(page, `<span>${mineOn(page).filter(l => !st(l.id).takes.length).length} to record here</span>`)}
 
       <div class="pane">
-        <div class="panehead">${icon('mic')}<b>page ${page}</b><span class="sp"></span>
+        <div class="panehead"><b>page ${page}</b><span class="sp"></span>
           <span>space · ↑↓ · enter</span></div>
         <div class="panel lines" id="lines">${linesHtml()}</div>
       </div>
@@ -72,10 +70,10 @@ function render(){
         <span class="sp"></span><span>${esc(COMIC.by)}</span></div>
       ${CAST.map(c => `<button class="pickrow" data-pick="${c.id}" style="--c:${c.color}">
         <span class="plate"><img src="${esc(COMIC.art)}" alt=""></span>
-        <span><span class="nm"><span class="sw"></span>${esc(c.name)}</span>
+        <span><span class="nm">${esc(c.name)}</span>
           <span class="bl">${esc(c.desc)}</span></span>
         <span class="meta">${forChar(c.id).length} lines<br>${esc(c.kind)}</span>
-        <span>${btn('voice this','mic','q keep')}</span>
+        <span>${btn('voice this','','q')}</span>
       </button>`).join('')}
       <div class="sheethead" style="border-top:1px solid var(--line,var(--hair));border-bottom:0">
         one character at a time, and any of them, however many people have read it before you
@@ -91,8 +89,8 @@ function linesHtml(){
       <div class="line sfx" style="--c:${roleColor('sfx')}">
         <span class="num n">${k + 1}</span>
         <span class="body">
-          <span class="cue-row"><span class="who"><span class="sw"></span>
-            ${icon('zap')} effect${l.letter ? ' · ' + esc(l.letter) : ''}</span></span>
+          <span class="cue-row"><span class="who">effect${
+            l.letter ? ' · ' + esc(l.letter) : ''}</span></span>
           <span class="say note">${esc(l.t)}</span>
         </span>
         <span class="side"></span>
@@ -103,7 +101,7 @@ function linesHtml(){
       <div class="line other" style="--c:${c.color}">
         <span class="num n">${k + 1}</span>
         <span class="body">
-          <span class="cue-row"><span class="who"><span class="sw"></span>${esc(c.name)}</span>
+          <span class="cue-row"><span class="who">${esc(c.name)}</span>
             ${l.dir ? `<span class="dir">${esc(l.dir)}</span>` : ''}</span>
           <span class="say">${esc(l.t)}</span>
         </span>
@@ -116,7 +114,7 @@ function linesHtml(){
       <div class="line${focused === l.id ? ' on' : ''}" data-line="${l.id}" style="--c:${c.color}">
         <span class="num n">${k + 1}</span>
         <span class="body">
-          <span class="cue-row"><span class="who"><span class="sw"></span>${esc(c.name)}</span>
+          <span class="cue-row"><span class="who">${esc(c.name)}</span>
             ${l.dir ? `<span class="dir">${esc(l.dir)}</span>` : ''}</span>
           <span class="say">${esc(l.t)}</span>
         </span>
@@ -142,8 +140,8 @@ function takesHtml(id){
       <span class="tools">
         <button class="prev" data-playtake="${id}" data-k="${k}"
           data-dur="${(t.out - t.in).toFixed(1)}">${icon('play')}</button>
-        ${btn('autotrim','wand','q keep',`data-auto="${id}" data-k="${k}"`)}
-        ${btn('trim','scissors','q keep',`data-trim="${id}" data-k="${k}" aria-pressed="${open}"`)}
+        ${btn('autotrim','','q',`data-auto="${id}" data-k="${k}"`)}
+        ${btn('trim','','q',`data-trim="${id}" data-k="${k}" aria-pressed="${open}"`)}
       </span>
       ${open ? trimHtml(id, k, t) : ''}
     </div>`;
@@ -168,7 +166,7 @@ function trimHtml(id, k, t){
       <span>in <b>${clock1(t.in)}</b></span><span>out <b>${clock1(t.out)}</b></span>
       <span>keeps <b>${clock1(t.out - t.in)}</b> of ${clock1(t.raw)}</span>
       <span class="sp"></span>
-      ${btn('reset','x','q keep',`data-reset="${id}" data-k="${k}"`)}
+      ${btn('reset','','q',`data-reset="${id}" data-k="${k}"`)}
     </div>
   </div>`;
 }

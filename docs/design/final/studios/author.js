@@ -18,26 +18,23 @@ function render(){
   document.getElementById('app').innerHTML = `
     ${topBar({
       mid:`<div class="seg" id="mode">
-             <button data-mode="script" aria-selected="${mode === 'script'}">
-               ${icon('type')}<span>script</span></button>
-             <button data-mode="cast" aria-selected="${mode === 'cast'}">
-               ${icon('user')}<span>cast</span></button>
+             <button data-mode="script" aria-selected="${mode === 'script'}">script</button>
+             <button data-mode="cast" aria-selected="${mode === 'cast'}">cast</button>
            </div>`,
-      actions:`${btn('import pages','upload','q keep','id="import"')}
-               ${btn('publish chapter','check','p keep','id="publish"')}`
+      actions:`${btn('import pages','','q','id="import"')}
+               ${btn('publish chapter','','p','id="publish"')}`
     })}
     <div class="subbar">
       <span><b>${COMIC.pages.length}</b> pages · <b>${SCRIPT.length}</b> entries
         · <b>${SCRIPT.filter(l => l.kind === 'sfx').length}</b> sound effects</span>
       <span class="track"><i style="width:${
         new Set(SCRIPT.map(l => l.p)).size / COMIC.pages.length * 100}%"></i></span>
-      ${legend(['voice','sfx'])}
     </div>
 
     <div class="frame nobay">
       ${pageHtml(page, `<span>${dialogueOn(page).length} lines · ${sfxOn(page).length} effects</span>`)}
       <div class="pane">
-        <div class="panehead">${mode === 'script' ? icon('type') : icon('user')}
+        <div class="panehead">
           <b>${mode === 'script' ? 'page ' + page : 'cast'}</b><span class="sp"></span>
           <span>${mode === 'script'
             ? dialogueOn(page).length + ' lines · ' + sfxOn(page).length + ' effects'
@@ -55,8 +52,8 @@ function render(){
 function scriptHtml(){
   return linesOn(page).map((l, k) => l.kind === 'sfx' ? sfxRow(l, k) : dialogueRow(l, k)).join('')
     + `<div style="display:flex;gap:6px;padding:var(--s3)">
-        ${btn('add line','plus','q keep','data-add="dialogue"')}
-        ${btn('add sound effect','zap','q keep','data-add="sfx"')}
+        ${btn('add line','','q','data-add="dialogue"')}
+        ${btn('add sound effect','','q','data-add="sfx"')}
       </div>`;
 }
 
@@ -67,7 +64,7 @@ function dialogueRow(l, k){
     <span class="num n">${k + 1}</span>
     <span class="body">
       <span class="cue-row">
-        <span class="who"><span class="sw"></span>
+        <span class="who">
           <select data-char="${l.id}">${CAST.map(x =>
             `<option value="${x.id}" ${x.id === l.c ? 'selected' : ''}>${esc(x.name)}</option>`
           ).join('')}</select></span>
@@ -75,7 +72,7 @@ function dialogueRow(l, k){
       </span>
       <span class="say" contenteditable="true" data-say="${l.id}">${esc(l.t)}</span>
     </span>
-    <span class="side">${btn('','trash','q sq','data-kill="' + l.id + '"')}</span>
+    <span class="side">${btn('','trash','q sq','data-kill="' + l.id + '" title="delete"')}</span>
   </div>`;
 }
 
@@ -87,13 +84,13 @@ function sfxRow(l, k){
     <span class="num n">${k + 1}</span>
     <span class="body">
       <span class="cue-row">
-        <span class="who"><span class="sw"></span>${icon('zap')} sound effect</span>
+        <span class="who">sound effect</span>
         <span class="dir" data-ph="lettering" contenteditable="true" data-letter="${l.id}"
           >${esc(l.letter || '')}</span>
       </span>
       <span class="say note" contenteditable="true" data-say="${l.id}">${esc(l.t)}</span>
     </span>
-    <span class="side">${btn('','trash','q sq','data-kill="' + l.id + '"')}</span>
+    <span class="side">${btn('','trash','q sq','data-kill="' + l.id + '" title="delete"')}</span>
   </div>`;
 }
 
@@ -104,7 +101,6 @@ function castHtml(){
     const pages = [...new Set(forChar(c.id).map(l => l.p))].length;
     return `<div class="char" style="--c:${c.color}">
       <div class="charhead">
-        <span class="sw"></span>
         <span class="nm" contenteditable="true" data-name="${c.id}">${esc(c.name)}</span>
         <span class="sp"></span>
         <select data-kind="${c.id}">${['lead','supporting','narration'].map(k =>
@@ -117,6 +113,10 @@ function castHtml(){
       <div class="frow"><span class="k">voice</span>
         <span class="v" contenteditable="true" data-voice="${c.id}"
           data-ph="register, accent, pace, mannerisms">${esc(c.voice)}</span></div>
+      <div class="swatches" style="margin-top:var(--s2)">${SWATCHES.map(x =>
+        `<button class="sw" data-charcolor="${c.id}" data-c="${x}" style="background:${x}"
+          aria-pressed="${x.toLowerCase() === c.color.toLowerCase()}"
+          title="colour this character"></button>`).join('')}</div>
       <div class="mirrorlabel">as it appears in voiceover needed</div>
       <div class="mirror">
         <span class="plate"><img src="${esc(COMIC.art)}" alt="" style="object-position:40% 20%"></span>
@@ -127,7 +127,7 @@ function castHtml(){
         <span class="meta n" style="font-size:9px;text-align:right">${n} lines<br>needs a voice</span>
       </div>
     </div>`;
-  }).join('') + `<div style="padding:var(--s3)">${btn('add character','plus','q keep','id="addchar"')}</div>`;
+  }).join('') + `<div style="padding:var(--s3)">${btn('add character','','q','id="addchar"')}</div>`;
 }
 
 /* ---------- editing ---------- */
@@ -168,6 +168,8 @@ document.addEventListener('click', e => {
     SCRIPT.splice(SCRIPT.findIndex(l => l.id === kill.dataset.kill), 1);
     render(); toast('deleted'); return;
   }
+  const col = e.target.closest('[data-charcolor]');
+  if(col){ castById(col.dataset.charcolor).color = col.dataset.c; render(); return; }
   const add = e.target.closest('[data-add]');
   if(add){ addEntry(add.dataset.add); return; }
   if(e.target.closest('#addchar')){

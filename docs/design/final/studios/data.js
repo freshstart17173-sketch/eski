@@ -15,9 +15,11 @@ const COMIC = {
    the .eski the same way the reader loads them. */
 COMIC.pages = Array.from({length:COMIC.pageCount}, (_, i) => ({n:i + 1, src:COMIC.art}));
 
-/* ---------- roles. four kinds of sound, four hues, one legend ----------
-   used identically in every studio: a dialogue line, its voiceover clip and
-   its lane are the same colour on three different pages. */
+/* ---------- colour ----------
+   the four hues are still how the model distinguishes a bed from a score from
+   an effect from a voice, and the reader and the manifest care. the composer
+   does not: to them it is all audio, any length they like, and the colour is
+   theirs to assign. so the names below never reach the composer's screen. */
 const ROLE = {
   voice:{label:'voice',  icon:'mic',   light:'#B4762A', dark:'#E0A94A'},
   score:{label:'score',  icon:'music', light:'#4F7A64', dark:'#7FB09A'},
@@ -32,6 +34,8 @@ const roleColor = k => {
 /* characters carry their own colour so a performer can find their lines in a
    page of everyone else's. six swatches, assigned in order. */
 const CAST_COLORS = ['#B4762A','#3F6F8E','#6E58A0','#4F7A64','#A6483C','#7A6A2E'];
+/* the palette offered anywhere a colour is assignable */
+const SWATCHES = ['#4F7A64','#3F6F8E','#6E58A0','#B4762A','#A6483C','#7A6A2E'];
 
 const CAST = [
   {id:'gwen', name:'gwen', kind:'lead',

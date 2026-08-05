@@ -8,7 +8,7 @@
 <link rel="stylesheet" href="broadsheet.css">
 <style>
 /* ============================================================
-   eski — home, browse, needed (voiceover + score), shelf, studio, profile.
+   eski — home, browse (eskis · roles · no score), studio, profile.
 
    broadsheet: near-white ground, near-black rules edge to edge,
    art at comic proportions with a hairline round it, the title set
@@ -197,6 +197,40 @@ section + section{margin-top:var(--s6)}
   border-top:1px solid var(--rule);position:sticky;bottom:0;background:var(--paper)}
 .alltags{display:flex;flex-wrap:wrap;gap:3px}
 
+/* ---------- profile ---------- */
+.phead{display:grid;grid-template-columns:64px 1fr auto;gap:var(--s4);align-items:start;
+  padding:var(--s5) 0 var(--s4);border-bottom:1px solid var(--rule)}
+.pfp-lg{width:64px;height:64px;border:1px solid var(--rule);display:grid;place-items:center;
+  font-family:var(--font-display);font-size:22px;color:var(--accent);background:var(--surface)}
+.pmeta h1{font-family:var(--font-display);font-weight:400;font-size:var(--fs-title);
+  margin:0;line-height:1}
+.ptag{margin:var(--s2) 0 0;font-size:var(--fs-micro);letter-spacing:.1em;text-transform:uppercase;
+  color:var(--accent)}
+.pbio{margin:var(--s2) 0 0;font-size:var(--fs-xs);color:var(--soft-ink);max-width:56ch;
+  line-height:1.55}
+.pstats{display:flex;gap:var(--s5);text-align:right}
+.pstats span{display:grid;gap:2px;font-size:var(--fs-micro);letter-spacing:.06em;
+  text-transform:uppercase;color:var(--label)}
+.pstats b{font-family:var(--font-display);font-size:20px;font-weight:400;
+  font-variant-numeric:tabular-nums}
+@media(max-width:760px){.phead{grid-template-columns:1fr}.pstats{text-align:left}}
+
+/* a little green where the eye lands in a dense view */
+.hot{color:var(--accent)}
+.head .n{color:var(--accent)}
+.cap .v.want{color:var(--accent)}
+.rolerow .lines b{color:var(--accent)}
+.seg button[aria-selected="true"]{background:var(--mark);color:var(--paper)}
+[data-theme="dark"] .seg button[aria-selected="true"]{color:var(--sage-900)}
+.bar.modes{border-bottom:0;padding-bottom:0}
+.modenote{font-size:var(--fs-micro);letter-spacing:.08em;text-transform:uppercase;
+  color:var(--accent)}
+button.link{background:none;border:0;padding:0;font:inherit;font-size:var(--fs-micro);
+  letter-spacing:.1em;text-transform:uppercase;color:var(--label);cursor:pointer;
+  box-shadow:inset 0 -1px 0 transparent;transition:color var(--t-fast) var(--ease),
+  box-shadow var(--t-fast) var(--ease)}
+button.link:hover{color:var(--ink);box-shadow:inset 0 -1px 0 var(--ink)}
+
 /* ---------- shelf ---------- */
 .progress{height:3px;background:var(--rule-hair);margin-top:var(--s2)}
 .progress i{display:block;height:100%;background:var(--mark)}
@@ -230,7 +264,6 @@ section + section{margin-top:var(--s6)}
   <nav id="nav">
     <button data-go="home" aria-current="page">home</button>
     <button data-go="browse">browse</button>
-    <button data-go="shelf">shelf</button>
     <button data-go="studio">studio</button>
     <button data-go="profile">profile</button>
   </nav>
@@ -255,7 +288,7 @@ section + section{margin-top:var(--s6)}
 
   <section>
     <div class="head"><h2>voiceover needed</h2><span class="n" id="roles-n"></span>
-      <span class="sp"></span><a href="#" data-go="roles">see all</a></div>
+      <span class="sp"></span><button class="link" data-browse="roles">see all</button></div>
     <div class="grid" id="grid-roles"></div>
     <button class="seemore" data-more="roles">see more</button>
   </section>
@@ -264,59 +297,27 @@ section + section{margin-top:var(--s6)}
     <span><a href="#">TERMS</a> · <a href="#">PRIVACY</a> · <a href="#">TAKEDOWN</a></span></div>
 </div></main>
 
-<!-- ================= BROWSE ================= -->
+<!-- ================= BROWSE — comics, roles, or comics with no score ====== -->
 <main class="pane" id="pane-browse"><div class="wrap">
-  <div class="head"><h2>browse</h2><span class="n" id="browse-n"></span>
-    <span class="sp"></span><a href="#" data-go="roles">what needs work →</a></div>
-  <div class="bar">
-    <input type="search" id="b-q" placeholder="search titles, credits, and tags">
-    <span class="lbl">sort</span>
-    <select id="b-sort">
-      <option value="new">newest</option>
-      <option value="kudos">most kudos</option>
-      <option value="title">title a–z</option>
-      <option value="short">shortest</option>
-    </select>
-    <div class="chips" id="b-filters">
-      <button class="chip" data-f="cast" aria-pressed="false">fully voiced</button>
-      <button class="chip" data-f="scored" aria-pressed="false">has a score</button>
-    </div>
-  </div>
-  <div class="grid" id="grid-browse"></div>
-  <div class="empty" id="browse-empty" hidden>nothing matches that.</div>
-</div></main>
-
-<!-- ================= NEEDED — voiceover and score, one place ================= -->
-<main class="pane" id="pane-roles"><div class="wrap">
-  <div class="head"><h2>needed</h2><span class="n" id="rolelist-n"></span>
-    <span class="sp"></span><a href="#" data-go="browse">← all comics</a></div>
-  <div class="bar">
-    <div class="chips" id="need-tabs">
-      <button class="chip" data-need="voice" aria-pressed="true">voiceover needed</button>
-      <button class="chip" data-need="score" aria-pressed="false">score needed</button>
+  <div class="head"><h2>browse</h2><span class="n" id="browse-n"></span></div>
+  <div class="bar modes">
+    <div class="seg" id="browse-modes">
+      <button data-mode="comics" aria-selected="true">eskis</button>
+      <button data-mode="roles" aria-selected="false">roles that need a voice</button>
+      <button data-mode="scores" aria-selected="false">eskis with no score</button>
     </div>
     <span class="sp" style="flex:1"></span>
+    <span class="modenote" id="modenote"></span>
   </div>
   <div class="bar">
-    <input type="search" id="r-q" placeholder="search">
+    <input type="search" id="b-q" placeholder="search">
     <span class="lbl">sort</span>
-    <select id="r-sort"></select>
-    <div class="chips" id="r-filters"></div>
+    <select id="b-sort"></select>
+    <div class="chips" id="b-filters"></div>
   </div>
+  <div class="grid" id="grid-browse"></div>
   <div class="rolelist" id="rolelist"></div>
-  <div class="empty" id="roles-empty" hidden>nothing matches that.</div>
-</div></main>
-
-<!-- ================= SHELF ================= -->
-<main class="pane" id="pane-shelf"><div class="wrap">
-  <section>
-    <div class="head"><h2>reading</h2><span class="n" id="reading-n"></span></div>
-    <div class="grid" id="grid-reading"></div>
-  </section>
-  <section>
-    <div class="head"><h2>read</h2><span class="n" id="read-n"></span></div>
-    <div class="grid" id="grid-read"></div>
-  </section>
+  <div class="empty" id="browse-empty" hidden>nothing matches that.</div>
 </div></main>
 
 <!-- ================= STUDIO ================= -->
@@ -357,7 +358,31 @@ section + section{margin-top:var(--s6)}
 
 <!-- ================= PROFILE ================= -->
 <main class="pane" id="pane-profile"><div class="wrap">
-  <div class="head"><h2>imogen ash</h2><span class="n">performer · cork, ireland</span></div>
+  <div class="phead">
+    <div class="pfp-lg">IA</div>
+    <div class="pmeta">
+      <h1>imogen ash</h1>
+      <p class="ptag">performer · cork, ireland · here since 2026</p>
+      <p class="pbio">Reads quiet and close. Will take anything with a narrator.
+        Currently working through the second dark.</p>
+    </div>
+    <div class="pstats">
+      <span><b class="hot" id="st-parts">—</b>parts performed</span>
+      <span><b class="hot" id="st-reading">—</b>reading</span>
+      <span><b class="hot" id="st-read">—</b>read</span>
+      <span><b class="hot">1,402</b>kudos received</span>
+    </div>
+  </div>
+
+  <section>
+    <div class="head"><h2>reading</h2><span class="n" id="reading-n"></span>
+      <span class="sp"></span><a href="#" data-go="browse">find something →</a></div>
+    <div class="grid" id="grid-reading"></div>
+  </section>
+  <section>
+    <div class="head"><h2>read</h2><span class="n" id="read-n"></span></div>
+    <div class="grid" id="grid-read"></div>
+  </section>
   <section>
     <div class="head"><h2>parts performed</h2><span class="n" id="parts-n"></span></div>
     <div class="rolelist" id="profile-parts"></div>
@@ -874,7 +899,16 @@ function openDetails(c, role){
     c.kudos += on ? -1 : 1;
     kb.setAttribute('aria-pressed', on ? 'false' : 'true');
     kb.textContent = `kudos ${nfmt(c.kudos)}`;
-    renderAll();
+    /* home.html#browse, #studio, #profile — the final index links straight in */
+function fromHash(){
+  const h = (location.hash || '').replace('#','');
+  if(['home','browse','studio','profile'].includes(h)) go(h);
+  else if(h === 'roles' || h === 'scores') goBrowse(h === 'roles' ? 'roles' : 'scores');
+}
+addEventListener('hashchange', fromHash);
+
+renderAll();
+fromHash();
   };
 
   lastFocus = document.activeElement;
@@ -902,7 +936,7 @@ addEventListener('keydown', e => { if(e.key === 'Escape' && ov.classList.contain
    panes
    ============================================================ */
 function go(name){
-  const pane = name === 'roles' ? 'roles' : name;
+  const pane = name === 'roles' ? 'browse' : name;
   document.querySelectorAll('.pane').forEach(p => p.classList.remove('on'));
   document.getElementById('pane-' + pane).classList.add('on');
   document.querySelectorAll('#nav button').forEach(b => {
@@ -913,6 +947,8 @@ function go(name){
   fitScrollers(document); fitTags(document);
 }
 document.addEventListener('click', e => {
+  const bm = e.target.closest('[data-browse]');
+  if(bm){ e.preventDefault(); goBrowse(bm.dataset.browse); return; }
   const t = e.target.closest('[data-go]');
   if(t){ e.preventDefault(); go(t.dataset.go); return; }
   const act = e.target.closest('[data-act]');
@@ -959,84 +995,56 @@ document.querySelectorAll('[data-more]').forEach(b => b.addEventListener('click'
   renderHome();
 }));
 
-/* ---------- browse ---------- */
-const bState = {q:'', sort:'new', filters:new Set()};
-function renderBrowse(){
-  const list = COMICS.filter(c => {
-    const hay = (c.title + ' ' + c.by + ' ' + c.tags.join(' ')).toLowerCase();
-    if(bState.q && !hay.includes(bState.q)) return false;
-    for(const f of bState.filters){
-      const v = voicesOf(c);
-      if(f === 'cast' && v.cls) return false;
-      if(f === 'scored' && !c.scores.length) return false;
-    }
-    return true;
-  });
-  const sorts = {
-    new:(a,b) => b.added.localeCompare(a.added),
-    kudos:(a,b) => b.kudos - a.kudos,
-    title:(a,b) => a.title.localeCompare(b.title),
-    short:(a,b) => a.pp - b.pp
-  };
-  list.sort(sorts[bState.sort]);
-  fill(document.getElementById('grid-browse'), list.map(c => cardEl(c)));
-  document.getElementById('browse-n').textContent = `${list.length} of ${COMICS.length} comics`;
-  document.getElementById('browse-empty').hidden = list.length > 0;
-}
-document.getElementById('b-q').addEventListener('input', e => {
-  bState.q = e.target.value.trim().toLowerCase(); renderBrowse();
-});
-document.getElementById('b-sort').addEventListener('change', e => {
-  bState.sort = e.target.value; renderBrowse();
-});
-document.getElementById('b-filters').addEventListener('click', e => {
-  const chip = e.target.closest('.chip'); if(!chip) return;
-  const f = chip.dataset.f, on = chip.getAttribute('aria-pressed') === 'true';
-  chip.setAttribute('aria-pressed', on ? 'false' : 'true');
-  on ? bState.filters.delete(f) : bState.filters.add(f);
-  renderBrowse();
-});
-
 /* ============================================================
-   needed. one page, two tabs: characters with no voice, and comics
-   with no score. they are the same question asked of two crafts, so
-   they share a search box, a sort and a row shape — and browse no
-   longer carries a "needs a voice" filter, because this is where that
-   lives.
+   browse. one surface, three modes, and the mode is never in doubt:
+   you are looking at eskis, at roles that need a voice, or at eskis
+   with no score. the search box, the sort and the filters change with
+   it; the row shape changes with it; the count says which you are in.
    ============================================================ */
-const rState = {tab:'voice', q:'',
-  sort:{voice:'lines-desc', score:'need'},
-  filters:{voice:new Set(), score:new Set()}};
+const bState = {mode:'comics', q:'',
+  sort:{comics:'new', roles:'lines-desc', scores:'need'},
+  filters:{comics:new Set(), roles:new Set(), scores:new Set()}};
 
-const NEED_SORTS = {
-  voice:[['lines-desc','most lines'],['lines-asc','fewest lines'],['name','character a–z'],
-         ['comic','comic a–z'],['author','author a–z']],
-  score:[['need','most needed'],['kudos','most kudos'],['new','newest'],
-         ['long','longest'],['title','title a–z']]
+const B_SORTS = {
+  comics:[['new','newest'],['kudos','most kudos'],['title','title a–z'],['short','shortest']],
+  roles:[['lines-desc','most lines'],['lines-asc','fewest lines'],['name','character a–z'],
+         ['comic','eski a–z'],['author','author a–z']],
+  scores:[['need','most needed'],['kudos','most kudos'],['new','newest'],
+          ['long','longest'],['title','title a–z']]
 };
-const NEED_FILTERS = {
-  voice:[['lead','lead'],['supporting','supporting'],['narration','narration'],
+const B_FILTERS = {
+  comics:[['cast','fully voiced'],['scored','has a score']],
+  roles:[['lead','lead'],['supporting','supporting'],['narration','narration'],
          ['short','under 50 lines']],
-  /* a comic with a score can still take another one, the same way a character
-     already voiced can still be voiced again. "no score yet" is a filter, not
-     the whole list. */
-  score:[['none','no score yet'],['more','wants another'],['short','under 150 pp']]
+  /* an eski with a score can still take another, the same way a character who
+     has been voiced can still be voiced again. */
+  scores:[['none','nothing at all yet'],['more','wants another'],['shortpp','under 150 pp']]
+};
+const B_PLACEHOLDER = {
+  comics:'search eskis, authors, tags',
+  roles:'search characters, eskis, authors, description',
+  scores:'search eskis, authors, tags'
+};
+const B_NOTE = {
+  comics:'every eski on the site',
+  roles:'characters nobody has read yet',
+  scores:'eskis waiting for music'
 };
 
-function paintNeedBar(){
-  const t = rState.tab;
-  document.getElementById('r-q').placeholder = t === 'voice'
-    ? 'search characters, comics, authors, description'
-    : 'search comics, authors, tags';
-  document.getElementById('r-sort').innerHTML = NEED_SORTS[t].map(([v, label]) =>
-    `<option value="${v}" ${v === rState.sort[t] ? 'selected' : ''}>${label}</option>`).join('');
-  document.getElementById('r-filters').innerHTML = NEED_FILTERS[t].map(([f, label]) =>
-    `<button class="chip" data-f="${f}" aria-pressed="${rState.filters[t].has(f)}">${label}</button>`
+function paintBrowseBar(){
+  const m = bState.mode;
+  document.getElementById('b-q').placeholder = B_PLACEHOLDER[m];
+  document.getElementById('modenote').textContent = B_NOTE[m];
+  document.getElementById('b-sort').innerHTML = B_SORTS[m].map(([v, label]) =>
+    `<option value="${v}" ${v === bState.sort[m] ? 'selected' : ''}>${label}</option>`).join('');
+  document.getElementById('b-filters').innerHTML = B_FILTERS[m].map(([f, label]) =>
+    `<button class="chip" data-f="${f}" aria-pressed="${bState.filters[m].has(f)}">${label}</button>`
   ).join('');
-  document.querySelectorAll('#need-tabs .chip').forEach(b =>
-    b.setAttribute('aria-pressed', b.dataset.need === t));
+  document.querySelectorAll('#browse-modes button').forEach(b =>
+    b.setAttribute('aria-selected', b.dataset.mode === m));
 }
 
+/* an eski with no score, as a dense row */
 function scoreRowEl(c){
   const b = document.createElement('button');
   b.className = 'rolerow';
@@ -1054,20 +1062,44 @@ function scoreRowEl(c){
        <div>${mq(c.tags.slice(0, 4).join(' · '))}</div>
      </div>
      <p class="blurb">${esc(c.desc)}</p>
-     <div class="lines"><b class="n">${n ? n + (n === 1 ? ' score' : ' scores') : 'no score'}</b>
+     <div class="lines"><b class="n ${n ? '' : 'hot'}">${
+        n ? n + (n === 1 ? ' score' : ' scores') : 'no score'}</b>
        ${nfmt(c.kudos)} kudos</div>
      <div class="go"><span class="btn sm">${n ? 'add another' : 'score this'}</span></div>`;
   b.addEventListener('click', () => openDetails(c));
   return b;
 }
 
-function renderRoles(){
-  paintNeedBar();
-  const t = rState.tab, q = rState.q, f = rState.filters[t];
-  let list, total, count, empty;
+function renderBrowse(){
+  paintBrowseBar();
+  const m = bState.mode, q = bState.q, f = bState.filters[m];
+  const grid = document.getElementById('grid-browse');
+  const list = document.getElementById('rolelist');
+  let n = 0, count = '', empty = '';
 
-  if(t === 'voice'){
-    list = ROLES.filter(r => {
+  if(m === 'comics'){
+    let items = COMICS.filter(c => {
+      const hay = (c.title + ' ' + c.by + ' ' + c.tags.join(' ')).toLowerCase();
+      if(q && !hay.includes(q)) return false;
+      const v = voicesOf(c);
+      if(f.has('cast') && v.cls) return false;
+      if(f.has('scored') && !c.scores.length) return false;
+      return true;
+    });
+    const sorts = {
+      new:(a,b) => b.added.localeCompare(a.added),
+      kudos:(a,b) => b.kudos - a.kudos,
+      title:(a,b) => a.title.localeCompare(b.title),
+      short:(a,b) => a.pp - b.pp
+    };
+    items.sort(sorts[bState.sort.comics]);
+    fill(grid, items.map(c => cardEl(c)));
+    list.replaceChildren();
+    n = items.length;
+    count = `${n} of ${COMICS.length} eskis`;
+    empty = 'no eski matches that.';
+  }else if(m === 'roles'){
+    let items = ROLES.filter(r => {
       const c = byId(r.comic);
       const hay = (r.name + ' ' + c.title + ' ' + c.by + ' ' + r.blurb).toLowerCase();
       if(q && !hay.includes(q)) return false;
@@ -1083,18 +1115,19 @@ function renderRoles(){
       'comic':(a,b) => byId(a.comic).title.localeCompare(byId(b.comic).title),
       'author':(a,b) => byId(a.comic).by.localeCompare(byId(b.comic).by)
     };
-    list.sort(sorts[rState.sort.voice]);
-    total = ROLES.length;
-    count = `${list.length} of ${total} characters with no voice`;
-    empty = 'nothing needs a voice that matches that.';
-    fill(document.getElementById('rolelist'), list.map(r => roleRowEl(r)));
+    items.sort(sorts[bState.sort.roles]);
+    grid.replaceChildren();
+    fill(list, items.map(r => roleRowEl(r)));
+    n = items.length;
+    count = `${n} of ${ROLES.length} roles with no voice`;
+    empty = 'no role matches that.';
   }else{
-    list = COMICS.filter(c => {
+    let items = COMICS.filter(c => {
       const hay = (c.title + ' ' + c.by + ' ' + c.tags.join(' ')).toLowerCase();
       if(q && !hay.includes(q)) return false;
       if(f.has('none') && c.scores.length) return false;
       if(f.has('more') && !c.scores.length) return false;
-      if(f.has('short') && c.pp >= 150) return false;
+      if(f.has('shortpp') && c.pp >= 150) return false;
       return true;
     });
     const sorts = {
@@ -1104,42 +1137,50 @@ function renderRoles(){
       long:(a,b) => b.pp - a.pp,
       title:(a,b) => a.title.localeCompare(b.title)
     };
-    list.sort(sorts[rState.sort.score]);
+    items.sort(sorts[bState.sort.scores]);
+    grid.replaceChildren();
+    fill(list, items.map(scoreRowEl));
+    n = items.length;
     const bare = COMICS.filter(c => !c.scores.length).length;
-    count = `${list.length} of ${COMICS.length} comics · ${bare} with no score at all`;
-    empty = 'no comic matches that.';
-    fill(document.getElementById('rolelist'), list.map(scoreRowEl));
+    count = `${n} eskis · ${bare} with no score at all`;
+    empty = 'no eski matches that.';
   }
 
-  document.getElementById('rolelist-n').textContent = count;
-  const e = document.getElementById('roles-empty');
+  document.getElementById('browse-n').textContent = count;
+  const e = document.getElementById('browse-empty');
   e.textContent = empty;
-  e.hidden = list.length > 0;
+  e.hidden = n > 0;
 }
 
-document.getElementById('need-tabs').addEventListener('click', e => {
-  const t = e.target.closest('[data-need]');
-  if(!t || t.dataset.need === rState.tab) return;
-  rState.tab = t.dataset.need;
-  rState.q = '';
-  document.getElementById('r-q').value = '';
-  renderRoles();
+function goBrowse(mode){
+  bState.mode = mode;
+  bState.q = '';
+  const q = document.getElementById('b-q');
+  if(q) q.value = '';
+  renderBrowse();
+  go('browse');
+}
+
+document.getElementById('browse-modes').addEventListener('click', e => {
+  const b = e.target.closest('[data-mode]');
+  if(b && b.dataset.mode !== bState.mode) goBrowse(b.dataset.mode);
 });
-document.getElementById('r-q').addEventListener('input', e => {
-  rState.q = e.target.value.trim().toLowerCase(); renderRoles();
+document.getElementById('b-q').addEventListener('input', e => {
+  bState.q = e.target.value.trim().toLowerCase(); renderBrowse();
 });
-document.getElementById('r-sort').addEventListener('change', e => {
-  rState.sort[rState.tab] = e.target.value; renderRoles();
+document.getElementById('b-sort').addEventListener('change', e => {
+  bState.sort[bState.mode] = e.target.value; renderBrowse();
 });
-document.getElementById('r-filters').addEventListener('click', e => {
+document.getElementById('b-filters').addEventListener('click', e => {
   const chip = e.target.closest('.chip');
   if(!chip) return;
-  const f = chip.dataset.f, set = rState.filters[rState.tab];
+  const set = bState.filters[bState.mode], f = chip.dataset.f;
   set.has(f) ? set.delete(f) : set.add(f);
-  renderRoles();
+  renderBrowse();
 });
+const renderRoles = () => {};
 
-/* ---------- shelf: what you are reading, what you have read ---------- */
+/* ---------- the shelf, now a part of the profile ---------- */
 function renderShelf(){
   const withBar = c => {
     const el = cardEl(c);
@@ -1170,6 +1211,11 @@ function renderProfile(){
   })));
   fill(document.getElementById('profile-parts'), parts.map(p => roleRowEl(p, true)));
   document.getElementById('parts-n').textContent = `${parts.length}`;
+  document.getElementById('st-parts').textContent = parts.length;
+  document.getElementById('st-reading').textContent =
+    COMICS.filter(c => c.shelf === 'reading').length;
+  document.getElementById('st-read').textContent =
+    COMICS.filter(c => c.shelf === 'read').length;
 }
 
 function renderAll(){ renderHome(); renderBrowse(); renderRoles(); renderShelf(); renderProfile(); }
@@ -1192,7 +1238,16 @@ function toast(msg){
   toastTimer = setTimeout(() => t.classList.remove('on'), 1800);
 }
 
+/* home.html#browse, #studio, #profile — the final index links straight in */
+function fromHash(){
+  const h = (location.hash || '').replace('#','');
+  if(['home','browse','studio','profile'].includes(h)) go(h);
+  else if(h === 'roles' || h === 'scores') goBrowse(h === 'roles' ? 'roles' : 'scores');
+}
+addEventListener('hashchange', fromHash);
+
 renderAll();
+fromHash();
 /* webfonts land after first paint and change every measurement */
 if(document.fonts && document.fonts.ready)
   document.fonts.ready.then(() => { fitScrollers(document); fitTags(document); });

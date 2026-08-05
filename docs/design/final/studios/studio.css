@@ -7,8 +7,12 @@
    still light, still sage, still square, but hierarchy comes from
    surfaces rather than hairlines: a sunk canvas the page sits on, a
    raised panel where the work happens, and a hover fill on anything
-   you can act on. colour means one thing only — which of the four
-   kinds of sound this is — and it is the same legend in all three.
+   you can act on.
+
+   colour identifies a row — a character, a piece of audio — and it is
+   assignable, not a category anyone has to learn. nothing is labelled
+   twice: if a row says what it is in words, it does not also carry an
+   icon and a swatch saying the same thing.
 
    the reference points are linear (quiet density, colour reserved for
    status), figma (canvas / panel / inspector) and final cut's roles
@@ -198,5 +202,7 @@ body{background:var(--canvas);color:var(--ink);font-size:13.5px;line-height:1.5}
 .droplayer span{color:var(--label)}
 .toast{background:var(--mark);color:var(--paper);box-shadow:0 6px 20px rgba(0,0,0,.2)}
 [data-theme="dark"] .toast{color:var(--canvas)}
-.legend{color:var(--label)}
-.legend .sw{background:var(--c)}
+/* a little green in a dense column: counts and the numbers you scan for */
+.hot{color:var(--accent);font-weight:600}
+.subbar b{color:var(--accent)}
+.swatches .sw[aria-pressed="true"]{color:var(--ink)}

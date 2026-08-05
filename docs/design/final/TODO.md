@@ -33,9 +33,6 @@ The model these surfaces are built against is `SPEC.md` at the repository root.
   row. That last one is the real open question.
 - [ ] **UX pass on all three studios.** The workbench layout is a decision about
   shape and style, not a finished interaction.
-- [ ] **Profile**, absorbing the shelf: reading and read become sections of it
-  alongside parts performed and scores composed. Broadsheet, with a little
-  colour and personality.
 - [ ] **Reader.** It has to let a reader pick the mix (which voiceover per
   character, which score) and play the layers stacked.
 - [ ] **`spec.html` still documents v2.** It carries a note pointing at
@@ -46,10 +43,15 @@ The model these surfaces are built against is `SPEC.md` at the repository root.
 
 ## done
 
+- [x] profile, absorbing the shelf: reading, read, parts performed, settings
+- [x] no icon, swatch and word all saying the same thing in the studios; the
+      composer is never shown sound *types*, and colour is assignable
+- [x] green on the numbers and counts you scan for in dense views
+
 - [x] home, browse, shelf, studio, profile — `home.html`
 - [x] the mix (voiceovers + score) picked in the details pane — `home.html`
-- [x] **needed**, one page with two tabs: voiceover needed and score needed.
-      Browse no longer carries a "needs a voice" filter — that axis lives here.
+- [x] browse is one surface with three named modes — **eskis**, **roles that
+      need a voice**, **eskis with no score** — and the mode is never in doubt
 - [x] author studio — `studios/author.html`
 - [x] composer studio — `studios/score.html`
 - [x] voiceover studio — `studios/voice.html`

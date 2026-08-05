@@ -296,11 +296,10 @@ legend (`docs/design/final/studios/studio.css`, geometry in `base.css`).
 
 | surface | file | what it is |
 |---|---|---|
-| home | `home.html` | new comics, from people you follow, voiceover needed |
-| browse | `home.html` | every comic; search, sort, filter |
-| voiceover needed | `home.html` | every character with no reading, densely listed |
-| details | `home.html` | the comic, its tags, and the mix picker |
-| shelf | `home.html` | reading and read |
+| home | `home.html` | new eskis, people you follow, roles that need a voice |
+| browse | `home.html#browse` | three modes, always named: **eskis**, **roles that need a voice**, **eskis with no score** |
+| details | `home.html` | the eski, its tags, and the mix picker |
+| profile | `home.html#profile` | reading, read, parts performed, settings — the shelf lives here |
 | studio | three pages | see §2 |
 
 **The mix.** Voices and score are picked together in the details pane. Every
