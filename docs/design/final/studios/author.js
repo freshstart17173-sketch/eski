@@ -32,7 +32,7 @@ function render(){
     </div>
 
     <div class="frame nobay">
-      ${pageHtml(page, `<span>${dialogueOn(page).length} lines · ${sfxOn(page).length} effects</span>`)}
+      ${pageHtml(page)}
       <div class="pane">
         <div class="panehead">
           <b>${mode === 'script' ? 'page ' + page : 'cast'}</b><span class="sp"></span>
@@ -161,8 +161,6 @@ document.addEventListener('click', e => {
   if(m){ mode = m.dataset.mode; render(); return; }
   const pg = e.target.closest('[data-page]');
   if(pg){ page = +pg.dataset.page; render(); return; }
-  if(e.target.closest('#prev')){ page = Math.max(1, page - 1); render(); return; }
-  if(e.target.closest('#next')){ page = Math.min(COMIC.pages.length, page + 1); render(); return; }
   const kill = e.target.closest('[data-kill]');
   if(kill){
     SCRIPT.splice(SCRIPT.findIndex(l => l.id === kill.dataset.kill), 1);

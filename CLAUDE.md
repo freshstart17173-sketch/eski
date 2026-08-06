@@ -1,0 +1,1 @@
+Solo project, one user. There's no staging — changes go straight to `main` and straight to prod (Vercel deploys `main` directly). No issue tracker, no triage labels, no wayfinder maps: work is tracked in `ROADMAP.md` and in conversation, not GitHub Issues.

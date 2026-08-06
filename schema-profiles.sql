@@ -17,7 +17,11 @@
 alter table comics add column if not exists description text;
 -- a small generated cover thumbnail, so the shelf never downloads a full page
 -- scan to fill a 150px cell. null means fall back to cover_key.
+-- ADDED AFTER THIS FILE WAS FIRST APPLIED, so a project set up before then is
+-- missing exactly this column and publish fails on it. schema-thumbs.sql is the
+-- same alter on its own, for anyone who would rather not re-run this file.
 alter table comics add column if not exists thumb_key text;
+notify pgrst, 'reload schema';
 
 create table if not exists profiles (
   id           uuid primary key references auth.users(id) on delete cascade,

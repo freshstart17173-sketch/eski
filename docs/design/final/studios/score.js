@@ -54,7 +54,7 @@ function render(){
         <div class="baylist" id="baylist"></div>
       </div>
 
-      ${pageHtml(page, `<span>${here.length} playing here</span>`)}
+      ${pageHtml(page)}
 
       <div class="pane">
         <div class="panehead"><b>on page ${page}</b><span class="sp"></span>

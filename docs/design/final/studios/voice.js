@@ -54,7 +54,7 @@ function render(){
         <div class="baylist" id="baylist"></div>
       </div>
 
-      ${pageHtml(page, `<span>${mineOn(page).filter(l => !st(l.id).takes.length).length} to record here</span>`)}
+      ${pageHtml(page)}
 
       <div class="pane">
         <div class="panehead"><b>page ${page}</b><span class="sp"></span>
@@ -73,11 +73,7 @@ function render(){
         <span><span class="nm">${esc(c.name)}</span>
           <span class="bl">${esc(c.desc)}</span></span>
         <span class="meta">${forChar(c.id).length} lines<br>${esc(c.kind)}</span>
-        <span>${btn('voice this','','q')}</span>
       </button>`).join('')}
-      <div class="sheethead" style="border-top:1px solid var(--line,var(--hair));border-bottom:0">
-        one character at a time, and any of them, however many people have read it before you
-      </div>
     </div></div>`;
   renderBay();
   scrollTimeline();
@@ -176,8 +172,7 @@ function renderBay(){
   if(!box) return;
   box.innerHTML = BAY_V.length
     ? BAY_V.map(b => bayRow(b, bayPick)).join('')
-    : `<div class="bayempty"><b>drop audio here</b>or record onto a line. anything you
-        drop waits here until you put it on one.</div>`;
+    : `<div class="bayempty"><b>drop audio here</b>or record onto a line</div>`;
 }
 
 /* ---------- takes ---------- */
@@ -262,8 +257,6 @@ document.addEventListener('click', e => {
   }
   const pg = e.target.closest('[data-page]');
   if(pg){ goPage(+pg.dataset.page); return; }
-  if(e.target.closest('#prev')){ goPage(page - 1); return; }
-  if(e.target.closest('#next')){ goPage(page + 1); return; }
   if(e.target.closest('#ref')){ reference = !reference; render(); return; }
   if(e.target.closest('#add')){ document.getElementById('filein').click(); return; }
   if(e.target.closest('#publish')){ toast(`${castById(ME).name} submitted for review`); return; }

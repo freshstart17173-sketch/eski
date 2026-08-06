@@ -54,8 +54,6 @@ body{background:var(--canvas);color:var(--ink);font-size:13.5px;line-height:1.5}
 .panehead{background:var(--paper);border-bottom:1px solid var(--line);color:var(--label);
   letter-spacing:.08em}
 .panehead b{color:var(--ink);font-weight:600}
-.pagebar{background:var(--paper);border-top:1px solid var(--line);color:var(--label)}
-.pagebar .n{color:var(--ink);font-weight:500}
 .plate{border:1px solid var(--line);background:var(--paper)}
 
 /* the timeline: a row of pages, and the one you are on takes a border */
@@ -113,7 +111,6 @@ body{background:var(--canvas);color:var(--ink);font-size:13.5px;line-height:1.5}
 .item.locked{opacity:.75}
 .item .nm b{color:var(--ink)}
 .item .sub{color:var(--label)}
-.item .glyph{color:var(--c)}
 .spanbar{color:var(--label)}
 .spanbar b{color:var(--ink)}
 .spanbar .len{background:var(--sunk)}

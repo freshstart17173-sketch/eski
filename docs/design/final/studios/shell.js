@@ -24,19 +24,17 @@ function topBar(opts){
   </header>`;
 }
 
-/* the page, centred, at the size you would actually look at it */
-function pageHtml(page, bar){
+/* the page, centred, at the size you would actually look at it.
+
+   no bar under it. every word it carried was already on screen twice —
+   the page number and its count are the strip at the foot, and the
+   "n playing here" was the panel head one column over. the strip is
+   also how you move between pages, so the arrows were a third way to
+   do what clicking a thumbnail does. */
+function pageHtml(page){
   return `<div class="pane centre">
     <div class="stage">
       <div class="plate"><img src="${esc(COMIC.pages[page - 1].src)}" alt="page ${page}"></div>
-    </div>
-    <div class="pagebar">
-      ${btn('', 'left', 'q sq', 'id="prev"' + (page === 1 ? ' disabled' : ''))}
-      <span class="n">page ${page} of ${COMIC.pages.length}</span>
-      <span class="sp"></span>
-      ${bar || ''}
-      ${btn('', 'right', 'q sq', 'id="next"' +
-        (page === COMIC.pages.length ? ' disabled' : ''))}
     </div>
   </div>`;
 }
@@ -65,8 +63,8 @@ function bayRow(b, armed){
 
 function dropLayerHtml(what){
   return `<div class="droplayer" id="droplayer"><div>
-    <b>drop ${what} here</b><span>${
-      what === 'pages' ? 'they import in filename order' : 'it lands in the bay'}</span>
+    <b>drop ${what} here</b>${
+      what === 'pages' ? '<span>they import in filename order</span>' : ''}
   </div></div>`;
 }
 
