@@ -1,4 +1,6 @@
-/* the mobile batch, checked on the deployed site */
+/* the tap and click zones, checked on the deployed site.
+   phone first, then the same zones with a mouse — the capture-phase
+   bug that dropped every edge tap dropped edge clicks too. */
 const { chromium, request } = require('playwright');
 const BASE = process.env.BASE || 'https://www.eski.lol';
 (async () => {
@@ -54,8 +56,10 @@ const BASE = process.env.BASE || 'https://www.eski.lol';
     return a ? a.getAttribute('href') : null;
   });
   if (!href) { ok('a readable comic on the shelf', false); await b.close(); process.exit(1); }
-  await p.goto(new URL(href, BASE + '/').href, { waitUntil:'networkidle' });
-  await p.waitForTimeout(4000);
+  await p.goto(new URL(href, BASE + '/').href, { waitUntil:'domcontentloaded' });
+  await p.waitForSelector('#player-bar:not([style*="display:none"])', { timeout: 30000 });
+  await p.waitForFunction(() => typeof current !== 'undefined' && !!current, null, { timeout: 30000 });
+  await p.waitForTimeout(1500);
 
   ok('no eski header in reader mode on a phone',
      await p.evaluate(()=>{ const t=document.querySelector('.top');
@@ -100,6 +104,66 @@ const BASE = process.env.BASE || 'https://www.eski.lol';
   const s3 = await pageNow0();
   ok('a tap in the middle does nothing — that is the zoom area', s3 === s2, `${s2} -> ${s3}`);
 
+  console.log('phone: zoom in the middle');
+  const zoomNow = () => p.evaluate(() => typeof pageZoom==='function' ? pageZoom() : -1);
+  const cx = Math.round(band.w/2), cy = Math.round(band.h/2);
+  await p.touchscreen.tap(cx, cy); await p.waitForTimeout(60);
+  await p.touchscreen.tap(cx, cy); await p.waitForTimeout(900);
+  const z1 = await zoomNow();
+  ok('a double-tap in the middle zooms in', z1 > 1.5, `scale ${z1}`);
+  await p.touchscreen.tap(cx, cy); await p.waitForTimeout(60);
+  await p.touchscreen.tap(cx, cy); await p.waitForTimeout(900);
+  const z2 = await zoomNow();
+  ok('and a second double-tap zooms back out', Math.abs(z2 - 1) < 0.01, `scale ${z2}`);
+
+  console.log('phone: a real two-finger pinch');
+  {
+    const cdp = await ctx.newCDPSession(p);
+    const pt = (x,y,id) => ({x, y, radiusX:12, radiusY:12, force:1, id});
+    const send = (type, pts) => cdp.send('Input.dispatchTouchEvent',
+      { type, touchPoints: pts, modifiers: 0 });
+    await send('touchStart', [pt(cx-30, cy, 1), pt(cx+30, cy, 2)]);
+    for (let i = 1; i <= 6; i++) {
+      const d = 30 + i * 22;
+      await send('touchMove', [pt(cx-d, cy, 1), pt(cx+d, cy, 2)]);
+      await p.waitForTimeout(40);
+    }
+    await send('touchEnd', []);
+    await p.waitForTimeout(600);
+    const zp = await zoomNow();
+    ok('a pinch actually zooms — the whole point of this batch', zp > 1.2, `scale ${zp}`);
+    await p.evaluate(() => resetZoom());
+    await p.waitForTimeout(600);
+    const zr = await zoomNow();
+    ok('and fit brings it back to one', Math.abs(zr - 1) < 0.01, `scale ${zr}`);
+  }
+
+  console.log('phone: the one-shot bands');
+  {
+    // walk forward until a page carries one-shots; skip if this comic has none
+    let found = -1;
+    for (let i = 0; i < 14; i++) {
+      if (await p.evaluate(() => os.list.length > 0)) { found = i; break; }
+      await p.evaluate(() => navRight()); await p.waitForTimeout(700);
+    }
+    if (found < 0) console.log('    (this comic has no one-shots — bands not exercised)');
+    else {
+      const cur = () => p.evaluate(() => os.cursor);
+      const b0 = await cur();
+      await p.touchscreen.tap(cx, band.h - 20); await p.waitForTimeout(900);
+      const b1 = await cur();
+      ok('a tap on the bottom band steps to the next sound', b1 > b0, `${b0} -> ${b1}`);
+      await p.touchscreen.tap(cx, 20); await p.waitForTimeout(900);
+      const b2 = await cur();
+      const n = await p.evaluate(() => os.list.length);
+      // with a single clip on the page the cursor has nowhere to go; that is
+      // correct behaviour, not a pass to be claimed as a step backwards
+      ok(n > 1 ? 'a tap on the top band steps back'
+               : 'a tap on the top band holds at the only clip',
+         n > 1 ? b2 === b1 - 1 : b2 === b1, `${b1} -> ${b2} of ${n}`);
+    }
+  }
+
   console.log('phone: the panels');
   const isOpen = id => p.evaluate(i =>
     !!document.getElementById(i) && document.getElementById(i).classList.contains('open'), id);
@@ -127,7 +191,43 @@ const BASE = process.env.BASE || 'https://www.eski.lol';
 
   ok('zero console errors on the phone', errs.length===0, errs.slice(0,3).join(' | '));
 
+  /* the capture-phase bug hit the mouse too, so check a desktop edge click */
+  console.log('desktop: the same zones with a mouse');
+  {
+    const d = await b.newContext({ viewport:{width:1440,height:900}, serviceWorkers:'block' });
+    if(api) await d.route('**/*', async route => {
+      const q = route.request();
+      try{
+        const r = await api.fetch(q.url(), { method:q.method(), headers:q.headers(),
+          data: q.postDataBuffer() || undefined, maxRedirects: 5, timeout: 60000 });
+        const h = r.headers(); delete h['content-encoding']; delete h['content-length'];
+        await route.fulfill({ status:r.status(), headers:h, body: await r.body() });
+      }catch(e){ await route.abort(); }
+    });
+    await d.addInitScript(() => { try{ localStorage.setItem('eski-onboarded','1'); }catch(e){} });
+    const q = await d.newPage();
+    const derrs = []; q.on('pageerror', e => derrs.push(e.message));
+    await q.goto(new URL(href, BASE + '/').href, { waitUntil:'domcontentloaded' });
+    await q.waitForSelector('#player-bar:not([style*="display:none"])', { timeout: 30000 });
+    await q.waitForFunction(() => typeof current !== 'undefined' && !!current, null, { timeout: 30000 });
+    await q.waitForTimeout(1500);
+    const box = await q.evaluate(()=>{ const r=document.getElementById('viewer').getBoundingClientRect();
+      return {l:Math.round(r.left),t:Math.round(r.top),w:Math.round(r.width),h:Math.round(r.height)}; });
+    const pn = () => q.evaluate(() => { const v=document.getElementById('page-jump');
+      return v && v.value ? parseInt(v.value,10) : -1; });
+    const d0 = await pn();
+    await q.mouse.click(box.l + box.w - 20, box.t + Math.round(box.h/2));
+    await q.waitForTimeout(1000);
+    const d1 = await pn();
+    ok('a click on the right edge turns the page', d1 === d0 + 1, `${d0} -> ${d1}`);
+    await q.mouse.click(box.l + 20, box.t + Math.round(box.h/2));
+    await q.waitForTimeout(1000);
+    const d2 = await pn();
+    ok('a click on the left edge turns it back', d2 === d0, `${d1} -> ${d2}`);
+    ok('zero console errors on the desktop', derrs.length===0, derrs.slice(0,3).join(' | '));
+  }
+
   await b.close();
-  console.log(bad ? `\n${bad} mobile check(s) failed` : '\nmobile run clean');
+  console.log(bad ? `\n${bad} input check(s) failed` : '\ninput run clean');
   process.exit(bad ? 1 : 0);
 })();
