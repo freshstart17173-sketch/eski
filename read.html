@@ -113,8 +113,34 @@ body.focus .settings{position:fixed;right:12px;bottom:calc(var(--bar) + 12px);z-
    instead — and only after a delay, so a warm page never flickers. */
 .viewer.page-loading:not(.plate) #page-left{opacity:.25;
   transition:opacity 120ms var(--ease) 200ms}
-.click-zones{position:absolute;inset:0;display:flex;z-index:8}
-.cz{flex:1;cursor:pointer}
+/* THE TOUCH BANDS.
+   They used to be two half-width divs covering the whole viewer, and that
+   was the reason zoom did not work on a phone at all: the overlay sat on
+   top of the page, so a pinch never reached panzoom, and there is no wheel
+   on a phone. It also meant a double click to zoom on the desktop turned
+   two pages on the way.
+
+   So there is no overlay any more. Taps are located after the fact, and
+   only near the EDGES — a frame around the picture, leaving the whole
+   middle free to double-tap, pinch and drag. */
+.zones{position:absolute;inset:0;z-index:7;pointer-events:none;opacity:0;
+  transition:opacity 160ms var(--ease)}
+.zones.show{opacity:1}
+.zones .z{position:absolute;display:grid;place-items:center;color:var(--ink);
+  background:var(--paper);opacity:.82;outline:1px solid var(--rule)}
+.zones .z i{display:block}
+.zones .ico{width:20px;height:20px}
+.zones .l{left:0;top:0;bottom:0;width:var(--band-x)}
+.zones .r{right:0;top:0;bottom:0;width:var(--band-x)}
+.zones .t{top:0;left:var(--band-x);right:var(--band-x);height:var(--band-y)}
+.zones .b{bottom:0;left:var(--band-x);right:var(--band-x);height:var(--band-y)}
+.zones .mid{left:var(--band-x);right:var(--band-x);top:var(--band-y);bottom:var(--band-y);
+  background:none;outline:1px dashed var(--rule);opacity:.7;
+  font-size:var(--fs-micro);letter-spacing:.16em;text-transform:uppercase;color:var(--label)}
+/* no one-shots on this page means no reason to show the two bands that fire
+   them, and no reason for them to swallow a tap either */
+.zones:not(.os) .t,.zones:not(.os) .b{display:none}
+.zones:not(.os) .mid{top:0;bottom:0}
 /* the zoom bar. it is a SIBLING of the panned element, never a child, so a
    drag in progress can never swallow the click that lands on "fit" — which
    is the only control you press while zoomed, and the one that was dead. */
@@ -185,6 +211,32 @@ body.focus .settings{position:fixed;right:12px;bottom:calc(var(--bar) + 12px);z-
 .busy::after{content:'';display:inline-block;width:1.2em;text-align:left;animation:dots 1.1s steps(1,end) infinite}
 @keyframes dots{0%{content:''}25%{content:'.'}50%{content:'..'}75%{content:'...'}100%{content:''}}
 
+/* ---------- the mix sheet ---------- */
+.mix{min-width:280px;max-width:min(340px,92vw);max-height:70vh;
+  display:none;flex-direction:column}
+.mix.open{display:flex}
+#mix-body{overflow-y:auto;padding:var(--s1) 0}
+.mix-head{font-size:var(--fs-micro);letter-spacing:.16em;text-transform:uppercase;
+  color:var(--label);padding:var(--s3) var(--s3) var(--s1);
+  border-bottom:1px solid var(--rule);margin-bottom:var(--s1)}
+.mix-char{font-family:var(--font-display);font-size:14px;color:var(--ink);
+  padding:var(--s2) var(--s3) 2px}
+.mix-note{padding:2px var(--s3) var(--s2);font-size:var(--fs-micro);color:var(--muted)}
+.mix-row{display:grid;grid-template-columns:14px 1fr;gap:var(--s2);align-items:center;
+  padding:5px var(--s3);cursor:pointer}
+.mix-row:hover{background:var(--surface)}
+.mix-row input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+.mix-row .dot{width:11px;height:11px;border:1px solid var(--line-strong);border-radius:50%;
+  position:relative}
+.mix-row:has(input:checked) .dot{border-color:var(--mark)}
+.mix-row:has(input:checked) .dot::after{content:"";position:absolute;inset:2px;
+  border-radius:50%;background:var(--mark)}
+.mix-row .who{font-size:var(--fs-xs);min-width:0}
+.mix-row .who b{font-weight:500}
+.mix-row .who span{color:var(--label);margin-left:var(--s1)}
+.mix-foot{padding:var(--s2) var(--s3);border-top:1px solid var(--rule);flex:none}
+.mix-foot .btn{width:100%;justify-content:center}
+
 /* ---------- settings ---------- */
 .sheet-head{display:none}
 .settings{display:none;position:absolute;right:var(--s3);bottom:calc(var(--bar) + var(--s2));
@@ -193,6 +245,14 @@ body.focus .settings{position:fixed;right:12px;bottom:calc(var(--bar) + 12px);z-
 .set-row{display:flex;align-items:center;gap:var(--s3);padding:5px var(--s3);font-size:var(--fs-xs)}
 .set-row>span:first-child{flex:1;color:var(--soft-ink);display:flex;align-items:center;gap:6px}
 .set-row input[type=number]{width:52px}
+/* only worth showing where the header is not: on a wide screen the same four
+   words are already three inches up and to the right */
+.set-nav{display:none;gap:var(--s4);border-top:1px solid var(--rule);
+  margin-top:var(--s1);padding-top:var(--s3)}
+.set-nav a{font-size:var(--fs-micro);letter-spacing:.14em;text-transform:uppercase;
+  color:var(--ink);opacity:.55}
+.set-nav a:hover{opacity:1}
+@media (max-width:640px){ .set-nav{display:flex} }
 /* "on" / "off" is a VALUE, not a label, so it is lowercase like every other
    value on the site — see the three rules at the head of broadsheet.css. */
 .tgl{border:1px solid var(--rule-hair);background:none;color:var(--label);padding:0 var(--s2);
@@ -239,6 +299,30 @@ body.focus .settings{position:fixed;right:12px;bottom:calc(var(--bar) + 12px);z-
   padding:0 5px;font-family:inherit;font-size:var(--fs-micro);color:var(--ink);white-space:nowrap;
   font-variant-numeric:var(--num)}
 .keys-grid span{color:var(--soft-ink)}
+/* the two halves of the panel, one per kind of pointer */
+.keys-touch{display:none}
+.keys-head .keys-touch,.keys-head .keys-keyboard{display:none}
+.keys-head .keys-keyboard{display:inline}
+@media (pointer:coarse){
+  .keys-touch{display:block}
+  .keys-keyboard{display:none}
+  .keys-head .keys-touch{display:inline}
+  .keys-head .keys-keyboard{display:none}
+}
+/* a small picture of the frame, because "the edges" is easier seen than read */
+.tapmap{position:relative;height:110px;margin-bottom:var(--s3);
+  border:1px solid var(--rule-hair);background:var(--paper-1)}
+[data-theme="dark"] .tapmap{background:var(--surf-2)}
+.tapmap span{position:absolute;display:grid;place-items:center;
+  font-size:var(--fs-xs);color:var(--ink);background:var(--paper);
+  outline:1px solid var(--rule-hair)}
+.tapmap .l{left:0;top:0;bottom:0;width:20%}
+.tapmap .r{right:0;top:0;bottom:0;width:20%}
+.tapmap .t{top:0;left:20%;right:20%;height:24%}
+.tapmap .b{bottom:0;left:20%;right:20%;height:24%}
+.tapmap .c{left:20%;right:20%;top:24%;bottom:24%;background:none;
+  outline:1px dashed var(--rule-hair);font-size:var(--fs-micro);
+  letter-spacing:.16em;text-transform:uppercase;color:var(--label)}
 
 
 /* ---------- toast ----------
@@ -270,17 +354,27 @@ footer a:hover{color:var(--ink)}
   .pb-right input[type=range]{display:none}
 }
 @media (max-width:640px){
+  /* THE SITE'S MENU BAR IS NOT PART OF READING.
+     On a phone it was a whole row of chrome above the comic, on the surface
+     whose entire job is to get out of the way. It goes; the settings sheet
+     carries the four words instead, which is where you already go to change
+     anything about the reader. */
+  .top{display:none}
+  .app{height:100vh;height:100dvh}
   /* the bar is taller on a phone because every control in it has to be a
      thumb target, not because it has more to say. */
   :root{ --bar:48px }
   .top nav{gap:var(--s3)}
+  .mix{max-height:76vh}
   .pb-score{display:none}
   #chapter-sel{display:none!important}
   /* icon-only controls in the bar: the label is a bare text node, so zero the
      font size on the button and restore it on the icon. title= still reads. */
   .player-bar .btn{width:40px;height:40px;padding:0;justify-content:center;font-size:0}
   .player-bar .btn .ico{width:17px;height:17px}
-  .pb-pages input{height:36px;width:52px}
+  .pb-pages input{height:36px;width:48px}
+  .player-bar>*{padding:0 var(--s2)}
+  .pb-right{gap:var(--s1)}
   .settings,.keys-panel{position:fixed;left:0;right:0;bottom:0;top:auto;width:100%;
     max-height:74vh;overflow-y:auto;transform:none}
   /* the sheet covers its own toggle, so it needs its own way out */
@@ -331,9 +425,16 @@ footer a:hover{color:var(--ink)}
         <img id="page-right" alt="comic page" style="display:none">
       </div>
       <div class="scroll-pages" id="scroll-pages"></div>
-      <div class="click-zones" id="click-zones" style="display:none">
-        <div class="cz" onclick="czLeft()" title="previous page"></div>
-        <div class="cz" onclick="czRight()" title="next page"></div>
+      <!-- NOT a pointer target: purely the picture of where the bands are,
+           shown for a moment when you ask what the controls are. Every real
+           tap is worked out from where it landed, so nothing sits on top of
+           the page stealing pinches. -->
+      <div class="zones" id="zones" aria-hidden="true">
+        <span class="z l"><i data-ico="chevron-left"></i></span>
+        <span class="z r"><i data-ico="chevron-right"></i></span>
+        <span class="z t"><i data-ico="chevron-up"></i></span>
+        <span class="z b"><i data-ico="chevron-down"></i></span>
+        <span class="z mid">zoom</span>
       </div>
       <!-- one-shot indicator: only shown when the current page has one-shots -->
       <div class="os-hint" id="os-hint" style="display:none">
@@ -350,6 +451,18 @@ footer a:hover{color:var(--ink)}
         <span id="zoom-pct">100%</span>
         <button data-z="in" type="button" title="zoom in">+</button>
         <button data-z="fit" type="button" title="fit the page">fit</button>
+      </div>
+    </div>
+
+    <!-- THE MIX, without going back to the shelf. Picking a voice or a score
+         is the thing this site is for, and it was only possible from the
+         detail sheet before you started reading. -->
+    <div class="settings mix" id="mix">
+      <div class="sheet-head"><span>the mix</span>
+        <button data-ico="x" onclick="toggleMix(false)" title="close"></button></div>
+      <div id="mix-body"></div>
+      <div class="mix-foot">
+        <button class="btn p" id="mix-apply" onclick="applyMix()">read with this mix</button>
       </div>
     </div>
 
@@ -396,6 +509,13 @@ footer a:hover{color:var(--ink)}
         <button class="tgl" id="set-osloop" onclick="toggleOsLoop()">off</button></div>
       <div class="set-row"><span><span data-ico="moon"></span>dark mode</span>
         <button class="tgl" id="set-dark" onclick="toggleDark()">off</button></div>
+      <!-- the four words, for the phone where the header is gone -->
+      <div class="set-row set-nav">
+        <a href="index.html">home</a>
+        <a href="index.html#browse">browse</a>
+        <a href="author.html">studio</a>
+        <a href="profile.html">profile</a>
+      </div>
     </div>
 
     <!-- WHAT IS AND IS NOT IN HERE.
@@ -421,7 +541,8 @@ footer a:hover{color:var(--ink)}
         <button class="btn" data-ico="maximize-2" onclick="toggleFocus()" title="fullscreen (f)">focus</button>
         <a class="btn" id="next-chapter" data-ico="chevron-right" href="#"
            style="display:none" title="next in this series">next</a>
-        <button class="btn icon-btn" id="keys-btn" data-ico="keyboard" onclick="toggleKeys()" title="hotkeys (?)"></button>
+        <button class="btn icon-btn" id="keys-btn" data-ico="keyboard" onclick="toggleKeys()" title="controls (?)"></button>
+        <button class="btn" id="mix-btn" data-ico="list-music" onclick="toggleMix()" title="voices and score">the mix</button>
         <button class="btn" id="settings-btn" data-ico="settings" onclick="toggleSettings()" title="reader settings">settings</button>
         <button class="btn" id="mute-btn" data-ico="volume-2" onclick="toggleMute()" title="mute (m)">mute</button>
         <input type="range" id="vol-slider" min="0" max="100" value="80" title="volume"
@@ -442,10 +563,27 @@ footer a:hover{color:var(--ink)}
 <!-- hotkeys cheat sheet (toggle, separate from the player bar) -->
 <div class="keys-scrim" id="keys-scrim" onclick="toggleKeys(false)"></div>
 <div class="keys-panel" id="keys-panel">
-  <div class="keys-head"><span data-ico="keyboard"></span> hotkeys
+  <div class="keys-head"><span data-ico="keyboard"></span>
+    <span class="keys-keyboard">hotkeys</span><span class="keys-touch">controls</span>
     <button data-ico="x" onclick="toggleKeys(false)" title="close"></button></div>
-  <div class="keys-grid">
-    <kbd>&#8592; &#8594;</kbd><span>turn page (or tap left / right)</span>
+  <!-- A PHONE HAS NO KEYS. The panel showed a keyboard either way, which on
+       a phone is a list of things you cannot do and no mention of the things
+       you can. Both are here; css shows whichever matches the pointer. -->
+  <div class="keys-touch">
+    <div class="tapmap" aria-hidden="true">
+      <span class="l">&#8592;</span><span class="r">&#8594;</span>
+      <span class="t">&#8593;</span><span class="b">&#8595;</span>
+      <span class="c">zoom</span>
+    </div>
+    <div class="keys-grid">
+      <kbd>edges</kbd><span>tap the left or right edge to turn the page</span>
+      <kbd>top / foot</kbd><span>step through the sounds on this page</span>
+      <kbd>middle</kbd><span>double tap or pinch to zoom, drag to pan</span>
+      <kbd>hold</kbd><span>nothing — a long press never turns the page</span>
+    </div>
+  </div>
+  <div class="keys-grid keys-keyboard">
+    <kbd>&#8592; &#8594;</kbd><span>turn page (or tap the left / right edge)</span>
     <kbd>space</kbd><span>pause / resume the soundtrack</span>
     <kbd>&#8595;</kbd><span>next one-shot on this page</span>
     <kbd>&#8593;</kbd><span>previous one-shot</span>
@@ -474,6 +612,8 @@ const ICONS = {
   "chevron-right": "<path d=\"m9 18 6-6-6-6\" />",
   "maximize-2": "<path d=\"M15 3h6v6\" /> <path d=\"m21 3-7 7\" /> <path d=\"m3 21 7-7\" /> <path d=\"M9 21H3v-6\" />",
   "x": "<path d=\"M18 6 6 18\" /> <path d=\"m6 6 12 12\" />",
+  "chevron-left": "<path d=\"m15 18-6-6 6-6\" />",
+  "list-music": "<path d=\"M16 5H3\" /> <path d=\"M11 12H3\" /> <path d=\"M11 19H3\" /> <path d=\"M21 16V5\" /> <circle cx=\"18\" cy=\"16\" r=\"3\" />",
   "settings": "<path d=\"M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915\" /> <circle cx=\"12\" cy=\"12\" r=\"3\" />",
   "volume-2": "<path d=\"M11 4.702a.705.705 0 0 0-1.203-.498L6.413 7.587A1.4 1.4 0 0 1 5.416 8H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2.416a1.4 1.4 0 0 1 .997.413l3.383 3.384A.705.705 0 0 0 11 19.298z\" /> <path d=\"M16 9a5 5 0 0 1 0 6\" /> <path d=\"M19.364 18.364a9 9 0 0 0 0-12.728\" />",
   "volume-x": "<path d=\"M11 4.702a.705.705 0 0 0-1.203-.498L6.413 7.587A1.4 1.4 0 0 1 5.416 8H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2.416a1.4 1.4 0 0 1 .997.413l3.383 3.384A.705.705 0 0 0 11 19.298z\" /> <line x1=\"22\" x2=\"16\" y1=\"9\" y2=\"15\" /> <line x1=\"16\" x2=\"22\" y1=\"9\" y2=\"15\" />",
@@ -708,7 +848,7 @@ async function comicFromApi(id, partIds){
      The fallback is not decoration: a database that has not had the migration
      applied answers 42883 (no such function), and reading must not break on a
      deploy that lands before a migration. */
-  let c, pg, tk;
+  let c, pg, tk, offered = null;
   // `sb.rpc` is guarded, not assumed: the smoke suite hands the reader a
   // minimal client stub, and so would an older vendored build.
   const rpc = sb.rpc ? await sb.rpc('get_comic', { p_id: id }) : { error: 'no rpc' };
@@ -716,6 +856,7 @@ async function comicFromApi(id, partIds){
     c  = { data: rpc.data.comic, error: rpc.data.comic ? null : { message: 'no comic' } };
     pg = { data: rpc.data.pages  || [], error: null };
     tk = { data: rpc.data.tracks || [], error: null };
+    offered = rpc.data.parts || [];
   }else{
     [c, pg, tk] = await Promise.all([
       sb.from('comics').select('*').eq('id', id).single(),
@@ -725,6 +866,10 @@ async function comicFromApi(id, partIds){
       // still opens as the author intended.
       baseTracks(sb, id)
     ]);
+    const pr = await sb.from('parts')
+      .select('id,kind,title,character_key,owner_name,preview_key')
+      .eq('comic_id', id).eq('status', 'published');
+    offered = pr.data || [];
   }
   /* say which step failed and what the server said. "could not load" is not a
      diagnosis, and every one of these has a different cause: a bad id, row
@@ -815,7 +960,7 @@ async function comicFromApi(id, partIds){
     player: {volume:80, crossfade:1.5, loopMode:'loop', playbackMode:'sync'},
     fileName: (c.data.slug || 'comic') + '.eski', isEski: true,
     scoreName: scoreOf(tracks, scoreName),
-    baseId: id, cast: c.data.cast_list || [], chapters: [],
+    baseId: id, cast: c.data.cast_list || [], chapters: [], offered: offered || [],
     series: c.data.series_title ? {title:c.data.series_title, index:c.data.series_index} : null
   };
 }
@@ -951,7 +1096,6 @@ function applyReadingMode(){
   const scroll = effReadingMode()==='scroll';
   $('pages').style.display = scroll ? 'none' : 'flex';
   $('scroll-pages').style.display = scroll ? 'block' : 'none';
-  $('click-zones').style.display = scroll ? 'none' : 'flex';
   resetZoom();                      // also hides the zoom bar in scroll mode
   if(scroll){
     buildScroller();
@@ -1119,7 +1263,6 @@ function paintZoom(scale){
   const on = z > 1.001;
   $('zoom-pct').textContent = Math.round(z * 100) + '%';
   $('zoombar').classList.toggle('on', on && effReadingMode() === 'pages');
-  $('click-zones').style.pointerEvents = on ? 'none' : '';
   $('viewer').classList.toggle('zoomed', on);
 }
 $('pages').addEventListener('panzoomchange', e => paintZoom(e.detail.scale));
@@ -1143,8 +1286,11 @@ $('zoombar').addEventListener('click', e=>{
 
 function updatePageChrome(){
   if(!current) return;
-  const shown = `${currentPage+1}`;
-  $('vt-info-text').textContent = `page ${shown} of ${current.pages.length}`;
+  /* "PAGE 2 OF 12" is ~110px of a 390px bar, and on a phone that was enough
+     to push the mute button off the end. Same information, fewer words. */
+  const shown = `${currentPage+1}`, of = current.pages.length;
+  $('vt-info-text').textContent = matchMedia('(max-width:640px)').matches
+    ? `${shown}/${of}` : `page ${shown} of ${of}`;
   $('page-jump').value = currentPage+1;
   $('page-jump').max = current.pages.length;
   paintChapters();
@@ -1189,8 +1335,96 @@ function prevPage(){ showPage(currentPage - 1); }
 function goToPage(i, force){ if(!isNaN(i)) showPage(i, false, force); }
 function navLeft(){ if(isRTL()) nextPage(); else prevPage(); }
 function navRight(){ if(isRTL()) prevPage(); else nextPage(); }
-function czLeft(){ navLeft(); }
-function czRight(){ navRight(); }
+
+/* ================================================================
+   WHERE A TAP LANDS.
+
+   A frame, not a split. The left and right bands turn the page, the top
+   and bottom ones step through the one-shots on this page, and the whole
+   middle belongs to the picture — double tap to zoom, pinch, drag.
+
+   That last part is the point. The bands used to be two half-width divs
+   covering the entire viewer, which meant:
+     - a pinch never reached panzoom, because the overlay was on top of it,
+       and with no wheel on a phone there was no way to zoom at all;
+     - a double click to zoom on the desktop turned two pages first.
+
+   So nothing overlays the page now. A tap is located afterwards, and only
+   acts if it landed in the frame.
+   ================================================================ */
+const BAND = { x: 0.16, y: 0.14, min: 44, max: 190 };
+function bandSize(){
+  const r = $('viewer').getBoundingClientRect();
+  return {
+    x: clamp(r.width * BAND.x, BAND.min, BAND.max),
+    y: clamp(r.height * BAND.y, BAND.min, BAND.max),
+    r
+  };
+}
+/* the picture of the bands has to agree with the arithmetic, so it is told
+   the same numbers rather than guessing them in css */
+function paintZones(){
+  const b = bandSize(), z = $('zones');
+  z.style.setProperty('--band-x', b.x + 'px');
+  z.style.setProperty('--band-y', b.y + 'px');
+  z.classList.toggle('os', os.list.length > 0);
+}
+let zonesTimer = 0;
+function flashZones(ms){
+  if(!current || effReadingMode() !== 'pages') return;
+  paintZones();
+  $('zones').classList.add('show');
+  clearTimeout(zonesTimer);
+  zonesTimer = setTimeout(()=>$('zones').classList.remove('show'), ms || 1400);
+}
+/* what a tap at this point would do: 'prev' | 'next' | 'os-prev' | 'os-next',
+   or null for "nothing, this belongs to the picture". the reading mode is part
+   of the answer, not a separate check at the call site — in scroll mode every
+   point is the picture's. */
+function zoneAt(x, y){
+  if(!current || effReadingMode() !== 'pages') return null;
+  const b = bandSize(), r = b.r;
+  const dx = x - r.left, dy = y - r.top;
+  if(dx < b.x) return 'prev';
+  if(dx > r.width - b.x) return 'next';
+  if(!os.list.length) return null;          // no one-shots: those bands are not live
+  if(dy < b.y) return 'os-prev';
+  if(dy > r.height - b.y) return 'os-next';
+  return null;
+}
+(function tapZones(){
+  const v = $('viewer');
+  let tap = null;
+  v.addEventListener('pointerdown', e => {
+    if(e.pointerType === 'mouse' && e.button !== 0) return;
+    // a second finger means a pinch, and a pinch is never a tap
+    if(tap){ tap.multi = true; return; }
+    tap = { id: e.pointerId, x: e.clientX, y: e.clientY, t: Date.now(), multi: false };
+  });
+  const drop = () => { tap = null; };
+  v.addEventListener('pointercancel', drop);
+  v.addEventListener('pointerup', e => {
+    const t = tap;
+    if(t && e.pointerId !== t.id){ tap = null; return; }
+    tap = null;
+    if(!t || t.multi || !current) return;
+    /* the tap that closed a panel does not also do something. otherwise
+       dismissing the settings by tapping near an edge turns the page on the
+       way out, which is never what was meant. */
+    if(dismissed){ dismissed = false; return; }
+    if(Math.hypot(e.clientX - t.x, e.clientY - t.y) > 10) return;   // a drag
+    if(Date.now() - t.t > 700) return;                              // a long press
+    if(pageZoom() > 1.001) return;                     // zoomed in: taps are for panning
+    // the chrome that sits over the viewer keeps its own taps
+    if(e.target.closest('.zoombar, .os-hint, .settings, .sheet, .drop-overlay')) return;
+    const z = zoneAt(e.clientX, e.clientY);
+    if(z === 'prev') navLeft();
+    else if(z === 'next') navRight();
+    else if(z === 'os-prev') osAdvance(-1);
+    else if(z === 'os-next') osAdvance(1);
+  });
+})();
+addEventListener('resize', ()=>{ if(current) paintZones(); });
 function toggleFocus(){
   const on = !document.body.classList.contains('focus');
   document.body.classList.toggle('focus', on);
@@ -1907,11 +2141,24 @@ function setDirMode(m){
 function toggleTint(){
   settings.tint = !settings.tint; saveSettings(); paintSettings(); applyTint();
 }
-function toggleSettings(){
-  const open = $('settings').classList.toggle('open');
+function toggleSettings(force){
+  const open = force === undefined ? !$('settings').classList.contains('open') : force;
+  $('settings').classList.toggle('open', open);
   $('settings-btn').classList.toggle('on', open);
-  if(document.body.classList.contains('focus')) document.body.classList.add('peek'); // keep controls up
+  if(open && document.body.classList.contains('focus')) document.body.classList.add('peek');
 }
+/* A PANEL CLOSES WHEN YOU TAP SOMETHING ELSE. That is what every panel on
+   every device does, and it was the one thing here you had to press the same
+   button twice for. Capture phase, so it runs before a tap does whatever else
+   it was going to do — including turning the page. */
+let dismissed = false;
+document.addEventListener('pointerdown', e => {
+  dismissed = false;
+  if($('settings').classList.contains('open') &&
+     !e.target.closest('#settings, #settings-btn')){ toggleSettings(false); dismissed = true; }
+  if($('mix').classList.contains('open') &&
+     !e.target.closest('#mix, #mix-btn')){ toggleMix(false); dismissed = true; }
+}, { capture: true });
 function paintSettings(){
   const dk = $('set-dark');
   if(dk){ dk.classList.toggle('on', settings.dark); dk.textContent = settings.dark ? 'on' : 'off'; }
@@ -1932,9 +2179,102 @@ function paintSettings(){
   const ol = $('set-osloop');
   if(ol){ ol.classList.toggle('on', effOsLoop()); ol.textContent = effOsLoop() ? 'on' : 'off'; }
 }
+/* ================================================================
+   THE MIX SHEET.
+   Which voice for each character, and which score — the choice the whole
+   site is built around, previously only available on the shelf before you
+   opened the comic. Changing it reloads with a new ?with=, because the
+   tracks and their audio are chosen at load; that is honest and it keeps
+   the engine's assumptions intact.
+   ================================================================ */
+function currentMix(){
+  return new Set((new URLSearchParams(location.search).get('with') || '')
+    .split(',').map(x => x.trim()).filter(Boolean));
+}
+function toggleMix(force){
+  const open = force === undefined ? !$('mix').classList.contains('open') : force;
+  if(open) paintMix();
+  $('mix').classList.toggle('open', open);
+  $('mix-btn').classList.toggle('on', open);
+  if(open && document.body.classList.contains('focus')) document.body.classList.add('peek');
+}
+function paintMix(){
+  const box = $('mix-body');
+  if(!current || !current.baseId){
+    box.innerHTML = '<div class="mix-note">this comic was opened from a file, ' +
+      'so there is no other mix to pick.</div>';
+    return;
+  }
+  const on = currentMix();
+  const offered = current.offered || [];
+  const vos = offered.filter(p => p.kind === 'vo');
+  const scores = offered.filter(p => p.kind === 'soundtrack');
+  const cast = (current.cast || []).filter(ch => ch && (ch.key || ch.name));
+  const row = (ref, label, sub, checked) => `<label class="mix-row">
+      <input type="checkbox" data-ref="${esc(ref)}"${checked ? ' checked' : ''}>
+      <span class="dot"></span>
+      <span class="who"><b>${esc(label)}</b>${sub ? `<span>${esc(sub)}</span>` : ''}</span>
+    </label>`;
+
+  let html = '';
+  if(cast.length || vos.length){
+    html += '<div class="mix-head">voices</div>';
+    const seen = new Set();
+    for(const ch of cast){
+      const key = ch.key || ch.name;
+      seen.add(key);
+      const mine = vos.filter(v => v.character_key === key);
+      html += `<div class="mix-char">${esc(ch.name || key)}</div>`;
+      html += mine.length
+        ? mine.map(v => row('part:' + v.id, v.owner_name || 'someone',
+            v.title || null, on.has('part:' + v.id))).join('')
+        : '<div class="mix-note">nobody has voiced this yet</div>';
+    }
+    for(const v of vos) if(!seen.has(v.character_key))
+      html += `<div class="mix-char">${esc(v.character_key || 'someone')}</div>` +
+        row('part:' + v.id, v.owner_name || 'someone', v.title || null, on.has('part:' + v.id));
+  }
+  html += '<div class="mix-head">score</div>';
+  html += row('score:none', 'no score', 'voices only', on.has('score:none'));
+  html += scores.length
+    ? scores.map(sc => row('part:' + sc.id, sc.title || 'untitled',
+        'by ' + (sc.owner_name || 'someone'), on.has('part:' + sc.id))).join('')
+    : '<div class="mix-note">only the author\'s score so far</div>';
+  box.innerHTML = html;
+
+  box.querySelectorAll('input[data-ref]').forEach(i => {
+    i.onchange = e => {
+      const t = e.target;
+      // one voice per character, and "no score" is exclusive with a score
+      if(!t.checked) return;
+      const ref = t.dataset.ref;
+      box.querySelectorAll('input[data-ref]').forEach(o => {
+        if(o === t) return;
+        const sameChar = charOf(o.dataset.ref) && charOf(o.dataset.ref) === charOf(ref);
+        const scoreClash = isScore(o.dataset.ref) && isScore(ref);
+        if(sameChar || scoreClash) o.checked = false;
+      });
+    };
+  });
+}
+const partById = id => (current.offered || []).find(p => 'part:' + p.id === id);
+const charOf = ref => { const p = partById(ref); return p && p.kind === 'vo' ? p.character_key : null; };
+const isScore = ref => ref === 'score:none' ||
+  (() => { const p = partById(ref); return !!(p && p.kind === 'soundtrack'); })();
+
+function applyMix(){
+  const on = [...$('mix-body').querySelectorAll('input:checked')].map(i => i.dataset.ref);
+  const q = new URLSearchParams(location.search);
+  if(on.length) q.set('with', on.join(',')); else q.delete('with');
+  // keep your place: the hash is where you are, and it survives the reload
+  location.href = location.pathname + '?' + q.toString() +
+    '#' + slugify(current.title) + '/page=' + (currentPage + 1);
+}
+
 /* hotkeys panel */
 function toggleKeys(force){
   const open = force===undefined ? !$('keys-panel').classList.contains('open') : force;
+  if(open) flashZones(2600);          // show the real frame, not just a diagram
   $('keys-panel').classList.toggle('open', open);
   $('keys-scrim').classList.toggle('open', open);
   $('keys-btn').classList.toggle('on', open);

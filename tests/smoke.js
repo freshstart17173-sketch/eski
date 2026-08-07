@@ -211,7 +211,8 @@ function ok(cond, name, extra) {
   await page.click('#set-reading button[data-m="scroll"]');
   await page.click('#settings-btn');
   ok(await page.isVisible('#scroll-pages'), 'scroller visible');
-  ok(await page.isHidden('#click-zones'), 'click zones off');
+  ok(await page.evaluate(() => zoneAt(innerWidth * 0.02, innerHeight / 2) === null),
+    'the page-turn bands are inert in scroll mode');
   /* pages lazy-load, so scrollHeight grows as images arrive: re-apply the scroll
      on every poll instead of once, or the midline can settle on an earlier page.
      the whole comic has to decode before the last page can be the midline one,
@@ -298,8 +299,24 @@ function ok(cond, name, extra) {
   });
   ok(await bigp.evaluate(() => pageZoom() > 1.3), 'wheel zooms the page in',
     await bigp.evaluate(() => pageZoom()));
-  ok(await bigp.evaluate(() => document.getElementById('click-zones').style.pointerEvents === 'none'),
-    'page-turn zones disabled while zoomed');
+  /* THE BANDS ARE A FRAME, NOT A SPLIT, and the middle belongs to the picture.
+     Two half-width divs over the whole viewer used to mean a pinch never
+     reached panzoom — no zoom at all on a phone — and a double click to zoom
+     on the desktop turned two pages first. */
+  const bands = await bigp.evaluate(() => {
+    const r = document.getElementById('viewer').getBoundingClientRect();
+    return {
+      left:   zoneAt(r.left + 4, r.top + r.height / 2),
+      right:  zoneAt(r.right - 4, r.top + r.height / 2),
+      middle: zoneAt(r.left + r.width / 2, r.top + r.height / 2),
+      overlay: !document.getElementById('click-zones')
+    };
+  });
+  ok(bands.left === 'prev' && bands.right === 'next', 'the edges turn the page',
+    JSON.stringify(bands));
+  ok(bands.middle === null, 'the middle of the page turns nothing, so it can zoom',
+    JSON.stringify(bands));
+  ok(bands.overlay, 'and nothing overlays the page to steal a pinch');
   // the zoom bar only exists while there is something to fit, and "fit" has to
   // work from a real click WHILE ZOOMED — capturing the pointer on the
   // container used to retarget that click and leave the button dead
@@ -1159,6 +1176,12 @@ function ok(cond, name, extra) {
     const m = document.querySelector('#overlay .modal');
     return m.getBoundingClientRect().width <= window.innerWidth;
   }), 'the comic modal fits the screen');
+  /* a phone has no scrim to tap and no escape key, so the sheet carries its
+     own way out */
+  ok(await phone.isVisible('.sheet-x'), 'the modal has a close button on a phone');
+  await phone.click('.sheet-x');
+  ok(await phone.evaluate(() => !document.getElementById('overlay').classList.contains('open')),
+    'and it closes the modal');
   await phone.keyboard.press('Escape');
 
   await phone.goto('http://localhost:8931/read.html?read=fx/oneshots.eski');
@@ -1173,7 +1196,7 @@ function ok(cond, name, extra) {
     return s.position === 'fixed' && s.left === '0px' && s.bottom === '0px';
   }), 'settings becomes a bottom sheet, not a corner popover');
   // the sheet covers the button that opened it, so it carries its own close
-  await phone.click('.sheet-head button');
+  await phone.click('#settings .sheet-head button');
   ok(await phone.evaluate(() => !document.getElementById('settings').classList.contains('open')),
     'the sheet can be closed from inside itself');
 

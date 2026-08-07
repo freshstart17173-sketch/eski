@@ -167,7 +167,16 @@ section + section{margin-top:var(--s6)}
    details. click outside or press escape to go back.
    ============================================================ */
 .ov.open{display:grid}
-.sheet{width:min(880px,100%);max-height:88vh}
+.sheet{width:min(880px,100%);max-height:88vh;position:relative}
+/* ON A PHONE THERE IS NOWHERE TO TAP "OUTSIDE".
+   The sheet fills the screen, so the tap-the-scrim-to-close that works on a
+   desktop has no target, and escape needs a keyboard. It carries its own way
+   out. On a desktop the scrim is right there, so this stays hidden. */
+.sheet-x{display:none;position:absolute;top:0;right:0;z-index:3;width:44px;height:44px;
+  border:0;border-left:1px solid var(--rule);border-bottom:1px solid var(--rule);
+  background:var(--paper);color:var(--ink);font-size:24px;line-height:1;padding:0}
+.sheet-x:active{background:var(--surface)}
+@media(max-width:720px){ .sheet-x{display:block} }
 .sheetbody{display:grid;grid-template-columns:270px 1fr}
 @media(max-width:720px){.sheetbody{grid-template-columns:1fr}}
 .sheetbody .left{padding:var(--s4);border-right:1px solid var(--rule)}
@@ -1325,7 +1334,8 @@ function openDetails(c, role){
   const later = isLater(c);
 
   sheet.innerHTML =
-   `<div class="sheetbody">
+   `<button class="sheet-x" onclick="close_()" title="close" aria-label="close">&times;</button>
+    <div class="sheetbody">
       <div class="left">
         <div class="plate">${c.cover ? `<img src="${esc(c.cover)}" alt="">` : ''}</div>
         ${capRows(c)}
