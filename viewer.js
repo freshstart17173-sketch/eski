@@ -17,18 +17,27 @@
   const clamp = (n, a, b) => Math.max(a, Math.min(b, n));
 
   const CSS = `
-.vw{position:relative;flex:1;min-height:0;min-width:0;overflow:hidden;display:grid;
-  place-items:center;background:var(--paper-1);touch-action:none;user-select:none}
+.vw{position:relative;flex:1;min-height:0;min-width:0;overflow:hidden;
+  background:var(--paper-1);touch-action:none;user-select:none}
 [data-theme="dark"] .vw{background:var(--surf-2)}
-.vw-inner{display:grid;place-items:center;width:100%;height:100%;padding:var(--s4);
-  box-sizing:border-box;transform-origin:center center;will-change:transform}
-/* the box is definite and the image contains itself inside it. a percentage
-   height on the image would resolve against a box whose own height came from
-   the image, so it never applied and the page rendered at natural size. */
+/* ABSOLUTE, not a stretched grid item. max-height on the image only resolves
+   against a parent whose own height is definite, and a grid/flex row that is
+   sized by its content is not: the percentage silently does nothing, the page
+   renders at natural size, and a tall one gets its foot cut off by the
+   overflow rule. inset:0 against the positioned .vw is what makes it definite. */
+.vw-inner{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  padding:var(--s4);box-sizing:border-box;transform-origin:center center;will-change:transform}
+/* -webkit-user-drag is what stops a pan turning into the browser's own image
+   drag a few pixels in, which is what put the "no drop" slashed circle under
+   the cursor and killed the pointer stream mid-gesture. */
 .vw-img{max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain;
-  display:block;background:var(--paper)}
+  display:block;background:var(--paper);-webkit-user-drag:none;user-drag:none;
+  -webkit-touch-callout:none}
 .vw-img[hidden]{display:none}
-.vw-empty{color:var(--label);font-size:var(--fs-xs);letter-spacing:.06em;text-align:center}
+/* .vw is no longer a centring grid, so the empty state places itself */
+.vw-empty{position:absolute;inset:0;display:grid;place-items:center;padding:var(--s4);
+  color:var(--label);font-size:var(--fs-xs);letter-spacing:.06em;text-align:center}
+.vw-empty[hidden]{display:none}
 .vw-zoom{position:absolute;right:var(--s3);bottom:var(--s3);display:flex;align-items:center;
   gap:0;border:1px solid var(--rule,var(--line));background:var(--paper);z-index:3}
 .vw-zoom button{width:26px;height:24px;border:0;border-left:1px solid var(--rule-hair,var(--line));
@@ -56,7 +65,7 @@
     opts = opts || {};
     root.classList.add('vw');
     root.innerHTML =
-      `<div class="vw-inner"><img class="vw-img" alt="" hidden></div>
+      `<div class="vw-inner"><img class="vw-img" alt="" draggable="false" hidden></div>
        <div class="vw-empty">${opts.empty || 'no page'}</div>
        <div class="vw-hint">scroll to zoom · drag to pan · double click to reset</div>
        <div class="vw-zoom" hidden>
@@ -102,9 +111,15 @@
       if(img.hidden) return;
       if(zoom > 1) reset(); else zoomAt(2.2, e.clientX, e.clientY);
     });
+    // belt and braces: even with user-drag off, a stray dragstart would end
+    // the gesture, so refuse it outright
+    root.addEventListener('dragstart', e => e.preventDefault());
     let drag = null;
     root.addEventListener('pointerdown', e => {
       if(zoom <= 1 || img.hidden) return;
+      // stops the native image drag before it starts, which is what used to
+      // interrupt a pan a few pixels in
+      e.preventDefault();
       drag = { x: e.clientX, y: e.clientY, px: panX, py: panY };
       root.setPointerCapture(e.pointerId);
       inner.style.cursor = 'grabbing';

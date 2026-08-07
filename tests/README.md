@@ -57,3 +57,18 @@ node tests/errors.js
 
 fixtures are generated, never committed. the reader's `demo.eski` at the
 project root is owner-swappable and is not touched by the tests.
+
+## viewer-fit
+
+`node tests/viewer-fit.js` (needs the folder served on :8940, e.g. the
+`eski` launch config) mounts `viewer.js` on its own and checks that a page
+sits inside the viewer box on BOTH axes, at four page shapes — tall, wide,
+square and a 900x4000 webtoon strip — across three viewports, and that the
+wheel still zooms.
+
+it exists because this broke twice. `max-height:100%` on the page image only
+resolves against a parent with a definite height; inside a grid or flex row
+sized by its own content it silently does nothing, the page renders at
+natural size, and a tall scan loses its foot to the overflow rule. a check
+that only ever used a WIDE page passes anyway, because there `max-width`
+does the work and the broken `max-height` is never asked to.
