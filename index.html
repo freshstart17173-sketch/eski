@@ -12,229 +12,368 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script type="module" src="platform.js"></script>
 <link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="docs/design/final/broadsheet.css">
 <style>
-body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--font-body);
-  font-weight:400;font-size:var(--fs);line-height:1.5;min-height:100vh;display:flex;flex-direction:column}
-h2{margin:0;font-size:var(--fs-display);line-height:.92;text-transform:lowercase;
-  font-weight:400;font-family:var(--font-display);color:var(--accent);letter-spacing:-0.01em}
-a{color:var(--accent-deep);text-decoration:none}
-a:hover{text-decoration:underline;text-underline-offset:3px}
-.ico{width:15px;height:15px;flex:none;stroke:currentColor;fill:none;stroke-width:2;
+/* ============================================================
+   eski — home and browse (eskis · roles · no score).
+
+   The style block below is docs/design/final/home.html's, kept as it was
+   written: the five-up grid stepping to four, three and two, the 2:3 plate,
+   the gnomon title on a fixed 24px line, three rows of tag chips, and the
+   five caption rows on a fixed 19px baseline so every card in a row ends
+   level with its neighbour.
+
+   Three class names differ from that file, each for a reason:
+     .card    also carries .cover, .title also carries .t, and the grid cell
+              is .cell — the smoke suite locates library cards by those names.
+     .shelved is the "on your shelf" badge. The design's .tag is a tag CHIP
+              and the two used to collide.
+     .bcard   is the browse pane's card. It cannot be .cover or a hidden
+              browse pane would double every count the suite makes.
+   ============================================================ */
+.wrap{max-width:1280px;margin:0 auto;padding:0 var(--s4) var(--s7)}
+.pane{display:none}
+.pane.on{display:block}
+section + section{margin-top:var(--s6)}
+:root{ --row:19px; }
+.top{position:sticky;top:0;z-index:30}
+.portrait{width:46px;height:46px}
+.pfp{width:22px;height:22px}
+
+/* ---------- the header: wordmark, the four words, then the utilities ----------
+   the nav sits right, exactly as the design has it. the buttons carry
+   font:inherit because a <button> does not inherit text-transform or family
+   from .top nav, which is what made "home browse" render in a different face
+   and size to "STUDIO PROFILE". */
+.top nav a,.top nav button{font:inherit;font-size:var(--fs-micro);letter-spacing:.14em;
+  text-transform:lowercase;cursor:pointer;line-height:1.2}
+.top .sp{flex:1}
+.ico{width:13px;height:13px;flex:none;stroke:currentColor;fill:none;stroke-width:2;
   stroke-linecap:round;stroke-linejoin:round;display:block}
+/* platform.js paints the sign-in control into .site-header itself. it is the
+   only thing in the bar besides the wordmark and the four words. */
+.auth{margin-left:var(--s4)}
+.auth-btn{font-size:var(--fs-micro)!important;letter-spacing:.1em!important;
+  text-transform:lowercase!important;border-color:var(--rule-hair)!important}
 
-/* header: one hairline, no shadow, no float */
-.site-header{position:sticky;top:0;z-index:10;height:var(--hdr);background:var(--surface);
-  border-bottom:var(--bw) solid var(--line);display:flex;align-items:center;
-  padding:0 var(--s4);gap:var(--s4)}
-.brand{font-family:var(--font-display);font-size:25px;color:var(--accent);line-height:1;
-  text-decoration:none;letter-spacing:-0.01em;padding-top:2px}
-.brand:hover{text-decoration:none;color:var(--accent-deep)}
-.hdr-label{color:var(--muted);text-transform:lowercase;font-size:var(--fs-sm);
-  border-left:var(--bw) solid var(--line);padding-left:var(--s4)}
-.hdr-link{color:var(--muted);text-transform:lowercase;font-size:var(--fs-sm);
-  display:inline-flex;align-items:center;gap:var(--s2)}
-.hdr-link:hover{color:var(--accent);text-decoration:none}
-.sp{flex:1}
-/* search: an icon until you ask for it. the input animates its width rather
-   than appearing, so the header never jumps. */
-.search{display:flex;align-items:center}
-.search .btn.icon{width:var(--ctl);padding:0;justify-content:center}
-.search input{width:0;padding:0;border:0;background:transparent;color:inherit;
-  font-size:var(--fs-sm);opacity:0;pointer-events:none;
-  transition:width var(--t-mid) var(--ease),opacity var(--t-fast) var(--ease),padding var(--t-mid) var(--ease)}
-.search.open input{width:min(260px,42vw);opacity:1;pointer-events:auto;
-  padding:0 var(--s3);border:var(--bw) solid var(--line);border-left:0;height:var(--ctl)}
-.search.open input:focus{outline:none;border-color:var(--accent)}
-.search.open .btn.icon{border-right:0;color:var(--accent)}
-.search input::-webkit-search-cancel-button{filter:grayscale(1)}
-/* no match is a state, not an empty page */
-.no-match{grid-column:1/-1;padding:var(--s7) var(--s5);text-align:center;color:var(--muted);
-  font-size:var(--fs-sm)}
-.wrap{width:min(var(--max),100%);margin:0 auto;padding:var(--s6) var(--s5) var(--s8);flex:1}
-.head-row{display:flex;align-items:flex-end;gap:var(--s4);margin-bottom:var(--s1)}
-.rule{margin:0 0 var(--s4)}
-.sub{color:var(--muted);font-size:var(--fs-sm);margin:0}
+/* ---------- the grid: five up, then four, three, two ---------- */
+.grid{display:grid;grid-template-columns:repeat(5,1fr);border-left:1px solid var(--rule)}
+@media(max-width:1180px){.grid{grid-template-columns:repeat(4,1fr)}}
+@media(max-width:900px){.grid{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:640px){.grid{grid-template-columns:repeat(2,1fr)}}
 
-/* the shelf. a contact sheet: cells share hairlines instead of floating apart. */
-/* hairlines come from each cell's outline, not from the container's
-   background showing through the gap: auto-fill keeps empty tracks on a wide
-   screen, and a container background paints them as a grey slab. outlines
-   take no layout space and meet inside the 1px gap. */
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));
-  gap:var(--bw);margin-top:var(--s5)}
-.cell{position:relative;background:var(--surface);outline:var(--bw) solid var(--line)}
-.cover{border:0;border-radius:var(--r);background:var(--surface);cursor:pointer;padding:0;
-  display:block;width:100%;text-align:left;overflow:hidden;
+/* ---------- a card: plate, title, tags, caption ---------- */
+.cell,.bcell{position:relative;display:flex;background:var(--paper);
+  border-right:1px solid var(--rule);border-bottom:1px solid var(--rule)}
+.card{display:flex;flex-direction:column;background:var(--paper);text-align:left;
+  border:0;border-right:1px solid var(--rule);border-bottom:1px solid var(--rule);
+  padding:var(--s3);color:inherit;font:inherit;min-width:0;width:100%;cursor:pointer;
   transition:background var(--t-fast) var(--ease)}
-.cover:hover{background:var(--sage-100)}
-.cover .art{width:100%;aspect-ratio:2/3;background:var(--paper-1);display:flex;
-  align-items:center;justify-content:center;color:var(--muted)}
-.cover .art img{width:100%;height:100%;object-fit:cover;display:block}
-.cover .art .ico{width:28px;height:28px;opacity:.45}
-.cover .t{padding:var(--s2) var(--s3);font-size:var(--fs-sm);text-transform:lowercase;
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--soft-ink);
-  border-top:var(--bw) solid var(--line)}
-.cover:hover .t{color:var(--accent-deep)}
-.cover .a{padding:0 var(--s3) var(--s2);font-size:var(--fs-micro);color:var(--muted);
-  text-transform:lowercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.cell .tag{position:absolute;top:0;left:0;background:var(--accent);color:var(--on-accent);
-  font-size:var(--fs-micro);padding:2px 6px;text-transform:lowercase;pointer-events:none;
-  font-weight:500;letter-spacing:.04em}
-.cell .rm{position:absolute;top:0;right:0;width:26px;height:26px;border:0;
-  background:var(--sage-900);color:var(--sage-100);display:none;
-  align-items:center;justify-content:center;padding:0;border-radius:var(--r)}
+/* inside a cell the hairlines belong to the cell, not the button */
+.cell > .card,.bcell > .card{border-right:0;border-bottom:0}
 .cell:hover .rm{display:flex}
-.cell .rm:hover{background:var(--danger);color:var(--white)}
+.card:hover{background:var(--surface)}
+.card:active{transform:translateY(1px)}
+.plate{position:relative;overflow:hidden;border:1px solid var(--rule-hair);
+  aspect-ratio:2/3;background:var(--paper-1)}
+[data-theme="dark"] .plate{background:var(--surf-2)}
+.plate img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;
+  transition:transform var(--t-mid) var(--ease)}
+.plate .ico{width:26px;height:26px;opacity:.35;position:absolute;inset:0;margin:auto}
+.card:hover .plate img{transform:scale(1.025)}
+.card:active .plate img{transform:scale(.998)}
+.card:hover .plate{border-color:var(--rule)}
 
-.state{border:var(--bw) solid var(--line);padding:var(--s7) var(--s5);text-align:center;
-  color:var(--muted);margin-top:var(--s5);background:var(--surface);font-size:var(--fs-sm)}
-.state code{background:var(--paper-1);border:var(--bw) solid var(--line);padding:1px 6px;
-  font-family:ui-monospace,Menlo,Consolas,monospace;font-size:var(--fs-xs);color:var(--ink)}
-/* the failure code is meant to be copied into a bug report, so let it wrap and
-   let it be selected even where the surrounding empty state is not */
+.title{font-family:var(--font-display);font-weight:400;font-size:17px;line-height:24px;
+  height:24px;text-align:center;margin-top:var(--s3)}
+.card:hover .title{box-shadow:inset 0 -1px 0 var(--rule)}
+/* the note line is in the markup whether or not it has anything in it, so a
+   card that carries one does not push its neighbours a row out of true. */
+.note{height:var(--row);line-height:var(--row);font-size:var(--fs-micro);
+  color:var(--label);text-align:center;letter-spacing:.04em}
+
+/* ---------- tags. ao3 order: the five that matter, then the count. ---------- */
+.tags{display:flex;flex-wrap:wrap;gap:3px;height:54px;overflow:hidden;
+  margin:var(--s1) 0 var(--s2);align-content:flex-start}
+.tags:empty{height:54px}
+
+/* ---------- caption rows: tight, hairline separated, right aligned ---------- */
+.cap{margin-top:auto;font-size:var(--fs-xs);color:var(--soft-ink)}
+.cap .r{display:grid;grid-template-columns:42px 1fr;align-items:center;gap:var(--s2);
+  height:var(--row);border-top:1px solid var(--rule-hair);min-width:0}
+.cap .r:first-child{border-top:0}
+.cap .k{color:var(--label);letter-spacing:.06em;font-size:var(--fs-micro);
+  text-transform:uppercase;white-space:nowrap}
+.cap .v{text-align:right;font-variant-numeric:tabular-nums;min-width:0}
+.cap .v.want{color:var(--ink);font-weight:500}
+.cap .v.none{color:var(--muted);font-style:italic}
+
+/* the shelved badge. NOT .tag — that is a chip. */
+.shelved{position:absolute;top:0;left:0;background:var(--mark);color:var(--paper);
+  font-size:9px;letter-spacing:.08em;text-transform:uppercase;padding:2px 6px;
+  pointer-events:none;z-index:2}
+[data-theme="dark"] .shelved{color:var(--sage-900)}
+.rm{position:absolute;top:0;right:0;width:24px;height:24px;border:0;
+  border-bottom:1px solid var(--rule-hair);border-left:1px solid var(--rule-hair);
+  background:var(--paper);color:var(--label);display:none;align-items:center;
+  justify-content:center;padding:0;z-index:2;cursor:pointer}
+.cell:hover .rm{display:flex}
+.rm:hover{background:var(--rec);color:var(--white)}
+
+/* ---------- voiceover needed, on the home page ---------- */
+.rolecard{display:flex;flex-direction:column;background:var(--paper);text-align:left;
+  border:0;border-right:1px solid var(--rule);border-bottom:1px solid var(--rule);
+  padding:var(--s3);color:inherit;font:inherit;min-width:0;cursor:pointer;
+  transition:background var(--t-fast) var(--ease)}
+.rolecard:hover{background:var(--surface)}
+.rolecard:active{transform:translateY(1px)}
+.rolehead{display:flex;gap:var(--s2);align-items:flex-start;min-width:0}
+.portrait{width:46px;height:46px;flex:none;display:block;overflow:hidden;
+  border:1px solid var(--rule-hair);background:var(--paper-1)}
+[data-theme="dark"] .portrait{background:var(--surf-2)}
+.portrait img{width:100%;height:100%;object-fit:cover;
+  transition:transform var(--t-mid) var(--ease)}
+.rolecard:hover .portrait img,.rolerow:hover .portrait img{transform:scale(1.06)}
+.rolename{font-family:var(--font-display);font-size:15px;line-height:20px;height:20px}
+.rolein{font-size:var(--fs-micro);color:var(--label);line-height:var(--row);height:var(--row)}
+.blurb{font-size:var(--fs-xs);color:var(--soft-ink);line-height:1.4;margin:var(--s2) 0;
+  height:calc(1.4em * 3);overflow:hidden;
+  display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical}
+.rolefoot{display:flex;align-items:center;justify-content:space-between;gap:var(--s2);
+  margin-top:auto;padding-top:var(--s1);border-top:1px solid var(--rule-hair);
+  height:var(--row);font-size:var(--fs-micro);letter-spacing:.06em;color:var(--label);
+  font-variant-numeric:tabular-nums}
+
+/* ---------- voiceover needed: one dense row per character ---------- */
+.rolelist{border-top:1px solid var(--rule)}
+.rolerow{display:grid;grid-template-columns:46px 196px 210px 1fr 84px 104px;gap:var(--s3);
+  align-items:center;padding:5px var(--s2);width:100%;text-align:left;background:none;
+  border:0;border-bottom:1px solid var(--rule-hair);color:inherit;font:inherit;
+  min-width:0;cursor:pointer;transition:background var(--t-fast) var(--ease)}
+.rolerow:hover{background:var(--surface)}
+.rolerow .who,.rolerow .where{min-width:0}
+.rolerow .where{font-size:var(--fs-micro);color:var(--label);line-height:var(--row)}
+.rolerow .where .ttl{color:var(--soft-ink)}
+.rolerow .blurb{margin:0;height:auto;-webkit-line-clamp:2;font-size:var(--fs-xs)}
+.rolerow .lines{text-align:right;font-size:var(--fs-micro);color:var(--label);
+  font-variant-numeric:tabular-nums;line-height:1.35}
+.rolerow .lines b{display:block;color:var(--ink);font-weight:500;font-size:var(--fs-xs)}
+.rolerow .go{display:flex;justify-content:flex-end}
+.rolerow .go .btn{opacity:.5;transition:opacity var(--t-fast) var(--ease),
+  background var(--t-fast) var(--ease),color var(--t-fast) var(--ease)}
+.rolerow:hover .go .btn{opacity:1}
+@media(max-width:1080px){
+  .rolerow{grid-template-columns:46px 1fr 1fr auto}
+  .rolerow .blurb,.rolerow .lines{display:none}
+}
+
+/* ============================================================
+   details. click outside or press escape to go back.
+   ============================================================ */
+.ov.open{display:grid}
+.sheet{width:min(880px,100%);max-height:88vh}
+.sheetbody{display:grid;grid-template-columns:270px 1fr}
+@media(max-width:720px){.sheetbody{grid-template-columns:1fr}}
+.sheetbody .left{padding:var(--s4);border-right:1px solid var(--rule)}
+.sheetbody .right{padding:var(--s4);min-width:0}
+.sheetbody h3{font-family:var(--font-display);font-weight:400;font-size:var(--fs-title);
+  margin:0 0 var(--s2);line-height:1.05}
+.sheetbody p.desc{margin:var(--s3) 0 0;color:var(--soft-ink);line-height:1.55;
+  font-size:var(--fs-xs);white-space:pre-wrap}
+.subhead{display:flex;align-items:baseline;gap:var(--s3);margin:var(--s5) 0 var(--s2);
+  padding-bottom:3px;border-bottom:1px solid var(--rule);
+  font-size:var(--fs-micro);letter-spacing:.16em;text-transform:uppercase}
+.subhead .sp{flex:1}
+.subhead .n{color:var(--label);letter-spacing:.1em}
+.charhead{display:flex;align-items:baseline;gap:var(--s2);margin:var(--s3) 0 2px;
+  font-size:var(--fs-micro);letter-spacing:.1em;text-transform:uppercase;color:var(--label)}
+.charhead b{color:var(--ink);font-weight:500;letter-spacing:.06em}
+.charhead .sp{flex:1}
+
+/* one voiceover, one score: a row you can pick. the design drew this as an
+   exclusive radio; SPEC.md §1 says contributions STACK, so it is a checkbox
+   with the design's dot on it — same object, honest behaviour. */
+.pick{display:grid;grid-template-columns:14px 22px 1fr auto;gap:var(--s2);
+  align-items:center;width:100%;text-align:left;background:none;color:inherit;font:inherit;
+  border:0;border-bottom:1px solid var(--rule-hair);padding:4px var(--s1);cursor:pointer;
+  transition:background var(--t-fast) var(--ease)}
+.pick:hover{background:var(--surface)}
+.pick input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+.pick .dot{width:11px;height:11px;border:1px solid var(--line-strong);border-radius:50%;
+  position:relative}
+.pick:has(input:checked) .dot{border-color:var(--mark)}
+.pick:has(input:checked) .dot::after{content:"";position:absolute;inset:2px;
+  border-radius:50%;background:var(--mark)}
+.pick .who{font-size:var(--fs-xs);min-width:0}
+.pick .who b{font-weight:500}
+.pick .who span{color:var(--label)}
+.pick:has(input:checked) .who b{color:var(--ink)}
+
+.openline{display:grid;grid-template-columns:14px 22px 1fr auto;gap:var(--s2);
+  align-items:center;padding:4px var(--s1);border-bottom:1px solid var(--rule-hair);
+  font-size:var(--fs-xs);color:var(--label)}
+
+.mixline{font-size:var(--fs-micro);color:var(--label);letter-spacing:.06em;
+  padding:var(--s2) 0 0}
+.mixline b{color:var(--ink);font-weight:500}
+.acts{display:flex;gap:var(--s2);flex-wrap:wrap;padding:var(--s3) var(--s4);
+  border-top:1px solid var(--rule);position:sticky;bottom:0;background:var(--paper)}
+.alltags{display:flex;flex-wrap:wrap;gap:3px;align-items:center}
+/* adding a tag: anyone signed in, ao3 style */
+.tagadd{display:flex;gap:var(--s1);align-items:center;margin-top:var(--s2)}
+.tagadd input{height:22px;border:1px solid var(--rule-hair);background:var(--surface);
+  color:var(--ink);padding:0 var(--s2);font-size:10px;letter-spacing:.06em;min-width:0;flex:1}
+.tagadd input:focus{outline:none;border-color:var(--accent)}
+.tag.mine{border-style:solid;border-color:var(--accent);color:var(--accent)}
+.tag.x{cursor:pointer}
+
+/* ---------- shelf progress ---------- */
+.progress{height:3px;background:var(--rule-hair);margin-top:var(--s2)}
+.progress i{display:block;height:100%;background:var(--mark)}
+
+/* a little green where the eye lands in a dense view */
+.hot{color:var(--accent)}
+.head .n{color:var(--accent)}
+.cap .v.want{color:var(--accent)}
+.rolerow .lines b{color:var(--accent)}
+.seg button[aria-selected="true"]{background:var(--mark);color:var(--paper)}
+[data-theme="dark"] .seg button[aria-selected="true"]{color:var(--sage-900)}
+.bar.modes{border-bottom:0;padding-bottom:0}
+.modenote{font-size:var(--fs-micro);letter-spacing:.08em;text-transform:uppercase;
+  color:var(--accent)}
+button.link{background:none;border:0;padding:0;font:inherit;font-size:var(--fs-micro);
+  letter-spacing:.1em;text-transform:uppercase;color:var(--label);cursor:pointer;
+  box-shadow:inset 0 -1px 0 transparent;transition:color var(--t-fast) var(--ease),
+  box-shadow var(--t-fast) var(--ease)}
+button.link:hover{color:var(--ink);box-shadow:inset 0 -1px 0 var(--ink)}
+
+.foot{margin-top:var(--s7);padding-top:var(--s3);border-top:1px solid var(--rule);
+  display:flex;justify-content:space-between;gap:var(--s3);flex-wrap:wrap;
+  font-size:var(--fs-micro);letter-spacing:.1em;color:var(--label)}
+.foot a{color:inherit;text-decoration:none}
+.foot a:hover{color:var(--ink)}
+
+/* ---------- states ---------- */
+.state{border:1px solid var(--rule);padding:var(--s7) var(--s5);text-align:center;
+  color:var(--label);background:var(--surface);font-size:var(--fs-xs)}
+.state code{background:var(--paper-1);border:1px solid var(--rule-hair);padding:1px 6px;
+  font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11px;color:var(--ink)}
 .state code.why{user-select:text;display:inline-block;max-width:46ch;text-align:left;
   white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.5}
-.spinner{width:28px;height:28px;border:2px solid var(--line);border-top-color:var(--accent);
-  border-radius:var(--r-round);animation:spin .8s linear infinite;margin:0 auto var(--s3)}
+.spinner{width:24px;height:24px;border:2px solid var(--rule-hair);border-top-color:var(--accent);
+  border-radius:50%;animation:spin .8s linear infinite;margin:0 auto var(--s3)}
 @keyframes spin{to{transform:rotate(360deg)}}
+.no-match{grid-column:1/-1;padding:var(--s7) var(--s5);text-align:center;color:var(--label);
+  font-size:var(--fs-xs)}
 
-/* modal */
-.overlay{position:fixed;inset:0;background:rgba(20,34,27,.72);display:none;align-items:center;
-  justify-content:center;z-index:100;padding:var(--s5)}
-.overlay.open{display:flex}
-.modal{background:var(--surface);border:var(--bw) solid var(--edge-strong);max-width:360px;
-  width:100%;padding:var(--s5);text-align:center}
-.modal .art{width:150px;aspect-ratio:2/3;object-fit:cover;margin:0 auto;display:block;
-  background:var(--paper-1);border:var(--bw) solid var(--line)}
-.modal .t{margin:var(--s4) 0 var(--s1);font-weight:500;text-transform:lowercase;font-size:var(--fs-lg)}
-.modal p{margin:var(--s2) 0 var(--s4);color:var(--soft-ink);font-size:var(--fs-sm)}
-.modal .by{color:var(--muted);font-size:var(--fs-sm);text-transform:lowercase;margin-bottom:var(--s2)}
-.modal .desc{color:var(--soft-ink);font-size:var(--fs-sm);text-align:left;margin:var(--s3) 0;
-  max-width:62ch;white-space:pre-wrap}
-.modal .actions{display:flex;gap:var(--bw);justify-content:center;flex-wrap:wrap}
-.mix-h{font-size:var(--fs-micro);text-transform:lowercase;letter-spacing:.14em;color:var(--muted);
-  margin:var(--s4) 0 var(--s2);text-align:left;font-weight:500}
-.mixrow{display:flex;align-items:center;gap:var(--s2);font-size:var(--fs-sm);padding:var(--s1) 0;
-  text-align:left;cursor:pointer}
-.mixrow .k{font-size:var(--fs-micro);text-transform:lowercase;letter-spacing:.05em;
-  color:var(--on-accent);background:var(--accent);padding:1px 6px;flex:none;font-weight:500}
-.mixrow .n{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.chaps{display:grid;grid-template-columns:repeat(auto-fill,minmax(30px,1fr));gap:var(--bw);
-  background:var(--line);border:var(--bw) solid var(--line)}
-.chap{height:30px;border:0;background:var(--surface);color:var(--soft-ink);font-size:var(--fs-xs);
-  font-variant-numeric:var(--num)}
-.chap:hover{background:var(--sage-100);color:var(--accent-deep)}
-.chap.on{background:var(--accent);color:var(--on-accent)}
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:var(--s2);
-  min-height:var(--ctl);padding:0 var(--s4);border-radius:var(--r);text-transform:lowercase;
-  font-size:var(--fs-sm);border:var(--bw) solid var(--line-strong);background:var(--surface);
-  color:var(--soft-ink);cursor:pointer;transition:background var(--t-fast) var(--ease),
-  color var(--t-fast) var(--ease),border-color var(--t-fast) var(--ease)}
-/* hover darkens toward the accent instead of washing out. accent-soft is the
-   ground and accent-deep the text, which stays legible in both themes. */
-.btn:hover{border-color:var(--accent);background:var(--accent-soft);
-  color:var(--accent-deep);text-decoration:none}
-.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent);font-weight:500}
-.btn.primary:hover{background:var(--accent-deep);border-color:var(--accent-deep);color:var(--on-accent)}
-
-/* onboarding, first visit only */
-.modal.wide{max-width:460px;text-align:left}
-.modal.wide .t{margin:0 0 var(--s1);font-size:var(--fs-title);font-family:var(--font-display);
-  font-weight:400;color:var(--accent)}
-.ob-sub{color:var(--muted);font-size:var(--fs-sm);margin:0 0 var(--s5)}
+/* ---------- onboarding ---------- */
+.sheet.wide{width:min(460px,100%);text-align:left;padding:var(--s5);max-height:88vh}
+.sheet.wide .t{margin:0 0 var(--s1);font-size:var(--fs-title);font-family:var(--font-display);
+  font-weight:400}
+.ob-sub{color:var(--label);font-size:var(--fs-xs);margin:0 0 var(--s5)}
 .ob-list{display:grid;gap:var(--s4);margin:0 0 var(--s5)}
 .ob-item{border-left:2px solid var(--accent);padding-left:var(--s3)}
-.ob-item b{display:block;font-weight:500;text-transform:lowercase;margin-bottom:2px}
-.ob-item span{display:block;color:var(--soft-ink);font-size:var(--fs-sm);line-height:1.45}
-.modal.wide .actions{justify-content:flex-start;gap:var(--s2)}
-footer{background:var(--surface);color:var(--muted);padding:var(--s5) 0;font-size:var(--fs-sm);
-  border-top:var(--bw) solid var(--line)}
-footer .wrap{display:flex;align-items:center;gap:var(--s4);flex-wrap:wrap;padding:0 var(--s5);flex:none}
-footer .brand{font-size:20px}
+.ob-item b{display:block;font-weight:500;margin-bottom:2px}
+.ob-item span{display:block;color:var(--soft-ink);font-size:var(--fs-xs);line-height:1.45}
+/* broadsheet's .btn is not a flex container, so an inlined icon svg would
+   break the line inside the button, and text sits off centre without it. */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:var(--s1)}
+.btn.primary{background:var(--mark);border-color:var(--mark);color:var(--paper)}
+.btn.primary:hover{background:var(--accent);border-color:var(--accent)}
+[data-theme="dark"] .btn.primary{color:var(--sage-900)}
+/* an empty section must not draw the rule that frames a full one */
+.grid:empty{border-left:0}
+.rolelist:empty{border-top:0}
 
-/* ---------------- touch and narrow screens. KEEP THIS BLOCK LAST ---------------- */
 @media (max-width:640px){
-  /* the header scrolls itself rather than making the whole page scroll, the
-     same treatment the studio header already uses. adding search pushed the
-     row past the viewport on a phone. */
-  .site-header{padding:0 var(--s3);gap:var(--s3);overflow-x:auto;scrollbar-width:none}
-  .site-header::-webkit-scrollbar{display:none}
-  .site-header>*{flex:none}
-  .search .btn.icon{width:42px;height:42px}
-  .search.open input{width:min(200px,38vw);height:42px}
-  .hdr-label{display:none}
-  /* the label hides, so the link would collapse to the icon's 20px. */
-  .hdr-link{min-height:42px;min-width:42px;justify-content:center}
-  .hdr-link span:not(.ico){display:none}
-  .wrap{padding:var(--s5) var(--s3) var(--s7)}
-  .grid{grid-template-columns:repeat(auto-fill,minmax(128px,1fr));margin-top:var(--s4)}
-  .modal{padding:var(--s4);max-height:88vh;overflow-y:auto}
-  .modal.wide{max-width:none}
-  .modal .art{width:118px}
-  .modal .actions{flex-direction:column}
-  .modal .actions .btn{width:100%;justify-content:center}
-  .cell .rm{display:flex;width:30px;height:30px}
-  .mixrow{padding:var(--s2) 0}
-  .mixrow input[type=checkbox]{width:20px;height:20px}
-  .chaps{grid-template-columns:repeat(auto-fill,minmax(38px,1fr))}
-  .chap{height:38px}
-  footer .wrap{gap:var(--s3)}
+  .top{gap:var(--s2);padding:var(--s2) var(--s3);overflow-x:auto;scrollbar-width:none}
+  .top::-webkit-scrollbar{display:none}
+  .top>*{flex:none}
+  .top nav{gap:var(--s3)}
+  .wrap{padding:0 var(--s3) var(--s6)}
+  .sheetbody .left{border-right:0;border-bottom:1px solid var(--rule)}
 }
 </style>
 </head>
 <body>
 
-<header class="site-header">
-  <a class="brand" href="index.html">eski!</a>
-  <span class="hdr-label">home</span>
-  <span class="sp"></span>
-  <!-- collapsed to its icon until clicked, so the shelf keeps the width -->
-  <div class="search" id="search">
-    <button class="btn icon" id="search-btn" data-ico="search" title="search (/)"
-            onclick="toggleSearch()"></button>
-    <input type="search" id="search-q" placeholder="search by title or author"
-           oninput="applySearch()" onkeydown="if(event.key==='Escape')closeSearch()">
-  </div>
-  <button class="btn icon" id="theme-btn" onclick="toggleTheme()"></button>
-  <a class="hdr-link" id="hdr-discord" href="#" target="_blank" rel="noopener"><span data-ico="message-circle"></span>discord</a>
-  <a class="hdr-link" href="studio.html"><span data-ico="file-plus"></span>make an eski</a>
-  <!-- the local shelf was owner staging until publishing existed (D14). it does
-       now, so home no longer offers to shelve: you publish from the studio, or
-       save a draft to your profile. the input stays as the only remaining
-       programmatic path, which the smoke suite drives to keep the idb: reader
-       route covered until the shelf is retired for good. -->
+<header class="top site-header">
+  <a class="mark" href="index.html">eski<i>!</i></a>
+  <nav id="nav">
+    <button data-pane="home" aria-current="page">home</button>
+    <button data-pane="browse">browse</button>
+    <a href="studio.html">studio</a>
+    <a href="profile.html">profile</a>
+  </nav>
+  <!-- the active nav word already says this. kept in the DOM because the
+       smoke suite reads it, and it pre-dates the nav redesign. -->
+  <span class="hdr-label" hidden>home</span>
+  <!-- the local shelf was owner staging until publishing existed. this input
+       is the one remaining programmatic path, which the smoke suite drives. -->
   <input type="file" id="shelf-input" accept=".eski,.cbz,.zip" multiple style="display:none"
          onchange="shelveFiles(this.files);this.value=''">
 </header>
 
-<div class="wrap">
-  <div class="rule"></div>
-  <h2>home</h2>
-  <p class="sub">comics scored with music and voice. pick a cover to start.</p>
-  <div id="grid">
-    <div class="state"><div class="spinner"></div>loading library&#8230;</div>
-  </div>
-</div>
+<!-- ================= HOME ================= -->
+<main class="pane on" id="pane-home"><div class="wrap">
 
-<div class="overlay" id="overlay" onclick="if(event.target===this)close_()">
-  <div class="modal">
-    <img class="art" id="ov-img" alt="cover">
-    <div class="t" id="ov-title"></div>
-    <div class="by" id="ov-by" hidden></div>
-    <p class="desc" id="ov-desc" hidden></p>
-    <div id="ov-credits"></div>
-    <div id="ov-mix"></div>
-    <div class="actions">
-      <a class="btn primary" id="ov-read" href="#"><span data-ico="book-open"></span>read it</a>
-      <button class="btn" id="ov-later"><span data-ico="bookmark"></span>read later</button>
-      <!-- published comics only: the studio needs rows to open, not a file -->
-      <a class="btn" id="ov-contrib" href="#" hidden><span data-ico="mic"></span>voice or score it</a>
+  <section>
+    <div class="head"><h2>new comics</h2><span class="n" id="new-n"></span>
+      <span class="sp"></span><button class="link" data-pane="browse">all comics</button></div>
+    <div id="grid">
+      <div class="state"><div class="spinner"></div>loading library&#8230;</div>
     </div>
+    <button class="seemore" data-more="new" hidden>see more</button>
+  </section>
+
+  <section id="sec-follow" hidden>
+    <div class="head"><h2>from people you follow</h2><span class="n" id="follow-n"></span>
+      <span class="sp"></span><a href="profile.html">who you follow</a></div>
+    <div class="grid" id="grid-follow"></div>
+    <button class="seemore" data-more="follow" hidden>see more</button>
+  </section>
+
+  <section>
+    <div class="head"><h2>voiceover needed</h2><span class="n" id="roles-n"></span>
+      <span class="sp"></span><button class="link" data-browse="roles">see all</button></div>
+    <div class="grid" id="grid-roles"></div>
+    <div class="empty" id="roles-empty" hidden></div>
+    <button class="seemore" data-more="roles" hidden>see more</button>
+  </section>
+
+  <div class="foot"><span>EST. 2026</span>
+    <span><a href="#">TERMS</a> · <a href="#">PRIVACY</a> · <a href="#">TAKEDOWN</a></span></div>
+</div></main>
+
+<!-- ================= BROWSE — eskis, roles, or eskis with no score ====== -->
+<main class="pane" id="pane-browse"><div class="wrap">
+  <div class="head"><h2>browse</h2><span class="n" id="browse-n"></span></div>
+  <div class="bar modes">
+    <div class="seg" id="browse-modes">
+      <button data-mode="comics" aria-selected="true">eskis</button>
+      <button data-mode="roles" aria-selected="false">roles that need a voice</button>
+      <button data-mode="scores" aria-selected="false">eskis with no score</button>
+    </div>
+    <span class="sp" style="flex:1"></span>
+    <span class="modenote" id="modenote"></span>
   </div>
+  <div class="bar">
+    <input type="search" id="b-q" placeholder="search">
+    <span class="lbl">sort</span>
+    <select id="b-sort"></select>
+    <div class="chips" id="b-filters"></div>
+  </div>
+  <div class="grid" id="grid-browse"></div>
+  <div class="rolelist" id="rolelist"></div>
+  <div class="empty" id="browse-empty" hidden>nothing matches that.</div>
+</div></main>
+
+<div class="ov overlay" id="overlay" onclick="if(event.target===this)close_()">
+  <div class="sheet modal" id="sheet"></div>
 </div>
 
-<div class="overlay" id="ob" onclick="if(event.target===this)closeOnboarding()">
-  <div class="modal wide">
+<div class="ov overlay" id="ob" onclick="if(event.target===this)closeOnboarding()">
+  <div class="sheet wide modal">
     <div class="t">how eski works</div>
     <p class="ob-sub">comics, scored and voiced.</p>
     <div class="ob-list">
@@ -247,43 +386,31 @@ footer .brand{font-size:20px}
       <div class="ob-item"><b>anyone can contribute</b>
         <span>voice a character, score a comic, or publish your own.</span></div>
     </div>
-    <div class="actions">
+    <div class="acts" style="padding:0;border:0;position:static">
       <button class="btn primary" onclick="closeOnboarding()">start reading</button>
-      <a class="btn" id="ob-discord" href="#" target="_blank" rel="noopener"><span data-ico="message-circle"></span>discord</a>
+      <a class="btn" id="ob-discord" href="#" target="_blank" rel="noopener">discord</a>
     </div>
   </div>
 </div>
 
-<footer>
-  <div class="wrap">
-    <span class="brand">eski!</span>
-    <span>comics with soundtracks and voice</span>
-    <span class="sp"></span>
-    <a href="read.html">reader</a>
-    <a href="studio.html">studio</a>
-    <a href="docs/design/final/">final design</a>
-  </div>
-</footer>
+<div class="toast" id="toast"></div>
 
 <script>
 /* ================================================================
-   library. drop .eski files into the library/ folder to fill this.
-   covers + titles are read straight from each eski's manifest, so
-   there is nothing to edit by hand.
+   home + browse.
+
+   Every number on this page is a real row. Where a thing cannot be known
+   yet it says so in words rather than showing a plausible zero: a comic
+   with no cast reads "no cast", not "missing 0".
    ================================================================ */
 const ICONS = {
   "book-open": "<path d=\"M12 7v14\" /> <path d=\"M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z\" />",
   "x": "<path d=\"M18 6 6 18\" /> <path d=\"m6 6 12 12\" />",
-  "plus": "<path d=\"M5 12h14\" /> <path d=\"M12 5v14\" />",
-  "file-plus": "<path d=\"M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7z\" /> <path d=\"M14 2v4a2 2 0 0 0 2 2h4\" /> <path d=\"M9 15h6\" /> <path d=\"M12 18v-6\" />",
   "image": "<rect width=\"18\" height=\"18\" x=\"3\" y=\"3\" rx=\"2\" ry=\"2\" /> <circle cx=\"9\" cy=\"9\" r=\"2\" /> <path d=\"m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21\" />",
   "message-circle": "<path d=\"M7.9 20A9 9 0 1 0 4 16.1L2 22Z\" />",
-  "arrow-left": "<path d=\"m12 19-7-7 7-7\" /> <path d=\"M19 12H5\" />",
   "search": "<circle cx=\"11\" cy=\"11\" r=\"8\" /> <path d=\"m21 21-4.3-4.3\" />",
-  "bookmark": "<path d=\"m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z\" />",
-  "mic": "<path d=\"M12 19v3\" /> <path d=\"M19 10v2a7 7 0 0 1-14 0v-2\" /> <rect x=\"9\" y=\"2\" width=\"6\" height=\"13\" rx=\"3\" />",
   "moon": "<path d=\"M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401\" />",
-  "sun": "<circle cx=\"12\" cy=\"12\" r=\"4\" /> <path d=\"M12 2v2\" /> <path d=\"M12 20v2\" /> <path d=\"m4.93 4.93 1.41 1.41\" /> <path d=\"m17.66 17.66 1.41 1.41\" /> <path d=\"M2 12h2\" /> <path d=\"M20 12h2\" /> <path d=\"m6.34 17.66-1.41 1.41\" /> <path d=\"m19.07 4.93-1.41 1.41\" />",
+  "sun": "<circle cx=\"12\" cy=\"12\" r=\"4\" /> <path d=\"M12 2v2\" /> <path d=\"M12 20v2\" /> <path d=\"m4.93 4.93 1.41 1.41\" /> <path d=\"m17.66 17.66 1.41 1.41\" /> <path d=\"M2 12h2\" /> <path d=\"M20 12h2\" /> <path d=\"m6.34 17.66-1.41 1.41\" /> <path d=\"m19.07 4.93-1.41 1.41\" />"
 };
 function paintIcons(root){
   (root||document).querySelectorAll('[data-ico]').forEach(el=>{
@@ -292,69 +419,368 @@ function paintIcons(root){
       `<svg class="ico" viewBox="0 0 24 24" aria-hidden="true">${ICONS[el.getAttribute('data-ico')]||''}</svg>`);
   });
 }
-/* theme. the same 'eski-settings' key the reader and the studio use, so the
-   choice follows you between the three surfaces instead of being per page.
-   the icon shows what you would switch TO, which is the convention that
-   confuses people least. */
-const themeSettings = (()=>{ try{ return JSON.parse(localStorage.getItem('eski-settings'))||{}; }
-  catch(e){ return {}; } })();
-function paintTheme(){
-  document.documentElement.dataset.theme = themeSettings.dark ? 'dark' : '';
-  const b = document.getElementById('theme-btn');
-  if(!b) return;
-  b.setAttribute('data-ico', themeSettings.dark ? 'sun' : 'moon');
-  b.title = themeSettings.dark ? 'light mode' : 'dark mode';
-  b.innerHTML = '';
-  paintIcons(b.parentElement);
-}
-function toggleTheme(){
-  themeSettings.dark = !themeSettings.dark;
-  try{ localStorage.setItem('eski-settings', JSON.stringify(themeSettings)); }catch(e){}
-  paintTheme();
-}
-paintTheme();
+/* the theme is chosen in profile settings and stored under the same
+   'eski-settings' key the reader and the studio read, so it follows you
+   between surfaces. this page only applies it. */
+try{
+  const s = JSON.parse(localStorage.getItem('eski-settings')) || {};
+  document.documentElement.dataset.theme = s.dark ? 'dark' : '';
+}catch(e){}
 
-const DISCORD = 'https://discord.gg/UFNpnHAbD';
-const esc = s => (s??'').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;');
+const esc = s => (s??'').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
+const nfmt = n => (n||0).toLocaleString('en-US');
+const initials = name => (name||'').split(/[\s.]+/).filter(Boolean).map(w=>w[0]).join('').slice(0,2);
 const IMG_RE = /\.(jpe?g|png|gif|webp|bmp|avif)$/i;
-document.querySelectorAll('#hdr-discord,#ob-discord').forEach(a=>a.href=DISCORD);
+const mq = s => `<span class="mq"><span>${esc(s)}</span></span>`;
+document.getElementById('ob-discord').href = 'https://discord.gg/UFNpnHAbD';
 
-/* where the library comes from, in order:
-   1. library/index.json, if present. It is authoritative: it can point at
-      media anywhere (R2) and carry a title and a small cover, which means the
-      grid never downloads a whole comic just to read its manifest.
-   2. a directory autoindex listing, the zero-config path for local dev and
-      apache/nginx. Vercel and GitHub Pages do not autoindex, which is exactly
-      why index.json comes first. */
-async function listEskis(){
-  try{
-    const r = await fetch('library/index.json', {cache:'no-store'});
-    if(r.ok){
-      const j = await r.json();
-      const arr = Array.isArray(j) ? j : (j.entries||j.files||[]);
-      const out = arr.map(e=>typeof e==='string'?{file:e}:e)
-        .filter(e=>e.file)
-        .map(e=>({...e, file: /^(https?:|\/|library\/)/.test(e.file) ? e.file : 'library/'+e.file}));
-      if(out.length) return out;
-    }
-  }catch(e){}
-  try{
-    const r = await fetch('library/', {cache:'no-store'});
-    if(r.ok){
-      const html = await r.text();
-      const files = [...html.matchAll(/href="([^"?]+\.eski)"/gi)].map(m=>m[1]);
-      if(files.length) return [...new Set(files)].map(f=>({
-        file: /^(https?:|\/)/.test(f) ? f : (f.includes('library/') ? f : 'library/'+f.replace(/^\.?\//,''))
-      }));
-    }
-  }catch(e){}
-  return [];
+let toastTimer;
+function toast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('on');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>t.classList.remove('on'), 1800);
 }
-/* ---------------- local shelf ----------------
-   eskis dropped straight onto the library live in indexeddb until there is a
-   backend to upload them to. they show up in the same grid and open in the
-   reader as ?read=idb:<id>, so the reader still only ever opens what the
-   library hands it. */
+
+/* ---------------- panes ---------------- */
+function go(name){
+  const pane = name === 'roles' || name === 'scores' ? 'browse' : name;
+  document.querySelectorAll('.pane').forEach(p=>p.classList.remove('on'));
+  document.getElementById('pane-' + pane).classList.add('on');
+  document.querySelectorAll('#nav [data-pane]').forEach(b=>{
+    if(b.dataset.pane === pane) b.setAttribute('aria-current','page');
+    else b.removeAttribute('aria-current');
+  });
+  scrollTo(0,0);
+  fitScrollers(document); fitTags(document);
+}
+document.addEventListener('click', e=>{
+  const bm = e.target.closest('[data-browse]');
+  if(bm){ e.preventDefault(); goBrowse(bm.dataset.browse); return; }
+  const t = e.target.closest('[data-pane]');
+  if(t){
+    e.preventDefault();
+    go(t.dataset.pane);
+    location.hash = t.dataset.pane === 'browse' ? 'browse' : '';
+  }
+});
+function fromHash(){
+  const h = (location.hash||'').replace('#','');
+  if(h === 'browse') go('browse');
+  else if(h === 'roles' || h === 'scores') goBrowse(h);
+  else go('home');
+}
+addEventListener('hashchange', fromHash);
+
+/* ---------- overflow: measure once, scroll on hover ---------- */
+function fitScrollers(root){
+  root.querySelectorAll('.mq').forEach(m=>{
+    const inner = m.firstElementChild;
+    if(!inner) return;
+    const over = inner.scrollWidth - m.clientWidth;
+    if(over > 1){
+      m.dataset.over = '1';
+      m.style.setProperty('--mq-x', `-${over + 4}px`);
+      m.style.setProperty('--mq-t', `${Math.round((over + 4) / 40 * 1000)}ms`);
+    }else{
+      m.removeAttribute('data-over');
+      m.style.removeProperty('--mq-x');
+    }
+  });
+}
+const TAGS_SHOWN = 5;
+function fitTags(root){
+  root.querySelectorAll('.tags').forEach(box=>{
+    const chips = [...box.querySelectorAll('.tag:not(.more)')];
+    const more = box.querySelector('.tag.more');
+    if(!more || !chips.length) return;
+    chips.forEach((chip,i)=>{ chip.hidden = i >= TAGS_SHOWN; });
+    more.hidden = false;
+    let vis = Math.min(TAGS_SHOWN, chips.length);
+    const limit = chips[0].offsetTop + 39;      // rows two and three are fine, four is not
+    while(vis > 1 && more.offsetTop > limit) chips[--vis].hidden = true;
+    const rest = chips.length - vis;
+    if(rest <= 0) more.hidden = true; else more.textContent = `+${rest} more`;
+  });
+}
+let fitTimer;
+addEventListener('resize', ()=>{
+  clearTimeout(fitTimer);
+  fitTimer = setTimeout(()=>{ fitScrollers(document); fitTags(document); }, 150);
+});
+
+/* ================================================================
+   the data layer. everything below builds ONE shape — the same shape
+   docs/design/final/home.html invented for its mock data — out of real
+   rows, so the render functions from that file work unchanged.
+   ================================================================ */
+async function platform(){
+  if(!window.eski && document.readyState === 'loading')
+    await new Promise(r => document.addEventListener('DOMContentLoaded', r, { once: true }));
+  return window.eski || null;
+}
+let sb = null, me = null;
+let COMICS = [], ROLES = [];
+let platformDown = false, platformWhy = '';
+
+const byId = id => COMICS.find(c => c.id === id);
+const rolesFor = id => ROLES.filter(r => r.comic === id);
+
+/* the five caption rows, identical on every card */
+function voicesOf(c){
+  // a comic whose author never wrote a cast cannot be "missing" anybody. say
+  // that, rather than reporting a confident 0 of 0.
+  if(!c.castKnown) return {t:'no cast', cls:'none'};
+  const total = c.cast.length + rolesFor(c.id).length;
+  const done = c.cast.length;
+  return done >= total && total > 0
+    ? {t:`${done} of ${total}`, cls:''}
+    : {t:`missing ${total - done}`, cls:'want'};
+}
+const scoreOf = c => c.scores.length
+  ? {t:`${c.scores.length} available`, cls:''}
+  : {t:'empty', cls:'none'};
+
+function capRows(c){
+  const v = voicesOf(c), s = scoreOf(c);
+  const extent = c.pp
+    ? `${c.pp} pp${c.chOf > 1 ? ` · ch${c.ch} of ${c.chOf}` : ''}`
+    : '—';
+  return `<div class="cap">
+    <div class="r"><span class="k">by</span><span class="v">${mq(c.by || '—')}</span></div>
+    <div class="r"><span class="k">extent</span><span class="v">${mq(extent)}</span></div>
+    <div class="r"><span class="k">voices</span><span class="v ${v.cls}">${esc(v.t)}</span></div>
+    <div class="r"><span class="k">score</span><span class="v ${s.cls}">${esc(s.t)}</span></div>
+    <div class="r"><span class="k">kudos</span><span class="v">${nfmt(c.kudos)}</span></div>
+  </div>`;
+}
+function tagRow(c){
+  if(!c.tags.length) return `<div class="tags"></div>`;
+  return `<div class="tags">${c.tags.map(t =>
+    `<span class="tag" data-tag="${esc(t)}">${esc(t)}</span>`).join('')
+    }<span class="tag more">+${Math.max(0, c.tags.length - TAGS_SHOWN)} more</span></div>`;
+}
+
+/* a card. .card is the design's class; .cover and .t are what the smoke
+   suite locates, and .cell is its wrapper. */
+/* `browse` is true for the browse and follow rails. Those cards are visually
+   identical but must not carry .cell or .cover: the smoke suite counts both
+   unscoped, and a hidden pane would double every count. */
+function cardEl(c, note, browse){
+  const cell = document.createElement('div');
+  cell.className = browse ? 'bcell' : 'cell';
+  const b = document.createElement('button');
+  b.className = browse ? 'card bcard' : 'card cover';
+  b.type = 'button';
+  b.innerHTML =
+    `<div class="plate">${c.cover
+        ? `<img src="${esc(c.cover)}" alt="" loading="lazy">`
+        : '<span data-ico="image"></span>'}</div>
+     <div class="title t">${mq(c.title)}</div>
+     <div class="note">${note ? mq(note) : ''}</div>
+     ${tagRow(c)}
+     ${capRows(c)}`;
+  b.addEventListener('click', e=>{
+    const tag = e.target.closest('[data-tag]');
+    if(tag){ e.stopPropagation(); searchTag(tag.dataset.tag); return; }
+    openDetails(c);
+  });
+  cell.appendChild(b);
+  if(c.progress != null){
+    const bar = document.createElement('div');
+    bar.className = 'progress';
+    bar.innerHTML = `<i style="width:${Math.round(c.progress*100)}%"></i>`;
+    b.appendChild(bar);
+  }
+  if(c.local){
+    cell.insertAdjacentHTML('beforeend', '<span class="shelved">shelved</span>');
+    const rm = document.createElement('button');
+    rm.className = 'rm'; rm.title = 'remove from the shelf';
+    rm.setAttribute('data-ico','x');
+    rm.onclick = async e=>{ e.stopPropagation(); await shelfDel(c.localId); boot(); };
+    cell.appendChild(rm);
+  }
+  cell.dataset.search = [c.title, c.by, ...c.tags].filter(Boolean).join(' ').toLowerCase();
+  return cell;
+}
+
+/* the character portrait: a crop of the comic's own art, framed per character
+   so one comic's four open parts do not show the same square four times. */
+function portrait(role){
+  const c = byId(role.comic);
+  let seed = 0; for(const ch of role.id) seed = (seed*31 + ch.charCodeAt(0)) & 255;
+  const x = 20 + (seed % 60), y = 6 + (seed % 34);
+  return `<span class="portrait">${(c && c.cover)
+    ? `<img src="${esc(c.cover)}" alt="${esc(role.name)}" loading="lazy"
+        style="object-position:${x}% ${y}%">` : ''}</span>`;
+}
+function roleCardEl(r){
+  const c = byId(r.comic) || {title:'', by:''};
+  const b = document.createElement('button');
+  b.className = 'rolecard';
+  b.type = 'button';
+  b.innerHTML =
+    `<div class="rolehead">${portrait(r)}
+      <div style="min-width:0;flex:1">
+        <div class="rolename">${mq(r.name)}</div>
+        <div class="rolein">${mq(c.title)}</div>
+        <div class="rolein">${mq(c.by)}</div>
+      </div></div>
+     <p class="blurb">${esc(r.blurb || '')}</p>
+     <div class="rolefoot"><span>${esc(r.kind)}</span><span class="n">${
+        r.lines ? nfmt(r.lines) + ' lines' : 'no lines yet'}</span></div>`;
+  b.addEventListener('click', ()=>{ const cc = byId(r.comic); if(cc) openDetails(cc, r); });
+  return b;
+}
+function roleRowEl(r){
+  const c = byId(r.comic) || {title:'', by:'', pp:0, ch:1, chOf:1};
+  const b = document.createElement('button');
+  b.className = 'rolerow';
+  b.type = 'button';
+  b.innerHTML =
+    `${portrait(r)}
+     <div class="who">
+       <div class="rolename">${mq(r.name)}</div>
+       <div class="rolein">${mq(r.kind)}</div>
+     </div>
+     <div class="where">
+       <div class="ttl">${mq(c.title)}</div>
+       <div>${mq(c.by)}</div>
+     </div>
+     <p class="blurb">${esc(r.blurb || '')}</p>
+     <div class="lines"><b class="n">${r.lines ? nfmt(r.lines) + ' lines' : 'no lines yet'}</b>
+       ${c.pp ? c.pp + ' pp' : ''}</div>
+     <div class="go"><span class="btn sm">voice this</span></div>`;
+  b.addEventListener('click', ()=>{ const cc = byId(r.comic); if(cc) openDetails(cc, r); });
+  return b;
+}
+function fill(node, els){ node.replaceChildren(...els); fitScrollers(node); fitTags(node); }
+
+/* ================================================================
+   loading. one pass, a handful of queries, then everything renders
+   from memory — which is also why search and browse filter in the
+   browser rather than round-tripping.
+   ================================================================ */
+async function loadPlatform(){
+  const eski = await platform();
+  sb = eski && await eski.ready;
+  if(!sb){
+    platformDown = true;
+    platformWhy = (eski && eski.bootError) || 'ESK-1005 platform.js did not load at all';
+    return [];
+  }
+  me = eski.user || null;
+  const { data, error } = await sb.from('comics')
+    .select('*')          /* not a column list: a schema one migration behind should not blank the shelf */
+    .eq('status', 'published')
+    .order('published_at', { ascending: false })
+    .limit(200);
+  if(error){
+    platformDown = true;
+    platformWhy = eski.dbError('ESK-5005', 'the shelf query failed', error);
+    return [];
+  }
+  const rows = data || [];
+  if(!rows.length) return [];
+  const ids = rows.map(r=>r.id);
+
+  /* ponytail: five list queries and the counting happens here rather than in
+     postgres. at a few hundred comics that is one round trip each and a few
+     thousand rows; past that these want to be one rpc returning the counts. */
+  const [pg, tk, ku, pt, tg, sv, fw] = await Promise.all([
+    sb.from('pages').select('comic_id').in('comic_id', ids),
+    sb.from('tracks').select('comic_id,type,role,character_key').in('comic_id', ids),
+    sb.from('kudos').select('comic_id'),
+    sb.from('parts').select('comic_id,kind,character_key,owner_name,title')
+      .eq('status','published').in('comic_id', ids),
+    sb.from('comic_tags').select('comic_id,tag,added_by').in('comic_id', ids),
+    me ? sb.from('saves').select('*').eq('user_id', me.id) : Promise.resolve({data:[]}),
+    me ? sb.from('follows').select('followee_id').eq('follower_id', me.id) : Promise.resolve({data:[]})
+  ]);
+
+  const count = (res, key) => {
+    const m = new Map();
+    for(const r of (res && res.data) || []) m.set(r[key], (m.get(r[key])||0) + 1);
+    return m;
+  };
+  const pages = count(pg, 'comic_id');
+  const kudos = count(ku, 'comic_id');
+
+  // line counts per (comic, character): a dialogue slot is a oneshot track
+  // with role 'line'. this is the only real source of "how big is this part".
+  const lines = new Map();
+  const hasMusic = new Set();
+  for(const t of (tk.data||[])){
+    if(t.type === 'music') hasMusic.add(t.comic_id);
+    if(t.type === 'oneshot' && (t.role||'line') === 'line' && t.character_key)
+      lines.set(t.comic_id+'::'+t.character_key, (lines.get(t.comic_id+'::'+t.character_key)||0) + 1);
+  }
+  const tagsFor = new Map();
+  for(const t of (tg.data||[])){
+    if(!tagsFor.has(t.comic_id)) tagsFor.set(t.comic_id, []);
+    tagsFor.get(t.comic_id).push(t);
+  }
+  const savedBy = new Map((sv.data||[]).map(s=>[s.comic_id, s]));
+  const following = new Set((fw.data||[]).map(f=>f.followee_id));
+
+  // series siblings, for "ch1 of 6"
+  const seriesCount = new Map();
+  for(const r of rows) if(r.series_title)
+    seriesCount.set(r.series_title, (seriesCount.get(r.series_title)||0) + 1);
+
+  ROLES = [];
+  const out = rows.map(r=>{
+    const parts = (pt.data||[]).filter(p=>p.comic_id === r.id);
+    const cast = Array.isArray(r.cast_list) ? r.cast_list : [];
+    // a character is "cast" when at least one published vo names it
+    const voFor = new Map();
+    for(const p of parts.filter(p=>p.kind === 'vo')){
+      const k = p.character_key || 'untitled';
+      if(!voFor.has(k)) voFor.set(k, []);
+      voFor.get(k).push({who: p.owner_name || 'someone', partId: p.id,
+        lines: lines.get(r.id+'::'+k) || 0});
+    }
+    const castOut = [];
+    for(const ch of cast){
+      const key = ch.key || ch.id || ch.name;
+      if(!key) continue;
+      if(voFor.has(key)) castOut.push({char: ch.name || key, key, vos: voFor.get(key)});
+      else ROLES.push({id: r.id + '::' + key, name: ch.name || key, comic: r.id,
+        kind: ch.kind === 'narrator' ? 'narration' : (ch.kind || 'supporting'),
+        lines: lines.get(r.id+'::'+key) || 0, blurb: ''});
+    }
+    // a voice part naming a character the cast list does not have still counts
+    for(const [k, vos] of voFor)
+      if(!cast.some(ch=>(ch.key||ch.id||ch.name) === k)) castOut.push({char:k, key:k, vos});
+
+    const scores = [
+      ...(hasMusic.has(r.id) ? [{title:'the author’s score', by:r.owner_name, partId:null}] : []),
+      ...parts.filter(p=>p.kind === 'soundtrack')
+        .map(p=>({title: p.title || 'untitled', by: p.owner_name || 'someone', partId: p.id}))
+    ];
+    const save = savedBy.get(r.id);
+    const pp = pages.get(r.id) || 0;
+    return {
+      id: r.id, dbId: r.id, file: 'db:' + r.id, ownerId: r.owner_id,
+      title: r.title || 'untitled', by: r.owner_name || null, desc: r.description || '',
+      cover: window.eski.mediaUrl(r.thumb_key || r.cover_key),
+      added: r.published_at || r.created_at || '',
+      pp, ch: r.series_index || 1, chOf: r.series_title ? (seriesCount.get(r.series_title)||1) : 1,
+      seriesTitle: r.series_title || null,
+      kudos: kudos.get(r.id) || 0,
+      tags: (tagsFor.get(r.id)||[]).map(t=>t.tag).sort(),
+      tagRows: tagsFor.get(r.id) || [],
+      castKnown: cast.length > 0 || castOut.length > 0,
+      cast: castOut, scores,
+      follow: following.has(r.owner_id) ? r.owner_name : null,
+      shelf: save ? save.status : null,
+      progress: save && save.pages ? Math.min(1, save.last_page / save.pages) : null
+    };
+  });
+  return out;
+}
+
+/* ---------------- the local shelf ---------------- */
 const SHELF_DB = 'eski-shelf', SHELF_STORE = 'files';
 function shelfOpen(){
   return new Promise((res, rej)=>{
@@ -364,11 +790,8 @@ function shelfOpen(){
       if(!db.objectStoreNames.contains(SHELF_STORE)) db.createObjectStore(SHELF_STORE, {keyPath:'id'});
     };
     r.onsuccess = ()=>res(r.result);
-    // private windows and locked-down profiles refuse indexeddb outright, and
-    // the local shelf is the one feature that cannot degrade without it
     r.onerror = ()=>rej(new Error('ESK-7001 the local shelf could not open: ' +
-      ((r.error && r.error.message) || 'indexeddb refused') +
-      '. private browsing blocks it.'));
+      ((r.error && r.error.message) || 'indexeddb refused') + '. private browsing blocks it.'));
   });
 }
 function shelfTx(mode, fn){
@@ -382,9 +805,6 @@ function shelfTx(mode, fn){
 const shelfList = ()=>shelfTx('readonly', s=>s.getAll()).catch(()=>[]);
 const shelfGet  = id=>shelfTx('readonly', s=>s.get(id));
 const shelfDel  = id=>shelfTx('readwrite', s=>s.delete(id));
-/* read enough of the manifest at shelve time to know what this file IS: a
-   whole comic, or one contributor's voice or score for one. parts never get
-   their own grid card; they attach to the base they name. */
 async function shelfMeta(file){
   try{
     const zip = await JSZip.loadAsync(file);
@@ -405,68 +825,46 @@ async function shelfAdd(file){
   await shelfTx('readwrite', s=>s.put({id, name:file.name, blob:file, added:Date.now(), ...meta}));
   return id;
 }
-
-/* keep slashes readable in ?read=, encode only the segments */
-function readHref(file){
-  if(file.startsWith('idb:') || file.startsWith('db:'))
-    return 'read.html?read=' + encodeURIComponent(file);
-  return 'read.html?read=' + file.split('/').map(encodeURIComponent).join('/');
-}
-
-/* published comics, straight from the database. these cost no download at all:
-   the row already carries the title, the author and the cover key, so the grid
-   never opens a comic just to look at it. */
-/* platform.js is a MODULE, so it executes after this classic script has run, and
-   window.eski does not exist yet while the page is still parsing. anything that
-   needs it has to wait for that point rather than race it: a page that read
-   window.eski too early reported "could not reach the shelf" on a perfectly
-   healthy site. modules run before DOMContentLoaded, so this is the gate. */
-async function platform(){
-  if(!window.eski && document.readyState === 'loading')
-    await new Promise(r => document.addEventListener('DOMContentLoaded', r, { once: true }));
-  return window.eski || null;
-}
-
-let platformDown = false, platformWhy = '';
-async function platformComics(){
-  try{
-    const eski = await platform();
-    const sb = eski && await eski.ready;
-    // no client means the auth module could not load. that is a connection
-    // problem, and saying "nothing here yet" would blame the shelf for it.
-    if(!sb){
-      platformDown = true;
-      platformWhy = (eski && eski.bootError) || 'ESK-1005 platform.js did not load at all';
-      return [];
-    }
-    const { data, error } = await sb.from('comics')
-      .select('*')   /* not a column list: a schema one migration behind should not blank the shelf */
-      .eq('status', 'published')
-      .order('published_at', { ascending: false })
-      .limit(200);
-    if(error){
-      platformDown = true;
-      platformWhy = eski.dbError('ESK-5005', 'the shelf query failed', error);
-      return [];
-    }
-    if(!data) return [];
-    return data.map(c=>({
-      file: 'db:'+c.id, dbId: c.id, ownerId: c.owner_id,
-      title: c.title, creator: c.owner_name, description: c.description,
-      cover: window.eski.mediaUrl(c.thumb_key || c.cover_key),
-      series: c.series_title ? {title:c.series_title, index:c.series_index} : null
-    }));
-  }catch(e){
-    platformDown = true;
-    platformWhy = 'ESK-5000 the shelf could not be read: ' + ((e && e.message) || e);
-    return [];
+async function shelveFiles(files){
+  const eskis = [...files].filter(f=>/\.(eski|cbz|zip)$/i.test(f.name));
+  if(!eskis.length) return;
+  for(const f of eskis){
+    try{ await shelfAdd(f); }catch(e){ console.warn('could not shelve ' + f.name, e); }
   }
+  await boot();
 }
+let shelfParts = [];
+const partsForBase = baseId => shelfParts.filter(p=>!p.baseId || !baseId || p.baseId===baseId);
 
+/* the library/ folder: index.json first (it can carry a title and a small
+   cover, so the grid never downloads a whole comic to read its manifest),
+   then a directory autoindex for zero-config local dev. */
+async function listEskis(){
+  try{
+    const r = await fetch('library/index.json', {cache:'no-store'});
+    if(r.ok){
+      const j = await r.json();
+      const arr = Array.isArray(j) ? j : (j.entries||j.files||[]);
+      const out = arr.map(e=>typeof e==='string'?{file:e}:e).filter(e=>e.file)
+        .map(e=>({...e, file: /^(https?:|\/|library\/)/.test(e.file) ? e.file : 'library/'+e.file}));
+      if(out.length) return out;
+    }
+  }catch(e){}
+  try{
+    const r = await fetch('library/', {cache:'no-store'});
+    if(r.ok){
+      const html = await r.text();
+      const files = [...html.matchAll(/href="([^"?]+\.eski)"/gi)].map(m=>m[1]);
+      if(files.length) return [...new Set(files)].map(f=>({
+        file: /^(https?:|\/)/.test(f) ? f : (f.includes('library/') ? f : 'library/'+f.replace(/^\.?\//,''))
+      }));
+    }
+  }catch(e){}
+  return [];
+}
 async function blobFor(item){
-  // only shelved items live in indexeddb. a published comic has no blob at all.
-  if(item.local && item.id){
-    const rec = await shelfGet(item.id);
+  if(item.local && item.localId){
+    const rec = await shelfGet(item.localId);
     if(!rec) throw new Error('ESK-7002 missing from the shelf');
     return rec.blob;
   }
@@ -474,338 +872,592 @@ async function blobFor(item){
   if(!res.ok) throw new Error(res.status);
   return res.blob();
 }
-
-async function coverFor(item){
-  /* if the index already told us the cover and title, trust it and do NOT
-     download the comic. an eski is tens of megabytes; opening the library
-     should not pull every one of them just to read a manifest. */
-  if(item.cover && item.title){
-    return {file:item.file, baseId:item.id || null, series:item.series || null,
-            dbId:item.dbId || null, ownerId:item.ownerId || null,
-            title:item.title, creator:item.creator || null, description:item.description || null,
-            cover:item.cover};
-  }
-  const zip = await JSZip.loadAsync(await blobFor(item));
-  let title = item.title, coverBlob = null, baseId = item.baseId || null, series = null,
-      creator = item.creator || null;
-  const mf = zip.file('.eski/manifest.json');
-  if(mf){
-    try{
+/* a file-backed eski, read into the same shape as a database one */
+async function fileComic(item){
+  const base = {
+    id: item.file, file: item.file, local: !!item.local, localId: item.localId || null,
+    dbId: null, ownerId: null, by: item.creator || null, desc: '',
+    cover: item.cover || null, added: item.added || '',
+    pp: 0, ch: 1, chOf: 1, seriesTitle: null, kudos: 0,
+    tags: [], tagRows: [], castKnown: false, cast: [], scores: [],
+    follow: null, shelf: null, progress: null,
+    title: item.title || item.file.split('/').pop().replace(/\.eski$/i,'')
+  };
+  if(item.cover && item.title) return base;      // the index told us; do not download
+  try{
+    const zip = await JSZip.loadAsync(await blobFor(item));
+    const mf = zip.file('.eski/manifest.json');
+    let coverBlob = null;
+    if(mf){
       const m = JSON.parse(await mf.async('string'));
-      title = title || m.meta?.title;
-      creator = m.meta?.creator || null;
-      baseId = m.meta?.id || baseId;
-      series = m.meta?.series || null;
+      base.title = base.title || m.meta?.title || base.title;
+      if(m.meta?.title) base.title = m.meta.title;
+      base.by = m.meta?.creator || null;
+      base.desc = m.meta?.description || '';
+      base.baseId = m.meta?.id || item.baseId || null;
+      if(m.meta?.series){ base.seriesTitle = m.meta.series.title || null; base.ch = m.meta.series.index || 1; }
+      if(Array.isArray(m.meta?.cast) && m.meta.cast.length) base.castKnown = true;
       if(m.meta?.cover && zip.file(m.meta.cover)) coverBlob = await zip.file(m.meta.cover).async('blob');
-    }catch(e){}
-  }
-  if(!coverBlob){
+    }
     const imgs = [];
     zip.forEach((p,en)=>{ if(!en.dir && !p.startsWith('.eski/') && !p.startsWith('audio/') &&
       !p.startsWith('__MACOSX/') && IMG_RE.test(p)) imgs.push({p,en}); });
-    imgs.sort((a,b)=>a.p.localeCompare(b.p, undefined, {numeric:true, sensitivity:'base'}));
-    if(imgs[0]) coverBlob = await imgs[0].en.async('blob');
-  }
-  return {
-    file: item.file, baseId, series, creator,
-    title: title || item.file.split('/').pop().replace(/\.eski$/i,''),
-    cover: coverBlob ? URL.createObjectURL(coverBlob) : null
-  };
-}
-
-/* every comic whose manifest has been read, so the modal can find the rest of
-   a series without opening every file again */
-let resolved = [];
-function seriesSiblings(entry){
-  if(!entry.series || !entry.series.title) return [];
-  return resolved
-    .filter(e=>e.series && e.series.title === entry.series.title)
-    .sort((a,b)=>(a.series.index||0)-(b.series.index||0));
-}
-
-/* published parts for a database comic: the voice tracks and soundtracks other
-   people have made for it. one small query per modal open, cached, and only for
-   comics that live in the database. a shelf file's parts are files. */
-const dbPartCache = new Map();
-async function dbPartsFor(comicId){
-  if(dbPartCache.has(comicId)) return dbPartCache.get(comicId);
-  let rows = [];
-  try{
-    const eski = await platform();
-    const sb = eski && await eski.ready;
-    if(sb){
-      const r = await sb.from('parts')
-        .select('id,kind,title,character_key,owner_name')
-        .eq('comic_id', comicId).eq('status', 'published')
-        .order('created_at', { ascending: true });
-      if(!r.error) rows = r.data || [];
+    base.pp = imgs.length;
+    if(!coverBlob){
+      imgs.sort((a,b)=>a.p.localeCompare(b.p, undefined, {numeric:true, sensitivity:'base'}));
+      if(imgs[0]) coverBlob = await imgs[0].en.async('blob');
     }
-  }catch(e){ /* the base still reads without them */ }
-  dbPartCache.set(comicId, rows);
-  return rows;
+    if(coverBlob) base.cover = URL.createObjectURL(coverBlob);
+  }catch(e){ base.title += ' (unreadable)'; }
+  return base;
 }
 
-/* the mix picker: which voices and which score to read this comic with.
-   parts are opt-in, so an unmixed base still opens as a silent comic. */
-let mixToken = 0;
-function paintMix(entry){
-  const box = $('ov-mix');
-  const token = ++mixToken;          // the modal may move on while a query flies
-  const parts = partsForBase(entry.baseId);
-  const sibs = seriesSiblings(entry);
-  const next = sibs[sibs.findIndex(e=>e.file === entry.file) + 1] || null;
+/* ================================================================
+   boot
+   ================================================================ */
+async function boot(){
+  const grid = document.getElementById('grid');
+  const published = await loadPlatform();
 
-  let html = '';
-  if(sibs.length > 1){
-    html += `<div class="mix-h">${esc(entry.series.title)}</div><div class="chaps">` +
-      sibs.map(e=>`<button class="chap${e.file===entry.file?' on':''}" data-f="${esc(e.file)}"
-        title="${esc(e.title)}">${e.series.index||'?'}</button>`).join('') + '</div>';
-  }
-  if(parts.length){
-    html += '<div class="mix-h">mix</div>' + parts.map(p=>`
-      <label class="mixrow">
-        <input type="checkbox" data-ref="idb:${esc(p.id)}" checked>
-        <span class="k">${p.kind === 'vo' ? 'voice' : 'score'}</span>
-        <span class="n">${esc(p.character || p.title || p.name || 'untitled')}</span>
-      </label>`).join('');
-  }
-  box.innerHTML = html;
-
-  const sync = ()=>{
-    const on = [...box.querySelectorAll('input:checked')].map(i=>i.dataset.ref);
-    // the reader is closed: it cannot look up the library, so hand it the next
-    // chapter's path up front and it can offer "next" at the last page
-    $('ov-read').href = readHref(entry.file)
-      + (on.length ? '&with=' + on.map(encodeURIComponent).join(',') : '')
-      + (next ? '&next=' + encodeURIComponent(next.file) + '&nextTitle=' + encodeURIComponent(next.title) : '');
-  };
-  const wire = ()=>{
-    box.querySelectorAll('input').forEach(i=>{ i.onchange = sync; });
-    box.querySelectorAll('.chap').forEach(b=>b.addEventListener('click', ()=>{
-      const e = resolved.find(x=>x.file === b.dataset.f);
-      if(e) open_(e);
-    }));
-    sync();
-  };
-  wire();
-
-  /* database parts arrive a moment later. they are appended rather than
-     re-rendered so a chapter strip does not flicker, and OFF by default: a
-     stranger's voice should be something a reader chooses, not something that
-     starts playing because it exists. */
-  const dbId = entry.dbId || (entry.file.startsWith('db:') ? entry.file.slice(3) : null);
-  if(!dbId) return;
-  dbPartsFor(dbId).then(rows=>{
-    if(!rows.length || token !== mixToken) return;
-    const wrap = document.createElement('div');
-    wrap.innerHTML = '<div class="mix-h">mix</div>' + rows.map(p=>`
-      <label class="mixrow">
-        <input type="checkbox" data-ref="part:${esc(p.id)}">
-        <span class="k">${p.kind === 'vo' ? 'voice' : 'score'}</span>
-        <span class="n">${esc(p.character_key || p.title || 'untitled')}
-          <small>by ${esc(p.owner_name || 'someone')}</small></span>
-      </label>`).join('');
-    box.append(...wrap.childNodes);
-    wire();
-  });
-}
-function open_(entry){
-  const o = $('overlay');
-  $('ov-img').src = entry.cover || '';
-  $('ov-img').style.visibility = entry.cover ? 'visible' : 'hidden';
-  $('ov-title').textContent = entry.title;
-  const by = $('ov-by');
-  by.textContent = entry.creator ? 'by ' + entry.creator : '';
-  by.hidden = !entry.creator;
-  const desc = $('ov-desc');
-  desc.textContent = entry.description || '';
-  desc.hidden = !entry.description;
-  /* contributors other than the voice cast and the composer. those two are
-     chosen in the mix picker below, so listing them twice would be noise.
-     nothing writes this yet: it arrives with the parts table. */
-  const cred = $('ov-credits');
-  cred.innerHTML = (entry.credits && entry.credits.length)
-    ? '<div class="mix-h">also</div>' + entry.credits
-        .map(c=>`<div class="mixrow"><span class="n">${esc(c.role ? c.role + ': ' : '')}${esc(c.name)}</span></div>`)
-        .join('')
-    : '';
-  /* read later is a local list until the saves table exists, so it survives a
-     reload on this device and nothing more. */
-  const later = $('ov-later');
-  later.onclick = ()=>{
-    const key = 'eski-later';
-    let list = [];
-    try{ list = JSON.parse(localStorage.getItem(key)) || []; }catch(e){}
-    const on = list.includes(entry.file);
-    list = on ? list.filter(f=>f !== entry.file) : [...list, entry.file];
-    try{ localStorage.setItem(key, JSON.stringify(list)); }catch(e){}
-    later.lastChild.textContent = on ? 'read later' : 'saved for later';
-  };
-  later.lastChild.textContent = (()=>{
-    try{ return (JSON.parse(localStorage.getItem('eski-later'))||[]).includes(entry.file)
-      ? 'saved for later' : 'read later'; }catch(e){ return 'read later'; }
-  })();
-  /* voice or score it. only for PUBLISHED comics, because the studio opens a
-     base from database rows and R2 objects: a file on your own shelf has
-     neither. hidden on your own work, where the answer is the studio's own
-     author mode rather than a contributor role. */
-  const contrib = $('ov-contrib');
-  const dbId = entry.dbId || (entry.file.startsWith('db:') ? entry.file.slice(3) : null);
-  const mine = !!(window.eski && window.eski.user && entry.ownerId &&
-                  window.eski.user.id === entry.ownerId);
-  contrib.hidden = !dbId || mine;
-  if(dbId) contrib.href = 'studio.html?base=' + encodeURIComponent(dbId) + '&as=vo';
-  paintIcons(contrib);
-  paintMix(entry);
-  o.classList.add('open');
-}
-function close_(){ $('overlay').classList.remove('open'); }
-const $ = id => document.getElementById(id);
-
-/* ---------------- search ----------------
-   filters the shelf in place rather than reloading it. covers resolve
-   asynchronously, so each cell carries its own searchable string as soon as
-   its title and author are known. */
-function toggleSearch(){
-  $('search').classList.contains('open') ? closeSearch() : openSearch();
-}
-function openSearch(){ $('search').classList.add('open'); $('search-q').focus(); }
-function closeSearch(){
-  $('search').classList.remove('open');
-  const q = $('search-q');
-  if(q.value){ q.value = ''; applySearch(); }
-  q.blur();
-}
-function applySearch(){
-  const q = ($('search-q').value || '').trim().toLowerCase();
-  let shown = 0;
-  document.querySelectorAll('#grid .cell').forEach(cell=>{
-    const hit = !q || (cell.dataset.search || '').includes(q);
-    cell.hidden = !hit;
-    if(hit) shown++;
-  });
-  let msg = $('no-match');
-  if(!shown && q){
-    if(!msg){
-      msg = document.createElement('div');
-      msg.className = 'no-match'; msg.id = 'no-match';
-      $('grid').appendChild(msg);
-    }
-    msg.textContent = 'nothing here matches ' + q + '.';
-  }else if(msg){ msg.remove(); }
-}
-// "/" is the shelf's search key, unless you are already typing somewhere
-document.addEventListener('keydown', e=>{
-  if(e.key === '/' && !/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName)){
-    e.preventDefault(); openSearch();
-  }
-});
-
-/* onboarding: shown once ever. the flag is set the moment it opens, so a
-   closed tab or a reload never brings it back. */
-const OB_KEY = 'eski-onboarded';
-function closeOnboarding(){ $('ob').classList.remove('open'); }
-function maybeOnboarding(){
-  try{ if(localStorage.getItem(OB_KEY)) return; localStorage.setItem(OB_KEY,'1'); }catch(e){ return; }
-  $('ob').classList.add('open');
-  paintIcons($('ob'));
-}
-document.addEventListener('keydown', e=>{ if(e.key==='Escape'){ close_(); closeOnboarding(); } });
-
-/* the published library/ folder plus anything on the local shelf */
-async function allItems(){
   let folder = [];
   try{ folder = await listEskis(); }catch(e){}
-  let shelf = [];
+  let local = [];
   try{
     const rows = (await shelfList()).sort((a,b)=>b.added-a.added);
     shelfParts = rows.filter(r=>r.kind && r.kind!=='base');
-    shelf = rows.filter(r=>!r.kind || r.kind==='base')
-      .map(r=>({ file:'idb:'+r.id, id:r.id, local:true, baseId:r.baseId||null,
+    local = rows.filter(r=>!r.kind || r.kind==='base')
+      .map(r=>({ file:'idb:'+r.id, localId:r.id, local:true, baseId:r.baseId||null,
                  title:(r.title||r.name||'untitled').replace(/\.(eski|cbz|zip)$/i,'') }));
   }catch(e){}
-  // published first: it is the real shelf. the local shelf is owner staging
-  // and the folder is the zero-config local dev path.
-  const published = await platformComics();
-  return [...published, ...shelf, ...folder];
-}
-/* vos and soundtracks sitting on the shelf, indexed while building the grid */
-let shelfParts = [];
-const partsForBase = baseId => shelfParts.filter(p=>!p.baseId || !baseId || p.baseId===baseId);
 
-const EMPTY_HTML = `<div class="state">
-  nothing published yet. build one in the <a href="studio.html">studio</a>,
-  then publish it or keep it as a draft on your <a href="profile.html">profile</a>.</div>`;
+  const files = await Promise.all([...local, ...folder].map(fileComic));
+  COMICS = [...published, ...files];
 
-async function renderGrid(){
-  const grid = $('grid');
-  const items = await allItems();
-  if(!items.length){
+  if(!COMICS.length){
     grid.className = '';
     grid.innerHTML = platformDown
       ? `<div class="state">could not reach the shelf.
            <br><br><code class="why">${esc(platformWhy)}</code><br><br>
            anything you drop here still works offline.</div>`
-      : EMPTY_HTML;
+      : `<div class="state">nothing published yet. build one in the
+           <a href="studio.html">studio</a>, then publish it or keep it as a draft
+           on your <a href="profile.html">profile</a>.</div>`;
     paintIcons();
+    renderRoles(); renderBrowse();
     return;
   }
   grid.className = 'grid';
-  grid.innerHTML = '';
-  const cards = items.map(it=>{
-    const cell = document.createElement('div');
-    cell.className = 'cell';
-    const btn = document.createElement('button');
-    btn.className = 'cover';
-    btn.innerHTML = `<div class="art"><span data-ico="image"></span></div>
-      <div class="t">${esc(it.title || it.file.split('/').pop().replace(/\.eski$/i,''))}</div>
-      <div class="a"></div>`;
-    cell.appendChild(btn);
-    if(it.local){
-      cell.insertAdjacentHTML('beforeend', '<span class="tag">shelved</span>');
-      const rm = document.createElement('button');
-      rm.className = 'rm'; rm.title = 'remove from the shelf';
-      rm.setAttribute('data-ico','x');
-      rm.onclick = async ()=>{ await shelfDel(it.id); renderGrid(); };
-      cell.appendChild(rm);
-    }
-    grid.appendChild(cell);
-    return btn;
-  });
+  renderHome();
+  renderBrowse();
   paintIcons();
-  await Promise.all(items.map(async (it,i)=>{
-    try{
-      const entry = await coverFor(it);
-      entry.baseId = it.baseId || entry.baseId || null;
-      resolved.push(entry);
-      const art = cards[i].querySelector('.art');
-      art.innerHTML = entry.cover ? `<img src="${entry.cover}" alt="cover">` : '';
-      cards[i].querySelector('.t').textContent = entry.title;
-      const by = cards[i].querySelector('.a');
-      if(by){ by.textContent = entry.creator ? 'by ' + entry.creator : ''; by.hidden = !entry.creator; }
-      cards[i].onclick = ()=>open_(entry);
-      // the cell carries what it can be found by, so search never re-reads a zip
-      cards[i].parentElement.dataset.search =
-        [entry.title, entry.creator, entry.series && entry.series.title]
-          .filter(Boolean).join(' ').toLowerCase();
-      applySearch();   // a late arrival must respect a query already typed
-    }catch(e){
-      cards[i].querySelector('.t').textContent += ' (unreadable)';
-    }
-  }));
+  if(document.fonts && document.fonts.ready)
+    document.fonts.ready.then(()=>{ fitScrollers(document); fitTags(document); });
 }
 
-/* shelving: drop files anywhere on the page, or use "add eski" */
-async function shelveFiles(files){
-  const eskis = [...files].filter(f=>/\.(eski|cbz|zip)$/i.test(f.name));
-  if(!eskis.length) return;
-  for(const f of eskis){
-    try{ await shelfAdd(f); }catch(e){ console.warn('could not shelve ' + f.name, e); }
+/* ---------- home. see more adds one more row of whatever it sits under. ---------- */
+const STEP = 5;
+const shown = {new:STEP, follow:STEP, roles:STEP};
+function renderHome(){
+  const fresh = [...COMICS].sort((a,b)=>(b.added||'').localeCompare(a.added||''));
+  fill(document.getElementById('grid'), fresh.slice(0, shown.new).map(c=>cardEl(c)));
+  document.getElementById('new-n').textContent =
+    `${fresh.length} ${fresh.length === 1 ? 'eski' : 'eskis'}`;
+
+  const follows = COMICS.filter(c=>c.follow);
+  const secFollow = document.getElementById('sec-follow');
+  secFollow.hidden = !me || !follows.length;
+  if(!secFollow.hidden){
+    fill(document.getElementById('grid-follow'),
+      follows.slice(0, shown.follow).map(c=>cardEl(c, `you follow ${c.follow}`, true)));
+    document.getElementById('follow-n').textContent =
+      `${follows.length} from ${new Set(follows.map(c=>c.by)).size} people`;
   }
-  await renderGrid();
+
+  renderRoles();
+
+  const totals = {new:fresh.length, follow:follows.length, roles:ROLES.length};
+  document.querySelectorAll('[data-more]').forEach(b=>{
+    const k = b.dataset.more, left = totals[k] - shown[k];
+    b.hidden = left <= 0;
+    b.textContent = `see more · ${left} left`;
+  });
 }
+function renderRoles(){
+  const roles = [...ROLES].sort((a,b)=>b.lines - a.lines);
+  fill(document.getElementById('grid-roles'), roles.slice(0, shown.roles).map(roleCardEl));
+  document.getElementById('roles-n').textContent = ROLES.length
+    ? `${ROLES.length} across ${new Set(ROLES.map(r=>r.comic)).size} comics`
+    : '';
+  const empty = document.getElementById('roles-empty');
+  const anyCast = COMICS.some(c=>c.castKnown);
+  empty.hidden = ROLES.length > 0;
+  empty.textContent = anyCast
+    ? 'every character has a voice. nothing is waiting.'
+    : 'no comic has a cast yet. an author writes one in the studio, and every character without a voice shows up here.';
+}
+document.querySelectorAll('[data-more]').forEach(b=>b.addEventListener('click', ()=>{
+  shown[b.dataset.more] += STEP;
+  renderHome();
+}));
+
+/* a tag anywhere on the page is a search */
+function searchTag(tag){
+  bState.mode = 'comics';
+  bState.q = tag;
+  const q = document.getElementById('b-q');
+  if(q) q.value = tag;
+  renderBrowse();
+  go('browse');
+  toast(`tagged “${tag}”`);
+}
+
+/* ================================================================
+   browse. one surface, three modes, and the mode is never in doubt.
+   ================================================================ */
+const bState = {mode:'comics', q:'',
+  sort:{comics:'new', roles:'lines-desc', scores:'need'},
+  filters:{comics:new Set(), roles:new Set(), scores:new Set()}};
+const B_SORTS = {
+  comics:[['new','newest'],['kudos','most kudos'],['title','title a–z'],['short','shortest']],
+  roles:[['lines-desc','most lines'],['lines-asc','fewest lines'],['name','character a–z'],
+         ['comic','eski a–z'],['author','author a–z']],
+  scores:[['need','most needed'],['kudos','most kudos'],['new','newest'],
+          ['long','longest'],['title','title a–z']]
+};
+const B_FILTERS = {
+  comics:[['cast','fully voiced'],['scored','has a score']],
+  roles:[['lead','lead'],['supporting','supporting'],['narration','narration'],
+         ['short','under 50 lines']],
+  scores:[['none','nothing at all yet'],['more','wants another'],['shortpp','under 150 pp']]
+};
+const B_PLACEHOLDER = {
+  comics:'search eskis, authors, tags',
+  roles:'search characters, eskis, authors',
+  scores:'search eskis, authors, tags'
+};
+const B_NOTE = {
+  comics:'every eski on the site',
+  roles:'characters nobody has read yet',
+  scores:'eskis waiting for music'
+};
+function paintBrowseBar(){
+  const m = bState.mode;
+  document.getElementById('b-q').placeholder = B_PLACEHOLDER[m];
+  document.getElementById('modenote').textContent = B_NOTE[m];
+  document.getElementById('b-sort').innerHTML = B_SORTS[m].map(([v,label])=>
+    `<option value="${v}" ${v === bState.sort[m] ? 'selected' : ''}>${label}</option>`).join('');
+  document.getElementById('b-filters').innerHTML = B_FILTERS[m].map(([f,label])=>
+    `<button class="chip" data-f="${f}" aria-pressed="${bState.filters[m].has(f)}">${label}</button>`).join('');
+  document.querySelectorAll('#browse-modes button').forEach(b=>
+    b.setAttribute('aria-selected', b.dataset.mode === m));
+}
+function scoreRowEl(c){
+  const b = document.createElement('button');
+  b.className = 'rolerow';
+  b.type = 'button';
+  const n = c.scores.length;
+  b.innerHTML =
+    `<span class="portrait">${c.cover ? `<img src="${esc(c.cover)}" alt="" loading="lazy"
+       style="object-position:50% 22%">` : ''}</span>
+     <div class="who">
+       <div class="rolename">${mq(c.title)}</div>
+       <div class="rolein">${mq(c.by || '')}</div>
+     </div>
+     <div class="where">
+       <div class="ttl">${mq(c.pp ? `${c.pp} pp` : '')}</div>
+       <div>${mq(c.tags.slice(0,4).join(' · '))}</div>
+     </div>
+     <p class="blurb">${esc(c.desc || '')}</p>
+     <div class="lines"><b class="n ${n ? '' : 'hot'}">${
+        n ? n + (n === 1 ? ' score' : ' scores') : 'no score'}</b>
+       ${nfmt(c.kudos)} kudos</div>
+     <div class="go"><span class="btn sm">${n ? 'add another' : 'score this'}</span></div>`;
+  b.addEventListener('click', ()=>openDetails(c));
+  return b;
+}
+function renderBrowse(){
+  paintBrowseBar();
+  const m = bState.mode, q = bState.q, f = bState.filters[m];
+  const grid = document.getElementById('grid-browse');
+  const list = document.getElementById('rolelist');
+  let n = 0, count = '', empty = '';
+
+  if(m === 'comics'){
+    let items = COMICS.filter(c=>{
+      const hay = (c.title + ' ' + (c.by||'') + ' ' + c.tags.join(' ')).toLowerCase();
+      if(q && !hay.includes(q)) return false;
+      if(f.has('cast') && voicesOf(c).cls) return false;
+      if(f.has('scored') && !c.scores.length) return false;
+      return true;
+    });
+    const sorts = {
+      new:(a,b)=>(b.added||'').localeCompare(a.added||''),
+      kudos:(a,b)=>b.kudos - a.kudos,
+      title:(a,b)=>a.title.localeCompare(b.title),
+      short:(a,b)=>a.pp - b.pp
+    };
+    items.sort(sorts[bState.sort.comics]);
+    fill(grid, items.map(c=>cardEl(c, null, true)));
+    list.replaceChildren();
+    n = items.length;
+    count = `${n} of ${COMICS.length} eskis`;
+    empty = 'no eski matches that.';
+  }else if(m === 'roles'){
+    let items = ROLES.filter(r=>{
+      const c = byId(r.comic) || {title:'', by:''};
+      const hay = (r.name + ' ' + c.title + ' ' + (c.by||'')).toLowerCase();
+      if(q && !hay.includes(q)) return false;
+      const kinds = [...f].filter(x=>x !== 'short');
+      if(kinds.length && !kinds.includes(r.kind)) return false;
+      if(f.has('short') && r.lines >= 50) return false;
+      return true;
+    });
+    const sorts = {
+      'lines-desc':(a,b)=>b.lines - a.lines,
+      'lines-asc':(a,b)=>a.lines - b.lines,
+      'name':(a,b)=>a.name.localeCompare(b.name),
+      'comic':(a,b)=>(byId(a.comic)||{title:''}).title.localeCompare((byId(b.comic)||{title:''}).title),
+      'author':(a,b)=>((byId(a.comic)||{}).by||'').localeCompare(((byId(b.comic)||{}).by)||'')
+    };
+    items.sort(sorts[bState.sort.roles]);
+    grid.replaceChildren();
+    fill(list, items.map(roleRowEl));
+    n = items.length;
+    count = `${n} of ${ROLES.length} roles with no voice`;
+    empty = COMICS.some(c=>c.castKnown)
+      ? 'no role matches that.'
+      : 'no comic has a cast yet, so nothing is waiting to be voiced.';
+  }else{
+    let items = COMICS.filter(c=>{
+      const hay = (c.title + ' ' + (c.by||'') + ' ' + c.tags.join(' ')).toLowerCase();
+      if(q && !hay.includes(q)) return false;
+      if(f.has('none') && c.scores.length) return false;
+      if(f.has('more') && !c.scores.length) return false;
+      if(f.has('shortpp') && c.pp >= 150) return false;
+      return true;
+    });
+    const sorts = {
+      need:(a,b)=>(a.scores.length - b.scores.length) || (b.kudos - a.kudos),
+      kudos:(a,b)=>b.kudos - a.kudos,
+      new:(a,b)=>(b.added||'').localeCompare(a.added||''),
+      long:(a,b)=>b.pp - a.pp,
+      title:(a,b)=>a.title.localeCompare(b.title)
+    };
+    items.sort(sorts[bState.sort.scores]);
+    grid.replaceChildren();
+    fill(list, items.map(scoreRowEl));
+    n = items.length;
+    const bare = COMICS.filter(c=>!c.scores.length).length;
+    count = `${n} eskis · ${bare} with no score at all`;
+    empty = 'no eski matches that.';
+  }
+  document.getElementById('browse-n').textContent = count;
+  const e = document.getElementById('browse-empty');
+  e.textContent = empty;
+  e.hidden = n > 0;
+}
+function goBrowse(mode){
+  bState.mode = mode === 'roles' ? 'roles' : mode === 'scores' ? 'scores' : 'comics';
+  bState.q = '';
+  const q = document.getElementById('b-q');
+  if(q) q.value = '';
+  renderBrowse();
+  go('browse');
+}
+document.getElementById('browse-modes').addEventListener('click', e=>{
+  const b = e.target.closest('[data-mode]');
+  if(b && b.dataset.mode !== bState.mode) goBrowse(b.dataset.mode);
+});
+document.getElementById('b-q').addEventListener('input', e=>{
+  bState.q = e.target.value.trim().toLowerCase(); renderBrowse();
+});
+document.getElementById('b-sort').addEventListener('change', e=>{
+  bState.sort[bState.mode] = e.target.value; renderBrowse();
+});
+document.getElementById('b-filters').addEventListener('click', e=>{
+  const chip = e.target.closest('.chip');
+  if(!chip) return;
+  const set = bState.filters[bState.mode], f = chip.dataset.f;
+  set.has(f) ? set.delete(f) : set.add(f);
+  renderBrowse();
+});
+
+/* ================================================================
+   details. the mix is picked here.
+   ================================================================ */
+const ov = document.getElementById('overlay'), sheet = document.getElementById('sheet');
+let current = null, lastFocus = null;
+
+function readHref(file){
+  if(file.startsWith('idb:') || file.startsWith('db:'))
+    return 'read.html?read=' + encodeURIComponent(file);
+  return 'read.html?read=' + file.split('/').map(encodeURIComponent).join('/');
+}
+function pickRow(ref, checked, label, sub){
+  return `<label class="pick">
+    <input type="checkbox" data-ref="${esc(ref)}"${checked?' checked':''}>
+    <span class="dot"></span>
+    <span class="pfp">${esc(initials(sub || label))}</span>
+    <span class="who"><b>${esc(label)}</b>${sub ? ` <span>${esc(sub)}</span>` : ''}</span>
+  </label>`;
+}
+function siblings(c){
+  if(!c.seriesTitle) return [];
+  return COMICS.filter(x=>x.seriesTitle === c.seriesTitle).sort((a,b)=>(a.ch||0)-(b.ch||0));
+}
+
+function openDetails(c, role){
+  /* the sheet is also opened directly with a partial object (the smoke suite
+     does this to check the contribute route), so fill in the collections
+     rather than throwing on a missing array. */
+  c.tags = c.tags || []; c.tagRows = c.tagRows || [];
+  c.cast = c.cast || []; c.scores = c.scores || [];
+  c.id = c.id || c.file;
+  if(!c.dbId && (c.file||'').startsWith('db:')) c.dbId = c.file.slice(3);
+  current = c;
+  const v = voicesOf(c), open = rolesFor(c.id);
+  const sibs = siblings(c);
+  const next = sibs[sibs.findIndex(x=>x.id === c.id) + 1] || null;
+  const localParts = partsForBase(c.baseId);
+
+  const castHtml = c.cast.map(ch=>`
+    <div class="charhead"><b>${esc(ch.char)}</b><span class="sp"></span>
+      <span>${ch.vos.length} ${ch.vos.length === 1 ? 'voiceover' : 'voiceovers'}</span></div>
+    ${ch.vos.map(vo=>pickRow('part:' + vo.partId, false, vo.who,
+        vo.lines ? vo.lines + ' lines' : null)).join('')}`).join('');
+
+  const openHtml = open.map(r=>`
+    <div class="charhead"><b>${esc(r.name)}</b><span class="sp"></span>
+      <span>${esc(r.kind)}</span></div>
+    <div class="openline"><span></span><span class="pfp">—</span>
+      <span>nobody has voiced this yet${r.lines ? ' · ' + nfmt(r.lines) + ' lines' : ''}</span>
+      ${c.dbId ? `<a class="btn sm" href="studio.html?base=${esc(c.dbId)}&as=vo">voice this</a>`
+               : '<span></span>'}</div>`).join('');
+
+  const localHtml = localParts.map(p=>pickRow('idb:' + p.id, true,
+    p.character || p.title || p.name || 'untitled', 'on your shelf')).join('');
+
+  const scoreHtml = c.scores.length
+    ? c.scores.map(s=>s.partId
+        ? pickRow('part:' + s.partId, false, s.title, 'by ' + s.by)
+        : `<div class="openline"><span></span><span class="pfp">${esc(initials(s.by||''))}</span>
+             <span>${esc(s.title)} · plays by default</span><span></span></div>`).join('')
+    : `<div class="openline"><span></span><span class="pfp">—</span>
+        <span>no score yet</span>
+        ${c.dbId ? `<a class="btn sm" href="studio.html?base=${esc(c.dbId)}&as=soundtrack">score it</a>`
+                 : '<span></span>'}</div>`;
+
+  const mine = !!(me && c.ownerId && me.id === c.ownerId);
+  const later = isLater(c);
+
+  sheet.innerHTML =
+   `<div class="sheetbody">
+      <div class="left">
+        <div class="plate">${c.cover ? `<img src="${esc(c.cover)}" alt="">` : ''}</div>
+        ${capRows(c)}
+        ${c.desc ? `<p class="desc">${esc(c.desc)}</p>` : ''}
+      </div>
+      <div class="right">
+        <h3>${esc(c.title)}</h3>
+        <div class="subhead"><span>tags</span><span class="sp"></span>
+          <span class="n">${c.tags.length}</span></div>
+        <div class="alltags" id="d-tags"></div>
+        ${c.dbId ? `<div class="tagadd">
+          <input id="d-tag-input" maxlength="40" placeholder="${me ? 'add a tag' : 'sign in to add a tag'}"${me?'':' disabled'}>
+          <button class="btn sm" id="d-tag-add"${me?'':' disabled'}>add</button></div>` : ''}
+
+        ${sibs.length > 1 ? `<div class="subhead"><span>${esc(c.seriesTitle)}</span>
+          <span class="sp"></span><span class="n">${sibs.length}</span></div>
+          <div class="chips">${sibs.map(s=>`<button class="chip" data-sib="${esc(s.id)}"
+            aria-pressed="${s.id===c.id}">${s.ch || '?'}</button>`).join('')}</div>` : ''}
+
+        <button class="fold" aria-expanded="true"><span class="caret"></span>
+          <span>voices</span><span class="sp"></span><span class="n">${esc(v.t)}</span></button>
+        <div class="folded">${castHtml}${openHtml}${localHtml}${
+          (castHtml||openHtml||localHtml) ? '' :
+          '<div class="openline"><span></span><span class="pfp">—</span><span>no cast written yet</span><span></span></div>'}</div>
+
+        <button class="fold" aria-expanded="true" style="margin-top:var(--s4)">
+          <span class="caret"></span><span>score</span><span class="sp"></span>
+          <span class="n">${c.scores.length} available</span></button>
+        <div class="folded">${scoreHtml}</div>
+
+        <div class="mixline">your mix travels with the link you open it from.</div>
+      </div>
+    </div>
+    <div class="acts">
+      <a class="btn p" id="ov-read" href="#">read it with this mix</a>
+      <button class="btn" id="ov-later" aria-pressed="${later}">${later ? 'on your shelf' : 'read later'}</button>
+      <button class="btn" id="ov-kudos"${c.dbId ? '' : ' hidden'}>kudos ${nfmt(c.kudos)}</button>
+      <a class="btn" id="ov-contrib" href="${c.dbId ? 'studio.html?base=' + esc(c.dbId) + '&as=vo' : '#'}"
+         ${(!c.dbId || mine) ? 'hidden' : ''}>voice or score it</a>
+    </div>`;
+
+  paintTags(c);
+
+  const sync = ()=>{
+    const on = [...sheet.querySelectorAll('input:checked')].map(i=>i.dataset.ref);
+    document.getElementById('ov-read').href = readHref(c.file)
+      + (on.length ? '&with=' + on.map(encodeURIComponent).join(',') : '')
+      + (next ? '&next=' + encodeURIComponent(next.file) + '&nextTitle=' + encodeURIComponent(next.title) : '');
+  };
+  sheet.querySelectorAll('input[data-ref]').forEach(i=>{ i.onchange = sync; });
+  sync();
+
+  document.getElementById('ov-later').onclick = ()=>toggleLater(c);
+  const kb = document.getElementById('ov-kudos');
+  if(kb) kb.onclick = ()=>giveKudos(c, kb);
+  const add = document.getElementById('d-tag-add');
+  if(add) add.onclick = ()=>addTag(c);
+  const inp = document.getElementById('d-tag-input');
+  if(inp) inp.onkeydown = e=>{ if(e.key === 'Enter'){ e.preventDefault(); addTag(c); } };
+
+  lastFocus = document.activeElement;
+  ov.classList.add('open');
+  document.body.style.overflow = 'hidden';
+  fitScrollers(sheet);
+  sheet.scrollTop = 0;
+  if(role){
+    const target = [...sheet.querySelectorAll('.charhead b')].find(b=>b.textContent === role.name);
+    if(target) target.closest('.charhead').scrollIntoView({block:'center'});
+  }
+}
+function close_(){
+  ov.classList.remove('open');
+  document.body.style.overflow = '';
+  if(lastFocus) lastFocus.focus();
+}
+/* one delegated listener, attached once: openDetails rewrites the sheet on
+   every open, and re-binding there would stack a handler per open. */
+sheet.addEventListener('click', e=>{
+  const fold = e.target.closest('.fold');
+  if(fold){ fold.setAttribute('aria-expanded', fold.getAttribute('aria-expanded') !== 'true'); return; }
+  const tag = e.target.closest('[data-tag]');
+  if(tag && !e.target.closest('[data-untag]')){ close_(); searchTag(tag.dataset.tag); return; }
+  const un = e.target.closest('[data-untag]');
+  if(un){ e.stopPropagation(); removeTag(current, un.dataset.untag); return; }
+  const sib = e.target.closest('[data-sib]');
+  if(sib){ const s = byId(sib.dataset.sib); if(s) openDetails(s); return; }
+});
+addEventListener('keydown', e=>{
+  if(e.key !== 'Escape') return;
+  if(ov.classList.contains('open')) close_();
+  closeOnboarding();
+});
+
+/* ---------------- tags: anyone signed in ---------------- */
+function paintTags(c){
+  const box = document.getElementById('d-tags');
+  if(!box) return;
+  box.innerHTML = c.tagRows.length
+    ? c.tagRows.map(t=>{
+        const mine = me && t.added_by === me.id;
+        const ownsComic = me && c.ownerId === me.id;
+        return `<span class="tag ${mine?'mine':''}" data-tag="${esc(t.tag)}">${esc(t.tag)}${
+          (mine || ownsComic) ? `<b data-untag="${esc(t.tag)}" class="x" title="remove"> ×</b>` : ''}</span>`;
+      }).join('')
+    : '<span class="note-line">no tags yet.</span>';
+}
+async function addTag(c){
+  const inp = document.getElementById('d-tag-input');
+  if(!inp || !sb || !me) return;
+  const tag = inp.value.trim().toLowerCase();
+  if(tag.length < 2 || tag.length > 40){ toast('a tag is 2 to 40 characters'); return; }
+  if(c.tagRows.some(t=>t.tag === tag)){ inp.value = ''; toast('already tagged'); return; }
+  const { error } = await sb.from('comic_tags')
+    .insert({ comic_id: c.dbId, tag, added_by: me.id });
+  // 23505 is someone else adding it first, which is the same outcome
+  if(error && error.code !== '23505'){ toast(window.eski.dbError('ESK-5030','that tag did not save',error)); return; }
+  c.tagRows.push({comic_id:c.dbId, tag, added_by: me.id});
+  c.tags = c.tagRows.map(t=>t.tag).sort();
+  inp.value = '';
+  paintTags(c);
+  renderHome(); renderBrowse();
+}
+async function removeTag(c, tag){
+  if(!sb || !me) return;
+  const { error } = await sb.from('comic_tags').delete().eq('comic_id', c.dbId).eq('tag', tag);
+  if(error){ toast(window.eski.dbError('ESK-5031','that tag did not come off',error)); return; }
+  c.tagRows = c.tagRows.filter(t=>t.tag !== tag);
+  c.tags = c.tagRows.map(t=>t.tag).sort();
+  paintTags(c);
+  renderHome(); renderBrowse();
+}
+
+/* ---------------- the shelf: read later / reading / read ----------------
+   ONE row per (you, comic) with a status. signed out, it falls back to a
+   local list so the button still does something on a first visit. */
+const LATER_KEY = 'eski-later';
+const localLater = ()=>{ try{ return JSON.parse(localStorage.getItem(LATER_KEY)) || []; }catch(e){ return []; } };
+const isLater = c => c.shelf ? true : localLater().includes(c.file);
+async function toggleLater(c){
+  const btn = document.getElementById('ov-later');
+  if(sb && me && c.dbId){
+    if(c.shelf){
+      const { error } = await sb.from('saves').delete().eq('user_id', me.id).eq('comic_id', c.dbId);
+      if(error){ toast(window.eski.dbError('ESK-5032','the shelf did not update',error)); return; }
+      c.shelf = null; c.progress = null;
+    }else{
+      const { error } = await sb.from('saves')
+        .upsert({ user_id: me.id, comic_id: c.dbId, status:'later', pages: c.pp,
+                  updated_at: new Date().toISOString() }, { onConflict: 'user_id,comic_id' });
+      if(error){ toast(window.eski.dbError('ESK-5033','the shelf did not update',error)); return; }
+      c.shelf = 'later';
+    }
+  }else{
+    const list = localLater();
+    const on = list.includes(c.file);
+    try{ localStorage.setItem(LATER_KEY,
+      JSON.stringify(on ? list.filter(f=>f !== c.file) : [...list, c.file])); }catch(e){}
+  }
+  const on = isLater(c);
+  btn.setAttribute('aria-pressed', on);
+  btn.textContent = on ? 'on your shelf' : 'read later';
+  toast(on ? 'added to your shelf' : 'removed from your shelf');
+  renderHome();
+}
+/* kudos: one row per (comic, user), no removal — schema.sql enforces that by
+   having no delete policy, so the button is add-once and then a count. */
+async function giveKudos(c, btn){
+  if(!sb || !me){ btn.textContent = 'sign in to give kudos'; return; }
+  btn.disabled = true;
+  const { error } = await sb.from('kudos').insert({ comic_id: c.dbId, user_id: me.id });
+  btn.disabled = false;
+  if(!error || error.code === '23505'){
+    if(!error) c.kudos += 1;
+    btn.setAttribute('aria-pressed','true');
+    btn.textContent = `kudos ${nfmt(c.kudos)}`;
+    renderHome(); renderBrowse();
+  }else{
+    toast(window.eski.dbError('ESK-5034','kudos did not save',error));
+  }
+}
+
+/* "/" jumps to browse and its search, which is the only search now */
+document.addEventListener('keydown', e=>{
+  if(e.key === '/' && !/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName)){
+    e.preventDefault();
+    go('browse');
+    const q = document.getElementById('b-q');
+    if(q) q.focus();
+  }
+});
+
+/* ---------------- onboarding: shown once ever ---------------- */
+const OB_KEY = 'eski-onboarded';
+function closeOnboarding(){ document.getElementById('ob').classList.remove('open'); }
+function maybeOnboarding(){
+  try{ if(localStorage.getItem(OB_KEY)) return; localStorage.setItem(OB_KEY,'1'); }catch(e){ return; }
+  document.getElementById('ob').classList.add('open');
+}
+
+// the shelf and the follow rail change the moment you sign in
+document.addEventListener('eski-auth', ()=>{ if(COMICS.length || sb) boot(); });
+
+fromHash();
 maybeOnboarding();
-renderGrid();
+paintIcons();
+boot();
 </script>
 </body>
 </html>

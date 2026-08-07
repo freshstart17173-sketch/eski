@@ -11,145 +11,184 @@
 <link href="https://fonts.googleapis.com/css2?family=Jost:wght@400;500;600&display=swap" rel="stylesheet">
 <script type="module" src="platform.js"></script>
 <link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="docs/design/final/broadsheet.css">
 <style>
-body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--font-body);
-  font-weight:400;font-size:var(--fs);line-height:1.5;min-height:100vh;display:flex;flex-direction:column}
-h2{margin:0;font-size:var(--fs-display);line-height:.92;text-transform:lowercase;font-weight:400;
-  font-family:var(--font-display);color:var(--accent);letter-spacing:-0.01em;word-break:break-word}
-a{color:var(--accent-deep);text-decoration:none}
-a:hover{text-decoration:underline;text-underline-offset:3px}
-.ico{width:15px;height:15px;flex:none;stroke:currentColor;fill:none;stroke-width:2;
-  stroke-linecap:round;stroke-linejoin:round;display:block}
-.site-header{position:sticky;top:0;z-index:10;height:var(--hdr);background:var(--surface);
-  border-bottom:var(--bw) solid var(--line);display:flex;align-items:center;padding:0 var(--s4);gap:var(--s4)}
-.brand{font-family:var(--font-display);font-size:25px;color:var(--accent);line-height:1;
-  text-decoration:none;letter-spacing:-0.01em;padding-top:2px}
-.brand:hover{text-decoration:none;color:var(--accent-deep)}
-.hdr-label{color:var(--muted);text-transform:lowercase;font-size:var(--fs-sm);
-  border-left:var(--bw) solid var(--line);padding-left:var(--s4)}
-.hdr-link{color:var(--muted);text-transform:lowercase;font-size:var(--fs-sm);
-  display:inline-flex;align-items:center;gap:var(--s2)}
-.hdr-link:hover{color:var(--accent);text-decoration:none}
-.sp{flex:1}
-.wrap{width:min(var(--max),100%);margin:0 auto;padding:var(--s6) var(--s5) var(--s8);flex:1;width:100%}
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:var(--s2);min-height:var(--ctl);
-  padding:0 var(--s4);border-radius:var(--r);text-transform:lowercase;font-size:var(--fs-sm);
-  border:var(--bw) solid var(--line-strong);background:var(--surface);color:var(--soft-ink);cursor:pointer;
-  transition:background var(--t-fast) var(--ease),color var(--t-fast) var(--ease),
-  border-color var(--t-fast) var(--ease)}
-.btn:hover{border-color:var(--accent);background:var(--accent-soft);color:var(--accent-deep);
-  text-decoration:none}
-.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent);font-weight:500}
-.btn.primary:hover{background:var(--accent-deep);border-color:var(--accent-deep);color:var(--on-accent)}
-.btn.icon{width:var(--ctl);padding:0}
-.btn.danger:hover{border-color:var(--danger);background:transparent;color:var(--danger)}
+/* ============================================================
+   eski — profile. docs/design/final/home.html's profile pane: the head
+   with its four counts, "reading" and "read" as the same card grid the
+   shelf uses, "parts performed" as the dense role rows, and settings.
 
-/* ---------- identity ---------- */
-.who{display:flex;gap:var(--s5);align-items:flex-start;border:var(--bw) solid var(--line);
-  background:var(--surface);padding:var(--s5)}
-.who .pic{width:96px;height:96px;flex:none;object-fit:cover;background:var(--paper-1);
-  border:var(--bw) solid var(--line)}
-.who .pic.ph{display:flex;align-items:center;justify-content:center;color:var(--muted);
-  font-family:var(--font-display);font-size:40px;line-height:1}
-.who .id{min-width:0;flex:1}
-.handle{color:var(--muted);font-size:var(--fs-sm);margin-top:var(--s1)}
-.bio{margin:var(--s3) 0 0;color:var(--soft-ink);font-size:var(--fs-sm);max-width:62ch;
-  white-space:pre-wrap;word-break:break-word}
-.who .acts{display:flex;gap:var(--s2);margin-top:var(--s4);flex-wrap:wrap}
+   Two sections the design did not have are here because the app needs
+   them and nothing else offers them: published and drafts, which is
+   where a comic is published, unpublished or deleted.
+   ============================================================ */
+body{margin:0;min-height:100vh;display:flex;flex-direction:column}
+:root{ --row:19px; }
+.top{position:sticky;top:0;z-index:30}
+.top nav a,.top nav button{font:inherit;font-size:var(--fs-micro);letter-spacing:.14em;
+  text-transform:lowercase;cursor:pointer;line-height:1.2}
+.top .sp{flex:1}
+.ico{width:13px;height:13px;flex:none;stroke:currentColor;fill:none;stroke-width:2;
+  stroke-linecap:round;stroke-linejoin:round;display:block}
+.auth{margin-left:var(--s4)}
+.auth-btn{font-size:var(--fs-micro)!important;letter-spacing:.1em!important;
+  text-transform:lowercase!important;border-color:var(--rule-hair)!important}
+.wrap{max-width:1280px;margin:0 auto;padding:0 var(--s4) var(--s7);flex:1;width:100%}
+section + section{margin-top:var(--s6)}
+/* broadsheet's .btn is not a flex container, so an inlined icon svg breaks
+   the line inside the button. every button here that carries one needs it. */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:var(--s1)}
+.btn.primary{background:var(--mark);border-color:var(--mark);color:var(--paper)}
+.btn.primary:hover{background:var(--accent);border-color:var(--accent)}
+[data-theme="dark"] .btn.primary{color:var(--sage-900)}
+.btn.danger:hover{border-color:var(--rec);background:none;color:var(--rec)}
+/* an empty section must not draw the rule that frames a full one */
+.grid:empty{border-left:0}
+.rolelist:empty{border-top:0}
+
+/* ---------- the head ---------- */
+.phead{display:grid;grid-template-columns:64px 1fr auto;gap:var(--s4);align-items:start;
+  padding:var(--s5) 0 var(--s4);border-bottom:1px solid var(--rule)}
+.pfp-lg{width:64px;height:64px;border:1px solid var(--rule);display:grid;place-items:center;
+  font-family:var(--font-display);font-size:22px;color:var(--accent);background:var(--surface);
+  overflow:hidden}
+.pfp-lg img{width:100%;height:100%;object-fit:cover}
+.pmeta h1{font-family:var(--font-display);font-weight:400;font-size:var(--fs-title);
+  margin:0;line-height:1;word-break:break-word}
+.ptag{margin:var(--s2) 0 0;font-size:var(--fs-micro);letter-spacing:.1em;text-transform:uppercase;
+  color:var(--accent)}
+.pbio{margin:var(--s2) 0 0;font-size:var(--fs-xs);color:var(--soft-ink);max-width:56ch;
+  line-height:1.55;white-space:pre-wrap;word-break:break-word}
+.pstats{display:flex;gap:var(--s5);text-align:right}
+.pstats span{display:grid;gap:2px;font-size:var(--fs-micro);letter-spacing:.06em;
+  text-transform:uppercase;color:var(--label)}
+.pstats b{font-family:var(--font-display);font-size:20px;font-weight:400;
+  font-variant-numeric:tabular-nums}
+.hot{color:var(--accent)}
+.head .n{color:var(--accent)}
+.pacts{display:flex;gap:var(--s2);margin-top:var(--s3);flex-wrap:wrap}
+@media(max-width:760px){.phead{grid-template-columns:1fr}.pstats{text-align:left;flex-wrap:wrap;gap:var(--s4)}}
+
+/* ---------- edit ---------- */
 .edit{display:none;margin-top:var(--s4);gap:var(--s3);flex-direction:column;max-width:520px}
 .edit.on{display:flex}
-.edit label{font-size:var(--fs-micro);letter-spacing:.12em;color:var(--muted);text-transform:lowercase;
-  font-weight:500}
-.edit input,.edit textarea{width:100%;padding:var(--s2) var(--s3);border:var(--bw) solid var(--line-strong);
-  border-radius:var(--r);background:var(--paper);color:var(--ink);font:inherit}
+.edit label{font-size:var(--fs-micro);letter-spacing:.12em;color:var(--label);
+  text-transform:uppercase;font-weight:500}
+.edit input,.edit textarea{width:100%;padding:var(--s2) var(--s3);border:1px solid var(--rule-hair);
+  background:var(--paper);color:var(--ink);font:inherit;font-size:var(--fs-xs)}
 .edit input:focus,.edit textarea:focus{outline:none;border-color:var(--accent)}
 .edit textarea{min-height:88px;resize:vertical}
-.err{color:var(--danger);font-size:var(--fs-sm)}
+.err{color:var(--rec);font-size:var(--fs-xs)}
 
-/* ---------- shelves ---------- */
-.tabs{display:flex;gap:var(--bw);margin-top:var(--s6);border-bottom:var(--bw) solid var(--line)}
-.tab{background:transparent;border:0;border-bottom:2px solid transparent;padding:var(--s2) var(--s3);
-  font:inherit;font-size:var(--fs-sm);text-transform:lowercase;color:var(--muted);cursor:pointer}
-.tab:hover{color:var(--accent-deep)}
-.tab.on{color:var(--accent-deep);border-bottom-color:var(--accent);font-weight:500}
-.tab .n{font-variant-numeric:var(--num);opacity:.75;margin-left:var(--s1)}
-.rows{border:var(--bw) solid var(--line);border-top:0}
-.row{display:flex;align-items:center;gap:var(--s4);padding:var(--s3);
-  border-bottom:var(--bw) solid var(--line);background:var(--surface)}
-.row:last-child{border-bottom:0}
-.row .art{width:44px;height:66px;object-fit:cover;background:var(--paper-1);
-  border:var(--bw) solid var(--line);flex:none}
-.row .meta{min-width:0;flex:1}
-.row .t{font-weight:500;text-transform:lowercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.row .d{color:var(--muted);font-size:var(--fs-sm);font-variant-numeric:var(--num)}
-.row .acts{display:flex;gap:var(--s2);flex:none;flex-wrap:wrap;justify-content:flex-end}
-.chip{font-size:var(--fs-micro);text-transform:lowercase;letter-spacing:.06em;font-weight:500;
-  padding:2px 7px;flex:none}
-.chip.draft{background:var(--paper-1);color:var(--muted);border:var(--bw) solid var(--line)}
-.chip.published{background:var(--accent);color:var(--on-accent)}
-.state{border:var(--bw) solid var(--line);border-top:0;padding:var(--s7) var(--s5);text-align:center;
-  color:var(--muted);background:var(--surface);font-size:var(--fs-sm)}
-.spinner{width:28px;height:28px;border:2px solid var(--line);border-top-color:var(--accent);
-  border-radius:var(--r-round);animation:spin .8s linear infinite;margin:0 auto var(--s3)}
+/* ---------- the same card grid the shelf uses ---------- */
+.grid{display:grid;grid-template-columns:repeat(5,1fr);border-left:1px solid var(--rule)}
+@media(max-width:1180px){.grid{grid-template-columns:repeat(4,1fr)}}
+@media(max-width:900px){.grid{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:640px){.grid{grid-template-columns:repeat(2,1fr)}}
+.cell{position:relative;display:flex;background:var(--paper);
+  border-right:1px solid var(--rule);border-bottom:1px solid var(--rule)}
+.card{display:flex;flex-direction:column;background:none;text-align:left;border:0;
+  padding:var(--s3);color:inherit;font:inherit;min-width:0;width:100%;cursor:pointer;
+  transition:background var(--t-fast) var(--ease)}
+.card:hover{background:var(--surface)}
+.card:active{transform:translateY(1px)}
+.plate{position:relative;overflow:hidden;border:1px solid var(--rule-hair);
+  aspect-ratio:2/3;background:var(--paper-1)}
+[data-theme="dark"] .plate{background:var(--surf-2)}
+.plate img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;
+  transition:transform var(--t-mid) var(--ease)}
+.card:hover .plate img{transform:scale(1.025)}
+.title{font-family:var(--font-display);font-weight:400;font-size:17px;line-height:24px;
+  height:24px;text-align:center;margin-top:var(--s3)}
+.card:hover .title{box-shadow:inset 0 -1px 0 var(--rule)}
+.note{height:var(--row);line-height:var(--row);font-size:var(--fs-micro);
+  color:var(--label);text-align:center;letter-spacing:.04em}
+.cap{margin-top:auto;font-size:var(--fs-xs);color:var(--soft-ink)}
+.cap .r{display:grid;grid-template-columns:42px 1fr;align-items:center;gap:var(--s2);
+  height:var(--row);border-top:1px solid var(--rule-hair);min-width:0}
+.cap .r:first-child{border-top:0}
+.cap .k{color:var(--label);letter-spacing:.06em;font-size:var(--fs-micro);
+  text-transform:uppercase;white-space:nowrap}
+.cap .v{text-align:right;font-variant-numeric:tabular-nums;min-width:0}
+.progress{height:3px;background:var(--rule-hair);margin-top:var(--s2)}
+.progress i{display:block;height:100%;background:var(--mark)}
+.chip.state{font-size:9px;text-transform:uppercase;letter-spacing:.06em;padding:2px 7px;
+  border:1px solid var(--rule-hair);color:var(--label);position:absolute;top:0;left:0;z-index:2;
+  background:var(--paper)}
+.chip.state.published{background:var(--mark);color:var(--paper);border-color:var(--mark)}
+[data-theme="dark"] .chip.state.published{color:var(--sage-900)}
+.cardacts{display:flex;gap:var(--s1);flex-wrap:wrap;padding:0 var(--s3) var(--s3)}
+
+/* ---------- parts performed: the dense role row ---------- */
+.rolelist{border-top:1px solid var(--rule)}
+.rolerow{display:grid;grid-template-columns:46px 196px 1fr 104px;gap:var(--s3);
+  align-items:center;padding:5px var(--s2);width:100%;text-align:left;background:none;
+  border:0;border-bottom:1px solid var(--rule-hair);color:inherit;font:inherit;min-width:0}
+.rolerow:hover{background:var(--surface)}
+.portrait{width:46px;height:46px;flex:none;display:block;overflow:hidden;
+  border:1px solid var(--rule-hair);background:var(--paper-1)}
+[data-theme="dark"] .portrait{background:var(--surf-2)}
+.portrait img{width:100%;height:100%;object-fit:cover}
+.rolename{font-family:var(--font-display);font-size:15px;line-height:20px}
+.rolein{font-size:var(--fs-micro);color:var(--label);line-height:var(--row)}
+.rolerow .where{font-size:var(--fs-micro);color:var(--label);min-width:0}
+.rolerow .where .ttl{color:var(--soft-ink)}
+.rolerow .go{display:flex;justify-content:flex-end;gap:var(--s1);flex-wrap:wrap}
+@media(max-width:760px){
+  .rolerow{grid-template-columns:46px 1fr auto}
+  .rolerow .where{display:none}
+}
+
+/* ---------- settings ---------- */
+.setrow{display:flex;align-items:center;gap:var(--s3);padding:var(--s2) 0;
+  border-bottom:1px solid var(--rule-hair);font-size:var(--fs-xs)}
+.setrow .sp{flex:1}
+.setrow small{color:var(--label);font-size:var(--fs-micro)}
+
+.state{border:1px solid var(--rule);padding:var(--s7) var(--s5);text-align:center;
+  color:var(--label);background:var(--surface);font-size:var(--fs-xs)}
+.spinner{width:24px;height:24px;border:2px solid var(--rule-hair);border-top-color:var(--accent);
+  border-radius:50%;animation:spin .8s linear infinite;margin:0 auto var(--s3)}
 @keyframes spin{to{transform:rotate(360deg)}}
-footer{background:var(--surface);color:var(--muted);padding:var(--s5) 0;font-size:var(--fs-sm);
-  border-top:var(--bw) solid var(--line)}
-footer .wrap{display:flex;align-items:center;gap:var(--s4);flex-wrap:wrap;padding:0 var(--s5);flex:none}
-footer .brand{font-size:20px}
+.foot{margin-top:var(--s7);padding-top:var(--s3);border-top:1px solid var(--rule);
+  display:flex;justify-content:space-between;gap:var(--s3);flex-wrap:wrap;
+  font-size:var(--fs-micro);letter-spacing:.1em;color:var(--label)}
+.foot a{color:inherit;text-decoration:none}
+.foot a:hover{color:var(--ink)}
 
-/* ---------------- touch and narrow screens. KEEP THIS BLOCK LAST ---------------- */
 @media (max-width:640px){
-  .site-header{padding:0 var(--s3);gap:var(--s3);overflow-x:auto;scrollbar-width:none}
-  .site-header::-webkit-scrollbar{display:none}
-  .site-header>*{flex:none}
-  .hdr-label{display:none}
-  .wrap{padding:var(--s5) var(--s3) var(--s7)}
-  .btn{min-height:42px}
-  .who{flex-direction:column;gap:var(--s4)}
-  .who .pic{width:72px;height:72px}
-  .tabs{overflow-x:auto;scrollbar-width:none}
-  .tabs::-webkit-scrollbar{display:none}
-  .tab{min-height:42px;white-space:nowrap}
-  .row{flex-wrap:wrap}
-  .row .acts{width:100%;justify-content:flex-start}
+  .top{gap:var(--s2);padding:var(--s2) var(--s3);overflow-x:auto;scrollbar-width:none}
+  .top::-webkit-scrollbar{display:none}
+  .top>*{flex:none}
+  .top nav{gap:var(--s3)}
+  .wrap{padding:0 var(--s3) var(--s6)}
 }
 </style>
 </head>
 <body>
 
-<header class="site-header">
-  <a class="brand" href="index.html">eski!</a>
-  <span class="hdr-label">profile</span>
-  <span class="sp"></span>
-  <a class="hdr-link" href="index.html">home</a>
-  <a class="hdr-link" href="studio.html">studio</a>
-  <button class="btn icon" id="theme-btn" onclick="toggleTheme()"></button>
+<header class="top site-header">
+  <a class="mark" href="index.html">eski<i>!</i></a>
+  <nav id="nav">
+    <a href="index.html">home</a>
+    <a href="index.html#browse">browse</a>
+    <a href="studio.html">studio</a>
+    <a href="profile.html" aria-current="page">profile</a>
+  </nav>
 </header>
 
 <div class="wrap" id="page">
   <div class="state"><div class="spinner"></div>loading&#8230;</div>
 </div>
 
-<footer>
-  <div class="wrap">
-    <span class="brand">eski!</span>
-    <span>comics with soundtracks and voice</span>
-    <span class="sp"></span>
-    <a href="index.html">home</a>
-    <a href="studio.html">studio</a>
-  </div>
-</footer>
-
 <script>
 /* ================================================================
    profile. two views from one file: your own, which can edit and shows
    drafts, and anyone else's, which is what a shared link opens.
-
    ?u=<handle> addresses a person. without it you get your own.
 
    a HANDLE is the identity and comics.owner_name is the byline. renaming
-   yourself does not rewrite work you already published, which is the correct
-   behaviour for attribution, so the two are deliberately not the same field.
+   yourself does not rewrite work you already published.
    ================================================================ */
 const ICONS = {
   "book-open": "<path d=\"M12 7v14\" /> <path d=\"M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z\" />",
@@ -158,10 +197,13 @@ const ICONS = {
   "trash-2": "<path d=\"M10 11v6\" /> <path d=\"M14 11v6\" /> <path d=\"M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6\" /> <path d=\"M3 6h18\" /> <path d=\"M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2\" />",
   "upload-cloud": "<path d=\"M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242\" /> <path d=\"M12 12v9\" /> <path d=\"m16 16-4-4-4 4\" />",
   "link": "<path d=\"M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71\" /> <path d=\"M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71\" />",
-  "pencil": "<path d=\"M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z\" /> <path d=\"m15 5 4 4\" />"
+  "pencil": "<path d=\"M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z\" /> <path d=\"m15 5 4 4\" />",
+  "message-circle": "<path d=\"M7.9 20A9 9 0 1 0 4 16.1L2 22Z\" />"
 };
 const $ = id => document.getElementById(id);
 const esc = s => (s ?? '').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
+const nfmt = n => (n||0).toLocaleString('en-US');
+const mq = s => `<span class="mq"><span>${esc(s)}</span></span>`;
 function paintIcons(root){
   (root||document).querySelectorAll('[data-ico]').forEach(el=>{
     if(el.querySelector(':scope > svg.ico')) return;
@@ -169,15 +211,14 @@ function paintIcons(root){
       `<svg class="ico" viewBox="0 0 24 24" aria-hidden="true">${ICONS[el.getAttribute('data-ico')]||''}</svg>`);
   });
 }
+/* the theme switch lives in the settings section below, which is where the
+   design puts it. every surface reads the same 'eski-settings' key. */
 const themeSettings = (()=>{ try{ return JSON.parse(localStorage.getItem('eski-settings'))||{}; }
   catch(e){ return {}; } })();
 function paintTheme(){
   document.documentElement.dataset.theme = themeSettings.dark ? 'dark' : '';
-  const b = $('theme-btn');
-  if(!b) return;
-  b.setAttribute('data-ico', themeSettings.dark ? 'sun' : 'moon');
-  b.title = themeSettings.dark ? 'light mode' : 'dark mode';
-  b.innerHTML = ''; paintIcons(b.parentElement);
+  const t = $('set-theme');
+  if(t){ t.setAttribute('aria-pressed', !!themeSettings.dark); t.textContent = themeSettings.dark ? 'on' : 'off'; }
 }
 function toggleTheme(){
   themeSettings.dark = !themeSettings.dark;
@@ -187,12 +228,9 @@ function toggleTheme(){
 paintTheme();
 
 const fmt = d => d ? new Date(d).toISOString().slice(0,10) : '';
-let sb = null, me = null, subject = null, isMe = false, comics = [], tab = 'published';
-let parts = [], partsError = '';
+let sb = null, me = null, subject = null, isMe = false;
+let comics = [], parts = [], saves = [], kudosReceived = 0, partsError = '';
 
-/* a handle has to be unique, so a first guess can collide. try the obvious one,
-   then widen, rather than making a new user invent a name before they can do
-   anything. */
 function handleSeed(user){
   const m = user.user_metadata || {};
   const raw = m.user_name || m.name || m.full_name || (user.email||'').split('@')[0] || 'reader';
@@ -214,17 +252,12 @@ async function ensureProfile(user){
       avatar_url: m.avatar_url || null
     }).select('*').single();
     if(!ins.error) return ins.data;
-    // not a collision
     if(ins.error.code !== '23505')
       throw new Error(dbe('ESK-5013', 'your profile could not be created', ins.error));
   }
   throw new Error('ESK-5014 could not pick a free handle after 5 tries');
 }
 
-/* platform.js is a MODULE and runs after this classic script, so window.eski is
-   not there yet while the page is parsing. this page used to read it straight
-   away and told everyone the server was unreachable. modules execute before
-   DOMContentLoaded, so waiting for that is enough. */
 async function platform(){
   if(!window.eski && document.readyState === 'loading')
     await new Promise(r => document.addEventListener('DOMContentLoaded', r, { once: true }));
@@ -248,8 +281,9 @@ async function load(){
     const r = await sb.from('profiles').select('*').eq('handle', wanted.toLowerCase()).maybeSingle();
     subject = r.data || null;
     if(!subject){
-      page.innerHTML = `<h2>not found</h2><p class="bio">no one here goes by
-        ${esc(wanted)}. <a href="index.html">back home</a>.</p>`;
+      page.innerHTML = `<div class="phead"><div class="pmeta"><h1>not found</h1>
+        <p class="pbio">no one here goes by ${esc(wanted)}. <a href="index.html">back home</a>.</p>
+        </div></div>`;
       return;
     }
   }else{
@@ -263,179 +297,272 @@ async function load(){
   isMe = !!(me && subject && me.id === subject.id);
 
   /* rls decides what comes back: a visitor sees published rows only, and the
-     owner also sees drafts. no status filter is needed here, and adding one
-     would just be a second place to get it wrong. */
-  const r = await sb.from('comics')
-    .select('*')
-    .eq('owner_id', subject.id)
-    .order('created_at', { ascending: false });
-  if(r.error){
+     owner also sees drafts. no status filter is needed here. */
+  const [cr, pr, sr] = await Promise.all([
+    sb.from('comics').select('*').eq('owner_id', subject.id).order('created_at', { ascending: false }),
+    sb.from('parts').select('*, comics(id,title,slug,cover_key,thumb_key,owner_name)')
+      .eq('owner_id', subject.id).order('created_at', { ascending: false }),
+    // the shelf. public by policy, which is what puts "reading" on someone
+    // else's profile as well as your own.
+    sb.from('saves').select('*, comics(id,title,cover_key,thumb_key,owner_name)')
+      .eq('user_id', subject.id).order('updated_at', { ascending: false })
+  ]);
+  if(cr.error){
     page.innerHTML = '<div class="state">' +
-      esc(window.eski.dbError('ESK-5015', 'your shelves could not be read', r.error)) + '</div>';
+      esc(window.eski.dbError('ESK-5015', 'your shelves could not be read', cr.error)) + '</div>';
     return;
   }
-  comics = r.data || [];
-
-  /* what they have made for OTHER people's comics. the same rls split applies:
-     a visitor sees published parts, the owner also sees their drafts. the comic
-     is joined in because a voice track with no comic beside it is unreadable as
-     a list entry. */
-  const pr = await sb.from('parts')
-    .select('*, comics(id,title,slug,cover_key,thumb_key,owner_name)')
-    .eq('owner_id', subject.id)
-    .order('created_at', { ascending: false });
-  // a missing parts table is not a reason to blank a profile: everything else
-  // on this page is still true, so the shelf just stays empty
+  comics = cr.data || [];
+  // a missing table is not a reason to blank a profile: everything else on
+  // this page is still true, so that shelf just stays empty.
   parts = pr.error ? [] : (pr.data || []);
   partsError = pr.error ? window.eski.dbError('ESK-5024', 'contributions could not be read', pr.error) : '';
+  saves = sr.error ? [] : (sr.data || []);
+
+  const ids = comics.map(c=>c.id);
+  if(ids.length){
+    const kr = await sb.from('kudos').select('comic_id').in('comic_id', ids);
+    kudosReceived = kr.error ? 0 : (kr.data || []).length;
+  }
   paint();
 }
 
-function shelf(name){
-  if(name === 'published')   return comics.filter(c=>c.status === 'published');
-  if(name === 'drafts')      return comics.filter(c=>c.status !== 'published');
-  if(name === 'contributed') return parts;
-  return [];   // saved has no data model yet
+const coverUrl = c => (c && (c.thumb_key || c.cover_key)) ? window.eski.mediaUrl(c.thumb_key || c.cover_key) : '';
+
+/* one card, the same object the shelf shows */
+function cardEl(comic, opts){
+  opts = opts || {};
+  const cell = document.createElement('div');
+  cell.className = 'cell';
+  const cover = coverUrl(comic);
+  const b = document.createElement('button');
+  b.className = 'card';
+  b.type = 'button';
+  b.innerHTML =
+    `<div class="plate">${cover ? `<img src="${esc(cover)}" alt="" loading="lazy">` : ''}</div>
+     <div class="title">${mq(comic.title || 'untitled')}</div>
+     <div class="note">${opts.note ? mq(opts.note) : ''}</div>
+     <div class="cap">
+       <div class="r"><span class="k">by</span><span class="v">${mq(comic.owner_name || subject.display_name || subject.handle)}</span></div>
+       ${opts.rows || ''}
+     </div>`;
+  b.onclick = ()=>{ location.href = 'read.html?read=db:' + encodeURIComponent(comic.id); };
+  cell.appendChild(b);
+  if(opts.progress != null){
+    const bar = document.createElement('div');
+    bar.className = 'progress';
+    bar.innerHTML = `<i style="width:${Math.round(opts.progress*100)}%"></i>`;
+    b.appendChild(bar);
+  }
+  if(opts.badge){
+    cell.insertAdjacentHTML('beforeend',
+      `<span class="chip state ${opts.badge === 'published' ? 'published' : ''}">${esc(opts.badge)}</span>`);
+  }
+  if(opts.acts){
+    const acts = document.createElement('div');
+    acts.className = 'cardacts';
+    acts.innerHTML = opts.acts;
+    cell.querySelector('.card').insertAdjacentElement('afterend', acts);
+    cell.style.flexDirection = 'column';
+  }
+  return cell;
+}
+
+function gridOf(list, emptyMsg){
+  if(!list.length) return `<div class="empty">${esc(emptyMsg)}</div>`;
+  return null;
 }
 
 function paint(){
   const p = subject;
   const initial = (p.display_name || p.handle || '?').trim().charAt(0).toLowerCase();
-  const pub = shelf('published').length, dr = shelf('drafts').length;
+  const reading = saves.filter(s=>s.status === 'reading' && s.comics);
+  const read    = saves.filter(s=>s.status === 'read' && s.comics);
+  const later   = saves.filter(s=>s.status === 'later' && s.comics);
+  const published = comics.filter(c=>c.status === 'published');
+  const drafts    = comics.filter(c=>c.status !== 'published');
+
   $('page').innerHTML = `
-    <div class="who">
-      ${p.avatar_url
-        ? `<img class="pic" src="${esc(p.avatar_url)}" alt="">`
-        : `<span class="pic ph">${esc(initial)}</span>`}
-      <div class="id">
-        <h2>${esc(p.display_name || p.handle)}</h2>
-        <div class="handle">@${esc(p.handle)}</div>
-        ${p.bio ? `<p class="bio">${esc(p.bio)}</p>`
-                : (isMe ? '<p class="bio">no bio yet.</p>' : '')}
-        <div class="acts">
-          <button class="btn" id="share" data-ico="link">copy link</button>
-          ${isMe ? '<button class="btn" id="editbtn" data-ico="pencil">edit profile</button>' : ''}
+    <div class="phead">
+      <!-- an oauth avatar url can 404 or be blocked, and a broken-image icon
+           is worse than the initial it was standing in for. -->
+      <div class="pfp-lg">${p.avatar_url
+        ? `<img src="${esc(p.avatar_url)}" alt="" referrerpolicy="no-referrer"
+             onerror="this.remove();this.parentNode.textContent='${esc(initial)}'">`
+        : esc(initial)}</div>
+      <div class="pmeta">
+        <h1>${esc(p.display_name || p.handle)}</h1>
+        <p class="ptag">@${esc(p.handle)}${p.created_at ? ' · here since ' + new Date(p.created_at).getFullYear() : ''}</p>
+        ${p.bio ? `<p class="pbio">${esc(p.bio)}</p>`
+                : (isMe ? '<p class="pbio">no bio yet.</p>' : '')}
+        <div class="pacts">
+          <button class="btn sm" id="share" data-ico="link">copy link</button>
+          ${isMe ? '<button class="btn sm" id="editbtn" data-ico="pencil">edit profile</button>' : ''}
         </div>
         ${isMe ? `<div class="edit" id="edit">
-          <div>
-            <label for="f-name">display name</label>
-            <input id="f-name" maxlength="60" value="${esc(p.display_name||'')}">
-          </div>
-          <div>
-            <label for="f-handle">handle</label>
-            <input id="f-handle" maxlength="30" value="${esc(p.handle)}">
-          </div>
-          <div>
-            <label for="f-bio">bio</label>
+          <div><label for="f-name">display name</label>
+            <input id="f-name" maxlength="60" value="${esc(p.display_name||'')}"></div>
+          <div><label for="f-handle">handle</label>
+            <input id="f-handle" maxlength="30" value="${esc(p.handle)}"></div>
+          <div><label for="f-bio">bio</label>
             <textarea id="f-bio" maxlength="400"
-              placeholder="what you make, or what you want to be cast in.">${esc(p.bio||'')}</textarea>
-          </div>
+              placeholder="what you make, or what you want to be cast in.">${esc(p.bio||'')}</textarea></div>
           <div class="err" id="f-err"></div>
-          <div class="acts">
-            <button class="btn primary" id="save">save</button>
-            <button class="btn" id="cancel">cancel</button>
+          <div class="pacts">
+            <button class="btn primary sm" id="save">save</button>
+            <button class="btn sm" id="cancel">cancel</button>
           </div>
         </div>` : ''}
       </div>
+      <div class="pstats">
+        <span><b class="hot">${nfmt(parts.length)}</b>parts performed</span>
+        <span><b class="hot">${nfmt(reading.length)}</b>reading</span>
+        <span><b class="hot">${nfmt(read.length)}</b>read</span>
+        <span><b class="hot">${nfmt(kudosReceived)}</b>kudos received</span>
+      </div>
     </div>
 
-    <div class="tabs">
-      <button class="tab${tab==='published'?' on':''}" data-tab="published">published<span class="n">${pub}</span></button>
-      ${isMe ? `<button class="tab${tab==='drafts'?' on':''}" data-tab="drafts">drafts<span class="n">${dr}</span></button>` : ''}
-      <button class="tab${tab==='contributed'?' on':''}" data-tab="contributed">contributed to</button>
-      ${isMe ? `<button class="tab${tab==='saved'?' on':''}" data-tab="saved">saved</button>` : ''}
-    </div>
-    <div id="shelf"></div>`;
+    <section>
+      <div class="head"><h2>reading</h2><span class="n">${reading.length}</span>
+        <span class="sp"></span><a href="index.html#browse">find something →</a></div>
+      <div class="grid" id="g-reading"></div>
+      <div class="empty" id="e-reading" hidden></div>
+    </section>
+
+    <section>
+      <div class="head"><h2>read</h2><span class="n">${read.length}</span></div>
+      <div class="grid" id="g-read"></div>
+      <div class="empty" id="e-read" hidden></div>
+    </section>
+
+    ${later.length ? `<section>
+      <div class="head"><h2>saved for later</h2><span class="n">${later.length}</span></div>
+      <div class="grid" id="g-later"></div>
+    </section>` : ''}
+
+    <section>
+      <div class="head"><h2>parts performed</h2><span class="n">${parts.length}</span></div>
+      <div class="rolelist" id="g-parts"></div>
+      <div class="empty" id="e-parts" hidden></div>
+    </section>
+
+    <section>
+      <div class="head"><h2>published</h2><span class="n">${published.length}</span></div>
+      <div class="grid" id="g-published"></div>
+      <div class="empty" id="e-published" hidden></div>
+    </section>
+
+    ${isMe ? `<section>
+      <div class="head"><h2>drafts</h2><span class="n">${drafts.length}</span>
+        <span class="sp"></span><a href="studio.html">open the studio →</a></div>
+      <div class="grid" id="g-drafts"></div>
+      <div class="empty" id="e-drafts" hidden></div>
+    </section>
+
+    <section>
+      <div class="head"><h2>settings</h2></div>
+      <div class="setrow"><span>dark mode</span><span class="sp"></span>
+        <button class="btn sm" id="set-theme" aria-pressed="false">off</button></div>
+      <div class="setrow"><span>autoplay previews</span>
+        <small>no preview clips are generated yet</small><span class="sp"></span>
+        <button class="btn sm" disabled>—</button></div>
+      <div class="setrow"><span>email me when a role i watch is cast</span>
+        <small>no mailer is wired up</small><span class="sp"></span>
+        <button class="btn sm" disabled>—</button></div>
+    </section>` : ''}
+
+    <div class="foot"><span>EST. 2026</span>
+      <span><a href="index.html">HOME</a> · <a href="studio.html">STUDIO</a></span></div>`;
+
+  const fillGrid = (id, list, mapper, emptyId, emptyMsg)=>{
+    const box = $(id);
+    if(!box) return;
+    box.replaceChildren(...list.map(mapper));
+    const e = $(emptyId);
+    if(e){ e.hidden = list.length > 0; e.textContent = emptyMsg; }
+    if(!list.length) box.style.borderLeft = '0';
+  };
+
+  fillGrid('g-reading', reading, s=>cardEl(s.comics, {
+    progress: s.pages ? Math.min(1, s.last_page / s.pages) : 0,
+    note: s.pages ? `page ${s.last_page} of ${s.pages}` : '',
+    rows: `<div class="r"><span class="k">at</span><span class="v">${
+      s.pages ? Math.round((s.last_page / s.pages) * 100) + '%' : '—'}</span></div>`
+  }), 'e-reading', isMe ? 'nothing on the go. open something and it lands here.'
+                        : 'not reading anything right now.');
+
+  fillGrid('g-read', read, s=>cardEl(s.comics, {
+    note: 'finished',
+    rows: `<div class="r"><span class="k">pages</span><span class="v">${nfmt(s.pages)}</span></div>`
+  }), 'e-read', 'nothing finished yet.');
+
+  if($('g-later')) fillGrid('g-later', later, s=>cardEl(s.comics, {note:'saved'}), null, '');
+
+  const partsBox = $('g-parts');
+  if(partsBox){
+    partsBox.replaceChildren(...parts.map(pt=>{
+      const c = pt.comics || {};
+      const cover = coverUrl(c);
+      const row = document.createElement('div');
+      row.className = 'rolerow';
+      const what = pt.kind === 'vo' ? 'voice' : 'score';
+      row.innerHTML =
+        `<span class="portrait">${cover ? `<img src="${esc(cover)}" alt="">` : ''}</span>
+         <div>
+           <div class="rolename">${mq(pt.character_key || pt.title || 'untitled')}</div>
+           <div class="rolein">${esc(what)}${pt.status === 'published' ? '' : ' · draft'}</div>
+         </div>
+         <div class="where"><div class="ttl">${mq(c.title || '')}</div>
+           <div>${esc(fmt(pt.published_at || pt.created_at))}</div></div>
+         <div class="go">
+           <a class="btn sm" href="read.html?read=db:${encodeURIComponent(c.id||'')}&with=part:${encodeURIComponent(pt.id)}">listen</a>
+           ${isMe ? `<button class="btn sm" data-part="${esc(pt.id)}"
+              data-act="${pt.status === 'published' ? 'unpublish' : 'publish'}">${
+              pt.status === 'published' ? 'unpublish' : 'publish'}</button>
+             <button class="btn sm danger" data-part="${esc(pt.id)}" data-act="delete">delete</button>` : ''}
+         </div>`;
+      return row;
+    }));
+    const e = $('e-parts');
+    e.hidden = parts.length > 0;
+    e.textContent = partsError || (isMe
+      ? "voice work and soundtracks you make for other people's comics show up here."
+      : 'no parts performed yet.');
+  }
+
+  // no status badge over the art: the section heading already says which
+  // shelf this is, and the design keeps the plate clean.
+  fillGrid('g-published', published, c=>cardEl(c, {
+    rows: `<div class="r"><span class="k">on</span><span class="v">${esc(fmt(c.published_at||c.created_at))}</span></div>`,
+    acts: isMe ? `<button class="btn sm" data-comic="${esc(c.id)}" data-act="unpublish">unpublish</button>
+       <button class="btn sm danger" data-comic="${esc(c.id)}" data-act="delete">delete</button>` : ''
+  }), 'e-published', 'nothing published yet.');
+
+  if($('g-drafts')) fillGrid('g-drafts', drafts, c=>cardEl(c, {
+    rows: `<div class="r"><span class="k">made</span><span class="v">${esc(fmt(c.created_at))}</span></div>`,
+    acts: `<button class="btn sm primary" data-comic="${esc(c.id)}" data-act="publish">publish</button>
+       <button class="btn sm danger" data-comic="${esc(c.id)}" data-act="delete">delete</button>`
+  }), 'e-drafts', 'no drafts. the studio saves them here.');
+
   paintIcons($('page'));
-  paintShelf();
+  paintTheme();
 
   $('share').addEventListener('click', async e=>{
     const url = location.origin + location.pathname.replace(/[^/]*$/, 'profile.html') + '?u=' + p.handle;
-    try{ await navigator.clipboard.writeText(url); e.target.lastChild.textContent = 'link copied'; }
+    try{ await navigator.clipboard.writeText(url); e.currentTarget.lastChild.textContent = 'link copied'; }
     catch(err){ prompt('copy this link', url); }
   });
   if(isMe){
     $('editbtn').addEventListener('click', ()=>$('edit').classList.toggle('on'));
     $('cancel').addEventListener('click', ()=>$('edit').classList.remove('on'));
     $('save').addEventListener('click', saveProfile);
+    const st = $('set-theme');
+    if(st) st.addEventListener('click', toggleTheme);
   }
-  $('page').querySelectorAll('.tab').forEach(b=>b.addEventListener('click', ()=>{
-    tab = b.dataset.tab; paint();
+  $('page').querySelectorAll('[data-act]').forEach(b=>b.addEventListener('click', ev=>{
+    ev.stopPropagation();
+    act(b);
   }));
-}
-
-function paintShelf(){
-  const box = $('shelf');
-  const rows = shelf(tab);
-  if(tab === 'contributed'){
-    if(!rows.length){
-      box.className = '';
-      box.innerHTML = partsError
-        ? `<div class="state">${esc(partsError)}</div>`
-        : `<div class="state">voice work and soundtracks made for other people's
-           comics show up here. nothing yet.</div>`;
-      return;
-    }
-    box.className = 'rows';
-    box.innerHTML = rows.map(p=>{
-      const c = p.comics || {};
-      const cover = (c.thumb_key || c.cover_key) ? window.eski.mediaUrl(c.thumb_key || c.cover_key) : '';
-      const published = p.status === 'published';
-      const what = p.kind === 'vo' ? 'voice' : 'score';
-      const who = p.character_key ? what + ': ' + p.character_key : what;
-      return `<div class="row" data-id="${esc(p.id)}" data-kind="part">
-        ${cover ? `<img class="art" src="${esc(cover)}" alt="">` : '<span class="art"></span>'}
-        <span class="meta">
-          <span class="t">${esc(p.title || c.title || 'untitled')}</span>
-          <span class="d">${esc(who)} &#183; ${esc(fmt(p.published_at || p.created_at))}</span>
-        </span>
-        <span class="chip ${published?'published':'draft'}">${published?'published':'draft'}</span>
-        <span class="acts">
-          <a class="btn" data-ico="book-open" href="read.html?read=db:${encodeURIComponent(c.id||'')}${
-            '&with=part:' + encodeURIComponent(p.id)}">read</a>
-          ${isMe ? `<button class="btn ${published?'':'primary'}" data-ico="upload-cloud"
-                  data-act="${published?'unpublish':'publish'}">${published?'unpublish':'publish'}</button>
-          <button class="btn danger icon" data-ico="trash-2" data-act="delete" title="delete"></button>` : ''}
-        </span>
-      </div>`;
-    }).join('');
-    paintIcons(box);
-    box.querySelectorAll('[data-act]').forEach(b=>b.addEventListener('click', ()=>act(b)));
-    return;
-  }
-  if(tab === 'saved'){
-    box.className = '';
-    box.innerHTML = '<div class="state">saving comics is not built yet.</div>';
-    return;
-  }
-  if(!rows.length){
-    box.className = '';
-    box.innerHTML = isMe
-      ? `<div class="state">nothing here. make one in the <a href="studio.html">studio</a>.</div>`
-      : '<div class="state">nothing published yet.</div>';
-    return;
-  }
-  box.className = 'rows';
-  box.innerHTML = rows.map(c=>{
-    const cover = (c.thumb_key || c.cover_key) ? window.eski.mediaUrl(c.thumb_key || c.cover_key) : '';
-    const published = c.status === 'published';
-    return `<div class="row" data-id="${esc(c.id)}">
-      ${cover ? `<img class="art" src="${esc(cover)}" alt="">` : '<span class="art"></span>'}
-      <span class="meta">
-        <span class="t">${esc(c.title)}</span>
-        <span class="d">${esc(fmt(c.published_at || c.created_at))}</span>
-      </span>
-      <span class="chip ${published?'published':'draft'}">${published?'published':'draft'}</span>
-      <span class="acts">
-        <a class="btn" data-ico="book-open" href="read.html?read=db:${encodeURIComponent(c.id)}">read</a>
-        ${isMe ? `<button class="btn ${published?'':'primary'}" data-ico="upload-cloud"
-                data-act="${published?'unpublish':'publish'}">${published?'unpublish':'publish'}</button>
-        <button class="btn danger icon" data-ico="trash-2" data-act="delete" title="delete"></button>` : ''}
-      </span>
-    </div>`;
-  }).join('');
-  paintIcons(box);
-  box.querySelectorAll('[data-act]').forEach(b=>b.addEventListener('click', ()=>act(b)));
 }
 
 async function saveProfile(){
@@ -460,15 +587,14 @@ async function saveProfile(){
   paint();
 }
 
+/* a part row and a comic card carry the same three actions against different
+   tables. the shape is identical, so only the table and the id change. */
 async function act(btn){
-  const row = btn.closest('.row');
-  const id = row.dataset.id;
   const what = btn.dataset.act;
-  const title = row.querySelector('.t').textContent;
-  // a part row and a comic row carry the same three actions against different
-  // tables. the shape is identical, so only the table name changes.
-  const table = row.dataset.kind === 'part' ? 'parts' : 'comics';
-  if(what === 'delete' && !confirm(`delete "${title}"? this cannot be undone.`)) return;
+  const isPart = !!btn.dataset.part;
+  const table = isPart ? 'parts' : 'comics';
+  const id = btn.dataset.part || btn.dataset.comic;
+  if(what === 'delete' && !confirm('delete this? it cannot be undone.')) return;
   btn.disabled = true;
   let err = null;
   if(what === 'delete'){
@@ -482,8 +608,7 @@ async function act(btn){
   }
   btn.disabled = false;
   if(err){
-    alert(window.eski.dbError(what === 'delete' ? 'ESK-5017' : 'ESK-5018',
-      'that did not work', err));
+    alert(window.eski.dbError(what === 'delete' ? 'ESK-5017' : 'ESK-5018', 'that did not work', err));
     return;
   }
   load();

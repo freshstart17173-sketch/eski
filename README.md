@@ -29,8 +29,10 @@ Two layers of this repo are at different stages:
 - **The design direction** (`docs/design/final/`) — the **v3** model from
   `SPEC.md`: layered audio (beds/score/oneshots/voice), a script with
   per-line voice performances, and three separate studios (author, composer,
-  voiceover) replacing today's single `studio.html`. Built and styled, not
-  yet wired into the live app or backed by the reader.
+  voiceover) replacing today's single `studio.html`. The *reading* half of
+  this is now live: `index.html` (home + browse) and `profile.html` are built
+  against `broadsheet.css` and the final layouts. The three studios are not —
+  `studio.html` is still the single v2 composer.
 
 `ROADMAP.md` and `docs/design/final/TODO.md` track what's left to close that
 gap. `TODO.txt` and `catchup.txt` are older working notes, kept for history.
@@ -48,10 +50,11 @@ hash-worker.js            content-addressing (sha256) for uploads, off the main 
 sw.js / manifest.json     PWA: offline shell, install prompt
 
 api/sign.mjs               Vercel function: signs R2 upload URLs for a caller
-schema.sql                 comics, pages, tracks, kudos, views, reports, slots, parts
-schema-parts.sql           parts (voice/soundtrack contributions) + part_kudos
-schema-profiles.sql        profiles, saves
+schema.sql                 comics, pages, tracks, kudos, views, reports
+schema-parts.sql           parts (voice/soundtrack contributions), tracks.part_id, comics.cast_list
+schema-profiles.sql        profiles
 schema-thumbs.sql          cover thumbnails
+schema-social.sql          comic_tags, saves (the shelf), follows
 
 library/                   drop-in .eski files for local/self-hosted browsing
 vendor/                    vendored supabase-js client (no CDN dependency at runtime)

@@ -1095,8 +1095,37 @@ document.addEventListener('mousemove', ()=>{
     if(!$('settings').classList.contains('open')) document.body.classList.remove('peek');
   }, 1800);
 });
-function savePos(){ if(current) try{ localStorage.setItem('eski-pos-'+current.title, currentPage); }catch(e){} }
+function savePos(){
+  if(!current) return;
+  try{ localStorage.setItem('eski-pos-'+current.title, currentPage); }catch(e){}
+  syncShelf();
+}
 function restorePos(c){ try{ return parseInt(localStorage.getItem('eski-pos-'+c.title))||0; }catch(e){ return 0; } }
+
+/* the shelf row behind the progress bars on a profile. only for comics that
+   live in the database (a file on your own disk has no row to point at) and
+   only when signed in. debounced, because this is called on every page turn
+   and a reader flicking through 40 pages must not be 40 writes. */
+let shelfTimer = null;
+function syncShelf(){
+  if(!current || !current.baseId) return;                 // file-backed, nothing to key on
+  const sb = window.eski && window.eski.sb, me = window.eski && window.eski.user;
+  if(!sb || !me) return;
+  clearTimeout(shelfTimer);
+  shelfTimer = setTimeout(async ()=>{
+    const pages = current.pages.length;
+    const page = Math.min(currentPage + 1, pages);         // currentPage is 0 based
+    try{
+      await sb.from('saves').upsert({
+        user_id: me.id, comic_id: current.baseId,
+        // reaching the last page is "read"; anything before it is "reading",
+        // which also promotes a comic you had only saved for later.
+        status: page >= pages ? 'read' : 'reading',
+        last_page: page, pages, updated_at: new Date().toISOString()
+      }, { onConflict: 'user_id,comic_id' });
+    }catch(e){ /* reading must never fail because the shelf did */ }
+  }, 1200);
+}
 
 /* ---- deep links: #page=12 or #comic-title/page=12 ---- */
 function slugify(t){

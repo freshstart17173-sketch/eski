@@ -1013,7 +1013,7 @@ function ok(cond, name, extra) {
     const r = await fetch('library/index.json', { cache: 'no-store' });
     return r.ok;
   }), 'the library reads library/index.json');
-  ok(await lib.evaluate(() => coverFor({ file: 'x.eski', title: 'given', cover: 'c.jpg' })
+  ok(await lib.evaluate(() => fileComic({ file: 'x.eski', title: 'given', cover: 'c.jpg' })
     .then(e => e.title === 'given' && e.cover === 'c.jpg')),
     'an entry that already carries a title and cover is not downloaded');
   await lib.click('.cover');
@@ -1032,14 +1032,14 @@ function ok(cond, name, extra) {
 
   console.log('library: published comics offer a contribute route, files do not');
   ok(await lib.evaluate(() => {
-    open_({ file: 'db:abc-123', dbId: 'abc-123', title: 'x' });
+    openDetails({ file: 'db:abc-123', dbId: 'abc-123', title: 'x' });
     const a = document.getElementById('ov-contrib');
     const shown = !a.hidden && /studio\.html\?base=abc-123/.test(a.getAttribute('href'));
     close_();
     return shown;
   }), 'a published comic links into the studio as a contributor');
   ok(await lib.evaluate(() => {
-    open_({ file: 'library/one.eski', title: 'x' });
+    openDetails({ file: 'library/one.eski', title: 'x' });
     const hidden = document.getElementById('ov-contrib').hidden;
     close_();
     return hidden;
@@ -1050,8 +1050,10 @@ function ok(cond, name, extra) {
   await lib.setInputFiles('#shelf-input', path.join(FIX, 'queue.eski'));
   await lib.waitForFunction(n => document.querySelectorAll('.cell').length === n + 1, beforeShelf);
   ok(true, 'a shelved eski joins the grid');
-  ok(await lib.evaluate(() => document.querySelectorAll('.cell .tag').length === 1),
-    'shelved eskis are tagged, published ones are not');
+  // .tag is a tag CHIP now that tags are a real table, so the "on your shelf"
+  // badge has its own class rather than sharing one with them.
+  ok(await lib.evaluate(() => document.querySelectorAll('.cell .shelved').length === 1),
+    'shelved eskis are badged, published ones are not');
   await lib.click('.cell .cover');
   await lib.waitForSelector('.overlay.open');
   const shelfHref = await lib.getAttribute('#ov-read', 'href');
@@ -1149,35 +1151,45 @@ function ok(cond, name, extra) {
   ok(await plat.evaluate(() => document.querySelectorAll('.cell').length > 0),
     'the library still renders without it');
 
-  console.log('home: search');
+  console.log('browse: search, sort and the three modes');
+  // the header no longer carries a search of its own: the design puts one on
+  // browse, beside the sort and the filter chips, and that is the one tested.
   ok(await plat.evaluate(() => document.querySelector('.hdr-label').textContent === 'home' &&
-    document.querySelector('h2').textContent === 'home'), 'the shelf is called home');
+    document.querySelector('#nav [aria-current]').textContent.trim() === 'home'),
+    'the shelf is called home');
   await plat.waitForSelector('.cell[data-search]');
-  ok(await plat.evaluate(() => getComputedStyle(document.getElementById('search-q')).width === '0px'),
-    'search is collapsed to its icon until asked for');
-  await plat.click('#search-btn');
-  await plat.waitForFunction(() =>
-    parseFloat(getComputedStyle(document.getElementById('search-q')).width) > 40);
-  ok(true, 'clicking the icon expands the field');
-  const total = await plat.evaluate(() => document.querySelectorAll('#grid .cell').length);
+  ok(await plat.evaluate(() => !document.getElementById('search-btn') &&
+    !document.getElementById('theme-btn') && !document.getElementById('hdr-discord')),
+    'the header is the wordmark and the four words, nothing else');
+  await plat.evaluate(() => goBrowse('comics'));
+  const total = await plat.evaluate(() => document.querySelectorAll('#grid-browse .bcell').length);
   const one = await plat.evaluate(() => {
     const t = document.querySelector('.cell[data-search]').dataset.search.split(' ')[0];
-    const q = document.getElementById('search-q');
-    q.value = t; applySearch();
-    return [...document.querySelectorAll('#grid .cell')].filter(c => !c.hidden).length;
+    const q = document.getElementById('b-q');
+    q.value = t; q.dispatchEvent(new Event('input'));
+    return document.querySelectorAll('#grid-browse .bcell').length;
   });
-  ok(one > 0 && one <= total, 'typing filters the shelf', `${one} of ${total}`);
+  ok(one > 0 && one <= total, 'typing filters browse', `${one} of ${total}`);
   ok(await plat.evaluate(() => {
-    const q = document.getElementById('search-q');
-    q.value = 'zzzznotathing'; applySearch();
-    return [...document.querySelectorAll('#grid .cell')].every(c => c.hidden) &&
-           !!document.getElementById('no-match');
+    const q = document.getElementById('b-q');
+    q.value = 'zzzznotathing'; q.dispatchEvent(new Event('input'));
+    return document.querySelectorAll('#grid-browse .bcell').length === 0 &&
+           !document.getElementById('browse-empty').hidden;
   }), 'no match says so instead of showing an empty page');
   ok(await plat.evaluate(() => {
-    closeSearch();
-    return [...document.querySelectorAll('#grid .cell')].every(c => !c.hidden) &&
-           !document.getElementById('no-match');
-  }), 'closing search restores the whole shelf');
+    const q = document.getElementById('b-q');
+    q.value = ''; q.dispatchEvent(new Event('input'));
+    return document.querySelectorAll('#grid-browse .bcell').length > 0 &&
+           document.getElementById('browse-empty').hidden;
+  }), 'clearing the query restores the whole shelf');
+  ok(await plat.evaluate(() => {
+    goBrowse('roles');
+    const a = document.getElementById('browse-n').textContent;
+    goBrowse('scores');
+    const b = document.getElementById('browse-n').textContent;
+    goBrowse('comics');
+    return /role/.test(a) && /score/.test(b);
+  }), 'each browse mode says which of the three you are in');
   await plat.goto('http://localhost:8931/studio.html');
   // publish stays visible signed out and explains itself on click, rather than
   // vanishing and leaving no trace of the flow
