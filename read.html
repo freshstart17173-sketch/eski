@@ -1395,14 +1395,20 @@ function zoneAt(x, y){
 (function tapZones(){
   const v = $('viewer');
   let tap = null;
+  /* CAPTURE, on all three. panzoom's default handleStartEvent is
+     `e => { e.preventDefault(), e.stopPropagation() }`, bound to the panned
+     element — which is a child of #viewer. A bubbling pointerdown here never
+     arrives, so the tap never arms and every edge tap is silently dropped.
+     Capture runs before the target's own handlers, so it still sees them. */
+  const CAP = true;
   v.addEventListener('pointerdown', e => {
     if(e.pointerType === 'mouse' && e.button !== 0) return;
     // a second finger means a pinch, and a pinch is never a tap
     if(tap){ tap.multi = true; return; }
     tap = { id: e.pointerId, x: e.clientX, y: e.clientY, t: Date.now(), multi: false };
-  });
+  }, CAP);
   const drop = () => { tap = null; };
-  v.addEventListener('pointercancel', drop);
+  v.addEventListener('pointercancel', drop, CAP);
   v.addEventListener('pointerup', e => {
     const t = tap;
     if(t && e.pointerId !== t.id){ tap = null; return; }
@@ -1422,7 +1428,7 @@ function zoneAt(x, y){
     else if(z === 'next') navRight();
     else if(z === 'os-prev') osAdvance(-1);
     else if(z === 'os-next') osAdvance(1);
-  });
+  }, CAP);
 })();
 addEventListener('resize', ()=>{ if(current) paintZones(); });
 function toggleFocus(){
