@@ -287,6 +287,103 @@ Open follow-ups (later): optional music ducking while a one-shot plays; polyphon
 
 ================================================================
 
+--- WHY PAGES WERE SLOW, AND WHAT OTHER SITES DO ---
+
+Measured against the live bucket, on a real published page:
+
+  the page             1988 x 3057 progressive JPEG, 984 KB
+  shown at             about 950 CSS px wide
+  time to fetch        ~0.6 to 1.2 s, every time
+  Cache-Control        ABSENT. no directive of any kind.
+  Content-Type         application/octet-stream, for pages AND audio
+
+So the reader was fetching four times the linear resolution it could show,
+in a format older than the browsers reading it, with nothing telling anyone
+to keep a copy. Four causes, in the order they cost the most:
+
+1. THE HOSTNAME. pub-*.r2.dev is Cloudflare's development hostname. Their
+   docs: it "is rate-limited and should only be used for development
+   purposes", and caching "is not available when using the r2.dev
+   development url". Every request goes to the origin, past no edge cache,
+   on a host that starts returning 429s under load.
+   -> NOT A CODE FIX. Add a custom domain to the bucket in the Cloudflare
+      dashboard and change the one line in platform.js. No rows migrate,
+      because the database stores keys and never urls. Everything already
+      published gets faster the moment it is done.
+   [ ] OPEN — needs the dashboard, so it is yours to do.
+
+2. THE BYTES. Nobody serves originals. Measured, re-encoding that same page:
+        1600px WebP q0.82   238 KB   4.1x smaller
+        1200px WebP q0.82   176 KB   5.6x smaller
+   [x] Publishing now writes a display copy alongside the original and the
+       reader shows that. The original stays as image_key: it is the archive,
+       the display copy is a derivative and can be regenerated.
+
+3. THE EMPTY FRAME. A ~1 KB copy of the page at 24px wide, stored as a data
+   uri ON THE ROW, so it costs no request and paints on the same frame as
+   the page turn. This is what Medium, Instagram and Unsplash have all done
+   for years. The dim-the-previous-page state it replaces was showing you
+   the WRONG PAGE while claiming to be on this one.
+   [x] Done: pages.blur, shown blurred under the real page.
+
+4. THE QUEUE. The page you turned TO was competing with four prefetches on
+   one connection. fetchpriority is the standard answer (web.dev's carousel
+   guidance is exactly this shape: high on the one you can see, low on the
+   ones you cannot).
+   [x] Done, plus a wider window now that a page is a quarter of the size.
+
+Also fixed while in there:
+   [x] Content-Type. A blob out of a zip has an empty type, so every object
+       was stored as application/octet-stream. Harmless for <img>, which
+       sniffs; not harmless for <audio>, which is entitled to refuse a type
+       it was not promised.
+   [x] Cache-Control: public, max-age=31536000, immutable on every upload.
+       Keys are a sha256 of the bytes, so an object at a key can never
+       change. Without it, re-reading a page you have already seen went back
+       to the network every time.
+
+AUDIO. Same idea, different shape. The elements now preload="auto", and the
+score that takes over at the next trigger page — plus every one-shot on this
+page and the next — is fetched into the browser cache before it is wanted, by
+muted elements that never play. A one-shot fires off a keypress and has to be
+instant; it cannot start by opening a connection.
+   [x] Done.
+   [ ] STILL OPEN: audio is uploaded in whatever format the author had. Opus
+       at 96 kbps is about a quarter of MP3 at 128 and sounds the same or
+       better, with universal support now. The composer used to transcode and
+       it was removed; worth putting back for the soundtrack, where the files
+       are minutes long rather than seconds.
+
+NOT DONE, worth knowing about: Cloudflare Image Transformations
+(/cdn-cgi/image/width=1600,format=auto/<key>) would do point 2 at the edge
+for content ALREADY PUBLISHED, with no re-upload and no second object. It
+needs the custom domain from point 1 first, and it bills per transform. The
+publish-time variant was chosen because it costs nothing per read and works
+on the free stack — but if you ever want to change the display size without
+republishing every comic, that is the lever.
+
+--- BASELINES ---
+[x] Gnomon declares 89.5% ascent and ZERO descent, but its outlines sit
+    0.26em ABOVE that declared baseline — even its descenders stop short of
+    it. So every flex row that put a Gnomon heading next to Jost micro type
+    floated the heading visibly high: "browse" sat above the "1 of 1 eskis"
+    beside it. Corrected once at the @font-face with ascent/descent-override
+    rather than in the dozen rules that mix the two faces. The two still add
+    to 89.5%, so no line box changes height and nothing reflows.
+
+--- A REAL PAN/ZOOM RACE, found by a flaky test ---
+[x] panzoom's contain:'outside' computes its minimum scale by measuring the
+    element and dividing by the current scale — but the scale variable moves
+    synchronously while the transform is written on the NEXT frame. A reset
+    taken within a frame of a zoom therefore divides a stale measurement by a
+    fresh number, computes a minimum above 1, and clamps the reset back to
+    roughly the scale it was asked to undo. It depended purely on whether a
+    frame landed in between, which is why it looked like a flaky test rather
+    than a bug: press fit quickly enough and nothing happened. Both viewers
+    now drop the constraint for the reset call and put it back after.
+
+================================================================
+
 --- DONE (earlier pass, for reference) ---
 [x] Split reader (index.html) and composer (composer.html) into separate pages.
 [x] Library -> cover grid; click shows "find all these eskis and more in the discord channel."

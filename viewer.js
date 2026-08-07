@@ -141,9 +141,26 @@
       else reset();
     });
 
-    /* panzoom's own change event lands on the next frame, so the bar would
-       still be up for a frame after fit. paint here as well as there. */
-    function reset(){ pz.reset({ animate: false }); paint(1); }
+    /* Two things this has to get right.
+
+       One: panzoom's own change event lands on the next frame, so the bar
+       would still be up for a frame after fit. Paint here as well as there.
+
+       Two: contain:'outside' works out its minimum scale by measuring the
+       element and dividing by the current scale — but the scale variable is
+       updated synchronously while the transform is written on the NEXT
+       frame. So a reset taken within a frame of a zoom divides a stale
+       measurement by a fresh number, computes a minimum above 1, and clamps
+       the reset back to roughly the scale it was asked to undo.
+       Intermittently, depending purely on whether a frame landed in between.
+       Fitting is the one case where the constraint has nothing to say — scale
+       1 with no pan IS the container — so it is turned off for the call. */
+    function reset(){
+      pz.setOptions({ contain: undefined });
+      pz.reset({ animate: false });
+      pz.setOptions({ contain: PZ.contain });
+      paint(1);
+    }
 
     paint(1);
     return {

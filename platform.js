@@ -13,9 +13,25 @@
 const SUPABASE_URL = 'https://zidqagrmxeawpasurpwi.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_cZuZnUhWmEGESYb7BR1Kzg_nPjR8CZR';   // public, safe to commit
 
-/* where published media is served from. the database stores object KEYS, never
-   urls, so moving off the rate-limited r2.dev domain to cdn.eski.lol is this
-   one line and zero row migrations. */
+/* WHERE PUBLISHED MEDIA IS SERVED FROM, and the single biggest thing still
+   slowing the reader down.
+
+   pub-*.r2.dev is Cloudflare's DEVELOPMENT hostname for a public bucket.
+   Their docs are unambiguous: it "is rate-limited and should only be used
+   for development purposes", and features "like WAF custom rules, caching,
+   access controls, or Bot Management" require a custom domain — caching
+   included. So today every page and every clip is fetched from the origin,
+   past no edge cache, on a hostname that will start returning 429s under
+   load. Measured from here: ~1s for a 1 MB page, no Cache-Control header of
+   any kind on the response.
+
+   THE FIX IS NOT CODE. Add a custom domain to the bucket in the Cloudflare
+   dashboard (R2 > the bucket > Settings > Custom Domains), point cdn.eski.lol
+   at it, and change the line below. The database stores object KEYS and never
+   urls, so that is the whole migration: no rows change, and everything
+   already published starts being served from the edge.
+
+   https://developers.cloudflare.com/r2/buckets/public-buckets/ */
 const R2_BASE = 'https://pub-b9e7c6b680ca415e9ffd5875bad0df03.r2.dev';
 
 // add 'discord' back once it is enabled in the supabase dashboard. a provider

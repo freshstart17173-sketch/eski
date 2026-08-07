@@ -2598,6 +2598,70 @@ const slugify = s => (s || '').toLowerCase().replace(/[^a-z0-9]+/g, '-')
    the WIDTH and crop the height to 2:3 from the top, which is where a cover's
    subject almost always is. webp, and png only if the source was png with
    transparency worth keeping. */
+/* ============================================================
+   WHAT ACTUALLY GETS SHOWN.
+
+   An author uploads a page scan: measured on a real one, 1988x3057 and
+   984 KB. The reader shows it in a box about 950 CSS px wide. So every page
+   turn was fetching four times the linear resolution it could display, in a
+   format fifteen years older than the browsers reading it.
+
+   Publishing now writes two more objects per page:
+
+     the display copy   long edge capped at DISPLAY_MAX, WebP q0.82. That
+                        same page becomes 1600x2460 and 238 KB — a quarter
+                        of the bytes, at more resolution than a 2x screen
+                        can show at this size.
+     the placeholder    the page at 24px wide, ~1 KB, stored as a data uri
+                        ON THE ROW. It costs no request at all, so the frame
+                        is never empty while the real page is in flight.
+
+   The original is still uploaded and still what image_key points at. It is
+   the archive copy: the display copy is a derivative and can be regenerated,
+   the author's bytes cannot.
+   ============================================================ */
+const DISPLAY_MAX = 1600, DISPLAY_Q = 0.82, BLUR_W = 24;
+
+async function makeDisplay(blob){
+  const bmp = await createImageBitmap(blob);
+  const scale = Math.min(1, DISPLAY_MAX / Math.max(bmp.width, bmp.height));
+  // already small enough: shipping a re-encode would be more bytes, not fewer
+  if(scale === 1 && /webp/i.test(blob.type)){ bmp.close(); return null; }
+  const cv = document.createElement('canvas');
+  cv.width = Math.round(bmp.width * scale);
+  cv.height = Math.round(bmp.height * scale);
+  const cx = cv.getContext('2d');
+  cx.imageSmoothingQuality = 'high';
+  cx.drawImage(bmp, 0, 0, cv.width, cv.height);
+  bmp.close();
+  const out = await new Promise(res => cv.toBlob(res, 'image/webp', DISPLAY_Q));
+  // a browser with no webp encoder hands back null, or the re-encode came out
+  // bigger than the original. either way the original is the better object.
+  if(!out || out.size >= blob.size) return null;
+  return out;
+}
+
+async function makeBlur(blob){
+  try{
+    const bmp = await createImageBitmap(blob);
+    const w = BLUR_W, h = Math.max(1, Math.round(bmp.height * (w / bmp.width)));
+    const cv = document.createElement('canvas');
+    cv.width = w; cv.height = h;
+    const cx = cv.getContext('2d');
+    cx.imageSmoothingQuality = 'high';
+    cx.drawImage(bmp, 0, 0, w, h);
+    bmp.close();
+    const b = await new Promise(res => cv.toBlob(res, 'image/webp', 0.6));
+    if(!b || b.size > 4096) return null;          // it is meant to be tiny
+    return await new Promise(res => {
+      const fr = new FileReader();
+      fr.onload = () => res(fr.result);
+      fr.onerror = () => res(null);
+      fr.readAsDataURL(b);
+    });
+  }catch(e){ return null; }
+}
+
 async function makeCoverThumb(blob, width = 420){
   const bmp = await createImageBitmap(blob);
   const w = Math.min(width, bmp.width);
@@ -2717,6 +2781,21 @@ async function makePreview(tracks, kind){
   }
 }
 
+/* A BLOB OUT OF A ZIP HAS NO TYPE. JSZip hands back an empty string, so every
+   object in the bucket was stored as application/octet-stream — pages and
+   audio alike. The browser sniffs its way to an <img> anyway, but an <audio>
+   element is entitled to refuse a type it was not promised, and a CDN cannot
+   make sensible decisions about something it has been told nothing about. */
+const MIME = { png:'image/png', jpg:'image/jpeg', jpeg:'image/jpeg', webp:'image/webp',
+  gif:'image/gif', avif:'image/avif', mp3:'audio/mpeg', m4a:'audio/mp4',
+  ogg:'audio/ogg', opus:'audio/ogg', wav:'audio/wav', flac:'audio/flac', aac:'audio/aac' };
+const mimeOf = p => MIME[(p.ext || '').toLowerCase()] || p.blob.type || 'application/octet-stream';
+
+/* keys are a sha256 of the bytes, so an object at a given key can never change.
+   without this header R2 sends no cache directive at all and every re-read of
+   a page you have already seen goes back to the network. */
+const IMMUTABLE = 'public, max-age=31536000, immutable';
+
 async function uploadObjects(sb, items, say){
   say('preparing');
   const totalBytes = items.reduce((n, p) => n + p.blob.size, 0) || 1;
@@ -2788,7 +2867,7 @@ async function uploadObjects(sb, items, say){
     for(let attempt = 1; attempt <= 3; attempt++){
       try{
         put = await fetch(p.url, { method: 'PUT', body: p.blob,
-          headers: { 'content-type': p.blob.type || 'application/octet-stream' } });
+          headers: { 'content-type': mimeOf(p), 'cache-control': IMMUTABLE } });
       }catch(netErr){
         // a thrown fetch here is CORS or connectivity, never a status
         lastErr = 'ESK-4001 network/CORS: ' + ((netErr && netErr.message) || netErr)
@@ -3007,6 +3086,21 @@ async function saveComic(finalStatus){
     // one entry per blob that has to exist in the bucket. the cover is just a
     // page, so it never uploads twice.
     const parts = cState.pages.map(p => ({ blob: p.blob, ext: extOf(p.name, 'jpg') }));
+
+    /* the display copies and the placeholders. a failure here is never a
+       failure to publish: the page falls back to its original, which is
+       exactly what every comic published before this did. */
+    say('preparing the pages');
+    const display = new Array(cState.pages.length).fill(null);
+    const blurs   = new Array(cState.pages.length).fill(null);
+    await pool(cState.pages.map((p, i) => ({ p, i })), 3, async ({ p, i }) => {
+      try{
+        const d = await makeDisplay(p.blob);
+        if(d) display[i] = { blob: d, ext: 'webp', display: i };
+        blurs[i] = await makeBlur(p.blob);
+      }catch(e){ console.warn('ESK-4006 page ' + (i + 1) + ' kept its original', e); }
+    });
+    for(const d of display) if(d) parts.push(d);
     for(const aud of [...new Set(cState.tracks.filter(t => t.aud).map(t => t.aud))]){
       const a = audioStore[aud];
       if(a) parts.push({ blob: a.blob, ext: extOf(a.fileName || '', 'mp3'), aud });
@@ -3058,7 +3152,8 @@ async function saveComic(finalStatus){
     const comicId = ins.data.id;
 
     const pe = await sb.from('pages').insert(
-      cState.pages.map((p, i) => ({ comic_id: comicId, idx: i + 1, image_key: parts[i].key })));
+      cState.pages.map((p, i) => ({ comic_id: comicId, idx: i + 1, image_key: parts[i].key,
+        display_key: display[i] ? display[i].key : null, blur: blurs[i] || null })));
     if(pe.error) throw new Error(dbe('ESK-5002', 'the media uploaded but the page rows did not', pe.error));
 
     const audKey = {};

@@ -94,9 +94,25 @@ body.focus .settings{position:fixed;right:12px;bottom:calc(var(--bar) + 12px);z-
   padding:var(--s3) var(--s7);position:relative;transform-origin:center center;will-change:transform}
 .pages img{max-height:100%;max-width:100%;object-fit:contain;background:var(--page-bg);
   box-shadow:0 0 0 1px var(--rule-hair);-webkit-user-drag:none;user-drag:none}
-/* a page still fetching. the delay is the whole point: a warm page swaps in
-   under it and never dims, so this only ever appears when the wait is real. */
-.viewer.page-loading .pages img{opacity:.3;transition:opacity 120ms var(--ease) 220ms}
+/* THE PAGE IS NEVER AN EMPTY RECTANGLE.
+   The placeholder is the same <img>, not a second element behind it. That is
+   deliberate: a wrapper around the page would be sized by its content, and
+   max-height:100% on the page inside it would then resolve against nothing
+   and silently do nothing — which is the exact bug that cut the foot off
+   tall pages twice before (see viewer.js). One element, so the page is still
+   a direct child of a box with a definite height.
+
+   The placeholder is a 24px wide copy that arrived on the comic's own rows,
+   so it costs no request and paints on the same frame as the page turn. It
+   has the page's aspect ratio, so the frame is the right shape immediately
+   and nothing reflows when the real bytes land. */
+#page-left{transition:filter 180ms var(--ease)}
+.viewer.plate #page-left{filter:blur(10px)}
+/* an older comic has no placeholder. showing the PREVIOUS page unblurred
+   while claiming to be on this one is the thing being fixed, so it dims
+   instead — and only after a delay, so a warm page never flickers. */
+.viewer.page-loading:not(.plate) #page-left{opacity:.25;
+  transition:opacity 120ms var(--ease) 200ms}
 .click-zones{position:absolute;inset:0;display:flex;z-index:8}
 .cz{flex:1;cursor:pointer}
 /* the zoom bar. it is a SIBLING of the panned element, never a child, so a
@@ -311,7 +327,7 @@ footer a:hover{color:var(--ink)}
         <a class="btn p" href="index.html">go home</a>
       </div>
       <div class="pages" id="pages" style="display:none">
-        <img id="page-left" alt="comic page">
+        <img id="page-left" alt="comic page" fetchpriority="high">
         <img id="page-right" alt="comic page" style="display:none">
       </div>
       <div class="scroll-pages" id="scroll-pages"></div>
@@ -683,7 +699,7 @@ async function comicFromApi(id, partIds){
     ((window.eski && window.eski.bootError) || 'platform.js did not load at all'));
   const [c, pg, tk] = await Promise.all([
     sb.from('comics').select('*').eq('id', id).single(),
-    sb.from('pages').select('idx,image_key').eq('comic_id', id).order('idx'),
+    sb.from('pages').select('idx,image_key,display_key,blur').eq('comic_id', id).order('idx'),
     // part_id null is the AUTHOR's own tracks. everyone else's arrive only when
     // the reader asked for them, below, so a comic with fifty voice tracks on it
     // still opens as the author intended.
@@ -703,7 +719,13 @@ async function comicFromApi(id, partIds){
   const u = k => window.eski.mediaUrl(k);
   const missingKey = pg.data.find(p => !p.image_key);
   if(missingKey) throw new Error('ESK-5011 page ' + missingKey.idx + ' has no image key');
-  const pages = pg.data.map(p=>({name:'p'+p.idx, entry:null, blob:null, url:u(p.image_key), _loading:null}));
+  /* display_key is a viewport-sized WebP of the same page, about a quarter of
+     the bytes. Comics published before it existed have only image_key, so the
+     original is the fallback rather than a failure. blur is a ~1 KB data uri
+     that arrived with this row and costs no request. */
+  const pages = pg.data.map(p=>({ name:'p'+p.idx, entry:null, blob:null,
+    url: u(p.display_key || p.image_key), full: u(p.image_key),
+    blur: p.blur || null, _loading:null }));
   const rowToTrack = t=>({
     id: t.id,
     title: t.title || 'untitled track',
@@ -807,14 +829,21 @@ function ensurePageUrl(i){
    So: really fetch and decode the neighbours, and never swap the visible
    page until the new one is decoded and ready to paint.
    ================================================================ */
-const PREFETCH_BACK = 1, PREFETCH_FWD = 3;
-const warm = new Map();                    // page index -> { img, ready }
-function warmPage(i){
+/* the window is wider than it was because a display copy is about a quarter
+   of the bytes of the original, so warming six of them costs less than
+   warming two used to. */
+const PREFETCH_BACK = 2, PREFETCH_FWD = 4;
+const warm = new Map();                    // page index -> { img, ready, decoded }
+function warmPage(i, urgent){
   if(!current || i < 0 || i >= current.pages.length) return null;
   const hit = warm.get(i);
-  if(hit) return hit;
-  const rec = { img: new Image(), ready: null, url: null };
+  /* a page you have turned TO outranks the ones being read ahead. without
+     this the page you are waiting on queues behind four prefetches on the
+     same connection. */
+  if(hit){ if(urgent) hit.img.fetchPriority = 'high'; return hit; }
+  const rec = { img: new Image(), ready: null, url: null, decoded: false };
   rec.img.decoding = 'async';
+  rec.img.fetchPriority = urgent ? 'high' : 'low';
   rec.ready = ensurePageUrl(i).then(url => {
     if(!url) throw new Error('ESK-6004 page ' + (i+1) + ' has no source');
     rec.url = url;
@@ -822,7 +851,7 @@ function warmPage(i){
     /* decode() is the only honest "this will paint instantly" signal. it
        rejects on a failed load, which is how a 404 or a CORS refusal gets
        reported as itself rather than as a blank page. */
-    return rec.img.decode().then(() => rec).catch(err => {
+    return rec.img.decode().then(() => { rec.decoded = true; return rec; }).catch(err => {
       throw new Error('ESK-6001 page ' + (i+1) + ' did not load from\n' + url +
         '\n(' + ((err && err.message) || err) + ')');
     });
@@ -873,6 +902,8 @@ function openComic(comic){
   paintScore();
   scrollBuiltFor = null;
   warm.clear();                 // decoded pages belong to the comic that opened them
+  audioWarm.forEach(el => { el.removeAttribute('src'); el.load(); });
+  audioWarm.clear();
   audio.queueFrom = null;
   applyReadingMode();
   if(effPlayback()==='playlist') startPlaylist();
@@ -991,12 +1022,20 @@ async function showPage(idx, instant, force){
   checkPageTrack(instant, force);
   prefetchAround(currentPage);
 
-  const rec = warmPage(currentPage);
+  const rec = warmPage(currentPage, true);
   if(!rec) return;
-  /* the class carries a transition delay, so a page that is already warm
-     swaps with no visible dim at all and only a genuinely slow one shows
-     that it is working. */
-  $('viewer').classList.add('page-loading');
+  const page = current.pages[currentPage];
+
+  /* if the page is ALREADY decoded there is nothing to cover: swap and be
+     done, with no placeholder flash on a comic you are re-reading. */
+  if(rec.decoded){
+    L.src = rec.url;
+    $('viewer').classList.remove('page-loading', 'plate');
+    return;
+  }
+  const v = $('viewer');
+  if(page.blur){ L.src = page.blur; v.classList.add('plate'); }
+  v.classList.add('page-loading');
   try{
     await rec.ready;
     if(my !== showSeq) return;           // a newer page turn superseded this one
@@ -1005,7 +1044,7 @@ async function showPage(idx, instant, force){
     if(my !== showSeq) return;
     toast((err && err.message) || String(err), 'error');
   }finally{
-    if(my === showSeq) $('viewer').classList.remove('page-loading');
+    if(my === showSeq) v.classList.remove('page-loading', 'plate');
   }
 }
 
@@ -1024,7 +1063,24 @@ const pagePan = Panzoom($('pages'), {
   cursor: 'grab', step: 0.22, animate: false
 });
 function pageZoom(){ return pagePan.getScale(); }
-function resetZoom(){ pagePan.reset({ animate: false }); paintZoom(1); }
+/* RESET WITH THE CONSTRAINT OFF, then put it back.
+
+   panzoom's contain:'outside' works out its minimum scale by measuring the
+   element and dividing by the current scale — but the scale variable is
+   updated synchronously while the transform is written on the NEXT frame. So
+   a reset taken within a frame of a zoom divides a stale measurement by a
+   fresh number, computes a minimum above 1, and clamps the reset back to
+   roughly the scale it was asked to undo. Intermittently: it depends purely
+   on whether a frame landed in between.
+
+   Fitting is the one case where the constraint has nothing to say — scale 1
+   with no pan is exactly the container — so it is turned off for the call. */
+function resetZoom(){
+  pagePan.setOptions({ contain: undefined });
+  pagePan.reset({ animate: false });
+  pagePan.setOptions({ contain: 'outside' });
+  paintZoom(1);
+}
 function paintZoom(scale){
   const z = scale == null ? pageZoom() : scale;
   const on = z > 1.001;
@@ -1063,6 +1119,7 @@ function updatePageChrome(){
   savePos();
   updateHash();
   refreshOneshots();
+  warmAudioAround();
 }
 /* chapter jump. only appears when the file actually declares chapters, so
    short comics keep the bar uncluttered. */
@@ -1235,6 +1292,8 @@ function audioPage(){ return currentPage; }
 function corsAudio(){
   const el = new Audio();
   el.crossOrigin = 'anonymous';
+  // the page decides what plays, so anything handed to these WILL be played
+  el.preload = 'auto';
   return el;
 }
 const audio = {
@@ -1447,6 +1506,7 @@ function duckChannel(busy, track){
    Up = previous. They play over the soundtrack, monophonic, and reset when
    the page turns (they live on that page only). */
 const os = { el: new Audio(), list: [], cursor: -1 };
+os.el.preload = 'auto';
 /* reflect play state in the indicator so silence-heavy one-shots read clearly */
 function setOsPlaying(p){
   $('os-hint').classList.toggle('playing', p);
@@ -1497,6 +1557,7 @@ function osApplyVolume(){
    their own element, which is why no polyphony pool is needed: the voice
    channel stays monophonic and overlapping VOICES are prerendered upstream. */
 const sfxEl = new Audio();
+sfxEl.preload = 'auto';
 let chainTimers = [];
 function clearChain(){
   chainTimers.forEach(clearTimeout);
@@ -1679,6 +1740,57 @@ function unlockAudio(){
 }
 ['pointerdown','click','keydown','touchstart'].forEach(ev=>
   document.addEventListener(ev, ()=>{ if(!audioUnlocked && current) unlockAudio(); }, {capture:true}));
+
+/* ================================================================
+   WARMING THE AUDIO.
+
+   The page turn that changes the score is the one that stalls: the element
+   is handed a url it has never seen and has to open a connection, wait for
+   headers, and buffer enough to decode before a note comes out. Meanwhile
+   the one-shots are worse — those fire off a keypress and are expected to be
+   instantaneous.
+
+   So the same trick the pages use: fetch it before it is wanted. These
+   elements never play. They exist to put the bytes in the browser's HTTP
+   cache, so that when the real element asks for the same url it is answered
+   locally. They are deliberately NOT routed through the web audio graph and
+   never carry crossOrigin — they are a cache primer, not a player.
+   ================================================================ */
+const audioWarm = new Map();               // url -> HTMLAudioElement
+function warmAudio(track){
+  if(!track || track.external || track.type === 'silence') return;
+  const url = track.url;
+  if(!url || audioWarm.has(url)) return;
+  const el = new Audio();
+  el.preload = 'auto';
+  el.muted = true;
+  el.src = url;
+  audioWarm.set(url, el);
+  /* a comic with fifty voice takes should not hold fifty buffers open. this
+     is a rolling window, same as the pages. */
+  if(audioWarm.size > 12){
+    const oldest = audioWarm.keys().next().value;
+    const dead = audioWarm.get(oldest);
+    if(dead){ dead.removeAttribute('src'); dead.load(); }
+    audioWarm.delete(oldest);
+  }
+}
+/* everything the next page or two could ask for: the score that takes over
+   at the next trigger page, and every one-shot on this page and the next. */
+function warmAudioAround(){
+  if(!current) return;
+  const p = audioPage() + 1;
+  const groups = queueGroups(current);
+  const next = groups.find(g => g.from > p);
+  if(next) next.tracks.slice(0, 1).forEach(warmAudio);
+  const here = groups.filter(g => g.from <= p).pop();
+  if(here) here.tracks.slice(0, 2).forEach(warmAudio);
+  for(const i of [audioPage(), audioPage() + 1])
+    oneshotsForPage(current, i).forEach(t => {
+      warmAudio(t);
+      childrenOf(t).forEach(warmAudio);      // a chained sfx has to land on time too
+    });
+}
 
 /* ---- playlist mode ---- */
 const playlist = {on:false, idx:0, list:[]};
