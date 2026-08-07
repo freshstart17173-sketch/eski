@@ -18,8 +18,13 @@
    fixes is ERRORS.txt; keep the two in step. */
 import { AwsClient } from 'aws4fetch';
 
+/* the extensions a key may end in. this is a security boundary, not a
+   convenience: the key is built HERE from a hash and one of these, so a caller
+   can never choose a path or an arbitrary suffix.
+   'webm' is the container the studio's opus transcode writes — audio only,
+   despite the name. */
 const EXT = new Set(['png', 'jpg', 'jpeg', 'webp', 'gif', 'avif',
-                     'mp3', 'm4a', 'ogg', 'opus', 'wav', 'flac', 'aac']);
+                     'mp3', 'm4a', 'ogg', 'opus', 'wav', 'flac', 'aac', 'webm']);
 
 export default async function handler(req, res){
   try{

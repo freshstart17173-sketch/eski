@@ -122,6 +122,9 @@ ESK-3006  A hash or extension the signer will not sign.
           Keys are derived server-side from a sha256 and an allowlisted
           extension (EXT in api/sign.mjs). A file type outside that set, or a
           hash that did not compute, produces this.
+          If the studio starts producing a NEW kind of object, this is the
+          list to add it to — that is how the opus transcode first failed,
+          with ext "webm" missing from EXT while everything else worked.
 
 ESK-3007  The signer crashed with an unhandled error. The message carries the
           throw. This is a bug in api/sign.mjs; the other 3xxx codes are the
@@ -183,6 +186,15 @@ ESK-4004  Three attempts, all 5xx or all network failures. Genuinely transient
 ESK-4005  (console warning only, never fatal) The cover thumbnail could not be
           generated, so the full-size cover is used instead. The comic publishes
           normally; the shelf just loads that one cover slowly.
+
+ESK-4006  (console warning only, never fatal) A page's display copy or its
+          placeholder could not be made, so that page keeps only the author's
+          original. It still reads; it is just the full-size bytes.
+
+ESK-4007  (console warning only, never fatal) A clip could not be transcoded to
+          opus, so the original is what readers get. Usually means WebCodecs is
+          unavailable — note AudioEncoder needs a SECURE CONTEXT and is simply
+          undefined without one — or the re-encode came out no smaller.
 
 ================================================================================
 5xxx — THE DATABASE
