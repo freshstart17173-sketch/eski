@@ -217,6 +217,80 @@ async function buildEski(){
   ok(new Set(seen).size === PAGES, 'all ' + PAGES + ' pages are different images',
     new Set(seen).size + ' distinct');
 
+  /* what the reader actually pulled down, and how it was served. this is the
+     assertion that would have caught the whole thing: octet-stream, no cache
+     directive, and the author's original bytes rather than a display copy. */
+  const delivery = await r.evaluate(() => ({
+    shownIsDisplay: current.pages.every(p => p.url !== p.full),
+    hasBlur: current.pages.every(p => !!p.blur),
+    blurBytes: Math.round(current.pages.reduce((n,p)=>n+(p.blur||'').length,0)/current.pages.length)
+  }));
+  ok(delivery.shownIsDisplay, 'the reader is showing display copies, not the originals',
+    JSON.stringify(delivery));
+  ok(delivery.hasBlur, 'every page carries its own placeholder', JSON.stringify(delivery));
+  const head = await api.fetch(await r.evaluate(() => current.pages[0].url), { method: 'GET' });
+  const hh = head.headers();
+  ok(/^image\//.test(hh['content-type'] || ''), 'pages are served as an image type',
+    hh['content-type']);
+  ok(/immutable/.test(hh['cache-control'] || ''), 'pages are served immutable',
+    hh['cache-control'] || '(no cache-control)');
+  const full = await api.fetch(await r.evaluate(() => current.pages[0].full), { method: 'GET' });
+  console.log('    original ' + Math.round((await full.body()).length/1024) + ' KB -> display ' +
+    Math.round((await head.body()).length/1024) + ' KB, placeholder ~' +
+    Math.round(delivery.blurBytes/1024*0.75) + ' KB inline');
+
+  /* THE POINT OF THE PLACEHOLDER, proved rather than assumed: hold one page's
+     bytes back and check that what is on screen is that page's own 1 KB
+     stand-in, not the previous page pretending to be this one.
+
+     In its OWN CONTEXT, because the walk above has already pulled every page
+     into the browser cache and they are served immutable — a second visit
+     makes no request at all, so there would be nothing to hold back. (That
+     is itself the cache header working; it just makes this untestable in a
+     warm tab.) */
+  console.log('read: a slow page');
+  const cold = await browser.newContext({ viewport: { width:1440, height:900 },
+    serviceWorkers: 'block' });
+  let stall = null, stallHits = 0;
+  // the catch-all goes on FIRST: playwright checks handlers most-recent-first,
+  // so the stall has to be registered after it to get a look in.
+  if(api) await cold.route('**/*', async route => {
+    const q = route.request();
+    try{
+      const rs = await api.fetch(q.url(), { method:q.method(), headers:q.headers(),
+        data: q.postDataBuffer() || undefined, maxRedirects: 5, timeout: 60000 });
+      const h = rs.headers(); delete h['content-encoding']; delete h['content-length'];
+      await route.fulfill({ status:rs.status(), headers:h, body: await rs.body() });
+    }catch(e){ await route.abort(); }
+  });
+  await cold.route(u => stall && u.href === stall, async route => {
+    stallHits++;
+    await new Promise(x => setTimeout(x, 3000));
+    await route.fallback();
+  });
+  const c = await cold.newPage(); wire(c);
+  await c.goto(SITE + '/read.html?read=db:' + row.id, { waitUntil:'domcontentloaded', timeout:60000 });
+  await c.waitForSelector('#player-bar', { state:'visible', timeout:60000 });
+  stall = await c.evaluate(() => current.pages[9].url);
+  await c.evaluate(() => goToPage(9, true));
+  await c.waitForTimeout(900);
+  const mid = await c.evaluate(() => ({
+    plate: document.getElementById('viewer').classList.contains('plate'),
+    showingPlaceholder: document.getElementById('page-left').src.startsWith('data:'),
+    counter: document.getElementById('vt-info-text').textContent
+  }));
+  ok(stallHits > 0, 'the slow page really was held back', 'stallHits=' + stallHits);
+  ok(mid.plate && mid.showingPlaceholder,
+    'a slow page shows its own placeholder, never the previous page', JSON.stringify(mid));
+  ok(/10 of 12/.test(mid.counter), 'and the counter has already moved to it', mid.counter);
+  await c.waitForFunction(() => !document.getElementById('viewer').classList.contains('plate'),
+    null, { timeout: 25000 });
+  ok(await c.evaluate(() => {
+    const rec = warm.get(currentPage);
+    return rec && document.getElementById('page-left').src === rec.url;
+  }), 'and the real page replaces it when it lands');
+  await cold.close();
+
   console.log('read: the score');
   await r.evaluate(() => goToPage(0, true));
   /* sampled twice rather than once. the track loops, so a single reading of
