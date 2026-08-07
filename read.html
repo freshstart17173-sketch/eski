@@ -12,143 +12,141 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Jost:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="vendor/panzoom.js"></script>
 <script type="module" src="platform.js"></script>
 <link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="docs/design/final/broadsheet.css">
 <style>
 /* colour match. the chrome is re-derived from the cover's hue only while
-   html.tint is set; without it the reader is the same sage as every other
-   surface. --hdr and the rest of the scale come from tokens.css. */
+   html.tint is set; without it the reader is the same near-white and
+   near-black as every other surface.
+
+   the RULES are deliberately left alone. broadsheet's structure is
+   near-black hairlines on near-white ground, and a comic with an orange
+   cover does not get orange rules — it gets a warmer paper behind the same
+   rules. only the ground, the surface and the accent move. */
 html.tint{
-  --paper:hsl(var(--hue),var(--tintsat),96%);
+  --paper:hsl(var(--hue),var(--tintsat),97%);
   --surface:hsl(var(--hue),var(--tintsat),100%);
   --accent:hsl(var(--hue),22%,38%);
   --accent-deep:hsl(var(--hue),28%,26%);
   --accent-soft:hsl(var(--hue),22%,86%);
   --band:hsl(var(--hue),var(--tintsat),12%);
-  --line:hsl(var(--hue),12%,84%);
+  --paper-1:hsl(var(--hue),var(--tintsat),94%);
 }
 html.tint[data-theme="dark"]{
-  --paper:hsl(var(--hue),var(--tintsat),10%);
-  --surface:hsl(var(--hue),var(--tintsat),14%);
+  --paper:hsl(var(--hue),var(--tintsat),8%);
+  --surface:hsl(var(--hue),var(--tintsat),12%);
   --accent:hsl(var(--hue),20%,66%);
   --accent-deep:hsl(var(--hue),24%,78%);
   --accent-soft:hsl(var(--hue),18%,28%);
-  --band:hsl(var(--hue),var(--tintsat),7%);
-  --line:hsl(var(--hue),12%,26%);
+  --band:hsl(var(--hue),var(--tintsat),6%);
+  --paper-1:hsl(var(--hue),var(--tintsat),15%);
 }
 html{scroll-behavior:smooth}
 body{margin:0;background:var(--paper);color:var(--ink);
-  font-family:'Jost','Avenir Next','Helvetica Neue',Arial,sans-serif;
-  font-weight:400;font-size:15px;line-height:1.45;
   transition:background 600ms ease}
-h1,h2,h3,strong{font-weight:500}
-h2{margin:0 0 14px;font-size:clamp(34px,5vw,60px);line-height:.98;text-transform:lowercase}
-button{font-family:inherit;font-size:inherit;cursor:pointer}
-input,select{font-family:inherit;font-size:14px;color:var(--ink);background:var(--surface);
-  border:1px solid var(--line);border-radius:0;padding:7px 10px;outline:none}
+button{font-family:inherit;cursor:pointer}
+input,select{font-family:inherit;font-size:var(--fs-xs);color:var(--ink);background:var(--surface);
+  border:1px solid var(--rule-hair);padding:0 var(--s2);height:24px;outline:none}
 input:focus,select:focus{border-color:var(--accent)}
 ::selection{background:var(--accent-soft);color:var(--accent-deep)}
-.wrap{width:min(var(--max),100%);margin:0 auto;padding:0 20px}
-.body-lg{font-size:clamp(17px,1.9vw,22px);line-height:1.35;color:var(--soft-ink)}
-a{color:var(--accent);text-decoration:none}
-a:hover{text-decoration:underline;text-underline-offset:3px}
+a{color:inherit;text-decoration:none}
 
-/* ---------- header ---------- */
-.site-header{position:sticky;top:0;z-index:400;height:var(--hdr);background:var(--paper);
-  border-bottom:1px solid var(--line);display:flex;align-items:center;padding:0 18px;gap:18px;
+/* ---------- header. the same bar, in the same order, as home and the
+     studios: wordmark, what you are looking at, the four words. ---------- */
+.top{position:sticky;top:0;z-index:400;height:var(--hdr);flex:none;
   transition:background 600ms ease}
-.brand{font-family:'Gnomon',sans-serif;font-size:27px;color:var(--accent);line-height:1;
-  text-decoration:none;letter-spacing:-0.01em;padding-top:2px;transition:color 600ms ease}
-.brand:hover{text-decoration:none;color:var(--accent-deep)}
-.hdr-spacer{flex:1}
-.hdr-link{color:var(--muted);text-transform:lowercase;font-size:14px}
-.hdr-link:hover{color:var(--accent)}
-.pill{display:inline-flex;align-items:center;gap:6px;background:var(--surface);border:1px solid var(--line);
-  color:var(--soft-ink);padding:5px 12px;border-radius:0;text-transform:lowercase;
-  transition:all 160ms ease;font-size:13.5px;box-shadow:var(--shadow)}
-.pill:hover{border-color:var(--accent);color:var(--accent);transform:translateY(-1px)}
-.pill.primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
-.pill.primary:hover{background:var(--accent-deep);border-color:var(--accent-deep);color:var(--on-accent)}
-.pill:disabled{opacity:.4;cursor:default;transform:none}
-.pill.on{background:var(--ink);border-color:var(--ink);color:var(--paper)}
-.ico{width:16px;height:16px;flex:none;stroke:currentColor;fill:none;stroke-width:2;
+.top .sp{flex:1}
+.what{min-width:0;margin-left:var(--s4)}
+.what .ttl{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:34vw}
+.ico{width:15px;height:15px;flex:none;stroke:currentColor;fill:none;stroke-width:2;
   stroke-linecap:round;stroke-linejoin:round;display:block}
-.pill.icon-btn{padding:5px 8px;gap:0}
 
-/* ---------- app shell ---------- */
-.app{height:calc(100vh - var(--hdr));display:flex;flex-direction:column;background:var(--paper);
-  border-bottom:1px solid var(--line);overflow:hidden}
-body.focus .app{height:100vh;border-bottom:0}
-body.focus .site-header,body.focus footer{display:none}
+/* ---------- app shell ----------
+   the frame is header · viewer · bar, and only the viewer flexes. the bar
+   has a FIXED height so a wide page, a long score name or a wrapped control
+   can never change it — that jumping was the bar re-flowing under content. */
+:root{ --bar:38px }
+.app{height:calc(100vh - var(--hdr));height:calc(100dvh - var(--hdr));
+  display:flex;flex-direction:column;background:var(--paper);overflow:hidden}
+body.focus .app{height:100vh;height:100dvh}
+body.focus .top,body.focus footer{display:none}
 body.focus .player-bar{display:none!important}
 body.focus.peek .player-bar{display:flex!important;position:fixed;left:0;right:0;bottom:0;z-index:60}
-body.focus .settings{position:fixed;right:12px;bottom:72px;z-index:80}
+body.focus .settings{position:fixed;right:12px;bottom:calc(var(--bar) + 12px);z-index:80}
 
 /* ---------- viewer ---------- */
 .viewer-col{flex:1;display:flex;flex-direction:column;min-width:0;min-height:0;position:relative}
 .viewer{flex:1;position:relative;display:flex;align-items:center;justify-content:center;
-  min-height:0;background:var(--paper);overflow:hidden;transition:background 600ms ease}
+  min-height:0;background:var(--paper);overflow:hidden;transition:background 600ms ease;
+  touch-action:none}
 /* empty state: the reader only opens comics the library hands it */
 .drop-overlay{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;
-  justify-content:center;gap:14px;text-align:center;padding:24px;z-index:5}
-.drop-overlay .big{font-size:clamp(26px,3.4vw,40px);font-weight:500;text-transform:lowercase;line-height:1.05}
-.drop-overlay p{margin:0;color:var(--muted);max-width:420px}
+  justify-content:center;gap:var(--s3);text-align:center;padding:var(--s5);z-index:5}
+.drop-overlay .big{font-family:var(--font-display);font-weight:400;font-size:clamp(26px,3.4vw,40px);
+  line-height:.92;letter-spacing:-.01em}
+.drop-overlay p{margin:0;color:var(--label);max-width:420px;font-size:var(--fs-xs)}
 /* the reason it failed, selectable so it can be pasted into a bug report */
-.drop-overlay p.why{color:var(--danger);max-width:70ch;user-select:text;
-  font-size:var(--fs-sm);white-space:pre-wrap;word-break:break-word}
-.drop-overlay .pill{text-decoration:none}
+.drop-overlay p.why{color:var(--rec);max-width:70ch;user-select:text;
+  white-space:pre-wrap;word-break:break-word}
 .pages{display:flex;align-items:center;justify-content:center;gap:2px;height:100%;width:100%;
-  padding:14px 60px;position:relative;transform-origin:center center;will-change:transform;touch-action:none}
+  padding:var(--s3) var(--s7);position:relative;transform-origin:center center;will-change:transform}
 .pages img{max-height:100%;max-width:100%;object-fit:contain;background:var(--page-bg);
-  box-shadow:0 0 0 1px var(--line)}
+  box-shadow:0 0 0 1px var(--rule-hair);-webkit-user-drag:none;user-drag:none}
 .click-zones{position:absolute;inset:0;display:flex;z-index:8}
 .cz{flex:1;cursor:pointer}
-.nav-arrow{position:absolute;top:50%;transform:translateY(-50%);z-index:9;background:var(--surface);
-  border:1px solid var(--line);border-radius:0;width:40px;height:58px;color:var(--soft-ink);
-  transition:all 160ms ease;display:flex;align-items:center;justify-content:center;box-shadow:var(--shadow)}
-.nav-arrow:hover{border-color:var(--accent);color:var(--accent)}
-.nav-arrow .ico{width:22px;height:22px}
-.nav-arrow.prev{left:10px}.nav-arrow.next{right:10px}
-.vt-info{color:var(--muted);font-size:13.5px;display:flex;align-items:center;gap:8px}
-.vt-info input{width:52px;padding:3px 6px;font-size:13px;text-align:center}
+/* the zoom bar. it is a SIBLING of the panned element, never a child, so a
+   drag in progress can never swallow the click that lands on "fit" — which
+   is the only control you press while zoomed, and the one that was dead. */
+.zoombar{position:absolute;right:var(--s3);bottom:var(--s3);z-index:12;display:none;
+  align-items:center;border:1px solid var(--rule);background:var(--paper)}
+.zoombar.on{display:flex}
+.zoombar button{width:26px;height:24px;border:0;border-left:1px solid var(--rule-hair);
+  background:none;color:var(--ink);font:inherit;font-size:12px;padding:0}
+.zoombar button[data-z="fit"]{width:auto;padding:0 var(--s2);font-size:10px;
+  letter-spacing:.12em;text-transform:uppercase}
+.zoombar button:first-child{border-left:0}
+.zoombar button:hover{background:var(--rule);color:var(--paper)}
+.zoombar span{padding:0 var(--s2);font-size:10px;letter-spacing:.06em;color:var(--label);
+  font-variant-numeric:var(--num);min-width:38px;text-align:center}
 
 /* ---------- scroll mode ---------- */
 .scroll-pages{position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;display:none;
   background:var(--paper);z-index:6}
 .scroll-pages .sp-page{display:block;margin:0 auto;width:min(100%,820px);background:var(--page-bg)}
-.scroll-pages .sp-page img{width:100%;display:block;box-shadow:0 0 0 1px var(--line)}
+.scroll-pages .sp-page img{width:100%;display:block;box-shadow:0 0 0 1px var(--rule-hair)}
 
-/* ---------- timeline bars ---------- */
-.bars{flex:1;min-width:120px;display:flex;flex-direction:column}
-.timeline{height:10px;display:flex;position:relative;cursor:pointer;border:1px solid var(--line);
-  background:var(--surface);overflow:hidden;transition:height 160ms ease}
-.timeline.rtl{flex-direction:row-reverse}
-.bars:hover .timeline{height:22px}
-.songbar{height:5px;border:1px solid var(--line);border-top:0;background:var(--surface);
-  position:relative;overflow:hidden}
-.songbar-fill{position:absolute;top:0;bottom:0;left:0;width:0%;background:var(--accent)}
-.tl-seg{height:100%;flex:1;min-width:1px}
-.tl-cursor{position:absolute;top:0;bottom:0;width:3px;background:var(--ink);pointer-events:none;
-  transition:left 160ms ease}
-.tl-tip{position:absolute;bottom:calc(100% + 6px);transform:translateX(-50%);background:var(--surface);
-  border:1px solid var(--line);padding:4px 9px;font-size:12px;pointer-events:none;opacity:0;
-  transition:opacity 140ms ease;white-space:nowrap;z-index:20}
-.bars:hover .tl-tip{opacity:1}
-
-/* ---------- player bar ---------- */
-.player-bar{border-top:1px solid var(--line);background:var(--paper);padding:9px 12px;display:flex;
-  align-items:center;gap:10px;flex-wrap:wrap;transition:background 600ms ease;
-  box-shadow:0 -2px 10px rgba(0,0,0,.06)}
-.pb-now{min-width:0;flex:0 1 220px}
-.pb-track{font-weight:500;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-  text-transform:lowercase}
-.pb-sub{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.pb-tl{flex:1;min-width:80px;position:relative}
-.pb-right{display:flex;align-items:center;gap:8px;flex:none}
-.pb-right input[type=range]{width:90px;accent-color:var(--accent)}
-.sound-gate{background:var(--accent);color:var(--on-accent);border:0;border-radius:0;padding:6px 12px;
-  text-transform:lowercase;display:none;align-items:center;gap:6px;box-shadow:var(--shadow)}
-body.needs-gesture .sound-gate{display:inline-flex}
+/* ---------- the bar ----------
+   compartments divided by hairlines, the same grammar as the library grid.
+   the gap IS the divider, so nothing needs its own border. */
+.player-bar{flex:none;height:var(--bar);display:flex;align-items:stretch;flex-wrap:nowrap;
+  gap:1px;padding:0;background:var(--rule);border-top:1px solid var(--rule);
+  overflow:hidden;transition:background 600ms ease}
+.player-bar>*{background:var(--paper);display:flex;align-items:center;gap:var(--s2);
+  padding:0 var(--s3);min-width:0}
+/* what you are listening to. the SCORE, not the individual cue: which cue is
+   playing changes every page and told you nothing you wanted to know. */
+.pb-score{flex:1;min-width:0;font-size:var(--fs-micro);letter-spacing:.1em;
+  text-transform:uppercase;color:var(--label)}
+.pb-score b{font-weight:500;color:var(--ink);letter-spacing:.04em;text-transform:none;
+  font-size:var(--fs-xs);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pb-score.silent b{color:var(--muted)}
+.pb-pages{flex:none;font-size:var(--fs-micro);letter-spacing:.1em;text-transform:uppercase;
+  color:var(--label);font-variant-numeric:var(--num)}
+.pb-pages input,.pb-pages select{height:22px;font-size:var(--fs-micro)}
+.pb-pages input{width:48px;text-align:center;font-variant-numeric:var(--num)}
+.pb-pages select{max-width:26vw}
+.pb-right{flex:none;gap:var(--s2)}
+.pb-right input[type=range]{width:84px;accent-color:var(--accent)}
+.player-bar .btn{height:24px;border-color:var(--rule-hair);gap:5px}
+.player-bar .btn:hover{border-color:var(--rule)}
+.player-bar .btn .ico{width:13px;height:13px}
+.player-bar .btn.icon-btn{padding:0 var(--s2)}
+/* a control that is currently doing something — the panel it opens is up,
+   or the mute it toggles is on — is the one solid fill in the bar. */
+.player-bar .btn.on{background:var(--mark);border-color:var(--mark);color:var(--paper)}
+[data-theme="dark"] .player-bar .btn.on{color:var(--sage-900)}
 
 /* ---------- busy dots ---------- */
 .busy::after{content:'';display:inline-block;width:1.2em;text-align:left;animation:dots 1.1s steps(1,end) infinite}
@@ -156,170 +154,126 @@ body.needs-gesture .sound-gate{display:inline-flex}
 
 /* ---------- settings ---------- */
 .sheet-head{display:none}
-.settings{display:none;position:absolute;right:10px;bottom:64px;z-index:40;background:var(--surface);
-  border:1px solid var(--line);border-radius:0;min-width:250px;padding:6px 0;box-shadow:var(--shadow-lg)}
+.settings{display:none;position:absolute;right:var(--s3);bottom:calc(var(--bar) + var(--s2));
+  z-index:40;background:var(--paper);border:1px solid var(--rule);min-width:262px;padding:var(--s1) 0}
 .settings.open{display:block}
-.set-row{display:flex;align-items:center;gap:12px;padding:8px 14px;font-size:13.5px}
-.set-row>span:first-child{flex:1;color:var(--soft-ink);text-transform:lowercase;
-  display:flex;align-items:center;gap:7px}
-.tgl{border:1px solid var(--line);border-radius:0;background:transparent;color:var(--muted);padding:2px 11px;
-  font-size:12.5px;text-transform:lowercase;transition:all 160ms ease}
-.tgl.on{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
-.seg{display:flex;border:1px solid var(--line);border-radius:0;overflow:hidden}
-.seg button{border:0;background:transparent;color:var(--muted);padding:3px 9px;font-size:12.5px;
-  text-transform:lowercase}
-.seg button.on{background:var(--ink);color:var(--paper)}
-.set-row input[type=number]{width:52px;padding:2px 6px;font-size:12.5px}
+.set-row{display:flex;align-items:center;gap:var(--s3);padding:5px var(--s3);font-size:var(--fs-xs)}
+.set-row>span:first-child{flex:1;color:var(--soft-ink);display:flex;align-items:center;gap:6px}
+.set-row input[type=number]{width:52px}
+/* "on" / "off" is a VALUE, not a label, so it is lowercase like every other
+   value on the site — see the three rules at the head of broadsheet.css. */
+.tgl{border:1px solid var(--rule-hair);background:none;color:var(--label);padding:0 var(--s2);
+  height:22px;font-size:10px;letter-spacing:.12em;text-transform:lowercase;
+  transition:all var(--t-fast) var(--ease)}
+.tgl:hover{color:var(--ink);border-color:var(--ink)}
+.tgl.on{background:var(--mark);border-color:var(--mark);color:var(--paper)}
+[data-theme="dark"] .tgl.on{color:var(--sage-900)}
+.seg button.on{background:var(--mark);color:var(--paper)}
+[data-theme="dark"] .seg button.on{color:var(--sage-900)}
 
 /* ---------- one-shot indicator ---------- */
-.os-hint{position:absolute;left:12px;bottom:12px;z-index:12;display:flex;align-items:center;gap:6px;
-  background:var(--surface);border:1px solid var(--line);border-radius:0;padding:4px 6px 4px 11px;
-  box-shadow:var(--shadow);color:var(--soft-ink);font-size:13px;overflow:hidden}
-body.focus .os-hint{bottom:16px}
-.os-hint .ico{width:15px;height:15px;color:var(--muted);transition:color 160ms ease}
+.os-hint{position:absolute;left:var(--s3);bottom:var(--s3);z-index:12;display:flex;
+  align-items:center;gap:var(--s2);background:var(--paper);border:1px solid var(--rule);
+  padding:3px 5px 3px var(--s3);color:var(--soft-ink);font-size:var(--fs-xs);
+  overflow:hidden}
+.os-hint .ico{width:14px;height:14px;color:var(--label);transition:color var(--t-fast) var(--ease)}
 .os-hint.playing .os-spk .ico{color:var(--accent);animation:os-pulse 1s ease-in-out infinite}
 @keyframes os-pulse{0%,100%{opacity:.5}50%{opacity:1}}
-.os-hint .os-count{font-variant-numeric:tabular-nums;min-width:26px;text-align:center}
-.os-hint .os-prog{position:absolute;left:0;right:0;bottom:0;height:3px;background:var(--line)}
-.os-hint .os-prog-fill{position:absolute;left:0;top:0;bottom:0;width:0%;background:var(--accent);
+.os-hint .os-count{font-variant-numeric:var(--num);min-width:26px;text-align:center;color:var(--ink)}
+.os-hint .os-prog{position:absolute;left:0;right:0;bottom:0;height:2px;background:var(--rule-hair)}
+.os-hint .os-prog-fill{position:absolute;left:0;top:0;bottom:0;width:0%;background:var(--mark);
   transition:width 120ms linear}
 .os-hint:not(.playing) .os-prog{opacity:0}
-.os-hint .os-step{width:24px;height:24px;border:1px solid var(--line);border-radius:50%;background:var(--paper);
-  color:var(--soft-ink);display:flex;align-items:center;justify-content:center;padding:0}
-.os-hint .os-step:hover{border-color:var(--accent);color:var(--accent)}
-.os-hint .os-step .ico{width:14px;height:14px;color:inherit}
+.os-hint .os-step{width:22px;height:22px;border:1px solid var(--rule-hair);background:none;
+  color:var(--label);display:flex;align-items:center;justify-content:center;padding:0}
+.os-hint .os-step:hover{border-color:var(--ink);color:var(--ink)}
 
 /* ---------- hotkeys panel ---------- */
-.keys-scrim{position:fixed;inset:0;background:rgba(0,0,0,.4);display:none;z-index:500}
+.keys-scrim{position:fixed;inset:0;background:rgba(12,19,15,.55);display:none;z-index:500}
 .keys-scrim.open{display:block}
 .keys-panel{position:fixed;left:50%;top:50%;transform:translate(-50%,-46%);z-index:501;display:none;
-  background:var(--surface);border:1px solid var(--line);border-radius:0;box-shadow:var(--shadow-lg);
-  padding:18px 20px;width:min(380px,92vw)}
+  background:var(--paper);border:1px solid var(--rule);padding:var(--s4);width:min(380px,92vw)}
 .keys-panel.open{display:block}
-.keys-head{display:flex;align-items:center;gap:8px;font-weight:500;text-transform:lowercase;
-  margin-bottom:12px}
-.keys-head .ico{width:18px;height:18px;color:var(--accent)}
-.keys-head button{margin-left:auto;border:0;background:transparent;color:var(--muted);cursor:pointer;padding:2px}
-.keys-head button .ico{width:18px;height:18px}
-.keys-grid{display:grid;grid-template-columns:auto 1fr;gap:8px 12px;align-items:center;font-size:13.5px}
-.keys-grid kbd{justify-self:start;background:var(--paper);border:1px solid var(--line);border-bottom-width:2px;
-  border-radius:0;padding:1px 7px;font-family:inherit;font-size:12px;color:var(--ink);white-space:nowrap}
-.keys-grid span{color:var(--soft-ink);text-transform:lowercase}
+.keys-head{display:flex;align-items:center;gap:var(--s2);font-size:var(--fs-micro);
+  letter-spacing:.16em;text-transform:uppercase;color:var(--label);
+  padding-bottom:var(--s2);border-bottom:1px solid var(--rule);margin-bottom:var(--s3)}
+.keys-head .ico{width:14px;height:14px}
+.keys-head button{margin-left:auto;border:0;background:none;color:var(--label);padding:2px}
+.keys-head button:hover{color:var(--ink)}
+.keys-grid{display:grid;grid-template-columns:auto 1fr;gap:6px var(--s3);align-items:center;
+  font-size:var(--fs-xs)}
+.keys-grid kbd{justify-self:start;background:none;border:1px solid var(--rule-hair);
+  padding:0 5px;font-family:inherit;font-size:var(--fs-micro);color:var(--ink);white-space:nowrap;
+  font-variant-numeric:var(--num)}
+.keys-grid span{color:var(--soft-ink)}
 
 /* ---------- tutorial popup ---------- */
-.tut{position:fixed;left:12px;bottom:64px;z-index:520;display:none;align-items:flex-start;gap:10px;
-  max-width:340px;background:var(--surface);border:1px solid var(--accent);border-radius:0;
-  padding:12px 14px;box-shadow:var(--shadow-lg);font-size:13px;line-height:1.45}
+.tut{position:fixed;left:var(--s3);bottom:calc(var(--bar) + var(--s5));z-index:520;display:none;
+  align-items:flex-start;gap:var(--s2);max-width:340px;background:var(--paper);
+  border:1px solid var(--rule);padding:var(--s3);font-size:var(--fs-xs);line-height:1.45}
 .tut.show{display:flex}
-.tut>span .ico,.tut>span{color:var(--accent)}
-.tut .ico{width:20px;height:20px;flex:none}
+.tut .ico{width:16px;height:16px;flex:none;color:var(--accent)}
 .tut b{font-weight:500}
-.tut kbd{background:var(--paper);border:1px solid var(--line);border-radius:0;padding:0 5px;font-size:11px}
-.tut button{margin-left:2px;border:0;background:transparent;color:var(--muted);cursor:pointer;padding:2px;flex:none}
-.tut button .ico{width:16px;height:16px}
+.tut kbd{border:1px solid var(--rule-hair);padding:0 4px;font-size:var(--fs-micro)}
+.tut button{margin-left:2px;border:0;background:none;color:var(--label);padding:2px;flex:none}
+.tut button .ico{width:14px;height:14px;color:inherit}
 
-/* ---------- toast ---------- */
-.toast{position:fixed;bottom:22px;left:50%;transform:translate(-50%,12px);background:var(--band);
-  color:var(--band-fg);padding:9px 18px;opacity:0;pointer-events:none;transition:all 220ms ease;z-index:900;
-  font-size:14px;max-width:86vw;text-align:center}
-.toast.show{opacity:1;transform:translate(-50%,0)}
-.toast.error{background:#A33028}
-/* an error exists to be read and copied, so it stays until dismissed, accepts
+/* ---------- toast ----------
+   an error exists to be read and copied, so it stays until dismissed, accepts
    pointer events, and its text is selectable. success messages still fade. */
-.toast.error{pointer-events:auto;user-select:text;text-align:left;padding-right:34px;
-  white-space:pre-wrap;word-break:break-word}
-.toast-x{position:absolute;top:1px;right:5px;border:0;background:transparent;color:inherit;
-  font-size:19px;line-height:1;cursor:pointer;padding:2px 5px}
+.toast{opacity:0;transform:translateX(-50%)}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(-4px)}
+.toast.error{background:var(--rec);color:#FFF;pointer-events:auto;user-select:text;
+  text-align:left;padding-right:30px;white-space:pre-wrap;word-break:break-word;max-width:86vw}
+.toast-x{position:absolute;top:1px;right:5px;border:0;background:none;color:inherit;
+  font-size:17px;line-height:1;padding:2px 5px}
 .toast-x:hover{opacity:.7}
 
-.rule{width:200px;height:6px;background:var(--accent);margin-bottom:22px;transition:background 600ms ease}
-footer{background:var(--band);color:var(--band-dim);padding:26px 20px;font-size:13.5px}
-footer .wrap{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
-footer .brand{font-size:22px;color:var(--band-fg)}
+/* ---------- foot ---------- */
+footer{flex:none;padding:var(--s2) var(--s4);border-top:1px solid var(--rule);
+  display:flex;align-items:center;gap:var(--s4);font-size:var(--fs-micro);
+  letter-spacing:.1em;text-transform:uppercase;color:var(--label)}
 footer .sp{flex:1}
-footer a{color:var(--accent-soft)}
+footer a:hover{color:var(--ink)}
 
-
-/* ---------------- facelift: swiss grid in sage ----------------
-   hover is a ground or colour step, never a lift. panels are hairline boxes
-   on a flat ground. every readout gets tabular figures. */
-.pill{padding:5px 10px;font-size:var(--fs-sm)}
-.pill:hover{transform:none;background:var(--accent-soft);border-color:var(--accent);color:var(--accent-deep)}
-.pill.on{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
-.pill:disabled{opacity:.4}
-.player-bar{padding:var(--s2) var(--s3);gap:var(--s3);background:var(--surface);box-shadow:none}
-/* RECOMPOSED: the bar is compartments divided by hairlines, the same grammar
-   as the library grid, instead of chunks floating in one padded row. the gap
-   IS the divider, so nothing needs its own border. below 641px the existing
-   mobile rules take over and the bar wraps, where hairlines would only add
-   noise. */
-@media (min-width:641px){
-  .player-bar{padding:0;gap:var(--bw);background:var(--line);align-items:stretch;flex-wrap:nowrap;
-    border-top:var(--bw) solid var(--line)}
-  .player-bar>*:not(.sound-gate){background:var(--surface);display:flex;align-items:center;
-    padding:var(--s2) var(--s3)}
-  .pb-now{flex:0 1 240px;flex-direction:column;align-items:flex-start;justify-content:center;gap:1px}
-  .bars{flex:1 1 auto;min-width:140px;flex-direction:column;align-items:stretch;
-    justify-content:center;gap:var(--s1)}
-  .vt-info{gap:var(--s2);flex:none}
-  .pb-right{gap:var(--s2);flex:none}
-  body.needs-gesture .sound-gate{padding:var(--s2) var(--s3)}
-}
-.vt-info{font-size:var(--fs-sm);font-variant-numeric:var(--num)}
-.vt-info input,#page-jump{font-variant-numeric:var(--num);text-align:center}
-.pb-right{gap:var(--s2)}
-.settings,.keys-panel,.tut{border:var(--bw) solid var(--line);background:var(--surface)}
-.keys-panel kbd,.tut kbd{font-variant-numeric:var(--num)}
-.os-hint{background:var(--surface);border:var(--bw) solid var(--line)}
-.os-hint .os-step{border-radius:0;background:var(--surface)}
-.os-hint .os-count{font-variant-numeric:var(--num)}
-/* the empty state is the one place the display face belongs in the reader */
-.drop-overlay .big{font-family:var(--font-display);font-weight:400;color:var(--accent);
-  letter-spacing:-0.01em;line-height:.92}
-.drop-overlay p{font-size:var(--fs-sm)}@media (max-width:900px){
-  .pb-now{display:none}
-  .pages{padding:10px 8px}
+/* ---------------- touch + narrow screens ----------------
+   the bar NEVER wraps. dropping a compartment keeps one fixed-height row,
+   where wrapping used to make the whole frame jump. */
+@media (max-width:900px){
+  .what{display:none}
+  .pages{padding:var(--s2) var(--s2)}
 }
 @media (max-width:760px){
   .pb-right input[type=range]{display:none}
 }
-/* ---------------- touch + narrow screens ----------------
-   the player bar is the only chrome on a phone, so it wraps into two rows
-   instead of scrolling sideways, and the popovers become bottom sheets. */
 @media (max-width:640px){
-  .hdr-link{display:none}
-  .site-header{gap:10px;padding:0 12px}
-  .player-bar{flex-wrap:wrap;gap:8px;padding:8px 10px}
-  .bars{order:1;width:100%}
-  .vt-info{order:2}
-  .pb-right{order:3;margin-left:auto;gap:6px}
-  /* icon-only pills in the bar: the label is a bare text node, so zero the
+  /* the bar is taller on a phone because every control in it has to be a
+     thumb target, not because it has more to say. */
+  :root{ --bar:48px }
+  .top nav{gap:var(--s3)}
+  .pb-score{display:none}
+  #chapter-sel{display:none!important}
+  /* icon-only controls in the bar: the label is a bare text node, so zero the
      font size on the button and restore it on the icon. title= still reads. */
-  .player-bar .pill{min-height:42px;width:42px;padding:0;justify-content:center;font-size:0}
-  .player-bar .pill .ico{width:19px;height:19px}
-  .pill{min-height:42px;padding:9px 14px}
-  #page-jump{min-height:42px;width:56px}
-  #chapter-sel{min-height:42px;max-width:36vw}
-  .settings, .keys-panel{position:fixed;left:0;right:0;bottom:0;top:auto;width:100%;
-    max-height:74vh;overflow-y:auto;border-radius:0 0 0}
+  .player-bar .btn{width:40px;height:40px;padding:0;justify-content:center;font-size:0}
+  .player-bar .btn .ico{width:17px;height:17px}
+  .pb-pages input{height:36px;width:52px}
+  .settings,.keys-panel{position:fixed;left:0;right:0;bottom:0;top:auto;width:100%;
+    max-height:74vh;overflow-y:auto;transform:none}
   /* the sheet covers its own toggle, so it needs its own way out */
   .sheet-head{display:flex;align-items:center;justify-content:space-between;
-    padding:12px 16px 8px;font-size:15px;text-transform:lowercase;
-    border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--surface)}
-  .sheet-head button{border:0;background:transparent;color:var(--muted);padding:6px;min-height:40px}
-  .sheet-head button .ico{width:20px;height:20px}
-  .set-row{padding:12px 16px;font-size:15px}
-  .seg button{padding:9px 12px;min-height:40px}
-  .tgl{min-height:40px;padding:6px 16px}
-  .keys-grid{grid-template-columns:auto 1fr;gap:10px 12px}
-  .os-hint{padding:10px 12px;gap:10px;bottom:96px}
-  .os-hint .os-step{width:38px;height:38px}
-  .os-hint .os-step .ico{width:18px;height:18px}
+    padding:var(--s3) var(--s4) var(--s2);font-size:var(--fs-micro);letter-spacing:.16em;
+    text-transform:uppercase;color:var(--label);border-bottom:1px solid var(--rule);
+    position:sticky;top:0;background:var(--paper)}
+  .sheet-head button{border:0;background:none;color:var(--label);padding:6px;min-height:36px}
+  .set-row{padding:var(--s2) var(--s4);font-size:var(--fs-sm)}
+  .seg button{padding:0 var(--s3);height:32px}
+  .tgl{height:32px;padding:0 var(--s4)}
+  .os-hint{bottom:calc(var(--bar) + var(--s5))}
+  .os-hint .os-step{width:32px;height:32px}
   .cz{min-width:22vw}                                   /* thumb-sized page turns */
-  .tut{left:10px;right:10px;bottom:88px;max-width:none}
-}
-@media (max-width:420px){
-  .pb-right{flex-wrap:wrap;justify-content:flex-end}
+  .tut{left:var(--s2);right:var(--s2);max-width:none}
+  footer{display:none}
 }
 @media (prefers-reduced-motion:reduce){
   *{transition:none!important;animation:none!important}
@@ -329,11 +283,15 @@ footer a{color:var(--accent-soft)}
 </head>
 <body>
 
-<header class="site-header">
-  <a class="brand" href="#top">eski!</a>
-  <div class="hdr-spacer"></div>
-  <a class="hdr-link" href="index.html">home</a>
-  <a class="hdr-link" href="https://discord.gg/UFNpnHAbD" target="_blank" rel="noopener">discord</a>
+<header class="top site-header">
+  <a class="mark" href="index.html">eski<i>!</i></a>
+  <span class="what" id="what" hidden><span class="ttl" id="what-ttl"></span><span id="what-sub"></span></span>
+  <nav>
+    <a href="index.html">home</a>
+    <a href="index.html#browse">browse</a>
+    <a href="author.html">studio</a>
+    <a href="profile.html">profile</a>
+  </nav>
 </header>
 
 <div class="app" id="top">
@@ -344,7 +302,7 @@ footer a{color:var(--accent-soft)}
         <div class="big" id="drop-big">nothing loaded</div>
         <p class="why" id="drop-sub" hidden></p>
         <p>pick a comic to start reading.</p>
-        <a class="pill primary" href="index.html">go home</a>
+        <a class="btn p" href="index.html">go home</a>
       </div>
       <div class="pages" id="pages" style="display:none">
         <img id="page-left" alt="comic page">
@@ -362,6 +320,14 @@ footer a{color:var(--accent-soft)}
         <button class="os-step" data-ico="chevron-up" title="previous sound (up)" onclick="osAdvance(-1)"></button>
         <button class="os-step" data-ico="chevron-down" title="next sound (down)" onclick="osAdvance(1)"></button>
         <span class="os-prog"><span class="os-prog-fill" id="os-prog"></span></span>
+      </div>
+      <!-- a sibling of .pages, never a child: a pan must not be able to eat
+           the click that lands on "fit". -->
+      <div class="zoombar" id="zoombar">
+        <button data-z="out" type="button" title="zoom out">&minus;</button>
+        <span id="zoom-pct">100%</span>
+        <button data-z="in" type="button" title="zoom in">+</button>
+        <button data-z="fit" type="button" title="fit the page">fit</button>
       </div>
     </div>
 
@@ -410,17 +376,18 @@ footer a{color:var(--accent-soft)}
         <button class="tgl" id="set-dark" onclick="toggleDark()">off</button></div>
     </div>
 
+    <!-- WHAT IS AND IS NOT IN HERE.
+         out: the page timeline and the song progress bar (three pixels tall,
+         nothing to read and nothing worth clicking), the now-playing cue
+         (it changed every page and told you nothing), the home button (the
+         header has home, browse, studio and profile), and "tap for sound"
+         (sound is unlocked by turning a page or clicking the art, which is
+         what a reader does within a second of arriving anyway).
+         in: which score you are listening to, where you are, and the
+         controls. one fixed-height row. -->
     <div class="player-bar" id="player-bar" style="display:none">
-      <div class="pb-now">
-        <div class="pb-track" id="pb-track"></div>
-        <div class="pb-sub" id="pb-sub"></div>
-      </div>
-      <button class="sound-gate" data-ico="volume-2" onclick="unlockAudio()">tap for sound</button>
-      <div class="bars" id="bars">
-        <div id="pb-tl-wrap"></div>
-        <div class="songbar"><div class="songbar-fill" id="songbar-fill"></div></div>
-      </div>
-      <span class="vt-info">
+      <div class="pb-score" id="pb-score"><span>score</span><b id="pb-score-name"></b></div>
+      <span class="pb-pages">
         <span id="vt-info-text"></span>
         <select id="chapter-sel" title="jump to a chapter" style="display:none"
                 onchange="goToPage(parseInt(this.value)-1, true)"></select>
@@ -428,13 +395,12 @@ footer a{color:var(--accent-soft)}
                onkeydown="if(event.key==='Enter'){goToPage(parseInt(this.value)-1,true);this.blur()}">
       </span>
       <div class="pb-right">
-        <button class="pill" data-ico="maximize-2" onclick="toggleFocus()" title="fullscreen (f)">focus</button>
-        <a class="pill" id="next-chapter" data-ico="chevron-right" href="#"
+        <button class="btn" data-ico="maximize-2" onclick="toggleFocus()" title="fullscreen (f)">focus</button>
+        <a class="btn" id="next-chapter" data-ico="chevron-right" href="#"
            style="display:none" title="next in this series">next</a>
-        <a class="pill" data-ico="library" href="index.html" title="back to home">home</a>
-        <button class="pill icon-btn" id="keys-btn" data-ico="keyboard" onclick="toggleKeys()" title="hotkeys (?)"></button>
-        <button class="pill" id="settings-btn" data-ico="settings" onclick="toggleSettings()" title="reader settings">settings</button>
-        <button class="pill" id="mute-btn" data-ico="volume-2" onclick="toggleMute()" title="mute (m)">mute</button>
+        <button class="btn icon-btn" id="keys-btn" data-ico="keyboard" onclick="toggleKeys()" title="hotkeys (?)"></button>
+        <button class="btn" id="settings-btn" data-ico="settings" onclick="toggleSettings()" title="reader settings">settings</button>
+        <button class="btn" id="mute-btn" data-ico="volume-2" onclick="toggleMute()" title="mute (m)">mute</button>
         <input type="range" id="vol-slider" min="0" max="100" value="80" title="volume"
                oninput="setVolume(parseInt(this.value))">
       </div>
@@ -443,14 +409,11 @@ footer a{color:var(--accent-soft)}
 </div>
 
 <footer>
-  <div class="wrap">
-    <span class="brand">eski!</span>
-    <span>comics with soundtracks and voice</span>
-    <span class="sp"></span>
-    <a href="studio.html">studio</a>
-    <a href="index.html">home</a>
-    <a href="https://discord.gg/UFNpnHAbD" target="_blank" rel="noopener">discord</a>
-  </div>
+  <span>comics with soundtracks and voice</span>
+  <span class="sp"></span>
+  <a href="author.html">studio</a>
+  <a href="index.html">home</a>
+  <a href="https://discord.gg/UFNpnHAbD" target="_blank" rel="noopener">discord</a>
 </footer>
 
 <!-- hotkeys cheat sheet (toggle, separate from the player bar) -->
@@ -489,22 +452,17 @@ footer a{color:var(--accent-soft)}
    ================================================================ */
 const $ = id => document.getElementById(id);
 const clamp = (v,a,b) => Math.max(a, Math.min(b, v));
-const TRACK_COLORS = ['#5B7A6B','#8d7a5b','#5b6f8d','#8d5b6f','#6b8d5b','#7a5b8d'];
-const SILENCE_COLOR = '#dedcde';
 const IMG_RE = /\.(jpe?g|png|gif|webp|bmp|avif)$/i;
 
 /* icons (Lucide v1.25.0, ISC, inlined) */
 const ICONS = {
   "moon": "<path d=\"M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401\" />",
-  "chevron-left": "<path d=\"m15 18-6-6 6-6\" />",
   "chevron-right": "<path d=\"m9 18 6-6-6-6\" />",
-  "columns-2": "<rect width=\"18\" height=\"18\" x=\"3\" y=\"3\" rx=\"2\" /> <path d=\"M12 3v18\" />",
   "maximize-2": "<path d=\"M15 3h6v6\" /> <path d=\"m21 3-7 7\" /> <path d=\"m3 21 7-7\" /> <path d=\"M9 21H3v-6\" />",
-  "library": "<path d=\"m16 6 4 14\" /> <path d=\"M12 6v14\" /> <path d=\"M8 8v12\" /> <path d=\"M4 4v16\" />",
+  "x": "<path d=\"M18 6 6 18\" /> <path d=\"m6 6 12 12\" />",
   "settings": "<path d=\"M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915\" /> <circle cx=\"12\" cy=\"12\" r=\"3\" />",
   "volume-2": "<path d=\"M11 4.702a.705.705 0 0 0-1.203-.498L6.413 7.587A1.4 1.4 0 0 1 5.416 8H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2.416a1.4 1.4 0 0 1 .997.413l3.383 3.384A.705.705 0 0 0 11 19.298z\" /> <path d=\"M16 9a5 5 0 0 1 0 6\" /> <path d=\"M19.364 18.364a9 9 0 0 0 0-12.728\" />",
   "volume-x": "<path d=\"M11 4.702a.705.705 0 0 0-1.203-.498L6.413 7.587A1.4 1.4 0 0 1 5.416 8H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2.416a1.4 1.4 0 0 1 .997.413l3.383 3.384A.705.705 0 0 0 11 19.298z\" /> <line x1=\"22\" x2=\"16\" y1=\"9\" y2=\"15\" /> <line x1=\"16\" x2=\"22\" y1=\"9\" y2=\"15\" />",
-  "list-music": "<path d=\"M16 5H3\" /> <path d=\"M11 12H3\" /> <path d=\"M11 19H3\" /> <path d=\"M21 16V5\" /> <circle cx=\"18\" cy=\"16\" r=\"3\" />",
   "chevron-up": "<path d=\"m18 15-6-6-6 6\" />",
   "chevron-down": "<path d=\"m6 9 6 6 6-6\" />",
   "keyboard": "<path d=\"M10 8h.01\" /> <path d=\"M12 12h.01\" /> <path d=\"M14 8h.01\" /> <path d=\"M16 12h.01\" /> <path d=\"M18 8h.01\" /> <path d=\"M6 8h.01\" /> <path d=\"M7 16h10\" /> <path d=\"M8 12h.01\" /> <rect width=\"20\" height=\"16\" x=\"2\" y=\"4\" rx=\"2\" />",
@@ -613,7 +571,17 @@ async function mergePart(comic, zip){
     n++;
   }
   comic.tracks.sort((a,b)=>a.from-b.from);
+  // whose score you are now listening to. this is what the bar names, because
+  // "which cue is playing" changes on every page turn and answers nothing.
+  if(m.kind === 'soundtrack')
+    comic.scoreName = (m.meta && m.meta.title) || m.title || 'a soundtrack';
   return n;
+}
+/* a comic with no playable music has no score, and saying "the author's
+   score" over silence is a lie the bar should not tell. */
+function scoreOf(tracks, name){
+  return tracks.some(t => t.type === 'music' && !t.external && (t.url || t.entry))
+    ? (name || 'the author’s score') : null;
 }
 
 async function comicFromZip(zip, fileName){
@@ -679,6 +647,7 @@ async function comicFromZip(zip, fileName){
     creator: meta.creator, description: meta.description,
     direction: meta.direction==='rtl' ? 'rtl' : 'ltr',
     coverEntry, coverUrl: null, pages, tracks, player, fileName, isEski: !!manifest,
+    scoreName: scoreOf(tracks, meta.score),
     baseId: meta.id || null, cast: Array.isArray(meta.cast) ? meta.cast : [],
     chapters: Array.isArray(meta.chapters) ? meta.chapters : [],
     series: meta.series || null
@@ -761,7 +730,13 @@ async function comicFromApi(id, partIds){
      a row carrying `fills` replaces the author's empty slot, anything else is
      appended. the reader engine downstream cannot tell the difference. */
   const want = (partIds || []).filter(Boolean);
+  let scoreName = null;
   if(want.length){
+    // the part ROWS, for the one thing the reader shows about them: whose
+    // score this is. a failure here is cosmetic, so it is not checked.
+    const pr = await sb.from('parts').select('id,kind,title,owner_name').in('id', want);
+    const st = (pr.data || []).find(p => p.kind === 'soundtrack');
+    if(st) scoreName = st.title || ('a score by ' + (st.owner_name || 'someone'));
     const pt = await sb.from('tracks').select('*')
       .eq('comic_id', id).in('part_id', want).order('order_idx');
     // a part that will not load is not a reason to refuse the comic: the base
@@ -786,6 +761,7 @@ async function comicFromApi(id, partIds){
     pages, tracks,
     player: {volume:80, crossfade:1.5, loopMode:'loop', playbackMode:'sync'},
     fileName: (c.data.slug || 'comic') + '.eski', isEski: true,
+    scoreName: scoreOf(tracks, scoreName),
     baseId: id, cast: c.data.cast_list || [], chapters: [],
     series: c.data.series_title ? {title:c.data.series_title, index:c.data.series_index} : null
   };
@@ -856,9 +832,12 @@ function openComic(comic){
   if(dl!==null) currentPage = clamp(dl, 0, comic.pages.length-1);
   $('drop-overlay').style.display = 'none';
   $('player-bar').style.display = 'flex';
+  $('what').hidden = false;
+  $('what-ttl').textContent = comic.title || 'untitled';
+  $('what-sub').textContent = comic.creator ? 'by ' + comic.creator : '';
+  paintScore();
   scrollBuiltFor = null;
   audio.queueFrom = null;
-  buildTimeline();
   applyReadingMode();
   if(effPlayback()==='playlist') startPlaylist();
   applyTint();
@@ -873,6 +852,7 @@ function applyReadingMode(){
   $('pages').style.display = scroll ? 'none' : 'flex';
   $('scroll-pages').style.display = scroll ? 'block' : 'none';
   $('click-zones').style.display = scroll ? 'none' : 'flex';
+  resetZoom();                      // also hides the zoom bar in scroll mode
   if(scroll){
     buildScroller();
     scrollToPage(currentPage, true);
@@ -933,11 +913,18 @@ function scrollToPage(i, instant){
   clearTimeout(scrollToPage._h);
   scrollToPage._h = setTimeout(()=>{ scrollJumping = false; }, 80);
 }
-$('scroll-pages').addEventListener('scroll', ()=>{
+/* a scroll that lands while a programmatic jump is still settling used to be
+   DROPPED, not deferred. if nothing scrolled afterwards — which is exactly
+   what happens when you fling straight to the end and the scroller is already
+   at its maximum — no further scroll event ever arrived, and the reader sat
+   on the wrong page and the wrong track for the rest of the session. look
+   again on the next frame instead of throwing the update away. */
+function onScrollPages(){
   if(scrollRaf) return;
   scrollRaf = requestAnimationFrame(()=>{
     scrollRaf = 0;
-    if(!current || effReadingMode()!=='scroll' || scrollJumping) return;
+    if(!current || effReadingMode()!=='scroll') return;
+    if(scrollJumping){ onScrollPages(); return; }
     const i = midlinePage();
     if(i!==currentPage){
       currentPage = i;
@@ -945,7 +932,8 @@ $('scroll-pages').addEventListener('scroll', ()=>{
       checkPageTrack(false);
     }
   });
-});
+}
+$('scroll-pages').addEventListener('scroll', onScrollPages);
 
 async function showPage(idx, instant, force){
   if(!current) return;
@@ -968,55 +956,48 @@ async function showPage(idx, instant, force){
   checkPageTrack(instant, force);
 }
 
-/* ---- page zoom + pan (pages mode) ---- */
-let zoom = 1, panX = 0, panY = 0;
-function applyZoom(){
-  const p = $('pages');
-  p.style.transform = `translate(${panX}px,${panY}px) scale(${zoom})`;
-  p.style.cursor = zoom>1 ? 'grab' : '';
-  $('click-zones').style.pointerEvents = zoom>1 ? 'none' : ''; // don't turn pages while panning
-  $('viewer').classList.toggle('zoomed', zoom>1);
+/* ---- page zoom + pan (pages mode) ----
+   Panzoom (vendor/panzoom.js, MIT) rather than three hand-rolled copies of
+   the same arithmetic. it also brings pinch-to-zoom, which this reader never
+   had. `contain: outside` is what stops a pan sliding the page off its own
+   box, and `panOnlyWhenZoomed` is what keeps the click zones working at 1x —
+   a drag is only a pan once there is something to pan.
+
+   the click zones sit ON TOP of the pages (z-index 8), so they, not the
+   pages, receive the pointer. they are switched off while zoomed, which both
+   lets the pan through and stops a drag turning the page when you let go. */
+const pagePan = Panzoom($('pages'), {
+  maxScale: 5, minScale: 1, contain: 'outside', panOnlyWhenZoomed: true,
+  cursor: 'grab', step: 0.22, animate: false
+});
+function pageZoom(){ return pagePan.getScale(); }
+function resetZoom(){ pagePan.reset({ animate: false }); paintZoom(1); }
+function paintZoom(scale){
+  const z = scale == null ? pageZoom() : scale;
+  const on = z > 1.001;
+  $('zoom-pct').textContent = Math.round(z * 100) + '%';
+  $('zoombar').classList.toggle('on', on && effReadingMode() === 'pages');
+  $('click-zones').style.pointerEvents = on ? 'none' : '';
+  $('viewer').classList.toggle('zoomed', on);
 }
-function resetZoom(){ zoom = 1; panX = panY = 0; applyZoom(); }
-function zoomAt(factor, cx, cy){
-  const v = $('viewer').getBoundingClientRect();
-  const nz = clamp(zoom*factor, 1, 5);
-  if(nz===zoom) return;
-  // keep the point under the cursor stationary: offset from the viewer centre
-  const ox = cx - (v.left + v.width/2), oy = cy - (v.top + v.height/2);
-  const k = nz/zoom;
-  panX = (panX - ox)*k + ox;
-  panY = (panY - oy)*k + oy;
-  zoom = nz;
-  if(zoom===1){ panX = panY = 0; }
-  applyZoom();
-}
-(function(){
-  const v = $('viewer');
-  v.addEventListener('wheel', e=>{
-    if(!current || effReadingMode()!=='pages') return;
-    e.preventDefault();
-    zoomAt(e.deltaY<0 ? 1.18 : 1/1.18, e.clientX, e.clientY);
-  }, {passive:false});
-  v.addEventListener('dblclick', e=>{
-    if(!current || effReadingMode()!=='pages') return;
-    if(zoom>1) resetZoom(); else zoomAt(2.2, e.clientX, e.clientY);
-  });
-  let drag=null;
-  v.addEventListener('pointerdown', e=>{
-    if(zoom<=1 || effReadingMode()!=='pages') return;
-    drag={x:e.clientX, y:e.clientY, px:panX, py:panY};
-    v.setPointerCapture(e.pointerId); $('pages').style.cursor='grabbing';
-  });
-  v.addEventListener('pointermove', e=>{
-    if(!drag) return;
-    panX = drag.px + (e.clientX-drag.x); panY = drag.py + (e.clientY-drag.y);
-    applyZoom();
-  });
-  const end=()=>{ if(drag){ drag=null; $('pages').style.cursor = zoom>1?'grab':''; } };
-  v.addEventListener('pointerup', end);
-  v.addEventListener('pointercancel', end);
-})();
+$('pages').addEventListener('panzoomchange', e => paintZoom(e.detail.scale));
+$('viewer').addEventListener('wheel', e=>{
+  if(!current || effReadingMode()!=='pages') return;
+  pagePan.zoomWithWheel(e, { step: 0.5 });   // e^(0.5/3) = 1.18x a notch
+  paintZoom();
+}, {passive:false});
+$('viewer').addEventListener('dblclick', e=>{
+  if(!current || effReadingMode()!=='pages' || e.target.closest('.zoombar')) return;
+  if(pageZoom() > 1.001) resetZoom(); else { pagePan.zoomToPoint(2.2, e); paintZoom(); }
+});
+$('viewer').addEventListener('dragstart', e=>e.preventDefault());
+$('zoombar').addEventListener('click', e=>{
+  const b = e.target.closest('[data-z]');
+  if(!b) return;
+  if(b.dataset.z === 'in'){ pagePan.zoomIn({ animate: false }); paintZoom(); }
+  else if(b.dataset.z === 'out'){ pagePan.zoomOut({ animate: false }); paintZoom(); }
+  else resetZoom();
+});
 
 function updatePageChrome(){
   if(!current) return;
@@ -1026,7 +1007,6 @@ function updatePageChrome(){
   $('page-jump').max = current.pages.length;
   paintChapters();
   paintNextChapter();
-  updateTimelineCursor();
   savePos();
   updateHash();
   refreshOneshots();
@@ -1180,61 +1160,32 @@ function queueForPage(comic, pageIdx){
   for(const g of queueGroups(comic)) if(g.from<=p) found = g;
   return found;
 }
-function colorFor(comic, track){
-  if(!track || track.type==='silence') return SILENCE_COLOR;
-  const music = comic.tracks.filter(t=>t.type==='music');
-  return TRACK_COLORS[music.indexOf(track) % TRACK_COLORS.length];
-}
 /* one page is visible at a time, so it owns the audio outright */
 function audioPage(){ return currentPage; }
-
-/* ---------------- page bar ---------------- */
-function buildTimeline(){
-  const wrap = $('pb-tl-wrap');
-  wrap.innerHTML = '';
-  if(!current) return;
-  const tl = document.createElement('div');
-  tl.className = 'timeline' + (isRTL() ? ' rtl' : ''); tl.id = 'pb-tl';
-  const tip = document.createElement('div'); tip.className='tl-tip'; tip.id='tl-tip';
-  for(let i=0;i<current.pages.length;i++){
-    const seg = document.createElement('div');
-    seg.className = 'tl-seg';
-    const q = queueForPage(current, i);
-    seg.style.background = q && q.tracks.length ? colorFor(current, q.tracks[0]) : 'var(--surface)';
-    tl.appendChild(seg);
-  }
-  const cur = document.createElement('div'); cur.className='tl-cursor'; cur.id='tl-cursor';
-  tl.appendChild(cur); tl.appendChild(tip);
-  const pageAtX = (e)=>{
-    const r = tl.getBoundingClientRect();
-    const n = current.pages.length;
-    const vis = clamp(Math.floor((e.clientX-r.left)/r.width*n), 0, n-1);
-    return isRTL() ? n-1-vis : vis;
-  };
-  tl.addEventListener('click', e=>goToPage(pageAtX(e), true));
-  tl.addEventListener('mousemove', e=>{
-    const r = tl.getBoundingClientRect();
-    const i = pageAtX(e);
-    const q = queueForPage(current, i);
-    tip.style.left = (e.clientX-r.left)+'px';
-    tip.textContent = `p.${i+1} · ${q && q.tracks.length ? q.tracks[0].title : 'silence'}`;
-  });
-  wrap.appendChild(tl);
-  updateTimelineCursor();
-}
-function updateTimelineCursor(){
-  const c = $('tl-cursor');
-  if(!c || !current) return;
-  const n = current.pages.length;
-  const vis = isRTL() ? n-1-currentPage : currentPage;
-  c.style.left = `calc(${(vis+0.5)/n*100}% - 1.5px)`;
-}
 
 /* ---------------- audio engine ----------------
    dual element crossfade. no play/pause anywhere: the page (or the
    playlist) decides what plays, mute and volume are the only controls. */
+/* THE SILENCE BUG.
+   createMediaElementSource on an element whose src is cross-origin and whose
+   crossOrigin attribute is unset produces a TAINTED source, and a tainted
+   source through a web audio graph is silence. published comics stream their
+   audio from R2, which is another origin, so the moment the duck graph was
+   built — on the reader's first click — every published comic went quiet,
+   while zip-backed ones (blob: urls, same origin) kept working. this is why
+   it looked like "the reader doesn't play audio" rather than "ducking is
+   broken". the attribute has to be set BEFORE any src is assigned.
+
+   r2-cors.json already allows GET from the app's origins. if it ever does
+   not, an anonymous request fails outright, so onCorsFail below drops back
+   to an unrouted element and a volume-only duck rather than to silence. */
+function corsAudio(){
+  const el = new Audio();
+  el.crossOrigin = 'anonymous';
+  return el;
+}
 const audio = {
-  a: new Audio(), b: new Audio(), active: null, fadeReq: null,
+  a: corsAudio(), b: corsAudio(), active: null, fadeReq: null,
   currentTrackId: null, queueFrom: null, muted: false, volume: 0.8, loadSeq: 0,
   stopAll(){
     cancelAnimationFrame(this.fadeReq);
@@ -1289,7 +1240,7 @@ const audio = {
     });
     this.active = incoming;
     const p = incoming.play();
-    if(p) p.catch(()=>{ document.body.classList.add('needs-gesture'); });
+    if(p) p.catch(()=>{});   // held until a gesture; unlockAudio picks it up
     this.fade(outgoing, incoming, fadeS, incoming._gain);
   },
   fade(out_, in_, dur, targetGain){
@@ -1352,6 +1303,18 @@ const DUCK = {
   strong: { gain: 0.30, eq: -5 }
 };
 const graph = { ctx: null, nodes: new Map(), ok: false, tried: false };
+/* an anonymous request the bucket refuses fails the load outright, which is
+   worse than the tainted-source silence it exists to prevent. once the graph
+   is built the element can never be unrouted, so the retry is only possible
+   before that — which is also the only window in which it is needed. */
+[audio.a, audio.b].forEach(el => el.addEventListener('error', ()=>{
+  if(!el.crossOrigin || graph.tried || !el.src) return;
+  const src = el.src;
+  el.crossOrigin = null;
+  graph.tried = true; graph.ok = false;   // no routing: volume-only duck
+  el.src = src;
+  const p = el.play(); if(p) p.catch(()=>{});
+}));
 function buildGraph(){
   if(graph.tried) return;
   graph.tried = true;
@@ -1524,7 +1487,7 @@ function playOneshot(t){
       os._endTimer = setTimeout(()=>os.el.pause(), (t.end - startAt)*1000);
     osApplyVolume();
     const p = os.el.play();
-    if(p) p.catch(()=>{ document.body.classList.add('needs-gesture'); });
+    if(p) p.catch(()=>{});   // held until a gesture; unlockAudio picks it up
   });
 }
 function toggleOneshotPause(){
@@ -1540,8 +1503,6 @@ function toggleSoundPause(){
   if(!el){ return; }
   if(el.paused){ soundPaused = false; const p = el.play(); if(p) p.catch(()=>{}); }
   else { soundPaused = true; el.pause(); }
-  const sub = $('pb-sub');
-  if(soundPaused && sub && !/paused/.test(sub.textContent)) sub.textContent = 'paused · ' + sub.textContent;
 }
 
 function checkPageTrack(instant, force){
@@ -1553,14 +1514,14 @@ function checkPageTrack(instant, force){
   if(!q || !q.tracks.length){
     audio.queueFrom = q ? q.from : null;
     audio.playTrack(null, current, instant);
-    paintNowPlaying(null);
+    setNow(null);
     return;
   }
   const sameQueue = audio.queueFrom===q.from && audio.currentTrackId;
   if(sameQueue && (audio.active || !force)) return; // mid-queue or quietly ended: leave it be
   audio.queueFrom = q.from;
   audio.playTrack(q.tracks[0], current, instant);
-  paintNowPlaying(q.tracks[0]);
+  setNow(q.tracks[0]);
 }
 
 /* a track finished (naturally or at its out point) */
@@ -1575,7 +1536,7 @@ function onTrackEnd(){
   if(idx+1 < q.tracks.length){
     audio.currentTrackId = null;
     audio.playTrack(q.tracks[idx+1], current, true);
-    paintNowPlaying(q.tracks[idx+1]);
+    setNow(q.tracks[idx+1]);
   }else if(loop){
     const t = q.tracks[0];
     if(q.tracks.length===1 && audio.active){
@@ -1584,7 +1545,7 @@ function onTrackEnd(){
     }else{
       audio.currentTrackId = null;
       audio.playTrack(t, current, true);
-      paintNowPlaying(t);
+      setNow(t);
     }
   }else{
     const out = audio.active;
@@ -1601,15 +1562,25 @@ function onTrackEnd(){
   });
 });
 
-let songColor = 'var(--accent)';
-function paintNowPlaying(t){
-  if(!current) return;
-  songColor = (t && t.type==='music') ? colorFor(current, t) : 'transparent';
-  if(!t){ $('pb-track').textContent = 'silence'; $('pb-sub').textContent=''; return; }
-  $('pb-track').textContent = t.title + (t.external ? ' (unavailable)' : '');
-  const q = queueForPage(current, audioPage());
-  const pos = q && q.tracks.length>1 ? ` · ${q.tracks.indexOf(t)+1}/${q.tracks.length}` : '';
-  $('pb-sub').textContent = q ? `pages ${q.from}–${q.to}${pos}` : '';
+/* WHAT IS PLAYING IS NO LONGER ON SCREEN.
+   the bar used to name the current cue and its page range. that line changed
+   on almost every page turn, and neither half of it was ever acted on: you
+   cannot pick a cue, and the page number is already two compartments to the
+   right. what a reader does want to know is WHOSE SCORE this is, which is
+   fixed for the whole read and is what the bar says now.
+
+   the cue is still tracked here, because the engine needs it and because it
+   is the honest observable for a test that wants to know what is playing. */
+let nowTrack = null, playlistEnded = false;
+function setNow(t){ nowTrack = t || null; if(t) playlistEnded = false; }
+window.nowPlaying = () => nowTrack ? nowTrack.title
+  : (playlistEnded ? 'end of playlist' : 'silence');
+
+function paintScore(){
+  const box = $('pb-score');
+  const name = current && current.scoreName;
+  box.classList.toggle('silent', !name);
+  $('pb-score-name').textContent = name || 'none';
 }
 function toggleMute(){
   audio.muted = !audio.muted;
@@ -1625,9 +1596,15 @@ function setVolume(v){
   if(current) current.player.volume = v;
   audio.applyVolume();
 }
+/* THERE IS NO "TAP FOR SOUND" BUTTON.
+   browsers hold audio until the reader has interacted with the page, and the
+   old fix was a button in the bar asking them to. but every single thing a
+   reader does here IS that interaction — turning a page, clicking the art,
+   pressing an arrow key — so the button occupied permanent space to solicit
+   a gesture it was always about to receive anyway. these listeners take the
+   first one, whatever it was, and start the soundtrack. */
 let audioUnlocked = false;
 function unlockAudio(){
-  document.body.classList.remove('needs-gesture');
   buildGraph();     // first gesture: safe to route the elements through web audio
   resumeGraph();
   if(!audioUnlocked){
@@ -1638,7 +1615,7 @@ function unlockAudio(){
     }
   }
 }
-['click','keydown','touchstart'].forEach(ev=>
+['pointerdown','click','keydown','touchstart'].forEach(ev=>
   document.addEventListener(ev, ()=>{ if(!audioUnlocked && current) unlockAudio(); }, {capture:true}));
 
 /* ---- playlist mode ---- */
@@ -1651,9 +1628,9 @@ function startPlaylist(){
   playlist.on = true;
   playlist.idx = 0;
   audio.currentTrackId = null;
-  if(!playlist.list.length){ audio.playTrack(null, current, true); paintNowPlaying(null); return; }
+  if(!playlist.list.length){ audio.playTrack(null, current, true); setNow(null); return; }
   audio.playTrack(playlist.list[0], current, true);
-  paintNowPlaying(playlist.list[0]);
+  setNow(playlist.list[0]);
 }
 function playlistNext(){
   playlist.idx++;
@@ -1661,31 +1638,15 @@ function playlistNext(){
     const out = audio.active;
     audio.active = null; audio.currentTrackId = null;
     audio.fade(out, null, 0, null);
-    $('pb-track').textContent = 'end of playlist';
-    $('pb-sub').textContent = '';
-    songColor = 'transparent';
+    setNow(null);
+    playlistEnded = true;
     return;
   }
   const t = playlist.list[playlist.idx];
   audio.currentTrackId = null;
   audio.playTrack(t, current, true);
-  paintNowPlaying(t);
+  setNow(t);
 }
-
-/* ---------------- song progress ---------------- */
-setInterval(()=>{
-  const f = $('songbar-fill');
-  if(!f) return;
-  const el = audio.active;
-  const t = trackById(audio.currentTrackId);
-  if(el && el.duration && !isNaN(el.duration)){
-    const s = t?.start||0, e = t?.end||el.duration;
-    f.style.width = clamp((el.currentTime-s)/Math.max(e-s, 0.01)*100, 0, 100)+'%';
-    f.style.background = songColor;
-  }else{
-    f.style.width = '0%';
-  }
-}, 200);
 
 /* ---------------- settings ---------------- */
 const settings = Object.assign(
@@ -1728,7 +1689,7 @@ function setPlaybackMode(m){
 }
 function setDirMode(m){
   settings.dirMode = m; saveSettings(); paintSettings();
-  if(current){ buildTimeline(); if(effReadingMode()==='pages') showPage(currentPage, true); }
+  if(current && effReadingMode()==='pages') showPage(currentPage, true);
 }
 function toggleTint(){
   settings.tint = !settings.tint; saveSettings(); paintSettings(); applyTint();
@@ -1923,7 +1884,6 @@ if('serviceWorker' in navigator && location.protocol.startsWith('http')){
       }
     }
     openComic(comic);
-    document.body.classList.add('needs-gesture'); // browsers hold audio until a tap
   }catch(err){
     console.warn(src + ' not reachable:', err);
     // only call it a failure if a specific comic was asked for; a bare visit

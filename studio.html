@@ -10,6 +10,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Jost:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="vendor/panzoom.js"></script>
 <script type="module" src="platform.js"></script>
 <link rel="stylesheet" href="tokens.css">
 <style>
@@ -1779,54 +1780,24 @@ function renderPreview(){
 function stepPreview(d){ openQueue(clamp(previewPage+d, 0, pageCount()-1) + 1); }
 
 /* ---------------- preview zoom + pan ----------------
-   same feel as the reader: wheel zooms toward the cursor, drag pans once
-   zoomed, double click toggles. changing page resets it. */
-let pvZoom = 1, pvX = 0, pvY = 0;
-function pvApply(){
-  const img = $('pv-img');
-  img.style.transform = `translate(${pvX}px, ${pvY}px) scale(${pvZoom})`;
-  $('preview').classList.toggle('zoomed', pvZoom > 1);
-}
-function pvReset(){ pvZoom = 1; pvX = pvY = 0; pvApply(); }
-function pvZoomAt(factor, cx, cy){
-  const r = $('preview').getBoundingClientRect();
-  const nz = clamp(pvZoom*factor, 1, 5);
-  if(nz === pvZoom) return;
-  if(nz === 1){ pvReset(); return; }
-  const ox = cx - (r.left + r.width/2), oy = cy - (r.top + r.height/2);
-  const k = nz/pvZoom;
-  pvX = ox - (ox - pvX)*k;
-  pvY = oy - (oy - pvY)*k;
-  pvZoom = nz;
-  pvApply();
-}
-(function(){
-  const pv = $('preview');
-  pv.addEventListener('wheel', e=>{
-    if(!pageCount()) return;
-    e.preventDefault();
-    pvZoomAt(e.deltaY < 0 ? 1.18 : 1/1.18, e.clientX, e.clientY);
-  }, {passive:false});
-  pv.addEventListener('dblclick', e=>{
-    if(!pageCount()) return;
-    pvZoom > 1 ? pvReset() : pvZoomAt(2.4, e.clientX, e.clientY);
-  });
-  let drag = null;
-  pv.addEventListener('pointerdown', e=>{
-    if(pvZoom <= 1 || e.button !== 0) return;
-    drag = {x:e.clientX, y:e.clientY, px:pvX, py:pvY};
-    pv.classList.add('panning'); pv.setPointerCapture(e.pointerId);
-  });
-  pv.addEventListener('pointermove', e=>{
-    if(!drag) return;
-    pvX = drag.px + (e.clientX - drag.x);
-    pvY = drag.py + (e.clientY - drag.y);
-    pvApply();
-  });
-  const end = ()=>{ drag = null; pv.classList.remove('panning'); };
-  pv.addEventListener('pointerup', end);
-  pv.addEventListener('pointercancel', end);
-})();
+   Panzoom (vendor/panzoom.js), the same instance the reader and the author
+   studio use, so the wheel, the drag and the pinch all feel identical in the
+   three places a page is shown. changing page resets it. */
+const pvPan = Panzoom($('pv-img'), {
+  maxScale: 5, minScale: 1, panOnlyWhenZoomed: true, cursor: 'grab',
+  step: 0.22, animate: false
+});
+function pvReset(){ pvPan.reset({ animate: false }); }
+$('pv-img').addEventListener('panzoomchange', e=>
+  $('preview').classList.toggle('zoomed', e.detail.scale > 1.001));
+$('preview').addEventListener('wheel', e=>{
+  if(!pageCount()) return;
+  pvPan.zoomWithWheel(e, { step: 0.5 });   // e^(0.5/3) = 1.18x a notch
+}, {passive:false});
+$('preview').addEventListener('dblclick', e=>{
+  if(!pageCount()) return;
+  if(pvPan.getScale() > 1.001) pvReset(); else pvPan.zoomToPoint(2.4, e);
+});
 
 /* ---------------- resizable panes ----------------
    the media bay, the page panel and the bottom pages panel all drag the same

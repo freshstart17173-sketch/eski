@@ -11,7 +11,34 @@
    stays in that surface's own <style>.
 
    loaded after tokens.css.
-   ============================================================ */
+
+   ------------------------------------------------------------
+   THE THREE RULES. everything below obeys them, and so should any
+   new surface. they exist because the site had drifted into caps
+   and lowercase, green and black, bold and regular all meaning
+   nothing in particular, which is the same as meaning nothing.
+
+   1. CASE.  UPPERCASE with letterspacing is for LABELS — words that
+      name a field, a section or a column and are never themselves
+      the answer. Anything you press, and any value, is lowercase as
+      typed. So: "VOICES" is a label, "missing 2" is a value, "read
+      later" is a button.
+
+   2. COLOUR. Near-black (--mark) is the only fill on the page, and
+      it means "this one is on": selected, pressed, current, primary.
+      Sage (--accent) never fills anything. It colours the NUMBERS
+      and counts you scan a dense view for, the focus ring, and the
+      wordmark's exclamation mark. Nothing else is coloured at all —
+      the page is otherwise near-black on near-white with hairlines.
+      (The author studio's three entry kinds are the one deliberate
+      exception, and they say so where they are defined.)
+
+   3. WEIGHT. 500 marks the ONE primary field of a row — the thing
+      you are looking for when you scan the column. Everything else
+      in that row is 400, and secondary fields also step down to
+      --label. A row where two things are bold has not chosen, and a
+      row where nothing is bold is a wall of grey.
+   ------------------------------------------------------------ */
 
 :root{
   --paper:#FCFDFC;
@@ -52,13 +79,20 @@ img{display:block;max-width:100%}
 .mark:hover i{color:var(--ink)}
 .top .sp{flex:1}
 .top nav{display:flex;gap:var(--s4);margin-left:auto;
-  font-size:var(--fs-micro);letter-spacing:.14em;text-transform:uppercase}
-.top nav a,.top nav button{background:none;border:0;padding:3px 0;color:var(--ink);
-  opacity:.55;text-decoration:none;box-shadow:inset 0 -2px 0 transparent;
+  font-size:var(--fs-micro);letter-spacing:.14em;text-transform:lowercase}
+/* font:inherit because a <button> inherits neither the family nor the case
+   from its parent, which is what used to render "home browse" in a different
+   face and size to "studio profile". */
+.top nav a,.top nav button{font:inherit;font-size:var(--fs-micro);letter-spacing:.14em;
+  text-transform:lowercase;line-height:1.2;background:none;border:0;padding:3px 0;
+  color:var(--ink);opacity:.55;text-decoration:none;cursor:pointer;
+  box-shadow:inset 0 -2px 0 transparent;
   transition:opacity var(--t-fast) var(--ease),box-shadow var(--t-fast) var(--ease)}
 .top nav a:hover,.top nav button:hover{opacity:1;box-shadow:inset 0 -2px 0 var(--rule-hair)}
+/* where you are is a "this one is on", so it is the near-black mark, the same
+   as every other selected state on the site */
 .top nav a[aria-current],.top nav button[aria-current]{opacity:1;
-  box-shadow:inset 0 -2px 0 var(--accent)}
+  box-shadow:inset 0 -2px 0 var(--mark)}
 
 /* what you are working on, in the bar, next to the wordmark */
 .what{display:flex;align-items:baseline;gap:var(--s2);min-width:0;
@@ -74,13 +108,18 @@ img{display:block;max-width:100%}
 .head .n{font-size:var(--fs-micro);letter-spacing:.1em;color:var(--label)}
 .head .sp{flex:1}
 .head a,.head button.link{font-size:var(--fs-micro);letter-spacing:.1em;color:var(--label);
-  text-decoration:none;background:none;border:0;padding:0;text-transform:uppercase;
+  text-decoration:none;background:none;border:0;padding:0;text-transform:lowercase;
   box-shadow:inset 0 -1px 0 transparent;
   transition:color var(--t-fast) var(--ease),box-shadow var(--t-fast) var(--ease)}
 .head a:hover,.head button.link:hover{color:var(--ink);box-shadow:inset 0 -1px 0 var(--ink)}
 
-/* ---------- controls ---------- */
-.btn{font-size:var(--fs-xs);letter-spacing:.08em;height:var(--ctl);padding:0 var(--s3);
+/* ---------- controls ----------
+   inline-flex, not the default inline-block: a button carrying an icon and a
+   word must put them on one line and centre the pair. every surface used to
+   restate this and read.html did not, which stacked the icon above its own
+   label in the reader's bar. */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:var(--s1);
+  font-size:var(--fs-xs);letter-spacing:.08em;height:var(--ctl);padding:0 var(--s3);
   border:1px solid var(--rule);background:none;color:var(--ink);white-space:nowrap;
   transition:background var(--t-fast) var(--ease),color var(--t-fast) var(--ease),
   border-color var(--t-fast) var(--ease),opacity var(--t-fast) var(--ease)}
@@ -108,7 +147,7 @@ img{display:block;max-width:100%}
   text-transform:uppercase}
 
 .chips{display:flex;gap:var(--s1);flex-wrap:wrap}
-.chip{font-size:10px;letter-spacing:.1em;text-transform:uppercase;height:22px;
+.chip{font-size:10px;letter-spacing:.1em;text-transform:lowercase;height:22px;
   padding:0 var(--s2);border:1px solid var(--rule-hair);background:none;color:var(--label);
   transition:all var(--t-fast) var(--ease)}
 .chip:hover{color:var(--ink);border-color:var(--ink)}
@@ -118,7 +157,7 @@ img{display:block;max-width:100%}
 /* a segmented switch: two or three words, one of them filled */
 .seg{display:flex;border:1px solid var(--rule)}
 .seg button{background:none;border:0;border-left:1px solid var(--rule);padding:0 var(--s3);
-  height:24px;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--label);
+  height:24px;font-size:10px;letter-spacing:.12em;text-transform:lowercase;color:var(--label);
   transition:all var(--t-fast) var(--ease)}
 .seg button:first-child{border-left:0}
 .seg button:hover{color:var(--ink)}
@@ -249,7 +288,7 @@ img{display:block;max-width:100%}
 
 /* ---------- see more ---------- */
 .seemore{width:100%;background:none;border:0;border-bottom:1px solid var(--rule);
-  padding:var(--s2);font-size:var(--fs-micro);letter-spacing:.16em;text-transform:uppercase;
+  padding:var(--s2);font-size:var(--fs-micro);letter-spacing:.16em;text-transform:lowercase;
   color:var(--label);transition:background var(--t-fast) var(--ease),
   color var(--t-fast) var(--ease)}
 .seemore:hover{background:var(--rule);color:var(--paper)}
@@ -268,7 +307,7 @@ img{display:block;max-width:100%}
   transition:padding-left var(--t-fast) var(--ease),color var(--t-fast) var(--ease)}
 .slide-list a:hover{padding-left:var(--s2)}
 .slide-list a b{font-weight:500;white-space:nowrap}
-.slide-list a span{color:var(--soft-ink);font-size:var(--fs-xs);min-width:0}
+.slide-list a span{color:var(--label);font-size:var(--fs-xs);min-width:0}
 .slide-list a .go{margin-left:auto;color:var(--label);font-size:var(--fs-micro)}
 .slide-list a:hover .go{color:var(--ink)}
 

@@ -108,14 +108,14 @@ function ok(cond, name, extra) {
   const page = await ctx.newPage();
   wire(page);
   const jump = () => page.inputValue('#page-jump');
-  const track = () => page.textContent('#pb-track');
+  const track = () => page.evaluate(() => window.nowPlaying());
 
   console.log('reader: boot + demo');
   await page.goto('http://localhost:8931/read.html');
   await page.waitForSelector('#player-bar', { state: 'visible' });
   ok(await page.textContent('#vt-info-text') === 'page 1 of 6', 'demo opens on page 1 of 6',
     await page.textContent('#vt-info-text'));
-  await page.waitForFunction(() => document.getElementById('pb-track').textContent.includes('first song'));
+  await page.waitForFunction(() => window.nowPlaying().includes('first song'));
   ok(true, 'track 1 named');
   ok(await page.title() === 'eski', 'title is just eski');
   await page.keyboard.press('ArrowRight');
@@ -141,7 +141,7 @@ function ok(cond, name, extra) {
   await page2.waitForSelector('#player-bar', { state: 'visible' });
   await page2.waitForFunction(() => document.getElementById('page-jump').value === '5');
   ok(true, 'deep link lands on page 5');
-  await page2.waitForFunction(() => document.getElementById('pb-track').textContent.includes('second song'));
+  await page2.waitForFunction(() => window.nowPlaying().includes('second song'));
   ok(true, 'deep link page owns track 2');
   await page2.close();
 
@@ -156,8 +156,7 @@ function ok(cond, name, extra) {
   await page.keyboard.press('ArrowRight');
   await page.waitForFunction(v => document.getElementById('page-jump').value === v, before);
   ok(true, 'rtl: ArrowRight goes back');
-  ok(await page.evaluate(() => document.getElementById('pb-tl').classList.contains('rtl')),
-    'page bar flipped');
+  ok(await page.evaluate(() => isRTL()), 'the reader is reading right to left');
 
   console.log('reader: spread mode is gone');
   ok(await page.evaluate(() => !document.getElementById('spread-btn') &&
@@ -199,7 +198,7 @@ function ok(cond, name, extra) {
     return document.getElementById('page-jump').value === '6';
   }, null, { timeout: 60000 });
   ok(true, 'midline page tracks scroll (page 6)');
-  await page.waitForFunction(() => document.getElementById('pb-track').textContent.includes('second song'));
+  await page.waitForFunction(() => window.nowPlaying().includes('second song'));
   ok(true, 'scroll changed the track');
   await page.waitForFunction(() => // lazy loading actually loaded the visible page
     !!document.querySelector('#scroll-pages .sp-page:last-child img[src]'), null, { timeout: 8000 });
@@ -214,13 +213,13 @@ function ok(cond, name, extra) {
   await page.click('#settings-btn');
   await page.click('#set-playback button[data-m="playlist"]');
   await page.click('#settings-btn');
-  await page.waitForFunction(() => document.getElementById('pb-track').textContent.includes('first song'));
+  await page.waitForFunction(() => window.nowPlaying().includes('first song'));
   await page.waitForFunction(() =>
-    document.getElementById('pb-track').textContent.includes('second song'), null, { timeout: 8000 });
+    window.nowPlaying().includes('second song'), null, { timeout: 8000 });
   ok(true, 'playlist advanced on ended');
   ok(await jump() === '1', 'page did not move', await jump());
   await page.waitForFunction(() =>
-    document.getElementById('pb-track').textContent.includes('end of playlist'), null, { timeout: 8000 });
+    window.nowPlaying().includes('end of playlist'), null, { timeout: 8000 });
   ok(true, 'playlist ends, no loop');
   await page.click('#settings-btn');
   await page.click('#set-playback button[data-m="file"]');
@@ -231,11 +230,12 @@ function ok(cond, name, extra) {
   await page.waitForSelector('#player-bar', { state: 'visible' });
   await page.keyboard.press('Shift');   // any gesture unlocks audio after a fresh load
   await page.waitForFunction(() => document.getElementById('vt-info-text').textContent.includes('of 3'));
-  await page.waitForFunction(() => document.getElementById('pb-track').textContent.includes('first song'));
-  ok((await page.textContent('#pb-sub')).includes('1/2'), 'queue position shown', await page.textContent('#pb-sub'));
+  await page.waitForFunction(() => window.nowPlaying().includes('first song'));
+  ok(await page.evaluate(() => queueForPage(current, currentPage).tracks.length === 2),
+    'page 1 carries a two-track queue');
   // out point at 0.5s: the second track should take over without a page turn
   await page.waitForFunction(() =>
-    document.getElementById('pb-track').textContent.includes('second song'), null, { timeout: 8000 });
+    window.nowPlaying().includes('second song'), null, { timeout: 8000 });
   ok(true, 'queue advanced at the out point');
   ok(await jump() === '1', 'still on page 1');
 
@@ -271,12 +271,25 @@ function ok(cond, name, extra) {
     v.dispatchEvent(new WheelEvent('wheel', { deltaY: -120, clientX: cx, clientY: cy, bubbles: true, cancelable: true }));
     v.dispatchEvent(new WheelEvent('wheel', { deltaY: -120, clientX: cx, clientY: cy, bubbles: true, cancelable: true }));
   });
-  ok(await bigp.evaluate(() => /scale\((?!1\))/.test(document.getElementById('pages').style.transform)),
-    'wheel zooms the page in', await bigp.evaluate(() => document.getElementById('pages').style.transform));
+  ok(await bigp.evaluate(() => pageZoom() > 1.3), 'wheel zooms the page in',
+    await bigp.evaluate(() => pageZoom()));
   ok(await bigp.evaluate(() => document.getElementById('click-zones').style.pointerEvents === 'none'),
     'page-turn zones disabled while zoomed');
+  // the zoom bar only exists while there is something to fit, and "fit" has to
+  // work from a real click WHILE ZOOMED — capturing the pointer on the
+  // container used to retarget that click and leave the button dead
+  ok(await bigp.isVisible('#zoombar'), 'the zoom bar appears once zoomed');
+  await bigp.click('#zoombar [data-z="fit"]');
+  ok(await bigp.evaluate(() => pageZoom()) === 1, 'fit returns the page to the box',
+    await bigp.evaluate(() => pageZoom()));
+  ok(await bigp.isHidden('#zoombar'), 'the zoom bar goes away again at 1x');
+  await bigp.evaluate(() => {
+    const v = document.getElementById('viewer'), b = v.getBoundingClientRect();
+    v.dispatchEvent(new WheelEvent('wheel', { deltaY: -120, clientX: b.left + b.width / 2,
+      clientY: b.top + b.height / 2, bubbles: true, cancelable: true }));
+  });
   await bigp.evaluate(() => window.showPage(1, false, false));
-  await bigp.waitForFunction(() => document.getElementById('pages').style.transform === 'translate(0px, 0px) scale(1)');
+  await bigp.waitForFunction(() => pageZoom() === 1);
   ok(true, 'turning the page resets the zoom');
   await bigp.close();
 
@@ -310,8 +323,8 @@ function ok(cond, name, extra) {
   await osp.evaluate(() => goToPage(1, true));
   await osp.waitForFunction(() => document.getElementById('os-hint').style.display !== 'none');
   ok(await osCount() === '0/2', 'page 2 shows 2 one-shots', await osCount());
-  ok((await osp.textContent('#pb-track')).includes('bg'), 'soundtrack still owns the one-shot page',
-    await osp.textContent('#pb-track'));
+  ok((await osp.evaluate(() => window.nowPlaying())).includes('bg'),
+    'soundtrack still owns the one-shot page', await osp.evaluate(() => window.nowPlaying()));
   ok(await osp.evaluate(() => document.getElementById('tut-os').classList.contains('show')),
     'first-run tutorial shows');
   // down = next, up = previous, no wrap by default
@@ -333,7 +346,7 @@ function ok(cond, name, extra) {
   await osp.keyboard.press('Space');
   await osp.waitForTimeout(60);
   ok(await osp.inputValue('#page-jump') === pgBefore, 'space no longer turns the page');
-  ok(/paused/.test(await osp.textContent('#pb-sub')), 'space pauses the soundtrack', await osp.textContent('#pb-sub'));
+  ok(await osp.evaluate(() => soundPaused && audio.active.paused), 'space pauses the soundtrack');
   await osp.keyboard.press('Space'); // resume
   // hotkeys panel toggles with ?
   await osp.keyboard.press('Shift+Slash'); // "?"
@@ -964,10 +977,10 @@ function ok(cond, name, extra) {
   ok(true, 'composed export re-imports cleanly (4 pages)');
   const musicFrom = music1[0].sync.from;
   await page.evaluate((p) => goToPage(p, true), musicFrom - 1);
-  await page.waitForFunction(() => /\d\/2/.test(document.getElementById('pb-sub').textContent), null,
-    { timeout: 8000 });
-  await page.waitForFunction(() =>
-    document.getElementById('pb-sub').textContent.includes('2/2'), null, { timeout: 8000 });
+  await page.waitForFunction(() => {
+    const q = queueForPage(current, currentPage);
+    return q && q.tracks.length === 2 && q.tracks[1].id === audio.currentTrackId;
+  }, null, { timeout: 8000 });
   ok(true, 'queue advances after re-import');
 
   console.log('reader: ?read= opens a specific eski from the library folder');
@@ -980,8 +993,16 @@ function ok(cond, name, extra) {
   await rp.close();
 
   console.log('reader: control icons painted');
-  ok(await page.evaluate(() => document.querySelectorAll('.player-bar svg.ico, .site-header svg.ico').length) > 4,
+  ok(await page.evaluate(() => document.querySelectorAll('.player-bar svg.ico').length) >= 4,
     'reader chrome shows icons');
+  ok(await page.evaluate(() => !document.querySelector('.sound-gate')),
+    'no "tap for sound" button');
+  ok(await page.evaluate(() => !document.querySelector('.songbar, .timeline')),
+    'no progress bars in the reader');
+  ok(await page.evaluate(() => !document.querySelector('.player-bar a[href="index.html"]')),
+    'no home button in the bar; the header carries navigation');
+  ok(await page.evaluate(() => (document.getElementById('pb-score-name').textContent || '').length > 0),
+    'the bar names the score', await page.textContent('#pb-score-name'));
   await page.click('#mute-btn');
   ok(await page.evaluate(() => document.querySelector('#mute-btn').getAttribute('data-ico')) === 'volume-x',
     'mute swaps to the muted icon');
@@ -1102,7 +1123,7 @@ function ok(cond, name, extra) {
   await phone.waitForSelector('#player-bar', { state: 'visible' });
   ok(await noSideScroll(phone), 'reader does not scroll sideways on a phone');
   ok(await phone.evaluate(() =>
-    [...document.querySelectorAll('.player-bar .pill')].every(p => p.offsetHeight === 0 || p.offsetHeight >= 40)),
+    [...document.querySelectorAll('.player-bar .btn')].every(p => p.offsetHeight === 0 || p.offsetHeight >= 40)),
     'player bar buttons are at least 40px tall for thumbs');
   await phone.click('#settings-btn');
   ok(await phone.evaluate(() => {

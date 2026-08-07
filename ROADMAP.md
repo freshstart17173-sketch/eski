@@ -210,8 +210,9 @@ low-resolution placeholder so pages do not flash blank.
 
 **Plain English:** the icon-only buttons say nothing to a screen reader.
 
-Labels on every icon button, a keyboard-help overlay, and touch gestures in the
-reader (swipe to turn, pinch to zoom — zoom is wheel-only today).
+Labels on every icon button, a keyboard-help overlay, and swipe-to-turn in the
+reader. Pinch to zoom already works: the reader, the author studio and the
+composer preview all run on the vendored Panzoom, which handles two pointers.
 
 ### 18. Position memory collision · ~30 minutes
 

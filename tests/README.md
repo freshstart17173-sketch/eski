@@ -63,8 +63,14 @@ project root is owner-swappable and is not touched by the tests.
 `node tests/viewer-fit.js` (needs the folder served on :8940, e.g. the
 `eski` launch config) mounts `viewer.js` on its own and checks that a page
 sits inside the viewer box on BOTH axes, at four page shapes — tall, wide,
-square and a 900x4000 webtoon strip — across three viewports, and that the
-wheel still zooms.
+square and a 900x4000 webtoon strip — across three viewports; that the wheel
+still zooms by the same amount it always did; that a pan moves and stays
+contained; and that the zoom bar responds to a REAL click while zoomed.
+
+That last one is not decoration. The bar used to capture the pointer on the
+container to start a pan, and pointer capture retargets the click — so every
+button in it, "fit" included, was dead in exactly the state you would press
+it. A synthetic click would not have caught it.
 
 it exists because this broke twice. `max-height:100%` on the page image only
 resolves against a parent with a definite height; inside a grid or flex row

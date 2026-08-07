@@ -40,21 +40,14 @@ section + section{margin-top:var(--s6)}
 .portrait{width:46px;height:46px}
 .pfp{width:22px;height:22px}
 
-/* ---------- the header: wordmark, the four words, then the utilities ----------
-   the nav sits right, exactly as the design has it. the buttons carry
-   font:inherit because a <button> does not inherit text-transform or family
-   from .top nav, which is what made "home browse" render in a different face
-   and size to "STUDIO PROFILE". */
-.top nav a,.top nav button{font:inherit;font-size:var(--fs-micro);letter-spacing:.14em;
-  text-transform:lowercase;cursor:pointer;line-height:1.2}
+/* ---------- the header: wordmark, then the four words. broadsheet
+   styles the nav itself. ---------- */
 .top .sp{flex:1}
 .ico{width:13px;height:13px;flex:none;stroke:currentColor;fill:none;stroke-width:2;
   stroke-linecap:round;stroke-linejoin:round;display:block}
-/* platform.js paints the sign-in control into .site-header itself. it is the
-   only thing in the bar besides the wordmark and the four words. */
-.auth{margin-left:var(--s4)}
-.auth-btn{font-size:var(--fs-micro)!important;letter-spacing:.1em!important;
-  text-transform:lowercase!important;border-color:var(--rule-hair)!important}
+/* platform.js paints the sign-in control into .site-header itself, in the
+   nav's own type. it is the only thing in the bar besides the wordmark and
+   the four words. */
 
 /* ---------- the grid: five up, then four, three, two ---------- */
 .grid{display:grid;grid-template-columns:repeat(5,1fr);border-left:1px solid var(--rule)}
@@ -135,7 +128,11 @@ section + section{margin-top:var(--s6)}
   transition:transform var(--t-mid) var(--ease)}
 .rolecard:hover .portrait img,.rolerow:hover .portrait img{transform:scale(1.06)}
 .rolename{font-family:var(--font-display);font-size:15px;line-height:20px;height:20px}
+/* two lines under the name: WHICH ESKI, then who wrote it. the first is what
+   you are scanning for, so it takes the weight and the ink; the second steps
+   down. they used to be identical, which is why the block read as grey. */
 .rolein{font-size:var(--fs-micro);color:var(--label);line-height:var(--row);height:var(--row)}
+.rolein.ttl{color:var(--ink);font-weight:500}
 .blurb{font-size:var(--fs-xs);color:var(--soft-ink);line-height:1.4;margin:var(--s2) 0;
   height:calc(1.4em * 3);overflow:hidden;
   display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical}
@@ -153,7 +150,7 @@ section + section{margin-top:var(--s6)}
 .rolerow:hover{background:var(--surface)}
 .rolerow .who,.rolerow .where{min-width:0}
 .rolerow .where{font-size:var(--fs-micro);color:var(--label);line-height:var(--row)}
-.rolerow .where .ttl{color:var(--soft-ink)}
+.rolerow .where .ttl{color:var(--ink);font-weight:500}
 .rolerow .blurb{margin:0;height:auto;-webkit-line-clamp:2;font-size:var(--fs-xs)}
 .rolerow .lines{text-align:right;font-size:var(--fs-micro);color:var(--label);
   font-variant-numeric:tabular-nums;line-height:1.35}
@@ -226,14 +223,16 @@ section + section{margin-top:var(--s6)}
 .tagadd input{height:22px;border:1px solid var(--rule-hair);background:var(--surface);
   color:var(--ink);padding:0 var(--s2);font-size:10px;letter-spacing:.06em;min-width:0;flex:1}
 .tagadd input:focus{outline:none;border-color:var(--accent)}
-.tag.mine{border-style:solid;border-color:var(--accent);color:var(--accent)}
+.tag.mine{border-color:var(--ink);color:var(--ink)}
 .tag.x{cursor:pointer}
 
 /* ---------- shelf progress ---------- */
 .progress{height:3px;background:var(--rule-hair);margin-top:var(--s2)}
 .progress i{display:block;height:100%;background:var(--mark)}
 
-/* a little green where the eye lands in a dense view */
+/* RULE 2, spelled out on this page: sage is on the numbers and counts the eye
+   lands on in a dense view, and nowhere else. every "this one is on" is the
+   near-black mark. */
 .hot{color:var(--accent)}
 .head .n{color:var(--accent)}
 .cap .v.want{color:var(--accent)}
@@ -241,17 +240,18 @@ section + section{margin-top:var(--s6)}
 .seg button[aria-selected="true"]{background:var(--mark);color:var(--paper)}
 [data-theme="dark"] .seg button[aria-selected="true"]{color:var(--sage-900)}
 .bar.modes{border-bottom:0;padding-bottom:0}
+/* prose, not a count */
 .modenote{font-size:var(--fs-micro);letter-spacing:.08em;text-transform:uppercase;
-  color:var(--accent)}
+  color:var(--label)}
 button.link{background:none;border:0;padding:0;font:inherit;font-size:var(--fs-micro);
-  letter-spacing:.1em;text-transform:uppercase;color:var(--label);cursor:pointer;
+  letter-spacing:.1em;text-transform:lowercase;color:var(--label);cursor:pointer;
   box-shadow:inset 0 -1px 0 transparent;transition:color var(--t-fast) var(--ease),
   box-shadow var(--t-fast) var(--ease)}
 button.link:hover{color:var(--ink);box-shadow:inset 0 -1px 0 var(--ink)}
 
 .foot{margin-top:var(--s7);padding-top:var(--s3);border-top:1px solid var(--rule);
   display:flex;justify-content:space-between;gap:var(--s3);flex-wrap:wrap;
-  font-size:var(--fs-micro);letter-spacing:.1em;color:var(--label)}
+  font-size:var(--fs-micro);letter-spacing:.1em;text-transform:uppercase;color:var(--label)}
 .foot a{color:inherit;text-decoration:none}
 .foot a:hover{color:var(--ink)}
 
@@ -274,12 +274,9 @@ button.link:hover{color:var(--ink);box-shadow:inset 0 -1px 0 var(--ink)}
   font-weight:400}
 .ob-sub{color:var(--label);font-size:var(--fs-xs);margin:0 0 var(--s5)}
 .ob-list{display:grid;gap:var(--s4);margin:0 0 var(--s5)}
-.ob-item{border-left:2px solid var(--accent);padding-left:var(--s3)}
+.ob-item{border-left:2px solid var(--rule);padding-left:var(--s3)}
 .ob-item b{display:block;font-weight:500;margin-bottom:2px}
 .ob-item span{display:block;color:var(--soft-ink);font-size:var(--fs-xs);line-height:1.45}
-/* broadsheet's .btn is not a flex container, so an inlined icon svg would
-   break the line inside the button, and text sits off centre without it. */
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:var(--s1)}
 .btn.primary{background:var(--mark);border-color:var(--mark);color:var(--paper)}
 .btn.primary:hover{background:var(--accent);border-color:var(--accent)}
 [data-theme="dark"] .btn.primary{color:var(--sage-900)}
@@ -343,8 +340,8 @@ button.link:hover{color:var(--ink);box-shadow:inset 0 -1px 0 var(--ink)}
     <button class="seemore" data-more="roles" hidden>see more</button>
   </section>
 
-  <div class="foot"><span>EST. 2026</span>
-    <span><a href="#">TERMS</a> · <a href="#">PRIVACY</a> · <a href="#">TAKEDOWN</a></span></div>
+  <div class="foot"><span>est. 2026</span>
+    <span><a href="#">terms</a> · <a href="#">privacy</a> · <a href="#">takedown</a></span></div>
 </div></main>
 
 <!-- ================= BROWSE — eskis, roles, or eskis with no score ====== -->
@@ -625,7 +622,7 @@ function roleCardEl(r){
     `<div class="rolehead">${portrait(r)}
       <div style="min-width:0;flex:1">
         <div class="rolename">${mq(r.name)}</div>
-        <div class="rolein">${mq(c.title)}</div>
+        <div class="rolein ttl">${mq(c.title)}</div>
         <div class="rolein">${mq(c.by)}</div>
       </div></div>
      <p class="blurb">${esc(r.blurb || '')}</p>

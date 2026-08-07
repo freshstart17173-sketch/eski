@@ -1,7 +1,7 @@
 /* eski platform layer: sign in, and the current session.
-   shared by index.html, read.html and studio.html. the three headers use
-   different class vocabularies (.btn vs .pill, .sp vs .hdr-spacer), so this
-   owns its own markup and styles instead of borrowing from any of them.
+   shared by every surface. the styles below are written in the broadsheet
+   tokens with plain fallbacks, so the control sits in the nav's voice on a
+   page that has them and still renders on a page that does not.
 
    FAILS SOFT, ALWAYS. blocked cdn, no network, unset key: no auth ui is
    painted and every page behaves exactly as it did before. that is also the
@@ -23,23 +23,31 @@ const R2_BASE = 'https://pub-b9e7c6b680ca415e9ffd5875bad0df03.r2.dev';
 // page, so this is the list that actually works, not the list we want.
 const PROVIDERS = ['google'];
 
+/* THERE IS NO PROFILE BUTTON.
+   signed in, this used to paint an avatar and your name, and the menu behind
+   it offered exactly two things: your profile, which is already a word in the
+   nav two inches to the left, and sign out. so the avatar was a second door
+   to a room you could already see, and the only thing it uniquely did was
+   sign you out. that is what it is now: one word, in the nav's voice.
+   signed out it is still the sign-in control, because there the menu really
+   does hold something — the providers. */
 const CSS = `
-.auth{position:relative;display:flex;align-items:center}
-.auth-btn{display:inline-flex;align-items:center;gap:7px;padding:6px 12px;border-radius:0;
-  border:1px solid rgba(128,128,128,.4);background:transparent;color:inherit;font:inherit;
-  text-transform:lowercase;cursor:pointer;line-height:1.2;white-space:nowrap}
-.auth-btn:hover{border-color:currentColor}
-.auth-btn img{width:22px;height:22px;border-radius:50%;display:block}
-.auth-menu{position:absolute;top:calc(100% + 8px);right:0;min-width:190px;z-index:500;
+.auth{position:relative;display:flex;align-items:center;margin-left:var(--s4,16px)}
+.auth-btn{display:inline-flex;align-items:center;gap:7px;padding:3px 0;border:0;border-radius:0;
+  background:transparent;color:inherit;font:inherit;font-size:var(--fs-micro,11px);
+  letter-spacing:.14em;text-transform:lowercase;cursor:pointer;line-height:1.2;
+  white-space:nowrap;opacity:.55;box-shadow:inset 0 -2px 0 transparent;
+  transition:opacity 160ms,box-shadow 160ms}
+.auth-btn:hover{opacity:1;box-shadow:inset 0 -2px 0 var(--rule-hair,currentColor)}
+.auth-menu{position:absolute;top:calc(100% + 8px);right:0;min-width:200px;z-index:500;
   display:none;flex-direction:column;gap:6px;padding:10px;border-radius:0;
-  border:1px solid rgba(128,128,128,.4);color:inherit;
-  background:var(--bg-1,var(--surface,var(--paper,#fff)));
-  box-shadow:0 8px 30px rgba(0,0,0,.28)}
+  border:1px solid var(--rule,rgba(128,128,128,.4));color:inherit;
+  background:var(--paper,var(--bg-1,#fff))}
 .auth-menu.open{display:flex}
-.auth-menu b{font-weight:500;font-size:13.5px;text-transform:lowercase;
-  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.auth-menu small{color:#8a8a8a;font-size:12px;text-transform:lowercase;line-height:1.35}
-@media(max-width:640px){.auth-btn .lbl{display:none}.auth-btn{min-height:42px}}
+.auth-menu .auth-btn{opacity:1;padding:4px 0}
+.auth-menu small{color:var(--label,#8a8a8a);font-size:12px;text-transform:lowercase;
+  line-height:1.35;letter-spacing:0}
+@media(max-width:640px){.auth-btn{min-height:42px}}
 `;
 
 let sb = null, user = null, bootError = null;
@@ -69,20 +77,14 @@ function paint(){
   menu.className = 'auth-menu';
 
   if(user){
-    const av = (user.user_metadata || {}).avatar_url;
-    const name = nameOf(user);
-    btn.title = name;
-    btn.innerHTML = (av ? `<img src="${esc(av)}" alt="">` : '') + `<span class="lbl">${esc(name)}</span>`;
-    menu.innerHTML = `<b>${esc(name)}</b>`;
-    const prof = document.createElement('a');
-    prof.className = 'auth-btn'; prof.href = 'profile.html'; prof.textContent = 'your profile';
-    prof.style.textDecoration = 'none';
-    menu.appendChild(prof);
-    const out = document.createElement('button');
-    out.type = 'button'; out.className = 'auth-btn'; out.textContent = 'sign out';
-    out.onclick = () => sb.auth.signOut();
-    menu.appendChild(out);
-  }else{
+    // one word, no menu behind it. the nav already carries "profile".
+    btn.title = 'signed in as ' + nameOf(user);
+    btn.textContent = 'sign out';
+    btn.onclick = () => sb.auth.signOut();
+    box.append(btn);
+    return;
+  }
+  {
     btn.title = 'sign in';
     btn.textContent = 'sign in';   // no avatar to fall back on, so never collapses
     menu.innerHTML = '<small>sign in to publish, to voice a comic, or to score one.</small>';

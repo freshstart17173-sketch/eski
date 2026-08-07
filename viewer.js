@@ -1,21 +1,27 @@
 /* ============================================================
-   the page viewer, on its own so every studio gets the reader's one
+   the page viewer, on its own so every surface gets the reader's one
    rather than a worse copy of it.
 
-   wheel zooms toward the cursor (1x to 5x), drag pans once you are past
-   1x, double click toggles, and turning the page resets. this is the
-   read.html implementation, moved here.
+   the gestures are Panzoom's (vendor/panzoom.js, MIT), not ours. we used
+   to hand-roll wheel-toward-cursor, drag-to-pan and the clamping in three
+   places — read.html, studio.html and here — and all three drifted. this
+   file owns the one instance; the other two mount it or call the same
+   library directly.
 
-   it also fixes the thing the studio mockups got wrong: the page is sized
-   by the BOX and contained inside it, so a spread that is wider than it is
-   tall is never clipped. sizing the plate to the image instead is what cut
-   the right edge and the foot off.
+   what is still ours:
+     - the page is sized by the BOX and contained inside it, so a spread
+       wider than it is tall is never clipped. sizing the plate to the
+       image instead is what cut the right edge and the foot off.
+     - the zoom bar, which is NOT inside the panned element, so a drag can
+       never swallow a click on "fit". that was the bug: capturing the
+       pointer on the container retargeted the click away from the button,
+       and every control in the bar went dead the moment you zoomed —
+       which is the only time you want them.
 
-   the style block is injected once, so this is the only file to include.
+   the style block is injected once, so this is the only file to include
+   (after vendor/panzoom.js).
    ============================================================ */
 (function(global){
-  const clamp = (n, a, b) => Math.max(a, Math.min(b, n));
-
   const CSS = `
 .vw{position:relative;flex:1;min-height:0;min-width:0;overflow:hidden;
   background:var(--paper-1);touch-action:none;user-select:none}
@@ -24,7 +30,9 @@
    against a parent whose own height is definite, and a grid/flex row that is
    sized by its content is not: the percentage silently does nothing, the page
    renders at natural size, and a tall one gets its foot cut off by the
-   overflow rule. inset:0 against the positioned .vw is what makes it definite. */
+   overflow rule. inset:0 against the positioned .vw is what makes it definite.
+   it is also what lets panzoom contain the page: the element it moves is
+   exactly the size of the box it moves inside. */
 .vw-inner{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
   padding:var(--s4);box-sizing:border-box;transform-origin:center center;will-change:transform}
 /* -webkit-user-drag is what stops a pan turning into the browser's own image
@@ -38,16 +46,19 @@
 .vw-empty{position:absolute;inset:0;display:grid;place-items:center;padding:var(--s4);
   color:var(--label);font-size:var(--fs-xs);letter-spacing:.06em;text-align:center}
 .vw-empty[hidden]{display:none}
-.vw-zoom{position:absolute;right:var(--s3);bottom:var(--s3);display:flex;align-items:center;
+/* the bar only exists once you are zoomed. at 1x every button in it is a
+   no-op and it is just furniture in the corner of somebody's artwork. */
+.vw-zoom{position:absolute;right:var(--s3);bottom:var(--s3);display:none;align-items:center;
   gap:0;border:1px solid var(--rule,var(--line));background:var(--paper);z-index:3}
+.vw-zoom.on{display:flex}
 .vw-zoom button{width:26px;height:24px;border:0;border-left:1px solid var(--rule-hair,var(--line));
   background:none;color:var(--ink);font:inherit;font-size:12px;cursor:pointer;padding:0}
+.vw-zoom button[data-z="fit"]{width:auto;padding:0 var(--s2);font-size:10px;
+  letter-spacing:.12em;text-transform:uppercase}
 .vw-zoom button:first-child{border-left:0}
 .vw-zoom button:hover{background:var(--rule,var(--ink));color:var(--paper)}
 .vw-zoom span{padding:0 var(--s2);font-size:10px;letter-spacing:.06em;color:var(--label);
   font-variant-numeric:tabular-nums;min-width:38px;text-align:center}
-.vw-hint{position:absolute;left:var(--s3);bottom:var(--s3);font-size:10px;letter-spacing:.08em;
-  text-transform:uppercase;color:var(--label);z-index:3;pointer-events:none}
 `;
   let injected = false;
   function injectCss(){
@@ -58,7 +69,24 @@
     document.head.appendChild(s);
   }
 
-  /* mountViewer(el) -> { show(url), reset(), zoom() }
+  /* the options every eski viewer shares. exported so read.html and the
+     composer get the same feel without restating it. */
+  const PZ = {
+    maxScale: 5,
+    minScale: 1,
+    contain: 'outside',      /* the page can never be panned out of its box */
+    panOnlyWhenZoomed: true, /* at 1x a drag is not a pan, so click zones live */
+    cursor: 'grab',
+    /* step is the exponent panzoom raises e to, so a button click is
+       e^0.22 = 1.25x. the wheel divides it by three, which would make a
+       notch 1.08x, so the wheel passes its own: e^(0.5/3) = 1.18x. both
+       numbers are the ones the hand-rolled version used. */
+    step: 0.22,
+    animate: false
+  };
+  const WHEEL_STEP = 0.5;
+
+  /* mountViewer(el) -> { show(url), reset(), zoom(), pz }
      el is filled in; anything already inside it is replaced. */
   function mountViewer(root, opts){
     injectCss();
@@ -67,8 +95,7 @@
     root.innerHTML =
       `<div class="vw-inner"><img class="vw-img" alt="" draggable="false" hidden></div>
        <div class="vw-empty">${opts.empty || 'no page'}</div>
-       <div class="vw-hint">scroll to zoom · drag to pan · double click to reset</div>
-       <div class="vw-zoom" hidden>
+       <div class="vw-zoom">
          <button data-z="out" title="zoom out" type="button">&minus;</button>
          <span>100%</span>
          <button data-z="in" title="zoom in" type="button">+</button>
@@ -80,70 +107,45 @@
     const zbar  = root.querySelector('.vw-zoom');
     const label = zbar.querySelector('span');
 
-    let zoom = 1, panX = 0, panY = 0;
-    function apply(){
-      inner.style.transform = `translate(${panX}px,${panY}px) scale(${zoom})`;
-      inner.style.cursor = zoom > 1 ? 'grab' : '';
-      root.classList.toggle('zoomed', zoom > 1);
-      label.textContent = Math.round(zoom * 100) + '%';
+    const pz = global.Panzoom(inner, PZ);
+
+    function paint(scale){
+      const z = scale == null ? pz.getScale() : scale;
+      label.textContent = Math.round(z * 100) + '%';
+      zbar.classList.toggle('on', !img.hidden && z > 1.001);
+      root.classList.toggle('zoomed', z > 1.001);
     }
-    function reset(){ zoom = 1; panX = panY = 0; apply(); }
-    function zoomAt(factor, cx, cy){
-      const r = root.getBoundingClientRect();
-      const nz = clamp(zoom * factor, 1, 5);
-      if(nz === zoom) return;
-      // keep the point under the cursor still: offset from the box centre
-      const ox = cx - (r.left + r.width / 2), oy = cy - (r.top + r.height / 2);
-      const k = nz / zoom;
-      panX = (panX - ox) * k + ox;
-      panY = (panY - oy) * k + oy;
-      zoom = nz;
-      if(zoom === 1){ panX = panY = 0; }
-      apply();
-    }
+    inner.addEventListener('panzoomchange', e => paint(e.detail.scale));
 
     root.addEventListener('wheel', e => {
       if(img.hidden) return;
-      e.preventDefault();
-      zoomAt(e.deltaY < 0 ? 1.18 : 1 / 1.18, e.clientX, e.clientY);
+      pz.zoomWithWheel(e, { step: WHEEL_STEP });
+      paint();
     }, { passive: false });
     root.addEventListener('dblclick', e => {
-      if(img.hidden) return;
-      if(zoom > 1) reset(); else zoomAt(2.2, e.clientX, e.clientY);
+      if(img.hidden || e.target.closest('.vw-zoom')) return;
+      if(pz.getScale() > 1.001) reset();
+      else { pz.zoomToPoint(2.2, e); paint(); }
     });
-    // belt and braces: even with user-drag off, a stray dragstart would end
-    // the gesture, so refuse it outright
+    /* belt and braces: even with user-drag off, a stray dragstart would end
+       the gesture, so refuse it outright */
     root.addEventListener('dragstart', e => e.preventDefault());
-    let drag = null;
-    root.addEventListener('pointerdown', e => {
-      if(zoom <= 1 || img.hidden) return;
-      // stops the native image drag before it starts, which is what used to
-      // interrupt a pan a few pixels in
-      e.preventDefault();
-      drag = { x: e.clientX, y: e.clientY, px: panX, py: panY };
-      root.setPointerCapture(e.pointerId);
-      inner.style.cursor = 'grabbing';
-    });
-    root.addEventListener('pointermove', e => {
-      if(!drag) return;
-      panX = drag.px + (e.clientX - drag.x);
-      panY = drag.py + (e.clientY - drag.y);
-      apply();
-    });
-    const end = () => { if(drag){ drag = null; inner.style.cursor = zoom > 1 ? 'grab' : ''; } };
-    root.addEventListener('pointerup', end);
-    root.addEventListener('pointercancel', end);
+
+    /* the bar is a sibling of the panned element, so nothing it does can be
+       eaten by a pan in progress. */
     zbar.addEventListener('click', e => {
       const b = e.target.closest('[data-z]');
       if(!b) return;
-      const r = root.getBoundingClientRect();
-      const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
-      if(b.dataset.z === 'in') zoomAt(1.25, cx, cy);
-      else if(b.dataset.z === 'out') zoomAt(1 / 1.25, cx, cy);
+      if(b.dataset.z === 'in'){ pz.zoomIn({ animate: false }); paint(); }
+      else if(b.dataset.z === 'out'){ pz.zoomOut({ animate: false }); paint(); }
       else reset();
     });
 
-    apply();
+    /* panzoom's own change event lands on the next frame, so the bar would
+       still be up for a frame after fit. paint here as well as there. */
+    function reset(){ pz.reset({ animate: false }); paint(1); }
+
+    paint(1);
     return {
       /* a new page always starts fit, because staying zoomed into the corner
          of the page you just left is never what you meant. */
@@ -151,14 +153,16 @@
         const has = !!url;
         img.hidden = !has;
         empty.hidden = has;
-        zbar.hidden = !has;
         if(has && img.getAttribute('src') !== url) img.src = url;
         reset();
       },
       reset,
-      zoom: () => zoom
+      zoom: () => pz.getScale(),
+      pz
     };
   }
 
   global.mountViewer = mountViewer;
+  global.mountViewer.options = PZ;
+  global.mountViewer.wheelStep = WHEEL_STEP;
 })(window);

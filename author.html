@@ -9,6 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Jost:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="vendor/panzoom.js"></script>
 <script src="viewer.js"></script>
 <script type="module" src="platform.js"></script>
 <link rel="stylesheet" href="tokens.css">
@@ -28,13 +29,13 @@ html,body{height:100%}
 body{margin:0;display:flex;flex-direction:column;overflow:hidden}
 .top{flex:none}
 .top .sp{flex:1}
-.top nav a,.top nav button{font:inherit;font-size:var(--fs-micro);letter-spacing:.14em;
-  text-transform:lowercase;cursor:pointer;line-height:1.2}
-.what{display:flex;align-items:baseline;gap:var(--s2);min-width:0;
-  font-size:var(--fs-micro);letter-spacing:.12em;text-transform:uppercase;color:var(--label)}
-.what .ttl{font-family:var(--font-display);font-size:15px;letter-spacing:0;
-  text-transform:none;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:var(--s1)}
+/* the title is the one thing in this bar with no length limit, so it is the
+   one thing allowed to shrink and clip. broadsheet already styles .what; all
+   that is needed here is permission to get smaller than its content, which
+   is what makes text-overflow fire instead of shoving the nav off the edge. */
+.what{flex:0 1 auto;min-width:0;margin-left:var(--s4);margin-right:auto}
+.what .ttl{max-width:32vw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.top nav{margin-left:0}
 
 /* page · panel, with the strip underneath */
 .frame{flex:1;display:grid;grid-template-columns:minmax(0,1fr) 360px;min-height:0}
@@ -62,47 +63,80 @@ body{margin:0;display:flex;flex-direction:column;overflow:hidden}
 [data-theme="dark"] .pg .plate{background:var(--surf-2)}
 .pg img{max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain;display:block}
 .pg[aria-current="true"] .plate{border-color:var(--mark);box-shadow:0 0 0 1px var(--mark)}
-.pg .cap{display:flex;align-items:baseline;justify-content:center;gap:4px;font-size:10px;
-  font-variant-numeric:tabular-nums;color:var(--label)}
-.pg[aria-current="true"] .cap{color:var(--ink)}
-.pg .cap b{font-weight:500}
-.pg .cap .n{color:var(--accent);font-weight:500}
+/* just the page number. it used to carry a second bare number for how many
+   lines were on the page, which read as part of the page number itself and
+   told you nothing a click would not. */
+.pg .cap{text-align:center;font-size:10px;font-variant-numeric:tabular-nums;
+  color:var(--label)}
+.pg[aria-current="true"] .cap{color:var(--ink);font-weight:500}
 
 /* ---------- cast ---------- */
-.castrow{display:grid;grid-template-columns:1fr auto auto;gap:var(--s2);align-items:center;
-  padding:var(--s1) 0}
-.castrow input.nm{border:0;border-bottom:1px solid transparent;background:none;color:inherit;
-  font:inherit;font-size:var(--fs-xs);padding:2px 0;min-width:0}
-.castrow input.nm:hover{border-bottom-color:var(--rule-hair)}
-.castrow input.nm:focus{outline:none;border-bottom-color:var(--accent)}
-.castrow select{height:22px;font-size:10px;border:1px solid var(--rule-hair);background:var(--surface);
-  color:var(--ink)}
-.castrow .x{width:22px;height:22px;border:1px solid var(--rule-hair);background:none;
-  color:var(--label);cursor:pointer;line-height:1}
+/* every control in this panel is 24px tall and every field starts on the same
+   left edge, so a column of them reads as a column. the name used to be a
+   borderless input that only showed itself on hover, which is most of why
+   nothing in here lined up with anything else. */
+.castrow{display:grid;grid-template-columns:minmax(0,1fr) 96px 24px;gap:var(--s1);
+  align-items:center}
+.castrow input.nm{height:24px;min-width:0;border:1px solid var(--rule-hair);
+  background:var(--surface);color:var(--ink);font:inherit;font-size:var(--fs-xs);
+  padding:0 var(--s2)}
+.castrow input.nm:focus{outline:none;border-color:var(--accent)}
+.castrow select{height:24px;width:100%;min-width:0;font-size:10px;letter-spacing:.06em;
+  border:1px solid var(--rule-hair);background:var(--surface);color:var(--ink)}
+.castrow .x{width:24px;height:24px;border:1px solid var(--rule-hair);background:none;
+  color:var(--label);line-height:1;padding:0}
 .castrow .x:hover{border-color:var(--rec);color:var(--rec)}
-.castnote{width:100%;box-sizing:border-box;margin:0 0 var(--s3);padding:5px 7px;font:inherit;
-  font-size:11px;line-height:1.45;resize:vertical;color:var(--ink);background:var(--surface);
-  border:1px solid var(--rule-hair)}
+.castnote{display:block;width:100%;margin:var(--s1) 0 var(--s3);padding:5px var(--s2);
+  font:inherit;font-size:11px;line-height:1.5;resize:vertical;color:var(--ink);
+  background:var(--surface);border:1px solid var(--rule-hair)}
 .castnote:focus{outline:none;border-color:var(--accent)}
 .castnote::placeholder{color:var(--muted)}
 
-/* ---------- the lines on this page ---------- */
-.line{display:grid;grid-template-columns:1fr auto;gap:var(--s2);align-items:start;
-  padding:var(--s2) 0;border-top:1px solid var(--rule-hair)}
-.line:first-child{border-top:0}
-.line select{height:22px;font-size:10px;border:1px solid var(--rule-hair);background:var(--surface);
-  color:var(--ink);max-width:100%}
-.line textarea{width:100%;box-sizing:border-box;margin-top:4px;padding:5px 7px;font:inherit;
-  font-size:var(--fs-xs);line-height:1.5;resize:vertical;min-height:46px;color:var(--ink);
+/* ---------- what happens on this page ----------
+   three kinds of entry, and the kind is the only thing on this panel allowed
+   a colour of its own. they sit outside the sage palette on purpose: these
+   are categories that have to be told apart at a glance down a long column,
+   which is a different job from the brand's single accent. one 3px spine and
+   one word each, and nothing else tinted. */
+:root{ --e-dialogue:#2F5FD0; --e-narration:#7A3EA1; --e-effect:#B26A00 }
+[data-theme="dark"]{ --e-dialogue:#8FB0F2; --e-narration:#C79BE4; --e-effect:#E0A24A }
+.entry{display:grid;grid-template-columns:minmax(0,1fr) 24px;gap:var(--s2);align-items:start;
+  padding:var(--s2) 0 var(--s2) var(--s2);border-top:1px solid var(--rule-hair);
+  box-shadow:inset 3px 0 0 var(--kind)}
+.entry:first-child{border-top:0}
+.entry[data-kind="dialogue"]{--kind:var(--e-dialogue)}
+.entry[data-kind="narration"]{--kind:var(--e-narration)}
+.entry[data-kind="effect"]{--kind:var(--e-effect)}
+.ehead{display:flex;align-items:center;gap:var(--s2);min-width:0;margin-bottom:var(--s1)}
+.etype{font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--kind);
+  font-weight:500;flex:none}
+.entry select{flex:1;min-width:0;height:24px;font-size:10px;border:1px solid var(--rule-hair);
+  background:var(--surface);color:var(--ink)}
+.entry textarea{display:block;width:100%;padding:5px var(--s2);font:inherit;
+  font-size:var(--fs-xs);line-height:1.5;resize:vertical;min-height:44px;color:var(--ink);
   background:var(--surface);border:1px solid var(--rule-hair)}
-.line textarea:focus{outline:none;border-color:var(--accent)}
-.line .tools{display:flex;flex-direction:column;gap:2px}
-.line .tools button{width:22px;height:20px;border:1px solid var(--rule-hair);background:none;
-  color:var(--label);cursor:pointer;font-size:10px;line-height:1;padding:0}
-.line .tools button:hover{border-color:var(--ink);color:var(--ink)}
-.line .tools .x:hover{border-color:var(--rec);color:var(--rec)}
-.line .voiced{font-size:9px;letter-spacing:.06em;text-transform:uppercase;color:var(--accent)}
-.line .locked{font-size:9px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.entry textarea:focus{outline:none;border-color:var(--accent)}
+.entry .tools{display:flex;flex-direction:column;gap:2px}
+.entry .tools button{width:24px;height:20px;border:1px solid var(--rule-hair);background:none;
+  color:var(--label);font-size:10px;line-height:1;padding:0}
+.entry .tools button:hover{border-color:var(--ink);color:var(--ink)}
+.entry .tools .x:hover{border-color:var(--rec);color:var(--rec)}
+.eflag{font-size:9px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);
+  white-space:nowrap;flex:none}
+.eflag.on{color:var(--accent)}
+
+/* the add control doubles as the legend for those three colours */
+.addbox{position:relative;margin-top:var(--s3)}
+.addmenu{display:none;flex-direction:column;border:1px solid var(--rule);margin-top:var(--s1)}
+.addbox.open .addmenu{display:flex}
+.addmenu button{display:flex;align-items:center;gap:var(--s2);width:100%;text-align:left;
+  background:none;border:0;border-top:1px solid var(--rule-hair);padding:var(--s2);
+  font:inherit;font-size:var(--fs-xs);color:var(--ink)}
+.addmenu button:first-child{border-top:0}
+.addmenu button:hover{background:var(--surface)}
+.addmenu i{width:3px;height:15px;flex:none;background:var(--kind);font-style:normal}
+.addmenu button b{font-weight:500}
+.addmenu button span{color:var(--label);font-size:var(--fs-micro);margin-left:auto}
 
 .empty{padding:var(--s5) var(--s3);text-align:center;color:var(--label);font-size:var(--fs-xs)}
 .state{padding:var(--s7) var(--s5);text-align:center;color:var(--label);font-size:var(--fs-xs)}
@@ -282,12 +316,19 @@ async function openComic(id){
   }
   comic = c.data;
   pages = pg.data || [];
+  /* a SOUND EFFECT is the same row as a line: a oneshot with no audio yet,
+     carrying role 'sfx' instead of 'line'. it used to be filtered out here
+     and silently preserved, which meant the author could see the dialogue
+     they had written but not the effects, and could not write a new one at
+     all — even though the composer already lists unfilled effects as work. */
   const all = tk.error ? [] : (tk.data || []);
-  lines = all.filter(t => t.type === 'oneshot' && (t.role || 'line') === 'line')
+  const isEntry = t => t.type === 'oneshot' && ['line','sfx'].includes(t.role || 'line');
+  lines = all.filter(isEntry)
     .map(t => ({ id: t.id, from_page: t.from_page, character_key: t.character_key,
                  line_text: t.line_text || '', order_idx: t.order_idx,
+                 role: (t.role || 'line') === 'sfx' ? 'sfx' : 'line',
                  hasAudio: !!t.audio_key, deleted: false, isNew: false }));
-  otherTracks = all.filter(t => !(t.type === 'oneshot' && (t.role || 'line') === 'line'));
+  otherTracks = all.filter(t => !isEntry(t));
   maxOrder = all.reduce((m, t) => Math.max(m, t.order_idx || 0), 0);
   filledBy = new Set((pt.error ? [] : (pt.data || [])).map(r => r.fills).filter(Boolean));
   cast = (Array.isArray(comic.cast_list) ? comic.cast_list : []).map(x => ({
@@ -334,12 +375,22 @@ function paintShell(){
              </div>
            </div>
            <div class="sect" style="border-bottom:0">
-             <h3>what is said on this page</h3>
+             <h3>what happens on this page</h3>
              <div id="lines"></div>
-             <button class="btn sm" id="line-add" style="margin-top:var(--s2)">+ a line</button>
+             <div class="addbox" id="addbox">
+               <button class="btn sm" id="add-toggle" aria-expanded="false">+ add</button>
+               <div class="addmenu">
+                 <button data-add="dialogue" style="--kind:var(--e-dialogue)"><i></i>
+                   <b>a line</b><span>a character speaks</span></button>
+                 <button data-add="narration" style="--kind:var(--e-narration)"><i></i>
+                   <b>narration</b><span>the narrator speaks</span></button>
+                 <button data-add="effect" style="--kind:var(--e-effect)"><i></i>
+                   <b>a sound effect</b><span>nobody speaks</span></button>
+               </div>
+             </div>
              <p class="note-line" style="margin-top:var(--s3)">
-               a line with no recording is an open slot: it shows up as a part a
-               voice actor can take.</p>
+               an entry with no recording is an open slot: a line shows up as a part
+               a voice actor can take, a sound effect as one the composer can fill.</p>
            </div>
          </div>
        </div>
@@ -349,7 +400,17 @@ function paintShell(){
   viewer = mountViewer($('viewer'), { empty: 'this comic has no pages yet' });
   $('cast-add').addEventListener('click', addCast);
   $('cast-name').addEventListener('keydown', e=>{ if(e.key === 'Enter'){ e.preventDefault(); addCast(); } });
-  $('line-add').addEventListener('click', addLine);
+  $('add-toggle').addEventListener('click', e=>{
+    e.stopPropagation();
+    const open = !$('addbox').classList.contains('open');
+    $('addbox').classList.toggle('open', open);
+    $('add-toggle').setAttribute('aria-expanded', open);
+  });
+  $('addbox').querySelectorAll('[data-add]').forEach(b=>
+    b.addEventListener('click', ()=>addLine(b.dataset.add)));
+  document.addEventListener('click', e=>{
+    if(!e.target.closest('#addbox')) $('addbox').classList.remove('open');
+  });
   renderAll();
   addEventListener('keydown', e=>{
     if(/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName)) return;
@@ -375,19 +436,17 @@ function renderViewer(){
   const l = $('ph-lines');
   if(l){
     const k = linesOn(page).length;
-    l.textContent = k ? k + (k === 1 ? ' line' : ' lines') : 'no lines';
+    l.textContent = k ? k + (k === 1 ? ' entry' : ' entries') : 'nothing yet';
   }
 }
 
-/* the strip: a thumbnail, its number, and how many lines are on it. */
+/* the strip: a thumbnail and its number. */
 function renderStrip(){
-  $('strip').innerHTML = pages.map(p=>{
-    const k = linesOn(p.idx).length;
-    return `<button class="pg" data-p="${p.idx}" aria-current="${p.idx === page}">
+  $('strip').innerHTML = pages.map(p=>
+    `<button class="pg" data-p="${p.idx}" aria-current="${p.idx === page}">
       <span class="plate"><img src="${esc(mediaUrl(p.image_key))}" alt="" loading="lazy"></span>
-      <span class="cap"><b>${p.idx}</b>${k ? `<span class="n">${k}</span>` : ''}</span>
-    </button>`;
-  }).join('');
+      <span class="cap">${p.idx}</span>
+    </button>`).join('');
   $('strip').querySelectorAll('[data-p]').forEach(b=>
     b.addEventListener('click', ()=>goto(+b.dataset.p)));
 }
@@ -445,38 +504,64 @@ function addCast(){
   renderCast(); renderLines();
 }
 
+/* THREE KINDS OF ENTRY, ONE LIST.
+   dialogue and narration are the same row wearing a different hat — the hat
+   is which cast member says it, and a narrator is a cast member whose kind is
+   'narrator'. an effect is genuinely different: nobody says it, so it has no
+   character and carries role 'sfx'.
+
+   the kind is DERIVED, never stored twice. reassigning a line from a
+   character to the narrator changes what it is, and it should, because that
+   is the only thing that changed. */
+const KINDS = {
+  dialogue: { label: 'dialogue',  note: 'a character speaks',        placeholder: 'what is said' },
+  narration:{ label: 'narration', note: 'the narrator speaks',       placeholder: 'what is narrated' },
+  effect:   { label: 'effect',    note: 'a sound, nobody speaks',    placeholder: 'what is heard — “a door slams”' }
+};
+function kindOf(l){
+  if(l.role === 'sfx') return 'effect';
+  const c = cast.find(x => x.key === l.character_key);
+  return c && c.kind === 'narrator' ? 'narration' : 'dialogue';
+}
+
 function renderLines(){
   const box = $('lines');
   const mine = linesOn(page);
   if(!mine.length){
-    box.innerHTML = '<div class="note-line">nothing said on this page yet.</div>';
+    box.innerHTML = '<div class="note-line">nothing happens on this page yet.</div>';
     renderStrip();
     return;
   }
   box.innerHTML = mine.map(l=>{
     const locked = filledBy.has(l.id);
-    return `<div class="line" data-id="${esc(l.id)}">
+    const k = kindOf(l);
+    return `<div class="entry" data-id="${esc(l.id)}" data-kind="${k}">
       <div>
-        <select data-f="character"${locked?' disabled':''}>
-          <option value=""${l.character_key?'':' selected'}>— who says it —</option>
-          ${cast.map(c=>`<option value="${esc(c.key)}"${c.key===l.character_key?' selected':''}>${esc(c.name)}</option>`).join('')}
-        </select>
-        ${l.hasAudio ? '<span class="voiced"> · recorded</span>' : ''}
-        ${locked ? '<span class="locked"> · a published voice fills this</span>' : ''}
-        <textarea data-f="text" rows="2" placeholder="what is said">${esc(l.line_text)}</textarea>
+        <div class="ehead">
+          <span class="etype">${KINDS[k].label}</span>
+          ${l.role === 'sfx' ? '' : `<select data-f="character"${locked?' disabled':''}>
+            <option value=""${l.character_key?'':' selected'}>— who says it —</option>
+            ${cast.map(c=>`<option value="${esc(c.key)}"${c.key===l.character_key?' selected':''}>${esc(c.name)}</option>`).join('')}
+          </select>`}
+          ${l.hasAudio ? '<span class="eflag on">recorded</span>' : ''}
+          ${locked ? '<span class="eflag">a published voice fills this</span>' : ''}
+        </div>
+        <textarea data-f="text" rows="2" placeholder="${esc(KINDS[k].placeholder)}">${esc(l.line_text)}</textarea>
       </div>
       <div class="tools">
         <button data-mv="-1" title="move up">↑</button>
         <button data-mv="1" title="move down">↓</button>
-        <button class="x" data-del="1" title="remove this line">×</button>
+        <button class="x" data-del="1" title="remove this">×</button>
       </div>
     </div>`;
   }).join('');
 
-  box.querySelectorAll('.line').forEach(row=>{
+  box.querySelectorAll('.entry').forEach(row=>{
     const l = lines.find(x=>x.id === row.dataset.id);
-    row.querySelector('[data-f="character"]').addEventListener('change', e=>{
+    const who = row.querySelector('[data-f="character"]');
+    if(who) who.addEventListener('change', e=>{
       l.character_key = e.target.value || null; dirty = true;
+      renderLines();                     // narrator or not is what the colour says
     });
     row.querySelector('[data-f="text"]').addEventListener('input', e=>{
       l.line_text = e.target.value; dirty = true;
@@ -487,12 +572,27 @@ function renderLines(){
   renderStrip();
 }
 
-function addLine(){
+/* adding a narrator line with no narrator in the cast would leave a line
+   nobody can voice, so the cast member is written first. */
+function narratorKey(){
+  const nar = cast.find(c => c.kind === 'narrator');
+  if(nar) return nar.key;
+  const c = { key: freeKey('narrator'), name: 'narrator', kind: 'narrator', blurb: '' };
+  cast.push(c);
+  renderCast();
+  return c.key;
+}
+function addLine(kind){
   if(!pages.length) return toast('this comic has no pages yet', true);
   maxOrder += 1;
-  lines.push({ id: uid(), from_page: page, character_key: cast[0] ? cast[0].key : null,
-               line_text: '', order_idx: maxOrder, hasAudio: false, deleted: false, isNew: true });
+  const speaker = kind === 'effect' ? null
+    : kind === 'narration' ? narratorKey()
+    : (cast.find(c => c.kind !== 'narrator') || {}).key || null;
+  lines.push({ id: uid(), from_page: page, character_key: speaker,
+               line_text: '', order_idx: maxOrder, role: kind === 'effect' ? 'sfx' : 'line',
+               hasAudio: false, deleted: false, isNew: true });
   dirty = true;
+  $('addbox').classList.remove('open');
   renderLines();
 }
 /* order_idx is the queue order among the one-shots on a page, so moving a
@@ -510,7 +610,7 @@ function move(l, dir){
 function del(l){
   if(filledBy.has(l.id))
     return toast('a published voice fills this line. it cannot be removed without breaking that part.', true);
-  if(l.hasAudio && !confirm('this line has a recording on it. remove anyway?')) return;
+  if(l.hasAudio && !confirm('this has a recording on it. remove anyway?')) return;
   if(l.isNew) lines = lines.filter(x=>x !== l);
   else l.deleted = true;
   dirty = true;
@@ -544,7 +644,8 @@ async function save(){
       // the id is minted here rather than read back, so a line keeps one
       // identity from the moment it appears and a second save updates it
       const ins = await sb.from('tracks').insert(fresh.map(l=>({
-        id: l.id, comic_id: comic.id, order_idx: l.order_idx, type: 'oneshot', role: 'line',
+        id: l.id, comic_id: comic.id, order_idx: l.order_idx, type: 'oneshot',
+        role: l.role || 'line',
         audio_key: null, from_page: l.from_page,
         character_key: l.character_key || null,
         line_text: (l.line_text || '').trim() || null
@@ -555,7 +656,7 @@ async function save(){
     const existing = lines.filter(l=>!l.isNew && !l.deleted);
     for(const l of existing){
       const u = await sb.from('tracks').update({
-        from_page: l.from_page, order_idx: l.order_idx,
+        from_page: l.from_page, order_idx: l.order_idx, role: l.role || 'line',
         character_key: l.character_key || null,
         line_text: (l.line_text || '').trim() || null
       }).eq('id', l.id);
