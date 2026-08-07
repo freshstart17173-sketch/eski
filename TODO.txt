@@ -287,6 +287,41 @@ Open follow-ups (later): optional music ducking while a one-shot plays; polyphon
 
 ================================================================
 
+--- NEXT UP, NOT DONE ---
+
+[ ] OPUS TRANSCODE FOR SOUNDTRACKS, back again. It was removed ("export packs
+    sources as-is") and audio now uploads in whatever format the author had.
+    Opus at 96 kbps is roughly a quarter of MP3 at 128 and sounds the same or
+    better, and a soundtrack is minutes long where a spoken line is seconds.
+    Research done, so this is ready to pick up:
+      - WebCodecs AudioEncoder does it natively, no wasm, no build step.
+        Verified: `AudioEncoder.isConfigSupported({codec:'opus', ...})` is
+        true for both mono and stereo. It needs a SECURE CONTEXT — on a
+        data: URL the constructor is simply undefined, which is what makes it
+        look unsupported when it is not.
+      - The encoder emits raw Opus packets, so they still need a container.
+        webm-muxer (~15 KB, UMD) is the small option; audio/webm;codecs=opus
+        plays everywhere that matters. mediabunny is the newer, larger one.
+      - The input is already there: decodePeaksNow() decodes every clip to an
+        AudioBuffer for the waveform and the loudness measurement, so the
+        transcode is free of an extra decode.
+      - Do it for type==='music' and for anything over ~1 MB, so a long VO
+        take gets it too. Fall back to the original bytes silently when
+        WebCodecs is missing or the result is not smaller — same shape as
+        makeDisplay() does for pages.
+      - NOTE the headless-shell trap: playwright's default chromium has no
+        AudioEncoder at all, so the test needs the full chromium build AND a
+        localhost origin.
+
+[ ] THE HOSTNAME. Written up in full, with the steps, in docs/FASTER.md. The
+    short version: pub-*.r2.dev is Cloudflare's development host, rate
+    limited and not edge cached, and eski.lol's DNS is on Vercel so the zone
+    has to move to Cloudflare first (partial CNAME setup is Business plan
+    only). Everything else worth doing for load speed is in the same file,
+    ordered by payoff.
+
+================================================================
+
 --- WHY PAGES WERE SLOW, AND WHAT OTHER SITES DO ---
 
 Measured against the live bucket, on a real published page:
