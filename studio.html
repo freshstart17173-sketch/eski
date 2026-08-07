@@ -11,6 +11,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Jost:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="vendor/panzoom.js"></script>
+<script src="vendor/webm-muxer.js"></script>
 <script type="module" src="platform.js"></script>
 <link rel="stylesheet" href="tokens.css">
 <style>
@@ -2662,6 +2663,122 @@ async function makeBlur(blob){
   }catch(e){ return null; }
 }
 
+/* ============================================================
+   OPUS, FOR THE THINGS THAT ARE LONG.
+
+   A soundtrack is minutes of audio uploaded in whatever format the author
+   happened to have — often WAV, which is about 10 MB a minute. Opus at
+   96 kbps is roughly a quarter of MP3 at 128 and sounds the same or better,
+   and the reader has to have the whole thing before a note comes out.
+
+   BOTH COPIES ARE KEPT, and this is the important part. Safari's support
+   for Opus in WebM is recent, has been broken for long stretches, and is
+   least certain on iOS — MDN still lists CAF as the only container Safari
+   takes Opus in. Publishing Opus alone would therefore risk silence on
+   every iPhone, which is the exact failure the crossOrigin fix removed a
+   week ago. So the original stays as audio_key and always plays, the Opus
+   copy goes in audio_opus_key, and the READER decides which to fetch by
+   asking canPlayType. A browser that cannot play it never sees it.
+
+   The encode is WebCodecs — native, no wasm, no build step. Two things
+   worth knowing if this ever looks unsupported:
+     - AudioEncoder needs a SECURE CONTEXT. On a data: URL the constructor
+       is simply undefined, which reads exactly like a missing feature.
+     - It emits raw Opus packets, so they still need a container. That is
+       what vendor/webm-muxer.js is for (MIT).
+   ============================================================ */
+const OPUS_BITRATE = 96000, OPUS_RATE = 48000;
+/* below this, the saving is not worth a second object: a one-shot line is a
+   second of audio and what matters about it is that it fires instantly. */
+const OPUS_MIN_BYTES = 256 * 1024;
+
+function canOpus(){
+  return typeof AudioEncoder !== 'undefined' && typeof WebMMuxer !== 'undefined';
+}
+
+/* everything at 48 kHz and at most stereo, which is what opus encodes
+   natively — resampling here rather than letting the encoder guess. */
+async function toOpusBuffer(blob){
+  waveAC = waveAC || new (window.AudioContext || window.webkitAudioContext)();
+  const src = await waveAC.decodeAudioData(await blob.arrayBuffer());
+  const ch = Math.min(2, src.numberOfChannels);
+  if(src.sampleRate === OPUS_RATE && src.numberOfChannels === ch) return src;
+  const off = new OfflineAudioContext(ch, Math.ceil(src.duration * OPUS_RATE), OPUS_RATE);
+  const node = off.createBufferSource();
+  node.buffer = src;
+  node.connect(off.destination);
+  node.start();
+  return off.startRendering();
+}
+
+async function makeOpus(blob){
+  if(!canOpus() || blob.size < OPUS_MIN_BYTES) return null;
+  try{
+    const cfg = { codec: 'opus', sampleRate: OPUS_RATE, numberOfChannels: 2, bitrate: OPUS_BITRATE };
+    const buf = await toOpusBuffer(blob);
+    cfg.numberOfChannels = buf.numberOfChannels;
+    const support = await AudioEncoder.isConfigSupported(cfg);
+    if(!support || !support.supported) return null;
+
+    const target = new WebMMuxer.ArrayBufferTarget();
+    const muxer = new WebMMuxer.Muxer({ target,
+      audio: { codec: 'A_OPUS', numberOfChannels: cfg.numberOfChannels, sampleRate: OPUS_RATE } });
+
+    let failed = null;
+    const encoder = new AudioEncoder({
+      output: (chunk, meta) => muxer.addAudioChunk(chunk, meta),
+      error: e => { failed = e; }
+    });
+    encoder.configure(cfg);
+
+    /* one second of planar float at a time. AudioData wants every channel
+       end to end, not interleaved. */
+    const CH = cfg.numberOfChannels, N = buf.length, STEP = OPUS_RATE;
+    const planes = [];
+    for(let c = 0; c < CH; c++) planes.push(buf.getChannelData(c));
+    for(let off = 0; off < N; off += STEP){
+      const n = Math.min(STEP, N - off);
+      const data = new Float32Array(n * CH);
+      for(let c = 0; c < CH; c++) data.set(planes[c].subarray(off, off + n), c * n);
+      const frame = new AudioData({
+        format: 'f32-planar', sampleRate: OPUS_RATE, numberOfFrames: n,
+        numberOfChannels: CH, timestamp: Math.round(off / OPUS_RATE * 1e6), data
+      });
+      encoder.encode(frame);
+      frame.close();
+      if(failed) throw failed;
+    }
+    await encoder.flush();
+    encoder.close();
+    if(failed) throw failed;
+    muxer.finalize();
+
+    const out = new Blob([target.buffer], { type: 'audio/webm' });
+    // a re-encode that came out bigger is not a saving; keep the original alone
+    return out.size < blob.size * 0.9 ? out : null;
+  }catch(e){
+    console.warn('ESK-4007 opus transcode skipped, the original will be used', e);
+    return null;
+  }
+}
+
+/* attempt an opus copy for every distinct clip, in parallel but not all at
+   once. returns aud -> {blob, ext, audOpus} for the ones worth having; a clip
+   that is too short, could not be encoded, or came out no smaller is simply
+   absent, and the reader falls back to the original. */
+async function opusParts(auds, say){
+  const out = {};
+  if(!canOpus()) return out;
+  say && say('compressing audio');
+  await pool(auds, 2, async aud => {
+    const a = audioStore[aud];
+    if(!a) return;
+    const o = await makeOpus(a.blob);
+    if(o) out[aud] = { blob: o, ext: 'webm', audOpus: aud };
+  });
+  return out;
+}
+
 async function makeCoverThumb(blob, width = 420){
   const bmp = await createImageBitmap(blob);
   const w = Math.min(width, bmp.width);
@@ -2967,10 +3084,13 @@ async function publishPart(finalStatus){
     // music are already in the bucket and are not mine to re-upload.
     const objs = [];
     const forAud = {};
-    for(const aud of [...new Set(tracks.map(t => t.aud).filter(Boolean))]){
+    const partAuds = [...new Set(tracks.map(t => t.aud).filter(Boolean))];
+    for(const aud of partAuds){
       const a = audioStore[aud];
       if(a) objs.push(forAud[aud] = { blob: a.blob, ext: extOf(a.fileName || '', 'mp3') });
     }
+    const partOpus = await opusParts(partAuds, say);
+    for(const aud of partAuds) if(partOpus[aud]) objs.push(partOpus[aud]);
     // the audition clip rides along with the part's own audio, so it costs
     // one extra object and no extra round trip
     say('making a preview clip');
@@ -3013,6 +3133,7 @@ async function publishPart(finalStatus){
       order_idx: i + 1,
       type: t.type,
       audio_key: t.type === 'silence' ? null : ((forAud[t.aud] || {}).key || null),
+      audio_opus_key: t.type === 'silence' ? null : ((partOpus[t.aud] || {}).key || null),
       title: t.title || null,
       from_page: t.from,
       start_ms: Math.round((t.start || 0) * 1000),
@@ -3101,10 +3222,13 @@ async function saveComic(finalStatus){
       }catch(e){ console.warn('ESK-4006 page ' + (i + 1) + ' kept its original', e); }
     });
     for(const d of display) if(d) parts.push(d);
-    for(const aud of [...new Set(cState.tracks.filter(t => t.aud).map(t => t.aud))]){
+    const auds = [...new Set(cState.tracks.filter(t => t.aud).map(t => t.aud))];
+    for(const aud of auds){
       const a = audioStore[aud];
       if(a) parts.push({ blob: a.blob, ext: extOf(a.fileName || '', 'mp3'), aud });
     }
+    const opus = await opusParts(auds, say);
+    for(const aud of auds) if(opus[aud]) parts.push(opus[aud]);
     /* plus a small cover thumbnail, so the shelf never downloads a full page
        scan to fill a 150px cell. it is content addressed like everything else,
        so republishing an unchanged cover re-uses the same object. */
@@ -3156,8 +3280,9 @@ async function saveComic(finalStatus){
         display_key: display[i] ? display[i].key : null, blur: blurs[i] || null })));
     if(pe.error) throw new Error(dbe('ESK-5002', 'the media uploaded but the page rows did not', pe.error));
 
-    const audKey = {};
+    const audKey = {}, audOpusKey = {};
     parts.filter(p => p.aud).forEach(p => { audKey[p.aud] = p.key; });
+    parts.filter(p => p.audOpus).forEach(p => { audOpusKey[p.audOpus] = p.key; });
     const ordered = [...cState.tracks]
       .sort((x, y) => x.from - y.from || cState.tracks.indexOf(x) - cState.tracks.indexOf(y));
     // mint the row ids here so a chain's attach_to can point at its parent
@@ -3166,6 +3291,7 @@ async function saveComic(finalStatus){
     const te = await sb.from('tracks').insert(ordered.map((t, i) => ({
       id: idFor.get(t.tid), comic_id: comicId, order_idx: i + 1, type: t.type,
       audio_key: t.type === 'silence' ? null : (audKey[t.aud] || null),
+      audio_opus_key: t.type === 'silence' ? null : (audOpusKey[t.aud] || null),
       title: t.title || null,
       from_page: t.from,
       start_ms: Math.round((t.start || 0) * 1000),

@@ -76,8 +76,8 @@ function png(w, h, [r, g, b], n){
   return Buffer.concat([Buffer.from([0x89,0x50,0x4e,0x47,0x0d,0x0a,0x1a,0x0a]),
     pngChunk('IHDR', ihdr), pngChunk('IDAT', zlib.deflateSync(raw)), pngChunk('IEND', Buffer.alloc(0))]);
 }
-function wav(seconds, freq){
-  const sr = 8000, n = Math.round(sr * seconds), d = Buffer.alloc(n * 2);
+function wav(seconds, freq, rate){
+  const sr = rate || 8000, n = Math.round(sr * seconds), d = Buffer.alloc(n * 2);
   for(let i = 0; i < n; i++) d.writeInt16LE(Math.round(Math.sin(2*Math.PI*freq*i/sr) * 12000), i * 2);
   const h = Buffer.alloc(44);
   h.write('RIFF', 0); h.writeUInt32LE(36 + d.length, 4); h.write('WAVE', 8);
@@ -92,8 +92,11 @@ async function buildEski(){
                 [90,190,190],[230,120,60],[120,120,220],[70,200,140],[210,70,90],[140,160,60]];
   for(let i = 1; i <= PAGES; i++)
     zip.file('p' + String(i).padStart(2,'0') + '.png', png(600, 900, hues[i-1], i));
-  zip.file('audio/song-a.wav', wav(3.0, 220));
-  zip.file('audio/song-b.wav', wav(3.0, 330));
+  /* long enough to cross the transcode floor, because a three second clip is
+     not what the opus path exists for. 40 s of 44.1 kHz stereo-ish PCM is a
+     few MB, which is the shape of a real score. */
+  zip.file('audio/song-a.wav', wav(40.0, 220, 44100));
+  zip.file('audio/song-b.wav', wav(40.0, 330, 44100));
   zip.file('audio/line-1.wav', wav(1.2, 500));
   zip.file('audio/line-2.wav', wav(1.2, 660));
   zip.file('.eski/manifest.json', JSON.stringify({
@@ -248,6 +251,38 @@ async function buildEski(){
      makes no request at all, so there would be nothing to hold back. (That
      is itself the cache header working; it just makes this untestable in a
      warm tab.) */
+  /* THE OPUS COPY. The score is 40 s of 44.1 kHz PCM — a few MB, the shape of
+     a real one — so the transcode floor is crossed and there should be a
+     second, much smaller object beside it. And the reader should be playing
+     THAT one, because chromium can play opus in webm. */
+  console.log('read: the opus copy');
+  const au = await r.evaluate(async () => {
+    const sb = window.eski.sb;
+    const t = await sb.from('tracks').select('title,type,audio_key,audio_opus_key')
+      .eq('comic_id', current.baseId).eq('type', 'music').order('order_idx');
+    return { rows: t.data || [], err: t.error && t.error.message,
+      playsOpus: !!new Audio().canPlayType('audio/webm; codecs="opus"'),
+      using: (current.tracks.find(x => x.type === 'music') || {}).url };
+  });
+  const withOpus = au.rows.filter(x => x.audio_opus_key);
+  ok(withOpus.length === au.rows.length && au.rows.length > 0,
+    'every score got an opus copy', JSON.stringify(au.rows.map(x => !!x.audio_opus_key)));
+  if(withOpus.length){
+    const orig = await api.fetch(SITE.replace(/^https:\/\/www\./,'https://') && await r.evaluate(k =>
+      window.eski.mediaUrl(k), withOpus[0].audio_key));
+    const op = await api.fetch(await r.evaluate(k => window.eski.mediaUrl(k), withOpus[0].audio_opus_key));
+    const ob = (await orig.body()).length, pb = (await op.body()).length;
+    ok(pb < ob * 0.6, 'the opus copy is substantially smaller',
+      Math.round(ob/1024) + ' KB -> ' + Math.round(pb/1024) + ' KB');
+    console.log('    ' + Math.round(ob/1024) + ' KB original -> ' + Math.round(pb/1024) +
+      ' KB opus  (' + (ob/pb).toFixed(1) + 'x)');
+    ok(/^audio\//.test(op.headers()['content-type'] || ''), 'served as an audio type',
+      op.headers()['content-type']);
+  }
+  ok(au.playsOpus && /\.webm$/.test(au.using || ''),
+    'and this browser, which plays opus, is being given the opus copy',
+    JSON.stringify({ playsOpus: au.playsOpus, using: (au.using || '').slice(-12) }));
+
   console.log('read: a slow page');
   const cold = await browser.newContext({ viewport: { width:1440, height:900 },
     serviceWorkers: 'block' });

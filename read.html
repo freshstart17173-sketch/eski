@@ -697,14 +697,35 @@ async function comicFromApi(id, partIds){
   const sb = window.eski && await window.eski.ready;
   if(!sb) throw new Error('ESK-1005 cannot reach the library. ' +
     ((window.eski && window.eski.bootError) || 'platform.js did not load at all'));
-  const [c, pg, tk] = await Promise.all([
-    sb.from('comics').select('*').eq('id', id).single(),
-    sb.from('pages').select('idx,image_key,display_key,blur').eq('comic_id', id).order('idx'),
-    // part_id null is the AUTHOR's own tracks. everyone else's arrive only when
-    // the reader asked for them, below, so a comic with fifty voice tracks on it
-    // still opens as the author intended.
-    baseTracks(sb, id)
-  ]);
+  /* ONE ROUND TRIP, NOT THREE.
+     The comic, its pages and the author's own tracks used to be three separate
+     selects — and because the reader needs the comic before it can do anything
+     with the rest, that was most of a second of pure latency before the first
+     page was even requested. get_comic() returns all three as one JSON
+     document; it is STABLE and not SECURITY DEFINER, so row level security
+     applies exactly as it did.
+
+     The fallback is not decoration: a database that has not had the migration
+     applied answers 42883 (no such function), and reading must not break on a
+     deploy that lands before a migration. */
+  let c, pg, tk;
+  // `sb.rpc` is guarded, not assumed: the smoke suite hands the reader a
+  // minimal client stub, and so would an older vendored build.
+  const rpc = sb.rpc ? await sb.rpc('get_comic', { p_id: id }) : { error: 'no rpc' };
+  if(!rpc.error && rpc.data){
+    c  = { data: rpc.data.comic, error: rpc.data.comic ? null : { message: 'no comic' } };
+    pg = { data: rpc.data.pages  || [], error: null };
+    tk = { data: rpc.data.tracks || [], error: null };
+  }else{
+    [c, pg, tk] = await Promise.all([
+      sb.from('comics').select('*').eq('id', id).single(),
+      sb.from('pages').select('idx,image_key,display_key,blur').eq('comic_id', id).order('idx'),
+      // part_id null is the AUTHOR's own tracks. everyone else's arrive only when
+      // the reader asked for them, below, so a comic with fifty voice tracks on it
+      // still opens as the author intended.
+      baseTracks(sb, id)
+    ]);
+  }
   /* say which step failed and what the server said. "could not load" is not a
      diagnosis, and every one of these has a different cause: a bad id, row
      level security hiding a draft, or the tables not existing yet. */
@@ -717,6 +738,18 @@ async function comicFromApi(id, partIds){
     throw new Error('ESK-5009 comic "' + (c.data.title||id) + '" has no page rows');
   if(tk.error) throw new Error(dbe('ESK-5010', 'the tracks could not be read', tk.error));
   const u = k => window.eski.mediaUrl(k);
+  /* OPUS ONLY WHERE IT PLAYS.
+     A track is stored twice: the author's original, which always plays, and an
+     Opus/WebM copy at roughly a quarter of the size. Safari's support for Opus
+     in WebM is recent, has been broken for long stretches and is least certain
+     on iOS, so this asks the browser rather than assuming. A browser that says
+     no never sees the small copy — silence would be a far worse outcome than
+     a larger download. */
+  const playsOpus = (() => {
+    try{ return !!new Audio().canPlayType('audio/webm; codecs="opus"'); }
+    catch(e){ return false; }
+  })();
+  const audioUrl = t => u((playsOpus && t.audio_opus_key) || t.audio_key);
   const missingKey = pg.data.find(p => !p.image_key);
   if(missingKey) throw new Error('ESK-5011 page ' + missingKey.idx + ' has no image key');
   /* display_key is a viewport-sized WebP of the same page, about a quarter of
@@ -741,7 +774,7 @@ async function comicFromApi(id, partIds){
     attachTo: t.attach_to || null,
     offset: (t.offset_ms || 0) / 1000,
     file: t.audio_key || null, entry: null, blob: null,
-    url: t.audio_key ? u(t.audio_key) : null, external: false
+    url: t.audio_key ? audioUrl(t) : null, external: false
   });
   const tracks = (tk.data || []).map(rowToTrack);
 
@@ -1296,6 +1329,10 @@ function corsAudio(){
   el.preload = 'auto';
   return el;
 }
+/* ...up to a point. preload="auto" on a twenty minute score pulls the whole
+   file before a note comes out, when <audio> would happily range-request its
+   way through it. anything past this asks for metadata and streams the rest. */
+const STREAM_OVER_BYTES = 4 * 1024 * 1024;
 const audio = {
   a: corsAudio(), b: corsAudio(), active: null, fadeReq: null,
   currentTrackId: null, queueFrom: null, muted: false, volume: 0.8, loadSeq: 0,
@@ -1761,6 +1798,8 @@ function warmAudio(track){
   if(!track || track.external || track.type === 'silence') return;
   const url = track.url;
   if(!url || audioWarm.has(url)) return;
+  // a long score is streamed rather than hoarded: warm its head, not all of it
+  if(track.bytes && track.bytes > STREAM_OVER_BYTES) return;
   const el = new Audio();
   el.preload = 'auto';
   el.muted = true;

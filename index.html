@@ -227,7 +227,10 @@ section + section{margin-top:var(--s6)}
 .tag.x{cursor:pointer}
 
 /* ---------- shelf progress ---------- */
-.progress{height:3px;background:var(--rule-hair);margin-top:var(--s2)}
+.resume{margin-top:var(--s2);font-size:var(--fs-micro);letter-spacing:.08em;
+  text-transform:uppercase;color:var(--accent);font-variant-numeric:tabular-nums}
+.resume.done{color:var(--label)}
+.progress{height:3px;background:var(--rule-hair);margin-top:var(--s1)}
 .progress i{display:block;height:100%;background:var(--mark)}
 
 /* RULE 2, spelled out on this page: sage is on the numbers and counts the eye
@@ -340,7 +343,8 @@ button.link:hover{color:var(--ink)}
   </section>
 
   <div class="foot"><span>est. 2026</span>
-    <span><a href="#">terms</a> · <a href="#">privacy</a> · <a href="#">takedown</a></span></div>
+    <span><a href="legal.html#terms">terms</a> · <a href="legal.html#privacy">privacy</a> ·
+      <a href="legal.html#takedown">takedown</a></span></div>
 </div></main>
 
 <!-- ================= BROWSE — eskis, roles, or eskis with no score ====== -->
@@ -539,6 +543,27 @@ const scoreOf = c => c.scores.length
   ? {t:`${c.scores.length} available`, cls:''}
   : {t:'empty', cls:'none'};
 
+/* THE SHELF KNOWS WHERE YOU STOPPED, so it should say so.
+   `saves` has carried last_page since the reader started writing it, and the
+   card has drawn a progress bar off it — but the thing you actually want, and
+   that every reading app on earth offers, is a way back to the page you were
+   on. The data was already here; only the sentence was missing. */
+function resumeNote(c){
+  if(c.progress == null || !c.pp) return null;
+  const page = Math.max(1, Math.round(c.progress * c.pp));
+  if(c.shelf === 'read' || page >= c.pp) return 'finished';
+  if(page <= 1) return null;
+  return 'continue · p.' + page;
+}
+function resumeHref(c){
+  const page = Math.max(1, Math.round((c.progress || 0) * (c.pp || 1)));
+  return readHref(c.file) + '#' + slugifyTitle(c.title) + '/page=' + page;
+}
+/* the reader's own slug rule, so a deep link built here lands rather than
+   being ignored as belonging to a different comic */
+const slugifyTitle = t => (t || '').toString().toLowerCase()
+  .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'untitled';
+
 function capRows(c){
   const v = voicesOf(c), s = scoreOf(c);
   const extent = c.pp
@@ -585,6 +610,13 @@ function cardEl(c, note, browse){
   });
   cell.appendChild(b);
   if(c.progress != null){
+    const note = resumeNote(c);
+    if(note){
+      const r = document.createElement('div');
+      r.className = 'resume' + (note === 'finished' ? ' done' : '');
+      r.textContent = note;
+      b.appendChild(r);
+    }
     const bar = document.createElement('div');
     bar.className = 'progress';
     bar.innerHTML = `<i style="width:${Math.round(c.progress*100)}%"></i>`;
@@ -1340,9 +1372,18 @@ function openDetails(c, role){
 
   const sync = ()=>{
     const on = [...sheet.querySelectorAll('input:checked')].map(i=>i.dataset.ref);
-    document.getElementById('ov-read').href = readHref(c.file)
+    const note = resumeNote(c);
+    const btn = document.getElementById('ov-read');
+    btn.href = readHref(c.file)
       + (on.length ? '&with=' + on.map(encodeURIComponent).join(',') : '')
-      + (next ? '&next=' + encodeURIComponent(next.file) + '&nextTitle=' + encodeURIComponent(next.title) : '');
+      + (next ? '&next=' + encodeURIComponent(next.file) + '&nextTitle=' + encodeURIComponent(next.title) : '')
+      // the hash has to come last: it is not a query parameter
+      + (note && note !== 'finished'
+          ? '#' + slugifyTitle(c.title) + '/page=' + Math.max(1, Math.round(c.progress * c.pp))
+          : '');
+    btn.textContent = (note && note !== 'finished')
+      ? 'continue · p.' + Math.max(1, Math.round(c.progress * c.pp))
+      : 'read it with this mix';
   };
   sheet.querySelectorAll('input[data-ref]').forEach(i=>{
     i.onchange = e=>{
