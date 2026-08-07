@@ -212,6 +212,8 @@ section + section{margin-top:var(--s6)}
 .openline{display:grid;grid-template-columns:14px 22px 1fr auto;gap:var(--s2);
   align-items:center;padding:4px var(--s1);border-bottom:1px solid var(--rule-hair);
   font-size:var(--fs-xs);color:var(--label)}
+/* the note a performer reads before taking the part */
+.rolenote{margin:2px 0 4px;font-size:var(--fs-xs);color:var(--soft-ink);line-height:1.45}
 
 .mixline{font-size:var(--fs-micro);color:var(--label);letter-spacing:.06em;
   padding:var(--s2) 0 0}
@@ -302,7 +304,7 @@ button.link:hover{color:var(--ink);box-shadow:inset 0 -1px 0 var(--ink)}
   <nav id="nav">
     <button data-pane="home" aria-current="page">home</button>
     <button data-pane="browse">browse</button>
-    <a href="studio.html">studio</a>
+    <a href="author.html">studio</a>
     <a href="profile.html">profile</a>
   </nav>
   <!-- the active nav word already says this. kept in the DOM because the
@@ -690,8 +692,8 @@ async function loadPlatform(){
   const [pg, tk, ku, pt, tg, sv, fw] = await Promise.all([
     sb.from('pages').select('comic_id').in('comic_id', ids),
     sb.from('tracks').select('comic_id,type,role,character_key').in('comic_id', ids),
-    sb.from('kudos').select('comic_id'),
-    sb.from('parts').select('comic_id,kind,character_key,owner_name,title')
+    sb.from('kudos').select('comic_id,user_id'),
+    sb.from('parts').select('id,comic_id,kind,character_key,owner_name,title,preview_key')
       .eq('status','published').in('comic_id', ids),
     sb.from('comic_tags').select('comic_id,tag,added_by').in('comic_id', ids),
     me ? sb.from('saves').select('*').eq('user_id', me.id) : Promise.resolve({data:[]}),
@@ -705,6 +707,7 @@ async function loadPlatform(){
   };
   const pages = count(pg, 'comic_id');
   const kudos = count(ku, 'comic_id');
+  const kudosMine = new Set(me ? (ku.data||[]).filter(k=>k.user_id === me.id).map(k=>k.comic_id) : []);
 
   // line counts per (comic, character): a dialogue slot is a oneshot track
   // with role 'line'. this is the only real source of "how big is this part".
@@ -738,7 +741,7 @@ async function loadPlatform(){
       const k = p.character_key || 'untitled';
       if(!voFor.has(k)) voFor.set(k, []);
       voFor.get(k).push({who: p.owner_name || 'someone', partId: p.id,
-        lines: lines.get(r.id+'::'+k) || 0});
+        preview: p.preview_key || null, lines: lines.get(r.id+'::'+k) || 0});
     }
     const castOut = [];
     for(const ch of cast){
@@ -747,16 +750,20 @@ async function loadPlatform(){
       if(voFor.has(key)) castOut.push({char: ch.name || key, key, vos: voFor.get(key)});
       else ROLES.push({id: r.id + '::' + key, name: ch.name || key, comic: r.id,
         kind: ch.kind === 'narrator' ? 'narration' : (ch.kind || 'supporting'),
-        lines: lines.get(r.id+'::'+key) || 0, blurb: ''});
+        lines: lines.get(r.id+'::'+key) || 0,
+        // the note a performer reads before they take the part. the author
+        // writes it in the studio's cast editor.
+        blurb: ch.blurb || ch.description || ''});
     }
     // a voice part naming a character the cast list does not have still counts
     for(const [k, vos] of voFor)
       if(!cast.some(ch=>(ch.key||ch.id||ch.name) === k)) castOut.push({char:k, key:k, vos});
 
     const scores = [
-      ...(hasMusic.has(r.id) ? [{title:'the author’s score', by:r.owner_name, partId:null}] : []),
+      ...(hasMusic.has(r.id) ? [{title:'the author’s score', by:r.owner_name, partId:null, preview:null}] : []),
       ...parts.filter(p=>p.kind === 'soundtrack')
-        .map(p=>({title: p.title || 'untitled', by: p.owner_name || 'someone', partId: p.id}))
+        .map(p=>({title: p.title || 'untitled', by: p.owner_name || 'someone',
+                  partId: p.id, preview: p.preview_key || null}))
     ];
     const save = savedBy.get(r.id);
     const pp = pages.get(r.id) || 0;
@@ -767,7 +774,7 @@ async function loadPlatform(){
       added: r.published_at || r.created_at || '',
       pp, ch: r.series_index || 1, chOf: r.series_title ? (seriesCount.get(r.series_title)||1) : 1,
       seriesTitle: r.series_title || null,
-      kudos: kudos.get(r.id) || 0,
+      kudos: kudos.get(r.id) || 0, kudosMine: kudosMine.has(r.id),
       tags: (tagsFor.get(r.id)||[]).map(t=>t.tag).sort(),
       tagRows: tagsFor.get(r.id) || [],
       castKnown: cast.length > 0 || castOut.length > 0,
@@ -940,7 +947,7 @@ async function boot(){
            <br><br><code class="why">${esc(platformWhy)}</code><br><br>
            anything you drop here still works offline.</div>`
       : `<div class="state">nothing published yet. build one in the
-           <a href="studio.html">studio</a>, then publish it or keep it as a draft
+           <a href="author.html">studio</a>, then publish it or keep it as a draft
            on your <a href="profile.html">profile</a>.</div>`;
     paintIcons();
     renderRoles(); renderBrowse();
@@ -1193,13 +1200,43 @@ function readHref(file){
     return 'read.html?read=' + encodeURIComponent(file);
   return 'read.html?read=' + file.split('/').map(encodeURIComponent).join('/');
 }
-function pickRow(ref, checked, label, sub){
+function pickRow(ref, checked, label, sub, previewKey){
   return `<label class="pick">
     <input type="checkbox" data-ref="${esc(ref)}"${checked?' checked':''}>
     <span class="dot"></span>
     <span class="pfp">${esc(initials(sub || label))}</span>
     <span class="who"><b>${esc(label)}</b>${sub ? ` <span>${esc(sub)}</span>` : ''}</span>
+    ${previewKey
+      ? `<button class="prev" data-preview="${esc(window.eski.mediaUrl(previewKey))}"
+           title="hear a few seconds">${PLAY}</button>`
+      : '<span class="prev ghost" title="no preview clip for this one">' + PLAY + '</span>'}
   </label>`;
+}
+
+/* one preview at a time, anywhere on the page. drawn rather than typed: the
+   pause character sits off centre in most faces. */
+const PLAY = '<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M3.5 2 10 6l-6.5 4z"/></svg>';
+const PAUSE = '<svg viewBox="0 0 12 12" aria-hidden="true">'
+  + '<rect x="3" y="2.5" width="2.4" height="7"/><rect x="6.6" y="2.5" width="2.4" height="7"/></svg>';
+let previewAudio = null, previewBtn = null;
+function stopPreview(){
+  if(previewAudio){ previewAudio.pause(); previewAudio = null; }
+  if(previewBtn){ previewBtn.classList.remove('playing'); previewBtn.innerHTML = PLAY; previewBtn = null; }
+}
+function playPreview(btn){
+  const url = btn.dataset.preview;
+  if(previewBtn === btn){ stopPreview(); return; }
+  stopPreview();
+  previewAudio = new Audio(url);
+  previewBtn = btn;
+  btn.innerHTML = PAUSE + '<i></i>';
+  previewAudio.addEventListener('loadedmetadata', ()=>{
+    if(previewBtn === btn) btn.style.setProperty('--prev-t', (previewAudio.duration || 9) + 's');
+    requestAnimationFrame(()=>{ if(previewBtn === btn) btn.classList.add('playing'); });
+  });
+  previewAudio.addEventListener('ended', stopPreview);
+  previewAudio.addEventListener('error', ()=>{ toast('that preview would not play'); stopPreview(); });
+  previewAudio.play().catch(()=>{ toast('that preview would not play'); stopPreview(); });
 }
 function siblings(c){
   if(!c.seriesTitle) return [];
@@ -1224,11 +1261,12 @@ function openDetails(c, role){
     <div class="charhead"><b>${esc(ch.char)}</b><span class="sp"></span>
       <span>${ch.vos.length} ${ch.vos.length === 1 ? 'voiceover' : 'voiceovers'}</span></div>
     ${ch.vos.map(vo=>pickRow('part:' + vo.partId, false, vo.who,
-        vo.lines ? vo.lines + ' lines' : null)).join('')}`).join('');
+        vo.lines ? vo.lines + ' lines' : null, vo.preview)).join('')}`).join('');
 
   const openHtml = open.map(r=>`
     <div class="charhead"><b>${esc(r.name)}</b><span class="sp"></span>
       <span>${esc(r.kind)}</span></div>
+    ${r.blurb ? `<p class="rolenote">${esc(r.blurb)}</p>` : ''}
     <div class="openline"><span></span><span class="pfp">—</span>
       <span>nobody has voiced this yet${r.lines ? ' · ' + nfmt(r.lines) + ' lines' : ''}</span>
       ${c.dbId ? `<a class="btn sm" href="studio.html?base=${esc(c.dbId)}&as=vo">voice this</a>`
@@ -1239,7 +1277,7 @@ function openDetails(c, role){
 
   const scoreHtml = c.scores.length
     ? c.scores.map(s=>s.partId
-        ? pickRow('part:' + s.partId, false, s.title, 'by ' + s.by)
+        ? pickRow('part:' + s.partId, false, s.title, 'by ' + s.by, s.preview)
         : `<div class="openline"><span></span><span class="pfp">${esc(initials(s.by||''))}</span>
              <span>${esc(s.title)} · plays by default</span><span></span></div>`).join('')
     : `<div class="openline"><span></span><span class="pfp">—</span>
@@ -1288,7 +1326,8 @@ function openDetails(c, role){
     <div class="acts">
       <a class="btn p" id="ov-read" href="#">read it with this mix</a>
       <button class="btn" id="ov-later" aria-pressed="${later}">${later ? 'on your shelf' : 'read later'}</button>
-      <button class="btn" id="ov-kudos"${c.dbId ? '' : ' hidden'}>kudos ${nfmt(c.kudos)}</button>
+      <button class="btn" id="ov-kudos" aria-pressed="${!!c.kudosMine}"${c.dbId ? '' : ' hidden'}>${
+        c.kudosMine ? 'kudos given · ' : 'kudos '}${nfmt(c.kudos)}</button>
       <a class="btn" id="ov-contrib" href="${c.dbId ? 'studio.html?base=' + esc(c.dbId) + '&as=vo' : '#'}"
          ${(!c.dbId || mine) ? 'hidden' : ''}>voice or score it</a>
     </div>`;
@@ -1325,11 +1364,14 @@ function openDetails(c, role){
 function close_(){
   ov.classList.remove('open');
   document.body.style.overflow = '';
+  stopPreview();               // a clip must not keep playing behind a shut sheet
   if(lastFocus) lastFocus.focus();
 }
 /* one delegated listener, attached once: openDetails rewrites the sheet on
    every open, and re-binding there would stack a handler per open. */
 sheet.addEventListener('click', e=>{
+  const prev = e.target.closest('[data-preview]');
+  if(prev){ e.preventDefault(); e.stopPropagation(); playPreview(prev); return; }
   const fold = e.target.closest('.fold');
   if(fold){ fold.setAttribute('aria-expanded', fold.getAttribute('aria-expanded') !== 'true'); return; }
   const tag = e.target.closest('[data-tag]');
@@ -1416,21 +1458,32 @@ async function toggleLater(c){
   toast(on ? 'added to your shelf' : 'removed from your shelf');
   renderHome();
 }
-/* kudos: one row per (comic, user), no removal — schema.sql enforces that by
-   having no delete policy, so the button is add-once and then a count. */
+/* kudos: one row per (comic, user), and removable — the delete policy exists
+   now, so this is a real toggle rather than a one-way count. */
 async function giveKudos(c, btn){
   if(!sb || !me){ btn.textContent = 'sign in to give kudos'; return; }
   btn.disabled = true;
-  const { error } = await sb.from('kudos').insert({ comic_id: c.dbId, user_id: me.id });
-  btn.disabled = false;
-  if(!error || error.code === '23505'){
-    if(!error) c.kudos += 1;
-    btn.setAttribute('aria-pressed','true');
-    btn.textContent = `kudos ${nfmt(c.kudos)}`;
-    renderHome(); renderBrowse();
+  let error;
+  if(c.kudosMine){
+    ({ error } = await sb.from('kudos').delete().eq('comic_id', c.dbId).eq('user_id', me.id));
+    if(!error){ c.kudosMine = false; c.kudos = Math.max(0, c.kudos - 1); }
   }else{
-    toast(window.eski.dbError('ESK-5034','kudos did not save',error));
+    ({ error } = await sb.from('kudos').insert({ comic_id: c.dbId, user_id: me.id }));
+    // 23505 means it was already there, which is the state we wanted anyway
+    if(!error || error.code === '23505'){
+      if(!error) c.kudos += 1;
+      c.kudosMine = true;
+      error = null;
+    }
   }
+  btn.disabled = false;
+  if(error){ toast(window.eski.dbError('ESK-5034','kudos did not save',error)); return; }
+  paintKudos(c, btn);
+  renderHome(); renderBrowse();
+}
+function paintKudos(c, btn){
+  btn.setAttribute('aria-pressed', c.kudosMine ? 'true' : 'false');
+  btn.textContent = (c.kudosMine ? 'kudos given · ' : 'kudos ') + nfmt(c.kudos);
 }
 
 /* "/" jumps to browse and its search, which is the only search now */

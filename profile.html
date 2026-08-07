@@ -172,7 +172,7 @@ section + section{margin-top:var(--s6)}
   <nav id="nav">
     <a href="index.html">home</a>
     <a href="index.html#browse">browse</a>
-    <a href="studio.html">studio</a>
+    <a href="author.html">studio</a>
     <a href="profile.html" aria-current="page">profile</a>
   </nav>
 </header>
@@ -454,7 +454,7 @@ function paint(){
 
     ${isMe ? `<section>
       <div class="head"><h2>drafts</h2><span class="n">${drafts.length}</span>
-        <span class="sp"></span><a href="studio.html">open the studio →</a></div>
+        <span class="sp"></span><a href="author.html">open the studio →</a></div>
       <div class="grid" id="g-drafts"></div>
       <div class="empty" id="e-drafts" hidden></div>
     </section>
@@ -463,16 +463,10 @@ function paint(){
       <div class="head"><h2>settings</h2></div>
       <div class="setrow"><span>dark mode</span><span class="sp"></span>
         <button class="btn sm" id="set-theme" aria-pressed="false">off</button></div>
-      <div class="setrow"><span>autoplay previews</span>
-        <small>no preview clips are generated yet</small><span class="sp"></span>
-        <button class="btn sm" disabled>—</button></div>
-      <div class="setrow"><span>email me when a role i watch is cast</span>
-        <small>no mailer is wired up</small><span class="sp"></span>
-        <button class="btn sm" disabled>—</button></div>
     </section>` : ''}
 
     <div class="foot"><span>EST. 2026</span>
-      <span><a href="index.html">HOME</a> · <a href="studio.html">STUDIO</a></span></div>`;
+      <span><a href="index.html">HOME</a> · <a href="author.html">STUDIO</a></span></div>`;
 
   const fillGrid = (id, list, mapper, emptyId, emptyMsg)=>{
     const box = $(id);

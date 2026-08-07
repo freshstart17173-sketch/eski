@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>eski — author studio</title>
+<meta name="description" content="write the cast and transcribe the pages.">
+<link rel="icon" type="image/png" href="eski_logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Jost:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="viewer.js"></script>
+<script type="module" src="platform.js"></script>
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="docs/design/final/broadsheet.css">
+<style>
+/* ============================================================
+   the author studio: write the cast, transcribe the pages.
+
+   one frame, the same one all three studios use —
+     the page in the middle, the panel on the right, the pages at the foot.
+   there is no bay, because transcription has no files to place.
+
+   the page itself is viewer.js, which is the reader's viewer: it zooms,
+   it pans, and it contains the page instead of cropping it.
+   ============================================================ */
+html,body{height:100%}
+body{margin:0;display:flex;flex-direction:column;overflow:hidden}
+.top{flex:none}
+.top .sp{flex:1}
+.top nav a,.top nav button{font:inherit;font-size:var(--fs-micro);letter-spacing:.14em;
+  text-transform:lowercase;cursor:pointer;line-height:1.2}
+.what{display:flex;align-items:baseline;gap:var(--s2);min-width:0;
+  font-size:var(--fs-micro);letter-spacing:.12em;text-transform:uppercase;color:var(--label)}
+.what .ttl{font-family:var(--font-display);font-size:15px;letter-spacing:0;
+  text-transform:none;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:var(--s1)}
+
+/* page · panel, with the strip underneath */
+.frame{flex:1;display:grid;grid-template-columns:minmax(0,1fr) 360px;min-height:0}
+.pane{display:flex;flex-direction:column;min-height:0;min-width:0}
+.pane.side{border-left:1px solid var(--rule);overflow:auto}
+.panehead{display:flex;align-items:center;gap:var(--s2);padding:var(--s2) var(--s3);
+  font-size:var(--fs-micro);letter-spacing:.14em;text-transform:uppercase;color:var(--label);
+  border-bottom:1px solid var(--rule);flex:none;position:sticky;top:0;background:var(--paper);z-index:2}
+.panehead .sp{flex:1}
+.sect{padding:var(--s3);border-bottom:1px solid var(--rule)}
+.sect h3{margin:0 0 var(--s2);font-size:var(--fs-micro);letter-spacing:.16em;
+  text-transform:uppercase;font-weight:400;color:var(--label)}
+
+/* ---------- the page strip. numbers you can read, not 4px dots. ----------
+   the mockup put up to six 4x4px dots under a 44px thumbnail to say what was
+   on the page. at that size they are a texture, not information. a count and
+   a word do the same job and can actually be read. */
+.strip{flex:none;display:flex;gap:var(--s2);align-items:flex-start;overflow-x:auto;
+  overflow-y:hidden;padding:var(--s2) var(--s3);border-top:1px solid var(--rule);
+  background:var(--paper);scrollbar-width:thin}
+.pg{flex:none;width:64px;padding:0;border:0;background:none;color:inherit;font:inherit;
+  cursor:pointer;display:flex;flex-direction:column;gap:3px}
+.pg .plate{aspect-ratio:2/3;overflow:hidden;display:grid;place-items:center;
+  border:1px solid var(--rule-hair);background:var(--paper-1)}
+[data-theme="dark"] .pg .plate{background:var(--surf-2)}
+.pg img{max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain;display:block}
+.pg[aria-current="true"] .plate{border-color:var(--mark);box-shadow:0 0 0 1px var(--mark)}
+.pg .cap{display:flex;align-items:baseline;justify-content:center;gap:4px;font-size:10px;
+  font-variant-numeric:tabular-nums;color:var(--label)}
+.pg[aria-current="true"] .cap{color:var(--ink)}
+.pg .cap b{font-weight:500}
+.pg .cap .n{color:var(--accent);font-weight:500}
+
+/* ---------- cast ---------- */
+.castrow{display:grid;grid-template-columns:1fr auto auto;gap:var(--s2);align-items:center;
+  padding:var(--s1) 0}
+.castrow input.nm{border:0;border-bottom:1px solid transparent;background:none;color:inherit;
+  font:inherit;font-size:var(--fs-xs);padding:2px 0;min-width:0}
+.castrow input.nm:hover{border-bottom-color:var(--rule-hair)}
+.castrow input.nm:focus{outline:none;border-bottom-color:var(--accent)}
+.castrow select{height:22px;font-size:10px;border:1px solid var(--rule-hair);background:var(--surface);
+  color:var(--ink)}
+.castrow .x{width:22px;height:22px;border:1px solid var(--rule-hair);background:none;
+  color:var(--label);cursor:pointer;line-height:1}
+.castrow .x:hover{border-color:var(--rec);color:var(--rec)}
+.castnote{width:100%;box-sizing:border-box;margin:0 0 var(--s3);padding:5px 7px;font:inherit;
+  font-size:11px;line-height:1.45;resize:vertical;color:var(--ink);background:var(--surface);
+  border:1px solid var(--rule-hair)}
+.castnote:focus{outline:none;border-color:var(--accent)}
+.castnote::placeholder{color:var(--muted)}
+
+/* ---------- the lines on this page ---------- */
+.line{display:grid;grid-template-columns:1fr auto;gap:var(--s2);align-items:start;
+  padding:var(--s2) 0;border-top:1px solid var(--rule-hair)}
+.line:first-child{border-top:0}
+.line select{height:22px;font-size:10px;border:1px solid var(--rule-hair);background:var(--surface);
+  color:var(--ink);max-width:100%}
+.line textarea{width:100%;box-sizing:border-box;margin-top:4px;padding:5px 7px;font:inherit;
+  font-size:var(--fs-xs);line-height:1.5;resize:vertical;min-height:46px;color:var(--ink);
+  background:var(--surface);border:1px solid var(--rule-hair)}
+.line textarea:focus{outline:none;border-color:var(--accent)}
+.line .tools{display:flex;flex-direction:column;gap:2px}
+.line .tools button{width:22px;height:20px;border:1px solid var(--rule-hair);background:none;
+  color:var(--label);cursor:pointer;font-size:10px;line-height:1;padding:0}
+.line .tools button:hover{border-color:var(--ink);color:var(--ink)}
+.line .tools .x:hover{border-color:var(--rec);color:var(--rec)}
+.line .voiced{font-size:9px;letter-spacing:.06em;text-transform:uppercase;color:var(--accent)}
+.line .locked{font-size:9px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+
+.empty{padding:var(--s5) var(--s3);text-align:center;color:var(--label);font-size:var(--fs-xs)}
+.state{padding:var(--s7) var(--s5);text-align:center;color:var(--label);font-size:var(--fs-xs)}
+.spinner{width:24px;height:24px;border:2px solid var(--rule-hair);border-top-color:var(--accent);
+  border-radius:50%;animation:spin .8s linear infinite;margin:0 auto var(--s3)}
+@keyframes spin{to{transform:rotate(360deg)}}
+.note-line{font-size:var(--fs-micro);color:var(--label);line-height:1.5}
+.warn{color:var(--rec)}
+
+/* the comic picker, when you arrive without one */
+.picker{max-width:900px;margin:0 auto;padding:var(--s6) var(--s4)}
+.picklist{border-top:1px solid var(--rule)}
+.pickrow{display:grid;grid-template-columns:44px 1fr auto;gap:var(--s3);align-items:center;
+  width:100%;text-align:left;background:none;border:0;border-bottom:1px solid var(--rule-hair);
+  padding:var(--s2);color:inherit;font:inherit;cursor:pointer}
+.pickrow:hover{background:var(--surface)}
+.pickrow .plate{width:44px;height:66px;overflow:hidden;border:1px solid var(--rule-hair);
+  background:var(--paper-1)}
+.pickrow img{width:100%;height:100%;object-fit:cover;display:block}
+.pickrow .ttl{font-family:var(--font-display);font-size:15px}
+.pickrow .sub{font-size:var(--fs-micro);color:var(--label);letter-spacing:.06em}
+
+@media(max-width:900px){
+  body{overflow:auto}
+  .frame{grid-template-columns:1fr;min-height:0}
+  .pane.centre{height:56vh}
+  .pane.side{border-left:0;border-top:1px solid var(--rule);overflow:visible}
+}
+</style>
+</head>
+<body>
+
+<header class="top site-header">
+  <a class="mark" href="index.html">eski<i>!</i></a>
+  <nav id="nav">
+    <a href="index.html">home</a>
+    <a href="index.html#browse">browse</a>
+    <a href="author.html" aria-current="page">studio</a>
+    <a href="profile.html">profile</a>
+  </nav>
+  <span class="what" id="what" hidden><span class="ttl" id="what-ttl"></span><span id="what-sub"></span></span>
+  <span class="sp"></span>
+  <span id="acts"></span>
+</header>
+
+<main id="main">
+  <div class="state"><div class="spinner"></div>loading&#8230;</div>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ================================================================
+   the author studio. two jobs: say who is in this comic, and write down
+   what they say on each page.
+
+   A DIALOGUE SLOT IS A TRACK. the database already models a line as a
+   oneshot track with a character and no audio; this page writes the words
+   into line_text and leaves everything else about the row alone. That is
+   what makes a slot fillable later: a voice actor's take points back at the
+   row id, so the id has to survive an edit. Nothing here ever deletes and
+   re-creates a line to save it.
+   ================================================================ */
+const $ = id => document.getElementById(id);
+const esc = s => (s ?? '').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
+/* a line's id is a real uuid from the moment it is added, because that id is
+   what a voice actor's take will point at. */
+const uid = () => (crypto.randomUUID ? crypto.randomUUID()
+  : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c=>{
+      const r = Math.random()*16|0;
+      return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+    }));
+
+try{
+  const s = JSON.parse(localStorage.getItem('eski-settings')) || {};
+  document.documentElement.dataset.theme = s.dark ? 'dark' : '';
+}catch(e){}
+
+let toastTimer;
+function toast(msg, bad){
+  const t = $('toast');
+  t.textContent = msg;
+  t.classList.add('on');
+  t.style.background = bad ? 'var(--rec)' : '';
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>t.classList.remove('on'), 2600);
+}
+
+async function platform(){
+  if(!window.eski && document.readyState === 'loading')
+    await new Promise(r => document.addEventListener('DOMContentLoaded', r, { once: true }));
+  return window.eski || null;
+}
+
+let sb = null, me = null, viewer = null;
+let comic = null, pages = [], cast = [], lines = [], otherTracks = [];
+let filledBy = new Set();          // line ids some published part already fills
+let page = 1, dirty = false, maxOrder = 0;
+
+const mediaUrl = k => k ? window.eski.mediaUrl(k) : '';
+const linesOn = n => lines.filter(l => l.from_page === n && !l.deleted);
+
+/* ---------------- boot ---------------- */
+async function boot(){
+  const eski = await platform();
+  sb = eski && await eski.ready;
+  if(!sb){
+    $('main').innerHTML = '<div class="state">could not reach the server.<br><br>' +
+      esc((eski && eski.bootError) || 'ESK-1005 platform.js did not load at all') + '</div>';
+    return;
+  }
+  me = (await sb.auth.getUser()).data.user || null;
+  if(!me){
+    $('main').innerHTML = '<div class="state">sign in to write a cast and transcribe your pages.</div>';
+    return;
+  }
+  const base = new URLSearchParams(location.search).get('base');
+  if(base) return openComic(base);
+  return pickComic();
+}
+
+/* no comic named: offer the ones you own. the composer is where a new one is
+   made, so that is a link rather than a second importer. */
+async function pickComic(){
+  const r = await sb.from('comics').select('id,title,status,cover_key,thumb_key,created_at')
+    .eq('owner_id', me.id).order('created_at', { ascending: false });
+  if(r.error){
+    $('main').innerHTML = '<div class="state">' +
+      esc(window.eski.dbError('ESK-5040', 'your comics could not be read', r.error)) + '</div>';
+    return;
+  }
+  const rows = r.data || [];
+  $('main').innerHTML = `<div class="picker">
+    <div class="head"><h2>author studio</h2><span class="n">${rows.length}</span>
+      <span class="sp"></span><a href="studio.html">make a new one →</a></div>
+    <p class="note-line" style="padding:var(--s3) 0">
+      pick a comic to write its cast and transcribe its pages. pages and audio
+      are imported in the <a href="studio.html">composer</a>.</p>
+    ${rows.length ? `<div class="picklist">${rows.map(c=>`
+      <button class="pickrow" data-id="${esc(c.id)}">
+        <span class="plate">${c.thumb_key || c.cover_key
+          ? `<img src="${esc(mediaUrl(c.thumb_key || c.cover_key))}" alt="">` : ''}</span>
+        <span><span class="ttl">${esc(c.title || 'untitled')}</span>
+          <span class="sub" style="display:block">${esc(c.status)}</span></span>
+        <span class="btn sm">open</span>
+      </button>`).join('')}</div>`
+      : '<div class="empty">you have not made a comic yet. the <a href="studio.html">composer</a> imports the pages.</div>'}
+  </div>`;
+  $('main').querySelectorAll('[data-id]').forEach(b=>b.addEventListener('click', ()=>{
+    location.search = '?base=' + encodeURIComponent(b.dataset.id);
+  }));
+}
+
+async function openComic(id){
+  const [c, pg, tk, pt] = await Promise.all([
+    sb.from('comics').select('*').eq('id', id).single(),
+    sb.from('pages').select('idx,image_key').eq('comic_id', id).order('idx'),
+    sb.from('tracks').select('*').eq('comic_id', id).is('part_id', null).order('order_idx'),
+    sb.from('tracks').select('fills').eq('comic_id', id).not('part_id','is',null)
+  ]);
+  const dbe = window.eski.dbError;
+  if(c.error || !c.data){
+    $('main').innerHTML = '<div class="state">' +
+      esc(dbe('ESK-5041', 'that comic could not be opened', c.error || {})) + '</div>';
+    return;
+  }
+  if(c.data.owner_id !== me.id){
+    $('main').innerHTML = `<div class="state">this is not your comic, so its cast and
+      transcript are not yours to write.<br><br>
+      <a class="btn" href="index.html#browse">find something to voice instead</a></div>`;
+    return;
+  }
+  if(pg.error){
+    $('main').innerHTML = '<div class="state">' +
+      esc(dbe('ESK-5042', 'the pages could not be read', pg.error)) + '</div>';
+    return;
+  }
+  comic = c.data;
+  pages = pg.data || [];
+  const all = tk.error ? [] : (tk.data || []);
+  lines = all.filter(t => t.type === 'oneshot' && (t.role || 'line') === 'line')
+    .map(t => ({ id: t.id, from_page: t.from_page, character_key: t.character_key,
+                 line_text: t.line_text || '', order_idx: t.order_idx,
+                 hasAudio: !!t.audio_key, deleted: false, isNew: false }));
+  otherTracks = all.filter(t => !(t.type === 'oneshot' && (t.role || 'line') === 'line'));
+  maxOrder = all.reduce((m, t) => Math.max(m, t.order_idx || 0), 0);
+  filledBy = new Set((pt.error ? [] : (pt.data || [])).map(r => r.fills).filter(Boolean));
+  cast = (Array.isArray(comic.cast_list) ? comic.cast_list : []).map(x => ({
+    key: x.key || slug(x.name || ''), name: x.name || x.key || 'unnamed',
+    kind: x.kind === 'narrator' ? 'narrator' : 'character', blurb: x.blurb || ''
+  }));
+  page = 1;
+  paintShell();
+}
+
+const slug = s => (s||'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'') || 'unnamed';
+function freeKey(name){
+  let k = slug(name), n = 2;
+  while(cast.some(c => c.key === k)) k = slug(name) + '-' + (n++);
+  return k;
+}
+
+/* ---------------- the frame ---------------- */
+function paintShell(){
+  $('what').hidden = false;
+  $('what-ttl').textContent = comic.title || 'untitled';
+  $('what-sub').textContent = comic.status;
+  $('acts').innerHTML =
+    `<button class="btn p" id="save">save</button>
+     <a class="btn" href="studio.html?base=${esc(comic.id)}" title="pages, audio and publishing">composer</a>`;
+  $('save').addEventListener('click', save);
+
+  $('main').outerHTML =
+    `<main id="main" style="flex:1;display:flex;flex-direction:column;min-height:0">
+       <div class="frame">
+         <div class="pane centre" id="viewer"></div>
+         <div class="pane side">
+           <div class="panehead"><span>page <b id="ph-n">1</b> of ${pages.length}</span>
+             <span class="sp"></span><span id="ph-lines"></span></div>
+           <div class="sect">
+             <h3>cast</h3>
+             <div id="cast"></div>
+             <div style="display:flex;gap:var(--s1);margin-top:var(--s2)">
+               <input id="cast-name" placeholder="add a character" maxlength="60"
+                 style="flex:1;min-width:0;height:24px;font-size:var(--fs-xs);
+                        border:1px solid var(--rule-hair);background:var(--surface);
+                        color:var(--ink);padding:0 var(--s2)">
+               <button class="btn sm" id="cast-add">add</button>
+             </div>
+           </div>
+           <div class="sect" style="border-bottom:0">
+             <h3>what is said on this page</h3>
+             <div id="lines"></div>
+             <button class="btn sm" id="line-add" style="margin-top:var(--s2)">+ a line</button>
+             <p class="note-line" style="margin-top:var(--s3)">
+               a line with no recording is an open slot: it shows up as a part a
+               voice actor can take.</p>
+           </div>
+         </div>
+       </div>
+       <div class="strip" id="strip"></div>
+     </main>`;
+
+  viewer = mountViewer($('viewer'), { empty: 'this comic has no pages yet' });
+  $('cast-add').addEventListener('click', addCast);
+  $('cast-name').addEventListener('keydown', e=>{ if(e.key === 'Enter'){ e.preventDefault(); addCast(); } });
+  $('line-add').addEventListener('click', addLine);
+  renderAll();
+  addEventListener('keydown', e=>{
+    if(/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName)) return;
+    if(e.key === 'ArrowRight') goto(page + 1);
+    if(e.key === 'ArrowLeft') goto(page - 1);
+  });
+  addEventListener('beforeunload', e=>{ if(dirty){ e.preventDefault(); e.returnValue = ''; } });
+}
+
+function goto(n){
+  page = Math.max(1, Math.min(pages.length || 1, n));
+  renderAll();
+  const el = document.querySelector('.pg[aria-current="true"]');
+  if(el) el.scrollIntoView({ inline:'center', block:'nearest', behavior:'smooth' });
+}
+
+function renderAll(){ renderViewer(); renderStrip(); renderCast(); renderLines(); }
+
+function renderViewer(){
+  const p = pages[page - 1];
+  viewer.show(p ? mediaUrl(p.image_key) : '');
+  const n = $('ph-n'); if(n) n.textContent = page;
+  const l = $('ph-lines');
+  if(l){
+    const k = linesOn(page).length;
+    l.textContent = k ? k + (k === 1 ? ' line' : ' lines') : 'no lines';
+  }
+}
+
+/* the strip: a thumbnail, its number, and how many lines are on it. */
+function renderStrip(){
+  $('strip').innerHTML = pages.map(p=>{
+    const k = linesOn(p.idx).length;
+    return `<button class="pg" data-p="${p.idx}" aria-current="${p.idx === page}">
+      <span class="plate"><img src="${esc(mediaUrl(p.image_key))}" alt="" loading="lazy"></span>
+      <span class="cap"><b>${p.idx}</b>${k ? `<span class="n">${k}</span>` : ''}</span>
+    </button>`;
+  }).join('');
+  $('strip').querySelectorAll('[data-p]').forEach(b=>
+    b.addEventListener('click', ()=>goto(+b.dataset.p)));
+}
+
+function renderCast(){
+  const box = $('cast');
+  if(!cast.length){ box.innerHTML = '<div class="note-line">no cast yet. add the characters who speak.</div>'; return; }
+  box.innerHTML = cast.map((c,i)=>`
+    <div class="castrow">
+      <input class="nm" value="${esc(c.name)}" data-i="${i}" data-f="name" maxlength="60">
+      <select data-i="${i}" data-f="kind">
+        <option value="character"${c.kind==='character'?' selected':''}>character</option>
+        <option value="narrator"${c.kind==='narrator'?' selected':''}>narrator</option>
+      </select>
+      <button class="x" data-rm="${i}" title="remove from the cast">×</button>
+    </div>
+    <textarea class="castnote" data-i="${i}" data-f="blurb" rows="2" maxlength="400"
+      placeholder="how does ${esc(c.name)} sound? this is what a voice actor reads before taking the part."
+      >${esc(c.blurb)}</textarea>`).join('');
+  box.querySelectorAll('[data-f]').forEach(el=>{
+    el.addEventListener('input', ()=>{
+      const c = cast[+el.dataset.i];
+      if(el.dataset.f === 'name'){
+        const old = c.key;
+        c.name = el.value;
+        // the key is the identity a recorded take points at, so renaming a
+        // character must not orphan the lines already assigned to it
+        if(!lines.some(l=>l.character_key === old) && !filledByKey(old)) c.key = freeKey(el.value);
+      }
+      else if(el.dataset.f === 'kind') c.kind = el.value;
+      else c.blurb = el.value;
+      dirty = true;
+      if(el.dataset.f !== 'blurb') renderLines();
+    });
+  });
+  box.querySelectorAll('[data-rm]').forEach(b=>b.addEventListener('click', ()=>{
+    const c = cast[+b.dataset.rm];
+    const used = lines.filter(l=>l.character_key === c.key && !l.deleted).length;
+    if(used && !confirm(`${c.name} is on ${used} line${used===1?'':'s'}. remove anyway? those lines go back to unassigned.`)) return;
+    lines.forEach(l=>{ if(l.character_key === c.key) l.character_key = null; });
+    cast.splice(+b.dataset.rm, 1);
+    dirty = true;
+    renderCast(); renderLines();
+  }));
+}
+const filledByKey = key => lines.some(l=>l.character_key === key && filledBy.has(l.id));
+
+function addCast(){
+  const inp = $('cast-name');
+  const name = inp.value.trim();
+  if(!name) return;
+  cast.push({ key: freeKey(name), name, kind: 'character', blurb: '' });
+  inp.value = '';
+  dirty = true;
+  renderCast(); renderLines();
+}
+
+function renderLines(){
+  const box = $('lines');
+  const mine = linesOn(page);
+  if(!mine.length){
+    box.innerHTML = '<div class="note-line">nothing said on this page yet.</div>';
+    renderStrip();
+    return;
+  }
+  box.innerHTML = mine.map(l=>{
+    const locked = filledBy.has(l.id);
+    return `<div class="line" data-id="${esc(l.id)}">
+      <div>
+        <select data-f="character"${locked?' disabled':''}>
+          <option value=""${l.character_key?'':' selected'}>— who says it —</option>
+          ${cast.map(c=>`<option value="${esc(c.key)}"${c.key===l.character_key?' selected':''}>${esc(c.name)}</option>`).join('')}
+        </select>
+        ${l.hasAudio ? '<span class="voiced"> · recorded</span>' : ''}
+        ${locked ? '<span class="locked"> · a published voice fills this</span>' : ''}
+        <textarea data-f="text" rows="2" placeholder="what is said">${esc(l.line_text)}</textarea>
+      </div>
+      <div class="tools">
+        <button data-mv="-1" title="move up">↑</button>
+        <button data-mv="1" title="move down">↓</button>
+        <button class="x" data-del="1" title="remove this line">×</button>
+      </div>
+    </div>`;
+  }).join('');
+
+  box.querySelectorAll('.line').forEach(row=>{
+    const l = lines.find(x=>x.id === row.dataset.id);
+    row.querySelector('[data-f="character"]').addEventListener('change', e=>{
+      l.character_key = e.target.value || null; dirty = true;
+    });
+    row.querySelector('[data-f="text"]').addEventListener('input', e=>{
+      l.line_text = e.target.value; dirty = true;
+    });
+    row.querySelectorAll('[data-mv]').forEach(b=>b.addEventListener('click', ()=>move(l, +b.dataset.mv)));
+    row.querySelector('[data-del]').addEventListener('click', ()=>del(l));
+  });
+  renderStrip();
+}
+
+function addLine(){
+  if(!pages.length) return toast('this comic has no pages yet', true);
+  maxOrder += 1;
+  lines.push({ id: uid(), from_page: page, character_key: cast[0] ? cast[0].key : null,
+               line_text: '', order_idx: maxOrder, hasAudio: false, deleted: false, isNew: true });
+  dirty = true;
+  renderLines();
+}
+/* order_idx is the queue order among the one-shots on a page, so moving a
+   line swaps that number with its neighbour rather than renumbering the lot. */
+function move(l, dir){
+  const mine = linesOn(page);
+  const i = mine.indexOf(l), j = i + dir;
+  if(i < 0 || j < 0 || j >= mine.length) return;
+  const other = mine[j];
+  [l.order_idx, other.order_idx] = [other.order_idx, l.order_idx];
+  lines.sort((a,b)=>a.order_idx - b.order_idx);
+  dirty = true;
+  renderLines();
+}
+function del(l){
+  if(filledBy.has(l.id))
+    return toast('a published voice fills this line. it cannot be removed without breaking that part.', true);
+  if(l.hasAudio && !confirm('this line has a recording on it. remove anyway?')) return;
+  if(l.isNew) lines = lines.filter(x=>x !== l);
+  else l.deleted = true;
+  dirty = true;
+  renderLines();
+}
+
+/* ---------------- save ----------------
+   an existing line is UPDATED in place, never replaced: a voice actor's take
+   points at its row id, so a delete-and-reinsert would silently unhook every
+   part built against this transcript. */
+async function save(){
+  const btn = $('save');
+  btn.disabled = true;
+  const say = t => { btn.textContent = t; };
+  say('saving');
+  try{
+    const castOut = cast.length ? cast.map(c=>({
+      key: c.key, name: (c.name || '').trim() || 'unnamed', kind: c.kind,
+      blurb: (c.blurb || '').trim() || null
+    })) : null;
+    const cu = await sb.from('comics').update({ cast_list: castOut }).eq('id', comic.id);
+    if(cu.error) throw new Error(window.eski.dbError('ESK-5043', 'the cast did not save', cu.error));
+
+    const gone = lines.filter(l=>l.deleted && !l.isNew).map(l=>l.id);
+    if(gone.length){
+      const d = await sb.from('tracks').delete().in('id', gone);
+      if(d.error) throw new Error(window.eski.dbError('ESK-5044', 'a removed line did not go', d.error));
+    }
+    const fresh = lines.filter(l=>l.isNew && !l.deleted);
+    if(fresh.length){
+      // the id is minted here rather than read back, so a line keeps one
+      // identity from the moment it appears and a second save updates it
+      const ins = await sb.from('tracks').insert(fresh.map(l=>({
+        id: l.id, comic_id: comic.id, order_idx: l.order_idx, type: 'oneshot', role: 'line',
+        audio_key: null, from_page: l.from_page,
+        character_key: l.character_key || null,
+        line_text: (l.line_text || '').trim() || null
+      })));
+      if(ins.error) throw new Error(window.eski.dbError('ESK-5045', 'the new lines did not save', ins.error));
+      fresh.forEach(l=>{ l.isNew = false; });
+    }
+    const existing = lines.filter(l=>!l.isNew && !l.deleted);
+    for(const l of existing){
+      const u = await sb.from('tracks').update({
+        from_page: l.from_page, order_idx: l.order_idx,
+        character_key: l.character_key || null,
+        line_text: (l.line_text || '').trim() || null
+      }).eq('id', l.id);
+      if(u.error) throw new Error(window.eski.dbError('ESK-5046', 'a line did not save', u.error));
+    }
+    lines = lines.filter(l=>!l.deleted);
+    dirty = false;
+    toast('saved');
+  }catch(e){
+    toast((e && e.message) || String(e), true);
+  }finally{
+    btn.disabled = false;
+    say('save');
+  }
+}
+
+boot();
+</script>
+</body>
+</html>

@@ -76,8 +76,7 @@ create table if not exists tracks (
 );
 
 -- ----------------------------------------------------------------- kudos
--- AO3 model: one per account, no removal. the missing delete policy IS the
--- "no removal" rule, enforced by the database rather than by the ui.
+-- one per account. removable: see kudos_remove below.
 create table if not exists kudos (
   comic_id   uuid not null references comics(id) on delete cascade,
   user_id    uuid not null references auth.users(id) on delete cascade,
@@ -158,12 +157,17 @@ create policy tracks_write on tracks for all
   using      (exists (select 1 from comics c where c.id = tracks.comic_id and c.owner_id = auth.uid()))
   with check (exists (select 1 from comics c where c.id = tracks.comic_id and c.owner_id = auth.uid()));
 
--- kudos: counts are public, you may only add your own, nobody may remove one
+-- kudos: counts are public, you may only add your own, and you may take your
+-- own back. the ao3 "no removal" rule was reversed by owner decision, so the
+-- delete policy that used to be deliberately absent now exists.
 drop policy if exists kudos_read on kudos;
 create policy kudos_read on kudos for select using (true);
 
 drop policy if exists kudos_add on kudos;
 create policy kudos_add on kudos for insert with check (user_id = auth.uid());
+
+drop policy if exists kudos_remove on kudos;
+create policy kudos_remove on kudos for delete using (user_id = auth.uid());
 
 -- views: anyone may log one (signed out readers count), only the author reads them
 drop policy if exists views_log on views;

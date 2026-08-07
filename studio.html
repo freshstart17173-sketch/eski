@@ -250,6 +250,13 @@ h4{margin:0 0 8px;font-size:11px;letter-spacing:.13em;color:var(--muted);font-we
 .castrow .cov{color:var(--muted);font-size:11px;flex:none}
 .castrow button{border:0;background:transparent;color:var(--muted);cursor:pointer;padding:2px}
 .castrow button:hover{color:#c1362b}
+/* the note a performer reads before taking the part. it sits under its own
+   cast row and travels to comics.cast_list. */
+.castnote{width:100%;box-sizing:border-box;margin:0 0 10px;padding:5px 7px;font:inherit;
+  font-size:11px;line-height:1.45;resize:vertical;color:var(--ink);
+  background:var(--bg-1);border:var(--bw) solid var(--line);border-radius:var(--r)}
+.castnote:focus{outline:none;border-color:var(--accent)}
+.castnote:disabled{opacity:.5}
 .castadd{display:flex;gap:6px;margin-top:8px}
 .castadd input{flex:1;min-width:0}
 .modebar{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted)}
@@ -996,7 +1003,8 @@ async function openEski(file){
       cState.meta.direction = cState.meta.direction==='rtl' ? 'rtl' : 'ltr';
       cState.player = Object.assign(cState.player, manifest.player||{});
       cState.cast = (manifest.meta?.cast || []).map(c=>({
-        cid: uid('c'), key: c.key, name: c.name || c.key, kind: c.kind==='narrator'?'narrator':'character'
+        cid: uid('c'), key: c.key, name: c.name || c.key,
+        kind: c.kind==='narrator'?'narrator':'character', blurb: c.blurb || null
       }));
       delete cState.meta.cast;
       let dropped = 0;
@@ -1086,7 +1094,8 @@ function castKeyFrom(name){
 }
 function addCast(name, kind){
   snap();
-  const c = {cid:uid('c'), key:castKeyFrom(name), name:(name||'').trim()||'unnamed', kind:kind||'character'};
+  const c = {cid:uid('c'), key:castKeyFrom(name), name:(name||'').trim()||'unnamed',
+             kind:kind||'character', blurb:null};
   cState.cast.push(c);
   render();
   return c;
@@ -1338,7 +1347,7 @@ async function loadBase(id, as){
     // the author's cast, so a voice actor sees names rather than bare keys
     cState.cast = (c.data.cast_list || []).map(x => ({
       cid: uid('c'), key: x.key, name: x.name || x.key,
-      kind: x.kind === 'narrator' ? 'narrator' : 'character'
+      kind: x.kind === 'narrator' ? 'narrator' : 'character', blurb: x.blurb || null
     }));
 
     // one list, so the bar measures pages and audio on the same scale
@@ -1465,6 +1474,19 @@ function renderCast(){
       <button data-ico="x" title="remove from cast"></button>`;
     row.querySelector('button').addEventListener('click', ()=>removeCast(c.cid));
     box.appendChild(row);
+    /* the note a performer reads before they take the part. it is the only
+       thing on "roles that need a voice" that says how to play the character,
+       so it travels with the cast entry into comics.cast_list. */
+    const note = document.createElement('textarea');
+    note.className = 'castnote';
+    note.rows = 2;
+    note.maxLength = 400;
+    note.placeholder = 'how does ' + c.name + ' sound? (shown to voice actors)';
+    note.value = c.blurb || '';
+    note.disabled = !canCast();
+    note.addEventListener('input', ()=>{ c.blurb = note.value.trim() || null; });
+    note.addEventListener('change', snap);
+    box.appendChild(note);
   });
   $('cast-row').style.display = canCast() ? '' : 'none';
   paintIcons(box);
@@ -2492,7 +2514,8 @@ async function exportEski(asBlob){
         series: cState.meta.series || undefined,
         // the cast is the one thing only the author can supply
         cast: cState.cast.length
-          ? cState.cast.map(c=>({key:c.key, name:c.name, kind:c.kind||'character'}))
+          ? cState.cast.map(c=>({key:c.key, name:c.name, kind:c.kind||'character',
+                                 blurb: c.blurb || undefined}))
           : undefined },
       player:{...cState.player},
       tracks: ordered.map(t=>{
@@ -2620,6 +2643,97 @@ async function makeCoverThumb(blob, width = 420){
    what they upload, never in how. content addressing means an object already in
    the bucket is still re-PUT, but a repeated publish of unchanged bytes lands on
    the same key and costs nothing downstream. */
+/* ============================================================
+   preview clips. a reader picking between five voices for one character
+   should not download five whole performances to decide. this builds a
+   short audition out of the part itself: three takes chosen at random,
+   the first three seconds of each, butted together with a short fade so
+   the joins do not click.
+
+   a soundtrack has no "lines", so it is sampled at three points across
+   the one track instead of three different ones.
+
+   ponytail: encoded as 22kHz mono wav, which is ~400KB for nine seconds
+   and needs no encoder at all. opus via WebCodecs would be a tenth of
+   that; worth doing when the bucket is big enough to notice.
+   ============================================================ */
+const PREVIEW_SEG = 3, PREVIEW_SEGS = 3, PREVIEW_SR = 22050;
+
+function wavBlob(samples, sampleRate){
+  const buf = new ArrayBuffer(44 + samples.length * 2);
+  const v = new DataView(buf);
+  const str = (at, s) => { for(let i = 0; i < s.length; i++) v.setUint8(at + i, s.charCodeAt(i)); };
+  str(0, 'RIFF'); v.setUint32(4, 36 + samples.length * 2, true); str(8, 'WAVE');
+  str(12, 'fmt '); v.setUint32(16, 16, true); v.setUint16(20, 1, true);
+  v.setUint16(22, 1, true); v.setUint32(24, sampleRate, true);
+  v.setUint32(28, sampleRate * 2, true); v.setUint16(32, 2, true); v.setUint16(34, 16, true);
+  str(36, 'data'); v.setUint32(40, samples.length * 2, true);
+  for(let i = 0; i < samples.length; i++){
+    const s = Math.max(-1, Math.min(1, samples[i]));
+    v.setInt16(44 + i * 2, s < 0 ? s * 0x8000 : s * 0x7fff, true);
+  }
+  return new Blob([buf], { type: 'audio/wav' });
+}
+
+async function makePreview(tracks, kind){
+  const AC = window.AudioContext || window.webkitAudioContext;
+  const OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+  if(!AC || !OAC) return null;
+  const withAudio = tracks.filter(t => t.aud && audioStore[t.aud] && audioStore[t.aud].blob);
+  if(!withAudio.length) return null;
+
+  const ac = new AC();
+  try{
+    const decode = async t => {
+      try{ return await ac.decodeAudioData(await audioStore[t.aud].blob.arrayBuffer()); }
+      catch(e){ return null; }
+    };
+    let segs = [];
+    if(kind === 'vo' && withAudio.length > 1){
+      // three different lines, chosen at random, from the top of each
+      const pick = [...withAudio].sort(() => Math.random() - 0.5).slice(0, PREVIEW_SEGS);
+      for(const t of pick){
+        const buf = await decode(t);
+        if(buf) segs.push({ buf, offset: Math.min(t.start || 0, Math.max(0, buf.duration - PREVIEW_SEG)) });
+      }
+    }else{
+      // one piece of audio: three points across it rather than three copies
+      // of the same opening
+      const buf = await decode(withAudio[0]);
+      if(buf) for(const frac of [0.15, 0.45, 0.72]){
+        const off = Math.max(0, Math.min(buf.duration * frac, buf.duration - PREVIEW_SEG));
+        if(buf.duration > 0.5) segs.push({ buf, offset: off });
+      }
+    }
+    segs = segs.filter(Boolean);
+    if(!segs.length) return null;
+
+    const total = PREVIEW_SEG * segs.length;
+    const off = new OAC(1, Math.ceil(PREVIEW_SR * total), PREVIEW_SR);
+    let at = 0;
+    for(const seg of segs){
+      const src = off.createBufferSource();
+      src.buffer = seg.buf;
+      const g = off.createGain();
+      g.gain.setValueAtTime(0, at);
+      g.gain.linearRampToValueAtTime(1, at + 0.06);
+      g.gain.setValueAtTime(1, at + PREVIEW_SEG - 0.12);
+      g.gain.linearRampToValueAtTime(0, at + PREVIEW_SEG);
+      src.connect(g).connect(off.destination);
+      // a take shorter than the segment simply ends early; the gain ramp
+      // still owns the slot, so the next one starts on the beat
+      src.start(at, seg.offset, Math.min(PREVIEW_SEG, Math.max(0.1, seg.buf.duration - seg.offset)));
+      at += PREVIEW_SEG;
+    }
+    const rendered = await off.startRendering();
+    return wavBlob(rendered.getChannelData(0), PREVIEW_SR);
+  }catch(e){
+    return null;         // a missing preview must never fail a publish
+  }finally{
+    try{ ac.close(); }catch(e){}
+  }
+}
+
 async function uploadObjects(sb, items, say){
   say('preparing');
   const totalBytes = items.reduce((n, p) => n + p.blob.size, 0) || 1;
@@ -2795,6 +2909,13 @@ async function publishPart(finalStatus){
       const a = audioStore[aud];
       if(a) objs.push(forAud[aud] = { blob: a.blob, ext: extOf(a.fileName || '', 'mp3') });
     }
+    // the audition clip rides along with the part's own audio, so it costs
+    // one extra object and no extra round trip
+    say('making a preview clip');
+    const preview = await makePreview(tracks, kind);
+    const previewObj = preview ? { blob: preview, ext: 'wav' } : null;
+    if(previewObj) objs.push(previewObj);      // uploadObjects fills in .key
+
     if(objs.length) await uploadObjects(sb, objs, say);
 
     say('writing the ' + noun);
@@ -2808,6 +2929,7 @@ async function publishPart(finalStatus){
       kind,
       title: (cState.meta.partTitle || '').trim() || null,
       character_key: characterKey,
+      preview_key: (previewObj && previewObj.key) || null,
       status: 'draft'
     }).select('id').single();
     /* the consent policy lives in the database, so a closed axis surfaces here
@@ -2938,7 +3060,8 @@ async function saveComic(finalStatus){
       // the cast is the author's alone, and a voice actor needs it to know who
       // speaks which slot. one list in, one list out.
       cast_list: cState.cast.length
-        ? cState.cast.map(c => ({ key: c.key, name: c.name, kind: c.kind || 'character' }))
+        ? cState.cast.map(c => ({ key: c.key, name: c.name, kind: c.kind || 'character',
+                                  blurb: c.blurb || null }))
         : null,
       status: 'draft'
     };
@@ -2992,8 +3115,11 @@ async function saveComic(finalStatus){
     progress(1);
     loadingDone(draft ? 'saved' : 'published');
     toast(draft ? 'saved as a draft on your profile' : 'published as ' + row.slug);
-    // phase 1 has no cast or slots table, so that work stays in the file
-    if(cState.cast.length) toast('cast and slots stay local for now', 'error');
+    // the cast IS saved: comics.cast_list carries it, which is what puts the
+    // uncast characters on "roles that need a voice". this used to say the
+    // opposite, from before that column existed.
+    if(cState.cast.length)
+      toast(cState.cast.length + ' characters saved. uncast ones show up as roles to fill.');
   }catch(err){
     toast(verb + ' failed: ' + err.message, 'error');
   }finally{

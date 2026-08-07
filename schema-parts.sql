@@ -151,3 +151,19 @@ order by table_name, column_name;
 --   alter table parts add column plays int          -- popularity, D5
 --   alter table reports drop constraint reports_target_type_check,
 --     add check (target_type in ('comic','vo','soundtrack'))
+
+-- ============================================================ added later
+-- a short audition clip for a part: three takes at random, the first three
+-- seconds of each, generated in the browser at publish time and uploaded to
+-- R2 like any other object. STORES A KEY, never a url.
+alter table parts add column if not exists preview_key text;
+
+-- the transcribed line. a dialogue slot is already a oneshot track with a
+-- character and no audio; this is what that character actually says, which
+-- is what an author writes and a voice actor reads.
+alter table tracks add column if not exists line_text text;
+
+-- NOTE: character notes ("how does this one sound") live in comics.cast_list,
+-- which is jsonb, so each entry simply grew a `blurb`. No migration needed.
+
+notify pgrst, 'reload schema';
