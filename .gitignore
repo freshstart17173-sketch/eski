@@ -15,3 +15,4 @@ demo.eski
 # media stays out of git: host it on R2 and point library/index.json at it
 *.eski
 !tests/**/*.eski
+tests/shots/
