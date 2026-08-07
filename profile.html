@@ -25,19 +25,12 @@
 body{margin:0;min-height:100vh;display:flex;flex-direction:column}
 :root{ --row:19px; }
 .top{position:sticky;top:0;z-index:30}
-.top nav a,.top nav button{font:inherit;font-size:var(--fs-micro);letter-spacing:.14em;
-  text-transform:lowercase;cursor:pointer;line-height:1.2}
+/* broadsheet styles the nav itself */
 .top .sp{flex:1}
 .ico{width:13px;height:13px;flex:none;stroke:currentColor;fill:none;stroke-width:2;
   stroke-linecap:round;stroke-linejoin:round;display:block}
-.auth{margin-left:var(--s4)}
-.auth-btn{font-size:var(--fs-micro)!important;letter-spacing:.1em!important;
-  text-transform:lowercase!important;border-color:var(--rule-hair)!important}
 .wrap{max-width:1280px;margin:0 auto;padding:0 var(--s4) var(--s7);flex:1;width:100%}
 section + section{margin-top:var(--s6)}
-/* broadsheet's .btn is not a flex container, so an inlined icon svg breaks
-   the line inside the button. every button here that carries one needs it. */
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:var(--s1)}
 .btn.primary{background:var(--mark);border-color:var(--mark);color:var(--paper)}
 .btn.primary:hover{background:var(--accent);border-color:var(--accent)}
 [data-theme="dark"] .btn.primary{color:var(--sage-900)}
@@ -100,7 +93,6 @@ section + section{margin-top:var(--s6)}
 .card:hover .plate img{transform:scale(1.025)}
 .title{font-family:var(--font-display);font-weight:400;font-size:17px;line-height:24px;
   height:24px;text-align:center;margin-top:var(--s3)}
-.card:hover .title{box-shadow:inset 0 -1px 0 var(--rule)}
 .note{height:var(--row);line-height:var(--row);font-size:var(--fs-micro);
   color:var(--label);text-align:center;letter-spacing:.04em}
 .cap{margin-top:auto;font-size:var(--fs-xs);color:var(--soft-ink)}
@@ -132,7 +124,7 @@ section + section{margin-top:var(--s6)}
 .rolename{font-family:var(--font-display);font-size:15px;line-height:20px}
 .rolein{font-size:var(--fs-micro);color:var(--label);line-height:var(--row)}
 .rolerow .where{font-size:var(--fs-micro);color:var(--label);min-width:0}
-.rolerow .where .ttl{color:var(--soft-ink)}
+.rolerow .where .ttl{color:var(--ink);font-weight:500}
 .rolerow .go{display:flex;justify-content:flex-end;gap:var(--s1);flex-wrap:wrap}
 @media(max-width:760px){
   .rolerow{grid-template-columns:46px 1fr auto}

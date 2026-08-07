@@ -79,7 +79,6 @@ section + section{margin-top:var(--s6)}
 
 .title{font-family:var(--font-display);font-weight:400;font-size:17px;line-height:24px;
   height:24px;text-align:center;margin-top:var(--s3)}
-.card:hover .title{box-shadow:inset 0 -1px 0 var(--rule)}
 /* the note line is in the markup whether or not it has anything in it, so a
    card that carries one does not push its neighbours a row out of true. */
 .note{height:var(--row);line-height:var(--row);font-size:var(--fs-micro);
@@ -179,9 +178,10 @@ section + section{margin-top:var(--s6)}
   font-size:var(--fs-xs);white-space:pre-wrap}
 .subhead{display:flex;align-items:baseline;gap:var(--s3);margin:var(--s5) 0 var(--s2);
   padding-bottom:3px;border-bottom:1px solid var(--rule);
-  font-size:var(--fs-micro);letter-spacing:.16em;text-transform:uppercase}
+  font-family:var(--font-display);font-weight:400;font-size:15px}
 .subhead .sp{flex:1}
-.subhead .n{color:var(--label);letter-spacing:.1em}
+.subhead .n{font-family:var(--font-body);font-size:var(--fs-micro);
+  color:var(--label);letter-spacing:.1em}
 .charhead{display:flex;align-items:baseline;gap:var(--s2);margin:var(--s3) 0 2px;
   font-size:var(--fs-micro);letter-spacing:.1em;text-transform:uppercase;color:var(--label)}
 .charhead b{color:var(--ink);font-weight:500;letter-spacing:.06em}
@@ -244,10 +244,9 @@ section + section{margin-top:var(--s6)}
 .modenote{font-size:var(--fs-micro);letter-spacing:.08em;text-transform:uppercase;
   color:var(--label)}
 button.link{background:none;border:0;padding:0;font:inherit;font-size:var(--fs-micro);
-  letter-spacing:.1em;text-transform:lowercase;color:var(--label);cursor:pointer;
-  box-shadow:inset 0 -1px 0 transparent;transition:color var(--t-fast) var(--ease),
-  box-shadow var(--t-fast) var(--ease)}
-button.link:hover{color:var(--ink);box-shadow:inset 0 -1px 0 var(--ink)}
+  letter-spacing:.1em;color:var(--label);cursor:pointer;
+  transition:color var(--t-fast) var(--ease)}
+button.link:hover{color:var(--ink)}
 
 .foot{margin-top:var(--s7);padding-top:var(--s3);border-top:1px solid var(--rule);
   display:flex;justify-content:space-between;gap:var(--s3);flex-wrap:wrap;
@@ -271,7 +270,7 @@ button.link:hover{color:var(--ink);box-shadow:inset 0 -1px 0 var(--ink)}
 /* ---------- onboarding ---------- */
 .sheet.wide{width:min(460px,100%);text-align:left;padding:var(--s5);max-height:88vh}
 .sheet.wide .t{margin:0 0 var(--s1);font-size:var(--fs-title);font-family:var(--font-display);
-  font-weight:400}
+  font-weight:400;letter-spacing:-.01em}
 .ob-sub{color:var(--label);font-size:var(--fs-xs);margin:0 0 var(--s5)}
 .ob-list{display:grid;gap:var(--s4);margin:0 0 var(--s5)}
 .ob-item{border-left:2px solid var(--rule);padding-left:var(--s3)}
@@ -1197,9 +1196,10 @@ function readHref(file){
     return 'read.html?read=' + encodeURIComponent(file);
   return 'read.html?read=' + file.split('/').map(encodeURIComponent).join('/');
 }
-function pickRow(ref, checked, label, sub, previewKey){
+function pickRow(ref, checked, label, sub, previewKey, group){
   return `<label class="pick">
-    <input type="checkbox" data-ref="${esc(ref)}"${checked?' checked':''}>
+    <input type="checkbox" data-ref="${esc(ref)}"${checked?' checked':''}${
+      group ? ` data-group="${esc(group)}"` : ''}>
     <span class="dot"></span>
     <span class="pfp">${esc(initials(sub || label))}</span>
     <span class="who"><b>${esc(label)}</b>${sub ? ` <span>${esc(sub)}</span>` : ''}</span>
@@ -1272,15 +1272,22 @@ function openDetails(c, role){
   const localHtml = localParts.map(p=>pickRow('idb:' + p.id, true,
     p.character || p.title || p.name || 'untitled', 'on your shelf')).join('');
 
-  const scoreHtml = c.scores.length
+  /* SILENCE IS A CHOICE YOU CAN MAKE HERE.
+     the author's score plays by default and there was no way to say no to it
+     short of muting the reader, which also mutes the voices. this is a real
+     pick in the same list as every other score, and it is exclusive with them
+     — you cannot listen to a score and to no score at once. */
+  const silentRow = pickRow('score:none', false, 'no score',
+    'read it with voices only', null, 'score');
+  const scoreHtml = (c.scores.length
     ? c.scores.map(s=>s.partId
-        ? pickRow('part:' + s.partId, false, s.title, 'by ' + s.by, s.preview)
+        ? pickRow('part:' + s.partId, false, s.title, 'by ' + s.by, s.preview, 'score')
         : `<div class="openline"><span></span><span class="pfp">${esc(initials(s.by||''))}</span>
              <span>${esc(s.title)} · plays by default</span><span></span></div>`).join('')
     : `<div class="openline"><span></span><span class="pfp">—</span>
         <span>no score yet</span>
         ${c.dbId ? `<a class="btn sm" href="studio.html?base=${esc(c.dbId)}&as=soundtrack">score it</a>`
-                 : '<span></span>'}</div>`;
+                 : '<span></span>'}</div>`) + silentRow;
 
   const mine = !!(me && c.ownerId && me.id === c.ownerId);
   const later = isLater(c);
@@ -1337,7 +1344,18 @@ function openDetails(c, role){
       + (on.length ? '&with=' + on.map(encodeURIComponent).join(',') : '')
       + (next ? '&next=' + encodeURIComponent(next.file) + '&nextTitle=' + encodeURIComponent(next.title) : '');
   };
-  sheet.querySelectorAll('input[data-ref]').forEach(i=>{ i.onchange = sync; });
+  sheet.querySelectorAll('input[data-ref]').forEach(i=>{
+    i.onchange = e=>{
+      const t = e.target;
+      if(t.checked && t.dataset.group === 'score')
+        sheet.querySelectorAll('input[data-group="score"]').forEach(x=>{
+          // "no score" and a score are mutually exclusive; two scores are not
+          if(x !== t && (x.dataset.ref === 'score:none' || t.dataset.ref === 'score:none'))
+            x.checked = false;
+        });
+      sync();
+    };
+  });
   sync();
 
   document.getElementById('ov-later').onclick = ()=>toggleLater(c);

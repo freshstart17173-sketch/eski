@@ -94,6 +94,9 @@ body.focus .settings{position:fixed;right:12px;bottom:calc(var(--bar) + 12px);z-
   padding:var(--s3) var(--s7);position:relative;transform-origin:center center;will-change:transform}
 .pages img{max-height:100%;max-width:100%;object-fit:contain;background:var(--page-bg);
   box-shadow:0 0 0 1px var(--rule-hair);-webkit-user-drag:none;user-drag:none}
+/* a page still fetching. the delay is the whole point: a warm page swaps in
+   under it and never dims, so this only ever appears when the wait is real. */
+.viewer.page-loading .pages img{opacity:.3;transition:opacity 120ms var(--ease) 220ms}
 .click-zones{position:absolute;inset:0;display:flex;z-index:8}
 .cz{flex:1;cursor:pointer}
 /* the zoom bar. it is a SIBLING of the panned element, never a child, so a
@@ -132,6 +135,20 @@ body.focus .settings{position:fixed;right:12px;bottom:calc(var(--bar) + 12px);z-
 .pb-score b{font-weight:500;color:var(--ink);letter-spacing:.04em;text-transform:none;
   font-size:var(--fs-xs);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .pb-score.silent b{color:var(--muted)}
+/* THREE BARS, AND THEY ONLY MOVE WHEN SOUND IS COMING OUT.
+   the bar says which score you are listening to, which is true whether or
+   not anything is audible right now — muted, between cues, paused. this is
+   the difference, and it is the only moving thing in the chrome. */
+.eq{display:none;align-items:flex-end;gap:2px;height:11px;flex:none;margin-left:var(--s1)}
+.pb-score.playing .eq{display:flex}
+.eq s{display:block;width:2px;background:var(--accent);text-decoration:none;
+  transform-origin:bottom;animation:eq 900ms ease-in-out infinite}
+.eq s:nth-child(1){height:11px;animation-delay:-200ms}
+.eq s:nth-child(2){height:11px;animation-delay:-600ms}
+.eq s:nth-child(3){height:11px;animation-delay:-400ms}
+@keyframes eq{0%,100%{transform:scaleY(.25)}50%{transform:scaleY(1)}}
+/* reduced motion still gets the state, just held rather than bouncing */
+@media (prefers-reduced-motion:reduce){ .eq s{transform:scaleY(.6)} }
 .pb-pages{flex:none;font-size:var(--fs-micro);letter-spacing:.1em;text-transform:uppercase;
   color:var(--label);font-variant-numeric:var(--num)}
 .pb-pages input,.pb-pages select{height:22px;font-size:var(--fs-micro)}
@@ -207,16 +224,6 @@ body.focus .settings{position:fixed;right:12px;bottom:calc(var(--bar) + 12px);z-
   font-variant-numeric:var(--num)}
 .keys-grid span{color:var(--soft-ink)}
 
-/* ---------- tutorial popup ---------- */
-.tut{position:fixed;left:var(--s3);bottom:calc(var(--bar) + var(--s5));z-index:520;display:none;
-  align-items:flex-start;gap:var(--s2);max-width:340px;background:var(--paper);
-  border:1px solid var(--rule);padding:var(--s3);font-size:var(--fs-xs);line-height:1.45}
-.tut.show{display:flex}
-.tut .ico{width:16px;height:16px;flex:none;color:var(--accent)}
-.tut b{font-weight:500}
-.tut kbd{border:1px solid var(--rule-hair);padding:0 4px;font-size:var(--fs-micro)}
-.tut button{margin-left:2px;border:0;background:none;color:var(--label);padding:2px;flex:none}
-.tut button .ico{width:14px;height:14px;color:inherit}
 
 /* ---------- toast ----------
    an error exists to be read and copied, so it stays until dismissed, accepts
@@ -272,7 +279,6 @@ footer a:hover{color:var(--ink)}
   .os-hint{bottom:calc(var(--bar) + var(--s5))}
   .os-hint .os-step{width:32px;height:32px}
   .cz{min-width:22vw}                                   /* thumb-sized page turns */
-  .tut{left:var(--s2);right:var(--s2);max-width:none}
   footer{display:none}
 }
 @media (prefers-reduced-motion:reduce){
@@ -386,7 +392,8 @@ footer a:hover{color:var(--ink)}
          in: which score you are listening to, where you are, and the
          controls. one fixed-height row. -->
     <div class="player-bar" id="player-bar" style="display:none">
-      <div class="pb-score" id="pb-score"><span>score</span><b id="pb-score-name"></b></div>
+      <div class="pb-score" id="pb-score"><span>score</span><b id="pb-score-name"></b>
+        <i class="eq" id="pb-eq" aria-hidden="true"><s></s><s></s><s></s></i></div>
       <span class="pb-pages">
         <span id="vt-info-text"></span>
         <select id="chapter-sel" title="jump to a chapter" style="display:none"
@@ -432,15 +439,6 @@ footer a:hover{color:var(--ink)}
     <kbd>d</kbd><span>dark mode</span>
     <kbd>?</kbd><span>this panel</span>
   </div>
-</div>
-
-<!-- first-run one-shot tutorials -->
-<div class="tut" id="tut-os">
-  <span data-ico="volume-2"></span>
-  <div><b>this comic has one-shots</b><br>some pages have sounds you trigger yourself.
-    press <kbd>&#8595;</kbd> for the next one, <kbd>&#8593;</kbd> for the previous.
-    <kbd>shift+space</kbd> pauses one.</div>
-  <button onclick="dismissTut('os')" data-ico="x" title="got it"></button>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -774,23 +772,6 @@ function cleanupComic(c){
   if(c.coverUrl) URL.revokeObjectURL(c.coverUrl);
 }
 
-/* a page that 404s from R2 leaves a silently broken image, which looks exactly
-   like a comic with blank pages. name the url that failed instead. */
-(function watchPageImages(){
-  const report = e => {
-    const src = e.target && e.target.src;
-    if(!src || src.startsWith('blob:')) return;   // zip-backed pages cannot 404
-    toast('ESK-6001 a page image did not load. check the bucket is public and CORS allows GET:\n'
-      + src, 'error');
-  };
-  document.addEventListener('DOMContentLoaded', ()=>{
-    ['page-left','page-right'].forEach(id=>{
-      const el = document.getElementById(id);
-      if(el) el.addEventListener('error', report);
-    });
-  });
-})();
-
 function ensurePageUrl(i){
   const p = current && current.pages[i];
   if(!p) return Promise.resolve(null);
@@ -802,10 +783,64 @@ function ensurePageUrl(i){
   }
   return p._loading;
 }
+
+/* ================================================================
+   THE PAGE YOU ARE LOOKING AT IS THE PAGE THE BAR SAYS YOU ARE ON.
+
+   It was not. A published comic's pages are ~1 MB objects on another
+   origin, roughly a second each on a cold fetch, and two things
+   conspired:
+
+     1. prefetchAround did nothing for them. ensurePageUrl exists to
+        decompress a zip entry, so it short circuits the moment a page
+        already HAS a url — which a published page always does, from the
+        moment the comic loads. So it "prefetched" by returning a string.
+        Nothing was ever warmed and every page turn was cold.
+
+     2. Assigning img.src does not clear the image. The browser keeps
+        painting the OLD one until the new one has decoded. So a reader
+        turning pages faster than a second each sat looking at page one
+        while the counter climbed, then saw whichever handful of requests
+        happened to win. Turning the other way won a different handful,
+        which is why it looked direction-dependent.
+
+   So: really fetch and decode the neighbours, and never swap the visible
+   page until the new one is decoded and ready to paint.
+   ================================================================ */
+const PREFETCH_BACK = 1, PREFETCH_FWD = 3;
+const warm = new Map();                    // page index -> { img, ready }
+function warmPage(i){
+  if(!current || i < 0 || i >= current.pages.length) return null;
+  const hit = warm.get(i);
+  if(hit) return hit;
+  const rec = { img: new Image(), ready: null, url: null };
+  rec.img.decoding = 'async';
+  rec.ready = ensurePageUrl(i).then(url => {
+    if(!url) throw new Error('ESK-6004 page ' + (i+1) + ' has no source');
+    rec.url = url;
+    rec.img.src = url;
+    /* decode() is the only honest "this will paint instantly" signal. it
+       rejects on a failed load, which is how a 404 or a CORS refusal gets
+       reported as itself rather than as a blank page. */
+    return rec.img.decode().then(() => rec).catch(err => {
+      throw new Error('ESK-6001 page ' + (i+1) + ' did not load from\n' + url +
+        '\n(' + ((err && err.message) || err) + ')');
+    });
+  });
+  rec.ready.catch(()=>{});                 // a prefetch failure is not unhandled
+  warm.set(i, rec);
+  return rec;
+}
 function prefetchAround(i){
   if(!current) return;
-  for(let k=i-1;k<=i+3;k++)
-    if(k>=0 && k<current.pages.length) ensurePageUrl(k);
+  for(let k = i - PREFETCH_BACK; k <= i + PREFETCH_FWD; k++)
+    if(k !== i) warmPage(k);
+  /* keep a window around THE READER — not around whichever page was warmed
+     last, which would evict the page behind you while prefetching the page
+     ahead. 45 decoded pages is a lot of bitmap; anything outside the window
+     is dropped and comes back from the browser's own cache if you turn back. */
+  for(const k of [...warm.keys()])
+    if(k < i - PREFETCH_BACK * 3 || k > i + PREFETCH_FWD * 3) warm.delete(k);
 }
 
 /* `failed` may be a message. an empty state that only says "could not load"
@@ -837,6 +872,7 @@ function openComic(comic){
   $('what-sub').textContent = comic.creator ? 'by ' + comic.creator : '';
   paintScore();
   scrollBuiltFor = null;
+  warm.clear();                 // decoded pages belong to the comic that opened them
   audio.queueFrom = null;
   applyReadingMode();
   if(effPlayback()==='playlist') startPlaylist();
@@ -946,14 +982,31 @@ async function showPage(idx, instant, force){
   }
   const my = ++showSeq;
   const L = $('page-left'), R = $('page-right');
-  const urls = await Promise.all([ensurePageUrl(currentPage)]);
-  if(my!==showSeq) return; // a newer page turn superseded this one
-  L.src = urls[0];
-  R.style.display='none';
-  prefetchAround(currentPage);
+  R.style.display = 'none';
+  /* the counter, the audio and the prefetch move NOW: they are about which
+     page you are on, which you decided the moment you pressed the key. only
+     the picture waits for its bytes. */
   resetZoom();
   updatePageChrome();
   checkPageTrack(instant, force);
+  prefetchAround(currentPage);
+
+  const rec = warmPage(currentPage);
+  if(!rec) return;
+  /* the class carries a transition delay, so a page that is already warm
+     swaps with no visible dim at all and only a genuinely slow one shows
+     that it is working. */
+  $('viewer').classList.add('page-loading');
+  try{
+    await rec.ready;
+    if(my !== showSeq) return;           // a newer page turn superseded this one
+    L.src = rec.url;
+  }catch(err){
+    if(my !== showSeq) return;
+    toast((err && err.message) || String(err), 'error');
+  }finally{
+    if(my === showSeq) $('viewer').classList.remove('page-loading');
+  }
 }
 
 /* ---- page zoom + pan (pages mode) ----
@@ -1268,6 +1321,7 @@ const audio = {
       this.active.volume = this.trackGain(t);
     }
     osApplyVolume();
+    if(typeof paintPlaying === 'function') paintPlaying();
   }
 };
 
@@ -1417,7 +1471,6 @@ function refreshOneshots(){
   os.list = current ? oneshotsForPage(current, audioPage()) : [];
   os.cursor = -1;
   paintOsHint();
-  maybeOsTutorial();
 }
 function paintOsHint(){
   const h = $('os-hint');
@@ -1427,7 +1480,6 @@ function paintOsHint(){
 }
 function osAdvance(dir){
   if(!current || !os.list.length) return;
-  $('tut-os').classList.remove('show');   // they clearly got the idea
   let n = os.cursor + dir;
   if(effOsLoop()) n = (n + os.list.length) % os.list.length;
   else n = clamp(n, 0, os.list.length-1);
@@ -1554,6 +1606,8 @@ function onTrackEnd(){
   }
 }
 [audio.a, audio.b].forEach(el=>{
+  ['play','playing','pause','ended','emptied','stalled','waiting'].forEach(ev=>
+    el.addEventListener(ev, paintPlaying));
   el.addEventListener('ended', ()=>{ if(el===audio.active || audio.active===null) onTrackEnd(); });
   el.addEventListener('timeupdate', ()=>{
     if(el!==audio.active || !current) return;
@@ -1581,6 +1635,14 @@ function paintScore(){
   const name = current && current.scoreName;
   box.classList.toggle('silent', !name);
   $('pb-score-name').textContent = name || 'none';
+  paintPlaying();
+}
+/* driven by the elements themselves rather than a timer, so it is exact and
+   costs nothing while nothing is happening. */
+function paintPlaying(){
+  const el = audio.active;
+  const on = !!(el && !el.paused && !el.ended && !audio.muted && audio.volume > 0);
+  $('pb-score').classList.toggle('playing', on);
 }
 function toggleMute(){
   audio.muted = !audio.muted;
@@ -1719,30 +1781,12 @@ function paintSettings(){
   const ol = $('set-osloop');
   if(ol){ ol.classList.toggle('on', effOsLoop()); ol.textContent = effOsLoop() ? 'on' : 'off'; }
 }
-/* hotkeys panel + one-shot tutorial (first run) */
+/* hotkeys panel */
 function toggleKeys(force){
   const open = force===undefined ? !$('keys-panel').classList.contains('open') : force;
   $('keys-panel').classList.toggle('open', open);
   $('keys-scrim').classList.toggle('open', open);
   $('keys-btn').classList.toggle('on', open);
-}
-function dismissTut(which){
-  clearTimeout(tutTimer);
-  $('tut-'+which).classList.remove('show');
-  try{ localStorage.setItem('eski-tut-'+which+'-reader','1'); }catch(e){}
-}
-/* shown once EVER: the flag is written the moment it appears, not when it is
-   dismissed, so closing the tab or turning the page never brings it back. */
-let tutTimer = 0;
-function maybeOsTutorial(){
-  if(!os.list.length) return;
-  try{
-    if(localStorage.getItem('eski-tut-os-reader')) return;
-    localStorage.setItem('eski-tut-os-reader','1');
-  }catch(e){ return; }
-  $('tut-os').classList.add('show');
-  clearTimeout(tutTimer);
-  tutTimer = setTimeout(()=>$('tut-os').classList.remove('show'), 9000);
 }
 function toggleDark(){
   settings.dark = !settings.dark; saveSettings();
@@ -1869,19 +1913,30 @@ if('serviceWorker' in navigator && location.protocol.startsWith('http')){
        references so the reader never has to look anything up. */
     const parts = (new URLSearchParams(location.search).get('with') || '')
       .split(',').map(s => s.trim()).filter(Boolean);
+    /* "listen with no score" travels in the same list as the parts, because it
+       is a choice about the mix like any other. it is not a part, so it is
+       taken out before anything tries to load it. */
+    const silent = parts.includes('score:none');
+    const mix = parts.filter(p => p !== 'score:none');
     let comic;
     if(src.startsWith('db:')){
       // a published comic: rows plus loose objects, no zip anywhere
       comic = await comicFromApi(src.slice(3),
-        parts.filter(p => p.startsWith('part:')).map(p => p.slice(5)));
+        mix.filter(p => p.startsWith('part:')).map(p => p.slice(5)));
     }else{
       const blob = await grab(src);
       const zip = await JSZip.loadAsync(blob);
       comic = await comicFromZip(zip, src.split('/').pop() || 'comic.eski');
-      for(const p of parts){
+      for(const p of mix){
         try{ await mergePart(comic, await JSZip.loadAsync(await grab(p))); }
         catch(e){ console.warn('part failed: ' + p, e); }
       }
+    }
+    /* the soundtrack goes, the voices stay. muting the reader would have
+       silenced both, which is why this could not be done from the bar. */
+    if(silent){
+      comic.tracks = comic.tracks.filter(t => t.type !== 'music');
+      comic.scoreName = null;
     }
     openComic(comic);
   }catch(err){

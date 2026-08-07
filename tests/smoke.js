@@ -122,6 +122,31 @@ function ok(cond, name, extra) {
   await page.waitForFunction(() => location.hash === '#test-comic/page=2');
   ok(true, 'hash follows navigation');
 
+  /* THE STALE-PAGE GUARD.
+     prefetchAround used to call ensurePageUrl, which short circuits the moment
+     a page already has a url — always true for a published comic — so it
+     "prefetched" by returning a string and nothing was ever fetched. Combined
+     with img.src keeping the OLD picture on screen until the new one decodes,
+     a reader turning pages faster than the network sat looking at page one.
+     Two invariants: the neighbours are really warmed, and what is on screen is
+     the page the counter claims. */
+  console.log('reader: pages keep up with the page turns');
+  await page.evaluate(() => goToPage(2, true));
+  await page.waitForFunction(() => {
+    const rec = warm.get(currentPage);
+    return rec && document.getElementById('page-left').src === rec.url;
+  }, null, { timeout: 8000 });
+  ok(true, 'the picture on screen is the page the counter says');
+  ok(await page.evaluate(() => warm.has(currentPage + 1) && warm.has(currentPage - 1)),
+    'the neighbours either side are warmed, not just named');
+  for (let i = 0; i < 5; i++) await page.keyboard.press('ArrowRight');
+  await page.waitForFunction(() => {
+    const rec = warm.get(currentPage);
+    return rec && document.getElementById('page-left').src === rec.url;
+  }, null, { timeout: 8000 });
+  ok(true, 'five fast turns still land on the right picture');
+  await page.evaluate(() => goToPage(1, true));
+
   console.log('reader: colour match');
   await page.waitForFunction(() =>
     document.documentElement.style.getPropertyValue('--tintsat').trim() === '9%');
@@ -280,8 +305,8 @@ function ok(cond, name, extra) {
   // container used to retarget that click and leave the button dead
   ok(await bigp.isVisible('#zoombar'), 'the zoom bar appears once zoomed');
   await bigp.click('#zoombar [data-z="fit"]');
-  ok(await bigp.evaluate(() => pageZoom()) === 1, 'fit returns the page to the box',
-    await bigp.evaluate(() => pageZoom()));
+  ok(Math.abs(await bigp.evaluate(() => pageZoom()) - 1) < 1e-4,
+    'fit returns the page to the box', await bigp.evaluate(() => pageZoom()));
   ok(await bigp.isHidden('#zoombar'), 'the zoom bar goes away again at 1x');
   await bigp.evaluate(() => {
     const v = document.getElementById('viewer'), b = v.getBoundingClientRect();
@@ -289,7 +314,9 @@ function ok(cond, name, extra) {
       clientY: b.top + b.height / 2, bubbles: true, cancelable: true }));
   });
   await bigp.evaluate(() => window.showPage(1, false, false));
-  await bigp.waitForFunction(() => pageZoom() === 1);
+  // contain:'outside' derives its floor from measured dimensions, so a reset
+  // lands on 1 to within a rounding error rather than the integer 1
+  await bigp.waitForFunction(() => Math.abs(pageZoom() - 1) < 1e-4);
   ok(true, 'turning the page resets the zoom');
   await bigp.close();
 
@@ -325,8 +352,9 @@ function ok(cond, name, extra) {
   ok(await osCount() === '0/2', 'page 2 shows 2 one-shots', await osCount());
   ok((await osp.evaluate(() => window.nowPlaying())).includes('bg'),
     'soundtrack still owns the one-shot page', await osp.evaluate(() => window.nowPlaying()));
-  ok(await osp.evaluate(() => document.getElementById('tut-os').classList.contains('show')),
-    'first-run tutorial shows');
+  // the one-shot tutorial is gone for good, not merely dismissed
+  ok(await osp.evaluate(() => !document.getElementById('tut-os') &&
+    typeof window.maybeOsTutorial === 'undefined'), 'no one-shot tutorial popup');
   // down = next, up = previous, no wrap by default
   await osp.keyboard.press('ArrowDown'); ok(await osCount() === '1/2', 'down = next one-shot', await osCount());
   // the indicator reflects that a one-shot is actually playing
@@ -982,6 +1010,20 @@ function ok(cond, name, extra) {
     return q && q.tracks.length === 2 && q.tracks[1].id === audio.currentTrackId;
   }, null, { timeout: 8000 });
   ok(true, 'queue advances after re-import');
+
+  console.log('reader: listening with no score');
+  const ns = await ctx.newPage();
+  wire(ns);
+  await ns.goto('http://localhost:8931/read.html?read=fx/oneshots.eski&with=score%3Anone');
+  await ns.waitForSelector('#player-bar', { state: 'visible' });
+  await ns.keyboard.press('Shift');
+  ok(await ns.evaluate(() => current.tracks.every(t => t.type !== 'music')),
+    'no score means no music tracks at all');
+  ok(await ns.evaluate(() => current.tracks.some(t => t.type === 'oneshot')),
+    'the voices are still there');
+  ok(await ns.textContent('#pb-score-name') === 'none', 'the bar says there is no score',
+    await ns.textContent('#pb-score-name'));
+  await ns.close();
 
   console.log('reader: ?read= opens a specific eski from the library folder');
   const rp = await ctx.newPage();

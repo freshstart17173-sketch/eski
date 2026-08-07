@@ -48,7 +48,8 @@ h4{margin:0 0 8px;font-size:11px;letter-spacing:.13em;color:var(--muted);font-we
 .brand{font-family:'Gnomon',sans-serif;font-size:25px;color:var(--accent);line-height:1;
   text-decoration:none;letter-spacing:-0.01em;padding-top:2px}
 .brand:hover{color:var(--accent-deep)}
-.hdr-label{color:var(--muted);text-transform:lowercase;font-size:13.5px;border-left:1px solid var(--edge);
+.hdr-label{color:var(--muted);text-transform:uppercase;letter-spacing:.14em;
+  font-size:var(--fs-micro);border-left:1px solid var(--edge);
   padding-left:9px;margin-right:2px}
 .sp{flex:1}
 
@@ -71,9 +72,9 @@ h4{margin:0 0 8px;font-size:11px;letter-spacing:.13em;color:var(--muted);font-we
   padding:6px 8px;cursor:grab;box-shadow:var(--shadow);transition:border-color 140ms ease}
 .chip-aud:hover{border-color:var(--accent)}
 .chip-aud.used{opacity:.55}
-.chip-aud .t{font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-  text-transform:lowercase}
-.chip-aud canvas{display:block;width:100%;height:20px;margin-top:4px;border-radius:0}
+/* a file name and a track name are the author's words, not ours */
+.chip-aud .t{font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chip-aud canvas{display:block;width:100%;height:20px;margin:4px 0;border-radius:0}
 .chip-aud .m{font-size:10px;color:var(--muted);margin-top:2px}
 .bay-hint{font-size:11px;color:var(--muted);margin-top:8px;line-height:1.5}
 .bay-empty{font-size:12px;color:var(--muted)}
@@ -203,9 +204,14 @@ h4{margin:0 0 8px;font-size:11px;letter-spacing:.13em;color:var(--muted);font-we
 .bay-search{display:flex;align-items:center;gap:6px;padding:9px 10px;border-bottom:1px solid var(--edge);
   background:var(--bg-2)}
 .bay-search .ico{width:14px;height:14px;color:var(--muted);flex:none}
-.bay-search input{flex:1;min-width:0;padding:5px 7px;font-size:12.5px}
-.bay-search select,.sec-head .sort{font-size:11.5px;padding:3px 5px;border-radius:0;
-  background:var(--bg-3);border:1px solid var(--edge);color:var(--soft-ink)}
+/* the input took flex:1 with min-width:0 while the select sized itself to its
+   longest option, so the select won the whole row and the search box collapsed
+   to about one character. the select is fixed and the input gets a floor. */
+.bay-search input{flex:1 1 auto;min-width:0;height:26px;padding:0 6px;font-size:12.5px}
+.bay-search select,.sec-head .sort{height:26px;flex:none;width:74px;font-size:11.5px;
+  padding:0 2px;border-radius:0;background:var(--bg-3);border:1px solid var(--edge);
+  color:var(--soft-ink)}
+.sec-head .sort{height:22px;width:70px}
 .sec-head .sort{margin-left:auto}
 
 /* one-shot tool + per-page one-shot block (pages mode) */
@@ -229,14 +235,14 @@ h4{margin:0 0 8px;font-size:11px;letter-spacing:.13em;color:var(--muted);font-we
 .songrow .sw{width:8px;height:8px;border-radius:50%;flex:none}
 .songrow.sel{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)}
 .songrow input.nm{flex:1;min-width:0;border:0;background:transparent;font-size:12px;padding:2px 3px;
-  text-transform:lowercase;color:var(--ink)}
+  color:var(--ink)}
 .songrow input.nm:focus{border-bottom:1px solid var(--accent);outline:none}
 .songrow .pos{color:var(--muted);font-size:11px;flex:none}
 .songknobs{display:flex;flex-wrap:wrap;gap:8px;margin:-2px 0 10px;padding:0 7px}
 .songknobs label{display:flex;align-items:center;gap:4px;font-size:11px;color:var(--muted)}
 .songknobs input[type=range]{width:70px;accent-color:var(--accent)}
 .songknobs input[type=number]{width:48px;padding:1px 4px;font-size:11px}
-.songadd{margin-top:8px}
+.songadd{margin-top:8px;display:flex}
 .info-sec .dropping{outline:2px dashed var(--accent);outline-offset:2px;border-radius:0}
 .oschip.empty{border-style:dashed;color:var(--muted)}
 .oschip .await{color:var(--muted);font-style:italic}
@@ -287,7 +293,11 @@ h4{margin:0 0 8px;font-size:11px;letter-spacing:.13em;color:var(--muted);font-we
 .qp-list{display:flex;flex-direction:column;gap:6px;min-height:60px;
   border:1px dashed var(--edge);border-radius:0;padding:8px}
 .qp-empty{color:var(--muted);font-size:12px;text-align:center;padding:14px 4px}
-.qp-foot{margin-top:10px;display:flex;justify-content:flex-end}
+/* every "add another one of these" control in this panel is the same width and
+   the same edge. "add silence" was left aligned and "someone speaks here" was
+   right aligned, in two boxes stacked directly on top of each other. */
+.qp-foot{margin-top:8px;display:flex}
+.qp-foot .pill,.songadd .pill{width:100%;justify-content:center}
 /* preview zoom/pan on the stage */
 .preview.zoomed img{cursor:grab}
 .preview.panning img{cursor:grabbing}
@@ -386,8 +396,10 @@ h4{margin:0 0 8px;font-size:11px;letter-spacing:.13em;color:var(--muted);font-we
 .bay-sec{padding:0;border-bottom:0}
 .sec-head{position:sticky;top:0;z-index:2;margin:0;padding:var(--s2) var(--s3);gap:var(--s2);
   background:var(--bg-1);border-bottom:var(--bw) solid var(--line)}
+/* the same register as the panel's own h5 labels on the other side of the
+   window — they name a section, so they are field labels. */
 .sec-head h4{font-size:var(--fs-micro);letter-spacing:.12em;font-weight:500;color:var(--muted);
-  text-transform:lowercase}
+  text-transform:uppercase}
 .sec-head .count{font-variant-numeric:var(--num);font-size:var(--fs-micro)}
 .bay-grid{padding:var(--s2)}
 #bay-imgs{gap:var(--bw)}
@@ -468,12 +480,12 @@ input[type=number],input[type=range]+span{font-variant-numeric:var(--num)}@media
   <aside class="bay" id="bay">
     <div class="bay-search">
       <span data-ico="search" data-sm></span>
-      <input type="text" id="bay-q" placeholder="search dock" oninput="bayFilter.q=this.value;renderBay()">
+      <input type="text" id="bay-q" placeholder="search" oninput="bayFilter.q=this.value;renderBay()">
       <select id="bay-filter" title="filter" onchange="bayFilter.kind=this.value;renderBay()">
         <option value="all">all</option>
         <option value="images">images</option>
         <option value="audio">audio</option>
-        <option value="unused">unused audio</option>
+        <option value="unused">unused</option>
       </select>
     </div>
     <div class="bay-sec imgs">

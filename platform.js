@@ -35,19 +35,19 @@ const CSS = `
 .auth{position:relative;display:flex;align-items:center;margin-left:var(--s4,16px)}
 .auth-btn{display:inline-flex;align-items:center;gap:7px;padding:3px 0;border:0;border-radius:0;
   background:transparent;color:inherit;font:inherit;font-size:var(--fs-micro,11px);
-  letter-spacing:.14em;text-transform:lowercase;cursor:pointer;line-height:1.2;
-  white-space:nowrap;opacity:.55;box-shadow:inset 0 -2px 0 transparent;
-  transition:opacity 160ms,box-shadow 160ms}
-.auth-btn:hover{opacity:1;box-shadow:inset 0 -2px 0 var(--rule-hair,currentColor)}
+  letter-spacing:.14em;text-transform:uppercase;cursor:pointer;line-height:1.2;
+  white-space:nowrap;opacity:.55;transition:opacity 160ms}
+.auth-btn:hover{opacity:1}
 .auth-menu{position:absolute;top:calc(100% + 8px);right:0;min-width:200px;z-index:500;
   display:none;flex-direction:column;gap:6px;padding:10px;border-radius:0;
   border:1px solid var(--rule,rgba(128,128,128,.4));color:inherit;
   background:var(--paper,var(--bg-1,#fff))}
 .auth-menu.open{display:flex}
 .auth-menu .auth-btn{opacity:1;padding:4px 0}
-.auth-menu small{color:var(--label,#8a8a8a);font-size:12px;text-transform:lowercase;
+.auth-menu small{color:var(--label,#8a8a8a);font-size:12px;text-transform:none;
   line-height:1.35;letter-spacing:0}
-@media(max-width:640px){.auth-btn{min-height:42px}}
+@media(max-width:640px){.auth{margin-left:var(--s3,12px)}
+  .auth-btn{min-height:42px;letter-spacing:.06em}}
 `;
 
 let sb = null, user = null, bootError = null;

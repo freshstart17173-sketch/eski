@@ -13,16 +13,22 @@
    loaded after tokens.css.
 
    ------------------------------------------------------------
-   THE THREE RULES. everything below obeys them, and so should any
+   THE RULES. everything below obeys them, and so should any
    new surface. they exist because the site had drifted into caps
    and lowercase, green and black, bold and regular all meaning
    nothing in particular, which is the same as meaning nothing.
 
-   1. CASE.  UPPERCASE with letterspacing is for LABELS — words that
-      name a field, a section or a column and are never themselves
-      the answer. Anything you press, and any value, is lowercase as
-      typed. So: "VOICES" is a label, "missing 2" is a value, "read
-      later" is a button.
+   1. CASE.  Three registers, and nothing else.
+        - The NAV is uppercase. It is the same four words on every
+          surface and it reads as the site's own furniture.
+        - FIELD LABELS are uppercase letterspaced micro type: the word
+          on the left of a value, never the value. "BY", "EXTENT",
+          "SORT".
+        - EVERYTHING ELSE is as typed. Buttons, values, tags, and
+          above all TITLES: a comic is called what its author called
+          it, capitals and all, and nothing on this site lowercases
+          somebody else's work.
+      Section HEADINGS are a fourth thing and rule 4 covers them.
 
    2. COLOUR. Near-black (--mark) is the only fill on the page, and
       it means "this one is on": selected, pressed, current, primary.
@@ -38,6 +44,17 @@
       in that row is 400, and secondary fields also step down to
       --label. A row where two things are bold has not chosen, and a
       row where nothing is bold is a wall of grey.
+
+   4. HEADINGS are Gnomon, set as typed. "new comics", "voiceover
+      needed", "browse". They are the only place besides the wordmark
+      the display face appears, which is what makes them read as
+      headings without needing size, rules or caps to do it.
+
+   And one thing that is NOT a rule: underlines. A link inside prose
+   may have one. Nothing else does — not on hover, not on a title, not
+   on a section link. The only underline in the chrome is the 2px mark
+   under the nav word for the page you are on, and it is there because
+   nothing else says where you are.
    ------------------------------------------------------------ */
 
 :root{
@@ -79,20 +96,29 @@ img{display:block;max-width:100%}
 .mark:hover i{color:var(--ink)}
 .top .sp{flex:1}
 .top nav{display:flex;gap:var(--s4);margin-left:auto;
-  font-size:var(--fs-micro);letter-spacing:.14em;text-transform:lowercase}
+  font-size:var(--fs-micro);letter-spacing:.14em;text-transform:uppercase}
 /* font:inherit because a <button> inherits neither the family nor the case
    from its parent, which is what used to render "home browse" in a different
    face and size to "studio profile". */
 .top nav a,.top nav button{font:inherit;font-size:var(--fs-micro);letter-spacing:.14em;
-  text-transform:lowercase;line-height:1.2;background:none;border:0;padding:3px 0;
+  text-transform:uppercase;line-height:1.2;background:none;border:0;padding:3px 0;
   color:var(--ink);opacity:.55;text-decoration:none;cursor:pointer;
   box-shadow:inset 0 -2px 0 transparent;
   transition:opacity var(--t-fast) var(--ease),box-shadow var(--t-fast) var(--ease)}
-.top nav a:hover,.top nav button:hover{opacity:1;box-shadow:inset 0 -2px 0 var(--rule-hair)}
+.top nav a:hover,.top nav button:hover{opacity:1}
 /* where you are is a "this one is on", so it is the near-black mark, the same
    as every other selected state on the site */
 .top nav a[aria-current],.top nav button[aria-current]{opacity:1;
   box-shadow:inset 0 -2px 0 var(--mark)}
+/* the bar is the wordmark, four words and a sign-in, and on a phone that is
+   almost exactly the width available. the letterspacing is what tips it over,
+   so it comes off first — every surface gets this rather than each one
+   inventing its own escape. */
+@media(max-width:640px){
+  .top{gap:var(--s2);padding:var(--s2) var(--s3)}
+  .top nav{gap:var(--s3)}
+  .top nav a,.top nav button{letter-spacing:.06em}
+}
 
 /* what you are working on, in the bar, next to the wordmark */
 .what{display:flex;align-items:baseline;gap:var(--s2);min-width:0;
@@ -103,15 +129,17 @@ img{display:block;max-width:100%}
 /* ---------- section heads ---------- */
 .head{display:flex;align-items:baseline;gap:var(--s3);padding:var(--s3) 0 var(--s2);
   border-bottom:1px solid var(--rule)}
-.head h2{margin:0;font-size:var(--fs-micro);letter-spacing:.16em;text-transform:uppercase;
-  font-weight:400;color:var(--ink)}
+/* RULE 4. the display face, set as typed. it used to be 11px letterspaced
+   caps, which is the same treatment as the word "BY" in a caption — so a
+   section heading and a field label looked like the same kind of thing. */
+.head h2{margin:0;font-family:var(--font-display);font-weight:400;font-size:19px;
+  line-height:1.1;letter-spacing:-.01em;text-transform:none;color:var(--ink)}
 .head .n{font-size:var(--fs-micro);letter-spacing:.1em;color:var(--label)}
 .head .sp{flex:1}
 .head a,.head button.link{font-size:var(--fs-micro);letter-spacing:.1em;color:var(--label);
-  text-decoration:none;background:none;border:0;padding:0;text-transform:lowercase;
-  box-shadow:inset 0 -1px 0 transparent;
-  transition:color var(--t-fast) var(--ease),box-shadow var(--t-fast) var(--ease)}
-.head a:hover,.head button.link:hover{color:var(--ink);box-shadow:inset 0 -1px 0 var(--ink)}
+  text-decoration:none;background:none;border:0;padding:0;
+  transition:color var(--t-fast) var(--ease)}
+.head a:hover,.head button.link:hover{color:var(--ink)}
 
 /* ---------- controls ----------
    inline-flex, not the default inline-block: a button carrying an icon and a
@@ -275,11 +303,12 @@ img{display:block;max-width:100%}
 /* ---------- disclosure ---------- */
 .fold{width:100%;display:flex;align-items:baseline;gap:var(--s2);background:none;
   border:0;border-bottom:1px solid var(--rule);padding:3px 0;margin-top:var(--s3);
-  color:var(--ink);font-size:var(--fs-micro);letter-spacing:.16em;text-transform:uppercase;
+  color:var(--ink);font-family:var(--font-display);font-weight:400;font-size:15px;
   transition:color var(--t-fast) var(--ease)}
 .fold:hover{color:var(--accent)}
 .fold .sp{flex:1}
-.fold .n{color:var(--label);letter-spacing:.1em;text-transform:none}
+.fold .n{color:var(--label);font-family:var(--font-body);font-size:var(--fs-micro);
+  letter-spacing:.1em}
 .fold .caret{width:0;height:0;border-left:4px solid transparent;border-right:4px solid transparent;
   border-top:5px solid currentColor;transform-origin:50% 30%;align-self:center;
   transition:transform var(--t-fast) var(--ease)}
