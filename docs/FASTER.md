@@ -373,6 +373,23 @@ for the **first row** of covers, since they are what the page is.
 
 Not tasks. Ideas with a source.
 
+**AVIF is not available to us client-side, and fails silently.** The display
+copies are already WebP — that is what the 984 KB → 238 KB is. AVIF would be
+another 20–30% smaller again, but `canvas.toBlob('image/avif')` is not
+supported: Chromium **returns a PNG instead of erroring**. Measured on a real
+page at 1600px:
+
+| asked for | got back | size |
+|---|---|---|
+| `image/webp` | webp | **151 KB** |
+| `image/jpeg` | jpeg | 239 KB |
+| `image/avif` | **png** | **2245 KB** |
+
+Fifteen times bigger than the WebP, and nothing throws. `makeDisplay()` has a
+`out.size >= blob.size` guard that would reject it, but only after doing the
+work. If AVIF is ever wanted it has to come from the edge (`format=auto`) or
+a wasm encoder, not from the canvas.
+
 **Serve derivatives at the edge, not at publish.** Cloudflare Image
 Transformations (`/cdn-cgi/image/width=1600,format=auto/<key>`) would replace
 the publish-time WebP with a URL parameter, and — crucially — it works on
