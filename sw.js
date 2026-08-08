@@ -2,6 +2,30 @@
    HTML is network-first so a deploy lands immediately (no hard-reload needed);
    other assets are cache-first with a background refresh. */
 const CACHE = 'eski-v16';
+
+/* WHERE PUBLISHED PAGES AND AUDIO COME FROM.
+
+   MUST MATCH R2_BASE IN platform.js. A service worker cannot import a module,
+   so this is the one value in the codebase that genuinely lives in two files —
+   and a media host that disagrees with the app's is invisible: nothing breaks,
+   the cache simply never hits and every page is downloaded again forever.
+   tests/structure.js asserts the two are identical, which is what makes the
+   duplication safe rather than a trap.
+
+   Change both together when the bucket moves to a custom domain. */
+const MEDIA = 'https://pub-b9e7c6b680ca415e9ffd5875bad0df03.r2.dev/';
+
+/* A SEPARATE, VERSIONLESS CACHE, and this is the important part. `activate`
+   deletes every cache whose name is not CACHE, so putting comics in there
+   would throw away somebody's whole offline library on every single deploy.
+   Media is content-addressed and cannot go stale, so it has nothing to gain
+   from a version in its name and everything to lose. */
+const MEDIA_CACHE = 'eski-media';
+/* Cache Storage is not free, and a comic is 40-90 objects. This is roughly a
+   dozen comics. FIFO by insertion, because the API gives no timestamps and
+   cache.keys() is insertion-ordered — cruder than least-recently-used, and the
+   right trade for a ceiling nobody should notice. */
+const MEDIA_MAX = 900;
 const ASSETS = [
   './',
   'index.html',
@@ -44,7 +68,8 @@ self.addEventListener('install', e => {
 self.addEventListener('activate', e => {
   e.waitUntil(
     caches.keys().then(keys =>
-      Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
+      // MEDIA_CACHE survives a deploy on purpose — see its definition
+      Promise.all(keys.filter(k => k !== CACHE && k !== MEDIA_CACHE).map(k => caches.delete(k)))
     ).then(() => self.clients.claim())
   );
 });
@@ -53,6 +78,19 @@ self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return;
   const url = new URL(e.request.url);
   const sameOrigin = url.origin === location.origin;
+  /* PUBLISHED MEDIA, kept forever and never revalidated.
+
+     Pages and audio are the biggest, slowest, most re-read things on the site,
+     and until now the cache refused exactly them. Keys are content-addressed —
+     a key is a hash of the bytes, so it can never point at different bytes —
+     which is what makes "cache-first, no background refresh" correct rather
+     than merely convenient. Re-reading a comic becomes instant, and works on a
+     train.
+
+     Handled before the cacheable test below because it wants a different
+     cache, a different strategy and a ceiling. */
+  if (url.href.startsWith(MEDIA)) { e.respondWith(media(e.request)); return; }
+
   /* cdnjs is still here for pdf.js, which the studio loads on demand for a PDF
      import. jszip left when it was vendored. */
   const cacheable = sameOrigin || url.href.startsWith('https://cdnjs.cloudflare.com/');
@@ -88,3 +126,35 @@ self.addEventListener('fetch', e => {
     )
   );
 });
+
+/* One published object. Cache-first with no revalidation, then trimmed.
+
+   NO ignoreSearch. Presigned GETs carry a signature in the query string and a
+   plain public read does not, so two requests for the same object can differ
+   only there — matching loosely would serve one for the other, and an expired
+   signature cached under a bare key would be worse than no cache at all. */
+async function media(request){
+  const cache = await caches.open(MEDIA_CACHE);
+  const hit = await cache.match(request);
+  if (hit) return hit;
+
+  const res = await fetch(request);
+  /* only 200. A 206 partial (audio seeking asks for ranges) must never be
+     stored whole: it would be served back as if it were the entire file. */
+  if (res && res.status === 200){
+    cache.put(request, res.clone()).then(trim).catch(() => {});
+  }
+  return res;
+}
+
+/* FIFO, and only when it is actually over. Runs after the put resolves rather
+   than on a timer, so the ceiling is checked exactly as often as it can move. */
+async function trim(){
+  const cache = await caches.open(MEDIA_CACHE);
+  const keys = await cache.keys();
+  if (keys.length <= MEDIA_MAX) return;
+  // 10% below the line at a time: trimming exactly one per put would leave the
+  // cache permanently at the ceiling and run this scan on every single object
+  const over = keys.length - MEDIA_MAX + Math.ceil(MEDIA_MAX * 0.1);
+  await Promise.all(keys.slice(0, over).map(k => cache.delete(k)));
+}

@@ -118,5 +118,123 @@ const preMissing = pre.filter(a => {
 });
 ok(preMissing.length === 0, 'every precached asset has a policy', preMissing.join(', '));
 
-console.log(bad ? `\n${bad} FAILURES` : '\ncache: all checks passed');
-process.exit(bad ? 1 : 0);
+/* ------------------------------------------------------------------------ */
+console.log('the media cache keeps published pages and audio');
+/* RUN AS CODE, NOT READ AS TEXT. The rules here are decisions — only a 200 is
+   stored, the query string is part of the key, the ceiling actually evicts —
+   and a grep for the right words would pass on a version that does none of
+   them. sw.js is loaded into a vm with a fake Cache API instead, which is
+   enough to call media() and trim() for real.
+
+   Why not a browser: registering a real service worker needs a live origin and
+   an activation dance, and every assertion below is about logic that has
+   nothing to do with either.
+
+   Wrapped in an async IIFE because media() is async and the rest of this file
+   is a plain script; the report moves inside so it still runs last. */
+(async () => {
+  const vm = require('vm');
+
+  const makeCaches = () => {
+    const stores = new Map();
+    return {
+      stores,
+      open: async name => {
+        if (!stores.has(name)) stores.set(name, new Map());
+        const m = stores.get(name);
+        return {
+          // insertion-ordered, which is what trim()'s FIFO relies on
+          keys:   async () => [...m.keys()],
+          /* ignoreSearch IS IMPLEMENTED, not ignored. A fake that quietly
+             accepts the option and behaves the same either way makes the
+             assertion about signed urls pass on a version that gets it wrong —
+             which is what this one did until the mutation test caught it. */
+          match:  async (req, opts) => {
+            const url = typeof req === 'string' ? req : req.url;
+            if (!opts || !opts.ignoreSearch) return m.get(url);
+            const bare = u => u.split('?')[0];
+            for (const [k, v] of m) if (bare(k) === bare(url)) return v;
+            return undefined;
+          },
+          put:    async (req, res) => { m.set(typeof req === 'string' ? req : req.url, res); },
+          delete: async req => m.delete(typeof req === 'string' ? req : req.url)
+        };
+      }
+    };
+  };
+
+  const load = (fakeCaches, fetchImpl) => {
+    const ctx = {
+      self: { addEventListener(){} },
+      caches: fakeCaches,
+      fetch: fetchImpl,
+      URL, Promise, Math, console
+    };
+    vm.createContext(ctx);
+    vm.runInContext(sw, ctx);
+    return ctx;
+  };
+
+  const KEY = 'https://pub-b9e7c6b680ca415e9ffd5875bad0df03.r2.dev/ab/deadbeef.png';
+  const res = (status, tag) => ({ status, tag, clone(){ return { status, tag }; } });
+
+  // one fetch, then the cache
+  {
+    const c = makeCaches();
+    let hits = 0;
+    const ctx = load(c, async () => { hits++; return res(200, 'net'); });
+    const a = await ctx.media({ url: KEY });
+    const b = await ctx.media({ url: KEY });
+    ok(hits === 1, 'a second read of the same object never reaches the network', 'fetches=' + hits);
+    ok(a.status === 200 && b.tag === 'net', 'and gets the same bytes back');
+    ok(c.stores.has('eski-media'), 'stored in its own cache, not the versioned one');
+    ok(!c.stores.get('eski-v16'), 'the versioned cache is untouched by media');
+  }
+
+  // a 206 is a RANGE, not the file. Storing it would serve a fragment as if it
+  // were whole, which for audio means a clip that silently plays half.
+  {
+    const c = makeCaches();
+    let hits = 0;
+    const ctx = load(c, async () => { hits++; return res(206, 'partial'); });
+    await ctx.media({ url: KEY });
+    await ctx.media({ url: KEY });
+    ok(hits === 2, 'a 206 range response is never stored', 'fetches=' + hits);
+  }
+  { // nor is an error page
+    const c = makeCaches();
+    let hits = 0;
+    const ctx = load(c, async () => { hits++; return res(404, 'gone'); });
+    await ctx.media({ url: KEY });
+    await ctx.media({ url: KEY });
+    ok(hits === 2, 'and neither is a 404', 'fetches=' + hits);
+  }
+
+  // the query string is part of the key: a presigned GET carries a signature
+  // that expires, and serving it for a plain public read would be worse than
+  // not caching at all
+  {
+    const c = makeCaches();
+    let hits = 0;
+    const ctx = load(c, async () => { hits++; return res(200, 'net'); });
+    await ctx.media({ url: KEY });
+    await ctx.media({ url: KEY + '?X-Amz-Signature=abc' });
+    ok(hits === 2, 'a signed url is not served from the unsigned one', 'fetches=' + hits);
+  }
+
+  // the ceiling actually evicts, oldest first
+  {
+    const c = makeCaches();
+    const ctx = load(c, async () => res(200, 'net'));
+    const max = vm.runInContext('MEDIA_MAX', ctx);
+    for (let i = 0; i < max + 5; i++) await ctx.media({ url: KEY + i });
+    const left = [...c.stores.get('eski-media').keys()];
+    ok(left.length < max, 'the cache is trimmed below the ceiling, not held at it',
+      `${left.length} of ${max}`);
+    ok(!left.includes(KEY + '0'), 'and the oldest went first');
+    ok(left.includes(KEY + (max + 4)), 'while the newest stayed');
+  }
+
+  console.log(bad ? `\n${bad} FAILURES` : '\ncache: all checks passed');
+  process.exit(bad ? 1 : 0);
+})();
