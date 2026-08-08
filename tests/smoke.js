@@ -147,17 +147,28 @@ function ok(cond, name, extra) {
   ok(true, 'five fast turns still land on the right picture');
   await page.evaluate(() => goToPage(1, true));
 
-  console.log('reader: colour match');
-  await page.waitForFunction(() =>
-    document.documentElement.style.getPropertyValue('--tintsat').trim() === '9%');
-  ok(true, 'tint applied from cover');
-  await page.click('#settings-btn');
-  await page.click('#set-tint');
-  await page.waitForFunction(() =>
-    document.documentElement.style.getPropertyValue('--tintsat').trim() === '0%');
-  ok(true, 'tint toggles off to neutral');
-  await page.click('#set-tint');
-  await page.click('#settings-btn');
+  console.log('reader: colour match is gone');
+  ok(await page.evaluate(() =>
+      !document.documentElement.style.getPropertyValue('--tintsat').trim() &&
+      typeof window.applyTint === 'undefined' && !document.getElementById('set-tint')),
+    'the reader no longer recolours itself from the cover');
+
+  console.log('the palette');
+  ok(await page.evaluate(() => !!window.eskiPalette), 'palette.js is on the reader');
+  ok(await page.evaluate(() => {
+      window.eskiPalette.set('cobalt');
+      const el = document.documentElement;
+      return el.getAttribute('data-palette') === 'cobalt' &&
+             el.getAttribute('data-mode') === 'light' && !el.hasAttribute('data-dark');
+    }), 'a light palette applies and clears data-dark');
+  ok(await page.evaluate(() => {
+      window.eskiPalette.set('moss');
+      const c = getComputedStyle(document.documentElement);
+      // shape is NOT a palette decision and must survive every swap
+      return c.getPropertyValue('--r').trim() === '0' &&
+             c.getPropertyValue('--bw').trim() === '1px' &&
+             document.documentElement.hasAttribute('data-dark');
+    }), 'a dark palette applies and leaves the radius and rules alone');
 
   console.log('reader: deep link');
   const page2 = await ctx.newPage();

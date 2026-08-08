@@ -95,10 +95,26 @@ img{display:block;max-width:100%}
      first heading starts and the nav ends where the rule ends */
   padding:var(--s2) max(var(--s4), calc((100% - var(--wrap)) / 2 + var(--s4)));
   border-bottom:var(--bw) solid var(--rule);background:var(--paper)}
+/* THE WORDMARK.
+   Gnomon's outlines sit high inside its own line box, so the logo floated
+   above the nav beside it however the row was aligned. line-height:1 plus a
+   measured nudge puts the ink on the optical centre. It is the ONLY place
+   the display face survives — headings are uppercase Jost now. */
+/* ONE COLOUR, ALL THE WAY THROUGH, including the exclamation mark — which
+   used to be a second colour and made the logo read as decoration rather
+   than a link.
+
+   --wordmark is a SHADE of the palette's accent, declared per palette and
+   pushed away from that palette's ground: lighter than the accent on a dark
+   ground, darker on a light one. Hard-coding white made it invisible the
+   moment somebody chose a light palette; deriving it in css is not something
+   css can do reliably, so each palette states its own. */
 .mark{font-family:var(--font-display);font-size:21px;letter-spacing:-.01em;
-  color:var(--ink);text-decoration:none;line-height:1}
-.mark i{font-style:normal;color:var(--accent);transition:color var(--t-fast) var(--ease)}
-.mark:hover i{color:var(--ink)}
+  color:var(--wordmark,var(--accent));text-decoration:none;line-height:1;
+  display:inline-block;transform:translateY(.09em);
+  transition:color var(--t-fast) var(--ease)}
+.mark i{font-style:normal;color:inherit}
+.mark:hover{color:var(--ink)}
 .top .sp{flex:1}
 .top nav{display:flex;gap:var(--s4);margin-left:auto;
   font-size:var(--fs-micro);letter-spacing:.14em;text-transform:uppercase}
@@ -137,8 +153,8 @@ img{display:block;max-width:100%}
 /* RULE 4. the display face, set as typed. it used to be 11px letterspaced
    caps, which is the same treatment as the word "BY" in a caption — so a
    section heading and a field label looked like the same kind of thing. */
-.head h2{margin:0;font-family:var(--font-display);font-weight:400;font-size:19px;
-  line-height:1.1;letter-spacing:-.01em;text-transform:none;color:var(--ink)}
+.head h2{margin:0;font-family:var(--font-body);font-weight:500;font-size:13px;
+  line-height:1.2;letter-spacing:.16em;text-transform:uppercase;color:var(--ink)}
 .head .n{font-size:var(--fs-micro);letter-spacing:.1em;color:var(--label)}
 .head .sp{flex:1}
 .head a,.head button.link{font-size:var(--fs-micro);letter-spacing:.1em;color:var(--label);
@@ -386,3 +402,90 @@ img{display:block;max-width:100%}
   .lnk{min-height:36px;display:inline-flex;align-items:center}
   .cm.reply{margin-left:var(--s3)}
 }
+
+/* ============================================================
+   CLICKABLE THINGS LOOK CLICKABLE, AND ONLY CLICKABLE THINGS DO.
+
+   The site had drifted into every case at once: "eskis" beside "Roles
+   that need a voice" beside "EVERY ESKI ON THE SITE", buttons in
+   sentence case next to labels in caps, and no way to tell a control
+   from a caption without hovering it. One rule now:
+
+     ANYTHING YOU CAN CLICK is uppercase, letterspaced, in --ui, and
+     grows a rectangular box behind it on hover. Colour only — nothing
+     moves, nothing resizes, nothing shifts the line it sits on.
+
+     ANYTHING YOU CANNOT CLICK is sentence case in --ink or --soft-ink.
+     Titles and prose read as titles and prose.
+
+   The box is the affordance. It is a background and a border on a
+   surface that was transparent, so the control's own geometry does not
+   change and the row does not reflow under the cursor.
+   ============================================================ */
+.btn, .pill, .chip, .seg button, .lnk, .seemore,
+.head a, .head button.link, .top nav a, .top nav button,
+.tab, .pal-sw, .cardacts .btn{
+  text-transform:uppercase;
+  letter-spacing:.12em;
+}
+
+/* the one control family that is NOT uppercased: anything showing a
+   person's words back to them. a tag is what somebody typed. */
+.tag, .cm-who, .title, .rolename, .pmeta h1, input, textarea, select{
+  text-transform:none;
+  letter-spacing:normal;
+}
+
+/* ---------- the hover box ---------- */
+.btn, .lnk, .chip, .pill, .seemore, .head a, .head button.link,
+.top nav a, .top nav button, .tab{
+  transition:background var(--t-fast) var(--ease),
+             color var(--t-fast) var(--ease),
+             border-color var(--t-fast) var(--ease),
+             opacity var(--t-fast) var(--ease);
+}
+.lnk:hover, .seemore:hover, .head a:hover, .head button.link:hover,
+.top nav a:hover, .top nav button:hover{
+  background:var(--ui-hover-bg);
+  color:var(--ui);
+  opacity:1;
+}
+/* a bare text control has no padding of its own, so the box would cling
+   to the letters. give it room without moving anything: the padding is
+   always there, only the ground appears. */
+.lnk, .seemore, .head a, .head button.link, .top nav a, .top nav button{
+  padding:3px var(--s2);
+  margin:0 calc(var(--s2) * -1);
+}
+.top nav a, .top nav button{ padding:3px var(--s2); margin:0 }
+
+/* a bordered control already has geometry; it only needs the fill */
+.btn:hover, .chip:hover, .pill:hover{
+  background:var(--ui-hover-bg);
+  border-color:var(--ui);
+  color:var(--ui);
+}
+/* except the primary one, which is already a fill and must not invert */
+.btn.p:hover{ background:var(--accent); border-color:var(--accent); color:var(--on-mark) }
+.btn[aria-pressed="true"]:hover, .chip[aria-pressed="true"]:hover{
+  background:var(--mark); border-color:var(--mark); color:var(--on-mark);
+}
+
+/* ---------- clickable text is its own colour ---------- */
+.lnk, .seemore, .head a, .head button.link{ color:var(--ui) }
+.top nav a, .top nav button{ color:var(--ui) }
+
+/* ---------- horizontal tabs ----------
+   One row, one panel underneath. Used by the profile. The selected one is
+   the near-black fill, the same "this is on" as everywhere else. */
+.tabs{display:flex;gap:0;overflow-x:auto;scrollbar-width:none;
+  border-bottom:var(--bw) solid var(--rule);margin-top:var(--s4)}
+.tabs::-webkit-scrollbar{display:none}
+.tab{display:inline-flex;align-items:center;gap:var(--s2);white-space:nowrap;
+  background:none;border:0;padding:var(--s3) var(--s4);cursor:pointer;
+  font:inherit;font-size:var(--fs-micro);color:var(--ui);opacity:.6;
+  box-shadow:inset 0 -2px 0 transparent}
+.tab:hover{background:var(--ui-hover-bg);opacity:1}
+.tab[aria-selected="true"]{opacity:1;box-shadow:inset 0 -2px 0 var(--mark);color:var(--ink)}
+.tab .n{font-size:10px;color:var(--label);letter-spacing:.06em}
+.tab[aria-selected="true"] .n{color:var(--accent)}

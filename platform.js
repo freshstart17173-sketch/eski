@@ -93,11 +93,11 @@ function paint(){
   menu.className = 'auth-menu';
 
   if(user){
-    // one word, no menu behind it. the nav already carries "profile".
-    btn.title = 'signed in as ' + nameOf(user);
-    btn.textContent = 'sign out';
-    btn.onclick = () => sb.auth.signOut();
-    box.append(btn);
+    /* SIGNED IN, THE BAR SAYS NOTHING. Sign out used to live here, which put
+       the one destructive control on the site permanently one click from
+       every page, next to the four words you navigate with. It is in the
+       profile's settings tab now, where you go on purpose. */
+    box.remove();
     return;
   }
   {

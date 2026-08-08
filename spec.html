@@ -9,9 +9,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Jost:wght@400;500;600&display=swap" rel="stylesheet">
-<script src="theme.js"></script>
+<script src="palette.js"></script>
 <link rel="stylesheet" href="tokens.css">
-<link rel="stylesheet" href="themes.css">
+<link rel="stylesheet" href="palettes.css">
 <style>
 *{box-sizing:border-box}
 button,input,select,textarea{font-family:inherit;font-size:inherit}
@@ -227,9 +227,6 @@ code{font-variant-numeric:var(--num)}
 <script>
 try{
   const s = JSON.parse(localStorage.getItem('eski-settings'))||{};
-  /* the dark toggle is now a shortcut into the theme system: there is one
-     place that owns data-theme, and it is theme.js. */
-  if(window.eskiTheme) window.eskiTheme.set(s.dark ? 'eski' : 'broadsheet');
 }catch(e){}
 </script>
 </body>

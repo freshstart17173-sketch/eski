@@ -10,10 +10,10 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Jost:wght@400;500;600&display=swap" rel="stylesheet">
 <script type="module" src="platform.js"></script>
-<script src="theme.js"></script>
+<script src="palette.js"></script>
 <link rel="stylesheet" href="tokens.css">
 <link rel="stylesheet" href="docs/design/final/broadsheet.css">
-<link rel="stylesheet" href="themes.css">
+<link rel="stylesheet" href="palettes.css">
 <style>
 /* ============================================================
    eski — profile. docs/design/final/home.html's profile pane: the head
@@ -48,10 +48,10 @@ section + section{margin-top:var(--s6)}
    the name column where it pushed the stats out of line */
 .editwrap{grid-column:1 / -1}
 .pfp-lg{width:64px;height:64px;border:var(--bw) solid var(--rule);display:grid;place-items:center;
-  font-family:var(--font-display);font-size:22px;color:var(--accent);background:var(--surface);
+  font-family:var(--font-body);font-size:22px;color:var(--accent);background:var(--surface);
   overflow:hidden}
 .pfp-lg img{width:100%;height:100%;object-fit:cover}
-.pmeta h1{font-family:var(--font-display);font-weight:400;font-size:var(--fs-title);
+.pmeta h1{font-family:var(--font-body);font-weight:400;font-size:var(--fs-title);
   margin:0;line-height:1;word-break:break-word}
 .ptag{margin:var(--s2) 0 0;font-size:var(--fs-micro);letter-spacing:.1em;text-transform:uppercase;
   color:var(--accent)}
@@ -68,7 +68,7 @@ section + section{margin-top:var(--s6)}
   border-right:var(--bw) solid var(--rule-hair);
   font-size:var(--fs-micro);letter-spacing:.06em;line-height:1.2;
   text-transform:uppercase;color:var(--label);text-align:right;align-content:start}
-.pstats b{font-family:var(--font-display);font-size:22px;font-weight:400;
+.pstats b{font-family:var(--font-body);font-size:22px;font-weight:400;
   line-height:1;font-variant-numeric:tabular-nums}
 .hot{color:var(--accent)}
 .head .n{color:var(--accent)}
@@ -101,14 +101,19 @@ section + section{margin-top:var(--s6)}
 .card{display:flex;flex-direction:column;background:none;text-align:left;border:0;
   padding:var(--s3);color:inherit;font:inherit;min-width:0;width:100%;cursor:pointer;
   transition:background var(--t-fast) var(--ease)}
-.card:hover{background:var(--surface)}
+/* THE WHOLE CARD, and unmistakably. The old hover tinted only the button's
+   own box and by a shade you had to look for; on a dark ground it was
+   invisible. The cell is the target, so the cell is what lights up. */
+.cell:hover{background:var(--surface)}
+.cell:hover .card{background:var(--surface)}
+.cell:hover .plate{border-color:var(--ui)}
 .card:active{transform:translateY(1px)}
 .plate{position:relative;overflow:hidden;border:var(--bw) solid var(--rule-hair);
   aspect-ratio:2/3;background:var(--plate-bg)}
 .plate img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;
   transition:transform var(--t-mid) var(--ease)}
 .card:hover .plate img{transform:scale(1.025)}
-.title{font-family:var(--font-display);font-weight:400;font-size:17px;line-height:24px;
+.title{font-family:var(--font-body);font-weight:400;font-size:17px;line-height:24px;
   height:24px;text-align:center;margin-top:var(--s3)}
 .note{height:var(--row);line-height:var(--row);font-size:var(--fs-micro);
   color:var(--label);text-align:center;letter-spacing:.04em}
@@ -136,7 +141,7 @@ section + section{margin-top:var(--s6)}
 .portrait{width:46px;height:46px;flex:none;display:block;overflow:hidden;
   border:var(--bw) solid var(--rule-hair);background:var(--plate-bg)}
 .portrait img{width:100%;height:100%;object-fit:cover}
-.rolename{font-family:var(--font-display);font-size:15px;line-height:20px}
+.rolename{font-family:var(--font-body);font-size:15px;line-height:20px}
 .rolein{font-size:var(--fs-micro);color:var(--label);line-height:var(--row)}
 .rolerow .where{font-size:var(--fs-micro);color:var(--label);min-width:0}
 .rolerow .where .ttl{color:var(--ink);font-weight:500}
@@ -218,51 +223,8 @@ function paintIcons(root){
       `<svg class="ico" viewBox="0 0 24 24" aria-hidden="true">${ICONS[el.getAttribute('data-ico')]||''}</svg>`);
   });
 }
-/* THE THEME PICKER. This is where the choice is made; theme.js owns applying
-   it, on every surface, before first paint.
-
-   Each swatch is drawn IN ITS OWN THEME rather than described in words: the
-   palette, the typeface, the corner radius and the presence or absence of a
-   rule are all visible at a glance, which is the only honest way to choose
-   between six of them. */
-const THEME_NOTE = {
-  broadsheet: ['Broadsheet',  'Near-white, hairline rules, Gnomon headings. Square.'],
-  press:      ['Press',       'Black on white, no hue at all, set in a serif.'],
-  eski:       ['eski dark',   'The house sage, inverted. Still ruled, still square.'],
-  light:      ['Light',       'Off-whites and greys, softly rounded, system type.'],
-  pink:       ['Pink',        'Warm ground, generous radius, and no rules at all.'],
-  slate:      ['Slate',       'Dark greys separated by value rather than by line.']
-};
-
-function paintThemes(){
-  const box = $('themes');
-  if(!box || !window.eskiTheme) return;
-  const now = window.eskiTheme.current;
-  const label = $('theme-now');
-  if(label) label.textContent = (THEME_NOTE[now] || [now])[0];
-
-  box.innerHTML = window.eskiTheme.list.map(t=>{
-    const [name, note] = THEME_NOTE[t] || [t, ''];
-    /* data-theme on the swatch itself, so every token inside it resolves to
-       that theme's values and the sample is the real thing, not a mock-up */
-    return `<button class="theme-sw" data-theme="${esc(t)}" data-pick="${esc(t)}"
-      aria-pressed="${t === now}" title="${esc(note)}">
-      <span class="demo" style="background:var(--paper);color:var(--ink);
-        font-family:var(--font-body);border-radius:var(--r)">
-        <b style="font-family:var(--font-display)">${esc(name)}</b>
-        <i style="color:var(--label)">Aa · voices · score</i>
-        <span class="bar" style="background:var(--mark);border-radius:var(--r)"></span>
-      </span>
-      <span class="nm">${t === now ? 'In use' : 'Use this'}</span>
-    </button>`;
-  }).join('');
-
-  box.querySelectorAll('[data-pick]').forEach(b=>b.addEventListener('click', ()=>{
-    window.eskiTheme.set(b.dataset.pick);
-    paintThemes();
-  }));
-}
-document.addEventListener('eski-theme', paintThemes);
+/* the palette picker is palette.js's; it renders into any
+   <div data-palette-picker>, here and in the footer. */
 
 const fmt = d => d ? new Date(d).toISOString().slice(0,10) : '';
 let sb = null, me = null, subject = null, isMe = false;
@@ -419,6 +381,20 @@ function paint(){
   const published = comics.filter(c=>c.status === 'published');
   const drafts    = comics.filter(c=>c.status !== 'published');
 
+  /* One row, one panel. `mine` marks the tabs only the owner sees. */
+  const TABS = [
+    { id:'reading',   label:'Reading',       mine:false, count:c=>c.reading },
+    { id:'later',     label:'Shelf',         mine:false, count:c=>c.later },
+    { id:'read',      label:'Read',          mine:false, count:c=>c.read },
+    { id:'parts',     label:'Contributions', mine:false, count:c=>c.parts },
+    { id:'published', label:'Published',     mine:false, count:c=>c.published },
+    { id:'drafts',    label:'Drafts',        mine:true,  count:c=>c.drafts },
+    { id:'settings',  label:'Settings',      mine:true,  count:()=>'' }
+  ];
+
+  const counts = { reading:reading.length, read:read.length, later:later.length,
+                   parts:parts.length, published:published.length, drafts:drafts.length };
+
   $('page').innerHTML = `
     <div class="phead">
       <!-- an oauth avatar url can 404 or be blocked, and a broken-image icon
@@ -459,54 +435,23 @@ function paint(){
         </div>` : ''}</div>
     </div>
 
-    <section>
-      <div class="head"><h2>Reading</h2><span class="n">${reading.length}</span>
-        <span class="sp"></span><a href="index.html#browse">Find something →</a></div>
-      <div class="grid" id="g-reading"></div>
-      <div class="empty" id="e-reading" hidden></div>
-    </section>
+    <!-- HORIZONTAL TABS, not six stacked sections. The profile was one long
+         column where every grid was open at once, so the page was mostly
+         empty grids and you scrolled past five to reach the sixth. One row of
+         tabs, one panel, and Reading is what you land on. -->
+    <div class="tabs" id="tabs" role="tablist">
+      ${TABS.filter(t=>t.mine ? isMe : true).map((t,i)=>
+        `<button class="tab" role="tab" data-tab="${t.id}"
+           aria-selected="${i===0}">${esc(t.label)}<span class="n">${
+           t.count(counts)}</span></button>`).join('')}
+    </div>
 
-    <section>
-      <div class="head"><h2>Read</h2><span class="n">${read.length}</span></div>
-      <div class="grid" id="g-read"></div>
-      <div class="empty" id="e-read" hidden></div>
-    </section>
+    <div id="panel"></div>
 
-    ${later.length ? `<section>
-      <div class="head"><h2>Shelf</h2><span class="n">${later.length}</span></div>
-      <div class="grid" id="g-later"></div>
-    </section>` : ''}
-
-    <section>
-      <div class="head"><h2>Contributions</h2><span class="n">${parts.length}</span></div>
-      <div class="rolelist" id="g-parts"></div>
-      <div class="empty" id="e-parts" hidden></div>
-    </section>
-
-    <section>
-      <div class="head"><h2>Published</h2><span class="n">${published.length}</span></div>
-      <div class="grid" id="g-published"></div>
-      <div class="empty" id="e-published" hidden></div>
-    </section>
-
-    ${isMe ? `<section>
-      <div class="head"><h2>Drafts</h2><span class="n">${drafts.length}</span>
-        <span class="sp"></span><a href="author.html">Open the studio →</a></div>
-      <div class="grid" id="g-drafts"></div>
-      <div class="empty" id="e-drafts" hidden></div>
-    </section>
-
-    <section>
-      <div class="head"><h2>Settings</h2></div>
-      <div class="subhead"><span>Theme</span><span class="sp"></span>
-        <span class="n" id="theme-now"></span></div>
-      <p class="note-line">A theme changes more than the colours: the typeface,
-        the corner radius, whether there are hairline rules at all, and how a
-        control answers a hover.</p>
-      <div class="themes" id="themes"></div>
-    </section>` : ''}
-
-    <div class="foot"><span>EST. 2026</span>
+    <div class="foot">
+      <span class="pal-foot"><span>Colour</span>
+        <span data-palette-picker data-compact></span></span>
+      <span class="sp"></span>
       <span><a href="index.html">HOME</a> · <a href="author.html">STUDIO</a></span></div>`;
 
   const fillGrid = (id, list, mapper, emptyId, emptyMsg)=>{
@@ -518,69 +463,109 @@ function paint(){
     if(!list.length) box.style.borderLeft = '0';
   };
 
-  fillGrid('g-reading', reading, s=>cardEl(s.comics, {
-    progress: s.pages ? Math.min(1, s.last_page / s.pages) : 0,
-    note: s.pages ? `page ${s.last_page} of ${s.pages}` : '',
-    rows: `<div class="r"><span class="k">at</span><span class="v">${
-      s.pages ? Math.round((s.last_page / s.pages) * 100) + '%' : '—'}</span></div>`
-  }), 'e-reading', isMe ? 'nothing on the go. open something and it lands here.'
-                        : 'not reading anything right now.');
+  /* ONE PANEL AT A TIME. Each tab builds only its own contents, so five
+     empty grids are never on the page at once. */
+  function showTab(id){
+    $('tabs').querySelectorAll('.tab').forEach(b=>
+      b.setAttribute('aria-selected', b.dataset.tab === id));
+    const box = $('panel');
 
-  fillGrid('g-read', read, s=>cardEl(s.comics, {
-    note: 'finished',
-    rows: `<div class="r"><span class="k">Pages</span><span class="v">${nfmt(s.pages)}</span></div>`
-  }), 'e-read', 'nothing finished yet.');
+    if(id === 'settings'){
+      box.innerHTML = `
+        <div class="subhead"><span>Colour</span></div>
+        <p class="note-line">The accent is yours. Ten palettes, five on a light
+          ground and five on a dark one — the shape of the site does not change,
+          only what it is coloured with.</p>
+        <div data-palette-picker></div>
+        <div class="subhead" style="margin-top:var(--s5)"><span>Account</span></div>
+        <div class="pacts"><button class="btn sm" id="signout">Sign out</button></div>`;
+      if(window.eskiPalette) window.eskiPalette.paint();
+      const so = $('signout');
+      if(so) so.addEventListener('click', ()=>{ if(sb) sb.auth.signOut(); });
+      return;
+    }
 
-  if($('g-later')) fillGrid('g-later', later, s=>cardEl(s.comics, {note:'on your shelf'}), null, '');
+    if(id === 'parts'){
+      box.innerHTML = `<div class="rolelist" id="g-parts"></div>
+        <div class="empty" id="e-parts" hidden></div>`;
+      $('g-parts').replaceChildren(...parts.map(pt=>{
+        const c = pt.comics || {};
+        const cover = coverUrl(c);
+        const row = document.createElement('div');
+        row.className = 'rolerow';
+        const what = pt.kind === 'vo' ? 'Voice' : 'Score';
+        row.innerHTML =
+          `<span class="portrait">${cover ? `<img src="${esc(cover)}" alt="">` : ''}</span>
+           <div>
+             <div class="rolename">${mq(pt.character_key || pt.title || 'untitled')}</div>
+             <div class="rolein">${esc(what)}${pt.status === 'published' ? '' : ' · draft'}</div>
+           </div>
+           <div class="where"><div class="ttl">${mq(c.title || '')}</div>
+             <div>${esc(fmt(pt.published_at || pt.created_at))}</div></div>
+           <div class="go">
+             <a class="btn sm" href="read.html?read=db:${encodeURIComponent(c.id||'')}&with=part:${encodeURIComponent(pt.id)}">Listen</a>
+             ${isMe ? `<button class="btn sm" data-part="${esc(pt.id)}"
+                data-act="${pt.status === 'published' ? 'unpublish' : 'publish'}">${
+                pt.status === 'published' ? 'Unpublish' : 'Publish'}</button>
+               <button class="btn sm danger" data-part="${esc(pt.id)}" data-act="delete">Delete</button>` : ''}
+           </div>`;
+        return row;
+      }));
+      const e = $('e-parts');
+      e.hidden = parts.length > 0;
+      e.textContent = partsError || (isMe
+        ? "Voice work and soundtracks you make for other people's comics show up here."
+        : 'No contributions yet.');
+      paintIcons(box); wireActs(box);
+      return;
+    }
 
-  const partsBox = $('g-parts');
-  if(partsBox){
-    partsBox.replaceChildren(...parts.map(pt=>{
-      const c = pt.comics || {};
-      const cover = coverUrl(c);
-      const row = document.createElement('div');
-      row.className = 'rolerow';
-      const what = pt.kind === 'vo' ? 'voice' : 'score';
-      row.innerHTML =
-        `<span class="portrait">${cover ? `<img src="${esc(cover)}" alt="">` : ''}</span>
-         <div>
-           <div class="rolename">${mq(pt.character_key || pt.title || 'untitled')}</div>
-           <div class="rolein">${esc(what)}${pt.status === 'published' ? '' : ' · draft'}</div>
-         </div>
-         <div class="where"><div class="ttl">${mq(c.title || '')}</div>
-           <div>${esc(fmt(pt.published_at || pt.created_at))}</div></div>
-         <div class="go">
-           <a class="btn sm" href="read.html?read=db:${encodeURIComponent(c.id||'')}&with=part:${encodeURIComponent(pt.id)}">Listen</a>
-           ${isMe ? `<button class="btn sm" data-part="${esc(pt.id)}"
-              data-act="${pt.status === 'published' ? 'unpublish' : 'publish'}">${
-              pt.status === 'published' ? 'unpublish' : 'publish'}</button>
-             <button class="btn sm danger" data-part="${esc(pt.id)}" data-act="delete">Delete</button>` : ''}
-         </div>`;
-      return row;
-    }));
-    const e = $('e-parts');
-    e.hidden = parts.length > 0;
-    e.textContent = partsError || (isMe
-      ? "voice work and soundtracks you make for other people's comics show up here."
-      : 'no contributions yet.');
+    const link = { reading:'<a href="index.html#browse">Find something →</a>',
+                   later:'<a href="index.html#browse">Find something →</a>',
+                   drafts:'<a href="author.html">Open the studio →</a>' }[id] || '';
+    box.innerHTML = `${link ? `<div class="head"><span class="sp"></span>${link}</div>` : ''}
+      <div class="grid" id="g-${id}"></div>
+      <div class="empty" id="e-${id}" hidden></div>`;
+
+    const MAP = {
+      reading: [reading, s=>cardEl(s.comics, {
+        progress: s.pages ? Math.min(1, s.last_page / s.pages) : 0,
+        note: s.pages ? `Page ${s.last_page} of ${s.pages}` : '',
+        rows: `<div class="r"><span class="k">at</span><span class="v">${
+          s.pages ? Math.round((s.last_page / s.pages) * 100) + '%' : '—'}</span></div>`
+      }), isMe ? 'Nothing on the go. Open something and it lands here.'
+               : 'Not reading anything right now.'],
+      later: [later, s=>cardEl(s.comics, { note:'On your shelf' }),
+        isMe ? 'Nothing on your shelf yet.' : 'Nothing on this shelf.'],
+      read: [read, s=>cardEl(s.comics, {
+        note:'Finished',
+        rows:`<div class="r"><span class="k">pages</span><span class="v">${nfmt(s.pages)}</span></div>`
+      }), 'Nothing finished yet.'],
+      published: [published, c=>cardEl(c, {
+        rows:`<div class="r"><span class="k">on</span><span class="v">${esc(fmt(c.published_at||c.created_at))}</span></div>`,
+        acts: isMe ? `<button class="btn sm" data-comic="${esc(c.id)}" data-act="unpublish">Unpublish</button>
+           <button class="btn sm danger" data-comic="${esc(c.id)}" data-act="delete">Delete</button>` : ''
+      }), 'Nothing published yet.'],
+      drafts: [drafts, c=>cardEl(c, {
+        rows:`<div class="r"><span class="k">made</span><span class="v">${esc(fmt(c.created_at))}</span></div>`,
+        acts:`<button class="btn sm primary" data-comic="${esc(c.id)}" data-act="publish">Publish</button>
+           <button class="btn sm danger" data-comic="${esc(c.id)}" data-act="delete">Delete</button>`
+      }), 'No drafts. The studio saves them here.']
+    }[id];
+
+    fillGrid('g-' + id, MAP[0], MAP[1], 'e-' + id, MAP[2]);
+    paintIcons(box); wireActs(box);
   }
 
-  // no status badge over the art: the section heading already says which
-  // shelf this is, and the design keeps the plate clean.
-  fillGrid('g-published', published, c=>cardEl(c, {
-    rows: `<div class="r"><span class="k">on</span><span class="v">${esc(fmt(c.published_at||c.created_at))}</span></div>`,
-    acts: isMe ? `<button class="btn sm" data-comic="${esc(c.id)}" data-act="unpublish">Unpublish</button>
-       <button class="btn sm danger" data-comic="${esc(c.id)}" data-act="delete">Delete</button>` : ''
-  }), 'e-published', 'nothing published yet.');
-
-  if($('g-drafts')) fillGrid('g-drafts', drafts, c=>cardEl(c, {
-    rows: `<div class="r"><span class="k">Made</span><span class="v">${esc(fmt(c.created_at))}</span></div>`,
-    acts: `<button class="btn sm primary" data-comic="${esc(c.id)}" data-act="publish">Publish</button>
-       <button class="btn sm danger" data-comic="${esc(c.id)}" data-act="delete">Delete</button>`
-  }), 'e-drafts', 'no drafts. the studio saves them here.');
+  const wireActs = root => root.querySelectorAll('[data-act]').forEach(b=>
+    b.addEventListener('click', ev=>{ ev.stopPropagation(); act(b); }));
 
   paintIcons($('page'));
-  paintThemes();
+  if(window.eskiPalette) window.eskiPalette.paint();
+
+  $('tabs').querySelectorAll('.tab').forEach(b=>
+    b.addEventListener('click', ()=>showTab(b.dataset.tab)));
+  showTab('reading');
 
   $('share').addEventListener('click', async e=>{
     const url = location.origin + location.pathname.replace(/[^/]*$/, 'profile.html') + '?u=' + p.handle;
@@ -592,10 +577,6 @@ function paint(){
     $('cancel').addEventListener('click', ()=>$('edit').classList.remove('on'));
     $('save').addEventListener('click', saveProfile);
   }
-  $('page').querySelectorAll('[data-act]').forEach(b=>b.addEventListener('click', ev=>{
-    ev.stopPropagation();
-    act(b);
-  }));
 }
 
 async function saveProfile(){

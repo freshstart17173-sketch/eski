@@ -1,0 +1,205 @@
+/* ============================================================
+   eski palettes.
+
+   THERE IS NO BRAND COLOUR. Sage green was one, and it was the wrong
+   choice for a site that exists to show other people's artwork: every
+   cover on the shelf had to sit inside somebody else's hue. So the
+   accent belongs to the reader now, and the only thing eski insists on
+   is the shape — square corners, hairline rules, dense metadata. Those
+   do not change between palettes and are not a setting.
+
+   TEN PALETTES, five light and five dark, each written out in full
+   rather than derived at runtime. A palette swap is one attribute on
+   <html>; the browser already has every value parsed, so it is instant
+   and cannot flash a half-applied state.
+
+   Each palette declares exactly these, and nothing else:
+
+     --paper      the page
+     --surface    a panel lifted off it (rows, hovers, plates)
+     --ink        body text
+     --soft-ink   secondary text
+     --muted      tertiary text
+     --label      field labels
+     --rule       the structural line
+     --rule-hair  the line inside a block
+     --accent     THE CHOICE. counts, the wordmark's !, focus rings
+     --mark       the one fill meaning "this is on"
+     --on-mark    what goes on that fill
+     --ui         the colour of anything clickable
+     --ui-hover-bg  the box that appears behind it on hover
+     --wordmark   the logo. a SHADE of the accent, pushed far enough from
+                  the ground to read as the clickable home link it is —
+                  lighter than the accent on a dark ground, darker on a
+                  light one. picked per palette, because "lighten the
+                  accent" is not a thing css can do reliably.
+
+   Shape tokens (--r, --bw) are NOT here. They are the same everywhere.
+   ============================================================ */
+
+/* ---------- what is true of every light palette ---------- */
+[data-mode="light"]{
+  --paper:#FCFCFC;
+  --surface:#F2F2F2;
+  --ink:#111111;
+  --soft-ink:#3A3A3A;
+  --muted:#6B6B6B;
+  --label:#6B6B6B;
+  --rule:#141414;
+  --rule-hair:#D6D6D6;
+  --line-1:#D6D6D6;
+  --line-strong:#141414;
+  --plate-bg:#EDEDED;
+  --on-mark:#FCFCFC;
+  --paper-1:#EDEDED;
+  color-scheme:light;
+}
+
+/* ---------- what is true of every dark palette ---------- */
+[data-mode="dark"]{
+  --paper:#0E0E0E;
+  --surface:#1A1A1A;
+  --ink:#F0F0F0;
+  --soft-ink:#C9C9C9;
+  --muted:#8C8C8C;
+  --label:#8C8C8C;
+  --rule:#3A3A3A;
+  --rule-hair:#2A2A2A;
+  --line-1:#2A2A2A;
+  --line-strong:#5A5A5A;
+  --plate-bg:#1A1A1A;
+  --on-mark:#0E0E0E;
+  --paper-1:#1A1A1A;
+  color-scheme:dark;
+}
+
+/* ============================================================
+   THE FIVE LIGHT ONES
+   ============================================================ */
+
+/* black — no hue at all. the accent IS the ink, so the page is one
+   colour and its emphasis is weight and fill rather than tint. */
+[data-palette="ink"]{
+  --wordmark:#000000;
+  --accent:#111111;
+  --mark:#111111;
+  --ui:#111111;
+  --ui-hover-bg:#E4E4E4;
+}
+
+[data-palette="forest"]{
+  --wordmark:#134A2E;
+  --accent:#1F6B45;
+  --mark:#1F6B45;
+  --ui:#1F6B45;
+  --ui-hover-bg:#DCEAE2;
+}
+
+[data-palette="cobalt"]{
+  --wordmark:#123A99;
+  --accent:#1B4FCC;
+  --mark:#1B4FCC;
+  --ui:#1B4FCC;
+  --ui-hover-bg:#DDE4F8;
+}
+
+[data-palette="crimson"]{
+  --wordmark:#7E1329;
+  --accent:#B21E3B;
+  --mark:#B21E3B;
+  --ui:#B21E3B;
+  --ui-hover-bg:#F6DDE2;
+}
+
+[data-palette="amber"]{
+  --wordmark:#6B3F00;
+  --accent:#9A5B00;
+  --mark:#9A5B00;
+  --ui:#9A5B00;
+  --ui-hover-bg:#F5E6CC;
+}
+
+/* ============================================================
+   THE FIVE DARK ONES
+   ============================================================ */
+
+/* white — the mirror of ink. near-black ground, white accent, no hue. */
+[data-palette="paper"]{
+  --wordmark:#FFFFFF;
+  --accent:#FFFFFF;
+  --mark:#FFFFFF;
+  --ui:#FFFFFF;
+  --ui-hover-bg:#2E2E2E;
+}
+
+/* THE ONE THAT WAS ALREADY THERE. Kept so nothing has to change for
+   anyone who liked it; it is now a choice rather than the house. */
+[data-palette="moss"]{
+  --wordmark:#BEE2CC;
+  --paper:#0C130F;
+  --surface:#182420;
+  --plate-bg:#182420;
+  --paper-1:#182420;
+  --rule:#3F5A4C;
+  --rule-hair:#22332B;
+  --line-1:#22332B;
+  --line-strong:#5B7A6B;
+  --on-mark:#0C130F;
+  --accent:#8FC0A4;
+  --mark:#8FC0A4;
+  --ui:#8FC0A4;
+  --ui-hover-bg:#22332B;
+}
+
+[data-palette="ice"]{
+  --wordmark:#B9D4FF;
+  --accent:#7FB2FF;
+  --mark:#7FB2FF;
+  --ui:#7FB2FF;
+  --ui-hover-bg:#22303F;
+}
+
+[data-palette="rose"]{
+  --wordmark:#FFC0D2;
+  --accent:#FF8FB0;
+  --mark:#FF8FB0;
+  --ui:#FF8FB0;
+  --ui-hover-bg:#3A2530;
+}
+
+[data-palette="gold"]{
+  --wordmark:#F4D69B;
+  --accent:#E8B45C;
+  --mark:#E8B45C;
+  --ui:#E8B45C;
+  --ui-hover-bg:#332A18;
+}
+
+/* ============================================================
+   THE PICKER
+
+   Ten swatches. Each is drawn in its own palette, so the choice is made
+   by looking. It appears in two places — the profile's settings and the
+   footer of every page — from one renderer in palette.js.
+   ============================================================ */
+.pal{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.pal-group{display:flex;gap:4px;align-items:center}
+.pal-group > span{font-size:var(--fs-micro);letter-spacing:.14em;text-transform:uppercase;
+  color:var(--label);margin-right:2px}
+.pal-sw{width:22px;height:22px;padding:0;cursor:pointer;
+  border:var(--bw) solid var(--rule-hair);
+  background:var(--paper);position:relative;
+  transition:border-color var(--t-fast) var(--ease)}
+/* the accent as a solid block inside the palette's own ground, so both
+   halves of the choice — what the page becomes and what the accent is —
+   are visible in one 22px square */
+.pal-sw::after{content:"";position:absolute;inset:5px;background:var(--accent)}
+.pal-sw:hover{border-color:var(--ink)}
+.pal-sw[aria-pressed="true"]{border-color:var(--ink);border-width:2px}
+.pal-sw[aria-pressed="true"]::after{inset:4px}
+
+/* the footer copy sits on one line with the swatches */
+.pal-foot{display:flex;align-items:center;gap:var(--s3);flex-wrap:wrap}
+@media(max-width:640px){
+  .pal-sw{width:26px;height:26px}
+}

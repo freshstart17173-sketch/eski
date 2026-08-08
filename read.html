@@ -15,37 +15,16 @@
 <script src="vendor/panzoom.js"></script>
 <script type="module" src="platform.js"></script>
 <script src="comments.js"></script>
-<script src="theme.js"></script>
+<script src="palette.js"></script>
 <link rel="stylesheet" href="tokens.css">
 <link rel="stylesheet" href="docs/design/final/broadsheet.css">
-<link rel="stylesheet" href="themes.css">
+<link rel="stylesheet" href="palettes.css">
 <style>
-/* colour match. the chrome is re-derived from the cover's hue only while
-   html.tint is set; without it the reader is the same near-white and
-   near-black as every other surface.
-
-   the RULES are deliberately left alone. broadsheet's structure is
-   near-black hairlines on near-white ground, and a comic with an orange
-   cover does not get orange rules — it gets a warmer paper behind the same
-   rules. only the ground, the surface and the accent move. */
-html.tint{
-  --paper:hsl(var(--hue),var(--tintsat),97%);
-  --surface:hsl(var(--hue),var(--tintsat),100%);
-  --accent:hsl(var(--hue),22%,38%);
-  --accent-deep:hsl(var(--hue),28%,26%);
-  --accent-soft:hsl(var(--hue),22%,86%);
-  --band:hsl(var(--hue),var(--tintsat),12%);
-  --paper-1:hsl(var(--hue),var(--tintsat),94%);
-}
-html.tint[data-dark]{
-  --paper:hsl(var(--hue),var(--tintsat),8%);
-  --surface:hsl(var(--hue),var(--tintsat),12%);
-  --accent:hsl(var(--hue),20%,66%);
-  --accent-deep:hsl(var(--hue),24%,78%);
-  --accent-soft:hsl(var(--hue),18%,28%);
-  --band:hsl(var(--hue),var(--tintsat),6%);
-  --paper-1:hsl(var(--hue),var(--tintsat),15%);
-}
+/* COLOUR MATCH IS GONE. It sampled the cover and recoloured the whole
+   chrome from it, which fought whatever palette the reader had chosen and
+   never looked right on a page whose art was mostly one hue. The accent is
+   the reader's choice now; the comic is the only thing that gets to be
+   loud. */
 html{scroll-behavior:smooth}
 body{margin:0;background:var(--paper);color:var(--ink);
   transition:background 600ms ease}
@@ -87,7 +66,7 @@ body.focus .settings{position:fixed;right:12px;bottom:calc(var(--bar) + 12px);z-
 /* empty state: the reader only opens comics the library hands it */
 .drop-overlay{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;
   justify-content:center;gap:var(--s3);text-align:center;padding:var(--s5);z-index:5}
-.drop-overlay .big{font-family:var(--font-display);font-weight:400;font-size:clamp(26px,3.4vw,40px);
+.drop-overlay .big{font-family:var(--font-body);font-weight:400;font-size:clamp(26px,3.4vw,40px);
   line-height:.92;letter-spacing:-.01em}
 .drop-overlay p{margin:0;color:var(--label);max-width:420px;font-size:var(--fs-xs)}
 /* the reason it failed, selectable so it can be pasted into a bug report */
@@ -232,7 +211,7 @@ body.focus .settings{position:fixed;right:12px;bottom:calc(var(--bar) + 12px);z-
 .mix-head{font-size:var(--fs-micro);letter-spacing:.16em;text-transform:uppercase;
   color:var(--label);padding:var(--s3) var(--s3) var(--s1);
   border-bottom:var(--bw) solid var(--rule);margin-bottom:var(--s1)}
-.mix-char{font-family:var(--font-display);font-size:14px;color:var(--ink);
+.mix-char{font-family:var(--font-body);font-size:14px;color:var(--ink);
   padding:var(--s2) var(--s3) 2px}
 .mix-note{padding:2px var(--s3) var(--s2);font-size:var(--fs-micro);color:var(--muted)}
 .mix-row{display:grid;grid-template-columns:14px 1fr;gap:var(--s2);align-items:center;
@@ -489,8 +468,6 @@ footer a:hover{color:var(--ink)}
     <div class="settings" id="settings">
       <div class="sheet-head"><span>Settings</span>
         <button data-ico="x" onclick="toggleSettings()" title="Close"></button></div>
-      <div class="set-row"><span>Colour match</span>
-        <button class="tgl" id="set-tint" onclick="toggleTint()">On</button></div>
       <div class="set-row"><span>Reading</span>
         <span class="seg" id="set-reading">
           <button data-m="file" onclick="setReadingMode('file')">File</button>
@@ -578,7 +555,8 @@ footer a:hover{color:var(--ink)}
 </div>
 
 <footer>
-  <span>Comics with soundtracks and voice</span>
+  <span class="pal-foot"><span>Colour</span>
+    <span data-palette-picker data-compact></span></span>
   <span class="sp"></span>
   <a href="author.html">Studio</a>
   <a href="index.html">Home</a>
@@ -1112,7 +1090,6 @@ function openComic(comic){
   audio.queueFrom = null;
   applyReadingMode();
   if(effPlayback()==='playlist') startPlaylist();
-  applyTint();
   savePos();
 }
 
@@ -2173,7 +2150,7 @@ function playlistNext(){
 
 /* ---------------- settings ---------------- */
 const settings = Object.assign(
-  {dark:false, tint:true, fadeMode:'file', fadeSecs:1.5,
+  {dark:false, fadeMode:'file', fadeSecs:1.5,
    readingMode:'file', playbackMode:'file', dirMode:'file', osloop:null},
   (()=>{ try{ return JSON.parse(localStorage.getItem('eski-settings'))||{}; }catch(e){ return {}; } })()
 );
@@ -2214,9 +2191,6 @@ function setDirMode(m){
   settings.dirMode = m; saveSettings(); paintSettings();
   if(current && effReadingMode()==='pages') showPage(currentPage, true);
 }
-function toggleTint(){
-  settings.tint = !settings.tint; saveSettings(); paintSettings(); applyTint();
-}
 function toggleSettings(force){
   const open = force === undefined ? !$('settings').classList.contains('open') : force;
   $('settings').classList.toggle('open', open);
@@ -2240,8 +2214,6 @@ document.addEventListener('pointerdown', e => {
 function paintSettings(){
   const dk = $('set-dark');
   if(dk){ dk.classList.toggle('on', settings.dark); dk.textContent = settings.dark ? 'On' : 'Off'; }
-  $('set-tint').classList.toggle('on', settings.tint);
-  $('set-tint').textContent = settings.tint ? 'On' : 'Off';
   $('set-fade').querySelectorAll('button').forEach(b=>
     b.classList.toggle('on', b.dataset.m===settings.fadeMode));
   $('set-fade-secs-row').style.display = settings.fadeMode==='fixed' ? 'flex' : 'none';
@@ -2359,7 +2331,7 @@ function toggleKeys(force){
 }
 function toggleDark(){
   settings.dark = !settings.dark; saveSettings();
-  if(window.eskiTheme) window.eskiTheme.set(settings.dark ? 'eski' : 'broadsheet');
+  
   paintSettings();
 }
 function setDuckMode(m){
@@ -2370,59 +2342,6 @@ function setDuckMode(m){
 function setFadeMode(m){ settings.fadeMode = m; saveSettings(); paintSettings(); }
 function setFadeSecs(v){ settings.fadeSecs = clamp(parseFloat(v)||0, 0, 10); saveSettings(); paintSettings(); }
 
-/* ---------------- colour match (ambient tint) ----------------
-   samples the cover, tints the whole chrome including the wordmark.
-   toggleable; off (or no comic) leaves a neutral grey with sage accents. */
-/* the palette is fixed sage in tokens.css, so the tint cannot just live in
-   :root any more. it sets the hue and flips html.tint, and the css below the
-   token link re-derives the chrome from it. dropping the class falls straight
-   back to sage, and light/dark stays css's problem rather than this
-   function's. */
-function setTintVars(hue, sat){
-  document.documentElement.style.setProperty('--hue', hue);
-  document.documentElement.style.setProperty('--tintsat', sat+'%');
-  document.documentElement.classList.toggle('tint', sat > 0);
-}
-async function applyTint(){
-  if(!settings.tint || !current){ setTintVars(152, 0); return; }
-  try{
-    let url = current.coverUrl;
-    if(!url){
-      if(current.coverEntry){
-        const b = await current.coverEntry.async('blob');
-        url = current.coverUrl = URL.createObjectURL(b);
-      }else{
-        url = await ensurePageUrl(0);
-      }
-    }
-    if(!url) return;
-    const img = new Image();
-    img.onload = ()=>{
-      try{
-        const W=50, H=50, cv=document.createElement('canvas');
-        cv.width=W; cv.height=H;
-        const cx = cv.getContext('2d');
-        cx.drawImage(img, 0, 0, W, H);
-        const d = cx.getImageData(0,0,W,H).data;
-        let x=0, y=0, wsum=0;
-        for(let i=0;i<d.length;i+=4){
-          const r=d[i]/255, g=d[i+1]/255, b=d[i+2]/255;
-          const mx=Math.max(r,g,b), mn=Math.min(r,g,b), c=mx-mn;
-          if(c<0.06) continue;
-          let h;
-          if(mx===r) h=((g-b)/c)%6; else if(mx===g) h=(b-r)/c+2; else h=(r-g)/c+4;
-          h*=60; if(h<0) h+=360;
-          const w=c*(mx>0.15?1:0.3);
-          x+=Math.cos(h*Math.PI/180)*w; y+=Math.sin(h*Math.PI/180)*w; wsum+=w;
-        }
-        if(wsum<3){ setTintVars(152, 0); return; } // monochrome cover: stay neutral
-        let hue=Math.atan2(y,x)*180/Math.PI; if(hue<0) hue+=360;
-        setTintVars(Math.round(hue), 9);
-      }catch(e){ /* tainted canvas: stay as is */ }
-    };
-    img.src = url;
-  }catch(e){}
-}
 
 /* ---------------- keyboard ---------------- */
 document.addEventListener('keydown', e=>{
@@ -2467,7 +2386,7 @@ if('serviceWorker' in navigator && location.protocol.startsWith('http')){
    so the owner can swap the file at any time.
    ================================================================ */
 (async function boot(){
-  if(window.eskiTheme) window.eskiTheme.set(settings.dark ? 'eski' : 'broadsheet');
+  
   paintIcons();
   paintSettings();
   // library links here with ?read=library/foo.eski; otherwise the owner's demo.eski

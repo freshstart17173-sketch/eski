@@ -17,10 +17,10 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script type="module" src="platform.js"></script>
 <script src="comments.js"></script>
-<script src="theme.js"></script>
+<script src="palette.js"></script>
 <link rel="stylesheet" href="tokens.css">
 <link rel="stylesheet" href="docs/design/final/broadsheet.css">
-<link rel="stylesheet" href="themes.css">
+<link rel="stylesheet" href="palettes.css">
 <style>
 /* ============================================================
    eski — home and browse (eskis · roles · no score).
@@ -73,7 +73,12 @@ section + section{margin-top:var(--s6)}
 /* inside a cell the hairlines belong to the cell, not the button */
 .cell > .card,.bcell > .card{border-right:0;border-bottom:0}
 .cell:hover .rm{display:flex}
-.card:hover{background:var(--surface)}
+/* THE WHOLE CARD, and unmistakably. The old hover tinted only the button's
+   own box and by a shade you had to look for; on a dark ground it was
+   invisible. The cell is the target, so the cell is what lights up. */
+.cell:hover{background:var(--surface)}
+.cell:hover .card{background:var(--surface)}
+.cell:hover .plate{border-color:var(--ui)}
 .card:active{transform:translateY(1px)}
 .plate{position:relative;overflow:hidden;border:var(--bw) solid var(--rule-hair);
   aspect-ratio:2/3;background:var(--plate-bg)}
@@ -84,7 +89,7 @@ section + section{margin-top:var(--s6)}
 .card:active .plate img{transform:scale(.998)}
 .card:hover .plate{border-color:var(--rule)}
 
-.title{font-family:var(--font-display);font-weight:400;font-size:17px;line-height:24px;
+.title{font-family:var(--font-body);font-weight:400;font-size:17px;line-height:24px;
   height:24px;text-align:center;margin-top:var(--s3)}
 /* the note line is in the markup whether or not it has anything in it, so a
    card that carries one does not push its neighbours a row out of true. */
@@ -131,7 +136,7 @@ section + section{margin-top:var(--s6)}
 .portrait img{width:100%;height:100%;object-fit:cover;
   transition:transform var(--t-mid) var(--ease)}
 .rolecard:hover .portrait img,.rolerow:hover .portrait img{transform:scale(1.06)}
-.rolename{font-family:var(--font-display);font-size:15px;line-height:20px;height:20px}
+.rolename{font-family:var(--font-body);font-size:15px;line-height:20px;height:20px}
 /* two lines under the name: WHICH ESKI, then who wrote it. the first is what
    you are scanning for, so it takes the weight and the ink; the second steps
    down. they used to be identical, which is why the block read as grey. */
@@ -186,13 +191,13 @@ section + section{margin-top:var(--s6)}
 @media(max-width:720px){.sheetbody{grid-template-columns:1fr}}
 .sheetbody .left{padding:var(--s4);border-right:var(--bw) solid var(--rule)}
 .sheetbody .right{padding:var(--s4);min-width:0}
-.sheetbody h3{font-family:var(--font-display);font-weight:400;font-size:var(--fs-title);
+.sheetbody h3{font-family:var(--font-body);font-weight:400;font-size:var(--fs-title);
   margin:0 0 var(--s2);line-height:1.05}
 .sheetbody p.desc{margin:var(--s3) 0 0;color:var(--soft-ink);line-height:1.55;
   font-size:var(--fs-xs);white-space:pre-wrap}
 .subhead{display:flex;align-items:baseline;gap:var(--s3);margin:var(--s5) 0 var(--s2);
   padding-bottom:3px;border-bottom:var(--bw) solid var(--rule);
-  font-family:var(--font-display);font-weight:400;font-size:15px}
+  font-family:var(--font-body);font-weight:400;font-size:15px}
 .subhead .sp{flex:1}
 .subhead .n{font-family:var(--font-body);font-size:var(--fs-micro);
   color:var(--label);letter-spacing:.1em}
@@ -309,7 +314,7 @@ button.link:hover{color:var(--ink)}
 
 /* ---------- onboarding ---------- */
 .sheet.wide{width:min(460px,100%);text-align:left;padding:var(--s5);max-height:88vh}
-.sheet.wide .t{margin:0 0 var(--s1);font-size:var(--fs-title);font-family:var(--font-display);
+.sheet.wide .t{margin:0 0 var(--s1);font-size:var(--fs-title);font-family:var(--font-body);
   font-weight:400;letter-spacing:-.01em}
 .ob-sub{color:var(--label);font-size:var(--fs-xs);margin:0 0 var(--s5)}
 .ob-list{display:grid;gap:var(--s4);margin:0 0 var(--s5)}
@@ -378,7 +383,10 @@ button.link:hover{color:var(--ink)}
     <button class="seemore" data-more="roles" hidden>See more</button>
   </section>
 
-  <div class="foot"><span>Est. 2026</span>
+  <div class="foot">
+    <span class="pal-foot"><span>Colour</span>
+      <span data-palette-picker data-compact></span></span>
+    <span class="sp"></span>
     <span><a href="legal.html#terms">Terms</a> · <a href="legal.html#privacy">Privacy</a> ·
       <a href="legal.html#takedown">Takedown</a></span></div>
 </div></main>
@@ -462,9 +470,6 @@ function paintIcons(root){
    between surfaces. this page only applies it. */
 try{
   const s = JSON.parse(localStorage.getItem('eski-settings')) || {};
-  /* the dark toggle is now a shortcut into the theme system: there is one
-     place that owns data-theme, and it is theme.js. */
-  if(window.eskiTheme) window.eskiTheme.set(s.dark ? 'eski' : 'broadsheet');
 }catch(e){}
 
 const esc = s => (s??'').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
@@ -1146,8 +1151,8 @@ function renderRoles(){
   const anyCast = COMICS.some(c=>c.castKnown);
   empty.hidden = ROLES.length > 0;
   empty.textContent = anyCast
-    ? 'every character has a voice. nothing is waiting.'
-    : 'no comic has a cast yet. an author writes one in the studio, and every character without a voice shows up here.';
+    ? 'Every character has a voice. Nothing is waiting.'
+    : 'No comic has a cast yet. An author writes one in the studio, and every character without a voice shows up here.';
 }
 document.querySelectorAll('[data-more]').forEach(b=>b.addEventListener('click', ()=>{
   shown[b.dataset.more] += STEP;
@@ -1185,13 +1190,13 @@ const B_FILTERS = {
   scores:[['none','nothing at all yet'],['more','wants another'],['shortpp','under 150 pp']]
 };
 const B_PLACEHOLDER = {
-  comics:'search eskis, authors, tags',
-  roles:'search characters, eskis, authors',
-  scores:'search eskis, authors, tags'
+  comics:'Search eskis, authors, tags',
+  roles:'Search characters, eskis, authors',
+  scores:'Search eskis, authors, tags'
 };
 const B_NOTE = {
   comics:'every eski on the site',
-  roles:'characters nobody has read yet',
+  roles:'Characters nobody has read yet',
   scores:'eskis waiting for music'
 };
 function paintBrowseBar(){
@@ -1280,7 +1285,7 @@ function renderBrowse(){
     count = `${n} of ${ROLES.length} roles with no voice`;
     empty = COMICS.some(c=>c.castKnown)
       ? 'no role matches that.'
-      : 'no comic has a cast yet, so nothing is waiting to be voiced.';
+      : 'No comic has a cast yet, so nothing is waiting to be voiced.';
   }else{
     let items = COMICS.filter(c=>{
       const hay = (c.title + ' ' + (c.by||'') + ' ' + c.tags.join(' ')).toLowerCase();
@@ -1430,7 +1435,7 @@ function openDetails(c, role, opts){
      pick in the same list as every other score, and it is exclusive with them
      — you cannot listen to a score and to no score at once. */
   const silentRow = pickRow('score:none', false, 'no score',
-    'read it with voices only', null, 'score');
+    'Read it with voices only', null, 'score');
   const scoreHtml = (c.scores.length
     ? c.scores.map(s=>s.partId
         ? pickRow('part:' + s.partId, false, s.title, 'by ' + s.by, s.preview, 'score')
@@ -1702,7 +1707,7 @@ function shareComic(c){
     return;
   }
   if(navigator.clipboard && navigator.clipboard.writeText){
-    navigator.clipboard.writeText(url).then(()=>toast('link copied'),
+    navigator.clipboard.writeText(url).then(()=>toast('Link copied'),
       ()=>prompt('Copy this link', url));
     return;
   }
@@ -1784,8 +1789,8 @@ async function toggleLater(c){
     }else if(c.shelf){
       // you are reading it, or have read it. that is already a kind of shelf;
       // pressing this must not be a way to lose your place.
-      toast(c.shelf === 'read' ? 'you have already read this one'
-                               : 'this one is already on your shelf, at p.' +
+      toast(c.shelf === 'read' ? 'You have already read this one'
+                               : 'This one is already on your shelf, at p.' +
                                  Math.max(1, Math.round((c.progress||0) * c.pp)));
       return;
     }else{
@@ -1807,7 +1812,7 @@ async function toggleLater(c){
   const on = isLater(c);
   btn.setAttribute('aria-pressed', on);
   btn.textContent = laterLabel(c);
-  toast(on ? 'added to your shelf' : 'removed from your shelf');
+  toast(on ? 'Added to your shelf' : 'Removed from your shelf');
   renderHome(); renderBrowse();
 }
 /* kudos: one row per (comic, user), and removable — the delete policy exists

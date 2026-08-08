@@ -13,9 +13,9 @@
 <script src="vendor/panzoom.js"></script>
 <script src="vendor/webm-muxer.js"></script>
 <script type="module" src="platform.js"></script>
-<script src="theme.js"></script>
+<script src="palette.js"></script>
 <link rel="stylesheet" href="tokens.css">
-<link rel="stylesheet" href="themes.css">
+<link rel="stylesheet" href="palettes.css">
 <style>
 *{box-sizing:border-box}
 /* .pill sets display:inline-flex, which outranks the ua stylesheet's
@@ -3409,11 +3409,11 @@ function paintDark(){
 function toggleDark(){
   settings.dark=!settings.dark;
   try{ localStorage.setItem('eski-settings', JSON.stringify(settings)); }catch(e){}
-  if(window.eskiTheme) window.eskiTheme.set(settings.dark ? 'eski' : 'broadsheet');
+  
   paintDark();
   render();
 }
-if(window.eskiTheme) window.eskiTheme.set(settings.dark ? 'eski' : 'broadsheet');
+
 paintDark();
 $('mode-sel').addEventListener('change', e=>setEditMode(e.target.value));
 initMode();          // sets the mode, applies the ui gating, and renders
