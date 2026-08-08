@@ -257,7 +257,8 @@ img{display:block;max-width:100%}
   background:color-mix(in srgb, var(--paper) 88%, transparent);
   border:2px solid var(--rule)}
 .droplayer.on{display:grid}
-.droplayer b{font-family:var(--font-display);font-size:26px;font-weight:400}
+/* Jost, like everything that is not the wordmark */
+.droplayer b{font-size:22px;font-weight:500;letter-spacing:.16em;text-transform:uppercase}
 .droplayer span{display:block;text-align:center;font-size:var(--fs-micro);
   letter-spacing:.16em;text-transform:uppercase;color:var(--label);margin-top:var(--s2)}
 
@@ -272,18 +273,27 @@ img{display:block;max-width:100%}
 .sheethead{display:flex;align-items:baseline;gap:var(--s3);padding:var(--s3) var(--s4);
   border-bottom:var(--bw) solid var(--rule);font-size:var(--fs-micro);letter-spacing:.16em;
   text-transform:uppercase;color:var(--label)}
-.sheethead .ttl{font-family:var(--font-display);font-size:16px;letter-spacing:0;
-  text-transform:none;color:var(--ink)}
+/* the comic's own title, so it is set as typed — but in Jost. Gnomon put
+   its ink visibly above the micro caps beside it on the same line, which is
+   the baseline problem the wordmark needed a nudge to solve. */
+.sheethead .ttl{font-family:var(--font-body);font-size:16px;font-weight:500;
+  letter-spacing:0;text-transform:none;color:var(--ink);line-height:1.2}
 .sheethead .sp{flex:1}
 .sheetfoot{padding:var(--s3) var(--s4);border-top:var(--bw) solid var(--rule);
   font-size:var(--fs-micro);color:var(--label);letter-spacing:.06em}
 
-/* ---------- disclosure ---------- */
+/* ---------- disclosure ----------
+   A FOLD IS A BUTTON, so it is uppercase Jost in --ui like every other
+   control. It was sentence-case Gnomon: the display face, which survives on
+   the wordmark and nowhere else, set at the size of body copy — so VOICES,
+   SCORE and COMMENTS read as three headings you happened to be able to press
+   rather than as the three controls they are. */
 .fold{width:100%;display:flex;align-items:baseline;gap:var(--s2);background:none;
-  border:0;border-bottom:var(--bw) solid var(--rule);padding:3px 0;margin-top:var(--s3);
-  color:var(--ink);font-family:var(--font-display);font-weight:400;font-size:15px;
-  transition:color var(--t-fast) var(--ease)}
-.fold:hover{color:var(--accent)}
+  border:0;border-bottom:var(--bw) solid var(--rule);padding:5px 0;margin-top:var(--s3);
+  color:var(--ui);font-family:var(--font-body);font-weight:500;font-size:13px;
+  text-transform:uppercase;letter-spacing:.16em;
+  transition:background var(--t-fast) var(--ease),color var(--t-fast) var(--ease)}
+.fold:hover{background:var(--ui-hover-bg);color:var(--ui)}
 .fold .sp{flex:1}
 .fold .n{color:var(--label);font-family:var(--font-body);font-size:var(--fs-micro);
   letter-spacing:.1em}

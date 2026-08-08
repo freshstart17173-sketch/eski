@@ -32,6 +32,10 @@ const gateOut = () => { GATE.n--; const next = GATE.q.shift(); if(next) next(); 
 
 const BASE = process.env.BASE || 'https://www.eski.lol';
 const GRID = process.argv.includes('--grid');
+/* --only=modal,thread — one config at a time, for when you are chasing a
+   specific thing and do not want to wait for fifty-four shots */
+const ONLY = (process.argv.find(a => a.startsWith('--only=')) || '')
+  .replace('--only=', '').split(',').filter(Boolean);
 const OUT = path.join(__dirname, '..', 'docs', 'design', 'shots');
 const EMAIL = process.env.ESKI_TEST_EMAIL || 'harness@eski.test';
 const PASSWORD = process.env.ESKI_TEST_PASSWORD || 'eski-harness-2026';
@@ -85,6 +89,17 @@ const OVERLAY = (tol) => {
   return { edges: xs.length, misaligned: near.size };
 };
 
+/* EVERY CONFIGURATION, not every page.
+
+   A surface at rest is the easy half. The bugs that survive review are the
+   ones that need a surface AND a state AND a theme at the same time: the
+   modal scrim was hard-coded to the old sage ground, so it only showed as
+   wrong with a sheet OPEN on a theme that is NOT green — a combination no
+   screenshot of six pages at rest in the default theme could ever contain.
+
+   So a config is surface x state x theme x viewport, and `state` is a
+   function that puts the page into it before the shutter. Adding a control
+   that opens something means adding a row here. */
 const SCREENS = [
   { name: 'home',    path: '/' },
   { name: 'browse',  path: '/#browse' },
@@ -93,7 +108,44 @@ const SCREENS = [
   { name: 'studio',  path: '/studio.html' },
   { name: 'author',  path: '/author.html' },
   { name: 'profile', path: '/profile.html' },
+
+  /* --- the states. everything that draws over, or instead of, a surface --- */
+  { name: 'modal', path: '/', wait: '.card', state: async p => {
+      await p.locator('.cell .card').first().click();
+      await p.waitForSelector('#overlay.open', { timeout: 30000 });
+    } },
+  { name: 'thread', path: '/c/untitled', state: async p => {
+      await p.waitForSelector('#overlay.open', { timeout: 30000 }).catch(()=>{});
+      await p.locator('#d-cm-toggle').click().catch(()=>{});
+    } },
+  { name: 'theme-open', path: '/', wait: '.card', state: async p => {
+      await p.locator('.pal-toggle').first().scrollIntoViewIfNeeded();
+      await p.locator('.pal-toggle').first().click();
+    } },
+  { name: 'reader-mix',      path: null, state: p => sheet(p, '#btn-mix', '#mix') },
+  { name: 'reader-comments', path: null, state: p => sheet(p, '#btn-comments', '#cmsheet') },
+  { name: 'reader-settings', path: null, state: p => sheet(p, '#btn-settings', '#settings') },
+  { name: 'profile-settings', path: '/profile.html', state: async p => {
+      await p.locator('.tab', { hasText: /^SETTINGS$/i }).click().catch(()=>{});
+    } },
+  { name: 'signed-out', path: '/', wait: '.card', signedOut: true },
 ];
+
+/* a reader sheet: press the control, wait for the panel. every one of them
+   closes on an outside tap, so nothing may click in between. */
+const sheet = async (p, btn, panel) => {
+  await p.locator(btn).click({ timeout: 15000 }).catch(()=>{});
+  await p.waitForSelector(panel + '.open, ' + panel + ':not([hidden])',
+    { timeout: 15000 }).catch(()=>{});
+};
+
+/* ONE PER TREATMENT, and deliberately not one per theme. Eighteen themes x
+   nine configs x two viewports is 324 shots nobody will look at. What varies
+   between two themes of the same treatment is six hex values; what varies
+   between treatments is whether the ground is light, whether the text is
+   light, and whether the accent is the page or an accent on it — which is
+   where every colour bug so far has lived. Three covers that. */
+const THEMES = (process.env.THEMES || 'light-neutral,mono-green,dark-pink').split(',');
 
 (async () => {
   fs.mkdirSync(OUT, { recursive: true });
@@ -129,8 +181,14 @@ const SCREENS = [
     return ctx;
   };
 
-  const shoot = async (label, viewport, extra) => {
+  const shoot = async (label, theme, viewport, extra) => {
     const ctx = await make(viewport, extra);
+    /* the theme is written before any page script runs, because palette.js
+       reads it in <head> — setting it afterwards would shoot the default and
+       repaint, which is the flash the whole design exists to avoid */
+    await ctx.addInitScript(t => {
+      try{ localStorage.setItem('eski-theme', t); }catch(e){}
+    }, theme);
     const p = await ctx.newPage();
     await p.goto(BASE + '/', { waitUntil:'domcontentloaded' });
     await p.waitForSelector('.card', { timeout: 60000 });
@@ -141,8 +199,14 @@ const SCREENS = [
 
     let readerHref = null;
     for(const s of SCREENS){
+      if(s.signedOut && !ONLY.length) {
+        await p.evaluate(() => window.eski.sb.auth.signOut()).catch(()=>{});
+        await p.waitForTimeout(1200);
+      }
+      if(ONLY.length && !ONLY.includes(s.name)) continue;
+
       let url = s.path;
-      if(s.name === 'reader'){
+      if(url === null){                       // anything that runs in the reader
         if(!readerHref) continue;
         url = readerHref;
       }
@@ -154,14 +218,22 @@ const SCREENS = [
         }, null, { timeout: 60000 }).catch(()=>{});
         readerHref = await p.locator('#ov-read').getAttribute('href').catch(()=>null);
       }
-      if(s.name === 'reader')
+      if(s.path === null || s.name === 'reader')
         await p.waitForSelector('#player-bar:not([style*="display:none"])',
           { timeout: 90000 }).catch(()=>{});
-      await p.waitForTimeout(3500);
+      if(s.wait) await p.waitForSelector(s.wait, { timeout: 60000 }).catch(()=>{});
+      await p.waitForTimeout(s.state ? 2500 : 3500);
+      if(s.state){
+        try{ await s.state(p); }
+        catch(e){ console.log(`  ! ${s.name}: could not reach the state — ${e.message.split('\n')[0]}`); }
+        /* let the transition finish. every panel on the site moves on
+           --t-mid (220ms); half-open is not a configuration anyone ships */
+        await p.waitForTimeout(900);
+      }
 
       let stats = null;
       if(GRID) stats = await p.evaluate(OVERLAY, 12).catch(()=>null);
-      const file = path.join(OUT, `${s.name}-${label}${GRID ? '-grid' : ''}.png`);
+      const file = path.join(OUT, `${s.name}-${theme}-${label}${GRID ? '-grid' : ''}.png`);
       await p.screenshot({ path: file, fullPage: false });
       console.log(`  ${path.basename(file)}` +
         (stats ? `   ${stats.edges} edges, ${stats.misaligned} near-misses` : ''));
@@ -169,13 +241,16 @@ const SCREENS = [
     await ctx.close();
   };
 
-  console.log('desktop 1440x900');
-  await shoot('desktop', { width: 1440, height: 900 });
-  console.log('phone 390x844');
-  await shoot('phone', { width: 390, height: 844 }, {
-    isMobile: true, hasTouch: true, deviceScaleFactor: 2,
-    userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 ' +
-               '(KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1' });
+  for(const theme of THEMES){
+    console.log(`\n=== ${theme}`);
+    console.log('desktop 1440x900');
+    await shoot('desktop', theme, { width: 1440, height: 900 });
+    console.log('phone 390x844');
+    await shoot('phone', theme, { width: 390, height: 844 }, {
+      isMobile: true, hasTouch: true, deviceScaleFactor: 2,
+      userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 ' +
+                 '(KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1' });
+  }
 
   await browser.close();
   console.log('\nshots in docs/design/shots/');

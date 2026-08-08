@@ -1598,13 +1598,13 @@ function openDetails(c, role, opts){
      short of muting the reader, which also mutes the voices. this is a real
      pick in the same list as every other score, and it is exclusive with them
      — you cannot listen to a score and to no score at once. */
-  const silentRow = pickRow('score:none', false, 'no score',
+  const silentRow = pickRow('score:none', false, 'No score',
     'Read it with voices only', null, 'score');
   const scoreHtml = (c.scores.length
     ? c.scores.map(s=>s.partId
         ? pickRow('part:' + s.partId, false, s.title, 'by ' + s.by, s.preview, 'score')
         : `<div class="openline"><span></span><span class="pfp">${esc(initials(s.by||''))}</span>
-             <span>${esc(s.title)} · plays by default</span><span></span></div>`).join('')
+             <span>${esc(s.title)} · Plays by default</span><span></span></div>`).join('')
     : `<div class="openline"><span></span><span class="pfp">—</span>
         <span>No score yet</span>
         ${c.dbId ? `<a class="btn sm" href="studio.html?base=${esc(c.dbId)}&as=soundtrack">Score it</a>`
@@ -1628,7 +1628,7 @@ function openDetails(c, role, opts){
           <span class="n">${c.tags.length}</span></div>
         <div class="alltags" id="d-tags"></div>
         ${c.dbId ? `<div class="tagadd">
-          <input id="d-tag-input" maxlength="40" placeholder="${me ? 'add a tag' : 'sign in to add a tag'}"${me?'':' disabled'}>
+          <input id="d-tag-input" maxlength="40" placeholder="${me ? 'Add a tag' : 'Sign in to add a tag'}"${me?'':' disabled'}>
           <button class="btn sm" id="d-tag-add"${me?'':' disabled'}>Add</button></div>` : ''}
 
         ${sibs.length > 1 ? `<div class="subhead"><span>${esc(c.seriesTitle)}</span>
