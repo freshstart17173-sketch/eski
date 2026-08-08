@@ -24,9 +24,25 @@ const BASE = process.env.BASE || 'https://www.eski.lol';
   });
   // a first-ever visit gets the onboarding overlay; this run is not about that
   await ctx.addInitScript(() => { try{ localStorage.setItem('eski-onboarded','1'); }catch(e){} });
+  /* every request is relayed node-side through the agent proxy, so a comic's
+     worth of pages and audio arrives far slower here than for a real reader.
+     the default 30s is a harness artefact, not a budget. */
+  ctx.setDefaultNavigationTimeout(120000);
+  ctx.setDefaultTimeout(60000);
   const p = await ctx.newPage();
   const errs = []; p.on('console', m => m.type()==='error' && errs.push(m.text()));
   p.on('pageerror', e => errs.push(e.message));
+  /* name the resource. a bare "ERR_FAILED" is usually the harness relay
+     dropping one request, not the site; saying which keeps the two apart. */
+  /* ERR_ABORTED is the reader CANCELLING a prefetch it no longer needs when
+     you turn pages faster than they warm — that is the design working, not a
+     failure. Anything else is named, so a relay hiccup and a real broken
+     asset are not the same line in the output. */
+  p.on('requestfailed', r => {
+    const why = (r.failure() && r.failure().errorText) || '';
+    if(why === 'net::ERR_ABORTED') return;
+    errs.push('requestfailed ' + r.url().slice(0,110) + ' :: ' + why);
+  });
 
   console.log('phone: the library');
   await p.goto(BASE + '/', { waitUntil:'networkidle' });
@@ -197,14 +213,24 @@ const BASE = process.env.BASE || 'https://www.eski.lol';
     const d = await b.newContext({ viewport:{width:1440,height:900}, serviceWorkers:'block' });
     if(api) await d.route('**/*', async route => {
       const q = route.request();
-      try{
-        const r = await api.fetch(q.url(), { method:q.method(), headers:q.headers(),
-          data: q.postDataBuffer() || undefined, maxRedirects: 5, timeout: 60000 });
-        const h = r.headers(); delete h['content-encoding']; delete h['content-length'];
-        await route.fulfill({ status:r.status(), headers:h, body: await r.body() });
-      }catch(e){ await route.abort(); }
+      /* ONE RETRY. The relay drops the occasional request when a page fires
+         thirty of them at once, and an aborted stylesheet then shows up as
+         "the site is broken" rather than "the harness blinked". */
+      for(let attempt = 0; attempt < 2; attempt++){
+        try{
+          const r = await api.fetch(q.url(), { method:q.method(), headers:q.headers(),
+            data: q.postDataBuffer() || undefined, maxRedirects: 5, timeout: 60000 });
+          const h = r.headers(); delete h['content-encoding']; delete h['content-length'];
+          await route.fulfill({ status:r.status(), headers:h, body: await r.body() });
+          return;
+        }catch(e){
+          if(attempt) { await route.abort(); return; }
+          await new Promise(r => setTimeout(r, 250));
+        }
+      }
     });
     await d.addInitScript(() => { try{ localStorage.setItem('eski-onboarded','1'); }catch(e){} });
+    d.setDefaultNavigationTimeout(120000); d.setDefaultTimeout(60000);
     const q = await d.newPage();
     const derrs = []; q.on('pageerror', e => derrs.push(e.message));
     await q.goto(new URL(href, BASE + '/').href, { waitUntil:'domcontentloaded' });

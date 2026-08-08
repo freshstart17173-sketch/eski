@@ -33,12 +33,21 @@ const ok = (n, c, extra) => {
   const wire = async ctx => {
     if(api) await ctx.route('**/*', async route => {
       const q = route.request();
-      try{
-        const r = await api.fetch(q.url(), { method:q.method(), headers:q.headers(),
-          data: q.postDataBuffer() || undefined, maxRedirects: 5, timeout: 60000 });
-        const h = r.headers(); delete h['content-encoding']; delete h['content-length'];
-        await route.fulfill({ status:r.status(), headers:h, body: await r.body() });
-      }catch(e){ await route.abort(); }
+      /* ONE RETRY. The relay drops the occasional request when a page fires
+         thirty of them at once, and an aborted stylesheet then shows up as
+         "the site is broken" rather than "the harness blinked". */
+      for(let attempt = 0; attempt < 2; attempt++){
+        try{
+          const r = await api.fetch(q.url(), { method:q.method(), headers:q.headers(),
+            data: q.postDataBuffer() || undefined, maxRedirects: 5, timeout: 60000 });
+          const h = r.headers(); delete h['content-encoding']; delete h['content-length'];
+          await route.fulfill({ status:r.status(), headers:h, body: await r.body() });
+          return;
+        }catch(e){
+          if(attempt) { await route.abort(); return; }
+          await new Promise(r => setTimeout(r, 250));
+        }
+      }
     });
     await ctx.addInitScript(() => { try{ localStorage.setItem('eski-onboarded','1'); }catch(e){} });
     /* every request is relayed through the agent proxy node-side, which makes
@@ -60,7 +69,7 @@ const ok = (n, c, extra) => {
   /* ---------------------------------------------- the address */
   console.log('a comic has an address');
   await p.goto(BASE + '/', { waitUntil:'domcontentloaded' });
-  await p.waitForSelector('.card', { timeout: 30000 });
+  await p.waitForSelector('.card', { timeout: 90000 });
   await settle(2500);
 
   const before = p.url();
@@ -183,7 +192,7 @@ const ok = (n, c, extra) => {
   ok('and is marked as edited', /edited/i.test(await body()));
 
   /* ---------------------------------------------- reader round trip */
-  console.log('reading, commenting, and coming back');
+  console.log('reading, and commenting without leaving');
   // the read button on the page we are already on is the route a reader takes
   const toReader = await p.locator('#ov-read').getAttribute('href');
   await p.goto(new URL(toReader, BASE + '/').href, { waitUntil:'domcontentloaded' });
@@ -191,32 +200,32 @@ const ok = (n, c, extra) => {
   await settle(2500);
   await p.evaluate(() => navRight());
   await settle(1200);
-  const cmHref = await p.locator('#cm-btn').getAttribute('href');
-  ok('the reader offers a way to the thread', !!cmHref, cmHref);
-  ok('and it carries the page you are on', /\?page=\d+#comments$/.test(cmHref || ''));
 
+  const readerUrl = p.url();
+  ok('the reader offers a comments control', await p.locator('#cm-btn').isVisible());
   await p.locator('#cm-btn').click();
-  await p.waitForFunction(() => {
-    const o = document.getElementById('overlay');       // null mid-navigation
-    return !!o && o.classList.contains('open');
-  }, null, { timeout: 30000 });
-  await settle(1500);
-  ok('following it lands on the comic with the thread already open',
-     (await p.locator('#d-cm-toggle').getAttribute('aria-expanded')) === 'true');
+  await settle(1800);
+  ok('it opens a sheet over the comic', await p.evaluate(() =>
+     document.getElementById('cmsheet').classList.contains('open')));
+  ok('and does NOT leave the reader', p.url() === readerUrl, p.url() === readerUrl ? '' : p.url());
+  ok('the sheet says which page you are on',
+     /p\.\d+/i.test(await p.locator('#cm-onpage').textContent()),
+     await p.locator('#cm-onpage').textContent());
 
+  const rbody = () => p.locator('#cm-body').innerText();
   const pageStamp = STAMP + ' from the reader';
   await p.locator('#cm-new-top').fill(pageStamp);
-  await p.locator('[data-cm-post]').first().click();
-  await settle(2000);
-  // innerText applies text-transform, and the head is uppercase by design
-  ok('a comment written here records the page it came from',
-     /p\.\d+/i.test(await body()), (await body()).match(/p\.\d+/i)?.[0] || 'no page tag');
+  await p.locator('#cm-body [data-cm-post]').first().click();
+  await settle(2500);
+  ok('a comment posts from inside the reader', (await rbody()).includes(pageStamp));
+  ok('and records the page it was written on', /p\.\d+/i.test(await rbody()),
+     (await rbody()).match(/p\.\d+/i)?.[0] || 'no page tag');
+  ok('the comic is still on screen behind it', await p.locator('#pages').isVisible());
 
-  await p.goBack({ waitUntil:'commit' });
-  await p.waitForSelector('#player-bar:not([style*="display:none"])', { timeout: 90000 });
-  await settle(1500);
-  ok('and back returns to the reader', /read\.html/.test(p.url()));
-  ok('on the page you left off', /page=\d+/.test(p.url()), p.url().split('#')[1] || '');
+  await p.mouse.click(700, 300);
+  await settle(800);
+  ok('an outside tap closes the sheet', !(await p.evaluate(() =>
+     document.getElementById('cmsheet').classList.contains('open'))));
 
   /* ---------------------------------------------- tidy up */
   console.log('tidying up');
@@ -243,10 +252,17 @@ const ok = (n, c, extra) => {
   const mErrs = [];
   m.on('pageerror', e => mErrs.push(e.message));
   m.on('console', e => e.type() === 'error' && mErrs.push(e.text()));
+  /* name the resource. "ERR_FAILED" with no url is usually the harness proxy
+     dropping a request, not the site; say which so the two are separable. */
+  m.on('requestfailed', r => {
+    const why = (r.failure() && r.failure().errorText) || '';
+    if(why === 'net::ERR_ABORTED') return;   // a cancelled prefetch, by design
+    mErrs.push('requestfailed ' + r.url().slice(0,120) + ' :: ' + why);
+  });
   const mStamp = STAMP + ' from a phone';
 
   await m.goto(BASE + '/', { waitUntil:'domcontentloaded' });
-  await m.waitForSelector('.card', { timeout: 30000 });
+  await m.waitForSelector('.card', { timeout: 90000 });
   await m.evaluate(async ([email, password]) => {
     await window.eski.sb.auth.signInWithPassword({ email, password });
   }, [EMAIL, PASSWORD]);
@@ -272,32 +288,19 @@ const ok = (n, c, extra) => {
   ok('and the bar still fits the screen with it there', barRight > 0 && barRight <= 390,
      `right edge ${barRight} of 390`);
 
+  const mReaderUrl = m.url();
   await m.locator('#cm-btn').tap();
-  await m.waitForFunction(() => {
-    const o = document.getElementById('overlay');
-    return !!o && o.classList.contains('open');
-  }, null, { timeout: 30000 });
-  await m.waitForTimeout(1800);
-  ok('tapping it lands on the comic with the thread open',
-     (await m.locator('#d-cm-toggle').getAttribute('aria-expanded')) === 'true');
-  ok('and the thread is actually on screen, not below the fold',
-     await m.evaluate(() => {
-       const t = document.getElementById('d-thread');
-       if(!t) return false;
-       const r = t.getBoundingClientRect();
-       return r.top < window.innerHeight && r.bottom > 0;
-     }));
+  await m.waitForTimeout(2000);
+  ok('tapping it opens the thread over the comic', await m.evaluate(() =>
+     document.getElementById('cmsheet').classList.contains('open')));
+  ok('without leaving the reader', m.url() === mReaderUrl);
 
   await m.locator('#cm-new-top').fill(mStamp);
-  await m.locator('[data-cm-post]').first().tap();
+  await m.locator('#cm-body [data-cm-post]').first().tap();
   await m.waitForTimeout(2500);
   ok('a comment posts from a phone',
-     (await m.locator('#d-cm-body').innerText()).includes(mStamp));
-
-  await m.goBack({ waitUntil:'commit' });
-  await m.waitForSelector('#player-bar:not([style*="display:none"])', { timeout: 90000 });
-  await m.waitForTimeout(1500);
-  ok('back returns to the reader, on the page you left', /read\.html.*#.*page=\d+/.test(m.url()));
+     (await m.locator('#cm-body').innerText()).includes(mStamp));
+  ok('and the comic is still behind it', await m.locator('#pages').isVisible());
 
   // and from the comic page, home is one tap
   await m.goto(BASE + '/c/' + slug, { waitUntil:'domcontentloaded' });
@@ -309,7 +312,7 @@ const ok = (n, c, extra) => {
   ok('arriving cold on a phone reads as a page',
      await m.evaluate(() => document.body.classList.contains('deep')));
   await m.locator('.sheet-home').tap();
-  await m.waitForSelector('.card', { timeout: 30000 });
+  await m.waitForSelector('.card', { timeout: 90000 });
   ok('and "all eskis" gets you to the shelf', new URL(m.url()).pathname === '/');
 
   const mGone = await m.evaluate(async stamp => {

@@ -90,12 +90,21 @@ const SCREENS = [
       const q = route.request();
       // a local server needs no proxy, and routing it through one breaks it
       if(q.url().startsWith('http://localhost')) return route.continue();
-      try{
-        const r = await api.fetch(q.url(), { method:q.method(), headers:q.headers(),
-          data: q.postDataBuffer() || undefined, maxRedirects: 5, timeout: 60000 });
-        const h = r.headers(); delete h['content-encoding']; delete h['content-length'];
-        await route.fulfill({ status:r.status(), headers:h, body: await r.body() });
-      }catch(e){ await route.abort(); }
+      /* ONE RETRY. The relay drops the occasional request when a page fires
+         thirty of them at once, and an aborted stylesheet then shows up as
+         "the site is broken" rather than "the harness blinked". */
+      for(let attempt = 0; attempt < 2; attempt++){
+        try{
+          const r = await api.fetch(q.url(), { method:q.method(), headers:q.headers(),
+            data: q.postDataBuffer() || undefined, maxRedirects: 5, timeout: 60000 });
+          const h = r.headers(); delete h['content-encoding']; delete h['content-length'];
+          await route.fulfill({ status:r.status(), headers:h, body: await r.body() });
+          return;
+        }catch(e){
+          if(attempt) { await route.abort(); return; }
+          await new Promise(r => setTimeout(r, 250));
+        }
+      }
     });
     await ctx.addInitScript(() => { try{ localStorage.setItem('eski-onboarded','1'); }catch(e){} });
     ctx.setDefaultNavigationTimeout(120000);
