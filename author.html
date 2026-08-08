@@ -12,8 +12,10 @@
 <script src="vendor/panzoom.js"></script>
 <script src="viewer.js"></script>
 <script type="module" src="platform.js"></script>
+<script src="theme.js"></script>
 <link rel="stylesheet" href="tokens.css">
 <link rel="stylesheet" href="docs/design/final/broadsheet.css">
+<link rel="stylesheet" href="themes.css">
 <style>
 /* ============================================================
    the author studio: write the cast, transcribe the pages.
@@ -40,12 +42,12 @@ body{margin:0;display:flex;flex-direction:column;overflow:hidden}
 /* page · panel, with the strip underneath */
 .frame{flex:1;display:grid;grid-template-columns:minmax(0,1fr) 360px;min-height:0}
 .pane{display:flex;flex-direction:column;min-height:0;min-width:0}
-.pane.side{border-left:1px solid var(--rule);overflow:auto}
+.pane.side{border-left:var(--bw) solid var(--rule);overflow:auto}
 .panehead{display:flex;align-items:center;gap:var(--s2);padding:var(--s2) var(--s3);
   font-size:var(--fs-micro);letter-spacing:.14em;text-transform:uppercase;color:var(--label);
-  border-bottom:1px solid var(--rule);flex:none;position:sticky;top:0;background:var(--paper);z-index:2}
+  border-bottom:var(--bw) solid var(--rule);flex:none;position:sticky;top:0;background:var(--paper);z-index:2}
 .panehead .sp{flex:1}
-.sect{padding:var(--s3);border-bottom:1px solid var(--rule)}
+.sect{padding:var(--s3);border-bottom:var(--bw) solid var(--rule)}
 .sect h3{margin:0 0 var(--s2);font-family:var(--font-display);font-weight:400;
   font-size:15px;line-height:1.1;color:var(--ink)}
 
@@ -54,13 +56,13 @@ body{margin:0;display:flex;flex-direction:column;overflow:hidden}
    on the page. at that size they are a texture, not information. a count and
    a word do the same job and can actually be read. */
 .strip{flex:none;display:flex;gap:var(--s2);align-items:flex-start;overflow-x:auto;
-  overflow-y:hidden;padding:var(--s2) var(--s3);border-top:1px solid var(--rule);
+  overflow-y:hidden;padding:var(--s2) var(--s3);border-top:var(--bw) solid var(--rule);
   background:var(--paper);scrollbar-width:thin}
 .pg{flex:none;width:64px;padding:0;border:0;background:none;color:inherit;font:inherit;
   cursor:pointer;display:flex;flex-direction:column;gap:3px}
 .pg .plate{aspect-ratio:2/3;overflow:hidden;display:grid;place-items:center;
-  border:1px solid var(--rule-hair);background:var(--paper-1)}
-[data-theme="dark"] .pg .plate{background:var(--surf-2)}
+  border:var(--bw) solid var(--rule-hair);background:var(--plate-bg)}
+[data-dark] .pg .plate{background:var(--surf-2)}
 .pg img{max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain;display:block}
 .pg[aria-current="true"] .plate{border-color:var(--mark);box-shadow:0 0 0 1px var(--mark)}
 /* just the page number. it used to carry a second bare number for how many
@@ -77,18 +79,18 @@ body{margin:0;display:flex;flex-direction:column;overflow:hidden}
    nothing in here lined up with anything else. */
 .castrow{display:grid;grid-template-columns:minmax(0,1fr) 96px 24px;gap:var(--s1);
   align-items:center}
-.castrow input.nm{height:24px;min-width:0;border:1px solid var(--rule-hair);
+.castrow input.nm{height:24px;min-width:0;border:var(--bw) solid var(--rule-hair);
   background:var(--surface);color:var(--ink);font:inherit;font-size:var(--fs-xs);
   padding:0 var(--s2)}
 .castrow input.nm:focus{outline:none;border-color:var(--accent)}
 .castrow select{height:24px;width:100%;min-width:0;font-size:10px;letter-spacing:.06em;
-  border:1px solid var(--rule-hair);background:var(--surface);color:var(--ink)}
-.castrow .x{width:24px;height:24px;border:1px solid var(--rule-hair);background:none;
+  border:var(--bw) solid var(--rule-hair);background:var(--surface);color:var(--ink)}
+.castrow .x{width:24px;height:24px;border:var(--bw) solid var(--rule-hair);background:none;
   color:var(--label);line-height:1;padding:0}
 .castrow .x:hover{border-color:var(--rec);color:var(--rec)}
 .castnote{display:block;width:100%;margin:var(--s1) 0 var(--s3);padding:5px var(--s2);
   font:inherit;font-size:11px;line-height:1.5;resize:vertical;color:var(--ink);
-  background:var(--surface);border:1px solid var(--rule-hair)}
+  background:var(--surface);border:var(--bw) solid var(--rule-hair)}
 .castnote:focus{outline:none;border-color:var(--accent)}
 .castnote::placeholder{color:var(--muted)}
 
@@ -99,9 +101,9 @@ body{margin:0;display:flex;flex-direction:column;overflow:hidden}
    which is a different job from the brand's single accent. one 3px spine and
    one word each, and nothing else tinted. */
 :root{ --e-dialogue:#2F5FD0; --e-narration:#7A3EA1; --e-effect:#B26A00 }
-[data-theme="dark"]{ --e-dialogue:#8FB0F2; --e-narration:#C79BE4; --e-effect:#E0A24A }
+[data-dark]{ --e-dialogue:#8FB0F2; --e-narration:#C79BE4; --e-effect:#E0A24A }
 .entry{display:grid;grid-template-columns:minmax(0,1fr) 24px;gap:var(--s2);align-items:start;
-  padding:var(--s2) 0 var(--s2) var(--s2);border-top:1px solid var(--rule-hair);
+  padding:var(--s2) 0 var(--s2) var(--s2);border-top:var(--bw) solid var(--rule-hair);
   box-shadow:inset 3px 0 0 var(--kind)}
 .entry:first-child{border-top:0}
 .entry[data-kind="dialogue"]{--kind:var(--e-dialogue)}
@@ -110,14 +112,14 @@ body{margin:0;display:flex;flex-direction:column;overflow:hidden}
 .ehead{display:flex;align-items:center;gap:var(--s2);min-width:0;margin-bottom:var(--s1)}
 .etype{font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--kind);
   font-weight:500;flex:none}
-.entry select{flex:1;min-width:0;height:24px;font-size:10px;border:1px solid var(--rule-hair);
+.entry select{flex:1;min-width:0;height:24px;font-size:10px;border:var(--bw) solid var(--rule-hair);
   background:var(--surface);color:var(--ink)}
 .entry textarea{display:block;width:100%;padding:5px var(--s2);font:inherit;
   font-size:var(--fs-xs);line-height:1.5;resize:vertical;min-height:44px;color:var(--ink);
-  background:var(--surface);border:1px solid var(--rule-hair)}
+  background:var(--surface);border:var(--bw) solid var(--rule-hair)}
 .entry textarea:focus{outline:none;border-color:var(--accent)}
 .entry .tools{display:flex;flex-direction:column;gap:2px}
-.entry .tools button{width:24px;height:20px;border:1px solid var(--rule-hair);background:none;
+.entry .tools button{width:24px;height:20px;border:var(--bw) solid var(--rule-hair);background:none;
   color:var(--label);font-size:10px;line-height:1;padding:0}
 .entry .tools button:hover{border-color:var(--ink);color:var(--ink)}
 .entry .tools .x:hover{border-color:var(--rec);color:var(--rec)}
@@ -127,10 +129,10 @@ body{margin:0;display:flex;flex-direction:column;overflow:hidden}
 
 /* the add control doubles as the legend for those three colours */
 .addbox{position:relative;margin-top:var(--s3)}
-.addmenu{display:none;flex-direction:column;border:1px solid var(--rule);margin-top:var(--s1)}
+.addmenu{display:none;flex-direction:column;border:var(--bw) solid var(--rule);margin-top:var(--s1)}
 .addbox.open .addmenu{display:flex}
 .addmenu button{display:flex;align-items:center;gap:var(--s2);width:100%;text-align:left;
-  background:none;border:0;border-top:1px solid var(--rule-hair);padding:var(--s2);
+  background:none;border:0;border-top:var(--bw) solid var(--rule-hair);padding:var(--s2);
   font:inherit;font-size:var(--fs-xs);color:var(--ink)}
 .addmenu button:first-child{border-top:0}
 .addmenu button:hover{background:var(--surface)}
@@ -148,13 +150,13 @@ body{margin:0;display:flex;flex-direction:column;overflow:hidden}
 
 /* the comic picker, when you arrive without one */
 .picker{max-width:900px;margin:0 auto;padding:var(--s6) var(--s4)}
-.picklist{border-top:1px solid var(--rule)}
+.picklist{border-top:var(--bw) solid var(--rule)}
 .pickrow{display:grid;grid-template-columns:44px 1fr auto;gap:var(--s3);align-items:center;
-  width:100%;text-align:left;background:none;border:0;border-bottom:1px solid var(--rule-hair);
+  width:100%;text-align:left;background:none;border:0;border-bottom:var(--bw) solid var(--rule-hair);
   padding:var(--s2);color:inherit;font:inherit;cursor:pointer}
 .pickrow:hover{background:var(--surface)}
-.pickrow .plate{width:44px;height:66px;overflow:hidden;border:1px solid var(--rule-hair);
-  background:var(--paper-1)}
+.pickrow .plate{width:44px;height:66px;overflow:hidden;border:var(--bw) solid var(--rule-hair);
+  background:var(--plate-bg)}
 .pickrow img{width:100%;height:100%;object-fit:cover;display:block}
 .pickrow .ttl{font-family:var(--font-display);font-size:15px}
 .pickrow .sub{font-size:var(--fs-micro);color:var(--label);letter-spacing:.1em;
@@ -164,7 +166,7 @@ body{margin:0;display:flex;flex-direction:column;overflow:hidden}
   body{overflow:auto}
   .frame{grid-template-columns:1fr;min-height:0}
   .pane.centre{height:56vh}
-  .pane.side{border-left:0;border-top:1px solid var(--rule);overflow:visible}
+  .pane.side{border-left:0;border-top:var(--bw) solid var(--rule);overflow:visible}
 }
 </style>
 </head>
@@ -213,7 +215,9 @@ const uid = () => (crypto.randomUUID ? crypto.randomUUID()
 
 try{
   const s = JSON.parse(localStorage.getItem('eski-settings')) || {};
-  document.documentElement.dataset.theme = s.dark ? 'dark' : '';
+  /* the dark toggle is now a shortcut into the theme system: there is one
+     place that owns data-theme, and it is theme.js. */
+  if(window.eskiTheme) window.eskiTheme.set(s.dark ? 'eski' : 'broadsheet');
 }catch(e){}
 
 let toastTimer;
@@ -370,7 +374,7 @@ function paintShell(){
              <div style="display:flex;gap:var(--s1);margin-top:var(--s2)">
                <input id="cast-name" placeholder="Add a character" maxlength="60"
                  style="flex:1;min-width:0;height:24px;font-size:var(--fs-xs);
-                        border:1px solid var(--rule-hair);background:var(--surface);
+                        border:var(--bw) solid var(--rule-hair);background:var(--surface);
                         color:var(--ink);padding:0 var(--s2)">
                <button class="btn sm" id="cast-add">Add</button>
              </div>

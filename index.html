@@ -17,8 +17,10 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script type="module" src="platform.js"></script>
 <script src="comments.js"></script>
+<script src="theme.js"></script>
 <link rel="stylesheet" href="tokens.css">
 <link rel="stylesheet" href="docs/design/final/broadsheet.css">
+<link rel="stylesheet" href="themes.css">
 <style>
 /* ============================================================
    eski — home and browse (eskis · roles · no score).
@@ -56,16 +58,16 @@ section + section{margin-top:var(--s6)}
    the four words. */
 
 /* ---------- the grid: five up, then four, three, two ---------- */
-.grid{display:grid;grid-template-columns:repeat(5,1fr);border-left:1px solid var(--rule)}
+.grid{display:grid;grid-template-columns:repeat(5,1fr);border-left:var(--bw) solid var(--rule)}
 @media(max-width:1180px){.grid{grid-template-columns:repeat(4,1fr)}}
 @media(max-width:900px){.grid{grid-template-columns:repeat(3,1fr)}}
 @media(max-width:640px){.grid{grid-template-columns:repeat(2,1fr)}}
 
 /* ---------- a card: plate, title, tags, caption ---------- */
 .cell,.bcell{position:relative;display:flex;background:var(--paper);
-  border-right:1px solid var(--rule);border-bottom:1px solid var(--rule)}
+  border-right:var(--bw) solid var(--rule);border-bottom:var(--bw) solid var(--rule)}
 .card{display:flex;flex-direction:column;background:var(--paper);text-align:left;
-  border:0;border-right:1px solid var(--rule);border-bottom:1px solid var(--rule);
+  border:0;border-right:var(--bw) solid var(--rule);border-bottom:var(--bw) solid var(--rule);
   padding:var(--s3);color:inherit;font:inherit;min-width:0;width:100%;cursor:pointer;
   transition:background var(--t-fast) var(--ease)}
 /* inside a cell the hairlines belong to the cell, not the button */
@@ -73,9 +75,8 @@ section + section{margin-top:var(--s6)}
 .cell:hover .rm{display:flex}
 .card:hover{background:var(--surface)}
 .card:active{transform:translateY(1px)}
-.plate{position:relative;overflow:hidden;border:1px solid var(--rule-hair);
-  aspect-ratio:2/3;background:var(--paper-1)}
-[data-theme="dark"] .plate{background:var(--surf-2)}
+.plate{position:relative;overflow:hidden;border:var(--bw) solid var(--rule-hair);
+  aspect-ratio:2/3;background:var(--plate-bg)}
 .plate img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;
   transition:transform var(--t-mid) var(--ease)}
 .plate .ico{width:26px;height:26px;opacity:.35;position:absolute;inset:0;margin:auto}
@@ -98,7 +99,7 @@ section + section{margin-top:var(--s6)}
 /* ---------- caption rows: tight, hairline separated, right aligned ---------- */
 .cap{margin-top:auto;font-size:var(--fs-xs);color:var(--soft-ink)}
 .cap .r{display:grid;grid-template-columns:42px 1fr;align-items:center;gap:var(--s2);
-  height:var(--row);border-top:1px solid var(--rule-hair);min-width:0}
+  height:var(--row);border-top:var(--bw) solid var(--rule-hair);min-width:0}
 .cap .r:first-child{border-top:0}
 .cap .k{color:var(--label);letter-spacing:.06em;font-size:var(--fs-micro);
   text-transform:uppercase;white-space:nowrap}
@@ -110,9 +111,8 @@ section + section{margin-top:var(--s6)}
 .shelved{position:absolute;top:0;left:0;background:var(--mark);color:var(--paper);
   font-size:9px;letter-spacing:.08em;text-transform:uppercase;padding:2px 6px;
   pointer-events:none;z-index:2}
-[data-theme="dark"] .shelved{color:var(--sage-900)}
 .rm{position:absolute;top:0;right:0;width:24px;height:24px;border:0;
-  border-bottom:1px solid var(--rule-hair);border-left:1px solid var(--rule-hair);
+  border-bottom:var(--bw) solid var(--rule-hair);border-left:var(--bw) solid var(--rule-hair);
   background:var(--paper);color:var(--label);display:none;align-items:center;
   justify-content:center;padding:0;z-index:2;cursor:pointer}
 .cell:hover .rm{display:flex}
@@ -120,15 +120,14 @@ section + section{margin-top:var(--s6)}
 
 /* ---------- voiceover needed, on the home page ---------- */
 .rolecard{display:flex;flex-direction:column;background:var(--paper);text-align:left;
-  border:0;border-right:1px solid var(--rule);border-bottom:1px solid var(--rule);
+  border:0;border-right:var(--bw) solid var(--rule);border-bottom:var(--bw) solid var(--rule);
   padding:var(--s3);color:inherit;font:inherit;min-width:0;cursor:pointer;
   transition:background var(--t-fast) var(--ease)}
 .rolecard:hover{background:var(--surface)}
 .rolecard:active{transform:translateY(1px)}
 .rolehead{display:flex;gap:var(--s2);align-items:flex-start;min-width:0}
 .portrait{width:46px;height:46px;flex:none;display:block;overflow:hidden;
-  border:1px solid var(--rule-hair);background:var(--paper-1)}
-[data-theme="dark"] .portrait{background:var(--surf-2)}
+  border:var(--bw) solid var(--rule-hair);background:var(--plate-bg)}
 .portrait img{width:100%;height:100%;object-fit:cover;
   transition:transform var(--t-mid) var(--ease)}
 .rolecard:hover .portrait img,.rolerow:hover .portrait img{transform:scale(1.06)}
@@ -142,15 +141,15 @@ section + section{margin-top:var(--s6)}
   height:calc(1.4em * 3);overflow:hidden;
   display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical}
 .rolefoot{display:flex;align-items:center;justify-content:space-between;gap:var(--s2);
-  margin-top:auto;padding-top:var(--s1);border-top:1px solid var(--rule-hair);
+  margin-top:auto;padding-top:var(--s1);border-top:var(--bw) solid var(--rule-hair);
   height:var(--row);font-size:var(--fs-micro);letter-spacing:.06em;color:var(--label);
   font-variant-numeric:tabular-nums}
 
 /* ---------- voiceover needed: one dense row per character ---------- */
-.rolelist{border-top:1px solid var(--rule)}
+.rolelist{border-top:var(--bw) solid var(--rule)}
 .rolerow{display:grid;grid-template-columns:46px 196px 210px 1fr 84px 104px;gap:var(--s3);
   align-items:center;padding:5px var(--s2);width:100%;text-align:left;background:none;
-  border:0;border-bottom:1px solid var(--rule-hair);color:inherit;font:inherit;
+  border:0;border-bottom:var(--bw) solid var(--rule-hair);color:inherit;font:inherit;
   min-width:0;cursor:pointer;transition:background var(--t-fast) var(--ease)}
 .rolerow:hover{background:var(--surface)}
 .rolerow .who,.rolerow .where{min-width:0}
@@ -179,20 +178,20 @@ section + section{margin-top:var(--s6)}
    desktop has no target, and escape needs a keyboard. It carries its own way
    out. On a desktop the scrim is right there, so this stays hidden. */
 .sheet-x{display:none;position:absolute;top:0;right:0;z-index:3;width:44px;height:44px;
-  border:0;border-left:1px solid var(--rule);border-bottom:1px solid var(--rule);
+  border:0;border-left:var(--bw) solid var(--rule);border-bottom:var(--bw) solid var(--rule);
   background:var(--paper);color:var(--ink);font-size:24px;line-height:1;padding:0}
 .sheet-x:active{background:var(--surface)}
 @media(max-width:720px){ .sheet-x{display:block} }
 .sheetbody{display:grid;grid-template-columns:270px 1fr}
 @media(max-width:720px){.sheetbody{grid-template-columns:1fr}}
-.sheetbody .left{padding:var(--s4);border-right:1px solid var(--rule)}
+.sheetbody .left{padding:var(--s4);border-right:var(--bw) solid var(--rule)}
 .sheetbody .right{padding:var(--s4);min-width:0}
 .sheetbody h3{font-family:var(--font-display);font-weight:400;font-size:var(--fs-title);
   margin:0 0 var(--s2);line-height:1.05}
 .sheetbody p.desc{margin:var(--s3) 0 0;color:var(--soft-ink);line-height:1.55;
   font-size:var(--fs-xs);white-space:pre-wrap}
 .subhead{display:flex;align-items:baseline;gap:var(--s3);margin:var(--s5) 0 var(--s2);
-  padding-bottom:3px;border-bottom:1px solid var(--rule);
+  padding-bottom:3px;border-bottom:var(--bw) solid var(--rule);
   font-family:var(--font-display);font-weight:400;font-size:15px}
 .subhead .sp{flex:1}
 .subhead .n{font-family:var(--font-body);font-size:var(--fs-micro);
@@ -207,11 +206,11 @@ section + section{margin-top:var(--s6)}
    with the design's dot on it — same object, honest behaviour. */
 .pick{display:grid;grid-template-columns:14px 22px 1fr auto;gap:var(--s2);
   align-items:center;width:100%;text-align:left;background:none;color:inherit;font:inherit;
-  border:0;border-bottom:1px solid var(--rule-hair);padding:4px var(--s1);cursor:pointer;
+  border:0;border-bottom:var(--bw) solid var(--rule-hair);padding:4px var(--s1);cursor:pointer;
   transition:background var(--t-fast) var(--ease)}
 .pick:hover{background:var(--surface)}
 .pick input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
-.pick .dot{width:11px;height:11px;border:1px solid var(--line-strong);border-radius:50%;
+.pick .dot{width:11px;height:11px;border:var(--bw) solid var(--line-strong);border-radius:50%;
   position:relative}
 .pick:has(input:checked) .dot{border-color:var(--mark)}
 .pick:has(input:checked) .dot::after{content:"";position:absolute;inset:2px;
@@ -222,7 +221,7 @@ section + section{margin-top:var(--s6)}
 .pick:has(input:checked) .who b{color:var(--ink)}
 
 .openline{display:grid;grid-template-columns:14px 22px 1fr auto;gap:var(--s2);
-  align-items:center;padding:4px var(--s1);border-bottom:1px solid var(--rule-hair);
+  align-items:center;padding:4px var(--s1);border-bottom:var(--bw) solid var(--rule-hair);
   font-size:var(--fs-xs);color:var(--label)}
 /* the note a performer reads before taking the part */
 .rolenote{margin:2px 0 4px;font-size:var(--fs-xs);color:var(--soft-ink);line-height:1.45}
@@ -231,7 +230,7 @@ section + section{margin-top:var(--s6)}
   padding:var(--s2) 0 0}
 .mixline b{color:var(--ink);font-weight:500}
 .acts{display:flex;gap:var(--s2);flex-wrap:wrap;padding:var(--s3) var(--s4);
-  border-top:1px solid var(--rule);position:sticky;bottom:0;background:var(--paper)}
+  border-top:var(--bw) solid var(--rule);position:sticky;bottom:0;background:var(--paper)}
 
 /* ============================================================
    ARRIVED ON A LINK, so this is a page.
@@ -248,7 +247,7 @@ body.deep .sheet{width:100%;max-height:none;min-height:100dvh;border:0;overflow:
 body.deep .sheet-x{display:none}
 body.deep .sheet-home{display:inline-flex}
 .sheet-home{display:none;align-items:center;gap:6px;position:sticky;top:0;z-index:3;
-  width:100%;padding:var(--s3) var(--s4);border:0;border-bottom:1px solid var(--rule);
+  width:100%;padding:var(--s3) var(--s4);border:0;border-bottom:var(--bw) solid var(--rule);
   background:var(--paper);color:var(--label);font:inherit;font-size:var(--fs-micro);
   letter-spacing:.14em;text-transform:uppercase;cursor:pointer;text-align:left}
 .sheet-home:hover{color:var(--ink)}
@@ -259,7 +258,7 @@ body.deep .sheet-home{display:inline-flex}
 .alltags{display:flex;flex-wrap:wrap;gap:3px;align-items:center}
 /* adding a tag: anyone signed in, ao3 style */
 .tagadd{display:flex;gap:var(--s1);align-items:center;margin-top:var(--s2)}
-.tagadd input{height:22px;border:1px solid var(--rule-hair);background:var(--surface);
+.tagadd input{height:22px;border:var(--bw) solid var(--rule-hair);background:var(--surface);
   color:var(--ink);padding:0 var(--s2);font-size:10px;letter-spacing:.06em;min-width:0;flex:1}
 .tagadd input:focus{outline:none;border-color:var(--accent)}
 .tag.mine{border-color:var(--ink);color:var(--ink)}
@@ -279,8 +278,7 @@ body.deep .sheet-home{display:inline-flex}
 .head .n{color:var(--accent)}
 .cap .v.want{color:var(--accent)}
 .rolerow .lines b{color:var(--accent)}
-.seg button[aria-selected="true"]{background:var(--mark);color:var(--paper)}
-[data-theme="dark"] .seg button[aria-selected="true"]{color:var(--sage-900)}
+.seg button[aria-selected="true"]{background:var(--mark);color:var(--on-mark)}
 .bar.modes{border-bottom:0;padding-bottom:0}
 /* prose, not a count */
 .modenote{font-size:var(--fs-micro);letter-spacing:.08em;text-transform:uppercase;
@@ -290,16 +288,16 @@ button.link{background:none;border:0;padding:0;font:inherit;font-size:var(--fs-m
   transition:color var(--t-fast) var(--ease)}
 button.link:hover{color:var(--ink)}
 
-.foot{margin-top:var(--s7);padding-top:var(--s3);border-top:1px solid var(--rule);
+.foot{margin-top:var(--s7);padding-top:var(--s3);border-top:var(--bw) solid var(--rule);
   display:flex;justify-content:space-between;gap:var(--s3);flex-wrap:wrap;
   font-size:var(--fs-micro);letter-spacing:.1em;text-transform:uppercase;color:var(--label)}
 .foot a{color:inherit;text-decoration:none}
 .foot a:hover{color:var(--ink)}
 
 /* ---------- states ---------- */
-.state{border:1px solid var(--rule);padding:var(--s7) var(--s5);text-align:center;
+.state{border:var(--bw) solid var(--rule);padding:var(--s7) var(--s5);text-align:center;
   color:var(--label);background:var(--surface);font-size:var(--fs-xs)}
-.state code{background:var(--paper-1);border:1px solid var(--rule-hair);padding:1px 6px;
+.state code{background:var(--paper-1);border:var(--bw) solid var(--rule-hair);padding:1px 6px;
   font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11px;color:var(--ink)}
 .state code.why{user-select:text;display:inline-block;max-width:46ch;text-align:left;
   white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.5}
@@ -318,9 +316,8 @@ button.link:hover{color:var(--ink)}
 .ob-item{border-left:2px solid var(--rule);padding-left:var(--s3)}
 .ob-item b{display:block;font-weight:500;margin-bottom:2px}
 .ob-item span{display:block;color:var(--soft-ink);font-size:var(--fs-xs);line-height:1.45}
-.btn.primary{background:var(--mark);border-color:var(--mark);color:var(--paper)}
+.btn.primary{background:var(--mark);border-color:var(--mark);color:var(--on-mark)}
 .btn.primary:hover{background:var(--accent);border-color:var(--accent)}
-[data-theme="dark"] .btn.primary{color:var(--sage-900)}
 /* an empty section must not draw the rule that frames a full one */
 .grid:empty{border-left:0}
 .rolelist:empty{border-top:0}
@@ -331,7 +328,7 @@ button.link:hover{color:var(--ink)}
   .top>*{flex:none}
   .top nav{gap:var(--s3)}
   .wrap{padding:0 var(--s3) var(--s6)}
-  .sheetbody .left{border-right:0;border-bottom:1px solid var(--rule)}
+  .sheetbody .left{border-right:0;border-bottom:var(--bw) solid var(--rule)}
 }
 </style>
 </head>
@@ -465,7 +462,9 @@ function paintIcons(root){
    between surfaces. this page only applies it. */
 try{
   const s = JSON.parse(localStorage.getItem('eski-settings')) || {};
-  document.documentElement.dataset.theme = s.dark ? 'dark' : '';
+  /* the dark toggle is now a shortcut into the theme system: there is one
+     place that owns data-theme, and it is theme.js. */
+  if(window.eskiTheme) window.eskiTheme.set(s.dark ? 'eski' : 'broadsheet');
 }catch(e){}
 
 const esc = s => (s??'').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');

@@ -15,8 +15,10 @@
 <script src="vendor/panzoom.js"></script>
 <script type="module" src="platform.js"></script>
 <script src="comments.js"></script>
+<script src="theme.js"></script>
 <link rel="stylesheet" href="tokens.css">
 <link rel="stylesheet" href="docs/design/final/broadsheet.css">
+<link rel="stylesheet" href="themes.css">
 <style>
 /* colour match. the chrome is re-derived from the cover's hue only while
    html.tint is set; without it the reader is the same near-white and
@@ -35,7 +37,7 @@ html.tint{
   --band:hsl(var(--hue),var(--tintsat),12%);
   --paper-1:hsl(var(--hue),var(--tintsat),94%);
 }
-html.tint[data-theme="dark"]{
+html.tint[data-dark]{
   --paper:hsl(var(--hue),var(--tintsat),8%);
   --surface:hsl(var(--hue),var(--tintsat),12%);
   --accent:hsl(var(--hue),20%,66%);
@@ -49,7 +51,7 @@ body{margin:0;background:var(--paper);color:var(--ink);
   transition:background 600ms ease}
 button{font-family:inherit;cursor:pointer}
 input,select{font-family:inherit;font-size:var(--fs-xs);color:var(--ink);background:var(--surface);
-  border:1px solid var(--rule-hair);padding:0 var(--s2);height:24px;outline:none}
+  border:var(--bw) solid var(--rule-hair);padding:0 var(--s2);height:24px;outline:none}
 input:focus,select:focus{border-color:var(--accent)}
 ::selection{background:var(--accent-soft);color:var(--accent-deep)}
 a{color:inherit;text-decoration:none}
@@ -128,7 +130,7 @@ body.focus .settings{position:fixed;right:12px;bottom:calc(var(--bar) + 12px);z-
   transition:opacity 160ms var(--ease)}
 .zones.show{opacity:1}
 .zones .z{position:absolute;display:grid;place-items:center;color:var(--ink);
-  background:var(--paper);opacity:.82;outline:1px solid var(--rule)}
+  background:var(--paper);opacity:.82;outline:var(--bw) solid var(--rule)}
 .zones .z i{display:block}
 .zones .ico{width:20px;height:20px}
 .zones .l{left:0;top:0;bottom:0;width:var(--band-x)}
@@ -146,14 +148,14 @@ body.focus .settings{position:fixed;right:12px;bottom:calc(var(--bar) + 12px);z-
    drag in progress can never swallow the click that lands on "fit" — which
    is the only control you press while zoomed, and the one that was dead. */
 .zoombar{position:absolute;right:var(--s3);bottom:var(--s3);z-index:12;display:none;
-  align-items:center;border:1px solid var(--rule);background:var(--paper)}
+  align-items:center;border:var(--bw) solid var(--rule);background:var(--paper)}
 .zoombar.on{display:flex}
-.zoombar button{width:26px;height:24px;border:0;border-left:1px solid var(--rule-hair);
+.zoombar button{width:26px;height:24px;border:0;border-left:var(--bw) solid var(--rule-hair);
   background:none;color:var(--ink);font:inherit;font-size:12px;padding:0}
 .zoombar button[data-z="fit"]{width:auto;padding:0 var(--s2);font-size:10px;
   letter-spacing:.12em;text-transform:uppercase}
 .zoombar button:first-child{border-left:0}
-.zoombar button:hover{background:var(--rule);color:var(--paper)}
+.zoombar button:hover{background:var(--rule);color:var(--on-mark)}
 .zoombar span{padding:0 var(--s2);font-size:10px;letter-spacing:.06em;color:var(--label);
   font-variant-numeric:var(--num);min-width:38px;text-align:center}
 
@@ -167,7 +169,7 @@ body.focus .settings{position:fixed;right:12px;bottom:calc(var(--bar) + 12px);z-
    compartments divided by hairlines, the same grammar as the library grid.
    the gap IS the divider, so nothing needs its own border. */
 .player-bar{flex:none;height:var(--bar);display:flex;align-items:stretch;flex-wrap:nowrap;
-  gap:1px;padding:0;background:var(--rule);border-top:1px solid var(--rule);
+  gap:1px;padding:0;background:var(--rule);border-top:var(--bw) solid var(--rule);
   overflow:hidden;transition:background 600ms ease}
 .player-bar>*{background:var(--paper);display:flex;align-items:center;gap:var(--s2);
   padding:0 var(--s3);min-width:0}
@@ -205,8 +207,7 @@ body.focus .settings{position:fixed;right:12px;bottom:calc(var(--bar) + 12px);z-
 .player-bar .btn.icon-btn{padding:0 var(--s2)}
 /* a control that is currently doing something — the panel it opens is up,
    or the mute it toggles is on — is the one solid fill in the bar. */
-.player-bar .btn.on{background:var(--mark);border-color:var(--mark);color:var(--paper)}
-[data-theme="dark"] .player-bar .btn.on{color:var(--sage-900)}
+.player-bar .btn.on{background:var(--mark);border-color:var(--mark);color:var(--on-mark)}
 
 /* ---------- busy dots ---------- */
 .busy::after{content:'';display:inline-block;width:1.2em;text-align:left;animation:dots 1.1s steps(1,end) infinite}
@@ -230,7 +231,7 @@ body.focus .settings{position:fixed;right:12px;bottom:calc(var(--bar) + 12px);z-
 }
 .mix-head{font-size:var(--fs-micro);letter-spacing:.16em;text-transform:uppercase;
   color:var(--label);padding:var(--s3) var(--s3) var(--s1);
-  border-bottom:1px solid var(--rule);margin-bottom:var(--s1)}
+  border-bottom:var(--bw) solid var(--rule);margin-bottom:var(--s1)}
 .mix-char{font-family:var(--font-display);font-size:14px;color:var(--ink);
   padding:var(--s2) var(--s3) 2px}
 .mix-note{padding:2px var(--s3) var(--s2);font-size:var(--fs-micro);color:var(--muted)}
@@ -238,7 +239,7 @@ body.focus .settings{position:fixed;right:12px;bottom:calc(var(--bar) + 12px);z-
   padding:5px var(--s3);cursor:pointer}
 .mix-row:hover{background:var(--surface)}
 .mix-row input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
-.mix-row .dot{width:11px;height:11px;border:1px solid var(--line-strong);border-radius:50%;
+.mix-row .dot{width:11px;height:11px;border:var(--bw) solid var(--line-strong);border-radius:50%;
   position:relative}
 .mix-row:has(input:checked) .dot{border-color:var(--mark)}
 .mix-row:has(input:checked) .dot::after{content:"";position:absolute;inset:2px;
@@ -246,20 +247,20 @@ body.focus .settings{position:fixed;right:12px;bottom:calc(var(--bar) + 12px);z-
 .mix-row .who{font-size:var(--fs-xs);min-width:0}
 .mix-row .who b{font-weight:500}
 .mix-row .who span{color:var(--label);margin-left:var(--s1)}
-.mix-foot{padding:var(--s2) var(--s3);border-top:1px solid var(--rule);flex:none}
+.mix-foot{padding:var(--s2) var(--s3);border-top:var(--bw) solid var(--rule);flex:none}
 .mix-foot .btn{width:100%;justify-content:center}
 
 /* ---------- settings ---------- */
 .sheet-head{display:none}
 .settings{display:none;position:absolute;right:var(--s3);bottom:calc(var(--bar) + var(--s2));
-  z-index:40;background:var(--paper);border:1px solid var(--rule);min-width:262px;padding:var(--s1) 0}
+  z-index:40;background:var(--paper);border:var(--bw) solid var(--rule);min-width:262px;padding:var(--s1) 0}
 .settings.open{display:block}
 .set-row{display:flex;align-items:center;gap:var(--s3);padding:5px var(--s3);font-size:var(--fs-xs)}
 .set-row>span:first-child{flex:1;color:var(--soft-ink);display:flex;align-items:center;gap:6px}
 .set-row input[type=number]{width:52px}
 /* only worth showing where the header is not: on a wide screen the same four
    words are already three inches up and to the right */
-.set-nav{display:none;gap:var(--s4);border-top:1px solid var(--rule);
+.set-nav{display:none;gap:var(--s4);border-top:var(--bw) solid var(--rule);
   margin-top:var(--s1);padding-top:var(--s3)}
 .set-nav a{font-size:var(--fs-micro);letter-spacing:.14em;text-transform:uppercase;
   color:var(--ink);opacity:.55}
@@ -267,18 +268,16 @@ body.focus .settings{position:fixed;right:12px;bottom:calc(var(--bar) + 12px);z-
 @media (max-width:640px){ .set-nav{display:flex} }
 /* "on" / "off" is a VALUE, not a label, so it is lowercase like every other
    value on the site — see the three rules at the head of broadsheet.css. */
-.tgl{border:1px solid var(--rule-hair);background:none;color:var(--label);padding:0 var(--s2);
+.tgl{border:var(--bw) solid var(--rule-hair);background:none;color:var(--label);padding:0 var(--s2);
   height:22px;font-size:10px;letter-spacing:.12em;
   transition:all var(--t-fast) var(--ease)}
 .tgl:hover{color:var(--ink);border-color:var(--ink)}
-.tgl.on{background:var(--mark);border-color:var(--mark);color:var(--paper)}
-[data-theme="dark"] .tgl.on{color:var(--sage-900)}
-.seg button.on{background:var(--mark);color:var(--paper)}
-[data-theme="dark"] .seg button.on{color:var(--sage-900)}
+.tgl.on{background:var(--mark);border-color:var(--mark);color:var(--on-mark)}
+.seg button.on{background:var(--mark);color:var(--on-mark)}
 
 /* ---------- one-shot indicator ---------- */
 .os-hint{position:absolute;left:var(--s3);bottom:var(--s3);z-index:12;display:flex;
-  align-items:center;gap:var(--s2);background:var(--paper);border:1px solid var(--rule);
+  align-items:center;gap:var(--s2);background:var(--paper);border:var(--bw) solid var(--rule);
   padding:3px 5px 3px var(--s3);color:var(--soft-ink);font-size:var(--fs-xs);
   overflow:hidden}
 .os-hint .ico{width:14px;height:14px;color:var(--label);transition:color var(--t-fast) var(--ease)}
@@ -289,7 +288,7 @@ body.focus .settings{position:fixed;right:12px;bottom:calc(var(--bar) + 12px);z-
 .os-hint .os-prog-fill{position:absolute;left:0;top:0;bottom:0;width:0%;background:var(--mark);
   transition:width 120ms linear}
 .os-hint:not(.playing) .os-prog{opacity:0}
-.os-hint .os-step{width:22px;height:22px;border:1px solid var(--rule-hair);background:none;
+.os-hint .os-step{width:22px;height:22px;border:var(--bw) solid var(--rule-hair);background:none;
   color:var(--label);display:flex;align-items:center;justify-content:center;padding:0}
 .os-hint .os-step:hover{border-color:var(--ink);color:var(--ink)}
 
@@ -297,17 +296,17 @@ body.focus .settings{position:fixed;right:12px;bottom:calc(var(--bar) + 12px);z-
 .keys-scrim{position:fixed;inset:0;background:rgba(12,19,15,.55);display:none;z-index:500}
 .keys-scrim.open{display:block}
 .keys-panel{position:fixed;left:50%;top:50%;transform:translate(-50%,-46%);z-index:501;display:none;
-  background:var(--paper);border:1px solid var(--rule);padding:var(--s4);width:min(380px,92vw)}
+  background:var(--paper);border:var(--bw) solid var(--rule);padding:var(--s4);width:min(380px,92vw)}
 .keys-panel.open{display:block}
 .keys-head{display:flex;align-items:center;gap:var(--s2);font-size:var(--fs-micro);
   letter-spacing:.16em;text-transform:uppercase;color:var(--label);
-  padding-bottom:var(--s2);border-bottom:1px solid var(--rule);margin-bottom:var(--s3)}
+  padding-bottom:var(--s2);border-bottom:var(--bw) solid var(--rule);margin-bottom:var(--s3)}
 .keys-head .ico{width:14px;height:14px}
 .keys-head button{margin-left:auto;border:0;background:none;color:var(--label);padding:2px}
 .keys-head button:hover{color:var(--ink)}
 .keys-grid{display:grid;grid-template-columns:auto 1fr;gap:6px var(--s3);align-items:center;
   font-size:var(--fs-xs)}
-.keys-grid kbd{justify-self:start;background:none;border:1px solid var(--rule-hair);
+.keys-grid kbd{justify-self:start;background:none;border:var(--bw) solid var(--rule-hair);
   padding:0 5px;font-family:inherit;font-size:var(--fs-micro);color:var(--ink);white-space:nowrap;
   font-variant-numeric:var(--num)}
 .keys-grid span{color:var(--soft-ink)}
@@ -323,11 +322,11 @@ body.focus .settings{position:fixed;right:12px;bottom:calc(var(--bar) + 12px);z-
 }
 /* a small picture of the frame, because "the edges" is easier seen than read */
 .tapmap{position:relative;height:110px;margin-bottom:var(--s3);
-  border:1px solid var(--rule-hair);background:var(--paper-1)}
-[data-theme="dark"] .tapmap{background:var(--surf-2)}
+  border:var(--bw) solid var(--rule-hair);background:var(--plate-bg)}
+[data-dark] .tapmap{background:var(--surf-2)}
 .tapmap span{position:absolute;display:grid;place-items:center;
   font-size:var(--fs-xs);color:var(--ink);background:var(--paper);
-  outline:1px solid var(--rule-hair)}
+  outline:var(--bw) solid var(--rule-hair)}
 .tapmap .l{left:0;top:0;bottom:0;width:20%}
 .tapmap .r{right:0;top:0;bottom:0;width:20%}
 .tapmap .t{top:0;left:20%;right:20%;height:24%}
@@ -349,7 +348,7 @@ body.focus .settings{position:fixed;right:12px;bottom:calc(var(--bar) + 12px);z-
 .toast-x:hover{opacity:.7}
 
 /* ---------- foot ---------- */
-footer{flex:none;padding:var(--s2) var(--s4);border-top:1px solid var(--rule);
+footer{flex:none;padding:var(--s2) var(--s4);border-top:var(--bw) solid var(--rule);
   display:flex;align-items:center;gap:var(--s4);font-size:var(--fs-micro);
   letter-spacing:.1em;text-transform:uppercase;color:var(--label)}
 footer .sp{flex:1}
@@ -392,7 +391,7 @@ footer a:hover{color:var(--ink)}
   /* the sheet covers its own toggle, so it needs its own way out */
   .sheet-head{display:flex;align-items:center;justify-content:space-between;
     padding:var(--s3) var(--s4) var(--s2);font-size:var(--fs-micro);letter-spacing:.16em;
-    text-transform:uppercase;color:var(--label);border-bottom:1px solid var(--rule);
+    text-transform:uppercase;color:var(--label);border-bottom:var(--bw) solid var(--rule);
     position:sticky;top:0;background:var(--paper)}
   .sheet-head button{border:0;background:none;color:var(--label);padding:6px;min-height:36px}
   .set-row{padding:var(--s2) var(--s4);font-size:var(--fs-sm)}
@@ -2360,7 +2359,7 @@ function toggleKeys(force){
 }
 function toggleDark(){
   settings.dark = !settings.dark; saveSettings();
-  document.documentElement.dataset.theme = settings.dark ? 'dark' : '';
+  if(window.eskiTheme) window.eskiTheme.set(settings.dark ? 'eski' : 'broadsheet');
   paintSettings();
 }
 function setDuckMode(m){
@@ -2468,7 +2467,7 @@ if('serviceWorker' in navigator && location.protocol.startsWith('http')){
    so the owner can swap the file at any time.
    ================================================================ */
 (async function boot(){
-  document.documentElement.dataset.theme = settings.dark ? 'dark' : '';
+  if(window.eskiTheme) window.eskiTheme.set(settings.dark ? 'eski' : 'broadsheet');
   paintIcons();
   paintSettings();
   // library links here with ?read=library/foo.eski; otherwise the owner's demo.eski

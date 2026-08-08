@@ -10,8 +10,10 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Jost:wght@400;500;600&display=swap" rel="stylesheet">
 <script type="module" src="platform.js"></script>
+<script src="theme.js"></script>
 <link rel="stylesheet" href="tokens.css">
 <link rel="stylesheet" href="docs/design/final/broadsheet.css">
+<link rel="stylesheet" href="themes.css">
 <style>
 /* ============================================================
    eski — profile. docs/design/final/home.html's profile pane: the head
@@ -31,9 +33,8 @@ body{margin:0;min-height:100vh;display:flex;flex-direction:column}
   stroke-linecap:round;stroke-linejoin:round;display:block}
 .wrap{max-width:1280px;margin:0 auto;padding:0 var(--s4) var(--s7);flex:1;width:100%}
 section + section{margin-top:var(--s6)}
-.btn.primary{background:var(--mark);border-color:var(--mark);color:var(--paper)}
+.btn.primary{background:var(--mark);border-color:var(--mark);color:var(--on-mark)}
 .btn.primary:hover{background:var(--accent);border-color:var(--accent)}
-[data-theme="dark"] .btn.primary{color:var(--sage-900)}
 .btn.danger:hover{border-color:var(--rec);background:none;color:var(--rec)}
 /* an empty section must not draw the rule that frames a full one */
 .grid:empty{border-left:0}
@@ -41,8 +42,8 @@ section + section{margin-top:var(--s6)}
 
 /* ---------- the head ---------- */
 .phead{display:grid;grid-template-columns:64px 1fr auto;gap:var(--s4);align-items:start;
-  padding:var(--s5) 0 var(--s4);border-bottom:1px solid var(--rule)}
-.pfp-lg{width:64px;height:64px;border:1px solid var(--rule);display:grid;place-items:center;
+  padding:var(--s5) 0 var(--s4);border-bottom:var(--bw) solid var(--rule)}
+.pfp-lg{width:64px;height:64px;border:var(--bw) solid var(--rule);display:grid;place-items:center;
   font-family:var(--font-display);font-size:22px;color:var(--accent);background:var(--surface);
   overflow:hidden}
 .pfp-lg img{width:100%;height:100%;object-fit:cover}
@@ -67,27 +68,26 @@ section + section{margin-top:var(--s6)}
 .edit.on{display:flex}
 .edit label{font-size:var(--fs-micro);letter-spacing:.12em;color:var(--label);
   text-transform:uppercase;font-weight:500}
-.edit input,.edit textarea{width:100%;padding:var(--s2) var(--s3);border:1px solid var(--rule-hair);
+.edit input,.edit textarea{width:100%;padding:var(--s2) var(--s3);border:var(--bw) solid var(--rule-hair);
   background:var(--paper);color:var(--ink);font:inherit;font-size:var(--fs-xs)}
 .edit input:focus,.edit textarea:focus{outline:none;border-color:var(--accent)}
 .edit textarea{min-height:88px;resize:vertical}
 .err{color:var(--rec);font-size:var(--fs-xs)}
 
 /* ---------- the same card grid the shelf uses ---------- */
-.grid{display:grid;grid-template-columns:repeat(5,1fr);border-left:1px solid var(--rule)}
+.grid{display:grid;grid-template-columns:repeat(5,1fr);border-left:var(--bw) solid var(--rule)}
 @media(max-width:1180px){.grid{grid-template-columns:repeat(4,1fr)}}
 @media(max-width:900px){.grid{grid-template-columns:repeat(3,1fr)}}
 @media(max-width:640px){.grid{grid-template-columns:repeat(2,1fr)}}
 .cell{position:relative;display:flex;background:var(--paper);
-  border-right:1px solid var(--rule);border-bottom:1px solid var(--rule)}
+  border-right:var(--bw) solid var(--rule);border-bottom:var(--bw) solid var(--rule)}
 .card{display:flex;flex-direction:column;background:none;text-align:left;border:0;
   padding:var(--s3);color:inherit;font:inherit;min-width:0;width:100%;cursor:pointer;
   transition:background var(--t-fast) var(--ease)}
 .card:hover{background:var(--surface)}
 .card:active{transform:translateY(1px)}
-.plate{position:relative;overflow:hidden;border:1px solid var(--rule-hair);
-  aspect-ratio:2/3;background:var(--paper-1)}
-[data-theme="dark"] .plate{background:var(--surf-2)}
+.plate{position:relative;overflow:hidden;border:var(--bw) solid var(--rule-hair);
+  aspect-ratio:2/3;background:var(--plate-bg)}
 .plate img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;
   transition:transform var(--t-mid) var(--ease)}
 .card:hover .plate img{transform:scale(1.025)}
@@ -97,7 +97,7 @@ section + section{margin-top:var(--s6)}
   color:var(--label);text-align:center;letter-spacing:.04em}
 .cap{margin-top:auto;font-size:var(--fs-xs);color:var(--soft-ink)}
 .cap .r{display:grid;grid-template-columns:42px 1fr;align-items:center;gap:var(--s2);
-  height:var(--row);border-top:1px solid var(--rule-hair);min-width:0}
+  height:var(--row);border-top:var(--bw) solid var(--rule-hair);min-width:0}
 .cap .r:first-child{border-top:0}
 .cap .k{color:var(--label);letter-spacing:.06em;font-size:var(--fs-micro);
   text-transform:uppercase;white-space:nowrap}
@@ -105,21 +105,19 @@ section + section{margin-top:var(--s6)}
 .progress{height:3px;background:var(--rule-hair);margin-top:var(--s2)}
 .progress i{display:block;height:100%;background:var(--mark)}
 .chip.state{font-size:9px;text-transform:uppercase;letter-spacing:.06em;padding:2px 7px;
-  border:1px solid var(--rule-hair);color:var(--label);position:absolute;top:0;left:0;z-index:2;
+  border:var(--bw) solid var(--rule-hair);color:var(--label);position:absolute;top:0;left:0;z-index:2;
   background:var(--paper)}
 .chip.state.published{background:var(--mark);color:var(--paper);border-color:var(--mark)}
-[data-theme="dark"] .chip.state.published{color:var(--sage-900)}
 .cardacts{display:flex;gap:var(--s1);flex-wrap:wrap;padding:0 var(--s3) var(--s3)}
 
 /* ---------- contributions: the dense role row ---------- */
-.rolelist{border-top:1px solid var(--rule)}
+.rolelist{border-top:var(--bw) solid var(--rule)}
 .rolerow{display:grid;grid-template-columns:46px 196px 1fr 104px;gap:var(--s3);
   align-items:center;padding:5px var(--s2);width:100%;text-align:left;background:none;
-  border:0;border-bottom:1px solid var(--rule-hair);color:inherit;font:inherit;min-width:0}
+  border:0;border-bottom:var(--bw) solid var(--rule-hair);color:inherit;font:inherit;min-width:0}
 .rolerow:hover{background:var(--surface)}
 .portrait{width:46px;height:46px;flex:none;display:block;overflow:hidden;
-  border:1px solid var(--rule-hair);background:var(--paper-1)}
-[data-theme="dark"] .portrait{background:var(--surf-2)}
+  border:var(--bw) solid var(--rule-hair);background:var(--plate-bg)}
 .portrait img{width:100%;height:100%;object-fit:cover}
 .rolename{font-family:var(--font-display);font-size:15px;line-height:20px}
 .rolein{font-size:var(--fs-micro);color:var(--label);line-height:var(--row)}
@@ -133,16 +131,16 @@ section + section{margin-top:var(--s6)}
 
 /* ---------- settings ---------- */
 .setrow{display:flex;align-items:center;gap:var(--s3);padding:var(--s2) 0;
-  border-bottom:1px solid var(--rule-hair);font-size:var(--fs-xs)}
+  border-bottom:var(--bw) solid var(--rule-hair);font-size:var(--fs-xs)}
 .setrow .sp{flex:1}
 .setrow small{color:var(--label);font-size:var(--fs-micro)}
 
-.state{border:1px solid var(--rule);padding:var(--s7) var(--s5);text-align:center;
+.state{border:var(--bw) solid var(--rule);padding:var(--s7) var(--s5);text-align:center;
   color:var(--label);background:var(--surface);font-size:var(--fs-xs)}
 .spinner{width:24px;height:24px;border:2px solid var(--rule-hair);border-top-color:var(--accent);
   border-radius:50%;animation:spin .8s linear infinite;margin:0 auto var(--s3)}
 @keyframes spin{to{transform:rotate(360deg)}}
-.foot{margin-top:var(--s7);padding-top:var(--s3);border-top:1px solid var(--rule);
+.foot{margin-top:var(--s7);padding-top:var(--s3);border-top:var(--bw) solid var(--rule);
   display:flex;justify-content:space-between;gap:var(--s3);flex-wrap:wrap;
   font-size:var(--fs-micro);letter-spacing:.1em;color:var(--label)}
 .foot a{color:inherit;text-decoration:none}
@@ -203,21 +201,51 @@ function paintIcons(root){
       `<svg class="ico" viewBox="0 0 24 24" aria-hidden="true">${ICONS[el.getAttribute('data-ico')]||''}</svg>`);
   });
 }
-/* the theme switch lives in the settings section below, which is where the
-   design puts it. every surface reads the same 'eski-settings' key. */
-const themeSettings = (()=>{ try{ return JSON.parse(localStorage.getItem('eski-settings'))||{}; }
-  catch(e){ return {}; } })();
-function paintTheme(){
-  document.documentElement.dataset.theme = themeSettings.dark ? 'dark' : '';
-  const t = $('set-theme');
-  if(t){ t.setAttribute('aria-pressed', !!themeSettings.dark); t.textContent = themeSettings.dark ? 'On' : 'Off'; }
+/* THE THEME PICKER. This is where the choice is made; theme.js owns applying
+   it, on every surface, before first paint.
+
+   Each swatch is drawn IN ITS OWN THEME rather than described in words: the
+   palette, the typeface, the corner radius and the presence or absence of a
+   rule are all visible at a glance, which is the only honest way to choose
+   between six of them. */
+const THEME_NOTE = {
+  broadsheet: ['Broadsheet',  'Near-white, hairline rules, Gnomon headings. Square.'],
+  press:      ['Press',       'Black on white, no hue at all, set in a serif.'],
+  eski:       ['eski dark',   'The house sage, inverted. Still ruled, still square.'],
+  light:      ['Light',       'Off-whites and greys, softly rounded, system type.'],
+  pink:       ['Pink',        'Warm ground, generous radius, and no rules at all.'],
+  slate:      ['Slate',       'Dark greys separated by value rather than by line.']
+};
+
+function paintThemes(){
+  const box = $('themes');
+  if(!box || !window.eskiTheme) return;
+  const now = window.eskiTheme.current;
+  const label = $('theme-now');
+  if(label) label.textContent = (THEME_NOTE[now] || [now])[0];
+
+  box.innerHTML = window.eskiTheme.list.map(t=>{
+    const [name, note] = THEME_NOTE[t] || [t, ''];
+    /* data-theme on the swatch itself, so every token inside it resolves to
+       that theme's values and the sample is the real thing, not a mock-up */
+    return `<button class="theme-sw" data-theme="${esc(t)}" data-pick="${esc(t)}"
+      aria-pressed="${t === now}" title="${esc(note)}">
+      <span class="demo" style="background:var(--paper);color:var(--ink);
+        font-family:var(--font-body);border-radius:var(--r)">
+        <b style="font-family:var(--font-display)">${esc(name)}</b>
+        <i style="color:var(--label)">Aa · voices · score</i>
+        <span class="bar" style="background:var(--mark);border-radius:var(--r)"></span>
+      </span>
+      <span class="nm">${t === now ? 'In use' : 'Use this'}</span>
+    </button>`;
+  }).join('');
+
+  box.querySelectorAll('[data-pick]').forEach(b=>b.addEventListener('click', ()=>{
+    window.eskiTheme.set(b.dataset.pick);
+    paintThemes();
+  }));
 }
-function toggleTheme(){
-  themeSettings.dark = !themeSettings.dark;
-  try{ localStorage.setItem('eski-settings', JSON.stringify(themeSettings)); }catch(e){}
-  paintTheme();
-}
-paintTheme();
+document.addEventListener('eski-theme', paintThemes);
 
 const fmt = d => d ? new Date(d).toISOString().slice(0,10) : '';
 let sb = null, me = null, subject = null, isMe = false;
@@ -453,8 +481,12 @@ function paint(){
 
     <section>
       <div class="head"><h2>Settings</h2></div>
-      <div class="setrow"><span>Dark mode</span><span class="sp"></span>
-        <button class="btn sm" id="set-theme" aria-pressed="false">Off</button></div>
+      <div class="subhead"><span>Theme</span><span class="sp"></span>
+        <span class="n" id="theme-now"></span></div>
+      <p class="note-line">A theme changes more than the colours: the typeface,
+        the corner radius, whether there are hairline rules at all, and how a
+        control answers a hover.</p>
+      <div class="themes" id="themes"></div>
     </section>` : ''}
 
     <div class="foot"><span>EST. 2026</span>
@@ -531,7 +563,7 @@ function paint(){
   }), 'e-drafts', 'no drafts. the studio saves them here.');
 
   paintIcons($('page'));
-  paintTheme();
+  paintThemes();
 
   $('share').addEventListener('click', async e=>{
     const url = location.origin + location.pathname.replace(/[^/]*$/, 'profile.html') + '?u=' + p.handle;
@@ -542,8 +574,6 @@ function paint(){
     $('editbtn').addEventListener('click', ()=>$('edit').classList.toggle('on'));
     $('cancel').addEventListener('click', ()=>$('edit').classList.remove('on'));
     $('save').addEventListener('click', saveProfile);
-    const st = $('set-theme');
-    if(st) st.addEventListener('click', toggleTheme);
   }
   $('page').querySelectorAll('[data-act]').forEach(b=>b.addEventListener('click', ev=>{
     ev.stopPropagation();
