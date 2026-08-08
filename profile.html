@@ -247,31 +247,28 @@ const fmt = d => d ? new Date(d).toISOString().slice(0,10) : '';
 let sb = null, me = null, subject = null, isMe = false;
 let comics = [], parts = [], saves = [], kudosReceived = 0, partsError = '';
 
-function handleSeed(user){
-  const m = user.user_metadata || {};
-  const raw = m.user_name || m.name || m.full_name || (user.email||'').split('@')[0] || 'reader';
-  const base = raw.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,24);
-  return base.length >= 3 ? base : 'reader';
-}
-async function ensureProfile(user){
+/* THIS PAGE NO LONGER CREATES A PROFILE. It used to: read your row, and if
+   there was none, insert one with a handle derived from the Google full_name,
+   retrying with a random suffix on a collision. Two things were wrong with it.
+
+   It never asked. Signing in as Alex Morgan made you @alex-morgan on a public
+   page and on every byline, chosen by nobody.
+
+   And it only ran HERE, so an account that never opened its profile had no row
+   at all — while schema-comments.sql reads display_name off profiles to stamp
+   a comment.
+
+   platform.js asks for a handle the moment the account appears, on whatever
+   page that is, and that insert is the only one. So by the time this page
+   loads for a signed-in person the row exists; if it somehow does not, say so
+   rather than quietly inventing an address for them. */
+async function myProfile(user){
   const dbe = window.eski.dbError;
   const got = await sb.from('profiles').select('*').eq('id', user.id).maybeSingle();
   if(got.error) throw new Error(dbe('ESK-5012', 'your profile row could not be read', got.error));
   if(got.data) return got.data;
-  const m = user.user_metadata || {};
-  const seed = handleSeed(user);
-  for(let i = 0; i < 5; i++){
-    const handle = i ? seed.slice(0,24) + '-' + Math.random().toString(36).slice(2,6) : seed;
-    const ins = await sb.from('profiles').insert({
-      id: user.id, handle,
-      display_name: m.full_name || m.name || m.user_name || null,
-      avatar_url: m.avatar_url || null
-    }).select('*').single();
-    if(!ins.error) return ins.data;
-    if(ins.error.code !== '23505')
-      throw new Error(dbe('ESK-5013', 'your profile could not be created', ins.error));
-  }
-  throw new Error('ESK-5014 could not pick a free handle after 5 tries');
+  throw new Error('ESK-5013 your profile has not been set up yet. Reload the page: ' +
+                  'you will be asked to pick a username.');
 }
 
 async function platform(){
@@ -310,7 +307,7 @@ async function load(){
       page.innerHTML = '<div class="state">Sign in to see your profile, your drafts and what you have saved.</div>';
       return;
     }
-    try{ subject = await ensureProfile(me); }
+    try{ subject = await myProfile(me); }
     catch(e){ page.innerHTML = '<div class="state">Could not set up your profile: '+esc(e.message)+'</div>'; return; }
   }
   isMe = !!(me && subject && me.id === subject.id);

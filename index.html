@@ -2096,16 +2096,37 @@ document.addEventListener('keydown', e=>{
 /* ---------------- onboarding: shown once ever ---------------- */
 const OB_KEY = 'eski-onboarded';
 function closeOnboarding(){ document.getElementById('ob').classList.remove('open'); }
+/* WAITS FOR platform.js TO BE OUT OF THE WAY. A brand new account is asked to
+   pick a username the moment it appears, and that sheet is not dismissable —
+   so opening the tour underneath it showed two modals at once AND burned the
+   shown-once flag on a tour nobody could see or read. window.eski.settled
+   resolves after that sheet is gone, or immediately when there is no sheet.
+
+   The flag is still set the moment it opens, not when it is closed: the point
+   is "offered once", and someone who dismisses it has been offered it. */
 function maybeOnboarding(){
   try{ if(localStorage.getItem(OB_KEY)) return; localStorage.setItem(OB_KEY,'1'); }catch(e){ return; }
   document.getElementById('ob').classList.add('open');
+}
+async function onboardingWhenClear(){
+  /* platform.js is TYPE=MODULE, so it is deferred and window.eski does not
+     exist while this inline script is being parsed. Checking for it here
+     without waiting is how this read as "the guard does nothing": it took the
+     fallback branch every single time. Deferred scripts run before
+     DOMContentLoaded, so one tick after that is enough. */
+  if(!window.eski && document.readyState === 'loading')
+    await new Promise(r => document.addEventListener('DOMContentLoaded', r, { once:true }));
+  /* platform.js may still have failed to load at all; the tour is not worth
+     losing over that, so fall through to showing it. */
+  if(window.eski && window.eski.settled) await window.eski.settled;
+  maybeOnboarding();
 }
 
 // the shelf and the follow rail change the moment you sign in
 document.addEventListener('eski-auth', ()=>{ if(COMICS.length || sb) boot(); });
 
 fromHash();
-maybeOnboarding();
+onboardingWhenClear();
 paintIcons();
 boot();
 </script>

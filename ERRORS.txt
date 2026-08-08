@@ -81,6 +81,13 @@ ESK-2004  The session has no access token.
           Rare: a half-written session in storage.
           FIX: sign out, clear the site's storage, sign in.
 
+ESK-2005  The username you picked could not be saved, and the reason was not
+          "taken" — a taken handle is [23505] and is shown as plain english in
+          the sheet, not as a code. With [42P01] the profiles table does not
+          exist: apply schema-profiles.sql, which is a separate file from
+          schema.sql. With [42501] the profiles_write policy is missing.
+          The sheet stays open, so the pick is not lost.
+
 NOT AN ESK CODE, but the same family — an OAuth round trip that fails on the
 PROVIDER's side never reaches our code, so it shows their error page, not ours:
   "redirect_uri_mismatch" (google)      the callback url is not on the allowed
@@ -264,10 +271,15 @@ ESK-5009  reader: the comic exists but has no page rows (see ESK-5002).
 ESK-5010  reader: the track rows could not be read.
 ESK-5011  reader: a page row has no image key. The publish was interrupted.
 ESK-5012  profile: your profile row could not be read.
-ESK-5013  profile: your profile row could not be created. With [42P01], apply
-          schema-profiles.sql; it is a separate file from schema.sql.
-ESK-5014  profile: five handle attempts all collided. Effectively impossible;
-          suspect the unique index is on the wrong column.
+ESK-5013  profile: you are signed in but have no profile row, so there is
+          nothing to show. The profile is created when you pick a username,
+          which platform.js asks for on first sign-in — so this means that
+          sheet was never completed, or the insert failed (see ESK-2005).
+          FIX: reload. You will be asked again.
+ESK-5014  RETIRED. It meant "five auto-generated handles all collided", from
+          when this page invented a handle from your Google name instead of
+          asking. Nothing generates a handle any more. Do not reuse the
+          number: an old bookmark or screenshot may still carry it.
 ESK-5015  profile: the shelves query was refused.
 ESK-5016  profile: your profile edits did not save.
 ESK-5017  profile: a delete was refused. [42501] means the delete policy is

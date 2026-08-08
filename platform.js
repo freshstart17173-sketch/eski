@@ -64,6 +64,34 @@ const CSS = `
   line-height:1.35;letter-spacing:0}
 @media(max-width:640px){.auth{margin-left:var(--s3,12px)}
   .auth-btn{min-height:42px;letter-spacing:.06em}}
+
+/* the pick-a-handle sheet. broadsheet tokens with fallbacks, same as above:
+   it has to render on legal.html and spec.html too. */
+.oz-scrim{position:fixed;inset:0;z-index:900;background:var(--scrim,rgba(0,0,0,.6));
+  display:flex;align-items:center;justify-content:center;padding:var(--s4,16px)}
+.oz{width:min(420px,100%);background:var(--paper,#fff);color:var(--ink,#111);
+  border:var(--bw,1px) solid var(--rule,rgba(128,128,128,.4));padding:var(--s5,24px)}
+.oz h2{font-family:var(--font-display,inherit);font-size:var(--fs-lg,20px);
+  margin:0 0 var(--s2,8px);font-weight:400}
+.oz p{margin:0 0 var(--s4,16px);font-size:var(--fs-sm,13px);color:var(--label,#8a8a8a);
+  line-height:1.45}
+.oz label{display:block;font-size:var(--fs-micro,11px);letter-spacing:.14em;
+  text-transform:uppercase;color:var(--label,#8a8a8a);margin:0 0 6px}
+.oz-at{display:flex;align-items:center;border:var(--bw,1px) solid var(--rule,rgba(128,128,128,.4))}
+.oz-at span{padding:0 var(--s2,8px);color:var(--label,#8a8a8a)}
+.oz input{flex:1;min-width:0;height:38px;border:0;background:transparent;color:inherit;
+  font:inherit;padding:0 var(--s2,8px) 0 0}
+.oz input:focus{outline:none}
+.oz-at:focus-within{border-color:var(--ink,#111)}
+.oz-say{min-height:1.3em;margin:6px 0 var(--s4,16px);font-size:var(--fs-sm,13px)}
+.oz-say.bad{color:var(--danger,#a33028)}
+.oz-acts{display:flex;gap:var(--s2,8px);align-items:center}
+.oz-acts button{font:inherit;font-size:var(--fs-micro,11px);letter-spacing:.14em;
+  text-transform:uppercase;padding:0 var(--s4,16px);height:38px;cursor:pointer;
+  border:var(--bw,1px) solid var(--rule,rgba(128,128,128,.4));background:transparent;color:inherit}
+.oz-acts .oz-go{background:var(--ink,#111);color:var(--paper,#fff);border-color:var(--ink,#111)}
+.oz-acts .oz-go[disabled]{opacity:.4;cursor:default}
+.oz-acts .oz-out{margin-left:auto;border:0;opacity:.55}
 `;
 
 let sb = null, user = null, bootError = null;
@@ -126,6 +154,149 @@ function paint(){
   box.append(btn, menu);
 }
 
+/* ============================================================ PICK A HANDLE
+
+   WHAT WAS WRONG. Google hands back full_name, and the profile row was created
+   from it without asking: sign in as Alex Morgan and you are @alex-morgan, on
+   a public page, on every byline, forever. Nobody chose that, and plenty of
+   people do not want their legal name to be their address here.
+
+   IT ALSO ONLY EVER RAN ON profile.html. ensureProfile() lived there, so
+   somebody could sign in on the reader, comment, publish, and have no profile
+   row at all — and schema-comments.sql reads display_name off profiles to
+   stamp a comment. So the row has to exist from the first moment of the
+   account, which means this belongs where the account is learned about: here.
+
+   IT BLOCKS, AND THAT IS DELIBERATE. Every other design lets somebody dismiss
+   it and carry on without a row, which is the bug above wearing a hat. The way
+   out is sign out, which is honest: you cannot have an account here without an
+   address. It happens exactly once. */
+
+const HANDLE_RE = /^[a-z0-9](?:[a-z0-9_-]{1,28}[a-z0-9])$/;   // == the CHECK in schema-profiles.sql
+
+/* A SUGGESTION, NOT A DECISION. Same derivation the old auto-create used, but
+   it lands in an editable field instead of in the database. */
+function suggestHandle(u){
+  const m = u.user_metadata || {};
+  const raw = m.user_name || m.name || m.full_name || (u.email || '').split('@')[0] || '';
+  const base = raw.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 24);
+  return HANDLE_RE.test(base) ? base : '';
+}
+
+let onboarding = false;
+/* CLAIMED BEFORE THE AWAIT, not after. setUser runs at least twice for one
+   sign-in — once from getSession() and again from onAuthStateChange's
+   INITIAL_SESSION — and a flag set after the profile read means both calls get
+   past the guard and two sheets are stacked on top of each other. Whoever gets
+   here first owns the question. */
+let asked = null;
+let pendingProfile = Promise.resolve();
+
+async function ensureProfile(u){
+  if(!sb || !u || onboarding || asked === u.id) return;
+  asked = u.id;
+  const got = await sb.from('profiles').select('id').eq('id', u.id).maybeSingle();
+  /* A READ THAT FAILED IS NOT A MISSING PROFILE. Offline, or the schema is not
+     applied: either way, showing the sheet would invite somebody to pick a
+     handle we cannot save. Say nothing and let the page work signed in. */
+  if(got.error || got.data) return;
+  onboarding = true;
+  await askHandle(u);
+  onboarding = false;
+}
+
+/* resolves when the sheet is gone — saved, or signed back out. */
+function askHandle(u){
+  let done;
+  const finished = new Promise(r => { done = r; });
+  const m = u.user_metadata || {};
+  const scrim = document.createElement('div');
+  scrim.className = 'oz-scrim';
+  scrim.innerHTML =
+    '<div class="oz" role="dialog" aria-modal="true" aria-labelledby="oz-h">' +
+      '<h2 id="oz-h">Pick a username</h2>' +
+      '<p>This is your address on eski — people find you at ' +
+        '<b>eski.lol/u/you</b>, and it is what appears on anything you make. ' +
+        'Your real name is not it unless you want it to be.</p>' +
+      '<label for="oz-h-in">Username</label>' +
+      '<div class="oz-at"><span>@</span>' +
+        '<input id="oz-h-in" maxlength="30" autocomplete="off" autocapitalize="off" ' +
+               'spellcheck="false" value="' + esc(suggestHandle(u)) + '"></div>' +
+      '<div class="oz-say" id="oz-say"></div>' +
+      '<div class="oz-acts">' +
+        '<button type="button" class="oz-go" id="oz-go">Continue</button>' +
+        '<button type="button" class="oz-out" id="oz-out">Sign out</button>' +
+      '</div>' +
+    '</div>';
+  document.body.appendChild(scrim);
+
+  const input = scrim.querySelector('#oz-h-in');
+  const say = scrim.querySelector('#oz-say');
+  const go = scrim.querySelector('#oz-go');
+  let token = 0;
+
+  const tell = (msg, bad) => { say.textContent = msg; say.classList.toggle('bad', !!bad); };
+
+  /* CHECKED AS THEY TYPE, and taken again on submit. The check is a courtesy —
+     two people can pass it in the same second — so the real answer is the
+     unique index, and 23505 on insert is handled as a normal outcome rather
+     than an error. */
+  async function check(){
+    const v = input.value.trim().toLowerCase();
+    const mine = ++token;
+    go.disabled = true;
+    if(!v) return tell('');
+    if(!HANDLE_RE.test(v))
+      return tell('3 to 30 characters: lowercase letters, numbers, - and _, ' +
+                  'starting and ending with a letter or number.', true);
+    tell('Checking…');
+    const r = await sb.from('profiles').select('id').eq('handle', v).maybeSingle();
+    if(mine !== token) return;                        // a later keystroke won
+    if(r.error) return tell('');                      // cannot tell; let submit decide
+    if(r.data) return tell('@' + v + ' is taken.', true);
+    tell('@' + v + ' is free.');
+    go.disabled = false;
+  }
+
+  let t = 0;
+  input.oninput = () => { clearTimeout(t); t = setTimeout(check, 220); };
+  input.onkeydown = e => { if(e.key === 'Enter' && !go.disabled) go.click(); };
+
+  go.onclick = async () => {
+    const v = input.value.trim().toLowerCase();
+    if(!HANDLE_RE.test(v)) return check();
+    go.disabled = true;
+    tell('Saving…');
+    const ins = await sb.from('profiles').insert({
+      id: u.id, handle: v,
+      /* the display name IS the one place their real name belongs, and it is
+         editable in profile settings like everything else. */
+      display_name: m.full_name || m.name || m.user_name || null,
+      avatar_url: m.avatar_url || null
+    });
+    if(!ins.error){
+      scrim.remove();
+      document.dispatchEvent(new CustomEvent('eski-profile', { detail:{ handle: v } }));
+      done();
+      return;
+    }
+    if(ins.error.code === '23505'){ go.disabled = true; return tell('@' + v + ' is taken.', true); }
+    tell(dbError('ESK-2005', 'your profile could not be created', ins.error), true);
+    go.disabled = false;
+  };
+
+  scrim.querySelector('#oz-out').onclick = async () => {
+    await sb.auth.signOut();
+    scrim.remove();
+    done();
+  };
+
+  input.focus();
+  input.select();
+  check();
+  return finished;
+}
+
 function setUser(u){
   user = u;
   /* THE THEME FOLLOWS THE ACCOUNT, and this is the only place that says so.
@@ -137,6 +308,8 @@ function setUser(u){
      second writer is what broke the theme last time. */
   if(window.eskiTheme && window.eskiTheme.adopt)
     window.eskiTheme.adopt(sb, u && u.id);
+  // a brand new account has no profile row and no address. ask, once, here.
+  if(u) pendingProfile = ensureProfile(u).catch(() => {});
   // the pages are classic scripts and cannot import this module
   document.dispatchEvent(new CustomEvent('eski-auth', { detail: { user: u } }));
   paint();
@@ -173,7 +346,7 @@ function dbError(eskiCode, what, e){
   return `${eskiCode} ${what}: ${(e && e.message) || e}${code ? ' [' + code + ']' : ''}.${hint}`;
 }
 
-let markReady;
+let markReady, markSettled;
 window.eski = {
   get user(){ return user; },
   get sb(){ return sb; },
@@ -181,7 +354,13 @@ window.eski = {
   mediaBase: R2_BASE,
   mediaUrl: key => key ? R2_BASE + '/' + key : null,
   dbError,
-  ready: new Promise(res => { markReady = res; })
+  ready: new Promise(res => { markReady = res; }),
+  /* `ready` means "there is a client". `settled` means "and nothing of ours is
+     in your way" — it waits out the pick-a-username sheet. A page with its own
+     first-run UI must wait on THIS, or it opens behind a modal the person
+     cannot dismiss and burns its shown-once flag doing it. That is exactly
+     what home's "How eski works" tour did the first time both existed. */
+  settled: new Promise(res => { markSettled = res; })
 };
 
 /* boot has four distinct ways to fail and they need four different fixes, so
@@ -213,4 +392,10 @@ window.eski = {
     setUser(null);
   }
   markReady(sb);
+  /* `settled` is about the FIRST LOAD, which is when a page's own once-ever UI
+     decides whether to open. Signing in later, in an already-loaded tab, does
+     not re-arm it — by then the tour has had its chance and the sheet is the
+     only modal on screen anyway. */
+  await pendingProfile;
+  markSettled(sb);
 })();
