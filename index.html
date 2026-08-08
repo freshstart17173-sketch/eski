@@ -70,19 +70,23 @@ section + section{margin-top:var(--s6)}
    height, with the strip a short way below it and a band of nothing under
    both.
 
-   The strip is the same height as the cover for the same reason: two things
-   side by side that nearly line up read as a mistake. They line up exactly.
-
-   AND IT TRAILS OFF. The last page in the strip is where your bookmark is,
-   so the row does not end, it continues — the mask says that in the only way
-   a still image can. It also means the strip no longer stops in a hard
-   vertical edge halfway across the page. */
+   The strip BOTTOM-ALIGNS with the cover rather than matching its height:
+   two things side by side that nearly line up read as a mistake, so they
+   share an edge. The pages are smaller than the cover on purpose — the cover
+   identifies the comic, and three thumbnails should not out-shout it. */
+/* THE SLACK GOES ON THE END, not between the credits and the pages. With the
+   middle column at 1fr it took every spare pixel and shoved the strip against
+   the right edge, leaving a lake of nothing across the middle of the row. The
+   meta column is max-content now (capped, so a long title still wraps) and the
+   1fr moved to the right of the strip — so cover, credits and pages read as
+   one group and the row simply ends, which is what the strip already says. */
 .rs{--rs-cover:232px;
-  display:grid;grid-template-columns:var(--rs-cover) minmax(0,1fr) auto;gap:var(--s5);
+  display:grid;grid-template-columns:var(--rs-cover) minmax(0,max-content) auto;
+  gap:var(--s5);
   align-items:start;padding:var(--s5) 0;border-bottom:var(--bw) solid var(--rule-hair)}
 .rs:last-child{border-bottom:0}
 .rs .plate.rs-cover{width:var(--rs-cover);aspect-ratio:2/3;flex:none}
-.rs-meta{min-width:0;display:flex;flex-direction:column;gap:var(--s1)}
+.rs-meta{min-width:0;max-width:46ch;display:flex;flex-direction:column;gap:var(--s1)}
 .rs-ttl{font-size:var(--fs-title);font-weight:500;line-height:1.15}
 .rs-by{font-size:var(--fs-sm);color:var(--label)}
 .rs-at{font-size:var(--fs-micro);letter-spacing:.1em;text-transform:uppercase;
@@ -91,37 +95,50 @@ section + section{margin-top:var(--s6)}
 .rs .progress i{display:block;height:100%;background:var(--mark)}
 .rs-acts{display:flex;gap:var(--s2);margin-top:var(--s4);flex-wrap:wrap}
 
-/* the strip stands exactly as tall as the cover: --rs-cover * 3/2.
+/* A PAGE IS PAGE-SHAPED. These were a fixed 118px wide at the cover's full
+   height — a 1:3 letterbox — with object-fit:cover cropping each page to a
+   vertical sliver of itself. A comic page you cannot recognise is not doing
+   the job this row exists for, which is reminding you what was happening.
+
+   So the plate carries aspect-ratio 2/3 and the image is CONTAINed inside it,
+   which is what the studios' page strips already do: a page that is not quite
+   2:3 letterboxes onto the plate instead of losing its edges.
+
+   Three at 60% of the cover, bottom-aligned with it. Full cover height would
+   make each page as big as the cover and there would be room for two; at 60%
+   they read as pages next to a cover rather than as four covers, and the row
+   still ends flush with the bottom of the plate beside it.
 
    NO FADE. A mask said "there is more over here" — but there is not: this is
-   the five pages you have read and the row ends. It was decoration doing the
-   job of an affordance that leads nowhere, and it dimmed real artwork to do
-   it. The row simply stops now, which is also what the rest of the site does.
-
-   The gap is a proper gutter rather than --s2, because these are separate
-   pages of a comic and at 4px they read as one torn strip. */
-.rs-strip{--rs-h:calc(var(--rs-cover) * 1.5);--rs-w:118px;
-  display:flex;gap:var(--s4)}
+   where your bookmark is and the row ends. It was decoration doing the job of
+   an affordance that leads nowhere, and it dimmed real artwork to do it. */
+.rs-strip{--rs-w:calc(var(--rs-cover) * .6);
+  display:flex;gap:var(--s4);align-self:end}
 .rs-pg{margin:0;width:var(--rs-w);flex:none}
-.rs-pg img{display:block;width:100%;height:var(--rs-h);object-fit:cover;object-position:top;
+.rs-pg img,.rs-blank{display:block;width:100%;aspect-ratio:2/3;
+  object-fit:contain;object-position:center;
   border:var(--bw) solid var(--rule-hair);background:var(--plate-bg)}
-.rs-blank{display:block;height:var(--rs-h);border:var(--bw) solid var(--rule-hair);
-  background:var(--plate-bg)}
+[data-dark] .rs-pg img,[data-dark] .rs-blank{background:var(--surface)}
 
-/* drop pages off the OLD end as the row narrows — the newest is the one you
-   need. with a wider gutter the row runs out of space sooner, so these break
-   earlier than they did. */
-@media(max-width:1360px){ .rs-pg:nth-child(1){display:none} }
-@media(max-width:1190px){ .rs-pg:nth-child(2){display:none} }
-@media(max-width:1020px){ .rs-pg:nth-child(3){display:none} }
+/* THREE, then TWO, then three again on a full-width row below 880. The oldest
+   goes first: the last page you saw is the one you need, and it is on the
+   right.
+
+   It stops at two rather than dropping to one. A single thumbnail beside a
+   cover reads as a thing that failed to load, not as a deliberate choice, and
+   the window where it would have shown was about 120px wide. */
+@media(max-width:1180px){ .rs-pg:nth-child(1){display:none} }
 @media(max-width:880px){
   .rs{--rs-cover:180px;grid-template-columns:var(--rs-cover) minmax(0,1fr)}
-  .rs-strip{grid-column:1 / -1;--rs-h:210px;overflow:hidden}
+  .rs-meta{max-width:none}
+  /* below the pair rather than beside it, so the pages keep their shape
+     instead of being squeezed into whatever is left of the row */
+  .rs-strip{grid-column:1 / -1;align-self:start;overflow:hidden}
   .rs-pg{display:block!important}
 }
 @media(max-width:560px){
   .rs{--rs-cover:132px;gap:var(--s4)}
-  .rs-strip{--rs-h:150px;--rs-w:96px}
+  .rs-strip{--rs-w:104px}
   .rs-ttl{font-size:var(--fs-lg)}
 }
 
@@ -1234,9 +1251,11 @@ function renderResume(){
 
   box.innerHTML = going.map(c => {
     const page = Math.max(1, Math.round(c.progress * c.pp));
-    /* five, not three: at three the row of pages ended a long way short of
-       the cover and left a band of nothing between it and everything else */
-    const back = [page - 4, page - 3, page - 2, page - 1, page].filter(n => n >= 1);
+    /* THREE, because a page has to be page-shaped to be worth showing. Five
+       only fitted by squashing each one into a 1:3 sliver, which is not a
+       comic page — it is a stripe of one. Three at their real proportions
+       tell you what was happening; five cropped ones do not. */
+    const back = [page - 2, page - 1, page].filter(n => n >= 1);
     const strip = back.map(n => {
       const url = pageUrl(c, n);
       /* no caption. the page number is already on the row, once, in the line
