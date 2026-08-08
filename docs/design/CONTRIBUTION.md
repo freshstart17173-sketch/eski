@@ -17,12 +17,18 @@ Three studios were designed: **composer** (score), **voiceover** (dialogue),
 exist. The v3 designs sit unbuilt in `docs/design/final/studios/`.
 
 The proposal is to merge composer and voiceover into **one contribution
-studio** with a stance chosen on the way in:
+studio** with a stance chosen on the way in. There are three:
 
-| Stance | Dialogue | Score | Sound effects |
-|---|---|---|---|
-| Voice actor | only the characters you claimed | read-only | **yes** |
-| Composer | read-only | yes | **yes** |
+| Stance | What you write | Everything else |
+|---|---|---|
+| Voice actor | one character's lines | read-only, and audible |
+| Composer | the score | read-only, and audible |
+| Sound effects | the effects layer | read-only, and audible |
+
+**Sound effects are their own stance, not a corner of the other two.** A voice
+actor or a composer can pick it — it is open to anyone, the way voicing is —
+but what they produce is a separate part, and a reader chooses it the same way
+they choose a score.
 
 ### Why one screen rather than two
 
@@ -50,23 +56,30 @@ layers.**
   p.3   │   │   │          │  ▓  │   ▓    │  ▓  │
 ```
 
-**Stance decides which columns are live.** Everything else stays visible and
-audible, drawn at label weight rather than ink weight, and refuses a drop.
+**Stance decides which single column is live.** Everything else stays visible
+and audible, drawn at label weight rather than ink weight, and refuses a drop.
 
-- As a voice actor who claimed AKI: the AKI and SFX columns are yours. SCORE,
-  NARRATOR and MOMOKO play, and cannot be edited.
-- As a composer: SCORE and SFX are yours. Every dialogue column plays, and
-  cannot be edited.
+- As a voice actor who claimed AKI: the AKI column is yours. Everything else
+  plays and cannot be edited.
+- As a composer: SCORE is yours.
+- As a sound designer: SFX is yours.
+
+Exactly one column is ever writable, which is the same sentence for all three
+stances. That is worth more than it looks — it means the grid has one rule
+rather than a rule per stance, and a contributor never has to work out which
+of two columns they are allowed to be in.
 
 The scene-launch control on each page row fires that whole page as a reader
 will hear it — every column, yours and not — which is the only honest way to
 judge a level.
 
-**Why sound effects are open to both.** An effect is not a performance and
-not a score; it is a thing that happens on a page. A door slam belongs to
-whoever noticed the door. Making it a third permission nobody holds would
-mean nobody adds any. Who is *heard* when two people both noticed is settled
-under DECIDED below.
+**Why effects are their own stance rather than a corner of the other two.**
+An effect is not a performance and not a score; it is a thing that happens on
+a page, and a door slam belongs to whoever noticed the door. But "open to
+both" and "part of both" are different claims, and only the first one was
+wanted. Made a stance of its own it stays open to anyone — a voice actor or a
+composer picks it the same way they pick voicing — while what comes out is a
+layer with one owner that a reader selects on its own.
 
 ### The four ways in
 
@@ -76,14 +89,19 @@ should never ask for one it can already infer.
 
 | From | Comic | Stance | What it asks for |
 |---|---|---|---|
-| A comic page → VOICE OR SCORE IT | known | — | stance, then characters if voice |
-| A role in browse / the contribute hub | known | voice, and the character too | nothing — straight in |
+| A comic page → CONTRIBUTE TO IT | known | — | which of the three, then the character if voice |
+| A role in browse / the contribute hub | known | known, character too | nothing — straight in |
+| The hub → "no effects yet" | known | effects | nothing — straight in |
 | The studio, cold | — | — | pick a comic open to contributions, then stance |
 | Profile → an unpublished part | known | known | nothing — reopen where you left it |
 
-Only the third one is a real picker, and it is a list of comics whose author
-has opened them to contributions — which is the contribute hub, so it should
-be that page rather than a second list.
+Only the fourth is a real picker, and it is a list of comics whose author has
+opened them to contributions — which is the contribute hub, so it should be
+that page rather than a second list.
+
+The button on the comic page said VOICE OR SCORE IT, which named two of what
+are now three things. **CONTRIBUTE TO IT**, and the sheet behind it offers
+whichever stances that comic is open to.
 
 ### What the database already supports
 
@@ -93,6 +111,19 @@ creation and does not need a second column. `parts.character_key` scopes a
 voice part to a character. `comics.voice_consent` / `music_consent` already
 gate whether either stance is offered at all, and the policy enforcing them
 is live.
+
+Effects need `parts.kind` to gain `'sfx'`, and that is very nearly the whole
+schema change: an effects part has an owner, a title, a status and a comic,
+which is what a part already is, and it has no `character_key`, which is
+already nullable. The reader's mix picker gains a third list beside voices
+and score, built from the same query.
+
+The one real question it raises is **consent**. There is
+`comics.voice_consent` and `comics.music_consent`; effects are neither. A
+third column (`sfx_consent`) is the consistent answer and costs one migration
+and one toggle. Folding effects under `music_consent` would be cheaper and
+wrong — an author who is happy for someone to score their comic has not
+thereby agreed to someone adding gunshots to it.
 
 What is missing: nothing for sfx (a third `kind`, or a track-level type on
 both), and nothing that lets one part claim more than one character.
@@ -107,29 +138,39 @@ published separately, and a reader picks each one independently.
 one comic means two parts open. This is what keeps every layer owned by
 exactly one person, which is the invariant the rest of this rests on.
 
-**Sound effects travel with the part**, and this turns out to be the
-interesting one, because it makes the effects layer a thing a reader can
-choose rather than something they are stuck with:
+**Sound effects are a third part kind**, open to voice actors and composers
+alike, and picked by the reader on its own.
 
-- read a comic with **no score at all**, and still hear effects and dialogue
-- read it with a composer's score **and** that composer's effects
-- read it with just the voice actors' effects, if no composer is picked
+This replaced a version where effects lived inside both the voice and the
+score part. That version needed a precedence rule to decide who was heard when
+two contributors had both noticed the same door — the composer, even when
+their effects layer was empty — and it still had a case with no good answer:
+three voice parts selected, all three having added the obvious effects, and
+the reader hears the slam three times. Every fix for that was a second
+invariant bolted next to the first.
 
-**The effects layer has exactly one owner at play time**, and the composer
-wins. If the reader has selected a composer's part, that part's effects layer
-is authoritative **even when it is empty** — picking a composer is picking
-their whole sound design, including their decision that a scene wants no door
-slam. A voice actor may still author effects; they are heard when no composer
-part is selected.
+Making it a part kind deletes the whole problem rather than answering it. A
+reader picks **one** effects part or none, exactly as they pick one score or
+none. There is nothing to arbitrate, because two effects layers can no more be
+selected at once than two scores can.
 
-> **Still open, and small:** with no composer selected and three voice parts
-> chosen, three people may each have added the obvious effects and the reader
-> hears the door slam three times. One character per part makes this more
-> likely, not less. The rule that follows from everything above is that the
-> effects layer keeps exactly one owner: take it from the selected voice
-> parts in cast order, the first that has an effects layer at all. It is
-> arbitrary between two contributors, but it is never doubled, and the grid
-> shows a contributor what is already there before they add to it.
+What it buys, beyond the simplification:
+
+- effects are **findable work**. "This comic has no effects yet" is a role
+  somebody can take, listed in the contribute hub next to the uncast
+  characters. Buried inside a voice part it was invisible.
+- a person who only wants to do foley has a way in that does not require them
+  to voice a character or write a score first.
+- effects are **creditable**. A part kind has an owner, a title and a profile
+  row; a corner of somebody else's part does not.
+- read a comic with **no score at all** and still hear effects and dialogue,
+  or swap the effects without touching the score, or the score without losing
+  the effects. Every layer became independent of every other, which is the
+  premise of the whole product applied one level down.
+
+The cost is one more thing in the mix picker, and one more decision for a
+reader who did not want to make it. That is answered the way the score already
+answers it: a default that plays unless you say otherwise.
 
 ---
 
@@ -190,6 +231,24 @@ An effect is an entry in the same per-page list, so it links the same way. A
 door slam is `with` the line "get out"; a distant siren is `over` at 20% of
 the narration. Nothing new to learn, nothing new to build, and it answers
 "same with sound effects" without a second design.
+
+**And this is where the effects part kind pays off a second time.** The author
+studio already writes three kinds of entry — dialogue, narration and
+**sound effect** (`l.role === 'sfx'`). So the author is already describing
+*where* an effect goes without recording one, exactly as they describe a
+character's line without voicing it.
+
+Which makes the whole model one sentence: **the author writes the script; each
+kind of entry is filled by whoever took that stance.** A voice actor fills one
+character's lines. A sound designer fills the sfx entries. A composer fills
+the space between them. The link field belongs to the *entry*, so it is
+authored once, by the author, and every contributor's take inherits the timing
+relationship whether or not they ever meet.
+
+An effects part with an empty entry filled is the same visible gap as an
+uncast character — which is what makes "this comic has no effects yet" a
+listable role in the contribute hub rather than a thing somebody has to think
+of unprompted.
 
 ### In the author studio
 

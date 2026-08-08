@@ -71,9 +71,15 @@ you have no way to say no.
 
 The database already has the switch — `comics.voice_consent` and
 `music_consent`, both defaulting to `open`, with a live policy enforcing them.
-What is missing is a pair of toggles in the studio's settings drawer and on the
-profile row, plus the same two words on the comic page so a contributor knows
+What is missing is the toggles in the studio's settings drawer and on the
+profile row, plus the same words on the comic page so a contributor knows
 before they start recording.
+
+Add `sfx_consent` while you are in here (see item 9): effects are becoming a
+contribution kind of their own, and an author who agreed to be scored has not
+thereby agreed to gunshots. Doing it now is one migration; doing it after
+people have published is a retroactive default applied to other people's
+comics.
 
 A hole opened by wiring parts. It should close in the same week.
 
@@ -127,10 +133,15 @@ columns are layers, and the stance you entered with decides which columns are
 live. Everything else stays visible and audible but refuses a drop, which is
 what finally lets a voice actor hear the score they are performing over.
 
-Settled: one character per part, stance fixed at creation (`parts.kind`
-already holds it), sound effects travel with the part, and the effects layer
-has exactly one owner at play time with the composer winning even when their
-effects layer is empty.
+Settled: **three stances** — voice, score and sound effects — with exactly
+one column writable under each, which is the same sentence for all three. One
+character per voice part, stance fixed at creation (`parts.kind` already holds
+it, and gains `'sfx'`). Effects are a part kind of their own, open to anyone,
+picked by the reader on its own like a score, so no layer ever needs a
+precedence rule.
+
+Needs one migration beyond `parts.kind`: `comics.sfx_consent`, because an
+author who agreed to be scored has not thereby agreed to gunshots.
 
 Still open in the interaction, not the model: no fades or crossfades anywhere
 though the manifest has them; nothing expresses "this bed ducks under
@@ -155,7 +166,9 @@ rather than a list.
 ### 10. The reader plays layers · ~1–2 days
 
 It has to let a reader pick the mix — which voiceover per character, which
-score — and play the layers stacked. Everything downstream of this is blocked
+score, which effects — and play the layers stacked. Three independent lists,
+each with a default that plays unless you say otherwise, so a reader who does
+not want to choose never has to. Everything downstream of this is blocked
 on it, including rewriting `spec.html`, which still documents v2 and carries a
 note saying so.
 
