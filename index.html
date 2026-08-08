@@ -74,19 +74,23 @@ section + section{margin-top:var(--s6)}
    two things side by side that nearly line up read as a mistake, so they
    share an edge. The pages are smaller than the cover on purpose — the cover
    identifies the comic, and three thumbnails should not out-shout it. */
-/* THE SLACK GOES ON THE END, not between the credits and the pages. With the
-   middle column at 1fr it took every spare pixel and shoved the strip against
-   the right edge, leaving a lake of nothing across the middle of the row. The
-   meta column is max-content now (capped, so a long title still wraps) and the
-   1fr moved to the right of the strip — so cover, credits and pages read as
-   one group and the row simply ends, which is what the strip already says. */
-.rs{--rs-cover:232px;
-  display:grid;grid-template-columns:var(--rs-cover) minmax(0,max-content) auto;
+/* FOUR COLUMNS: the comic, where you are, what you will hear, what people
+   said. Each one is a different question, and they get equal-ish room rather
+   than one of them taking the slack — the mix and the thread both hold text
+   that wants to wrap, so neither can be `auto`. */
+/* 200, not 232. The cover was sized to match a card's plate exactly, which
+   was right when a strip of pages stood beside it at the same height and the
+   row was two tall things. With three short columns beside it instead, 348px
+   of cover set a row height nothing else came close to filling. It is still
+   unmistakably a cover — it is just no longer the only thing with a size. */
+.rs{--rs-cover:200px;
+  display:grid;
+  grid-template-columns:var(--rs-cover) minmax(0,1.1fr) minmax(0,1fr) minmax(0,1fr);
   gap:var(--s5);
   align-items:start;padding:var(--s5) 0;border-bottom:var(--bw) solid var(--rule-hair)}
 .rs:last-child{border-bottom:0}
 .rs .plate.rs-cover{width:var(--rs-cover);aspect-ratio:2/3;flex:none}
-.rs-meta{min-width:0;max-width:46ch;display:flex;flex-direction:column;gap:var(--s1)}
+.rs-meta{min-width:0;display:flex;flex-direction:column;gap:var(--s1)}
 .rs-ttl{font-size:var(--fs-title);font-weight:500;line-height:1.15}
 .rs-by{font-size:var(--fs-sm);color:var(--label)}
 .rs-at{font-size:var(--fs-micro);letter-spacing:.1em;text-transform:uppercase;
@@ -95,50 +99,57 @@ section + section{margin-top:var(--s6)}
 .rs .progress i{display:block;height:100%;background:var(--mark)}
 .rs-acts{display:flex;gap:var(--s2);margin-top:var(--s4);flex-wrap:wrap}
 
-/* A PAGE IS PAGE-SHAPED. These were a fixed 118px wide at the cover's full
-   height — a 1:3 letterbox — with object-fit:cover cropping each page to a
-   vertical sliver of itself. A comic page you cannot recognise is not doing
-   the job this row exists for, which is reminding you what was happening.
+/* ---------- the two columns that replaced the page previews ----------
+   THE PREVIEWS WERE PICTURES OF SOMETHING YOU CAN ALREADY SEE. Three page
+   thumbnails next to a cover told you where you were, which the page count
+   says in four words. What the row never showed is what you are about to
+   HEAR — which is the only thing on this site that no other comic reader
+   has. So the space went to the mix and the thread instead. */
+.rs-col{min-width:0;display:flex;flex-direction:column;gap:var(--s2);
+  border-left:var(--bw) solid var(--rule-hair);padding-left:var(--s4)}
+.rs-h{font-size:var(--fs-micro);letter-spacing:.14em;text-transform:uppercase;
+  color:var(--label)}
 
-   So the plate carries aspect-ratio 2/3 and the image is CONTAINed inside it,
-   which is what the studios' page strips already do: a page that is not quite
-   2:3 letterboxes onto the plate instead of losing its edges.
+/* a caption block, same geometry as the modal's: label left, value right,
+   one --row tall each so the two columns align down the row */
+.rs-mix{margin:0;display:grid;grid-template-columns:auto minmax(0,1fr);
+  gap:0 var(--s3);align-content:start}
+.rs-mix dt{font-size:var(--fs-micro);letter-spacing:.1em;text-transform:uppercase;
+  color:var(--label);line-height:var(--row)}
+.rs-mix dd{margin:0;font-size:var(--fs-xs);color:var(--ink);line-height:var(--row);
+  text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rs-swap{align-self:start;margin-top:var(--s1)}
 
-   Three at 60% of the cover, bottom-aligned with it. Full cover height would
-   make each page as big as the cover and there would be room for two; at 60%
-   they read as pages next to a cover rather than as four covers, and the row
-   still ends flush with the bottom of the plate beside it.
+/* the comment fold. .fold already styles the control; this only places it. */
+.rs-cmfold{margin-top:0}
+.rs-cmbody{padding-top:var(--s2);display:flex;flex-direction:column;gap:var(--s2)}
+.rs-cm{font-size:var(--fs-xs);line-height:1.45;min-width:0}
+.rs-cm b{display:block;font-weight:500;font-size:var(--fs-micro);letter-spacing:.06em;
+  text-transform:uppercase;color:var(--label)}
+.rs-cm span{color:var(--ink);display:block;overflow:hidden;
+  display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical}
+.rs-cmnote{font-size:var(--fs-micro);color:var(--label)}
+/* a flex column stretches its children, which centred the "all n" link
+   across the column instead of starting it where the comments start */
+.rs-cmbody .lnk{align-self:start}
 
-   NO FADE. A mask said "there is more over here" — but there is not: this is
-   where your bookmark is and the row ends. It was decoration doing the job of
-   an affordance that leads nowhere, and it dimmed real artwork to do it. */
-.rs-strip{--rs-w:calc(var(--rs-cover) * .6);
-  display:flex;gap:var(--s4);align-self:end}
-.rs-pg{margin:0;width:var(--rs-w);flex:none}
-.rs-pg img,.rs-blank{display:block;width:100%;aspect-ratio:2/3;
-  object-fit:contain;object-position:center;
-  border:var(--bw) solid var(--rule-hair);background:var(--plate-bg)}
-[data-dark] .rs-pg img,[data-dark] .rs-blank{background:var(--surface)}
-
-/* THREE, then TWO, then three again on a full-width row below 880. The oldest
-   goes first: the last page you saw is the one you need, and it is on the
-   right.
-
-   It stops at two rather than dropping to one. A single thumbnail beside a
-   cover reads as a thing that failed to load, not as a deliberate choice, and
-   the window where it would have shown was about 120px wide. */
-@media(max-width:1180px){ .rs-pg:nth-child(1){display:none} }
+/* the two added columns fold underneath before they get too narrow to read,
+   and lose the left rule when they do — a divider across a wrapped row points
+   at nothing. */
+@media(max-width:1100px){
+  .rs{grid-template-columns:var(--rs-cover) minmax(0,1fr) minmax(0,1fr)}
+  .rs-col:last-child{grid-column:2 / -1;border-left:0;padding-left:0;
+    border-top:var(--bw) solid var(--rule-hair);padding-top:var(--s3)}
+}
 @media(max-width:880px){
   .rs{--rs-cover:180px;grid-template-columns:var(--rs-cover) minmax(0,1fr)}
   .rs-meta{max-width:none}
-  /* below the pair rather than beside it, so the pages keep their shape
-     instead of being squeezed into whatever is left of the row */
-  .rs-strip{grid-column:1 / -1;align-self:start;overflow:hidden}
-  .rs-pg{display:block!important}
+  .rs-col{grid-column:1 / -1;border-left:0;padding-left:0;
+    border-top:var(--bw) solid var(--rule-hair);padding-top:var(--s3)}
+  .rs-col:last-child{grid-column:1 / -1}
 }
 @media(max-width:560px){
   .rs{--rs-cover:132px;gap:var(--s4)}
-  .rs-strip{--rs-w:104px}
   .rs-ttl{font-size:var(--fs-lg)}
 }
 
@@ -400,7 +411,9 @@ button.link:hover{color:var(--ink)}
 .ob-item b{display:block;font-weight:500;margin-bottom:2px}
 .ob-item span{display:block;color:var(--soft-ink);font-size:var(--fs-xs);line-height:1.45}
 .btn.primary{background:var(--mark);border-color:var(--mark);color:var(--on-mark)}
-.btn.primary:hover{background:var(--accent);border-color:var(--accent)}
+/* inverts, like .btn.p — going to --accent was a no-op, since every palette
+   gives --mark and --accent the same value */
+.btn.primary:hover{background:var(--ink);border-color:var(--ink);color:var(--paper)}
 /* an empty section must not draw the rule that frames a full one */
 .grid:empty{border-left:0}
 .rolelist:empty{border-top:0}
@@ -1251,27 +1264,47 @@ function renderResume(){
 
   box.innerHTML = going.map(c => {
     const page = Math.max(1, Math.round(c.progress * c.pp));
-    /* THREE, because a page has to be page-shaped to be worth showing. Five
-       only fitted by squashing each one into a 1:3 sliver, which is not a
-       comic page — it is a stripe of one. Three at their real proportions
-       tell you what was happening; five cropped ones do not. */
-    const back = [page - 2, page - 1, page].filter(n => n >= 1);
-    const strip = back.map(n => {
-      const url = pageUrl(c, n);
-      /* no caption. the page number is already on the row, once, in the line
-         that says where you are — printing it again under every thumbnail
-         labelled the pictures with something nobody was going to read */
-      return `<figure class="rs-pg">${url
-        ? `<img src="${esc(url)}" alt="" loading="lazy">`
-        : '<span class="rs-blank"></span>'}</figure>`;
-    }).join('');
+
+    /* THE MIX, which is the thing this row was missing. The page previews
+       that used to sit here were pictures of a comic you are already looking
+       at the cover of — they told you where you were, which the page count
+       already says. What you cannot see anywhere on this row is what you are
+       about to hear, and that is the one thing eski has that nothing else
+       does. So: who is voicing whom, and what is playing under it. */
+    const voices = (c.cast || []).filter(v => v.by);
+    const score = (c.scores || [])[0];
+    const mix = `
+      <div class="rs-col">
+        <div class="rs-h">Your mix</div>
+        <dl class="rs-mix">
+          <dt>Score</dt><dd>${score ? esc(score.title) : 'No score'}</dd>
+          <dt>Voices</dt><dd>${voices.length
+            ? voices.slice(0, 3).map(v => esc(v.character || v.name || 'someone')).join(', ') +
+              (voices.length > 3 ? ' +' + (voices.length - 3) : '')
+            : 'No cast'}</dd>
+        </dl>
+        <button class="lnk rs-swap" data-open="${esc(c.id)}">Change it</button>
+      </div>`;
+
+    /* COMMENTS, still a fold. Collapsed by default because this row is a
+       place you pass through on the way back into a comic, and an open
+       thread is a place you stop — and because a comment on a comic you are
+       21 pages into is a spoiler until you have caught up. */
+    const n = c.commentCount || 0;
+    const comments = `
+      <div class="rs-col">
+        <button class="fold rs-cmfold" data-cm="${esc(c.id)}" aria-expanded="false">
+          <span class="caret"></span>Comments<span class="sp"></span><span class="n">${n}</span>
+        </button>
+        <div class="folded rs-cmbody" hidden></div>
+      </div>`;
+
     return `<article class="rs" data-resume="${esc(c.id)}">
       <div class="plate rs-cover">${c.cover
         ? `<img src="${esc(c.cover)}" alt="" loading="lazy">` : ''}</div>
       <div class="rs-meta">
         <div class="rs-ttl">${esc(c.title || 'untitled')}</div>
-        <div class="rs-by">${esc(c.by || '—')}${
-          c.scores.length ? ' · ' + esc(c.scores[0].title) : ''}</div>
+        <div class="rs-by">${esc(c.by || '—')}</div>
         <div class="rs-at">Page ${page} of ${c.pp}</div>
         <div class="progress"><i style="width:${Math.round(c.progress*100)}%"></i></div>
         <div class="rs-acts">
@@ -1279,15 +1312,60 @@ function renderResume(){
           <button class="btn" data-open="${esc(c.id)}">Details</button>
         </div>
       </div>
-      <div class="rs-strip">${strip}</div>
+      ${mix}
+      ${comments}
     </article>`;
   }).join('');
+
+  /* the fold loads its thread the first time it is opened, not on render:
+     three rows each fetching a thread nobody asked for is three queries for
+     nothing, and this row is above the fold on every visit. */
+  box.querySelectorAll('.rs-cmfold').forEach(b => b.addEventListener('click', async e => {
+    e.stopPropagation();
+    const body = b.nextElementSibling;
+    const open = b.getAttribute('aria-expanded') === 'true';
+    b.setAttribute('aria-expanded', String(!open));
+    body.hidden = open;
+    if(open || body.dataset.loaded) return;
+    body.dataset.loaded = '1';
+    body.innerHTML = '<div class="rs-cmnote">Loading&#8230;</div>';
+    const c = byId(b.dataset.cm);
+    const rows = await recentComments(c);
+    body.innerHTML = rows === null
+      ? '<div class="rs-cmnote warn">That thread did not load.</div>'
+      : rows.length
+        ? rows.map(r => `<div class="rs-cm"><b>${esc(r.author_name || 'someone')}</b>
+            <span>${esc((r.body || '').slice(0, 140))}</span></div>`).join('') +
+          `<button class="lnk" data-open="${esc(c.id)}">All ${c.commentCount}</button>`
+        : '<div class="rs-cmnote">No comments yet.</div>';
+    body.querySelectorAll('[data-open]').forEach(x => x.addEventListener('click', ev => {
+      ev.stopPropagation();
+      const cc = byId(x.dataset.open);
+      if(cc) openDetails(cc);
+    }));
+  }));
 
   box.querySelectorAll('[data-open]').forEach(b => b.addEventListener('click', e => {
     e.stopPropagation();
     const c = byId(b.dataset.open);
     if(c) openDetails(c);
   }));
+}
+
+/* The last two comments on a comic, for the rail's fold. Deliberately not
+   the whole thread: this is a glance on the way back into a comic, and the
+   full conversation lives in the modal where there is room for it.
+
+   Returns null on failure rather than throwing — a thread that will not load
+   should say so in the fold and leave the rest of the row working. */
+async function recentComments(c){
+  if(!sb || !c || !c.dbId) return [];
+  const r = await sb.from('comments')
+    .select('author_name,body,created_at')
+    .eq('comic_id', c.dbId).is('deleted_at', null)
+    .order('created_at', { ascending: false }).limit(2);
+  if(r.error){ console.warn(window.eski.dbError('ESK-5064','the thread did not load', r.error)); return null; }
+  return r.data || [];
 }
 
 /* the reader's own page urls, so the strip shows the same bytes it will.

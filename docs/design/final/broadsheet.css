@@ -460,8 +460,17 @@ select[data-ui], select[data-ui] option{
   border-color:var(--ui);
   color:var(--ui);
 }
-/* except the primary one, which is already a fill and must not invert */
-.btn.p:hover{ background:var(--accent); border-color:var(--accent); color:var(--on-mark) }
+/* THE PRIMARY BUTTON'S HOVER, DEFINED ONCE. This block used to restate it as
+   --accent, which is the same value --mark already is in all eighteen
+   palettes — a hover that resolves to the colour the button already was. It
+   also sat LATER in the file than the real rule at the top, so it silently
+   won on equal specificity and undid the fix. CONTINUE READING and READ IT
+   WITH THIS MIX, the two most-pressed controls on the site, had no hover at
+   all as a result.
+
+   It inverts, which is unmistakable in every theme and is still colour only:
+   same box, same position, same size. See the rule in the controls section —
+   this comment is here because this is where the duplicate was. */
 .btn[aria-pressed="true"]:hover, .chip[aria-pressed="true"]:hover{
   background:var(--mark); border-color:var(--mark); color:var(--on-mark);
 }

@@ -159,6 +159,12 @@ const SCREENS = [
       });
       await p.waitForTimeout(700);
     } },
+  /* the rail's comment fold, which loads its thread on first open — so this
+     also proves the query, not just the chevron turning. */
+  { name: 'resume-thread', path: '/', wait: '.rs', state: async p => {
+      await p.locator('.rs-cmfold').first().click();
+      await p.waitForSelector('.rs-cm, .rs-cmnote', { timeout: 20000 });
+    } },
   { name: 'signed-out', path: '/', wait: '.card', signedOut: true },
 ];
 

@@ -15,8 +15,8 @@ ones I would not leave sitting.
 ## Yours, not mine
 
 Five things no amount of code can do, because they need a dashboard login, a
-legal name, or a decision that is yours. Two are deferred on purpose, one is
-done, and **item 1 is the one still worth doing now**.
+legal name, or a decision that is yours. Most are now done or deliberately
+deferred — **item 1 is the one still worth doing.**
 
 ### 1. Move the media off `r2.dev` — 20 minutes, then some waiting
 
@@ -57,17 +57,14 @@ are product calls, not legal ones: can an author reuse a contributed voiceover
 **outside** eski, and is AI-generated voice allowed and must it be labelled.
 Then delete the red box. Have someone who knows this read it.
 
-### 4. Billing alarms — DEFERRED until there are users
+### 4. Billing alarms — the half that mattered is DONE
 
-Your call. The spend half is clearly fine to defer: no users means no reads,
-and R2 bills per read.
+The inactivity emails are set up, which was the part that is not about
+traffic: a quiet project is more likely to be paused than a busy one, and a
+paused project is a dead site.
 
-The **pause** half is not really about users, though, and is worth keeping in
-view. Supabase pauses a free project after a stretch of inactivity, and a
-quiet project is exactly the kind that gets paused — a site with no users is
-more at risk of this than a busy one, not less. A paused project is a dead
-site, and the first sign is usually somebody telling you it is broken. If you
-want one thing from this item, it is that one email.
+The spend notification is deferred until there are users, which is right — R2
+bills per read, and nobody is reading yet.
 
 ### 4b. Paste the R2 CORS policy — DONE
 

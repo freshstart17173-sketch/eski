@@ -312,6 +312,10 @@ ESK-5062  comments: an edit did not save. Only the writer may edit; the owner
 ESK-5063  comments: a comment did not come off. Deleting writes a tombstone
           rather than removing the row, so replies underneath survive.
 
+ESK-5064  home: the continue-reading row's comment fold could not load its
+          thread. The rest of the row still works; the fold says so rather
+          than sitting empty.
+
 ESK-5070  profile: a setting did not save (the shelf's public switch).
 ESK-5071  profile: the old avatar did not come off storage. Harmless — the new
           one is already up; this is the cleanup of the previous file.
