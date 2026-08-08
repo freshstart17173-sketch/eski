@@ -155,6 +155,9 @@ Ten suites. Four need nothing but node.
 | `wordmark.js` | The logo's ink centred in the bar, measured rather than judged. |
 | `cues.js` | The after/with/over arithmetic, as a pure function of clips and durations. |
 
+**CI runs all ten on every push** — `.github/workflows/tests.yml`, static
+checks first so they fail fast, browser checks only if those pass.
+
 `tests/shots.js` is not a test — it takes pictures across surface × state ×
 theme × viewport. The `eski-ui-audit` skill is how to read them.
 

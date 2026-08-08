@@ -384,12 +384,20 @@ Supabase gives users no way to delete themselves, so today it is a manual job
 in a dashboard. Someone will ask, possibly in the same breath as asking why
 there is no privacy policy.
 
-### 21. Run the tests on every push · ~1 hour
+### 21. Run the tests on every push · DONE
 
-The suite only runs when someone remembers to. GitHub Actions, the local
-runners, gate deploys on green. The local suites mock every external
-dependency, so this is mostly YAML — but note the live suites need real
-credentials and should not gate a PR.
+`.github/workflows/tests.yml`. Nothing ran the suites but me, which made "the
+tests are green" a claim rather than a fact — in a codebase whose failure mode
+is a correct fix being silently undone.
+
+Two jobs. The static four need nothing but node and finish in seconds, so they
+fail fast: `structure` runs first because it is the one that catches a fix
+being overwritten. The browser six only start once those pass, so a typo does
+not cost a Playwright download. Chromium only — the reader is not
+browser-specific and three engines is three times the install for one answer.
+
+`npm ci` rather than `npm install`, because the lockfile is tracked and is
+already a deploy requirement: Vercel builds `api/sign.mjs` from it.
 
 ### 22. The small performance batch · ~2–3 hours
 

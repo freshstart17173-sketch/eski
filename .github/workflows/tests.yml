@@ -1,0 +1,79 @@
+# Nothing ran these but me, which meant "the suite is green" was a claim rather
+# than a fact — and the suite exists precisely because this codebase's failure
+# mode is a correct fix being silently undone.
+#
+# Two jobs on purpose. The static ones need nothing but node and finish in
+# seconds, so they fail fast and tell you what is wrong before a browser has
+# even downloaded. The browser ones cost a Playwright install, so they only run
+# once the cheap checks have passed.
+name: tests
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  static:
+    name: static checks (no browser)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      # ci, not install: the lockfile is tracked and a deploy requirement
+      # (vercel builds api/sign.mjs from it), so CI should honour it exactly
+      - run: npm ci --no-audit --no-fund
+
+      # structure first: it is the one that catches a fix being overwritten,
+      # and it costs milliseconds
+      - name: structure — one thing decided in one place
+        run: node tests/structure.js
+      - name: cache — every asset has a caching policy
+        run: node tests/cache.js
+      - name: loudness — the meter against the EBU conformance cases
+        run: node tests/loudness.js
+      - name: signer — refusals, called as a function
+        run: node tests/check-sign.mjs
+
+  browser:
+    name: browser checks
+    runs-on: ubuntu-latest
+    needs: static
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      # ci, not install: the lockfile is tracked and a deploy requirement
+      # (vercel builds api/sign.mjs from it), so CI should honour it exactly
+      - run: npm ci --no-audit --no-fund
+      # chromium only. the reader is not browser-specific and three engines is
+      # three times the install for the same answer.
+      - run: npx playwright install --with-deps chromium
+
+      # viewer-fit and wordmark measure a served page, so they need one
+      - name: serve the folder
+        run: |
+          python3 -m http.server 8940 >/dev/null 2>&1 &
+          for i in $(seq 1 30); do
+            curl -sf http://localhost:8940/ >/dev/null && break
+            sleep 1
+          done
+
+      - name: smoke — the reader and both studios
+        run: node tests/smoke.js
+      - name: errors — a failure names itself
+        run: node tests/errors.js
+      - name: cues — after / with / over
+        run: node tests/cues.js
+      - name: recording — a take, with a fake microphone
+        run: node tests/recording.js
+      - name: viewer-fit — every page shape fits its box
+        run: node tests/viewer-fit.js
+      - name: wordmark — the logo's ink is centred
+        run: node tests/wordmark.js
