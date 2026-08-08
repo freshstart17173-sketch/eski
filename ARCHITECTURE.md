@@ -13,6 +13,13 @@ nothing stops you defining the same thing twice.
 `tests/structure.js` enforces the parts of this that can be checked
 mechanically. If it fails, this document is what it is holding you to.
 
+The other docs, and when to open them: [`ROADMAP.md`](ROADMAP.md) is the only
+backlog; [`ERRORS.txt`](ERRORS.txt) registers every `ESK-####`;
+[`docs/FASTER.md`](docs/FASTER.md) is what is slow and why, measured;
+[`docs/AUTH.md`](docs/AUTH.md) is why sign-in is Supabase and what it would
+cost to change; [`docs/design/STYLE.md`](docs/design/STYLE.md) is the UI's own
+rules.
+
 ---
 
 ## The rule that matters most
@@ -164,7 +171,7 @@ Ten suites. Four need nothing but node.
 | `wordmark.js` | The logo's ink centred in the bar, measured rather than judged. |
 | `cues.js` | The after/with/over arithmetic, as a pure function of clips and durations. |
 
-**CI runs all ten on every push** — `.github/workflows/tests.yml`, static
+**CI runs all of them on every push** — `.github/workflows/tests.yml`, static
 checks first so they fail fast, browser checks only if those pass.
 
 `tests/shots.js` is not a test — it takes pictures across surface × state ×

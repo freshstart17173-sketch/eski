@@ -8,6 +8,43 @@ others put together.
 
 ---
 
+## Where this stands · re-measured 8 Aug 2026
+
+| # | | |
+|---|---|---|
+| 1 | Move media off `r2.dev` | **OPEN — and it is still the big one. Yours, not code.** |
+| 2 | Preconnect to the media host | done — every page but `admin.html` |
+| 3 | Stop loading jszip everywhere | **done** — vendored, loaded only when a zip is opened |
+| 4 | A real cache policy for un-hashed assets | done — see `vercel.json` |
+| 5 | Let the service worker cache media | **done** — own cache, survives deploys, FIFO ceiling |
+| 6 | Trim 57 KB of Supabase client off the reader | open — biggest lump left after (1) |
+| 7 | Smaller covers on the home grid | partly — see the note below |
+
+Re-measured on the live site today, so this is the current state and not
+yesterday's:
+
+```
+GET pub-…r2.dev/<a real cover>
+  Content-Type:   application/octet-stream     ← still wrong
+  Cache-Control:  (absent)                     ← still absent
+  Content-Length: 1 007 324                    ← 1 MB, for a grid cell
+  TTFB:           0.35 – 0.58 s, every time, no edge cache
+```
+
+**Item 1 has not moved and everything else is small beside it.** Until the
+bucket is on a custom domain, every page and every clip is fetched from a
+single region with no edge cache, on a hostname Cloudflare documents as
+rate-limited and development-only.
+
+One thing found while re-measuring, which is a **data** problem rather than a
+code one: the published comic's `thumb_key` is **null**, so the home grid falls
+back to `cover_key` and downloads that whole 1 MB file into a ~230 px cell. The
+studio generates thumbnails now, so this affects only rows published before it
+did — re-publishing, or a one-off backfill, fixes it. Item 7's "the grid
+already uses `thumb_key`" is true of the code and not yet true of the data.
+
+---
+
 ## The numbers as they stand
 
 A page from a real published comic:

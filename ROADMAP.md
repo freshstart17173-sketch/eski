@@ -28,8 +28,19 @@ rate-limits on purpose and which under real traffic starts answering 429.
 [`docs/FASTER.md`](docs/FASTER.md) §1.** The shape of it: put `eski.lol` on
 Cloudflare (free plan, **grey**-cloud the Vercel records — you do not want it
 proxying the app), attach `cdn.eski.lol` to the R2 bucket, add a cache rule
-that overrides origin with a one-year TTL, turn on Smart Tiered Cache. Then one
-line in `platform.js` changes: `const R2_BASE = 'https://cdn.eski.lol'`.
+that overrides origin with a one-year TTL, turn on Smart Tiered Cache. Then
+**two** lines change, and they must agree:
+
+```js
+platform.js   const R2_BASE = 'https://cdn.eski.lol'
+sw.js         const MEDIA   = 'https://cdn.eski.lol/'      // note the slash
+```
+
+It is two because a service worker cannot import a module, so `sw.js` has to
+repeat the host. Changing only one breaks nothing visibly — the media cache
+just stops hitting and every page is downloaded again forever, on a site that
+looks fine. `node tests/structure.js` fails if they disagree, so run it before
+you deploy and it will catch you.
 
 The cache rule is the part not to skip — it is what fixes comics published
 before August, which went up with no cache headers at all.
