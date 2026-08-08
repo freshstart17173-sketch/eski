@@ -121,15 +121,15 @@ const ok = (cond, what, extra = '') => {
   await prof2.goto('http://localhost:8932/profile.html');
   await prof2.waitForTimeout(1200);
   const good = await text(prof2, '#page');
-  ok(!/could not reach the server/.test(good),
+  ok(!/could not reach the server/i.test(good),
     'profile does not claim the server is unreachable when it is fine', good.slice(0, 160));
-  ok(/sign in to see your profile/.test(good),
+  ok(/sign in to see your profile/i.test(good),
     'profile shows the signed-out state instead', good.slice(0, 160));
 
   const home2 = await up.newPage();
   await home2.goto('http://localhost:8932/index.html');
   await home2.waitForTimeout(1200);
-  ok(!/could not reach the shelf/.test(await text(home2, '#grid')),
+  ok(!/could not reach the shelf/i.test(await text(home2, '#grid')),
     'home does not claim the shelf is unreachable when it is fine');
 
   await browser.close();

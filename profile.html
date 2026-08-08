@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>eski profile</title>
-<meta name="description" content="a reader, a voice, or a composer on eski.">
+<meta name="description" content="A reader, a voice, or a composer on eski.">
 <link rel="icon" type="image/png" href="eski_logo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -162,15 +162,15 @@ section + section{margin-top:var(--s6)}
 <header class="top site-header">
   <a class="mark" href="index.html">eski<i>!</i></a>
   <nav id="nav">
-    <a href="index.html">home</a>
-    <a href="index.html#browse">browse</a>
-    <a href="author.html">studio</a>
-    <a href="profile.html" aria-current="page">profile</a>
+    <a href="index.html">Home</a>
+    <a href="index.html#browse">Browse</a>
+    <a href="author.html">Studio</a>
+    <a href="profile.html" aria-current="page">Profile</a>
   </nav>
 </header>
 
 <div class="wrap" id="page">
-  <div class="state"><div class="spinner"></div>loading&#8230;</div>
+  <div class="state"><div class="spinner"></div>Loading&#8230;</div>
 </div>
 
 <script>
@@ -210,7 +210,7 @@ const themeSettings = (()=>{ try{ return JSON.parse(localStorage.getItem('eski-s
 function paintTheme(){
   document.documentElement.dataset.theme = themeSettings.dark ? 'dark' : '';
   const t = $('set-theme');
-  if(t){ t.setAttribute('aria-pressed', !!themeSettings.dark); t.textContent = themeSettings.dark ? 'on' : 'off'; }
+  if(t){ t.setAttribute('aria-pressed', !!themeSettings.dark); t.textContent = themeSettings.dark ? 'On' : 'Off'; }
 }
 function toggleTheme(){
   themeSettings.dark = !themeSettings.dark;
@@ -262,7 +262,7 @@ async function load(){
   sb = eski && await eski.ready;
   if(!sb){
     const why = (eski && eski.bootError) || 'ESK-1005 platform.js did not load at all';
-    page.innerHTML = '<div class="state">could not reach the server.<br><br>' + esc(why) +
+    page.innerHTML = '<div class="state">Could not reach the server.<br><br>' + esc(why) +
       '<br><br>if this persists, hard reload once: an old service worker can keep serving a stale page.</div>';
     return;
   }
@@ -273,18 +273,18 @@ async function load(){
     const r = await sb.from('profiles').select('*').eq('handle', wanted.toLowerCase()).maybeSingle();
     subject = r.data || null;
     if(!subject){
-      page.innerHTML = `<div class="phead"><div class="pmeta"><h1>not found</h1>
-        <p class="pbio">no one here goes by ${esc(wanted)}. <a href="index.html">back home</a>.</p>
+      page.innerHTML = `<div class="phead"><div class="pmeta"><h1>Not found</h1>
+        <p class="pbio">No one here goes by ${esc(wanted)}. <a href="index.html">Back home</a>.</p>
         </div></div>`;
       return;
     }
   }else{
     if(!me){
-      page.innerHTML = '<div class="state">sign in to see your profile, your drafts and what you have saved.</div>';
+      page.innerHTML = '<div class="state">Sign in to see your profile, your drafts and what you have saved.</div>';
       return;
     }
     try{ subject = await ensureProfile(me); }
-    catch(e){ page.innerHTML = '<div class="state">could not set up your profile: '+esc(e.message)+'</div>'; return; }
+    catch(e){ page.innerHTML = '<div class="state">Could not set up your profile: '+esc(e.message)+'</div>'; return; }
   }
   isMe = !!(me && subject && me.id === subject.id);
 
@@ -386,75 +386,75 @@ function paint(){
         <h1>${esc(p.display_name || p.handle)}</h1>
         <p class="ptag">@${esc(p.handle)}${p.created_at ? ' · here since ' + new Date(p.created_at).getFullYear() : ''}</p>
         ${p.bio ? `<p class="pbio">${esc(p.bio)}</p>`
-                : (isMe ? '<p class="pbio">no bio yet.</p>' : '')}
+                : (isMe ? '<p class="pbio">No bio yet.</p>' : '')}
         <div class="pacts">
-          <button class="btn sm" id="share" data-ico="link">copy link</button>
-          ${isMe ? '<button class="btn sm" id="editbtn" data-ico="pencil">edit profile</button>' : ''}
+          <button class="btn sm" id="share" data-ico="link">Copy link</button>
+          ${isMe ? '<button class="btn sm" id="editbtn" data-ico="pencil">Edit profile</button>' : ''}
         </div>
         ${isMe ? `<div class="edit" id="edit">
-          <div><label for="f-name">display name</label>
+          <div><label for="f-name">Display name</label>
             <input id="f-name" maxlength="60" value="${esc(p.display_name||'')}"></div>
-          <div><label for="f-handle">handle</label>
+          <div><label for="f-handle">Handle</label>
             <input id="f-handle" maxlength="30" value="${esc(p.handle)}"></div>
-          <div><label for="f-bio">bio</label>
+          <div><label for="f-bio">Bio</label>
             <textarea id="f-bio" maxlength="400"
-              placeholder="what you make, or what you want to be cast in.">${esc(p.bio||'')}</textarea></div>
+              placeholder="What you make, or what you want to be cast in.">${esc(p.bio||'')}</textarea></div>
           <div class="err" id="f-err"></div>
           <div class="pacts">
-            <button class="btn primary sm" id="save">save</button>
-            <button class="btn sm" id="cancel">cancel</button>
+            <button class="btn primary sm" id="save">Save</button>
+            <button class="btn sm" id="cancel">Cancel</button>
           </div>
         </div>` : ''}
       </div>
       <div class="pstats">
-        <span><b class="hot">${nfmt(parts.length)}</b>parts performed</span>
-        <span><b class="hot">${nfmt(reading.length)}</b>reading</span>
-        <span><b class="hot">${nfmt(read.length)}</b>read</span>
-        <span><b class="hot">${nfmt(kudosReceived)}</b>kudos received</span>
+        <span><b class="hot">${nfmt(parts.length)}</b>Parts performed</span>
+        <span><b class="hot">${nfmt(reading.length)}</b>Reading</span>
+        <span><b class="hot">${nfmt(read.length)}</b>Read</span>
+        <span><b class="hot">${nfmt(kudosReceived)}</b>Kudos received</span>
       </div>
     </div>
 
     <section>
-      <div class="head"><h2>reading</h2><span class="n">${reading.length}</span>
-        <span class="sp"></span><a href="index.html#browse">find something →</a></div>
+      <div class="head"><h2>Reading</h2><span class="n">${reading.length}</span>
+        <span class="sp"></span><a href="index.html#browse">Find something →</a></div>
       <div class="grid" id="g-reading"></div>
       <div class="empty" id="e-reading" hidden></div>
     </section>
 
     <section>
-      <div class="head"><h2>read</h2><span class="n">${read.length}</span></div>
+      <div class="head"><h2>Read</h2><span class="n">${read.length}</span></div>
       <div class="grid" id="g-read"></div>
       <div class="empty" id="e-read" hidden></div>
     </section>
 
     ${later.length ? `<section>
-      <div class="head"><h2>saved for later</h2><span class="n">${later.length}</span></div>
+      <div class="head"><h2>Saved for later</h2><span class="n">${later.length}</span></div>
       <div class="grid" id="g-later"></div>
     </section>` : ''}
 
     <section>
-      <div class="head"><h2>parts performed</h2><span class="n">${parts.length}</span></div>
+      <div class="head"><h2>Parts performed</h2><span class="n">${parts.length}</span></div>
       <div class="rolelist" id="g-parts"></div>
       <div class="empty" id="e-parts" hidden></div>
     </section>
 
     <section>
-      <div class="head"><h2>published</h2><span class="n">${published.length}</span></div>
+      <div class="head"><h2>Published</h2><span class="n">${published.length}</span></div>
       <div class="grid" id="g-published"></div>
       <div class="empty" id="e-published" hidden></div>
     </section>
 
     ${isMe ? `<section>
-      <div class="head"><h2>drafts</h2><span class="n">${drafts.length}</span>
-        <span class="sp"></span><a href="author.html">open the studio →</a></div>
+      <div class="head"><h2>Drafts</h2><span class="n">${drafts.length}</span>
+        <span class="sp"></span><a href="author.html">Open the studio →</a></div>
       <div class="grid" id="g-drafts"></div>
       <div class="empty" id="e-drafts" hidden></div>
     </section>
 
     <section>
-      <div class="head"><h2>settings</h2></div>
-      <div class="setrow"><span>dark mode</span><span class="sp"></span>
-        <button class="btn sm" id="set-theme" aria-pressed="false">off</button></div>
+      <div class="head"><h2>Settings</h2></div>
+      <div class="setrow"><span>Dark mode</span><span class="sp"></span>
+        <button class="btn sm" id="set-theme" aria-pressed="false">Off</button></div>
     </section>` : ''}
 
     <div class="foot"><span>EST. 2026</span>
@@ -479,7 +479,7 @@ function paint(){
 
   fillGrid('g-read', read, s=>cardEl(s.comics, {
     note: 'finished',
-    rows: `<div class="r"><span class="k">pages</span><span class="v">${nfmt(s.pages)}</span></div>`
+    rows: `<div class="r"><span class="k">Pages</span><span class="v">${nfmt(s.pages)}</span></div>`
   }), 'e-read', 'nothing finished yet.');
 
   if($('g-later')) fillGrid('g-later', later, s=>cardEl(s.comics, {note:'saved'}), null, '');
@@ -501,11 +501,11 @@ function paint(){
          <div class="where"><div class="ttl">${mq(c.title || '')}</div>
            <div>${esc(fmt(pt.published_at || pt.created_at))}</div></div>
          <div class="go">
-           <a class="btn sm" href="read.html?read=db:${encodeURIComponent(c.id||'')}&with=part:${encodeURIComponent(pt.id)}">listen</a>
+           <a class="btn sm" href="read.html?read=db:${encodeURIComponent(c.id||'')}&with=part:${encodeURIComponent(pt.id)}">Listen</a>
            ${isMe ? `<button class="btn sm" data-part="${esc(pt.id)}"
               data-act="${pt.status === 'published' ? 'unpublish' : 'publish'}">${
               pt.status === 'published' ? 'unpublish' : 'publish'}</button>
-             <button class="btn sm danger" data-part="${esc(pt.id)}" data-act="delete">delete</button>` : ''}
+             <button class="btn sm danger" data-part="${esc(pt.id)}" data-act="delete">Delete</button>` : ''}
          </div>`;
       return row;
     }));
@@ -520,14 +520,14 @@ function paint(){
   // shelf this is, and the design keeps the plate clean.
   fillGrid('g-published', published, c=>cardEl(c, {
     rows: `<div class="r"><span class="k">on</span><span class="v">${esc(fmt(c.published_at||c.created_at))}</span></div>`,
-    acts: isMe ? `<button class="btn sm" data-comic="${esc(c.id)}" data-act="unpublish">unpublish</button>
-       <button class="btn sm danger" data-comic="${esc(c.id)}" data-act="delete">delete</button>` : ''
+    acts: isMe ? `<button class="btn sm" data-comic="${esc(c.id)}" data-act="unpublish">Unpublish</button>
+       <button class="btn sm danger" data-comic="${esc(c.id)}" data-act="delete">Delete</button>` : ''
   }), 'e-published', 'nothing published yet.');
 
   if($('g-drafts')) fillGrid('g-drafts', drafts, c=>cardEl(c, {
-    rows: `<div class="r"><span class="k">made</span><span class="v">${esc(fmt(c.created_at))}</span></div>`,
-    acts: `<button class="btn sm primary" data-comic="${esc(c.id)}" data-act="publish">publish</button>
-       <button class="btn sm danger" data-comic="${esc(c.id)}" data-act="delete">delete</button>`
+    rows: `<div class="r"><span class="k">Made</span><span class="v">${esc(fmt(c.created_at))}</span></div>`,
+    acts: `<button class="btn sm primary" data-comic="${esc(c.id)}" data-act="publish">Publish</button>
+       <button class="btn sm danger" data-comic="${esc(c.id)}" data-act="delete">Delete</button>`
   }), 'e-drafts', 'no drafts. the studio saves them here.');
 
   paintIcons($('page'));
@@ -535,8 +535,8 @@ function paint(){
 
   $('share').addEventListener('click', async e=>{
     const url = location.origin + location.pathname.replace(/[^/]*$/, 'profile.html') + '?u=' + p.handle;
-    try{ await navigator.clipboard.writeText(url); e.currentTarget.lastChild.textContent = 'link copied'; }
-    catch(err){ prompt('copy this link', url); }
+    try{ await navigator.clipboard.writeText(url); e.currentTarget.lastChild.textContent = 'Link copied'; }
+    catch(err){ prompt('Copy this link', url); }
   });
   if(isMe){
     $('editbtn').addEventListener('click', ()=>$('edit').classList.toggle('on'));
@@ -556,7 +556,7 @@ async function saveProfile(){
   const err = $('f-err');
   err.textContent = '';
   if(!/^[a-z0-9](?:[a-z0-9_-]{1,28}[a-z0-9])$/.test(handle)){
-    err.textContent = 'handles are 3 to 30 characters: letters, numbers, - and _, not at the ends.';
+    err.textContent = 'Handles are 3 to 30 characters: letters, numbers, - and _, not at the ends.';
     return;
   }
   const up = await sb.from('profiles').update({
@@ -565,7 +565,7 @@ async function saveProfile(){
     bio: $('f-bio').value.trim() || null
   }).eq('id', me.id).select('*').single();
   if(up.error){
-    err.textContent = up.error.code === '23505' ? 'that handle is taken.'
+    err.textContent = up.error.code === '23505' ? 'That handle is taken.'
       : window.eski.dbError('ESK-5016', 'your profile did not save', up.error);
     return;
   }

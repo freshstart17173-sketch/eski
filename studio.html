@@ -31,7 +31,7 @@ a{color:var(--accent);text-decoration:none}
 h4{margin:0 0 8px;font-size:11px;letter-spacing:.13em;color:var(--muted);font-weight:600;
   text-transform:uppercase}
 .pill{display:inline-flex;align-items:center;gap:6px;background:var(--bg-3);border:1px solid var(--edge);
-  color:var(--soft-ink);padding:6px 12px;border-radius:0;text-transform:lowercase;
+  color:var(--soft-ink);padding:6px 12px;border-radius:0;
   transition:all 140ms ease;font-size:13px;box-shadow:var(--shadow)}
 .pill:hover{border-color:var(--accent);color:var(--accent);transform:translateY(-1px)}
 .pill:active{transform:translateY(0)}
@@ -102,7 +102,7 @@ h4{margin:0 0 8px;font-size:11px;letter-spacing:.13em;color:var(--muted);font-we
 .pv-nav.prev{left:14px} .pv-nav.next{right:14px}
 .empty-hint{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;
   justify-content:center;gap:14px;text-align:center;padding:24px;z-index:5;background:var(--bg-0)}
-.empty-hint .big{font-size:clamp(24px,3vw,34px);font-weight:500;text-transform:lowercase}
+.empty-hint .big{font-size:clamp(24px,3vw,34px);font-weight:500}
 .empty-hint p{margin:0;color:var(--muted);max-width:460px}
 .empty-hint .drops{display:flex;gap:12px;margin-top:6px}
 
@@ -144,7 +144,7 @@ h4{margin:0 0 8px;font-size:11px;letter-spacing:.13em;color:var(--muted);font-we
   overflow-y:auto;transform:translateX(100%);transition:transform 200ms ease}
 .drawer.open{transform:translateX(0)}
 .drawer .row{margin-bottom:12px}
-.drawer label{display:block;font-size:12px;color:var(--muted);margin-bottom:3px;text-transform:lowercase}
+.drawer label{display:block;font-size:12px;color:var(--muted);margin-bottom:3px}
 .drawer input[type=text],.drawer textarea,.drawer select{width:100%}
 .drawer textarea{resize:vertical;min-height:52px}
 .drawer .duo{display:flex;gap:10px}
@@ -155,7 +155,7 @@ h4{margin:0 0 8px;font-size:11px;letter-spacing:.13em;color:var(--muted);font-we
   box-shadow:var(--shadow-lg);overflow:hidden}
 .readerprev.open{display:flex}
 .rp-head{display:flex;align-items:center;gap:8px;padding:9px 12px;border-bottom:1px solid var(--edge);
-  font-size:13px;text-transform:lowercase}
+  font-size:13px}
 .rp-head .ico{width:16px;height:16px;color:var(--accent)}
 .rp-note{color:var(--muted);font-size:11.5px}
 .rp-head button{margin-left:auto;border:0;background:transparent;color:var(--muted);padding:2px}
@@ -286,7 +286,7 @@ h4{margin:0 0 8px;font-size:11px;letter-spacing:.13em;color:var(--muted);font-we
 .pane-resize.col{top:0;width:6px;height:100%;cursor:col-resize}
 .pane-resize.col.left{left:-3px}
 .pane-resize.row{left:0;top:-3px;width:100%;height:6px;cursor:row-resize}
-.qp-head{display:flex;align-items:center;gap:8px;font-weight:500;text-transform:lowercase;margin-bottom:6px}
+.qp-head{display:flex;align-items:center;gap:8px;font-weight:500;margin-bottom:6px}
 .qp-head .ico{width:17px;height:17px;color:var(--accent)}
 .qp-head button{margin-left:auto;border:0;background:transparent;color:var(--muted);cursor:pointer;padding:2px}
 .qp-head button .ico{width:17px;height:17px}
@@ -320,7 +320,7 @@ h4{margin:0 0 8px;font-size:11px;letter-spacing:.13em;color:var(--muted);font-we
 .oschip:hover{border-color:var(--accent)}
 .oschip.dragging{opacity:.4}
 .oschip .ord{color:var(--muted);font-size:10px;min-width:12px}
-.oschip .nm{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-transform:lowercase}
+.oschip .nm{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .oschip svg.ico{width:13px;height:13px}
 .oschip button{border:0;background:transparent;color:var(--muted);padding:0;cursor:pointer}
 .oschip button:hover{color:#c1362b}
@@ -332,7 +332,7 @@ h4{margin:0 0 8px;font-size:11px;letter-spacing:.13em;color:var(--muted);font-we
 .spinner{width:46px;height:46px;border:4px solid rgba(255,255,255,.25);border-top-color:#fff;
   border-radius:50%;animation:spin .8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
-.loading .lbl{color:#fff;font-size:15px;text-transform:lowercase}
+.loading .lbl{color:#fff;font-size:15px}
 /* a determinate bar beats a list of internal steps: it answers "how long",
    which is the only question being asked while waiting. */
 .loading .bar{width:min(320px,64vw);height:6px;background:rgba(255,255,255,.2)}
@@ -355,7 +355,7 @@ h4{margin:0 0 8px;font-size:11px;letter-spacing:.13em;color:var(--muted);font-we
   pointer-events:none;background:var(--bg-2);border:1px dashed var(--edge-strong);border-radius:0;
   padding:9px 20px;display:flex;align-items:center;gap:8px;color:var(--muted);z-index:150;
   transition:opacity 160ms ease,transform 160ms ease,background 160ms ease,border-color 160ms ease,color 160ms ease;
-  box-shadow:var(--shadow-lg);text-transform:lowercase;font-size:13px}
+  box-shadow:var(--shadow-lg);font-size:13px}
 .trash-bar.show{opacity:1;transform:translate(-50%,0);pointer-events:auto}
 .trash-bar.hot{border-color:#c1362b;color:#c1362b;border-style:solid;background:#fbe9e7}
 [data-theme="dark"] .trash-bar.hot{background:#3a1614}
@@ -453,27 +453,27 @@ input[type=number],input[type=range]+span{font-variant-numeric:var(--num)}@media
 <body>
 
 <header class="site-header">
-  <a class="brand" href="index.html" title="home">eski!</a>
-  <span class="hdr-label">studio</span>
+  <a class="brand" href="index.html" title="Home">eski!</a>
+  <span class="hdr-label">Studio</span>
   <!-- "open .eski" folded in here: addFiles() already routes a dropped .eski
        to openEski(), so a separate button was the same action twice. -->
   <button class="pill" id="add-media-btn" data-ico="plus"
           onclick="document.getElementById('in-media').click()"
-          title="images, audio, a cbz, a pdf, or an existing .eski">add media</button>
+          title="Images, audio, a cbz, a pdf, or an existing .eski">Add media</button>
   <button class="pill" id="add-folder-btn" data-ico="folder" onclick="document.getElementById('in-folder').click()"
-          title="import a whole folder of images and sounds">add folder</button>
+          title="Import a whole folder of images and sounds">Add folder</button>
   <button class="pill icon-btn mob-only" id="bay-toggle" data-ico="folder"
-          onclick="toggleDrawer('bay')" title="media"></button>
+          onclick="toggleDrawer('bay')" title="Media"></button>
   <button class="pill icon-btn mob-only" id="panel-toggle" data-ico="list-music"
-          onclick="toggleDrawer('qp')" title="this page"></button>
-  <span class="hdr-label" id="mode-label" title="what this session may edit"></span>
+          onclick="toggleDrawer('qp')" title="This page"></button>
+  <span class="hdr-label" id="mode-label" title="What this session may edit"></span>
   <span class="sp"></span>
-  <button class="pill" id="settings-btn" data-ico="settings" onclick="openSettings()">settings</button>
-  <button class="pill" data-ico="play" id="preview-btn" onclick="previewInReader()">preview</button>
+  <button class="pill" id="settings-btn" data-ico="settings" onclick="openSettings()">Settings</button>
+  <button class="pill" data-ico="play" id="preview-btn" onclick="previewInReader()">Preview</button>
   <button class="pill" data-ico="save" id="draft-btn" onclick="saveDraft()"
-          title="save to your profile without publishing">save draft</button>
+          title="Save to your profile without publishing">Save draft</button>
   <button class="pill primary" data-ico="upload-cloud" id="publish-btn" onclick="publishComic()"
-          title="put this on the shelf">publish</button>
+          title="Put this on the shelf">Publish</button>
 </header>
 
 <div class="work">
@@ -481,73 +481,73 @@ input[type=number],input[type=range]+span{font-variant-numeric:var(--num)}@media
   <aside class="bay" id="bay">
     <div class="bay-search">
       <span data-ico="search" data-sm></span>
-      <input type="text" id="bay-q" placeholder="search" oninput="bayFilter.q=this.value;renderBay()">
-      <select id="bay-filter" title="filter" onchange="bayFilter.kind=this.value;renderBay()">
-        <option value="all">all</option>
-        <option value="images">images</option>
-        <option value="audio">audio</option>
-        <option value="unused">unused</option>
+      <input type="text" id="bay-q" placeholder="Search" oninput="bayFilter.q=this.value;renderBay()">
+      <select id="bay-filter" title="Filter" onchange="bayFilter.kind=this.value;renderBay()">
+        <option value="all">All</option>
+        <option value="images">Images</option>
+        <option value="audio">Audio</option>
+        <option value="unused">Unused</option>
       </select>
     </div>
     <div class="bay-sec imgs">
       <div class="sec-head">
-        <h4><span data-ico="image" data-sm></span>images <span class="count" id="img-count"></span></h4>
+        <h4><span data-ico="image" data-sm></span>Images <span class="count" id="img-count"></span></h4>
         <span class="zoomers">
-          <button class="mini-btn" data-ico="zoom-out" title="smaller" onclick="bayZoom(-1)"></button>
-          <button class="mini-btn" data-ico="zoom-in" title="bigger" onclick="bayZoom(1)"></button>
+          <button class="mini-btn" data-ico="zoom-out" title="Smaller" onclick="bayZoom(-1)"></button>
+          <button class="mini-btn" data-ico="zoom-in" title="Bigger" onclick="bayZoom(1)"></button>
         </span>
       </div>
-      <div class="bay-grid" id="bay-imgs"><div class="bay-empty">none yet</div></div>
+      <div class="bay-grid" id="bay-imgs"><div class="bay-empty">None yet</div></div>
     </div>
     <div class="bay-sec auds">
       <div class="sec-head">
-        <h4><span data-ico="music" data-sm></span>audio <span class="count" id="aud-count"></span></h4>
-        <select class="sort" id="bay-sort" title="sort" onchange="bayFilter.sort=this.value;renderBay()">
-          <option value="added">added</option>
-          <option value="name">name</option>
-          <option value="dur">duration</option>
+        <h4><span data-ico="music" data-sm></span>Audio <span class="count" id="aud-count"></span></h4>
+        <select class="sort" id="bay-sort" title="Sort" onchange="bayFilter.sort=this.value;renderBay()">
+          <option value="added">Added</option>
+          <option value="name">Name</option>
+          <option value="dur">Duration</option>
         </select>
       </div>
-      <div class="bay-grid" id="bay-auds" style="flex-direction:column"><div class="bay-empty">none yet</div></div>
-      <div class="bay-hint">pick a page, then drag audio into the panel on the right and drop it on
+      <div class="bay-grid" id="bay-auds" style="flex-direction:column"><div class="bay-empty">None yet</div></div>
+      <div class="bay-hint">Pick a page, then drag audio into the panel on the right and drop it on
         soundtrack or on one-shots. drag any block to the trash bar to remove it.</div>
     </div>
-    <div class="bay-resize" id="bay-resize" title="drag to resize"></div>
+    <div class="bay-resize" id="bay-resize" title="Drag to resize"></div>
   </aside>
 
   <!-- stage -->
   <div class="stage">
     <div class="preview" id="preview">
       <div class="empty-hint" id="empty-hint">
-        <div class="big">compose an .eski</div>
-        <p>drop images, a .cbz, a .pdf, or an existing .eski to start. then pick a page and add
+        <div class="big">Compose an .eski</div>
+        <p>Drop images, a .cbz, a .pdf, or an existing .eski to start. then pick a page and add
           its sound in the panel on the right. pages with no track stay silent.</p>
         <div class="drops">
-          <button class="pill primary" onclick="document.getElementById('in-media').click()">add media</button>
-          <button class="pill" onclick="document.getElementById('in-folder').click()">add a folder</button>
+          <button class="pill primary" onclick="document.getElementById('in-media').click()">Add media</button>
+          <button class="pill" onclick="document.getElementById('in-folder').click()">Add a folder</button>
         </div>
       </div>
-      <button class="pv-nav prev" id="pv-prev" data-ico="chevron-left" onclick="stepPreview(-1)" style="display:none" title="previous page"></button>
-      <img id="pv-img" alt="page preview" style="display:none">
-      <button class="pv-nav next" id="pv-next" data-ico="chevron-right" onclick="stepPreview(1)" style="display:none" title="next page"></button>
+      <button class="pv-nav prev" id="pv-prev" data-ico="chevron-left" onclick="stepPreview(-1)" style="display:none" title="Previous page"></button>
+      <img id="pv-img" alt="Page preview" style="display:none">
+      <button class="pv-nav next" id="pv-next" data-ico="chevron-right" onclick="stepPreview(1)" style="display:none" title="Next page"></button>
       <div class="pv-badge" id="pv-badge" style="display:none"></div>
     </div>
 
     <div class="tl-panel" id="tl-panel">
-      <div class="pane-resize row" id="tl-resize" title="drag to resize"></div>
+      <div class="pane-resize row" id="tl-resize" title="Drag to resize"></div>
       <div class="tl-top">
-        <span class="tl-status" id="tl-status">no pages yet</span>
-        <span class="modebar" id="modebar" style="display:none">working as
-          <select id="mode-sel" title="what this session may edit">
-            <option value="scratch">the author (everything)</option>
-            <option value="vo">a voice actor (dialogue only)</option>
-            <option value="soundtrack">a composer (music + sfx)</option>
+        <span class="tl-status" id="tl-status">No pages yet</span>
+        <span class="modebar" id="modebar" style="display:none">Working as
+          <select id="mode-sel" title="What this session may edit">
+            <option value="scratch">The author (everything)</option>
+            <option value="vo">A voice actor (dialogue only)</option>
+            <option value="soundtrack">A composer (music + sfx)</option>
           </select>
         </span>
         <span class="sp"></span>
         <span class="zoom" id="pages-ctrls" style="display:none">
-          <button class="pill icon-btn" data-ico="zoom-out" onclick="pageZoom(-1)" title="smaller pages"></button>
-          <button class="pill icon-btn" data-ico="zoom-in" onclick="pageZoom(1)" title="bigger pages"></button>
+          <button class="pill icon-btn" data-ico="zoom-out" onclick="pageZoom(-1)" title="Smaller pages"></button>
+          <button class="pill icon-btn" data-ico="zoom-in" onclick="pageZoom(1)" title="Bigger pages"></button>
         </span>
       </div>
       <div class="tl-scroll" id="tl-scroll">
@@ -558,21 +558,21 @@ input[type=number],input[type=range]+span{font-variant-numeric:var(--num)}@media
 
   <!-- page info panel: everything authored on the selected page -->
   <aside class="qp" id="qp">
-    <div class="pane-resize col left" id="qp-resize" title="drag to resize"></div>
-    <div class="qp-head"><span data-ico="list-music"></span><span id="qp-title">page</span></div>
+    <div class="pane-resize col left" id="qp-resize" title="Drag to resize"></div>
+    <div class="qp-head"><span data-ico="list-music"></span><span id="qp-title">Page</span></div>
     <div class="info-sec">
-      <h5>soundtrack</h5>
+      <h5>Soundtrack</h5>
       <div id="info-song"></div>
     </div>
     <div class="info-sec" id="sec-lines">
-      <h5>dialogue</h5>
-      <div class="qp-hint">one slot per run of speech, not per balloon. drop audio on a slot to fill it.</div>
+      <h5>Dialogue</h5>
+      <div class="qp-hint">One slot per run of speech, not per balloon. drop audio on a slot to fill it.</div>
       <div class="qp-list" id="qp-list"></div>
       <div class="qp-foot"><button class="pill" id="slot-add" data-ico="plus"
-        onclick="addSlot(qpPage)">someone speaks here</button></div>
+        onclick="addSlot(qpPage)">Someone speaks here</button></div>
     </div>
     <div class="info-sec" id="sec-sfx">
-      <h5>sound effects</h5>
+      <h5>Sound effects</h5>
       <div class="qp-list" id="qp-sfx"></div>
     </div>
   </aside>
@@ -581,56 +581,56 @@ input[type=number],input[type=range]+span{font-variant-numeric:var(--num)}@media
 <!-- settings drawer -->
 <div class="drawer-scrim" id="drawer-scrim" onclick="closeSettings()"></div>
 <div class="drawer" id="drawer">
-  <div class="drawer-head"><h4>this eski</h4><button data-ico="x" onclick="closeSettings()" title="close"></button></div>
-  <div class="row"><label>title</label><input type="text" id="m-title" placeholder="untitled"></div>
-  <div class="row"><label>creator</label><input type="text" id="m-creator" placeholder="you"></div>
-  <div class="row"><label>description</label><textarea id="m-desc"></textarea></div>
-  <div class="row"><label>cover page</label><select id="m-cover"></select></div>
+  <div class="drawer-head"><h4>This eski</h4><button data-ico="x" onclick="closeSettings()" title="Close"></button></div>
+  <div class="row"><label>Title</label><input type="text" id="m-title" placeholder="Untitled"></div>
+  <div class="row"><label>Creator</label><input type="text" id="m-creator" placeholder="You"></div>
+  <div class="row"><label>Description</label><textarea id="m-desc"></textarea></div>
+  <div class="row"><label>Cover page</label><select id="m-cover"></select></div>
   <div class="row duo">
-    <div><label>series</label><input type="text" id="m-series" placeholder="none"></div>
-    <div><label>part no.</label><input type="number" id="m-seriesidx" min="1" placeholder="1"></div>
+    <div><label>Series</label><input type="text" id="m-series" placeholder="None"></div>
+    <div><label>Part no.</label><input type="number" id="m-seriesidx" min="1" placeholder="1"></div>
   </div>
-  <div class="row"><label>chapters</label>
-    <div class="qp-hint">one per line, as <code>page: title</code>. lets long comics be navigated.</div>
+  <div class="row"><label>Chapters</label>
+    <div class="qp-hint">One per line, as <code>page: title</code>. lets long comics be navigated.</div>
     <textarea id="m-chapters" placeholder="1: the arrival&#10;24: nightfall"></textarea></div>
-  <div class="row"><label>reading direction</label>
-    <select id="m-dir"><option value="ltr">left to right</option><option value="rtl">right to left</option></select></div>
-  <div class="row"><label>reading mode</label>
-    <select id="m-reading"><option value="pages">pages</option><option value="scroll">vertical scroll</option></select></div>
-  <div class="row"><label>playback</label>
+  <div class="row"><label>Reading direction</label>
+    <select id="m-dir"><option value="ltr">Left to right</option><option value="rtl">Right to left</option></select></div>
+  <div class="row"><label>Reading mode</label>
+    <select id="m-reading"><option value="pages">Pages</option><option value="scroll">Vertical scroll</option></select></div>
+  <div class="row"><label>Playback</label>
     <select id="m-playback">
-      <option value="sync">sync: tracks follow pages</option>
-      <option value="playlist">playlist: tracks advance when a song ends</option>
+      <option value="sync">Sync: tracks follow pages</option>
+      <option value="playlist">Playlist: tracks advance when a song ends</option>
     </select></div>
-  <div class="row"><label>when a lone track ends</label>
+  <div class="row"><label>When a lone track ends</label>
     <select id="m-loop">
-      <option value="loop">loop it until the page changes</option>
-      <option value="next">let it end (go quiet)</option>
+      <option value="loop">Loop it until the page changes</option>
+      <option value="next">Let it end (go quiet)</option>
     </select></div>
   <div class="row duo">
-    <div><label>crossfade (s)</label><input type="number" id="m-fade" min="0" max="10" step="0.5"></div>
-    <div><label>volume</label><input type="number" id="m-vol" min="0" max="100"></div>
+    <div><label>Crossfade (s)</label><input type="number" id="m-fade" min="0" max="10" step="0.5"></div>
+    <div><label>Volume</label><input type="number" id="m-vol" min="0" max="100"></div>
   </div>
   <div class="drawer-sep"></div>
   <div class="row" id="cast-row">
-    <label>cast</label>
-    <div class="qp-hint">who speaks in this comic. only the author can set this,
+    <label>Cast</label>
+    <div class="qp-hint">Who speaks in this comic. only the author can set this,
       because only they know who is in which balloon.</div>
     <div id="cast-list"></div>
     <div class="castadd">
-      <input type="text" id="cast-name" placeholder="character name"
+      <input type="text" id="cast-name" placeholder="Character name"
              onkeydown="if(event.key==='Enter')addCastFromInput()">
       <select id="cast-kind">
-        <option value="character">character</option>
-        <option value="narrator">narrator</option>
+        <option value="character">Character</option>
+        <option value="narrator">Narrator</option>
       </select>
-      <button class="pill" onclick="addCastFromInput()" data-ico="plus">add</button>
+      <button class="pill" onclick="addCastFromInput()" data-ico="plus">Add</button>
     </div>
   </div>
   <div class="drawer-sep"></div>
-  <div class="row"><label>this app</label>
+  <div class="row"><label>This app</label>
     <button class="pill" id="set-dark" onclick="toggleDark()"><span data-ico="moon"></span><span
-      id="set-dark-lbl">dark mode: off</span></button></div>
+      id="set-dark-lbl">Dark mode: off</span></button></div>
 </div>
 
 <input type="file" id="in-media" accept="image/*,audio/*,.cbz,.zip,.pdf,.eski" multiple style="display:none"
@@ -644,7 +644,7 @@ input[type=number],input[type=range]+span{font-variant-numeric:var(--num)}@media
 <div class="menu" id="bay-menu"></div>
 
 <div class="trim" id="trim">
-  <h4>trim</h4>
+  <h4>Trim</h4>
   <div class="sub" id="trim-name"></div>
   <div class="trim-wave" id="trim-wave">
     <canvas id="trim-cv" width="1000" height="184"></canvas>
@@ -655,28 +655,28 @@ input[type=number],input[type=range]+span{font-variant-numeric:var(--num)}@media
   </div>
   <div class="trim-foot">
     <span class="nums" id="trim-nums"></span>
-    <button class="pill" onclick="trimPreview()" data-ico="play">listen</button>
-    <button class="pill" onclick="closeTrim()">cancel</button>
-    <button class="pill primary" onclick="applyTrim()">apply</button>
+    <button class="pill" onclick="trimPreview()" data-ico="play">Listen</button>
+    <button class="pill" onclick="closeTrim()">Cancel</button>
+    <button class="pill primary" onclick="applyTrim()">Apply</button>
   </div>
 </div>
 
 <div class="readerprev" id="readerprev">
   <div class="rp-head">
-    <span data-ico="play"></span>preview
-    <span class="rp-note">the real reader, on a snapshot of this eski</span>
-    <button data-ico="x" onclick="closePreview()" title="close"></button>
+    <span data-ico="play"></span>Preview
+    <span class="rp-note">The real reader, on a snapshot of this eski</span>
+    <button data-ico="x" onclick="closePreview()" title="Close"></button>
   </div>
-  <iframe id="rp-frame" src="about:blank" title="reader preview"></iframe>
+  <iframe id="rp-frame" src="about:blank" title="Reader preview"></iframe>
 </div>
 
-<div class="trash-bar" id="trash-bar"><span data-ico="trash-2" class="ico"></span><span>drop here to remove</span></div>
+<div class="trash-bar" id="trash-bar"><span data-ico="trash-2" class="ico"></span><span>Drop here to remove</span></div>
 <div class="loading" id="loading">
   <div class="spinner" id="loading-spin"></div>
   <svg class="tick" id="loading-tick" viewBox="0 0 52 52" aria-hidden="true">
     <circle cx="26" cy="26" r="23"/><path d="M15 27l8 8 15-16"/>
   </svg>
-  <div class="lbl" id="loading-lbl">working</div>
+  <div class="lbl" id="loading-lbl">Working</div>
   <div class="bar" id="loading-bar" hidden><i id="loading-fill"></i></div>
 </div>
 <div class="toast" id="toast"></div>
@@ -742,7 +742,7 @@ function toast(msg, kind){
   clearTimeout(t._h);
   if(!err){ t._h = setTimeout(()=>t.classList.remove('show'), 3200); return; }
   const x = document.createElement('button');
-  x.className = 'toast-x'; x.type = 'button'; x.title = 'dismiss'; x.textContent = '×';
+  x.className = 'toast-x'; x.type = 'button'; x.title = 'Dismiss'; x.textContent = '×';
   x.addEventListener('click', ()=>t.classList.remove('show'));
   t.appendChild(x);
 }
@@ -763,7 +763,7 @@ function progress(frac){
 function loadingDone(label){
   const el = $('loading');
   if(!el || !el.classList.contains('on')) return;
-  $('loading-lbl').textContent = label || 'done';
+  $('loading-lbl').textContent = label || 'Done';
   el.classList.add('done');
   setTimeout(() => { el.classList.remove('on','done'); loadDepth = 0; progress(null); }, 900);
 }
@@ -843,8 +843,8 @@ function addFiles(files){
   if(eskis.length){ openEski(eskis[0]); return; }
   // contributors bring audio. the pages belong to the author.
   if(!canPages() && (imgs.length || pdfs.length || zips.length)){
-    if(!auds.length){ toast('pages are the author’s. bring audio instead.', 'error'); return; }
-    toast('added the audio. pages are the author’s.');
+    if(!auds.length){ toast('Pages are the author’s. bring audio instead.', 'error'); return; }
+    toast('Added the audio. pages are the author’s.');
     imgs = []; pdfs.length = 0; zips.length = 0;
   }
   (async ()=>{
@@ -853,7 +853,7 @@ function addFiles(files){
     for(const p of pdfs) await importPdf(p);
     if(imgs.length) addImages(imgs);
     if(!auds.length && !zips.length && !pdfs.length && !imgs.length)
-      toast('nothing usable in that drop', 'error');
+      toast('Nothing usable in that drop', 'error');
     ensureDefaultSilence();
     render();
   })();
@@ -892,10 +892,10 @@ async function addPagesFromZip(file){
       if(IMG_RE.test(path)) imgs.push({entry, name:path.split('/').pop()});
     });
     imgs.sort((a,b)=>a.name.localeCompare(b.name, undefined, {numeric:true, sensitivity:'base'}));
-    if(!imgs.length){ toast('no images inside '+file.name, 'error'); return; }
+    if(!imgs.length){ toast('No images inside '+file.name, 'error'); return; }
     for(const im of imgs) pushPage(im.name, await im.entry.async('blob'));
     toast(`added ${imgs.length} pages from ${file.name}`);
-  }catch(err){ toast('could not read '+file.name+': '+err.message, 'error'); }
+  }catch(err){ toast('Could not read '+file.name+': '+err.message, 'error'); }
   finally{ loading(false); }
 }
 let pdfjsReady = null;
@@ -1152,7 +1152,7 @@ function addTrackFromPool(aud, page){
   render();
 }
 function addSilence(){
-  if(!pageCount()){ toast('add some pages first', 'error'); return; }
+  if(!pageCount()){ toast('Add some pages first', 'error'); return; }
   snap();
   const t = {tid:uid('t'), aud:null, type:'silence', title:'silence',
     from:clamp(qpPage || previewPage+1, 1, pageCount()), start:0, volume:100};
@@ -1383,14 +1383,14 @@ async function loadBase(id, as){
       return r.blob();
     };
 
-    $('loading-lbl').textContent = 'downloading pages';
+    $('loading-lbl').textContent = 'Downloading pages';
     for(const p of pg.data){
       if(!p.image_key) throw new Error('ESK-5011 page ' + p.idx + ' has no image key');
       pushPage('p' + String(p.idx).padStart(3, '0') + '.jpg', await grab(p.image_key));
       step();
     }
 
-    $('loading-lbl').textContent = 'downloading the soundtrack';
+    $('loading-lbl').textContent = 'Downloading the soundtrack';
     const audFor = {};
     for(const key of audKeys){
       const blob = await grab(key);
@@ -1430,7 +1430,7 @@ async function loadBase(id, as){
     setEditMode(as === 'soundtrack' ? 'soundtrack' : 'vo');
     progress(1);
     loadingDone('opened');
-    toast('opened ' + cState.meta.title + ' by ' + (cState.meta.creator || 'someone') +
+    toast('Opened ' + cState.meta.title + ' by ' + (cState.meta.creator || 'someone') +
       '. the pages are theirs; bring audio.');
   }catch(err){
     // a failed base load must not leave a half comic that could be exported as
@@ -1476,7 +1476,7 @@ function renderCast(){
   if(!cState.cast) cState.cast = [];
   box.innerHTML = '';
   if(!cState.cast.length){
-    box.innerHTML = '<div class="qp-empty">no cast yet.</div>';
+    box.innerHTML = '<div class="qp-empty">No cast yet.</div>';
   }
   cState.cast.forEach(c=>{
     const cov = coverageFor(c.key);
@@ -1485,7 +1485,7 @@ function renderCast(){
     row.innerHTML = `<span class="nm">${esc(c.name)}${c.kind==='narrator'?' <span class="cov">(narrator)</span>':''}</span>
       <span class="covbar"><span style="width:${cov.pct}%"></span></span>
       <span class="cov">${cov.filled}/${cov.total}</span>
-      <button data-ico="x" title="remove from cast"></button>`;
+      <button data-ico="x" title="Remove from cast"></button>`;
     row.querySelector('button').addEventListener('click', ()=>removeCast(c.cid));
     box.appendChild(row);
     /* the note a performer reads before they take the part. it is the only
@@ -1495,7 +1495,7 @@ function renderCast(){
     note.className = 'castnote';
     note.rows = 2;
     note.maxLength = 400;
-    note.placeholder = 'how does ' + c.name + ' sound? (shown to voice actors)';
+    note.placeholder = 'How does ' + c.name + ' sound? (shown to voice actors)';
     note.value = c.blurb || '';
     note.disabled = !canCast();
     note.addEventListener('input', ()=>{ c.blurb = note.value.trim() || null; });
@@ -1510,7 +1510,7 @@ function render(){
   $('mode-sel').value = editMode;
   // publish names what you are actually shipping in this mode
   $('publish-btn').lastChild.textContent =
-    editMode==='vo' ? 'publish vo' : editMode==='soundtrack' ? 'publish soundtrack' : 'publish';
+    editMode==='vo' ? 'Publish vo' : editMode==='Soundtrack' ? 'Publish soundtrack' : 'Publish';
   $('empty-hint').style.display = has ? 'none' : 'flex';
   ['pv-img','pv-badge','pv-prev','pv-next'].forEach(id=>$(id).style.display = has ? '' : 'none');
   $('pages-ctrls').style.display = has ? '' : 'none';
@@ -1564,7 +1564,7 @@ function renderBay(){
     el.className = 'chip-aud' + (used?' used':''); el.draggable = true;
     const playing = previewKey === 'aud:'+aud;
     if(pickedAud.has(aud)) el.classList.add('picked');
-    el.innerHTML = `<button class="dots" title="options">&#8942;</button>
+    el.innerHTML = `<button class="dots" title="Options">&#8942;</button>
       <div class="t">${esc((a.fileName||'audio').replace(/\.[^.]+$/,''))}</div>
       <canvas width="150" height="20"></canvas>
       <div class="m"><button class="mini-btn" data-ico="${playing?'square':'play'}"
@@ -1654,13 +1654,13 @@ function openBayMenu(aud, x, y){
   const used = cState.tracks.filter(t=>t.aud===aud);
   const m = $('bay-menu');
   m.innerHTML = `
-    <button data-a="trim"><span data-ico="scissors"></span>trim</button>
-    <button data-a="rename"><span data-ico="pencil"></span>rename</button>
-    <button data-a="dup"><span data-ico="copy"></span>duplicate</button>
-    <button data-a="dl"><span data-ico="download"></span>download</button>
-    <button data-a="uses"><span data-ico="search"></span>reveal usages (${used.length})</button>
+    <button data-a="trim"><span data-ico="scissors"></span>Trim</button>
+    <button data-a="rename"><span data-ico="pencil"></span>Rename</button>
+    <button data-a="dup"><span data-ico="copy"></span>Duplicate</button>
+    <button data-a="dl"><span data-ico="download"></span>Download</button>
+    <button data-a="uses"><span data-ico="search"></span>Reveal usages (${used.length})</button>
     <div class="sep"></div>
-    <button data-a="del" class="danger"><span data-ico="trash-2"></span>delete</button>`;
+    <button data-a="del" class="danger"><span data-ico="trash-2"></span>Delete</button>`;
   m.style.left = Math.min(x, innerWidth-170) + 'px';
   m.style.top  = Math.min(y, innerHeight-220) + 'px';
   m.classList.add('open');
@@ -1670,7 +1670,7 @@ function openBayMenu(aud, x, y){
     closeBayMenu();
     if(act==='trim') openTrim(aud);
     else if(act==='rename'){
-      const n = prompt('name for this clip', a.fileName || '');
+      const n = prompt('Name for this clip', a.fileName || '');
       if(n){ a.fileName = n; cState.tracks.forEach(t=>{ if(t.aud===aud) t.title = n.replace(/\.[^.]+$/,'').toLowerCase(); }); render(); }
     }else if(act==='dup'){
       const id = uid('a');
@@ -1680,7 +1680,7 @@ function openBayMenu(aud, x, y){
       const el = document.createElement('a');
       el.href = a.url; el.download = a.fileName || 'clip'; el.click();
     }else if(act==='uses'){
-      if(!used.length) return toast('not placed anywhere yet');
+      if(!used.length) return toast('Not placed anywhere yet');
       openQueue(used[0].from);
       toast(`used on page${used.length>1?'s':''} ` + [...new Set(used.map(t=>t.from))].join(', '));
     }else if(act==='del') removePoolAudio(aud);
@@ -1698,11 +1698,11 @@ document.addEventListener('pointerdown', e=>{
 let trimAud = null, trimIn = 0, trimOut = 0;
 function openTrim(aud){
   const a = audioStore[aud];
-  if(!a || !a.peaks){ toast('still decoding that clip', 'error'); return; }
+  if(!a || !a.peaks){ toast('Still decoding that clip', 'error'); return; }
   trimAud = aud;
   trimIn = a.trimStart || 0;
   trimOut = a.trimEnd || a.duration || 0;
-  $('trim-name').textContent = a.fileName || 'clip';
+  $('trim-name').textContent = a.fileName || 'Clip';
   $('trim').classList.add('open');
   drawTrim();
 }
@@ -1739,7 +1739,7 @@ function applyTrim(){
     t.end = a.trimEnd;
   });
   closeTrim(); render();
-  toast('trimmed ' + (a.fileName||'clip'));
+  toast('Trimmed ' + (a.fileName||'clip'));
 }
 (function(){
   const wave = $('trim-wave');
@@ -1788,7 +1788,7 @@ function renderPreview(){
   previewPage = i;
   if(pvShown !== i){ pvShown = i; pvReset(); }   // a new page always starts unzoomed
   $('pv-img').src = cState.pages[i].url;
-  $('pv-badge').textContent = `page ${i+1} of ${pageCount()}`;
+  $('pv-badge').textContent = `Page ${i+1} of ${pageCount()}`;
 }
 function stepPreview(d){ openQueue(clamp(previewPage+d, 0, pageCount()-1) + 1); }
 
@@ -1866,7 +1866,7 @@ function renderPages(){
     if(page === qpPage) el.classList.add('sel');
     el.draggable = canPages();
     el.innerHTML = `<img src="${p.thumb||p.url}" style="height:${Math.round(pgW*1.28)}px"><span class="n">${page}</span>
-      ${canPages()?'<button class="x" data-ico="x" title="remove page"></button>':''}
+      ${canPages()?'<button class="x" data-ico="x" title="Remove page"></button>':''}
       <span class="pgstate">
         <i class="lines${nShots?' on':''}" title="${nShots?nShots+' one-shot'+(nShots===1?'':'s')+' on this page':'no one-shots'}"></i>
         <i class="song ${esc(songState)}" title="${esc(songTitle)}"></i>
@@ -1895,7 +1895,7 @@ function renderPages(){
     el.addEventListener('dragleave', ()=>el.classList.remove('dragover'));
     el.addEventListener('drop', e=>{
       if(e.dataTransfer.types.includes('text/eski-aud')){
-        toast('drop audio in the page panel, so you can say what it is', 'error');
+        toast('Drop audio in the page panel, so you can say what it is', 'error');
         return;
       }
       e.preventDefault(); e.stopPropagation(); el.classList.remove('dragover');
@@ -1990,24 +1990,24 @@ function groupOwning(page){ return queueGroups().find(g=>page>=g.from && page<=g
 
 function renderInfo(){
   const box = $('info-song');
-  if(!pageCount()){ $('qp-title').textContent = 'page'; box.innerHTML=''; $('qp-list').innerHTML=''; return; }
+  if(!pageCount()){ $('qp-title').textContent = 'Page'; box.innerHTML=''; $('qp-list').innerHTML=''; return; }
   if(qpPage==null) qpPage = 1;
-  $('qp-title').textContent = 'page ' + qpPage + ' of ' + pageCount();
+  $('qp-title').textContent = 'Page ' + qpPage + ' of ' + pageCount();
 
   const g = groupOwning(qpPage);
   box.innerHTML = '';
   if(!g){
-    box.innerHTML = '<div class="info-empty">silent. drag audio here to start a song on this page.</div>';
+    box.innerHTML = '<div class="info-empty">Silent. drag audio here to start a song on this page.</div>';
   }else{
     const triggersHere = g.from === qpPage;
     g.tracks.forEach((t,i)=>{
       const row = document.createElement('div');
       row.className = 'songrow' + (t.tid===sel ? ' sel' : '');
       row.innerHTML = `<span class="sw" style="background:${colorOf(t)}"></span>
-        <input class="nm" value="${esc(t.title)}" title="name">
+        <input class="nm" value="${esc(t.title)}" title="Name">
         ${g.tracks.length>1?`<span class="pos">${i+1}/${g.tracks.length}</span>`:''}
-        ${t.type==='music'?`<button data-ico="play" title="listen"></button>`:''}
-        <button data-ico="trash-2" title="remove"></button>`;
+        ${t.type==='music'?`<button data-ico="play" title="Listen"></button>`:''}
+        <button data-ico="trash-2" title="Remove"></button>`;
       row.addEventListener('pointerdown', ()=>{ sel = t.tid; });
       row.querySelector('input.nm').addEventListener('input', e=>{ t.title = e.target.value; renderBay(); });
       const btns = [...row.querySelectorAll('button')];
@@ -2019,11 +2019,11 @@ function renderInfo(){
         // the numbers the timeline's grip and slip drags used to set
         const knobs = document.createElement('div');
         knobs.className = 'songknobs';
-        knobs.innerHTML = `<label>vol<input type="range" min="0" max="100" value="${t.volume}"></label>
-          <label>starts p.<input type="number" class="pg" min="1" max="${pageCount()}" value="${t.from}"></label>
+        knobs.innerHTML = `<label>Vol<input type="range" min="0" max="100" value="${t.volume}"></label>
+          <label>Starts p.<input type="number" class="pg" min="1" max="${pageCount()}" value="${t.from}"></label>
           <label>in<input type="number" class="inp" min="0" step="0.5" value="${t.start||0}">s</label>
-          <label>out<input type="number" class="outp" min="0" step="0.5"
-                 placeholder="end" value="${t.end||''}">s</label>`;
+          <label>Out<input type="number" class="outp" min="0" step="0.5"
+                 placeholder="End" value="${t.end||''}">s</label>`;
         const [vol, pg, inp, outp] = knobs.querySelectorAll('input');
         outp.addEventListener('change', e=>{
           snap();
@@ -2049,7 +2049,7 @@ function renderInfo(){
   const add = document.createElement('div');
   add.className = 'songadd';
   add.innerHTML = `<button class="pill" id="silence-btn" data-ico="volume-x"
-    title="go quiet from this page on">add silence</button>`;
+    title="Go quiet from this page on">Add silence</button>`;
   add.querySelector('button').addEventListener('click', addSilence);
   box.appendChild(add);
   paintIcons(box);
@@ -2061,15 +2061,15 @@ let qpDrag = null;
 function osChip(t, idx, showCast){
   const chip = document.createElement('div');
   chip.className = 'oschip' + (t.aud ? '' : ' empty'); chip.draggable = true;
-  const label = t.aud ? esc(t.title) : '<span class="await">empty</span>';
+  const label = t.aud ? esc(t.title) : '<span class="await">Empty</span>';
   chip.innerHTML = `<span class="ord">${idx+1}</span>
-    ${showCast ? `<select class="castsel" title="who speaks"></select>` : ''}
+    ${showCast ? `<select class="castsel" title="Who speaks"></select>` : ''}
     <span class="nm">${label}</span>
-    ${t.aud ? '<button data-ico="play" title="listen"></button>' : ''}
-    <button data-ico="x" title="remove"></button>`;
+    ${t.aud ? '<button data-ico="play" title="Listen"></button>' : ''}
+    <button data-ico="x" title="Remove"></button>`;
   if(showCast){
     const sel2 = chip.querySelector('.castsel');
-    sel2.innerHTML = '<option value="">unassigned</option>' + cState.cast.map(c=>
+    sel2.innerHTML = '<option value="">Unassigned</option>' + cState.cast.map(c=>
       `<option value="${esc(c.key)}"${c.key===t.character?' selected':''}>${esc(c.name)}</option>`).join('');
     sel2.disabled = !canCast();
     sel2.addEventListener('change', e=>{ snap(); t.character = e.target.value || null; render(); });
@@ -2085,11 +2085,11 @@ function osChip(t, idx, showCast){
     if(lines.length){
       const at = document.createElement('div');
       at.className = 'attachrow';
-      at.innerHTML = `<span>fires</span>
-        <select><option value="">on its own</option>${lines.map((l,i)=>
-          `<option value="${l.tid}"${l.tid===t.attachTo?' selected':''}>with line ${i+1}</option>`).join('')}</select>
+      at.innerHTML = `<span>Fires</span>
+        <select><option value="">On its own</option>${lines.map((l,i)=>
+          `<option value="${l.tid}"${l.tid===t.attachTo?' selected':''}>With line ${i+1}</option>`).join('')}</select>
         <input type="number" step="0.1" min="0" value="${t.offset||0}"
-               title="seconds after that line starts"${t.attachTo?'':' disabled'}>s`;
+               title="Seconds after that line starts"${t.attachTo?'':' disabled'}>s`;
       const [sel2, off] = [at.querySelector('select'), at.querySelector('input')];
       sel2.addEventListener('change', e=>{
         snap(); t.attachTo = e.target.value || null; if(!t.attachTo) t.offset = 0; render();
@@ -2128,14 +2128,14 @@ function renderQueue(){
   lbox.innerHTML = '';
   if(!lines.length){
     lbox.innerHTML = canLines()
-      ? '<div class="qp-empty">nobody speaks on this page yet.</div>'
-      : '<div class="qp-empty">no dialogue marked on this page.</div>';
+      ? '<div class="qp-empty">Nobody speaks on this page yet.</div>'
+      : '<div class="qp-empty">No dialogue marked on this page.</div>';
   }
   lines.forEach((t,i)=>lbox.appendChild(osChip(t, i, true)));
 
   const sbox = $('qp-sfx');
   sbox.innerHTML = '';
-  if(!sfx.length) sbox.innerHTML = '<div class="qp-empty">no sound effects here.</div>';
+  if(!sfx.length) sbox.innerHTML = '<div class="qp-empty">No sound effects here.</div>';
   sfx.forEach((t,i)=>sbox.appendChild(osChip(t, i, false)));
 
   $('slot-add').style.display = canCast() ? '' : 'none';
@@ -2262,7 +2262,7 @@ function openSettings(){
   $('m-title').value=s.meta.title||''; $('m-creator').value=s.meta.creator||'';
   $('m-desc').value=s.meta.description||'';
   const cover=$('m-cover'); cover.innerHTML='';
-  cState.pages.forEach((p,i)=>{ const o=document.createElement('option'); o.value=i; o.textContent='page '+(i+1); cover.appendChild(o); });
+  cState.pages.forEach((p,i)=>{ const o=document.createElement('option'); o.value=i; o.textContent='Page '+(i+1); cover.appendChild(o); });
   cover.value=clamp(s.coverIndex,0,Math.max(pageCount()-1,0));
   $('m-dir').value=s.meta.direction||'ltr';
   $('m-reading').value=s.player.readingMode==='scroll'?'scroll':'pages';
@@ -2353,11 +2353,11 @@ function normGains(){
    up. matching is by SLOT ID, which is why base track ids must stay stable. */
 async function attachPart(zip, manifest, fileName){
   if(!pageCount()){
-    toast('open the comic first, then attach this ' + manifest.kind, 'error');
+    toast('Open the comic first, then attach this ' + manifest.kind, 'error');
     return;
   }
   if(manifest.base && cState.meta.id && manifest.base.id !== cState.meta.id){
-    toast('that ' + manifest.kind + ' was made for a different comic', 'error');
+    toast('That ' + manifest.kind + ' was made for a different comic', 'error');
     return;
   }
   let filled = 0, added = 0;
@@ -2411,7 +2411,7 @@ async function exportPart(kind){
   let character = null;
   if(isVo){
     const keys = [...new Set(tracks.map(t=>t.character).filter(Boolean))];
-    if(keys.length > 1){ toast('a vo covers one character. this has ' + keys.length, 'error'); return; }
+    if(keys.length > 1){ toast('A vo covers one character. this has ' + keys.length, 'error'); return; }
     character = keys[0] || null;
     const cov = coverageFor(character);
     if(cov.pct < 100) toast(`heads up: ${cov.filled}/${cov.total} lines. a vo needs every line to publish.`);
@@ -2454,7 +2454,7 @@ async function exportPart(kind){
     aEl.download = partFileName(kind, character);
     aEl.click();
     setTimeout(()=>URL.revokeObjectURL(aEl.href), 4000);
-    toast('exported ' + aEl.download);
+    toast('Exported ' + aEl.download);
   }catch(err){ toast('export failed: '+err.message, 'error'); }
   finally{ loading(false); }
 }
@@ -2464,7 +2464,7 @@ function exportCurrent(){
   return exportEski();
 }
 async function exportEski(asBlob){
-  if(!pageCount()){ toast('add some pages first', 'error'); return; }
+  if(!pageCount()){ toast('Add some pages first', 'error'); return; }
   try{
     loading(true, asBlob ? 'building preview' : 'packing your eski');
         await new Promise(r=>setTimeout(r,30)); // let the overlay paint before the heavy zip work
@@ -2527,7 +2527,7 @@ async function exportEski(asBlob){
       .replace(/^-+|-+$/g,'')||'untitled')+'.eski';
     aEl.click();
     setTimeout(()=>URL.revokeObjectURL(aEl.href), 4000);
-    toast('exported '+aEl.download);
+    toast('Exported '+aEl.download);
   }catch(err){ toast('export failed: '+err.message, 'error'); }
   finally{ loading(false); }
 }
@@ -2900,7 +2900,7 @@ async function makePreview(tracks, kind){
 
 /* A BLOB OUT OF A ZIP HAS NO TYPE. JSZip hands back an empty string, so every
    object in the bucket was stored as application/octet-stream — pages and
-   audio alike. The browser sniffs its way to an <img> anyway, but an <audio>
+   audio alike. The browser sniffs its way to an <img> Anyway, but an <audio>
    element is entitled to refuse a type it was not promised, and a CDN cannot
    make sensible decisions about something it has been told nothing about. */
 const MIME = { png:'image/png', jpg:'image/jpeg', jpeg:'image/jpeg', webp:'image/webp',
@@ -3048,7 +3048,7 @@ async function publishPart(finalStatus){
   /* a part hangs off a comic ROW. a comic opened from a file has no row to hang
      off, so exporting is the only honest thing to offer there. */
   if(!baseComicId){
-    toast('this comic was opened from a file, not the library, so there is nothing to '
+    toast('This comic was opened from a file, not the library, so there is nothing to '
       + 'attach a ' + noun + ' to. exporting it as a file instead.', 'error');
     return exportPart(kind);
   }
@@ -3061,12 +3061,12 @@ async function publishPart(finalStatus){
   if(kind === 'vo'){
     const keys = [...new Set(tracks.map(t => t.character).filter(Boolean))];
     if(keys.length > 1)
-      return toast('a voice track covers one character. this has ' + keys.length, 'error');
+      return toast('A voice track covers one character. this has ' + keys.length, 'error');
     characterKey = keys[0] || null;
     // the database requires it: a vo nobody can attribute to a character cannot
     // be swapped in against that character later
     if(!characterKey)
-      return toast('say which character these lines are for before you ' + verb +
+      return toast('Say which character these lines are for before you ' + verb +
         ' them. pick one on each line in the page panel.', 'error');
     const cov = coverageFor(characterKey);
     if(cov.pct < 100 && !draft)
@@ -3193,8 +3193,8 @@ async function saveComic(finalStatus){
   if(uerr) return toast('ESK-2002 your session could not be read: ' + uerr.message +
     '. sign out and back in.', 'error');
   if(!user) return toast('ESK-2001 sign in to ' + verb, 'error');
-  if(!pageCount()) return toast('add some pages first', 'error');
-  if(!(cState.meta.title || '').trim()) return toast('give it a title in settings first', 'error');
+  if(!pageCount()) return toast('Add some pages first', 'error');
+  if(!(cState.meta.title || '').trim()) return toast('Give it a title in settings first', 'error');
 
   const say = t => { $('loading-lbl').textContent = t; };
   try{
@@ -3337,7 +3337,7 @@ async function saveComic(finalStatus){
    not. the title carries the state for anyone hovering. */
 document.addEventListener('eski-auth', e => {
   const b = $('publish-btn');
-  if(b) b.title = e.detail.user ? 'put this in the library' : 'sign in to publish';
+  if(b) b.title = e.detail.user ? 'Put this in the library' : 'Sign in to publish';
 });
 
 /* ---------------- preview in the real reader ----------------
@@ -3347,7 +3347,7 @@ document.addEventListener('eski-auth', e => {
    second implementation that would drift. */
 let previewUrl = null;
 async function previewInReader(){
-  if(!pageCount()){ toast('add some pages first', 'error'); return; }
+  if(!pageCount()){ toast('Add some pages first', 'error'); return; }
   const blob = await exportEski(true);
   if(!blob) return;
   if(previewUrl) URL.revokeObjectURL(previewUrl);
@@ -3369,7 +3369,7 @@ const settings=(()=>{ try{ return JSON.parse(localStorage.getItem('eski-settings
 function paintDark(){
   const b=$('set-dark'), l=$('set-dark-lbl');
   if(b) b.classList.toggle('on', !!settings.dark);
-  if(l) l.textContent = 'dark mode: ' + (settings.dark?'on':'off');
+  if(l) l.textContent = 'Dark mode: ' + (settings.dark?'On':'Off');
 }
 function toggleDark(){
   settings.dark=!settings.dark;

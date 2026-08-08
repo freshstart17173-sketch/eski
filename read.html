@@ -256,7 +256,7 @@ body.focus .settings{position:fixed;right:12px;bottom:calc(var(--bar) + 12px);z-
 /* "on" / "off" is a VALUE, not a label, so it is lowercase like every other
    value on the site — see the three rules at the head of broadsheet.css. */
 .tgl{border:1px solid var(--rule-hair);background:none;color:var(--label);padding:0 var(--s2);
-  height:22px;font-size:10px;letter-spacing:.12em;text-transform:lowercase;
+  height:22px;font-size:10px;letter-spacing:.12em;
   transition:all var(--t-fast) var(--ease)}
 .tgl:hover{color:var(--ink);border-color:var(--ink)}
 .tgl.on{background:var(--mark);border-color:var(--mark);color:var(--paper)}
@@ -403,10 +403,10 @@ footer a:hover{color:var(--ink)}
   <a class="mark" href="index.html">eski<i>!</i></a>
   <span class="what" id="what" hidden><span class="ttl" id="what-ttl"></span><span id="what-sub"></span></span>
   <nav>
-    <a href="index.html">home</a>
-    <a href="index.html#browse">browse</a>
-    <a href="author.html">studio</a>
-    <a href="profile.html">profile</a>
+    <a href="index.html">Home</a>
+    <a href="index.html#browse">Browse</a>
+    <a href="author.html">Studio</a>
+    <a href="profile.html">Profile</a>
   </nav>
 </header>
 
@@ -415,14 +415,14 @@ footer a:hover{color:var(--ink)}
   <div class="viewer-col">
     <div class="viewer" id="viewer">
       <div class="drop-overlay" id="drop-overlay">
-        <div class="big" id="drop-big">nothing loaded</div>
+        <div class="big" id="drop-big">Nothing loaded</div>
         <p class="why" id="drop-sub" hidden></p>
-        <p>pick a comic to start reading.</p>
-        <a class="btn p" href="index.html">go home</a>
+        <p>Pick a comic to start reading.</p>
+        <a class="btn p" href="index.html">Go home</a>
       </div>
       <div class="pages" id="pages" style="display:none">
-        <img id="page-left" alt="comic page" fetchpriority="high">
-        <img id="page-right" alt="comic page" style="display:none">
+        <img id="page-left" alt="Comic page" fetchpriority="high">
+        <img id="page-right" alt="Comic page" style="display:none">
       </div>
       <div class="scroll-pages" id="scroll-pages"></div>
       <!-- NOT a pointer target: purely the picture of where the bands are,
@@ -434,23 +434,23 @@ footer a:hover{color:var(--ink)}
         <span class="z r"><i data-ico="chevron-right"></i></span>
         <span class="z t"><i data-ico="chevron-up"></i></span>
         <span class="z b"><i data-ico="chevron-down"></i></span>
-        <span class="z mid">zoom</span>
+        <span class="z mid">Zoom</span>
       </div>
       <!-- one-shot indicator: only shown when the current page has one-shots -->
       <div class="os-hint" id="os-hint" style="display:none">
         <span class="os-spk" data-ico="volume-2"></span>
         <span class="os-count" id="os-count">0/0</span>
-        <button class="os-step" data-ico="chevron-up" title="previous sound (up)" onclick="osAdvance(-1)"></button>
-        <button class="os-step" data-ico="chevron-down" title="next sound (down)" onclick="osAdvance(1)"></button>
+        <button class="os-step" data-ico="chevron-up" title="Previous sound (up)" onclick="osAdvance(-1)"></button>
+        <button class="os-step" data-ico="chevron-down" title="Next sound (down)" onclick="osAdvance(1)"></button>
         <span class="os-prog"><span class="os-prog-fill" id="os-prog"></span></span>
       </div>
       <!-- a sibling of .pages, never a child: a pan must not be able to eat
            the click that lands on "fit". -->
       <div class="zoombar" id="zoombar">
-        <button data-z="out" type="button" title="zoom out">&minus;</button>
+        <button data-z="out" type="button" title="Zoom out">&minus;</button>
         <span id="zoom-pct">100%</span>
-        <button data-z="in" type="button" title="zoom in">+</button>
-        <button data-z="fit" type="button" title="fit the page">fit</button>
+        <button data-z="in" type="button" title="Zoom in">+</button>
+        <button data-z="fit" type="button" title="Fit the page">Fit</button>
       </div>
     </div>
 
@@ -458,63 +458,63 @@ footer a:hover{color:var(--ink)}
          is the thing this site is for, and it was only possible from the
          detail sheet before you started reading. -->
     <div class="settings mix" id="mix">
-      <div class="sheet-head"><span>the mix</span>
-        <button data-ico="x" onclick="toggleMix(false)" title="close"></button></div>
+      <div class="sheet-head"><span>The mix</span>
+        <button data-ico="x" onclick="toggleMix(false)" title="Close"></button></div>
       <div id="mix-body"></div>
       <div class="mix-foot">
-        <button class="btn p" id="mix-apply" onclick="applyMix()">read with this mix</button>
+        <button class="btn p" id="mix-apply" onclick="applyMix()">Read with this mix</button>
       </div>
     </div>
 
     <div class="settings" id="settings">
-      <div class="sheet-head"><span>settings</span>
-        <button data-ico="x" onclick="toggleSettings()" title="close"></button></div>
-      <div class="set-row"><span>colour match</span>
-        <button class="tgl" id="set-tint" onclick="toggleTint()">on</button></div>
-      <div class="set-row"><span>reading</span>
+      <div class="sheet-head"><span>Settings</span>
+        <button data-ico="x" onclick="toggleSettings()" title="Close"></button></div>
+      <div class="set-row"><span>Colour match</span>
+        <button class="tgl" id="set-tint" onclick="toggleTint()">On</button></div>
+      <div class="set-row"><span>Reading</span>
         <span class="seg" id="set-reading">
-          <button data-m="file" onclick="setReadingMode('file')">file</button>
-          <button data-m="pages" onclick="setReadingMode('pages')">pages</button>
-          <button data-m="scroll" onclick="setReadingMode('scroll')">scroll</button>
+          <button data-m="file" onclick="setReadingMode('file')">File</button>
+          <button data-m="pages" onclick="setReadingMode('pages')">Pages</button>
+          <button data-m="scroll" onclick="setReadingMode('scroll')">Scroll</button>
         </span></div>
-      <div class="set-row"><span>playback</span>
+      <div class="set-row"><span>Playback</span>
         <span class="seg" id="set-playback">
-          <button data-m="file" onclick="setPlaybackMode('file')">file</button>
-          <button data-m="sync" onclick="setPlaybackMode('sync')">sync</button>
-          <button data-m="playlist" onclick="setPlaybackMode('playlist')">playlist</button>
+          <button data-m="file" onclick="setPlaybackMode('file')">File</button>
+          <button data-m="sync" onclick="setPlaybackMode('sync')">Sync</button>
+          <button data-m="playlist" onclick="setPlaybackMode('playlist')">Playlist</button>
         </span></div>
-      <div class="set-row"><span>direction</span>
+      <div class="set-row"><span>Direction</span>
         <span class="seg" id="set-dir">
-          <button data-m="file" onclick="setDirMode('file')">file</button>
-          <button data-m="ltr" onclick="setDirMode('ltr')">ltr</button>
-          <button data-m="rtl" onclick="setDirMode('rtl')">rtl</button>
+          <button data-m="file" onclick="setDirMode('file')">File</button>
+          <button data-m="ltr" onclick="setDirMode('ltr')">Ltr</button>
+          <button data-m="rtl" onclick="setDirMode('rtl')">Rtl</button>
         </span></div>
-      <div class="set-row"><span>crossfade</span>
+      <div class="set-row"><span>Crossfade</span>
         <span class="seg" id="set-fade">
-          <button data-m="file" onclick="setFadeMode('file')">file</button>
-          <button data-m="fixed" onclick="setFadeMode('fixed')">fixed</button>
-          <button data-m="off" onclick="setFadeMode('off')">off</button>
+          <button data-m="file" onclick="setFadeMode('file')">File</button>
+          <button data-m="fixed" onclick="setFadeMode('fixed')">Fixed</button>
+          <button data-m="off" onclick="setFadeMode('off')">Off</button>
         </span></div>
-      <div class="set-row" id="set-fade-secs-row" style="display:none"><span>fixed length</span>
+      <div class="set-row" id="set-fade-secs-row" style="display:none"><span>Fixed length</span>
         <input type="number" id="set-fade-secs" min="0" max="10" step="0.5" value="1.5"
-               onchange="setFadeSecs(this.value)"> <span>s</span></div>
-      <div class="set-row"><span>duck under voices</span>
+               onchange="setFadeSecs(this.value)"> <span>S</span></div>
+      <div class="set-row"><span>Duck under voices</span>
         <span class="seg" id="set-duck">
-          <button data-m="off" onclick="setDuckMode('off')">off</button>
-          <button data-m="light" onclick="setDuckMode('light')">light</button>
-          <button data-m="medium" onclick="setDuckMode('medium')">medium</button>
-          <button data-m="strong" onclick="setDuckMode('strong')">strong</button>
+          <button data-m="off" onclick="setDuckMode('off')">Off</button>
+          <button data-m="light" onclick="setDuckMode('light')">Light</button>
+          <button data-m="medium" onclick="setDuckMode('medium')">Medium</button>
+          <button data-m="strong" onclick="setDuckMode('strong')">Strong</button>
         </span></div>
-      <div class="set-row"><span>one-shots loop</span>
-        <button class="tgl" id="set-osloop" onclick="toggleOsLoop()">off</button></div>
-      <div class="set-row"><span><span data-ico="moon"></span>dark mode</span>
-        <button class="tgl" id="set-dark" onclick="toggleDark()">off</button></div>
+      <div class="set-row"><span>One-shots loop</span>
+        <button class="tgl" id="set-osloop" onclick="toggleOsLoop()">Off</button></div>
+      <div class="set-row"><span><span data-ico="moon"></span>Dark mode</span>
+        <button class="tgl" id="set-dark" onclick="toggleDark()">Off</button></div>
       <!-- the four words, for the phone where the header is gone -->
       <div class="set-row set-nav">
-        <a href="index.html">home</a>
-        <a href="index.html#browse">browse</a>
-        <a href="author.html">studio</a>
-        <a href="profile.html">profile</a>
+        <a href="index.html">Home</a>
+        <a href="index.html#browse">Browse</a>
+        <a href="author.html">Studio</a>
+        <a href="profile.html">Profile</a>
       </div>
     </div>
 
@@ -528,28 +528,28 @@ footer a:hover{color:var(--ink)}
          in: which score you are listening to, where you are, and the
          controls. one fixed-height row. -->
     <div class="player-bar" id="player-bar" style="display:none">
-      <div class="pb-score" id="pb-score"><span>score</span><b id="pb-score-name"></b>
+      <div class="pb-score" id="pb-score"><span>Score</span><b id="pb-score-name"></b>
         <i class="eq" id="pb-eq" aria-hidden="true"><s></s><s></s><s></s></i></div>
       <span class="pb-pages">
         <span id="vt-info-text"></span>
-        <select id="chapter-sel" title="jump to a chapter" style="display:none"
+        <select id="chapter-sel" title="Jump to a chapter" style="display:none"
                 onchange="goToPage(parseInt(this.value)-1, true)"></select>
-        <input type="number" id="page-jump" min="1" title="go to page"
+        <input type="number" id="page-jump" min="1" title="Go to page"
                onkeydown="if(event.key==='Enter'){goToPage(parseInt(this.value)-1,true);this.blur()}">
       </span>
       <div class="pb-right">
-        <button class="btn" data-ico="maximize-2" onclick="toggleFocus()" title="fullscreen (f)">focus</button>
+        <button class="btn" data-ico="maximize-2" onclick="toggleFocus()" title="Fullscreen (f)">Focus</button>
         <a class="btn" id="next-chapter" data-ico="chevron-right" href="#"
-           style="display:none" title="next in this series">next</a>
-        <button class="btn icon-btn" id="keys-btn" data-ico="keyboard" onclick="toggleKeys()" title="controls (?)"></button>
-        <button class="btn" id="mix-btn" data-ico="list-music" onclick="toggleMix()" title="voices and score">the mix</button>
+           style="display:none" title="Next in this series">Next</a>
+        <button class="btn icon-btn" id="keys-btn" data-ico="keyboard" onclick="toggleKeys()" title="Controls (?)"></button>
+        <button class="btn" id="mix-btn" data-ico="list-music" onclick="toggleMix()" title="Voices and score">The mix</button>
         <!-- carries the page you are on, so a comment written here says which
              page it is about, and so back lands you where you left off -->
         <a class="btn" id="cm-btn" data-ico="message-square" href="#"
-           style="display:none" title="comments">comments</a>
-        <button class="btn" id="settings-btn" data-ico="settings" onclick="toggleSettings()" title="reader settings">settings</button>
-        <button class="btn" id="mute-btn" data-ico="volume-2" onclick="toggleMute()" title="mute (m)">mute</button>
-        <input type="range" id="vol-slider" min="0" max="100" value="80" title="volume"
+           style="display:none" title="Comments">Comments</a>
+        <button class="btn" id="settings-btn" data-ico="settings" onclick="toggleSettings()" title="Reader settings">Settings</button>
+        <button class="btn" id="mute-btn" data-ico="volume-2" onclick="toggleMute()" title="Mute (m)">Mute</button>
+        <input type="range" id="vol-slider" min="0" max="100" value="80" title="Volume"
                oninput="setVolume(parseInt(this.value))">
       </div>
     </div>
@@ -557,19 +557,19 @@ footer a:hover{color:var(--ink)}
 </div>
 
 <footer>
-  <span>comics with soundtracks and voice</span>
+  <span>Comics with soundtracks and voice</span>
   <span class="sp"></span>
-  <a href="author.html">studio</a>
-  <a href="index.html">home</a>
-  <a href="https://discord.gg/UFNpnHAbD" target="_blank" rel="noopener">discord</a>
+  <a href="author.html">Studio</a>
+  <a href="index.html">Home</a>
+  <a href="https://discord.gg/UFNpnHAbD" target="_blank" rel="noopener">Discord</a>
 </footer>
 
 <!-- hotkeys cheat sheet (toggle, separate from the player bar) -->
 <div class="keys-scrim" id="keys-scrim" onclick="toggleKeys(false)"></div>
 <div class="keys-panel" id="keys-panel">
   <div class="keys-head"><span data-ico="keyboard"></span>
-    <span class="keys-keyboard">hotkeys</span><span class="keys-touch">controls</span>
-    <button data-ico="x" onclick="toggleKeys(false)" title="close"></button></div>
+    <span class="keys-keyboard">Hotkeys</span><span class="keys-touch">Controls</span>
+    <button data-ico="x" onclick="toggleKeys(false)" title="Close"></button></div>
   <!-- A PHONE HAS NO KEYS. The panel showed a keyboard either way, which on
        a phone is a list of things you cannot do and no mention of the things
        you can. Both are here; css shows whichever matches the pointer. -->
@@ -577,25 +577,25 @@ footer a:hover{color:var(--ink)}
     <div class="tapmap" aria-hidden="true">
       <span class="l">&#8592;</span><span class="r">&#8594;</span>
       <span class="t">&#8593;</span><span class="b">&#8595;</span>
-      <span class="c">zoom</span>
+      <span class="c">Zoom</span>
     </div>
     <div class="keys-grid">
-      <kbd>edges</kbd><span>tap the left or right edge to turn the page</span>
-      <kbd>top / foot</kbd><span>step through the sounds on this page</span>
-      <kbd>middle</kbd><span>double tap or pinch to zoom, drag to pan</span>
-      <kbd>hold</kbd><span>nothing — a long press never turns the page</span>
+      <kbd>Edges</kbd><span>Tap the left or right edge to turn the page</span>
+      <kbd>Top / foot</kbd><span>Step through the sounds on this page</span>
+      <kbd>Middle</kbd><span>Double tap or pinch to zoom, drag to pan</span>
+      <kbd>Hold</kbd><span>Nothing — a long press never turns the page</span>
     </div>
   </div>
   <div class="keys-grid keys-keyboard">
-    <kbd>&#8592; &#8594;</kbd><span>turn page (or tap the left / right edge)</span>
-    <kbd>space</kbd><span>pause / resume the soundtrack</span>
-    <kbd>&#8595;</kbd><span>next one-shot on this page</span>
-    <kbd>&#8593;</kbd><span>previous one-shot</span>
-    <kbd>shift+space</kbd><span>pause / resume the current one-shot</span>
-    <kbd>f</kbd><span>fullscreen</span>
-    <kbd>m</kbd><span>mute</span>
-    <kbd>d</kbd><span>dark mode</span>
-    <kbd>?</kbd><span>this panel</span>
+    <kbd>&#8592; &#8594;</kbd><span>Turn page (or tap the left / right edge)</span>
+    <kbd>Space</kbd><span>Pause / resume the soundtrack</span>
+    <kbd>&#8595;</kbd><span>Next one-shot on this page</span>
+    <kbd>&#8593;</kbd><span>Previous one-shot</span>
+    <kbd>Shift+space</kbd><span>Pause / resume the current one-shot</span>
+    <kbd>F</kbd><span>Fullscreen</span>
+    <kbd>M</kbd><span>Mute</span>
+    <kbd>D</kbd><span>Dark mode</span>
+    <kbd>?</kbd><span>This panel</span>
   </div>
 </div>
 
@@ -650,7 +650,7 @@ function toast(msg, kind){
   clearTimeout(t._h);
   if(!err){ t._h = setTimeout(()=>t.classList.remove('show'), 3200); return; }
   const x = document.createElement('button');
-  x.className = 'toast-x'; x.type = 'button'; x.title = 'dismiss'; x.textContent = '×';
+  x.className = 'toast-x'; x.type = 'button'; x.title = 'Dismiss'; x.textContent = '×';
   x.addEventListener('click', ()=>t.classList.remove('show'));
   t.appendChild(x);
 }
@@ -702,7 +702,7 @@ async function mergePart(comic, zip){
   let m; try{ m = JSON.parse(await mf.async('string')); }catch(e){ return 0; }
   if(!m.kind || m.kind === 'base') return 0;
   if(m.base && comic.baseId && m.base.id !== comic.baseId){
-    toast('skipped a part built for a different comic', 'error');
+    toast('Skipped a part built for a different comic', 'error');
     return 0;
   }
   let n = 0;
@@ -796,7 +796,7 @@ async function comicFromZip(zip, fileName){
     /* manifest order is queue order; a stable sort keeps it within a trigger page */
     tracks.sort((a,b)=>a.from-b.from);
     if(tracks.some(t=>t.external))
-      toast('old streaming tracks in this file will stay silent', 'error');
+      toast('Old streaming tracks in this file will stay silent', 'error');
   }
   let coverEntry = zip.file('.eski/cover.png') || zip.file('.eski/cover.jpg') || null;
   return {
@@ -1059,7 +1059,7 @@ function prefetchAround(i){
    tells you nothing you did not already know from the blank screen. */
 function showBusy(on, failed){
   const b = $('drop-big');
-  b.textContent = on ? 'loading' : (failed ? 'could not load that comic' : 'nothing loaded');
+  b.textContent = on ? 'Loading' : (failed ? 'Could not load that comic' : 'Nothing loaded');
   b.classList.toggle('busy', on);
   const p = $('drop-sub');
   if(p){
@@ -1080,8 +1080,8 @@ function openComic(comic){
   $('drop-overlay').style.display = 'none';
   $('player-bar').style.display = 'flex';
   $('what').hidden = false;
-  $('what-ttl').textContent = comic.title || 'untitled';
-  $('what-sub').textContent = comic.creator ? 'by ' + comic.creator : '';
+  $('what-ttl').textContent = comic.title || 'Untitled';
+  $('what-sub').textContent = comic.creator ? 'By ' + comic.creator : '';
   paintScore();
   scrollBuiltFor = null;
   warm.clear();                 // decoded pages belong to the comic that opened them
@@ -1136,7 +1136,7 @@ function buildScroller(){
     d.dataset.i = i;
     d.style.minHeight = '70vh';
     const img = document.createElement('img');
-    img.alt = 'page '+(i+1);
+    img.alt = 'Page '+(i+1);
     d.appendChild(img);
     sc.appendChild(d);
     scrollObserver.observe(d);
@@ -1295,7 +1295,7 @@ function updatePageChrome(){
      to push the mute button off the end. Same information, fewer words. */
   const shown = `${currentPage+1}`, of = current.pages.length;
   $('vt-info-text').textContent = matchMedia('(max-width:640px)').matches
-    ? `${shown}/${of}` : `page ${shown} of ${of}`;
+    ? `${shown}/${of}` : `Page ${shown} of ${of}`;
   $('page-jump').value = currentPage+1;
   $('page-jump').max = current.pages.length;
   paintChapters();
@@ -1331,7 +1331,7 @@ function paintNextChapter(){
   const near = currentPage >= current.pages.length - 2;
   if(!nx || !near){ b.style.display = 'none'; return; }
   b.style.display = '';
-  b.textContent = q.get('nextTitle') || 'next';
+  b.textContent = q.get('nextTitle') || 'Next';
   b.insertAdjacentHTML('afterbegin', iconSvg('chevron-right'));
   b.href = 'read.html?read=' + encodeURIComponent(nx);
 }
@@ -1996,7 +1996,7 @@ function paintScore(){
   const box = $('pb-score');
   const name = current && current.scoreName;
   box.classList.toggle('silent', !name);
-  $('pb-score-name').textContent = name || 'none';
+  $('pb-score-name').textContent = name || 'None';
   paintPlaying();
 }
 /* driven by the elements themselves rather than a timer, so it is exact and
@@ -2191,9 +2191,9 @@ document.addEventListener('pointerdown', e => {
 }, { capture: true });
 function paintSettings(){
   const dk = $('set-dark');
-  if(dk){ dk.classList.toggle('on', settings.dark); dk.textContent = settings.dark ? 'on' : 'off'; }
+  if(dk){ dk.classList.toggle('on', settings.dark); dk.textContent = settings.dark ? 'On' : 'Off'; }
   $('set-tint').classList.toggle('on', settings.tint);
-  $('set-tint').textContent = settings.tint ? 'on' : 'off';
+  $('set-tint').textContent = settings.tint ? 'On' : 'Off';
   $('set-fade').querySelectorAll('button').forEach(b=>
     b.classList.toggle('on', b.dataset.m===settings.fadeMode));
   $('set-fade-secs-row').style.display = settings.fadeMode==='fixed' ? 'flex' : 'none';
@@ -2207,7 +2207,7 @@ function paintSettings(){
   const dq = $('set-duck');
   if(dq) dq.querySelectorAll('button').forEach(b=>b.classList.toggle('on', b.dataset.m===effDuck()));
   const ol = $('set-osloop');
-  if(ol){ ol.classList.toggle('on', effOsLoop()); ol.textContent = effOsLoop() ? 'on' : 'off'; }
+  if(ol){ ol.classList.toggle('on', effOsLoop()); ol.textContent = effOsLoop() ? 'On' : 'Off'; }
 }
 /* ================================================================
    THE MIX SHEET.
@@ -2248,7 +2248,7 @@ function paintMix(){
 
   let html = '';
   if(cast.length || vos.length){
-    html += '<div class="mix-head">voices</div>';
+    html += '<div class="mix-head">Voices</div>';
     const seen = new Set();
     for(const ch of cast){
       const key = ch.key || ch.name;
@@ -2258,18 +2258,18 @@ function paintMix(){
       html += mine.length
         ? mine.map(v => row('part:' + v.id, v.owner_name || 'someone',
             v.title || null, on.has('part:' + v.id))).join('')
-        : '<div class="mix-note">nobody has voiced this yet</div>';
+        : '<div class="mix-note">Nobody has voiced this yet</div>';
     }
     for(const v of vos) if(!seen.has(v.character_key))
       html += `<div class="mix-char">${esc(v.character_key || 'someone')}</div>` +
         row('part:' + v.id, v.owner_name || 'someone', v.title || null, on.has('part:' + v.id));
   }
-  html += '<div class="mix-head">score</div>';
+  html += '<div class="mix-head">Score</div>';
   html += row('score:none', 'no score', 'voices only', on.has('score:none'));
   html += scores.length
     ? scores.map(sc => row('part:' + sc.id, sc.title || 'untitled',
         'by ' + (sc.owner_name || 'someone'), on.has('part:' + sc.id))).join('')
-    : '<div class="mix-note">only the author\'s score so far</div>';
+    : '<div class="mix-note">Only the author\'s score so far</div>';
   box.innerHTML = html;
 
   box.querySelectorAll('input[data-ref]').forEach(i => {

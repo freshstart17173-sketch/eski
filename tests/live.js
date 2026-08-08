@@ -194,7 +194,7 @@ async function buildEski(){
   await r.goto(SITE + '/read.html?read=db:' + row.id, { waitUntil:'domcontentloaded', timeout:60000 });
   await r.waitForSelector('#player-bar', { state:'visible', timeout:60000 });
   await r.keyboard.press('Shift');                        // any gesture unlocks audio
-  ok(await r.textContent('#vt-info-text') === 'page 1 of ' + PAGES,
+  ok(await r.textContent('#vt-info-text') === 'Page 1 of ' + PAGES,
     'opens on page 1 of ' + PAGES, await r.textContent('#vt-info-text'));
 
   const seen = [];

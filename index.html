@@ -9,7 +9,7 @@
      answer at two depths, and it must stay ahead of the first relative url. -->
 <base href="/">
 <title>eski</title>
-<meta name="description" content="comics scored with music and voice.">
+<meta name="description" content="Comics scored with music and voice.">
 <link rel="icon" type="image/png" href="eski_logo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -370,14 +370,14 @@ button.link:hover{color:var(--ink)}
 <header class="top site-header">
   <a class="mark" href="index.html">eski<i>!</i></a>
   <nav id="nav">
-    <button data-pane="home" aria-current="page">home</button>
-    <button data-pane="browse">browse</button>
-    <a href="author.html">studio</a>
-    <a href="profile.html">profile</a>
+    <button data-pane="home" aria-current="page">Home</button>
+    <button data-pane="browse">Browse</button>
+    <a href="author.html">Studio</a>
+    <a href="profile.html">Profile</a>
   </nav>
   <!-- the active nav word already says this. kept in the DOM because the
        smoke suite reads it, and it pre-dates the nav redesign. -->
-  <span class="hdr-label" hidden>home</span>
+  <span class="hdr-label" hidden>Home</span>
   <!-- the local shelf was owner staging until publishing existed. this input
        is the one remaining programmatic path, which the smoke suite drives. -->
   <input type="file" id="shelf-input" accept=".eski,.cbz,.zip" multiple style="display:none"
@@ -388,55 +388,55 @@ button.link:hover{color:var(--ink)}
 <main class="pane on" id="pane-home"><div class="wrap">
 
   <section>
-    <div class="head"><h2>new comics</h2><span class="n" id="new-n"></span>
-      <span class="sp"></span><button class="link" data-pane="browse">all comics</button></div>
+    <div class="head"><h2>New comics</h2><span class="n" id="new-n"></span>
+      <span class="sp"></span><button class="link" data-pane="browse">All comics</button></div>
     <div id="grid">
-      <div class="state"><div class="spinner"></div>loading library&#8230;</div>
+      <div class="state"><div class="spinner"></div>Loading library&#8230;</div>
     </div>
-    <button class="seemore" data-more="new" hidden>see more</button>
+    <button class="seemore" data-more="new" hidden>See more</button>
   </section>
 
   <section id="sec-follow" hidden>
-    <div class="head"><h2>from people you follow</h2><span class="n" id="follow-n"></span>
-      <span class="sp"></span><a href="profile.html">who you follow</a></div>
+    <div class="head"><h2>From people you follow</h2><span class="n" id="follow-n"></span>
+      <span class="sp"></span><a href="profile.html">Who you follow</a></div>
     <div class="grid" id="grid-follow"></div>
-    <button class="seemore" data-more="follow" hidden>see more</button>
+    <button class="seemore" data-more="follow" hidden>See more</button>
   </section>
 
   <section>
-    <div class="head"><h2>voiceover needed</h2><span class="n" id="roles-n"></span>
-      <span class="sp"></span><button class="link" data-browse="roles">see all</button></div>
+    <div class="head"><h2>Voiceover needed</h2><span class="n" id="roles-n"></span>
+      <span class="sp"></span><button class="link" data-browse="roles">See all</button></div>
     <div class="grid" id="grid-roles"></div>
     <div class="empty" id="roles-empty" hidden></div>
-    <button class="seemore" data-more="roles" hidden>see more</button>
+    <button class="seemore" data-more="roles" hidden>See more</button>
   </section>
 
-  <div class="foot"><span>est. 2026</span>
-    <span><a href="legal.html#terms">terms</a> · <a href="legal.html#privacy">privacy</a> ·
-      <a href="legal.html#takedown">takedown</a></span></div>
+  <div class="foot"><span>Est. 2026</span>
+    <span><a href="legal.html#terms">Terms</a> · <a href="legal.html#privacy">Privacy</a> ·
+      <a href="legal.html#takedown">Takedown</a></span></div>
 </div></main>
 
 <!-- ================= BROWSE — eskis, roles, or eskis with no score ====== -->
 <main class="pane" id="pane-browse"><div class="wrap">
-  <div class="head"><h2>browse</h2><span class="n" id="browse-n"></span></div>
+  <div class="head"><h2>Browse</h2><span class="n" id="browse-n"></span></div>
   <div class="bar modes">
     <div class="seg" id="browse-modes">
       <button data-mode="comics" aria-selected="true">eskis</button>
-      <button data-mode="roles" aria-selected="false">roles that need a voice</button>
+      <button data-mode="roles" aria-selected="false">Roles that need a voice</button>
       <button data-mode="scores" aria-selected="false">eskis with no score</button>
     </div>
     <span class="sp" style="flex:1"></span>
     <span class="modenote" id="modenote"></span>
   </div>
   <div class="bar">
-    <input type="search" id="b-q" placeholder="search">
-    <span class="lbl">sort</span>
+    <input type="search" id="b-q" placeholder="Search">
+    <span class="lbl">Sort</span>
     <select id="b-sort"></select>
     <div class="chips" id="b-filters"></div>
   </div>
   <div class="grid" id="grid-browse"></div>
   <div class="rolelist" id="rolelist"></div>
-  <div class="empty" id="browse-empty" hidden>nothing matches that.</div>
+  <div class="empty" id="browse-empty" hidden>Nothing matches that.</div>
 </div></main>
 
 <div class="ov overlay" id="overlay" onclick="if(event.target===this)close_()">
@@ -445,21 +445,21 @@ button.link:hover{color:var(--ink)}
 
 <div class="ov overlay" id="ob" onclick="if(event.target===this)closeOnboarding()">
   <div class="sheet wide modal">
-    <div class="t">how eski works</div>
-    <p class="ob-sub">comics, scored and voiced.</p>
+    <div class="t">How eski works</div>
+    <p class="ob-sub">Comics, scored and voiced.</p>
     <div class="ob-list">
-      <div class="ob-item"><b>the soundtrack follows the page</b>
-        <span>music is mapped to page ranges, so turning a page changes the score.</span></div>
-      <div class="ob-item"><b>dialogue is voiced</b>
-        <span>each character is performed by a voice actor. sound effects sit alongside them.</span></div>
-      <div class="ob-item"><b>you pick the mix</b>
-        <span>swap in a different cast or a different soundtrack, or read it silent.</span></div>
-      <div class="ob-item"><b>anyone can contribute</b>
-        <span>voice a character, score a comic, or publish your own.</span></div>
+      <div class="ob-item"><b>The soundtrack follows the page</b>
+        <span>Music is mapped to page ranges, so turning a page changes the score.</span></div>
+      <div class="ob-item"><b>Dialogue is voiced</b>
+        <span>Each character is performed by a voice actor. sound effects sit alongside them.</span></div>
+      <div class="ob-item"><b>You pick the mix</b>
+        <span>Swap in a different cast or a different soundtrack, or read it silent.</span></div>
+      <div class="ob-item"><b>Anyone can contribute</b>
+        <span>Voice a character, score a comic, or publish your own.</span></div>
     </div>
     <div class="acts" style="padding:0;border:0;position:static">
-      <button class="btn primary" onclick="closeOnboarding()">start reading</button>
-      <a class="btn" id="ob-discord" href="#" target="_blank" rel="noopener">discord</a>
+      <button class="btn primary" onclick="closeOnboarding()">Start reading</button>
+      <a class="btn" id="ob-discord" href="#" target="_blank" rel="noopener">Discord</a>
     </div>
   </div>
 </div>
@@ -669,11 +669,11 @@ function capRows(c){
     : '—';
   return `<div class="cap">
     <div class="r"><span class="k">by</span><span class="v">${mq(c.by || '—')}</span></div>
-    <div class="r"><span class="k">extent</span><span class="v">${mq(extent)}</span></div>
-    <div class="r"><span class="k">voices</span><span class="v ${v.cls}">${esc(v.t)}</span></div>
-    <div class="r"><span class="k">score</span><span class="v ${s.cls}">${esc(s.t)}</span></div>
-    <div class="r"><span class="k">kudos</span><span class="v">${nfmt(c.kudos)}</span></div>
-    ${c.commentCount ? `<div class="r"><span class="k">comments</span>
+    <div class="r"><span class="k">Extent</span><span class="v">${mq(extent)}</span></div>
+    <div class="r"><span class="k">Voices</span><span class="v ${v.cls}">${esc(v.t)}</span></div>
+    <div class="r"><span class="k">Score</span><span class="v ${s.cls}">${esc(s.t)}</span></div>
+    <div class="r"><span class="k">Kudos</span><span class="v">${nfmt(c.kudos)}</span></div>
+    ${c.commentCount ? `<div class="r"><span class="k">Comments</span>
       <span class="v">${nfmt(c.commentCount)}</span></div>` : ''}
   </div>`;
 }
@@ -723,9 +723,9 @@ function cardEl(c, note, browse){
     b.appendChild(bar);
   }
   if(c.local){
-    cell.insertAdjacentHTML('beforeend', '<span class="shelved">shelved</span>');
+    cell.insertAdjacentHTML('beforeend', '<span class="shelved">Shelved</span>');
     const rm = document.createElement('button');
-    rm.className = 'rm'; rm.title = 'remove from the shelf';
+    rm.className = 'rm'; rm.title = 'Remove from the shelf';
     rm.setAttribute('data-ico','x');
     rm.onclick = async e=>{ e.stopPropagation(); await shelfDel(c.localId); boot(); };
     cell.appendChild(rm);
@@ -780,7 +780,7 @@ function roleRowEl(r){
      <p class="blurb">${esc(r.blurb || '')}</p>
      <div class="lines"><b class="n">${r.lines ? nfmt(r.lines) + ' lines' : 'no lines yet'}</b>
        ${c.pp ? c.pp + ' pp' : ''}</div>
-     <div class="go"><span class="btn sm">voice this</span></div>`;
+     <div class="go"><span class="btn sm">Voice this</span></div>`;
   b.addEventListener('click', ()=>{ const cc = byId(r.comic); if(cc) openDetails(cc, r); });
   return b;
 }
@@ -1086,9 +1086,9 @@ async function boot(){
         openDetails(one[0], null, { fromHistory:true, deep:true });
       }else if(!platformDown){
         grid.className = '';
-        grid.innerHTML = `<div class="state">no eski lives at that link.
-          <br><br>it may have been unpublished, or the address is a typo.
-          <br><br><a href="/">all eskis</a></div>`;
+        grid.innerHTML = `<div class="state">No eski lives at that link.
+          <br><br>It may have been unpublished, or the address is a typo.
+          <br><br><a href="/">All eskis</a></div>`;
       }
     }catch(e){}
   }
@@ -1114,12 +1114,12 @@ async function boot(){
   if(!COMICS.length){
     grid.className = '';
     grid.innerHTML = platformDown
-      ? `<div class="state">could not reach the shelf.
+      ? `<div class="state">Could not reach the shelf.
            <br><br><code class="why">${esc(platformWhy)}</code><br><br>
-           anything you drop here still works offline.</div>`
-      : `<div class="state">nothing published yet. build one in the
-           <a href="author.html">studio</a>, then publish it or keep it as a draft
-           on your <a href="profile.html">profile</a>.</div>`;
+           Anything you drop here still works offline.</div>`
+      : `<div class="state">Nothing published yet. build one in the
+           <a href="author.html">Studio</a>, then publish it or keep it as a draft
+           on your <a href="profile.html">Profile</a>.</div>`;
     paintIcons();
     renderRoles(); renderBrowse();
     return;
@@ -1164,7 +1164,7 @@ function renderHome(){
   document.querySelectorAll('[data-more]').forEach(b=>{
     const k = b.dataset.more, left = totals[k] - shown[k];
     b.hidden = left <= 0;
-    b.textContent = `see more · ${left} left`;
+    b.textContent = `See more · ${left} left`;
   });
 }
 function renderRoles(){
@@ -1387,8 +1387,8 @@ function pickRow(ref, checked, label, sub, previewKey, group){
     <span class="who"><b>${esc(label)}</b>${sub ? ` <span>${esc(sub)}</span>` : ''}</span>
     ${previewKey
       ? `<button class="prev" data-preview="${esc(window.eski.mediaUrl(previewKey))}"
-           title="hear a few seconds">${PLAY}</button>`
-      : '<span class="prev ghost" title="no preview clip for this one">' + PLAY + '</span>'}
+           title="Hear a few seconds">${PLAY}</button>`
+      : '<span class="prev ghost" title="No preview clip for this one">' + PLAY + '</span>'}
   </label>`;
 }
 
@@ -1414,8 +1414,8 @@ function playPreview(btn){
     requestAnimationFrame(()=>{ if(previewBtn === btn) btn.classList.add('playing'); });
   });
   previewAudio.addEventListener('ended', stopPreview);
-  previewAudio.addEventListener('error', ()=>{ toast('that preview would not play'); stopPreview(); });
-  previewAudio.play().catch(()=>{ toast('that preview would not play'); stopPreview(); });
+  previewAudio.addEventListener('error', ()=>{ toast('That preview would not play'); stopPreview(); });
+  previewAudio.play().catch(()=>{ toast('That preview would not play'); stopPreview(); });
 }
 function siblings(c){
   if(!c.seriesTitle) return [];
@@ -1449,7 +1449,7 @@ function openDetails(c, role, opts){
     ${r.blurb ? `<p class="rolenote">${esc(r.blurb)}</p>` : ''}
     <div class="openline"><span></span><span class="pfp">—</span>
       <span>nobody has voiced this yet${r.lines ? ' · ' + nfmt(r.lines) + ' lines' : ''}</span>
-      ${c.dbId ? `<a class="btn sm" href="studio.html?base=${esc(c.dbId)}&as=vo">voice this</a>`
+      ${c.dbId ? `<a class="btn sm" href="studio.html?base=${esc(c.dbId)}&as=vo">Voice this</a>`
                : '<span></span>'}</div>`).join('');
 
   const localHtml = localParts.map(p=>pickRow('idb:' + p.id, true,
@@ -1468,15 +1468,15 @@ function openDetails(c, role, opts){
         : `<div class="openline"><span></span><span class="pfp">${esc(initials(s.by||''))}</span>
              <span>${esc(s.title)} · plays by default</span><span></span></div>`).join('')
     : `<div class="openline"><span></span><span class="pfp">—</span>
-        <span>no score yet</span>
-        ${c.dbId ? `<a class="btn sm" href="studio.html?base=${esc(c.dbId)}&as=soundtrack">score it</a>`
+        <span>No score yet</span>
+        ${c.dbId ? `<a class="btn sm" href="studio.html?base=${esc(c.dbId)}&as=soundtrack">Score it</a>`
                  : '<span></span>'}</div>`) + silentRow;
 
   const mine = !!(me && c.ownerId && me.id === c.ownerId);
   const later = isLater(c);
 
   sheet.innerHTML =
-   `<button class="sheet-x" onclick="close_()" title="close" aria-label="close">&times;</button>
+   `<button class="sheet-x" onclick="close_()" title="Close" aria-label="Close">&times;</button>
     <button class="sheet-home" onclick="close_()">&larr; all eskis</button>
     <div class="sheetbody">
       <div class="left">
@@ -1486,12 +1486,12 @@ function openDetails(c, role, opts){
       </div>
       <div class="right">
         <h3>${esc(c.title)}</h3>
-        <div class="subhead"><span>tags</span><span class="sp"></span>
+        <div class="subhead"><span>Tags</span><span class="sp"></span>
           <span class="n">${c.tags.length}</span></div>
         <div class="alltags" id="d-tags"></div>
         ${c.dbId ? `<div class="tagadd">
           <input id="d-tag-input" maxlength="40" placeholder="${me ? 'add a tag' : 'sign in to add a tag'}"${me?'':' disabled'}>
-          <button class="btn sm" id="d-tag-add"${me?'':' disabled'}>add</button></div>` : ''}
+          <button class="btn sm" id="d-tag-add"${me?'':' disabled'}>Add</button></div>` : ''}
 
         ${sibs.length > 1 ? `<div class="subhead"><span>${esc(c.seriesTitle)}</span>
           <span class="sp"></span><span class="n">${sibs.length}</span></div>
@@ -1499,38 +1499,38 @@ function openDetails(c, role, opts){
             aria-pressed="${s.id===c.id}">${s.ch || '?'}</button>`).join('')}</div>` : ''}
 
         <button class="fold" aria-expanded="true"><span class="caret"></span>
-          <span>voices</span><span class="sp"></span><span class="n">${esc(v.t)}</span></button>
+          <span>Voices</span><span class="sp"></span><span class="n">${esc(v.t)}</span></button>
         <div class="folded">${castHtml}${openHtml}${localHtml}${
           (castHtml||openHtml||localHtml) ? '' :
-          '<div class="openline"><span></span><span class="pfp">—</span><span>no cast written yet</span><span></span></div>'}</div>
+          '<div class="openline"><span></span><span class="pfp">—</span><span>No cast written yet</span><span></span></div>'}</div>
 
         <button class="fold" aria-expanded="true" style="margin-top:var(--s4)">
-          <span class="caret"></span><span>score</span><span class="sp"></span>
+          <span class="caret"></span><span>Score</span><span class="sp"></span>
           <span class="n">${c.scores.length} available</span></button>
         <div class="folded">${scoreHtml}</div>
 
-        <div class="mixline">your mix travels with the link you open it from.</div>
+        <div class="mixline">Your mix travels with the link you open it from.</div>
       </div>
     </div>
 
     ${c.slug ? `<div class="thread" id="d-thread">
       <button class="fold thread-open" id="d-cm-toggle" aria-expanded="false">
-        <span class="caret"></span><span>comments</span><span class="sp"></span>
+        <span class="caret"></span><span>Comments</span><span class="sp"></span>
         <span class="n" id="d-cm-n">${nfmt(c.commentCount || 0)}</span></button>
       <!-- .folded hides on an ADJACENT sibling selector, so nothing may come
            between these two -->
       <div class="folded" id="d-cm-body"></div>
-      <p class="spoilernote">shut on purpose — people discuss the ending in here.</p>
+      <p class="spoilernote">Shut on purpose — people discuss the ending in here.</p>
     </div>` : ''}
 
     <div class="acts">
-      <a class="btn p" id="ov-read" href="#">read it with this mix</a>
+      <a class="btn p" id="ov-read" href="#">Read it with this mix</a>
       <button class="btn" id="ov-later" aria-pressed="${later}">${later ? 'on your shelf' : 'read later'}</button>
       <button class="btn" id="ov-kudos" aria-pressed="${!!c.kudosMine}"${c.dbId ? '' : ' hidden'}>${
         c.kudosMine ? 'kudos given · ' : 'kudos '}${nfmt(c.kudos)}</button>
       <a class="btn" id="ov-contrib" href="${c.dbId ? 'studio.html?base=' + esc(c.dbId) + '&as=vo' : '#'}"
-         ${(!c.dbId || mine) ? 'hidden' : ''}>voice or score it</a>
-      <button class="btn" id="ov-share"${c.slug ? '' : ' hidden'}>copy link</button>
+         ${(!c.dbId || mine) ? 'hidden' : ''}>Voice or score it</a>
+      <button class="btn" id="ov-share"${c.slug ? '' : ' hidden'}>Copy link</button>
     </div>`;
 
   paintTags(c);
@@ -1659,16 +1659,16 @@ function paintTags(c){
         const mine = me && t.added_by === me.id;
         const ownsComic = me && c.ownerId === me.id;
         return `<span class="tag ${mine?'mine':''}" data-tag="${esc(t.tag)}">${esc(t.tag)}${
-          (mine || ownsComic) ? `<b data-untag="${esc(t.tag)}" class="x" title="remove"> ×</b>` : ''}</span>`;
+          (mine || ownsComic) ? `<b data-untag="${esc(t.tag)}" class="x" title="Remove"> ×</b>` : ''}</span>`;
       }).join('')
-    : '<span class="note-line">no tags yet.</span>';
+    : '<span class="note-line">No tags yet.</span>';
 }
 async function addTag(c){
   const inp = document.getElementById('d-tag-input');
   if(!inp || !sb || !me) return;
   const tag = inp.value.trim().toLowerCase();
-  if(tag.length < 2 || tag.length > 40){ toast('a tag is 2 to 40 characters'); return; }
-  if(c.tagRows.some(t=>t.tag === tag)){ inp.value = ''; toast('already tagged'); return; }
+  if(tag.length < 2 || tag.length > 40){ toast('A tag is 2 to 40 characters'); return; }
+  if(c.tagRows.some(t=>t.tag === tag)){ inp.value = ''; toast('Already tagged'); return; }
   const { error } = await sb.from('comic_tags')
     .insert({ comic_id: c.dbId, tag, added_by: me.id });
   // 23505 is someone else adding it first, which is the same outcome
@@ -1703,7 +1703,7 @@ async function removeTag(c, tag){
    ================================================================ */
 function shareComic(c){
   const url = location.origin + comicPath(c);
-  const done = ()=>toast('link copied');
+  const done = ()=>toast('Link copied');
   /* the share sheet on a phone is the better answer and the only one that
      reaches messages and whatsapp; the clipboard is the desktop answer. */
   if(navigator.share && matchMedia('(pointer:coarse)').matches){
@@ -1711,10 +1711,10 @@ function shareComic(c){
     return;
   }
   if(navigator.clipboard && navigator.clipboard.writeText){
-    navigator.clipboard.writeText(url).then(done, ()=>prompt('copy this link', url));
+    navigator.clipboard.writeText(url).then(done, ()=>prompt('Copy this link', url));
     return;
   }
-  prompt('copy this link', url);
+  prompt('Copy this link', url);
 }
 
 const CM = { rows: [], loaded: null, replyTo: null, editing: null, open: false };
@@ -1766,8 +1766,8 @@ async function loadComments(c){
   const body = document.getElementById('d-cm-body');
   if(!body || !c.dbId) return;
   if(CM.loaded === c.dbId){ renderComments(c); return; }
-  if(!sb){ body.innerHTML = '<p class="note-line">comments need the server, and it is not reachable.</p>'; return; }
-  body.innerHTML = '<p class="note-line">loading…</p>';
+  if(!sb){ body.innerHTML = '<p class="note-line">Comments need the server, and it is not reachable.</p>'; return; }
+  body.innerHTML = '<p class="note-line">Loading…</p>';
   const { data, error } = await sb.from('comments')
     .select('*').eq('comic_id', c.dbId)
     .order('created_at', { ascending: true }).limit(500);
@@ -1787,13 +1787,13 @@ function cmRow(c, r, isReply){
   const mine = me && r.user_id === me.id;
   const owns = me && c.ownerId === me.id;
   if(r.deleted_at) return `<div class="cm gone${isReply?' reply':''}">
-    <span class="cm-who">removed</span></div>`;
+    <span class="cm-who">Removed</span></div>`;
   if(CM.editing === r.id) return `<div class="cm${isReply?' reply':''}">
     <div class="cm-head"><span class="cm-who">${esc(r.author_name)}</span></div>
     <textarea class="cm-box" id="cm-edit" maxlength="4000">${esc(r.body)}</textarea>
     <div class="cm-acts">
-      <button class="btn sm" data-cm-save="${esc(r.id)}">save</button>
-      <button class="btn sm" data-cm-cancel="1">cancel</button></div></div>`;
+      <button class="btn sm" data-cm-save="${esc(r.id)}">Save</button>
+      <button class="btn sm" data-cm-cancel="1">Cancel</button></div></div>`;
   return `<div class="cm${isReply?' reply':''}">
     <div class="cm-head">
       <span class="cm-who">${esc(r.author_name)}</span>
@@ -1803,21 +1803,21 @@ function cmRow(c, r, isReply){
     </div>
     <p class="cm-body">${esc(r.body).replace(/\n/g,'<br>')}</p>
     <div class="cm-acts">
-      ${(me && !isReply) ? `<button class="lnk" data-cm-reply="${esc(r.id)}">reply</button>` : ''}
-      ${mine ? `<button class="lnk" data-cm-edit="${esc(r.id)}">edit</button>` : ''}
-      ${(mine || owns) ? `<button class="lnk" data-cm-del="${esc(r.id)}">delete</button>` : ''}
+      ${(me && !isReply) ? `<button class="lnk" data-cm-reply="${esc(r.id)}">Reply</button>` : ''}
+      ${mine ? `<button class="lnk" data-cm-edit="${esc(r.id)}">Edit</button>` : ''}
+      ${(mine || owns) ? `<button class="lnk" data-cm-del="${esc(r.id)}">Delete</button>` : ''}
     </div>
     ${CM.replyTo === r.id ? composer(c, r.id) : ''}</div>`;
 }
 
 function composer(c, parentId){
-  if(!me) return `<p class="note-line">sign in to join the thread.</p>`;
+  if(!me) return `<p class="note-line">Sign in to join the thread.</p>`;
   return `<div class="cm-write">
     <textarea class="cm-box" id="cm-new-${parentId||'top'}" maxlength="4000"
       placeholder="${parentId ? 'write a reply' : 'say something about this eski'}"></textarea>
     <div class="cm-acts">
-      <button class="btn sm p" data-cm-post="${esc(parentId||'')}">post</button>
-      ${parentId ? '<button class="lnk" data-cm-cancel="1">cancel</button>' : ''}
+      <button class="btn sm p" data-cm-post="${esc(parentId||'')}">Post</button>
+      ${parentId ? '<button class="lnk" data-cm-cancel="1">Cancel</button>' : ''}
     </div></div>`;
 }
 
@@ -1836,7 +1836,7 @@ function renderComments(c){
     (live.length
       ? live.map(r=>cmRow(c, r, false) +
           (kids.get(r.id)||[]).map(k=>cmRow(c, k, true)).join('')).join('')
-      : '<p class="note-line">nothing here yet. be the first.</p>');
+      : '<p class="note-line">Nothing here yet. be the first.</p>');
 }
 
 async function postComment(c, parentId){
@@ -1844,7 +1844,7 @@ async function postComment(c, parentId){
   if(!box) return;
   const text = box.value.trim();
   if(!text) return;
-  if(!me){ toast('sign in to comment'); return; }
+  if(!me){ toast('Sign in to comment'); return; }
   box.disabled = true;
   const row = { comic_id: c.dbId, user_id: me.id, body: text };
   if(parentId) row.parent_id = parentId;
@@ -1940,14 +1940,14 @@ async function toggleLater(c){
   }
   const on = isLater(c);
   btn.setAttribute('aria-pressed', on);
-  btn.textContent = on ? 'on your shelf' : 'read later';
+  btn.textContent = on ? 'On your shelf' : 'Read later';
   toast(on ? 'added to your shelf' : 'removed from your shelf');
   renderHome();
 }
 /* kudos: one row per (comic, user), and removable — the delete policy exists
    now, so this is a real toggle rather than a one-way count. */
 async function giveKudos(c, btn){
-  if(!sb || !me){ btn.textContent = 'sign in to give kudos'; return; }
+  if(!sb || !me){ btn.textContent = 'Sign in to give kudos'; return; }
   btn.disabled = true;
   let error;
   if(c.kudosMine){
@@ -1969,7 +1969,7 @@ async function giveKudos(c, btn){
 }
 function paintKudos(c, btn){
   btn.setAttribute('aria-pressed', c.kudosMine ? 'true' : 'false');
-  btn.textContent = (c.kudosMine ? 'kudos given · ' : 'kudos ') + nfmt(c.kudos);
+  btn.textContent = (c.kudosMine ? 'Kudos given · ' : 'Kudos ') + nfmt(c.kudos);
 }
 
 /* "/" jumps to browse and its search, which is the only search now */

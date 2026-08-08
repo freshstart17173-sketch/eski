@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>eski — author studio</title>
-<meta name="description" content="write the cast and transcribe the pages.">
+<meta name="description" content="Write the cast and transcribe the pages.">
 <link rel="icon" type="image/png" href="eski_logo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -173,10 +173,10 @@ body{margin:0;display:flex;flex-direction:column;overflow:hidden}
 <header class="top site-header">
   <a class="mark" href="index.html">eski<i>!</i></a>
   <nav id="nav">
-    <a href="index.html">home</a>
-    <a href="index.html#browse">browse</a>
-    <a href="author.html" aria-current="page">studio</a>
-    <a href="profile.html">profile</a>
+    <a href="index.html">Home</a>
+    <a href="index.html#browse">Browse</a>
+    <a href="author.html" aria-current="page">Studio</a>
+    <a href="profile.html">Profile</a>
   </nav>
   <span class="what" id="what" hidden><span class="ttl" id="what-ttl"></span><span id="what-sub"></span></span>
   <span class="sp"></span>
@@ -184,7 +184,7 @@ body{margin:0;display:flex;flex-direction:column;overflow:hidden}
 </header>
 
 <main id="main">
-  <div class="state"><div class="spinner"></div>loading&#8230;</div>
+  <div class="state"><div class="spinner"></div>Loading&#8230;</div>
 </main>
 
 <div class="toast" id="toast"></div>
@@ -245,13 +245,13 @@ async function boot(){
   const eski = await platform();
   sb = eski && await eski.ready;
   if(!sb){
-    $('main').innerHTML = '<div class="state">could not reach the server.<br><br>' +
+    $('main').innerHTML = '<div class="state">Could not reach the server.<br><br>' +
       esc((eski && eski.bootError) || 'ESK-1005 platform.js did not load at all') + '</div>';
     return;
   }
   me = (await sb.auth.getUser()).data.user || null;
   if(!me){
-    $('main').innerHTML = '<div class="state">sign in to write a cast and transcribe your pages.</div>';
+    $('main').innerHTML = '<div class="state">Sign in to write a cast and transcribe your pages.</div>';
     return;
   }
   const base = new URLSearchParams(location.search).get('base');
@@ -271,20 +271,20 @@ async function pickComic(){
   }
   const rows = r.data || [];
   $('main').innerHTML = `<div class="picker">
-    <div class="head"><h2>author studio</h2><span class="n">${rows.length}</span>
-      <span class="sp"></span><a href="studio.html">make a new one →</a></div>
+    <div class="head"><h2>Author studio</h2><span class="n">${rows.length}</span>
+      <span class="sp"></span><a href="studio.html">Make a new one →</a></div>
     <p class="note-line" style="padding:var(--s3) 0">
       pick a comic to write its cast and transcribe its pages. pages and audio
-      are imported in the <a href="studio.html">composer</a>.</p>
+      are imported in the <a href="studio.html">Composer</a>.</p>
     ${rows.length ? `<div class="picklist">${rows.map(c=>`
       <button class="pickrow" data-id="${esc(c.id)}">
         <span class="plate">${c.thumb_key || c.cover_key
           ? `<img src="${esc(mediaUrl(c.thumb_key || c.cover_key))}" alt="">` : ''}</span>
         <span><span class="ttl">${esc(c.title || 'untitled')}</span>
           <span class="sub" style="display:block">${esc(c.status)}</span></span>
-        <span class="btn sm">open</span>
+        <span class="btn sm">Open</span>
       </button>`).join('')}</div>`
-      : '<div class="empty">you have not made a comic yet. the <a href="studio.html">composer</a> imports the pages.</div>'}
+      : '<div class="empty">You have not made a comic yet. the <a href="studio.html">Composer</a> Imports the pages.</div>'}
   </div>`;
   $('main').querySelectorAll('[data-id]').forEach(b=>b.addEventListener('click', ()=>{
     location.search = '?base=' + encodeURIComponent(b.dataset.id);
@@ -307,7 +307,7 @@ async function openComic(id){
   if(c.data.owner_id !== me.id){
     $('main').innerHTML = `<div class="state">this is not your comic, so its cast and
       transcript are not yours to write.<br><br>
-      <a class="btn" href="index.html#browse">find something to voice instead</a></div>`;
+      <a class="btn" href="index.html#browse">Find something to voice instead</a></div>`;
     return;
   }
   if(pg.error){
@@ -350,11 +350,11 @@ function freeKey(name){
 /* ---------------- the frame ---------------- */
 function paintShell(){
   $('what').hidden = false;
-  $('what-ttl').textContent = comic.title || 'untitled';
+  $('what-ttl').textContent = comic.title || 'Untitled';
   $('what-sub').textContent = comic.status;
   $('acts').innerHTML =
-    `<button class="btn p" id="save">save</button>
-     <a class="btn" href="studio.html?base=${esc(comic.id)}" title="pages, audio and publishing">composer</a>`;
+    `<button class="btn p" id="save">Save</button>
+     <a class="btn" href="studio.html?base=${esc(comic.id)}" title="Pages, audio and publishing">Composer</a>`;
   $('save').addEventListener('click', save);
 
   $('main').outerHTML =
@@ -362,31 +362,31 @@ function paintShell(){
        <div class="frame">
          <div class="pane centre" id="viewer"></div>
          <div class="pane side">
-           <div class="panehead"><span>page <b id="ph-n">1</b> of ${pages.length}</span>
+           <div class="panehead"><span>Page <b id="ph-n">1</b> of ${pages.length}</span>
              <span class="sp"></span><span id="ph-lines"></span></div>
            <div class="sect">
-             <h3>cast</h3>
+             <h3>Cast</h3>
              <div id="cast"></div>
              <div style="display:flex;gap:var(--s1);margin-top:var(--s2)">
-               <input id="cast-name" placeholder="add a character" maxlength="60"
+               <input id="cast-name" placeholder="Add a character" maxlength="60"
                  style="flex:1;min-width:0;height:24px;font-size:var(--fs-xs);
                         border:1px solid var(--rule-hair);background:var(--surface);
                         color:var(--ink);padding:0 var(--s2)">
-               <button class="btn sm" id="cast-add">add</button>
+               <button class="btn sm" id="cast-add">Add</button>
              </div>
            </div>
            <div class="sect" style="border-bottom:0">
-             <h3>what happens on this page</h3>
+             <h3>What happens on this page</h3>
              <div id="lines"></div>
              <div class="addbox" id="addbox">
                <button class="btn sm" id="add-toggle" aria-expanded="false">+ add</button>
                <div class="addmenu">
                  <button data-add="dialogue" style="--kind:var(--e-dialogue)"><i></i>
-                   <b>a line</b><span>a character speaks</span></button>
+                   <b>A line</b><span>A character speaks</span></button>
                  <button data-add="narration" style="--kind:var(--e-narration)"><i></i>
-                   <b>narration</b><span>the narrator speaks</span></button>
+                   <b>Narration</b><span>The narrator speaks</span></button>
                  <button data-add="effect" style="--kind:var(--e-effect)"><i></i>
-                   <b>a sound effect</b><span>nobody speaks</span></button>
+                   <b>A sound effect</b><span>Nobody speaks</span></button>
                </div>
              </div>
              <p class="note-line" style="margin-top:var(--s3)">
@@ -437,7 +437,7 @@ function renderViewer(){
   const l = $('ph-lines');
   if(l){
     const k = linesOn(page).length;
-    l.textContent = k ? k + (k === 1 ? ' entry' : ' entries') : 'nothing yet';
+    l.textContent = k ? k + (k === 1 ? ' Entry' : ' Entries') : 'Nothing yet';
   }
 }
 
@@ -454,15 +454,15 @@ function renderStrip(){
 
 function renderCast(){
   const box = $('cast');
-  if(!cast.length){ box.innerHTML = '<div class="note-line">no cast yet. add the characters who speak.</div>'; return; }
+  if(!cast.length){ box.innerHTML = '<div class="note-line">No cast yet. add the characters who speak.</div>'; return; }
   box.innerHTML = cast.map((c,i)=>`
     <div class="castrow">
       <input class="nm" value="${esc(c.name)}" data-i="${i}" data-f="name" maxlength="60">
       <select data-i="${i}" data-f="kind">
-        <option value="character"${c.kind==='character'?' selected':''}>character</option>
-        <option value="narrator"${c.kind==='narrator'?' selected':''}>narrator</option>
+        <option value="character"${c.kind==='character'?' selected':''}>Character</option>
+        <option value="narrator"${c.kind==='narrator'?' selected':''}>Narrator</option>
       </select>
-      <button class="x" data-rm="${i}" title="remove from the cast">×</button>
+      <button class="x" data-rm="${i}" title="Remove from the cast">×</button>
     </div>
     <textarea class="castnote" data-i="${i}" data-f="blurb" rows="2" maxlength="400"
       placeholder="how does ${esc(c.name)} sound? this is what a voice actor reads before taking the part."
@@ -529,7 +529,7 @@ function renderLines(){
   const box = $('lines');
   const mine = linesOn(page);
   if(!mine.length){
-    box.innerHTML = '<div class="note-line">nothing happens on this page yet.</div>';
+    box.innerHTML = '<div class="note-line">Nothing happens on this page yet.</div>';
     renderStrip();
     return;
   }
@@ -544,15 +544,15 @@ function renderLines(){
             <option value=""${l.character_key?'':' selected'}>— who says it —</option>
             ${cast.map(c=>`<option value="${esc(c.key)}"${c.key===l.character_key?' selected':''}>${esc(c.name)}</option>`).join('')}
           </select>`}
-          ${l.hasAudio ? '<span class="eflag on">recorded</span>' : ''}
-          ${locked ? '<span class="eflag">a published voice fills this</span>' : ''}
+          ${l.hasAudio ? '<span class="eflag on">Recorded</span>' : ''}
+          ${locked ? '<span class="eflag">A published voice fills this</span>' : ''}
         </div>
         <textarea data-f="text" rows="2" placeholder="${esc(KINDS[k].placeholder)}">${esc(l.line_text)}</textarea>
       </div>
       <div class="tools">
-        <button data-mv="-1" title="move up">↑</button>
-        <button data-mv="1" title="move down">↓</button>
-        <button class="x" data-del="1" title="remove this">×</button>
+        <button data-mv="-1" title="Move up">↑</button>
+        <button data-mv="1" title="Move down">↓</button>
+        <button class="x" data-del="1" title="Remove this">×</button>
       </div>
     </div>`;
   }).join('');
@@ -584,7 +584,7 @@ function narratorKey(){
   return c.key;
 }
 function addLine(kind){
-  if(!pages.length) return toast('this comic has no pages yet', true);
+  if(!pages.length) return toast('This comic has no pages yet', true);
   maxOrder += 1;
   const speaker = kind === 'effect' ? null
     : kind === 'narration' ? narratorKey()
@@ -610,7 +610,7 @@ function move(l, dir){
 }
 function del(l){
   if(filledBy.has(l.id))
-    return toast('a published voice fills this line. it cannot be removed without breaking that part.', true);
+    return toast('A published voice fills this line. it cannot be removed without breaking that part.', true);
   if(l.hasAudio && !confirm('this has a recording on it. remove anyway?')) return;
   if(l.isNew) lines = lines.filter(x=>x !== l);
   else l.deleted = true;
@@ -665,7 +665,7 @@ async function save(){
     }
     lines = lines.filter(l=>!l.deleted);
     dirty = false;
-    toast('saved');
+    toast('Saved');
   }catch(e){
     toast((e && e.message) || String(e), true);
   }finally{

@@ -113,7 +113,7 @@ function ok(cond, name, extra) {
   console.log('reader: boot + demo');
   await page.goto('http://localhost:8931/read.html');
   await page.waitForSelector('#player-bar', { state: 'visible' });
-  ok(await page.textContent('#vt-info-text') === 'page 1 of 6', 'demo opens on page 1 of 6',
+  ok(await page.textContent('#vt-info-text') === 'Page 1 of 6', 'demo opens on page 1 of 6',
     await page.textContent('#vt-info-text'));
   await page.waitForFunction(() => window.nowPlaying().includes('first song'));
   ok(true, 'track 1 named');
@@ -266,7 +266,7 @@ function ok(cond, name, extra) {
   ok(await jump() === '1', 'still on page 1');
 
   console.log('reader: fullscreen focus');
-  await page.click('button[title="fullscreen (f)"]');
+  await page.click('button[title="Fullscreen (f)"]');
   await page.waitForFunction(() => document.body.classList.contains('focus'));
   ok(await page.isHidden('#player-bar'), 'player bar hidden in focus');
   ok(await page.isHidden('.site-header'), 'header hidden in focus');
@@ -606,18 +606,18 @@ function ok(cond, name, extra) {
   ok(await comp.evaluate(() => [...document.querySelectorAll('svg.ico')].every(s => s.innerHTML.trim())),
     'no empty icon glyphs');
   const chipW0 = await comp.evaluate(() => document.querySelector('.chip-img').offsetWidth);
-  await comp.click('.sec-head .zoomers button[title="bigger"]');
+  await comp.click('.sec-head .zoomers button[title="Bigger"]');
   ok(await comp.evaluate(() => document.querySelector('.chip-img').offsetWidth) > chipW0,
     'media tray zoom grows the image blocks');
   const pgW0 = await comp.evaluate(() => document.querySelector('.pgcard').offsetWidth);
-  await comp.click('#pages-ctrls button[title="bigger pages"]');
+  await comp.click('#pages-ctrls button[title="Bigger pages"]');
   ok(await comp.evaluate(() => document.querySelector('.pgcard').offsetWidth) > pgW0,
     'page zoom grows the thumbnails');
 
   console.log('composer: removing a song from the panel');
   await comp.evaluate(() => openQueue(cState.tracks.find(t => t.type === 'music').from));
   const nMusic = await comp.evaluate(() => cState.tracks.filter(t => t.type === 'music').length);
-  await comp.click('.songrow button[title="remove"]');
+  await comp.click('.songrow button[title="Remove"]');
   ok(await comp.evaluate(() => cState.tracks.filter(t => t.type === 'music').length) === nMusic - 1,
     'the panel removes a song');
   await comp.close();
@@ -660,7 +660,7 @@ function ok(cond, name, extra) {
     return s.backgroundColor !== c.backgroundColor && parseFloat(s.height) >= 8;
   }), 'the two soundtrack shades differ and the bars are the taller size');
   ok(await oc.evaluate(() => { openQueue(1); return document.getElementById('qp-title').textContent; })
-    === 'page 1 of 3', 'clicking a page retargets the panel');
+    === 'Page 1 of 3', 'clicking a page retargets the panel');
   await oc.evaluate(() => openQueue(2));
   // reorder in the queue
   const order0 = await oc.evaluate(() => cState.tracks.filter(t => t.type === 'oneshot').map(t => t.title));
@@ -1038,7 +1038,7 @@ function ok(cond, name, extra) {
     'no score means no music tracks at all');
   ok(await ns.evaluate(() => current.tracks.some(t => t.type === 'oneshot')),
     'the voices are still there');
-  ok(await ns.textContent('#pb-score-name') === 'none', 'the bar says there is no score',
+  ok(await ns.textContent('#pb-score-name') === 'None', 'the bar says there is no score',
     await ns.textContent('#pb-score-name'));
   await ns.close();
 
@@ -1240,8 +1240,8 @@ function ok(cond, name, extra) {
   console.log('browse: search, sort and the three modes');
   // the header no longer carries a search of its own: the design puts one on
   // browse, beside the sort and the filter chips, and that is the one tested.
-  ok(await plat.evaluate(() => document.querySelector('.hdr-label').textContent === 'home' &&
-    document.querySelector('#nav [aria-current]').textContent.trim() === 'home'),
+  ok(await plat.evaluate(() => document.querySelector('.hdr-label').textContent === 'Home' &&
+    document.querySelector('#nav [aria-current]').textContent.trim() === 'Home'),
     'the shelf is called home');
   await plat.waitForSelector('.cell[data-search]');
   ok(await plat.evaluate(() => !document.getElementById('search-btn') &&

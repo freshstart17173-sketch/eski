@@ -30,6 +30,14 @@
           somebody else's work.
       Section HEADINGS are a fourth thing and rule 4 covers them.
 
+      NOTHING IS SET IN text-transform:lowercase. There is no rule
+      that lowercases; there never was a good one. It forced other
+      people's words — tags, chapter names, one-shot names, file
+      names — into a house voice they did not ask for, and it made
+      "eski" and "Eski" and "ESKI" indistinguishable on screen while
+      being three different strings underneath. Sentences read as
+      sentences, and a proper noun keeps its capital.
+
    2. COLOUR. Near-black (--mark) is the only fill on the page, and
       it means "this one is on": selected, pressed, current, primary.
       Sage (--accent) never fills anything. It colours the NUMBERS
@@ -175,7 +183,7 @@ img{display:block;max-width:100%}
   text-transform:uppercase}
 
 .chips{display:flex;gap:var(--s1);flex-wrap:wrap}
-.chip{font-size:10px;letter-spacing:.1em;text-transform:lowercase;height:22px;
+.chip{font-size:10px;letter-spacing:.1em;height:22px;
   padding:0 var(--s2);border:1px solid var(--rule-hair);background:none;color:var(--label);
   transition:all var(--t-fast) var(--ease)}
 .chip:hover{color:var(--ink);border-color:var(--ink)}
@@ -185,7 +193,7 @@ img{display:block;max-width:100%}
 /* a segmented switch: two or three words, one of them filled */
 .seg{display:flex;border:1px solid var(--rule)}
 .seg button{background:none;border:0;border-left:1px solid var(--rule);padding:0 var(--s3);
-  height:24px;font-size:10px;letter-spacing:.12em;text-transform:lowercase;color:var(--label);
+  height:24px;font-size:10px;letter-spacing:.12em;color:var(--label);
   transition:all var(--t-fast) var(--ease)}
 .seg button:first-child{border-left:0}
 .seg button:hover{color:var(--ink)}
@@ -317,7 +325,7 @@ img{display:block;max-width:100%}
 
 /* ---------- see more ---------- */
 .seemore{width:100%;background:none;border:0;border-bottom:1px solid var(--rule);
-  padding:var(--s2);font-size:var(--fs-micro);letter-spacing:.16em;text-transform:lowercase;
+  padding:var(--s2);font-size:var(--fs-micro);letter-spacing:.16em;
   color:var(--label);transition:background var(--t-fast) var(--ease),
   color var(--t-fast) var(--ease)}
 .seemore:hover{background:var(--rule);color:var(--paper)}
