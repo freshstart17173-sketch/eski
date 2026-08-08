@@ -79,24 +79,42 @@ Cloudflare becomes the authoritative DNS host; Vercel keeps serving the site
 through an ordinary DNS record. This is a completely standard arrangement and
 the free plan covers it.
 
+### What you will see if you try it first
+
+Attaching the bucket before the zone moves fails with:
+
+> That domain was not found on your account. Public bucket access supports
+> only domains on your account and managed through Cloudflare DNS.
+
+That is this whole section, stated as an error. It is not a permissions
+problem and there is nothing to fix in R2 — the zone simply has to be
+Cloudflare's before the custom domain exists as an option.
+
 ### Steps
 
 **1. Write down what Vercel is currently serving.**
-Vercel dashboard → your project → Settings → Domains. Note the records for
-`eski.lol` and `www.eski.lol`. They will be something like:
+Vercel dashboard → your project → Settings → Domains. As of this writing the
+live zone is four A records and nothing else — no CNAME, no MX, no TXT:
 
 ```
-A      eski.lol        76.76.21.21
-CNAME  www.eski.lol    cname.vercel-dns.com
+A   eski.lol       216.198.79.1, 64.29.17.65
+A   www.eski.lol   216.198.79.1, 216.198.79.65
 ```
 
-Take Vercel's values, not these — it hands out per-project targets now.
+**Take Vercel's values, not these.** It hands out per-project targets and
+rotates them; the point of listing them is that the zone is small and boring,
+so this is a low-risk move rather than that these are the numbers to type.
 
 **2. Add the zone to Cloudflare.**
 Cloudflare dashboard → Add a site → `eski.lol` → Free plan. It will scan and
 import what it can find. Check the imported records against step 1 and fix
 anything missing. **Include any MX/TXT records** — email and domain
-verification break silently if you drop them.
+verification break silently if you drop them. (There are none today, which is
+one less thing to get wrong.)
+
+Do this BEFORE touching the nameservers. Cloudflare is not authoritative until
+step 4, so the zone can be wrong for as long as you like at this stage and
+nothing is affected.
 
 **3. Set the Vercel records to DNS only.**
 On the `eski.lol` and `www` records, click the orange cloud so it goes
@@ -108,8 +126,17 @@ The record you are about to create for the bucket is different — that one
 *must* be proxied, and R2 sets it up that way itself.
 
 **4. Change the nameservers at your registrar** to the two Cloudflare gives
-you. Propagation is usually minutes, occasionally a few hours. The site keeps
+you, replacing `ns1.vercel-dns.com` and `ns2.vercel-dns.com`. You are moving
+DNS hosting, **not** the domain registration — the registrar stays whoever it
+is and nothing is transferred.
+
+Propagation is usually minutes, occasionally a few hours. The site keeps
 working throughout, because the records resolve to the same Vercel targets.
+
+Vercel will then show a nameserver warning on the domain. It is expected and
+can be ignored: A-record setup is their supported "external DNS" path, and the
+records still point at them. The domain stays verified and the certificate
+keeps renewing.
 
 Wait until Cloudflare shows the zone as **Active**.
 

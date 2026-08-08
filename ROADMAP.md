@@ -15,7 +15,8 @@ ones I would not leave sitting.
 ## Yours, not mine
 
 Five things no amount of code can do, because they need a dashboard login, a
-legal name, or a decision that is yours. **4b is blocking a live bug.**
+legal name, or a decision that is yours. Two are deferred on purpose, one is
+done, and **item 1 is the one still worth doing now**.
 
 ### 1. Move the media off `r2.dev` — 20 minutes, then some waiting
 
@@ -33,12 +34,19 @@ line in `platform.js` changes: `const R2_BASE = 'https://cdn.eski.lol'`.
 The cache rule is the part not to skip — it is what fixes comics published
 before August, which went up with no cache headers at all.
 
-### 2. Register a DMCA agent — 15 minutes and $6
+### 2. Register a DMCA agent — DEFERRED until there are users
 
-You host other people's artwork; safe harbour is not automatic.
-<https://www.copyright.gov/dmca-directory/>. **Put a three-year reminder in
-your calendar** — the registration expires silently and the protection goes
-with it.
+Your call, and a reasonable one: with no users there is nothing to receive a
+notice about. Two things to know so the deferral stays deliberate rather than
+forgotten.
+
+Safe harbour is not retroactive — it protects you from the moment you
+register, not from the moment you needed it. So the trigger is **the first
+time somebody who is not you uploads artwork**, not "when it gets busy". That
+may be the same day you show anyone the contribute hub.
+
+<https://www.copyright.gov/dmca-directory/>, 15 minutes and $6, and it expires
+silently after three years.
 
 ### 3. Fill in the blanks in `legal.html` — 20 minutes
 
@@ -49,25 +57,24 @@ are product calls, not legal ones: can an author reuse a contributed voiceover
 **outside** eski, and is AI-generated voice allowed and must it be labelled.
 Then delete the red box. Have someone who knows this read it.
 
-### 4. Billing alarms — 10 minutes
+### 4. Billing alarms — DEFERRED until there are users
 
-Supabase pauses a free project after enough inactivity, and a paused project is
-a dead site — turn on whatever usage email they offer. R2 has no egress fees
-but bills per read; set a spend notification. Item 1 cuts those a lot.
+Your call. The spend half is clearly fine to defer: no users means no reads,
+and R2 bills per read.
 
-### 4b. Paste the R2 CORS policy — 5 minutes
+The **pause** half is not really about users, though, and is worth keeping in
+view. Supabase pauses a free project after a stretch of inactivity, and a
+quiet project is exactly the kind that gets paused — a site with no users is
+more at risk of this than a busy one, not less. A paused project is a dead
+site, and the first sign is usually somebody telling you it is broken. If you
+want one thing from this item, it is that one email.
 
-**This one is currently blocking a real bug.** `r2-cors.json` in the repo is
-the corrected policy, but a file in git changes nothing: Cloudflare only reads
-what is in its own dashboard. Until you paste it, opening an eski in the studio
-from a preview deploy or localhost still fails with ESK-6003.
+### 4b. Paste the R2 CORS policy — DONE
 
-R2 → your bucket → Settings → CORS Policy → paste the contents of
-`r2-cors.json` → save. The change is that GET and HEAD are now `*` rather than
-four named origins: reading is public — every `<img>` on the site already
-fetches these objects — so the allowlist blocked no attacker and only ever
-blocked our own `fetch()`. PUT keeps its allowlist, which is the half that
-matters.
+Applied in the dashboard. GET and HEAD are `*`; PUT keeps its allowlist.
+ESK-6003 opening an eski in the studio should be gone from preview deploys and
+localhost — worth confirming once, since it is the only way to know the
+dashboard took it.
 
 Two smaller ones, whenever: start filling `tag_synonyms` (the table and `canonical_tag()` exist, nothing
 reads them yet — see item 12), and delete the orphan draft `untitled-76nm`,
