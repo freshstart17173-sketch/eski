@@ -247,9 +247,23 @@ One `rpc('get_comic', {p_id})` instead of four round trips. On a mobile
 connection at 150 ms RTT that is ~450 ms removed from before-anything-starts.
 RLS still applies (`stable`, not `security definer` — keep it that way).
 
-This is the largest latency win left after the CDN, and it is an hour's work.
+**DONE**, and it turned out to be two wins rather than one. The reader already
+had `get_comic`; home did not, and home was the worse offender — not because
+of the round trip but because of what crossed the wire. The second trip
+fetched every `pages`, `tracks`, `kudos`, `comic_tags` and `comments` row for
+every comic on the shelf and **counted them in javascript**. A 45-page comic
+shipped 45 rows so the browser could learn the number 45.
 
-*Effort: small. Highest value in this file.*
+`get_shelf()` (schema-shelf.sql, applied) returns the comics with the counts
+already computed. On the current data that is 94 page rows plus 11 track rows
+plus the rest, down to one row. At two hundred comics it is the difference
+between tens of thousands of rows and two hundred.
+
+It also found dead weight: the page-key index home built on every load fed
+`pageUrl()`, whose only caller was the continue-reading strip — removed
+earlier the same day. Nothing read it.
+
+*Effort: small. Highest value in this file, and it was.*
 
 ### Move derivative work off the publishing browser — eventually
 

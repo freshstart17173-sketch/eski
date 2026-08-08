@@ -878,80 +878,39 @@ async function loadPlatform(only){
     return [];
   }
   me = eski.user || null;
-  let q = sb.from('comics')
-    .select('*');         /* not a column list: a schema one migration behind should not blank the shelf */
-  if(only && only.slug){
-    /* NO STATUS FILTER when asking for ONE comic by name. Row level security
-       already decides who may see it — the owner can open their own draft or
-       private eski at its own address, everyone else gets nothing — and
-       filtering here as well meant an author could not look at their own
-       unpublished work through the page everybody else uses. */
-    q = q.eq('slug', only.slug).limit(1);
-  }else{
-    q = q.eq('status', 'published')
-         .order('published_at', { ascending: false }).limit(200);
-  }
-  const { data, error } = await q;
-  if(error){
+
+  /* ONE ROUND TRIP, AND POSTGRES DOES THE COUNTING.
+
+     This used to be TWO SERIAL trips — the comics, then eight queries keyed by
+     their ids, which cannot start until the first returns. On a phone that is
+     two round trips before anything can render.
+
+     The payload was the worse half. Those eight fetched every `pages` row,
+     every `tracks` row, and every kudo, tag and comment for up to 200 comics,
+     and then counted them in javascript: a 45-page comic shipped 45 rows so
+     the browser could learn the number 45. get_shelf() returns the comics with
+     their counts already computed. It is STABLE and not SECURITY DEFINER, so
+     it runs as you and every policy applies exactly as it did.
+
+     It fails loudly rather than falling back to the old path. A fallback here
+     would mean keeping both versions of this function forever to cover a
+     window that closes the moment the migration is applied — and a shelf that
+     silently takes the slow path is a bug nobody ever notices. */
+  const shelf = await sb.rpc('get_shelf',
+    { p_slug: (only && only.slug) || null, p_limit: 200 });
+  if(shelf.error){
     platformDown = true;
-    platformWhy = eski.dbError('ESK-5005', 'the shelf query failed', error);
+    platformWhy = shelf.error.code === '42883'
+      ? 'ESK-5035 the shelf needs schema-shelf.sql applying to the database.'
+      : eski.dbError('ESK-5005', 'the shelf query failed', shelf.error);
     return [];
   }
-  const rows = data || [];
+  const rows = shelf.data || [];
   if(!rows.length) return [];
-  const ids = rows.map(r=>r.id);
 
-  /* ponytail: five list queries and the counting happens here rather than in
-     postgres. at a few hundred comics that is one round trip each and a few
-     thousand rows; past that these want to be one rpc returning the counts. */
-  const [pg, tk, ku, pt, tg, sv, fw, cm] = await Promise.all([
-    /* idx and the display key as well as the count: the continue-reading rail
-       shows the last few pages you saw, and these are the same display copies
-       the reader serves, so it costs no extra upload and no extra column. */
-    sb.from('pages').select('comic_id,idx,display_key,image_key').in('comic_id', ids),
-    sb.from('tracks').select('comic_id,type,role,character_key').in('comic_id', ids),
-    sb.from('kudos').select('comic_id,user_id'),
-    sb.from('parts').select('id,comic_id,kind,character_key,owner_name,title,preview_key')
-      .eq('status','published').in('comic_id', ids),
-    sb.from('comic_tags').select('comic_id,tag,added_by').in('comic_id', ids),
-    me ? sb.from('saves').select('*').eq('user_id', me.id) : Promise.resolve({data:[]}),
-    me ? sb.from('follows').select('followee_id').eq('follower_id', me.id) : Promise.resolve({data:[]}),
-    // just the id, for a count. the bodies are fetched only when a thread is
-    // actually opened, which is most of the point of keeping it closed.
-    sb.from('comments').select('comic_id').in('comic_id', ids).is('deleted_at', null)
-  ]);
-
-  const count = (res, key) => {
-    const m = new Map();
-    for(const r of (res && res.data) || []) m.set(r[key], (m.get(r[key])||0) + 1);
-    return m;
-  };
-  const pages = count(pg, 'comic_id');
-  const pageKeys = new Map();
-  for(const p of (pg.data || [])){
-    if(!pageKeys.has(p.comic_id)) pageKeys.set(p.comic_id, []);
-    pageKeys.get(p.comic_id)[p.idx - 1] = p.display_key || p.image_key;
-  }
-  const kudos = count(ku, 'comic_id');
-  const comments = count(cm, 'comic_id');
-  const kudosMine = new Set(me ? (ku.data||[]).filter(k=>k.user_id === me.id).map(k=>k.comic_id) : []);
-
-  // line counts per (comic, character): a dialogue slot is a oneshot track
-  // with role 'line'. this is the only real source of "how big is this part".
-  const lines = new Map();
-  const hasMusic = new Set();
-  for(const t of (tk.data||[])){
-    if(t.type === 'music') hasMusic.add(t.comic_id);
-    if(t.type === 'oneshot' && (t.role||'line') === 'line' && t.character_key)
-      lines.set(t.comic_id+'::'+t.character_key, (lines.get(t.comic_id+'::'+t.character_key)||0) + 1);
-  }
-  const tagsFor = new Map();
-  for(const t of (tg.data||[])){
-    if(!tagsFor.has(t.comic_id)) tagsFor.set(t.comic_id, []);
-    tagsFor.get(t.comic_id).push(t);
-  }
-  const savedBy = new Map((sv.data||[]).map(s=>[s.comic_id, s]));
-  const following = new Set((fw.data||[]).map(f=>f.followee_id));
+  /* the aggregates arrive on the row now, so the only thing left to build
+     client-side is the series sibling count, which is a fact about the LIST
+     rather than about any one comic. */
 
   // series siblings, for "ch1 of 6"
   const seriesCount = new Map();
@@ -960,7 +919,8 @@ async function loadPlatform(only){
 
   ROLES = [];
   const out = rows.map(r=>{
-    const parts = (pt.data||[]).filter(p=>p.comic_id === r.id);
+    const parts = r.parts || [];
+    const lineCounts = r.line_counts || {};
     const cast = Array.isArray(r.cast_list) ? r.cast_list : [];
     // a character is "cast" when at least one published vo names it
     const voFor = new Map();
@@ -968,7 +928,7 @@ async function loadPlatform(only){
       const k = p.character_key || 'untitled';
       if(!voFor.has(k)) voFor.set(k, []);
       voFor.get(k).push({who: p.owner_name || 'someone', partId: p.id,
-        preview: p.preview_key || null, lines: lines.get(r.id+'::'+k) || 0});
+        preview: p.preview_key || null, lines: lineCounts[k] || 0});
     }
     const castOut = [];
     for(const ch of cast){
@@ -977,7 +937,7 @@ async function loadPlatform(only){
       if(voFor.has(key)) castOut.push({char: ch.name || key, key, vos: voFor.get(key)});
       else ROLES.push({id: r.id + '::' + key, name: ch.name || key, comic: r.id,
         kind: ch.kind === 'narrator' ? 'narration' : (ch.kind || 'supporting'),
-        lines: lines.get(r.id+'::'+key) || 0,
+        lines: lineCounts[key] || 0,
         // the note a performer reads before they take the part. the author
         // writes it in the studio's cast editor.
         blurb: ch.blurb || ch.description || ''});
@@ -987,30 +947,29 @@ async function loadPlatform(only){
       if(!cast.some(ch=>(ch.key||ch.id||ch.name) === k)) castOut.push({char:k, key:k, vos});
 
     const scores = [
-      ...(hasMusic.has(r.id) ? [{title:'the author’s score', by:r.owner_name, partId:null, preview:null}] : []),
+      ...(r.has_music ? [{title:'the author’s score', by:r.owner_name, partId:null, preview:null}] : []),
       ...parts.filter(p=>p.kind === 'soundtrack')
         .map(p=>({title: p.title || 'untitled', by: p.owner_name || 'someone',
                   partId: p.id, preview: p.preview_key || null}))
     ];
-    const save = savedBy.get(r.id);
-    const pp = pages.get(r.id) || 0;
+    const save = r.save || null;
+    const pp = r.page_count || 0;
     return {
       id: r.id, dbId: r.id, file: 'db:' + r.id, ownerId: r.owner_id,
       title: r.title || 'untitled', by: r.owner_name || null, desc: r.description || '',
       cover: window.eski.mediaUrl(r.thumb_key || r.cover_key),
       added: r.published_at || r.created_at || '',
       slug: r.slug || null,
-      pageKeys: pageKeys.get(r.id) || [],
       readAt: save ? save.updated_at : null,
-      commentCount: comments.get(r.id) || 0,
+      commentCount: r.comment_count || 0,
       pp, ch: r.series_index || 1, chOf: r.series_title ? (seriesCount.get(r.series_title)||1) : 1,
       seriesTitle: r.series_title || null,
-      kudos: kudos.get(r.id) || 0, kudosMine: kudosMine.has(r.id),
-      tags: (tagsFor.get(r.id)||[]).map(t=>t.tag).sort(),
-      tagRows: tagsFor.get(r.id) || [],
+      kudos: r.kudos_count || 0, kudosMine: !!r.kudos_mine,
+      tags: r.tags || [],
+      tagRows: (r.tags || []).map(t => ({ comic_id: r.id, tag: t })),
       castKnown: cast.length > 0 || castOut.length > 0,
       cast: castOut, scores,
-      follow: following.has(r.owner_id) ? r.owner_name : null,
+      follow: r.following ? r.owner_name : null,
       shelf: save ? save.status : null,
       shelved: !!(save && save.shelved),
       /* what the author allows. absent means the column default, which is
@@ -1368,14 +1327,6 @@ async function recentComments(c){
   return r.data || [];
 }
 
-/* the reader's own page urls, so the strip shows the same bytes it will.
-   only db comics have addressable pages; a local file has none until it is
-   unzipped, and this must not download a comic to draw a thumbnail. */
-function pageUrl(c, n){
-  if(!c.pageKeys || !c.pageKeys.length) return null;
-  const k = c.pageKeys[n - 1];
-  return k ? window.eski.mediaUrl(k) : null;
-}
 
 /* ---------- home. see more adds one more row of whatever it sits under. ---------- */
 const STEP = 5;

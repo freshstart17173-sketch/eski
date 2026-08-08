@@ -107,6 +107,15 @@ script. This is what ESK-1005 is for.
 ### Database
 
 Schema lives in `schema*.sql`, each applied in order and safe to re-run.
+
+**Two reads go through an RPC rather than a query**, because both were serial
+round trips that also counted in the browser what Postgres can count:
+`get_comic(id)` for the reader and `get_shelf(slug, limit)` for home and
+browse. Both are `STABLE` and **not** `SECURITY DEFINER` — they run as the
+caller, so `auth.uid()` is the real user and RLS applies exactly as it does to
+the selects they replaced. Keep it that way; `SECURITY DEFINER` here would be
+a way to leak other people's drafts.
+
 `schema.sql` is the base; the rest add a feature each. **The policies are the
 rule, not the UI** — the studio hides a control it knows is refused, but the
 insert is where the refusal actually happens, which is why closing a consent
@@ -131,7 +140,7 @@ axis works even against a stale page.
 
 ## The tests, and what each is really for
 
-Seven suites. Three need nothing but node.
+Eight suites. Four need nothing but node.
 
 | Suite | Catches |
 |---|---|
@@ -142,6 +151,7 @@ Seven suites. Three need nothing but node.
 | `errors.js` | That a failure names itself instead of being swallowed. |
 | `recording.js` | A take end to end against a fake capture device — no microphone needed. |
 | `viewer-fit.js` | Every page shape fits its box, at every zoom. |
+| `check-sign.mjs` | The signer's refusals, called as a function with no network. |
 
 `tests/shots.js` is not a test — it takes pictures across surface × state ×
 theme × viewport. The `eski-ui-audit` skill is how to read them.
