@@ -140,8 +140,10 @@ const ok = (n, c, extra) => {
   if(auth !== 'ok'){ await browser.close(); process.exit(1); }
 
   await p.goto(BASE + '/c/' + slug, { waitUntil:'domcontentloaded' });
-  await p.waitForFunction(() =>
-    document.getElementById('overlay').classList.contains('open'), null, { timeout: 30000 });
+  await p.waitForFunction(() => {
+    const o = document.getElementById('overlay');       // null mid-navigation
+    return !!o && o.classList.contains('open');
+  }, null, { timeout: 30000 });
   await p.locator('#d-cm-toggle').click();
   await settle(1600);
 
@@ -189,8 +191,10 @@ const ok = (n, c, extra) => {
   ok('and it carries the page you are on', /\?page=\d+#comments$/.test(cmHref || ''));
 
   await p.locator('#cm-btn').click();
-  await p.waitForFunction(() =>
-    document.getElementById('overlay').classList.contains('open'), null, { timeout: 30000 });
+  await p.waitForFunction(() => {
+    const o = document.getElementById('overlay');       // null mid-navigation
+    return !!o && o.classList.contains('open');
+  }, null, { timeout: 30000 });
   await settle(1500);
   ok('following it lands on the comic with the thread already open',
      (await p.locator('#d-cm-toggle').getAttribute('aria-expanded')) === 'true');
@@ -199,8 +203,9 @@ const ok = (n, c, extra) => {
   await p.locator('#cm-new-top').fill(pageStamp);
   await p.locator('[data-cm-post]').first().click();
   await settle(2000);
+  // innerText applies text-transform, and the head is uppercase by design
   ok('a comment written here records the page it came from',
-     /p\.\d+/.test(await body()), (await body()).match(/p\.\d+/)?.[0] || 'no page tag');
+     /p\.\d+/i.test(await body()), (await body()).match(/p\.\d+/i)?.[0] || 'no page tag');
 
   await p.goBack();
   await p.waitForSelector('#player-bar:not([style*="display:none"])', { timeout: 30000 });
@@ -220,6 +225,97 @@ const ok = (n, c, extra) => {
   ok('the harness comments are off the comic again', gone === 0, gone + ' left');
 
   ok('zero console errors across the run', errs.length === 0, errs.slice(0,3).join(' | '));
+
+  /* ---------------------------------------------- the same trip on a phone */
+  console.log('on a phone: read, comment, come back');
+  const phone = await browser.newContext({
+    viewport:{width:390,height:844}, isMobile:true, hasTouch:true, deviceScaleFactor:3,
+    serviceWorkers:'block',
+    userAgent:'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 '+
+              '(KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1' });
+  await wire(phone);
+  const m = await phone.newPage();
+  const mErrs = [];
+  m.on('pageerror', e => mErrs.push(e.message));
+  m.on('console', e => e.type() === 'error' && mErrs.push(e.text()));
+  const mStamp = STAMP + ' from a phone';
+
+  await m.goto(BASE + '/', { waitUntil:'domcontentloaded' });
+  await m.waitForSelector('.card', { timeout: 30000 });
+  await m.evaluate(async ([email, password]) => {
+    await window.eski.sb.auth.signInWithPassword({ email, password });
+  }, [EMAIL, PASSWORD]);
+  await m.waitForTimeout(2500);
+
+  await m.locator('.card').first().tap();
+  await m.waitForTimeout(1200);
+  ok('tapping a card opens the comic and takes its url',
+     /^\/c\//.test(new URL(m.url()).pathname), new URL(m.url()).pathname);
+  ok('the modal still has its close button', await m.locator('.sheet-x').isVisible().catch(()=>false));
+  ok('the page does not scroll sideways on a phone',
+     await m.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1));
+
+  const mRead = await m.locator('#ov-read').getAttribute('href');
+  await m.goto(new URL(mRead, BASE + '/').href, { waitUntil:'domcontentloaded' });
+  await m.waitForSelector('#player-bar:not([style*="display:none"])', { timeout: 30000 });
+  await m.waitForTimeout(2500);
+  ok('the reader shows a comments control on a phone too',
+     await m.locator('#cm-btn').isVisible().catch(()=>false));
+  const barRight = await m.evaluate(() => {
+    const r = document.querySelector('.pb-right');
+    return r ? Math.round(r.getBoundingClientRect().right) : -1; });
+  ok('and the bar still fits the screen with it there', barRight > 0 && barRight <= 390,
+     `right edge ${barRight} of 390`);
+
+  await m.locator('#cm-btn').tap();
+  await m.waitForFunction(() => {
+    const o = document.getElementById('overlay');
+    return !!o && o.classList.contains('open');
+  }, null, { timeout: 30000 });
+  await m.waitForTimeout(1800);
+  ok('tapping it lands on the comic with the thread open',
+     (await m.locator('#d-cm-toggle').getAttribute('aria-expanded')) === 'true');
+  ok('and the thread is actually on screen, not below the fold',
+     await m.evaluate(() => {
+       const t = document.getElementById('d-thread');
+       if(!t) return false;
+       const r = t.getBoundingClientRect();
+       return r.top < window.innerHeight && r.bottom > 0;
+     }));
+
+  await m.locator('#cm-new-top').fill(mStamp);
+  await m.locator('[data-cm-post]').first().tap();
+  await m.waitForTimeout(2500);
+  ok('a comment posts from a phone',
+     (await m.locator('#d-cm-body').innerText()).includes(mStamp));
+
+  await m.goBack();
+  await m.waitForSelector('#player-bar:not([style*="display:none"])', { timeout: 30000 });
+  await m.waitForTimeout(1500);
+  ok('back returns to the reader, on the page you left', /read\.html.*#.*page=\d+/.test(m.url()));
+
+  // and from the comic page, home is one tap
+  await m.goto(BASE + '/c/' + slug, { waitUntil:'domcontentloaded' });
+  await m.waitForFunction(() => {
+    const o = document.getElementById('overlay');
+    return !!o && o.classList.contains('open');
+  }, null, { timeout: 30000 });
+  await m.waitForTimeout(1200);
+  ok('arriving cold on a phone reads as a page',
+     await m.evaluate(() => document.body.classList.contains('deep')));
+  await m.locator('.sheet-home').tap();
+  await m.waitForSelector('.card', { timeout: 30000 });
+  ok('and "all eskis" gets you to the shelf', new URL(m.url()).pathname === '/');
+
+  const mGone = await m.evaluate(async stamp => {
+    const { data } = await window.eski.sb.from('comments').select('id,body');
+    for(const r of (data||[]).filter(x => (x.body||'').includes(stamp)))
+      await window.eski.sb.from('comments').delete().eq('id', r.id);
+    const { data: left } = await window.eski.sb.from('comments').select('id,body');
+    return (left||[]).filter(x => (x.body||'').includes(stamp)).length;
+  }, STAMP);
+  ok('the phone run cleaned up after itself', mGone === 0, mGone + ' left');
+  ok('zero console errors on the phone', mErrs.length === 0, mErrs.slice(0,3).join(' | '));
 
   await browser.close();
   console.log(bad ? `\n${bad} check(s) failed` : '\ncomic-page run clean');

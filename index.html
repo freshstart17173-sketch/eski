@@ -238,8 +238,12 @@ section + section{margin-top:var(--s6)}
    to go back to by tapping past it, so the scrim goes, the rules run to the
    edges, and the way out is a word rather than a cross in a corner.
    ============================================================ */
-body.deep .ov{background:var(--paper);padding:0}
-body.deep .sheet{width:100%;max-height:none;min-height:100dvh;border:0}
+/* the sheet scrolls itself at 86vh; a page taller than the screen does not,
+   so the scrolling has to move up to the overlay — and it has to start at the
+   top rather than centring, or a long comic page is clipped at both ends */
+body.deep .ov{background:var(--paper);padding:0;overflow-y:auto;place-items:start stretch}
+body.deep .sheet{width:100%;max-height:none;min-height:100dvh;border:0;overflow:visible;
+  animation:none}
 body.deep .sheet-x{display:none}
 body.deep .sheet-home{display:inline-flex}
 .sheet-home{display:none;align-items:center;gap:6px;position:sticky;top:0;z-index:3;
