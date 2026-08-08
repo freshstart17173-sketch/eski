@@ -9,10 +9,16 @@ migration (applied), the after/with/over control is live in the author studio,
 and takes can be recorded in the browser as well as attached — measured for
 loudness either way (`loudness.js`, roadmap 9c).
 
-What is NOT built: the reader still plays v2's single soundtrack and still
-fires every one-shot at the page turn, so a published part is not yet audible
-to a reader and the with/over timing is not yet heard. Both wait on roadmap
-item 10, and both need the same rewrite of how a page's audio starts.
+**The reader now hears the timing.** A page's cues are scheduled from
+`after` / `with` / `over` rather than all firing at the page turn, on a pool
+of elements so several can sound at once. Durations are measured first,
+because `over` is a percentage of whatever take is selected.
+
+What is still NOT built: a reader cannot yet CHOOSE between published parts
+mid-read — one score plays, and a contributed voice or effects part is only
+audible if the link that opened the comic already named it. That is roadmap
+item 13, and it is the last thing standing between a published part and
+somebody actually hearing it.
 
 ---
 

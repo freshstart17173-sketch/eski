@@ -255,14 +255,36 @@ the page turn. That is the scheduler described above, and it belongs with item
 10 rather than here, because both need the same rewrite of how a page's audio
 is started.
 
-### 10. The reader plays layers · ~1–2 days
+### 10. The reader plays layers · PARTLY DONE — cues land, one score
 
-It has to let a reader pick the mix — which voiceover per character, which
-score, which effects — and play the layers stacked. Three independent lists,
-each with a default that plays unless you say otherwise, so a reader who does
-not want to choose never has to. Everything downstream of this is blocked
-on it, including rewriting `spec.html`, which still documents v2 and carries a
-note saying so.
+**The cue scheduler is in.** A page's one-shots are scheduled from the
+`after` / `with` / `over` timing the author studio writes, so a page is a
+conversation rather than a chord. Several can sound at once, which is what
+`with` and `over` mean, so playback owns a small pool of elements instead of
+the single one the old stepper used.
+
+Durations are MEASURED before the schedule is built, because `over` is a
+percentage of a take whose length is not known until it loads — that is the
+whole reason it is a percentage and not a millisecond offset.
+
+The stepper is gone with it: a cursor over one element cannot express two
+lines at once, and it was the reason the authored timing had nothing reading
+it. The loop setting was repurposed rather than dropped — it wrapped a cursor,
+and now repeats the page.
+
+**Still one score layer**, deliberately, and that is the remaining half:
+
+- A reader still cannot pick between two published scores mid-read, or hear a
+  contributed voice part instead of the author's. `comicFromApi` already
+  merges parts into the track list when it is handed part ids; nothing lets a
+  reader change that selection without going back to the comic page. That is
+  item 13.
+- A published effects part is not selectable at all yet.
+- No crossfade between two scores, since there is only ever one.
+
+`tests/cues.js` holds the arithmetic — after/with/over, chained runs, the
+clamp on a silly percentage — as a pure function, with no audio and no
+browser needed for the maths.
 
 ### 11. The open questions at the foot of `SPEC.md`
 

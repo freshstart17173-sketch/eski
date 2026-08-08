@@ -140,7 +140,7 @@ axis works even against a stale page.
 
 ## The tests, and what each is really for
 
-Nine suites. Four need nothing but node.
+Ten suites. Four need nothing but node.
 
 | Suite | Catches |
 |---|---|
@@ -153,6 +153,7 @@ Nine suites. Four need nothing but node.
 | `viewer-fit.js` | Every page shape fits its box, at every zoom. |
 | `check-sign.mjs` | The signer's refusals, called as a function with no network. |
 | `wordmark.js` | The logo's ink centred in the bar, measured rather than judged. |
+| `cues.js` | The after/with/over arithmetic, as a pure function of clips and durations. |
 
 `tests/shots.js` is not a test — it takes pictures across surface × state ×
 theme × viewport. The `eski-ui-audit` skill is how to read them.
@@ -170,6 +171,7 @@ Written down rather than left to be rediscovered.
   modal, the local shelf).
 - **`spec.html` documents v2** while the app is growing v3 parts. It says so at
   the top, but it will mislead somebody eventually.
-- **The reader has not caught up with the studios.** It plays one soundtrack
-  and fires every one-shot at the page turn, so published parts and the
-  `with`/`over` timing are authored but never heard. Roadmap item 10.
+- **The reader hears the timing but not the choice.** Cues are scheduled from
+  `after`/`with`/`over` now, but a reader still cannot pick between published
+  parts mid-read: one score plays, and a contributed voice is only audible if
+  the opening link named it. Roadmap item 13.

@@ -427,11 +427,16 @@ footer a:hover{color:var(--ink)}
         <span class="z mid">Zoom</span>
       </div>
       <!-- one-shot indicator: only shown when the current page has one-shots -->
+      <!-- WHAT IS SOUNDING ON THIS PAGE. It used to be a stepper — a count and
+           two chevrons that walked one clip at a time — which was the only
+           thing a single audio element could offer. A page's cues now play as
+           a scheduled conversation, so there is no cursor to move: the count
+           is how many there are, and the one control replays them. -->
       <div class="os-hint" id="os-hint" style="display:none">
         <span class="os-spk" data-ico="volume-2"></span>
-        <span class="os-count" id="os-count">0/0</span>
-        <button class="os-step" data-ico="chevron-up" title="Previous sound (up)" onclick="osAdvance(-1)"></button>
-        <button class="os-step" data-ico="chevron-down" title="Next sound (down)" onclick="osAdvance(1)"></button>
+        <span class="os-count" id="os-count">0</span>
+        <button class="os-step" data-ico="rotate-ccw" title="Play the page again (r)"
+                aria-label="Play this page's sound again" onclick="replayCues()"></button>
         <span class="os-prog"><span class="os-prog-fill" id="os-prog"></span></span>
       </div>
       <!-- a sibling of .pages, never a child: a pan must not be able to eat
@@ -923,6 +928,13 @@ async function comicFromApi(id, partIds){
     character: t.character_key || null,
     attachTo: t.attach_to || null,
     offset: (t.offset_ms || 0) / 1000,
+    /* HOW THIS CUE IS TIMED AGAINST THE ONE BEFORE IT, authored in the author
+       studio. `over` carries a percentage rather than a millisecond offset
+       because the audio does not exist when the author writes it and there is
+       more than one of it afterwards — see docs/design/CONTRIBUTION.md. */
+    link: ['after','with','over'].includes(t.link) ? t.link : 'after',
+    overPct: t.over_pct == null ? null : +t.over_pct,
+    order: t.order_idx ?? 0,
     file: t.audio_key || null, entry: null, blob: null,
     url: t.audio_key ? audioUrl(t) : null, external: false
   });
@@ -1432,8 +1444,11 @@ function zoneAt(x, y){
     const z = zoneAt(e.clientX, e.clientY);
     if(z === 'prev') navLeft();
     else if(z === 'next') navRight();
-    else if(z === 'os-prev') osAdvance(-1);
-    else if(z === 'os-next') osAdvance(1);
+    /* THE TOP AND BOTTOM STRIPS USED TO STEP THROUGH CUES ONE AT A TIME,
+       which is what a single audio element could offer. A page's cues play as
+       a scheduled conversation now, so there is nothing to step: both strips
+       replay the page. */
+    else if(z === 'os-prev' || z === 'os-next') replayCues();
   }, CAP);
 })();
 addEventListener('resize', ()=>{ if(current) paintZones(); });
@@ -1831,52 +1846,245 @@ function duckChannel(busy, track){
    a per-page ordered list the reader triggers by key/tap. Down = next,
    Up = previous. They play over the soundtrack, monophonic, and reset when
    the page turns (they live on that page only). */
-const os = { el: new Audio(), list: [], cursor: -1 };
-os.el.preload = 'auto';
+/* what is on this page. `list` is all the scheduler needs; the element and
+   the cursor belonged to the stepper. */
+const os = { list: [] };
 /* reflect play state in the indicator so silence-heavy one-shots read clearly */
-function setOsPlaying(p){
-  $('os-hint').classList.toggle('playing', p);
-  if(!p) $('os-prog').style.width = '0%';
-  duckChannel(p, os.cur);
-}
-os.el.addEventListener('playing', ()=>setOsPlaying(true));
-os.el.addEventListener('play', ()=>setOsPlaying(true));
-os.el.addEventListener('pause', ()=>setOsPlaying(false));
-os.el.addEventListener('ended', ()=>setOsPlaying(false));
-os.el.addEventListener('timeupdate', ()=>{
-  const d = os.el.duration;
-  if(d && !os.el.paused) $('os-prog').style.width = clamp(os.el.currentTime/d*100, 0, 100)+'%';
-});
+/* the indicator and the duck are driven by the scheduler now — see
+   paintCueState() and cues.done(). This element and its listeners went with
+   the stepper. */
 function effOsLoop(){
   if(settings.osloop!=null) return settings.osloop;
   return !!(current && current.player && current.player.oneshotLoop);
 }
+/* THE PAGE TURNED, so whatever was sounding is cut and the new page's cues
+   are scheduled. Cutting is deliberate — see the scheduler's comment. */
 function refreshOneshots(){
-  os.el.pause();
   clearChain();
+  cues.stop();
   os.list = current ? oneshotsForPage(current, audioPage()) : [];
-  os.cursor = -1;
   paintOsHint();
+  /* NOT ON THE FIRST PAINT. Browsers refuse audio before a gesture, and a
+     rejected play() on every page turn fills the console with noise that
+     looks like a bug. Once anything has played, the gesture has happened. */
+  if(os.list.length && audioUnlocked) cues.run(os.list);
+}
+/* audioUnlocked already exists further down — it is set by the first gesture,
+   which is exactly the condition the scheduler needs, so it is READ here
+   rather than shadowed. Declaring a second one was a bug the parser caught;
+   it would otherwise have been two variables with one name and a coin toss
+   over which the scheduler saw. */
+function replayCues(){
+  if(os.list.length) cues.run(os.list);
 }
 function paintOsHint(){
   const h = $('os-hint');
   if(!os.list.length){ h.style.display = 'none'; return; }
   h.style.display = 'flex';
-  $('os-count').textContent = (os.cursor<0 ? 0 : os.cursor+1) + '/' + os.list.length;
+  const n = os.list.length;
+  $('os-count').textContent = n + (n === 1 ? ' cue' : ' cues');
 }
-function osAdvance(dir){
-  if(!current || !os.list.length) return;
-  let n = os.cursor + dir;
-  if(effOsLoop()) n = (n + os.list.length) % os.list.length;
-  else n = clamp(n, 0, os.list.length-1);
-  os.cursor = n;
-  playOneshot(os.list[n]);
-  paintOsHint();
-}
+/* the volume slider moved, so every sounding cue follows it. the pool is
+   the truth now; os.cur was one clip and there can be several. */
 function osApplyVolume(){
-  if(os.cur) os.el.volume = clamp((os.cur.volume??100)/100 * normGain(os.cur)
-    * audio.volume * (audio.muted?0:1), 0, 1);
+  cues.pool.forEach(el => {
+    if(!el.src) return;
+    const t = el._cue;
+    el.volume = clamp((t ? (t.volume??100)/100 * normGain(t) : 1)
+      * audio.volume * (audio.muted?0:1), 0, 1);
+  });
 }
+/* ================= THE CUE SCHEDULER =================
+   A PAGE WAS A CHORD; THIS MAKES IT A CONVERSATION.
+
+   Every one-shot on a page used to fire at the page turn, or — in this
+   reader — sit in a list you stepped through by hand with next and previous.
+   Neither is how dialogue works. The author studio lets a line say how it
+   starts relative to the line above it:
+
+     after   start = prev.start + prev.duration     ordinary back-and-forth
+     with    start = prev.start                     two at once, a crowd
+     over    start = prev.start + prev.duration * pct/100    an interruption
+
+   `over` carries a PERCENTAGE, which is the whole reason this can work at
+   all: the audio does not exist when the author writes the timing, and when
+   it does exist there is more than one of it — a line is voiced by whoever
+   chooses to, at whatever length. A millisecond offset authored against the
+   first take is wrong for every other take and does not announce itself. A
+   fraction is authored against the line, which is text, and resolves at play
+   time against the take actually selected.
+
+   WHICH IS WHY DURATIONS ARE MEASURED, NOT ASSUMED. The schedule cannot be
+   built until the clips report how long they are, so the page's audio is
+   loaded to metadata first and the timeline computed from what came back.
+   A clip whose duration never arrives is given a nominal two seconds rather
+   than stalling the rest of the page behind it.
+
+   POLYPHONY. `with` and `over` mean two clips sound at once, so this owns a
+   small pool of elements instead of the single one the stepper used. The pool
+   grows to whatever a page actually needs and is reused after that.
+
+   CUT ON THE TURN. A group still playing when the reader turns the page is
+   stopped, all of it. It loses the end of a sentence, and that is the right
+   trade: audio from the page before arguing with the page in front of you is
+   worse, and it means a page turn always costs the same thing — nothing. */
+const cues = {
+  pool: [], timers: [], seq: 0, playing: 0, raf: 0, span: 0, began: 0,
+
+  lend(){
+    let el = this.pool.find(e => e.paused || e.ended);
+    if(!el){
+      el = corsAudio();
+      el.addEventListener('ended', () => this.done());
+      this.pool.push(el);
+    }
+    return el;
+  },
+
+  stop(){
+    this.seq++;
+    this.timers.forEach(clearTimeout);
+    this.timers = [];
+    cancelAnimationFrame(this.raf);
+    this.pool.forEach(el => { try{ el.pause(); }catch(e){} el.currentTime = 0; });
+    this.playing = 0;
+    duckChannel(false, null);          // nothing is speaking, so let the score back up
+    const bar = document.getElementById('os-prog');
+    if(bar) bar.style.width = '0%';
+    paintCueState();
+  },
+
+  /* metadata only: how long is each clip. runs them together rather than in
+     sequence, because the schedule needs all of them before it needs any.
+
+     RESOLVE FIRST. A published comic's track carries a url; one from a .eski
+     zip carries an `entry` and has no url until audio.resolve() unpacks it to
+     a blob. Reading t.url directly worked on the site and silently scheduled
+     nothing for every local file — a whole class of comic playing in silence,
+     which is exactly the shape of the bug this reader had once before. */
+  async durations(list){
+    return Promise.all(list.map(async t => {
+      const url = await audio.resolve(t);
+      return new Promise(res => {
+      if(!url) return res(0);
+      const probe = corsAudio();
+      probe.preload = 'metadata';
+      let done = false;
+      const finish = d => { if(done) return; done = true; probe.src = ''; res(d); };
+      probe.addEventListener('loadedmetadata', () =>
+        finish(isFinite(probe.duration) && probe.duration > 0 ? probe.duration : 2));
+      probe.addEventListener('error', () => finish(2));
+      /* a clip that never answers must not hold up the page */
+      setTimeout(() => finish(2), 4000);
+      probe.src = url;
+      });
+    }));
+  },
+
+  /* the arithmetic, kept separate so it can be tested without audio */
+  plan(list, secs){
+    const out = [];
+    let prevStart = 0, prevDur = 0;
+    list.forEach((t, i) => {
+      const d = secs[i] || 0;
+      let start;
+      if(i === 0 || t.link === 'after') start = prevStart + prevDur;
+      else if(t.link === 'with') start = prevStart;
+      else start = prevStart + prevDur * (clamp(t.overPct ?? 60, 1, 99) / 100);
+      if(i === 0) start = 0;
+      out.push({ track: t, at: start, dur: d });
+      prevStart = start; prevDur = d;
+    });
+    return out;
+  },
+
+  async run(list){
+    this.stop();
+    if(!list.length) return;
+    const seq = this.seq;
+    const secs = await this.durations(list);
+    if(seq !== this.seq) return;            // the page turned while we measured
+    const plan = this.plan(list, secs);
+    this.span = plan.length ? plan[plan.length-1].at + plan[plan.length-1].dur : 0;
+    this.began = 0;
+    for(const step of plan){
+      this.timers.push(setTimeout(() => {
+        if(seq !== this.seq) return;
+        const t = step.track;
+        const el = this.lend();
+        if(!t.url) return this.done();  // resolve() already ran; nothing to play
+        el._cue = t;                    // so the volume slider can rescale it
+        el.src = t.url;
+        el.loop = false;
+        /* the same trim the stepper honoured: an in point and an out point
+           that shorten a clip without touching the file */
+        const from = t.start || 0;
+        el.onloadedmetadata = () => { if(from) try{ el.currentTime = from; }catch(e){} };
+        if(t.end && t.end > from)
+          this.timers.push(setTimeout(() => { try{ el.pause(); }catch(e){} },
+            Math.round((t.end - from) * 1000)));
+        el.volume = clamp((t.volume ?? 100)/100 * normGain(t)
+          * audio.volume * (audio.muted ? 0 : 1), 0, 1);
+        /* a chain child hangs off its parent with a fixed offset. That is a
+           second way of saying "this plays relative to that", and it predates
+           link/over — chains come from exported .eski manifests, link comes
+           from the author studio. They are not merged because they answer to
+           different authors; a chain rides along when its parent fires. */
+        scheduleChain(t);
+        /* THE SCORE DUCKS UNDER A VOICE, which is the one thing the old single
+           element did that a pool must not lose. It is driven by whether
+           ANYTHING is sounding, not by one element, or two overlapping lines
+           would release the duck when the first of them ended. */
+        this.playing++;
+        duckChannel(true, t);
+        paintCueState();
+        el.play().catch(() => this.done());
+      }, Math.round(step.at * 1000)));
+    }
+    if(!this.began) this.began = performance.now();
+    this.tick();
+
+    /* LOOP MEANT "WRAP THE CURSOR" when cues were stepped one at a time. With
+       a schedule there is no cursor, so it means the honest equivalent: play
+       the page again when it finishes, until the reader turns the page. Kept
+       rather than dropped because it is a setting somebody may already have
+       switched on, and silently ignoring it is worse than retiring it. */
+    if(effOsLoop() && this.span > 0){
+      this.timers.push(setTimeout(() => {
+        if(seq === this.seq) this.run(list);
+      }, Math.round(this.span * 1000) + 400));
+    }
+  },
+
+  done(){
+    this.playing = Math.max(0, this.playing - 1);
+    if(!this.playing) duckChannel(false, null);
+    paintCueState();
+  },
+
+  /* the bar shows how far through the PAGE'S SCHEDULE we are, not how far
+     through one clip — with several sounding at once, one clip's position is
+     not a thing a reader can act on. */
+  tick(){
+    cancelAnimationFrame(this.raf);
+    const bar = document.getElementById('os-prog');
+    if(!bar || !this.span) return;
+    const step = () => {
+      const p = clamp((performance.now() - this.began) / 1000 / this.span, 0, 1);
+      bar.style.width = (p * 100).toFixed(1) + '%';
+      if(p < 1 && this.playing >= 0 && this.timers.length) this.raf = requestAnimationFrame(step);
+    };
+    step();
+  }
+};
+/* the indicator says how many cues are sounding, which is the only honest
+   thing to show when several can be at once */
+function paintCueState(){
+  const h = document.getElementById('os-hint');
+  if(!h) return;
+  h.classList.toggle('playing', cues.playing > 0);
+}
+
 /* ---------------- chains ----------------
    sfx and layered lines hang off a parent one-shot with an offset, so a punch
    lands mid-line without the reader having to time anything. children play on
@@ -1910,29 +2118,16 @@ function scheduleChain(parent){
   }
 }
 
-function playOneshot(t){
-  os.cur = t;
-  scheduleChain(t);
-  const seq = ++audio.loadSeq;   // share the loader guard so a page turn cancels it
-  audio.resolve(t).then(url=>{
-    if(!url || seq!==audio.loadSeq) return;
-    os.el.src = url;
-    os.el.loop = false;
-    const startAt = t.start||0;
-    os.el.onloadedmetadata = ()=>{ if(startAt) try{ os.el.currentTime = startAt; }catch(e){} };
-    // an out point trims the tail without touching the file
-    clearTimeout(os._endTimer);
-    if(t.end && t.end > startAt)
-      os._endTimer = setTimeout(()=>os.el.pause(), (t.end - startAt)*1000);
-    osApplyVolume();
-    const p = os.el.play();
-    if(p) p.catch(()=>{});   // held until a gesture; unlockAudio picks it up
-  });
-}
+/* THE STEPPER IS GONE. osAdvance() and playOneshot() drove a cursor over one
+   audio element, which is the most a single element can do and the reason the
+   author studio's timing had nothing to read it. cues.run() schedules the
+   whole page instead. What is kept is the pause, because "stop talking" is
+   still a thing a reader wants mid-page. */
 function toggleOneshotPause(){
-  if(!os.el.src) return;
-  if(os.el.paused){ const p = os.el.play(); if(p) p.catch(()=>{}); }
-  else os.el.pause();
+  if(!cues.pool.some(el => el.src)) return;
+  const anyPlaying = cues.pool.some(el => !el.paused && !el.ended);
+  if(anyPlaying) cues.pool.forEach(el => { try{ el.pause(); }catch(e){} });
+  else cues.pool.forEach(el => { if(el.src && !el.ended){ const p = el.play(); if(p) p.catch(()=>{}); } });
 }
 
 /* soundtrack pause/resume (space). resets on page turn. */
@@ -2061,6 +2256,9 @@ function unlockAudio(){
     if(current){
       if(audio.active){ const p=audio.active.play(); if(p) p.catch(()=>{}); }
       else checkPageTrack(true, true);
+      /* the page you unlocked on has cues too, and they were skipped when it
+         painted because no gesture had happened yet */
+      if(os.list.length) cues.run(os.list);
     }
   }
 }
@@ -2361,10 +2559,11 @@ document.addEventListener('keydown', e=>{
     if(e.shiftKey) toggleOneshotPause(); else toggleSoundPause();
     return;
   }
-  // up/down drive one-shots when the page has them (down = next, up = previous)
-  if((e.key==='ArrowDown' || e.key==='ArrowUp') && os.list.length){
+  // up, down or r replay the page's cues. there is no cursor to move.
+  if((e.key==='ArrowDown' || e.key==='ArrowUp' || e.key==='r' || e.key==='R')
+     && os.list.length){
     e.preventDefault();
-    osAdvance(e.key==='ArrowDown' ? 1 : -1);
+    replayCues();
     return;
   }
   switch(e.key){

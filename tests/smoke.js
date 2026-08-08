@@ -384,24 +384,32 @@ function ok(cond, name, extra) {
   // the soundtrack music must still own page 2 (one-shots do not split the range)
   await osp.evaluate(() => goToPage(1, true));
   await osp.waitForFunction(() => document.getElementById('os-hint').style.display !== 'none');
-  ok(await osCount() === '0/2', 'page 2 shows 2 one-shots', await osCount());
+  ok(await osCount() === '2 cues', 'page 2 shows its two cues', await osCount());
   ok((await osp.evaluate(() => window.nowPlaying())).includes('bg'),
     'soundtrack still owns the one-shot page', await osp.evaluate(() => window.nowPlaying()));
   // the one-shot tutorial is gone for good, not merely dismissed
   ok(await osp.evaluate(() => !document.getElementById('tut-os') &&
     typeof window.maybeOsTutorial === 'undefined'), 'no one-shot tutorial popup');
-  // down = next, up = previous, no wrap by default
-  await osp.keyboard.press('ArrowDown'); ok(await osCount() === '1/2', 'down = next one-shot', await osCount());
-  // the indicator reflects that a one-shot is actually playing
+  /* THE STEPPER IS GONE, so the assertions that walked a cursor with the arrow
+     keys went with it. A page's cues are SCHEDULED — several can sound at once,
+     which is the whole point of `with` and `over` — so there is no "next one"
+     to move to, and the count is how many there are rather than where you are.
+
+     What is worth asserting instead: that pressing replay actually starts
+     them, and that they stop dead on a page turn. */
+  await osp.keyboard.press('ArrowDown');       // now replays rather than steps
   let osPlaying = false;
   try { await osp.waitForFunction(() => document.getElementById('os-hint').classList.contains('playing'),
-    null, { timeout: 4000 }); osPlaying = true; } catch (e) {}
-  ok(osPlaying, 'indicator shows the one-shot playing');
-  await osp.keyboard.press('ArrowDown'); ok(await osCount() === '2/2', 'down again', await osCount());
-  await osp.keyboard.press('ArrowDown'); ok(await osCount() === '2/2', 'no wrap at the end', await osCount());
-  await osp.keyboard.press('ArrowUp'); ok(await osCount() === '1/2', 'up = previous one-shot', await osCount());
-  // turning the page resets the one-shot cursor + hides the indicator
+    null, { timeout: 6000 }); osPlaying = true; } catch (e) {}
+  ok(osPlaying, 'the page\'s cues play when replayed');
+  ok(await osCount() === '2 cues', 'and the count is how many, not where you are',
+    await osCount());
+  /* CUT ON THE TURN. A group still sounding when the reader moves on is
+     stopped, all of it — audio from the page before arguing with the page in
+     front of you is worse than losing the end of a sentence. */
   await osp.evaluate(() => goToPage(0, true));
+  ok(await osp.evaluate(() => cues.playing === 0 &&
+       cues.pool.every(el => el.paused)), 'a page turn cuts every sounding cue');
   await osp.waitForFunction(() => document.getElementById('os-hint').style.display === 'none');
   ok(true, 'one-shots reset on page turn');
   // space no longer turns the page; it pauses the soundtrack
@@ -418,11 +426,25 @@ function ok(cond, name, extra) {
   await osp.keyboard.press('Escape');
   ok(await osp.evaluate(() => !document.getElementById('keys-panel').classList.contains('open')),
     'escape closes the hotkeys panel');
-  // loop setting wraps the cursor
+  /* LOOP USED TO WRAP THE CURSOR. There is no cursor, so it now means the
+     honest equivalent: play the page's cues again when they finish. It is
+     kept rather than retired because somebody may already have it switched
+     on, and silently ignoring a setting is worse than removing it. */
   await osp.evaluate(() => { toggleOsLoop(); goToPage(1, true); });
-  await osp.waitForFunction(() => document.getElementById('os-count').textContent === '0/2');
-  await osp.keyboard.press('ArrowDown'); await osp.keyboard.press('ArrowDown'); await osp.keyboard.press('ArrowDown');
-  ok(await osCount() === '1/2', 'loop setting wraps the cursor', await osCount());
+  await osp.waitForFunction(() => document.getElementById('os-count').textContent === '2 cues');
+  ok(await osp.evaluate(() => effOsLoop()), 'the loop setting is on');
+  await osp.keyboard.press('ArrowDown');
+  /* run() MEASURES THE CLIPS BEFORE IT SCHEDULES THEM — durations are read
+     from the audio rather than assumed, because `over` is a percentage of a
+     take whose length is not known until it loads. So nothing is armed the
+     instant the key goes down; wait for the schedule rather than racing it. */
+  let armed = 0;
+  try {
+    await osp.waitForFunction(() => cues.timers.length > 2, null, { timeout: 15000 });
+    armed = await osp.evaluate(() => cues.timers.length);
+  } catch (e) { armed = await osp.evaluate(() => cues.timers.length); }
+  ok(armed > 2, 'with loop on, the page arms a repeat as well as its cues', String(armed));
+  await osp.evaluate(() => { toggleOsLoop(); });
 
   console.log('reader: soundtrack duck under one-shots');
   ok(await osp.evaluate(() => graph.ok && graph.nodes.size === 2),
@@ -436,9 +458,11 @@ function ok(cond, name, extra) {
     const n = [...graph.nodes.values()][0];
     const wait = ms => new Promise(r => setTimeout(r, ms));
     const read = () => ({ g: +n.duck.gain.value.toFixed(2), eq: +n.lo.gain.value.toFixed(2) });
-    // the one-shot tests above left audio playing; silence the channel and let
-    // its release debounce flush before measuring a clean idle
-    os.el.pause(); await wait(900);
+    // the cue tests above left audio playing; silence the channel and let its
+    // release debounce flush before measuring a clean idle. os.el is gone with
+    // the stepper — the scheduler owns a pool now, and stop() releases the
+    // duck as well as pausing it.
+    cues.stop(); await wait(900);
     applyDuck(false); await wait(1800);
     const idle = read();
     duckChannel(true, null); await wait(500);

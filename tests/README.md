@@ -30,7 +30,7 @@ The live runners need an ordinary account. Create it once with
 
 ---
 
-## The local nine
+## The local ten
 
 ```
 node tests/structure.js
@@ -42,6 +42,7 @@ node tests/loudness.js
 node tests/recording.js
 node tests/viewer-fit.js       # needs the folder served on :8940
 node tests/wordmark.js         # same
+node tests/cues.js             # needs it too
 ```
 
 Three of them need nothing at all — `cache.js`, `loudness.js` and
@@ -90,6 +91,15 @@ descender at all — at 21px the lowest ink sits 4px ABOVE the baseline, so any
 box-based centring is wrong by construction. A zero-height inline-block finds
 the baseline by measurement, canvas measureText finds the ink either side of
 it, and the check fails past a pixel of drift.
+
+### `cues.js` — a page of dialogue is scheduled as written
+
+The reader half of overlapping dialogue. `cues.plan()` is kept as a pure
+function of (clips, durations) so the arithmetic can be checked without audio:
+`after` follows, `with` lands together, `over` takes a percentage of whatever
+take is actually selected — which is why it is a percentage and not a
+millisecond offset. Also the edges: a first line that says `over` has nothing
+to be over, and a percentage outside 1-99 is clamped rather than thrown.
 
 ### `cache.js` — every asset has a caching policy
 
