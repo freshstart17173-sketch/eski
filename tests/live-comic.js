@@ -14,6 +14,23 @@
    no powers a signed-up reader lacks, and it cleans up after itself. */
 const { chromium, request } = require('playwright');
 
+
+/* THE RELAY IS THE BOTTLENECK, NOT THE SITE.
+
+   Every request is fulfilled node-side through one proxy context. A phone
+   opening a comic fires thirty at once, the relay drops one, and an aborted
+   stylesheet reads as "the site is broken" — a different file each run,
+   which is the signature of saturation rather than a bug. Retrying harder
+   did not help because the retries pile onto the same jam.
+
+   So: at most THREE in flight, and anything that still fails gets four
+   attempts with a growing backoff. Six was still too many. */
+const GATE = { n: 0, max: 3, q: [] };
+const gateIn = () => GATE.n < GATE.max
+  ? (GATE.n++, Promise.resolve())
+  : new Promise(r => GATE.q.push(r)).then(() => { GATE.n++; });
+const gateOut = () => { GATE.n--; const next = GATE.q.shift(); if(next) next(); };
+
 const BASE = process.env.BASE || 'https://www.eski.lol';
 const EMAIL = process.env.ESKI_TEST_EMAIL || 'harness@eski.test';
 const PASSWORD = process.env.ESKI_TEST_PASSWORD || 'eski-harness-2026';
@@ -33,21 +50,21 @@ const ok = (n, c, extra) => {
   const wire = async ctx => {
     if(api) await ctx.route('**/*', async route => {
       const q = route.request();
-      /* three attempts with backoff. a phone context opens thirty requests at
-         once and the relay drops one often enough that a single retry still
-         left a stylesheet failing about one run in three. */
-      for(let attempt = 0; attempt < 3; attempt++){
-        try{
-          const r = await api.fetch(q.url(), { method:q.method(), headers:q.headers(),
-            data: q.postDataBuffer() || undefined, maxRedirects: 5, timeout: 60000 });
-          const h = r.headers(); delete h['content-encoding']; delete h['content-length'];
-          await route.fulfill({ status:r.status(), headers:h, body: await r.body() });
-          return;
-        }catch(e){
-          if(attempt === 2){ await route.abort(); return; }
-          await new Promise(r => setTimeout(r, 300 * (attempt + 1)));
+      await gateIn();
+      try{
+        for(let attempt = 0; attempt < 4; attempt++){
+          try{
+            const r = await api.fetch(q.url(), { method:q.method(), headers:q.headers(),
+              data: q.postDataBuffer() || undefined, maxRedirects: 5, timeout: 60000 });
+            const h = r.headers(); delete h['content-encoding']; delete h['content-length'];
+            await route.fulfill({ status:r.status(), headers:h, body: await r.body() });
+            return;
+          }catch(e){
+            if(attempt === 3){ await route.abort(); return; }
+            await new Promise(r => setTimeout(r, 400 * (attempt + 1)));
+          }
         }
-      }
+      }finally{ gateOut(); }
     });
     await ctx.addInitScript(() => { try{ localStorage.setItem('eski-onboarded','1'); }catch(e){} });
     /* every request is relayed through the agent proxy node-side, which makes
