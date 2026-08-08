@@ -91,11 +91,17 @@ section + section{margin-top:var(--s6)}
 .rs .progress i{display:block;height:100%;background:var(--mark)}
 .rs-acts{display:flex;gap:var(--s2);margin-top:var(--s4);flex-wrap:wrap}
 
-/* the strip stands exactly as tall as the cover: --rs-cover * 3/2 */
+/* the strip stands exactly as tall as the cover: --rs-cover * 3/2.
+
+   NO FADE. A mask said "there is more over here" — but there is not: this is
+   the five pages you have read and the row ends. It was decoration doing the
+   job of an affordance that leads nowhere, and it dimmed real artwork to do
+   it. The row simply stops now, which is also what the rest of the site does.
+
+   The gap is a proper gutter rather than --s2, because these are separate
+   pages of a comic and at 4px they read as one torn strip. */
 .rs-strip{--rs-h:calc(var(--rs-cover) * 1.5);--rs-w:118px;
-  display:flex;gap:var(--s2);
-  -webkit-mask-image:linear-gradient(to right,#000 55%,transparent 100%);
-  mask-image:linear-gradient(to right,#000 55%,transparent 100%)}
+  display:flex;gap:var(--s4)}
 .rs-pg{margin:0;width:var(--rs-w);flex:none}
 .rs-pg img{display:block;width:100%;height:var(--rs-h);object-fit:cover;object-position:top;
   border:var(--bw) solid var(--rule-hair);background:var(--plate-bg)}
@@ -103,10 +109,11 @@ section + section{margin-top:var(--s6)}
   background:var(--plate-bg)}
 
 /* drop pages off the OLD end as the row narrows — the newest is the one you
-   need, and it is the one the fade is pointing at */
-@media(max-width:1280px){ .rs-pg:nth-child(1){display:none} }
-@media(max-width:1120px){ .rs-pg:nth-child(2){display:none} }
-@media(max-width:980px){  .rs-pg:nth-child(3){display:none} }
+   need. with a wider gutter the row runs out of space sooner, so these break
+   earlier than they did. */
+@media(max-width:1360px){ .rs-pg:nth-child(1){display:none} }
+@media(max-width:1190px){ .rs-pg:nth-child(2){display:none} }
+@media(max-width:1020px){ .rs-pg:nth-child(3){display:none} }
 @media(max-width:880px){
   .rs{--rs-cover:180px;grid-template-columns:var(--rs-cover) minmax(0,1fr)}
   .rs-strip{grid-column:1 / -1;--rs-h:210px;overflow:hidden}
@@ -975,6 +982,7 @@ async function loadPlatform(only){
       cast: castOut, scores,
       follow: following.has(r.owner_id) ? r.owner_name : null,
       shelf: save ? save.status : null,
+      shelved: !!(save && save.shelved),
       progress: save && save.pages ? Math.min(1, save.last_page / save.pages) : null
     };
   });
@@ -1928,55 +1936,61 @@ let CM_LAST = null;
 /* ---------------- the shelf, reading, read ----------------
    ONE row per (you, comic) with a status. signed out, it falls back to a
    local list so the button still does something on a first visit. */
-/* ONE ROW PER (YOU, COMIC), and it carries two different things: that you
-   put the comic on your shelf, and how far into it you are. The old toggle
-   treated them as one, so:
+/* ONE ROW PER (YOU, COMIC), CARRYING TWO INDEPENDENT FACTS: that you shelved
+   it, and how far into it you are. They were one column, and one column
+   cannot hold two answers.
 
-     - it UPSERT-ed on add, which rewrote a row that already held your place
-       and sent last_page back to zero
-     - it DELETED on remove, so taking a comic off your shelf silently threw
-       away how far you had read it
+   What that cost, in order of how badly it read:
 
-   and because a comic you had started reading has a row, the button read
-   "on your shelf" before you had ever put it there — pressing it deleted
-   your progress rather than doing nothing.
+     - SHELVING SOMETHING YOU HAD STARTED WAS REFUSED. The button toasted
+       "this one is already on your shelf" and did nothing, because writing
+       status='later' would have destroyed your place. But a shelf is a
+       bookmark: anything goes on or off it at any time, read, half-read or
+       untouched, and it is nobody's business but yours.
+     - it UPSERT-ed on add, rewriting a row that already held your place and
+       sending last_page back to zero
+     - it DELETED on remove, so taking a comic off your shelf threw away how
+       far you had read it
 
-   So: adding never overwrites, removing a comic you have started keeps the
-   row and only clears the intent, and the label is generated in ONE place
-   rather than once in the markup and once here, which is how the two came
-   to disagree about capitals. */
+   `shelved` is its own boolean now and `status` went back to meaning only
+   progress. Shelving writes one field and never touches another, un-shelving
+   keeps the row whenever it still holds a place, and the label is generated
+   in ONE place rather than once in the markup and once here — which is how
+   the two came to disagree about capitals. */
 const LATER_KEY = 'eski-later';
 const localLater = ()=>{ try{ return JSON.parse(localStorage.getItem(LATER_KEY)) || []; }catch(e){ return []; } };
-const isLater = c => c.dbId ? c.shelf === 'later' : localLater().includes(c.file);
-const laterLabel = c => isLater(c) ? 'On your shelf'
-  : (c.shelf === 'reading' ? 'Reading' : c.shelf === 'read' ? 'Read' : 'Add to shelf');
+const isLater = c => c.dbId ? !!c.shelved : localLater().includes(c.file);
+/* TWO STATES, and only two. It used to have four — "Reading" and "Read"
+   crept in from progress, which is the other fact this row carries and not
+   this button's job. A toggle that reports somebody else's state cannot say
+   what pressing it does. */
+const laterLabel = c => isLater(c) ? 'Shelved' : 'Add to shelf';
 
 async function toggleLater(c){
   const btn = document.getElementById('ov-later');
   if(sb && me && c.dbId){
-    if(c.shelf === 'later'){
-      // never on the shelf and never started: the row has nothing left to say
+    const want = !c.shelved;
+    if(!want && !c.shelf){
+      /* nothing shelved and nothing read: the row has nothing left to say,
+         so it goes rather than sitting there as a false negative */
       const { error } = await sb.from('saves').delete()
-        .eq('user_id', me.id).eq('comic_id', c.dbId).eq('status', 'later');
+        .eq('user_id', me.id).eq('comic_id', c.dbId);
       if(error){ toast(window.eski.dbError('ESK-5032','the shelf did not update',error)); return; }
-      c.shelf = null;
-    }else if(c.shelf){
-      // you are reading it, or have read it. that is already a kind of shelf;
-      // pressing this must not be a way to lose your place.
-      toast(c.shelf === 'read' ? 'You have already read this one'
-                               : 'This one is already on your shelf, at p.' +
-                                 Math.max(1, Math.round((c.progress||0) * c.pp)));
-      return;
     }else{
-      /* insert, not upsert: if a row somehow exists it holds your place and
-         must survive. 23505 means it was already there, which is the state
-         we were asking for. */
-      const { error } = await sb.from('saves')
-        .insert({ user_id: me.id, comic_id: c.dbId, status:'later', pages: c.pp });
-      if(error && error.code !== '23505'){
-        toast(window.eski.dbError('ESK-5033','the shelf did not update',error)); return; }
-      c.shelf = 'later';
+      /* UPDATE first, insert only if there was no row. an upsert would carry
+         defaults for last_page and pages and so would reset your place — the
+         exact bug this whole block exists to have fixed. */
+      const up = await sb.from('saves').update({ shelved: want })
+        .eq('user_id', me.id).eq('comic_id', c.dbId).select('comic_id');
+      if(up.error){ toast(window.eski.dbError('ESK-5032','the shelf did not update',up.error)); return; }
+      if(!(up.data || []).length){
+        const { error } = await sb.from('saves')
+          .insert({ user_id: me.id, comic_id: c.dbId, status:'later', shelved: want, pages: c.pp });
+        if(error && error.code !== '23505'){
+          toast(window.eski.dbError('ESK-5033','the shelf did not update',error)); return; }
+      }
     }
+    c.shelved = want;
   }else{
     const list = localLater();
     const on = list.includes(c.file);

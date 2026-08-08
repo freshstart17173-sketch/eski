@@ -127,6 +127,40 @@ body{margin:0;display:flex;flex-direction:column;overflow:hidden}
   white-space:nowrap;flex:none}
 .eflag.on{color:var(--accent)}
 
+/* ---------- how an entry is timed against the one before it ----------
+   A PAGE WAS A CHORD AND NEVER A CONVERSATION: everything on it fired at
+   the page turn. Each entry after the first now says how it starts relative
+   to the entry above — after it, with it, or partway over it — which is
+   enough for an interruption, two people at once, and a crowd.
+
+   the row is 20px and sits ABOVE the entry it belongs to, in the gap the
+   border already draws, because it describes the join rather than either
+   side of it. */
+.link{display:flex;align-items:center;gap:var(--s1);padding:2px 0 2px var(--s2);
+  font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.link .seg{display:flex;border:var(--bw) solid var(--rule-hair)}
+.link .seg button{font:inherit;font-size:9px;letter-spacing:.1em;text-transform:uppercase;
+  background:none;border:0;border-left:var(--bw) solid var(--rule-hair);color:var(--label);
+  padding:2px 5px;line-height:1.4;
+  transition:background var(--t-fast) var(--ease),color var(--t-fast) var(--ease)}
+.link .seg button:first-child{border-left:0}
+.link .seg button:hover{background:var(--ui-hover-bg);color:var(--ui)}
+/* the selected one is the near-black fill, same as every other "this one is
+   on" on the site */
+.link .seg button[aria-pressed="true"]{background:var(--mark);color:var(--on-mark)}
+/* a range input is the one control that cannot be made square and hairline in
+   every browser, so it is kept small and given the accent rather than fought */
+.link input[type=range]{flex:1;min-width:40px;max-width:110px;height:14px;accent-color:var(--accent)}
+.link .pct{font-variant-numeric:tabular-nums;color:var(--ink);min-width:26px;text-align:right}
+
+/* A GROUP READS AS A GROUP. anything not `after` is joined to the entry above,
+   and the pair draws one bracket down the left so a run of them is one shape
+   rather than three rows that happen to be adjacent. */
+.entry.joined{border-top:0}
+.grp{position:relative;padding-left:9px}
+.grp::before{content:"";position:absolute;left:0;top:3px;bottom:3px;width:5px;
+  border:var(--bw) solid var(--rule);border-right:0}
+
 /* the add control doubles as the legend for those three colours */
 .addbox{position:relative;margin-top:var(--s3)}
 .addmenu{display:none;flex-direction:column;border:var(--bw) solid var(--rule);margin-top:var(--s1)}
@@ -337,6 +371,10 @@ async function openComic(id){
     .map(t => ({ id: t.id, from_page: t.from_page, character_key: t.character_key,
                  line_text: t.line_text || '', order_idx: t.order_idx,
                  role: (t.role || 'line') === 'sfx' ? 'sfx' : 'line',
+                 // a row written before cue linking existed has no link, and
+                 // 'after' is exactly what it has always done
+                 link: LINKS[t.link] ? t.link : 'after',
+                 over_pct: t.over_pct == null ? null : +t.over_pct,
                  hasAudio: !!t.audio_key, deleted: false, isNew: false }));
   otherTracks = all.filter(t => !isEntry(t));
   maxOrder = all.reduce((m, t) => Math.max(m, t.order_idx || 0), 0);
@@ -474,7 +512,7 @@ function renderCast(){
       <button class="x" data-rm="${i}" title="Remove from the cast">×</button>
     </div>
     <textarea class="castnote" data-i="${i}" data-f="blurb" rows="2" maxlength="400"
-      placeholder="how does ${esc(c.name)} sound? this is what a voice actor reads before taking the part."
+      placeholder="How does ${esc(c.name)} sound? This is what a voice actor reads before taking the part."
       >${esc(c.blurb)}</textarea>`).join('');
   box.querySelectorAll('[data-f]').forEach(el=>{
     el.addEventListener('input', ()=>{
@@ -534,6 +572,45 @@ function kindOf(l){
   return c && c.kind === 'narrator' ? 'narration' : 'dialogue';
 }
 
+/* ---------------- how an entry is timed against the one before it ----------
+   THE WHOLE OF OVERLAPPING DIALOGUE, and it is one field. A page used to be a
+   chord: every one-shot on it fired at the page turn, so there was no way to
+   say "this lands while that one is still going".
+
+     after  start = prev.start + prev.duration
+     with   start = prev.start
+     over   start = prev.start + prev.duration * pct/100
+
+   `over` carries a PERCENTAGE and not milliseconds, because the audio does
+   not exist when the author writes this and when it does exist there is more
+   than one of it — a line is voiced by however many people choose to, at
+   whatever length. An offset in ms authored against the first take is wrong
+   for every other take and does not announce itself. A percentage is authored
+   against the line, which is text, which is the same for everybody. */
+const LINKS = {
+  after: { label: 'After',  note: 'starts when the one above finishes' },
+  with:  { label: 'With',   note: 'starts at the same moment' },
+  over:  { label: 'Over',   note: 'starts partway through the one above' }
+};
+const DEFAULT_OVER = 60;
+
+/* the first entry on a page has nothing above it to be relative to, so it is
+   always `after`. moving and deleting can both make a different entry first,
+   which is why this is enforced on the list rather than at the point of
+   change. */
+function normaliseLinks(n){
+  const mine = linesOn(n);
+  if(mine.length && mine[0].link !== 'after'){
+    mine[0].link = 'after'; mine[0].over_pct = null; dirty = true;
+  }
+}
+function setLink(l, how){
+  l.link = how;
+  l.over_pct = how === 'over' ? (l.over_pct || DEFAULT_OVER) : null;
+  dirty = true;
+  renderLines();
+}
+
 function renderLines(){
   const box = $('lines');
   const mine = linesOn(page);
@@ -542,10 +619,29 @@ function renderLines(){
     renderStrip();
     return;
   }
-  box.innerHTML = mine.map(l=>{
+  /* consecutive entries that are not `after` belong to the run above them, so
+     the list is walked into groups once and a group of more than one draws a
+     bracket. doing it here rather than with a css sibling selector is what
+     lets the bracket span three rows instead of decorating each of them. */
+  normaliseLinks(page);
+  const groups = [];
+  mine.forEach((l, i) => {
+    if(i === 0 || l.link === 'after') groups.push([l]);
+    else groups[groups.length - 1].push(l);
+  });
+
+  const entryHtml = (l, first) => {
     const locked = filledBy.has(l.id);
     const k = kindOf(l);
-    return `<div class="entry" data-id="${esc(l.id)}" data-kind="${k}">
+    const linkbar = first ? '' : `<div class="link">
+      <span class="seg">${Object.keys(LINKS).map(how =>
+        `<button data-link="${how}" aria-pressed="${l.link === how}"
+          title="${esc(LINKS[how].note)}">${LINKS[how].label}</button>`).join('')}</span>
+      ${l.link === 'over' ? `<input type="range" min="1" max="99" value="${l.over_pct || DEFAULT_OVER}"
+          data-f="pct" aria-label="How far into the entry above this one starts">
+        <span class="pct">${l.over_pct || DEFAULT_OVER}%</span>` : ''}
+    </div>`;
+    return linkbar + `<div class="entry${first ? '' : ' joined'}" data-id="${esc(l.id)}" data-kind="${k}">
       <div>
         <div class="ehead">
           <span class="etype">${KINDS[k].label}</span>
@@ -564,6 +660,11 @@ function renderLines(){
         <button class="x" data-del="1" title="Remove this">×</button>
       </div>
     </div>`;
+  };
+
+  box.innerHTML = groups.map(g => {
+    const inner = g.map((l, i) => entryHtml(l, i === 0)).join('');
+    return g.length > 1 ? `<div class="grp">${inner}</div>` : inner;
   }).join('');
 
   box.querySelectorAll('.entry').forEach(row=>{
@@ -578,6 +679,21 @@ function renderLines(){
     });
     row.querySelectorAll('[data-mv]').forEach(b=>b.addEventListener('click', ()=>move(l, +b.dataset.mv)));
     row.querySelector('[data-del]').addEventListener('click', ()=>del(l));
+  });
+
+  /* the link bar sits OUTSIDE the .entry it belongs to — it describes the
+     join, so it is a sibling above rather than a child of either side. that
+     means it is wired from the entry that follows it, not from within. */
+  box.querySelectorAll('.link').forEach(bar=>{
+    const l = lines.find(x=>x.id === bar.nextElementSibling.dataset.id);
+    bar.querySelectorAll('[data-link]').forEach(b=>
+      b.addEventListener('click', ()=>setLink(l, b.dataset.link)));
+    const pct = bar.querySelector('[data-f="pct"]');
+    if(pct) pct.addEventListener('input', e=>{
+      l.over_pct = +e.target.value; dirty = true;
+      // the number beside it, without a re-render that would drop the drag
+      bar.querySelector('.pct').textContent = l.over_pct + '%';
+    });
   });
   renderStrip();
 }
@@ -600,6 +716,7 @@ function addLine(kind){
     : (cast.find(c => c.kind !== 'narrator') || {}).key || null;
   lines.push({ id: uid(), from_page: page, character_key: speaker,
                line_text: '', order_idx: maxOrder, role: kind === 'effect' ? 'sfx' : 'line',
+               link: 'after', over_pct: null,
                hasAudio: false, deleted: false, isNew: true });
   dirty = true;
   $('addbox').classList.remove('open');
@@ -615,6 +732,7 @@ function move(l, dir){
   [l.order_idx, other.order_idx] = [other.order_idx, l.order_idx];
   lines.sort((a,b)=>a.order_idx - b.order_idx);
   dirty = true;
+  normaliseLinks(l.from_page);
   renderLines();
 }
 function del(l){
@@ -658,6 +776,7 @@ async function save(){
         role: l.role || 'line',
         audio_key: null, from_page: l.from_page,
         character_key: l.character_key || null,
+        link: l.link || 'after', over_pct: l.link === 'over' ? (l.over_pct || DEFAULT_OVER) : null,
         line_text: (l.line_text || '').trim() || null
       })));
       if(ins.error) throw new Error(window.eski.dbError('ESK-5045', 'the new lines did not save', ins.error));
@@ -668,6 +787,7 @@ async function save(){
       const u = await sb.from('tracks').update({
         from_page: l.from_page, order_idx: l.order_idx, role: l.role || 'line',
         character_key: l.character_key || null,
+        link: l.link || 'after', over_pct: l.link === 'over' ? (l.over_pct || DEFAULT_OVER) : null,
         line_text: (l.line_text || '').trim() || null
       }).eq('id', l.id);
       if(u.error) throw new Error(window.eski.dbError('ESK-5046', 'a line did not save', u.error));

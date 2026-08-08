@@ -128,6 +128,17 @@ const SCREENS = [
   { name: 'profile-settings', path: '/profile.html', state: async p => {
       await p.locator('.tab', { hasText: /^SETTINGS$/i }).click().catch(()=>{});
     } },
+  /* THE AUTHOR STUDIO AT REST IS A PICKER, and the picker is not the studio.
+     Every control worth auditing — the cast rows, the entry column, the
+     after/with/over link bars — only exists once a draft is open, so the
+     config opens one. It needs a draft owned by the harness account to find;
+     `harness-fixture` is that draft, and if it is missing this shoots the
+     picker and says so rather than failing the run. */
+  { name: 'author-open', path: '/author.html', state: async p => {
+      await p.waitForSelector('.pickrow', { timeout: 30000 });
+      await p.locator('.pickrow').first().click();
+      await p.waitForSelector('.entry, .empty', { timeout: 30000 });
+    } },
   { name: 'signed-out', path: '/', wait: '.card', signedOut: true },
 ];
 

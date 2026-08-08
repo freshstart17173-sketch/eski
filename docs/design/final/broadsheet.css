@@ -332,6 +332,14 @@ img{display:block;max-width:100%}
   font-size:var(--fs-xs);letter-spacing:.08em}
 .note-line{font-size:var(--fs-micro);color:var(--label);letter-spacing:.06em}
 .note-line b{color:var(--ink);font-weight:500}
+/* A LINK INSIDE PROSE keeps its underline — it is the one place STYLE allows
+   one, because in a running sentence there is no other affordance. What it
+   may not keep is the browser's blue, which was arriving unstyled here and in
+   every other paragraph on the site: a second hue, in a design whose whole
+   colour rule is that there is exactly one. */
+.note-line a,.state a,p a{color:var(--ui);text-decoration:underline;
+  text-underline-offset:2px;transition:color var(--t-fast) var(--ease)}
+.note-line a:hover,.state a:hover,p a:hover{color:var(--ink)}
 
 /* ---------- toast ---------- */
 .toast{position:fixed;left:50%;bottom:var(--s5);transform:translateX(-50%);
