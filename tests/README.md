@@ -30,7 +30,7 @@ The live runners need an ordinary account. Create it once with
 
 ---
 
-## The local eight
+## The local nine
 
 ```
 node tests/structure.js
@@ -41,6 +41,7 @@ node tests/cache.js
 node tests/loudness.js
 node tests/recording.js
 node tests/viewer-fit.js       # needs the folder served on :8940
+node tests/wordmark.js         # same
 ```
 
 Three of them need nothing at all — `cache.js`, `loudness.js` and
@@ -80,6 +81,15 @@ It fails on a selector given the same colour property in two places outside a
 media query, on a hex literal in a page, on an ESK code raised but not
 registered, on a page loading `palette.js` after the stylesheets, and on
 `ARCHITECTURE.md` drifting behind the files it describes.
+
+### `wordmark.js` — the logo is actually centred
+
+"It looks a few pixels too high" got answered by eye twice and was wrong both
+times. Gnomon declares 63.5% ascent and 26% descent, and "eski!" has no
+descender at all — at 21px the lowest ink sits 4px ABOVE the baseline, so any
+box-based centring is wrong by construction. A zero-height inline-block finds
+the baseline by measurement, canvas measureText finds the ink either side of
+it, and the check fails past a pixel of drift.
 
 ### `cache.js` — every asset has a caching policy
 

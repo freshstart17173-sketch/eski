@@ -140,7 +140,7 @@ axis works even against a stale page.
 
 ## The tests, and what each is really for
 
-Eight suites. Four need nothing but node.
+Nine suites. Four need nothing but node.
 
 | Suite | Catches |
 |---|---|
@@ -152,6 +152,7 @@ Eight suites. Four need nothing but node.
 | `recording.js` | A take end to end against a fake capture device — no microphone needed. |
 | `viewer-fit.js` | Every page shape fits its box, at every zoom. |
 | `check-sign.mjs` | The signer's refusals, called as a function with no network. |
+| `wordmark.js` | The logo's ink centred in the bar, measured rather than judged. |
 
 `tests/shots.js` is not a test — it takes pictures across surface × state ×
 theme × viewport. The `eski-ui-audit` skill is how to read them.

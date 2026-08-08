@@ -63,13 +63,23 @@ img{display:block;max-width:100%}
    link. --wordmark is a shade of the theme's accent, declared per theme and
    pushed clear of that theme's ground.
 
-   Gnomon declares 63.5% ascent and 26% descent, so its ink sits high in
-   whatever box it is given. The nudge below puts the GLYPH BOX on the row's
-   centre — not the optical centre, which is what the smaller value did and
-   what kept the logo looking like it was floating. */
+   THE NUDGE CENTRES THE INK, which is the third value this has had and the
+   first one that was measured rather than judged.
+
+   Gnomon is a strange face metrically: it declares 63.5% ascent and 26%
+   descent, and "eski!" has no descender at all — the lowest ink sits 4px
+   ABOVE the baseline at 21px. So every box-based centring is wrong. Centring
+   the glyph box, which is what .18em did, still left the ink 5.2px high in a
+   38px bar, because the box is mostly empty underneath.
+
+   .43em puts the measured ink box on the row's centre. tests/wordmark.js
+   measures it rather than trusting this comment: a zero-height inline-block
+   finds the baseline, canvas measureText finds the ink extents either side of
+   it, and the check fails if the centre drifts more than a pixel. Change the
+   font, the size or the bar height and it will tell you. */
 .mark{font-family:var(--font-display);font-size:21px;letter-spacing:-.01em;
   color:var(--wordmark,var(--accent));text-decoration:none;line-height:1;
-  display:inline-block;transform:translateY(.18em);
+  display:inline-block;transform:translateY(.43em);
   transition:color var(--t-fast) var(--ease)}
 .mark i{font-style:normal;color:inherit}
 .mark:hover{color:var(--ink)}

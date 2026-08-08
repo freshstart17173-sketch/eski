@@ -137,7 +137,15 @@ Specifically: the wordmark starts where the first heading starts; the nav ends
 where the rule ends; captions right-align their values down a column; the
 metadata row is `--row` (19px) everywhere so columns align down the grid.
 
-### 5. Baselines
+### 5. Baselines, and the wordmark
+
+`node tests/wordmark.js` measures whether the wordmark's INK is centred in the
+bar, because "the logo looks a few pixels too high" is measurable and was
+answered twice by eye and twice wrongly. Gnomon has no descender in "eski!" —
+the lowest ink sits above the baseline — so every box-based centring leaves it
+high. Run it after any change to the header, the font or the bar height.
+
+### 5b. Other baselines
 
 Two things on one line must sit on one baseline. Gnomon declares 63.5% ascent,
 so its ink sits high in its box — that is why the wordmark carries a
