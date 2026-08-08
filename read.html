@@ -543,6 +543,10 @@ footer a:hover{color:var(--ink)}
            style="display:none" title="next in this series">next</a>
         <button class="btn icon-btn" id="keys-btn" data-ico="keyboard" onclick="toggleKeys()" title="controls (?)"></button>
         <button class="btn" id="mix-btn" data-ico="list-music" onclick="toggleMix()" title="voices and score">the mix</button>
+        <!-- carries the page you are on, so a comment written here says which
+             page it is about, and so back lands you where you left off -->
+        <a class="btn" id="cm-btn" data-ico="message-square" href="#"
+           style="display:none" title="comments">comments</a>
         <button class="btn" id="settings-btn" data-ico="settings" onclick="toggleSettings()" title="reader settings">settings</button>
         <button class="btn" id="mute-btn" data-ico="volume-2" onclick="toggleMute()" title="mute (m)">mute</button>
         <input type="range" id="vol-slider" min="0" max="100" value="80" title="volume"
@@ -959,6 +963,7 @@ async function comicFromApi(id, partIds){
     pages, tracks,
     player: {volume:80, crossfade:1.5, loopMode:'loop', playbackMode:'sync'},
     fileName: (c.data.slug || 'comic') + '.eski', isEski: true,
+    slug: c.data.slug || null,          // the comic's public address, for /c/<slug>
     scoreName: scoreOf(tracks, scoreName),
     baseId: id, cast: c.data.cast_list || [], chapters: [], offered: offered || [],
     series: c.data.series_title ? {title:c.data.series_title, index:c.data.series_index} : null
@@ -1511,6 +1516,25 @@ function updateHash(){
   if(!current) return;
   try{ history.replaceState(null, '', '#'+slugify(current.title)+'/page='+(currentPage+1)); }
   catch(e){}
+  paintCommentLink();
+}
+
+/* THE WAY OUT OF THE READER AND BACK IN.
+
+   The comic's page is a real url, so this is an ordinary link: going there is
+   a navigation, and the browser's own back button returns to the reader with
+   the hash still saying which page you were on. Nothing to hand-roll, and it
+   works the same on a phone, where back is a swipe.
+
+   ?page= rides along so a comment written from here records where it was
+   written — a comment that says "p.7" carries its own spoiler warning. */
+function paintCommentLink(){
+  const a = $('cm-btn');
+  if(!a) return;
+  if(!current || !current.slug){ a.style.display = 'none'; return; }
+  a.style.display = '';
+  a.href = '/c/' + encodeURIComponent(current.slug) +
+           '?page=' + (currentPage + 1) + '#comments';
 }
 
 /* ---------------- ranges & queues ----------------

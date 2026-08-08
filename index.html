@@ -3,6 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- THIS PAGE ALSO LIVES AT /c/<slug>. Every relative url below — and every
+     one built later in script, like read.html?read=… — would otherwise
+     resolve against /c/ and 404. The base tag is what makes one file able to
+     answer at two depths, and it must stay ahead of the first relative url. -->
+<base href="/">
 <title>eski</title>
 <meta name="description" content="comics scored with music and voice.">
 <link rel="icon" type="image/png" href="eski_logo.png">
@@ -226,6 +231,57 @@ section + section{margin-top:var(--s6)}
 .mixline b{color:var(--ink);font-weight:500}
 .acts{display:flex;gap:var(--s2);flex-wrap:wrap;padding:var(--s3) var(--s4);
   border-top:1px solid var(--rule);position:sticky;bottom:0;background:var(--paper)}
+
+/* ============================================================
+   ARRIVED ON A LINK, so this is a page.
+   Same markup, same sheet. What changes is that there is no shelf behind it
+   to go back to by tapping past it, so the scrim goes, the rules run to the
+   edges, and the way out is a word rather than a cross in a corner.
+   ============================================================ */
+body.deep .ov{background:var(--paper);padding:0}
+body.deep .sheet{width:100%;max-height:none;min-height:100dvh;border:0}
+body.deep .sheet-x{display:none}
+body.deep .sheet-home{display:inline-flex}
+.sheet-home{display:none;align-items:center;gap:6px;position:sticky;top:0;z-index:3;
+  width:100%;padding:var(--s3) var(--s4);border:0;border-bottom:1px solid var(--rule);
+  background:var(--paper);color:var(--label);font:inherit;font-size:var(--fs-micro);
+  letter-spacing:.14em;text-transform:uppercase;cursor:pointer;text-align:left}
+.sheet-home:hover{color:var(--ink)}
+
+/* ============================================================
+   the thread. shut until asked for — see the comment in the script.
+   ============================================================ */
+.thread{border-top:1px solid var(--rule);padding:var(--s3) var(--s4) var(--s4)}
+.thread-open{width:100%}
+.thread .spoilernote{margin:2px 0 0;font-size:var(--fs-micro);color:var(--label);
+  letter-spacing:.06em}
+.thread-open[aria-expanded="true"] ~ .spoilernote{display:none}
+.cm{padding:var(--s3) 0;border-bottom:1px solid var(--rule-hair)}
+.cm.reply{margin-left:var(--s4);border-left:1px solid var(--rule-hair);
+  padding-left:var(--s3)}
+.cm.gone{color:var(--label);font-size:var(--fs-micro);letter-spacing:.06em}
+.cm-head{display:flex;align-items:baseline;gap:var(--s2);
+  font-size:var(--fs-micro);letter-spacing:.1em;text-transform:uppercase;color:var(--label)}
+.cm-head .sp{flex:1}
+.cm-who{color:var(--ink);font-weight:500;letter-spacing:.06em}
+.cm-page{border:1px solid var(--rule-hair);padding:0 4px;letter-spacing:.06em}
+.cm-when{white-space:nowrap}
+.cm-body{margin:4px 0 0;font-size:var(--fs-xs);line-height:1.55;color:var(--soft-ink);
+  overflow-wrap:anywhere}
+.cm-acts{display:flex;gap:var(--s3);margin-top:4px;flex-wrap:wrap}
+.lnk{border:0;background:none;padding:0;color:var(--label);font:inherit;
+  font-size:var(--fs-micro);letter-spacing:.1em;text-transform:uppercase;cursor:pointer}
+.lnk:hover{color:var(--ink)}
+.cm-write{padding:var(--s2) 0 var(--s3)}
+.cm-box{width:100%;min-height:64px;resize:vertical;background:var(--surface);
+  color:var(--ink);border:1px solid var(--rule-hair);padding:var(--s2);
+  font:inherit;font-size:var(--fs-xs);line-height:1.5}
+.cm-box:focus{outline:none;border-color:var(--accent)}
+@media(max-width:720px){
+  /* thumbs, not cursors */
+  .lnk{min-height:36px;display:inline-flex;align-items:center}
+  .cm.reply{margin-left:var(--s3)}
+}
 .alltags{display:flex;flex-wrap:wrap;gap:3px;align-items:center}
 /* adding a tag: anyone signed in, ao3 style */
 .tagadd{display:flex;gap:var(--s1);align-items:center;margin-top:var(--s2)}
@@ -471,17 +527,46 @@ document.addEventListener('click', e=>{
   const t = e.target.closest('[data-pane]');
   if(t){
     e.preventDefault();
+    const h = t.dataset.pane === 'browse' ? '#browse' : '';
+    // the nav leaves the comic you are looking at; it does not open a pane
+    // underneath it and leave the sheet sitting on top
+    if(slugFromPath()){ location.href = '/' + h; return; }
     go(t.dataset.pane);
-    location.hash = t.dataset.pane === 'browse' ? 'browse' : '';
+    location.hash = h.replace('#','');
   }
 });
 function fromHash(){
-  const h = (location.hash||'').replace('#','');
+  const h = (location.hash||'').replace('#','').split('/')[0];
   if(h === 'browse') go('browse');
   else if(h === 'roles' || h === 'scores') goBrowse(h);
   else go('home');
 }
-addEventListener('hashchange', fromHash);
+addEventListener('hashchange', ()=>{ if(!slugFromPath()) fromHash(); });
+
+/* ================================================================
+   EVERY COMIC HAS AN ADDRESS.
+
+   The details used to be a modal and nothing else, which made it the one
+   thing on the site you could look at and not link anybody to. It is now
+   both: opening a card pushes /c/<slug> without navigating, so browsing
+   stays as quick as it was, and that url is real — paste it to someone and
+   they land on the same comic.
+
+   Closing goes back rather than forward, so the browser's back button and
+   the close button are the same gesture and the history does not fill up
+   with one entry per comic you glanced at.
+
+   Arriving cold on /c/<slug> is a PAGE, not a modal floating over a shelf
+   you did not ask for: body.deep drops the scrim, fills the screen, and
+   turns the close button into "all eskis".
+   ================================================================ */
+const comicPath = c => c && c.slug ? '/c/' + encodeURIComponent(c.slug) : null;
+function slugFromPath(){
+  const m = location.pathname.match(/^\/c\/([^/]+)\/?$/);
+  return m ? decodeURIComponent(m[1]) : null;
+}
+// true when this tab began life on a comic url, so there is nothing behind it
+let deepEntry = !!slugFromPath();
 
 /* ---------- overflow: measure once, scroll on hover ---------- */
 function fitScrollers(root){
@@ -584,6 +669,8 @@ function capRows(c){
     <div class="r"><span class="k">voices</span><span class="v ${v.cls}">${esc(v.t)}</span></div>
     <div class="r"><span class="k">score</span><span class="v ${s.cls}">${esc(s.t)}</span></div>
     <div class="r"><span class="k">kudos</span><span class="v">${nfmt(c.kudos)}</span></div>
+    ${c.commentCount ? `<div class="r"><span class="k">comments</span>
+      <span class="v">${nfmt(c.commentCount)}</span></div>` : ''}
   </div>`;
 }
 function tagRow(c){
@@ -700,7 +787,11 @@ function fill(node, els){ node.replaceChildren(...els); fitScrollers(node); fitT
    from memory — which is also why search and browse filter in the
    browser rather than round-tripping.
    ================================================================ */
-async function loadPlatform(){
+/* `only` narrows this to a single comic by slug, for the case where somebody
+   followed a shared /c/<slug> link. Same query, same shaping, one row — so a
+   shared link paints its comic without first waiting on the whole shelf, and
+   there is no second copy of this function to keep in step. */
+async function loadPlatform(only){
   const eski = await platform();
   sb = eski && await eski.ready;
   if(!sb){
@@ -709,11 +800,12 @@ async function loadPlatform(){
     return [];
   }
   me = eski.user || null;
-  const { data, error } = await sb.from('comics')
+  let q = sb.from('comics')
     .select('*')          /* not a column list: a schema one migration behind should not blank the shelf */
-    .eq('status', 'published')
-    .order('published_at', { ascending: false })
-    .limit(200);
+    .eq('status', 'published');
+  if(only && only.slug) q = q.eq('slug', only.slug).limit(1);
+  else q = q.order('published_at', { ascending: false }).limit(200);
+  const { data, error } = await q;
   if(error){
     platformDown = true;
     platformWhy = eski.dbError('ESK-5005', 'the shelf query failed', error);
@@ -726,7 +818,7 @@ async function loadPlatform(){
   /* ponytail: five list queries and the counting happens here rather than in
      postgres. at a few hundred comics that is one round trip each and a few
      thousand rows; past that these want to be one rpc returning the counts. */
-  const [pg, tk, ku, pt, tg, sv, fw] = await Promise.all([
+  const [pg, tk, ku, pt, tg, sv, fw, cm] = await Promise.all([
     sb.from('pages').select('comic_id').in('comic_id', ids),
     sb.from('tracks').select('comic_id,type,role,character_key').in('comic_id', ids),
     sb.from('kudos').select('comic_id,user_id'),
@@ -734,7 +826,10 @@ async function loadPlatform(){
       .eq('status','published').in('comic_id', ids),
     sb.from('comic_tags').select('comic_id,tag,added_by').in('comic_id', ids),
     me ? sb.from('saves').select('*').eq('user_id', me.id) : Promise.resolve({data:[]}),
-    me ? sb.from('follows').select('followee_id').eq('follower_id', me.id) : Promise.resolve({data:[]})
+    me ? sb.from('follows').select('followee_id').eq('follower_id', me.id) : Promise.resolve({data:[]}),
+    // just the id, for a count. the bodies are fetched only when a thread is
+    // actually opened, which is most of the point of keeping it closed.
+    sb.from('comments').select('comic_id').in('comic_id', ids).is('deleted_at', null)
   ]);
 
   const count = (res, key) => {
@@ -744,6 +839,7 @@ async function loadPlatform(){
   };
   const pages = count(pg, 'comic_id');
   const kudos = count(ku, 'comic_id');
+  const comments = count(cm, 'comic_id');
   const kudosMine = new Set(me ? (ku.data||[]).filter(k=>k.user_id === me.id).map(k=>k.comic_id) : []);
 
   // line counts per (comic, character): a dialogue slot is a oneshot track
@@ -809,6 +905,8 @@ async function loadPlatform(){
       title: r.title || 'untitled', by: r.owner_name || null, desc: r.description || '',
       cover: window.eski.mediaUrl(r.thumb_key || r.cover_key),
       added: r.published_at || r.created_at || '',
+      slug: r.slug || null,
+      commentCount: comments.get(r.id) || 0,
       pp, ch: r.series_index || 1, chOf: r.series_title ? (seriesCount.get(r.series_title)||1) : 1,
       seriesTitle: r.series_title || null,
       kudos: kudos.get(r.id) || 0, kudosMine: kudosMine.has(r.id),
@@ -961,6 +1059,27 @@ async function fileComic(item){
    ================================================================ */
 async function boot(){
   const grid = document.getElementById('grid');
+
+  /* SOMEBODY FOLLOWED A LINK. Paint their comic off one row before touching
+     the shelf, so a shared link is not held up by two hundred other comics
+     and five count queries it does not need. The full load still runs right
+     after and replaces COMICS; the sheet is already on screen by then. */
+  const want = slugFromPath();
+  if(want && !ov.classList.contains('open')){
+    try{
+      const one = await loadPlatform({ slug: want });
+      if(one[0]){
+        COMICS = one;
+        openDetails(one[0], null, { fromHistory:true, deep:true });
+      }else if(!platformDown){
+        grid.className = '';
+        grid.innerHTML = `<div class="state">no eski lives at that link.
+          <br><br>it may have been unpublished, or the address is a typo.
+          <br><br><a href="/">all eskis</a></div>`;
+      }
+    }catch(e){}
+  }
+
   const published = await loadPlatform();
 
   let folder = [];
@@ -994,6 +1113,13 @@ async function boot(){
   renderHome();
   renderBrowse();
   paintIcons();
+  /* the link was followed before the shelf existed, or the fast path missed:
+     open it now that it does */
+  const slug = slugFromPath();
+  if(slug && !ov.classList.contains('open')){
+    const c = COMICS.find(x=>x.slug === slug);
+    if(c) openDetails(c, null, { fromHistory:true, deep: deepEntry });
+  }
   if(document.fonts && document.fonts.ready)
     document.fonts.ready.then(()=>{ fitScrollers(document); fitTags(document); });
 }
@@ -1281,7 +1407,8 @@ function siblings(c){
   return COMICS.filter(x=>x.seriesTitle === c.seriesTitle).sort((a,b)=>(a.ch||0)-(b.ch||0));
 }
 
-function openDetails(c, role){
+function openDetails(c, role, opts){
+  opts = opts || {};
   /* the sheet is also opened directly with a partial object (the smoke suite
      does this to check the contribute route), so fill in the collections
      rather than throwing on a missing array. */
@@ -1335,6 +1462,7 @@ function openDetails(c, role){
 
   sheet.innerHTML =
    `<button class="sheet-x" onclick="close_()" title="close" aria-label="close">&times;</button>
+    <button class="sheet-home" onclick="close_()">&larr; all eskis</button>
     <div class="sheetbody">
       <div class="left">
         <div class="plate">${c.cover ? `<img src="${esc(c.cover)}" alt="">` : ''}</div>
@@ -1369,6 +1497,17 @@ function openDetails(c, role){
         <div class="mixline">your mix travels with the link you open it from.</div>
       </div>
     </div>
+
+    ${c.slug ? `<div class="thread" id="d-thread">
+      <button class="fold thread-open" id="d-cm-toggle" aria-expanded="false">
+        <span class="caret"></span><span>comments</span><span class="sp"></span>
+        <span class="n" id="d-cm-n">${nfmt(c.commentCount || 0)}</span></button>
+      <!-- .folded hides on an ADJACENT sibling selector, so nothing may come
+           between these two -->
+      <div class="folded" id="d-cm-body"></div>
+      <p class="spoilernote">shut on purpose — people discuss the ending in here.</p>
+    </div>` : ''}
+
     <div class="acts">
       <a class="btn p" id="ov-read" href="#">read it with this mix</a>
       <button class="btn" id="ov-later" aria-pressed="${later}">${later ? 'on your shelf' : 'read later'}</button>
@@ -1376,6 +1515,7 @@ function openDetails(c, role){
         c.kudosMine ? 'kudos given · ' : 'kudos '}${nfmt(c.kudos)}</button>
       <a class="btn" id="ov-contrib" href="${c.dbId ? 'studio.html?base=' + esc(c.dbId) + '&as=vo' : '#'}"
          ${(!c.dbId || mine) ? 'hidden' : ''}>voice or score it</a>
+      <button class="btn" id="ov-share"${c.slug ? '' : ' hidden'}>copy link</button>
     </div>`;
 
   paintTags(c);
@@ -1409,6 +1549,11 @@ function openDetails(c, role){
   });
   sync();
 
+  const share = document.getElementById('ov-share');
+  if(share) share.onclick = ()=>shareComic(c);
+  const ct = document.getElementById('d-cm-toggle');
+  if(ct) ct.onclick = ()=>toggleThread(c);
+
   document.getElementById('ov-later').onclick = ()=>toggleLater(c);
   const kb = document.getElementById('ov-kudos');
   if(kb) kb.onclick = ()=>giveKudos(c, kb);
@@ -1420,25 +1565,62 @@ function openDetails(c, role){
   lastFocus = document.activeElement;
   ov.classList.add('open');
   document.body.style.overflow = 'hidden';
+  /* a local .eski file has no slug and no address to share — it is a file on
+     this machine. it still opens exactly as it always did; it just does not
+     pretend to have a url. */
+  const path = comicPath(c);
+  if(path && !opts.fromHistory){
+    // keep the hash: it is which pane you came from, and closing should
+    // return you to it rather than dumping you on home
+    history.pushState({ comic: c.slug }, '', path + location.hash);
+  }
+  document.body.classList.toggle('deep', !!opts.deep);
+  document.title = c.title ? c.title + ' · eski' : 'eski';
   fitScrollers(sheet);
   sheet.scrollTop = 0;
+  paintComments(c);
   if(role){
     const target = [...sheet.querySelectorAll('.charhead b')].find(b=>b.textContent === role.name);
     if(target) target.closest('.charhead').scrollIntoView({block:'center'});
   }
 }
-function close_(){
+function close_(opts){
+  opts = opts || {};
+  /* If the url is a comic, closing means going BACK — one gesture, one history
+     entry, and the browser's own back button does the same thing. Except when
+     this tab opened on the comic: there is nothing behind it, so walking back
+     would leave the site entirely. Then closing goes to the shelf for real. */
+  if(!opts.fromHistory && slugFromPath()){
+    if(deepEntry){ location.href = '/'; return; }
+    history.back();
+    return;
+  }
   ov.classList.remove('open');
+  document.body.classList.remove('deep');
   document.body.style.overflow = '';
+  document.title = 'eski';
   stopPreview();               // a clip must not keep playing behind a shut sheet
-  if(lastFocus) lastFocus.focus();
+  if(lastFocus && document.contains(lastFocus)) lastFocus.focus();
 }
+
+/* the url is the source of truth; back and forward just change it */
+addEventListener('popstate', ()=>{
+  const slug = slugFromPath();
+  if(slug){
+    const c = COMICS.find(x=>x.slug === slug);
+    if(c){ openDetails(c, null, { fromHistory:true, deep: deepEntry }); return; }
+    return;                    // shelf not loaded yet; boot() will open it
+  }
+  if(ov.classList.contains('open')) close_({ fromHistory:true });
+  fromHash();
+});
 /* one delegated listener, attached once: openDetails rewrites the sheet on
    every open, and re-binding there would stack a handler per open. */
 sheet.addEventListener('click', e=>{
   const prev = e.target.closest('[data-preview]');
   if(prev){ e.preventDefault(); e.stopPropagation(); playPreview(prev); return; }
-  const fold = e.target.closest('.fold');
+  // .thread-open runs its own toggle, because opening it also fetches
+  const fold = e.target.closest('.fold:not(.thread-open)');
   if(fold){ fold.setAttribute('aria-expanded', fold.getAttribute('aria-expanded') !== 'true'); return; }
   const tag = e.target.closest('[data-tag]');
   if(tag && !e.target.closest('[data-untag]')){ close_(); searchTag(tag.dataset.tag); return; }
@@ -1491,6 +1673,220 @@ async function removeTag(c, tag){
   paintTags(c);
   renderHome(); renderBrowse();
 }
+
+/* ================================================================
+   COMMENTS.
+
+   Shut until you ask for them. A comic thread is nothing but the ending,
+   discussed, and a section that unrolls the moment the page paints would
+   spoil the comic for everybody who scrolled past it on the way to the read
+   button. So it is a closed fold with a count on it, and the bodies are not
+   even fetched until it is opened.
+
+   One level of reply. The database enforces that (schema-comments.sql), not
+   this file.
+   ================================================================ */
+function shareComic(c){
+  const url = location.origin + comicPath(c);
+  const done = ()=>toast('link copied');
+  /* the share sheet on a phone is the better answer and the only one that
+     reaches messages and whatsapp; the clipboard is the desktop answer. */
+  if(navigator.share && matchMedia('(pointer:coarse)').matches){
+    navigator.share({ title: c.title, url }).catch(()=>{});
+    return;
+  }
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(url).then(done, ()=>prompt('copy this link', url));
+    return;
+  }
+  prompt('copy this link', url);
+}
+
+const CM = { rows: [], loaded: null, replyTo: null, editing: null };
+const cmTime = iso => {
+  const s = Math.max(0, (Date.now() - new Date(iso).getTime()) / 1000);
+  if(s < 60) return 'just now';
+  if(s < 3600) return Math.floor(s/60) + 'm ago';
+  if(s < 86400) return Math.floor(s/3600) + 'h ago';
+  if(s < 86400*30) return Math.floor(s/86400) + 'd ago';
+  return new Date(iso).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
+};
+
+function toggleThread(c, force){
+  const t = document.getElementById('d-cm-toggle');
+  if(!t) return;
+  const open = force != null ? force : t.getAttribute('aria-expanded') !== 'true';
+  t.setAttribute('aria-expanded', open);
+  if(open) loadComments(c);
+}
+
+/* opening the sheet does NOT open the thread. it only resets it, so the next
+   comic you look at does not briefly show the last one's replies. */
+function paintComments(c){
+  CM.rows = []; CM.loaded = null; CM.replyTo = null; CM.editing = null;
+  const body = document.getElementById('d-cm-body');
+  if(body) body.innerHTML = '';
+  /* a link ending in #comments means somebody was sent here to talk — most
+     often straight out of the reader. open the thread and put it on screen,
+     rather than leaving them to find a closed fold at the bottom. */
+  if((location.hash||'').includes('comments')){
+    toggleThread(c, true);
+    requestAnimationFrame(()=>{
+      const t = document.getElementById('d-thread');
+      if(t) t.scrollIntoView({ block:'start' });
+    });
+  }
+}
+
+async function loadComments(c){
+  const body = document.getElementById('d-cm-body');
+  if(!body || !c.dbId) return;
+  if(CM.loaded === c.dbId){ renderComments(c); return; }
+  if(!sb){ body.innerHTML = '<p class="note-line">comments need the server, and it is not reachable.</p>'; return; }
+  body.innerHTML = '<p class="note-line">loading…</p>';
+  const { data, error } = await sb.from('comments')
+    .select('*').eq('comic_id', c.dbId)
+    .order('created_at', { ascending: true }).limit(500);
+  if(error){
+    body.innerHTML = `<p class="note-line">${esc(window.eski.dbError('ESK-5040','the comments did not load',error))}</p>`;
+    return;
+  }
+  CM.rows = data || [];
+  CM.loaded = c.dbId;
+  c.commentCount = CM.rows.filter(r=>!r.deleted_at).length;
+  const n = document.getElementById('d-cm-n');
+  if(n) n.textContent = nfmt(c.commentCount);
+  renderComments(c);
+}
+
+function cmRow(c, r, isReply){
+  const mine = me && r.user_id === me.id;
+  const owns = me && c.ownerId === me.id;
+  if(r.deleted_at) return `<div class="cm gone${isReply?' reply':''}">
+    <span class="cm-who">removed</span></div>`;
+  if(CM.editing === r.id) return `<div class="cm${isReply?' reply':''}">
+    <div class="cm-head"><span class="cm-who">${esc(r.author_name)}</span></div>
+    <textarea class="cm-box" id="cm-edit" maxlength="4000">${esc(r.body)}</textarea>
+    <div class="cm-acts">
+      <button class="btn sm" data-cm-save="${esc(r.id)}">save</button>
+      <button class="btn sm" data-cm-cancel="1">cancel</button></div></div>`;
+  return `<div class="cm${isReply?' reply':''}">
+    <div class="cm-head">
+      <span class="cm-who">${esc(r.author_name)}</span>
+      ${r.page ? `<span class="cm-page">p.${r.page}</span>` : ''}
+      <span class="sp"></span>
+      <span class="cm-when">${esc(cmTime(r.created_at))}${r.edited_at ? ' · edited' : ''}</span>
+    </div>
+    <p class="cm-body">${esc(r.body).replace(/\n/g,'<br>')}</p>
+    <div class="cm-acts">
+      ${(me && !isReply) ? `<button class="lnk" data-cm-reply="${esc(r.id)}">reply</button>` : ''}
+      ${mine ? `<button class="lnk" data-cm-edit="${esc(r.id)}">edit</button>` : ''}
+      ${(mine || owns) ? `<button class="lnk" data-cm-del="${esc(r.id)}">delete</button>` : ''}
+    </div>
+    ${CM.replyTo === r.id ? composer(c, r.id) : ''}</div>`;
+}
+
+function composer(c, parentId){
+  if(!me) return `<p class="note-line">sign in to join the thread.</p>`;
+  return `<div class="cm-write">
+    <textarea class="cm-box" id="cm-new-${parentId||'top'}" maxlength="4000"
+      placeholder="${parentId ? 'write a reply' : 'say something about this eski'}"></textarea>
+    <div class="cm-acts">
+      <button class="btn sm p" data-cm-post="${esc(parentId||'')}">post</button>
+      ${parentId ? '<button class="lnk" data-cm-cancel="1">cancel</button>' : ''}
+    </div></div>`;
+}
+
+function renderComments(c){
+  const body = document.getElementById('d-cm-body');
+  if(!body) return;
+  const tops = CM.rows.filter(r=>!r.parent_id);
+  const kids = new Map();
+  for(const r of CM.rows.filter(r=>r.parent_id)){
+    if(!kids.has(r.parent_id)) kids.set(r.parent_id, []);
+    kids.get(r.parent_id).push(r);
+  }
+  // a tombstone with no replies left is just noise; drop it
+  const live = tops.filter(r=>!r.deleted_at || (kids.get(r.id)||[]).length);
+  body.innerHTML = composer(c, null) +
+    (live.length
+      ? live.map(r=>cmRow(c, r, false) +
+          (kids.get(r.id)||[]).map(k=>cmRow(c, k, true)).join('')).join('')
+      : '<p class="note-line">nothing here yet. be the first.</p>');
+}
+
+async function postComment(c, parentId){
+  const box = document.getElementById('cm-new-' + (parentId || 'top'));
+  if(!box) return;
+  const text = box.value.trim();
+  if(!text) return;
+  if(!me){ toast('sign in to comment'); return; }
+  box.disabled = true;
+  const row = { comic_id: c.dbId, user_id: me.id, body: text };
+  if(parentId) row.parent_id = parentId;
+  // a comment written in the reader remembers where you were
+  const p = parseInt(new URLSearchParams(location.search).get('page') || '', 10);
+  if(!parentId && p > 0) row.page = p;
+  const { data, error } = await sb.from('comments').insert(row).select().single();
+  box.disabled = false;
+  if(error){ toast(window.eski.dbError('ESK-5041','that comment did not post',error)); return; }
+  CM.rows.push(data);
+  CM.replyTo = null;
+  c.commentCount = (c.commentCount || 0) + 1;
+  const n = document.getElementById('d-cm-n');
+  if(n) n.textContent = nfmt(c.commentCount);
+  renderComments(c);
+  renderHome(); renderBrowse();
+}
+
+async function saveComment(c, id){
+  const box = document.getElementById('cm-edit');
+  if(!box) return;
+  const text = box.value.trim();
+  if(!text) return;
+  const { data, error } = await sb.from('comments')
+    .update({ body: text }).eq('id', id).select().single();
+  if(error){ toast(window.eski.dbError('ESK-5042','that edit did not save',error)); return; }
+  CM.rows = CM.rows.map(r=>r.id === id ? data : r);
+  CM.editing = null;
+  renderComments(c);
+}
+
+/* a tombstone, not a delete: the replies underneath it have to survive. */
+async function deleteComment(c, id){
+  if(!confirm('remove this comment?')) return;
+  const { data, error } = await sb.from('comments')
+    .update({ deleted_at: new Date().toISOString() }).eq('id', id).select().single();
+  if(error){ toast(window.eski.dbError('ESK-5043','that comment did not come off',error)); return; }
+  CM.rows = CM.rows.map(r=>r.id === id ? data : r);
+  c.commentCount = Math.max(0, (c.commentCount || 1) - 1);
+  const n = document.getElementById('d-cm-n');
+  if(n) n.textContent = nfmt(c.commentCount);
+  renderComments(c);
+  renderHome(); renderBrowse();
+}
+
+/* delegated, on the sheet, bound once — the thread is rewritten on every
+   action and binding per render would stack a handler per keystroke's worth
+   of re-rendering. */
+sheet.addEventListener('click', e=>{
+  const c = current;
+  if(!c) return;
+  const post = e.target.closest('[data-cm-post]');
+  if(post){ postComment(c, post.dataset.cmPost || null); return; }
+  const rep = e.target.closest('[data-cm-reply]');
+  if(rep){ CM.replyTo = CM.replyTo === rep.dataset.cmReply ? null : rep.dataset.cmReply;
+    CM.editing = null; renderComments(c); return; }
+  const ed = e.target.closest('[data-cm-edit]');
+  if(ed){ CM.editing = ed.dataset.cmEdit; CM.replyTo = null; renderComments(c);
+    const t = document.getElementById('cm-edit'); if(t) t.focus(); return; }
+  const sv = e.target.closest('[data-cm-save]');
+  if(sv){ saveComment(c, sv.dataset.cmSave); return; }
+  const del = e.target.closest('[data-cm-del]');
+  if(del){ deleteComment(c, del.dataset.cmDel); return; }
+  const can = e.target.closest('[data-cm-cancel]');
+  if(can){ CM.replyTo = null; CM.editing = null; renderComments(c); return; }
+});
 
 /* ---------------- the shelf: read later / reading / read ----------------
    ONE row per (you, comic) with a status. signed out, it falls back to a
