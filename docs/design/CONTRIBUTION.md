@@ -1,7 +1,10 @@
 # One contribution studio, and how dialogue overlaps
 
-Two open designs, written down because they decide the shape of the studio
-that has not been built yet. Nothing here is implemented.
+Two designs, written down because they decide the shape of the studio that
+has not been built yet — and building it before they were settled would have
+been building the wrong screen. **Nothing here is implemented.** The DECIDED
+blocks are answers, not proposals; everything else is the reasoning that got
+there, kept so the same ideas do not get re-proposed.
 
 ---
 
@@ -59,10 +62,11 @@ The scene-launch control on each page row fires that whole page as a reader
 will hear it — every column, yours and not — which is the only honest way to
 judge a level.
 
-**Why sound effects are shared.** An effect is not a performance and not a
-score; it is a thing that happens on a page. A door slam belongs to whoever
-noticed the door. Making it a third permission nobody has would mean nobody
-adds any.
+**Why sound effects are open to both.** An effect is not a performance and
+not a score; it is a thing that happens on a page. A door slam belongs to
+whoever noticed the door. Making it a third permission nobody holds would
+mean nobody adds any. Who is *heard* when two people both noticed is settled
+under DECIDED below.
 
 ### The four ways in
 
@@ -93,35 +97,39 @@ is live.
 What is missing: nothing for sfx (a third `kind`, or a track-level type on
 both), and nothing that lets one part claim more than one character.
 
-### The three things I need decided
+### DECIDED
 
-**1. One character per part, or several?**
-One-per-part is simpler and matches `parts.character_key` as it stands: three
-characters means three parts, three separate things a reader can pick, three
-things you publish separately. Several-per-part needs a join table, but it
-matches how a person actually works — you sit down and voice the whole scene —
-and a reader picking "this VA's take" gets a coherent set rather than having
-to tick three boxes that happen to be the same person.
+**One character per part.** `parts.character_key` stands as it is, and no join
+table is needed. Voicing three characters is three parts, exported and
+published separately, and a reader picks each one independently.
 
-**2. Is stance permanent per part, or per session?**
-Permanent is the honest reading of `parts.kind` and of your rule: pick voice
-actor and you cannot touch anything else. But it means a person doing both for
-one comic keeps two parts open and switches between them, which is two exports
-and two publishes for one sitting.
+**Stance is fixed per part.** `parts.kind` already holds it. Doing both for
+one comic means two parts open. This is what keeps every layer owned by
+exactly one person, which is the invariant the rest of this rests on.
 
-**3. Do sound effects belong to the part, or to the comic?**
-If they belong to the part, a reader who picks a different voice actor loses
-their door slams, and two contributors both adding the obvious effects means
-the reader hears it twice. If they belong to the comic, they survive a mix
-change — but then anyone can edit a shared layer, which is exactly the thing
-publishing-is-one-way exists to prevent.
+**Sound effects travel with the part**, and this turns out to be the
+interesting one, because it makes the effects layer a thing a reader can
+choose rather than something they are stuck with:
 
-My recommendation on all three, if you want one: **several characters per
-part** (a join table; the reader is picking a performance, not a checkbox),
-**stance permanent** (it is already a column, and it is what makes the
-promise "your eski will not be re-cut" true for contributions too), and
-**sfx belong to the part** (it keeps every layer owned by exactly one person,
-which is the invariant everything else here rests on).
+- read a comic with **no score at all**, and still hear effects and dialogue
+- read it with a composer's score **and** that composer's effects
+- read it with just the voice actors' effects, if no composer is picked
+
+**The effects layer has exactly one owner at play time**, and the composer
+wins. If the reader has selected a composer's part, that part's effects layer
+is authoritative **even when it is empty** — picking a composer is picking
+their whole sound design, including their decision that a scene wants no door
+slam. A voice actor may still author effects; they are heard when no composer
+part is selected.
+
+> **Still open, and small:** with no composer selected and three voice parts
+> chosen, three people may each have added the obvious effects and the reader
+> hears the door slam three times. One character per part makes this more
+> likely, not less. The rule that follows from everything above is that the
+> effects layer keeps exactly one owner: take it from the selected voice
+> parts in cast order, the first that has an effects layer at all. It is
+> arbitrary between two contributors, but it is never doubled, and the grid
+> shows a contributor what is already there before they add to it.
 
 ---
 
@@ -202,14 +210,12 @@ smallint null) and a scheduler in the reader that walks a page's entries once
 at page turn instead of firing them all at zero. The manifest gains the same
 two fields per cue so an exported `.eski` carries it.
 
-### The open question
+### DECIDED: cut on the turn
 
-**What happens when a linked group runs past the reader's page turn?** Someone
-reading fast turns the page while three overlapping lines are still playing.
-Options: let them run to the end over the next page (a conversation continues,
-which is realistic), cut them at the turn (clean, and loses the end of a
-sentence), or hold the turn (never — nothing may block a page turn).
+A linked group still playing when the reader turns the page is **cut**, group
+and all. It loses the end of a sentence, and that is the right trade: the page
+is what the reader is looking at, and audio from the page before it arguing
+with the page in front of them is worse than a clean stop. It also means a
+page turn always costs the same thing, which is nothing.
 
-Letting them run is my recommendation, with the group as the unit: a group
-that has started finishes. It is what happens in a film when you cut on
-dialogue.
+Holding the turn was never an option — nothing may block a page turn.

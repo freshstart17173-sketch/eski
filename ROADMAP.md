@@ -119,15 +119,38 @@ audio and per-line voice performances; the running app implements v2, one
 soundtrack per comic. The design for all three studios is built and styled in
 `docs/design/final/studios/` and hooked to nothing.
 
-### 9. The composer studio · ~2–3 days
+### 9. The contribution studio · ~2–3 days
 
-The frame and the style are settled; the interaction is not. Known gaps: no way
-to hear the stack (you can preview one clip, not the page); no fades or
-crossfades anywhere, though the manifest has them; nothing expresses "this bed
-ducks under dialogue"; two clips on one layer can overlap with nothing deciding
-which wins; the cue rail can only be filled from the bay, not recorded into;
-and there is no way to **see a range as a shape** now that the lanes are gone,
-only as "pages 7–13" in a row. That last one is the real open question.
+**Designed and decided — see [`docs/design/CONTRIBUTION.md`](docs/design/CONTRIBUTION.md).**
+The voiceover and composer studios collapse into one screen: rows are pages,
+columns are layers, and the stance you entered with decides which columns are
+live. Everything else stays visible and audible but refuses a drop, which is
+what finally lets a voice actor hear the score they are performing over.
+
+Settled: one character per part, stance fixed at creation (`parts.kind`
+already holds it), sound effects travel with the part, and the effects layer
+has exactly one owner at play time with the composer winning even when their
+effects layer is empty.
+
+Still open in the interaction, not the model: no fades or crossfades anywhere
+though the manifest has them; nothing expresses "this bed ducks under
+dialogue"; two clips on one layer can overlap with nothing deciding which
+wins; the cue rail can only be filled from the bay, not recorded into; and
+there is no way to **see a range as a shape** now that the lanes are gone,
+only as "pages 7–13" in a row. That last one is the real question left.
+
+### 9b. Overlapping dialogue · ~4–6 hours
+
+**Designed and decided — same document, Part 2.** A cue is relative to the cue
+before it: `after`, `with`, or `over`, and `over` carries a *fraction* of the
+previous entry rather than a millisecond offset, because the audio does not
+exist when the author writes it and there is more than one of it afterwards.
+Two columns on the lines table, one control per row in the author studio, and
+a scheduler in the reader that walks a page's entries at page turn instead of
+firing them all at zero. A group still playing when the page turns is cut.
+
+Blocks nothing, and makes the author studio able to describe a conversation
+rather than a list.
 
 ### 10. The reader plays layers · ~1–2 days
 
