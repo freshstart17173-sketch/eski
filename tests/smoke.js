@@ -1279,6 +1279,19 @@ function ok(cond, name, extra) {
   ok(await phone.evaluate(() =>
     [...document.querySelectorAll('.player-bar .btn')].every(p => p.offsetHeight === 0 || p.offsetHeight >= 40)),
     'player bar buttons are at least 40px tall for thumbs');
+  /* THE BAR'S BACKGROUND IS --rule, showing through the 1px flex gaps as the
+     dividers. Something must absorb the leftover width or the bar paints it as
+     a slab in the corner — which is exactly what happened when the mobile query
+     hid .pb-score, the only child that was flex:1. Assert the children cover
+     the bar rather than asserting a colour: any future child that stops
+     growing brings the box back, whatever it is called. */
+  ok(await phone.evaluate(() => {
+    const bar = document.querySelector('.player-bar');
+    const kids = [...bar.children].filter(k => k.offsetWidth > 0);
+    const right = Math.max(...kids.map(k => k.getBoundingClientRect().right));
+    return bar.getBoundingClientRect().right - right < 2;
+  }), 'the player bar has no bare strip in the corner on a phone');
+
   await phone.click('#settings-btn');
   ok(await phone.evaluate(() => {
     const s = getComputedStyle(document.getElementById('settings'));
@@ -1416,6 +1429,68 @@ function ok(cond, name, extra) {
   ok(stanceRule.scoreCount === 4,
     'every authored entry stays on screen under every stance', String(stanceRule.scoreCount));
   await contrib.close();
+
+  /* ---------------------------------------------------------------------- */
+  console.log('the theme follows the account');
+  /* The suite is signed out throughout — the supabase origin returns 401 for
+     auth — so adopt() is driven directly with a fake client. That is the point:
+     what is being tested is the reconciliation rule, and a fake makes each
+     branch reachable without four sessions on two devices. */
+  const th = await ctx.newPage();
+  wire(th);
+  await th.goto('http://localhost:8931/legal.html');
+  const theme = await th.evaluate(async () => {
+    const out = {};
+    const writes = [];
+    // the shape palette.js uses: .from(t).select(c).eq(c,v).maybeSingle() and
+    // .from(t).upsert(row, opts)
+    const client = stored => ({
+      from(){ return {
+        select(){ return { eq(){ return { maybeSingle(){
+          return Promise.resolve({ data: stored ? { theme: stored } : null });
+        } }; } }; },
+        upsert(row){ writes.push(row.theme); return Promise.resolve({}); }
+      }; }
+    });
+
+    localStorage.setItem('eski-theme', 'light-blue');
+    window.eskiTheme.set('light-blue');
+
+    // 1. the account has one, and it wins over whatever this browser had
+    await window.eskiTheme.adopt(client('dark-pink'), 'u1');
+    out.adopted = window.eskiTheme.current;
+    out.stamped = document.documentElement.getAttribute('data-theme');
+
+    // 2. a token refresh must not re-pull: it would drag a fresh pick back
+    window.eskiTheme.set('mono-amber');
+    await window.eskiTheme.adopt(client('dark-pink'), 'u1');
+    out.afterRefresh = window.eskiTheme.current;
+
+    // 3. picking one writes it through
+    out.wroteOnSet = writes.includes('mono-amber');
+
+    // 4. an account with no row is seeded from this browser's pick
+    writes.length = 0;
+    await window.eskiTheme.adopt(client(null), 'u2');
+    out.seeded = writes[0];
+    out.keptLocal = window.eskiTheme.current;
+
+    // 5. signing out detaches, and a later pick must not throw
+    await window.eskiTheme.adopt(null, null);
+    writes.length = 0;
+    window.eskiTheme.set('light-neutral');
+    out.silentSignedOut = writes.length === 0;
+    return out;
+  });
+  ok(theme.adopted === 'dark-pink' && theme.stamped === 'dark-pink',
+    'signing in adopts the account theme over this browser\'s', JSON.stringify(theme));
+  ok(theme.afterRefresh === 'mono-amber',
+    'a token refresh does not undo a pick made since', theme.afterRefresh);
+  ok(theme.wroteOnSet, 'picking a theme writes it to the account');
+  ok(theme.seeded === 'mono-amber' && theme.keptLocal === 'mono-amber',
+    'an account with no theme yet is seeded from this browser', JSON.stringify(theme));
+  ok(theme.silentSignedOut, 'signed out, a pick stays local and writes nothing');
+  await th.close();
 
   console.log('console errors');
   ok(consoleErrors.length === 0, 'zero console errors', consoleErrors.join(' | '));

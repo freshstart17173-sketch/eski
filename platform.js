@@ -128,6 +128,15 @@ function paint(){
 
 function setUser(u){
   user = u;
+  /* THE THEME FOLLOWS THE ACCOUNT, and this is the only place that says so.
+     palette.js keeps localStorage as its first-paint source — it is a
+     synchronous script in <head> so the page never repaints — and adopts the
+     account's theme here, just after we learn who is signed in. This call
+     belongs here and nowhere else: platform.js is the one module on every
+     page that knows the user, and palette.js's whole design note is that a
+     second writer is what broke the theme last time. */
+  if(window.eskiTheme && window.eskiTheme.adopt)
+    window.eskiTheme.adopt(sb, u && u.id);
   // the pages are classic scripts and cannot import this module
   document.dispatchEvent(new CustomEvent('eski-auth', { detail: { user: u } }));
   paint();

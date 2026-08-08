@@ -57,10 +57,76 @@
 
   apply(read());
 
+  /* ------------------------------------------------- following the account */
+  /* THE THEME IS A PROPERTY OF YOU, NOT OF THIS BROWSER. localStorage is
+     per-device, so picking a theme on a laptop and opening the site on a
+     phone showed the default and read as "it did not save".
+
+     localStorage stays the FIRST PAINT source and cannot stop being one: this
+     file is synchronous in <head> so the page never paints twice, and no
+     round trip fits before paint. So the server value is adopted just after
+     sign-in instead, which is one late repaint on a device that has never
+     seen your theme, and none at all on the one you picked it on.
+
+     ONE WRITER, still: platform.js calls adopt() because platform.js is the
+     only thing on every page that knows who is signed in. Nothing else may
+     call it — a second caller is how the "theme resets when I navigate" bug
+     came back last time. */
+  var push = null;                      // set by adopt(); null when signed out
+  var adopted = null;                   // whose theme we have already pulled
+
+  function save(id){
+    if(push) push(id);
+  }
+
+  /* sb: the supabase client. uid: the signed-in user, or null to detach. */
+  function adopt(sb, uid){
+    if(!sb || !uid){ push = null; adopted = null; return Promise.resolve(); }
+
+    push = function(id){
+      sb.from('user_prefs')
+        .upsert({ user_id: uid, theme: id, updated_at: new Date().toISOString() },
+                { onConflict: 'user_id' })
+        .then(null, function(){});
+      /* DELIBERATELY UNREPORTED, and there is no ESK code for it. A colour
+         preference that failed to sync is not a thing to interrupt somebody
+         about: the theme they just picked is applied and stored locally, so
+         the only loss is that one other device stays on its old one. A toast
+         here would be noise on every offline page load. */
+    };
+
+    /* onAuthStateChange also fires on every token refresh, and re-pulling then
+       would not just waste a query — it would drag the theme back to the
+       stored one seconds after somebody picked a new one in another tab. Pull
+       once per account. */
+    if(adopted === uid) return Promise.resolve();
+    adopted = uid;
+
+    return sb.from('user_prefs').select('theme').eq('user_id', uid).maybeSingle()
+      .then(function(r){
+        var theirs = r && r.data && r.data.theme;
+        if(theirs && parse(theirs)){
+          if(theirs !== read()){
+            try{ localStorage.setItem(KEY, theirs); }catch(e){}
+            apply(theirs);
+            document.dispatchEvent(new CustomEvent('eski-theme', { detail:{ theme:theirs } }));
+            paintAll();
+          }
+          return;
+        }
+        /* NO ROW YET — the account predates this table, or they have never
+           changed the theme. Their current local pick becomes the account's,
+           so the first device they sign in on seeds the rest rather than the
+           account starting on a default nobody chose. */
+        push(read());
+      }, function(){ /* offline, or the table is not applied yet: keep local */ });
+  }
+
   function set(id){
     if(!parse(id)) return;
     try{ localStorage.setItem(KEY, id); }catch(e){}
     apply(id);
+    save(id);
     document.dispatchEvent(new CustomEvent('eski-theme', { detail:{ theme:id } }));
     paintAll();
   }
@@ -138,7 +204,8 @@
     get current(){ return read(); },
     get mode(){ return (parse(read()) || parse(DEFAULT)).treatment.mode; },
     set: set,
-    paint: paintAll
+    paint: paintAll,
+    adopt: adopt
   };
 
   addEventListener('storage', function(e){

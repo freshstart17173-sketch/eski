@@ -77,7 +77,7 @@ script. This is what ESK-1005 is for.
 | `tokens.css` | Spacing, type scale, control heights, timings. **No colour.** |
 | `docs/design/final/broadsheet.css` | The house style: chrome, controls, plates, sheets, folds, captions. The foot of the file owns colour and hover for every shared control. |
 | `palettes.css` | The eighteen themes. The only file with raw colour in it. |
-| `palette.js` | Reads and stamps the theme, and draws the picker. |
+| `palette.js` | Reads and stamps the theme, draws the picker, and syncs the choice to the account. |
 | `viewer.js` | `mountViewer()` — the pan/zoom page viewer. Used by the reader and both studios, so a viewer fix lands here once. |
 | `loudness.js` | ITU-R BS.1770-4 measurement and the gain targets. Used by both studios so the two cannot disagree about how loud a clip is. |
 | `comments.js` | The comment thread widget, used by the comic page and the reader. |
@@ -115,6 +115,14 @@ browse. Both are `STABLE` and **not** `SECURITY DEFINER` — they run as the
 caller, so `auth.uid()` is the real user and RLS applies exactly as it does to
 the selects they replaced. Keep it that way; `SECURITY DEFINER` here would be
 a way to leak other people's drafts.
+
+**The theme is stored twice on purpose.** `localStorage` is what the first
+paint reads — `palette.js` is synchronous in `<head>` so the page never paints
+in one theme and repaints in yours, and no round trip fits before paint.
+`user_prefs.theme` (`schema-prefs.sql`) is what makes it follow you to another
+device: `platform.js` calls `eskiTheme.adopt()` once it knows who is signed in,
+and that is the **only** caller. A second one is how "the theme resets when I
+navigate" comes back.
 
 `schema.sql` is the base; the rest add a feature each. **The policies are the
 rule, not the UI** — the studio hides a control it knows is refused, but the
