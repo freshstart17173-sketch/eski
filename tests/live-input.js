@@ -213,10 +213,10 @@ const BASE = process.env.BASE || 'https://www.eski.lol';
     const d = await b.newContext({ viewport:{width:1440,height:900}, serviceWorkers:'block' });
     if(api) await d.route('**/*', async route => {
       const q = route.request();
-      /* ONE RETRY. The relay drops the occasional request when a page fires
-         thirty of them at once, and an aborted stylesheet then shows up as
-         "the site is broken" rather than "the harness blinked". */
-      for(let attempt = 0; attempt < 2; attempt++){
+      /* three attempts with backoff. a phone context opens thirty requests at
+         once and the relay drops one often enough that a single retry still
+         left a stylesheet failing about one run in three. */
+      for(let attempt = 0; attempt < 3; attempt++){
         try{
           const r = await api.fetch(q.url(), { method:q.method(), headers:q.headers(),
             data: q.postDataBuffer() || undefined, maxRedirects: 5, timeout: 60000 });
@@ -224,8 +224,8 @@ const BASE = process.env.BASE || 'https://www.eski.lol';
           await route.fulfill({ status:r.status(), headers:h, body: await r.body() });
           return;
         }catch(e){
-          if(attempt) { await route.abort(); return; }
-          await new Promise(r => setTimeout(r, 250));
+          if(attempt === 2){ await route.abort(); return; }
+          await new Promise(r => setTimeout(r, 300 * (attempt + 1)));
         }
       }
     });

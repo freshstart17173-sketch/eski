@@ -133,7 +133,7 @@ async function buildEski(){
     /* ONE RETRY: the relay drops the occasional request when a page fires
        thirty at once, and an aborted stylesheet then reads as "the site is
        broken" rather than "the harness blinked". */
-    for(let attempt = 0; attempt < 2; attempt++){
+    for(let attempt = 0; attempt < 3; attempt++){
       try{
         const r = await api.fetch(q.url(), { method:q.method(), headers:q.headers(),
           data: q.postDataBuffer() || undefined, maxRedirects: 5, timeout: 60000 });
@@ -141,8 +141,8 @@ async function buildEski(){
         await route.fulfill({ status:r.status(), headers:h, body: await r.body() });
         return;
       }catch(e){
-        if(attempt){ await route.abort(); return; }
-        await new Promise(r => setTimeout(r, 250));
+        if(attempt === 2){ await route.abort(); return; }
+        await new Promise(r => setTimeout(r, 300 * (attempt + 1)));
       }
     }
   });
