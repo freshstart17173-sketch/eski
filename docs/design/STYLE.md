@@ -40,11 +40,32 @@ stop at the end.
 
 **There is no brand colour.** Sage green was one, and it was the wrong choice
 for a site whose job is to show other people's artwork — every cover had to sit
-inside somebody else's hue. The accent belongs to the reader.
+inside somebody else's hue. The colour belongs to the reader.
 
-Ten palettes: five on a light ground, five on a dark one, including black and
-white. Each is written out in full in `palettes.css`, so a swap is one
-attribute on `<html>` and the browser already has every value parsed.
+**A theme is a hue and a treatment.** Six hues (neutral, green, blue, red,
+amber, pink) across three treatments:
+
+| Treatment | What it is |
+|---|---|
+| `light` | Near-white ground, near-black text, the hue as the accent |
+| `mono`  | The hue **is** the page — ground, text and accent are one colour at different values. The old sage look. |
+| `dark`  | Near-black ground, near-white text, the hue as the accent |
+
+Eighteen in all, each written out in full in `palettes.css`, so a swap is one
+attribute on `<html>` with everything already parsed: instant, and it cannot
+flash a half-applied state.
+
+**The picker is in the footer of every page**, and nowhere else — a second one
+in settings meant two controls that could disagree about which was
+authoritative. The word THEME is the toggle; the chips unroll to the right of
+it on the same line.
+
+**A chip is a miniature of the page it makes** — ground, rule, a heading bar, a
+line of body text and the accent, drawn in its own theme. The first version was
+a ground with an accent block on it, which said "mostly green" for a theme that
+is a dark page with green type on it. There are no LIGHT/MONO/DARK labels: the
+treatment is the thing you can already see, and naming it would be captioning a
+picture with what the picture is.
 
 A palette sets exactly these and nothing else:
 
@@ -68,7 +89,7 @@ Rules for using them:
   sampled the cover and recoloured the chrome from it, which fought the
   reader's own choice and never looked right.
 
-**One writer.** `palette.js` owns `data-palette` and `data-mode`. Nothing else
+**One writer.** `palette.js` owns `data-theme`, `data-mode` and `data-dark`. Nothing else
 writes them. The previous system had seven surfaces setting the theme on load
 from their own local flag, so choosing one and navigating anywhere reset it —
 which read as "the theme disappears when I leave the profile". If you find
@@ -95,7 +116,7 @@ everything beside them; they are uppercase Jost now.
 
 | Role | Treatment |
 |---|---|
-| Wordmark | Gnomon 21px, `--ink`, nudged `.09em` down (its outlines sit high in its own line box) |
+| Wordmark | Gnomon 21px, `--wordmark`, nudged `.18em` down onto its **bounding-box** centre (its outlines sit high in its own line box). One colour throughout, including the `!` |
 | Section heading | Jost 13px, 500, uppercase, `.16em` |
 | Body | Jost 13.5px, 400 |
 | Field label | Jost 11px, uppercase, `.06–.1em`, `--label` |
@@ -156,7 +177,55 @@ Kept here so the same ideas do not get re-proposed.
   being one thing, two of them removed the hairlines the layout was built out
   of, and the choice was overwhelming. Replaced by ten accent palettes over
   one fixed shape.
-- **Cover-match tint** in the reader.
+- **Cover-match tint** in the reader. It sampled the cover and recoloured the
+  chrome from it, which fought whatever theme the reader had chosen.
 - **Gnomon on headings.**
+- **Ten flat palettes** (one accent over a light or dark ground). The chips
+  could not honestly show a monochrome theme, because "ground + accent block"
+  is not what a monochrome page looks like. Replaced by hue × treatment.
 - **Sign out in the top bar** — the one destructive control, permanently one
   click from every page. It is in the profile's settings tab now.
+
+
+---
+
+## 9. What a comic's state means
+
+Not styling, but it drives what the profile and the studio show, so it belongs
+somewhere findable.
+
+| State | Who sees it | Editable | Can become |
+|---|---|---|---|
+| `draft` | the owner | **yes**, in the studio | `published` |
+| `published` | everyone | no | `private`, deleted |
+| `private` | the owner | no | `published`, deleted |
+
+**Publishing is one way.** A published comic can never go back to being a
+draft. By then other people have voiced and scored it, and a draft is editable
+— so returning one to draft would let an author re-cut a comic underneath the
+people who contributed to it. The database enforces this with a trigger, not
+the interface.
+
+`unpublish` is gone as a word and as an action. The thing it used to do —
+return a comic to `draft` — is exactly what must not happen. **Make private**
+is what it is now.
+
+A draft is therefore only ever a comic that has **never** been published.
+
+---
+
+## 10. What a profile shows a stranger
+
+| Tab | Visible to |
+|---|---|
+| Reading, Contributions, Published | everyone |
+| Shelf | the owner, plus everyone **if** `profiles.shelf_public` |
+| Read, Private, Drafts, Settings | the owner only |
+
+What you have finished and what you have not shown anyone are never public and
+have no setting. The shelf is the one where it is a real question — some people
+want it read as a recommendation, some as a private queue.
+
+**Unpublish/private and delete appear on the profile and nowhere else**, and
+both ask first in a dialog that names what goes with it. The old flow acted
+immediately and reported afterwards in a toast, which is the wrong order.

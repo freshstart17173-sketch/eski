@@ -276,14 +276,21 @@ async function pickComic(){
       <span class="sp"></span><a href="studio.html">Make a new one →</a></div>
     <p class="note-line" style="padding:var(--s3) 0">
       Pick a comic to write its cast and transcribe its pages. Pages and audio
-      are imported in the <a href="studio.html">composer</a>.</p>
+      are imported in the <a href="studio.html">composer</a>.
+      <br><br><b>Only a draft can be edited.</b> Once an eski is published,
+      people start voicing and scoring it, so it is frozen — you can make it
+      private or delete it from your profile, but not re-cut it under the
+      people who contributed to it.</p>
     ${rows.length ? `<div class="picklist">${rows.map(c=>`
       <button class="pickrow" data-id="${esc(c.id)}">
         <span class="plate">${c.thumb_key || c.cover_key
           ? `<img src="${esc(mediaUrl(c.thumb_key || c.cover_key))}" alt="">` : ''}</span>
         <span><span class="ttl">${esc(c.title || 'untitled')}</span>
-          <span class="sub" style="display:block">${esc(c.status)}</span></span>
-        <span class="btn sm">Open</span>
+          <span class="sub" style="display:block">${esc(
+            c.status === 'draft' ? 'Draft · editable'
+            : c.status === 'private' ? 'Private · published once, no longer editable'
+            : 'Published · no longer editable')}</span></span>
+        <span class="btn sm">${c.status === 'draft' ? 'Open' : 'View'}</span>
       </button>`).join('')}</div>`
       : '<div class="empty">You have not made a comic yet. The <a href="studio.html">composer</a> imports the pages.</div>'}
   </div>`;

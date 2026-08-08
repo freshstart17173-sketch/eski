@@ -555,8 +555,7 @@ footer a:hover{color:var(--ink)}
 </div>
 
 <footer>
-  <span class="pal-foot"><span>Colour</span>
-    <span data-palette-picker data-compact></span></span>
+  <span data-palette-picker></span>
   <span class="sp"></span>
   <a href="author.html">Studio</a>
   <a href="index.html">Home</a>
@@ -611,6 +610,9 @@ const IMG_RE = /\.(jpe?g|png|gif|webp|bmp|avif)$/i;
 
 /* icons (Lucide v1.25.0, ISC, inlined) */
 const ICONS = {
+  /* the comments button asked for this and it was never here, so it rendered
+     an empty 17px box beside four buttons that had icons. */
+  "message-square": "<path d=\"M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z\" />",
   "moon": "<path d=\"M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401\" />",
   "chevron-right": "<path d=\"m9 18 6-6-6-6\" />",
   "maximize-2": "<path d=\"M15 3h6v6\" /> <path d=\"m21 3-7 7\" /> <path d=\"m3 21 7-7\" /> <path d=\"M9 21H3v-6\" />",

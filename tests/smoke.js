@@ -153,22 +153,29 @@ function ok(cond, name, extra) {
       typeof window.applyTint === 'undefined' && !document.getElementById('set-tint')),
     'the reader no longer recolours itself from the cover');
 
-  console.log('the palette');
-  ok(await page.evaluate(() => !!window.eskiPalette), 'palette.js is on the reader');
+  console.log('the theme');
+  ok(await page.evaluate(() => !!window.eskiTheme), 'palette.js is on the reader');
   ok(await page.evaluate(() => {
-      window.eskiPalette.set('cobalt');
+      window.eskiTheme.set('light-blue');
       const el = document.documentElement;
-      return el.getAttribute('data-palette') === 'cobalt' &&
+      return el.getAttribute('data-theme') === 'light-blue' &&
              el.getAttribute('data-mode') === 'light' && !el.hasAttribute('data-dark');
-    }), 'a light palette applies and clears data-dark');
+    }), 'a light theme applies and clears data-dark');
   ok(await page.evaluate(() => {
-      window.eskiPalette.set('moss');
+      window.eskiTheme.set('mono-green');
       const c = getComputedStyle(document.documentElement);
-      // shape is NOT a palette decision and must survive every swap
+      // shape is NOT a theme decision and must survive every swap
       return c.getPropertyValue('--r').trim() === '0' &&
              c.getPropertyValue('--bw').trim() === '1px' &&
              document.documentElement.hasAttribute('data-dark');
-    }), 'a dark palette applies and leaves the radius and rules alone');
+    }), 'a mono theme applies and leaves the radius and rules alone');
+  ok(await page.evaluate(() => window.eskiTheme.hues.length * window.eskiTheme.treatments.length),
+    'eighteen themes: six hues across three treatments');
+  ok(await page.evaluate(() => {
+      const p = document.querySelector('[data-palette-picker] .pal-pop');
+      // shut until asked for, and never a stack of rows
+      return p && !document.querySelector('.pal-row');
+    }), 'the picker is one row, shut until the word is clicked');
 
   console.log('reader: deep link');
   const page2 = await ctx.newPage();

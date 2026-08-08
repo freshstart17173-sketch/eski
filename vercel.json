@@ -2,6 +2,13 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "installCommand": "npm install --omit=dev",
   "rewrites": [
-    { "source": "/c/:slug", "destination": "/api/comic" }
+    {
+      "source": "/c/:slug",
+      "destination": "/api/comic"
+    },
+    {
+      "source": "/u/:handle",
+      "destination": "/profile.html"
+    }
   ]
 }

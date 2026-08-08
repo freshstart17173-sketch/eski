@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- this page also answers at /u/<handle>; without this every relative
+     url below would resolve against /u/ and 404 -->
+<base href="/">
 <title>eski profile</title>
 <meta name="description" content="A reader, a voice, or a composer on eski.">
 <link rel="icon" type="image/png" href="eski_logo.png">
@@ -151,6 +154,22 @@ section + section{margin-top:var(--s6)}
   .rolerow .where{display:none}
 }
 
+/* ---------- the confirm dialog ----------
+   a destructive action asks BEFORE it happens and names what goes with it.
+   the old flow deleted and then told you in a toast, which is the wrong
+   order: a toast tells you after. */
+.confirm{place-items:center}
+.confirm-sheet{width:min(440px,100%);max-height:none}
+.confirm-body{margin:0;padding:var(--s4);font-size:var(--fs-xs);line-height:1.6;
+  color:var(--soft-ink);white-space:pre-wrap}
+.sheetfoot{display:flex;gap:var(--s2);justify-content:flex-end}
+.btn.danger{border-color:var(--rec);color:var(--rec)}
+.btn.danger:hover{background:var(--rec);border-color:var(--rec);color:var(--paper)}
+
+/* ---------- avatar ---------- */
+.avrow{display:flex;align-items:center;gap:var(--s3);flex-wrap:wrap}
+.pfp-lg.sm{width:44px;height:44px;font-size:16px}
+
 /* ---------- settings ---------- */
 .setrow{display:flex;align-items:center;gap:var(--s3);padding:var(--s2) 0;
   border-bottom:var(--bw) solid var(--rule-hair);font-size:var(--fs-xs)}
@@ -273,7 +292,10 @@ async function load(){
       '<br><br>if this persists, hard reload once: an old service worker can keep serving a stale page.</div>';
     return;
   }
-  const wanted = new URLSearchParams(location.search).get('u');
+  /* A PROFILE HAS AN ADDRESS: /u/<handle>. ?u= still works — old links do
+     not break — but the one people copy is the readable one. */
+  const wanted = (location.pathname.match(/^\/u\/([^/]+)\/?$/) || [])[1]
+              || new URLSearchParams(location.search).get('u');
   me = (await sb.auth.getUser()).data.user || null;
 
   if(wanted){
@@ -345,7 +367,15 @@ function cardEl(comic, opts){
        <div class="r"><span class="k">by</span><span class="v">${mq(comic.owner_name || subject.display_name || subject.handle)}</span></div>
        ${opts.rows || ''}
      </div>`;
-  b.onclick = ()=>{ location.href = 'read.html?read=db:' + encodeURIComponent(comic.id); };
+  /* THE CARD OPENS THE COMIC'S PAGE, not the reader. Every eski has one at
+     /c/<slug> whatever its state — a draft and a private one are visible to
+     their owner and to nobody else — so this is the same door everywhere,
+     and it is where read, the mix, the thread and the owner's controls are. */
+  b.onclick = ()=>{
+    location.href = comic.slug
+      ? '/c/' + encodeURIComponent(comic.slug)
+      : 'read.html?read=db:' + encodeURIComponent(comic.id);
+  };
   cell.appendChild(b);
   if(opts.progress != null){
     const bar = document.createElement('div');
@@ -379,21 +409,30 @@ function paint(){
   const read    = saves.filter(s=>s.status === 'read' && s.comics);
   const later   = saves.filter(s=>s.status === 'later' && s.comics);
   const published = comics.filter(c=>c.status === 'published');
-  const drafts    = comics.filter(c=>c.status !== 'published');
+  const priv      = comics.filter(c=>c.status === 'private');
+  // a draft is now ONLY a comic that has never been published
+  const drafts    = comics.filter(c=>c.status === 'draft');
 
   /* One row, one panel. `mine` marks the tabs only the owner sees. */
+  /* `mine` marks a tab only the owner ever sees. READ and DRAFTS are always
+     private — what you have finished and what you have not shown anyone are
+     nobody's business. The SHELF is the one that is a real question, so it
+     is a setting (profiles.shelf_public) rather than a rule. */
+  const shelfVisible = isMe || subject.shelf_public;
   const TABS = [
-    { id:'reading',   label:'Reading',       mine:false, count:c=>c.reading },
-    { id:'later',     label:'Shelf',         mine:false, count:c=>c.later },
-    { id:'read',      label:'Read',          mine:false, count:c=>c.read },
-    { id:'parts',     label:'Contributions', mine:false, count:c=>c.parts },
-    { id:'published', label:'Published',     mine:false, count:c=>c.published },
-    { id:'drafts',    label:'Drafts',        mine:true,  count:c=>c.drafts },
-    { id:'settings',  label:'Settings',      mine:true,  count:()=>'' }
+    { id:'reading',   label:'Reading',       show:true,          count:()=>'' },
+    { id:'later',     label:'Shelf',         show:shelfVisible,  count:c=>c.later },
+    { id:'read',      label:'Read',          show:isMe,          count:c=>c.read },
+    { id:'parts',     label:'Contributions', show:true,          count:c=>c.parts },
+    { id:'published', label:'Published',     show:true,          count:c=>c.published },
+    { id:'private',   label:'Private',       show:isMe,          count:c=>c.priv },
+    { id:'drafts',    label:'Drafts',        show:isMe,          count:c=>c.drafts },
+    { id:'settings',  label:'Settings',      show:isMe,          count:()=>'' }
   ];
 
   const counts = { reading:reading.length, read:read.length, later:later.length,
-                   parts:parts.length, published:published.length, drafts:drafts.length };
+                   parts:parts.length, published:published.length,
+                   priv:priv.length, drafts:drafts.length };
 
   $('page').innerHTML = `
     <div class="phead">
@@ -420,6 +459,14 @@ function paint(){
         <span><b class="hot">${nfmt(kudosReceived)}</b>Kudos</span>
       </div>
       <div class="editwrap">${isMe ? `<div class="edit" id="edit">
+          <div><label for="f-av">Picture</label>
+            <div class="avrow">
+              <span class="pfp-lg sm" id="av-prev">${p.avatar_url
+                ? `<img src="${esc(p.avatar_url)}" alt="">` : esc(initial)}</span>
+              <input type="file" id="f-av" accept="image/png,image/jpeg,image/webp,image/gif" hidden>
+              <button class="btn sm" id="av-pick">Choose a picture</button>
+              ${p.avatar_url ? '<button class="btn sm" id="av-clear">Remove</button>' : ''}
+            </div></div>
           <div><label for="f-name">Display name</label>
             <input id="f-name" maxlength="60" value="${esc(p.display_name||'')}"></div>
           <div><label for="f-handle">Handle</label>
@@ -440,7 +487,7 @@ function paint(){
          empty grids and you scrolled past five to reach the sixth. One row of
          tabs, one panel, and Reading is what you land on. -->
     <div class="tabs" id="tabs" role="tablist">
-      ${TABS.filter(t=>t.mine ? isMe : true).map((t,i)=>
+      ${TABS.filter(t=>t.show).map((t,i)=>
         `<button class="tab" role="tab" data-tab="${t.id}"
            aria-selected="${i===0}">${esc(t.label)}<span class="n">${
            t.count(counts)}</span></button>`).join('')}
@@ -449,8 +496,7 @@ function paint(){
     <div id="panel"></div>
 
     <div class="foot">
-      <span class="pal-foot"><span>Colour</span>
-        <span data-palette-picker data-compact></span></span>
+      <span data-palette-picker></span>
       <span class="sp"></span>
       <span><a href="index.html">HOME</a> · <a href="author.html">STUDIO</a></span></div>`;
 
@@ -471,15 +517,16 @@ function paint(){
     const box = $('panel');
 
     if(id === 'settings'){
+      /* the theme lives in the footer of every page. having it here as well
+         meant two pickers that could disagree about which was authoritative. */
       box.innerHTML = `
-        <div class="subhead"><span>Colour</span></div>
-        <p class="note-line">The accent is yours. Ten palettes, five on a light
-          ground and five on a dark one — the shape of the site does not change,
-          only what it is coloured with.</p>
-        <div data-palette-picker></div>
+        <div class="subhead"><span>Privacy</span></div>
+        <p class="note-line">What you have read and what you have not published
+          are never public. Your shelf is the one that is up to you.</p>
+        ${shelfSwitch()}
         <div class="subhead" style="margin-top:var(--s5)"><span>Account</span></div>
         <div class="pacts"><button class="btn sm" id="signout">Sign out</button></div>`;
-      if(window.eskiPalette) window.eskiPalette.paint();
+      wireShelfSwitch(box);
       const so = $('signout');
       if(so) so.addEventListener('click', ()=>{ if(sb) sb.auth.signOut(); });
       return;
@@ -520,10 +567,7 @@ function paint(){
       return;
     }
 
-    const link = { reading:'<a href="index.html#browse">Find something →</a>',
-                   later:'<a href="index.html#browse">Find something →</a>',
-                   drafts:'<a href="author.html">Open the studio →</a>' }[id] || '';
-    box.innerHTML = `${link ? `<div class="head"><span class="sp"></span>${link}</div>` : ''}
+    box.innerHTML = `${id === 'later' && isMe ? shelfSwitch() : ''}
       <div class="grid" id="g-${id}"></div>
       <div class="empty" id="e-${id}" hidden></div>`;
 
@@ -543,9 +587,15 @@ function paint(){
       }), 'Nothing finished yet.'],
       published: [published, c=>cardEl(c, {
         rows:`<div class="r"><span class="k">on</span><span class="v">${esc(fmt(c.published_at||c.created_at))}</span></div>`,
-        acts: isMe ? `<button class="btn sm" data-comic="${esc(c.id)}" data-act="unpublish">Unpublish</button>
+        acts: isMe ? `<button class="btn sm" data-comic="${esc(c.id)}" data-act="private">Make private</button>
            <button class="btn sm danger" data-comic="${esc(c.id)}" data-act="delete">Delete</button>` : ''
       }), 'Nothing published yet.'],
+      private: [priv, c=>cardEl(c, {
+        note:'Hidden',
+        rows:`<div class="r"><span class="k">was up</span><span class="v">${esc(fmt(c.published_at))}</span></div>`,
+        acts:`<button class="btn sm" data-comic="${esc(c.id)}" data-act="publish">Make public</button>
+           <button class="btn sm danger" data-comic="${esc(c.id)}" data-act="delete">Delete</button>`
+      }), 'Nothing hidden. A published eski you make private lands here — it stays uneditable.'],
       drafts: [drafts, c=>cardEl(c, {
         rows:`<div class="r"><span class="k">made</span><span class="v">${esc(fmt(c.created_at))}</span></div>`,
         acts:`<button class="btn sm primary" data-comic="${esc(c.id)}" data-act="publish">Publish</button>
@@ -554,7 +604,29 @@ function paint(){
     }[id];
 
     fillGrid('g-' + id, MAP[0], MAP[1], 'e-' + id, MAP[2]);
-    paintIcons(box); wireActs(box);
+    paintIcons(box); wireActs(box); wireShelfSwitch(box);
+  }
+
+  /* ONE SETTING, TWO PLACES IT MATTERS: settings, and above the shelf itself
+     where you can see what you are exposing. Both render this. */
+  function shelfSwitch(){
+    return `<div class="setrow">
+      <span>Show my shelf on my profile</span><span class="sp"></span>
+      <button class="btn sm" data-shelf aria-pressed="${!!subject.shelf_public}">${
+        subject.shelf_public ? 'Public' : 'Private'}</button></div>`;
+  }
+  function wireShelfSwitch(root){
+    root.querySelectorAll('[data-shelf]').forEach(b=>b.addEventListener('click', async ()=>{
+      const next = !subject.shelf_public;
+      b.disabled = true;
+      const { error } = await sb.from('profiles')
+        .update({ shelf_public: next }).eq('id', me.id);
+      b.disabled = false;
+      if(error){ alert(window.eski.dbError('ESK-5019','that setting did not save',error)); return; }
+      subject.shelf_public = next;
+      b.setAttribute('aria-pressed', next);
+      b.textContent = next ? 'Public' : 'Private';
+    }));
   }
 
   const wireActs = root => root.querySelectorAll('[data-act]').forEach(b=>
@@ -568,7 +640,7 @@ function paint(){
   showTab('reading');
 
   $('share').addEventListener('click', async e=>{
-    const url = location.origin + location.pathname.replace(/[^/]*$/, 'profile.html') + '?u=' + p.handle;
+    const url = location.origin + '/u/' + encodeURIComponent(p.handle);
     try{ await navigator.clipboard.writeText(url); e.currentTarget.lastChild.textContent = 'Link copied'; }
     catch(err){ prompt('Copy this link', url); }
   });
@@ -576,7 +648,48 @@ function paint(){
     $('editbtn').addEventListener('click', ()=>$('edit').classList.toggle('on'));
     $('cancel').addEventListener('click', ()=>$('edit').classList.remove('on'));
     $('save').addEventListener('click', saveProfile);
+    wireAvatar();
   }
+}
+
+/* AVATARS GO IN THEIR OWN BUCKET, in a folder named after your uid — the
+   storage policy only lets you write inside that folder, so nobody can
+   overwrite anyone else's. The file is content-addressed by timestamp so a
+   new picture is never served from a stale cache. */
+function wireAvatar(){
+  const pick = $('av-pick'), file = $('f-av'), prev = $('av-prev'), clear = $('av-clear');
+  if(!pick || !file) return;
+  pick.addEventListener('click', ()=>file.click());
+  if(clear) clear.addEventListener('click', async ()=>{
+    clear.disabled = true;
+    const { error } = await sb.from('profiles').update({ avatar_url:null }).eq('id', me.id);
+    clear.disabled = false;
+    if(error){ alert(window.eski.dbError('ESK-5020','the picture did not come off',error)); return; }
+    subject.avatar_url = null; paint();
+  });
+  file.addEventListener('change', async ()=>{
+    const f = file.files && file.files[0];
+    if(!f) return;
+    if(f.size > 2 * 1024 * 1024){ alert('That picture is over 2 MB. Try a smaller one.'); return; }
+    pick.disabled = true; pick.textContent = 'Uploading…';
+    try{
+      const ext = (f.name.split('.').pop() || 'png').toLowerCase().replace(/[^a-z0-9]/g,'');
+      const key = me.id + '/' + Date.now() + '.' + (ext || 'png');
+      const up = await sb.storage.from('avatars').upload(key, f, { upsert:true, contentType:f.type });
+      if(up.error) throw up.error;
+      const { data } = sb.storage.from('avatars').getPublicUrl(key);
+      const url = data.publicUrl;
+      const wr = await sb.from('profiles').update({ avatar_url:url }).eq('id', me.id);
+      if(wr.error) throw wr.error;
+      subject.avatar_url = url;
+      if(prev) prev.innerHTML = `<img src="${esc(url)}" alt="">`;
+      paint();
+    }catch(e){
+      alert(window.eski.dbError('ESK-5021','the picture did not upload', e));
+    }finally{
+      pick.disabled = false; pick.textContent = 'Choose a picture';
+    }
+  });
 }
 
 async function saveProfile(){
@@ -603,26 +716,104 @@ async function saveProfile(){
 
 /* a part row and a comic card carry the same three actions against different
    tables. the shape is identical, so only the table and the id change. */
+/* ============================================================
+   THE THREE THINGS AN OWNER CAN DO, AND WHAT THEY COST.
+
+   Publishing is one way. A comic that has been published can be made
+   PRIVATE or DELETED and nothing else — it can never go back to being a
+   draft, because a draft is editable and other people's voice work and
+   scores are attached to it by then. The database enforces that; this is
+   only the interface to it.
+
+     draft     never published. editable in the studio. only you see it.
+     published public.
+     private   was published, now hidden. still not editable.
+
+   Both destructive actions ask first, in a real dialog that names what is
+   about to happen. "Unpublish" used to do it silently and report with a
+   toast, which is the wrong order: a toast tells you after.
+   ============================================================ */
+const ASK = {
+  private: {
+    title: 'Make this private?',
+    body: c => `“${c.title || 'untitled'}” comes off the shelf. Nobody else can `
+             + `open it, and its comments go with it.\n\nYou can make it public `
+             + `again at any time. It does NOT go back to being a draft — once a `
+             + `comic has been published it stays uneditable, so nobody's voice `
+             + `work or score can be changed underneath them.`,
+    verb: 'Make private'
+  },
+  publish: {
+    title: 'Publish this?',
+    body: c => `“${c.title || 'untitled'}” goes on the shelf for everyone.\n\n`
+             + `After this it can no longer be edited in the studio — only made `
+             + `private again, or deleted. Make sure the pages and audio are `
+             + `how you want them.`,
+    verb: 'Publish'
+  },
+  delete: {
+    title: 'Delete this for good?',
+    body: c => `“${c.title || 'untitled'}” and everything under it — every page, `
+             + `every track, every comment, and every voice or score anybody `
+             + `contributed to it — is removed.\n\nThis cannot be undone.`,
+    verb: 'Delete', danger: true
+  }
+};
+
+function ask(kind, subject){
+  const a = ASK[kind];
+  return new Promise(resolve => {
+    const ov = document.createElement('div');
+    ov.className = 'ov open confirm';
+    ov.innerHTML = `<div class="sheet confirm-sheet" role="alertdialog" aria-modal="true">
+      <div class="sheethead"><span class="ttl">${esc(a.title)}</span></div>
+      <p class="confirm-body">${esc(a.body(subject))}</p>
+      <div class="sheetfoot">
+        <button class="btn" data-no>Cancel</button>
+        <button class="btn ${a.danger ? 'danger' : 'primary'}" data-yes>${esc(a.verb)}</button>
+      </div></div>`;
+    document.body.appendChild(ov);
+    const done = v => { ov.remove(); document.removeEventListener('keydown', key); resolve(v); };
+    const key = e => { if(e.key === 'Escape') done(false); };
+    ov.querySelector('[data-no]').onclick = () => done(false);
+    ov.querySelector('[data-yes]').onclick = () => done(true);
+    ov.onclick = e => { if(e.target === ov) done(false); };
+    document.addEventListener('keydown', key);
+    ov.querySelector('[data-yes]').focus();
+  });
+}
+
 async function act(btn){
   const what = btn.dataset.act;
   const isPart = !!btn.dataset.part;
   const table = isPart ? 'parts' : 'comics';
   const id = btn.dataset.part || btn.dataset.comic;
-  if(what === 'delete' && !confirm('delete this? it cannot be undone.')) return;
+  const subject = isPart
+    ? (parts.find(p => p.id === id) || {})
+    : ([...published, ...drafts].find(c => c.id === id) || {});
+  const label = isPart
+    ? { title: subject.character_key || subject.title || 'this part' }
+    : subject;
+
+  if(ASK[what] && !await ask(what, label)) return;
+
   btn.disabled = true;
   let err = null;
   if(what === 'delete'){
     ({ error: err } = await sb.from(table).delete().eq('id', id));
-  }else{
-    const published = what === 'publish';
+  }else if(what === 'publish'){
     ({ error: err } = await sb.from(table).update({
-      status: published ? 'published' : 'draft',
-      published_at: published ? new Date().toISOString() : null
-    }).eq('id', id));
+      status: 'published', published_at: new Date().toISOString() }).eq('id', id));
+  }else if(what === 'private'){
+    /* a part has no private state — it is either offered or it is not — so
+       for parts this is still a return to draft. only comics are one way. */
+    ({ error: err } = await sb.from(table)
+      .update({ status: isPart ? 'draft' : 'private' }).eq('id', id));
   }
   btn.disabled = false;
   if(err){
-    alert(window.eski.dbError(what === 'delete' ? 'ESK-5017' : 'ESK-5018', 'that did not work', err));
+    alert(window.eski.dbError(what === 'delete' ? 'ESK-5017' : 'ESK-5018',
+      'that did not work', err));
     return;
   }
   load();

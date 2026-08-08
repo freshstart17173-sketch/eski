@@ -1,83 +1,89 @@
-/* THE PALETTE, APPLIED BEFORE ANYTHING PAINTS.
+/* THE THEME, APPLIED BEFORE ANYTHING PAINTS.
 
    A classic script in <head>, deliberately not a module: a module is
-   deferred, so the page would paint in the default palette and then repaint
+   deferred, so the page would paint in the default theme and then repaint
    in yours. That flash is why this is its own file and loads where it does.
 
-   ONE PLACE OWNS THE CHOICE. The theme system this replaces had seven other
-   surfaces calling `set()` on load from their own local "dark mode" flag, so
-   picking a palette in the profile and then navigating anywhere reset it —
-   which read as "the theme disappears when I leave profile". Nothing else
-   writes here now. If you find yourself adding a second writer, that is the
-   bug coming back.
+   ONE PLACE OWNS THE CHOICE. The system this replaced had seven other
+   surfaces calling set() on load from their own local "dark mode" flag, so
+   picking a theme and navigating anywhere reset it — which read as "the
+   theme disappears when I leave profile". Nothing else writes here now. If
+   you find yourself adding a second writer, that is the bug coming back.
 
-   The picker renders from PALETTES below, so a new palette is one entry in
-   this array plus one block in palettes.css, and it appears in the profile
-   and the footer without either of them being touched. */
+   A theme is a HUE and a TREATMENT: light, mono or dark. The picker is
+   built from those two lists, so adding a hue is one entry here and three
+   blocks in palettes.css. */
 (function(){
-  var KEY = 'eski-palette';
-  var DEFAULT = 'moss';          // what the site looked like before this existed
+  var KEY = 'eski-theme';
+  var DEFAULT = 'mono-green';        // what the site looked like before this
 
-  var PALETTES = [
-    { id:'ink',     mode:'light', name:'Black' },
-    { id:'forest',  mode:'light', name:'Forest' },
-    { id:'cobalt',  mode:'light', name:'Cobalt' },
-    { id:'crimson', mode:'light', name:'Crimson' },
-    { id:'amber',   mode:'light', name:'Amber' },
-    { id:'paper',   mode:'dark',  name:'White' },
-    { id:'moss',    mode:'dark',  name:'Moss' },
-    { id:'ice',     mode:'dark',  name:'Ice' },
-    { id:'rose',    mode:'dark',  name:'Rose' },
-    { id:'gold',    mode:'dark',  name:'Gold' }
+  var TREATMENTS = [
+    { id:'light', name:'Light', mode:'light' },
+    { id:'mono',  name:'Mono',  mode:'dark'  },   // each mono block sets its own ground
+    { id:'dark',  name:'Dark',  mode:'dark'  }
+  ];
+  var HUES = [
+    { id:'neutral', name:'Neutral' },
+    { id:'green',   name:'Green' },
+    { id:'blue',    name:'Blue' },
+    { id:'red',     name:'Red' },
+    { id:'amber',   name:'Amber' },
+    { id:'pink',    name:'Pink' }
   ];
 
-  var byId = {};
-  for(var i = 0; i < PALETTES.length; i++) byId[PALETTES[i].id] = PALETTES[i];
+  function parse(id){
+    var bits = String(id || '').split('-');
+    var t = null, h = null, i;
+    for(i = 0; i < TREATMENTS.length; i++) if(TREATMENTS[i].id === bits[0]) t = TREATMENTS[i];
+    for(i = 0; i < HUES.length; i++) if(HUES[i].id === bits[1]) h = HUES[i];
+    return (t && h) ? { id:t.id + '-' + h.id, treatment:t, hue:h } : null;
+  }
 
   function read(){
-    try{
-      var p = localStorage.getItem(KEY);
-      return byId[p] ? p : DEFAULT;
-    }catch(e){ return DEFAULT; }
+    try{ return parse(localStorage.getItem(KEY)) ? localStorage.getItem(KEY) : DEFAULT; }
+    catch(e){ return DEFAULT; }
   }
 
   function apply(id){
-    var p = byId[id] || byId[DEFAULT];
+    var t = parse(id) || parse(DEFAULT);
     var el = document.documentElement;
-    el.setAttribute('data-palette', p.id);
-    el.setAttribute('data-mode', p.mode);
-    /* one attribute for "this is a dark ground", so a rule that only needs
-       to know that can say so without naming five palettes */
-    if(p.mode === 'dark') el.setAttribute('data-dark', '');
+    el.setAttribute('data-theme', t.id);
+    el.setAttribute('data-mode', t.treatment.mode);
+    /* one attribute for "this ground is dark", so a rule that only needs to
+       know that can say so without naming twelve themes */
+    if(t.treatment.mode === 'dark') el.setAttribute('data-dark', '');
     else el.removeAttribute('data-dark');
   }
 
   apply(read());
 
   function set(id){
-    if(!byId[id]) return;
+    if(!parse(id)) return;
     try{ localStorage.setItem(KEY, id); }catch(e){}
     apply(id);
-    document.dispatchEvent(new CustomEvent('eski-palette', { detail:{ palette:id } }));
+    document.dispatchEvent(new CustomEvent('eski-theme', { detail:{ theme:id } }));
     paintAll();
   }
 
   /* ---------------------------------------------------------------- picker */
-  function html(current, compact){
+  /* ONE LINE, no treatment labels: a chip is a miniature of the page it
+     makes, so what treatment it is is the thing you can already see. */
+  function chips(current){
     var out = '';
-    ['light', 'dark'].forEach(function(mode){
-      out += '<span class="pal-group">' +
-             (compact ? '' : '<span>' + mode + '</span>');
-      PALETTES.filter(function(p){ return p.mode === mode; }).forEach(function(p){
-        /* data-palette AND data-mode on the swatch itself, so --accent and
-           --paper inside it resolve to that palette's values and the button
-           is a real sample rather than a hard-coded hex */
+    TREATMENTS.forEach(function(t){
+      out += '<span class="pal-set">';
+      HUES.forEach(function(h){
+        var id = t.id + '-' + h.id;
+        /* data-theme AND data-mode on the chip itself, so every token inside
+           resolves to that theme's values and the miniature is the real
+           thing rather than a hard-coded hex */
         out += '<button class="pal-sw" type="button"' +
-               ' data-palette="' + p.id + '" data-mode="' + p.mode + '"' +
-               ' data-pick="' + p.id + '"' +
-               ' aria-pressed="' + (p.id === current) + '"' +
-               ' title="' + p.name + ' · ' + mode + '"' +
-               ' aria-label="' + p.name + ' ' + mode + ' palette"></button>';
+               ' data-theme="' + id + '" data-mode="' + t.mode + '"' +
+               ' data-pick="' + id + '"' +
+               ' aria-pressed="' + (id === current) + '"' +
+               ' title="' + h.name + ' · ' + t.name + '"' +
+               ' aria-label="' + h.name + ' ' + t.name + ' theme">' +
+               '<i></i><b></b><s></s><u></u><em></em></button>';
       });
       out += '</span>';
     });
@@ -86,33 +92,55 @@
 
   function paint(box){
     if(!box) return;
+    var open = box.classList.contains('open');
     box.classList.add('pal');
-    box.innerHTML = html(read(), box.hasAttribute('data-compact'));
-    var bs = box.querySelectorAll('[data-pick]');
-    for(var i = 0; i < bs.length; i++){
-      bs[i].addEventListener('click', function(){ set(this.getAttribute('data-pick')); });
-    }
+    box.innerHTML =
+      '<button class="pal-toggle" type="button" aria-expanded="' + open + '">Theme</button>' +
+      '<div class="pal-pop">' + chips(read()) + '</div>';
+    if(open) box.classList.add('open');
+
+    box.querySelector('.pal-toggle').addEventListener('click', function(e){
+      e.stopPropagation();
+      var on = !box.classList.contains('open');
+      closeAll();
+      box.classList.toggle('open', on);
+      this.setAttribute('aria-expanded', on);
+    });
+    box.querySelectorAll('[data-pick]').forEach(function(b){
+      b.addEventListener('click', function(e){
+        e.stopPropagation();
+        set(b.getAttribute('data-pick'));
+      });
+    });
   }
+
+  function closeAll(){
+    document.querySelectorAll('.pal.open').forEach(function(p){
+      p.classList.remove('open');
+      var t = p.querySelector('.pal-toggle');
+      if(t) t.setAttribute('aria-expanded', 'false');
+    });
+  }
+  document.addEventListener('click', closeAll);
+  document.addEventListener('keydown', function(e){ if(e.key === 'Escape') closeAll(); });
 
   function paintAll(){
-    var boxes = document.querySelectorAll('[data-palette-picker]');
-    for(var i = 0; i < boxes.length; i++) paint(boxes[i]);
+    document.querySelectorAll('[data-palette-picker]').forEach(paint);
   }
 
-  /* every surface just puts <div data-palette-picker></div> where it wants one */
   if(document.readyState === 'loading')
     document.addEventListener('DOMContentLoaded', paintAll);
   else paintAll();
 
-  window.eskiPalette = {
-    list: PALETTES.slice(),
+  window.eskiTheme = {
+    treatments: TREATMENTS.slice(),
+    hues: HUES.slice(),
     get current(){ return read(); },
-    get mode(){ return (byId[read()] || byId[DEFAULT]).mode; },
+    get mode(){ return (parse(read()) || parse(DEFAULT)).treatment.mode; },
     set: set,
     paint: paintAll
   };
 
-  /* another tab changed it: follow, so two open tabs never disagree */
   addEventListener('storage', function(e){
     if(e.key === KEY){ apply(read()); paintAll(); }
   });

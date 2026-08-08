@@ -58,6 +58,43 @@ section + section{margin-top:var(--s6)}
    the four words. */
 
 /* ---------- the grid: five up, then four, three, two ---------- */
+/* ---------- continue reading ----------
+   Cover, credits, and the last few pages you actually saw. A percentage does
+   not help you pick a comic back up — you have to remember what was
+   happening in it. The strip is capped well under the cover's height: the
+   cover identifies the comic, three thumbnails should not out-shout it. */
+.rs{display:grid;grid-template-columns:132px minmax(0,1fr) auto;gap:var(--s4);
+  align-items:start;padding:var(--s4) 0;border-bottom:var(--bw) solid var(--rule-hair)}
+.rs:last-child{border-bottom:0}
+.rs .plate.rs-cover{width:132px;aspect-ratio:2/3;flex:none}
+.rs-meta{min-width:0;display:flex;flex-direction:column;gap:var(--s1)}
+.rs-ttl{font-size:var(--fs-lg);font-weight:500;line-height:1.2}
+.rs-by{font-size:var(--fs-xs);color:var(--label)}
+.rs-at{font-size:var(--fs-micro);letter-spacing:.1em;text-transform:uppercase;
+  color:var(--label);margin-top:var(--s2)}
+.rs .progress{height:3px;background:var(--rule-hair);max-width:280px}
+.rs .progress i{display:block;height:100%;background:var(--mark)}
+.rs-acts{display:flex;gap:var(--s2);margin-top:var(--s3);flex-wrap:wrap}
+.rs-strip{display:flex;gap:var(--s2)}
+.rs-pg{margin:0;width:104px}
+.rs-pg img{width:100%;height:150px;object-fit:cover;object-position:top;
+  border:var(--bw) solid var(--rule-hair);background:var(--plate-bg)}
+.rs-blank{display:block;height:150px;border:var(--bw) solid var(--rule-hair);
+  background:var(--plate-bg)}
+.rs-pg figcaption{font-size:var(--fs-micro);letter-spacing:.1em;text-transform:uppercase;
+  color:var(--label);text-align:center;padding-top:3px}
+@media(max-width:1080px){ .rs-pg:first-child{display:none} }
+@media(max-width:880px){
+  .rs{grid-template-columns:96px minmax(0,1fr)}
+  .rs .plate.rs-cover{width:96px}
+  .rs-strip{grid-column:1 / -1}
+  .rs-pg:first-child{display:block}
+}
+@media(max-width:560px){
+  .rs-pg{width:84px}
+  .rs-pg img,.rs-blank{height:120px}
+}
+
 .grid{display:grid;grid-template-columns:repeat(5,1fr);border-left:var(--bw) solid var(--rule)}
 @media(max-width:1180px){.grid{grid-template-columns:repeat(4,1fr)}}
 @media(max-width:900px){.grid{grid-template-columns:repeat(3,1fr)}}
@@ -359,6 +396,14 @@ button.link:hover{color:var(--ink)}
 <!-- ================= HOME ================= -->
 <main class="pane on" id="pane-home"><div class="wrap">
 
+  <!-- CONTINUE READING. The shelf told you a comic was 36% read and made you
+       remember what was happening in it. This shows the last few pages you
+       actually saw, big enough to recognise, beside the cover. -->
+  <section id="sec-resume" hidden>
+    <div class="head"><h2>Continue reading</h2><span class="n" id="resume-n"></span></div>
+    <div id="resume"></div>
+  </section>
+
   <section>
     <div class="head"><h2>New comics</h2><span class="n" id="new-n"></span>
       <span class="sp"></span><button class="link" data-pane="browse">All comics</button></div>
@@ -384,8 +429,7 @@ button.link:hover{color:var(--ink)}
   </section>
 
   <div class="foot">
-    <span class="pal-foot"><span>Colour</span>
-      <span data-palette-picker data-compact></span></span>
+    <span data-palette-picker></span>
     <span class="sp"></span>
     <span><a href="legal.html#terms">Terms</a> · <a href="legal.html#privacy">Privacy</a> ·
       <a href="legal.html#takedown">Takedown</a></span></div>
@@ -779,10 +823,18 @@ async function loadPlatform(only){
   }
   me = eski.user || null;
   let q = sb.from('comics')
-    .select('*')          /* not a column list: a schema one migration behind should not blank the shelf */
-    .eq('status', 'published');
-  if(only && only.slug) q = q.eq('slug', only.slug).limit(1);
-  else q = q.order('published_at', { ascending: false }).limit(200);
+    .select('*');         /* not a column list: a schema one migration behind should not blank the shelf */
+  if(only && only.slug){
+    /* NO STATUS FILTER when asking for ONE comic by name. Row level security
+       already decides who may see it — the owner can open their own draft or
+       private eski at its own address, everyone else gets nothing — and
+       filtering here as well meant an author could not look at their own
+       unpublished work through the page everybody else uses. */
+    q = q.eq('slug', only.slug).limit(1);
+  }else{
+    q = q.eq('status', 'published')
+         .order('published_at', { ascending: false }).limit(200);
+  }
   const { data, error } = await q;
   if(error){
     platformDown = true;
@@ -797,7 +849,10 @@ async function loadPlatform(only){
      postgres. at a few hundred comics that is one round trip each and a few
      thousand rows; past that these want to be one rpc returning the counts. */
   const [pg, tk, ku, pt, tg, sv, fw, cm] = await Promise.all([
-    sb.from('pages').select('comic_id').in('comic_id', ids),
+    /* idx and the display key as well as the count: the continue-reading rail
+       shows the last few pages you saw, and these are the same display copies
+       the reader serves, so it costs no extra upload and no extra column. */
+    sb.from('pages').select('comic_id,idx,display_key,image_key').in('comic_id', ids),
     sb.from('tracks').select('comic_id,type,role,character_key').in('comic_id', ids),
     sb.from('kudos').select('comic_id,user_id'),
     sb.from('parts').select('id,comic_id,kind,character_key,owner_name,title,preview_key')
@@ -816,6 +871,11 @@ async function loadPlatform(only){
     return m;
   };
   const pages = count(pg, 'comic_id');
+  const pageKeys = new Map();
+  for(const p of (pg.data || [])){
+    if(!pageKeys.has(p.comic_id)) pageKeys.set(p.comic_id, []);
+    pageKeys.get(p.comic_id)[p.idx - 1] = p.display_key || p.image_key;
+  }
   const kudos = count(ku, 'comic_id');
   const comments = count(cm, 'comic_id');
   const kudosMine = new Set(me ? (ku.data||[]).filter(k=>k.user_id === me.id).map(k=>k.comic_id) : []);
@@ -884,6 +944,8 @@ async function loadPlatform(only){
       cover: window.eski.mediaUrl(r.thumb_key || r.cover_key),
       added: r.published_at || r.created_at || '',
       slug: r.slug || null,
+      pageKeys: pageKeys.get(r.id) || [],
+      readAt: save ? save.updated_at : null,
       commentCount: comments.get(r.id) || 0,
       pp, ch: r.series_index || 1, chOf: r.series_title ? (seriesCount.get(r.series_title)||1) : 1,
       seriesTitle: r.series_title || null,
@@ -1113,10 +1175,82 @@ async function boot(){
     document.fonts.ready.then(()=>{ fitScrollers(document); fitTags(document); });
 }
 
+/* ============================================================
+   CONTINUE READING.
+
+   A percentage does not help you pick the comic back up — you have to
+   remember what was happening in it. So this shows THE LAST FEW PAGES YOU
+   SAW, at a size where you can recognise them, next to the cover and the
+   credits, with one button.
+
+   The pages are the display copies the reader already caches, so this
+   costs no new upload and no new column: page N-2, N-1 and N of where the
+   bookmark is. They are deliberately shorter than the cover — the cover is
+   what identifies the comic, and three thumbnails should not out-shout it.
+   ============================================================ */
+function renderResume(){
+  const sec = document.getElementById('sec-resume');
+  const box = document.getElementById('resume');
+  if(!sec || !box) return;
+
+  const going = COMICS
+    .filter(c => c.progress != null && c.progress > 0 && c.progress < 1 && c.pp)
+    .sort((a, b) => (b.readAt || '').localeCompare(a.readAt || ''))
+    .slice(0, 3);
+
+  sec.hidden = !going.length;
+  document.getElementById('resume-n').textContent =
+    going.length ? going.length + (going.length === 1 ? ' eski' : ' eskis') : '';
+  if(!going.length){ box.innerHTML = ''; return; }
+
+  box.innerHTML = going.map(c => {
+    const page = Math.max(1, Math.round(c.progress * c.pp));
+    const back = [page - 2, page - 1, page].filter(n => n >= 1);
+    const strip = back.map(n => {
+      const url = pageUrl(c, n);
+      return `<figure class="rs-pg">${url
+        ? `<img src="${esc(url)}" alt="" loading="lazy">`
+        : '<span class="rs-blank"></span>'}<figcaption>p.${n}</figcaption></figure>`;
+    }).join('');
+    return `<article class="rs" data-resume="${esc(c.id)}">
+      <div class="plate rs-cover">${c.cover
+        ? `<img src="${esc(c.cover)}" alt="" loading="lazy">` : ''}</div>
+      <div class="rs-meta">
+        <div class="rs-ttl">${esc(c.title || 'untitled')}</div>
+        <div class="rs-by">${esc(c.by || '—')}${
+          c.scores.length ? ' · ' + esc(c.scores[0].title) : ''}</div>
+        <div class="rs-at">Page ${page} of ${c.pp}</div>
+        <div class="progress"><i style="width:${Math.round(c.progress*100)}%"></i></div>
+        <div class="rs-acts">
+          <a class="btn p" href="${esc(resumeHref(c))}">Continue reading</a>
+          <button class="btn" data-open="${esc(c.id)}">Details</button>
+        </div>
+      </div>
+      <div class="rs-strip">${strip}</div>
+    </article>`;
+  }).join('');
+
+  box.querySelectorAll('[data-open]').forEach(b => b.addEventListener('click', e => {
+    e.stopPropagation();
+    const c = byId(b.dataset.open);
+    if(c) openDetails(c);
+  }));
+}
+
+/* the reader's own page urls, so the strip shows the same bytes it will.
+   only db comics have addressable pages; a local file has none until it is
+   unzipped, and this must not download a comic to draw a thumbnail. */
+function pageUrl(c, n){
+  if(!c.pageKeys || !c.pageKeys.length) return null;
+  const k = c.pageKeys[n - 1];
+  return k ? window.eski.mediaUrl(k) : null;
+}
+
 /* ---------- home. see more adds one more row of whatever it sits under. ---------- */
 const STEP = 5;
 const shown = {new:STEP, follow:STEP, roles:STEP};
 function renderHome(){
+  renderResume();
   const fresh = [...COMICS].sort((a,b)=>(b.added||'').localeCompare(a.added||''));
   fill(document.getElementById('grid'), fresh.slice(0, shown.new).map(c=>cardEl(c)));
   document.getElementById('new-n').textContent =
@@ -1499,6 +1633,7 @@ function openDetails(c, role, opts){
 
     <div class="acts">
       <a class="btn p" id="ov-read" href="#">Read it with this mix</a>
+      <a class="btn" id="ov-restart" href="#" hidden>Read from the beginning</a>
       <button class="btn" id="ov-later" aria-pressed="${later}">${esc(laterLabel(c))}</button>
       <button class="btn" id="ov-kudos" aria-pressed="${!!c.kudosMine}"${c.dbId ? '' : ' hidden'}>${
         c.kudosMine ? 'kudos given · ' : 'kudos '}${nfmt(c.kudos)}</button>
@@ -1512,17 +1647,27 @@ function openDetails(c, role, opts){
   const sync = ()=>{
     const on = [...sheet.querySelectorAll('input:checked')].map(i=>i.dataset.ref);
     const note = resumeNote(c);
-    const btn = document.getElementById('ov-read');
-    btn.href = readHref(c.file)
+    /* the query half is the same for both buttons; only the page differs */
+    const base = readHref(c.file)
       + (on.length ? '&with=' + on.map(encodeURIComponent).join(',') : '')
-      + (next ? '&next=' + encodeURIComponent(next.file) + '&nextTitle=' + encodeURIComponent(next.title) : '')
-      // the hash has to come last: it is not a query parameter
-      + (note && note !== 'finished'
-          ? '#' + slugifyTitle(c.title) + '/page=' + Math.max(1, Math.round(c.progress * c.pp))
-          : '');
-    btn.textContent = (note && note !== 'finished')
-      ? 'continue · p.' + Math.max(1, Math.round(c.progress * c.pp))
-      : 'read it with this mix';
+      + (next ? '&next=' + encodeURIComponent(next.file) + '&nextTitle=' + encodeURIComponent(next.title) : '');
+    const started = note && note !== 'finished';
+    const page = Math.max(1, Math.round((c.progress || 0) * c.pp));
+    // the hash comes last: it is not a query parameter
+    const at = n => base + '#' + slugifyTitle(c.title) + '/page=' + n;
+
+    const btn = document.getElementById('ov-read');
+    btn.href = started ? at(page) : base;
+    btn.textContent = started ? 'Continue · p.' + page : 'Read it with this mix';
+
+    /* A COMIC YOU ARE PART WAY THROUGH still needs a way back to page one.
+       There was only ever one button, so re-reading meant opening it at your
+       bookmark and paging backwards. */
+    const again = document.getElementById('ov-restart');
+    if(again){
+      again.hidden = !started;
+      again.href = at(1);
+    }
   };
   sheet.querySelectorAll('input[data-ref]').forEach(i=>{
     i.onchange = e=>{

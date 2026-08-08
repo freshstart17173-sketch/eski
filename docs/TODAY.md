@@ -143,6 +143,23 @@ afternoon. **The blurb is the actual product**, and only you can write it.
 
 ---
 
+## Since then
+
+- Every comic has an address at `/c/<slug>`, with real link previews.
+- Comments, in the reader and on the comic page.
+- An admin console at `/admin.html`, gated in the database. You are an admin.
+- Eighteen themes; the picker is in the footer of every page.
+- **A `private` state.** Publishing is now one way: a published eski can be
+  made private or deleted, never returned to draft. That is what stops an
+  author re-cutting a comic under the people who voiced it.
+- Your profile has a real address at `/u/<handle>`, avatars, and a switch for
+  whether your shelf is public.
+
+**One thing for you:** there is still an orphan draft, `untitled-76nm`, left
+over from the save-then-publish bug — publishing used to write a second comic
+row rather than updating the first. The bug is fixed; that row is yours to
+delete from the admin console or your profile when you want it gone.
+
 ## What I did on my side
 
 For the record, so you know what's already handled:

@@ -13,74 +13,26 @@
    loaded after tokens.css.
 
    ------------------------------------------------------------
-   THE RULES. everything below obeys them, and so should any
-   new surface. they exist because the site had drifted into caps
-   and lowercase, green and black, bold and regular all meaning
-   nothing in particular, which is the same as meaning nothing.
+   THE RULES NOW LIVE IN docs/design/STYLE.md, in one piece, because
+   they outgrew a comment: case, colour, shape, type, hover, underlines
+   and layout. If this file and that one disagree, that one is right.
 
-   1. CASE.  Three registers, and nothing else.
-        - The NAV is uppercase. It is the same four words on every
-          surface and it reads as the site's own furniture.
-        - FIELD LABELS are uppercase letterspaced micro type: the word
-          on the left of a value, never the value. "BY", "EXTENT",
-          "SORT".
-        - EVERYTHING ELSE is as typed. Buttons, values, tags, and
-          above all TITLES: a comic is called what its author called
-          it, capitals and all, and nothing on this site lowercases
-          somebody else's work.
-      Section HEADINGS are a fourth thing and rule 4 covers them.
-
-      NOTHING IS SET IN text-transform:lowercase. There is no rule
-      that lowercases; there never was a good one. It forced other
-      people's words — tags, chapter names, one-shot names, file
-      names — into a house voice they did not ask for, and it made
-      "eski" and "Eski" and "ESKI" indistinguishable on screen while
-      being three different strings underneath. Sentences read as
-      sentences, and a proper noun keeps its capital.
-
-   2. COLOUR. Near-black (--mark) is the only fill on the page, and
-      it means "this one is on": selected, pressed, current, primary.
-      Sage (--accent) never fills anything. It colours the NUMBERS
-      and counts you scan a dense view for, the focus ring, and the
-      wordmark's exclamation mark. Nothing else is coloured at all —
-      the page is otherwise near-black on near-white with hairlines.
-      (The author studio's three entry kinds are the one deliberate
-      exception, and they say so where they are defined.)
-
-   3. WEIGHT. 500 marks the ONE primary field of a row — the thing
-      you are looking for when you scan the column. Everything else
-      in that row is 400, and secondary fields also step down to
-      --label. A row where two things are bold has not chosen, and a
-      row where nothing is bold is a wall of grey.
-
-   4. HEADINGS are Gnomon, set as typed. "new comics", "voiceover
-      needed", "browse". They are the only place besides the wordmark
-      the display face appears, which is what makes them read as
-      headings without needing size, rules or caps to do it.
-
-   And one thing that is NOT a rule: underlines. A link inside prose
-   may have one. Nothing else does — not on hover, not on a title, not
-   on a section link. The only underline in the chrome is the 2px mark
-   under the nav word for the page you are on, and it is there because
-   nothing else says where you are.
+   The short version, so nothing here is a surprise:
+     - anything clickable is UPPERCASE and grows a hover box
+     - anything you cannot click is a sentence
+     - --mark is the only fill; --accent never fills anything
+     - square corners and hairline rules, always, in every theme
    ------------------------------------------------------------ */
 
 :root{
-  --paper:#FCFDFC;
-  --surface:#FFFFFF;
-  --rule:#141A17;
-  --rule-hair:var(--line-1);
-  --label:var(--sage-600);
-  --ink:var(--sage-900);
-  --soft-ink:#45544D;
-  --muted:#62746B;
-  --accent:var(--sage-600);
-  --mark:#141A17;
-  --rec:#A33028;
+  /* NOT a theme. These are the two values no theme sets, plus the row
+     metric. Every colour comes from palettes.css — a fallback here would
+     mean a missing token silently rendered in the old sage instead of
+     failing visibly. */
+  --rec:#A33028;         /* the record light, and destructive actions */
   --row:19px;            /* one metadata row. fixed, so columns align. */
   --hdr:44px;
 }
-/* dark now lives in themes.css, with the other five. */
 
 html{background:var(--paper)}
 body{margin:0;background:var(--paper);color:var(--ink);
@@ -95,23 +47,21 @@ img{display:block;max-width:100%}
      first heading starts and the nav ends where the rule ends */
   padding:var(--s2) max(var(--s4), calc((100% - var(--wrap)) / 2 + var(--s4)));
   border-bottom:var(--bw) solid var(--rule);background:var(--paper)}
-/* THE WORDMARK.
-   Gnomon's outlines sit high inside its own line box, so the logo floated
-   above the nav beside it however the row was aligned. line-height:1 plus a
-   measured nudge puts the ink on the optical centre. It is the ONLY place
-   the display face survives — headings are uppercase Jost now. */
-/* ONE COLOUR, ALL THE WAY THROUGH, including the exclamation mark — which
-   used to be a second colour and made the logo read as decoration rather
-   than a link.
+/* THE WORDMARK. The only place the display face survives — headings are
+   uppercase Jost now.
 
-   --wordmark is a SHADE of the palette's accent, declared per palette and
-   pushed away from that palette's ground: lighter than the accent on a dark
-   ground, darker on a light one. Hard-coding white made it invisible the
-   moment somebody chose a light palette; deriving it in css is not something
-   css can do reliably, so each palette states its own. */
+   ONE COLOUR ALL THE WAY THROUGH, including the exclamation mark, which used
+   to be a second colour and made the logo read as decoration rather than a
+   link. --wordmark is a shade of the theme's accent, declared per theme and
+   pushed clear of that theme's ground.
+
+   Gnomon declares 63.5% ascent and 26% descent, so its ink sits high in
+   whatever box it is given. The nudge below puts the GLYPH BOX on the row's
+   centre — not the optical centre, which is what the smaller value did and
+   what kept the logo looking like it was floating. */
 .mark{font-family:var(--font-display);font-size:21px;letter-spacing:-.01em;
   color:var(--wordmark,var(--accent));text-decoration:none;line-height:1;
-  display:inline-block;transform:translateY(.09em);
+  display:inline-block;transform:translateY(.18em);
   transition:color var(--t-fast) var(--ease)}
 .mark i{font-style:normal;color:inherit}
 .mark:hover{color:var(--ink)}
@@ -144,8 +94,12 @@ img{display:block;max-width:100%}
 /* what you are working on, in the bar, next to the wordmark */
 .what{display:flex;align-items:baseline;gap:var(--s2);min-width:0;
   font-size:var(--fs-micro);letter-spacing:.12em;text-transform:uppercase;color:var(--label)}
-.what .ttl{font-family:var(--font-display);font-size:15px;letter-spacing:0;
-  text-transform:none;color:var(--ink)}
+/* THE TITLE IN THE READER'S BAR. It was the display face beside micro caps,
+   so its ink sat visibly above "BY DEXTER" next to it however the row was
+   aligned — the same problem the wordmark had. One face, one baseline. */
+.what .ttl{font-family:var(--font-body);font-size:15px;font-weight:500;
+  letter-spacing:0;text-transform:none;color:var(--ink);line-height:1.2}
+.what #what-sub, .what span:not(.ttl){line-height:1.2}
 
 /* ---------- section heads ---------- */
 .head{display:flex;align-items:baseline;gap:var(--s3);padding:var(--s3) 0 var(--s2);
@@ -489,3 +443,10 @@ img{display:block;max-width:100%}
 .tab[aria-selected="true"]{opacity:1;box-shadow:inset 0 -2px 0 var(--mark);color:var(--ink)}
 .tab .n{font-size:10px;color:var(--label);letter-spacing:.06em}
 .tab[aria-selected="true"] .n{color:var(--accent)}
+
+/* ---------- no underlines on controls ----------
+   a .btn is sometimes an <a> (read, listen, next chapter) and picked up the
+   browser's default underline, so half the buttons on a row were underlined
+   and half were not depending on which element they happened to be. */
+a.btn, a.pill, a.chip, a.lnk, a.tab, .btn, .pill, .chip, .lnk, .tab,
+.cardacts a, .head a, .foot a, .top nav a{ text-decoration:none }
