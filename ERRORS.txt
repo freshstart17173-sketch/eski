@@ -299,6 +299,11 @@ ESK-5035  home: the shelf needs schema-shelf.sql applied to the database.
           design. Keeping both paths forever to cover a window that closes on
           the first migration is how a slow path survives unnoticed.
 
+ESK-5036  reader: the mix could not be changed. The comic is still playing
+          whatever it was playing before — the swap rebuilds the track list
+          from a pristine copy of the author's own tracks, so a failure
+          leaves the previous mix intact rather than a half-applied one.
+
 ESK-5040  author studio: your comics could not be listed.
 ESK-5041  author studio: that comic could not be opened.
 ESK-5042  author studio: the pages could not be read.

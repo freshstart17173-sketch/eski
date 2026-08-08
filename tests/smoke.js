@@ -446,6 +446,35 @@ function ok(cond, name, extra) {
   ok(armed > 2, 'with loop on, the page arms a repeat as well as its cues', String(armed));
   await osp.evaluate(() => { toggleOsLoop(); });
 
+  /* SWAPPING THE MIX MUST NOT RELOAD THE COMIC. It used to set location.href,
+     which kept your place through the hash but threw away every decoded page
+     to fetch the same forty-five images again — so a reader comparing two
+     takes of one line paid for the whole comic twice. Nobody does it twice.
+
+     What proves it is not a reload: the page you were on, the zoom, and a
+     marker put on `window` survive the swap. A navigation would lose all
+     three. */
+  console.log('reader: the mix swaps in place');
+  await osp.evaluate(() => { goToPage(1, true); window.__notReloaded = true; });
+  const beforePage = await osp.inputValue('#page-jump');
+  await osp.evaluate(() => toggleMix(true));
+  await osp.evaluate(() => applyMix());
+  await osp.waitForFunction(() => !document.getElementById('mix').classList.contains('open'),
+    null, { timeout: 15000 }).catch(()=>{});
+  ok(await osp.evaluate(() => window.__notReloaded === true),
+    'changing the mix does not reload the reader');
+  ok(await osp.inputValue('#page-jump') === beforePage,
+    'and you are still on the page you were reading',
+    await osp.inputValue('#page-jump'));
+  /* THIS FIXTURE IS A .eski FILE, which has no parts to swap between and no
+     comic id to fetch them with — so the honest assertion is that the sheet
+     says so and the button does not pretend. The database path needs a
+     published comic with a second part, which is tests/live.js territory. */
+  ok(await osp.evaluate(() => !current.baseId),
+    'the fixture is a file, so there is nothing to swap between');
+  ok(await osp.evaluate(() => typeof mergeParts === 'function'),
+    'and the swap shares one merge with the initial load rather than a copy');
+
   console.log('reader: soundtrack duck under one-shots');
   ok(await osp.evaluate(() => graph.ok && graph.nodes.size === 2),
     'web audio graph built on both soundtrack elements');

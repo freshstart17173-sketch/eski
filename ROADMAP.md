@@ -305,13 +305,26 @@ or music, with the characters nobody has voiced yet, is the main lever against
 the cold-start problem. Pairs with a "filler" badge on comics carrying
 reference tracks.
 
-### 13. Swap voices and soundtracks while reading · ~4–6 hours
+### 13. Swap voices and soundtracks while reading · DONE
 
-The mix picker on the comic page is fine for choosing before you start and
-useless once you have. The reader needs the cast bar on arrival — who is
-voicing whom, with a preview and a link to their profile — and a swap panel
-during the read that re-resolves the current page and keeps your position.
-Mostly UI; the parts rows exist and `comicFromApi` already merges them.
+The mix sheet existed and worked, but APPLYING it set `location.href` — the
+hash kept your place, so it looked fine, and it threw away every decoded page
+to fetch the same forty-five images again. A reader comparing two takes of one
+line paid for the whole comic twice, which means nobody does it twice.
+
+Only the audio changes when the mix changes, so only the audio is rebuilt now:
+a pristine copy of the author's own tracks, the chosen parts merged onto it
+with the SAME function the initial load uses, and the page re-cued. Pages,
+scroll and zoom are never touched, and the url still gets the mix through
+`replaceState` so it still travels with a link.
+
+Keeping the author's tracks pristine is the part that matters: merging a part
+rewrites the slot it fills in place, so without a clean base every swap would
+layer onto the result of the last one.
+
+**Still to do here:** the cast bar on arrival — who is voicing whom, with a
+preview — which is really item 14, and effects parts are not in the sheet yet
+because nothing publishes one.
 
 ### 14. Preview clips for voice tracks · ~2–3 hours
 

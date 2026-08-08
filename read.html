@@ -838,6 +838,44 @@ async function baseTracks(sb, id){
   return r;
 }
 
+/* LAYERING THE CHOSEN PARTS ONTO A BASE. Pulled out of comicFromApi so that
+   swapping mid-read runs the SAME rules rather than a second copy of them —
+   two implementations of "a row carrying `fills` replaces the author's slot,
+   anything else is appended" would drift, and the drift would be silent.
+
+   Mutates `tracks`, which is why the caller hands it a fresh copy of the base
+   every time. */
+/* the client is HANDED IN rather than read off window.eski: comicFromApi
+   already awaited eski.ready to get it, and the smoke suite supplies a stub
+   through that promise which never sets eski.sb. Reaching for the global
+   worked on the site and failed in the harness, which is the wrong way round
+   for a thing to fail. */
+async function mergeParts(sb, id, tracks, want, rowToTrack){
+  const dbe = window.eski.dbError;
+  let scoreName = null;
+  if(!want.length) return { scoreName };
+  // the part ROWS, for the one thing the reader shows about them: whose score
+  // this is. a failure here is cosmetic, so it is not checked.
+  const pr = await sb.from('parts').select('id,kind,title,owner_name').in('id', want);
+  const st = (pr.data || []).find(p => p.kind === 'soundtrack');
+  if(st) scoreName = st.title || ('a score by ' + (st.owner_name || 'someone'));
+  const pt = await sb.from('tracks').select('*')
+    .eq('comic_id', id).in('part_id', want).order('order_idx');
+  // a part that will not load is not a reason to refuse the comic: the base is
+  // still readable, so say it and carry on
+  if(pt.error) toast(dbe('ESK-5023', 'a chosen voice or soundtrack could not be loaded', pt.error), 'error');
+  for(const row of (pt.data || [])){
+    const t = rowToTrack(row);
+    const slot = row.fills ? tracks.find(x => x.id === row.fills) : null;
+    if(slot) Object.assign(slot, {url: t.url, file: t.file, entry: null, blob: null,
+      title: t.title, start: t.start, end: t.end, gainDb: t.gainDb, volume: t.volume,
+      link: t.link, overPct: t.overPct});
+    else tracks.push(t);
+  }
+  tracks.sort((a,b)=>a.from-b.from);
+  return { scoreName };
+}
+
 async function comicFromApi(id, partIds){
   /* platform.js is a MODULE, so it executes after this classic script and
      window.eski does not exist while the page is still parsing. wait for that
@@ -939,32 +977,26 @@ async function comicFromApi(id, partIds){
     url: t.audio_key ? audioUrl(t) : null, external: false
   });
   const tracks = (tk.data || []).map(rowToTrack);
+  /* THE AUTHOR'S OWN TRACKS, KEPT PRISTINE. Merging a part rewrites the slot
+     it fills in place, which is destructive — swapping to a different voice
+     afterwards would layer onto whatever the last one left behind. A copy of
+     the base means every swap rebuilds from the same starting point rather
+     than from the result of the previous swap.
+
+     NOT `baseTracks`: that is already a function in this file, and a const of
+     the same name inside this one shadowed it — including the call to it
+     twenty lines ABOVE, which is a temporal dead zone error rather than a
+     wrong answer, so it failed loudly. It is the third name collision in this
+     codebase this week; see ARCHITECTURE.md on searching before defining. */
+  const authorTracks = tracks.map(t => ({ ...t }));
 
   /* PARTS. a vo or a soundtrack somebody else made for this comic, layered on
      only when the reader picked it. this is the database twin of mergePart():
      a row carrying `fills` replaces the author's empty slot, anything else is
      appended. the reader engine downstream cannot tell the difference. */
   const want = (partIds || []).filter(Boolean);
-  let scoreName = null;
-  if(want.length){
-    // the part ROWS, for the one thing the reader shows about them: whose
-    // score this is. a failure here is cosmetic, so it is not checked.
-    const pr = await sb.from('parts').select('id,kind,title,owner_name').in('id', want);
-    const st = (pr.data || []).find(p => p.kind === 'soundtrack');
-    if(st) scoreName = st.title || ('a score by ' + (st.owner_name || 'someone'));
-    const pt = await sb.from('tracks').select('*')
-      .eq('comic_id', id).in('part_id', want).order('order_idx');
-    // a part that will not load is not a reason to refuse the comic: the base
-    // is still readable, so say it and carry on
-    if(pt.error) toast(dbe('ESK-5023', 'a chosen voice or soundtrack could not be loaded', pt.error), 'error');
-    for(const row of (pt.data || [])){
-      const t = rowToTrack(row);
-      const slot = row.fills ? tracks.find(x => x.id === row.fills) : null;
-      if(slot) Object.assign(slot, {url: t.url, file: t.file, entry: null, blob: null,
-        title: t.title, start: t.start, end: t.end, gainDb: t.gainDb, volume: t.volume});
-      else tracks.push(t);
-    }
-  }
+  const merged = await mergeParts(sb, id, tracks, want, rowToTrack);
+  const scoreName = merged.scoreName;
   tracks.sort((a,b)=>a.from-b.from);
   return {
     id: 'c'+String(id).slice(0,8),
@@ -973,7 +1005,7 @@ async function comicFromApi(id, partIds){
     description: c.data.description || null,
     direction: c.data.direction === 'rtl' ? 'rtl' : 'ltr',
     coverEntry: null, coverUrl: u(c.data.cover_key),
-    pages, tracks,
+    pages, tracks, authorTracks, rowToTrack,
     player: {volume:80, crossfade:1.5, loopMode:'loop', playbackMode:'sync'},
     fileName: (c.data.slug || 'comic') + '.eski', isEski: true,
     slug: c.data.slug || null,          // the comic's public address, for /c/<slug>
@@ -2512,13 +2544,59 @@ const charOf = ref => { const p = partById(ref); return p && p.kind === 'vo' ? p
 const isScore = ref => ref === 'score:none' ||
   (() => { const p = partById(ref); return !!(p && p.kind === 'soundtrack'); })();
 
-function applyMix(){
+/* SWAPPING A VOICE USED TO RELOAD THE COMIC. The hash kept your place, so it
+   worked — but it threw away every decoded page and every warmed connection
+   to fetch the same forty-five images again, and a reader who wanted to hear
+   two takes of one line had to sit through that twice. Nobody does it twice.
+
+   Only the AUDIO changes when the mix changes, so only the audio is rebuilt:
+   the base tracks are copied, the chosen parts merged onto them with the same
+   function the initial load uses, and the current page re-cued. The pages,
+   the scroll position and the zoom are never touched.
+
+   The url still gets the mix, because a mix travels with a link — but through
+   replaceState, which updates the address without navigating. */
+let swapping = false;
+async function applyMix(){
+  if(swapping || !current) return;
   const on = [...$('mix-body').querySelectorAll('input:checked')].map(i => i.dataset.ref);
+
   const q = new URLSearchParams(location.search);
   if(on.length) q.set('with', on.join(',')); else q.delete('with');
-  // keep your place: the hash is where you are, and it survives the reload
-  location.href = location.pathname + '?' + q.toString() +
-    '#' + slugify(current.title) + '/page=' + (currentPage + 1);
+  history.replaceState(null, '', location.pathname + '?' + q.toString() +
+    '#' + slugify(current.title) + '/page=' + (currentPage + 1));
+
+  /* a file opened from disk has no parts to swap, and no base id to fetch
+     them with — the sheet says so, but the button is still reachable */
+  if(!current.baseId || !current.authorTracks){ toggleMix(false); return; }
+
+  const btn = $('mix-apply');
+  const was = btn.textContent;
+  swapping = true; btn.disabled = true; btn.textContent = 'Switching';
+  try{
+    cues.stop();
+    audio.stopAll();
+    const want = on.filter(r => r.startsWith('part:')).map(r => r.slice(5));
+    let tracks = current.authorTracks.map(t => ({ ...t }));
+    const { scoreName } = await mergeParts(window.eski.sb, current.baseId, tracks, want, current.rowToTrack);
+    /* THE SAME RULE THE INITIAL LOAD USES: "no score" drops the music and
+       keeps the voices. It is a choice about the mix, not the absence of one,
+       so it has to be re-applied after every rebuild or the author's
+       soundtrack walks straight back in. */
+    const silent = on.includes('score:none');
+    if(silent) tracks = tracks.filter(t => t.type !== 'music');
+    current.tracks = tracks;
+    current.scoreName = silent ? null : scoreOf(tracks, scoreName);
+    paintScore();
+    checkPageTrack(true, true);
+    refreshOneshots();
+    toast('Mix changed');
+  }catch(e){
+    toast('ESK-5036 the mix could not be changed: ' + ((e && e.message) || e), 'error');
+  }finally{
+    swapping = false; btn.disabled = false; btn.textContent = was;
+    toggleMix(false);
+  }
 }
 
 /* hotkeys panel */

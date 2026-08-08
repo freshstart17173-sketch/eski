@@ -14,11 +14,14 @@ loudness either way (`loudness.js`, roadmap 9c).
 of elements so several can sound at once. Durations are measured first,
 because `over` is a percentage of whatever take is selected.
 
-What is still NOT built: a reader cannot yet CHOOSE between published parts
-mid-read — one score plays, and a contributed voice or effects part is only
-audible if the link that opened the comic already named it. That is roadmap
-item 13, and it is the last thing standing between a published part and
-somebody actually hearing it.
+**And a reader can change their mind mid-comic.** The mix sheet swaps parts
+in place rather than reloading, rebuilding the track list from a pristine copy
+of the author's own tracks. So a published voice part is now genuinely
+audible: pick it, keep your page, hear it.
+
+What is still NOT built: an effects part cannot be picked, because nothing has
+published one yet and the sheet only lists voices and scores. One more group
+in `paintMix()` when the first one exists.
 
 ---
 
