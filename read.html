@@ -364,7 +364,14 @@ footer a:hover{color:var(--ink)}
   .player-bar .btn .ico{width:17px;height:17px}
   .pb-pages input{height:36px;width:48px}
   .player-bar>*{padding:0 var(--s2)}
-  .pb-right{gap:var(--s1)}
+  /* AND SOMETHING HAS TO ABSORB THE SLACK. The bar's own background is
+     --rule, showing through the 1px gaps as the dividers; .pb-score being
+     flex:1 is what kept it to 1px. Hide .pb-score and the leftover width
+     stops being anybody's, so the bar paints it — a solid block of rule
+     colour in the bottom-right corner that reads as a stray box. The right
+     group grows into it instead. `1 0 auto`, not `1`: it must grow but never
+     shrink below its buttons. */
+  .pb-right{flex:1 0 auto;justify-content:flex-end;gap:var(--s1)}
   .settings,.keys-panel{position:fixed;left:0;right:0;bottom:0;top:auto;width:100%;
     max-height:74vh;overflow-y:auto;transform:none}
   /* the sheet covers its own toggle, so it needs its own way out */

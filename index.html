@@ -1738,8 +1738,7 @@ function openDetails(c, role, opts){
       <button class="btn" id="ov-kudos" aria-pressed="${!!c.kudosMine}"${c.dbId ? '' : ' hidden'}>${
         c.kudosMine ? 'kudos given · ' : 'kudos '}${nfmt(c.kudos)}</button>
       <a class="btn" id="ov-contrib" href="${c.dbId ? contribHref(c) : '#'}"
-         ${(!c.dbId || mine || !openAxes(c).length) ? 'hidden' : ''}>Contribute to it</a>
-      <button class="btn" id="ov-share"${c.slug ? '' : ' hidden'}>Copy link</button>
+         ${(!c.dbId || mine || !openAxes(c).length) ? 'hidden' : ''}>Contribute</a>
     </div>`;
 
   paintTags(c);
@@ -1783,8 +1782,6 @@ function openDetails(c, role, opts){
   });
   sync();
 
-  const share = document.getElementById('ov-share');
-  if(share) share.onclick = ()=>shareComic(c);
   const ct = document.getElementById('d-cm-toggle');
   if(ct) ct.onclick = ()=>toggleThread(c);
 
@@ -1925,40 +1922,15 @@ async function removeTag(c, tag){
    One level of reply. The database enforces that (schema-comments.sql), not
    this file.
    ================================================================ */
-function shareComic(c){
-  const url = location.origin + comicPath(c);
-  const done = ()=>toast('Link copied');
-  /* the share sheet on a phone is the better answer and the only one that
-     reaches messages and whatsapp; the clipboard is the desktop answer. */
-  if(navigator.share && matchMedia('(pointer:coarse)').matches){
-    navigator.share({ title: c.title, url }).catch(()=>{});
-    return;
-  }
-  if(navigator.clipboard && navigator.clipboard.writeText){
-    navigator.clipboard.writeText(url).then(done, ()=>prompt('Copy this link', url));
-    return;
-  }
-  prompt('Copy this link', url);
-}
+/* NO COPY LINK BUTTON, and no shareComic to back it. The details panel used to
+   carry one; the URL is in the address bar the moment the panel opens (the
+   panel pushes it), so the button was offering what the browser already had.
+   It was defined TWICE here with the same name and near-identical bodies —
+   the second silently won — which is the collision this codebase keeps
+   producing. Both are gone rather than one. */
 
 /* the thread itself lives in comments.js, because the reader mounts the same
    one. this is only the fold around it. */
-function shareComic(c){
-  const url = location.origin + comicPath(c);
-  /* the share sheet on a phone is the better answer and the only one that
-     reaches messages and whatsapp; the clipboard is the desktop answer. */
-  if(navigator.share && matchMedia('(pointer:coarse)').matches){
-    navigator.share({ title: c.title, url }).catch(()=>{});
-    return;
-  }
-  if(navigator.clipboard && navigator.clipboard.writeText){
-    navigator.clipboard.writeText(url).then(()=>toast('Link copied'),
-      ()=>prompt('Copy this link', url));
-    return;
-  }
-  prompt('Copy this link', url);
-}
-
 function toggleThread(c, force){
   const t = document.getElementById('d-cm-toggle');
   if(!t || !window.eskiComments) return;
