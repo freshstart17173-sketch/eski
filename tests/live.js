@@ -138,6 +138,11 @@ async function buildEski(){
     }catch(e){ await route.abort(); }
   });
 
+  /* every request is relayed through the agent proxy node-side, so a comic's
+     worth of pages and audio arrives far slower here than for a real reader.
+     the default 30s is a harness artefact, not a budget. */
+  for(const c of [ctx]) { c.setDefaultNavigationTimeout(120000); c.setDefaultTimeout(60000); }
+
   const errs = [], bad = [];
   const wire = p => {
     p.on('console', m => { if(m.type() === 'error') errs.push('console: ' + m.text().slice(0,200)); });
@@ -298,6 +303,7 @@ async function buildEski(){
       await route.fulfill({ status:rs.status(), headers:h, body: await rs.body() });
     }catch(e){ await route.abort(); }
   });
+  cold.setDefaultNavigationTimeout(120000); cold.setDefaultTimeout(60000);
   await cold.route(u => stall && u.href === stall, async route => {
     stallHits++;
     await new Promise(x => setTimeout(x, 3000));

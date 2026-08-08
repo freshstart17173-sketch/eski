@@ -41,6 +41,11 @@ const ok = (n, c, extra) => {
       }catch(e){ await route.abort(); }
     });
     await ctx.addInitScript(() => { try{ localStorage.setItem('eski-onboarded','1'); }catch(e){} });
+    /* every request is relayed through the agent proxy node-side, which makes
+       a comic's worth of pages and audio far slower to arrive than it would be
+       for a real reader. the default 30s is a harness artefact, not a budget. */
+    ctx.setDefaultNavigationTimeout(120000);
+    ctx.setDefaultTimeout(60000);
   };
 
   const ctx = await browser.newContext({ viewport:{width:1280,height:900}, serviceWorkers:'block' });
@@ -181,7 +186,6 @@ const ok = (n, c, extra) => {
   console.log('reading, commenting, and coming back');
   // the read button on the page we are already on is the route a reader takes
   const toReader = await p.locator('#ov-read').getAttribute('href');
-  console.log('    read link:', toReader);
   await p.goto(new URL(toReader, BASE + '/').href, { waitUntil:'domcontentloaded' });
   await p.waitForSelector('#player-bar:not([style*="display:none"])', { timeout: 90000 });
   await settle(2500);
@@ -208,7 +212,7 @@ const ok = (n, c, extra) => {
   ok('a comment written here records the page it came from',
      /p\.\d+/i.test(await body()), (await body()).match(/p\.\d+/i)?.[0] || 'no page tag');
 
-  await p.goBack();
+  await p.goBack({ waitUntil:'commit' });
   await p.waitForSelector('#player-bar:not([style*="display:none"])', { timeout: 90000 });
   await settle(1500);
   ok('and back returns to the reader', /read\.html/.test(p.url()));
@@ -290,7 +294,7 @@ const ok = (n, c, extra) => {
   ok('a comment posts from a phone',
      (await m.locator('#d-cm-body').innerText()).includes(mStamp));
 
-  await m.goBack();
+  await m.goBack({ waitUntil:'commit' });
   await m.waitForSelector('#player-bar:not([style*="display:none"])', { timeout: 90000 });
   await m.waitForTimeout(1500);
   ok('back returns to the reader, on the page you left', /read\.html.*#.*page=\d+/.test(m.url()));
