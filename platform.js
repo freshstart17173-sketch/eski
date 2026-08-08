@@ -174,13 +174,65 @@ function paint(){
 
 const HANDLE_RE = /^[a-z0-9](?:[a-z0-9_-]{1,28}[a-z0-9])$/;   // == the CHECK in schema-profiles.sql
 
+/* HANDLES ARE FIRST COME, AND SOME MUST NOT BE.
+
+   Impersonation is the cheapest attack on a site whose entire currency is
+   attribution: @support telling somebody their account needs verifying is
+   more convincing than any amount of forged art. @eski and @admin are
+   claimable by whoever signs up first, once, forever — so this goes in before
+   there are users rather than after somebody takes one.
+
+   ALSO ROUTES. /u/<handle> is a real path, and the pathnames the site already
+   answers on (`c`, `u`, `api`, `read`, `studio`…) are worth keeping out of the
+   namespace even though nothing collides today: a handle is permanent and a
+   route is not, and finding out later that @studio cannot have a profile page
+   is worse than refusing it now.
+
+   NOT ENFORCED IN THE DATABASE, deliberately. A CHECK constraint with a word
+   list in it is a migration every time the list changes, and the list is a
+   product decision that will change. The uniqueness that actually matters —
+   two people cannot hold one handle — is still the unique index. */
+const RESERVED = new Set([
+  // us
+  'eski', 'eskilol', 'admin', 'administrator', 'root', 'support', 'help',
+  'staff', 'team', 'mod', 'mods', 'moderator', 'official', 'system',
+  'security', 'abuse', 'legal', 'dmca', 'billing', 'noreply', 'no-reply',
+  'postmaster', 'webmaster', 'contact', 'info',
+  // routes the site answers on, or plausibly will
+  'c', 'u', 'api', 'read', 'reader', 'studio', 'author', 'contribute',
+  'profile', 'browse', 'library', 'home', 'index', 'settings', 'account',
+  'signin', 'signup', 'login', 'logout', 'auth', 'new', 'edit', 'delete',
+  'search', 'explore', 'about', 'terms', 'privacy', 'takedown', 'spec',
+  'docs', 'blog', 'shelf', 'comic', 'comics', 'part', 'parts', 'me',
+  'you', 'null', 'undefined', 'anonymous', 'deleted'
+]);
+const reserved = h => RESERVED.has(h.replace(/[-_]/g, ''));
+
+/* THE ONE PLACE THE HANDLE RULE LIVES. It was written out three times — the
+   regex here, the same regex again in profile.html's save, and the CHECK in
+   schema-profiles.sql — and profile.html's copy is where somebody would rename
+   themselves to @support, because only the sign-up path knew about RESERVED.
+   The database CHECK stays: it is the backstop, and it is the only one that
+   holds against a crafted request. These two are the message.
+
+   Returns a sentence to show, or null when the handle is fine. */
+function handleProblem(h){
+  const v = (h || '').trim().toLowerCase();
+  if(!HANDLE_RE.test(v))
+    return 'Handles are 3 to 30 characters: lowercase letters, numbers, ' +
+           '- and _, starting and ending with a letter or number.';
+  if(reserved(v)) return '@' + v + ' is reserved. Pick another.';
+  return null;
+}
+
 /* A SUGGESTION, NOT A DECISION. Same derivation the old auto-create used, but
    it lands in an editable field instead of in the database. */
 function suggestHandle(u){
   const m = u.user_metadata || {};
   const raw = m.user_name || m.name || m.full_name || (u.email || '').split('@')[0] || '';
   const base = raw.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 24);
-  return HANDLE_RE.test(base) ? base : '';
+  // never suggest one we are about to refuse
+  return HANDLE_RE.test(base) && !reserved(base) ? base : '';
 }
 
 let onboarding = false;
@@ -246,9 +298,10 @@ function askHandle(u){
     const mine = ++token;
     go.disabled = true;
     if(!v) return tell('');
-    if(!HANDLE_RE.test(v))
-      return tell('3 to 30 characters: lowercase letters, numbers, - and _, ' +
-                  'starting and ending with a letter or number.', true);
+    /* before the round trip: neither a malformed nor a reserved handle can
+       become free, so asking the server about one is waste */
+    const why = handleProblem(v);
+    if(why) return tell(why, true);
     tell('Checking…');
     const r = await sb.from('profiles').select('id').eq('handle', v).maybeSingle();
     if(mine !== token) return;                        // a later keystroke won
@@ -264,7 +317,8 @@ function askHandle(u){
 
   go.onclick = async () => {
     const v = input.value.trim().toLowerCase();
-    if(!HANDLE_RE.test(v)) return check();
+    // checked again here: the button can be enabled and the field edited after
+    if(handleProblem(v)) return check();
     go.disabled = true;
     tell('Saving…');
     const ins = await sb.from('profiles').insert({
@@ -384,6 +438,7 @@ window.eski = {
   mediaUrl: key => key ? R2_BASE + '/' + key : null,
   dbError,
   jszip,
+  handleProblem,
   ready: new Promise(res => { markReady = res; }),
   /* `ready` means "there is a client". `settled` means "and nothing of ours is
      in your way" — it waits out the pick-a-username sheet. A page with its own

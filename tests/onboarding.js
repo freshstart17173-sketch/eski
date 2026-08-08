@@ -63,6 +63,7 @@ const USER = {
      the thing under test: whether anything was written without being asked. */
   const db = { profiles: [] };
   const inserts = [];
+  let handleLookups = 0;
 
   /* served rather than 404'd, so the only console errors left are ours. a 404
      here would be four lines of noise the last assertion cannot tell from a
@@ -97,6 +98,7 @@ const USER = {
       // GET: the only filters this code uses are id=eq.x and handle=eq.x
       const id = (url.searchParams.get('id') || '').replace('eq.', '');
       const handle = (url.searchParams.get('handle') || '').replace('eq.', '');
+      if(handle) handleLookups++;
       const hit = db.profiles.filter(p =>
         (id ? p.id === id : true) && (handle ? p.handle === handle : true));
       return json(id || handle ? hit : db.profiles);
@@ -151,6 +153,29 @@ const USER = {
   await page.waitForTimeout(400);
   ok(await page.evaluate(() => document.getElementById('oz-go').disabled),
     'spaces and punctuation are refused');
+
+  console.log('handles nobody may take');
+  /* Impersonation is the cheapest attack on a site whose currency is
+     attribution, and these are permanent once claimed. */
+  for(const [h, why] of [['admin','the obvious one'],
+                         ['support','the one that phishes'],
+                         ['eski','us'],
+                         ['ad-min','separators do not evade it'],
+                         ['studio','a route the site answers on']]){
+    await page.fill('#oz-h-in', h);
+    await page.waitForTimeout(320);
+    const said = await page.evaluate(() => document.getElementById('oz-say').textContent);
+    const off  = await page.evaluate(() => document.getElementById('oz-go').disabled);
+    ok(off && /reserved/i.test(said), `@${h} is refused — ${why}`, said);
+  }
+  /* AND IT COSTS NO ROUND TRIP. A reserved handle can never become free, so
+     asking the server about one is waste on every keystroke. Counted, because
+     'it feels instant' is not an assertion. */
+  const spent = handleLookups;
+  await page.fill('#oz-h-in', 'moderator');
+  await page.waitForTimeout(400);
+  ok(handleLookups === spent, 'and refusing one costs no server round trip',
+    `${handleLookups - spent} lookups`);
 
   console.log('a handle that is taken');
   db.profiles.push({ id:'other', handle:'taken' });

@@ -691,10 +691,11 @@ async function saveProfile(){
   const handle = $('f-handle').value.trim().toLowerCase();
   const err = $('f-err');
   err.textContent = '';
-  if(!/^[a-z0-9](?:[a-z0-9_-]{1,28}[a-z0-9])$/.test(handle)){
-    err.textContent = 'Handles are 3 to 30 characters: letters, numbers, - and _, not at the ends.';
-    return;
-  }
+  /* platform.js owns this rule — it used to be this regex written out a second
+     time, which meant renaming yourself here skipped the reserved-word list
+     that sign-up enforces. @support was one edit away. */
+  const why = window.eski.handleProblem(handle);
+  if(why){ err.textContent = why; return; }
   const up = await sb.from('profiles').update({
     handle,
     display_name: $('f-name').value.trim() || null,
