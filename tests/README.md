@@ -30,9 +30,10 @@ The live runners need an ordinary account. Create it once with
 
 ---
 
-## The local seven
+## The local eight
 
 ```
+node tests/structure.js
 node tests/smoke.js
 node tests/errors.js
 node tests/check-sign.mjs
@@ -68,6 +69,17 @@ Calls the signer directly with broken env vars, then loads the pages with
 `vendor/supabase.js` 404ing to prove the boot failure is **named** rather than
 swallowed, and finally checks the healthy case: no page may claim a service is
 unreachable when it is not. Codes are registered in `ERRORS.txt`.
+
+### `structure.js` — a fix cannot be silently overwritten
+
+The one to run first, and the one that exists because the same bug happened
+twice: `.btn.p:hover` defined at the top of `broadsheet.css` and again 330
+lines later, source order deciding it, "fixed" twice with no visible change.
+
+It fails on a selector given the same colour property in two places outside a
+media query, on a hex literal in a page, on an ESK code raised but not
+registered, on a page loading `palette.js` after the stylesheets, and on
+`ARCHITECTURE.md` drifting behind the files it describes.
 
 ### `cache.js` — every asset has a caching policy
 

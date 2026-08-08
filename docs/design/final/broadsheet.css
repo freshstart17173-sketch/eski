@@ -30,6 +30,14 @@
      mean a missing token silently rendered in the old sage instead of
      failing visibly. */
   --rec:#A33028;         /* the record light, and destructive actions */
+  /* WHITE ON A SCRIM IS NOT A THEME COLOUR. A caption over a 55%-black
+     overlay, a spinner on the loading veil, an icon stroked over a dark
+     plate: the ground under these is a fixed dark scrim, not the theme's
+     paper, so they must NOT follow the palette — on a light theme they would
+     turn near-black and vanish into the scrim. Naming the exception once
+     beats a dozen scattered #fff literals that each look like an oversight. */
+  --on-scrim:#FFF;
+  --rec-wash:color-mix(in srgb, var(--rec) 12%, var(--paper));
   --row:19px;            /* one metadata row. fixed, so columns align. */
   --hdr:44px;
 }
@@ -72,8 +80,8 @@ img{display:block;max-width:100%}
    from its parent, which is what used to render "home browse" in a different
    face and size to "studio profile". */
 .top nav a,.top nav button{font:inherit;font-size:var(--fs-micro);letter-spacing:.14em;
-  text-transform:uppercase;line-height:1.2;background:none;border:0;padding:3px 0;
-  color:var(--ink);opacity:.55;text-decoration:none;cursor:pointer;
+  text-transform:uppercase;line-height:1.2;background:none;border:0;
+  opacity:.55;text-decoration:none;cursor:pointer;
   box-shadow:inset 0 -2px 0 transparent;
   transition:opacity var(--t-fast) var(--ease),box-shadow var(--t-fast) var(--ease)}
 .top nav a:hover,.top nav button:hover{opacity:1}
@@ -111,10 +119,8 @@ img{display:block;max-width:100%}
   line-height:1.2;letter-spacing:.16em;text-transform:uppercase;color:var(--ink)}
 .head .n{font-size:var(--fs-micro);letter-spacing:.1em;color:var(--label)}
 .head .sp{flex:1}
-.head a,.head button.link{font-size:var(--fs-micro);letter-spacing:.1em;color:var(--label);
-  text-decoration:none;background:none;border:0;padding:0;
-  transition:color var(--t-fast) var(--ease)}
-.head a:hover,.head button.link:hover{color:var(--ink)}
+.head a,.head button.link{font-size:var(--fs-micro);letter-spacing:.1em;
+  text-decoration:none;background:none;border:0;padding:0}
 
 /* ---------- controls ----------
    inline-flex, not the default inline-block: a button carrying an icon and a
@@ -126,7 +132,6 @@ img{display:block;max-width:100%}
   border:var(--bw) solid var(--rule);background:none;color:var(--ink);white-space:nowrap;
   transition:background var(--t-fast) var(--ease),color var(--t-fast) var(--ease),
   border-color var(--t-fast) var(--ease),opacity var(--t-fast) var(--ease)}
-.btn:hover{background:var(--rule);color:var(--on-mark)}
 .btn.p{background:var(--mark);border-color:var(--mark);color:var(--on-mark)}
 /* A PRIMARY BUTTON HAS TO INVERT, not shift hue. This said
    `background:var(--accent)` and did nothing at all — every palette sets
@@ -156,7 +161,6 @@ img{display:block;max-width:100%}
 .chip{font-size:10px;letter-spacing:.1em;height:22px;
   padding:0 var(--s2);border:var(--bw) solid var(--rule-hair);background:none;color:var(--label);
   transition:all var(--t-fast) var(--ease)}
-.chip:hover{color:var(--ink);border-color:var(--ink)}
 .chip[aria-pressed="true"]{background:var(--mark);border-color:var(--mark);color:var(--on-mark)}
 
 /* a segmented switch: two or three words, one of them filled */
@@ -306,9 +310,7 @@ img{display:block;max-width:100%}
 /* ---------- see more ---------- */
 .seemore{width:100%;background:none;border:0;border-bottom:var(--bw) solid var(--rule);
   padding:var(--s2);font-size:var(--fs-micro);letter-spacing:.16em;
-  color:var(--label);transition:background var(--t-fast) var(--ease),
-  color var(--t-fast) var(--ease)}
-.seemore:hover{background:var(--rule);color:var(--on-mark)}
+  transition:background var(--t-fast) var(--ease),color var(--t-fast) var(--ease)}
 .seemore.in{border-bottom:var(--bw) solid var(--rule-hair);padding:3px;font-size:10px;
   letter-spacing:.12em}
 
@@ -370,9 +372,8 @@ img{display:block;max-width:100%}
 .cm-body{margin:4px 0 0;font-size:var(--fs-xs);line-height:1.55;color:var(--soft-ink);
   overflow-wrap:anywhere}
 .cm-acts{display:flex;gap:var(--s3);margin-top:4px;flex-wrap:wrap}
-.lnk{border:0;background:none;padding:0;color:var(--label);font:inherit;
+.lnk{border:0;background:none;padding:0;font:inherit;
   font-size:var(--fs-micro);letter-spacing:.1em;text-transform:uppercase;cursor:pointer}
-.lnk:hover{color:var(--ink)}
 .cm-write{padding:var(--s2) 0 var(--s3)}
 .cm-box{width:100%;min-height:64px;resize:vertical;background:var(--surface);
   color:var(--ink);border:var(--bw) solid var(--rule-hair);padding:var(--s2);
@@ -453,6 +454,23 @@ select[data-ui], select[data-ui] option{
   margin:0 calc(var(--s2) * -1);
 }
 .top nav a, .top nav button{ padding:3px var(--s2); margin:0 }
+
+/* ============================================================
+   INTERACTION OWNS COLOUR. Everything from here down is the single place a
+   clickable thing's colour, hover and underline are decided.
+
+   THIS SECTION USED TO SHADOW THE ONES ABOVE IT. .btn:hover, .chip:hover,
+   .lnk, .seemore, .head a and .top nav a were each given a colour up in
+   their structural rule AND again down here, with different values —
+   fifteen conflicting declarations, all of them resolved silently by source
+   order. That is how .btn.p:hover got fixed at the top of the file and
+   un-fixed 330 lines later, twice.
+
+   So the structural rules above set shape only: size, spacing, borders,
+   type. If you are changing what something LOOKS like when it is coloured or
+   hovered, it is here, and it is here once. tests/structure.js fails the
+   build if a selector gets the same colour property in two places.
+   ============================================================ */
 
 /* a bordered control already has geometry; it only needs the fill */
 .btn:hover, .chip:hover, .pill:hover{

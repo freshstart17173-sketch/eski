@@ -71,7 +71,7 @@ h4{margin:0 0 8px;font-size:11px;letter-spacing:.13em;color:var(--muted);font-we
   background:var(--bg-3);cursor:grab;position:relative;box-shadow:var(--shadow)}
 .chip-img img{width:100%;height:100%;object-fit:cover;display:block;pointer-events:none}
 .chip-img .n{position:absolute;bottom:0;left:0;right:0;font-size:9px;text-align:center;
-  background:rgba(0,0,0,.55);color:#fff;line-height:1.4}
+  background:rgba(0,0,0,.55);color:var(--on-scrim);line-height:1.4}
 .chip-aud{width:100%;border:var(--bw) solid var(--edge);border-radius:var(--r);background:var(--bg-3);
   padding:6px 8px;cursor:grab;box-shadow:var(--shadow);transition:border-color 140ms ease}
 .chip-aud:hover{border-color:var(--accent)}
@@ -94,7 +94,7 @@ h4{margin:0 0 8px;font-size:11px;letter-spacing:.13em;color:var(--muted);font-we
 .stage{flex:1;display:flex;flex-direction:column;min-width:0;background:var(--bg-0)}
 .preview{flex:1;display:flex;align-items:center;justify-content:center;min-height:0;position:relative;
   padding:16px;background:radial-gradient(circle at 50% 38%, var(--bg-1), var(--bg-0))}
-.preview img{max-height:100%;max-width:100%;object-fit:contain;box-shadow:var(--shadow-lg);background:#fff}
+.preview img{max-height:100%;max-width:100%;object-fit:contain;box-shadow:var(--shadow-lg);background:var(--on-scrim)}
 .pv-badge{position:absolute;top:12px;left:50%;transform:translateX(-50%);font-size:12.5px;
   color:var(--soft-ink);background:var(--bg-2);border:var(--bw) solid var(--edge);border-radius:var(--r);
   padding:3px 14px;box-shadow:var(--shadow)}
@@ -124,10 +124,10 @@ h4{margin:0 0 8px;font-size:11px;letter-spacing:.13em;color:var(--muted);font-we
 .pgcard{width:88px;position:relative;border:var(--bw) solid var(--edge);border-radius:var(--r);overflow:hidden;
   background:var(--bg-3);cursor:grab;box-shadow:var(--shadow)}
 .pgcard img{width:100%;height:112px;object-fit:cover;display:block;pointer-events:none}
-.pgcard .n{position:absolute;top:3px;left:4px;font-size:10px;background:rgba(0,0,0,.6);color:#fff;
+.pgcard .n{position:absolute;top:3px;left:4px;font-size:10px;background:rgba(0,0,0,.6);color:var(--on-scrim);
   padding:0 5px;border-radius:var(--r)}
 .pgcard .x{position:absolute;top:2px;right:2px;width:18px;height:18px;border:0;border-radius:var(--r);
-  background:rgba(0,0,0,.6);color:#fff;font-size:12px;display:flex;align-items:center;
+  background:rgba(0,0,0,.6);color:var(--on-scrim);font-size:12px;display:flex;align-items:center;
   justify-content:center;opacity:0;transition:opacity 120ms ease}
 .pgcard:hover .x{opacity:1}
 .pgcard.dragover{outline:2px dashed var(--accent);outline-offset:-2px}
@@ -184,7 +184,7 @@ h4{margin:0 0 8px;font-size:11px;letter-spacing:.13em;color:var(--muted);font-we
 .menu button{display:flex;align-items:center;gap:7px;width:100%;border:0;background:transparent;
   color:var(--soft-ink);font-size:12.5px;padding:6px 9px;border-radius:var(--r);text-align:left}
 .menu button:hover{background:var(--bg-3);color:var(--accent)}
-.menu button.danger:hover{color:#c1362b}
+.menu button.danger:hover{color:var(--rec)}
 .menu .sep{height:1px;background:var(--edge);margin:4px 2px}
 /* trim */
 .trim{position:fixed;inset:auto;left:50%;top:50%;transform:translate(-50%,-50%);z-index:215;
@@ -229,7 +229,7 @@ h4{margin:0 0 8px;font-size:11px;letter-spacing:.13em;color:var(--muted);font-we
 .pgcard .osblock{position:absolute;left:4px;bottom:4px;display:flex;align-items:center;gap:3px;
   background:var(--accent);color:var(--on-accent);border-radius:var(--r);padding:1px 7px 1px 5px;font-size:10.5px;
   cursor:pointer;box-shadow:var(--shadow)}
-.pgcard .osblock svg{width:11px;height:11px;stroke:#fff}
+.pgcard .osblock svg{width:11px;height:11px;stroke:var(--on-scrim)}
 .pgcard.osdrop{outline:2px solid var(--accent);outline-offset:-2px}
 
 /* page info panel: docked, persistent, the hub for authoring a page */
@@ -267,7 +267,7 @@ h4{margin:0 0 8px;font-size:11px;letter-spacing:.13em;color:var(--muted);font-we
 .castrow .nm{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .castrow .cov{color:var(--muted);font-size:11px;flex:none}
 .castrow button{border:0;background:transparent;color:var(--muted);cursor:pointer;padding:2px}
-.castrow button:hover{color:#c1362b}
+.castrow button:hover{color:var(--rec)}
 /* the note a performer reads before taking the part. it sits under its own
    cast row and travels to comics.cast_list. */
 .castnote{width:100%;box-sizing:border-box;margin:0 0 10px;padding:5px 7px;font:inherit;
@@ -333,23 +333,23 @@ h4{margin:0 0 8px;font-size:11px;letter-spacing:.13em;color:var(--muted);font-we
 .oschip .nm{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .oschip svg.ico{width:13px;height:13px}
 .oschip button{border:0;background:transparent;color:var(--muted);padding:0;cursor:pointer}
-.oschip button:hover{color:#c1362b}
+.oschip button:hover{color:var(--rec)}
 
 /* loading overlay */
 .loading{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;
   justify-content:center;flex-direction:column;gap:16px;z-index:200}
 .loading.on{display:flex}
-.spinner{width:46px;height:46px;border:4px solid rgba(255,255,255,.25);border-top-color:#fff;
+.spinner{width:46px;height:46px;border:4px solid rgba(255,255,255,.25);border-top-color:var(--on-scrim);
   border-radius:50%;animation:spin .8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
-.loading .lbl{color:#fff;font-size:15px}
+.loading .lbl{color:var(--on-scrim);font-size:15px}
 /* a determinate bar beats a list of internal steps: it answers "how long",
    which is the only question being asked while waiting. */
 .loading .bar{width:min(320px,64vw);height:6px;background:rgba(255,255,255,.2)}
-.loading .bar i{display:block;height:100%;width:0;background:#fff;
+.loading .bar i{display:block;height:100%;width:0;background:var(--on-scrim);
   transition:width 200ms var(--ease)}
 /* the done state: the spinner is swapped for a tick that draws itself once */
-.loading .tick{display:none;width:52px;height:52px;fill:none;stroke:#fff;stroke-width:3;
+.loading .tick{display:none;width:52px;height:52px;fill:none;stroke:var(--on-scrim);stroke-width:3;
   stroke-linecap:round;stroke-linejoin:round}
 .loading.done .tick{display:block}
 .loading.done .spinner,.loading.done .bar{display:none}
@@ -367,16 +367,15 @@ h4{margin:0 0 8px;font-size:11px;letter-spacing:.13em;color:var(--muted);font-we
   transition:opacity 160ms ease,transform 160ms ease,background 160ms ease,border-color 160ms ease,color 160ms ease;
   box-shadow:var(--shadow-lg);font-size:13px}
 .trash-bar.show{opacity:1;transform:translate(-50%,0);pointer-events:auto}
-.trash-bar.hot{border-color:#c1362b;color:#c1362b;border-style:solid;background:#fbe9e7}
-[data-dark] .trash-bar.hot{background:#3a1614}
+.trash-bar.hot{border-color:var(--rec);color:var(--rec);border-style:solid;background:var(--rec-wash)}
 
 /* toast */
-.toast{position:fixed;bottom:22px;left:50%;transform:translate(-50%,12px);background:#202020;
-  color:#f4f4f4;padding:9px 18px;border-radius:var(--r);opacity:0;pointer-events:none;
+.toast{position:fixed;bottom:22px;left:50%;transform:translate(-50%,12px);background:var(--ink);
+  color:var(--paper);padding:9px 18px;border-radius:var(--r);opacity:0;pointer-events:none;
   transition:all 220ms ease;z-index:900;font-size:14px;max-width:86vw;text-align:center;
   box-shadow:var(--shadow-lg)}
 .toast.show{opacity:1;transform:translate(-50%,0)}
-.toast.error{background:#a1362b}
+.toast.error{background:var(--rec)}
 /* an error exists to be read and copied, so it stays until dismissed, accepts
    pointer events, and its text is selectable. success messages still fade. */
 .toast.error{pointer-events:auto;user-select:text;text-align:left;padding-right:34px;
