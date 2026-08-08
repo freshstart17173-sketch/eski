@@ -128,13 +128,30 @@ The admin console already reads the table, so the queue half is done. Add a
 Discord webhook on insert (~20 minutes) or reports rot until someone remembers
 to look.
 
-### 8. Cache headers · ~30 minutes
+### 8. Cache headers · DONE
 
-Every visitor re-downloads things that can never change. `vercel.json` sets
-rewrites and an install command and nothing else. Media keys are
-content-addressed, so they can be immutable for a year; HTML must stay
-no-cache so deploys land immediately. Best effort-to-payoff ratio left in the
-repo, and it compounds with item 1.
+`vercel.json` set rewrites and an install command and nothing else, so every
+visitor re-downloaded things that can never change.
+
+Three policies. `/vendor/*` is immutable for a year — those are pinned
+versions, and **re-vendoring must rename the file**, because a browser holding
+an immutable copy will never ask again. App scripts and stylesheets get 60
+seconds plus a day of `stale-while-revalidate`, so a repeat visit paints from
+cache and refreshes behind itself. HTML revalidates every time, which is what
+makes a deploy land instead of leaving people running last week's javascript
+against this week's database.
+
+`tests/cache.js` guards it, and guards the failure that actually happens:
+config fails SILENTLY, so a rule with a typo does not error — it just never
+matches. Rather than checking the config against itself, the test walks the
+HTML for every same-origin asset and asserts each one is covered. It caught
+`manifest.json` immediately, and it would have caught `loudness.js`, which was
+added this week to a rule that names files one at a time.
+
+Its own pattern translator got the bug it exists to catch: escaping the source
+before expanding `(.*)` turned every wildcard into "a run of literal dots", so
+every rule matched nothing and every check passed vacuously until the
+assertions were strong enough to notice.
 
 ---
 

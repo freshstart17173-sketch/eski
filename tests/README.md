@@ -30,14 +30,21 @@ The live runners need an ordinary account. Create it once with
 
 ---
 
-## The local four
+## The local seven
 
 ```
 node tests/smoke.js
 node tests/errors.js
 node tests/check-sign.mjs
+node tests/cache.js
+node tests/loudness.js
+node tests/recording.js
 node tests/viewer-fit.js       # needs the folder served on :8940
 ```
+
+Three of them need nothing at all — `cache.js`, `loudness.js` and
+`check-sign.mjs` read files and do arithmetic. `recording.js` needs a browser
+but no microphone.
 
 ### `smoke.js` — the reader and the composer
 
@@ -61,6 +68,30 @@ Calls the signer directly with broken env vars, then loads the pages with
 `vendor/supabase.js` 404ing to prove the boot failure is **named** rather than
 swallowed, and finally checks the healthy case: no page may claim a service is
 unreachable when it is not. Codes are registered in `ERRORS.txt`.
+
+### `cache.js` — every asset has a caching policy
+
+`vercel.json` is configuration, so it fails silently: a rule with a typo does
+not error, it just never matches. This walks the HTML for every same-origin
+asset and asserts each one is covered, which catches the failure that actually
+happens — a file added later that nobody put on the list. It also checks the
+policies are the right way round: HTML must revalidate or deploys do not land,
+and only `/vendor/` may be immutable, because nothing else gets renamed when
+it changes.
+
+### `loudness.js` — the meter, against the published conformance cases
+
+ITU-R BS.1770-4 checked against EBU Tech 3341: a 1kHz sine at a known level
+must read that level back within 0.1 LU, at several sample rates. Also the
+gates, the peak-headroom guard, and the rule that a whole part gets ONE gain so
+a performance keeps its dynamics. Fakes an AudioBuffer, so it runs in node with
+no browser and no audio files.
+
+### `recording.js` — a take, end to end, with no microphone
+
+Chromium's fake capture device drives the contribution studio's recorder:
+permission, MediaRecorder, the blob, the loudness measurement, the shared part
+gain, and that the microphone is closed again afterwards.
 
 ### `check-sign.mjs` — the signer, without a browser
 
