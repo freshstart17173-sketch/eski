@@ -1057,7 +1057,15 @@ async function fileComic(item){
 /* ================================================================
    boot
    ================================================================ */
+/* boot runs again whenever the session changes, and signing in on a comic
+   page used to start a second one while the first was still awaiting its
+   query — so both reached the fast path, both opened the sheet, and the
+   second render threw away whatever you had done in the first (an open
+   thread, a half-typed comment). Only the newest run may paint. */
+let bootRun = 0;
 async function boot(){
+  const run = ++bootRun;
+  const stale = () => run !== bootRun;
   const grid = document.getElementById('grid');
 
   /* SOMEBODY FOLLOWED A LINK. Paint their comic off one row before touching
@@ -1068,6 +1076,7 @@ async function boot(){
   if(want && !ov.classList.contains('open')){
     try{
       const one = await loadPlatform({ slug: want });
+      if(stale()) return;
       if(one[0]){
         COMICS = one;
         openDetails(one[0], null, { fromHistory:true, deep:true });
@@ -1081,6 +1090,7 @@ async function boot(){
   }
 
   const published = await loadPlatform();
+  if(stale()) return;
 
   let folder = [];
   try{ folder = await listEskis(); }catch(e){}
@@ -1094,6 +1104,7 @@ async function boot(){
   }catch(e){}
 
   const files = await Promise.all([...local, ...folder].map(fileComic));
+  if(stale()) return;
   COMICS = [...published, ...files];
 
   if(!COMICS.length){
@@ -1702,7 +1713,7 @@ function shareComic(c){
   prompt('copy this link', url);
 }
 
-const CM = { rows: [], loaded: null, replyTo: null, editing: null };
+const CM = { rows: [], loaded: null, replyTo: null, editing: null, open: false };
 const cmTime = iso => {
   const s = Math.max(0, (Date.now() - new Date(iso).getTime()) / 1000);
   if(s < 60) return 'just now';
@@ -1717,15 +1728,24 @@ function toggleThread(c, force){
   if(!t) return;
   const open = force != null ? force : t.getAttribute('aria-expanded') !== 'true';
   t.setAttribute('aria-expanded', open);
+  CM.open = open;
   if(open) loadComments(c);
 }
 
-/* opening the sheet does NOT open the thread. it only resets it, so the next
-   comic you look at does not briefly show the last one's replies. */
+/* Opening the sheet does NOT open the thread — it resets it, so the next
+   comic you look at never flashes the last one's replies.
+
+   Unless it is the SAME comic being re-rendered under you, which happens when
+   the session changes or the shelf finishes loading behind an already-open
+   page. Wiping the thread there would be a re-render throwing away something
+   you deliberately opened, so it is restored instead. */
 function paintComments(c){
-  CM.rows = []; CM.loaded = null; CM.replyTo = null; CM.editing = null;
+  const same = CM.loaded && CM.loaded === c.dbId;
+  const wasOpen = same && CM.open;
+  if(!same){ CM.rows = []; CM.loaded = null; CM.replyTo = null; CM.editing = null; CM.open = false; }
   const body = document.getElementById('d-cm-body');
   if(body) body.innerHTML = '';
+  if(wasOpen){ toggleThread(c, true); return; }
   /* a link ending in #comments means somebody was sent here to talk — most
      often straight out of the reader. open the thread and put it on screen,
      rather than leaving them to find a closed fold at the bottom. */
