@@ -36,17 +36,16 @@
 }
 
 :root{
-  /* ---------- the sage ramp. the only hue, locked values ---------- */
-  --sage-50:#F6F9F7; --sage-100:#E9F1ED; --sage-200:#D1E1D9; --sage-300:#ABC4B8;
-  --sage-400:#7A9F8D; --sage-500:#5B7A6B; --sage-600:#486356; --sage-700:#354D41;
-  --sage-800:#23362D; --sage-900:#14221B;
+  /* THERE IS NO RAMP HERE ANY MORE. A ten-step sage ramp used to live at the
+     top of this file and every surface reached into it directly, which meant
+     the palette in palettes.css could only ever recolour the things that had
+     been converted. Colour now comes from exactly one place. The two literals
+     below are not colours in that sense — they are the ends of the range, and
+     nothing draws with them except a mask. */
+  --white:#FFFFFF; --black:#000000;
 
-  --white:#FFFFFF; --paper-0:#F8FAF9; --paper-1:#EFF3F1;
-  --line-1:#CDD6D1; --black:#000000;
-
-  --void:#0C130F; --surf-1:#14221B; --surf-2:#1C2C24; --surf-3:#23362D;
-  --line-dark:#3A5045; --muted-dark:#98AEA4;
-
+  /* status. deliberately outside the palette: red has to mean stop in every
+     theme, and a pink theme does not get to make a warning look decorative. */
   --success:#486356; --warning:#8A5A12; --danger:#A33028;
 
   /* page state bars in the studio. two stacked bars under every page card.
@@ -100,43 +99,34 @@
   --t-fast:160ms; --t-mid:220ms; --t-slow:300ms;
 
   /* ============================================================
-     compatibility layer.
-     the four pages grew two different vocabularies: index and studio
-     speak --bg-0..--bg-3 / --edge / --shadow, while read and spec speak
-     --paper / --surface / --line. rather than rewrite 847 lines of
-     component css, both vocabularies are defined here in terms of the
-     ramp above. every page changes palette at once and nothing drifts.
+     COMPATIBILITY LAYER, and it must not hold a colour of its own.
+
+     The pages grew two vocabularies: index and studio speak
+     --bg-0..--bg-3 / --edge / --shadow, read and spec speak
+     --paper / --surface / --line. Rewriting 847 lines of component css
+     was never worth it, so both are defined here — but ONLY as aliases
+     onto the palette in palettes.css. Every value below is a var().
+
+     THIS BLOCK USED TO HOLD LITERAL SAGE, and that is exactly how a pink
+     theme ended up with green in it: the palette overrode --ink and
+     --paper, the aliases did not, and anything drawn with --bg-3 or
+     --band stayed the colour of a brand that no longer exists. If you
+     add an alias here and give it a hex, you are reopening that bug.
      ============================================================ */
 
-  /* the reader recolours these two live from the cover art, so anything
-     derived from them has to stay in hsl. neutral until tint is on. */
-  --hue:151; --tintsat:0%;
-
-  --ink:var(--sage-900);
-  --soft-ink:#45544D;
-  --muted:#62746B;
-
-  --accent:var(--sage-500);
-  --accent-deep:var(--sage-700);
-  --accent-soft:var(--sage-200);
-  /* what goes ON an accent fill. this MUST flip with the theme: in dark mode
-     the accent steps up the ramp to sage-300, and white text on sage-300 is
-     about 1.9:1, which is both unreadable and the source of the glare. */
-  --on-accent:var(--white);
-  /* borders on things you can click. --line is for dividers, which may be
-     quiet; an interactive boundary needs to be seen. */
-  --line-strong:#7F948A;
-
-  --paper:var(--paper-0);
-  --surface:var(--white);
-  --line:var(--line-1);
+  --line:var(--rule-hair);
 
   --bg-0:var(--paper-1);
-  --bg-1:var(--paper-0);
-  --bg-2:var(--white);
-  --bg-3:var(--white);
-  --edge:var(--line-1);
-  --edge-strong:var(--sage-300);
+  --bg-1:var(--paper);
+  --bg-2:var(--surface);
+  --bg-3:var(--plate-bg);
+  --edge:var(--rule-hair);
+  --edge-strong:var(--line-strong);
+
+  /* the soft ground behind an active control, and the ink on it */
+  --accent-soft:var(--ui-hover-bg);
+  --accent-deep:var(--ui);
+  --on-accent:var(--on-mark);
 
   /* elevation is a change of ground and a hairline, never a shadow.
      these stay defined so no existing rule breaks. */
@@ -144,37 +134,8 @@
   --shadow-lg:none;
 
   /* reader page bands */
-  --band:var(--sage-900); --band-fg:var(--sage-100); --band-dim:var(--sage-400);
-  --page-bg:var(--white);
-}
-
-[data-theme="dark"]{
-  --ink:#EAF0EC;
-  --soft-ink:var(--sage-200);
-  --muted:var(--muted-dark);
-
-  /* sage-500 is 3.5:1 on a dark ground and fails for body text, so the
-     primary interactive colour steps up the ramp instead. */
-  --accent:var(--sage-300);
-  --accent-deep:var(--sage-200);
-  --accent-soft:var(--surf-3);
-  /* dark accents are light, so what sits on them must be dark */
-  --on-accent:var(--sage-900);
-  --line-strong:var(--sage-400);
-
-  --paper:var(--surf-1);
-  --surface:var(--surf-2);
-  --line:var(--line-dark);
-
-  --bg-0:var(--void);
-  --bg-1:var(--surf-1);
-  --bg-2:var(--surf-2);
-  --bg-3:var(--surf-3);
-  --edge:var(--line-dark);
-  --edge-strong:var(--sage-700);
-
-  --band:var(--void); --band-fg:var(--sage-100); --band-dim:var(--sage-400);
-  --page-bg:var(--paper-1);
+  --band:var(--paper); --band-fg:var(--ink); --band-dim:var(--muted);
+  --page-bg:var(--plate-bg);
 }
 
 /* ============================================================
@@ -191,15 +152,20 @@ button{cursor:pointer}
 /* readouts. any element that ticks or counts gets steady digit widths. */
 .num,[data-num]{font-variant-numeric:var(--num)}
 
-::selection{background:var(--sage-200);color:var(--sage-900)}
+/* SELECTION IS THE ACCENT. It is the one piece of chrome the browser draws
+   over your own text, so it has no business being a colour the reader did
+   not pick — and the default blue is a second hue on a page that allows
+   one. --on-mark is the palette's own answer to "what is legible on top of
+   this", so the pair can never be a contrast accident. */
+::selection{background:var(--mark);color:var(--on-mark)}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 
-*{scrollbar-width:thin;scrollbar-color:var(--sage-300) transparent}
+*{scrollbar-width:thin;scrollbar-color:var(--line-strong) transparent}
 *::-webkit-scrollbar{width:10px;height:10px}
 *::-webkit-scrollbar-track{background:transparent}
-*::-webkit-scrollbar-thumb{background:var(--sage-300);border:3px solid transparent;
+*::-webkit-scrollbar-thumb{background:var(--line-strong);border:3px solid transparent;
   background-clip:content-box;border-radius:var(--r-track)}
-*::-webkit-scrollbar-thumb:hover{background:var(--sage-500);border:3px solid transparent;
+*::-webkit-scrollbar-thumb:hover{background:var(--ui);border:3px solid transparent;
   background-clip:content-box}
 
 /* the rule bar, the one piece of ornament the brand keeps */

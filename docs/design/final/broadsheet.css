@@ -1,10 +1,10 @@
 /* ============================================================
    eski — broadsheet. the house style, shared by every final surface.
 
-   near-white ground, near-black rules, hairlines inside a block,
-   micro caps for labels, gnomon on titles only, art at comic
-   proportions, sage as the single accent. no shadows, no radii, no
-   second hue, and no ornament that is not doing work.
+   hairline rules inside a block, micro caps for labels, art at comic
+   proportions, and a ground and accent the reader picks. Gnomon survives
+   on the wordmark and nowhere else. no shadows, no radii, no second hue,
+   and no ornament that is not doing work.
 
    this file is chrome only: tokens, type, buttons, rules, plates,
    sheets, bays. anything that is the shape of one particular surface
@@ -127,9 +127,14 @@ img{display:block;max-width:100%}
   transition:background var(--t-fast) var(--ease),color var(--t-fast) var(--ease),
   border-color var(--t-fast) var(--ease),opacity var(--t-fast) var(--ease)}
 .btn:hover{background:var(--rule);color:var(--on-mark)}
-.btn:active{transform:translateY(1px)}
 .btn.p{background:var(--mark);border-color:var(--mark);color:var(--on-mark)}
-.btn.p:hover{background:var(--accent);border-color:var(--accent)}
+/* A PRIMARY BUTTON HAS TO INVERT, not shift hue. This said
+   `background:var(--accent)` and did nothing at all — every palette sets
+   --mark and --accent to the same value, so CONTINUE READING and READ IT
+   WITH THIS MIX, the two most-pressed controls on the site, were the only
+   ones with no hover at all. Going to --ink is unmistakable in all eighteen
+   themes and is still colour only: same box, same position, same size. */
+.btn.p:hover{background:var(--ink);border-color:var(--ink);color:var(--paper)}
 .btn:disabled{opacity:.35;pointer-events:none}
 .btn.sm{height:22px;font-size:10px;padding:0 var(--s2);letter-spacing:.1em}
 .btn.quiet{border-color:var(--rule-hair);color:var(--label)}
@@ -243,16 +248,21 @@ img{display:block;max-width:100%}
 .cliprow[aria-grabbed="true"]{background:var(--surface);box-shadow:inset 3px 0 0 var(--mark)}
 
 /* the page-wide drop state. one rule, one word, no animation. */
+/* the drop veil is the PAGE washed out, not a dim over it — you are being
+   shown where the file lands, so the ground has to stay recognisably the
+   ground. Mixed from --paper so it is right in all eighteen themes; it used
+   to be one near-white literal plus a near-black override, which between them
+   covered two. */
 .droplayer{position:fixed;inset:0;z-index:80;display:none;place-items:center;
-  background:rgba(252,253,252,.86);border:2px solid var(--rule)}
-[data-dark] .droplayer{background:rgba(12,19,15,.86)}
+  background:color-mix(in srgb, var(--paper) 88%, transparent);
+  border:2px solid var(--rule)}
 .droplayer.on{display:grid}
 .droplayer b{font-family:var(--font-display);font-size:26px;font-weight:400}
 .droplayer span{display:block;text-align:center;font-size:var(--fs-micro);
   letter-spacing:.16em;text-transform:uppercase;color:var(--label);margin-top:var(--s2)}
 
 /* ---------- sheets ---------- */
-.ov{position:fixed;inset:0;z-index:60;background:rgba(12,19,15,.55);display:none;
+.ov{position:fixed;inset:0;z-index:60;background:var(--scrim);display:none;
   place-items:center;padding:var(--s5);animation:fade var(--t-fast) var(--ease)}
 .ov.on{display:grid}
 @keyframes fade{from{opacity:0}to{opacity:1}}
@@ -289,7 +299,6 @@ img{display:block;max-width:100%}
   color:var(--label);transition:background var(--t-fast) var(--ease),
   color var(--t-fast) var(--ease)}
 .seemore:hover{background:var(--rule);color:var(--on-mark)}
-.seemore:active{transform:translateY(1px)}
 .seemore.in{border-bottom:var(--bw) solid var(--rule-hair);padding:3px;font-size:10px;
   letter-spacing:.12em}
 
@@ -327,9 +336,9 @@ img{display:block;max-width:100%}
    ============================================================ */
 .thread{border-top:var(--bw) solid var(--rule);padding:var(--s3) var(--s4) var(--s4)}
 .thread-open{width:100%}
-.thread .spoilernote{margin:2px 0 0;font-size:var(--fs-micro);color:var(--label);
-  letter-spacing:.06em}
-.thread-open[aria-expanded="true"] ~ .spoilernote{display:none}
+/* the fold used to carry a line explaining that it was shut on purpose. A
+   closed fold labelled Comments already says that, and telling a reader the
+   thread might hold spoilers is telling them what a comment section is. */
 .cm{padding:var(--s3) 0;border-bottom:var(--bw) solid var(--rule-hair)}
 .cm.reply{margin-left:var(--s4);border-left:var(--bw) solid var(--rule-hair);
   padding-left:var(--s3)}
@@ -388,6 +397,20 @@ img{display:block;max-width:100%}
 .tag, .cm-who, .title, .rolename, .pmeta h1, input, textarea, select{
   text-transform:none;
   letter-spacing:normal;
+}
+
+/* …except a select whose options are OUR words. The exemption above exists
+   for the reader's chapter list, which holds titles somebody typed; a sort
+   list holds four labels we wrote, and it was the last lowercase control on
+   the site. Opt in with [data-ui] rather than opting the whole element out,
+   so a select full of user text can never be uppercased by accident.
+
+   Browsers do not agree about text-transform inside the popped-open option
+   list, so the option strings are written in caps too. This rule is what
+   makes the CLOSED control match them. */
+select[data-ui], select[data-ui] option{
+  text-transform:uppercase;
+  letter-spacing:.1em;
 }
 
 /* ---------- the hover box ---------- */

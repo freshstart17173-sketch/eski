@@ -1,12 +1,22 @@
 [
   {
+    "_comment": "READING IS PUBLIC, SO THE ORIGIN LIST WAS PROTECTING NOTHING. The bucket serves these objects to anyone who has the url — that is the whole point of a public bucket, and it is how every <img> on the site loads. Restricting GET to four named origins therefore blocked no attacker; it only blocked our own fetch() calls, which is a different code path to <img> and is the one the studio uses to re-open a comic. That is ESK-6003: a Vercel preview deploy and localhost:3000 are separate origins from www.eski.lol, so opening an eski in the studio from either got no Access-Control-Allow-Origin back and failed. Writing is the half that needs an allowlist, and it keeps one.",
+    "AllowedOrigins": ["*"],
+    "AllowedMethods": ["GET", "HEAD"],
+    "AllowedHeaders": ["range", "content-type"],
+    "ExposeHeaders": ["etag", "content-length", "content-type", "content-range", "accept-ranges"],
+    "MaxAgeSeconds": 86400
+  },
+  {
+    "_comment": "Uploads. A presigned PUT is already unforgeable without the signature, but there is no reason to let any page on the internet spend one, so this half stays named. Add a preview origin here only if you need to publish from it.",
     "AllowedOrigins": [
       "https://eski.lol",
       "https://www.eski.lol",
+      "http://localhost:3000",
       "http://localhost:8940",
       "http://localhost:8931"
     ],
-    "AllowedMethods": ["GET", "HEAD", "PUT"],
+    "AllowedMethods": ["PUT"],
     "AllowedHeaders": [
       "content-type",
       "content-length",
@@ -16,7 +26,7 @@
       "x-amz-date",
       "x-amz-acl"
     ],
-    "ExposeHeaders": ["etag", "content-length", "content-type"],
+    "ExposeHeaders": ["etag"],
     "MaxAgeSeconds": 3600
   }
 ]

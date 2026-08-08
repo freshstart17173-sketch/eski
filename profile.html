@@ -110,12 +110,10 @@ section + section{margin-top:var(--s6)}
 .cell:hover{background:var(--surface)}
 .cell:hover .card{background:var(--surface)}
 .cell:hover .plate{border-color:var(--ui)}
-.card:active{transform:translateY(1px)}
 .plate{position:relative;overflow:hidden;border:var(--bw) solid var(--rule-hair);
   aspect-ratio:2/3;background:var(--plate-bg)}
 .plate img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;
   transition:transform var(--t-mid) var(--ease)}
-.card:hover .plate img{transform:scale(1.025)}
 .title{font-family:var(--font-body);font-weight:400;font-size:17px;line-height:24px;
   height:24px;text-align:center;margin-top:var(--s3)}
 .note{height:var(--row);line-height:var(--row);font-size:var(--fs-micro);

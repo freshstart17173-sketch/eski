@@ -1374,15 +1374,44 @@ async function loadBase(id, as){
     const step = () => progress(++done / total);
     progress(0);
 
+    /* THE STUDIO IS THE ONLY PLACE THAT fetch()es MEDIA. Everywhere else an
+       <img> loads it, and an <img> is not subject to CORS — which is why a
+       bucket policy that allows GET from four named origins looked fine on
+       every surface until you tried to re-open a comic here, from a preview
+       deploy or localhost, and got nothing back at all.
+
+       Two things were wrong with what this used to say. It asserted "CORS
+       does not allow GET from this origin" for ANY thrown fetch, and a
+       thrown fetch is equally offline, DNS, an extension, or r2.dev
+       answering 429 — the public dev hostname is rate limited on purpose,
+       and a comic is dozens of objects at once, which is exactly how you
+       provoke it. So it named the wrong cause with total confidence.
+
+       And it gave up on the first failure. A 429 is transient by
+       definition; three tries with a growing wait clears it. */
     const grab = async key => {
       const url = window.eski.mediaUrl(key);
-      let r;
-      try{ r = await fetch(url); }
-      catch(e){ throw new Error('ESK-6003 could not fetch ' + url + ': ' +
-        ((e && e.message) || e) + '. CORS does not allow GET from this origin.'); }
-      if(!r.ok) throw new Error((r.status === 404 ? 'ESK-6001' :
-        r.status === 403 ? 'ESK-6002' : 'ESK-6000') + ' ' + r.status + ' fetching ' + url);
-      return r.blob();
+      let last = null;
+      for(let attempt = 0; attempt < 3; attempt++){
+        if(attempt) await new Promise(r => setTimeout(r, 400 * (1 << attempt)));
+        let r;
+        try{ r = await fetch(url); }
+        catch(e){ last = new Error('ESK-6003 could not fetch ' + url + ': ' +
+          ((e && e.message) || e) + '. Either this origin is not allowed to ' +
+          'read the bucket (apply r2-cors.json — the GET half must allow *), ' +
+          'or the request never arrived: offline, or r2.dev rate limiting a ' +
+          'burst this size.'); continue; }
+        if(r.ok) return r.blob();
+        /* 429 and 5xx are worth another go; a 404 or a 403 will say the same
+           thing however many times you ask */
+        last = new Error((r.status === 404 ? 'ESK-6001' :
+          r.status === 403 ? 'ESK-6002' : 'ESK-6000') + ' ' + r.status +
+          ' fetching ' + url + (r.status === 429
+            ? '. r2.dev is rate limited and is not meant for production ' +
+              'traffic; a custom domain on the bucket is the fix.' : ''));
+        if(r.status !== 429 && r.status < 500) break;
+      }
+      throw last;
     };
 
     $('loading-lbl').textContent = 'Downloading pages';

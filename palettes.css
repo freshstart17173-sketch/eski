@@ -39,19 +39,38 @@
    Shape tokens (--r, --bw) are NOT here. They are the same everywhere.
    ============================================================ */
 
-/* ---------- the two grounds every treatment starts from ---------- */
+/* ---------- the two grounds every treatment starts from ----------
+
+   `:root` carries the light ground as well, so a page that somehow renders
+   before palette.js has stamped an attribute — or with scripting off — is a
+   readable light page rather than unstyled text on white. */
+:root,
 [data-mode="light"]{
   --paper:#FCFCFC; --surface:#F1F1F1; --plate-bg:#EAEAEA; --paper-1:#EAEAEA;
   --ink:#111111; --soft-ink:#3A3A3A; --muted:#6B6B6B; --label:#6B6B6B;
   --rule:#141414; --rule-hair:#D6D6D6; --line-1:#D6D6D6; --line-strong:#141414;
   --on-mark:#FCFCFC;
+  /* THE SCRIM BEHIND A MODAL. It used to be one hard-coded rgba of the old
+     sage ground, which meant opening a comic on a pink or a white theme laid
+     GREEN over the whole page — the palette recoloured the sheet and left the
+     thing behind it alone. It is a token now, and it is a neutral dim rather
+     than a tinted one, because a scrim's job is to remove the page, not to
+     add a colour to it. */
+  --scrim:rgba(10,10,10,.42);
   color-scheme:light;
+}
+/* light-neutral is the fallback theme, so its accents belong on :root too */
+:root{
+  --accent:#111111; --mark:#111111; --ui:#111111;
+  --ui-hover-bg:#E4E4E4; --wordmark:#000000;
 }
 [data-mode="dark"]{
   --paper:#0E0E0E; --surface:#1A1A1A; --plate-bg:#1A1A1A; --paper-1:#1A1A1A;
   --ink:#F0F0F0; --soft-ink:#C9C9C9; --muted:#8C8C8C; --label:#8C8C8C;
   --rule:#3A3A3A; --rule-hair:#262626; --line-1:#262626; --line-strong:#5A5A5A;
   --on-mark:#0E0E0E;
+  /* deeper on a dark ground: a 42% dim over near-black is barely a scrim */
+  --scrim:rgba(0,0,0,.62);
   color-scheme:dark;
 }
 

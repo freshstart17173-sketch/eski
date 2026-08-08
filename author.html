@@ -62,7 +62,7 @@ body{margin:0;display:flex;flex-direction:column;overflow:hidden}
   cursor:pointer;display:flex;flex-direction:column;gap:3px}
 .pg .plate{aspect-ratio:2/3;overflow:hidden;display:grid;place-items:center;
   border:var(--bw) solid var(--rule-hair);background:var(--plate-bg)}
-[data-dark] .pg .plate{background:var(--surf-2)}
+[data-dark] .pg .plate{background:var(--surface)}
 .pg img{max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain;display:block}
 .pg[aria-current="true"] .plate{border-color:var(--mark);box-shadow:0 0 0 1px var(--mark)}
 /* just the page number. it used to carry a second bare number for how many
@@ -262,9 +262,16 @@ async function boot(){
 
 /* no comic named: offer the ones you own. the composer is where a new one is
    made, so that is a link rather than a second importer. */
+/* DRAFTS ONLY. This used to list everything you own and label the published
+   ones "no longer editable", which is a list of things you cannot do
+   anything with — the studio's whole job is editing, so a row you can only
+   look at is noise in the one place it should not be. Published and private
+   eskis live on your profile, which is where their controls are. The filter
+   is in the query rather than the render so the rows are never fetched. */
 async function pickComic(){
   const r = await sb.from('comics').select('id,title,status,cover_key,thumb_key,created_at')
-    .eq('owner_id', me.id).order('created_at', { ascending: false });
+    .eq('owner_id', me.id).eq('status', 'draft')
+    .order('created_at', { ascending: false });
   if(r.error){
     $('main').innerHTML = '<div class="state">' +
       esc(window.eski.dbError('ESK-5040', 'your comics could not be read', r.error)) + '</div>';
@@ -275,24 +282,18 @@ async function pickComic(){
     <div class="head"><h2>Author studio</h2><span class="n">${rows.length}</span>
       <span class="sp"></span><a href="studio.html">Make a new one →</a></div>
     <p class="note-line" style="padding:var(--s3) 0">
-      Pick a comic to write its cast and transcribe its pages. Pages and audio
-      are imported in the <a href="studio.html">composer</a>.
-      <br><br><b>Only a draft can be edited.</b> Once an eski is published,
-      people start voicing and scoring it, so it is frozen — you can make it
-      private or delete it from your profile, but not re-cut it under the
-      people who contributed to it.</p>
+      Pick a draft to write its cast and transcribe its pages. Pages and audio
+      are imported in the <a href="studio.html">composer</a>. Publishing is one
+      way, so anything you have already published is on your profile rather
+      than here.</p>
     ${rows.length ? `<div class="picklist">${rows.map(c=>`
       <button class="pickrow" data-id="${esc(c.id)}">
         <span class="plate">${c.thumb_key || c.cover_key
           ? `<img src="${esc(mediaUrl(c.thumb_key || c.cover_key))}" alt="">` : ''}</span>
-        <span><span class="ttl">${esc(c.title || 'untitled')}</span>
-          <span class="sub" style="display:block">${esc(
-            c.status === 'draft' ? 'Draft · editable'
-            : c.status === 'private' ? 'Private · published once, no longer editable'
-            : 'Published · no longer editable')}</span></span>
-        <span class="btn sm">${c.status === 'draft' ? 'Open' : 'View'}</span>
+        <span><span class="ttl">${esc(c.title || 'untitled')}</span></span>
+        <span class="btn sm">Open</span>
       </button>`).join('')}</div>`
-      : '<div class="empty">You have not made a comic yet. The <a href="studio.html">composer</a> imports the pages.</div>'}
+      : '<div class="empty">No drafts. The <a href="studio.html">composer</a> imports the pages for a new one.</div>'}
   </div>`;
   $('main').querySelectorAll('[data-id]').forEach(b=>b.addEventListener('click', ()=>{
     location.search = '?base=' + encodeURIComponent(b.dataset.id);

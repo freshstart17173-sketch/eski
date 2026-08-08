@@ -272,7 +272,7 @@ body.focus .settings{position:fixed;right:12px;bottom:calc(var(--bar) + 12px);z-
 .os-hint .os-step:hover{border-color:var(--ink);color:var(--ink)}
 
 /* ---------- hotkeys panel ---------- */
-.keys-scrim{position:fixed;inset:0;background:rgba(12,19,15,.55);display:none;z-index:500}
+.keys-scrim{position:fixed;inset:0;background:var(--scrim);display:none;z-index:500}
 .keys-scrim.open{display:block}
 .keys-panel{position:fixed;left:50%;top:50%;transform:translate(-50%,-46%);z-index:501;display:none;
   background:var(--paper);border:var(--bw) solid var(--rule);padding:var(--s4);width:min(380px,92vw)}
@@ -302,7 +302,7 @@ body.focus .settings{position:fixed;right:12px;bottom:calc(var(--bar) + 12px);z-
 /* a small picture of the frame, because "the edges" is easier seen than read */
 .tapmap{position:relative;height:110px;margin-bottom:var(--s3);
   border:var(--bw) solid var(--rule-hair);background:var(--plate-bg)}
-[data-dark] .tapmap{background:var(--surf-2)}
+[data-dark] .tapmap{background:var(--surface)}
 .tapmap span{position:absolute;display:grid;place-items:center;
   font-size:var(--fs-xs);color:var(--ink);background:var(--paper);
   outline:var(--bw) solid var(--rule-hair)}

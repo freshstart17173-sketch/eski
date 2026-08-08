@@ -59,40 +59,63 @@ section + section{margin-top:var(--s6)}
 
 /* ---------- the grid: five up, then four, three, two ---------- */
 /* ---------- continue reading ----------
-   Cover, credits, and the last few pages you actually saw. A percentage does
-   not help you pick a comic back up — you have to remember what was
-   happening in it. The strip is capped well under the cover's height: the
-   cover identifies the comic, three thumbnails should not out-shout it. */
-.rs{display:grid;grid-template-columns:132px minmax(0,1fr) auto;gap:var(--s4);
-  align-items:start;padding:var(--s4) 0;border-bottom:var(--bw) solid var(--rule-hair)}
+   Cover, credits, and the last five pages you actually saw. A percentage does
+   not help you pick a comic back up — you have to remember what was happening
+   in it, and the pages are the only thing on this row that can tell you.
+
+   THE COVER IS A REAL COVER. --rs-cover is the width a card's plate resolves
+   to in the five-up grid at the 1280 wrap (256 column, less 12px of padding
+   each side), so the comic is the same size here as it is everywhere else on
+   the page. It used to be 132px — half a cover, floating in a row twice its
+   height, with the strip a short way below it and a band of nothing under
+   both.
+
+   The strip is the same height as the cover for the same reason: two things
+   side by side that nearly line up read as a mistake. They line up exactly.
+
+   AND IT TRAILS OFF. The last page in the strip is where your bookmark is,
+   so the row does not end, it continues — the mask says that in the only way
+   a still image can. It also means the strip no longer stops in a hard
+   vertical edge halfway across the page. */
+.rs{--rs-cover:232px;
+  display:grid;grid-template-columns:var(--rs-cover) minmax(0,1fr) auto;gap:var(--s5);
+  align-items:start;padding:var(--s5) 0;border-bottom:var(--bw) solid var(--rule-hair)}
 .rs:last-child{border-bottom:0}
-.rs .plate.rs-cover{width:132px;aspect-ratio:2/3;flex:none}
+.rs .plate.rs-cover{width:var(--rs-cover);aspect-ratio:2/3;flex:none}
 .rs-meta{min-width:0;display:flex;flex-direction:column;gap:var(--s1)}
-.rs-ttl{font-size:var(--fs-lg);font-weight:500;line-height:1.2}
-.rs-by{font-size:var(--fs-xs);color:var(--label)}
+.rs-ttl{font-size:var(--fs-title);font-weight:500;line-height:1.15}
+.rs-by{font-size:var(--fs-sm);color:var(--label)}
 .rs-at{font-size:var(--fs-micro);letter-spacing:.1em;text-transform:uppercase;
   color:var(--label);margin-top:var(--s2)}
 .rs .progress{height:3px;background:var(--rule-hair);max-width:280px}
 .rs .progress i{display:block;height:100%;background:var(--mark)}
-.rs-acts{display:flex;gap:var(--s2);margin-top:var(--s3);flex-wrap:wrap}
-.rs-strip{display:flex;gap:var(--s2)}
-.rs-pg{margin:0;width:104px}
-.rs-pg img{width:100%;height:150px;object-fit:cover;object-position:top;
+.rs-acts{display:flex;gap:var(--s2);margin-top:var(--s4);flex-wrap:wrap}
+
+/* the strip stands exactly as tall as the cover: --rs-cover * 3/2 */
+.rs-strip{--rs-h:calc(var(--rs-cover) * 1.5);--rs-w:118px;
+  display:flex;gap:var(--s2);
+  -webkit-mask-image:linear-gradient(to right,#000 55%,transparent 100%);
+  mask-image:linear-gradient(to right,#000 55%,transparent 100%)}
+.rs-pg{margin:0;width:var(--rs-w);flex:none}
+.rs-pg img{display:block;width:100%;height:var(--rs-h);object-fit:cover;object-position:top;
   border:var(--bw) solid var(--rule-hair);background:var(--plate-bg)}
-.rs-blank{display:block;height:150px;border:var(--bw) solid var(--rule-hair);
+.rs-blank{display:block;height:var(--rs-h);border:var(--bw) solid var(--rule-hair);
   background:var(--plate-bg)}
-.rs-pg figcaption{font-size:var(--fs-micro);letter-spacing:.1em;text-transform:uppercase;
-  color:var(--label);text-align:center;padding-top:3px}
-@media(max-width:1080px){ .rs-pg:first-child{display:none} }
+
+/* drop pages off the OLD end as the row narrows — the newest is the one you
+   need, and it is the one the fade is pointing at */
+@media(max-width:1280px){ .rs-pg:nth-child(1){display:none} }
+@media(max-width:1120px){ .rs-pg:nth-child(2){display:none} }
+@media(max-width:980px){  .rs-pg:nth-child(3){display:none} }
 @media(max-width:880px){
-  .rs{grid-template-columns:96px minmax(0,1fr)}
-  .rs .plate.rs-cover{width:96px}
-  .rs-strip{grid-column:1 / -1}
-  .rs-pg:first-child{display:block}
+  .rs{--rs-cover:180px;grid-template-columns:var(--rs-cover) minmax(0,1fr)}
+  .rs-strip{grid-column:1 / -1;--rs-h:210px;overflow:hidden}
+  .rs-pg{display:block!important}
 }
 @media(max-width:560px){
-  .rs-pg{width:84px}
-  .rs-pg img,.rs-blank{height:120px}
+  .rs{--rs-cover:132px;gap:var(--s4)}
+  .rs-strip{--rs-h:150px;--rs-w:96px}
+  .rs-ttl{font-size:var(--fs-lg)}
 }
 
 .grid{display:grid;grid-template-columns:repeat(5,1fr);border-left:var(--bw) solid var(--rule)}
@@ -116,14 +139,10 @@ section + section{margin-top:var(--s6)}
 .cell:hover{background:var(--surface)}
 .cell:hover .card{background:var(--surface)}
 .cell:hover .plate{border-color:var(--ui)}
-.card:active{transform:translateY(1px)}
 .plate{position:relative;overflow:hidden;border:var(--bw) solid var(--rule-hair);
   aspect-ratio:2/3;background:var(--plate-bg)}
-.plate img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;
-  transition:transform var(--t-mid) var(--ease)}
+.plate img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 .plate .ico{width:26px;height:26px;opacity:.35;position:absolute;inset:0;margin:auto}
-.card:hover .plate img{transform:scale(1.025)}
-.card:active .plate img{transform:scale(.998)}
 .card:hover .plate{border-color:var(--rule)}
 
 .title{font-family:var(--font-body);font-weight:400;font-size:17px;line-height:24px;
@@ -166,13 +185,11 @@ section + section{margin-top:var(--s6)}
   padding:var(--s3);color:inherit;font:inherit;min-width:0;cursor:pointer;
   transition:background var(--t-fast) var(--ease)}
 .rolecard:hover{background:var(--surface)}
-.rolecard:active{transform:translateY(1px)}
 .rolehead{display:flex;gap:var(--s2);align-items:flex-start;min-width:0}
 .portrait{width:46px;height:46px;flex:none;display:block;overflow:hidden;
   border:var(--bw) solid var(--rule-hair);background:var(--plate-bg)}
 .portrait img{width:100%;height:100%;object-fit:cover;
   transition:transform var(--t-mid) var(--ease)}
-.rolecard:hover .portrait img,.rolerow:hover .portrait img{transform:scale(1.06)}
 .rolename{font-family:var(--font-body);font-size:15px;line-height:20px;height:20px}
 /* two lines under the name: WHICH ESKI, then who wrote it. the first is what
    you are scanning for, so it takes the weight and the ink; the second steps
@@ -400,7 +417,9 @@ button.link:hover{color:var(--ink)}
        remember what was happening in it. This shows the last few pages you
        actually saw, big enough to recognise, beside the cover. -->
   <section id="sec-resume" hidden>
-    <div class="head"><h2>Continue reading</h2><span class="n" id="resume-n"></span></div>
+    <!-- no count. it is the eski you were last reading; "1 eski" is a
+         tally of a thing there is only ever one of -->
+    <div class="head"><h2>Continue reading</h2></div>
     <div id="resume"></div>
   </section>
 
@@ -450,7 +469,7 @@ button.link:hover{color:var(--ink)}
   <div class="bar">
     <input type="search" id="b-q" placeholder="Search">
     <span class="lbl">Sort</span>
-    <select id="b-sort"></select>
+    <select id="b-sort" data-ui></select>
     <div class="chips" id="b-filters"></div>
   </div>
   <div class="grid" id="grid-browse"></div>
@@ -1199,18 +1218,21 @@ function renderResume(){
     .slice(0, 3);
 
   sec.hidden = !going.length;
-  document.getElementById('resume-n').textContent =
-    going.length ? going.length + (going.length === 1 ? ' eski' : ' eskis') : '';
   if(!going.length){ box.innerHTML = ''; return; }
 
   box.innerHTML = going.map(c => {
     const page = Math.max(1, Math.round(c.progress * c.pp));
-    const back = [page - 2, page - 1, page].filter(n => n >= 1);
+    /* five, not three: at three the row of pages ended a long way short of
+       the cover and left a band of nothing between it and everything else */
+    const back = [page - 4, page - 3, page - 2, page - 1, page].filter(n => n >= 1);
     const strip = back.map(n => {
       const url = pageUrl(c, n);
+      /* no caption. the page number is already on the row, once, in the line
+         that says where you are — printing it again under every thumbnail
+         labelled the pictures with something nobody was going to read */
       return `<figure class="rs-pg">${url
         ? `<img src="${esc(url)}" alt="" loading="lazy">`
-        : '<span class="rs-blank"></span>'}<figcaption>p.${n}</figcaption></figure>`;
+        : '<span class="rs-blank"></span>'}</figure>`;
     }).join('');
     return `<article class="rs" data-resume="${esc(c.id)}">
       <div class="plate rs-cover">${c.cover
@@ -1310,12 +1332,17 @@ function searchTag(tag){
 const bState = {mode:'comics', q:'',
   sort:{comics:'new', roles:'lines-desc', scores:'need'},
   filters:{comics:new Set(), roles:new Set(), scores:new Set()}};
+/* SORT AND FILTER LABELS ARE CONTROLS, so they are written in caps here as
+   well as transformed in css — browsers disagree about text-transform inside
+   an opened <option> list, and a dropdown that says "newest" while every
+   other control on the page says SEE ALL is the drift the case rule exists
+   to stop. */
 const B_SORTS = {
-  comics:[['new','newest'],['kudos','most kudos'],['title','title a–z'],['short','shortest']],
-  roles:[['lines-desc','most lines'],['lines-asc','fewest lines'],['name','character a–z'],
-         ['comic','eski a–z'],['author','author a–z']],
-  scores:[['need','most needed'],['kudos','most kudos'],['new','newest'],
-          ['long','longest'],['title','title a–z']]
+  comics:[['new','NEWEST'],['kudos','MOST KUDOS'],['title','TITLE A–Z'],['short','SHORTEST']],
+  roles:[['lines-desc','MOST LINES'],['lines-asc','FEWEST LINES'],['name','CHARACTER A–Z'],
+         ['comic','ESKI A–Z'],['author','AUTHOR A–Z']],
+  scores:[['need','MOST NEEDED'],['kudos','MOST KUDOS'],['new','NEWEST'],
+          ['long','LONGEST'],['title','TITLE A–Z']]
 };
 const B_FILTERS = {
   comics:[['cast','fully voiced'],['scored','has a score']],
@@ -1328,10 +1355,13 @@ const B_PLACEHOLDER = {
   roles:'Search characters, eskis, authors',
   scores:'Search eskis, authors, tags'
 };
+/* the note says what this mode is FOR, which only two of the three need.
+   "every eski on the site" over a list of every eski on the site is a
+   caption telling you what you are already looking at. */
 const B_NOTE = {
-  comics:'every eski on the site',
+  comics:'',
   roles:'Characters nobody has read yet',
-  scores:'eskis waiting for music'
+  scores:'Eskis waiting for music'
 };
 function paintBrowseBar(){
   const m = bState.mode;
@@ -1628,7 +1658,6 @@ function openDetails(c, role, opts){
       <!-- .folded hides on an ADJACENT sibling selector, so nothing may come
            between these two -->
       <div class="folded" id="d-cm-body"></div>
-      <p class="spoilernote">Shut on purpose — people discuss the ending in here.</p>
     </div>` : ''}
 
     <div class="acts">
