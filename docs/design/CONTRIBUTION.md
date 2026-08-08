@@ -5,11 +5,14 @@ it was built. The DECIDED blocks are answers, not proposals; everything else is
 the reasoning that got there, kept so the same ideas do not get re-proposed.
 
 **Status: built.** `contribute.html` is the studio, `schema-sfx.sql` is the
-migration (applied), and the after/with/over control is live in the author
-studio. What is NOT built yet is recording in the browser — a take is attached
-as a file — and the reader still plays v2's single soundtrack, so a published
-part is not audible to a reader until item 10 on the roadmap lands. Both are
-called out there.
+migration (applied), the after/with/over control is live in the author studio,
+and takes can be recorded in the browser as well as attached — measured for
+loudness either way (`loudness.js`, roadmap 9c).
+
+What is NOT built: the reader still plays v2's single soundtrack and still
+fires every one-shot at the page turn, so a published part is not yet audible
+to a reader and the with/over timing is not yet heard. Both wait on roadmap
+item 10, and both need the same rewrite of how a page's audio starts.
 
 ---
 

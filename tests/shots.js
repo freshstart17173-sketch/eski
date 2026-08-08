@@ -148,12 +148,27 @@ const SCREENS = [
   { name: 'contrib-score', path: '/contribute.html?base=BASE&as=soundtrack',
     wait: '.slot, .state' },
   { name: 'contrib-pick',  path: '/contribute.html', wait: '.picker' },
+  /* MID-TAKE. The level meter, the timer and the STOP state only exist while
+     a recording is actually running, so the config records one. Chromium is
+     launched with a fake capture device, so no microphone is involved. */
+  { name: 'contrib-rec', path: '/contribute.html?base=BASE&as=sfx',
+    wait: '.slot, .state', state: async p => {
+      await p.evaluate(async () => {
+        const s = (typeof slotsOn === 'function' ? slotsOn(page) : []).find(x => x.live);
+        if(s) await startRec(s);
+      });
+      await p.waitForTimeout(700);
+    } },
   { name: 'signed-out', path: '/', wait: '.card', signedOut: true },
 ];
 
-/* the contribution configs need a comic that is not the harness's own, so the
-   published one is looked up once and substituted into their paths. */
-const BASE_COMIC = process.env.BASE_COMIC || '4389b9e2-4e22-4b34-9b6b-d8c113bf7837';
+/* THE CONTRIBUTION CONFIGS NEED A COMIC WITH A SCRIPT IN IT. Pointed at the
+   published comic they shoot four empty panels: it has no cast and no entries
+   on page 1, so no stance has a live slot and there is nothing to photograph.
+   `harness-fixture` carries a three-character cast and a five-entry
+   overlapping conversation, which is what makes the stance columns, the link
+   echoes and the recorder visible at all. See ROADMAP, "Yours, not mine". */
+const BASE_COMIC = process.env.BASE_COMIC || '153b0c48-8404-43ad-80c3-1429fa33f923';
 
 /* a reader sheet: press the control, wait for the panel. every one of them
    closes on an outside tap, so nothing may click in between. */
@@ -175,7 +190,8 @@ const THEMES = (process.env.THEMES || 'light-neutral,mono-green,dark-pink').spli
   fs.mkdirSync(OUT, { recursive: true });
   const PROXY = process.env.HTTPS_PROXY || process.env.https_proxy;
   const api = PROXY ? await request.newContext({ proxy: { server: PROXY } }) : null;
-  const browser = await chromium.launch({ args: ['--no-sandbox'] });
+  const browser = await chromium.launch({ args: ['--no-sandbox',
+    '--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream'] });
 
   const make = async (viewport, extra) => {
     const ctx = await browser.newContext({ viewport, serviceWorkers: 'block', ...extra });

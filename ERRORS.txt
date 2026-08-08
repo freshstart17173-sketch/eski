@@ -378,6 +378,19 @@ ESK-7004  No page images inside that file. It is not an eski, or it is an empty
           zip.
 
 ================================================================================
+8xxx — THE MICROPHONE
+================================================================================
+ESK-8001  This browser will not hand a page a microphone at all. Almost always
+          an insecure origin: getUserMedia needs https or localhost, so a
+          preview on a plain http host cannot record. Attach a file instead.
+ESK-8002  No MediaRecorder here. Recording is impossible; attaching is not.
+ESK-8003  The microphone was refused, or there is not one. If refused, the
+          permission is remembered per origin — clear it from the padlock in
+          the address bar, because the prompt will not appear a second time.
+ESK-8004  The take came out empty. Usually a muted input or a device that
+          disappeared mid-take; nothing was attached, so record it again.
+
+================================================================================
 HOW TO REPORT ONE
 ================================================================================
 Paste the whole line. It already contains the code, what step failed, and

@@ -165,17 +165,55 @@ a live row and a dead row differ by an attribute rather than by much ink.
 Consent is checked twice, once in the studio so nobody wastes an evening and
 once in the policy because that is the rule.
 
+**Recording is in**, with a level meter and a timer, and every clip is
+measured for loudness on the way in (see 9c). `tests/recording.js` drives the
+whole path against Chromium's fake capture device, so it runs with no
+microphone and no clicking.
+
 **Still to do here**, smallest first:
 
-- **Recording in the browser.** A take is attached as a file today. The
-  script-is-the-timeline design (`eski-script`) is the shape it should take.
-- No fades or crossfades anywhere, though the manifest has them, and nothing
-  expresses "this bed ducks under dialogue".
 - Two clips on one layer can overlap with nothing deciding which wins.
 - No way to **see a range as a shape** now that the lanes are gone, only as
   "pages 7–13" in a row. Still the real open question.
 - A part cannot be withdrawn from the studio yet — the policy allows it, so
   this is a button and a confirm.
+- No fades or crossfades, though the manifest has them.
+
+### 9c. Loudness normalisation · DONE
+
+Every clip is measured with ITU-R BS.1770-4 — the algorithm behind EBU R128 —
+and `tracks.gain_db`, which the reader has always applied and nothing ever
+set, now carries target-minus-measured. `loudness.js` is the meter and
+`tests/loudness.js` holds it to the published EBU conformance cases.
+
+Three things worth knowing about it:
+
+- **The correction is per PART, not per clip.** A whisper and a shout are one
+  performance; pulling each to the same loudness would flatten the acting out
+  of it. What needs fixing is the offset between two contributors, not the
+  range inside one person's work. Same distinction streaming services draw
+  between track and album normalisation.
+- **The composer studio was measuring RMS**, which is amplitude and not
+  loudness, against its own targets. Two studios disagreeing about the same
+  file is precisely the mismatch this exists to remove, so it now goes through
+  the same meter.
+- **Mono is deliberately not BS.1770.** The spec would read a mono file 3 LU
+  quieter, but the browser upmixes mono to both speakers on playback and puts
+  that 3 dB straight back — and a laptop voice take is almost always mono.
+
+### 9d. Ducking · ON THE BACK BURNER, deliberately
+
+Pulling the score down whenever a voice is present is the usual answer to "the
+music buries the dialogue". It needs a sidechain, an attack and a release, and
+it is audible when it mistimes.
+
+Most of what it is for is already done by 9c: the layers arrive at random
+loudnesses, and once they are placed at fixed sensible ones relative to each
+other — speech at -16 LUFS, effects at -18, a score at -22 — a bed sits under
+dialogue without anything moving. `tracks.duck` exists and the reader's DUCK
+table is still there, so picking this up later is wiring rather than design.
+
+Revisit if a real comic turns out to need it. Do not build it speculatively.
 
 ### 9b. Overlapping dialogue · BUILT (author side)
 

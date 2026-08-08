@@ -14,6 +14,7 @@
 <script src="vendor/webm-muxer.js"></script>
 <script type="module" src="platform.js"></script>
 <script src="palette.js"></script>
+<script src="loudness.js"></script>
 <link rel="stylesheet" href="tokens.css">
 <link rel="stylesheet" href="palettes.css">
 <style>
@@ -1008,10 +1009,20 @@ async function decodePeaksNow(a){
     a.peaks = peaks;
     a.peak  = peak;
     a.rms   = counted ? Math.sqrt(sq/counted) : 0;
+    /* RMS IS NOT LOUDNESS, and the two studios must agree or the same clip
+       gets a different correction depending on who uploaded it. The buffer is
+       already decoded here, so measure it properly in the same pass: K-weighted
+       and gated, ITU-R BS.1770-4. rms stays because the waveform drawing uses
+       it, but nothing decides a gain from it any more. */
+    if(window.eskiLoudness){
+      const m = window.eskiLoudness.measureBuffer(buf);
+      a.lufs = m.lufs;
+      if(m.peak > a.peak) a.peak = m.peak;   // measured across every channel
+    }
     /* D4: no dead air before a line. where the audio actually starts, so a
        slot filled with this clip can skip straight to it. */
     a.leadTrim = firstSound > 0 ? Math.max(0, (firstSound/N)*buf.duration - 0.05) : 0;
-  }catch(e){ a.peaks = null; a.peak = 0; a.rms = 0; a.leadTrim = 0; }
+  }catch(e){ a.peaks = null; a.peak = 0; a.rms = 0; a.lufs = null; a.leadTrim = 0; }
   render();
 }
 
@@ -2381,40 +2392,43 @@ $('m-seriesidx').addEventListener('change', syncSeries);
 function extOf(name, fb){ const m=/\.([a-z0-9]+)$/i.exec(name||''); return m?m[1].toLowerCase():fb; }
 
 /* ---------------- loudness normalization (export time) ----------------
-   sources arrive at wildly different levels, which makes the reader's duck
-   feel inconsistent from track to track. measure each one and store a
+   Sources arrive at wildly different levels. Measure each one and store a
    correction in dB; the audio itself is never re-encoded.
 
-   music is normalized PER TRACK. one-shots get ONE shared gain across the
-   whole file: they are a performance, and normalizing a whisper and a shout
-   to the same level individually would flatten the acting out of it. */
-const NORM_MUSIC = -20;   // dBFS rms
-const NORM_VOICE = -16;   // voices sit above the bed by construction
-function dbOf(rms){ return 20*Math.log10(Math.max(rms, 1e-6)); }
-function gainDbFor(rms, peak, target){
-  if(!rms) return 0;
-  let g = target - dbOf(rms);
-  // never let the correction clip: leave the true peak just under full scale
-  if(peak > 0) g = Math.min(g, 20*Math.log10(0.99/peak));
-  return Math.round(clamp(g, -24, 12)*10)/10;
+   THIS USED TO MEASURE RMS against a dBFS target, which is amplitude and not
+   loudness — a whisper and a shout can share an RMS and be far apart in what
+   a person hears, and a bright mix measures the same as a dull one at half
+   the perceived level. It also meant the contribution studio, which measures
+   properly, would hand the same file a different gain. Both now go through
+   loudness.js: ITU-R BS.1770-4, the algorithm behind EBU R128.
+
+   ONE SHARED GAIN ACROSS ALL ONE-SHOTS, still, and for the reason the old
+   code gave: they are a performance, and correcting a whisper and a shout
+   individually would flatten the acting out of it. Music is per track, since
+   two cues are two pieces rather than one take.
+
+   The targets live in loudness.js so the two studios cannot drift apart. */
+function gainDbFor(lufs, peak, kind){
+  return window.eskiLoudness.gainFor(lufs, kind, peak);
 }
 function normGains(){
   const out = {};
-  const os = cState.tracks.filter(t=>t.type==='oneshot' && t.aud && audioStore[t.aud]);
-  // one aggregate measurement for every one-shot in the file
-  let sq = 0, n = 0, peak = 0;
-  for(const t of os){
-    const a = audioStore[t.aud];
-    if(!a || !a.rms) continue;
-    sq += a.rms*a.rms; n++;
-    if(a.peak > peak) peak = a.peak;
-  }
-  const voiceGain = n ? gainDbFor(Math.sqrt(sq/n), peak, NORM_VOICE) : 0;
+  /* every one-shot measured as one continuous performance, energy weighted by
+     duration, so a four-second line counts four times a one-second one */
+  const os = cState.tracks
+    .filter(t => t.type === 'oneshot' && t.aud && audioStore[t.aud])
+    .map(t => audioStore[t.aud])
+    .filter(a => a && a.lufs != null);
+  const whole = window.eskiLoudness.combine(os);
+  const voiceGain = window.eskiLoudness.gainFor(whole.lufs, 'vo', whole.peak);
+
   for(const t of cState.tracks){
-    if(!t.aud) continue;
+    if(!t.aud){ continue; }
     const a = audioStore[t.aud];
-    if(!a || !a.rms){ out[t.tid] = 0; continue; }
-    out[t.tid] = t.type==='oneshot' ? voiceGain : gainDbFor(a.rms, a.peak, NORM_MUSIC);
+    if(!a || a.lufs == null){ out[t.tid] = 0; continue; }
+    out[t.tid] = t.type === 'oneshot'
+      ? voiceGain
+      : gainDbFor(a.lufs, a.peak, 'soundtrack');
   }
   return out;
 }
@@ -3215,6 +3229,8 @@ async function publishPart(finalStatus){
       end_ms: t.end ? Math.round(t.end * 1000) : null,
       volume: t.volume ?? 100,
       gain_db: gains[t.tid] || 0,
+      lufs: ((audioStore[t.aud]||{}).lufs ?? null),
+      peak: ((audioStore[t.aud]||{}).peak ?? null),
       duck: t.duck || null,
       // a chain inside a part points at a row in the same part
       attach_to: t.attachTo ? (idFor.get(t.attachTo) || null) : null,
@@ -3410,6 +3426,8 @@ async function saveComic(finalStatus){
       end_ms: t.end ? Math.round(t.end * 1000) : null,
       volume: t.volume ?? 100,
       gain_db: gains[t.tid] || 0,
+      lufs: ((audioStore[t.aud]||{}).lufs ?? null),
+      peak: ((audioStore[t.aud]||{}).peak ?? null),
       duck: t.duck || null,
       attach_to: t.attachTo ? (idFor.get(t.attachTo) || null) : null,
       offset_ms: Math.round((t.offset || 0) * 1000),

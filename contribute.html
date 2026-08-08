@@ -13,6 +13,7 @@
 <script src="viewer.js"></script>
 <script type="module" src="platform.js"></script>
 <script src="palette.js"></script>
+<script src="loudness.js"></script>
 <link rel="stylesheet" href="tokens.css">
 <link rel="stylesheet" href="docs/design/final/broadsheet.css">
 <link rel="stylesheet" href="palettes.css">
@@ -129,6 +130,28 @@ body{margin:0;display:flex;flex-direction:column;overflow:hidden}
 .sflag{font-size:9px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);
   white-space:nowrap;flex:none}
 .sflag.on{color:var(--accent)}
+
+/* ---------- recording ----------
+   the level meter is peak, not loudness: this answers "is sound arriving",
+   which needs to be instant, and loudness needs 400ms of history. */
+.recbar{display:flex;align-items:center;gap:var(--s2);margin-top:5px}
+.recbar .dot{width:7px;height:7px;flex:none;background:var(--rec);
+  animation:pulse 1.1s ease-in-out infinite}
+@keyframes pulse{50%{opacity:.25}}
+.recbar .lvl{flex:1;height:5px;background:var(--surface);
+  border:var(--bw) solid var(--rule-hair);overflow:hidden}
+.recbar .lvl i{display:block;height:100%;width:0;background:var(--mark);
+  transition:width 60ms linear}
+.recbar .t{font-size:9px;font-variant-numeric:tabular-nums;color:var(--label);min-width:30px;
+  text-align:right}
+.slot .tools button.recording{border-color:var(--rec);color:var(--rec)}
+
+/* the measured loudness, said in numbers a person can act on */
+.loud{font-size:9px;letter-spacing:.06em;color:var(--muted);margin-top:3px;
+  font-variant-numeric:tabular-nums}
+.loud.warn{color:var(--rec)}
+.loudhead{font-size:9px;letter-spacing:.06em;color:var(--muted);
+  font-variant-numeric:tabular-nums;text-transform:none}
 
 .empty{padding:var(--s5) var(--s3);text-align:center;color:var(--label);font-size:var(--fs-xs)}
 .state{padding:var(--s7) var(--s5);text-align:center;color:var(--label);font-size:var(--fs-xs)}
@@ -373,7 +396,14 @@ async function loadMyTracks(){
   if(!part) return;
   const r = await sb.from('tracks').select('*').eq('part_id', part.id).order('order_idx');
   if(r.error){ toast(eski.dbError('ESK-5082','your part did not load', r.error), true); return; }
-  myTracks = r.data || [];
+  myTracks = (r.data || []).map(t => Object.assign(t, {
+    // the readout is rebuilt from the stored columns, so reopening a draft
+    // shows the same numbers rather than "not measured"
+    loudness: t.lufs == null ? null
+      : { lufs: t.lufs, gainDb: t.gain_db, target: window.eskiLoudness.TARGETS[
+            t.role === 'sfx' ? 'sfx' : t.type === 'soundtrack' ? 'soundtrack' : 'vo' ] }
+  }));
+  repartGain();
 }
 const mineFor = slotId => myTracks.find(t => t.fills === slotId) || null;
 
@@ -398,7 +428,7 @@ function paintShell(){
       </div>
       <div class="pane side">
         <div class="panehead">Your layer<span class="sp"></span>
-          <span id="ph-count"></span></div>
+          <span id="ph-loud" class="loudhead"></span><span id="ph-count"></span></div>
         <div class="sect">
           <div class="stance" id="stance">${Object.keys(STANCES).map(k=>
             `<button data-stance="${k}" aria-pressed="${k===stance}"
@@ -438,12 +468,14 @@ function renderAll(){ renderViewer(); renderStrip(); renderWho(); renderSlots();
 /* the same viewer the reader and the author studio use: it zooms, it pans,
    and it contains the page instead of cropping it. */
 function renderViewer(){
+  if(!viewer) return;
   const p = pages[page - 1];
   viewer.show(p ? mediaUrl(p.display_key || p.image_key) : '');
-  $('ph-n').textContent = page;
+  if($('ph-n')) $('ph-n').textContent = page;
 }
 
 function renderStrip(){
+  if(!$('strip')) return;
   $('strip').innerHTML = pages.map((p, i)=>{
     const n = i + 1;
     const done = slotsOn(n).filter(s => s.mine).length;
@@ -464,6 +496,7 @@ function renderStrip(){
    somebody else's lines, so it locks once the draft has anything in it. */
 function renderWho(){
   const box = $('whopick');
+  if(!box) return;
   if(stance !== 'vo'){ box.innerHTML = ''; return; }
   if(!cast.length){
     box.innerHTML = `<p class="note-line warn">The author has not written a cast yet,
@@ -515,8 +548,38 @@ function slotsOn(n){
 const LINKWORD = { after:'', with:'At the same time as the one above',
                    over:'Starts partway through the one above' };
 
+/* the meter, only under the slot actually recording */
+const recBar = s => (rec && rec.slot && String(rec.slot.id) === String(s.id))
+  ? `<div class="recbar"><span class="dot"></span><span class="lvl"><i id="rec-level"></i></span>
+     <span class="t" id="rec-time">0.0s</span></div>` : '';
+
+/* WHAT THE MEASUREMENT SAYS, in full. "-24.3 LUFS · +8.3 dB" can be acted on
+   — move closer to the microphone — where "quiet" cannot. The warning only
+   appears when the clip could not reach its target, which is the one case a
+   contributor has to do something about. */
+function loudLine(s){
+  const t = s.track;
+  if(!t) return '';
+  if(t.measuring) return `<div class="loud">Measuring&#8230;</div>`;
+  if(t.lufs == null) return '';
+  /* the CLIP's own loudness, not the part's gain — this is the number that
+     tells somebody whether this particular take sits with the others, and a
+     take twenty LU off the rest of the part is worth re-recording even though
+     the part-wide correction will not flag it */
+  const off = partLoud && partLoud.lufs != null ? t.lufs - partLoud.lufs : 0;
+  const odd = Math.abs(off) > 12;
+  return `<div class="loud${odd ? ' warn' : ''}">${t.lufs.toFixed(1)} LUFS${
+    odd ? ' · ' + (off > 0 ? '+' : '') + off.toFixed(0) +
+          ' LU against the rest of this part' : ''}</div>`;
+}
+
 function renderSlots(){
+  /* RECORDING OUTLIVES THE SCREEN IT STARTED ON. onstop fires after an await,
+     and by then the contributor may have switched stance — which repaints
+     main and takes #slots with it. Every renderer here returns quietly rather
+     than throwing into a callback nobody is catching. */
   const box = $('slots');
+  if(!box) return;
   const list = slotsOn(page);
   if(!list.length){
     box.innerHTML = `<div class="note-line">Nothing is written on this page.</div>`;
@@ -537,11 +600,14 @@ function renderSlots(){
         </div>
         <div class="stext">${esc(s.text)}</div>
         ${link}
+        ${recBar(s)}
+        ${loudLine(s)}
       </div>
       <div class="tools">
         ${s.live ? (s.mine
-          ? `<button data-play="1">Play</button><button class="x" data-clear="1">Clear</button>`
-          : `<button data-add="1">Attach</button>`) : ''}
+          ? `<button data-play="1">Play</button><button data-rec="1">Retake</button
+             ><button class="x" data-clear="1">Clear</button>`
+          : `<button data-rec="1">Record</button><button data-add="1">Attach</button>`) : ''}
       </div>
     </div>`;
   }).join('');
@@ -554,15 +620,78 @@ function renderSlots(){
     if(play) play.addEventListener('click', ()=>preview(s));
     const clr = row.querySelector('[data-clear]');
     if(clr) clr.addEventListener('click', ()=>clearSlot(s));
+    const rc = row.querySelector('[data-rec]');
+    if(rc){
+      const live = rec && rec.slot && String(rec.slot.id) === String(s.id);
+      rc.textContent = live ? 'Stop' : (s.mine ? 'Retake' : 'Record');
+      if(live) rc.classList.add('recording');
+      rc.addEventListener('click', ()=> live ? stopRec() : startRec(s));
+    }
   });
   renderStrip();
 }
 
-/* ---------------- attaching audio ----------------
-   the file is held in memory until save, exactly as the composer holds pages:
-   uploading on pick would leave orphans in the bucket every time somebody
-   changes their mind, and there is no way to collect those later. */
+/* ---------------- getting audio into a slot ----------------
+   Two ways in, one landing place. A clip is held in memory until save,
+   exactly as the composer holds pages: uploading on pick would leave an
+   orphan in the bucket every time somebody changes their mind, and there is
+   no way to collect those later.
+
+   Everything that arrives is MEASURED — see loudness.js. A voice actor
+   recording into a laptop and a composer bouncing a mastered bed land twenty
+   dB apart in perceived loudness, and stacked in the reader the quiet one
+   simply is not there. */
 let pendingFor = null;
+
+async function addClip(s, blob, name){
+  const t = {
+    id: uid(), local: blob, name: name,
+    fills: s.authored ? s.authored.id : null,
+    from_page: page, to_page: page,
+    type: s.kind === 'score' ? 'soundtrack' : 'oneshot',
+    role: s.kind === 'effect' ? 'sfx' : (s.kind === 'score' ? null : 'line'),
+    character_key: s.kind === 'dialogue' || s.kind === 'narration' ? character : null,
+    order_idx: s.authored ? s.authored.order_idx : page,
+    measuring: true
+  };
+  myTracks.push(t);
+  dirty = true;
+  renderSlots(); renderWho();
+
+  /* the measurement is the slow part on a long bed, so the clip is in the
+     list and playable first and the numbers arrive after. a failure to
+     measure is not a failure to attach: gain stays 0 and the clip is kept. */
+  try{
+    const r = await window.eskiLoudness.analyse(blob, partKind());
+    t.lufs = r.lufs; t.peak = r.peak; t.duration = r.duration;
+  }catch(e){ /* unmeasurable is not unattachable */ }
+  t.measuring = false;
+  repartGain();
+  renderSlots();
+}
+
+/* the part's kind is what decides the target, not the individual slot: every
+   clip in a part gets the same correction, so they all answer to one target */
+const partKind = () => stance === 'soundtrack' ? 'soundtrack'
+                     : stance === 'sfx' ? 'sfx' : 'vo';
+
+/* ONE GAIN FOR THE WHOLE PART, recomputed whenever its contents change.
+
+   Correcting each take separately would pull a whisper and a shout to the
+   same loudness and flatten the performance out of them. What needs fixing is
+   the offset between two contributors, not the range inside one person's
+   work — so the part is measured as one continuous piece and every clip in it
+   carries the same dB. See loudness.js. */
+let partLoud = null;
+function repartGain(){
+  partLoud = window.eskiLoudness.combine(myTracks);
+  const g = window.eskiLoudness.gainFor(partLoud.lufs, partKind(), partLoud.peak);
+  myTracks.forEach(t => { t.gain_db = g; });
+  const el = document.getElementById('ph-loud');
+  if(el) el.textContent = partLoud.lufs == null ? ''
+    : window.eskiLoudness.describe({ lufs: partLoud.lufs, gainDb: g });
+}
+
 function attach(s){
   pendingFor = s;
   $('audio-in').value = '';
@@ -572,21 +701,117 @@ $('audio-in').addEventListener('change', e=>{
   const f = e.target.files && e.target.files[0];
   if(!f || !pendingFor) return;
   const s = pendingFor; pendingFor = null;
-  const t = {
-    id: uid(), local: f, name: f.name,
-    fills: s.authored ? s.authored.id : null,
-    from_page: page, to_page: page,
-    type: s.kind === 'score' ? 'soundtrack' : 'oneshot',
-    role: s.kind === 'effect' ? 'sfx' : (s.kind === 'score' ? null : 'line'),
-    character_key: s.kind === 'dialogue' || s.kind === 'narration' ? character : null,
-    order_idx: s.authored ? s.authored.order_idx : page
-  };
-  myTracks.push(t);
-  dirty = true;
-  renderSlots();
-  renderWho();          // the character locks as soon as the part has a take
+  addClip(s, f, f.name);
   toast('Attached ' + f.name);
 });
+
+/* ---------------- recording ----------------
+   ONE RECORDER AT A TIME, and it belongs to a slot. Starting a second while
+   one is running would leave the first orphaned with its microphone still
+   open, which is the bug that makes a browser tab show a recording dot
+   forever.
+
+   The stream is opened per take and stopped after, rather than held for the
+   session: holding it keeps the OS recording indicator lit while somebody
+   reads a page, which is alarming and rightly so. */
+let rec = null;
+
+function pickMime(){
+  /* Safari does not do webm and Chrome did not do mp4 until recently, so ask
+     rather than assume. An empty string lets the browser choose, which is
+     better than handing it a type it will refuse. */
+  const want = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/ogg;codecs=opus'];
+  if(typeof MediaRecorder === 'undefined') return null;
+  for(const m of want) if(MediaRecorder.isTypeSupported(m)) return m;
+  return '';
+}
+
+async function startRec(s){
+  if(rec) return stopRec();
+  if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia)
+    return toast('ESK-8001 this browser will not give a page a microphone', true);
+  const mime = pickMime();
+  if(mime === null)
+    return toast('ESK-8002 this browser has no MediaRecorder, so attach a file instead', true);
+  let stream;
+  try{
+    /* the processing chain is left ON. it is tempting to disable it for
+       "clean" audio, but this is somebody recording in a room on a laptop,
+       and echo cancellation plus noise suppression is the difference between
+       a usable take and one nobody can listen to. */
+    stream = await navigator.mediaDevices.getUserMedia({ audio: {
+      echoCancellation: true, noiseSuppression: true, autoGainControl: false } });
+  }catch(e){
+    const why = (e && e.name) === 'NotAllowedError'
+      ? 'the microphone was refused. allow it in the address bar and try again'
+      : (e && e.name) === 'NotFoundError'
+      ? 'no microphone was found'
+      : ((e && e.message) || e);
+    return toast('ESK-8003 ' + why, true);
+  }
+  /* AUTO GAIN IS OFF ON PURPOSE. It rides the level during a take, which is
+     exactly what the loudness measurement is trying to characterise — an
+     AGC'd take measures as whatever the AGC decided, and normalising it after
+     the fact fights a moving target. Measure a flat take once instead. */
+  const chunks = [];
+  const mr = new MediaRecorder(stream, mime ? { mimeType: mime } : undefined);
+  mr.ondataavailable = ev => { if(ev.data && ev.data.size) chunks.push(ev.data); };
+  mr.onstop = async () => {
+    stream.getTracks().forEach(tr => tr.stop());     // close the microphone
+    const blob = new Blob(chunks, { type: mr.mimeType || 'audio/webm' });
+    const ext = /mp4/.test(blob.type) ? 'm4a' : /ogg/.test(blob.type) ? 'ogg' : 'webm';
+    rec = null;
+    if(!blob.size){ renderSlots(); return toast('ESK-8004 the take came out empty', true); }
+    await addClip(s, blob, 'take.' + ext);
+    toast('Recorded ' + Math.round(blob.size / 1024) + ' kB');
+  };
+  rec = { mr, slot: s, stream, started: Date.now() };
+  mr.start();
+  meter(stream);
+  renderSlots();
+}
+
+function stopRec(){
+  if(!rec) return;
+  try{ rec.mr.stop(); }catch(e){ rec = null; }
+  stopMeter();
+}
+
+/* A LEVEL METER, because recording blind is how you find out afterwards that
+   the microphone was muted. It is peak, not loudness: loudness needs 400ms
+   blocks and gating and is the wrong tool for "is sound arriving right now". */
+let meterCtx = null, meterRaf = 0;
+function meter(stream){
+  const AC = window.AudioContext || window.webkitAudioContext;
+  if(!AC) return;
+  meterCtx = new AC();
+  const src = meterCtx.createMediaStreamSource(stream);
+  const an = meterCtx.createAnalyser();
+  an.fftSize = 1024;
+  src.connect(an);
+  const buf = new Float32Array(an.fftSize);
+  const tick = () => {
+    an.getFloatTimeDomainData(buf);
+    let peak = 0;
+    for(let i = 0; i < buf.length; i++){ const a = Math.abs(buf[i]); if(a > peak) peak = a; }
+    const bar = document.getElementById('rec-level');
+    if(bar){
+      bar.style.width = Math.min(100, peak * 140) + '%';
+      /* red only when it is actually about to clip, so the warning means
+         something when it appears */
+      bar.style.background = peak > 0.94 ? 'var(--rec)' : 'var(--mark)';
+    }
+    const el = document.getElementById('rec-time');
+    if(el && rec) el.textContent = ((Date.now() - rec.started) / 1000).toFixed(1) + 's';
+    meterRaf = requestAnimationFrame(tick);
+  };
+  tick();
+}
+function stopMeter(){
+  cancelAnimationFrame(meterRaf); meterRaf = 0;
+  if(meterCtx && meterCtx.close) meterCtx.close();
+  meterCtx = null;
+}
 
 function preview(s){
   const t = s.track;
@@ -604,6 +829,7 @@ function clearSlot(s){
   myTracks = myTracks.filter(x => x !== t);
   if(!t.local) removed.push(t.id);
   dirty = true;
+  repartGain();          // one clip fewer changes the part's own loudness
   renderSlots();
   renderWho();
 }
@@ -656,7 +882,13 @@ async function save(publish){
         comic_id: comic.id, part_id: part.id, fills: t.fills || null,
         type: t.type, role: t.role, audio_key: t.audio_key,
         from_page: t.from_page, to_page: t.to_page,
-        order_idx: t.order_idx, character_key: t.character_key || null
+        order_idx: t.order_idx, character_key: t.character_key || null,
+        /* the measurement and the decision, in separate columns: lufs is a
+           fact about the file, gain_db is target-minus-measured and follows
+           whatever the targets are today */
+        lufs: t.lufs == null ? null : t.lufs,
+        peak: t.peak == null ? null : t.peak,
+        gain_db: typeof t.gain_db === 'number' ? t.gain_db : 0
       };
       const u = t.saved
         ? await sb.from('tracks').update(body).eq('id', t.id)
