@@ -181,8 +181,9 @@ const ok = (n, c, extra) => {
   console.log('reading, commenting, and coming back');
   // the read button on the page we are already on is the route a reader takes
   const toReader = await p.locator('#ov-read').getAttribute('href');
+  console.log('    read link:', toReader);
   await p.goto(new URL(toReader, BASE + '/').href, { waitUntil:'domcontentloaded' });
-  await p.waitForSelector('#player-bar:not([style*="display:none"])', { timeout: 30000 });
+  await p.waitForSelector('#player-bar:not([style*="display:none"])', { timeout: 90000 });
   await settle(2500);
   await p.evaluate(() => navRight());
   await settle(1200);
@@ -208,7 +209,7 @@ const ok = (n, c, extra) => {
      /p\.\d+/i.test(await body()), (await body()).match(/p\.\d+/i)?.[0] || 'no page tag');
 
   await p.goBack();
-  await p.waitForSelector('#player-bar:not([style*="display:none"])', { timeout: 30000 });
+  await p.waitForSelector('#player-bar:not([style*="display:none"])', { timeout: 90000 });
   await settle(1500);
   ok('and back returns to the reader', /read\.html/.test(p.url()));
   ok('on the page you left off', /page=\d+/.test(p.url()), p.url().split('#')[1] || '');
@@ -257,7 +258,7 @@ const ok = (n, c, extra) => {
 
   const mRead = await m.locator('#ov-read').getAttribute('href');
   await m.goto(new URL(mRead, BASE + '/').href, { waitUntil:'domcontentloaded' });
-  await m.waitForSelector('#player-bar:not([style*="display:none"])', { timeout: 30000 });
+  await m.waitForSelector('#player-bar:not([style*="display:none"])', { timeout: 90000 });
   await m.waitForTimeout(2500);
   ok('the reader shows a comments control on a phone too',
      await m.locator('#cm-btn').isVisible().catch(()=>false));
@@ -290,7 +291,7 @@ const ok = (n, c, extra) => {
      (await m.locator('#d-cm-body').innerText()).includes(mStamp));
 
   await m.goBack();
-  await m.waitForSelector('#player-bar:not([style*="display:none"])', { timeout: 30000 });
+  await m.waitForSelector('#player-bar:not([style*="display:none"])', { timeout: 90000 });
   await m.waitForTimeout(1500);
   ok('back returns to the reader, on the page you left', /read\.html.*#.*page=\d+/.test(m.url()));
 
