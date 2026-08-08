@@ -73,6 +73,8 @@ jobs:
         run: node tests/cues.js
       - name: recording — a take, with a fake microphone
         run: node tests/recording.js
+      - name: onboarding — no profile is created without being asked for
+        run: node tests/onboarding.js
       - name: viewer-fit — every page shape fits its box
         run: node tests/viewer-fit.js
       - name: wordmark — the logo's ink is centred

@@ -34,6 +34,7 @@ node tests/loudness.js
 node tests/smoke.js
 node tests/errors.js
 node tests/recording.js
+node tests/onboarding.js
 node tests/viewer-fit.js   # needs the folder served on :8940
 ```
 

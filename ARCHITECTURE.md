@@ -157,6 +157,7 @@ Ten suites. Four need nothing but node.
 | `loudness.js` | The meter, against the published EBU conformance cases. A normaliser that is wrong is worse than none. |
 | `smoke.js` | The reader and both studios, end to end, in a browser. |
 | `errors.js` | That a failure names itself instead of being swallowed. |
+| `onboarding.js` | A profile row appearing without being asked for. Stands up its own fake supabase because smoke is signed out throughout, which is what keeps smoke off the real project. |
 | `recording.js` | A take end to end against a fake capture device — no microphone needed. |
 | `viewer-fit.js` | Every page shape fits its box, at every zoom. |
 | `check-sign.mjs` | The signer's refusals, called as a function with no network. |
