@@ -103,16 +103,26 @@ are asserted in `smoke.js`.
 
 Still open: the toggles are not on the profile row, only in the studio.
 
-### 6. Upload quota on the signer · ~2–3 hours
+### 6. Upload quota on the signer · DONE
 
-One person with a script can fill the bucket and the bill. `api/sign.mjs` signs
-up to 500 upload urls per call for any signed-in user, with no per-user limit
-and no size cap. A presigned PUT cannot enforce a content-length, so the cap
-has to be counted *before* signing: objects per user per day, and a maximum
-page count per comic. One small table, or a count against `pages`.
+`api/sign.mjs` signed up to 500 presigned PUTs per call for any signed-in
+user, with no per-user total. One person with a script could fill the bucket
+and the bill overnight, and R2 charges per operation, so the damage lands
+before anyone looks.
 
-Cheap now, awkward later — once people have published, any limit is
-retroactive and someone is already over it.
+`schema-quota.sql` (applied) adds a per-user daily count and
+`claim_upload_quota()`. It is **claimed, not checked**: the function adds
+atomically and answers from the value it wrote, so two calls racing cannot
+both see room. It is SECURITY DEFINER and only ever ADDS, and the table has no
+write policy at all — so a caller cannot reset their own tally, only spend it.
+
+2000 objects a day, about twenty comics. Validation runs before the claim, so
+a malformed request never costs somebody part of their allowance. And it fails
+CLOSED: if the counter cannot be reached the request is refused, because a
+ceiling that disappears when the database is unhappy is not a ceiling.
+
+**Still open:** a per-comic page cap. The signer does not know which comic a
+batch belongs to, so that one belongs in the studio or in a `pages` count.
 
 ### 7. Reporting and a moderation queue · ~2–3 hours
 

@@ -99,6 +99,63 @@ async function sign(req, res){
     return fail(res, 400, 'ESK-3005', 'files must be 1 to 500 entries, got ' +
       (Array.isArray(files) ? files.length : typeof files));
 
+  /* VALIDATE FIRST, THEN CLAIM, THEN SIGN. The hash and extension checks are
+     free and local, so they run before anything that costs a round trip —
+     there is no sense spending a quota call, or a claim against somebody's
+     daily allowance, on a request that was malformed anyway. */
+  for(const f of files){
+    const hash = String(f.hash || '').toLowerCase();
+    const ext  = String(f.ext  || '').toLowerCase();
+    if(!/^[0-9a-f]{64}$/.test(hash) || !EXT.has(ext))
+      return fail(res, 400, 'ESK-3006', 'bad hash or extension: ' +
+        JSON.stringify({ hash: hash.slice(0, 12), ext }));
+  }
+
+  /* THE CEILING, CLAIMED BEFORE ANYTHING IS SIGNED.
+     500 urls per call with no per-user total meant one person with a script
+     could fill the bucket and the bill overnight, and R2 charges per
+     operation, so the damage lands before anyone looks.
+
+     The count is claimed rather than checked: claim_upload_quota() adds
+     atomically and answers from the value it wrote, so two calls racing
+     cannot both see room. It is SECURITY DEFINER and only ever ADDS, which is
+     what stops a caller resetting their own tally — the table has no write
+     policy at all.
+
+     A FAILURE TO REACH THE COUNTER DOES NOT OPEN THE GATE. If the rpc is
+     unreachable the request is refused, because the alternative is that the
+     ceiling quietly stops existing exactly when the database is unhappy. */
+  try{
+    const q = await fetch(env('SUPABASE_URL').replace(/\/+$/, '') +
+      '/rest/v1/rpc/claim_upload_quota', {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        Authorization: 'Bearer ' + jwt,
+        apikey: env('SUPABASE_PUBLISHABLE_KEY')
+      },
+      body: JSON.stringify({ n: files.length })
+    });
+    if(!q.ok){
+      const body = await q.text();
+      /* 404 means the migration has not been applied. Say which file, rather
+         than leaving somebody reading a bare 404 from a url they did not
+         write. */
+      return fail(res, 503, 'ESK-3014', q.status === 404
+        ? 'the upload ceiling is not installed: apply schema-quota.sql'
+        : 'the upload ceiling could not be checked (' + q.status + '): ' + body.slice(0, 140));
+    }
+    const verdict = await q.json();
+    if(!verdict || verdict.ok !== true)
+      return fail(res, 429, 'ESK-3015',
+        'daily upload limit reached (' + (verdict && verdict.used != null ? verdict.used : '?') +
+        ' of ' + (verdict && verdict.cap != null ? verdict.cap : '?') +
+        ' objects today). it resets at UTC midnight.');
+  }catch(e){
+    return fail(res, 503, 'ESK-3014',
+      'the upload ceiling could not be checked: ' + ((e && e.message) || e));
+  }
+
   const aws = new AwsClient({
     accessKeyId: env('R2_ACCESS_KEY_ID'),
     secretAccessKey: env('R2_SECRET_ACCESS_KEY'),
@@ -109,11 +166,9 @@ async function sign(req, res){
 
   const out = [];
   for(const f of files){
-    const hash = String(f.hash || '').toLowerCase();
-    const ext  = String(f.ext  || '').toLowerCase();
-    if(!/^[0-9a-f]{64}$/.test(hash) || !EXT.has(ext))
-      return fail(res, 400, 'ESK-3006', 'bad hash or extension: ' +
-        JSON.stringify({ hash: hash.slice(0, 12), ext }));
+    // already validated above, so this only has to derive the key
+    const hash = String(f.hash).toLowerCase();
+    const ext  = String(f.ext).toLowerCase();
     const key = `${hash.slice(0, 2)}/${hash}.${ext}`;
     try{
       const signed = await aws.sign(`${base}/${key}?X-Amz-Expires=3600`,

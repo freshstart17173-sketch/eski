@@ -135,6 +135,17 @@ ESK-3004  Supabase rejected the session (its /auth/v1/user said no).
 ESK-3005  The studio asked for 0 or more than 500 objects in one call.
           500 is the hard cap in api/sign.mjs. A comic that big has to be split.
 
+ESK-3014  The upload ceiling could not be checked, so nothing was signed.
+          A 404 here means schema-quota.sql has not been applied; anything
+          else means the database is unreachable from the function.
+          THIS FAILS CLOSED ON PURPOSE. A ceiling that stops existing when the
+          database is unhappy is no ceiling, and that is exactly when somebody
+          hammering it would find out.
+ESK-3015  Daily upload limit reached. The message carries the number and the
+          cap; it resets at UTC midnight. Raise it in schema-quota.sql
+          (upload_cap) if 2000 objects a day is genuinely too few — that is
+          roughly twenty comics.
+
 ESK-3006  A hash or extension the signer will not sign.
           Keys are derived server-side from a sha256 and an allowlisted
           extension (EXT in api/sign.mjs). A file type outside that set, or a
