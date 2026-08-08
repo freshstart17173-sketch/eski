@@ -1,7 +1,7 @@
 /* eski service worker.
    HTML is network-first so a deploy lands immediately (no hard-reload needed);
    other assets are cache-first with a background refresh. */
-const CACHE = 'eski-v15';
+const CACHE = 'eski-v16';
 const ASSETS = [
   './',
   'index.html',
@@ -25,7 +25,11 @@ const ASSETS = [
   'spec.html',
   'legal.html',
   'eski_logo.png',
-  'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js'
+  /* NOT PRECACHED, on purpose. jszip is 95 KB and most visits never open a
+     zip; platform.js loads it the first time one is actually opened, and
+     cache-first below keeps it from then on. Precaching it would put the cost
+     back on the first load, which is the whole thing this moved off. */
+  // 'vendor/jszip.js'
 ];
 
 self.addEventListener('install', e => {
@@ -49,6 +53,8 @@ self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return;
   const url = new URL(e.request.url);
   const sameOrigin = url.origin === location.origin;
+  /* cdnjs is still here for pdf.js, which the studio loads on demand for a PDF
+     import. jszip left when it was vendored. */
   const cacheable = sameOrigin || url.href.startsWith('https://cdnjs.cloudflare.com/');
   if (!cacheable) return;
 

@@ -14,7 +14,6 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Jost:wght@400;500;600&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script type="module" src="platform.js"></script>
 <script src="comments.js"></script>
 <script src="palette.js"></script>
@@ -1009,6 +1008,7 @@ const shelfGet  = id=>shelfTx('readonly', s=>s.get(id));
 const shelfDel  = id=>shelfTx('readwrite', s=>s.delete(id));
 async function shelfMeta(file){
   try{
+    const JSZip = await window.eski.jszip();
     const zip = await JSZip.loadAsync(file);
     const mf = zip.file('.eski/manifest.json');
     if(!mf) return {kind:'base'};
@@ -1087,6 +1087,7 @@ async function fileComic(item){
   };
   if(item.cover && item.title) return base;      // the index told us; do not download
   try{
+    const JSZip = await window.eski.jszip();
     const zip = await JSZip.loadAsync(await blobFor(item));
     const mf = zip.file('.eski/manifest.json');
     let coverBlob = null;

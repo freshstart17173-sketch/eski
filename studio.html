@@ -9,7 +9,6 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Jost:wght@400;500;600&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="vendor/panzoom.js"></script>
 <script src="vendor/webm-muxer.js"></script>
 <script type="module" src="platform.js"></script>
@@ -915,6 +914,7 @@ function addImages(files){
 async function addPagesFromZip(file){
   try{
     loading(true, 'extracting');
+    const JSZip = await window.eski.jszip();
     const zip = await JSZip.loadAsync(file);
     const imgs = [];
     zip.forEach((path, entry)=>{
@@ -1029,6 +1029,7 @@ async function decodePeaksNow(a){
 async function openEski(file){
   try{
     loading(true, 'opening');
+    const JSZip = await window.eski.jszip();
     const zip = await JSZip.loadAsync(file);
     let manifest = null;
     const mf = zip.file('.eski/manifest.json');
@@ -2509,6 +2510,7 @@ async function exportPart(kind){
     await new Promise(r=>setTimeout(r,30));
     await Promise.all(Object.keys(audioStore).map(aud=>decodePeaks(aud)));
     const gains = normGains();
+    const JSZip = await window.eski.jszip();
     const zip = new JSZip();
     const packed = {}; let ai = 0;
     for(const t of tracks){
@@ -2556,6 +2558,7 @@ async function exportEski(asBlob){
   try{
     loading(true, asBlob ? 'building preview' : 'packing your eski');
         await new Promise(r=>setTimeout(r,30)); // let the overlay paint before the heavy zip work
+    const JSZip = await window.eski.jszip();
     const zip = new JSZip();
     const pageNames=[];
     cState.pages.forEach((p,i)=>{

@@ -11,7 +11,6 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Jost:wght@400;500;600&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="vendor/panzoom.js"></script>
 <script type="module" src="platform.js"></script>
 <script src="comments.js"></script>
@@ -2698,6 +2697,19 @@ if('serviceWorker' in navigator && location.protocol.startsWith('http')){
       comic = await comicFromApi(src.slice(3),
         mix.filter(p => p.startsWith('part:')).map(p => p.slice(5)));
     }else{
+      /* the ONLY branch that needs jszip. A published comic goes through the
+         API path above and never opens a zip, which is why loading 95 KB of it
+         in the head of every reader was pure waste.
+
+         THE WAIT IS NOT OPTIONAL. boot() is an inline classic script and runs
+         during parse; platform.js is TYPE=MODULE and therefore deferred, so
+         window.eski does not exist yet. Without this the reader opened a local
+         .eski by throwing into its own catch and showing a toast. The other
+         call sites (the studio's imports, the shelf) are user-triggered and
+         happen long after load, so they need nothing. */
+      if(!window.eski) await new Promise(r =>
+        document.addEventListener('DOMContentLoaded', r, { once:true }));
+      const JSZip = await window.eski.jszip();
       const blob = await grab(src);
       const zip = await JSZip.loadAsync(blob);
       comic = await comicFromZip(zip, src.split('/').pop() || 'comic.eski');

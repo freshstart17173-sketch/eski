@@ -339,6 +339,35 @@ const DB_HINTS = {
   '22P02': 'that id is not a valid uuid.'
 };
 
+/* ------------------------------------------------------------------ jszip */
+/* LOADED WHEN A ZIP IS ACTUALLY OPENED, and from our own origin.
+
+   It used to be a render-blocking <script> from cdnjs in the head of
+   read.html, index.html and studio.html: a DNS lookup, a TLS handshake and a
+   round trip to a host we do not control, before any of those pages could
+   paint. 95 KB of it. And the reader usually never opens a zip at all — a
+   published comic is ?read=db:… and goes nowhere near it.
+
+   ONE LOADER, HERE, because three copies of this is exactly the duplication
+   this codebase keeps producing. Every call site is already inside an async
+   function, so `const JSZip = await window.eski.jszip()` is the whole change
+   at each one. Rebuild the file with `node tests/vendor-jszip.js`. */
+let jszipReady = null;
+function jszip(){
+  if(window.JSZip) return Promise.resolve(window.JSZip);
+  return jszipReady || (jszipReady = new Promise((res, rej) => {
+    const s = document.createElement('script');
+    s.src = new URL('vendor/jszip.js', document.baseURI).href;
+    s.onload = () => window.JSZip ? res(window.JSZip)
+      : rej(new Error('ESK-1006 vendor/jszip.js loaded but defined no JSZip'));
+    /* the one failure worth a code: every "open this file" path on the site
+       dead-ends here, and without it the symptom is a button that does
+       nothing. */
+    s.onerror = () => { jszipReady = null; rej(new Error('ESK-1006 vendor/jszip.js did not load')); };
+    document.head.appendChild(s);
+  }));
+}
+
 /* eskiCode: which call site refused. e: whatever supabase handed back. */
 function dbError(eskiCode, what, e){
   const code = (e && e.code) || '';
@@ -354,6 +383,7 @@ window.eski = {
   mediaBase: R2_BASE,
   mediaUrl: key => key ? R2_BASE + '/' + key : null,
   dbError,
+  jszip,
   ready: new Promise(res => { markReady = res; }),
   /* `ready` means "there is a client". `settled` means "and nothing of ours is
      in your way" — it waits out the pick-a-username sheet. A page with its own

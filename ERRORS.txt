@@ -60,6 +60,14 @@ ESK-1004  createClient() worked but getSession() threw.
 ESK-1005  A page needed the account client and there is none.
           Always accompanied by the real 1001-1004 cause. Read that one.
 
+ESK-1006  vendor/jszip.js did not load, so no .eski file can be opened.
+          It is fetched the first time a zip is actually opened rather than in
+          the head of every page, which is why this appears on a drop or an
+          import and never on a plain page load. A published comic does not
+          need it and is unaffected.
+          FIX: check the file deployed — /vendor/jszip.js should be ~95 KB of
+          javascript. Rebuild it with `node tests/vendor-jszip.js`.
+
 ================================================================================
 2xxx — AUTH AND SESSION
 ================================================================================
