@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>eski — contribute</title>
+<meta name="description" content="Voice a character, write a score, or add the sound effects.">
+<link rel="icon" type="image/png" href="eski_logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Jost:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="vendor/panzoom.js"></script>
+<script src="viewer.js"></script>
+<script type="module" src="platform.js"></script>
+<script src="palette.js"></script>
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="docs/design/final/broadsheet.css">
+<link rel="stylesheet" href="palettes.css">
+<style>
+/* ============================================================
+   the contribution studio: one screen, three stances.
+
+   THE SAME FRAME AS THE AUTHOR STUDIO, deliberately and to the pixel —
+   the page in the middle, the panel on the right, the pages at the foot.
+   Somebody who has written a comic already knows where everything is, and
+   a contributor who starts here already knows the author studio.
+
+   What changes with the stance is WHICH COLUMN IS WRITABLE. Everything
+   else stays visible and audible and refuses a drop. That is one rule for
+   all three stances rather than a rule per stance, and it is what lets a
+   voice actor hear the score they are performing over — the thing two
+   separate studios could not do.
+   ============================================================ */
+html,body{height:100%}
+body{margin:0;display:flex;flex-direction:column;overflow:hidden}
+/* main IS the frame's container, so it has to be the flex child that grows —
+   without this the whole studio collapses to its content height and sits in
+   the top third of the window with the strip stranded under it. overflow is
+   for the picker state, which is ordinary scrolling prose rather than a
+   fixed three-region frame. */
+#main{flex:1;display:flex;flex-direction:column;min-height:0;overflow:auto}
+.top{flex:none}
+.top .sp{flex:1}
+.what{flex:0 1 auto;min-width:0;margin-left:var(--s4);margin-right:auto}
+.what .ttl{max-width:28vw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.top nav{margin-left:0}
+
+.frame{flex:1;display:grid;grid-template-columns:minmax(0,1fr) 360px;min-height:0}
+.pane{display:flex;flex-direction:column;min-height:0;min-width:0}
+.pane.side{border-left:var(--bw) solid var(--rule);overflow:auto}
+.panehead{display:flex;align-items:center;gap:var(--s2);padding:var(--s2) var(--s3);
+  font-size:var(--fs-micro);letter-spacing:.14em;text-transform:uppercase;color:var(--label);
+  border-bottom:var(--bw) solid var(--rule);flex:none;position:sticky;top:0;background:var(--paper);z-index:2}
+.panehead .sp{flex:1}
+.sect{padding:var(--s3);border-bottom:var(--bw) solid var(--rule)}
+.sect h3{margin:0 0 var(--s2);font-family:var(--font-body);font-weight:400;
+  font-size:15px;line-height:1.1;color:var(--ink)}
+
+/* the page strip, identical to the author studio's */
+.strip{flex:none;display:flex;gap:var(--s2);align-items:flex-start;overflow-x:auto;
+  overflow-y:hidden;padding:var(--s2) var(--s3);border-top:var(--bw) solid var(--rule);
+  background:var(--paper);scrollbar-width:thin}
+.pg{flex:none;width:64px;padding:0;border:0;background:none;color:inherit;font:inherit;
+  cursor:pointer;display:flex;flex-direction:column;gap:3px}
+.pg .plate{aspect-ratio:2/3;overflow:hidden;display:grid;place-items:center;
+  border:var(--bw) solid var(--rule-hair);background:var(--plate-bg)}
+[data-dark] .pg .plate{background:var(--surface)}
+.pg img{max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain;display:block}
+.pg[aria-current="true"] .plate{border-color:var(--mark);box-shadow:0 0 0 1px var(--mark)}
+.pg .cap{text-align:center;font-size:10px;font-variant-numeric:tabular-nums;color:var(--label)}
+.pg[aria-current="true"] .cap{color:var(--ink);font-weight:500}
+/* a page you have put something on. the dot is the only per-page state worth
+   showing: it is what tells you where the gaps are without opening all 45. */
+.pg .cap b{color:var(--mark);font-weight:700}
+
+/* ---------- the stance ----------
+   chosen once, on the way in, and then shown rather than offered: a part's
+   kind is fixed at creation because that is what keeps every layer owned by
+   exactly one person. switching means a different part. */
+.stance{display:flex;gap:0;border:var(--bw) solid var(--rule);margin-bottom:var(--s3)}
+.stance button{flex:1;font:inherit;font-size:var(--fs-micro);letter-spacing:.12em;
+  text-transform:uppercase;background:none;border:0;border-left:var(--bw) solid var(--rule);
+  color:var(--label);padding:var(--s2) 0;
+  transition:background var(--t-fast) var(--ease),color var(--t-fast) var(--ease)}
+.stance button:first-child{border-left:0}
+.stance button:hover:not(:disabled){background:var(--ui-hover-bg);color:var(--ui)}
+.stance button[aria-pressed="true"]{background:var(--mark);color:var(--on-mark)}
+/* an axis the author closed is not a thing you can pick, and saying so where
+   the choice is beats letting somebody find out at the insert */
+.stance button:disabled{opacity:.4;text-decoration:line-through}
+
+/* ---------- a slot: one thing you can fill ----------
+   the same entry geometry the author studio uses, so the two panels read as
+   one family. what differs is that a slot has an audio state rather than a
+   text field. */
+:root{ --e-dialogue:#2F5FD0; --e-narration:#7A3EA1; --e-effect:#B26A00; --e-score:#1F7A6B }
+[data-dark]{ --e-dialogue:#8FB0F2; --e-narration:#C79BE4; --e-effect:#E0A24A; --e-score:#6FC7B6 }
+.slot{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:var(--s2);align-items:start;
+  padding:var(--s2) 0 var(--s2) var(--s2);border-top:var(--bw) solid var(--rule-hair);
+  box-shadow:inset 3px 0 0 var(--kind)}
+.slot:first-child{border-top:0}
+.slot[data-kind="dialogue"]{--kind:var(--e-dialogue)}
+.slot[data-kind="narration"]{--kind:var(--e-narration)}
+.slot[data-kind="effect"]{--kind:var(--e-effect)}
+.slot[data-kind="score"]{--kind:var(--e-score)}
+/* NOT YOURS: still here, still audible, and unmistakably not editable. it is
+   drawn at label weight with no spine colour, because a column you cannot
+   write into should not compete with the one you can. */
+.slot.theirs{box-shadow:inset 3px 0 0 var(--rule);opacity:.6}
+.slot.theirs .stype{color:var(--label)}
+.shead{display:flex;align-items:center;gap:var(--s2);min-width:0;margin-bottom:3px}
+.stype{font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--kind);
+  font-weight:500;flex:none}
+.swho{font-size:var(--fs-micro);color:var(--label);letter-spacing:.06em;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.stext{font-size:var(--fs-xs);line-height:1.5;color:var(--ink)}
+.slot.theirs .stext{color:var(--label)}
+/* the link a cue carries, echoed here read-only: a voice actor has to know
+   they are being talked over to perform it, and it is the author's call. */
+.slink{font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);
+  margin-top:3px}
+.slot .tools{display:flex;flex-direction:column;gap:2px;align-items:flex-end}
+.slot .tools button{height:20px;padding:0 5px;border:var(--bw) solid var(--rule-hair);
+  background:none;color:var(--label);font:inherit;font-size:9px;letter-spacing:.08em;
+  text-transform:uppercase;line-height:1;
+  transition:background var(--t-fast) var(--ease),color var(--t-fast) var(--ease)}
+.slot .tools button:hover{background:var(--ui-hover-bg);color:var(--ui)}
+.slot .tools .x:hover{border-color:var(--rec);color:var(--rec);background:none}
+.sflag{font-size:9px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);
+  white-space:nowrap;flex:none}
+.sflag.on{color:var(--accent)}
+
+.empty{padding:var(--s5) var(--s3);text-align:center;color:var(--label);font-size:var(--fs-xs)}
+.state{padding:var(--s7) var(--s5);text-align:center;color:var(--label);font-size:var(--fs-xs)}
+.spinner{width:24px;height:24px;border:2px solid var(--rule-hair);border-top-color:var(--accent);
+  border-radius:50%;animation:spin .8s linear infinite;margin:0 auto var(--s3)}
+@keyframes spin{to{transform:rotate(360deg)}}
+.note-line{font-size:var(--fs-micro);color:var(--label);line-height:1.5}
+.warn{color:var(--rec)}
+
+/* the comic picker, when you arrive with no comic named */
+.picker{max-width:900px;margin:0 auto;padding:var(--s6) var(--s4)}
+.picklist{border-top:var(--bw) solid var(--rule)}
+.pickrow{display:grid;grid-template-columns:44px 1fr auto;gap:var(--s3);align-items:center;
+  width:100%;text-align:left;background:none;border:0;border-bottom:var(--bw) solid var(--rule-hair);
+  padding:var(--s2);color:inherit;font:inherit;cursor:pointer}
+.pickrow:hover{background:var(--surface)}
+.pickrow .plate{width:44px;height:66px;overflow:hidden;border:var(--bw) solid var(--rule-hair);
+  background:var(--plate-bg)}
+.pickrow img{width:100%;height:100%;object-fit:cover;display:block}
+.pickrow .sub{font-size:var(--fs-micro);color:var(--label);letter-spacing:.1em;
+  text-transform:uppercase}
+
+@media(max-width:900px){
+  body{overflow:auto}
+  .frame{grid-template-columns:1fr;min-height:0}
+  .pane.centre{height:56vh}
+  .pane.side{border-left:0;border-top:var(--bw) solid var(--rule);overflow:visible}
+}
+</style>
+</head>
+<body>
+
+<header class="top site-header">
+  <a class="mark" href="index.html">eski<i>!</i></a>
+  <nav id="nav">
+    <a href="index.html">Home</a>
+    <a href="index.html#browse">Browse</a>
+    <a href="author.html">Studio</a>
+    <a href="profile.html">Profile</a>
+  </nav>
+  <span class="what" id="what" hidden><span class="ttl" id="what-ttl"></span><span id="what-sub"></span></span>
+  <span class="sp"></span>
+  <span id="acts"></span>
+</header>
+
+<main id="main">
+  <div class="state"><div class="spinner"></div>Loading&#8230;</div>
+</main>
+
+<input type="file" id="audio-in" accept="audio/*" style="display:none">
+<div class="toast" id="toast"></div>
+
+<script>
+/* ================================================================
+   THE CONTRIBUTION STUDIO.
+
+   One screen, three stances, and exactly one writable column under each:
+
+     vo          one character's lines
+     sfx         the effect entries
+     soundtrack  a clip per page range
+
+   Everything outside your column is drawn but dead. That is the whole
+   permission model, and it is one sentence for all three stances rather
+   than a rule per stance.
+
+   WHAT A CONTRIBUTION IS, in the database: a `part` header that you own,
+   plus `tracks` rows that carry part_id. A track that FILLS an authored
+   slot points at that slot's row id, and the reader swaps it in. Nothing
+   here ever writes to the author's own rows — part_id is what separates
+   your layer from theirs, and the RLS policy enforces it independently of
+   anything this file does.
+
+   see docs/design/CONTRIBUTION.md
+   ================================================================ */
+const $ = id => document.getElementById(id);
+const esc = s => (s ?? '').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
+const uid = () => (crypto.randomUUID ? crypto.randomUUID()
+  : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c=>{
+      const r = Math.random()*16|0;
+      return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+    }));
+
+let toastTimer;
+function toast(msg, bad){
+  const t = $('toast');
+  t.textContent = msg;
+  t.classList.add('on');
+  t.style.background = bad ? 'var(--rec)' : '';
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>t.classList.remove('on'), 3200);
+}
+
+async function platform(){
+  if(!window.eski && document.readyState === 'loading')
+    await new Promise(r => document.addEventListener('DOMContentLoaded', r, { once: true }));
+  if(!window.eski) throw new Error('ESK-1005 platform.js did not load at all');
+  const sb = await window.eski.ready;
+  if(!sb) throw new Error('ESK-1005 cannot reach the library. ' + (window.eski.bootError || ''));
+  return window.eski;
+}
+
+/* ---------------- the three stances ----------------
+   `kind` is the database's word and the url's; everything else here is what
+   a person sees. `fills` says whether this stance takes over authored slots
+   (voices and effects do) or adds rows of its own (a score does). */
+const STANCES = {
+  vo: { kind:'vo', label:'Voice', noun:'voice part', fills:true,
+        axis:'voice_consent',
+        blurb:'Pick a character, then record or attach a take for each of their lines.' },
+  sfx:{ kind:'sfx', label:'Effects', noun:'effects part', fills:true,
+        axis:'sfx_consent',
+        blurb:'The author wrote where each sound happens. You decide what it sounds like.' },
+  soundtrack:{ kind:'soundtrack', label:'Score', noun:'score', fills:false,
+        axis:'music_consent',
+        blurb:'Attach a clip and give it a page range. It plays under everything else.' }
+};
+
+let eski, sb, me = null;
+let comic = null, pages = [], cast = [], entries = [], myTracks = [];
+let stance = 'vo', character = null, part = null, page = 1, dirty = false, viewer = null;
+const mediaUrl = k => k ? window.eski.mediaUrl(k) : '';
+const onPage = n => entries.filter(e => e.from_page === n);
+
+/* ---------------- boot ---------------- */
+async function boot(){
+  try{
+    eski = await platform();
+    sb = eski.sb; me = eski.user;
+  }catch(e){
+    $('main').innerHTML = `<div class="state warn">${esc((e && e.message) || e)}</div>`;
+    return;
+  }
+  if(!me){
+    $('main').innerHTML = `<div class="state">Contributions are attached to your account,
+      so this needs you signed in. <a href="index.html">Go to the library</a> and sign in there.</div>`;
+    return;
+  }
+  const q = new URLSearchParams(location.search);
+  const asked = q.get('as');
+  if(STANCES[asked]) stance = asked;
+  const base = q.get('base');
+  if(base) await openComic(base, q.get('part'));
+  else await pickComic();
+}
+
+/* ---------------- pick a comic ----------------
+   only comics somebody has actually opened to contributions, because a list
+   whose rows mostly refuse you is worse than a short list. */
+async function pickComic(){
+  const r = await sb.from('comics')
+    .select('id,title,slug,owner_name,cover_key,thumb_key,voice_consent,music_consent,sfx_consent')
+    .eq('status','published').neq('owner_id', me.id)
+    .order('created_at',{ ascending:false }).limit(60);
+  if(r.error){
+    $('main').innerHTML = `<div class="state warn">${esc(eski.dbError('ESK-5080',
+      'the list of comics did not load', r.error))}</div>`;
+    return;
+  }
+  const rows = (r.data || []).filter(c =>
+    Object.values(STANCES).some(s => c[s.axis] !== 'closed'));
+  $('main').innerHTML = `<div class="picker">
+    <div class="head"><h2>Contribute</h2><span class="n">${rows.length}</span></div>
+    <p class="note-line" style="padding:var(--s3) 0">
+      Pick a comic to voice, score, or add sound effects to. What you make is a
+      separate layer a reader chooses — it never changes what the author published,
+      and you can take it down whenever you like.</p>
+    ${rows.length ? `<div class="picklist">${rows.map(c=>`
+      <button class="pickrow" data-id="${esc(c.id)}">
+        <span class="plate">${c.thumb_key || c.cover_key
+          ? `<img src="${esc(mediaUrl(c.thumb_key || c.cover_key))}" alt="" loading="lazy">` : ''}</span>
+        <span><b>${esc(c.title || 'Untitled')}</b><br>
+          <span class="sub">${esc(c.owner_name || 'unknown')}</span></span>
+        <span class="sub">${Object.values(STANCES)
+          .filter(s => c[s.axis] !== 'closed').map(s => s.label).join(' · ')}</span>
+      </button>`).join('')}</div>`
+      : `<div class="empty">Nothing is open to contributions yet.</div>`}
+  </div>`;
+  document.querySelectorAll('.pickrow').forEach(b =>
+    b.addEventListener('click', ()=>openComic(b.dataset.id)));
+}
+
+/* ---------------- open one ---------------- */
+async function openComic(id, partId){
+  $('main').innerHTML = `<div class="state"><div class="spinner"></div>Opening the comic&#8230;</div>`;
+  const [c, pg, tk, pt] = await Promise.all([
+    sb.from('comics').select('*').eq('id', id).single(),
+    sb.from('pages').select('idx,image_key,display_key').eq('comic_id', id).order('idx'),
+    /* the author's script: every authored entry, filled or not. a contributor
+       needs the ones that are not theirs too, because you cannot place a line
+       without hearing what it lands against. */
+    sb.from('tracks').select('*').eq('comic_id', id).is('part_id', null).order('order_idx'),
+    sb.from('parts').select('*').eq('comic_id', id).eq('owner_id', me.id)
+  ]);
+  const bad = [c, pg, tk, pt].find(r => r.error);
+  if(bad){
+    $('main').innerHTML = `<div class="state warn">${esc(eski.dbError('ESK-5081',
+      'the comic did not open', bad.error))}</div>`;
+    return;
+  }
+  comic = c.data;
+  pages = pg.data || [];
+  const all = tk.data || [];
+  entries = all.filter(t => t.type === 'oneshot' && ['line','sfx'].includes(t.role || 'line'));
+  cast = (Array.isArray(comic.cast_list) ? comic.cast_list : []).map(x => ({
+    key: x.key, name: x.name || x.key || 'unnamed',
+    kind: x.kind === 'narrator' ? 'narrator' : 'character', blurb: x.blurb || '' }));
+
+  /* AN AXIS THE AUTHOR CLOSED IS NOT A STANCE YOU CAN TAKE. arriving on a
+     closed one — an old link, a bookmark — lands on the first open one
+     rather than on a screen that refuses every save. */
+  if(!axisOpen(stance)){
+    const fallback = Object.keys(STANCES).find(axisOpen);
+    if(!fallback){
+      $('main').innerHTML = `<div class="state">The author has closed
+        <b>${esc(comic.title || 'this comic')}</b> to contributions.
+        <a href="index.html">Back to the library</a></div>`;
+      return;
+    }
+    stance = fallback;
+  }
+
+  /* an existing draft of yours for this stance is reopened rather than
+     shadowed by a second one — two drafts of the same part is a mess a
+     contributor cannot see and cannot fix. */
+  const mine = (pt.data || []);
+  part = (partId && mine.find(p => p.id === partId))
+      || mine.find(p => p.kind === STANCES[stance].kind && p.status === 'draft')
+      || null;
+  if(part && part.character_key) character = part.character_key;
+  if(!character) character = (cast.find(c => c.kind !== 'narrator') || cast[0] || {}).key || null;
+  await loadMyTracks();
+  page = 1;
+  paintShell();
+  renderAll();
+}
+
+const axisOpen = s => comic && comic[STANCES[s].axis] !== 'closed';
+
+async function loadMyTracks(){
+  myTracks = [];
+  if(!part) return;
+  const r = await sb.from('tracks').select('*').eq('part_id', part.id).order('order_idx');
+  if(r.error){ toast(eski.dbError('ESK-5082','your part did not load', r.error), true); return; }
+  myTracks = r.data || [];
+}
+const mineFor = slotId => myTracks.find(t => t.fills === slotId) || null;
+
+/* ---------------- shell ---------------- */
+function paintShell(){
+  $('what').hidden = false;
+  $('what-ttl').textContent = comic.title || 'Untitled';
+  $('what-sub').textContent = STANCES[stance].label.toUpperCase() +
+    (part ? ' · ' + (part.status === 'published' ? 'PUBLISHED' : 'DRAFT') : ' · NEW');
+  $('acts').innerHTML =
+    `<button class="btn" id="save">Save</button>
+     <button class="btn p" id="publish"${part && part.status === 'published' ? ' disabled' : ''}>Publish</button>`;
+  $('save').addEventListener('click', ()=>save(false));
+  $('publish').addEventListener('click', ()=>save(true));
+
+  $('main').innerHTML = `
+    <div class="frame">
+      <div class="pane centre">
+        <div class="panehead">Page <b id="ph-n">1</b> of ${pages.length}
+          <span class="sp"></span><span id="ph-done"></span></div>
+        <div id="viewer" style="flex:1;min-height:0"></div>
+      </div>
+      <div class="pane side">
+        <div class="panehead">Your layer<span class="sp"></span>
+          <span id="ph-count"></span></div>
+        <div class="sect">
+          <div class="stance" id="stance">${Object.keys(STANCES).map(k=>
+            `<button data-stance="${k}" aria-pressed="${k===stance}"
+              ${axisOpen(k) ? '' : 'disabled title="The author has not opened this one"'}
+              >${STANCES[k].label}</button>`).join('')}</div>
+          <p class="note-line">${esc(STANCES[stance].blurb)}</p>
+          <div id="whopick"></div>
+        </div>
+        <div class="sect">
+          <h3>This page</h3>
+          <div id="slots"></div>
+        </div>
+      </div>
+    </div>
+    <div class="strip" id="strip"></div>`;
+
+  document.querySelectorAll('[data-stance]').forEach(b =>
+    b.addEventListener('click', ()=>switchStance(b.dataset.stance)));
+  viewer = mountViewer($('viewer'), { empty: 'this comic has no pages' });
+}
+
+/* SWITCHING STANCE IS SWITCHING PARTS, not switching modes. a part's kind is
+   fixed at creation, so this reloads rather than re-rendering: whatever draft
+   you have for the stance you moved to is the one that opens. */
+async function switchStance(k){
+  if(k === stance || !axisOpen(k)) return;
+  if(dirty && !confirm('You have unsaved changes in this part. Leave them?')) return;
+  stance = k; part = null; dirty = false;
+  const u = new URL(location.href);
+  u.searchParams.set('as', k); u.searchParams.delete('part');
+  history.replaceState(null, '', u);
+  await openComic(comic.id);
+}
+
+function renderAll(){ renderViewer(); renderStrip(); renderWho(); renderSlots(); }
+
+/* the same viewer the reader and the author studio use: it zooms, it pans,
+   and it contains the page instead of cropping it. */
+function renderViewer(){
+  const p = pages[page - 1];
+  viewer.show(p ? mediaUrl(p.display_key || p.image_key) : '');
+  $('ph-n').textContent = page;
+}
+
+function renderStrip(){
+  $('strip').innerHTML = pages.map((p, i)=>{
+    const n = i + 1;
+    const done = slotsOn(n).filter(s => s.mine).length;
+    return `<button class="pg" data-n="${n}" aria-current="${n===page}">
+      <span class="plate">${p.image_key
+        ? `<img src="${esc(mediaUrl(p.display_key || p.image_key))}" alt="" loading="lazy">` : ''}</span>
+      <span class="cap">${n}${done ? ' <b>&bull;</b>' : ''}</span></button>`;
+  }).join('');
+  $('strip').querySelectorAll('.pg').forEach(b =>
+    b.addEventListener('click', ()=>{ page = +b.dataset.n; renderAll(); }));
+  const total = pages.reduce((n, _p, i)=> n + slotsOn(i+1).filter(s=>s.mine).length, 0);
+  $('ph-count').textContent = total ? total + (total === 1 ? ' clip' : ' clips') : '';
+}
+
+/* WHICH CHARACTER — only under the voice stance, and only when the comic has
+   a cast. one character per part, so this is the part's identity rather than
+   a filter: changing it while a draft has takes in it would silently reassign
+   somebody else's lines, so it locks once the draft has anything in it. */
+function renderWho(){
+  const box = $('whopick');
+  if(stance !== 'vo'){ box.innerHTML = ''; return; }
+  if(!cast.length){
+    box.innerHTML = `<p class="note-line warn">The author has not written a cast yet,
+      so there is nothing to voice. Come back when they have.</p>`;
+    return;
+  }
+  const locked = myTracks.length > 0;
+  box.innerHTML = `<label class="note-line" for="who">Voicing</label>
+    <select id="who" style="width:100%;height:26px;margin-top:3px"${locked?' disabled':''}>
+      ${cast.map(c=>`<option value="${esc(c.key)}"${c.key===character?' selected':''}
+        >${esc(c.name)}</option>`).join('')}
+    </select>
+    ${locked ? `<p class="note-line" style="margin-top:5px">A part covers one character.
+      Start a new part to voice somebody else.</p>` : ''}`;
+  const sel = $('who');
+  if(sel && !locked) sel.addEventListener('change', e=>{ character = e.target.value; renderSlots(); });
+}
+
+/* ---------------- the slots on this page ----------------
+   ONE LIST, and every entry the author wrote is in it. Yours are live;
+   everything else is drawn at label weight and refuses a drop, which is what
+   makes the score audible to a voice actor and the dialogue audible to a
+   composer. */
+function slotsOn(n){
+  const out = [];
+  if(stance === 'soundtrack'){
+    // a score adds rows of its own rather than filling authored ones, so the
+    // slot is the page itself
+    const t = myTracks.find(t => t.from_page === n && t.type !== 'oneshot');
+    out.push({ id: 'score-' + n, kind: 'score', mine: !!t, track: t || null,
+               who: 'Score', text: 'Plays under this page', authored: null, live: true });
+  }
+  onPage(n).forEach(e => {
+    const isSfx = (e.role || 'line') === 'sfx';
+    const c = cast.find(x => x.key === e.character_key);
+    const kind = isSfx ? 'effect' : (c && c.kind === 'narrator' ? 'narration' : 'dialogue');
+    const live = stance === 'sfx' ? isSfx
+               : stance === 'vo'  ? (!isSfx && e.character_key === character)
+               : false;
+    const t = mineFor(e.id);
+    out.push({ id: e.id, kind, mine: !!t, track: t || null, authored: e, live,
+               who: isSfx ? 'Effect' : (c ? c.name : 'Unassigned'),
+               text: e.line_text || (isSfx ? 'A sound' : ''),
+               link: e.link, over: e.over_pct });
+  });
+  return out;
+}
+
+const LINKWORD = { after:'', with:'At the same time as the one above',
+                   over:'Starts partway through the one above' };
+
+function renderSlots(){
+  const box = $('slots');
+  const list = slotsOn(page);
+  if(!list.length){
+    box.innerHTML = `<div class="note-line">Nothing is written on this page.</div>`;
+    renderStrip();
+    return;
+  }
+  box.innerHTML = list.map(s=>{
+    const link = s.link && s.link !== 'after'
+      ? `<div class="slink">${esc(LINKWORD[s.link])}${s.link === 'over' && s.over ? ' (' + s.over + '%)' : ''}</div>`
+      : '';
+    return `<div class="slot${s.live ? '' : ' theirs'}" data-id="${esc(s.id)}" data-kind="${s.kind}">
+      <div>
+        <div class="shead">
+          <span class="stype">${s.kind === 'score' ? 'Score' : s.kind}</span>
+          <span class="swho">${esc(s.who)}</span>
+          ${s.mine ? '<span class="sflag on">Yours</span>' : ''}
+          ${!s.live && s.authored && s.authored.audio_key ? '<span class="sflag">Filled</span>' : ''}
+        </div>
+        <div class="stext">${esc(s.text)}</div>
+        ${link}
+      </div>
+      <div class="tools">
+        ${s.live ? (s.mine
+          ? `<button data-play="1">Play</button><button class="x" data-clear="1">Clear</button>`
+          : `<button data-add="1">Attach</button>`) : ''}
+      </div>
+    </div>`;
+  }).join('');
+
+  box.querySelectorAll('.slot').forEach(row=>{
+    const s = list.find(x => String(x.id) === row.dataset.id);
+    const add = row.querySelector('[data-add]');
+    if(add) add.addEventListener('click', ()=>attach(s));
+    const play = row.querySelector('[data-play]');
+    if(play) play.addEventListener('click', ()=>preview(s));
+    const clr = row.querySelector('[data-clear]');
+    if(clr) clr.addEventListener('click', ()=>clearSlot(s));
+  });
+  renderStrip();
+}
+
+/* ---------------- attaching audio ----------------
+   the file is held in memory until save, exactly as the composer holds pages:
+   uploading on pick would leave orphans in the bucket every time somebody
+   changes their mind, and there is no way to collect those later. */
+let pendingFor = null;
+function attach(s){
+  pendingFor = s;
+  $('audio-in').value = '';
+  $('audio-in').click();
+}
+$('audio-in').addEventListener('change', e=>{
+  const f = e.target.files && e.target.files[0];
+  if(!f || !pendingFor) return;
+  const s = pendingFor; pendingFor = null;
+  const t = {
+    id: uid(), local: f, name: f.name,
+    fills: s.authored ? s.authored.id : null,
+    from_page: page, to_page: page,
+    type: s.kind === 'score' ? 'soundtrack' : 'oneshot',
+    role: s.kind === 'effect' ? 'sfx' : (s.kind === 'score' ? null : 'line'),
+    character_key: s.kind === 'dialogue' || s.kind === 'narration' ? character : null,
+    order_idx: s.authored ? s.authored.order_idx : page
+  };
+  myTracks.push(t);
+  dirty = true;
+  renderSlots();
+  renderWho();          // the character locks as soon as the part has a take
+  toast('Attached ' + f.name);
+});
+
+function preview(s){
+  const t = s.track;
+  if(!t) return;
+  const src = t.local ? URL.createObjectURL(t.local) : mediaUrl(t.audio_key);
+  if(!src) return toast('This one has nothing to play yet', true);
+  const a = new Audio(src);
+  a.play().catch(err => toast('Could not play it: ' + ((err && err.message) || err), true));
+}
+
+function clearSlot(s){
+  const t = s.track;
+  if(!t) return;
+  if(t.id && !t.local && part && !confirm('Remove this take from your part?')) return;
+  myTracks = myTracks.filter(x => x !== t);
+  if(!t.local) removed.push(t.id);
+  dirty = true;
+  renderSlots();
+  renderWho();
+}
+let removed = [];
+
+/* ---------------- save ----------------
+   the part header first, because every track needs its id; then the audio;
+   then the rows. a failure anywhere leaves a draft that can be opened again
+   rather than a half-written part nobody can reach. */
+async function save(publish){
+  const btn = $(publish ? 'publish' : 'save');
+  const other = $(publish ? 'save' : 'publish');
+  btn.disabled = other.disabled = true;
+  const say = t => { btn.textContent = t; };
+  const was = btn.textContent;
+  try{
+    if(stance === 'vo' && !character) throw new Error('ESK-5083 pick a character first');
+    if(!myTracks.length) throw new Error('ESK-5084 there is nothing in this part yet');
+
+    say('saving');
+    if(!part){
+      const ins = await sb.from('parts').insert({
+        comic_id: comic.id, owner_id: me.id,
+        owner_name: (me.user_metadata && me.user_metadata.name) || me.email || 'someone',
+        kind: STANCES[stance].kind,
+        character_key: stance === 'vo' ? character : null,
+        title: comic.title || null, status: 'draft'
+      }).select('*').single();
+      if(ins.error) throw new Error(eski.dbError('ESK-5085',
+        'the part could not be created', ins.error));
+      part = ins.data;
+    }
+
+    const fresh = myTracks.filter(t => t.local);
+    if(fresh.length){
+      say('uploading');
+      await uploadAll(fresh);
+    }
+
+    if(removed.length){
+      const d = await sb.from('tracks').delete().in('id', removed);
+      if(d.error) throw new Error(eski.dbError('ESK-5086','a removed take did not go', d.error));
+      removed = [];
+    }
+
+    say('saving');
+    for(const t of myTracks){
+      if(t.local) continue;               // uploadAll set audio_key and cleared local
+      const body = {
+        comic_id: comic.id, part_id: part.id, fills: t.fills || null,
+        type: t.type, role: t.role, audio_key: t.audio_key,
+        from_page: t.from_page, to_page: t.to_page,
+        order_idx: t.order_idx, character_key: t.character_key || null
+      };
+      const u = t.saved
+        ? await sb.from('tracks').update(body).eq('id', t.id)
+        : await sb.from('tracks').insert({ id: t.id, ...body });
+      if(u.error) throw new Error(eski.dbError('ESK-5087','a take did not save', u.error));
+      t.saved = true;
+    }
+
+    if(publish){
+      const p = await sb.from('parts')
+        .update({ status:'published', published_at: new Date().toISOString() })
+        .eq('id', part.id).select('*').single();
+      if(p.error) throw new Error(eski.dbError('ESK-5088','the part did not publish', p.error));
+      part = p.data;
+    }
+    dirty = false;
+    $('what-sub').textContent = STANCES[stance].label.toUpperCase() + ' · ' +
+      (part.status === 'published' ? 'PUBLISHED' : 'DRAFT');
+    $('publish').disabled = part.status === 'published';
+    toast(publish ? 'Published. Readers can pick it now.' : 'Saved');
+  }catch(e){
+    toast((e && e.message) || String(e), true);
+  }finally{
+    btn.textContent = was;
+    btn.disabled = false;
+    other.disabled = part && part.status === 'published' && other.id === 'publish';
+  }
+}
+
+/* the same signer the composer uses, and the same content-addressed keys, so
+   two people attaching the same clip store it once. */
+async function sha256(blob){
+  const buf = await blob.arrayBuffer();
+  const h = await crypto.subtle.digest('SHA-256', buf);
+  return [...new Uint8Array(h)].map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+async function uploadAll(items){
+  for(const t of items){
+    t.hash = await sha256(t.local);
+    t.ext = (t.name.split('.').pop() || 'mp3').toLowerCase().replace(/[^a-z0-9]/g,'') || 'mp3';
+  }
+  const sess = (await sb.auth.getSession()).data.session;
+  const token = sess && sess.access_token;
+  if(!token) throw new Error('ESK-2004 your session has no access token. sign out and back in.');
+  let r;
+  try{
+    r = await fetch('/api/sign', {
+      method:'POST',
+      headers:{ 'content-type':'application/json', authorization:'Bearer ' + token },
+      body: JSON.stringify({ files: items.map(t=>({ hash:t.hash, ext:t.ext })) })
+    });
+  }catch(netErr){
+    throw new Error('ESK-3009 could not reach /api/sign at all (offline, or the deploy is down): '
+      + ((netErr && netErr.message) || netErr));
+  }
+  if(!r.ok){
+    const body = await r.text();
+    let detail = body.slice(0,140), code = '';
+    try{ const j = JSON.parse(body); detail = j.error || detail; code = j.code || ''; }
+    catch(e){ if(/^\s*</.test(body)) code = 'ESK-3008',
+      detail = 'vercel returned an html page, not the function.'; }
+    if(r.status === 404 && !code)
+      code = 'ESK-3008', detail = 'no /api/sign here. functions do not run on a static server.';
+    throw new Error(`${code || 'ESK-3000'} upload signing failed (${r.status}): ${detail}`);
+  }
+  const signed = await r.json();
+  if(!signed.files || signed.files.length !== items.length)
+    throw new Error(`ESK-3013 the signer returned ${(signed.files||[]).length} urls for ${items.length} files`);
+  for(let i = 0; i < items.length; i++){
+    const t = items[i], f = signed.files[i];
+    const put = await fetch(f.url, { method:'PUT', body: t.local,
+      headers:{ 'content-type': t.local.type || 'application/octet-stream' } });
+    if(!put.ok) throw new Error(`ESK-3011 uploading ${t.name} failed (${put.status})`);
+    t.audio_key = f.key;
+    delete t.local;                       // it is in the bucket now, not in memory
+  }
+}
+
+window.addEventListener('beforeunload', e=>{
+  if(dirty){ e.preventDefault(); e.returnValue = ''; }
+});
+
+boot();
+</script>
+</body>
+</html>

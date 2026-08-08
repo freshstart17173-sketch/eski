@@ -151,6 +151,13 @@ h4{margin:0 0 8px;font-size:11px;letter-spacing:.13em;color:var(--muted);font-we
 .drawer textarea{resize:vertical;min-height:52px}
 .drawer .duo{display:flex;gap:10px}
 .drawer-sep{height:1px;background:var(--edge);margin:16px 0 14px}
+/* the three consent axes. a checkbox each, because they are independent
+   permissions and a select would imply one answer covers all three. */
+.consent{display:flex;flex-direction:column;gap:7px;margin-top:7px}
+.cbox{display:flex;align-items:flex-start;gap:8px;font-size:12px;color:var(--muted);
+  margin:0;cursor:pointer;line-height:1.45}
+.cbox input{margin:2px 0 0;flex:none;accent-color:var(--accent)}
+.cbox b{color:var(--ink);font-weight:500}
 /* reader preview */
 .readerprev{position:fixed;inset:24px;z-index:200;display:none;flex-direction:column;
   background:var(--bg-1);border:var(--bw) solid var(--edge-strong);border-radius:var(--r);
@@ -627,6 +634,27 @@ input[type=number],input[type=range]+span{font-variant-numeric:var(--num)}@media
         <option value="narrator">Narrator</option>
       </select>
       <button class="pill" onclick="addCastFromInput()" data-ico="plus">Add</button>
+    </div>
+  </div>
+  <div class="drawer-sep"></div>
+  <!-- WHO MAY ADD TO THIS, and it is three questions rather than one.
+       Anyone signed in could attach a voice track or a soundtrack to your
+       comic and you had no way to say no: the database has had the switch and
+       a live policy enforcing it since parts shipped, but nothing in the app
+       ever showed it to you. Effects are the third axis, because agreeing to
+       be scored is not agreeing to gunshots. -->
+  <div class="row" id="consent-row">
+    <label>Who may add to this</label>
+    <div class="qp-hint">Contributions are separate layers a reader chooses —
+      they never change what you published. Closing an axis stops NEW work; it
+      does not take down anything already made.</div>
+    <div class="consent">
+      <label class="cbox"><input type="checkbox" id="m-voice-consent" checked>
+        <span><b>Voices</b> — a voice actor may take a character</span></label>
+      <label class="cbox"><input type="checkbox" id="m-music-consent" checked>
+        <span><b>Score</b> — a composer may write music for it</span></label>
+      <label class="cbox"><input type="checkbox" id="m-sfx-consent" checked>
+        <span><b>Sound effects</b> — someone may add foley</span></label>
     </div>
   </div>
   <div class="drawer-sep"></div>
@@ -1355,6 +1383,11 @@ async function loadBase(id, as){
     cState.meta.creator = c.data.owner_name || null;
     cState.meta.description = c.data.description || null;
     cState.meta.direction = c.data.direction === 'rtl' ? 'rtl' : 'ltr';
+    // what the author allows, carried so the drawer shows the real state and
+    // a re-save does not reopen an axis they closed
+    cState.meta.voiceConsent = c.data.voice_consent || 'open';
+    cState.meta.musicConsent = c.data.music_consent || 'open';
+    cState.meta.sfxConsent   = c.data.sfx_consent   || 'open';
     // the base id a part points back at IS the comic's row id, so an exported
     // vo or soundtrack can only ever be attached to the comic it was made for
     cState.meta.id = id;
@@ -2303,6 +2336,11 @@ function openSettings(){
   $('m-series').value = s.meta.series?.title || '';
   $('m-seriesidx').value = s.meta.series?.index || '';
   $('m-chapters').value = (s.meta.chapters||[]).map(c=>`${c.page}: ${c.title}`).join('\n');
+  /* undefined means never set, and the database default is open, so an old
+     draft opens with all three ticked rather than silently closing itself */
+  $('m-voice-consent').checked = s.meta.voiceConsent !== 'closed';
+  $('m-music-consent').checked = s.meta.musicConsent !== 'closed';
+  $('m-sfx-consent').checked   = s.meta.sfxConsent   !== 'closed';
   $('drawer').classList.add('open'); $('drawer-scrim').classList.add('open');
 }
 function closeSettings(){ $('drawer').classList.remove('open'); $('drawer-scrim').classList.remove('open'); }
@@ -2316,6 +2354,12 @@ $('m-playback').addEventListener('change', e=>cState.player.playbackMode=e.targe
 $('m-loop').addEventListener('change', e=>cState.player.loopMode=e.target.value);
 $('m-fade').addEventListener('change', e=>cState.player.crossfade=clamp(parseFloat(e.target.value)||0,0,10));
 $('m-vol').addEventListener('change', e=>cState.player.volume=clamp(parseInt(e.target.value)||0,0,100));
+const consentBox = (id, key) => $(id).addEventListener('change', e=>{
+  cState.meta[key] = e.target.checked ? 'open' : 'closed';
+});
+consentBox('m-voice-consent', 'voiceConsent');
+consentBox('m-music-consent', 'musicConsent');
+consentBox('m-sfx-consent',   'sfxConsent');
 /* chapters are authored as plain text because that is faster than any widget:
    "page: title" per line, anything unparseable is ignored. */
 function parseChapters(text){
@@ -3295,6 +3339,10 @@ async function saveComic(finalStatus){
         ? cState.cast.map(c => ({ key: c.key, name: c.name, kind: c.kind || 'character',
                                   blurb: c.blurb || null }))
         : null,
+      // three independent axes, defaulting open to match the column default
+      voice_consent: cState.meta.voiceConsent === 'closed' ? 'closed' : 'open',
+      music_consent: cState.meta.musicConsent === 'closed' ? 'closed' : 'open',
+      sfx_consent:   cState.meta.sfxConsent   === 'closed' ? 'closed' : 'open',
       status: 'draft'
     };
     const dbe = window.eski.dbError;

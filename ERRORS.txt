@@ -318,6 +318,29 @@ ESK-5071  profile: the old avatar did not come off storage. Harmless — the new
 ESK-5072  profile: the avatar did not upload. The bucket's policy is per-uid
           folder, so an upload outside `<uid>/…` is refused by design.
 
+ESK-5080  contribute: the list of comics open to contributions did not load.
+ESK-5081  contribute: that comic did not open. The studio needs the pages, the
+          author's script and any part of yours, so any one of the four
+          queries failing lands here.
+ESK-5082  contribute: your existing part did not load. The draft is still
+          there; reopen it rather than starting a second one, or you will end
+          up with two parts for the same character.
+ESK-5083  contribute: no character picked. A voice part covers exactly one, and
+          `parts.character_key` is not nullable for kind = 'vo'.
+ESK-5084  contribute: nothing in this part yet. Attach at least one take before
+          saving — an empty part would appear in a reader's mix picker as a
+          choice that plays silence.
+ESK-5085  contribute: the part header could not be created. [42501] here is the
+          consent gate: the author has closed that axis, and the policy checks
+          it on insert rather than trusting the studio. See eski_part_allowed
+          in schema-sfx.sql.
+ESK-5086  contribute: a take you removed did not go.
+ESK-5087  contribute: a take did not save. [42501] is again the consent gate —
+          tracks_write re-checks it, so closing an axis mid-session stops new
+          rows even though the part header already exists.
+ESK-5088  contribute: the part did not publish. It is still saved as a draft;
+          nothing is lost.
+
 ================================================================================
 6xxx — READING MEDIA BACK
 ================================================================================

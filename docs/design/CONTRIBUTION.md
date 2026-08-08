@@ -1,10 +1,15 @@
 # One contribution studio, and how dialogue overlaps
 
-Two designs, written down because they decide the shape of the studio that
-has not been built yet — and building it before they were settled would have
-been building the wrong screen. **Nothing here is implemented.** The DECIDED
-blocks are answers, not proposals; everything else is the reasoning that got
-there, kept so the same ideas do not get re-proposed.
+Two designs, written down because they decided the shape of the studio before
+it was built. The DECIDED blocks are answers, not proposals; everything else is
+the reasoning that got there, kept so the same ideas do not get re-proposed.
+
+**Status: built.** `contribute.html` is the studio, `schema-sfx.sql` is the
+migration (applied), and the after/with/over control is live in the author
+studio. What is NOT built yet is recording in the browser — a take is attached
+as a file — and the reader still plays v2's single soundtrack, so a published
+part is not audible to a reader until item 10 on the roadmap lands. Both are
+called out there.
 
 ---
 
@@ -13,11 +18,11 @@ there, kept so the same ideas do not get re-proposed.
 ### What is there now
 
 Three studios were designed: **composer** (score), **voiceover** (dialogue),
-**author** (script and cast). Only the author studio and the v2 composer
-exist. The v3 designs sit unbuilt in `docs/design/final/studios/`.
+**author** (script and cast). The v3 mockups sit in
+`docs/design/final/studios/` and were never wired to anything.
 
-The proposal is to merge composer and voiceover into **one contribution
-studio** with a stance chosen on the way in. There are three:
+Composer and voiceover are **one contribution studio** now — `contribute.html`
+— with a stance chosen on the way in. There are three:
 
 | Stance | What you write | Everything else |
 |---|---|---|
@@ -38,10 +43,11 @@ both export a `part` row, and both need to hear what is already there to place
 anything sensibly. The only real difference is which column you are allowed to
 write into. That is a permission, not a product.
 
-Merging also fixes something the split could not: a voice actor cannot
-currently hear the score they are performing over, and a composer cannot hear
-the dialogue they are scoring around. On one screen both are simply there,
-greyed but audible.
+Merging also fixes something the split could not: a voice actor could not hear
+the score they were performing over, and a composer could not hear the
+dialogue they were scoring around. On one screen both are simply there, greyed
+but audible. That is why nothing is ever filtered OUT of the slot list — only
+made dead — and it is what `smoke.js` asserts under all three stances.
 
 ### The shape
 
@@ -118,15 +124,12 @@ which is what a part already is, and it has no `character_key`, which is
 already nullable. The reader's mix picker gains a third list beside voices
 and score, built from the same query.
 
-The one real question it raises is **consent**. There is
-`comics.voice_consent` and `comics.music_consent`; effects are neither. A
-third column (`sfx_consent`) is the consistent answer and costs one migration
-and one toggle. Folding effects under `music_consent` would be cheaper and
-wrong — an author who is happy for someone to score their comic has not
-thereby agreed to someone adding gunshots to it.
-
-What is missing: nothing for sfx (a third `kind`, or a track-level type on
-both), and nothing that lets one part claim more than one character.
+The one real question it raised was **consent**, and `sfx_consent` is the
+answer: a third column rather than a reuse of `music_consent`, because an
+author happy to be scored has not thereby agreed to gunshots. It is applied,
+`eski_part_allowed` reads all three axes, and it now fails CLOSED on an
+unrecognised kind — the old two-armed CASE returned the music answer for
+anything that was not 'vo'.
 
 ### DECIDED
 
@@ -138,8 +141,8 @@ published separately, and a reader picks each one independently.
 one comic means two parts open. This is what keeps every layer owned by
 exactly one person, which is the invariant the rest of this rests on.
 
-**Sound effects are a third part kind**, open to voice actors and composers
-alike, and picked by the reader on its own.
+**Sound effects are a third STANCE**, open to anyone, producing a part of its
+own that the reader picks like a score.
 
 This replaced a version where effects lived inside both the voice and the
 score part. That version needed a precedence rule to decide who was heard when

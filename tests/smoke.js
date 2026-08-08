@@ -1132,10 +1132,28 @@ function ok(cond, name, extra) {
   ok(await lib.evaluate(() => {
     openDetails({ file: 'db:abc-123', dbId: 'abc-123', title: 'x' });
     const a = document.getElementById('ov-contrib');
-    const shown = !a.hidden && /studio\.html\?base=abc-123/.test(a.getAttribute('href'));
+    const shown = !a.hidden && /contribute\.html\?base=abc-123&as=vo/.test(a.getAttribute('href'));
     close_();
     return shown;
-  }), 'a published comic links into the studio as a contributor');
+  }), 'a published comic links into the contributor studio');
+  /* CONSENT IS SHOWN BEFORE THE WORK, not after it. the gate is a database
+     policy, but a person who spends an evening voicing a character and only
+     then learns the author said no has been failed by the interface. */
+  ok(await lib.evaluate(() => {
+    openDetails({ file: 'db:abc-123', dbId: 'abc-123', title: 'x',
+                  consent: { vo: false, soundtrack: true, sfx: true } });
+    const a = document.getElementById('ov-contrib');
+    const to = a.getAttribute('href');
+    close_();
+    return !a.hidden && /as=soundtrack/.test(to);
+  }), 'a closed axis is never the one the contribute link opens on');
+  ok(await lib.evaluate(() => {
+    openDetails({ file: 'db:abc-123', dbId: 'abc-123', title: 'x',
+                  consent: { vo: false, soundtrack: false, sfx: false } });
+    const hidden = document.getElementById('ov-contrib').hidden;
+    close_();
+    return hidden;
+  }), 'a comic closed to all three offers no contribute route at all');
   ok(await lib.evaluate(() => {
     openDetails({ file: 'library/one.eski', title: 'x' });
     const hidden = document.getElementById('ov-contrib').hidden;
@@ -1305,6 +1323,46 @@ function ok(cond, name, extra) {
     return b && b.offsetParent !== null && /sign in/i.test(b.title);
   }, null, { timeout: 10000 });
   ok(true, 'publish is visible signed out and says it needs a sign in');
+
+  /* ---------------- the contribution studio ----------------
+     THE ONE INVARIANT WORTH A TEST: exactly one column is writable, and which
+     one is decided by the stance. Everything else on that screen is drawn but
+     dead. A screenshot cannot prove this — a greyed row and a live row differ
+     by an attribute, not by much ink — so it is checked as logic.
+
+     slotsOn() is called with a fixed script rather than a live comic, because
+     what is being tested is the rule and not the data. */
+  console.log('contribute: one writable column per stance');
+  const contrib = await ctx.newPage();
+  await contrib.goto('http://localhost:8931/contribute.html');
+  const stanceRule = await contrib.evaluate(() => {
+    // stand up just enough state for slotsOn() to run
+    cast = [{ key:'aki', name:'Aki', kind:'character' },
+            { key:'nar', name:'narrator', kind:'narrator' }];
+    entries = [
+      { id:'l1', from_page:1, role:'line', character_key:'aki',    line_text:'mine',  order_idx:1 },
+      { id:'l2', from_page:1, role:'line', character_key:'nar',    line_text:'theirs',order_idx:2 },
+      { id:'l3', from_page:1, role:'sfx',  character_key:null,     line_text:'bang',  order_idx:3 }
+    ];
+    myTracks = []; character = 'aki';
+    const live = () => slotsOn(1).filter(s => s.live).map(s => s.id).sort().join(',');
+    stance = 'vo';         const vo    = live();
+    stance = 'sfx';        const sfx   = live();
+    stance = 'soundtrack'; const score = live();
+    return { vo, sfx, score, scoreCount: slotsOn(1).length };
+  });
+  ok(stanceRule.vo === 'l1',
+    'voice: only the chosen character\'s own lines are writable', stanceRule.vo);
+  ok(stanceRule.sfx === 'l3',
+    'effects: only the effect entries are writable', stanceRule.sfx);
+  ok(stanceRule.score === 'score-1',
+    'score: the page itself, and none of the dialogue', stanceRule.score);
+  /* the point of merging the two studios: a voice actor can HEAR the score and
+     a composer can hear the dialogue, so nothing may be filtered out of the
+     list — only made dead. */
+  ok(stanceRule.scoreCount === 4,
+    'every authored entry stays on screen under every stance', String(stanceRule.scoreCount));
+  await contrib.close();
 
   console.log('console errors');
   ok(consoleErrors.length === 0, 'zero console errors', consoleErrors.join(' | '));

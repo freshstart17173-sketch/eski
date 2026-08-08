@@ -983,6 +983,10 @@ async function loadPlatform(only){
       follow: following.has(r.owner_id) ? r.owner_name : null,
       shelf: save ? save.status : null,
       shelved: !!(save && save.shelved),
+      /* what the author allows. absent means the column default, which is
+         open — an older row must not read as a refusal. */
+      consent: { vo: r.voice_consent !== 'closed', soundtrack: r.music_consent !== 'closed',
+                 sfx: r.sfx_consent !== 'closed' },
       progress: save && save.pages ? Math.min(1, save.last_page / save.pages) : null
     };
   });
@@ -1595,7 +1599,8 @@ function openDetails(c, role, opts){
     ${r.blurb ? `<p class="rolenote">${esc(r.blurb)}</p>` : ''}
     <div class="openline"><span></span><span class="pfp">—</span>
       <span>nobody has voiced this yet${r.lines ? ' · ' + nfmt(r.lines) + ' lines' : ''}</span>
-      ${c.dbId ? `<a class="btn sm" href="studio.html?base=${esc(c.dbId)}&as=vo">Voice this</a>`
+      ${c.dbId && (c.consent||{}).vo !== false
+           ? `<a class="btn sm" href="contribute.html?base=${esc(c.dbId)}&as=vo">Voice this</a>`
                : '<span></span>'}</div>`).join('');
 
   const localHtml = localParts.map(p=>pickRow('idb:' + p.id, true,
@@ -1615,7 +1620,8 @@ function openDetails(c, role, opts){
              <span>${esc(s.title)} · Plays by default</span><span></span></div>`).join('')
     : `<div class="openline"><span></span><span class="pfp">—</span>
         <span>No score yet</span>
-        ${c.dbId ? `<a class="btn sm" href="studio.html?base=${esc(c.dbId)}&as=soundtrack">Score it</a>`
+        ${c.dbId && (c.consent||{}).soundtrack !== false
+             ? `<a class="btn sm" href="contribute.html?base=${esc(c.dbId)}&as=soundtrack">Score it</a>`
                  : '<span></span>'}</div>`) + silentRow;
 
   const mine = !!(me && c.ownerId && me.id === c.ownerId);
@@ -1656,6 +1662,15 @@ function openDetails(c, role, opts){
         <div class="folded">${scoreHtml}</div>
 
         <div class="mixline">Your mix travels with the link you open it from.</div>
+        <div class="mixline">${(()=>{
+          const open = openAxes(c), shut = AXES.filter(a=>!open.includes(a));
+          if(mine) return 'You decide who may add to this in the studio.';
+          if(!open.length) return 'The author has closed this one to contributions.';
+          if(!shut.length) return 'Open to voices, a score and sound effects.';
+          return 'Open to ' + open.map(a=>a.label.toLowerCase()).join(' and ') +
+                 '. The author has not opened it to ' +
+                 shut.map(a=>a.label.toLowerCase()).join(' or ') + '.';
+        })()}</div>
       </div>
     </div>
 
@@ -1674,8 +1689,8 @@ function openDetails(c, role, opts){
       <button class="btn" id="ov-later" aria-pressed="${later}">${esc(laterLabel(c))}</button>
       <button class="btn" id="ov-kudos" aria-pressed="${!!c.kudosMine}"${c.dbId ? '' : ' hidden'}>${
         c.kudosMine ? 'kudos given · ' : 'kudos '}${nfmt(c.kudos)}</button>
-      <a class="btn" id="ov-contrib" href="${c.dbId ? 'studio.html?base=' + esc(c.dbId) + '&as=vo' : '#'}"
-         ${(!c.dbId || mine) ? 'hidden' : ''}>Voice or score it</a>
+      <a class="btn" id="ov-contrib" href="${c.dbId ? contribHref(c) : '#'}"
+         ${(!c.dbId || mine || !openAxes(c).length) ? 'hidden' : ''}>Contribute to it</a>
       <button class="btn" id="ov-share"${c.slug ? '' : ' hidden'}>Copy link</button>
     </div>`;
 
@@ -1957,6 +1972,23 @@ let CM_LAST = null;
    keeps the row whenever it still holds a place, and the label is generated
    in ONE place rather than once in the markup and once here — which is how
    the two came to disagree about capitals. */
+/* WHAT THE AUTHOR HAS LEFT OPEN, and the words a contributor sees before
+   they start rather than after they have recorded. The gate itself is a
+   database policy — a mode flag in a browser is a hint, and the insert is
+   the rule — but a person who spends an evening voicing a character and
+   only then learns the author said no has been failed by the interface,
+   not by the policy. */
+const AXES = [
+  { key: 'vo',         as: 'vo',         label: 'Voices' },
+  { key: 'soundtrack', as: 'soundtrack', label: 'A score' },
+  { key: 'sfx',        as: 'sfx',        label: 'Sound effects' }
+];
+const openAxes = c => AXES.filter(a => (c.consent || {})[a.key] !== false);
+/* the contribute link carries the first open axis so the studio never opens
+   on a stance the author has closed; it asks for the rest itself. */
+const contribHref = c => 'contribute.html?base=' + encodeURIComponent(c.dbId) +
+  '&as=' + ((openAxes(c)[0] || {}).as || 'vo');
+
 const LATER_KEY = 'eski-later';
 const localLater = ()=>{ try{ return JSON.parse(localStorage.getItem(LATER_KEY)) || []; }catch(e){ return []; } };
 const isLater = c => c.dbId ? !!c.shelved : localLater().includes(c.file);

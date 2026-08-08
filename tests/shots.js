@@ -139,8 +139,21 @@ const SCREENS = [
       await p.locator('.pickrow').first().click();
       await p.waitForSelector('.entry, .empty', { timeout: 30000 });
     } },
+  /* the contribution studio, in each of its three stances. the stance is what
+     decides which column is writable, so one shot of it proves nothing. */
+  { name: 'contrib-voice', path: '/contribute.html?base=BASE&as=vo',
+    wait: '.slot, .state' },
+  { name: 'contrib-sfx',   path: '/contribute.html?base=BASE&as=sfx',
+    wait: '.slot, .state' },
+  { name: 'contrib-score', path: '/contribute.html?base=BASE&as=soundtrack',
+    wait: '.slot, .state' },
+  { name: 'contrib-pick',  path: '/contribute.html', wait: '.picker' },
   { name: 'signed-out', path: '/', wait: '.card', signedOut: true },
 ];
+
+/* the contribution configs need a comic that is not the harness's own, so the
+   published one is looked up once and substituted into their paths. */
+const BASE_COMIC = process.env.BASE_COMIC || '4389b9e2-4e22-4b34-9b6b-d8c113bf7837';
 
 /* a reader sheet: press the control, wait for the panel. every one of them
    closes on an outside tap, so nothing may click in between. */
@@ -216,8 +229,8 @@ const THEMES = (process.env.THEMES || 'light-neutral,mono-green,dark-pink').spli
       }
       if(ONLY.length && !ONLY.includes(s.name)) continue;
 
-      let url = s.path;
-      if(url === null){                       // anything that runs in the reader
+      let url = (s.path || '').replace('BASE', BASE_COMIC) || s.path;
+      if(s.path === null){                    // anything that runs in the reader
         if(!readerHref) continue;
         url = readerHref;
       }

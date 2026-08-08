@@ -14,8 +14,8 @@ ones I would not leave sitting.
 
 ## Yours, not mine
 
-Four things no amount of code can do, because they need a dashboard login, a
-legal name, or a decision that is yours.
+Five things no amount of code can do, because they need a dashboard login, a
+legal name, or a decision that is yours. **4b is blocking a live bug.**
 
 ### 1. Move the media off `r2.dev` — 20 minutes, then some waiting
 
@@ -55,33 +55,49 @@ Supabase pauses a free project after enough inactivity, and a paused project is
 a dead site — turn on whatever usage email they offer. R2 has no egress fees
 but bills per read; set a spend notification. Item 1 cuts those a lot.
 
-Two smaller ones, whenever: start filling `tag_synonyms` (the table and
-`canonical_tag()` exist, nothing reads them yet — see item 12), and delete the
-orphan draft `untitled-76nm`, left over from the save-then-publish bug. The bug
-is fixed; the row is yours to remove from the admin console.
+### 4b. Paste the R2 CORS policy — 5 minutes
+
+**This one is currently blocking a real bug.** `r2-cors.json` in the repo is
+the corrected policy, but a file in git changes nothing: Cloudflare only reads
+what is in its own dashboard. Until you paste it, opening an eski in the studio
+from a preview deploy or localhost still fails with ESK-6003.
+
+R2 → your bucket → Settings → CORS Policy → paste the contents of
+`r2-cors.json` → save. The change is that GET and HEAD are now `*` rather than
+four named origins: reading is public — every `<img>` on the site already
+fetches these objects — so the allowlist blocked no attacker and only ever
+blocked our own `fetch()`. PUT keeps its allowlist, which is the half that
+matters.
+
+Two smaller ones, whenever: start filling `tag_synonyms` (the table and `canonical_tag()` exist, nothing
+reads them yet — see item 12), and delete the orphan draft `untitled-76nm`,
+left over from the save-then-publish bug. The bug is fixed; the row is yours to
+remove from the admin console.
+
+**Do not delete `harness-fixture`.** It looks like the same kind of orphan and
+is not: it is a four-page draft owned by `harness@eski.test` carrying a
+five-entry overlapping conversation, and `tests/shots.js` opens it to
+photograph the author studio's cast rows and after/with/over controls. Deleting
+it makes that audit config shoot an empty picker instead.
 
 ---
 
 ## Tier 1 — open holes
 
-### 5. Consent controls in the studio · ~1–2 hours
+### 5. Consent controls in the studio · DONE
 
-Anyone signed in can attach a voice track or a soundtrack to your comic, and
-you have no way to say no.
+Anyone signed in could attach a voice track or a soundtrack to your comic and
+you had no way to say no. The database had the switch and a live policy
+enforcing it; nothing in the app ever showed it to you.
 
-The database already has the switch — `comics.voice_consent` and
-`music_consent`, both defaulting to `open`, with a live policy enforcing them.
-What is missing is the toggles in the studio's settings drawer and on the
-profile row, plus the same words on the comic page so a contributor knows
-before they start recording.
+Three checkboxes in the studio's settings drawer now — voices, score, sound
+effects — written on every save, and the same words on the comic page so a
+contributor knows before they record rather than after. `sfx_consent` is the
+third axis, applied. A closed axis is never the one the contribute link opens
+on, and a comic closed to all three offers no contribute route at all; both
+are asserted in `smoke.js`.
 
-Add `sfx_consent` while you are in here (see item 9): effects are becoming a
-contribution kind of their own, and an author who agreed to be scored has not
-thereby agreed to gunshots. Doing it now is one migration; doing it after
-people have published is a retroactive default applied to other people's
-comics.
-
-A hole opened by wiring parts. It should close in the same week.
+Still open: the toggles are not on the profile row, only in the studio.
 
 ### 6. Upload quota on the signer · ~2–3 hours
 
@@ -125,7 +141,7 @@ audio and per-line voice performances; the running app implements v2, one
 soundtrack per comic. The design for all three studios is built and styled in
 `docs/design/final/studios/` and hooked to nothing.
 
-### 9. The contribution studio · ~2–3 days
+### 9. The contribution studio · BUILT
 
 **Designed and decided — see [`docs/design/CONTRIBUTION.md`](docs/design/CONTRIBUTION.md).**
 The voiceover and composer studios collapse into one screen: rows are pages,
@@ -143,14 +159,25 @@ precedence rule.
 Needs one migration beyond `parts.kind`: `comics.sfx_consent`, because an
 author who agreed to be scored has not thereby agreed to gunshots.
 
-Still open in the interaction, not the model: no fades or crossfades anywhere
-though the manifest has them; nothing expresses "this bed ducks under
-dialogue"; two clips on one layer can overlap with nothing deciding which
-wins; the cue rail can only be filled from the bay, not recorded into; and
-there is no way to **see a range as a shape** now that the lanes are gone,
-only as "pages 7–13" in a row. That last one is the real question left.
+`contribute.html` ships it: the author studio's frame exactly, a stance
+segment, and one writable column under each — asserted in `smoke.js`, because
+a live row and a dead row differ by an attribute rather than by much ink.
+Consent is checked twice, once in the studio so nobody wastes an evening and
+once in the policy because that is the rule.
 
-### 9b. Overlapping dialogue · ~4–6 hours
+**Still to do here**, smallest first:
+
+- **Recording in the browser.** A take is attached as a file today. The
+  script-is-the-timeline design (`eski-script`) is the shape it should take.
+- No fades or crossfades anywhere, though the manifest has them, and nothing
+  expresses "this bed ducks under dialogue".
+- Two clips on one layer can overlap with nothing deciding which wins.
+- No way to **see a range as a shape** now that the lanes are gone, only as
+  "pages 7–13" in a row. Still the real open question.
+- A part cannot be withdrawn from the studio yet — the policy allows it, so
+  this is a button and a confirm.
+
+### 9b. Overlapping dialogue · BUILT (author side)
 
 **Designed and decided — same document, Part 2.** A cue is relative to the cue
 before it: `after`, `with`, or `over`, and `over` carries a *fraction* of the
@@ -160,8 +187,14 @@ Two columns on the lines table, one control per row in the author studio, and
 a scheduler in the reader that walks a page's entries at page turn instead of
 firing them all at zero. A group still playing when the page turns is cut.
 
-Blocks nothing, and makes the author studio able to describe a conversation
-rather than a list.
+The author side is live: the control is on every entry after the first, a
+linked run draws one bracket, and `tracks.link` / `tracks.over_pct` are
+applied with the pair kept honest by a check constraint.
+
+**The reader half is not built** — it still fires every one-shot on a page at
+the page turn. That is the scheduler described above, and it belongs with item
+10 rather than here, because both need the same rewrite of how a page's audio
+is started.
 
 ### 10. The reader plays layers · ~1–2 days
 

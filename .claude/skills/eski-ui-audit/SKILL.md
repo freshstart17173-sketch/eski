@@ -57,7 +57,13 @@ alignment near-misses. The looking is the skill.
 | `reader-comments` | Writing without leaving the comic |
 | `reader-settings` | The bottom sheet on a phone |
 | `profile-settings` | The only tab with controls rather than cards |
+| `author-open` | The author studio with a draft open — at rest it is a picker, and the cast rows, entry column and after/with/over bars only exist past it |
+| `contrib-voice/-sfx/-score` | One writable column per stance. Three shots, because one proves nothing |
+| `contrib-pick` | Only comics open to contributions |
 | `signed-out` | Every empty state, and the auth button as a menu |
+
+`author-open` needs the `harness-fixture` draft to exist (see ROADMAP,
+"Yours, not mine"). Without it the config shoots an empty picker.
 
 **Themes** — one per *treatment*, not one per theme:
 `light-neutral`, `mono-green`, `dark-pink`. Two themes of the same treatment
