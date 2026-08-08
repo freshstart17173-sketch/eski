@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<base href="/">
+<title>eski admin</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" type="image/png" href="eski_logo.png">
+<script type="module" src="platform.js"></script>
+<script src="theme.js"></script>
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="themes.css">
+<style>
+/* ============================================================
+   eski — admin.
+
+   DELIBERATELY PLAIN. It is not a product surface: no Gnomon, no plates,
+   no broadsheet.css. Monospace, one table style, and every number where
+   you can read it. Making it pretty would only make it slower to change.
+
+   THE GATE IS NOT HERE. This page has no powers of its own — it can only
+   do what the signed-in account is already allowed to do by the policies
+   in schema-admin.sql. A page that merely hides its buttons is not a gate:
+   anyone can open the console and run the same queries. So if you are not
+   in `admins`, the database refuses every call this page makes, and the
+   page says so rather than pretending to work.
+   ============================================================ */
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);
+  font:13px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+a{color:var(--accent)}
+header{display:flex;align-items:baseline;gap:16px;padding:10px 16px;
+  border-bottom:2px solid var(--rule);position:sticky;top:0;background:var(--paper);z-index:5}
+header b{font-size:15px}
+header .sp{flex:1}
+main{padding:16px;max-width:1500px}
+h2{font-size:13px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);
+  margin:28px 0 8px;font-weight:400}
+h2:first-child{margin-top:0}
+
+.tabs{display:flex;gap:2px;margin-bottom:16px;flex-wrap:wrap}
+.tabs button{font:inherit;background:none;color:var(--muted);border:1px solid var(--rule-hair);
+  padding:5px 12px;cursor:pointer}
+.tabs button[aria-selected="true"]{background:var(--mark);color:var(--on-mark);border-color:var(--mark)}
+
+.stats{display:grid;grid-template-columns:repeat(auto-fill,minmax(128px,1fr));gap:1px;
+  background:var(--rule-hair);border:1px solid var(--rule-hair)}
+.stats div{background:var(--paper);padding:10px 12px}
+.stats b{display:block;font-size:22px;line-height:1.1;font-weight:500;
+  font-variant-numeric:tabular-nums}
+.stats span{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.08em}
+.stats div.warn b{color:var(--rec)}
+
+table{border-collapse:collapse;width:100%;font-size:12px}
+th,td{text-align:left;padding:5px 8px;border-bottom:1px solid var(--rule-hair);
+  vertical-align:top}
+th{color:var(--muted);font-weight:400;text-transform:uppercase;font-size:10px;
+  letter-spacing:.08em;position:sticky;top:44px;background:var(--paper)}
+td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
+tr:hover td{background:var(--surface)}
+.wrap{overflow-x:auto}
+.mono-id{color:var(--muted);font-size:10px}
+.body{max-width:60ch;white-space:pre-wrap;word-break:break-word}
+
+button.act{font:inherit;font-size:11px;background:none;border:1px solid var(--rule-hair);
+  color:var(--ink);padding:2px 7px;cursor:pointer;margin-right:4px}
+button.act:hover{border-color:var(--ink)}
+button.act.danger{color:var(--rec);border-color:var(--rec)}
+.pill{display:inline-block;padding:1px 6px;border:1px solid var(--rule-hair);
+  font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.pill.on{background:var(--mark);color:var(--on-mark);border-color:var(--mark)}
+.note{color:var(--muted);margin:8px 0}
+.err{color:var(--rec);white-space:pre-wrap;border:1px solid var(--rec);padding:10px;margin:12px 0}
+.gate{padding:48px 16px;max-width:60ch}
+.gate h1{font-size:16px;margin:0 0 12px}
+input.q{font:inherit;background:var(--surface);color:var(--ink);
+  border:1px solid var(--rule-hair);padding:5px 8px;min-width:240px}
+</style>
+</head>
+<body>
+<header>
+  <b>eski admin</b>
+  <span id="who" class="note"></span>
+  <span class="sp"></span>
+  <a href="/">← the site</a>
+</header>
+
+<div id="app"><div class="gate"><p class="note">Checking…</p></div></div>
+
+<script>
+const $ = id => document.getElementById(id);
+const esc = s => (s ?? '').toString()
+  .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const n = v => (v ?? 0).toLocaleString('en-US');
+const when = d => d ? new Date(d).toISOString().slice(0,16).replace('T',' ') : '—';
+const short = id => (id || '').slice(0, 8);
+
+let sb = null, me = null, TAB = 'overview';
+const DATA = { overview:null, comics:[], comments:[], users:[], reports:[], parts:[] };
+
+async function boot(){
+  const eski = window.eski;
+  if(!eski){ gate('ESK-1005 platform.js did not load.'); return; }
+  sb = await eski.ready;
+  me = eski.user;
+  if(!sb){ gate(eski.bootError || 'ESK-1001 no client.'); return; }
+  if(!me){ gate('Not signed in. Sign in on the main site first, then come back.'); return; }
+
+  $('who').textContent = me.email || me.id;
+
+  /* ASK THE DATABASE, not the page. is_admin() is the same function every
+     policy calls, so this answer and the policies can never disagree. */
+  const { data: ok, error } = await sb.rpc('is_admin');
+  if(error){ gate('Could not check admin status: ' + error.message); return; }
+  if(!ok){
+    gate('This account is not an admin.\n\nAdmin is granted in SQL only — there is no ' +
+         'button anywhere that adds one:\n\n  insert into admins (user_id, note)\n' +
+         '  select id, \'why\' from auth.users where email = \'you@example.com\';');
+    return;
+  }
+  render();
+  load();
+}
+
+function gate(msg){
+  $('app').innerHTML = `<div class="gate"><h1>No.</h1><p class="err">${esc(msg)}</p>
+    <p class="note"><a href="/">Back to the site</a></p></div>`;
+}
+
+const TABS = [['overview','Overview'],['comics','Comics'],['comments','Comments'],
+              ['parts','Parts'],['reports','Reports'],['users','Users']];
+
+function render(){
+  $('app').innerHTML = `<main>
+    <div class="tabs">${TABS.map(([k,l])=>
+      `<button data-tab="${k}" aria-selected="${k===TAB}">${l}</button>`).join('')}</div>
+    <div id="panel"><p class="note">Loading…</p></div>
+  </main>`;
+  $('app').querySelectorAll('[data-tab]').forEach(b=>b.addEventListener('click', ()=>{
+    TAB = b.dataset.tab; render(); load();
+  }));
+}
+
+function fail(where, e){
+  $('panel').innerHTML = `<div class="err">${esc(where)}: ${esc((e && e.message) || e)}
+${esc((e && e.code) ? '[' + e.code + ']' : '')}</div>`;
+}
+
+async function load(){
+  try{
+    if(TAB === 'overview')  return await loadOverview();
+    if(TAB === 'comics')    return await loadComics();
+    if(TAB === 'comments')  return await loadComments();
+    if(TAB === 'parts')     return await loadParts();
+    if(TAB === 'reports')   return await loadReports();
+    if(TAB === 'users')     return await loadUsers();
+  }catch(e){ fail('That did not load', e); }
+}
+
+/* ---------------------------------------------------------------- overview */
+async function loadOverview(){
+  const { data, error } = await sb.rpc('admin_overview');
+  if(error) return fail('admin_overview', error);
+  DATA.overview = data;
+  const cells = [
+    ['users','Users'], ['signups_7d','New this week'],
+    ['comics','Comics'], ['published','Published'], ['drafts','Drafts'],
+    ['pages','Pages'], ['tracks','Tracks'], ['parts','Contributed parts'],
+    ['comments','Comments'], ['removed','Removed'],
+    ['kudos','Kudos'], ['saves','Shelved'], ['reports','Open reports']
+  ];
+  $('panel').innerHTML = `<h2>Right now</h2>
+    <div class="stats">${cells.map(([k,l])=>
+      `<div class="${k==='reports' && data[k] ? 'warn' : ''}">
+        <b>${n(data[k])}</b><span>${l}</span></div>`).join('')}</div>
+    <p class="note">Counts come from admin_overview(), which refuses anyone not in
+      <code>admins</code> — checked inside the function, because a security-definer
+      function bypasses row level security and would otherwise be a public dump.</p>`;
+}
+
+/* ---------------------------------------------------------------- comics */
+async function loadComics(){
+  const { data, error } = await sb.from('comics')
+    .select('id,title,slug,status,owner_name,owner_id,created_at,published_at')
+    .order('created_at', { ascending:false }).limit(500);
+  if(error) return fail('comics', error);
+  DATA.comics = data || [];
+  table('panel', ['Title','Slug','Status','Owner','Created','Published',''],
+    DATA.comics.map(c=>[
+      `${esc(c.title || 'untitled')}<div class="mono-id">${short(c.id)}</div>`,
+      c.slug ? `<a href="/c/${encodeURIComponent(c.slug)}" target="_blank">${esc(c.slug)}</a>` : '—',
+      `<span class="pill ${c.status==='published'?'on':''}">${esc(c.status)}</span>`,
+      esc(c.owner_name || short(c.owner_id)),
+      when(c.created_at), when(c.published_at),
+      c.status === 'published'
+        ? `<button class="act" data-act="unpublish" data-id="${c.id}">Unpublish</button>
+           <button class="act danger" data-act="delcomic" data-id="${c.id}">Delete</button>`
+        : `<button class="act" data-act="publish" data-id="${c.id}">Publish</button>
+           <button class="act danger" data-act="delcomic" data-id="${c.id}">Delete</button>`
+    ]), 'No comics.');
+}
+
+/* ---------------------------------------------------------------- comments */
+async function loadComments(){
+  const { data, error } = await sb.from('comments')
+    .select('*').order('created_at', { ascending:false }).limit(500);
+  if(error) return fail('comments', error);
+  DATA.comments = data || [];
+  const titles = new Map((DATA.comics||[]).map(c=>[c.id, c.title]));
+  table('panel', ['Who','Comment','On','When',''],
+    DATA.comments.map(r=>[
+      `${esc(r.author_name)}<div class="mono-id">${short(r.user_id)}</div>`,
+      r.deleted_at ? '<span class="pill">removed</span>'
+                   : `<div class="body">${esc(r.body)}</div>` +
+                     (r.page ? `<span class="pill">p.${r.page}</span>` : '') +
+                     (r.parent_id ? '<span class="pill">reply</span>' : ''),
+      esc(titles.get(r.comic_id) || short(r.comic_id)),
+      when(r.created_at),
+      r.deleted_at
+        ? `<button class="act danger" data-act="purge" data-id="${r.id}">Purge</button>`
+        : `<button class="act" data-act="hide" data-id="${r.id}">Remove</button>
+           <button class="act danger" data-act="purge" data-id="${r.id}">Purge</button>`
+    ]), 'No comments yet.');
+}
+
+/* ---------------------------------------------------------------- parts */
+async function loadParts(){
+  const { data, error } = await sb.from('parts')
+    .select('id,comic_id,kind,title,character_key,owner_name,status,created_at')
+    .order('created_at', { ascending:false }).limit(500);
+  if(error) return fail('parts', error);
+  DATA.parts = data || [];
+  table('panel', ['Kind','Title / character','By','Status','When',''],
+    DATA.parts.map(p=>[
+      `<span class="pill">${esc(p.kind)}</span>`,
+      esc(p.title || p.character_key || '—'),
+      esc(p.owner_name || '—'),
+      `<span class="pill ${p.status==='published'?'on':''}">${esc(p.status)}</span>`,
+      when(p.created_at),
+      `<button class="act danger" data-act="delpart" data-id="${p.id}">Delete</button>`
+    ]), 'Nothing contributed yet.');
+}
+
+/* ---------------------------------------------------------------- reports */
+async function loadReports(){
+  const { data, error } = await sb.from('reports')
+    .select('*').order('created_at', { ascending:false }).limit(500);
+  if(error) return fail('reports', error);
+  DATA.reports = data || [];
+  table('panel', ['Target','Reason','Status','When',''],
+    DATA.reports.map(r=>[
+      `${esc(r.target_type)} <span class="mono-id">${short(r.target_id)}</span>`,
+      `<div class="body">${esc(r.reason)}</div>`,
+      `<span class="pill ${r.status==='open'?'on':''}">${esc(r.status)}</span>`,
+      when(r.created_at),
+      r.status === 'open'
+        ? `<button class="act" data-act="close" data-id="${r.id}">Close</button>` : ''
+    ]), 'Nothing reported. Good.');
+}
+
+/* ---------------------------------------------------------------- users */
+async function loadUsers(){
+  const { data, error } = await sb.rpc('admin_users', { p_limit: 500 });
+  if(error) return fail('admin_users', error);
+  DATA.users = data || [];
+  table('panel', ['Name','Email','Handle','Joined','Last seen','Comics','Comments',''],
+    DATA.users.map(u=>[
+      `${esc(u.name)}${u.is_admin ? ' <span class="pill on">admin</span>' : ''}
+       <div class="mono-id">${short(u.id)}</div>`,
+      esc(u.email || '—'), u.handle ? '@' + esc(u.handle) : '—',
+      when(u.created_at), when(u.last_sign_in_at),
+      { n: n(u.comics) }, { n: n(u.comments) }, ''
+    ]), 'No users.');
+}
+
+/* one table renderer. cells are html strings, or {n:…} for a numeric column. */
+function table(into, cols, rows, empty){
+  if(!rows.length){ $(into).innerHTML = `<p class="note">${esc(empty)}</p>`; return; }
+  $(into).innerHTML = `<p class="note">${rows.length} rows</p><div class="wrap"><table>
+    <thead><tr>${cols.map(c=>`<th>${esc(c)}</th>`).join('')}</tr></thead>
+    <tbody>${rows.map(r=>`<tr>${r.map(c=>
+      (c && typeof c === 'object' && 'n' in c)
+        ? `<td class="n">${c.n}</td>` : `<td>${c}</td>`).join('')}</tr>`).join('')}
+    </tbody></table></div>`;
+  $(into).querySelectorAll('[data-act]').forEach(b=>b.addEventListener('click', ()=>act(b)));
+}
+
+async function act(btn){
+  const id = btn.dataset.id, a = btn.dataset.act;
+  const run = async (label, p) => {
+    btn.disabled = true;
+    const { error } = await p;
+    btn.disabled = false;
+    if(error){ alert(label + ' failed: ' + error.message + ' [' + (error.code||'') + ']'); return false; }
+    return true;
+  };
+  if(a === 'unpublish'){
+    if(!await run('Unpublish', sb.from('comics').update({ status:'draft' }).eq('id', id))) return;
+  }else if(a === 'publish'){
+    if(!await run('Publish', sb.from('comics')
+      .update({ status:'published', published_at:new Date().toISOString() }).eq('id', id))) return;
+  }else if(a === 'delcomic'){
+    if(!confirm('Delete this comic and everything under it? This cannot be undone.')) return;
+    if(!await run('Delete', sb.from('comics').delete().eq('id', id))) return;
+  }else if(a === 'hide'){
+    // tombstone, so replies underneath survive
+    if(!await run('Remove', sb.from('comments')
+      .update({ deleted_at:new Date().toISOString() }).eq('id', id))) return;
+  }else if(a === 'purge'){
+    if(!confirm('Purge the row outright? Any replies to it go too.')) return;
+    if(!await run('Purge', sb.from('comments').delete().eq('id', id))) return;
+  }else if(a === 'delpart'){
+    if(!confirm('Delete this contributed part?')) return;
+    if(!await run('Delete', sb.from('parts').delete().eq('id', id))) return;
+  }else if(a === 'close'){
+    if(!await run('Close', sb.from('reports').update({ status:'closed' }).eq('id', id))) return;
+  }
+  load();
+}
+
+document.addEventListener('eski-auth', () => { if(!me) boot(); });
+boot();
+</script>
+</body>
+</html>
