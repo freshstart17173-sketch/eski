@@ -287,9 +287,10 @@ than play the first layer and call it the score.
 ## 5. Surfaces
 
 Two styles, one for each half of the product. **Broadsheet** dresses everything
-you read — near-white ground, near-black rules, hairlines, micro caps, gnomon on
-titles only, art at comic proportions, sage as the single accent
-(`docs/design/final/broadsheet.css`). **Workbench** dresses the three studios:
+you read — hairline rules, micro caps, square corners, art at comic proportions,
+and a ground and accent the reader picks
+(`docs/design/final/broadsheet.css`, colour in `palettes.css`; the full rules
+are in `docs/design/STYLE.md`). **Workbench** dresses the three studios:
 the same palette and square corners, but hierarchy from surfaces rather than
 hairlines, and colour that means something — four kinds of sound, four hues, one
 legend (`docs/design/final/studios/studio.css`, geometry in `base.css`).

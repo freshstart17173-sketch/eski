@@ -13,9 +13,21 @@ WHERE THEY COME FROM
   2xxx  auth and session                                   platform.js, studio.html
   3xxx  the signer function and its env vars               api/sign.mjs, studio.html
   4xxx  uploading to R2                                    studio.html
-  5xxx  the database (postgres + row level security)       all four pages
+  5xxx  the database (postgres + row level security)       every page
   6xxx  reading media back out of R2                       read.html
   7xxx  local: the browser's storage and the file itself   index.html, read.html
+
+THE 5xxx BLOCKS ARE OWNED PER FILE, because two files that share a number make
+a pasted code ambiguous, which is the one thing a code exists to prevent:
+
+  5000-5018  index.html, studio.html, read.html (the original spread)
+  5019-5024  studio.html — parts
+  5030-5034  index.html — tags, the shelf, kudos
+  5040-5046  author.html — the script
+  5060-5063  comments.js
+  5070-5072  profile.html
+
+Take the next free number in your file's block. Do not reuse a retired one.
 
 A 5xxx message also carries the raw postgres or postgrest code in [brackets] and,
 when it is one we recognise, the translation. That mapping lives once, in
@@ -89,6 +101,11 @@ PROVIDER's side never reaches our code, so it shows their error page, not ours:
 ================================================================================
 This function is the only server code in the project. Everything here is a
 vercel configuration answer.
+
+ESK-3000  The signer answered with a failure that carried no code of its own.
+          A fallback, so a bare non-200 from /api/sign is still named. The
+          status and whatever body came back are in the message; if that body
+          contains a 3xxx code, read that one instead.
 
 ESK-3001  The server is missing env vars. The message names exactly which.
           FIX: vercel dashboard > Settings > Environment Variables. Add the named
@@ -216,7 +233,8 @@ ones and what they mean:
 
 The call sites:
 
-ESK-5000  The shelf query threw. Generic; the message carries the throw.
+ESK-5000  RETIRED. It was a generic "the shelf query threw"; every call site it
+          covered now names itself. Do not reuse the number.
 ESK-5001  studio: the comic row could not be written. Nothing was published, but
           the MEDIA IS ALREADY IN THE BUCKET. Republishing costs no re-upload:
           keys are content-addressed, so the same bytes get the same key.
@@ -244,7 +262,12 @@ ESK-5016  profile: your profile edits did not save.
 ESK-5017  profile: a delete was refused. [42501] means the delete policy is
           missing — RLS denies by default, so a table with no delete policy
           refuses every delete, including the owner's.
-ESK-5018  profile: publish or unpublish was refused. Same shape as 5017.
+ESK-5018  profile: a state change was refused. Same shape as 5017 when it is
+          [42501]. But a refusal here can also be CORRECT: publishing is one
+          way, and a trigger in schema-states.sql rejects any attempt to move a
+          published or private comic back to `draft`. If the message says the
+          trigger raised it, the interface asked for something that must not
+          happen — fix the caller, not the policy.
 ESK-5019  studio: the author has not opened this comic to voice work (or to
           music), so a part cannot be attached. Consent lives in the database,
           not the ui: comics.voice_consent / music_consent must be 'open', and
@@ -262,6 +285,39 @@ ESK-5023  reader: a chosen voice track or soundtrack could not be loaded. The
 ESK-5024  profile: the contributions shelf could not be read. With [42P01],
           schema-parts.sql has not been applied to this project.
 
+ESK-5030  home: a tag did not save. A [23505] here is not an error and is
+          swallowed — it only means the comic already carries that tag.
+ESK-5031  home: a tag did not come off.
+ESK-5032  home: adding to or removing from the shelf was refused (the comic
+          page). With [42P01], apply schema-social.sql — `saves` lives there.
+ESK-5033  home: the same, from the card on the shelf itself.
+ESK-5034  home: kudos did not save.
+
+ESK-5040  author studio: your comics could not be listed.
+ESK-5041  author studio: that comic could not be opened.
+ESK-5042  author studio: the pages could not be read.
+ESK-5043  author studio: the cast did not save.
+ESK-5044  author studio: a deleted line did not go. The script is now half
+          saved; reopen the comic to see what actually landed.
+ESK-5045  author studio: the new lines did not save.
+ESK-5046  author studio: an edited line did not save.
+
+ESK-5060  comments: the thread did not load. With [42P01], apply
+          schema-comments.sql — it is its own file.
+ESK-5061  comments: that comment did not post. [42501] on an insert means the
+          author is signed in but the policy refuses — check the comic is
+          published, since the policy keys off that.
+ESK-5062  comments: an edit did not save. Only the writer may edit; the owner
+          of the comic may delete but not rewrite.
+ESK-5063  comments: a comment did not come off. Deleting writes a tombstone
+          rather than removing the row, so replies underneath survive.
+
+ESK-5070  profile: a setting did not save (the shelf's public switch).
+ESK-5071  profile: the old avatar did not come off storage. Harmless — the new
+          one is already up; this is the cleanup of the previous file.
+ESK-5072  profile: the avatar did not upload. The bucket's policy is per-uid
+          folder, so an upload outside `<uid>/…` is refused by design.
+
 ================================================================================
 6xxx — READING MEDIA BACK
 ================================================================================
@@ -275,6 +331,10 @@ ESK-6002  403. The bucket is not public.
           R2_BASE in platform.js to match.
 ESK-6003  The fetch threw: offline, or CORS does not allow GET from this origin.
           Same r2-cors.json as ESK-4001, but the GET half.
+ESK-6004  A page has no source at all — no display copy, no original. Nothing
+          was fetched, because there was no key to fetch. This is a data fault
+          upstream of R2: the page row saved without an image key (see
+          ESK-5011), so the publish was interrupted.
 
 Also worth knowing: the r2.dev public subdomain is RATE LIMITED by cloudflare
 and is not meant for production traffic. Under load it starts refusing. Moving

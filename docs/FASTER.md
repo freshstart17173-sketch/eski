@@ -298,9 +298,8 @@ Two different policies on purpose:
   navigation instead of costing a round trip on every one.
 
 **Leave the HTML alone.** `read.html`, `index.html` and `studio.html` carry
-the app itself and must keep landing immediately — that is a deliberate choice
-already recorded in `TODO.txt`, and `sw.js` is network-first for HTML for the
-same reason.
+the app itself and must keep landing immediately. That is deliberate, and it is
+why `sw.js` is network-first for HTML and cache-first for everything else.
 
 ---
 

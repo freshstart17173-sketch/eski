@@ -175,8 +175,8 @@ Kept here so the same ideas do not get re-proposed.
 - **Six full themes** (Broadsheet / Press / eski / Light / Pink / Slate) that
   each changed typeface, radius and rule width. Too much — the site stopped
   being one thing, two of them removed the hairlines the layout was built out
-  of, and the choice was overwhelming. Replaced by ten accent palettes over
-  one fixed shape.
+  of, and the choice was overwhelming. Replaced by accent palettes over one
+  fixed shape.
 - **Cover-match tint** in the reader. It sampled the cover and recoloured the
   chrome from it, which fought whatever theme the reader had chosen.
 - **Gnomon on headings.**

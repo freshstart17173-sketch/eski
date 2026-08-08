@@ -75,7 +75,7 @@
       .order('created_at', { ascending: true }).limit(500);
     if(error){
       S.root.innerHTML = `<p class="note-line">${esc(
-        window.eski.dbError('ESK-5040','the comments did not load',error))}</p>`;
+        window.eski.dbError('ESK-5060','the comments did not load',error))}</p>`;
       return;
     }
     S.rows = data || [];
@@ -157,7 +157,7 @@
     else if(S.page > 0) r.page = S.page;
     const { data, error } = await sb().from('comments').insert(r).select().single();
     box.disabled = false;
-    if(error){ say(window.eski.dbError('ESK-5041','that comment did not post',error)); return; }
+    if(error){ say(window.eski.dbError('ESK-5061','that comment did not post',error)); return; }
     S.rows.push(data);
     S.replyTo = null;
     count(); render();
@@ -170,7 +170,7 @@
     if(!text) return;
     const { data, error } = await sb().from('comments')
       .update({ body: text }).eq('id', id).select().single();
-    if(error){ say(window.eski.dbError('ESK-5042','that edit did not save',error)); return; }
+    if(error){ say(window.eski.dbError('ESK-5062','that edit did not save',error)); return; }
     S.rows = S.rows.map(r => r.id === id ? data : r);
     S.editing = null;
     render();
@@ -181,7 +181,7 @@
     if(!confirm('Remove this comment?')) return;
     const { data, error } = await sb().from('comments')
       .update({ deleted_at: new Date().toISOString() }).eq('id', id).select().single();
-    if(error){ say(window.eski.dbError('ESK-5043','that comment did not come off',error)); return; }
+    if(error){ say(window.eski.dbError('ESK-5063','that comment did not come off',error)); return; }
     S.rows = S.rows.map(r => r.id === id ? data : r);
     count(); render();
   }

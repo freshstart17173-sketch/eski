@@ -34,7 +34,7 @@ the first heading starts (96px at 1440) and the nav ends where the rule ends
 | Section head ×3 | `h2` (Gnomon), `.n` count, `All comics` / `Who you follow` / `See all` |
 | Comic card | Whole card opens the detail; tags inside it are their own buttons |
 | Card caption | BY · EXTENT · VOICES · SCORE · KUDOS · COMMENTS, right-aligned values |
-| Resume strip | `.resume` — "continue · p.12", clicks straight into the reader |
+| Continue reading | `#resume` — cover, title, credits and the last few pages read, with one CONTINUE button. Sized so the strip of pages fills the space beside the cover without outgrowing it |
 | See more | `.seemore` — inverts on hover in broadsheet, fills in the soft themes |
 | Onboarding | `#ob` overlay, shown once ever |
 
@@ -65,7 +65,11 @@ page form: no scrim, full height, and the way out is a word.
 | Voices fold | `.pick` checkboxes, `[data-preview]` play buttons |
 | Score fold | Same, plus "no score" — exclusive with the others |
 | Thread | `#d-cm-toggle` fold, then comments.js |
-| Actions | Read with this mix · Add to shelf · Kudos · Voice or score it · Copy link |
+| Actions | Read with this mix · Read from the beginning (only once you have started) · Add to shelf · Kudos · Voice or score it · Copy link |
+
+Every eski opens this sheet, whatever its state — a draft and a private comic
+open it for their owner too. What changes with state is what the sheet offers,
+not whether it exists.
 
 ## Reader (`read.html`)
 
@@ -101,13 +105,18 @@ sound effect — which are the one documented exception to the colour rule.
 
 ## Profile (`profile.html`)
 
+Also answers at `/u/<handle>` (a Vercel rewrite), so a profile is linkable.
+
 | Surface | Controls |
 |---|---|
-| Identity | Avatar, name, @handle, bio, Copy link, Edit profile |
-| Stats | Contributions · Shelf · Reading · Kudos — four equal columns, hairline-separated |
+| Identity | Avatar (click to replace, `[data-avatar]`), name, @handle, bio, Copy link, Edit profile |
+| Stats | Contributions · Shelf · Kudos — hairline-separated. There is no reading counter |
 | Edit panel | Display name, handle, bio, Save, Cancel |
-| Sections | Reading · Read · Shelf · Contributions · Published · Drafts |
-| Settings | The theme picker |
+| Tabs | Reading · Shelf · Read · Contributions · Published · Private · Drafts · Settings — horizontal, one list at a time. Only **Reading** shows cards |
+| Settings | Shelf public/private, Sign out. **Not** the theme picker — that lives in the footer |
+| Owner-only actions | Make private and Delete, each behind an `ask()` dialog that names what goes with it. They appear here and nowhere else |
+
+See `docs/design/STYLE.md` §10 for which tabs a stranger sees.
 
 ## Admin (`admin.html`)
 
@@ -119,23 +128,27 @@ Comics, Comments, Parts, Reports, Users. **The gate is in the database**
 
 ## What a theme has to cover
 
-Every one of the above reads these tokens. A theme that sets all of them is
-complete; see `themes.css`.
+Every surface above reads these tokens. A theme that sets all of them is
+complete; they are written out in full in `palettes.css`, one block per theme,
+and `palette.js` is the only thing that writes `data-theme` / `data-mode` /
+`data-dark`.
 
 | Token | What it decides |
 |---|---|
-| `--paper` `--surface` `--plate-bg` | Grounds, including behind cover art |
+| `--paper` `--surface` `--plate-bg` `--paper-1` | Grounds, including behind cover art |
 | `--ink` `--soft-ink` `--muted` `--label` | Text, in four steps |
 | `--rule` `--rule-hair` `--line-1` `--line-strong` | Every line on the site |
-| `--accent` | Counts, focus rings, the wordmark's `!` |
+| `--accent` | Counts and the focus ring. It never fills anything |
 | `--mark` `--on-mark` | The one fill that means "this is on", and what goes on it |
-| `--r` | Corner radius, everywhere |
-| `--bw` | Hairline width. **`0` genuinely removes them** |
-| `--font-body` `--font-display` | Only Jost and Gnomon are downloaded; the rest are system stacks |
-| `--hover-bg` `--hover-ink` | Whether a hover changes colour or fills |
-| `--shadow-1` | Whether anything lifts off the page |
+| `--ui` `--ui-hover-bg` | The colour of clickable text, and the rectangle behind it on hover |
+| `--wordmark` | The logo, including its `!` — a shade of the accent, clear of the ground |
 
-Two themes set `--bw:0`. That breaks any layout built out of borders, so the
-card grid gets separation back the way unruled designs do it: a surface, a
-radius, a small shadow and real space. If you add a bordered layout, check it
-in **pink** before you call it done.
+**Shape is not a theme token.** `--r: 0`, `--bw: 1px` and no shadows are the
+same under every theme and live in `tokens.css`. So is the typeface: one
+family, Jost, with Gnomon on the wordmark alone. An earlier system made all
+three themeable, two of those themes removed the hairlines the layout is built
+out of, and the site stopped being one thing. Do not put them back.
+
+A new hue is one entry in `HUES` in `palette.js` and three blocks in
+`palettes.css` (light, mono, dark). Check the contrast of `--wordmark` against
+`--paper` before adding it; every existing pair is at least 8.8:1.

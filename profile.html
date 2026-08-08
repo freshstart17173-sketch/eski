@@ -622,7 +622,7 @@ function paint(){
       const { error } = await sb.from('profiles')
         .update({ shelf_public: next }).eq('id', me.id);
       b.disabled = false;
-      if(error){ alert(window.eski.dbError('ESK-5019','that setting did not save',error)); return; }
+      if(error){ alert(window.eski.dbError('ESK-5070','that setting did not save',error)); return; }
       subject.shelf_public = next;
       b.setAttribute('aria-pressed', next);
       b.textContent = next ? 'Public' : 'Private';
@@ -633,7 +633,7 @@ function paint(){
     b.addEventListener('click', ev=>{ ev.stopPropagation(); act(b); }));
 
   paintIcons($('page'));
-  if(window.eskiPalette) window.eskiPalette.paint();
+  if(window.eskiTheme) window.eskiTheme.paint();
 
   $('tabs').querySelectorAll('.tab').forEach(b=>
     b.addEventListener('click', ()=>showTab(b.dataset.tab)));
@@ -664,7 +664,7 @@ function wireAvatar(){
     clear.disabled = true;
     const { error } = await sb.from('profiles').update({ avatar_url:null }).eq('id', me.id);
     clear.disabled = false;
-    if(error){ alert(window.eski.dbError('ESK-5020','the picture did not come off',error)); return; }
+    if(error){ alert(window.eski.dbError('ESK-5071','the picture did not come off',error)); return; }
     subject.avatar_url = null; paint();
   });
   file.addEventListener('change', async ()=>{
@@ -685,7 +685,7 @@ function wireAvatar(){
       if(prev) prev.innerHTML = `<img src="${esc(url)}" alt="">`;
       paint();
     }catch(e){
-      alert(window.eski.dbError('ESK-5021','the picture did not upload', e));
+      alert(window.eski.dbError('ESK-5072','the picture did not upload', e));
     }finally{
       pick.disabled = false; pick.textContent = 'Choose a picture';
     }

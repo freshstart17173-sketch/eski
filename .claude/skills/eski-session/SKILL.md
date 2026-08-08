@@ -24,7 +24,7 @@ Live has two views of the same song. Arrangement is a timeline: left to right, a
 
 ## Why it fits eski
 
-The catchup and the roadmap both say the same thing: the soundtrack timeline goes away and each page's panel becomes where you author that page. That is a description of Session View. An eski comic is already discrete and already triggered — the page turn *is* the scene launch.
+`ROADMAP.md` says the soundtrack timeline goes away and each page's panel becomes where you author that page. That is a description of Session View. An eski comic is already discrete and already triggered — the page turn *is* the scene launch.
 
 The grid also does pre-export validation for free. Duplicate trigger pages are two starts in the same column. Tracks past the last page are cells below the final row. A page with no audio is a visibly empty row. These stop being validation errors and become things you can see.
 
