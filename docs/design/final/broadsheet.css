@@ -90,7 +90,10 @@ img{display:block;max-width:100%}
 .n{font-variant-numeric:tabular-nums}
 
 /* ---------- chrome: wordmark top left, the words on the right ---------- */
-.top{display:flex;align-items:center;gap:var(--s4);padding:var(--s2) var(--s4);
+.top{display:flex;align-items:center;gap:var(--s4);
+  /* the same inset the content column has, so the wordmark starts where the
+     first heading starts and the nav ends where the rule ends */
+  padding:var(--s2) max(var(--s4), calc((100% - var(--wrap)) / 2 + var(--s4)));
   border-bottom:var(--bw) solid var(--rule);background:var(--paper)}
 .mark{font-family:var(--font-display);font-size:21px;letter-spacing:-.01em;
   color:var(--ink);text-decoration:none;line-height:1}

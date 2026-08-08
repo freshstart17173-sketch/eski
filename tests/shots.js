@@ -88,6 +88,8 @@ const SCREENS = [
     const ctx = await browser.newContext({ viewport, serviceWorkers: 'block', ...extra });
     if(api) await ctx.route('**/*', async route => {
       const q = route.request();
+      // a local server needs no proxy, and routing it through one breaks it
+      if(q.url().startsWith('http://localhost')) return route.continue();
       try{
         const r = await api.fetch(q.url(), { method:q.method(), headers:q.headers(),
           data: q.postDataBuffer() || undefined, maxRedirects: 5, timeout: 60000 });

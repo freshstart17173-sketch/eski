@@ -41,8 +41,12 @@ section + section{margin-top:var(--s6)}
 .rolelist:empty{border-top:0}
 
 /* ---------- the head ---------- */
-.phead{display:grid;grid-template-columns:64px 1fr auto;gap:var(--s4);align-items:start;
-  padding:var(--s5) 0 var(--s4);border-bottom:var(--bw) solid var(--rule)}
+.phead{display:grid;grid-template-columns:64px minmax(0,1fr) auto;gap:var(--s4);
+  align-items:start;padding:var(--s5) 0 var(--s4);
+  border-bottom:var(--bw) solid var(--rule)}
+/* the edit form is a panel under the head, not a third thing stacked inside
+   the name column where it pushed the stats out of line */
+.editwrap{grid-column:1 / -1}
 .pfp-lg{width:64px;height:64px;border:var(--bw) solid var(--rule);display:grid;place-items:center;
   font-family:var(--font-display);font-size:22px;color:var(--accent);background:var(--surface);
   overflow:hidden}
@@ -53,15 +57,28 @@ section + section{margin-top:var(--s6)}
   color:var(--accent)}
 .pbio{margin:var(--s2) 0 0;font-size:var(--fs-xs);color:var(--soft-ink);max-width:56ch;
   line-height:1.55;white-space:pre-wrap;word-break:break-word}
-.pstats{display:flex;gap:var(--s5);text-align:right}
-.pstats span{display:grid;gap:2px;font-size:var(--fs-micro);letter-spacing:.06em;
-  text-transform:uppercase;color:var(--label)}
-.pstats b{font-family:var(--font-display);font-size:20px;font-weight:400;
-  font-variant-numeric:tabular-nums}
+/* FOUR EQUAL COLUMNS, not a flex row.
+   These were laid out with `gap` between labels of wildly different widths
+   — "READING" next to "KUDOS RECEIVED" — so the numbers above them landed at
+   four unrelated offsets and the block read as scattered. Equal columns and
+   one shared baseline make it a table, which is what it always was. */
+.pstats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:0;border-left:var(--bw) solid var(--rule-hair);min-width:340px}
+.pstats span{display:grid;gap:3px;padding:0 var(--s3);
+  border-right:var(--bw) solid var(--rule-hair);
+  font-size:var(--fs-micro);letter-spacing:.06em;line-height:1.2;
+  text-transform:uppercase;color:var(--label);text-align:right;align-content:start}
+.pstats b{font-family:var(--font-display);font-size:22px;font-weight:400;
+  line-height:1;font-variant-numeric:tabular-nums}
 .hot{color:var(--accent)}
 .head .n{color:var(--accent)}
 .pacts{display:flex;gap:var(--s2);margin-top:var(--s3);flex-wrap:wrap}
-@media(max-width:760px){.phead{grid-template-columns:1fr}.pstats{text-align:left;flex-wrap:wrap;gap:var(--s4)}}
+@media(max-width:760px){
+  .phead{grid-template-columns:56px 1fr}
+  /* the stats drop below the identity rather than squeezing beside it */
+  .pstats{grid-column:1 / -1;min-width:0;margin-top:var(--s3)}
+  .pstats span{padding:0 var(--s2)}
+}
 
 /* ---------- edit ---------- */
 .edit{display:none;margin-top:var(--s4);gap:var(--s3);flex-direction:column;max-width:520px}
@@ -419,7 +436,14 @@ function paint(){
           <button class="btn sm" id="share" data-ico="link">Copy link</button>
           ${isMe ? '<button class="btn sm" id="editbtn" data-ico="pencil">Edit profile</button>' : ''}
         </div>
-        ${isMe ? `<div class="edit" id="edit">
+      </div>
+      <div class="pstats">
+        <span><b class="hot">${nfmt(parts.length)}</b>Contributions</span>
+        <span><b class="hot">${nfmt(later.length)}</b>Shelf</span>
+        <span><b class="hot">${nfmt(reading.length)}</b>Reading</span>
+        <span><b class="hot">${nfmt(kudosReceived)}</b>Kudos</span>
+      </div>
+      <div class="editwrap">${isMe ? `<div class="edit" id="edit">
           <div><label for="f-name">Display name</label>
             <input id="f-name" maxlength="60" value="${esc(p.display_name||'')}"></div>
           <div><label for="f-handle">Handle</label>
@@ -432,14 +456,7 @@ function paint(){
             <button class="btn primary sm" id="save">Save</button>
             <button class="btn sm" id="cancel">Cancel</button>
           </div>
-        </div>` : ''}
-      </div>
-      <div class="pstats">
-        <span><b class="hot">${nfmt(parts.length)}</b>Contributions</span>
-        <span><b class="hot">${nfmt(reading.length)}</b>Reading</span>
-        <span><b class="hot">${nfmt(read.length)}</b>Read</span>
-        <span><b class="hot">${nfmt(kudosReceived)}</b>Kudos received</span>
-      </div>
+        </div>` : ''}</div>
     </div>
 
     <section>

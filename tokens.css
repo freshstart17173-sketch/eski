@@ -87,6 +87,10 @@
 
   /* ---------- density. one place to retune every control at once ---------- */
   --hdr:52px;
+  /* THE CONTENT COLUMN. The header reads it too, so the wordmark and the nav
+     line up with the page rather than sitting 80px outside it on a wide
+     screen. A surface with a narrower measure (legal.html) overrides it. */
+  --wrap:1280px;
   --ctl:30px;          /* pointer sized control */
   --ctl-touch:42px;    /* coarse pointer, see the media query at the end */
   --max:1100px;
