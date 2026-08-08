@@ -3267,13 +3267,46 @@ async function saveComic(finalStatus){
       status: 'draft'
     };
     const dbe = window.eski.dbError;
-    let ins = await sb.from('comics').insert(row).select('id').single();
-    if(ins.error && ins.error.code === '23505'){          // slug already taken
-      row.slug += '-' + Math.random().toString(36).slice(2, 6);
-      ins = await sb.from('comics').insert(row).select('id').single();
+
+    /* SAVE, THEN PUBLISH, USED TO MAKE TWO COMICS.
+
+       This always inserted, so pressing "save draft" and later "publish" wrote
+       a second row — and because the slug was taken by the first, the new one
+       got a random suffix. You ended up with the comic you published and an
+       orphan draft beside it on your profile, holding a full second copy of
+       every uploaded page. That is where `untitled` and `untitled-76nm` came
+       from.
+
+       So the first write remembers its row, and every write after it updates
+       that row instead. The children are rewritten wholesale because the state
+       here is the truth: pages may have been reordered, tracks retimed. */
+    let comicId = cState.meta.comicId || null;
+    if(comicId){
+      let up = await sb.from('comics').update(row)
+        .eq('id', comicId).eq('owner_id', user.id).select('id').single();
+      if(up.error && up.error.code === '23505'){        // the retitled slug is taken
+        row.slug += '-' + Math.random().toString(36).slice(2, 6);
+        up = await sb.from('comics').update(row)
+          .eq('id', comicId).eq('owner_id', user.id).select('id').single();
+      }
+      // the row is gone (deleted from the profile in another tab): start fresh
+      if(up.error && up.error.code === 'PGRST116'){ comicId = null; }
+      else if(up.error) throw new Error(dbe('ESK-5001', 'could not update the comic row', up.error));
+      else {
+        await sb.from('tracks').delete().eq('comic_id', comicId);
+        await sb.from('pages').delete().eq('comic_id', comicId);
+      }
     }
-    if(ins.error) throw new Error(dbe('ESK-5001', 'could not write the comic row', ins.error));
-    const comicId = ins.data.id;
+    if(!comicId){
+      let ins = await sb.from('comics').insert(row).select('id').single();
+      if(ins.error && ins.error.code === '23505'){        // slug already taken
+        row.slug += '-' + Math.random().toString(36).slice(2, 6);
+        ins = await sb.from('comics').insert(row).select('id').single();
+      }
+      if(ins.error) throw new Error(dbe('ESK-5001', 'could not write the comic row', ins.error));
+      comicId = ins.data.id;
+    }
+    cState.meta.comicId = comicId;
 
     const pe = await sb.from('pages').insert(
       cState.pages.map((p, i) => ({ comic_id: comicId, idx: i + 1, image_key: parts[i].key,

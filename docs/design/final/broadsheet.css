@@ -361,3 +361,39 @@ img{display:block;max-width:100%}
   transition:opacity var(--t-fast) var(--ease),transform var(--t-fast) var(--ease)}
 [data-theme="dark"] .toast{color:var(--sage-900)}
 .toast.on{opacity:1;transform:translateX(-50%) translateY(-4px)}
+
+/* ============================================================
+   the thread. shut until asked for. shared by the comic page and the reader,
+   which both mount comments.js into a .cm-root.
+   ============================================================ */
+.thread{border-top:1px solid var(--rule);padding:var(--s3) var(--s4) var(--s4)}
+.thread-open{width:100%}
+.thread .spoilernote{margin:2px 0 0;font-size:var(--fs-micro);color:var(--label);
+  letter-spacing:.06em}
+.thread-open[aria-expanded="true"] ~ .spoilernote{display:none}
+.cm{padding:var(--s3) 0;border-bottom:1px solid var(--rule-hair)}
+.cm.reply{margin-left:var(--s4);border-left:1px solid var(--rule-hair);
+  padding-left:var(--s3)}
+.cm.gone{color:var(--label);font-size:var(--fs-micro);letter-spacing:.06em}
+.cm-head{display:flex;align-items:baseline;gap:var(--s2);
+  font-size:var(--fs-micro);letter-spacing:.1em;text-transform:uppercase;color:var(--label)}
+.cm-head .sp{flex:1}
+.cm-who{color:var(--ink);font-weight:500;letter-spacing:.06em}
+.cm-page{border:1px solid var(--rule-hair);padding:0 4px;letter-spacing:.06em}
+.cm-when{white-space:nowrap}
+.cm-body{margin:4px 0 0;font-size:var(--fs-xs);line-height:1.55;color:var(--soft-ink);
+  overflow-wrap:anywhere}
+.cm-acts{display:flex;gap:var(--s3);margin-top:4px;flex-wrap:wrap}
+.lnk{border:0;background:none;padding:0;color:var(--label);font:inherit;
+  font-size:var(--fs-micro);letter-spacing:.1em;text-transform:uppercase;cursor:pointer}
+.lnk:hover{color:var(--ink)}
+.cm-write{padding:var(--s2) 0 var(--s3)}
+.cm-box{width:100%;min-height:64px;resize:vertical;background:var(--surface);
+  color:var(--ink);border:1px solid var(--rule-hair);padding:var(--s2);
+  font:inherit;font-size:var(--fs-xs);line-height:1.5}
+.cm-box:focus{outline:none;border-color:var(--accent)}
+@media(max-width:720px){
+  /* thumbs, not cursors */
+  .lnk{min-height:36px;display:inline-flex;align-items:center}
+  .cm.reply{margin-left:var(--s3)}
+}

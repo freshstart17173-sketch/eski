@@ -16,6 +16,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Jost:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script type="module" src="platform.js"></script>
+<script src="comments.js"></script>
 <link rel="stylesheet" href="tokens.css">
 <link rel="stylesheet" href="docs/design/final/broadsheet.css">
 <style>
@@ -252,40 +253,9 @@ body.deep .sheet-home{display:inline-flex}
   letter-spacing:.14em;text-transform:uppercase;cursor:pointer;text-align:left}
 .sheet-home:hover{color:var(--ink)}
 
-/* ============================================================
-   the thread. shut until asked for — see the comment in the script.
-   ============================================================ */
-.thread{border-top:1px solid var(--rule);padding:var(--s3) var(--s4) var(--s4)}
-.thread-open{width:100%}
-.thread .spoilernote{margin:2px 0 0;font-size:var(--fs-micro);color:var(--label);
-  letter-spacing:.06em}
-.thread-open[aria-expanded="true"] ~ .spoilernote{display:none}
-.cm{padding:var(--s3) 0;border-bottom:1px solid var(--rule-hair)}
-.cm.reply{margin-left:var(--s4);border-left:1px solid var(--rule-hair);
-  padding-left:var(--s3)}
-.cm.gone{color:var(--label);font-size:var(--fs-micro);letter-spacing:.06em}
-.cm-head{display:flex;align-items:baseline;gap:var(--s2);
-  font-size:var(--fs-micro);letter-spacing:.1em;text-transform:uppercase;color:var(--label)}
-.cm-head .sp{flex:1}
-.cm-who{color:var(--ink);font-weight:500;letter-spacing:.06em}
-.cm-page{border:1px solid var(--rule-hair);padding:0 4px;letter-spacing:.06em}
-.cm-when{white-space:nowrap}
-.cm-body{margin:4px 0 0;font-size:var(--fs-xs);line-height:1.55;color:var(--soft-ink);
-  overflow-wrap:anywhere}
-.cm-acts{display:flex;gap:var(--s3);margin-top:4px;flex-wrap:wrap}
-.lnk{border:0;background:none;padding:0;color:var(--label);font:inherit;
-  font-size:var(--fs-micro);letter-spacing:.1em;text-transform:uppercase;cursor:pointer}
-.lnk:hover{color:var(--ink)}
-.cm-write{padding:var(--s2) 0 var(--s3)}
-.cm-box{width:100%;min-height:64px;resize:vertical;background:var(--surface);
-  color:var(--ink);border:1px solid var(--rule-hair);padding:var(--s2);
-  font:inherit;font-size:var(--fs-xs);line-height:1.5}
-.cm-box:focus{outline:none;border-color:var(--accent)}
-@media(max-width:720px){
-  /* thumbs, not cursors */
-  .lnk{min-height:36px;display:inline-flex;align-items:center}
-  .cm.reply{margin-left:var(--s3)}
-}
+/* the thread's styles live in broadsheet.css: the reader mounts the same
+   markup from comments.js. */
+
 .alltags{display:flex;flex-wrap:wrap;gap:3px;align-items:center}
 /* adding a tag: anyone signed in, ao3 style */
 .tagadd{display:flex;gap:var(--s1);align-items:center;margin-top:var(--s2)}
@@ -1525,7 +1495,7 @@ function openDetails(c, role, opts){
 
     <div class="acts">
       <a class="btn p" id="ov-read" href="#">Read it with this mix</a>
-      <button class="btn" id="ov-later" aria-pressed="${later}">${later ? 'on your shelf' : 'read later'}</button>
+      <button class="btn" id="ov-later" aria-pressed="${later}">${esc(laterLabel(c))}</button>
       <button class="btn" id="ov-kudos" aria-pressed="${!!c.kudosMine}"${c.dbId ? '' : ' hidden'}>${
         c.kudosMine ? 'kudos given · ' : 'kudos '}${nfmt(c.kudos)}</button>
       <a class="btn" id="ov-contrib" href="${c.dbId ? 'studio.html?base=' + esc(c.dbId) + '&as=vo' : '#'}"
@@ -1579,7 +1549,11 @@ function openDetails(c, role, opts){
 
   lastFocus = document.activeElement;
   ov.classList.add('open');
+  /* Hiding the body scrollbar reclaims its width and the whole page slides
+     sideways under the modal. Pad by exactly what was taken away. */
+  const bar = window.innerWidth - document.documentElement.clientWidth;
   document.body.style.overflow = 'hidden';
+  if(bar > 0) document.body.style.paddingRight = bar + 'px';
   /* a local .eski file has no slug and no address to share — it is a file on
      this machine. it still opens exactly as it always did; it just does not
      pretend to have a url. */
@@ -1613,6 +1587,7 @@ function close_(opts){
   ov.classList.remove('open');
   document.body.classList.remove('deep');
   document.body.style.overflow = '';
+  document.body.style.paddingRight = '';
   document.title = 'eski';
   stopPreview();               // a clip must not keep playing behind a shut sheet
   if(lastFocus && document.contains(lastFocus)) lastFocus.focus();
@@ -1717,219 +1692,111 @@ function shareComic(c){
   prompt('Copy this link', url);
 }
 
-const CM = { rows: [], loaded: null, replyTo: null, editing: null, open: false };
-const cmTime = iso => {
-  const s = Math.max(0, (Date.now() - new Date(iso).getTime()) / 1000);
-  if(s < 60) return 'just now';
-  if(s < 3600) return Math.floor(s/60) + 'm ago';
-  if(s < 86400) return Math.floor(s/3600) + 'h ago';
-  if(s < 86400*30) return Math.floor(s/86400) + 'd ago';
-  return new Date(iso).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
-};
+/* the thread itself lives in comments.js, because the reader mounts the same
+   one. this is only the fold around it. */
+function shareComic(c){
+  const url = location.origin + comicPath(c);
+  /* the share sheet on a phone is the better answer and the only one that
+     reaches messages and whatsapp; the clipboard is the desktop answer. */
+  if(navigator.share && matchMedia('(pointer:coarse)').matches){
+    navigator.share({ title: c.title, url }).catch(()=>{});
+    return;
+  }
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(url).then(()=>toast('link copied'),
+      ()=>prompt('Copy this link', url));
+    return;
+  }
+  prompt('Copy this link', url);
+}
 
 function toggleThread(c, force){
   const t = document.getElementById('d-cm-toggle');
-  if(!t) return;
+  if(!t || !window.eskiComments) return;
   const open = force != null ? force : t.getAttribute('aria-expanded') !== 'true';
   t.setAttribute('aria-expanded', open);
-  CM.open = open;
-  if(open) loadComments(c);
+  window.eskiComments.toggle(open);
 }
 
-/* Opening the sheet does NOT open the thread — it resets it, so the next
-   comic you look at never flashes the last one's replies.
-
-   Unless it is the SAME comic being re-rendered under you, which happens when
-   the session changes or the shelf finishes loading behind an already-open
-   page. Wiping the thread there would be a re-render throwing away something
-   you deliberately opened, so it is restored instead. */
+/* opening the sheet does NOT open the thread. it resets it, so the next comic
+   you look at never flashes the last one's replies — unless it is the SAME
+   comic being re-rendered under you (the session changed, the shelf finished
+   loading), where wiping it would throw away something you opened on purpose. */
 function paintComments(c){
-  const same = CM.loaded && CM.loaded === c.dbId;
-  const wasOpen = same && CM.open;
-  if(!same){ CM.rows = []; CM.loaded = null; CM.replyTo = null; CM.editing = null; CM.open = false; }
   const body = document.getElementById('d-cm-body');
-  if(body) body.innerHTML = '';
-  if(wasOpen){ toggleThread(c, true); return; }
-  /* a link ending in #comments means somebody was sent here to talk — most
-     often straight out of the reader. open the thread and put it on screen,
-     rather than leaving them to find a closed fold at the bottom. */
-  if((location.hash||'').includes('comments')){
-    toggleThread(c, true);
+  if(!body || !window.eskiComments) return;
+  const wasOpen = window.eskiComments.isOpen && CM_LAST === c.dbId;
+  CM_LAST = c.dbId;
+  window.eskiComments.mount({
+    root: body, comicId: c.dbId, ownerId: c.ownerId, toast,
+    onCount: n => {
+      c.commentCount = n;
+      const el = document.getElementById('d-cm-n');
+      if(el) el.textContent = nfmt(n);
+      renderHome(); renderBrowse();
+    }
+  });
+  const wanted = wasOpen || (location.hash || '').includes('comments');
+  toggleThread(c, wanted);
+  if(wanted && (location.hash || '').includes('comments'))
     requestAnimationFrame(()=>{
       const t = document.getElementById('d-thread');
       if(t) t.scrollIntoView({ block:'start' });
     });
-  }
 }
+let CM_LAST = null;
 
-async function loadComments(c){
-  const body = document.getElementById('d-cm-body');
-  if(!body || !c.dbId) return;
-  if(CM.loaded === c.dbId){ renderComments(c); return; }
-  if(!sb){ body.innerHTML = '<p class="note-line">Comments need the server, and it is not reachable.</p>'; return; }
-  body.innerHTML = '<p class="note-line">Loading…</p>';
-  const { data, error } = await sb.from('comments')
-    .select('*').eq('comic_id', c.dbId)
-    .order('created_at', { ascending: true }).limit(500);
-  if(error){
-    body.innerHTML = `<p class="note-line">${esc(window.eski.dbError('ESK-5040','the comments did not load',error))}</p>`;
-    return;
-  }
-  CM.rows = data || [];
-  CM.loaded = c.dbId;
-  c.commentCount = CM.rows.filter(r=>!r.deleted_at).length;
-  const n = document.getElementById('d-cm-n');
-  if(n) n.textContent = nfmt(c.commentCount);
-  renderComments(c);
-}
 
-function cmRow(c, r, isReply){
-  const mine = me && r.user_id === me.id;
-  const owns = me && c.ownerId === me.id;
-  if(r.deleted_at) return `<div class="cm gone${isReply?' reply':''}">
-    <span class="cm-who">Removed</span></div>`;
-  if(CM.editing === r.id) return `<div class="cm${isReply?' reply':''}">
-    <div class="cm-head"><span class="cm-who">${esc(r.author_name)}</span></div>
-    <textarea class="cm-box" id="cm-edit" maxlength="4000">${esc(r.body)}</textarea>
-    <div class="cm-acts">
-      <button class="btn sm" data-cm-save="${esc(r.id)}">Save</button>
-      <button class="btn sm" data-cm-cancel="1">Cancel</button></div></div>`;
-  return `<div class="cm${isReply?' reply':''}">
-    <div class="cm-head">
-      <span class="cm-who">${esc(r.author_name)}</span>
-      ${r.page ? `<span class="cm-page">p.${r.page}</span>` : ''}
-      <span class="sp"></span>
-      <span class="cm-when">${esc(cmTime(r.created_at))}${r.edited_at ? ' · edited' : ''}</span>
-    </div>
-    <p class="cm-body">${esc(r.body).replace(/\n/g,'<br>')}</p>
-    <div class="cm-acts">
-      ${(me && !isReply) ? `<button class="lnk" data-cm-reply="${esc(r.id)}">Reply</button>` : ''}
-      ${mine ? `<button class="lnk" data-cm-edit="${esc(r.id)}">Edit</button>` : ''}
-      ${(mine || owns) ? `<button class="lnk" data-cm-del="${esc(r.id)}">Delete</button>` : ''}
-    </div>
-    ${CM.replyTo === r.id ? composer(c, r.id) : ''}</div>`;
-}
-
-function composer(c, parentId){
-  if(!me) return `<p class="note-line">Sign in to join the thread.</p>`;
-  return `<div class="cm-write">
-    <textarea class="cm-box" id="cm-new-${parentId||'top'}" maxlength="4000"
-      placeholder="${parentId ? 'write a reply' : 'say something about this eski'}"></textarea>
-    <div class="cm-acts">
-      <button class="btn sm p" data-cm-post="${esc(parentId||'')}">Post</button>
-      ${parentId ? '<button class="lnk" data-cm-cancel="1">Cancel</button>' : ''}
-    </div></div>`;
-}
-
-function renderComments(c){
-  const body = document.getElementById('d-cm-body');
-  if(!body) return;
-  const tops = CM.rows.filter(r=>!r.parent_id);
-  const kids = new Map();
-  for(const r of CM.rows.filter(r=>r.parent_id)){
-    if(!kids.has(r.parent_id)) kids.set(r.parent_id, []);
-    kids.get(r.parent_id).push(r);
-  }
-  // a tombstone with no replies left is just noise; drop it
-  const live = tops.filter(r=>!r.deleted_at || (kids.get(r.id)||[]).length);
-  body.innerHTML = composer(c, null) +
-    (live.length
-      ? live.map(r=>cmRow(c, r, false) +
-          (kids.get(r.id)||[]).map(k=>cmRow(c, k, true)).join('')).join('')
-      : '<p class="note-line">Nothing here yet. be the first.</p>');
-}
-
-async function postComment(c, parentId){
-  const box = document.getElementById('cm-new-' + (parentId || 'top'));
-  if(!box) return;
-  const text = box.value.trim();
-  if(!text) return;
-  if(!me){ toast('Sign in to comment'); return; }
-  box.disabled = true;
-  const row = { comic_id: c.dbId, user_id: me.id, body: text };
-  if(parentId) row.parent_id = parentId;
-  // a comment written in the reader remembers where you were
-  const p = parseInt(new URLSearchParams(location.search).get('page') || '', 10);
-  if(!parentId && p > 0) row.page = p;
-  const { data, error } = await sb.from('comments').insert(row).select().single();
-  box.disabled = false;
-  if(error){ toast(window.eski.dbError('ESK-5041','that comment did not post',error)); return; }
-  CM.rows.push(data);
-  CM.replyTo = null;
-  c.commentCount = (c.commentCount || 0) + 1;
-  const n = document.getElementById('d-cm-n');
-  if(n) n.textContent = nfmt(c.commentCount);
-  renderComments(c);
-  renderHome(); renderBrowse();
-}
-
-async function saveComment(c, id){
-  const box = document.getElementById('cm-edit');
-  if(!box) return;
-  const text = box.value.trim();
-  if(!text) return;
-  const { data, error } = await sb.from('comments')
-    .update({ body: text }).eq('id', id).select().single();
-  if(error){ toast(window.eski.dbError('ESK-5042','that edit did not save',error)); return; }
-  CM.rows = CM.rows.map(r=>r.id === id ? data : r);
-  CM.editing = null;
-  renderComments(c);
-}
-
-/* a tombstone, not a delete: the replies underneath it have to survive. */
-async function deleteComment(c, id){
-  if(!confirm('remove this comment?')) return;
-  const { data, error } = await sb.from('comments')
-    .update({ deleted_at: new Date().toISOString() }).eq('id', id).select().single();
-  if(error){ toast(window.eski.dbError('ESK-5043','that comment did not come off',error)); return; }
-  CM.rows = CM.rows.map(r=>r.id === id ? data : r);
-  c.commentCount = Math.max(0, (c.commentCount || 1) - 1);
-  const n = document.getElementById('d-cm-n');
-  if(n) n.textContent = nfmt(c.commentCount);
-  renderComments(c);
-  renderHome(); renderBrowse();
-}
-
-/* delegated, on the sheet, bound once — the thread is rewritten on every
-   action and binding per render would stack a handler per keystroke's worth
-   of re-rendering. */
-sheet.addEventListener('click', e=>{
-  const c = current;
-  if(!c) return;
-  const post = e.target.closest('[data-cm-post]');
-  if(post){ postComment(c, post.dataset.cmPost || null); return; }
-  const rep = e.target.closest('[data-cm-reply]');
-  if(rep){ CM.replyTo = CM.replyTo === rep.dataset.cmReply ? null : rep.dataset.cmReply;
-    CM.editing = null; renderComments(c); return; }
-  const ed = e.target.closest('[data-cm-edit]');
-  if(ed){ CM.editing = ed.dataset.cmEdit; CM.replyTo = null; renderComments(c);
-    const t = document.getElementById('cm-edit'); if(t) t.focus(); return; }
-  const sv = e.target.closest('[data-cm-save]');
-  if(sv){ saveComment(c, sv.dataset.cmSave); return; }
-  const del = e.target.closest('[data-cm-del]');
-  if(del){ deleteComment(c, del.dataset.cmDel); return; }
-  const can = e.target.closest('[data-cm-cancel]');
-  if(can){ CM.replyTo = null; CM.editing = null; renderComments(c); return; }
-});
-
-/* ---------------- the shelf: read later / reading / read ----------------
+/* ---------------- the shelf, reading, read ----------------
    ONE row per (you, comic) with a status. signed out, it falls back to a
    local list so the button still does something on a first visit. */
+/* ONE ROW PER (YOU, COMIC), and it carries two different things: that you
+   put the comic on your shelf, and how far into it you are. The old toggle
+   treated them as one, so:
+
+     - it UPSERT-ed on add, which rewrote a row that already held your place
+       and sent last_page back to zero
+     - it DELETED on remove, so taking a comic off your shelf silently threw
+       away how far you had read it
+
+   and because a comic you had started reading has a row, the button read
+   "on your shelf" before you had ever put it there — pressing it deleted
+   your progress rather than doing nothing.
+
+   So: adding never overwrites, removing a comic you have started keeps the
+   row and only clears the intent, and the label is generated in ONE place
+   rather than once in the markup and once here, which is how the two came
+   to disagree about capitals. */
 const LATER_KEY = 'eski-later';
 const localLater = ()=>{ try{ return JSON.parse(localStorage.getItem(LATER_KEY)) || []; }catch(e){ return []; } };
-const isLater = c => c.shelf ? true : localLater().includes(c.file);
+const isLater = c => c.dbId ? c.shelf === 'later' : localLater().includes(c.file);
+const laterLabel = c => isLater(c) ? 'On your shelf'
+  : (c.shelf === 'reading' ? 'Reading' : c.shelf === 'read' ? 'Read' : 'Add to shelf');
+
 async function toggleLater(c){
   const btn = document.getElementById('ov-later');
   if(sb && me && c.dbId){
-    if(c.shelf){
-      const { error } = await sb.from('saves').delete().eq('user_id', me.id).eq('comic_id', c.dbId);
+    if(c.shelf === 'later'){
+      // never on the shelf and never started: the row has nothing left to say
+      const { error } = await sb.from('saves').delete()
+        .eq('user_id', me.id).eq('comic_id', c.dbId).eq('status', 'later');
       if(error){ toast(window.eski.dbError('ESK-5032','the shelf did not update',error)); return; }
-      c.shelf = null; c.progress = null;
+      c.shelf = null;
+    }else if(c.shelf){
+      // you are reading it, or have read it. that is already a kind of shelf;
+      // pressing this must not be a way to lose your place.
+      toast(c.shelf === 'read' ? 'you have already read this one'
+                               : 'this one is already on your shelf, at p.' +
+                                 Math.max(1, Math.round((c.progress||0) * c.pp)));
+      return;
     }else{
+      /* insert, not upsert: if a row somehow exists it holds your place and
+         must survive. 23505 means it was already there, which is the state
+         we were asking for. */
       const { error } = await sb.from('saves')
-        .upsert({ user_id: me.id, comic_id: c.dbId, status:'later', pages: c.pp,
-                  updated_at: new Date().toISOString() }, { onConflict: 'user_id,comic_id' });
-      if(error){ toast(window.eski.dbError('ESK-5033','the shelf did not update',error)); return; }
+        .insert({ user_id: me.id, comic_id: c.dbId, status:'later', pages: c.pp });
+      if(error && error.code !== '23505'){
+        toast(window.eski.dbError('ESK-5033','the shelf did not update',error)); return; }
       c.shelf = 'later';
     }
   }else{
@@ -1940,9 +1807,9 @@ async function toggleLater(c){
   }
   const on = isLater(c);
   btn.setAttribute('aria-pressed', on);
-  btn.textContent = on ? 'On your shelf' : 'Read later';
+  btn.textContent = laterLabel(c);
   toast(on ? 'added to your shelf' : 'removed from your shelf');
-  renderHome();
+  renderHome(); renderBrowse();
 }
 /* kudos: one row per (comic, user), and removable — the delete policy exists
    now, so this is a real toggle rather than a one-way count. */

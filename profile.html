@@ -16,7 +16,7 @@
 /* ============================================================
    eski — profile. docs/design/final/home.html's profile pane: the head
    with its four counts, "reading" and "read" as the same card grid the
-   shelf uses, "parts performed" as the dense role rows, and settings.
+   shelf uses, "contributions" as the dense role rows, and settings.
 
    Two sections the design did not have are here because the app needs
    them and nothing else offers them: published and drafts, which is
@@ -111,7 +111,7 @@ section + section{margin-top:var(--s6)}
 [data-theme="dark"] .chip.state.published{color:var(--sage-900)}
 .cardacts{display:flex;gap:var(--s1);flex-wrap:wrap;padding:0 var(--s3) var(--s3)}
 
-/* ---------- parts performed: the dense role row ---------- */
+/* ---------- contributions: the dense role row ---------- */
 .rolelist{border-top:1px solid var(--rule)}
 .rolerow{display:grid;grid-template-columns:46px 196px 1fr 104px;gap:var(--s3);
   align-items:center;padding:5px var(--s2);width:100%;text-align:left;background:none;
@@ -407,7 +407,7 @@ function paint(){
         </div>` : ''}
       </div>
       <div class="pstats">
-        <span><b class="hot">${nfmt(parts.length)}</b>Parts performed</span>
+        <span><b class="hot">${nfmt(parts.length)}</b>Contributions</span>
         <span><b class="hot">${nfmt(reading.length)}</b>Reading</span>
         <span><b class="hot">${nfmt(read.length)}</b>Read</span>
         <span><b class="hot">${nfmt(kudosReceived)}</b>Kudos received</span>
@@ -428,12 +428,12 @@ function paint(){
     </section>
 
     ${later.length ? `<section>
-      <div class="head"><h2>Saved for later</h2><span class="n">${later.length}</span></div>
+      <div class="head"><h2>Shelf</h2><span class="n">${later.length}</span></div>
       <div class="grid" id="g-later"></div>
     </section>` : ''}
 
     <section>
-      <div class="head"><h2>Parts performed</h2><span class="n">${parts.length}</span></div>
+      <div class="head"><h2>Contributions</h2><span class="n">${parts.length}</span></div>
       <div class="rolelist" id="g-parts"></div>
       <div class="empty" id="e-parts" hidden></div>
     </section>
@@ -482,7 +482,7 @@ function paint(){
     rows: `<div class="r"><span class="k">Pages</span><span class="v">${nfmt(s.pages)}</span></div>`
   }), 'e-read', 'nothing finished yet.');
 
-  if($('g-later')) fillGrid('g-later', later, s=>cardEl(s.comics, {note:'saved'}), null, '');
+  if($('g-later')) fillGrid('g-later', later, s=>cardEl(s.comics, {note:'on your shelf'}), null, '');
 
   const partsBox = $('g-parts');
   if(partsBox){
@@ -513,7 +513,7 @@ function paint(){
     e.hidden = parts.length > 0;
     e.textContent = partsError || (isMe
       ? "voice work and soundtracks you make for other people's comics show up here."
-      : 'no parts performed yet.');
+      : 'no contributions yet.');
   }
 
   // no status badge over the art: the section heading already says which

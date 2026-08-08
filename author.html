@@ -274,8 +274,8 @@ async function pickComic(){
     <div class="head"><h2>Author studio</h2><span class="n">${rows.length}</span>
       <span class="sp"></span><a href="studio.html">Make a new one →</a></div>
     <p class="note-line" style="padding:var(--s3) 0">
-      pick a comic to write its cast and transcribe its pages. pages and audio
-      are imported in the <a href="studio.html">Composer</a>.</p>
+      Pick a comic to write its cast and transcribe its pages. Pages and audio
+      are imported in the <a href="studio.html">composer</a>.</p>
     ${rows.length ? `<div class="picklist">${rows.map(c=>`
       <button class="pickrow" data-id="${esc(c.id)}">
         <span class="plate">${c.thumb_key || c.cover_key
@@ -284,7 +284,7 @@ async function pickComic(){
           <span class="sub" style="display:block">${esc(c.status)}</span></span>
         <span class="btn sm">Open</span>
       </button>`).join('')}</div>`
-      : '<div class="empty">You have not made a comic yet. the <a href="studio.html">Composer</a> Imports the pages.</div>'}
+      : '<div class="empty">You have not made a comic yet. The <a href="studio.html">composer</a> imports the pages.</div>'}
   </div>`;
   $('main').querySelectorAll('[data-id]').forEach(b=>b.addEventListener('click', ()=>{
     location.search = '?base=' + encodeURIComponent(b.dataset.id);
