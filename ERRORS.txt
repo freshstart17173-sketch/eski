@@ -394,6 +394,23 @@ ESK-5088  contribute: the part did not publish. It is still saved as a draft;
           nothing is lost.
 
 ================================================================================
+59xx — RATE LIMITS AND REPORTING
+================================================================================
+ESK-5900  You are commenting too quickly, and the message says when to come
+          back. 30 comments an hour, per account, on a rolling window — not a
+          calendar one, so it cannot be reset by waiting for midnight.
+          The ceiling is a BEFORE INSERT trigger on comments, not a policy: a
+          policy expression may be evaluated more than once per row and must be
+          side-effect free, and spending an allowance is a side effect.
+          Raised as SQLSTATE 53400 (configuration_limit_exceeded).
+          To change the number, edit rate_limit() in schema-moderation.sql.
+
+ESK-5901  A report could not be filed. file_report() answers with a reason
+          rather than throwing, so this is only for a call that failed outright
+          — offline, or schema-moderation.sql not applied. "already reported"
+          and "that no longer exists" are normal answers, not errors.
+
+================================================================================
 6xxx — READING MEDIA BACK
 ================================================================================
 ESK-6000  An unexpected status fetching media. The message names the url.

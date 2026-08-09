@@ -248,9 +248,18 @@ async function loadReports(){
     .select('*').order('created_at', { ascending:false }).limit(500);
   if(error) return fail('reports', error);
   DATA.reports = data || [];
+  /* A LINK, NOT JUST AN ID. The queue used to print the uuid and leave you to
+     find the thing yourself, which is the difference between a queue you work
+     through and one you avoid. Only comics and profiles have a page of their
+     own; a comment or a part is identified by its id and its comic. */
+  const at = r => r.target_type === 'comic'
+      ? `<a class="lnk" href="/index.html#c/${esc(r.target_id)}" target="_blank">open</a>`
+    : r.target_type === 'profile'
+      ? `<a class="lnk" href="/profile.html?u=${esc(r.target_id)}" target="_blank">open</a>`
+      : '';
   table('panel', ['Target','Reason','Status','When',''],
     DATA.reports.map(r=>[
-      `${esc(r.target_type)} <span class="mono-id">${short(r.target_id)}</span>`,
+      `${esc(r.target_type)} <span class="mono-id">${short(r.target_id)}</span> ${at(r)}`,
       `<div class="body">${esc(r.reason)}</div>`,
       `<span class="pill ${r.status==='open'?'on':''}">${esc(r.status)}</span>`,
       when(r.created_at),

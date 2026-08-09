@@ -99,6 +99,16 @@ const CSS = `
 .oz-acts .oz-go{background:var(--ink,#111);color:var(--paper,#fff);border-color:var(--ink,#111)}
 .oz-acts .oz-go[disabled]{opacity:.4;cursor:default}
 .oz-acts .oz-out{margin-left:auto;border:0;opacity:.55}
+.oz textarea{width:100%;min-height:96px;resize:vertical;font:inherit;
+  font-size:var(--fs-sm,13px);padding:var(--s2,8px);color:inherit;
+  background:transparent;border:var(--bw,1px) solid var(--rule,rgba(128,128,128,.4))}
+.oz textarea:focus{outline:none;border-color:var(--ink,#111)}
+/* the report control itself: a quiet word, never a button competing with
+   the things somebody came to the page to press */
+.report-link{background:none;border:0;padding:0;font:inherit;
+  font-size:var(--fs-micro,11px);letter-spacing:.1em;text-transform:uppercase;
+  color:var(--label,#8a8a8a);cursor:pointer;opacity:.7}
+.report-link:hover{opacity:1;color:var(--rec,#a33028)}
 `;
 
 let sb = null, user = null, bootError = null;
@@ -463,6 +473,102 @@ function jszip(){
   }));
 }
 
+/* ================================================================= REPORTING
+
+   ONE SHEET, FOUR TARGETS, and it lives here because three surfaces need it —
+   the comic modal, a comment row, a profile. A copy per surface is how the
+   wording drifts and how one of them quietly stops working.
+
+   THE ONLY WAY IN IS file_report(). The direct insert policy on `reports` was
+   dropped (schema-moderation.sql): a client that could INSERT straight through
+   PostgREST would walk around the rate limit, the does-the-target-exist check
+   and the one-open-report-per-person rule, all of which live inside that
+   function. So this is not a convenience wrapper — it is the door.
+
+   IT NEVER THROWS AT THE PERSON. file_report answers `{ok:false, why}` for
+   every ordinary refusal, and "you already reported this" answers ok, because
+   they asked for the thing to be looked at and it is going to be looked at.
+   Telling them "you already did" is true and useless. */
+const REPORT_WHAT = {
+  comic:   'this comic',
+  part:    'this contribution',
+  comment: 'this comment',
+  profile: 'this account'
+};
+
+function reportThing(type, id, label){
+  if(!sb || !user){
+    alert('ESK-2001 sign in first — a report needs an account, so there is ' +
+          'somebody to come back to if we have a question.');
+    return;
+  }
+  const what = REPORT_WHAT[type] || 'this';
+  const scrim = document.createElement('div');
+  scrim.className = 'oz-scrim';
+  scrim.innerHTML =
+    '<div class="oz" role="dialog" aria-modal="true" aria-labelledby="rp-h">' +
+      '<h2 id="rp-h">Report ' + esc(what) + '</h2>' +
+      (label ? '<p><b>' + esc(label) + '</b></p>' : '') +
+      '<p>Say what is wrong with it. This goes to the person who runs eski, ' +
+      'not to whoever made it, and they are not told who reported it.</p>' +
+      '<label for="rp-why">What is wrong</label>' +
+      '<textarea id="rp-why" maxlength="2000" placeholder="Stolen artwork, ' +
+      'abuse, spam, something that should not be here…"></textarea>' +
+      '<div class="oz-say" id="rp-say"></div>' +
+      '<div class="oz-acts">' +
+        '<button type="button" class="oz-go" id="rp-go" disabled>Send report</button>' +
+        '<button type="button" class="oz-out" id="rp-x">Cancel</button>' +
+      '</div>' +
+    '</div>';
+  document.body.appendChild(scrim);
+
+  const why = scrim.querySelector('#rp-why');
+  const say = scrim.querySelector('#rp-say');
+  const go  = scrim.querySelector('#rp-go');
+  const close = () => { scrim.remove(); document.removeEventListener('keydown', key); };
+  const key = e => { if(e.key === 'Escape') close(); };
+  document.addEventListener('keydown', key);
+  scrim.querySelector('#rp-x').onclick = close;
+
+  // a reason is required, so the button says so by being unavailable
+  why.oninput = () => { go.disabled = !why.value.trim(); };
+
+  go.onclick = async () => {
+    go.disabled = true;
+    say.classList.remove('bad');
+    say.textContent = 'Sending…';
+    let r;
+    try{
+      r = await sb.rpc('file_report',
+        { p_type: type, p_id: id, p_reason: why.value.trim() });
+    }catch(e){ r = { error: e }; }
+
+    if(r.error){
+      say.textContent = dbError('ESK-5901', 'that report did not send', r.error);
+      say.classList.add('bad');
+      go.disabled = false;
+      return;
+    }
+    const d = r.data || {};
+    if(!d.ok){
+      /* the rate limit is the one refusal worth saying plainly: it is not
+         their fault and it is temporary. */
+      say.textContent = d.why === 'rate limit'
+        ? 'You have sent a lot of reports in the last hour. Try again in ' +
+          (d.retry_after_minutes || 60) + ' minutes.'
+        : (d.why || 'that did not send');
+      say.classList.add('bad');
+      go.disabled = false;
+      return;
+    }
+    close();
+    document.dispatchEvent(new CustomEvent('eski-reported',
+      { detail: { type, id, already: !!d.already } }));
+  };
+
+  why.focus();
+}
+
 /* eskiCode: which call site refused. e: whatever supabase handed back. */
 function dbError(eskiCode, what, e){
   const code = (e && e.code) || '';
@@ -480,6 +586,7 @@ window.eski = {
   dbError,
   jszip,
   handleProblem,
+  report: reportThing,
   ready: new Promise(res => { markReady = res; }),
   /* `ready` means "there is a client". `settled` means "and nothing of ours is
      in your way" — it waits out the pick-a-username sheet. A page with its own

@@ -124,6 +124,10 @@
         ${(me() && !isReply) ? `<button class="lnk" data-cm-reply="${esc(r.id)}">Reply</button>` : ''}
         ${mine ? `<button class="lnk" data-cm-edit="${esc(r.id)}">Edit</button>` : ''}
         ${(mine || owns) ? `<button class="lnk" data-cm-del="${esc(r.id)}">Delete</button>` : ''}
+        <!-- NOT ON YOUR OWN. Reporting yourself is noise in the queue, and the
+             delete button two inches left is what you actually wanted. -->
+        ${(me() && !mine) ? `<span class="sp"></span>
+          <button class="report-link" data-cm-report="${esc(r.id)}">Report</button>` : ''}
       </div>
       ${S.replyTo === r.id ? composer(r.id) : ''}</div>`;
   }
@@ -206,6 +210,15 @@
       if(sv){ save(sv.dataset.cmSave); return; }
       const del = hit('[data-cm-del]');
       if(del){ remove(del.dataset.cmDel); return; }
+      const rp = hit('[data-cm-report]');
+      if(rp){
+        const row = S.rows.find(x => x.id === rp.dataset.cmReport);
+        /* platform.js owns the sheet: three surfaces report things and one
+           copy of the wording is the point. */
+        window.eski.report('comment', rp.dataset.cmReport,
+          row ? (row.body || '').slice(0, 80) : '');
+        return;
+      }
       if(hit('[data-cm-cancel]')){ S.replyTo = null; S.editing = null; render(); return; }
     });
   }

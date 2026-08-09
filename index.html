@@ -1740,6 +1740,14 @@ function openDetails(c, role, opts){
         c.kudosMine ? 'kudos given · ' : 'kudos '}${nfmt(c.kudos)}</button>
       <a class="btn" id="ov-contrib" href="${c.dbId ? contribHref(c) : '#'}"
          ${(!c.dbId || mine || !openAxes(c).length) ? 'hidden' : ''}>Contribute</a>
+      <!-- LAST, QUIET, AND NOT ON YOUR OWN COMIC. A report control has to be
+           findable without competing with the button somebody came here to
+           press, which is why it is a word rather than a .btn. Only for a
+           published comic in the database: a local .eski on your own shelf has
+           nobody to report it to. -->
+      <span class="sp"></span>
+      <button class="report-link" id="ov-report"
+        ${(!c.dbId || mine) ? 'hidden' : ''}>Report</button>
     </div>`;
 
   paintTags(c);
@@ -1783,6 +1791,8 @@ function openDetails(c, role, opts){
   });
   sync();
 
+  const rp = document.getElementById('ov-report');
+  if(rp) rp.onclick = ()=>window.eski.report('comic', c.dbId, c.title);
   const ct = document.getElementById('d-cm-toggle');
   if(ct) ct.onclick = ()=>toggleThread(c);
 
@@ -2125,6 +2135,12 @@ async function onboardingWhenClear(){
 
 // the shelf and the follow rail change the moment you sign in
 document.addEventListener('eski-auth', ()=>{ if(COMICS.length || sb) boot(); });
+
+/* platform.js sends the report and says nothing; the surface says it landed,
+   because only the surface has a toast. "Already reported" gets the same
+   answer on purpose — they asked for it to be looked at, and it will be. */
+document.addEventListener('eski-reported',
+  ()=>toast('Reported. Thank you — someone will look.'));
 
 fromHash();
 onboardingWhenClear();
