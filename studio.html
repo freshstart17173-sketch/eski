@@ -701,7 +701,12 @@ input[type=number],input[type=range]+span{font-variant-numeric:var(--num)}@media
     <span class="rp-note">The real reader, on a snapshot of this eski</span>
     <button data-ico="x" onclick="closePreview()" title="Close"></button>
   </div>
-  <iframe id="rp-frame" src="about:blank" title="Reader preview"></iframe>
+  <!-- sandbox is the SECOND lock, not the first: &preview=1 removes the
+       links, and allow-top-navigation being absent means a link that
+       somehow survives still cannot take the studio with it. scripts and
+       same-origin are both needed — it is the real reader in there. -->
+  <iframe id="rp-frame" src="about:blank" title="Reader preview"
+          sandbox="allow-scripts allow-same-origin"></iframe>
 </div>
 
 <div class="trash-bar" id="trash-bar"><span data-ico="trash-2" class="ico"></span><span>Drop here to remove</span></div>
@@ -3490,7 +3495,13 @@ async function previewInReader(){
   previewUrl = URL.createObjectURL(blob);
   const slug = (cState.meta.title||'untitled').toLowerCase()
     .replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'') || 'untitled';
+  /* &preview=1 strips the reader's chrome. Without it the frame carries the
+     whole site nav, so STUDIO inside the preview loads the studio inside the
+     studio and nests as far as you keep clicking. The engine is still the
+     real reader — that part was right, and a second implementation would
+     drift the way the three pan/zoom copies did. */
   $('rp-frame').src = 'read.html?read=' + encodeURIComponent(previewUrl)
+    + '&preview=1'
     + '#' + slug + '/page=' + ((qpPage||1));
   $('readerprev').classList.add('open');
 }

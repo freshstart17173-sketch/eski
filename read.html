@@ -171,6 +171,31 @@ body.focus .settings{position:fixed;right:12px;bottom:calc(var(--bar) + 12px);z-
 .eq s:nth-child(3){height:11px;animation-delay:-400ms}
 @keyframes eq{0%,100%{transform:scaleY(.25)}50%{transform:scaleY(1)}}
 /* reduced motion still gets the state, just held rather than bouncing */
+/* ---------------- PREVIEW MODE ----------------
+   ?preview=1, set only by the studio's preview panel.
+
+   THE PREVIEW IS THE REAL READER ON PURPOSE — ducking, cue chains, the mix,
+   all of it — because a second implementation would drift from this one the
+   way the three pan/zoom copies did. What it must NOT carry is the site
+   around it: an iframe of the whole reader puts HOME / BROWSE / STUDIO /
+   PROFILE inside the studio, so clicking STUDIO loads the studio inside the
+   studio, and from there it nests as far as you care to click.
+
+   So the engine stays and the chrome goes. Nothing in here can navigate: no
+   header, no footer, no comments (every comment is a link to a profile).
+   `all: unset` is deliberately not used — these are display rules only, so a
+   surface that grows a new link is hidden by the last rule rather than
+   needing this list updated. */
+body.preview .site-header,
+body.preview footer,
+body.preview .cm-wrap,
+body.preview #cm-toggle{display:none!important}
+/* the catch-all: anything that would leave the frame is not a link here.
+   pointer-events rather than display, so a control that happens to be an
+   anchor still looks right while refusing to navigate. */
+body.preview a[href]:not([href^="#"]){pointer-events:none;text-decoration:none;color:inherit}
+body.preview .app{height:100vh}
+
 @media (prefers-reduced-motion:reduce){ .eq s{transform:scaleY(.6)} }
 .pb-pages{flex:none;font-size:var(--fs-micro);letter-spacing:.1em;text-transform:uppercase;
   color:var(--label);font-variant-numeric:var(--num)}
@@ -2676,6 +2701,9 @@ if('serviceWorker' in navigator && location.protocol.startsWith('http')){
   paintSettings();
   // library links here with ?read=library/foo.eski; otherwise the owner's demo.eski
   const readParam = new URLSearchParams(location.search).get('read');
+  /* stamped before anything paints, so the chrome never flashes in the frame */
+  if(new URLSearchParams(location.search).get('preview') === '1')
+    document.body.classList.add('preview');
   const src = (readParam && !/^https?:/i.test(readParam)) ? readParam : (readParam || 'demo.eski');
   try{
     showBusy(true);
