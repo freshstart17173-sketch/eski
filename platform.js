@@ -247,14 +247,48 @@ let pendingProfile = Promise.resolve();
 async function ensureProfile(u){
   if(!sb || !u || onboarding || asked === u.id) return;
   asked = u.id;
-  const got = await sb.from('profiles').select('id').eq('id', u.id).maybeSingle();
+  const got = await sb.from('profiles').select('id, deleted_at').eq('id', u.id).maybeSingle();
   /* A READ THAT FAILED IS NOT A MISSING PROFILE. Offline, or the schema is not
      applied: either way, showing the sheet would invite somebody to pick a
      handle we cannot save. Say nothing and let the page work signed in. */
-  if(got.error || got.data) return;
+  if(got.error) return;
+
+  /* A DELETED ACCOUNT MAY NOT COME BACK. The session outlives the deletion
+     until its token expires, and signing in with Google again mints a new one
+     for the same user id — so without this, deleting your account and signing
+     back in would land you in a working session attached to a tombstone. The
+     database refuses the writes either way (account_live() is in four
+     policies); this is so the person is told, rather than finding out by
+     having every action silently fail. */
+  if(got.data && got.data.deleted_at){
+    await sb.auth.signOut();
+    tombstoneNotice();
+    return;
+  }
+  if(got.data) return;
   onboarding = true;
   await askHandle(u);
   onboarding = false;
+}
+
+/* Reuses the sheet's own furniture rather than inventing a second modal: same
+   scrim, same box, one button. */
+function tombstoneNotice(){
+  const scrim = document.createElement('div');
+  scrim.className = 'oz-scrim';
+  scrim.innerHTML =
+    '<div class="oz" role="alertdialog" aria-modal="true" aria-labelledby="oz-t">' +
+      '<h2 id="oz-t">That account was deleted</h2>' +
+      '<p>You have been signed out. A deleted account cannot be reopened — ' +
+      'the name and everything on it are gone, and bringing them back is not ' +
+      'something we can honestly offer.<br><br>' +
+      'You are welcome to start a new one; it will need a new username, ' +
+      'because the old one stays reserved.</p>' +
+      '<div class="oz-acts"><button type="button" class="oz-go" id="oz-ok">OK</button></div>' +
+    '</div>';
+  document.body.appendChild(scrim);
+  scrim.querySelector('#oz-ok').onclick = () => scrim.remove();
+  scrim.querySelector('#oz-ok').focus();
 }
 
 /* resolves when the sheet is gone — saved, or signed back out. */

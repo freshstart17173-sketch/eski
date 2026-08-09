@@ -222,6 +222,53 @@ const USER = {
   ok(wrote.length === 0, 'no handle was generated', JSON.stringify(wrote));
   await p3.close();
 
+  /* ---------------------------------------------------------------------- */
+  console.log('a deleted account');
+  /* THE TOMBSTONE SCREEN. A deleted account keeps its row and its handle, so
+     /u/<handle> still resolves — and rendering the normal profile with a blank
+     name and four zeroes would read as a bug rather than as a person leaving. */
+  db.profiles.push({ id:'gone-1', handle:'ghost', display_name:null, bio:null,
+                     avatar_url:null, created_at:'2025-03-01',
+                     deleted_at:'2026-08-01T10:00:00Z' });
+  const gp = await ctx.newPage();
+  gp.on('pageerror', e => errors.push('pageerror: ' + e.message));
+  await gp.goto(`http://localhost:${PORT}/profile.html?u=ghost`);
+  await gp.waitForTimeout(2000);
+  const head = await gp.evaluate(() => {
+    const h = document.querySelector('h1');
+    /* #page, NOT document.body: every page here holds its behaviour in an
+       inline <script> at the foot of <body>, and textContent includes script
+       source. Reading the body matched the string "Not found" in this page's
+       own comment about not saying "Not found". */
+    return { h: h ? h.textContent.trim() : '',
+             body: document.getElementById('page').textContent };
+  });
+  ok(head.h === 'Deleted account', 'says the account was deleted', head.h);
+  /* NOT "Not found". Whoever followed a byline here needs to know the person
+     was real and their work may still be up — "not found" would say the link
+     was wrong. */
+  ok(!/Not found/.test(head.body), 'and does not claim the link was wrong');
+  ok(/@ghost/.test(head.body), 'the handle is still shown, because it is still theirs');
+  ok(/still on eski/.test(head.body),
+     'and it says their published work survives, which is the surprising part');
+  await gp.close();
+
+  /* SIGNING BACK IN MUST NOT WORK. Google will happily mint a new session for
+     the same user id after deletion, so without this you would land in a
+     working session attached to a tombstone and find every action failing
+     silently against the policies. */
+  const back = await ctx.newPage();
+  back.on('pageerror', e => errors.push('pageerror: ' + e.message));
+  db.profiles.push({ id: USER.id, handle:'kite2', deleted_at:'2026-08-01T10:00:00Z' });
+  db.profiles = db.profiles.filter(p => !(p.id === USER.id && !p.deleted_at));
+  await back.goto(`http://localhost:${PORT}/index.html`);
+  await back.waitForSelector('.oz-scrim', { timeout: 10000 });
+  const notice = await back.evaluate(() => document.querySelector('.oz h2').textContent);
+  ok(/deleted/i.test(notice), 'signing in on a deleted account says so', notice);
+  ok(!(await back.evaluate(() => !!document.getElementById('oz-h-in'))),
+    'and does not offer to pick a new username on the dead one');
+  await back.close();
+
   console.log('console errors');
   ok(errors.length === 0, 'zero console errors', errors.join(' | '));
 

@@ -315,6 +315,12 @@ ESK-5023  reader: a chosen voice track or soundtrack could not be loaded. The
           comic still opens; only that layer is missing.
 ESK-5024  profile: the contributions shelf could not be read. With [42P01],
           schema-parts.sql has not been applied to this project.
+ESK-5025  profile: deleting your account did not go through. Nothing has
+          happened — the tombstone is one UPDATE and it either lands or it
+          does not, so a failure here leaves the account exactly as it was
+          and the button is live again. With [42883] or [PGRST202] the
+          delete_my_account() function is missing: apply
+          schema-deletion.sql.
 
 ESK-5030  home: a tag did not save. A [23505] here is not an error and is
           swallowed — it only means the comic already carries that tag.

@@ -38,7 +38,6 @@ body{margin:0;min-height:100vh;display:flex;flex-direction:column}
 section + section{margin-top:var(--s6)}
 .btn.primary{background:var(--mark);border-color:var(--mark);color:var(--on-mark)}
 .btn.primary:hover{background:var(--accent);border-color:var(--accent)}
-.btn.danger:hover{border-color:var(--rec);background:none;color:var(--rec)}
 /* an empty section must not draw the rule that frames a full one */
 .grid:empty{border-left:0}
 .rolelist:empty{border-top:0}
@@ -161,8 +160,8 @@ section + section{margin-top:var(--s6)}
 .confirm-body{margin:0;padding:var(--s4);font-size:var(--fs-xs);line-height:1.6;
   color:var(--soft-ink);white-space:pre-wrap}
 .sheetfoot{display:flex;gap:var(--s2);justify-content:flex-end}
-.btn.danger{border-color:var(--rec);color:var(--rec)}
-.btn.danger:hover{background:var(--rec);border-color:var(--rec);color:var(--paper)}
+/* .btn.danger and its hover live in broadsheet.css now — they were defined
+   twice in this file with opposite answers. */
 
 /* ---------- avatar ---------- */
 .avrow{display:flex;align-items:center;gap:var(--s3);flex-wrap:wrap}
@@ -302,6 +301,14 @@ async function load(){
         </div></div>`;
       return;
     }
+    /* THE TOMBSTONE. A deleted account keeps its row and its handle, so this
+       url still resolves — and it must say why rather than rendering an empty
+       profile with a blank name and four zeroes, which reads as a bug.
+
+       NOT 'Not found'. The difference matters to whoever followed a byline
+       here: this person was real, their work may still be on the site, and
+       they left. Saying "not found" would imply the link was wrong. */
+    if(subject.deleted_at){ paintDeleted(subject); return; }
   }else{
     if(!me){
       page.innerHTML = '<div class="state">Sign in to see your profile, your drafts and what you have saved.</div>';
@@ -395,6 +402,41 @@ function cardEl(comic, opts){
 function gridOf(list, emptyMsg){
   if(!list.length) return `<div class="empty">${esc(emptyMsg)}</div>`;
   return null;
+}
+
+/* THE DELETED ACCOUNT SCREEN.
+
+   Deliberately a whole screen and not a banner over the usual layout. There is
+   nothing left to lay out — no name, no picture, no bio, and the shelves are
+   private and now gone — so a profile page with everything emptied would be a
+   grid of blanks that reads as broken. One statement, and the way onward.
+
+   Their published work is NOT listed here even though it still exists and is
+   still credited to them. A page whose whole message is "this person is gone"
+   should not then be a shelf of their comics: the comics are findable from
+   browse and from their own pages, where the byline tells the same truth in
+   the place somebody is actually looking for it. */
+function paintDeleted(p){
+  const when = p.deleted_at ? new Date(p.deleted_at).getFullYear() : null;
+  document.getElementById('page').innerHTML = `
+    <div class="phead">
+      <div class="pfp-lg" aria-hidden="true">·</div>
+      <div class="pmeta">
+        <h1>Deleted account</h1>
+        <p class="ptag">@${esc(p.handle)}${when ? ' · left in ' + when : ''}</p>
+        <!-- .pbio is white-space:pre-wrap, because a bio somebody typed keeps
+             its own line breaks. That makes the SOURCE indentation of a
+             template literal visible too, so these strings sit hard against
+             the left margin and are two <p>s rather than one with <br><br>. -->
+<p class="pbio">This account was deleted, and everything personal on it is gone.</p>
+<p class="pbio" style="margin-top:var(--s3)">Anything they published is still on eski — other people voiced, scored and replied to it, and it did not stop being theirs. You will find it credited to a deleted account.</p>
+        <div class="pacts">
+          <a class="btn sm" href="index.html">Back home</a>
+          <a class="btn sm" href="index.html#browse">Browse eskis</a>
+        </div>
+      </div>
+    </div>`;
+  document.title = 'Deleted account · eski';
 }
 
 function paint(){
@@ -520,10 +562,21 @@ function paint(){
           are never public. Your shelf is the one that is up to you.</p>
         ${shelfSwitch()}
         <div class="subhead" style="margin-top:var(--s5)"><span>Account</span></div>
-        <div class="pacts"><button class="btn sm" id="signout">Sign out</button></div>`;
+        <div class="pacts"><button class="btn sm" id="signout">Sign out</button></div>
+        <p class="note-line" style="margin-top:var(--s5)">Deleting your account
+          clears your name, your picture and everything you wrote about
+          yourself, and signs you out for good. <b>Anything you published
+          stays up</b>, credited to a deleted account — other people have
+          voiced, scored and replied to it, and taking it down would take their
+          work with it. Drafts nobody has seen are deleted. Your handle stays
+          reserved so old links still lead somewhere, and so nobody can take
+          your name.</p>
+        <div class="pacts"><button class="btn sm danger" id="del-acct">Delete account</button></div>`;
       wireShelfSwitch(box);
       const so = $('signout');
       if(so) so.addEventListener('click', ()=>{ if(sb) sb.auth.signOut(); });
+      const da = $('del-acct');
+      if(da) da.addEventListener('click', deleteAccount);
       return;
     }
 
@@ -753,8 +806,46 @@ const ASK = {
              + `every track, every comment, and every voice or score anybody `
              + `contributed to it — is removed.\n\nThis cannot be undone.`,
     verb: 'Delete', danger: true
+  },
+  /* THE ACCOUNT IS NOT LIKE THE OTHERS, so its wording says what survives as
+     well as what goes. Somebody pressing this deserves to know their published
+     work stays up BEFORE they press it, not after — that is the one part of
+     this they cannot change their mind about later. */
+  account: {
+    title: 'Delete your account?',
+    body: () => `Your name, your picture and your bio are cleared, and you are `
+             + `signed out for good.\n\n`
+             + `Anything you published stays up, credited to a deleted `
+             + `account. Other people voiced, scored and replied to it, and `
+             + `removing it would remove their work too. Drafts nobody has `
+             + `seen are deleted.\n\n`
+             + `Your handle stays reserved, so old links still lead somewhere `
+             + `and nobody else can take your name.\n\n`
+             + `This cannot be undone.`,
+    verb: 'Delete account', danger: true
   }
 };
+
+async function deleteAccount(){
+  if(!await ask('account', null)) return;
+  const btn = $('del-acct');
+  if(btn){ btn.disabled = true; btn.textContent = 'Deleting…'; }
+  /* ONE RPC, and it is not SECURITY DEFINER — it updates the caller's own row
+     through the same policy anybody else would face, so it cannot reach
+     another account even if this call site is wrong. */
+  const { data, error } = await sb.rpc('delete_my_account');
+  if(error || !(data && data.ok)){
+    if(btn){ btn.disabled = false; btn.textContent = 'Delete account'; }
+    alert(error ? window.eski.dbError('ESK-5025', 'your account could not be deleted', error)
+                : 'ESK-5025 your account could not be deleted: ' +
+                  ((data && data.why) || 'unknown reason'));
+    return;
+  }
+  await sb.auth.signOut();
+  /* to the tombstone, not to home: it is the proof the deletion happened, and
+     it is what anybody following an old link to them will now see. */
+  location.href = '/u/' + encodeURIComponent(subject.handle);
+}
 
 function ask(kind, subject){
   const a = ASK[kind];

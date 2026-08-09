@@ -503,6 +503,18 @@ select[data-ui], select[data-ui] option{
   background:var(--mark); border-color:var(--mark); color:var(--on-mark);
 }
 
+/* THE DESTRUCTIVE BUTTON, DEFINED ONCE AND NOT IN A PAGE. profile.html had
+   .btn.danger:hover twice in its own <style>, 124 lines apart, with opposite
+   answers — the first left the background alone, the second filled it — and
+   source order picked the second. Exactly the .btn.p:hover story, in a
+   different file, which is why it lives up here now with every other shared
+   control. Delete only ever means one thing, so it may only look one way.
+
+   It fills, like the primary button does, because a destructive action is the
+   one place where "did I actually hit it" must never be a question. */
+.btn.danger{ border-color:var(--rec); color:var(--rec) }
+.btn.danger:hover{ background:var(--rec); border-color:var(--rec); color:var(--paper) }
+
 /* ---------- clickable text is its own colour ---------- */
 .lnk, .seemore, .head a, .head button.link{ color:var(--ui) }
 .top nav a, .top nav button{ color:var(--ui) }
