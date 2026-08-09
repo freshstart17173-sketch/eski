@@ -24,11 +24,16 @@ Worth more than everything else on this page put together. Every page and every
 clip is fetched from one region with no edge cache, on a hostname Cloudflare
 rate-limits on purpose and which under real traffic starts answering 429.
 
-**The full step-by-step, with the checks, is in
-[`docs/FASTER.md`](docs/FASTER.md) §1.** The shape of it: put `eski.lol` on
-Cloudflare (free plan, **grey**-cloud the Vercel records — you do not want it
-proxying the app), attach `cdn.eski.lol` to the R2 bucket, add a cache rule
-that overrides origin with a one-year TTL, turn on Smart Tiered Cache. Then
+**The DNS half is already done** — checked 9 Aug: the zone is on Cloudflare
+and the app is still on Vercel. What is left is that `cdn.eski.lol` exists but
+points at **Vercel**, which answers it `DEPLOYMENT_NOT_FOUND`. So it is not the
+bucket, and the media is still coming off `r2.dev`.
+
+**The remaining steps, with the checks, are in
+[`docs/FASTER.md`](docs/FASTER.md) §1**, starting at 5a. The shape: delete the
+leftover `cdn` DNS record, attach `cdn.eski.lol` to the R2 bucket from R2 >
+Settings > Custom Domains, add a cache rule that overrides origin with a
+one-year TTL, turn on Smart Tiered Cache. Then
 **two** lines change, and they must agree:
 
 ```js
@@ -399,11 +404,31 @@ insert, no removal, count displayed. Views is one insert when a comic opens.
 Attribution history cannot be backfilled, so the insert should start early even
 though payouts are deferred.
 
-### 20. Account deletion · ~2–3 hours
+### 20. Account deletion · MOSTLY DONE
 
-Supabase gives users no way to delete themselves, so today it is a manual job
-in a dashboard. Someone will ask, possibly in the same breath as asking why
-there is no privacy policy.
+`schema-deletion.sql` (applied). A deleted account is **tombstoned, not
+erased**, the same shape as a deleted comment: the profile row and the handle
+stay, everything personal in it goes, and `/u/<handle>` shows a deleted-account
+screen. Published work stays up credited to a deleted account — other people
+voiced, scored and replied to it — while drafts, the shelf and the follows go.
+
+The part that was easy to miss: `comics.owner_name` and `comments.author_name`
+denormalise the name at insert, so the trigger scrubs those too. Clearing
+`profiles` alone would have left their real name on every byline and looked
+finished.
+
+Enforced in the database, not the UI: `account_live()` is in four insert
+policies, so a session outliving the deletion cannot post. `platform.js` signs
+a tombstoned account out on sight. Undeleting raises.
+
+**What is still open, and it is the GDPR half:** the `auth.users` row survives,
+so the email address and the Google identity are still stored. Erasing them
+means repointing eight foreign keys off `auth.users` — they cascade today, so
+deleting the auth user would take the comics and comments with it, which is the
+exact opposite of the above. The shape of the fix: give `profiles` a durable
+identity with no FK to `auth.users`, repoint the content tables at
+`profiles(id)`, then the auth row can be deleted freely. Its own pass, half a
+day. Until then a real erasure request is a manual job in the dashboard.
 
 ### 21. Run the tests on every push · DONE
 

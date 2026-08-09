@@ -12,7 +12,7 @@ others put together.
 
 | # | | |
 |---|---|---|
-| 1 | Move media off `r2.dev` | **OPEN — and it is still the big one. Yours, not code.** |
+| 1 | Move media off `r2.dev` | **OPEN — the DNS move is done; `cdn.eski.lol` still points at Vercel. See §1.** |
 | 2 | Preconnect to the media host | done — every page but `admin.html` |
 | 3 | Stop loading jszip everywhere | **done** — vendored, loaded only when a zip is opened |
 | 4 | A real cache policy for un-hashed assets | done — see `vercel.json` |
@@ -98,95 +98,93 @@ url". So today:
 This is why a page turn costs a second. Fixing it makes everything already
 published faster, without republishing anything.
 
-### The complication: your DNS is on Vercel
+### Where this actually stands — checked 9 Aug 2026
+
+**The DNS move is DONE.** The zone is on Cloudflare and the app is still on
+Vercel, which is exactly the arrangement steps 1-4 below described. Measured
+from here:
 
 ```
-$ dig NS eski.lol
-ns1.vercel-dns.com.
-ns2.vercel-dns.com.
+eski.lol        proxied by Cloudflare (cf-ray present), serving Vercel  200
+www.eski.lol    DNS only (no cf-ray), straight to Vercel                200
+cdn.eski.lol    proxied by Cloudflare ... to VERCEL                     404
 ```
+
+That last line is the whole remaining problem. **`cdn.eski.lol` exists and is
+pointed at Vercel, not at the bucket.** Vercel answers it with
+`x-vercel-error: DEPLOYMENT_NOT_FOUND`, because no Vercel project claims that
+hostname. So there is a leftover `cdn` record in the zone — almost certainly a
+CNAME to `cname.vercel-dns.com` created while the zone was being set up.
+
+The proof, either object, either host:
+
+```
+https://pub-…r2.dev/98/9877….jpg   200   ← the bucket is fine
+https://cdn.eski.lol/98/9877….jpg  404   ← this is Vercel answering, not R2
+```
+
+**So steps 1-4 are already behind you. Do steps 5-8, starting with deleting
+that record**, because R2 will not attach a hostname that already has a
+conflicting record — it either refuses or silently leaves the old one winning,
+which is what a 404 from Vercel on your CDN hostname looks like.
+
+**5a. Delete the existing `cdn` record.** Cloudflare → `eski.lol` → **DNS** →
+**Records**. Find the row named `cdn` and delete it. It is pointed at Vercel
+and nothing wants it there. (If there is no such row, the record may have come
+from a wildcard `*` CNAME — in that case leave the wildcard and skip ahead;
+R2's explicit `cdn` record will beat it.)
+
+### One thing to fix while you are in the DNS tab
+
+`eski.lol` (the apex) is **proxied** and `www.eski.lol` is **not**. That is
+inconsistent, and step 3 below says both should be DNS-only. It works today —
+the apex returns 200 — but two CDNs in series in front of Vercel buys nothing
+and makes cache behaviour harder to reason about, and only one of your two
+hostnames is doing it. Grey-cloud the apex so the pair match.
+
+The bucket record is the deliberate exception: that one **must** stay proxied,
+and R2 sets it up that way itself.
+
+---
+
+<details>
+<summary>Steps 1-4, kept for the record — the DNS move, already done</summary>
 
 An R2 custom domain requires the zone to be **in Cloudflare, in the same
 account as the bucket**. There is a "partial (CNAME) setup" that leaves DNS
-where it is — but it is Business plan only ($200/mo), so it is not the answer
-here.
+where it is, but it is Business plan only ($200/mo).
 
-So the move is: **the zone goes to Cloudflare, the app stays on Vercel.**
-Cloudflare becomes the authoritative DNS host; Vercel keeps serving the site
-through an ordinary DNS record. This is a completely standard arrangement and
-the free plan covers it.
+Attaching the bucket before the zone moved failed with *"That domain was not
+found on your account. Public bucket access supports only domains on your
+account and managed through Cloudflare DNS."*
 
-### What you will see if you try it first
+1. Write down what Vercel is serving (Vercel → project → Settings → Domains).
+2. Cloudflare → Add a site → `eski.lol` → Free plan. Check the imported
+   records, including any MX/TXT.
+3. Set the Vercel records to **DNS only** (grey cloud).
+4. Change the nameservers at the registrar from `ns*.vercel-dns.com` to
+   Cloudflare's. This moves DNS hosting, not the registration. Vercel then
+   shows a nameserver warning, which is expected and can be ignored — A-record
+   setup is their supported "external DNS" path.
 
-Attaching the bucket before the zone moves fails with:
-
-> That domain was not found on your account. Public bucket access supports
-> only domains on your account and managed through Cloudflare DNS.
-
-That is this whole section, stated as an error. It is not a permissions
-problem and there is nothing to fix in R2 — the zone simply has to be
-Cloudflare's before the custom domain exists as an option.
-
-### Steps
-
-**1. Write down what Vercel is currently serving.**
-Vercel dashboard → your project → Settings → Domains. As of this writing the
-live zone is four A records and nothing else — no CNAME, no MX, no TXT:
-
-```
-A   eski.lol       216.198.79.1, 64.29.17.65
-A   www.eski.lol   216.198.79.1, 216.198.79.65
-```
-
-**Take Vercel's values, not these.** It hands out per-project targets and
-rotates them; the point of listing them is that the zone is small and boring,
-so this is a low-risk move rather than that these are the numbers to type.
-
-**2. Add the zone to Cloudflare.**
-Cloudflare dashboard → Add a site → `eski.lol` → Free plan. It will scan and
-import what it can find. Check the imported records against step 1 and fix
-anything missing. **Include any MX/TXT records** — email and domain
-verification break silently if you drop them. (There are none today, which is
-one less thing to get wrong.)
-
-Do this BEFORE touching the nameservers. Cloudflare is not authoritative until
-step 4, so the zone can be wrong for as long as you like at this stage and
-nothing is affected.
-
-**3. Set the Vercel records to DNS only.**
-On the `eski.lol` and `www` records, click the orange cloud so it goes
-**grey**. You do not want Cloudflare proxying traffic to Vercel: two CDNs in
-series buys nothing and makes cache behaviour and IP forwarding harder to
-reason about. Vercel serves the app exactly as it does today.
-
-The record you are about to create for the bucket is different — that one
-*must* be proxied, and R2 sets it up that way itself.
-
-**4. Change the nameservers at your registrar** to the two Cloudflare gives
-you, replacing `ns1.vercel-dns.com` and `ns2.vercel-dns.com`. You are moving
-DNS hosting, **not** the domain registration — the registrar stays whoever it
-is and nothing is transferred.
-
-Propagation is usually minutes, occasionally a few hours. The site keeps
-working throughout, because the records resolve to the same Vercel targets.
-
-Vercel will then show a nameserver warning on the domain. It is expected and
-can be ignored: A-record setup is their supported "external DNS" path, and the
-records still point at them. The domain stays verified and the certificate
-keeps renewing.
-
-Wait until Cloudflare shows the zone as **Active**.
+</details>
 
 **5. Connect the bucket.**
 Cloudflare dashboard → R2 → your bucket → **Settings** → **Custom Domains** →
 **Add**. Enter `cdn.eski.lol`. Review the record it proposes and **Connect
 Domain**. Status goes Initializing → Active in a few minutes.
 
-**6. Change one line.** In `platform.js`:
+**6. Change two lines, and they must agree.**
 
 ```js
-const R2_BASE = 'https://cdn.eski.lol';
+platform.js   const R2_BASE = 'https://cdn.eski.lol'
+sw.js         const MEDIA   = 'https://cdn.eski.lol/'      // note the slash
 ```
+
+Two, because a service worker cannot import a module, so `sw.js` repeats the
+host. Changing only one breaks nothing visibly — the media cache stops hitting
+and every page is downloaded again forever on a site that looks fine. Run
+`node tests/structure.js` before deploying; it fails if they disagree.
 
 That is the whole code change. The database stores object **keys** and never
 URLs, so no rows migrate and every comic already published starts coming off
