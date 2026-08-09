@@ -12,6 +12,10 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Jost:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="vendor/panzoom.js"></script>
+<!-- after panzoom: viewer.js exports mountViewer.controls, the shared
+     zoom arithmetic this page calls. It does not MOUNT here — #pages holds
+     two images for spreads and that mount is built around one. -->
+<script src="viewer.js"></script>
 <script type="module" src="platform.js"></script>
 <script src="comments.js"></script>
 <script src="palette.js"></script>
@@ -126,11 +130,14 @@ body.focus .settings{position:fixed;right:12px;bottom:calc(var(--bar) + 12px);z-
    drag in progress can never swallow the click that lands on "fit" — which
    is the only control you press while zoomed, and the one that was dead. */
 .zoombar{position:absolute;right:var(--s3);bottom:var(--s3);z-index:12;display:none;
-  align-items:center;border:var(--bw) solid var(--rule);background:var(--paper)}
+  align-items:center;border:var(--bw) solid var(--rule);background:var(--paper);
+  opacity:.5;transition:opacity var(--t-fast) var(--ease)}
+/* quiet until wanted, but never absent — see paintZoom */
 .zoombar.on{display:flex}
+.viewer:hover .zoombar, .zoombar:hover, .zoombar:focus-within{opacity:1}
 .zoombar button{width:26px;height:24px;border:0;border-left:var(--bw) solid var(--rule-hair);
   background:none;color:var(--ink);font:inherit;font-size:12px;padding:0}
-.zoombar button[data-z="fit"]{width:auto;padding:0 var(--s2);font-size:10px;
+.zoombar button[data-z="fit"],.zoombar button[data-z="width"]{width:auto;padding:0 var(--s2);font-size:10px;
   letter-spacing:.12em;text-transform:uppercase}
 .zoombar button:first-child{border-left:0}
 .zoombar button:hover{background:var(--rule);color:var(--on-mark)}
@@ -476,7 +483,8 @@ footer a:hover{color:var(--ink)}
         <button data-z="out" type="button" title="Zoom out">&minus;</button>
         <span id="zoom-pct">100%</span>
         <button data-z="in" type="button" title="Zoom in">+</button>
-        <button data-z="fit" type="button" title="Fit the page">Fit</button>
+        <button data-z="fit" type="button" title="Fit the whole page">Fit</button>
+        <button data-z="width" type="button" title="Fit the width">Width</button>
       </div>
     </div>
 
@@ -1339,11 +1347,20 @@ function resetZoom(){
   pagePan.setOptions({ contain: 'outside' });
   paintZoom(1);
 }
+/* THE SHARED ZOOM ARITHMETIC, so this page and viewer.js cannot drift again.
+   It does not mount viewer.js — #pages holds two <img> for a spread — but the
+   part that was actually wrong was never the mount, it was the maths. */
+const pageCtl = mountViewer.controls(pagePan, $('viewer'), $('pages'), $('page-left'));
+
 function paintZoom(scale){
   const z = scale == null ? pageZoom() : scale;
   const on = z > 1.001;
   $('zoom-pct').textContent = Math.round(z * 100) + '%';
-  $('zoombar').classList.toggle('on', on && effReadingMode() === 'pages');
+  /* SHOWN WHENEVER THERE IS A PAGE, not only once zoomed. WIDTH is not a
+     no-op at 1x — it is the thing you want on a tall page before you have
+     touched anything — and hiding the only route back to FIT is how somebody
+     ends up zoomed into a corner with no control on screen. */
+  $('zoombar').classList.toggle('on', !!current && effReadingMode() === 'pages');
   $('viewer').classList.toggle('zoomed', on);
 }
 $('pages').addEventListener('panzoomchange', e => paintZoom(e.detail.scale));
@@ -1360,9 +1377,11 @@ $('viewer').addEventListener('dragstart', e=>e.preventDefault());
 $('zoombar').addEventListener('click', e=>{
   const b = e.target.closest('[data-z]');
   if(!b) return;
-  if(b.dataset.z === 'in'){ pagePan.zoomIn({ animate: false }); paintZoom(); }
-  else if(b.dataset.z === 'out'){ pagePan.zoomOut({ animate: false }); paintZoom(); }
-  else resetZoom();
+  const z = b.dataset.z;
+  if(z === 'in')        { pageCtl.zoomBy(1.25);     paintZoom(); }
+  else if(z === 'out')  { pageCtl.zoomBy(1 / 1.25); paintZoom(); }
+  else if(z === 'width'){ paintZoom(pageCtl.fitWidth()); }
+  else                    resetZoom();
 });
 
 function updatePageChrome(){

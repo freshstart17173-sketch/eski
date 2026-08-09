@@ -92,6 +92,68 @@
   };
   const WHEEL_STEP = 0.5;
 
+  /* THE TWO THINGS THAT WERE WRONG, IN ONE PLACE.
+
+     The reader cannot mount mountViewer(): its #pages holds TWO images, for
+     two-page spreads, and this mount is built around one. Forcing spreads
+     through a single-image mount to share the code would be the tail wagging
+     the dog.
+
+     But the code worth sharing is not the mount — it is the arithmetic, and
+     that is exactly what had drifted across three copies. So the arithmetic
+     lives here and both callers use it. A viewer that grows a fourth copy of
+     `zoomIn()` is the bug coming back.
+
+     pz     the Panzoom instance
+     root   the element that defines the visible box
+     inner  the element panzoom moves (its padding is read for fit-width)
+     probe  the element to measure for fit-width — the page itself */
+  function makeControls(pz, root, inner, probe){
+    const clampScale = s => Math.min(PZ.maxScale, Math.max(PZ.minScale, s));
+
+    /* Buttons anchor on the CENTRE OF THE BOX. panzoom's own zoomIn/zoomOut
+       scale about the element's transform-origin, which stops being the middle
+       of what you are looking at the moment you pan — so + and - walked the
+       page sideways by an amount that depended on how far you had dragged. It
+       felt anchored on nothing because it was anchored on something invisible.
+       The wheel still follows the cursor; that part was always right. */
+    function zoomBy(mult){
+      const r = root.getBoundingClientRect();
+      pz.zoomToPoint(clampScale(pz.getScale() * mult),
+        { clientX: r.left + r.width / 2, clientY: r.top + r.height / 2 },
+        { animate: false });
+    }
+
+    /* FIT WIDTH. At scale 1 an `object-fit: contain` page leaves bars down
+       both sides, and on a tall page that is unreadably small.
+
+       THE PADDING IS READ, NOT INFERRED. The first cut worked it out as
+       inner's width minus the page's, which is not padding — it is the
+       letterboxing contain leaves. On a 400x1200 page in a 900px box that came
+       to 711px, so the target computed as exactly 1 and the button did
+       nothing. It looked unimplemented; it was implemented and always
+       answering "already there". */
+    function fitWidth(){
+      const box = root.getBoundingClientRect();
+      const cur = pz.getScale() || 1;
+      const drawn = probe.getBoundingClientRect().width / cur;
+      if(!drawn || !box.width) return 1;
+      const cs = getComputedStyle(inner);
+      const pad = (parseFloat(cs.paddingLeft) || 0) + (parseFloat(cs.paddingRight) || 0);
+      const target = clampScale((box.width - pad) / drawn);
+      /* RESET WITH THE CONSTRAINT OFF, then put it back — the same reason
+         reset() does: contain works its minimum out from a measurement taken
+         before the scale it is about to divide by was written. */
+      pz.setOptions({ contain: undefined });
+      pz.reset({ animate: false });
+      pz.zoom(target, { animate: false });
+      pz.setOptions({ contain: PZ.contain });
+      return target;
+    }
+
+    return { zoomBy, fitWidth, clampScale };
+  }
+
   /* mountViewer(el) -> { show(url), reset(), zoom(), pz }
      el is filled in; anything already inside it is replaced. */
   function mountViewer(root, opts){
@@ -135,62 +197,8 @@
       else { pz.zoomToPoint(2.2, e); paint(); }
     });
 
-    /* ZOOM FROM A BUTTON ANCHORS ON THE MIDDLE OF THE BOX.
-
-       This is the "zooming doesn't zoom predictably" bug, and it is worth
-       being exact about. panzoom's zoomIn/zoomOut scale about the element's
-       own transform-origin. Once you have PANNED, the element's centre is no
-       longer the middle of what you are looking at — so + and − walked the
-       page sideways by an amount that depended entirely on how far you had
-       dragged. It felt like the zoom was anchored on nothing, because it was
-       anchored on something invisible.
-
-       Anchoring on the centre of the viewport is the rule people expect from
-       every other viewer: the wheel follows the cursor, the buttons hold the
-       middle still. */
-    function zoomBy(mult){
-      const r = root.getBoundingClientRect();
-      const next = clampScale(pz.getScale() * mult);
-      pz.zoomToPoint(next, { clientX: r.left + r.width / 2,
-                             clientY: r.top  + r.height / 2 }, { animate: false });
-      paint();
-    }
-    const clampScale = s => Math.min(PZ.maxScale, Math.max(PZ.minScale, s));
-
-    /* FIT WIDTH. The page is drawn `object-fit: contain`, so at scale 1 a tall
-       page leaves bars down both sides and is unreadably small — which is the
-       single most common thing to want fixed on a comic page.
-
-       The scale that makes the drawn image exactly fill the box's width is the
-       box width over the DRAWN width, and the drawn width is not the natural
-       width: contain has already shrunk it. getBoundingClientRect() on the img
-       reports the drawn box AFTER the current transform, so it is divided back
-       out by the current scale to get the untransformed one. */
-    function fitWidth(){
-      if(img.hidden) return;
-      const box = root.getBoundingClientRect();
-      const cur = pz.getScale() || 1;
-      const drawn = img.getBoundingClientRect().width / cur;
-      if(!drawn || !box.width) return;
-      /* THE PADDING IS READ, NOT INFERRED. The first cut worked it out as
-         inner's width minus the image's, which is not padding at all — it is
-         the letterboxing `object-fit: contain` leaves down the sides of a tall
-         page. On a 400x1200 page in a 900px box that came to 711px of
-         "padding", so the target scale computed as exactly 1 and the button
-         did nothing. It looked like fit-width was unimplemented; it was
-         implemented and always answering "already there". */
-      const cs = getComputedStyle(inner);
-      const pad = (parseFloat(cs.paddingLeft) || 0) + (parseFloat(cs.paddingRight) || 0);
-      const target = clampScale((box.width - pad) / drawn);
-      pz.setOptions({ contain: undefined });
-      pz.reset({ animate: false });
-      pz.zoom(target, { animate: false });
-      pz.setOptions({ contain: PZ.contain });
-      paint(target);
-    }
-    /* belt and braces: even with user-drag off, a stray dragstart would end
-       the gesture, so refuse it outright */
-    root.addEventListener('dragstart', e => e.preventDefault());
+    const ctl = makeControls(pz, root, inner, img);
+    const zoomBy = ctl.zoomBy, fitWidth = () => { ctl.fitWidth(); paint(); };
 
     /* the bar is a sibling of the panned element, so nothing it does can be
        eaten by a pan in progress. */
@@ -246,4 +254,7 @@
   global.mountViewer = mountViewer;
   global.mountViewer.options = PZ;
   global.mountViewer.wheelStep = WHEEL_STEP;
+  /* read.html mounts its own Panzoom (two images, for spreads) and calls
+     these, so the arithmetic exists once. */
+  global.mountViewer.controls = makeControls;
 })(window);

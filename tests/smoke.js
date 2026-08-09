@@ -342,7 +342,17 @@ function ok(cond, name, extra) {
   await bigp.click('#zoombar [data-z="fit"]');
   ok(Math.abs(await bigp.evaluate(() => pageZoom()) - 1) < 1e-4,
     'fit returns the page to the box', await bigp.evaluate(() => pageZoom()));
-  ok(await bigp.isHidden('#zoombar'), 'the zoom bar goes away again at 1x');
+  /* IT STAYS. This asserted the opposite until the bar started carrying a
+     WIDTH preset, and the old rule stopped making sense on two counts: fit
+     width is not a no-op at 1x — it is what you want on a tall page before
+     touching anything — and hiding the only route back to FIT is exactly how
+     somebody ends up zoomed into a corner with no control on screen. It is
+     dimmed at rest and comes up on hover, which is a different thing from
+     absent. */
+  ok(await bigp.isVisible('#zoombar'),
+    'the zoom bar stays at 1x, because WIDTH and FIT are both live there');
+  ok(await bigp.isVisible('#zoombar [data-z="width"]'),
+    'and it offers fit-width, not just fit');
   await bigp.evaluate(() => {
     const v = document.getElementById('viewer'), b = v.getBoundingClientRect();
     v.dispatchEvent(new WheelEvent('wheel', { deltaY: -120, clientX: b.left + b.width / 2,
