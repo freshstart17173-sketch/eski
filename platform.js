@@ -127,6 +127,18 @@ const CSS = `
   color:var(--label,#8a8a8a);cursor:pointer;opacity:.7}
 .report-link:hover{opacity:1;color:var(--rec,#a33028)}
 
+/* THE PANEL DRAG HANDLE, shared. It lived in studio.html and the other two
+   studios simply had no handle at all — their side panel was a fixed 360px.
+   A copy per studio is how three of them end up with three different minimums. */
+.pane-resize{position:absolute;z-index:6;background:transparent;
+  transition:background var(--t-fast,140ms) var(--ease,ease);touch-action:none}
+.pane-resize:hover,.pane-resize.dragging{background:var(--accent,#888);opacity:.4}
+.pane-resize.col{top:0;width:6px;height:100%;cursor:col-resize}
+.pane-resize.col.left{left:-3px}
+.pane-resize.col.right{right:-3px}
+.pane-resize.row{left:0;top:-3px;width:100%;height:6px;cursor:row-resize}
+@media(max-width:900px){.pane-resize{display:none}}
+
 /* THE PROFILE WORD WEARS YOUR FACE. Small on purpose: it sits inside a nav of
    four words set at 11px, so anything taller than the cap height turns the bar
    into a toolbar. 18px is about the height of the word beside it.
@@ -678,6 +690,66 @@ function reportThing(type, id, label){
   why.focus();
 }
 
+/* ============================================================ PANE RESIZING
+
+   Lifted out of studio.html, where it was the only copy — author.html and
+   contribute.html had no handle at all, so their side panel was a fixed 360px
+   whatever you were doing in it. Three studios with three implementations is
+   this codebase's signature failure; three studios calling one is the fix.
+
+   The size is remembered per pane, because resizing a panel and finding it
+   back at 360px on the next comic is the kind of thing that makes people stop
+   bothering.
+
+   handle/pane  elements or ids
+   axis         'x' (width) or 'y' (height)
+   sign         +1 when the handle is on the pane's TRAILING edge (dragging
+                right makes it bigger), -1 when it is on the leading edge */
+function makeResizer(handle, pane, axis, min, max, sign, key){
+  const h = typeof handle === 'string' ? document.getElementById(handle) : handle;
+  const el = typeof pane === 'string' ? document.getElementById(pane) : pane;
+  if(!h || !el) return;
+
+  const store = key ? 'eski-pane-' + key : null;
+  const put = size => {
+    if(axis === 'x'){ el.style.width = size + 'px'; el.style.minWidth = size + 'px'; }
+    else { el.style.height = size + 'px'; el.style.flex = '0 0 ' + size + 'px'; }
+  };
+  if(store){
+    try{
+      const saved = parseFloat(localStorage.getItem(store));
+      if(saved) put(Math.min(max, Math.max(min, saved)));
+    }catch(e){}
+  }
+
+  let start = null;
+  h.addEventListener('pointerdown', e => {
+    // below 900px every pane is a drawer or full width, so there is nothing to drag
+    if(matchMedia('(max-width:900px)').matches) return;
+    const r = el.getBoundingClientRect();
+    start = { p: axis === 'x' ? e.clientX : e.clientY,
+              size: axis === 'x' ? r.width : r.height };
+    h.setPointerCapture(e.pointerId);
+    h.classList.add('dragging');
+    e.preventDefault();
+  });
+  h.addEventListener('pointermove', e => {
+    if(!start) return;
+    const now = axis === 'x' ? e.clientX : e.clientY;
+    put(Math.min(max, Math.max(min, start.size + (now - start.p) * sign)));
+  });
+  const end = () => {
+    if(start && store){
+      const r = el.getBoundingClientRect();
+      try{ localStorage.setItem(store, String(Math.round(axis === 'x' ? r.width : r.height))); }catch(e){}
+    }
+    start = null;
+    h.classList.remove('dragging');
+  };
+  h.addEventListener('pointerup', end);
+  h.addEventListener('pointercancel', end);
+}
+
 /* eskiCode: which call site refused. e: whatever supabase handed back. */
 function dbError(eskiCode, what, e){
   const code = (e && e.code) || '';
@@ -697,6 +769,7 @@ window.eski = {
   handleProblem,
   report: reportThing,
   signOut: signOutAndReload,
+  resizer: makeResizer,
   get profile(){ return profile; },
   ready: new Promise(res => { markReady = res; }),
   /* `ready` means "there is a client". `settled` means "and nothing of ours is
