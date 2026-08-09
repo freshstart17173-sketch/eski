@@ -74,6 +74,48 @@ const server = http.createServer((q, r) => {
   near((await plan([['after'], ['over', 500]], [10, 2]))[1], 9.9,
     'and an out-of-range one is clamped rather than thrown');
 
+  /* ------------------------------------------------------------------ */
+  console.log('the author studio can actually reach the link control');
+  /* THE ARITHMETIC ABOVE IS USELESS IF NOBODY CAN SET THE LINK, and for a
+     while nobody could. `first` — the flag that suppresses the AFTER/WITH/OVER
+     bar — was the entry's index WITHIN ITS GROUP, and groups are split on
+     link === 'after'. So an 'after' entry was always index 0 of its own group,
+     always `first`, and never got a bar; and a new entry defaults to 'after'.
+     The only control that could move an entry off AFTER was hidden on every
+     entry that was on AFTER.
+
+     This runs the SHIPPED grouping and render code out of author.html rather
+     than a retyped copy, because a retyped copy would have passed the whole
+     time the real one was broken. */
+  {
+    const src = fs.readFileSync(path.join(ROOT, 'author.html'), 'utf8');
+    const grp = src.slice(src.indexOf('  const groups = [];'),
+                          src.indexOf('  const entryHtml ='));
+    const ren = src.match(/  let seen = 0;\n  box\.innerHTML = groups\.map\(g => \{\n[\s\S]*?\}\)\.join\(''\);/);
+    ok(!!ren, 'the render block is still findable in author.html');
+    if(ren){
+      const body = grp +
+        '\nconst entryHtml=(l,first)=>{ out.push(!first); return ""; };\n' +
+        ren[0] + '\nreturn out;';
+      const render = new Function('mine', 'out', 'box', body);
+      const bars = ls => render(ls, [], { set innerHTML(v){} });
+      const L = link => ({ id: Math.random(), link });
+
+      const fresh = bars([L('after'), L('after'), L('after')]);
+      ok(JSON.stringify(fresh) === '[false,true,true]',
+        'three fresh entries: every one but the first offers the control',
+        JSON.stringify(fresh));
+
+      const linked = bars([L('after'), L('with'), L('after')]);
+      ok(JSON.stringify(linked) === '[false,true,true]',
+        'and setting one to WITH does not take the control off the others',
+        JSON.stringify(linked));
+
+      ok(bars([L('after')])[0] === false,
+        'the first entry on a page has nothing above it, so no control');
+    }
+  }
+
   console.log('console errors');
   await b.close(); server.close();
   console.log(bad ? `\n${bad} FAILURES` : '\ncues: all checks passed');
