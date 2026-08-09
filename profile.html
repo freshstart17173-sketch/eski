@@ -574,7 +574,10 @@ function paint(){
         <div class="pacts"><button class="btn sm danger" id="del-acct">Delete account</button></div>`;
       wireShelfSwitch(box);
       const so = $('signout');
-      if(so) so.addEventListener('click', ()=>{ if(sb) sb.auth.signOut(); });
+      /* platform.js's, because it RELOADS. Signing out in place left you
+         looking at your own drafts, shelf and settings on a page that had
+         stopped being yours — none of those panels repaint themselves. */
+      if(so) so.addEventListener('click', ()=>window.eski.signOut());
       const da = $('del-acct');
       if(da) da.addEventListener('click', deleteAccount);
       return;

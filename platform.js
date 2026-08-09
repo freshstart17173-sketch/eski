@@ -41,10 +41,17 @@ const SUPABASE_KEY = 'sb_publishable_cZuZnUhWmEGESYb7BR1Kzg_nPjR8CZR';   // publ
    https://developers.cloudflare.com/r2/buckets/public-buckets/ */
 const R2_BASE = 'https://cdn.eski.lol';
 
-// add 'discord' back once it is enabled in the supabase dashboard. a provider
-// offered here but not enabled there fails at the redirect with a raw error
-// page, so this is the list that actually works, not the list we want.
-const PROVIDERS = ['google'];
+/* A PROVIDER LISTED HERE MUST BE ENABLED IN THE SUPABASE DASHBOARD, or it
+   fails at the redirect with their raw error page rather than ours — that is
+   ESK-2003, and the menu says so when the call refuses.
+
+   Discord is here because Google-only excludes anyone without a Google account
+   or unwilling to use one, and makes a single provider outage a total sign-in
+   outage. It needs Authentication > Providers > Discord enabled, with a client
+   id and secret from the Discord developer portal, and
+   <SUPABASE_URL>/auth/v1/callback as the redirect. Until that is done it will
+   show ESK-2003 when picked, which is the honest failure. */
+const PROVIDERS = ['google', 'discord'];
 
 /* THERE IS NO PROFILE BUTTON.
    signed in, this used to paint an avatar and your name, and the menu behind
@@ -103,16 +110,51 @@ const CSS = `
   font-size:var(--fs-sm,13px);padding:var(--s2,8px);color:inherit;
   background:transparent;border:var(--bw,1px) solid var(--rule,rgba(128,128,128,.4))}
 .oz textarea:focus{outline:none;border-color:var(--ink,#111)}
+/* the label's optional marker: same line, quieter, not a second label */
+.oz label em{font-style:normal;opacity:.6;letter-spacing:.08em}
+.oz-note{margin:6px 0 var(--s4,16px);font-size:var(--fs-xs,12px);
+  color:var(--label,#8a8a8a);line-height:1.45}
+/* the picture the provider handed over, shown at the size it will actually be
+   used rather than blown up: this is a confirmation, not a portrait */
+.oz-me{display:flex;gap:var(--s3,12px);align-items:center;margin:0 0 var(--s4,16px)}
+.oz-me img{width:44px;height:44px;object-fit:cover;flex:none;
+  border:var(--bw,1px) solid var(--rule,rgba(128,128,128,.4))}
+.oz-me small{font-size:var(--fs-xs,12px);color:var(--label,#8a8a8a);line-height:1.4}
 /* the report control itself: a quiet word, never a button competing with
    the things somebody came to the page to press */
 .report-link{background:none;border:0;padding:0;font:inherit;
   font-size:var(--fs-micro,11px);letter-spacing:.1em;text-transform:uppercase;
   color:var(--label,#8a8a8a);cursor:pointer;opacity:.7}
 .report-link:hover{opacity:1;color:var(--rec,#a33028)}
+
+/* THE PROFILE WORD WEARS YOUR FACE. Small on purpose: it sits inside a nav of
+   four words set at 11px, so anything taller than the cap height turns the bar
+   into a toolbar. 18px is about the height of the word beside it.
+
+   A square, like every other plate on the site. The one round thing in a
+   layout built from rules and right angles reads as imported from somewhere
+   else. */
+.nav-av{width:18px;height:18px;object-fit:cover;display:inline-block;
+  vertical-align:-4px;margin-right:6px;background:var(--surface,transparent);
+  border:var(--bw,1px) solid var(--rule-hair,rgba(128,128,128,.3))}
+/* no picture yet: the first letter, in the same box, so the bar does not
+   change width the moment one loads */
+.nav-av-fb{display:inline-grid;place-items:center;font-size:9px;
+  letter-spacing:0;color:var(--label,#8a8a8a);text-transform:uppercase}
 `;
 
 let sb = null, user = null, bootError = null;
+/* the caller's own profile row, cached because the nav wants avatar_url on
+   every page and it is one small read per load, not per paint. */
+let profile = null;
 const esc = s => (s ?? '').toString().replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+
+/* which provider signed them in, for the one line that says where the picture
+   came from. app_metadata.provider is supabase's own record of it. */
+function providerOf(u){
+  const p = ((u && u.app_metadata && u.app_metadata.provider) || 'your account');
+  return p.charAt(0).toUpperCase() + p.slice(1);
+}
 
 function nameOf(u){
   const m = u.user_metadata || {};
@@ -143,6 +185,7 @@ function paint(){
        every page, next to the four words you navigate with. It is in the
        profile's settings tab now, where you go on purpose. */
     box.remove();
+    paintNavAvatar();
     return;
   }
   {
@@ -264,7 +307,8 @@ let pendingProfile = Promise.resolve();
 async function ensureProfile(u){
   if(!sb || !u || onboarding || asked === u.id) return;
   asked = u.id;
-  const got = await sb.from('profiles').select('id, deleted_at').eq('id', u.id).maybeSingle();
+  // select * so the nav avatar has what it needs without a second read
+  const got = await sb.from('profiles').select('*').eq('id', u.id).maybeSingle();
   /* A READ THAT FAILED IS NOT A MISSING PROFILE. Offline, or the schema is not
      applied: either way, showing the sheet would invite somebody to pick a
      handle we cannot save. Say nothing and let the page work signed in. */
@@ -277,6 +321,8 @@ async function ensureProfile(u){
      database refuses the writes either way (account_live() is in four
      policies); this is so the person is told, rather than finding out by
      having every action silently fail. */
+  profile = got.data || null;
+  if(profile) paintNavAvatar();
   if(got.data && got.data.deleted_at){
     await sb.auth.signOut();
     tombstoneNotice();
@@ -315,17 +361,32 @@ function askHandle(u){
   const m = u.user_metadata || {};
   const scrim = document.createElement('div');
   scrim.className = 'oz-scrim';
+  /* THE WHOLE PROFILE, ONCE, RATHER THAN A HANDLE AND A SURPRISE.
+     This asked only for a username and silently took the provider's full name
+     as the display name and their picture as the avatar. Both of those show up
+     on every byline, so being shown them while you can still change them is
+     the difference between setting up a profile and discovering one. */
+  const av = m.avatar_url || m.picture || '';
   scrim.innerHTML =
     '<div class="oz" role="dialog" aria-modal="true" aria-labelledby="oz-h">' +
-      '<h2 id="oz-h">Pick a username</h2>' +
-      '<p>This is your address on eski — people find you at ' +
-        '<b>eski.lol/u/you</b>, and it is what appears on anything you make. ' +
-        'Your real name is not it unless you want it to be.</p>' +
+      '<h2 id="oz-h">Set up your profile</h2>' +
+      '<p>This is how you appear on anything you make. All of it can be ' +
+      'changed later, except the username, which is your address.</p>' +
+      (av ? '<div class="oz-me"><img src="' + esc(av) + '" alt="" ' +
+              'onerror="this.style.display=\'none\'">' +
+            '<small>From ' + esc(providerOf(u)) + '. You can change or remove ' +
+            'it in your profile settings.</small></div>' : '') +
       '<label for="oz-h-in">Username</label>' +
       '<div class="oz-at"><span>@</span>' +
         '<input id="oz-h-in" maxlength="30" autocomplete="off" autocapitalize="off" ' +
                'spellcheck="false" value="' + esc(suggestHandle(u)) + '"></div>' +
       '<div class="oz-say" id="oz-say"></div>' +
+      '<label for="oz-n-in">Display name <em>optional</em></label>' +
+      '<div class="oz-at">' +
+        '<input id="oz-n-in" maxlength="60" value="' +
+          esc(m.full_name || m.name || m.user_name || '') + '"></div>' +
+      '<p class="oz-note">People see the display name; they find you by the ' +
+      'username. Leave it blank to be known only by your username.</p>' +
       '<div class="oz-acts">' +
         '<button type="button" class="oz-go" id="oz-go">Continue</button>' +
         '<button type="button" class="oz-out" id="oz-out">Sign out</button>' +
@@ -376,8 +437,9 @@ function askHandle(u){
       id: u.id, handle: v,
       /* the display name IS the one place their real name belongs, and it is
          editable in profile settings like everything else. */
-      display_name: m.full_name || m.name || m.user_name || null,
-      avatar_url: m.avatar_url || null
+      // what they actually confirmed, not what the provider handed over
+      display_name: (scrim.querySelector('#oz-n-in').value || '').trim() || null,
+      avatar_url: av || null
     });
     if(!ins.error){
       scrim.remove();
@@ -400,6 +462,53 @@ function askHandle(u){
   input.select();
   check();
   return finished;
+}
+
+/* PAINTED HERE, NOT IN FIVE PAGES. The nav markup is copied into index,
+   author, contribute, read and legal; an avatar added by hand would be five
+   copies that drift, which is the failure this codebase specialises in.
+   platform.js already paints into .site-header, so it paints this too. */
+function paintNavAvatar(){
+  const link = document.querySelector('.site-header nav a[href="profile.html"]');
+  if(!link) return;
+  const url = profile && profile.avatar_url;
+  const initial = ((profile && (profile.display_name || profile.handle)) ||
+                   (user && nameOf(user)) || '?').trim().charAt(0);
+
+  let av = link.querySelector('.nav-av');
+  if(!av){
+    /* the word is a text node; insert before it rather than rewriting the
+       link, so the nav's own active/hover styling keeps working */
+    av = document.createElement(url ? 'img' : 'span');
+    link.insertBefore(av, link.firstChild);
+  }else if((av.tagName === 'IMG') !== !!url){
+    // gained or lost a picture: swap the element rather than the attribute
+    const next = document.createElement(url ? 'img' : 'span');
+    link.replaceChild(next, av);
+    av = next;
+  }
+  av.className = 'nav-av' + (url ? '' : ' nav-av-fb');
+  if(url){
+    if(av.getAttribute('src') !== url) av.src = url;
+    av.alt = '';
+    /* a provider avatar is somebody else's host and can 404 later; fall back
+       to the letter rather than leaving a broken-image glyph in the nav */
+    av.onerror = () => { profile = Object.assign({}, profile, { avatar_url: null });
+                         paintNavAvatar(); };
+  }else{
+    av.textContent = initial;
+  }
+}
+
+/* SIGN OUT RELOADS, and that is the whole point of it living here.
+   profile.html signed out in place, which left you looking at your own
+   drafts, your own shelf and your own settings on a page that had already
+   stopped being yours — every one of those panels was painted before the
+   session went away and nothing repaints them. A reload is the only honest
+   answer: whatever page you are on renders its signed-out self. */
+async function signOutAndReload(){
+  try{ if(sb) await sb.auth.signOut(); }catch(e){}
+  location.reload();
 }
 
 function setUser(u){
@@ -587,6 +696,8 @@ window.eski = {
   jszip,
   handleProblem,
   report: reportThing,
+  signOut: signOutAndReload,
+  get profile(){ return profile; },
   ready: new Promise(res => { markReady = res; }),
   /* `ready` means "there is a client". `settled` means "and nothing of ours is
      in your way" — it waits out the pick-a-username sheet. A page with its own

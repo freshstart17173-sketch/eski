@@ -74,6 +74,13 @@ const USER = {
       ? fs.readFileSync(require.resolve('jszip/dist/jszip.min.js')) : '' }));
   await ctx.route('https://fonts.googleapis.com/**', r => r.fulfill({ contentType:'text/css', body:'' }));
   await ctx.route('https://fonts.gstatic.com/**', r => r.fulfill({ contentType:'font/woff2', body:'' }));
+  /* THE PROVIDER'S AVATAR IS A REAL REMOTE FETCH now that the setup sheet
+     shows it, and the fixture's host does not exist. Served rather than left
+     to fail, so the zero-console-errors assertion keeps meaning something —
+     it caught this the moment the sheet started rendering a picture. */
+  await ctx.route('https://x/**', r => r.fulfill({
+    contentType: 'image/png',
+    body: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64') }));
   await ctx.route(`https://${REF}.supabase.co/**`, route => {
     const req = route.request();
     const url = new URL(req.url());
@@ -141,6 +148,17 @@ const USER = {
   ok(await page.evaluate(() => !localStorage.getItem('eski-onboarded')),
     'and has not spent its one showing');
 
+  /* IT IS A PROFILE, NOT JUST A HANDLE. The provider's display name and
+     picture both end up on every byline, so being shown them while they are
+     still editable is the difference between setting a profile up and
+     discovering one. */
+  ok(await page.evaluate(() => !!document.getElementById('oz-n-in')),
+    'the display name is offered too, not taken silently');
+  ok(await page.evaluate(() => document.getElementById('oz-n-in').value) === 'Alex Morgan',
+    'prefilled from the provider, and editable');
+  ok(await page.evaluate(() => !!document.querySelector('.oz-me img')),
+    'and the picture it is about to use is shown');
+
   console.log('what it refuses');
   await page.fill('#oz-h-in', 'A');
   await page.waitForTimeout(400);
@@ -196,7 +214,9 @@ const USER = {
   ok(inserts.length === 1 && inserts[0].handle === 'kite',
     'exactly one row, with the handle they typed', JSON.stringify(inserts));
   ok(inserts[0].display_name === 'Alex Morgan',
-    'their real name is kept as the display name, which is theirs to change');
+    'the display name saved is the one in the field');
+  ok(inserts[0].avatar_url === 'https://x/a.png',
+    'and the picture they were shown is the one stored');
   await page.waitForTimeout(400);
   ok(await page.evaluate(() => document.getElementById('ob').classList.contains('open')),
     'and the tour gets its turn once the sheet is gone');
