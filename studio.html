@@ -10,6 +10,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Jost:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="vendor/panzoom.js"></script>
+<!-- after panzoom, because mountViewer() needs Panzoom defined -->
+<script src="viewer.js"></script>
 <script src="vendor/webm-muxer.js"></script>
 <script type="module" src="platform.js"></script>
 <script src="palette.js"></script>
@@ -536,7 +538,10 @@ input[type=number],input[type=range]+span{font-variant-numeric:var(--num)}@media
         </div>
       </div>
       <button class="pv-nav prev" id="pv-prev" data-ico="chevron-left" onclick="stepPreview(-1)" style="display:none" title="Previous page"></button>
-      <img id="pv-img" alt="Page preview" style="display:none">
+      <!-- mountViewer() fills this. It is a BOX, not an <img>: the thing
+           panzoom moves has to fill the frame or the drag only works on
+           the artwork. -->
+      <div id="pv-img" style="display:none"></div>
       <button class="pv-nav next" id="pv-next" data-ico="chevron-right" onclick="stepPreview(1)" style="display:none" title="Next page"></button>
       <div class="pv-badge" id="pv-badge" style="display:none"></div>
     </div>
@@ -1587,7 +1592,8 @@ function render(){
   $('publish-btn').lastChild.textContent =
     editMode==='vo' ? 'Publish vo' : editMode==='Soundtrack' ? 'Publish soundtrack' : 'Publish';
   $('empty-hint').style.display = has ? 'none' : 'flex';
-  ['pv-img','pv-badge','pv-prev','pv-next'].forEach(id=>$(id).style.display = has ? '' : 'none');
+  ['pv-badge','pv-prev','pv-next'].forEach(id=>$(id).style.display = has ? '' : 'none');
+  $('pv-img').style.display = has ? 'flex' : 'none';
   $('pages-ctrls').style.display = has ? '' : 'none';
   $('qp').style.display = has ? '' : 'none';
   setStatus();
@@ -1861,31 +1867,29 @@ function renderPreview(){
   if(!pageCount()) return;
   const i = clamp(previewPage, 0, pageCount()-1);
   previewPage = i;
-  if(pvShown !== i){ pvShown = i; pvReset(); }   // a new page always starts unzoomed
-  $('pv-img').src = cState.pages[i].url;
+  // show() resets for us, so a new page always starts fit
+  if(!pv) pv = mountViewer($('pv-img'), { empty: 'no pages yet' });
+  pv.show(cState.pages[i].url);
+  pvShown = i;
   $('pv-badge').textContent = `Page ${i+1} of ${pageCount()}`;
 }
 function stepPreview(d){ openQueue(clamp(previewPage+d, 0, pageCount()-1) + 1); }
 
 /* ---------------- preview zoom + pan ----------------
-   Panzoom (vendor/panzoom.js), the same instance the reader and the author
-   studio use, so the wheel, the drag and the pinch all feel identical in the
-   three places a page is shown. changing page resets it. */
-const pvPan = Panzoom($('pv-img'), {
-  maxScale: 5, minScale: 1, panOnlyWhenZoomed: true, cursor: 'grab',
-  step: 0.22, animate: false
-});
-function pvReset(){ pvPan.reset({ animate: false }); }
-$('pv-img').addEventListener('panzoomchange', e=>
-  $('preview').classList.toggle('zoomed', e.detail.scale > 1.001));
-$('preview').addEventListener('wheel', e=>{
-  if(!pageCount()) return;
-  pvPan.zoomWithWheel(e, { step: 0.5 });   // e^(0.5/3) = 1.18x a notch
-}, {passive:false});
-$('preview').addEventListener('dblclick', e=>{
-  if(!pageCount()) return;
-  if(pvPan.getScale() > 1.001) pvReset(); else pvPan.zoomToPoint(2.4, e);
-});
+   mountViewer(), the same one author.html and contribute.html use. This file
+   used to build its OWN Panzoom, and the comment above it claimed it was "the
+   same instance the reader and the author studio use". It was not: there were
+   three, and they had drifted.
+
+   THE DRIFT WAS THE BUG YOU COULD FEEL. This copy panned $('pv-img') — the
+   image element itself — so pointerdown only landed on the artwork. Drag the
+   background and nothing happened; zoom until the page was smaller than the
+   viewport, or pan it to an edge, and there was nothing left to grab. The
+   shared viewer pans a box that always fills the frame, so the drag works
+   anywhere, and its zoom bar is a sibling of the panned element rather than
+   inside it. */
+let pv = null;
+function pvReset(){ if(pv) pv.reset(); }
 
 /* ---------------- resizable panes ----------------
    the media bay, the page panel and the bottom pages panel all drag the same

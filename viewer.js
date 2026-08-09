@@ -46,11 +46,17 @@
 .vw-empty{position:absolute;inset:0;display:grid;place-items:center;padding:var(--s4);
   color:var(--label);font-size:var(--fs-xs);letter-spacing:.06em;text-align:center}
 .vw-empty[hidden]{display:none}
-/* the bar only exists once you are zoomed. at 1x every button in it is a
-   no-op and it is just furniture in the corner of somebody's artwork. */
-.vw-zoom{position:absolute;right:var(--s3);bottom:var(--s3);display:none;align-items:center;
-  gap:0;border:1px solid var(--rule,var(--line));background:var(--paper);z-index:3}
-.vw-zoom.on{display:flex}
+/* THE BAR IS ALWAYS THERE NOW, and that is the fix rather than a preference.
+   It used to appear only above 1x, on the reasoning that its buttons were
+   no-ops at rest. That was wrong twice over: FIT WIDTH is not a no-op at 1x —
+   it is the thing you reach for on a tall page before you have zoomed at all —
+   and hiding the only way back to fit is what let somebody zoom into a corner
+   and find no control anywhere on screen. A control that appears only after
+   you are lost is not a control. */
+.vw-zoom{position:absolute;right:var(--s3);bottom:var(--s3);display:flex;align-items:center;
+  gap:0;border:1px solid var(--rule,var(--line));background:var(--paper);z-index:3;
+  opacity:.55;transition:opacity var(--t-fast,140ms) var(--ease,ease)}
+.vw:hover .vw-zoom, .vw-zoom:focus-within, .vw-zoom.on{opacity:1}
 .vw-zoom button{width:26px;height:24px;border:0;border-left:1px solid var(--rule-hair,var(--line));
   background:none;color:var(--ink);font:inherit;font-size:12px;cursor:pointer;padding:0}
 .vw-zoom button[data-z="fit"]{width:auto;padding:0 var(--s2);font-size:10px;
@@ -72,7 +78,7 @@
   /* the options every eski viewer shares. exported so read.html and the
      composer get the same feel without restating it. */
   const PZ = {
-    maxScale: 5,
+    maxScale: 8,
     minScale: 1,
     contain: 'outside',      /* the page can never be panned out of its box */
     panOnlyWhenZoomed: true, /* at 1x a drag is not a pan, so click zones live */
@@ -99,7 +105,8 @@
          <button data-z="out" title="zoom out" type="button">&minus;</button>
          <span>100%</span>
          <button data-z="in" title="zoom in" type="button">+</button>
-         <button data-z="fit" title="fit the page" type="button">fit</button>
+         <button data-z="fit" title="fit the whole page" type="button">fit</button>
+         <button data-z="width" title="fit the width" type="button">width</button>
        </div>`;
     const inner = root.querySelector('.vw-inner');
     const img   = root.querySelector('.vw-img');
@@ -119,7 +126,7 @@
 
     root.addEventListener('wheel', e => {
       if(img.hidden) return;
-      pz.zoomWithWheel(e, { step: WHEEL_STEP });
+      pz.zoomWithWheel(e, { step: WHEEL_STEP });   // anchors on the cursor
       paint();
     }, { passive: false });
     root.addEventListener('dblclick', e => {
@@ -127,6 +134,60 @@
       if(pz.getScale() > 1.001) reset();
       else { pz.zoomToPoint(2.2, e); paint(); }
     });
+
+    /* ZOOM FROM A BUTTON ANCHORS ON THE MIDDLE OF THE BOX.
+
+       This is the "zooming doesn't zoom predictably" bug, and it is worth
+       being exact about. panzoom's zoomIn/zoomOut scale about the element's
+       own transform-origin. Once you have PANNED, the element's centre is no
+       longer the middle of what you are looking at — so + and − walked the
+       page sideways by an amount that depended entirely on how far you had
+       dragged. It felt like the zoom was anchored on nothing, because it was
+       anchored on something invisible.
+
+       Anchoring on the centre of the viewport is the rule people expect from
+       every other viewer: the wheel follows the cursor, the buttons hold the
+       middle still. */
+    function zoomBy(mult){
+      const r = root.getBoundingClientRect();
+      const next = clampScale(pz.getScale() * mult);
+      pz.zoomToPoint(next, { clientX: r.left + r.width / 2,
+                             clientY: r.top  + r.height / 2 }, { animate: false });
+      paint();
+    }
+    const clampScale = s => Math.min(PZ.maxScale, Math.max(PZ.minScale, s));
+
+    /* FIT WIDTH. The page is drawn `object-fit: contain`, so at scale 1 a tall
+       page leaves bars down both sides and is unreadably small — which is the
+       single most common thing to want fixed on a comic page.
+
+       The scale that makes the drawn image exactly fill the box's width is the
+       box width over the DRAWN width, and the drawn width is not the natural
+       width: contain has already shrunk it. getBoundingClientRect() on the img
+       reports the drawn box AFTER the current transform, so it is divided back
+       out by the current scale to get the untransformed one. */
+    function fitWidth(){
+      if(img.hidden) return;
+      const box = root.getBoundingClientRect();
+      const cur = pz.getScale() || 1;
+      const drawn = img.getBoundingClientRect().width / cur;
+      if(!drawn || !box.width) return;
+      /* THE PADDING IS READ, NOT INFERRED. The first cut worked it out as
+         inner's width minus the image's, which is not padding at all — it is
+         the letterboxing `object-fit: contain` leaves down the sides of a tall
+         page. On a 400x1200 page in a 900px box that came to 711px of
+         "padding", so the target scale computed as exactly 1 and the button
+         did nothing. It looked like fit-width was unimplemented; it was
+         implemented and always answering "already there". */
+      const cs = getComputedStyle(inner);
+      const pad = (parseFloat(cs.paddingLeft) || 0) + (parseFloat(cs.paddingRight) || 0);
+      const target = clampScale((box.width - pad) / drawn);
+      pz.setOptions({ contain: undefined });
+      pz.reset({ animate: false });
+      pz.zoom(target, { animate: false });
+      pz.setOptions({ contain: PZ.contain });
+      paint(target);
+    }
     /* belt and braces: even with user-drag off, a stray dragstart would end
        the gesture, so refuse it outright */
     root.addEventListener('dragstart', e => e.preventDefault());
@@ -136,9 +197,11 @@
     zbar.addEventListener('click', e => {
       const b = e.target.closest('[data-z]');
       if(!b) return;
-      if(b.dataset.z === 'in'){ pz.zoomIn({ animate: false }); paint(); }
-      else if(b.dataset.z === 'out'){ pz.zoomOut({ animate: false }); paint(); }
-      else reset();
+      const z = b.dataset.z;
+      if(z === 'in')         zoomBy(1.25);
+      else if(z === 'out')   zoomBy(1 / 1.25);
+      else if(z === 'width') fitWidth();
+      else                   reset();
     });
 
     /* Two things this has to get right.
@@ -174,6 +237,7 @@
         reset();
       },
       reset,
+      fitWidth,
       zoom: () => pz.getScale(),
       pz
     };
