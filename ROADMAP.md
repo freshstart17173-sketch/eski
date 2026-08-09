@@ -40,26 +40,23 @@ only while proxied, and there is no explicit apex record. Re-proxy the wildcard
 to unbreak it, then give the apex its own A records so the wildcard stops being
 load-bearing. `docs/FASTER.md` §1.
 
-**The remaining steps, with the checks, are in
-[`docs/FASTER.md`](docs/FASTER.md) §1**, starting at 5a. The shape: delete the
-leftover `cdn` DNS record, attach `cdn.eski.lol` to the R2 bucket from R2 >
-Settings > Custom Domains, add a cache rule that overrides origin with a
-one-year TTL, turn on Smart Tiered Cache. Then
-**two** lines change, and they must agree:
+**The full step-by-step is in [`docs/FASTER.md`](docs/FASTER.md) §1.** The two
+remaining actions, both dashboard:
 
-```js
-platform.js   const R2_BASE = 'https://cdn.eski.lol'
-sw.js         const MEDIA   = 'https://cdn.eski.lol/'      // note the slash
-```
+1. **The cache rule.** Cloudflare → Caching → Cache Rules → new rule,
+   expression `(http.host eq "cdn.eski.lol")`, Eligible for cache, Edge TTL
+   *ignore cache-control and use this TTL* → 1 year, Browser TTL *override
+   origin* → 1 year. Then Caching → Tiered Cache → Smart Tiered Cache.
+   "Ignore", not "respect": objects published before August have no
+   `Cache-Control` at all, and respecting the origin leaves them uncached
+   forever. Safe because every key is a sha256 of the bytes.
+2. **Give `eski.lol` its own A records** and re-proxy the wildcard until you
+   have, per the warning in §1.
 
-It is two because a service worker cannot import a module, so `sw.js` has to
-repeat the host. Changing only one breaks nothing visibly — the media cache
-just stops hitting and every page is downloaded again forever, on a site that
-looks fine. `node tests/structure.js` fails if they disagree, so run it before
-you deploy and it will catch you.
-
-The cache rule is the part not to skip — it is what fixes comics published
-before August, which went up with no cache headers at all.
+The code half is done. The host is in **three** files, not two —
+`platform.js`, `sw.js` and `api/comic.mjs` — and `node tests/structure.js`
+fails if any of them disagrees. That check originally covered only two, which
+is exactly how `api/comic.mjs` was nearly left behind on the old hostname.
 
 ### 2. Register a DMCA agent — DEFERRED until there are users
 
