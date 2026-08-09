@@ -17,8 +17,9 @@ The other docs, and when to open them: [`ROADMAP.md`](ROADMAP.md) is the only
 backlog; [`ERRORS.txt`](ERRORS.txt) registers every `ESK-####`;
 [`docs/FASTER.md`](docs/FASTER.md) is what is slow and why, measured;
 [`docs/AUTH.md`](docs/AUTH.md) is why sign-in is Supabase and what it would
-cost to change; [`docs/design/STYLE.md`](docs/design/STYLE.md) is the UI's own
-rules.
+cost to change; [`docs/BEFORE-LAUNCH.md`](docs/BEFORE-LAUNCH.md) is what is
+still missing before strangers can use it; and
+[`docs/design/STYLE.md`](docs/design/STYLE.md) is the UI's own rules.
 
 ---
 
@@ -89,7 +90,7 @@ script. This is what ESK-1005 is for.
 | `loudness.js` | ITU-R BS.1770-4 measurement and the gain targets. Used by both studios so the two cannot disagree about how loud a clip is. |
 | `comments.js` | The comment thread widget, used by the comic page and the reader. |
 | `hash-worker.js` | SHA-256 off the main thread, for content-addressed upload keys. |
-| `sw.js` | Precaches the app shell. Deliberately refuses media. |
+| `sw.js` | Precaches the app shell, and keeps published media in a second, versionless cache that survives deploys. Names the media host, which `platform.js` also names — `tests/structure.js` asserts the two agree. |
 
 ### Surfaces
 

@@ -94,6 +94,31 @@ grant  execute on function public.eski_part_allowed(uuid, text) to anon, authent
 --       turning on if magic links or passwords are ever added; today it
 --       protects nothing.
 
+-- ==================================================== 4. ceilings on free text
+-- Every other column a stranger can write already had one — comments 4000,
+-- bio 400, tags 2-40, handle by regex — so these four were the exception
+-- rather than the rule. A display name with no ceiling is the worst of them:
+-- it renders on every byline of every comic and every comment they touch, so
+-- one person could make a megabyte of text appear on somebody else's page.
+--
+-- The longest real value in the database when this went in was 15 characters,
+-- so nothing existing is remotely near these numbers.
+alter table profiles drop constraint if exists profiles_display_name_len;
+alter table profiles add constraint profiles_display_name_len
+  check (display_name is null or char_length(display_name) <= 60);
+
+alter table comics drop constraint if exists comics_title_len;
+alter table comics add constraint comics_title_len
+  check (char_length(title) <= 200);
+
+alter table comics drop constraint if exists comics_description_len;
+alter table comics add constraint comics_description_len
+  check (description is null or char_length(description) <= 2000);
+
+alter table parts drop constraint if exists parts_title_len;
+alter table parts add constraint parts_title_len
+  check (title is null or char_length(title) <= 200);
+
 notify pgrst, 'reload schema';
 
 -- ------------------------------------------------------------------ verify
