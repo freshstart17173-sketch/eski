@@ -24,10 +24,21 @@ Worth more than everything else on this page put together. Every page and every
 clip is fetched from one region with no edge cache, on a hostname Cloudflare
 rate-limits on purpose and which under real traffic starts answering 429.
 
-**The DNS half is already done** — checked 9 Aug: the zone is on Cloudflare
-and the app is still on Vercel. What is left is that `cdn.eski.lol` exists but
-points at **Vercel**, which answers it `DEPLOYMENT_NOT_FOUND`. So it is not the
-bucket, and the media is still coming off `r2.dev`.
+**Mostly done, checked 9 Aug.** The zone is on Cloudflare, `cdn.eski.lol` is
+attached to the bucket and serving it, and the app points at it — verified for
+Range (206), CORS (`*`) and a 404 coming from Cloudflare rather than Vercel.
+
+**What is left is the Cloudflare cache rule**, and it is the step that matters
+most: two consecutive requests still answer `cf-cache-status: DYNAMIC`, because
+objects published before August carry no `Cache-Control` at all. The rule has
+to be set to **ignore** the origin header, not respect it, or those stay
+uncached forever.
+
+**Also: `eski.lol` currently does not resolve.** Grey-clouding `*.eski.lol` was
+my suggestion and it was wrong — a Cloudflare wildcard covers the zone apex
+only while proxied, and there is no explicit apex record. Re-proxy the wildcard
+to unbreak it, then give the apex its own A records so the wildcard stops being
+load-bearing. `docs/FASTER.md` §1.
 
 **The remaining steps, with the checks, are in
 [`docs/FASTER.md`](docs/FASTER.md) §1**, starting at 5a. The shape: delete the

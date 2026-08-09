@@ -12,7 +12,7 @@ others put together.
 
 | # | | |
 |---|---|---|
-| 1 | Move media off `r2.dev` | **OPEN — the DNS move is done; `cdn.eski.lol` still points at Vercel. See §1.** |
+| 1 | Move media off `r2.dev` | **half done — the app is on `cdn.eski.lol`; the cache rule is not in yet, so it is still `DYNAMIC`. See §1.** |
 | 2 | Preconnect to the media host | done — every page but `admin.html` |
 | 3 | Stop loading jszip everywhere | **done** — vendored, loaded only when a zip is opened |
 | 4 | A real cache policy for un-hashed assets | done — see `vercel.json` |
@@ -98,52 +98,56 @@ url". So today:
 This is why a page turn costs a second. Fixing it makes everything already
 published faster, without republishing anything.
 
-### Where this actually stands — checked 9 Aug 2026
+### Where this actually stands — checked 9 Aug 2026, second pass
 
-**The DNS move is DONE.** The zone is on Cloudflare and the app is still on
-Vercel, which is exactly the arrangement steps 1-4 below described. Measured
-from here:
+**`cdn.eski.lol` now serves the bucket.** The R2 custom domain is attached and
+Active, and the app points at it — `platform.js`, `sw.js` and `api/comic.mjs`,
+all three, with `tests/structure.js` asserting they agree.
 
-```
-eski.lol        proxied by Cloudflare (cf-ray present), serving Vercel  200
-www.eski.lol    DNS only (no cf-ray), straight to Vercel                200
-cdn.eski.lol    proxied by Cloudflare ... to VERCEL                     404
-```
-
-That last line is the whole remaining problem. **`cdn.eski.lol` exists and is
-pointed at Vercel, not at the bucket.** Vercel answers it with
-`x-vercel-error: DEPLOYMENT_NOT_FOUND`, because no Vercel project claims that
-hostname. So there is a leftover `cdn` record in the zone — almost certainly a
-CNAME to `cname.vercel-dns.com` created while the zone was being set up.
-
-The proof, either object, either host:
+Verified before switching, because a wrong host here breaks every comic at once
+rather than one page:
 
 ```
-https://pub-…r2.dev/98/9877….jpg   200   ← the bucket is fine
-https://cdn.eski.lol/98/9877….jpg  404   ← this is Vercel answering, not R2
+GET  cdn.eski.lol/<a real key>          200, correct etag and length
+GET  with Range: bytes=0-1023           206  ← audio seeking needs this
+GET  with Origin:                       access-control-allow-origin: *
+GET  a key that does not exist          404 from cloudflare, NOT from vercel
 ```
 
-**So steps 1-4 are already behind you. Do steps 5-8, starting with deleting
-that record**, because R2 will not attach a hostname that already has a
-conflicting record — it either refuses or silently leaves the old one winning,
-which is what a 404 from Vercel on your CDN hostname looks like.
+That last line is the one that mattered. An hour earlier the same request
+returned `x-vercel-error: DEPLOYMENT_NOT_FOUND`, because a leftover CNAME
+pointed `cdn` at Vercel instead of at the bucket.
 
-**5a. Delete the existing `cdn` record.** Cloudflare → `eski.lol` → **DNS** →
-**Records**. Find the row named `cdn` and delete it. It is pointed at Vercel
-and nothing wants it there. (If there is no such row, the record may have come
-from a wildcard `*` CNAME — in that case leave the wildcard and skip ahead;
-R2's explicit `cdn` record will beat it.)
+**What is still missing: the cache rule.** Two consecutive requests both
+answer `cf-cache-status: DYNAMIC`, and there is still no `Cache-Control` on
+the response, because objects published before August went up without one.
+Until step 7 below is done, `cdn.eski.lol` is a better hostname than `r2.dev`
+— proxied, not rate-limited, HTTP/3 — but it is **not yet a cache**.
 
-### One thing to fix while you are in the DNS tab
+### DO NOT grey-cloud the wildcard — I got this wrong once already
 
-`eski.lol` (the apex) is **proxied** and `www.eski.lol` is **not**. That is
-inconsistent, and step 3 below says both should be DNS-only. It works today —
-the apex returns 200 — but two CDNs in series in front of Vercel buys nothing
-and makes cache behaviour harder to reason about, and only one of your two
-hostnames is doing it. Grey-cloud the apex so the pair match.
+An earlier version of this section said the apex was proxied while `www` was
+not, and to grey-cloud it so the pair matched. **That advice took the apex
+down**, and the reason is worth writing out because it is not obvious:
 
-The bucket record is the deliberate exception: that one **must** stay proxied,
-and R2 sets it up that way itself.
+There is **no explicit `eski.lol` record** in this zone. The apex was resolving
+through the `*.eski.lol` wildcard — and a Cloudflare wildcard covers the zone
+apex **only while it is proxied**. Grey-clouded, it follows RFC 1034, stops
+matching the bare domain, and `eski.lol` resolves to nothing at all.
+
+So the correct order is:
+
+1. **Give the apex its own records** — `eski.lol` A → the same pair `www` uses
+   (check Vercel → Settings → Domains for the authoritative values), DNS only.
+2. **Only then** is the wildcard free to be grey-clouded, or deleted outright,
+   because nothing else in this zone needs `*`.
+
+If the apex is down right now, the one-click unbreak is to set `*.eski.lol`
+back to Proxied. It is not the tidy end state, but a dead apex beats a tidy
+one.
+
+The bucket record is the deliberate exception either way: `cdn.eski.lol`
+**must** stay proxied, and R2 sets it up that way itself.
 
 ---
 
@@ -161,7 +165,10 @@ account and managed through Cloudflare DNS."*
 1. Write down what Vercel is serving (Vercel → project → Settings → Domains).
 2. Cloudflare → Add a site → `eski.lol` → Free plan. Check the imported
    records, including any MX/TXT.
-3. Set the Vercel records to **DNS only** (grey cloud).
+3. Set the Vercel records to **DNS only** (grey cloud). **With one exception,
+   learned the hard way — see the warning above: the `*` wildcard must stay
+   proxied unless the apex has records of its own, or `eski.lol` stops
+   resolving entirely.**
 4. Change the nameservers at the registrar from `ns*.vercel-dns.com` to
    Cloudflare's. This moves DNS hosting, not the registration. Vercel then
    shows a nameserver warning, which is expected and can be ignored — A-record
