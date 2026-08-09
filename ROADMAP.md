@@ -467,6 +467,25 @@ vendored Panzoom, which handles two pointers.
 Asked for, never built. Wants item 10 first if it is going to survive the move
 to layers.
 
+### 26. Profile page cleanup · ~1 hour · QUEUED
+
+Five things, all on `profile.html`, from looking at the real page:
+
+- **Drop the READ counter.** "Read 0" beside "Reading" and "Shelf" is three
+  numbers where one matters.
+- **Drop every horizontal rule inside the page.** The header and footer keep
+  theirs; the ones between sections are dividing things that do not need
+  dividing.
+- **The tabs align to the wrong box.** Each tab is `word + count`, and the
+  whole pair is being centred — so when a count is 0 or absent the word sits
+  visibly off from its neighbours. The WORD is the thing on the baseline grid;
+  the count hangs off it. Align on the word.
+- **Drop the copy-link button.** Same reasoning as the one on the comic modal:
+  every profile is already at `/u/<handle>`, so the address bar has it.
+- Discord sign-in is wired in `PROVIDERS` but **not enabled in the dashboard
+  yet** — that is deliberate, and it is item 1's neighbour in "yours, not
+  mine".
+
 ### 25. An offline download button · ~2–3 hours
 
 The service worker caches what you have read; there is no way to say "keep this
