@@ -164,18 +164,31 @@ for (const f of PAGES) {
   ok(missing.length === 0, `${f} links only to files that exist`, missing.join(', '));
 }
 
-console.log('the media host is the same in both files that name it');
-/* THE ONE VALUE THAT GENUINELY LIVES TWICE. A service worker cannot import a
-   module, so sw.js cannot read R2_BASE out of platform.js and has to repeat
-   it. A disagreement here is invisible in the worst way: nothing breaks, the
-   media cache simply never hits, and every page is downloaded again forever
-   while the site looks fine. So the duplication is allowed and checked, rather
-   than allowed and hoped about. */
+console.log('the media host is the same in all three files that name it');
+/* THE ONE VALUE THAT GENUINELY LIVES THREE TIMES. A service worker cannot
+   import a module and a Vercel function does not share a bundle with the app,
+   so sw.js and api/comic.mjs each repeat what platform.js declares.
+
+   A disagreement is invisible in the worst way. sw.js out of step means the
+   media cache silently never hits again. api/comic.mjs out of step means link
+   previews keep pulling from the old hostname — and that one is worse than it
+   sounds, because it only shows up in Slack, Discord and iMessage unfurls,
+   which nobody tests and everybody sees.
+
+   This check was written for two files and MISSED api/comic.mjs, which is
+   exactly how the third copy survived the move to cdn.eski.lol. */
 {
-  const app = (read('platform.js').match(/const R2_BASE\s*=\s*'([^']+)'/) || [])[1];
-  const sw  = (read('sw.js').match(/const MEDIA\s*=\s*'([^']+)'/) || [])[1];
-  ok(app && sw && sw.replace(/\/$/, '') === app.replace(/\/$/, ''),
-    'sw.js MEDIA matches platform.js R2_BASE', `platform=${app} sw=${sw}`);
+  const hosts = {
+    'platform.js':    (read('platform.js').match(/const R2_BASE\s*=\s*'([^']+)'/) || [])[1],
+    'sw.js':          (read('sw.js').match(/const MEDIA\s*=\s*'([^']+)'/) || [])[1],
+    'api/comic.mjs':  (read('api/comic.mjs').match(/const R2_BASE\s*=\s*'([^']+)'/) || [])[1]
+  };
+  const bare = Object.fromEntries(
+    Object.entries(hosts).map(([f, h]) => [f, (h || '').replace(/\/$/, '')]));
+  const all = [...new Set(Object.values(bare))];
+  ok(all.length === 1 && all[0],
+    'every file that names the media host names the same one',
+    Object.entries(bare).map(([f, h]) => `${f}=${h || '(not found)'}`).join('  '));
 }
 
 console.log('the map is current');

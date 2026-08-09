@@ -13,26 +13,33 @@
 const SUPABASE_URL = 'https://zidqagrmxeawpasurpwi.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_cZuZnUhWmEGESYb7BR1Kzg_nPjR8CZR';   // public, safe to commit
 
-/* WHERE PUBLISHED MEDIA IS SERVED FROM, and the single biggest thing still
-   slowing the reader down.
+/* WHERE PUBLISHED MEDIA IS SERVED FROM.
 
-   pub-*.r2.dev is Cloudflare's DEVELOPMENT hostname for a public bucket.
-   Their docs are unambiguous: it "is rate-limited and should only be used
-   for development purposes", and features "like WAF custom rules, caching,
-   access controls, or Bot Management" require a custom domain — caching
-   included. So today every page and every clip is fetched from the origin,
-   past no edge cache, on a hostname that will start returning 429s under
-   load. Measured from here: ~1s for a 1 MB page, no Cache-Control header of
-   any kind on the response.
+   This was pub-*.r2.dev, Cloudflare's DEVELOPMENT hostname for a public
+   bucket. Their docs are unambiguous: it "is rate-limited and should only be
+   used for development purposes", and caching "is not available when using
+   the r2.dev development url". So every page and every clip came from the
+   origin in one region, past no edge cache, on a hostname that starts
+   answering 429 under load.
 
-   THE FIX IS NOT CODE. Add a custom domain to the bucket in the Cloudflare
-   dashboard (R2 > the bucket > Settings > Custom Domains), point cdn.eski.lol
-   at it, and change the line below. The database stores object KEYS and never
-   urls, so that is the whole migration: no rows change, and everything
-   already published starts being served from the edge.
+   cdn.eski.lol is the bucket's custom domain, proxied through Cloudflare.
+   Verified before switching, because a wrong hostname here breaks every comic
+   at once: it returns the object with a correct etag and length, answers a
+   Range request with 206 (audio seeking needs that), sends
+   access-control-allow-origin: * (the studio and the reader both read cross
+   origin), and 404s from Cloudflare rather than from Vercel — which it did
+   NOT do at first, because a leftover CNAME pointed the name at Vercel.
+
+   The database stores object KEYS and never urls, so changing this migrates
+   nothing: every comic already published simply starts coming off the edge.
+
+   MUST MATCH `MEDIA` IN sw.js. A service worker cannot import a module, so
+   that file repeats the host, and tests/structure.js fails if the two
+   disagree — a mismatch is invisible, it just means the media cache never
+   hits again.
 
    https://developers.cloudflare.com/r2/buckets/public-buckets/ */
-const R2_BASE = 'https://pub-b9e7c6b680ca415e9ffd5875bad0df03.r2.dev';
+const R2_BASE = 'https://cdn.eski.lol';
 
 // add 'discord' back once it is enabled in the supabase dashboard. a provider
 // offered here but not enabled there fails at the redirect with a raw error

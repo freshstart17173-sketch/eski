@@ -175,7 +175,7 @@ console.log('the media cache keeps published pages and audio');
     return ctx;
   };
 
-  const KEY = 'https://pub-b9e7c6b680ca415e9ffd5875bad0df03.r2.dev/ab/deadbeef.png';
+  const KEY = 'https://cdn.eski.lol/ab/deadbeef.png';
   const res = (status, tag) => ({ status, tag, clone(){ return { status, tag }; } });
 
   // one fetch, then the cache

@@ -1,7 +1,7 @@
 /* eski service worker.
    HTML is network-first so a deploy lands immediately (no hard-reload needed);
    other assets are cache-first with a background refresh. */
-const CACHE = 'eski-v16';
+const CACHE = 'eski-v17';
 
 /* WHERE PUBLISHED PAGES AND AUDIO COME FROM.
 
@@ -13,7 +13,7 @@ const CACHE = 'eski-v16';
    duplication safe rather than a trap.
 
    Change both together when the bucket moves to a custom domain. */
-const MEDIA = 'https://pub-b9e7c6b680ca415e9ffd5875bad0df03.r2.dev/';
+const MEDIA = 'https://cdn.eski.lol/';
 
 /* A SEPARATE, VERSIONLESS CACHE, and this is the important part. `activate`
    deletes every cache whose name is not CACHE, so putting comics in there

@@ -20,7 +20,14 @@
 
 const SUPABASE_URL = 'https://zidqagrmxeawpasurpwi.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_cZuZnUhWmEGESYb7BR1Kzg_nPjR8CZR';   // public, safe to commit
-const R2_BASE = 'https://pub-b9e7c6b680ca415e9ffd5875bad0df03.r2.dev';
+/* THE THIRD COPY OF THE MEDIA HOST, and the one that nearly got left behind.
+   platform.js and sw.js were both updated when the bucket moved to
+   cdn.eski.lol; this was missed, because nothing on the site reads it — it
+   only builds og:image, so the symptom would have been link previews quietly
+   still pulling from the rate-limited development hostname, on exactly the
+   requests that come from Slack, Discord and iMessage unfurlers.
+   tests/structure.js now checks all three. */
+const R2_BASE = 'https://cdn.eski.lol';
 
 const esc = s => (s ?? '').toString()
   .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
