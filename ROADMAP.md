@@ -18,45 +18,40 @@ Five things no amount of code can do, because they need a dashboard login, a
 legal name, or a decision that is yours. Most are now done or deliberately
 deferred — **item 1 is the one still worth doing.**
 
-### 1. Move the media off `r2.dev` — 20 minutes, then some waiting
+### 1. Move the media off `r2.dev` — DONE except the apex record
 
-Worth more than everything else on this page put together. Every page and every
-clip is fetched from one region with no edge cache, on a hostname Cloudflare
-rate-limits on purpose and which under real traffic starts answering 429.
+The zone is on Cloudflare, `cdn.eski.lol` is attached to the bucket, the app
+points at it in all three files that name it, and **the cache rule is live**:
+a request for a cache key the edge has never seen answers
+`cf-cache-status: MISS` with `cache-control: max-age=31536000`, and the next
+one answers `HIT` with a climbing `age`. Objects published before August, which
+carry no cache header of their own, are now held at the edge for a year — which
+is exactly why the rule had to *override* the origin rather than respect it.
 
-**Mostly done, checked 9 Aug.** The zone is on Cloudflare, `cdn.eski.lol` is
-attached to the bucket and serving it, and the app points at it — verified for
-Range (206), CORS (`*`) and a 404 coming from Cloudflare rather than Vercel.
+**Verify with a GET, never `curl -I`.** HEAD is not cached by Cloudflare and
+answers `DYNAMIC` on a perfectly healthy zone. I called this rule broken twice
+before noticing that. `docs/FASTER.md` §1, "Check it worked".
 
-**What is left is the Cloudflare cache rule**, and it is the step that matters
-most: two consecutive requests still answer `cf-cache-status: DYNAMIC`, because
-objects published before August carry no `Cache-Control` at all. The rule has
-to be set to **ignore** the origin header, not respect it, or those stay
-uncached forever.
+**The one thing left: `eski.lol` does not resolve.** Grey-clouding
+`*.eski.lol` was my suggestion and it was wrong — a Cloudflare wildcard covers
+the zone apex only while proxied, and there is no explicit apex record. Add
+one, DNS only:
 
-**Also: `eski.lol` currently does not resolve.** Grey-clouding `*.eski.lol` was
-my suggestion and it was wrong — a Cloudflare wildcard covers the zone apex
-only while proxied, and there is no explicit apex record. Re-proxy the wildcard
-to unbreak it, then give the apex its own A records so the wildcard stops being
-load-bearing. `docs/FASTER.md` §1.
+```
+eski.lol   CNAME   70c3f7e54f47192c.vercel-dns-017.com
+```
 
-**The full step-by-step is in [`docs/FASTER.md`](docs/FASTER.md) §1.** The two
-remaining actions, both dashboard:
+Cloudflare flattens a CNAME at the apex, and that target is what Vercel issued
+for this project — it resolves to `216.198.79.1` and `64.29.17.1`, the same
+pair `www.eski.lol` uses, which is how it was confirmed rather than guessed.
+Once it is in, the wildcard can be grey-clouded or deleted; nothing else needs
+`*`.
 
-1. **The cache rule.** Cloudflare → Caching → Cache Rules → new rule,
-   expression `(http.host eq "cdn.eski.lol")`, Eligible for cache, Edge TTL
-   *ignore cache-control and use this TTL* → 1 year, Browser TTL *override
-   origin* → 1 year. Then Caching → Tiered Cache → Smart Tiered Cache.
-   "Ignore", not "respect": objects published before August have no
-   `Cache-Control` at all, and respecting the origin leaves them uncached
-   forever. Safe because every key is a sha256 of the bytes.
-2. **Give `eski.lol` its own A records** and re-proxy the wildcard until you
-   have, per the warning in §1.
-
-The code half is done. The host is in **three** files, not two —
-`platform.js`, `sw.js` and `api/comic.mjs` — and `node tests/structure.js`
-fails if any of them disagrees. That check originally covered only two, which
-is exactly how `api/comic.mjs` was nearly left behind on the old hostname.
+**Three dashboards, one authority.** Spaceship is only the registrar — its DNS
+panel says INACTIVE and anything in it is ignored. Vercel's "update your
+nameservers" banner is expected and should stay ignored; external DNS is their
+supported path and both domains are connected to the project. **Cloudflare is
+the only place a DNS change has any effect.**
 
 ### 2. Register a DMCA agent — DEFERRED until there are users
 

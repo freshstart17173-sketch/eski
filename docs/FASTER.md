@@ -12,7 +12,7 @@ others put together.
 
 | # | | |
 |---|---|---|
-| 1 | Move media off `r2.dev` | **half done — the app is on `cdn.eski.lol`; the cache rule is not in yet, so it is still `DYNAMIC`. See §1.** |
+| 1 | Move media off `r2.dev` | **DONE** — app on `cdn.eski.lol`, cache rule live, `MISS` → `HIT` confirmed |
 | 2 | Preconnect to the media host | done — every page but `admin.html` |
 | 3 | Stop loading jszip everywhere | **done** — vendored, loaded only when a zip is opened |
 | 4 | A real cache policy for un-hashed assets | done — see `vercel.json` |
@@ -118,11 +118,23 @@ That last line is the one that mattered. An hour earlier the same request
 returned `x-vercel-error: DEPLOYMENT_NOT_FOUND`, because a leftover CNAME
 pointed `cdn` at Vercel instead of at the bucket.
 
-**What is still missing: the cache rule.** Two consecutive requests both
-answer `cf-cache-status: DYNAMIC`, and there is still no `Cache-Control` on
-the response, because objects published before August went up without one.
-Until step 7 below is done, `cdn.eski.lol` is a better hostname than `r2.dev`
-— proxied, not rate-limited, HTTP/3 — but it is **not yet a cache**.
+**The cache rule is in and working.** Confirmed on a cache key the edge had
+never seen:
+
+```
+GET  cdn.eski.lol/<key>?v=fresh    cache-control: max-age=31536000
+                                   cf-cache-status: MISS
+GET  the same url again            age: 0 → climbing
+                                   cf-cache-status: HIT
+```
+
+I reported this rule as broken twice before checking it properly. See
+"Check it worked" below for why, and do not repeat it: `curl -I` is a HEAD
+request and Cloudflare never caches HEAD.
+
+So objects published before August, which carry no `Cache-Control` of their
+own, are now served with a year of it and held at the edge. That was the whole
+point of overriding the origin header rather than respecting it.
 
 ### DO NOT grey-cloud the wildcard — I got this wrong once already
 
@@ -137,8 +149,18 @@ matching the bare domain, and `eski.lol` resolves to nothing at all.
 
 So the correct order is:
 
-1. **Give the apex its own records** — `eski.lol` A → the same pair `www` uses
-   (check Vercel → Settings → Domains for the authoritative values), DNS only.
+1. **Give the apex its own record.** The best form is a CNAME, because
+   Cloudflare flattens CNAMEs at the zone apex and it then survives Vercel
+   rotating IPs:
+
+   ```
+   eski.lol   CNAME   70c3f7e54f47192c.vercel-dns-017.com   DNS only
+   ```
+
+   That target is the one Vercel issued for this project, and it resolves to
+   `216.198.79.1` and `64.29.17.1` — the exact pair `www.eski.lol` already
+   uses, which is how it was confirmed rather than guessed. A records with
+   those two values work equally well and are less future-proof.
 2. **Only then** is the wildcard free to be grey-clouded, or deleted outright,
    because nothing else in this zone needs `*`.
 
@@ -215,25 +237,45 @@ never change. If the bytes change, so does the key.
 Free, one toggle. It means a miss in one city is filled from a nearby
 Cloudflare datacentre rather than from the bucket.
 
-### Check it worked
+### Check it worked — and NOT with `curl -I`
+
+**`curl -I` sends a HEAD request, and Cloudflare does not cache HEAD.** It
+answers `cf-cache-status: DYNAMIC` forever, on a zone whose cache rule is
+working perfectly. This document told you to check that way, I checked that
+way, and I twice reported a correct cache rule as broken because of it. Use a
+real GET and throw the body away:
 
 ```bash
-# should be a real image type, an immutable directive, and — on the second
-# request — a HIT
-curl -sI https://cdn.eski.lol/98/9877…c.jpg | grep -iE 'content-type|cache-control|cf-cache-status'
-
-content-type: image/jpeg
-cache-control: public, max-age=31536000, immutable
-cf-cache-status: HIT
+K=98/9877…c.jpg
+curl -sS -o /dev/null -D - "https://cdn.eski.lol/$K" \
+  | grep -iE 'cf-cache-status|cache-control|age'
 ```
 
-`cf-cache-status: HIT` on the second request is the whole point. If it says
-`DYNAMIC`, the cache rule is not matching. If there is no `cf-cache-status`
-header at all, the record is not proxied.
+Run it twice. What a working rule looks like:
 
-Also check the site still works: `curl -sI https://www.eski.lol/` should still
-show `x-vercel-id`, and **not** a `cf-ray`. If you see `cf-ray`, the Vercel
-record got proxied — grey-cloud it.
+```
+cache-control: max-age=31536000
+cf-cache-status: MISS      ← first request, fills the edge
+---
+age: 2
+cache-control: max-age=31536000
+cf-cache-status: HIT       ← second request, served from the edge
+```
+
+`age:` climbing across requests is the strongest single signal: it is the edge
+telling you how long it has held that object.
+
+To test on a key the edge has never seen, add a query string — `?v=whatever`
+is a different cache key, so it re-runs the MISS → HIT sequence without waiting
+for anything to expire.
+
+If it says `DYNAMIC` **on a GET**, the rule is genuinely not matching: check
+the expression is `(http.host eq "cdn.eski.lol")` and that the rule is deployed
+rather than saved as a draft. If there is no `cf-cache-status` header at all,
+the record is not proxied.
+
+Also check the site still works: `curl -sS -o /dev/null -D - https://www.eski.lol/`
+should still show `x-vercel-id`.
 
 ### While you are in there
 
