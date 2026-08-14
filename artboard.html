@@ -38,8 +38,8 @@
 }
 
 :root{
-  --bg:#000000; --panel:#1a1a1a; --panel-soft:rgba(26,26,26,.6);
-  --border:#333333; --text:#e5e5e5; --text-dim:#b2b2b2; --text-mute:#696969;
+  --bg:#242424; --panel:#1a1a1a; --panel-soft:rgba(26,26,26,.6);
+  --border:#333333; --hover-bg:#333333; --text:#e5e5e5; --text-dim:#b2b2b2; --text-mute:#696969;
   --primary:#e2dfe9; --primary-ink:#000000; --radius:3px; --scrim:rgba(0,0,0,.95);
   --font-chrome:'areal','Areal Fallback',Arial,Helvetica,sans-serif;
 }
@@ -60,11 +60,13 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--
 .top button,.top select{font:inherit;font-family:var(--font-chrome);font-size:12.5px;font-weight:700;
   color:var(--text-dim);background:var(--panel);border:1px solid transparent;border-radius:var(--radius);
   height:28px;padding:0 10px;cursor:pointer;display:flex;align-items:center;gap:6px}
-.top button:hover{color:var(--text);border-color:var(--border)}
+.top button:hover{color:var(--text);border-color:var(--border);background:var(--hover-bg)}
 .top button[aria-pressed="true"]{background:var(--primary);color:var(--primary-ink)}
+.top button[aria-pressed="true"]:hover{background:var(--primary);border-color:var(--primary)}
 .top select{appearance:none;padding-right:22px;background-image:
   linear-gradient(45deg,transparent 50%,var(--text-dim) 50%),linear-gradient(135deg,var(--text-dim) 50%,transparent 50%);
   background-position:calc(100% - 12px) 12px,calc(100% - 8px) 12px;background-size:4px 4px;background-repeat:no-repeat}
+.top select:hover{color:var(--text);border-color:var(--border);background-color:var(--hover-bg)}
 .zoomreadout{font-variant-numeric:tabular-nums;font-size:12px;color:var(--text-mute);min-width:38px;text-align:center}
 .sp{flex:1}
 .help{font-size:11px;color:var(--text-mute);white-space:nowrap}
@@ -79,7 +81,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--
 #viewport.grabbing{cursor:grabbing}
 #viewport.comment-mode{cursor:crosshair}
 #grid{position:absolute;inset:0;pointer-events:none;opacity:0;
-  background-image:linear-gradient(#2a2a2a 1px,transparent 1px),linear-gradient(90deg,#2a2a2a 1px,transparent 1px);
+  background-image:linear-gradient(#454545 1px,transparent 1px),linear-gradient(90deg,#454545 1px,transparent 1px);
   transition:opacity 120ms linear}
 /* no will-change here on purpose: it promotes #world to its own GPU
    layer, and chrome then scales that layer's cached raster texture
@@ -91,8 +93,10 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--
 .marquee{position:fixed;border:1px solid var(--primary);background:rgba(226,223,233,.08);pointer-events:none;z-index:40}
 
 /* ---------- selectable mockup chrome ---------- */
-.selectable{outline:1px solid transparent;outline-offset:2px;cursor:pointer}
+.selectable{outline:1px solid transparent;outline-offset:2px;cursor:pointer;transition:outline-color 100ms ease}
+.selectable:hover{outline:1px dashed rgba(226,223,233,.55)}
 .selectable.selected{outline:2px solid var(--primary)}
+.selectable.selected:hover{outline:2px solid var(--primary)}
 .section-label{position:absolute;top:-22px;left:0;font-size:11px;color:var(--text-mute);
   font-family:var(--font-chrome);font-weight:700;letter-spacing:.02em}
 
@@ -146,12 +150,46 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--
 .eski-mockup .ms{position:relative} /* generic wrapper so .section-label can anchor */
 .badge{font-family:var(--font-body);font-weight:700;font-size:var(--fs-micro);color:var(--paper);
   background:var(--ink);text-transform:uppercase;letter-spacing:.06em;padding:4px 7px}
+
 .chip{font-family:var(--font-body);font-weight:500;font-size:var(--fs-xs);color:var(--ink-soft);
-  background:var(--paper);padding:6px 12px;border:1.5px solid var(--ink);border-radius:var(--radius-min)}
+  background:var(--paper);padding:6px 12px;border:1.5px solid var(--ink);border-radius:var(--radius-min);
+  cursor:pointer;transition:background 120ms ease,border-color 120ms ease}
+.chip:hover{background:var(--accent-tint);border-color:var(--accent)}
 .chip.small{font-size:var(--fs-micro);padding:4px 9px}
+.chip.active{background:var(--ink);color:var(--paper)}
+.chip.active:hover{background:var(--ink-soft);border-color:var(--ink-soft)}
+
 .btnline{font-family:var(--font-body);font-weight:600;font-size:var(--fs-sm);color:var(--ink);
   background:var(--paper);text-transform:uppercase;letter-spacing:.06em;padding:10px 18px;
-  border:1.5px solid var(--ink);border-radius:var(--radius-min)}
+  border:1.5px solid var(--ink);border-radius:var(--radius-min);cursor:pointer;
+  transition:background 120ms ease,color 120ms ease,border-color 120ms ease}
+.btnline:hover{background:var(--ink);color:var(--paper)}
+.btnline.filled{background:var(--ink);color:var(--paper)}
+.btnline.filled:hover{background:var(--accent);border-color:var(--accent);color:var(--paper)}
+
+.navlink{font-family:var(--font-body);font-weight:500;font-size:13.5px;color:var(--muted);
+  text-transform:uppercase;letter-spacing:.06em;cursor:pointer;padding-bottom:4px;
+  border-bottom:2px solid transparent;transition:color 120ms ease,border-color 120ms ease}
+.navlink:hover{color:var(--ink)}
+.navlink.active{font-weight:600;color:var(--ink);border-bottom-color:var(--ink)}
+
+.tab{font-family:var(--font-body);font-weight:500;font-size:var(--fs-xs);color:var(--ink);
+  background:var(--paper);text-transform:uppercase;letter-spacing:.06em;padding:9px 16px;
+  border:1.5px solid var(--ink);border-radius:var(--radius-min);cursor:pointer;
+  transition:background 120ms ease,color 120ms ease}
+.tab:hover{background:var(--paper-dim)}
+.tab.active{background:var(--ink);color:var(--paper)}
+.tab.active:hover{background:var(--ink-soft)}
+
+.dtab{font-weight:500;font-size:13px;color:var(--muted);padding:10px 0;cursor:pointer;
+  border-bottom:2px solid transparent;transition:color 120ms ease,border-color 120ms ease}
+.dtab:hover{color:var(--ink)}
+.dtab.active{font-weight:600;color:var(--ink);border-bottom-color:var(--ink)}
+
+.navarrow{width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:14px;
+  color:var(--ink);background:var(--paper);border:1.5px solid var(--ink);border-radius:var(--radius-min);
+  cursor:pointer;transition:background 120ms ease,color 120ms ease}
+.navarrow:hover{background:var(--ink);color:var(--paper)}
 </style>
 </head>
 <body>
@@ -226,27 +264,23 @@ const homepageHtml = `
     width:100%;height:64px;padding:0 32px;box-sizing:border-box;flex-shrink:0;">
   <div style="font-family:var(--font-display);font-weight:700;font-size:22px;color:var(--ink);">eski</div>
   <div style="display:flex;flex-direction:row;align-items:center;gap:32px;">
-    <div style="font-weight:600;font-size:13.5px;color:var(--ink);text-transform:uppercase;letter-spacing:.06em;
-      padding-bottom:4px;border-bottom:2px solid var(--ink);">Home</div>
-    <div style="font-weight:500;font-size:13.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;">Browse</div>
-    <div style="font-weight:500;font-size:13.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;">Profile</div>
-    <div class="btnline" style="color:var(--paper);background:var(--ink);">Upload</div>
+    <div class="navlink active">Home</div>
+    <div class="navlink">Browse</div>
+    <div class="navlink">Profile</div>
+    <div class="btnline filled">Upload</div>
   </div>
 </div>
 <div class="ms selectable" style="display:flex;flex-direction:row;align-items:center;gap:8px;width:100%;
     padding:24px 32px 0 32px;box-sizing:border-box;flex-shrink:0;">
-  <div class="chip" style="color:var(--paper);background:var(--ink);">Following</div>
-  <div class="chip">Beats</div><div class="chip">Stories</div><div class="chip">Visual</div><div class="chip">Last Week</div>
+  <div class="tab active">Following</div>
+  <div class="tab">Beats</div><div class="tab">Stories</div><div class="tab">Visual</div><div class="tab">Last Week</div>
 </div>
-<div class="ms selectable" style="display:flex;flex-direction:row;gap:48px;width:100%;padding:24px 32px 24px 32px;box-sizing:border-box;flex-shrink:0;">
-  <div class="ms selectable" style="display:flex;flex-direction:column;gap:12px;">
-    <div style="position:relative;font-family:var(--font-display);font-weight:700;font-size:44px;color:var(--ink);letter-spacing:-.01em;">Following</div>
-    <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;">content tags</div>
-    <div style="display:flex;gap:8px;"><div class="chip small">#following</div><div class="chip small">#newuploads</div><div class="chip small">#thisweek</div></div>
-  </div>
-  <div class="ms selectable" style="display:flex;flex-direction:column;gap:12px;padding-top:44px;">
-    <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;">modifiers</div>
-    <div style="display:flex;gap:8px;"><div class="chip small">#wip</div><div class="chip small">#remix-ok</div><div class="chip small">#nsfw-free</div></div>
+<div class="ms selectable" style="display:flex;flex-direction:column;gap:12px;width:100%;padding:24px 32px 24px 32px;box-sizing:border-box;flex-shrink:0;">
+  <div style="position:relative;font-family:var(--font-display);font-weight:700;font-size:44px;color:var(--ink);letter-spacing:-.01em;">Following</div>
+  <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;">content tags</div>
+  <div style="display:flex;gap:8px;">
+    <div class="chip small">#following</div><div class="chip small">#newuploads</div>
+    <div class="chip small">#thisweek</div><div class="chip small">#wip</div>
   </div>
 </div>
 <div style="display:flex;flex-direction:row;gap:8px;width:100%;padding:0 32px;box-sizing:border-box;flex-shrink:0;">
@@ -278,9 +312,9 @@ const homepageHtml = `
 const maximisedHtml = `
 <div class="ms selectable" style="position:relative;display:flex;flex-direction:row;width:1100px;height:760px;background:var(--paper);overflow:hidden;">
   <div class="grp" style="position:absolute;top:16px;right:16px;z-index:5;display:flex;gap:6px;">
-    <div class="chip small selectable" style="cursor:pointer;">&lsaquo;</div>
-    <div class="chip small selectable" style="cursor:pointer;">&rsaquo;</div>
-    <div class="chip small selectable" style="cursor:pointer;">Close</div>
+    <div class="navarrow selectable">&lsaquo;</div>
+    <div class="navarrow selectable">&rsaquo;</div>
+    <div class="chip small selectable">Close</div>
   </div>
   <div class="ms selectable" style="width:58%;height:100%;background:var(--paper-dim);flex-shrink:0;"></div>
   <div style="width:42%;height:100%;display:flex;flex-direction:column;overflow:hidden;">
@@ -306,16 +340,14 @@ const maximisedHtml = `
       <div style="font-size:14px;color:var(--ink-soft);line-height:1.5;">shot this on the walk back from the studio around 2am. the building across the street never turns its lights off.</div>
     </div>
     <div class="ms selectable" style="display:flex;flex-direction:row;gap:24px;padding:0 24px;border-top:0;flex-shrink:0;">
-      <div class="selectable" style="font-weight:600;font-size:13px;color:var(--ink);padding:10px 0;border-bottom:2px solid var(--ink);cursor:pointer;">Tags</div>
-      <div class="selectable" style="font-weight:500;font-size:13px;color:var(--muted);padding:10px 0;cursor:pointer;">Comments</div>
+      <div class="dtab active selectable">Tags</div>
+      <div class="dtab selectable">Comments</div>
     </div>
     <div style="flex:1;background:var(--paper-dim);padding:16px 24px;box-sizing:border-box;overflow:auto;">
       <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px;">content tags</div>
-      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;">
-        <div class="chip small" style="background:var(--paper);">#following</div><div class="chip small" style="background:var(--paper);">#newuploads</div>
-      </div>
-      <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px;">modifiers</div>
       <div style="display:flex;gap:6px;flex-wrap:wrap;">
+        <div class="chip small" style="background:var(--paper);">#following</div>
+        <div class="chip small" style="background:var(--paper);">#newuploads</div>
         <div class="chip small" style="background:var(--paper);">#wip</div>
       </div>
     </div>
