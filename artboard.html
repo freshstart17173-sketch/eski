@@ -8,113 +8,151 @@
 <link rel="icon" type="image/png" href="eski_logo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Jost:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Jost:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=Familjen+Grotesk:wght@400;500;600;700&family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script type="module" src="platform.js"></script>
-<link rel="stylesheet" href="tokens.css">
 <style>
 /* ============================================================
-   eski — the artboard. every live page and the current design
-   direction, embedded on one pannable/zoomable canvas, with comment
-   pins and pasted reference images layered on top. url is unlisted
-   on purpose, same as spec.html — no auth gate on viewing, sign-in
-   required to add or move anything.
+   eski — the artboard, Are.na-styled. one live-rebuilt mockup of the
+   pivot direction (not an iframe of the empty live app — nothing to
+   render there yet) plus comment pins and pasted reference images on
+   a pannable/zoomable canvas. researched against the real are.na.xyz
+   (2026-08-15): pure black ground, #1a1a1a panels, #333 hairlines,
+   three text tiers of gray, one pale-lavender primary action, 3px
+   radius on chrome / 0px on media, bold normal-case labels, Areal
+   falls back to Arial (it's Dinamo's paid custom face — not ours to
+   embed).
    ============================================================ */
-html,body{margin:0;height:100%;overflow:hidden;background:var(--bg-1);color:var(--ink);
-  font-family:var(--font-body);font-size:var(--fs);-webkit-user-select:none;user-select:none}
+:root{
+  --bg:#000000; --panel:#1a1a1a; --panel-soft:rgba(26,26,26,.6);
+  --border:#333333; --text:#e5e5e5; --text-dim:#b2b2b2; --text-mute:#696969;
+  --primary:#e2dfe9; --primary-ink:#000000; --radius:3px; --scrim:rgba(0,0,0,.95);
+  --font-chrome:'areal','Areal Fallback',Arial,Helvetica,sans-serif;
+}
+html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--text);
+  font-family:var(--font-chrome);font-size:14px;-webkit-user-select:none;user-select:none}
+*{box-sizing:border-box}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:#3a3a3a;border:2px solid var(--panel);border-radius:6px}
+::-webkit-scrollbar-thumb:hover{background:#555}
 
 /* ---------- toolbar ---------- */
-.top{position:fixed;top:0;left:0;right:0;z-index:50;display:flex;align-items:center;
-  gap:var(--s4);height:var(--hdr);padding:0 var(--s4);background:var(--bg-2);
-  border-bottom:1px solid var(--edge)}
-.top .mark{font-family:var(--font-display);font-weight:400;font-size:19px;color:var(--ink);
+.top{position:fixed;top:0;left:0;right:0;z-index:60;display:flex;align-items:center;
+  gap:14px;height:48px;padding:0 14px;background:var(--panel);border-bottom:1px solid var(--border)}
+.top .mark{font-family:'Gnomon','Jost',sans-serif;font-weight:700;font-size:18px;color:var(--text);
   text-decoration:none;flex-shrink:0}
-.tools{display:flex;align-items:center;gap:var(--s1);flex-shrink:0}
-.tools button{font:inherit;font-size:var(--fs-xs);letter-spacing:.04em;color:var(--ink);
-  background:none;border:1px solid var(--edge);border-radius:var(--r-track);height:var(--ctl);
-  padding:0 var(--s3);cursor:pointer;display:flex;align-items:center;gap:6px;
-  transition:background var(--t-fast) var(--ease),border-color var(--t-fast) var(--ease)}
-.tools button:hover{border-color:var(--line-strong)}
-.tools button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
-.zoomreadout{font-variant-numeric:var(--num);font-size:var(--fs-xs);color:var(--muted);
-  min-width:42px;text-align:center}
+.grp{display:flex;align-items:center;gap:4px;flex-shrink:0}
+.top button,.top select{font:inherit;font-family:var(--font-chrome);font-size:12.5px;font-weight:700;
+  color:var(--text-dim);background:var(--panel);border:1px solid transparent;border-radius:var(--radius);
+  height:28px;padding:0 10px;cursor:pointer;display:flex;align-items:center;gap:6px}
+.top button:hover{color:var(--text);border-color:var(--border)}
+.top button[aria-pressed="true"]{background:var(--primary);color:var(--primary-ink)}
+.top select{appearance:none;padding-right:22px;background-image:
+  linear-gradient(45deg,transparent 50%,var(--text-dim) 50%),linear-gradient(135deg,var(--text-dim) 50%,transparent 50%);
+  background-position:calc(100% - 12px) 12px,calc(100% - 8px) 12px;background-size:4px 4px;background-repeat:no-repeat}
+.zoomreadout{font-variant-numeric:tabular-nums;font-size:12px;color:var(--text-mute);min-width:38px;text-align:center}
 .sp{flex:1}
-.help{font-size:var(--fs-micro);color:var(--muted);white-space:nowrap}
-.count{font-size:var(--fs-micro);color:var(--muted);white-space:nowrap;font-variant-numeric:var(--num)}
-.auth{margin-left:var(--s2)}
-.auth-btn{font-size:var(--fs-micro)!important;letter-spacing:.06em!important;
-  border-color:var(--edge)!important}
+.help{font-size:11px;color:var(--text-mute);white-space:nowrap}
+.count{font-size:11px;color:var(--text-mute);white-space:nowrap;font-variant-numeric:tabular-nums}
+.auth{margin-left:4px}
+.auth-btn{font-size:11px!important;letter-spacing:.02em!important;border-color:var(--border)!important;
+  color:var(--text-dim)!important;border-radius:var(--radius)!important}
+.auth-menu{background:var(--panel)!important;border-color:var(--border)!important;color:var(--text)!important}
 
 /* ---------- canvas ---------- */
-#viewport{position:fixed;top:var(--hdr);left:0;right:0;bottom:0;overflow:hidden;
-  cursor:grab;background:
-    linear-gradient(var(--edge) 1px,transparent 1px),
-    linear-gradient(90deg,var(--edge) 1px,transparent 1px);
-  background-size:80px 80px;background-color:var(--bg-1)}
-#viewport.panning{cursor:grabbing}
+#viewport{position:fixed;top:48px;left:0;right:0;bottom:0;overflow:hidden;cursor:default;background:var(--bg)}
+#viewport.grabbing{cursor:grabbing}
 #viewport.comment-mode{cursor:crosshair}
+#grid{position:absolute;inset:0;pointer-events:none;opacity:0;
+  background-image:linear-gradient(#2a2a2a 1px,transparent 1px),linear-gradient(90deg,#2a2a2a 1px,transparent 1px);
+  transition:opacity 120ms linear}
 #world{position:absolute;top:0;left:0;transform-origin:0 0;will-change:transform}
-#world.panning iframe,#world.panning .pasted-image{pointer-events:none}
 
-.frame{position:absolute;display:flex;flex-direction:column;gap:8px}
-.frame .lbl{font-family:var(--font-body);font-weight:500;font-size:14px;color:var(--soft-ink);
-  letter-spacing:.02em}
-.frame .lbl small{color:var(--muted);font-weight:400;margin-left:8px}
-.frame iframe{width:1440px;height:900px;border:1px solid var(--edge);background:var(--surface);
-  box-shadow:0 1px 0 var(--edge)}
+.marquee{position:fixed;border:1px solid var(--primary);background:rgba(226,223,233,.08);pointer-events:none;z-index:40}
 
-.placeholder{position:absolute;width:1440px;height:340px;border:1.5px dashed var(--edge-strong);
-  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;
-  color:var(--muted);text-align:center;padding:var(--s5);box-sizing:border-box}
-.placeholder b{color:var(--soft-ink);font-family:var(--font-display);font-weight:400;font-size:20px}
-.placeholder span{font-size:var(--fs-xs);max-width:52ch;line-height:1.5}
+/* ---------- selectable mockup chrome ---------- */
+.selectable{outline:1px solid transparent;outline-offset:2px;cursor:pointer}
+.selectable.selected{outline:2px solid var(--primary)}
+.section-label{position:absolute;top:-22px;left:0;font-size:11px;color:var(--text-mute);
+  font-family:var(--font-chrome);font-weight:700;letter-spacing:.02em}
 
 /* ---------- pasted images ---------- */
 .pasted-image{position:absolute;cursor:move}
 .pasted-image img{display:block;width:100%;height:100%;object-fit:contain;
-  border:1px solid var(--edge);box-shadow:0 2px 10px rgba(0,0,0,.18);background:var(--surface)}
-.pasted-image.selected img{outline:2px solid var(--accent);outline-offset:2px}
-.pasted-image .del{position:absolute;top:-11px;right:-11px;width:22px;height:22px;
-  border-radius:50%;background:var(--rec,#a33028);color:#fff;border:2px solid var(--bg-1);
-  display:none;align-items:center;justify-content:center;font-size:13px;line-height:1;cursor:pointer}
+  border:1px solid var(--border);box-shadow:0 4px 20px rgba(0,0,0,.5);background:#111}
+.pasted-image.selected img{outline:2px solid var(--primary);outline-offset:2px}
+.pasted-image .del{position:absolute;top:-11px;right:-11px;width:22px;height:22px;border-radius:50%;
+  background:#a33028;color:#fff;border:2px solid var(--bg);display:none;align-items:center;
+  justify-content:center;font-size:13px;line-height:1;cursor:pointer}
 .pasted-image.selected .del{display:flex}
 
 /* ---------- comment pins ---------- */
-.pin{position:absolute;display:flex;align-items:flex-start;gap:0;cursor:default}
-.pin .dot{width:26px;height:26px;border-radius:50% 50% 50% 4px;background:var(--accent);
-  color:var(--on-accent);display:flex;align-items:center;justify-content:center;
-  font-family:var(--font-display);font-size:13px;flex-shrink:0;cursor:pointer;
-  box-shadow:0 1px 4px rgba(0,0,0,.3);transform:rotate(45deg)}
+.pin{position:absolute}
+.pin .dot{width:26px;height:26px;border-radius:50% 50% 50% 4px;background:var(--primary);
+  color:#000;display:flex;align-items:center;justify-content:center;font-family:'Gnomon','Jost',sans-serif;
+  font-size:13px;flex-shrink:0;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.5);transform:rotate(45deg)}
 .pin .dot span{transform:rotate(-45deg)}
-.pin.resolved .dot{background:var(--muted);opacity:.55}
-.pin .card{position:absolute;left:32px;top:0;min-width:220px;max-width:320px;
-  background:var(--bg-2);border:1px solid var(--edge);border-radius:0;padding:var(--s3);
-  box-shadow:0 6px 24px rgba(0,0,0,.22);display:none;flex-direction:column;gap:6px;
-  user-select:text;cursor:default}
+.pin.resolved .dot{background:var(--text-mute);opacity:.6}
+.pin .card{position:absolute;left:32px;top:0;min-width:220px;max-width:320px;background:#fff;color:#111;
+  border-radius:0;padding:12px;box-shadow:0 8px 30px rgba(0,0,0,.5);display:none;flex-direction:column;
+  gap:6px;user-select:text;cursor:default}
 .pin.open .card,.pin:hover .card{display:flex}
-.pin .card .who{display:flex;align-items:center;gap:8px;font-size:var(--fs-micro);color:var(--muted)}
-.pin .card .who b{color:var(--ink);font-weight:500}
-.pin .card .body{font-size:var(--fs-xs);color:var(--soft-ink);line-height:1.5;white-space:pre-wrap}
+.pin .card .who{display:flex;align-items:center;gap:8px;font-size:11px;color:#888}
+.pin .card .who b{color:#111;font-weight:600}
+.pin .card .body{font-size:12.5px;color:#333;line-height:1.5;white-space:pre-wrap}
 .pin .card .row{display:flex;gap:6px;align-items:center;margin-top:2px}
-.pin .card button{font:inherit;font-size:10px;letter-spacing:.06em;text-transform:uppercase;
-  border:1px solid var(--edge);background:none;color:var(--muted);border-radius:var(--r-track);
-  padding:3px 9px;cursor:pointer}
-.pin .card button:hover{border-color:var(--line-strong);color:var(--ink)}
-.pin .card textarea{font:inherit;font-size:var(--fs-xs);width:100%;box-sizing:border-box;
-  border:1px solid var(--edge);padding:6px 8px;resize:vertical;min-height:56px;background:var(--paper)}
-
-/* the pin being placed / edited right now */
+.pin .card button{font:inherit;font-size:10px;letter-spacing:.02em;border:1px solid #ddd;background:none;
+  color:#888;border-radius:var(--radius);padding:3px 9px;cursor:pointer}
+.pin .card button:hover{border-color:#999;color:#111}
+.pin .card textarea{font:inherit;font-size:12.5px;width:100%;box-sizing:border-box;border:1px solid #ddd;
+  padding:6px 8px;resize:vertical;min-height:56px;background:#fafafa;border-radius:var(--radius)}
 .pin.editing .card{display:flex}
+
+/* ============================================================
+   the eski mockup itself — scoped tokens, independent of the Are.na
+   chrome above. --font-body is swapped live by the font-switcher;
+   --font-display (gnomon) is not, on purpose.
+   ============================================================ */
+.eski-mockup{
+  --paper:#FCFCFC; --paper-dim:#F1F1F1; --ink:#111111; --ink-soft:#3A3A3A; --muted:#6B6B6B;
+  --line:var(--ink); --accent:#5B7A6B; --accent-tint:#E9F1ED;
+  --font-display:'Gnomon','Jost',sans-serif; --font-body:'Jost',sans-serif;
+  --fs-micro:11px; --fs-xs:12px; --fs-sm:13.5px; --fs:15px; --fs-lg:17px; --fs-title:22px; --fs-display:44px;
+  --s1:4px; --s2:8px; --s3:12px; --s4:16px; --s5:24px; --s6:32px; --s7:48px; --s8:64px; --s9:96px;
+  --radius-0:0px; --radius-min:2px;
+  position:absolute; background:var(--paper); color:var(--ink); font-family:var(--font-body);
+  box-shadow:0 30px 90px rgba(0,0,0,.6);
+}
+.eski-mockup .ms{position:relative} /* generic wrapper so .section-label can anchor */
+.badge{font-family:var(--font-body);font-weight:700;font-size:var(--fs-micro);color:var(--paper);
+  background:var(--ink);text-transform:uppercase;letter-spacing:.06em;padding:4px 7px}
+.chip{font-family:var(--font-body);font-weight:500;font-size:var(--fs-xs);color:var(--ink-soft);
+  background:var(--paper);padding:6px 12px;border:1.5px solid var(--ink);border-radius:var(--radius-min)}
+.chip.small{font-size:var(--fs-micro);padding:4px 9px}
+.btnline{font-family:var(--font-body);font-weight:600;font-size:var(--fs-sm);color:var(--ink);
+  background:var(--paper);text-transform:uppercase;letter-spacing:.06em;padding:10px 18px;
+  border:1.5px solid var(--ink);border-radius:var(--radius-min)}
 </style>
 </head>
 <body>
 
 <header class="top">
   <a class="mark" href="index.html">eski<i>!</i></a>
-  <div class="tools">
+  <div class="grp">
     <button id="t-select" aria-pressed="true">select</button>
     <button id="t-comment" aria-pressed="false">comment</button>
   </div>
-  <div class="tools">
+  <div class="grp">
+    <label style="font-size:11px;color:var(--text-mute);padding:0 2px">type</label>
+    <select id="font-picker">
+      <option value="'Jost',sans-serif">Jost (default)</option>
+      <option value="Arial,Helvetica,sans-serif">Areal — Are.na's face (Arial stand-in)</option>
+      <option value="'Space Grotesk',sans-serif">Space Grotesk</option>
+      <option value="'Familjen Grotesk',sans-serif">Familjen Grotesk</option>
+      <option value="'Instrument Sans',sans-serif">Instrument Sans</option>
+    </select>
+  </div>
+  <div class="grp">
     <button id="zoom-out">−</button>
     <span class="zoomreadout" id="zoom-readout">100%</span>
     <button id="zoom-in">+</button>
@@ -122,10 +160,11 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--bg-1);color:var(
   </div>
   <span class="count" id="item-count"></span>
   <span class="sp"></span>
-  <span class="help">scroll to zoom · drag to pan · paste or drop an image · comment, then click the canvas</span>
+  <span class="help">ctrl+scroll zoom · scroll pans up/down · shift+scroll pans sideways · ctrl+shift+drag grabs · paste or drop an image · comment, then click</span>
 </header>
 
 <div id="viewport">
+  <div id="grid"></div>
   <div id="world"></div>
 </div>
 
@@ -136,51 +175,163 @@ async function platform(){
     await new Promise(r => document.addEventListener('DOMContentLoaded', r, { once: true }));
   return window.eski || null;
 }
-
-/* ---------- the frames: every live page, plus a placeholder for the new
-   pivot direction until it can be pulled out of Paper/Penpot ---------- */
-const FRAMES = [
-  { name: 'home / browse', file: 'index.html',      x: 0,    y: 0,    note: 'live' },
-  { name: 'reader',        file: 'read.html',       x: 1560, y: 0,    note: 'live · shows the drop screen with no ?read= set' },
-  { name: 'author studio', file: 'author.html',     x: 3120, y: 0,    note: 'live' },
-  { name: 'composer',      file: 'studio.html',     x: 0,    y: 1060, note: 'live · shows an empty draft with no ?base= set' },
-  { name: 'profile',       file: 'profile.html',    x: 1560, y: 1060, note: 'live' },
-  { name: 'onboarding',    file: 'onboarding.html', x: 3120, y: 1060, note: 'new, 2026-08-15' },
-];
-const PLACEHOLDER = { x: 0, y: 2120 };
-
 const world = document.getElementById('world');
 const viewport = document.getElementById('viewport');
+const grid = document.getElementById('grid');
 
-for(const f of FRAMES){
-  const el = document.createElement('div');
-  el.className = 'frame';
-  el.style.left = f.x + 'px';
-  el.style.top = f.y + 'px';
-  el.innerHTML = `<div class="lbl">${esc(f.name)}<small>${esc(f.note)}</small></div>
-    <iframe src="${esc(f.file)}" loading="lazy"></iframe>`;
-  world.appendChild(el);
+/* ============================================================
+   the mockup — real HTML, not a screenshot, so it can be re-fonted
+   and so pan/zoom/select work the same over it as over anything
+   else. studio is cut from the product (2026-08-15), so it's out of
+   the nav here too, not just off the artboard.
+   ============================================================ */
+function card(badge, title, handle, h, extra){
+  return `<div class="ms selectable" style="display:flex;flex-direction:column;width:100%;">
+    <div class="ms selectable" style="position:relative;width:100%;height:${h}px;background:var(--paper-dim);overflow:hidden;">
+      <div class="badge" style="position:absolute;top:8px;left:8px;">${esc(badge)}</div>
+      ${extra||''}
+    </div>
+    <div style="display:flex;flex-direction:column;gap:2px;padding:8px 0 0 0;">
+      <div style="font-weight:500;font-size:var(--fs);color:var(--ink);">${esc(title)}</div>
+      <div style="font-size:var(--fs-xs);color:var(--muted);">${esc(handle)}</div>
+    </div>
+  </div>`;
 }
-{
+const quote = t => `<div class="badge" style="position:absolute;top:8px;left:8px;">Text</div>
+  <div style="display:flex;align-items:center;height:100%;padding:24px;box-sizing:border-box;
+    font-family:var(--font-display);font-weight:600;font-size:20px;color:var(--ink-soft);line-height:1.15;">"${esc(t)}"</div>`;
+
+const homepageHtml = `
+<div class="ms selectable" style="display:flex;flex-direction:row;align-items:center;justify-content:space-between;
+    width:100%;height:64px;padding:0 32px;box-sizing:border-box;flex-shrink:0;">
+  <div style="font-family:var(--font-display);font-weight:700;font-size:22px;color:var(--ink);">eski</div>
+  <div style="display:flex;flex-direction:row;align-items:center;gap:32px;">
+    <div style="font-weight:600;font-size:13.5px;color:var(--ink);text-transform:uppercase;letter-spacing:.06em;
+      padding-bottom:4px;border-bottom:2px solid var(--ink);">Home</div>
+    <div style="font-weight:500;font-size:13.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;">Browse</div>
+    <div style="font-weight:500;font-size:13.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;">Profile</div>
+    <div class="btnline" style="color:var(--paper);background:var(--ink);">Upload</div>
+  </div>
+</div>
+<div class="ms selectable" style="display:flex;flex-direction:row;align-items:center;gap:8px;width:100%;
+    padding:24px 32px 0 32px;box-sizing:border-box;flex-shrink:0;">
+  <div class="chip" style="color:var(--paper);background:var(--ink);">Following</div>
+  <div class="chip">Beats</div><div class="chip">Stories</div><div class="chip">Visual</div><div class="chip">Last Week</div>
+</div>
+<div class="ms selectable" style="display:flex;flex-direction:row;gap:48px;width:100%;padding:24px 32px 24px 32px;box-sizing:border-box;flex-shrink:0;">
+  <div class="ms selectable" style="display:flex;flex-direction:column;gap:12px;">
+    <div style="position:relative;font-family:var(--font-display);font-weight:700;font-size:44px;color:var(--ink);letter-spacing:-.01em;">Following</div>
+    <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;">content tags</div>
+    <div style="display:flex;gap:8px;"><div class="chip small">#following</div><div class="chip small">#newuploads</div><div class="chip small">#thisweek</div></div>
+  </div>
+  <div class="ms selectable" style="display:flex;flex-direction:column;gap:12px;padding-top:44px;">
+    <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;">modifiers</div>
+    <div style="display:flex;gap:8px;"><div class="chip small">#wip</div><div class="chip small">#remix-ok</div><div class="chip small">#nsfw-free</div></div>
+  </div>
+</div>
+<div style="display:flex;flex-direction:row;gap:8px;width:100%;padding:0 32px;box-sizing:border-box;flex-shrink:0;">
+  <div style="display:flex;flex-direction:column;gap:8px;flex:1;">
+    ${card('Image','midnight session','@inkwell',420)}
+    ${card('Audio','night drive','@lowfreq',260)}
+    ${card('Video','rooftop cut','@camrafilm',300,'<div class="badge" style="position:absolute;bottom:8px;right:8px;">2:14</div>')}
+  </div>
+  <div style="display:flex;flex-direction:column;gap:8px;flex:1;">
+    ${card('Text','issue no. 4','@paperbound',340,quote('nobody remembers the flood the same way twice.'))}
+    ${card('Combination','sketchbook, march','@linewerk',380,'<div class="badge" style="position:absolute;bottom:8px;right:8px;">1/6</div>')}
+    ${card('Image','static','@glasseye',240)}
+  </div>
+  <div style="display:flex;flex-direction:column;gap:8px;flex:1;">
+    ${card('Combination','story bible: HALO','@inkwell',300,'<div style="position:absolute;bottom:8px;left:8px;font-size:13.5px;color:var(--muted);">12 items</div>')}
+    ${card('Audio','tape no. 9','@lowfreq',400)}
+    ${card('Image','afterglow','@salt.mv',280)}
+  </div>
+  <div style="display:flex;flex-direction:column;gap:8px;flex:1;">
+    ${card('Video','loop test','@camrafilm',420,'<div class="badge" style="position:absolute;bottom:8px;right:8px;">0:47</div>')}
+    ${card('Image','reference','@glasseye',230)}
+    ${card('Text','letters, unsent','@paperbound',330,quote('i kept writing your name in the margins.'))}
+  </div>
+</div>
+<div style="display:flex;align-items:center;justify-content:center;width:100%;padding:48px 32px;box-sizing:border-box;flex-shrink:0;">
+  <div class="btnline">See more</div>
+</div>`;
+
+const maximisedHtml = `
+<div class="ms selectable" style="position:relative;display:flex;flex-direction:row;width:1100px;height:760px;background:var(--paper);overflow:hidden;">
+  <div class="grp" style="position:absolute;top:16px;right:16px;z-index:5;display:flex;gap:6px;">
+    <div class="chip small selectable" style="cursor:pointer;">&lsaquo;</div>
+    <div class="chip small selectable" style="cursor:pointer;">&rsaquo;</div>
+    <div class="chip small selectable" style="cursor:pointer;">Close</div>
+  </div>
+  <div class="ms selectable" style="width:58%;height:100%;background:var(--paper-dim);flex-shrink:0;"></div>
+  <div style="width:42%;height:100%;display:flex;flex-direction:column;overflow:hidden;">
+    <div class="ms selectable" style="display:flex;flex-direction:column;gap:16px;padding:48px 24px 24px 24px;box-sizing:border-box;">
+      <div style="font-weight:700;font-size:22px;color:var(--ink);">midnight session</div>
+      <div style="display:flex;align-items:center;gap:12px;">
+        <div style="width:32px;height:32px;background:var(--paper-dim);border:1.5px solid var(--ink);flex-shrink:0;"></div>
+        <div style="font-weight:600;font-size:13.5px;color:var(--ink);flex:1;">@inkwell</div>
+        <div class="chip small">Follow</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:0;">
+        <div style="display:flex;justify-content:space-between;padding:6px 0;font-size:12.5px;color:var(--muted);">
+          <span>Added</span><span style="color:var(--ink-soft);">Aug 12</span></div>
+        <div style="display:flex;justify-content:space-between;padding:6px 0;font-size:12.5px;color:var(--muted);">
+          <span>By</span><span style="color:var(--ink-soft);font-weight:500;">inkwell</span></div>
+        <div style="display:flex;justify-content:space-between;padding:6px 0;font-size:12.5px;color:var(--muted);">
+          <span>Content type</span><span style="color:var(--ink-soft);">image/png</span></div>
+        <div style="display:flex;justify-content:space-between;padding:6px 0;font-size:12.5px;color:var(--muted);">
+          <span>Resolution</span><span style="color:var(--ink-soft);">3024 × 4032</span></div>
+        <div style="display:flex;justify-content:space-between;padding:6px 0;font-size:12.5px;color:var(--muted);">
+          <span>File size</span><span style="color:var(--ink-soft);">4.1 MB</span></div>
+      </div>
+      <div style="font-size:14px;color:var(--ink-soft);line-height:1.5;">shot this on the walk back from the studio around 2am. the building across the street never turns its lights off.</div>
+    </div>
+    <div class="ms selectable" style="display:flex;flex-direction:row;gap:24px;padding:0 24px;border-top:0;flex-shrink:0;">
+      <div class="selectable" style="font-weight:600;font-size:13px;color:var(--ink);padding:10px 0;border-bottom:2px solid var(--ink);cursor:pointer;">Tags</div>
+      <div class="selectable" style="font-weight:500;font-size:13px;color:var(--muted);padding:10px 0;cursor:pointer;">Comments</div>
+    </div>
+    <div style="flex:1;background:var(--paper-dim);padding:16px 24px;box-sizing:border-box;overflow:auto;">
+      <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px;">content tags</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;">
+        <div class="chip small" style="background:var(--paper);">#following</div><div class="chip small" style="background:var(--paper);">#newuploads</div>
+      </div>
+      <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px;">modifiers</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;">
+        <div class="chip small" style="background:var(--paper);">#wip</div>
+      </div>
+    </div>
+  </div>
+</div>`;
+
+function placeMockup(html, x, y, w, label){
   const el = document.createElement('div');
-  el.className = 'placeholder';
-  el.style.left = PLACEHOLDER.x + 'px';
-  el.style.top = PLACEHOLDER.y + 'px';
-  el.innerHTML = `<b>new homepage direction — Paper</b>
-    <span>the masonry pivot mockup lives in Paper (or Penpot once that's set up),
-    not as a page in this repo. paste a screenshot of it right here to bring it
-    onto the board.</span>`;
+  el.className = 'eski-mockup';
+  el.style.left = x + 'px'; el.style.top = y + 'px'; el.style.width = w + 'px';
+  el.innerHTML = `<div class="section-label" style="position:absolute;top:-24px;left:0;color:var(--text-mute,#696969);font-size:11px;">${esc(label)}</div>` + html;
   world.appendChild(el);
+  return el;
 }
+placeMockup(homepageHtml, 0, 60, 1440, 'homepage — masonry feed (live-rebuilt from Paper, re-fontable)');
+placeMockup(maximisedHtml, 1560, 60, 1100, 'maximised post — detail overlay');
+
+/* font switcher: swaps --font-body on every mockup instance. gnomon
+   (--font-display) never changes, on purpose — the wordmark keeps it. */
+const fontPicker = document.getElementById('font-picker');
+fontPicker.addEventListener('change', () => {
+  document.querySelectorAll('.eski-mockup').forEach(m => m.style.setProperty('--font-body', fontPicker.value));
+});
 
 /* ---------- pan / zoom ---------- */
-let panX = 40, panY = 40, zoom = 0.32;
-const ZMIN = 0.08, ZMAX = 2.5;
+let panX = 60, panY = -20, zoom = 0.55;
+const ZMIN = 0.05, ZMAX = 3;
 function applyTransform(){
   world.style.transform = `translate(${panX}px, ${panY}px) scale(${zoom})`;
   document.getElementById('zoom-readout').textContent = Math.round(zoom * 100) + '%';
+  const base = 24 * zoom;
+  grid.style.backgroundSize = `${base}px ${base}px`;
+  grid.style.backgroundPosition = `${panX}px ${panY}px`;
+  grid.style.opacity = Math.max(0, Math.min(.35, (zoom - 1.4) * .3));
 }
-function resetView(){ panX = 40; panY = 40; zoom = 0.32; applyTransform(); }
+function resetView(){ panX = 60; panY = -20; zoom = 0.55; applyTransform(); }
 applyTransform();
 
 function screenToWorld(clientX, clientY){
@@ -195,26 +346,44 @@ function zoomAt(clientX, clientY, factor){
   panX = mx - wx * zoom; panY = my - wy * zoom;
   applyTransform();
 }
+
+/* ctrl+scroll = zoom · plain scroll = pan vertical · shift+scroll = pan
+   horizontal. attached to the viewport itself, not the grid, so it fires
+   over the mockup, a pasted image, a pin — anything, since none of it is
+   an iframe any more. */
 viewport.addEventListener('wheel', e => {
   e.preventDefault();
-  zoomAt(e.clientX, e.clientY, Math.exp(-e.deltaY * 0.0012));
+  if(e.ctrlKey || e.metaKey){ zoomAt(e.clientX, e.clientY, Math.exp(-e.deltaY * 0.0012)); return; }
+  if(e.shiftKey){ panX -= (e.deltaX || e.deltaY); applyTransform(); return; }
+  panY -= e.deltaY; panX -= e.deltaX; applyTransform();
 }, { passive: false });
 
-document.getElementById('zoom-in').onclick  = () => zoomAt(innerWidth/2, innerHeight/2 + 26, 1.25);
-document.getElementById('zoom-out').onclick = () => zoomAt(innerWidth/2, innerHeight/2 + 26, 0.8);
+document.getElementById('zoom-in').onclick  = () => zoomAt(innerWidth/2, innerHeight/2 + 24, 1.25);
+document.getElementById('zoom-out').onclick = () => zoomAt(innerWidth/2, innerHeight/2 + 24, 0.8);
 document.getElementById('reset-view').onclick = resetView;
 
-let panning = false, panStart = null;
+/* ctrl+shift+drag = grab and pan, from anywhere, taking priority over
+   select/move. plain drag on empty canvas = marquee select. */
+let grabbing = false, grabStart = null;
+let marqueeStart = null, marqueeEl = null;
 viewport.addEventListener('mousedown', e => {
-  if(e.target.closest('.pasted-image') || e.target.closest('.pin')) return;
-  panning = true; world.classList.add('panning'); viewport.classList.add('panning');
-  panStart = { x: e.clientX, y: e.clientY, panX, panY };
-  if(mode === 'comment') return; // handled by click, not drag
+  if(e.ctrlKey && e.shiftKey){
+    grabbing = true; grabStart = { x: e.clientX, y: e.clientY, panX, panY };
+    viewport.classList.add('grabbing');
+    e.preventDefault();
+    return;
+  }
+  if(e.target === viewport || e.target === world || e.target === grid){
+    marqueeStart = { x: e.clientX, y: e.clientY };
+    marqueeEl = document.createElement('div');
+    marqueeEl.className = 'marquee';
+    document.body.appendChild(marqueeEl);
+  }
 });
 window.addEventListener('mousemove', e => {
-  if(panning && panStart){
-    panX = panStart.panX + (e.clientX - panStart.x);
-    panY = panStart.panY + (e.clientY - panStart.y);
+  if(grabbing && grabStart){
+    panX = grabStart.panX + (e.clientX - grabStart.x);
+    panY = grabStart.panY + (e.clientY - grabStart.y);
     applyTransform();
   }
   if(dragImg){
@@ -222,10 +391,26 @@ window.addEventListener('mousemove', e => {
     dragImg.item.x = pt.x - dragImg.offX; dragImg.item.y = pt.y - dragImg.offY;
     dragImg.el.style.left = dragImg.item.x + 'px'; dragImg.el.style.top = dragImg.item.y + 'px';
   }
+  if(marqueeStart && marqueeEl){
+    const x = Math.min(marqueeStart.x, e.clientX), y = Math.min(marqueeStart.y, e.clientY);
+    const w = Math.abs(e.clientX - marqueeStart.x), h = Math.abs(e.clientY - marqueeStart.y);
+    Object.assign(marqueeEl.style, { left: x+'px', top: y+'px', width: w+'px', height: h+'px' });
+  }
 });
-window.addEventListener('mouseup', () => {
-  if(panning){ panning = false; world.classList.remove('panning'); viewport.classList.remove('panning'); }
+window.addEventListener('mouseup', e => {
+  if(grabbing){ grabbing = false; viewport.classList.remove('grabbing'); }
   if(dragImg){ saveImagePosition(dragImg.item); dragImg = null; }
+  if(marqueeStart && marqueeEl){
+    const box = marqueeEl.getBoundingClientRect();
+    if(box.width > 4 || box.height > 4){
+      clearSelection();
+      document.querySelectorAll('.selectable, .pasted-image').forEach(el => {
+        const r = el.getBoundingClientRect();
+        if(r.right > box.left && r.left < box.right && r.bottom > box.top && r.top < box.bottom) selectEl(el);
+      });
+    }
+    marqueeEl.remove(); marqueeEl = null; marqueeStart = null;
+  }
 });
 
 /* ---------- select / comment tool ---------- */
@@ -241,35 +426,44 @@ function setMode(m){
 btnSelect.onclick = () => setMode('select');
 btnComment.onclick = () => setMode('comment');
 document.addEventListener('keydown', e => {
-  if(e.key === 'Escape'){ setMode('select'); deselect(); }
-  if((e.key === 'Delete' || e.key === 'Backspace') && selected && document.activeElement.tagName !== 'TEXTAREA'){
-    e.preventDefault(); removeItem(selected);
+  if(e.key === 'Escape'){ setMode('select'); clearSelection(); }
+  if((e.key === 'Delete' || e.key === 'Backspace') && document.activeElement.tagName !== 'TEXTAREA'){
+    selectedImages.forEach(item => removeItem(item));
   }
 });
 
-let selected = null;
-function deselect(){ if(selected) selected.el.classList.remove('selected'); selected = null; }
-function select(item){ deselect(); selected = item; item.el.classList.add('selected'); }
+const selectedEls = new Set();
+let selectedImages = new Set();
+function clearSelection(){
+  selectedEls.forEach(el => el.classList.remove('selected'));
+  selectedEls.clear(); selectedImages.clear();
+}
+function selectEl(el){
+  selectedEls.add(el); el.classList.add('selected');
+  if(el.__item) selectedImages.add(el.__item);
+}
 
 viewport.addEventListener('click', async e => {
-  if(e.target.closest('.pasted-image') || e.target.closest('.pin')) return;
-  if(mode === 'comment' && !panning){
+  const sel = e.target.closest('.selectable');
+  const img = e.target.closest('.pasted-image');
+  const pin = e.target.closest('.pin');
+  if(pin) return;
+  if(mode === 'comment' && !grabbing && !img && !sel){
     const pt = screenToWorld(e.clientX, e.clientY);
     await startNewComment(pt);
-  } else if(mode === 'select'){
-    deselect();
+    return;
   }
+  if(img){ return; } // handled on mousedown for drag+select together
+  if(sel){ clearSelection(); selectEl(sel); return; }
+  clearSelection();
 });
 
-/* ---------- data layer ---------- */
+/* ---------- data layer (comment pins + pasted images) ---------- */
 let sb = null, me = null;
-const items = new Map(); // id -> { row, el, kind }
+const items = new Map();
 let dragImg = null;
 
-function itemEl(row){
-  if(row.kind === 'comment') return renderPin(row);
-  return renderImage(row);
-}
+function itemEl(row){ return row.kind === 'comment' ? renderPin(row) : renderImage(row); }
 
 function renderImage(row){
   const el = document.createElement('div');
@@ -279,17 +473,17 @@ function renderImage(row){
   const url = sb.storage.from('artboard').getPublicUrl(row.image_key).data.publicUrl;
   el.innerHTML = `<img src="${esc(url)}" alt="" draggable="false"><div class="del">×</div>`;
   const item = { row, el, kind: 'image', x: row.x, y: row.y };
+  el.__item = item;
   el.addEventListener('mousedown', e => {
     if(e.target.classList.contains('del')) return;
     e.stopPropagation();
-    select(item);
+    clearSelection(); selectEl(el);
     const pt = screenToWorld(e.clientX, e.clientY);
     dragImg = { item, el, offX: pt.x - row.x, offY: pt.y - row.y };
   });
   el.querySelector('.del').addEventListener('click', e => { e.stopPropagation(); removeItem(item); });
   return item;
 }
-
 async function saveImagePosition(item){
   if(!me) return;
   await sb.from('artboard_items').update({ x: item.x, y: item.y }).eq('id', item.row.id);
@@ -311,8 +505,7 @@ function renderPin(row){
       </div>
     </div>`;
   const item = { row, el, kind: 'comment' };
-  const dot = el.querySelector('.dot');
-  dot.addEventListener('click', e => { e.stopPropagation(); el.classList.toggle('open'); });
+  el.querySelector('.dot').addEventListener('click', e => { e.stopPropagation(); el.classList.toggle('open'); });
   el.addEventListener('mousedown', e => e.stopPropagation());
   el.querySelector('.resolve').addEventListener('click', async e => {
     e.stopPropagation();
@@ -326,16 +519,13 @@ function renderPin(row){
 }
 
 async function removeItem(item){
-  if(!me || me.id !== item.row.user_id){ return; }
+  if(!me || me.id !== item.row.user_id) return;
   if(item.kind === 'comment' && !confirm('delete this note?')) return;
   const { error } = await sb.from('artboard_items').delete().eq('id', item.row.id);
   if(error) return;
-  item.el.remove();
-  items.delete(item.row.id);
-  updateCount();
-  if(selected === item) selected = null;
+  item.el.remove(); items.delete(item.row.id); updateCount();
+  selectedImages.delete(item);
 }
-
 function addLive(row){
   if(items.has(row.id)) return;
   const item = itemEl(row);
@@ -401,7 +591,7 @@ async function handleIncomingImage(blob, atPoint){
   });
   let w = dims.w, h = dims.h;
   if(w > MAXW){ h = h * (MAXW / w); w = MAXW; }
-  const pt = atPoint || screenToWorld(innerWidth / 2, innerHeight / 2 + 26);
+  const pt = atPoint || screenToWorld(innerWidth / 2, innerHeight / 2 + 24);
   const ext = (blob.type.split('/')[1] || 'png').replace('jpeg', 'jpg');
   const path = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}.${ext}`;
   const up = await sb.storage.from('artboard').upload(path, blob, { contentType: blob.type });
