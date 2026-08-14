@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>eski — artboard</title>
+<meta name="robots" content="noindex">
+<link rel="icon" type="image/png" href="eski_logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Jost:wght@400;500;600&display=swap" rel="stylesheet">
+<script type="module" src="platform.js"></script>
+<link rel="stylesheet" href="tokens.css">
+<style>
+/* ============================================================
+   eski — the artboard. every live page and the current design
+   direction, embedded on one pannable/zoomable canvas, with comment
+   pins and pasted reference images layered on top. url is unlisted
+   on purpose, same as spec.html — no auth gate on viewing, sign-in
+   required to add or move anything.
+   ============================================================ */
+html,body{margin:0;height:100%;overflow:hidden;background:var(--bg-1);color:var(--ink);
+  font-family:var(--font-body);font-size:var(--fs);-webkit-user-select:none;user-select:none}
+
+/* ---------- toolbar ---------- */
+.top{position:fixed;top:0;left:0;right:0;z-index:50;display:flex;align-items:center;
+  gap:var(--s4);height:var(--hdr);padding:0 var(--s4);background:var(--bg-2);
+  border-bottom:1px solid var(--edge)}
+.top .mark{font-family:var(--font-display);font-weight:400;font-size:19px;color:var(--ink);
+  text-decoration:none;flex-shrink:0}
+.tools{display:flex;align-items:center;gap:var(--s1);flex-shrink:0}
+.tools button{font:inherit;font-size:var(--fs-xs);letter-spacing:.04em;color:var(--ink);
+  background:none;border:1px solid var(--edge);border-radius:var(--r-track);height:var(--ctl);
+  padding:0 var(--s3);cursor:pointer;display:flex;align-items:center;gap:6px;
+  transition:background var(--t-fast) var(--ease),border-color var(--t-fast) var(--ease)}
+.tools button:hover{border-color:var(--line-strong)}
+.tools button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.zoomreadout{font-variant-numeric:var(--num);font-size:var(--fs-xs);color:var(--muted);
+  min-width:42px;text-align:center}
+.sp{flex:1}
+.help{font-size:var(--fs-micro);color:var(--muted);white-space:nowrap}
+.count{font-size:var(--fs-micro);color:var(--muted);white-space:nowrap;font-variant-numeric:var(--num)}
+.auth{margin-left:var(--s2)}
+.auth-btn{font-size:var(--fs-micro)!important;letter-spacing:.06em!important;
+  border-color:var(--edge)!important}
+
+/* ---------- canvas ---------- */
+#viewport{position:fixed;top:var(--hdr);left:0;right:0;bottom:0;overflow:hidden;
+  cursor:grab;background:
+    linear-gradient(var(--edge) 1px,transparent 1px),
+    linear-gradient(90deg,var(--edge) 1px,transparent 1px);
+  background-size:80px 80px;background-color:var(--bg-1)}
+#viewport.panning{cursor:grabbing}
+#viewport.comment-mode{cursor:crosshair}
+#world{position:absolute;top:0;left:0;transform-origin:0 0;will-change:transform}
+#world.panning iframe,#world.panning .pasted-image{pointer-events:none}
+
+.frame{position:absolute;display:flex;flex-direction:column;gap:8px}
+.frame .lbl{font-family:var(--font-body);font-weight:500;font-size:14px;color:var(--soft-ink);
+  letter-spacing:.02em}
+.frame .lbl small{color:var(--muted);font-weight:400;margin-left:8px}
+.frame iframe{width:1440px;height:900px;border:1px solid var(--edge);background:var(--surface);
+  box-shadow:0 1px 0 var(--edge)}
+
+.placeholder{position:absolute;width:1440px;height:340px;border:1.5px dashed var(--edge-strong);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;
+  color:var(--muted);text-align:center;padding:var(--s5);box-sizing:border-box}
+.placeholder b{color:var(--soft-ink);font-family:var(--font-display);font-weight:400;font-size:20px}
+.placeholder span{font-size:var(--fs-xs);max-width:52ch;line-height:1.5}
+
+/* ---------- pasted images ---------- */
+.pasted-image{position:absolute;cursor:move}
+.pasted-image img{display:block;width:100%;height:100%;object-fit:contain;
+  border:1px solid var(--edge);box-shadow:0 2px 10px rgba(0,0,0,.18);background:var(--surface)}
+.pasted-image.selected img{outline:2px solid var(--accent);outline-offset:2px}
+.pasted-image .del{position:absolute;top:-11px;right:-11px;width:22px;height:22px;
+  border-radius:50%;background:var(--rec,#a33028);color:#fff;border:2px solid var(--bg-1);
+  display:none;align-items:center;justify-content:center;font-size:13px;line-height:1;cursor:pointer}
+.pasted-image.selected .del{display:flex}
+
+/* ---------- comment pins ---------- */
+.pin{position:absolute;display:flex;align-items:flex-start;gap:0;cursor:default}
+.pin .dot{width:26px;height:26px;border-radius:50% 50% 50% 4px;background:var(--accent);
+  color:var(--on-accent);display:flex;align-items:center;justify-content:center;
+  font-family:var(--font-display);font-size:13px;flex-shrink:0;cursor:pointer;
+  box-shadow:0 1px 4px rgba(0,0,0,.3);transform:rotate(45deg)}
+.pin .dot span{transform:rotate(-45deg)}
+.pin.resolved .dot{background:var(--muted);opacity:.55}
+.pin .card{position:absolute;left:32px;top:0;min-width:220px;max-width:320px;
+  background:var(--bg-2);border:1px solid var(--edge);border-radius:0;padding:var(--s3);
+  box-shadow:0 6px 24px rgba(0,0,0,.22);display:none;flex-direction:column;gap:6px;
+  user-select:text;cursor:default}
+.pin.open .card,.pin:hover .card{display:flex}
+.pin .card .who{display:flex;align-items:center;gap:8px;font-size:var(--fs-micro);color:var(--muted)}
+.pin .card .who b{color:var(--ink);font-weight:500}
+.pin .card .body{font-size:var(--fs-xs);color:var(--soft-ink);line-height:1.5;white-space:pre-wrap}
+.pin .card .row{display:flex;gap:6px;align-items:center;margin-top:2px}
+.pin .card button{font:inherit;font-size:10px;letter-spacing:.06em;text-transform:uppercase;
+  border:1px solid var(--edge);background:none;color:var(--muted);border-radius:var(--r-track);
+  padding:3px 9px;cursor:pointer}
+.pin .card button:hover{border-color:var(--line-strong);color:var(--ink)}
+.pin .card textarea{font:inherit;font-size:var(--fs-xs);width:100%;box-sizing:border-box;
+  border:1px solid var(--edge);padding:6px 8px;resize:vertical;min-height:56px;background:var(--paper)}
+
+/* the pin being placed / edited right now */
+.pin.editing .card{display:flex}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <a class="mark" href="index.html">eski<i>!</i></a>
+  <div class="tools">
+    <button id="t-select" aria-pressed="true">select</button>
+    <button id="t-comment" aria-pressed="false">comment</button>
+  </div>
+  <div class="tools">
+    <button id="zoom-out">−</button>
+    <span class="zoomreadout" id="zoom-readout">100%</span>
+    <button id="zoom-in">+</button>
+    <button id="reset-view">reset view</button>
+  </div>
+  <span class="count" id="item-count"></span>
+  <span class="sp"></span>
+  <span class="help">scroll to zoom · drag to pan · paste or drop an image · comment, then click the canvas</span>
+</header>
+
+<div id="viewport">
+  <div id="world"></div>
+</div>
+
+<script>
+function esc(s){ return (s ?? '').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;'); }
+async function platform(){
+  if(!window.eski && document.readyState === 'loading')
+    await new Promise(r => document.addEventListener('DOMContentLoaded', r, { once: true }));
+  return window.eski || null;
+}
+
+/* ---------- the frames: every live page, plus a placeholder for the new
+   pivot direction until it can be pulled out of Paper/Penpot ---------- */
+const FRAMES = [
+  { name: 'home / browse', file: 'index.html',      x: 0,    y: 0,    note: 'live' },
+  { name: 'reader',        file: 'read.html',       x: 1560, y: 0,    note: 'live · shows the drop screen with no ?read= set' },
+  { name: 'author studio', file: 'author.html',     x: 3120, y: 0,    note: 'live' },
+  { name: 'composer',      file: 'studio.html',     x: 0,    y: 1060, note: 'live · shows an empty draft with no ?base= set' },
+  { name: 'profile',       file: 'profile.html',    x: 1560, y: 1060, note: 'live' },
+  { name: 'onboarding',    file: 'onboarding.html', x: 3120, y: 1060, note: 'new, 2026-08-15' },
+];
+const PLACEHOLDER = { x: 0, y: 2120 };
+
+const world = document.getElementById('world');
+const viewport = document.getElementById('viewport');
+
+for(const f of FRAMES){
+  const el = document.createElement('div');
+  el.className = 'frame';
+  el.style.left = f.x + 'px';
+  el.style.top = f.y + 'px';
+  el.innerHTML = `<div class="lbl">${esc(f.name)}<small>${esc(f.note)}</small></div>
+    <iframe src="${esc(f.file)}" loading="lazy"></iframe>`;
+  world.appendChild(el);
+}
+{
+  const el = document.createElement('div');
+  el.className = 'placeholder';
+  el.style.left = PLACEHOLDER.x + 'px';
+  el.style.top = PLACEHOLDER.y + 'px';
+  el.innerHTML = `<b>new homepage direction — Paper</b>
+    <span>the masonry pivot mockup lives in Paper (or Penpot once that's set up),
+    not as a page in this repo. paste a screenshot of it right here to bring it
+    onto the board.</span>`;
+  world.appendChild(el);
+}
+
+/* ---------- pan / zoom ---------- */
+let panX = 40, panY = 40, zoom = 0.32;
+const ZMIN = 0.08, ZMAX = 2.5;
+function applyTransform(){
+  world.style.transform = `translate(${panX}px, ${panY}px) scale(${zoom})`;
+  document.getElementById('zoom-readout').textContent = Math.round(zoom * 100) + '%';
+}
+function resetView(){ panX = 40; panY = 40; zoom = 0.32; applyTransform(); }
+applyTransform();
+
+function screenToWorld(clientX, clientY){
+  const r = viewport.getBoundingClientRect();
+  return { x: (clientX - r.left - panX) / zoom, y: (clientY - r.top - panY) / zoom };
+}
+function zoomAt(clientX, clientY, factor){
+  const r = viewport.getBoundingClientRect();
+  const mx = clientX - r.left, my = clientY - r.top;
+  const wx = (mx - panX) / zoom, wy = (my - panY) / zoom;
+  zoom = Math.min(ZMAX, Math.max(ZMIN, zoom * factor));
+  panX = mx - wx * zoom; panY = my - wy * zoom;
+  applyTransform();
+}
+viewport.addEventListener('wheel', e => {
+  e.preventDefault();
+  zoomAt(e.clientX, e.clientY, Math.exp(-e.deltaY * 0.0012));
+}, { passive: false });
+
+document.getElementById('zoom-in').onclick  = () => zoomAt(innerWidth/2, innerHeight/2 + 26, 1.25);
+document.getElementById('zoom-out').onclick = () => zoomAt(innerWidth/2, innerHeight/2 + 26, 0.8);
+document.getElementById('reset-view').onclick = resetView;
+
+let panning = false, panStart = null;
+viewport.addEventListener('mousedown', e => {
+  if(e.target.closest('.pasted-image') || e.target.closest('.pin')) return;
+  panning = true; world.classList.add('panning'); viewport.classList.add('panning');
+  panStart = { x: e.clientX, y: e.clientY, panX, panY };
+  if(mode === 'comment') return; // handled by click, not drag
+});
+window.addEventListener('mousemove', e => {
+  if(panning && panStart){
+    panX = panStart.panX + (e.clientX - panStart.x);
+    panY = panStart.panY + (e.clientY - panStart.y);
+    applyTransform();
+  }
+  if(dragImg){
+    const pt = screenToWorld(e.clientX, e.clientY);
+    dragImg.item.x = pt.x - dragImg.offX; dragImg.item.y = pt.y - dragImg.offY;
+    dragImg.el.style.left = dragImg.item.x + 'px'; dragImg.el.style.top = dragImg.item.y + 'px';
+  }
+});
+window.addEventListener('mouseup', () => {
+  if(panning){ panning = false; world.classList.remove('panning'); viewport.classList.remove('panning'); }
+  if(dragImg){ saveImagePosition(dragImg.item); dragImg = null; }
+});
+
+/* ---------- select / comment tool ---------- */
+let mode = 'select';
+const btnSelect = document.getElementById('t-select');
+const btnComment = document.getElementById('t-comment');
+function setMode(m){
+  mode = m;
+  btnSelect.setAttribute('aria-pressed', m === 'select');
+  btnComment.setAttribute('aria-pressed', m === 'comment');
+  viewport.classList.toggle('comment-mode', m === 'comment');
+}
+btnSelect.onclick = () => setMode('select');
+btnComment.onclick = () => setMode('comment');
+document.addEventListener('keydown', e => {
+  if(e.key === 'Escape'){ setMode('select'); deselect(); }
+  if((e.key === 'Delete' || e.key === 'Backspace') && selected && document.activeElement.tagName !== 'TEXTAREA'){
+    e.preventDefault(); removeItem(selected);
+  }
+});
+
+let selected = null;
+function deselect(){ if(selected) selected.el.classList.remove('selected'); selected = null; }
+function select(item){ deselect(); selected = item; item.el.classList.add('selected'); }
+
+viewport.addEventListener('click', async e => {
+  if(e.target.closest('.pasted-image') || e.target.closest('.pin')) return;
+  if(mode === 'comment' && !panning){
+    const pt = screenToWorld(e.clientX, e.clientY);
+    await startNewComment(pt);
+  } else if(mode === 'select'){
+    deselect();
+  }
+});
+
+/* ---------- data layer ---------- */
+let sb = null, me = null;
+const items = new Map(); // id -> { row, el, kind }
+let dragImg = null;
+
+function itemEl(row){
+  if(row.kind === 'comment') return renderPin(row);
+  return renderImage(row);
+}
+
+function renderImage(row){
+  const el = document.createElement('div');
+  el.className = 'pasted-image';
+  el.style.left = row.x + 'px'; el.style.top = row.y + 'px';
+  el.style.width = row.w + 'px'; el.style.height = row.h + 'px';
+  const url = sb.storage.from('artboard').getPublicUrl(row.image_key).data.publicUrl;
+  el.innerHTML = `<img src="${esc(url)}" alt="" draggable="false"><div class="del">×</div>`;
+  const item = { row, el, kind: 'image', x: row.x, y: row.y };
+  el.addEventListener('mousedown', e => {
+    if(e.target.classList.contains('del')) return;
+    e.stopPropagation();
+    select(item);
+    const pt = screenToWorld(e.clientX, e.clientY);
+    dragImg = { item, el, offX: pt.x - row.x, offY: pt.y - row.y };
+  });
+  el.querySelector('.del').addEventListener('click', e => { e.stopPropagation(); removeItem(item); });
+  return item;
+}
+
+async function saveImagePosition(item){
+  if(!me) return;
+  await sb.from('artboard_items').update({ x: item.x, y: item.y }).eq('id', item.row.id);
+}
+
+function renderPin(row){
+  const el = document.createElement('div');
+  el.className = 'pin' + (row.resolved ? ' resolved' : '');
+  el.style.left = row.x + 'px'; el.style.top = row.y + 'px';
+  const when = new Date(row.created_at);
+  el.innerHTML = `
+    <div class="dot"><span>!</span></div>
+    <div class="card">
+      <div class="who"><b>${esc(row.owner_name || 'someone')}</b>${when.toLocaleDateString()}</div>
+      <div class="body">${esc(row.body)}</div>
+      <div class="row">
+        <button class="resolve">${row.resolved ? 'reopen' : 'mark resolved'}</button>
+        <button class="delete">delete</button>
+      </div>
+    </div>`;
+  const item = { row, el, kind: 'comment' };
+  const dot = el.querySelector('.dot');
+  dot.addEventListener('click', e => { e.stopPropagation(); el.classList.toggle('open'); });
+  el.addEventListener('mousedown', e => e.stopPropagation());
+  el.querySelector('.resolve').addEventListener('click', async e => {
+    e.stopPropagation();
+    if(!me || me.id !== row.user_id) return;
+    const next = !row.resolved;
+    const { error } = await sb.from('artboard_items').update({ resolved: next }).eq('id', row.id);
+    if(!error){ row.resolved = next; el.classList.toggle('resolved', next); }
+  });
+  el.querySelector('.delete').addEventListener('click', e => { e.stopPropagation(); removeItem(item); });
+  return item;
+}
+
+async function removeItem(item){
+  if(!me || me.id !== item.row.user_id){ return; }
+  if(item.kind === 'comment' && !confirm('delete this note?')) return;
+  const { error } = await sb.from('artboard_items').delete().eq('id', item.row.id);
+  if(error) return;
+  item.el.remove();
+  items.delete(item.row.id);
+  updateCount();
+  if(selected === item) selected = null;
+}
+
+function addLive(row){
+  if(items.has(row.id)) return;
+  const item = itemEl(row);
+  world.appendChild(item.el);
+  items.set(row.id, item);
+  updateCount();
+}
+function updateLive(row){
+  const item = items.get(row.id);
+  if(!item) return addLive(row);
+  Object.assign(item.row, row);
+  if(row.kind === 'comment'){
+    item.el.classList.toggle('resolved', row.resolved);
+    const body = item.el.querySelector('.body'); if(body) body.textContent = row.body;
+  }else{
+    item.el.style.left = row.x + 'px'; item.el.style.top = row.y + 'px';
+  }
+}
+function removeLive(id){
+  const item = items.get(id);
+  if(item){ item.el.remove(); items.delete(id); updateCount(); }
+}
+function updateCount(){
+  document.getElementById('item-count').textContent = items.size ? items.size + ' items on the board' : '';
+}
+
+async function startNewComment(pt){
+  if(!me){ alert('sign in first (top right) — comments need an account.'); return; }
+  const el = document.createElement('div');
+  el.className = 'pin editing';
+  el.style.left = pt.x + 'px'; el.style.top = pt.y + 'px';
+  el.innerHTML = `<div class="dot"><span>!</span></div>
+    <div class="card">
+      <textarea placeholder="say what you actually mean — this is precise feedback, not a like button." autofocus></textarea>
+      <div class="row"><button class="save">save</button><button class="cancel">cancel</button></div>
+    </div>`;
+  world.appendChild(el);
+  const ta = el.querySelector('textarea');
+  ta.focus();
+  const cleanup = () => el.remove();
+  el.querySelector('.cancel').onclick = e => { e.stopPropagation(); cleanup(); };
+  el.querySelector('.save').onclick = async e => {
+    e.stopPropagation();
+    const body = ta.value.trim();
+    if(!body) return cleanup();
+    const owner_name = (me.user_metadata && (me.user_metadata.full_name || me.user_metadata.name)) || me.email || 'you';
+    const { data, error } = await sb.from('artboard_items').insert({
+      kind: 'comment', x: pt.x, y: pt.y, body, user_id: me.id, owner_name
+    }).select('*').single();
+    cleanup();
+    if(!error) addLive(data);
+  };
+}
+
+/* ---------- paste + drop images ---------- */
+const MAXW = 560;
+async function handleIncomingImage(blob, atPoint){
+  if(!me){ alert('sign in first (top right) — pasting an image needs an account.'); return; }
+  const dims = await new Promise(res => {
+    const img = new Image();
+    img.onload = () => res({ w: img.naturalWidth, h: img.naturalHeight });
+    img.src = URL.createObjectURL(blob);
+  });
+  let w = dims.w, h = dims.h;
+  if(w > MAXW){ h = h * (MAXW / w); w = MAXW; }
+  const pt = atPoint || screenToWorld(innerWidth / 2, innerHeight / 2 + 26);
+  const ext = (blob.type.split('/')[1] || 'png').replace('jpeg', 'jpg');
+  const path = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}.${ext}`;
+  const up = await sb.storage.from('artboard').upload(path, blob, { contentType: blob.type });
+  if(up.error){ alert('upload failed: ' + up.error.message); return; }
+  const owner_name = (me.user_metadata && (me.user_metadata.full_name || me.user_metadata.name)) || me.email || 'you';
+  const { data, error } = await sb.from('artboard_items').insert({
+    kind: 'image', x: pt.x - w / 2, y: pt.y - h / 2, w, h, image_key: path, user_id: me.id, owner_name
+  }).select('*').single();
+  if(!error) addLive(data);
+}
+window.addEventListener('paste', e => {
+  const dt = e.clipboardData; if(!dt) return;
+  for(const it of dt.items){
+    if(it.type.startsWith('image/')){ handleIncomingImage(it.getAsFile()); break; }
+  }
+});
+viewport.addEventListener('dragover', e => e.preventDefault());
+viewport.addEventListener('drop', e => {
+  e.preventDefault();
+  const pt = screenToWorld(e.clientX, e.clientY);
+  const files = [...(e.dataTransfer?.files || [])].filter(f => f.type.startsWith('image/'));
+  files.forEach(f => handleIncomingImage(f, pt));
+});
+
+/* ---------- boot ---------- */
+(async function boot(){
+  const eski = await platform();
+  sb = eski && await eski.ready;
+  if(!sb){ alert('could not reach the server — comments and pasting are disabled, the board still renders.'); return; }
+  me = (await sb.auth.getUser()).data.user || null;
+  document.addEventListener('eski-auth', e => { me = e.detail.user; });
+
+  const { data, error } = await sb.from('artboard_items').select('*').order('created_at');
+  if(!error) for(const row of data) addLive(row);
+
+  sb.channel('artboard-live')
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'artboard_items' }, p => addLive(p.new))
+    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'artboard_items' }, p => updateLive(p.new))
+    .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'artboard_items' }, p => removeLive(p.old.id))
+    .subscribe();
+})();
+</script>
+</body>
+</html>
