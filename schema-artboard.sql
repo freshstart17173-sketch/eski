@@ -80,6 +80,20 @@ drop policy if exists artboard_bucket_delete on storage.objects;
 create policy artboard_bucket_delete on storage.objects for delete
   using (bucket_id = 'artboard' and owner = auth.uid());
 
+-- resolving a note is a triage action, not a content edit: any signed-in
+-- user may flip it on any comment, separately from the owner-only
+-- artboard_items_edit policy above (added 2026-08-15, same day, once the
+-- owner-only version turned out too narrow for actually using the board).
+create or replace function toggle_artboard_resolved(item_id uuid, next boolean)
+returns void language sql security definer set search_path = public as $$
+  update artboard_items set resolved = next where id = item_id and kind = 'comment';
+$$;
+revoke all on function toggle_artboard_resolved(uuid, boolean) from public;
+grant execute on function toggle_artboard_resolved(uuid, boolean) to authenticated;
+-- supabase grants execute on new functions to anon by default, separately
+-- from the public-role revoke above, so that alone did not close it.
+revoke execute on function toggle_artboard_resolved(uuid, boolean) from anon;
+
 notify pgrst, 'reload schema';
 
 -- ------------------------------------------------------------------ verify
