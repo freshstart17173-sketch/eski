@@ -35,23 +35,25 @@ picked.
 
 ---
 
-## 2. The three studios
+## 2. The two studios
 
-The studio is not one surface. The three jobs share a shell and almost nothing
-else, so they are three pages fit for their own purpose.
+The studio is not one surface, but it is not three either. Voicing a line and
+scoring a page turn out to be the same job seen from two stances — "supply
+audio; the author already said where, and for a line, how long" — so one
+screen holds both, and only authoring the comic itself stands apart.
 
-| | Author studio | Composer studio | Voiceover studio |
-|---|---|---|---|
-| File | `studios/author.html` | `studios/score.html` | `studios/voice.html` |
-| Who | the person who drew it | a composer or sound designer | a voice actor |
-| Makes | pages, cast, transcript | layers of sound over page ranges | one character's lines |
-| Shape | page beside its script | page ruler with stacked lanes | page beside its lines |
-| Unit of work | the page | the page range | the line |
+| | Author studio | Contribution studio |
+|---|---|---|
+| File | `author.html` | `contribute.html` |
+| Who | the person who drew it | anyone: voice actor, composer, sound designer |
+| Makes | pages, cast, transcript, line durations | takes that fill those durations, plus score and effects |
+| Shape | page beside its script | page beside its lines, one stance at a time |
+| Unit of work | the page | the line, or the page range |
 
 ### 2.1 Author studio
 
-Imports finished art, writes the cast, transcribes the pages. Nothing else — the
-author is not scoring and not casting.
+Imports finished art, writes the cast, transcribes the pages, and times them.
+Nothing else — the author is not scoring and not casting.
 
 **Pages.** Dropped in, ordered by filename with numeric awareness, shown as a
 strip. Page order is the reading order and is the spine everything else hangs
@@ -64,51 +66,57 @@ they are what a stranger reads in *voiceover needed* before deciding to take the
 part, so the studio edits them against a live copy of that row. If the row reads
 badly there, it reads badly to every performer who might have taken it.
 
-**Transcript.** Each line carries a page, a character, the text, and a
-**direction** — `sad`, `worried`, `choking`, `flat, reading aloud`. The direction
-is the author's instruction to the performer and is the difference between a
-reading that fits the panel and one that does not. It is set as a parenthetical,
-which is what it is.
+**Transcript.** Each line carries a page, a character, the text, a
+**direction** — `sad`, `worried`, `choking`, `flat, reading aloud` — and a
+**duration**, in seconds. The direction is the author's instruction to the
+performer; the duration is the author's instruction to the schedule, and it is
+set before any performance of the line exists. Timing a line well is a real
+skill, and not the same one as drawing or writing it — the author who is good
+at this is closer to a storyboard artist blocking an animatic than to a comic
+artist laying out a page. That is fine. The format should select for whoever
+can hear the beat, not assume the two abilities come bundled.
 
-### 2.2 Composer studio
+### 2.2 Contribution studio
 
-The one idea this surface exists to express: **audio stacks.**
+One screen, two stances: **Voice** and **Score**. What changes with the
+stance is which column is writable, which is one sentence for both rather
+than a rule per stance.
 
-A layer is a lane. A lane runs the length of the comic. Lanes play at the same
-time. Rain can run pages 1–47 on one lane while a piece of music owns pages
-12–19 on the lane above it and a door slams on page 14 on the lane above that.
+**Voice.** Every character is offered on the way in, however many people have
+already read it. No performer is named anywhere on the surface: a reading you
+can play is a reference, not an attribution. Other characters' lines stay on
+the page in grey, because a line is unreadable without the line before it, and
+can be played back as reference where a reading exists.
 
-So the primary view is a page ruler with lanes under it, because the composer's
-real question is never "what is this file" — it is *"what is playing on page 14,
-and where does it stop"*. A clip is dragged in from the bay and given a page
-range; the range is the object, and there is no waveform timeline underneath to
-disagree with it.
+A line's duration is fixed by the author, not by you. Recording in the
+browser and dropping a file in are the same act — both land in the bay, and a
+take from there gets trimmed into the box the author set: autotrim moves the
+in and out points to the first and last sound, manual trim drags them, and
+what falls outside them is dimmed, never cut. A take that runs short is padded
+with trailing silence rather than stretched; a take that runs long is cut
+where the box ends — the same rule that already cuts a still-sounding group
+when the reader turns the page, applied one level down. Every take placed
+against a line ends up exactly that line's duration regardless of whose take
+it is, which is what makes the timing in §3.6 possible without measuring
+anything at read time.
+
+**Score.** Attach a clip and give it a page range. There is no separate mode
+for a score cue and a sound effect to choose before you start, because the
+manifest never asked that question either — a `score` layer and a `oneshot`
+layer differ only in whether the range is longer than one page (§3.1). Drag a
+clip onto a single page and it is a hit; give it pages 12–19 and it is a
+theme. Where the author has already marked a beat in the transcript — a door
+that slams on page 14 — that anchor shows on the canvas as a place to fill;
+anywhere else is open canvas, and a clip placed there defines its own range.
 
 - Overlapping clips on one layer stack into visible sub-rows. A layer that is
   two deep says so.
 - A page preview shows the page you have selected and, under it, everything
   audible on that page in playing order.
-- The voice layer is present and read-only: the composer cannot move what a
-  performer turned in, but has to be able to see where the talking is in order
-  to duck around it.
+- The voice layer is present and read-only in this stance, so a contributor
+  scoring the page can see where the talking is without being able to move
+  it — and the reverse is true in Voice.
 - Publishing reports the pages with nothing under them rather than blocking.
-
-### 2.3 Voiceover studio
-
-One character at a time, one page at a time.
-
-Every character in the chapter is offered on the way in, however many people have
-already read it. No performer is named anywhere on the surface: a reading you can
-play is labelled a reference, not an attribution.
-
-Other characters' lines stay on the page in grey, because a line is unreadable
-without the line before it, and can be played back as reference where a reading
-exists.
-
-Recording in the browser and dropping a file in are the same act — both land in
-the bay, and a line takes audio from there. Every take carries in and out points;
-autotrim moves them to the first and last sound, manual trim drags them. What
-falls outside the points is dimmed, never cut.
 
 ---
 
@@ -130,7 +138,7 @@ A layer has a kind, and the kind sets what its clips mean:
 | `bed` | ambience that runs under everything — rain, room tone, a city | own page ranges, usually long, usually looping | its range ends |
 | `score` | the soundtrack proper | own page ranges | its range ends |
 | `oneshot` | effects and stings fired on a page | one page each (`from === to`) | the sound ends |
-| `voice` | a performance of one character | one page each, anchored to a line | the line ends |
+| `voice` | a performance of one character | one page each, anchored to a line | the line's authored duration ends |
 
 Layers are ordered in the manifest. Order is presentation only: what a reader
 sees in the mix picker, not a mixing precedence.
@@ -152,14 +160,14 @@ clip = { id, title, file, from, to, start, end, gain, loop, fade }
 - `loop` means the clip repeats until its range ends. Without it the clip plays
   once and the layer goes quiet for the rest of the range.
 - `start` and `end` are in and out points into the audio file, in seconds. This
-  is what the voiceover studio's trim writes, and it is why trimming is not
+  is what the contribution studio's trim writes, and it is why trimming is not
   destructive: the file is untouched and the points can be moved again.
 
 ### 3.3 What plays on a page
 
 For each page, for each layer, take the clips whose range covers it. That is the
 whole rule. A page's sound is the union of every layer's answer, which is what
-the composer studio's page preview lists.
+the contribution studio's page preview lists.
 
 ### 3.4 Ducking
 
@@ -176,14 +184,36 @@ The transcript is part of the file, not a side-car. Voice clips reference it.
 ```
 script = {
   characters: [ { id, name, kind, description, voice } ],
-  lines:      [ { id, page, character, text, direction } ]
+  lines:      [ { id, page, character, text, direction, duration } ]
 }
 ```
 
 `description` and `voice` are what *voiceover needed* lists. `direction` is the
-author's instruction for how a line is read. A line with no voice clip pointing
-at it is an open part, and that — not a flag, not a status — is what the browse
-surface counts.
+author's instruction for how a line is read. `duration` is the author's
+instruction for how long it takes, in seconds, set at transcription time and
+before any take of the line exists — see §2.1. A line with no voice clip
+pointing at it is an open part, and that — not a flag, not a status — is what
+the browse surface counts.
+
+### 3.6 Cue timing
+
+A page's entries — its lines and its one-shots — are not all fired at page
+turn. Each is scheduled relative to the one before it: `after` (wait for it to
+finish), `with` (start together), or `over` (start partway through it). A
+group still sounding when the reader turns the page is cut, the same rule
+§2.2 applies one level down to a take that outruns its line.
+
+Because a line's duration is authored, not measured, `over` can be an offset
+into that duration rather than a fraction of a take — every take of a line is
+the same length by construction (§2.2), so the offset means the same thing no
+matter which performer's take is placed. Nothing about the schedule has to
+wait for audio to load before it can be built.
+
+`oneshot` entries have no authored duration yet — an effect's length is
+whatever clip fills it, so a cue chained `after` one still has to wait for
+that clip to load before the schedule is exact. Giving the author a duration
+field for an anchored effect cue, the same way a line has one, is open;
+nothing forces it today, since effects are usually short and rarely chained.
 
 ---
 
@@ -248,7 +278,7 @@ surface counts.
     ],
     "lines": [
       { "id": "l12", "page": 3, "character": "gwen",
-        "text": "Forty-one. That's everyone.", "direction": "" }
+        "text": "Forty-one. That's everyone.", "direction": "", "duration": 2.4 }
     ]
   },
 
@@ -263,6 +293,8 @@ surface counts.
 - `layers[].character` on a `voice` layer is the character id from `script`.
   Several `voice` layers may name the same character. That is the point.
 - `clips[].line` ties a voice clip to the line it reads.
+- `script.lines[].duration` is authored once per line and applies to every
+  clip that fills it, regardless of performer — see §2.1 and §3.6.
 - `gain` stays decibels, clamped -24..+12, and never re-encodes the audio.
 - The zip layout is unchanged: pages at the root, audio under `audio/`,
   `.eski/manifest.json`, and a plain cbz reader still opens it as a silent
@@ -276,8 +308,9 @@ surface counts.
    runs to the final page.
 3. A `silence` track sets the end of the previous clip and is then discarded.
 4. Wrap all `oneshot` tracks in one `oneshot` layer with `from === to`.
-5. There is no script and no voice layer. The comic opens with its music intact
-   and every character listed as needing a voice.
+5. There is no script and no voice layer, so there are no authored durations
+   either. The comic opens with its music intact and every character listed
+   as needing a voice.
 
 A v3 reader must read v2. A v2 reader shown a v3 file should refuse it rather
 than play the first layer and call it the score.
@@ -290,7 +323,7 @@ Two styles, one for each half of the product. **Broadsheet** dresses everything
 you read — hairline rules, micro caps, square corners, art at comic proportions,
 and a ground and accent the reader picks
 (`docs/design/final/broadsheet.css`, colour in `palettes.css`; the full rules
-are in `docs/design/STYLE.md`). **Workbench** dresses the three studios:
+are in `docs/design/STYLE.md`). **Workbench** dresses the two studios:
 the same palette and square corners, but hierarchy from surfaces rather than
 hairlines, and colour that means something — four kinds of sound, four hues, one
 legend (`docs/design/final/studios/studio.css`, geometry in `base.css`).
@@ -301,7 +334,7 @@ legend (`docs/design/final/studios/studio.css`, geometry in `base.css`).
 | browse | `home.html#browse` | three modes, always named: **eskis**, **roles that need a voice**, **eskis with no score** |
 | details | `home.html` | the eski, its tags, and the mix picker |
 | profile | `home.html#profile` | reading, read, parts performed, settings — the shelf lives here |
-| studio | three pages | see §2 |
+| studio | two pages | see §2 |
 
 **The mix.** Voices and score are picked together in the details pane. Every
 voiceover for a character is listed with its performer and a preview; every
@@ -326,3 +359,6 @@ each, which is what a reader who never opens the pane gets.
 - **Page ranges under a reordered comic.** If an author inserts a page after a
   score exists, every clip range after it is wrong. Ranges probably need to
   anchor to page ids rather than page numbers.
+- **Authored duration for effect cues.** A line has one (§2.1); an anchored
+  one-shot does not, so a cue chained off an effect still has to wait for
+  that clip to load before the schedule is exact (§3.6).
