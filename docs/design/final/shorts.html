@@ -23,10 +23,13 @@
    strip again, as an invitation into a different one. an eski feed
    is not supposed to be a thing you could theoretically never leave.
 
-   a tag is a tag whether it describes the comic (#gag, #oneshot) or
-   describes YOUR relationship to it (#following, #lastweek) — there
-   is one AND-query under both, not a content system with a second,
-   different filter system bolted on for "following". see tagsOf().
+   two tiers of tag, one query. CONTENT tags (#gag, #horror) are open —
+   anything an eski has been tagged with. MODIFIER tags (#following,
+   #lastweek, #needsvoice, #noscore…) are a small closed set describing
+   something other than the content: when, who, shape, cast/score state.
+   Both land in the same array and AND together the same way — the tiers
+   are about where a tag comes from, not a second filter system bolted
+   on beside the first. see tagsOf().
 
    opening a block does not navigate anywhere: the reader is the same
    feed, re-rendered full-screen starting at the block you tapped, so
@@ -130,17 +133,34 @@ const MIC = '<svg viewBox="0 0 14 14"><rect x="5" y="1.2" width="4" height="7" r
 const NOTE = '<svg viewBox="0 0 14 14"><circle cx="4" cy="10.5" r="2"/>' +
   '<path d="M6 10.5V2.2l6-1.4v7.2"/><circle cx="10" cy="8" r="2"/></svg>';
 
-/* kind: short | long. following: true if you follow this creator. tags
-   are content tags, genre-shaped — a separate thing from kind/following/
-   lastweek only because those three are computed, not authored; to a
-   tab query they're the same kind of tag. ratio only matters for shorts. */
+/* kind: short | long. following: true if you follow this creator.
+
+   two tiers of tag, on purpose:
+   - CONTENT tags (`tags: [...]`) — open vocabulary, whatever an eski has
+     been tagged with. #gag, #horror, #noir. Anyone can add one; there is
+     no fixed list, same as SPEC's freeform-tagging instinct elsewhere.
+   - MODIFIER tags — a fixed, small vocabulary that isn't about the
+     content at all: when it was posted (#lastweek), who posted it
+     (#following), its shape (#shortform/#longform), and its cast/score
+     state (#needsvoice/#needsscore/#novoice/#noscore). These are
+     computed by tagsOf() below, never authored, and there will only
+     ever be a handful of them.
+   Both tiers AND together in the same query — the split is about where
+   a tag comes from and how many of them can exist, not how it's used.
+
+   openRole / wantsScore are the source facts behind the two "needs"
+   modifiers: openRole means at least one part is still uncast even
+   though somebody else on the same eski has been voiced; wantsScore
+   means it already has a score but isn't closed to another the way
+   SPEC says nothing is ("an eski with a score can still take another").
+   ratio only matters for shorts — longs are always 2:3. */
 const ITEMS = [
   {id:'i1', kind:'short', creator:'abusegoblin', cap:'he does this every single day', ratio:'1/1',
    img:'../covers/jigoku.jpg', added:daysAgo(0), voice:true, score:false, following:true, tags:['gag']},
   {id:'i2', kind:'short', creator:'beetlemoses', cap:'panel three is the whole joke', ratio:'4/5',
    img:'../covers/talking-axe.jpg', added:daysAgo(0), voice:false, score:true, following:true, tags:['gag']},
   {id:'i3', kind:'long', title:'falling in love on the path to hell', creator:'duggan & brown',
-   img:'../covers/jigoku.jpg', added:daysAgo(1), voice:true, score:true, following:true, tags:['horror','romance']},
+   img:'../covers/jigoku.jpg', added:daysAgo(1), voice:true, score:true, following:true, tags:['horror','romance'], openRole:true},
   {id:'i4', kind:'short', creator:'goobsmooch', cap:'a normal tuesday for these two', ratio:'1/1',
    img:'../covers/sunbound.jpg', added:daysAgo(1), voice:true, score:true, following:false, tags:['sliceoflife']},
   {id:'i5', kind:'short', creator:'mbekidraws', cap:'no caption, the art can carry it', ratio:'4/5',
@@ -148,15 +168,15 @@ const ITEMS = [
   {id:'i6', kind:'short', creator:'abusegoblin', cap:'part two of yesterday, sorry', ratio:'1/1',
    img:'../covers/second-dark.jpg', added:daysAgo(2), voice:true, score:false, following:true, tags:['gag']},
   {id:'i7', kind:'long', title:'the dark knight returns', creator:'miller, janson & varley',
-   img:'../covers/second-dark.jpg', added:daysAgo(3), voice:true, score:true, following:true, tags:['crime','noir']},
+   img:'../covers/second-dark.jpg', added:daysAgo(3), voice:true, score:true, following:true, tags:['crime','noir'], wantsScore:true},
   {id:'i8', kind:'short', creator:'vargacomics', cap:'drew this on the train', ratio:'4/5',
    img:'../covers/jigoku.jpg', added:daysAgo(3), voice:false, score:false, following:false, tags:['sliceoflife']},
   {id:'i9', kind:'short', creator:'beetlemoses', cap:'the axe has opinions about this', ratio:'1/1',
-   img:'../covers/talking-axe.jpg', added:daysAgo(4), voice:true, score:true, following:true, tags:['gag']},
+   img:'../covers/talking-axe.jpg', added:daysAgo(4), voice:true, score:true, following:true, tags:['gag'], openRole:true},
   {id:'i10', kind:'short', creator:'wrenlines', cap:'four panels, one bad decision', ratio:'4/5',
    img:'../covers/sunbound.jpg', added:daysAgo(5), voice:false, score:true, following:false, tags:['oneshot']},
   {id:'i11', kind:'long', title:'blame! master edition', creator:'tsutomu nihei',
-   img:'../covers/concrete-sky.jpg', added:daysAgo(6), voice:true, score:true, following:false, tags:['scifi']},
+   img:'../covers/concrete-sky.jpg', added:daysAgo(6), voice:true, score:true, following:false, tags:['scifi'], openRole:true},
   {id:'i12', kind:'short', creator:'goobsmooch', cap:'the follow-up nobody asked for', ratio:'1/1',
    img:'../covers/concrete-sky.jpg', added:daysAgo(6), voice:true, score:false, following:false, tags:['sliceoflife']},
   {id:'i13', kind:'short', creator:'opokudraws', cap:'this took four attempts to letter', ratio:'4/5',
@@ -183,22 +203,34 @@ const ITEMS = [
    purely so this mockup can demonstrate what hitting a cap looks like
    without needing eighty fake rows to prove it. */
 const CAP = 8;
+/* the first four are "you" modifiers, the last two are cast/score
+   modifiers — browse's three old modes (eskis, roles that need a
+   voice, eskis with no score) are #longform, #needsvoice and #noscore
+   with nothing else added, which is the case for retiring browse as
+   its own surface rather than keeping two ways to ask the same thing. */
 const BUILTIN_TABS = [
   {tags:['following']},
   {tags:['shortform']},
   {tags:['longform']},
-  {tags:['lastweek']}
+  {tags:['lastweek']},
+  {tags:['needsvoice']},
+  {tags:['noscore']}
 ];
 const customTabs = [];
 
-/* every tag lives in one list — a genre an author picked (#gag), a shape
-   the item just has (#shortform), and a fact about you (#following,
-   #lastweek) are computed or authored differently but AND together
-   exactly the same way once they're in this array. */
+/* content tags (item.tags — open, authored) and modifier tags (computed
+   here — closed, small, never authored) end up in one flat array. A tab
+   query doesn't know or care which tier a tag came from; the tiers exist
+   for where a tag comes from and how many there can be, not for how
+   resolve() treats them. */
 function tagsOf(item){
   const t = [item.kind === 'short' ? 'shortform' : 'longform', ...(item.tags || [])];
   if(item.following) t.push('following');
   if(item.added >= daysAgo(7)) t.push('lastweek');
+  if(!item.voice) t.push('novoice');
+  if(!item.voice || item.openRole) t.push('needsvoice');
+  if(!item.score) t.push('noscore');
+  if(!item.score || item.wantsScore) t.push('needsscore');
   return t;
 }
 function tabLabel(tags){ return tags.map(t => '#' + t).join(' '); }
@@ -324,7 +356,7 @@ function renderTabs(){
   });
   const compose = document.createElement('div');
   compose.className = 'tabcompose';
-  compose.innerHTML = `<input type="text" placeholder="+ #following #gag #lastweek">`;
+  compose.innerHTML = `<input type="text" placeholder="+ #gag #following #needsscore">`;
   compose.querySelector('input').addEventListener('keydown', e => {
     if(e.key !== 'Enter') return;
     const tags = e.target.value.split(/\s+/).map(t => t.replace(/^#/,'').toLowerCase()).filter(Boolean);
