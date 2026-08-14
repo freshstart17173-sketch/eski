@@ -9,117 +9,69 @@
 <link rel="stylesheet" href="../../../palettes.css">
 <style>
 /* ============================================================
-   eski — shorts. a separate surface from home.html, on purpose:
-   short-form has no cover, so its card is built around a first
-   page that was never composed to survive being shrunk, the way
-   an actual cover is. that one fact is why almost nothing here
-   is the long-form card at a different size.
+   eski — shorts, in the eski-arena style (.claude/skills/eski-arena).
 
-   non-algorithmic means the same thing it means on home: order is
-   either "newest" (a fact) or "picked by a person, and they say
-   why" (the featured strip), never a score nobody can see.
+   one column, one comic per row, full width, no crop — the whole
+   reason for this style over the shorts grid this replaced is that
+   a grid forces every card to negotiate a column width with its
+   neighbours, and a comic with an unusual aspect ratio loses that
+   negotiation. a single column never asks it to.
 
-   following is the one place the two card shapes share a grid —
-   because "if you follow someone you see every post" (STYLE.md's
-   own rule) does not care what length the post is. everywhere
-   else on this page is short-form only, so the grid can stay one
-   shape and run large.
+   there is no algorithmic feed here, and there is also no INFINITE
+   one: every tab is a #tag query (#following, #shortform, #lastweek,
+   or a combination you type yourself) and every tab has a stated cap.
+   reaching it does not reload the same feed — it hands you the tab
+   strip again, as an invitation into a different one. an eski feed
+   is not supposed to be a thing you could theoretically never leave.
    ============================================================ */
 
-.wrap{max-width:1280px;margin:0 auto;padding:0 var(--s4) var(--s7)}
-section+section{margin-top:var(--s6)}
+.wrap{max-width:var(--arena-max);margin:0 auto;padding:0 var(--s4) var(--s7)}
+:root{ --arena-max:640px; --arena-gap:var(--s6); --tab-h:34px; }
 
-/* ---------- this week: hand-picked, dated, said why ---------- */
-/* three wide at most — this is the one place order is not chronological,
-   so it has to look unmistakably like a choice, not the top of a feed. */
-.featured{display:grid;grid-template-columns:repeat(3,1fr);border-left:1px solid var(--rule)}
-@media(max-width:900px){.featured{grid-template-columns:repeat(2,1fr)}}
-@media(max-width:560px){.featured{grid-template-columns:1fr}}
-.fcard{display:flex;flex-direction:column;background:var(--paper);text-align:left;
-  border:0;border-right:1px solid var(--rule);border-bottom:1px solid var(--rule);
-  padding:var(--s3);color:inherit;font:inherit;min-width:0;
-  transition:background var(--t-fast) var(--ease)}
-.fcard:hover{background:var(--surface)}
-.fcard:active{transform:translateY(1px)}
-.fplate{position:relative;overflow:hidden;border:1px solid var(--rule-hair);
-  background:var(--paper-1)}
-[data-theme="dark"] .fplate{background:var(--surf-2)}
-.fplate img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;
-  transition:transform var(--t-mid) var(--ease)}
-.fcard:hover .fplate img{transform:scale(1.02)}
-.fdate{font-size:var(--fs-micro);letter-spacing:.14em;text-transform:uppercase;
-  color:var(--accent);margin-top:var(--s3)}
-.fwhy{font-size:var(--fs-xs);color:var(--soft-ink);line-height:1.5;margin:4px 0 0}
-.fwhy b{color:var(--ink);font-weight:500}
+/* ---------- tab strip: one line, scrolls sideways, never wraps ---------- */
+.tabbar{display:flex;gap:var(--s2);align-items:center;height:var(--tab-h);
+  overflow-x:auto;scrollbar-width:none;margin:var(--s4) 0 var(--s5);
+  border-bottom:1px solid var(--rule)}
+.tabbar::-webkit-scrollbar{display:none}
+.tab{flex:none;height:var(--tab-h);padding:0 2px;background:none;border:0;
+  border-bottom:2px solid transparent;font:inherit;font-size:var(--fs-micro);
+  letter-spacing:.04em;color:var(--label);cursor:pointer;white-space:nowrap;
+  transition:color var(--t-fast) var(--ease),border-color var(--t-fast) var(--ease)}
+.tab:hover{color:var(--ink)}
+.tab[aria-current="true"]{color:var(--accent);border-color:var(--accent)}
+.tab.compose{color:var(--label);font-style:italic}
+.tabcompose{display:flex;flex:none;align-items:center;gap:6px;height:var(--tab-h)}
+.tabcompose input{border:0;background:none;font:inherit;font-size:var(--fs-micro);
+  color:var(--ink);width:150px;padding:0}
+.tabcompose input::placeholder{color:var(--muted)}
+.tabcompose input:focus{outline:0}
 
-/* ---------- lens: newest or following, nothing ranked ---------- */
-.bar.modes{border-bottom:0;padding-bottom:0}
-.lensnote{font-size:var(--fs-micro);letter-spacing:.06em;color:var(--label)}
+/* ---------- the block: art, glyphs, one caption line, a byline, a rule ---------- */
+.feed{display:flex;flex-direction:column}
+.block{display:block;padding:var(--arena-gap) 0 0;text-align:left;background:none;
+  border:0;color:inherit;font:inherit;width:100%}
+.bplate{position:relative;overflow:hidden;border:1px solid var(--rule-hair);
+  background:var(--paper-1);width:100%}
+[data-theme="dark"] .bplate{background:var(--surf-2)}
+.bplate img{display:block;width:100%;height:auto}
+.baudio{display:flex;gap:6px;height:15px;margin-top:var(--s3)}
+.baudio svg{width:13px;height:13px;fill:none;stroke:var(--label);stroke-width:1.4}
+.bcap{margin-top:4px;font-size:var(--fs-sm);color:var(--ink);line-height:1.4}
+.bby{display:flex;gap:var(--s2);align-items:baseline;margin-top:2px;
+  font-size:var(--fs-micro);letter-spacing:.04em;color:var(--label)}
+.bby .kind{color:var(--label)}
+.brule{margin-top:var(--arena-gap);border-top:1px solid var(--rule-hair)}
 
-/* ---------- the short card ---------- */
-/* four across at most, half what the long-form grid runs, because the
-   plate is doing a cover's job with none of a cover's preparation — it
-   needs the extra room to still read as a joke rather than a smear. */
-.sgrid{display:grid;grid-template-columns:repeat(4,1fr);border-left:1px solid var(--rule)}
-@media(max-width:1180px){.sgrid{grid-template-columns:repeat(3,1fr)}}
-@media(max-width:820px){.sgrid{grid-template-columns:repeat(2,1fr)}}
-@media(max-width:520px){.sgrid{grid-template-columns:1fr}}
+/* a long-form block is the same shape, just at 2:3 and named as what it is,
+   so it never reads as a broken short when it turns up in #following. */
+.block.long .bplate{aspect-ratio:2/3;max-width:280px}
 
-.scard{display:flex;flex-direction:column;background:var(--paper);text-align:left;
-  border:0;border-right:1px solid var(--rule);border-bottom:1px solid var(--rule);
-  padding:var(--s3);color:inherit;font:inherit;min-width:0;
-  transition:background var(--t-fast) var(--ease)}
-.scard:hover{background:var(--surface)}
-.scard:active{transform:translateY(1px)}
-/* the plate's ratio is a property of the post, not the grid — square and
-   4:5 both ship. forcing one ratio is what crops the joke. */
-.splate{position:relative;overflow:hidden;border:1px solid var(--rule-hair);
-  background:var(--paper-1)}
-[data-theme="dark"] .splate{background:var(--surf-2)}
-.splate img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;
-  transition:transform var(--t-mid) var(--ease)}
-.scard:hover .splate img{transform:scale(1.02)}
-.scard:hover .splate{border-color:var(--rule)}
-
-/* audio glyphs read as presence, never absence — a silent short is the
-   expected state, not a missing one, so there is no "no audio" mark. */
-.saudio{display:flex;gap:6px;height:16px;margin-top:var(--s2)}
-.saudio svg{width:13px;height:13px;fill:none;stroke:var(--label);stroke-width:1.4}
-.scard:hover .saudio svg{stroke:var(--ink)}
-
-.scap{margin-top:4px;font-size:var(--fs-xs);color:var(--ink);line-height:1.4;
-  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.sby{font-size:var(--fs-micro);letter-spacing:.04em;color:var(--label);margin-top:2px}
-
-/* ---------- following: both shapes, one feed, chronological ---------- */
-/* not the uniform card grid above — heights are allowed to differ, the
-   way a 2:3 cover and a square post always will, because pretending
-   they are the same shape is worse than just letting the grid be loose. */
-.mixfeed{display:grid;grid-template-columns:repeat(4,1fr);align-items:start;
-  border-left:1px solid var(--rule)}
-@media(max-width:1180px){.mixfeed{grid-template-columns:repeat(3,1fr)}}
-@media(max-width:820px){.mixfeed{grid-template-columns:repeat(2,1fr)}}
-@media(max-width:520px){.mixfeed{grid-template-columns:1fr}}
-.lcard{display:flex;flex-direction:column;background:var(--paper);text-align:left;
-  border:0;border-right:1px solid var(--rule);border-bottom:1px solid var(--rule);
-  padding:var(--s3);color:inherit;font:inherit;min-width:0;
-  transition:background var(--t-fast) var(--ease)}
-.lcard:hover{background:var(--surface)}
-.lcard:active{transform:translateY(1px)}
-.lplate{position:relative;overflow:hidden;border:1px solid var(--rule-hair);
-  aspect-ratio:2/3;background:var(--paper-1)}
-[data-theme="dark"] .lplate{background:var(--surf-2)}
-.lplate img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
-.ltitle{font-family:var(--font-display);font-weight:400;font-size:15px;line-height:20px;
-  margin-top:var(--s2)}
-.lwhen{font-size:var(--fs-micro);letter-spacing:.06em;color:var(--label);margin-top:2px}
-.lwhen b{color:var(--accent);font-weight:400}
-
-.foot{margin-top:var(--s7);padding-top:var(--s3);border-top:1px solid var(--rule);
-  display:flex;justify-content:space-between;gap:var(--s3);flex-wrap:wrap;
-  font-size:var(--fs-micro);letter-spacing:.1em;color:var(--label)}
-.foot a{color:inherit;text-decoration:none}
-.foot a:hover{color:var(--ink)}
+/* ---------- the cap: a fact, not a spinner ---------- */
+.cap{padding:var(--s6) 0 var(--s5);text-align:center}
+.cap p{margin:0 0 var(--s4);font-size:var(--fs-xs);color:var(--soft-ink)}
+.cap p b{color:var(--ink);font-weight:500}
+.cap .keepgoing{font-size:var(--fs-micro);letter-spacing:.1em;text-transform:uppercase;
+  color:var(--label);margin-bottom:var(--s2)}
 </style>
 </head>
 <body>
@@ -137,166 +89,176 @@ section+section{margin-top:var(--s6)}
 
 <main><div class="wrap">
 
-  <section>
-    <div class="head"><h2>this week</h2><span class="n">picked by hand, mondays</span></div>
-    <div class="featured" id="featured"></div>
-  </section>
-
-  <section>
-    <div class="head"><h2>shorts</h2><span class="n" id="lens-n"></span></div>
-    <div class="bar modes">
-      <div class="seg" id="lens">
-        <button data-lens="new" aria-selected="true">newest</button>
-        <button data-lens="follow" aria-selected="false">following</button>
-      </div>
-      <span class="sp" style="flex:1"></span>
-      <span class="lensnote" id="lens-note"></span>
-    </div>
-    <div class="sgrid" id="grid-new"></div>
-    <div class="mixfeed" id="grid-follow" hidden></div>
-  </section>
-
-  <div class="foot"><span>EST. 2026</span>
-    <span><a href="#">TERMS</a> · <a href="#">PRIVACY</a> · <a href="#">TAKEDOWN</a></span></div>
+  <div class="tabbar" id="tabbar"></div>
+  <div class="feed" id="feed"></div>
+  <div class="cap" id="cap" hidden></div>
 
 </div></main>
 
 <script>
 /* ============================================================
-   mock data. cover art is borrowed from the long-form set purely
-   because this is a design doc with no upload pipeline behind it —
-   a real short's plate is whatever image page one actually is.
+   mock data. cover art is borrowed from the long-form set — this
+   is a design doc with no upload pipeline behind it.
    ============================================================ */
-const esc = s => String(s).replace(/[&<>"]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
+const esc = s => String(s).replace(/[&<>"]/g, m => ({'&':'&lt;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
+const TODAY = new Date('2026-08-14');
+const daysAgo = n => { const d = new Date(TODAY); d.setDate(d.getDate() - n); return d.toISOString().slice(0,10); };
 
 const MIC = '<svg viewBox="0 0 14 14"><rect x="5" y="1.2" width="4" height="7" rx="2"/>' +
   '<path d="M3 7.2a4 4 0 0 0 8 0M7 11.2v1.6M4.8 12.8h4.4"/></svg>';
 const NOTE = '<svg viewBox="0 0 14 14"><circle cx="4" cy="10.5" r="2"/>' +
   '<path d="M6 10.5V2.2l6-1.4v7.2"/><circle cx="10" cy="8" r="2"/></svg>';
 
-const SHORTS = [
-  {id:'s1', by:'nick vost', creator:'abusegoblin', cap:'he does this every single day', ratio:'1/1',
-   img:'../covers/jigoku.jpg', added:'2026-08-13', voice:true, score:false, tag:'gag'},
-  {id:'s2', by:'harris fishman', creator:'beetlemoses', cap:'panel three is the whole joke', ratio:'4/5',
-   img:'../covers/talking-axe.jpg', added:'2026-08-13', voice:false, score:true, tag:'gag'},
-  {id:'s3', by:'goobsmooch', creator:'goobsmooch', cap:'a normal tuesday for these two', ratio:'1/1',
-   img:'../covers/sunbound.jpg', added:'2026-08-12', voice:true, score:true, tag:'sliceoflife'},
-  {id:'s4', by:'r. mbeki', creator:'mbekidraws', cap:'no caption, the art can carry it', ratio:'4/5',
-   img:'../covers/concrete-sky.jpg', added:'2026-08-12', voice:false, score:false, tag:'oneshot'},
-  {id:'s5', by:'nick vost', creator:'abusegoblin', cap:'part two of yesterday, sorry', ratio:'1/1',
-   img:'../covers/second-dark.jpg', added:'2026-08-11', voice:true, score:false, tag:'gag'},
-  {id:'s6', by:'a. varga', creator:'vargacomics', cap:'drew this on the train', ratio:'4/5',
-   img:'../covers/jigoku.jpg', added:'2026-08-11', voice:false, score:false, tag:'sliceoflife'},
-  {id:'s7', by:'harris fishman', creator:'beetlemoses', cap:'the axe has opinions about this', ratio:'1/1',
-   img:'../covers/talking-axe.jpg', added:'2026-08-10', voice:true, score:true, tag:'gag'},
-  {id:'s8', by:'j. wren', creator:'wrenlines', cap:'four panels, one bad decision', ratio:'4/5',
-   img:'../covers/sunbound.jpg', added:'2026-08-10', voice:false, score:true, tag:'oneshot'},
-  {id:'s9', by:'goobsmooch', creator:'goobsmooch', cap:'the follow-up nobody asked for', ratio:'1/1',
-   img:'../covers/concrete-sky.jpg', added:'2026-08-09', voice:true, score:false, tag:'sliceoflife'},
-  {id:'s10', by:'samuel opoku', creator:'opokudraws', cap:'this took four attempts to letter', ratio:'4/5',
-   img:'../covers/second-dark.jpg', added:'2026-08-08', voice:false, score:false, tag:'gag'},
-  {id:'s11', by:'r. mbeki', creator:'mbekidraws', cap:'a villain who is just tired', ratio:'1/1',
-   img:'../covers/jigoku.jpg', added:'2026-08-08', voice:true, score:true, tag:'oneshot'},
-  {id:'s12', by:'a. varga', creator:'vargacomics', cap:'the last panel is the whole point', ratio:'4/5',
-   img:'../covers/talking-axe.jpg', added:'2026-08-07', voice:false, score:true, tag:'gag'}
+/* kind: short | long. following: true if you follow this creator.
+   ratio only matters for shorts — longs are always 2:3. */
+const ITEMS = [
+  {id:'i1', kind:'short', creator:'abusegoblin', cap:'he does this every single day', ratio:'1/1',
+   img:'../covers/jigoku.jpg', added:daysAgo(0), voice:true, score:false, following:true},
+  {id:'i2', kind:'short', creator:'beetlemoses', cap:'panel three is the whole joke', ratio:'4/5',
+   img:'../covers/talking-axe.jpg', added:daysAgo(0), voice:false, score:true, following:true},
+  {id:'i3', kind:'long', title:'falling in love on the path to hell', creator:'duggan & brown',
+   img:'../covers/jigoku.jpg', added:daysAgo(1), voice:true, score:true, following:true},
+  {id:'i4', kind:'short', creator:'goobsmooch', cap:'a normal tuesday for these two', ratio:'1/1',
+   img:'../covers/sunbound.jpg', added:daysAgo(1), voice:true, score:true, following:false},
+  {id:'i5', kind:'short', creator:'mbekidraws', cap:'no caption, the art can carry it', ratio:'4/5',
+   img:'../covers/concrete-sky.jpg', added:daysAgo(2), voice:false, score:false, following:false},
+  {id:'i6', kind:'short', creator:'abusegoblin', cap:'part two of yesterday, sorry', ratio:'1/1',
+   img:'../covers/second-dark.jpg', added:daysAgo(2), voice:true, score:false, following:true},
+  {id:'i7', kind:'long', title:'the dark knight returns', creator:'miller, janson & varley',
+   img:'../covers/second-dark.jpg', added:daysAgo(3), voice:true, score:true, following:true},
+  {id:'i8', kind:'short', creator:'vargacomics', cap:'drew this on the train', ratio:'4/5',
+   img:'../covers/jigoku.jpg', added:daysAgo(3), voice:false, score:false, following:false},
+  {id:'i9', kind:'short', creator:'beetlemoses', cap:'the axe has opinions about this', ratio:'1/1',
+   img:'../covers/talking-axe.jpg', added:daysAgo(4), voice:true, score:true, following:true},
+  {id:'i10', kind:'short', creator:'wrenlines', cap:'four panels, one bad decision', ratio:'4/5',
+   img:'../covers/sunbound.jpg', added:daysAgo(5), voice:false, score:true, following:false},
+  {id:'i11', kind:'long', title:'blame! master edition', creator:'tsutomu nihei',
+   img:'../covers/concrete-sky.jpg', added:daysAgo(6), voice:true, score:true, following:false},
+  {id:'i12', kind:'short', creator:'goobsmooch', cap:'the follow-up nobody asked for', ratio:'1/1',
+   img:'../covers/concrete-sky.jpg', added:daysAgo(6), voice:true, score:false, following:false},
+  {id:'i13', kind:'short', creator:'opokudraws', cap:'this took four attempts to letter', ratio:'4/5',
+   img:'../covers/second-dark.jpg', added:daysAgo(8), voice:false, score:false, following:false},
+  {id:'i14', kind:'short', creator:'mbekidraws', cap:'a villain who is just tired', ratio:'1/1',
+   img:'../covers/jigoku.jpg', added:daysAgo(9), voice:true, score:true, following:false},
+  {id:'i15', kind:'long', title:'all-star superman', creator:'morrison, quitely & grant',
+   img:'../covers/sunbound.jpg', added:daysAgo(10), voice:false, score:true, following:true},
+  {id:'i16', kind:'short', creator:'vargacomics', cap:'the last panel is the whole point', ratio:'4/5',
+   img:'../covers/talking-axe.jpg', added:daysAgo(11), voice:false, score:true, following:false},
+  {id:'i17', kind:'short', creator:'abusegoblin', cap:'a week of these, back to back', ratio:'1/1',
+   img:'../covers/sunbound.jpg', added:daysAgo(12), voice:true, score:false, following:true},
+  {id:'i18', kind:'short', creator:'beetlemoses', cap:'redraw of the very first post', ratio:'4/5',
+   img:'../covers/jigoku.jpg', added:daysAgo(14), voice:false, score:false, following:true},
+  {id:'i19', kind:'long', title:'noise', creator:'tsutomu nihei',
+   img:'../covers/concrete-sky.jpg', added:daysAgo(15), voice:true, score:true, following:false},
+  {id:'i20', kind:'short', creator:'opokudraws', cap:'a two-parter, part one', ratio:'1/1',
+   img:'../covers/talking-axe.jpg', added:daysAgo(16), voice:false, score:false, following:false}
 ];
 
-/* the featured strip is written, not sorted — three of the above, and
-   a sentence for each saying why it is here this week. */
-const FEATURED = [
-  {short:'s2', dateline:'MON 08.10', why:'Fishman times a silent beat better than anyone posting weekly right now — the whole strip earns panel three by not rushing to it.'},
-  {short:'s7', dateline:'MON 08.10', why:'Second week in a row the axe steals the strip. Worth reading back to back with 08.03 if you missed it.'},
-  {short:'s9', dateline:'MON 08.10', why:'A follow-up that is funnier without the setup. First voice contribution went up Wednesday — worth a listen.'}
+/* ---------- tabs: a name, a set of #tags to AND together, a cap ---------- */
+/* CAP is provisional — the real number is a product decision that wants
+   real usage data, not a guess made in a design doc. eight is picked here
+   purely so this mockup can demonstrate what hitting a cap looks like
+   without needing eighty fake rows to prove it. */
+const CAP = 8;
+const BUILTIN_TABS = [
+  {tags:['following']},
+  {tags:['shortform']},
+  {tags:['longform']},
+  {tags:['lastweek']}
 ];
+const customTabs = [];
 
-/* people you follow, long-form and short-form together, newest first —
-   the same rule the shelf already keeps: if you follow someone you see
-   everything, not just the length of thing this page is mostly about. */
-const FOLLOWLONG = [
-  {id:'jigoku', title:'falling in love on the path to hell', by:'duggan & brown',
-   img:'../covers/jigoku.jpg', added:'2026-08-11'},
-  {id:'dkr', title:'the dark knight returns', by:'miller, janson & varley',
-   img:'../covers/second-dark.jpg', added:'2026-08-09'}
-];
+function tagsOf(item){
+  const t = [item.kind === 'short' ? 'shortform' : 'longform'];
+  if(item.following) t.push('following');
+  if(item.added >= daysAgo(7)) t.push('lastweek');
+  return t;
+}
+function tabLabel(tags){ return tags.map(t => '#' + t).join(' '); }
+function resolve(tags){
+  return ITEMS.filter(i => tags.every(t => tagsOf(i).includes(t)))
+    .sort((a,b) => b.added.localeCompare(a.added));
+}
 
-function shortOf(id){ return SHORTS.find(s => s.id === id); }
+let active = BUILTIN_TABS[0].tags;
 
-function featuredEl(f){
-  const s = shortOf(f.short);
+function audioGlyphs(i){
+  return (i.voice ? `<span title="voice">${MIC}</span>` : '')
+       + (i.score ? `<span title="score">${NOTE}</span>` : '');
+}
+
+function blockEl(i){
   const b = document.createElement('button');
-  b.className = 'fcard'; b.type = 'button';
-  b.innerHTML = `<div class="fplate" style="aspect-ratio:${s.ratio}">
-      <img src="${esc(s.img)}" alt="" loading="lazy"></div>
-    <div class="fdate">${esc(f.dateline)} · <b>@${esc(s.creator)}</b></div>
-    <p class="fwhy">${esc(f.why)}</p>`;
+  b.type = 'button';
+  b.className = 'block' + (i.kind === 'long' ? ' long' : '');
+  const ratio = i.kind === 'long' ? '2/3' : i.ratio;
+  b.innerHTML = `<div class="bplate" style="aspect-ratio:${ratio}">
+      <img src="${esc(i.img)}" alt="" loading="lazy"></div>
+    <div class="baudio">${audioGlyphs(i)}</div>
+    <div class="bcap">${esc(i.kind === 'long' ? i.title : (i.cap || ''))}</div>
+    <div class="bby"><span>@${esc(i.creator)}</span>
+      ${i.kind === 'long' ? '<span class="kind">· eski</span>' : ''}</div>
+    <div class="brule"></div>`;
   return b;
 }
 
-function audioGlyphs(s){
-  return (s.voice ? `<span title="voice">${MIC}</span>` : '')
-       + (s.score ? `<span title="score">${NOTE}</span>` : '');
+function renderTabs(){
+  const bar = document.getElementById('tabbar');
+  const all = [...BUILTIN_TABS, ...customTabs];
+  bar.innerHTML = '';
+  all.forEach(t => {
+    const btn = document.createElement('button');
+    btn.className = 'tab'; btn.type = 'button';
+    btn.setAttribute('aria-current', String(t.tags.join() === active.join()));
+    btn.textContent = tabLabel(t.tags);
+    btn.addEventListener('click', () => switchTab(t.tags));
+    bar.appendChild(btn);
+  });
+  const compose = document.createElement('div');
+  compose.className = 'tabcompose';
+  compose.innerHTML = `<span class="tab compose">+ build a tab</span>
+    <input type="text" placeholder="#following #shortform">`;
+  compose.querySelector('input').addEventListener('keydown', e => {
+    if(e.key !== 'Enter') return;
+    const tags = e.target.value.split(/\s+/).map(t => t.replace(/^#/,'').toLowerCase()).filter(Boolean);
+    if(!tags.length || !resolve(tags).length){ e.target.value = ''; return; }
+    if(!customTabs.some(t => t.tags.join() === tags.join())) customTabs.push({tags});
+    e.target.value = '';
+    switchTab(tags);
+  });
+  bar.appendChild(compose);
 }
 
-function shortEl(s){
-  const b = document.createElement('button');
-  b.className = 'scard'; b.type = 'button';
-  b.innerHTML = `<div class="splate" style="aspect-ratio:${s.ratio}">
-      <img src="${esc(s.img)}" alt="" loading="lazy"></div>
-    <div class="saudio">${audioGlyphs(s)}</div>
-    <div class="scap">${esc(s.cap)}</div>
-    <div class="sby">@${esc(s.creator)}</div>`;
-  return b;
+function renderFeed(){
+  const items = resolve(active).slice(0, CAP);
+  const feed = document.getElementById('feed');
+  feed.replaceChildren(...items.map(blockEl));
+  const total = resolve(active).length;
+  const capEl = document.getElementById('cap');
+  if(total <= CAP){ capEl.hidden = true; return; }
+  capEl.hidden = false;
+  capEl.innerHTML = `<p>you're through <b>${items.length} of ${total}</b> in <b>${esc(tabLabel(active))}</b>
+    — that's everything for now.</p>
+    <div class="keepgoing">keep going in</div>`;
+  capEl.appendChild(document.getElementById('tabbar').cloneNode(true));
+  capEl.querySelectorAll('.tab[aria-current], .tabcompose').forEach(el => {
+    if(el.classList.contains('tabcompose')) el.remove();
+  });
+  capEl.querySelectorAll('.tab').forEach((btn, idx) => {
+    const src = [...BUILTIN_TABS, ...customTabs][idx];
+    if(src) btn.addEventListener('click', () => switchTab(src.tags));
+  });
 }
 
-function longEl(c){
-  const b = document.createElement('button');
-  b.className = 'lcard'; b.type = 'button';
-  b.innerHTML = `<div class="lplate"><img src="${esc(c.img)}" alt="" loading="lazy"></div>
-    <div class="ltitle">${esc(c.title)}</div>
-    <div class="lwhen"><b>eski</b> · ${esc(c.by)}</div>`;
-  return b;
+function switchTab(tags){
+  active = tags;
+  renderTabs();
+  renderFeed();
+  window.scrollTo({top:0, behavior:'smooth'});
 }
 
-function renderFeatured(){
-  document.getElementById('featured').replaceChildren(...FEATURED.map(featuredEl));
-}
-
-function renderNewest(){
-  const sorted = [...SHORTS].sort((a,b) => b.added.localeCompare(a.added));
-  document.getElementById('grid-new').replaceChildren(...sorted.map(shortEl));
-}
-
-function renderFollowing(){
-  /* one timeline, two card shapes, sorted by the one thing they share */
-  const items = [
-    ...SHORTS.filter(s => ['abusegoblin','beetlemoses'].includes(s.creator))
-      .map(s => ({when:s.added, el:shortEl(s)})),
-    ...FOLLOWLONG.map(c => ({when:c.added, el:longEl(c)}))
-  ].sort((a,b) => b.when.localeCompare(a.when));
-  document.getElementById('grid-follow').replaceChildren(...items.map(i => i.el));
-}
-
-document.getElementById('lens').addEventListener('click', e => {
-  const btn = e.target.closest('button[data-lens]');
-  if(!btn) return;
-  document.querySelectorAll('#lens button').forEach(b =>
-    b.setAttribute('aria-selected', b === btn));
-  const following = btn.dataset.lens === 'follow';
-  document.getElementById('grid-new').hidden = following;
-  document.getElementById('grid-follow').hidden = !following;
-  document.getElementById('lens-note').textContent = following
-    ? 'shorts and eskis from people you follow, newest first'
-    : 'every short, newest first — nothing ranked';
-  document.getElementById('lens-n').textContent = following
-    ? `${document.getElementById('grid-follow').children.length} from people you follow`
-    : `${SHORTS.length} today`;
-});
-
-renderFeatured();
-renderNewest();
-renderFollowing();
-document.getElementById('lens-note').textContent = 'every short, newest first — nothing ranked';
-document.getElementById('lens-n').textContent = `${SHORTS.length} today`;
+renderTabs();
+renderFeed();
 </script>
 </body>
 </html>
