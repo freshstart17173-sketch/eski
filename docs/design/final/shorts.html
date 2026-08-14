@@ -18,11 +18,20 @@
    negotiation. a single column never asks it to.
 
    there is no algorithmic feed here, and there is also no INFINITE
-   one: every tab is a #tag query (#following, #shortform, #lastweek,
-   or a combination you type yourself) and every tab has a stated cap.
+   one: every tab is a #tag query and every tab has a stated cap.
    reaching it does not reload the same feed — it hands you the tab
    strip again, as an invitation into a different one. an eski feed
    is not supposed to be a thing you could theoretically never leave.
+
+   a tag is a tag whether it describes the comic (#gag, #oneshot) or
+   describes YOUR relationship to it (#following, #lastweek) — there
+   is one AND-query under both, not a content system with a second,
+   different filter system bolted on for "following". see tagsOf().
+
+   opening a block does not navigate anywhere: the reader is the same
+   feed, re-rendered full-screen starting at the block you tapped, so
+   "next" is just the rest of the queue you were already scrolling —
+   comments included inline, capped the same honest way the feed is.
    ============================================================ */
 
 .wrap{max-width:var(--arena-max);margin:0 auto;padding:0 var(--s4) var(--s7)}
@@ -69,6 +78,15 @@
 .cap p b{color:var(--ink);font-weight:500}
 .cap .keepgoing{font-size:var(--fs-micro);letter-spacing:.1em;text-transform:uppercase;
   color:var(--label);margin-bottom:var(--s2)}
+
+/* ---------- the reader: the same feed, full screen, no navigation ----------
+   an overlay toggled with `hidden`, not a page — so there is nothing to
+   reload and nothing that needs a route. a real build would still want
+   history.pushState so the back button and a shared link both work; a
+   static design doc doesn't need to prove that part. */
+.reader{position:fixed;inset:0;background:var(--paper);overflow-y:auto;z-index:50}
+.reader-bar{position:sticky;top:0;background:var(--paper);border-bottom:1px solid var(--rule);
+  padding:var(--s3) var(--s4);display:flex;justify-content:flex-end;z-index:1}
 </style>
 </head>
 <body>
@@ -92,6 +110,12 @@
 
 </div></main>
 
+<div class="reader" id="reader" hidden>
+  <div class="reader-bar"><button class="btn sm" id="reader-close">close</button></div>
+  <div class="wrap" id="reader-list"></div>
+  <div class="cap" id="reader-cap" hidden></div>
+</div>
+
 <script>
 /* ============================================================
    mock data. cover art is borrowed from the long-form set — this
@@ -106,49 +130,51 @@ const MIC = '<svg viewBox="0 0 14 14"><rect x="5" y="1.2" width="4" height="7" r
 const NOTE = '<svg viewBox="0 0 14 14"><circle cx="4" cy="10.5" r="2"/>' +
   '<path d="M6 10.5V2.2l6-1.4v7.2"/><circle cx="10" cy="8" r="2"/></svg>';
 
-/* kind: short | long. following: true if you follow this creator.
-   ratio only matters for shorts — longs are always 2:3. */
+/* kind: short | long. following: true if you follow this creator. tags
+   are content tags, genre-shaped — a separate thing from kind/following/
+   lastweek only because those three are computed, not authored; to a
+   tab query they're the same kind of tag. ratio only matters for shorts. */
 const ITEMS = [
   {id:'i1', kind:'short', creator:'abusegoblin', cap:'he does this every single day', ratio:'1/1',
-   img:'../covers/jigoku.jpg', added:daysAgo(0), voice:true, score:false, following:true},
+   img:'../covers/jigoku.jpg', added:daysAgo(0), voice:true, score:false, following:true, tags:['gag']},
   {id:'i2', kind:'short', creator:'beetlemoses', cap:'panel three is the whole joke', ratio:'4/5',
-   img:'../covers/talking-axe.jpg', added:daysAgo(0), voice:false, score:true, following:true},
+   img:'../covers/talking-axe.jpg', added:daysAgo(0), voice:false, score:true, following:true, tags:['gag']},
   {id:'i3', kind:'long', title:'falling in love on the path to hell', creator:'duggan & brown',
-   img:'../covers/jigoku.jpg', added:daysAgo(1), voice:true, score:true, following:true},
+   img:'../covers/jigoku.jpg', added:daysAgo(1), voice:true, score:true, following:true, tags:['horror','romance']},
   {id:'i4', kind:'short', creator:'goobsmooch', cap:'a normal tuesday for these two', ratio:'1/1',
-   img:'../covers/sunbound.jpg', added:daysAgo(1), voice:true, score:true, following:false},
+   img:'../covers/sunbound.jpg', added:daysAgo(1), voice:true, score:true, following:false, tags:['sliceoflife']},
   {id:'i5', kind:'short', creator:'mbekidraws', cap:'no caption, the art can carry it', ratio:'4/5',
-   img:'../covers/concrete-sky.jpg', added:daysAgo(2), voice:false, score:false, following:false},
+   img:'../covers/concrete-sky.jpg', added:daysAgo(2), voice:false, score:false, following:false, tags:['oneshot']},
   {id:'i6', kind:'short', creator:'abusegoblin', cap:'part two of yesterday, sorry', ratio:'1/1',
-   img:'../covers/second-dark.jpg', added:daysAgo(2), voice:true, score:false, following:true},
+   img:'../covers/second-dark.jpg', added:daysAgo(2), voice:true, score:false, following:true, tags:['gag']},
   {id:'i7', kind:'long', title:'the dark knight returns', creator:'miller, janson & varley',
-   img:'../covers/second-dark.jpg', added:daysAgo(3), voice:true, score:true, following:true},
+   img:'../covers/second-dark.jpg', added:daysAgo(3), voice:true, score:true, following:true, tags:['crime','noir']},
   {id:'i8', kind:'short', creator:'vargacomics', cap:'drew this on the train', ratio:'4/5',
-   img:'../covers/jigoku.jpg', added:daysAgo(3), voice:false, score:false, following:false},
+   img:'../covers/jigoku.jpg', added:daysAgo(3), voice:false, score:false, following:false, tags:['sliceoflife']},
   {id:'i9', kind:'short', creator:'beetlemoses', cap:'the axe has opinions about this', ratio:'1/1',
-   img:'../covers/talking-axe.jpg', added:daysAgo(4), voice:true, score:true, following:true},
+   img:'../covers/talking-axe.jpg', added:daysAgo(4), voice:true, score:true, following:true, tags:['gag']},
   {id:'i10', kind:'short', creator:'wrenlines', cap:'four panels, one bad decision', ratio:'4/5',
-   img:'../covers/sunbound.jpg', added:daysAgo(5), voice:false, score:true, following:false},
+   img:'../covers/sunbound.jpg', added:daysAgo(5), voice:false, score:true, following:false, tags:['oneshot']},
   {id:'i11', kind:'long', title:'blame! master edition', creator:'tsutomu nihei',
-   img:'../covers/concrete-sky.jpg', added:daysAgo(6), voice:true, score:true, following:false},
+   img:'../covers/concrete-sky.jpg', added:daysAgo(6), voice:true, score:true, following:false, tags:['scifi']},
   {id:'i12', kind:'short', creator:'goobsmooch', cap:'the follow-up nobody asked for', ratio:'1/1',
-   img:'../covers/concrete-sky.jpg', added:daysAgo(6), voice:true, score:false, following:false},
+   img:'../covers/concrete-sky.jpg', added:daysAgo(6), voice:true, score:false, following:false, tags:['sliceoflife']},
   {id:'i13', kind:'short', creator:'opokudraws', cap:'this took four attempts to letter', ratio:'4/5',
-   img:'../covers/second-dark.jpg', added:daysAgo(8), voice:false, score:false, following:false},
+   img:'../covers/second-dark.jpg', added:daysAgo(8), voice:false, score:false, following:false, tags:['oneshot']},
   {id:'i14', kind:'short', creator:'mbekidraws', cap:'a villain who is just tired', ratio:'1/1',
-   img:'../covers/jigoku.jpg', added:daysAgo(9), voice:true, score:true, following:false},
+   img:'../covers/jigoku.jpg', added:daysAgo(9), voice:true, score:true, following:false, tags:['gag']},
   {id:'i15', kind:'long', title:'all-star superman', creator:'morrison, quitely & grant',
-   img:'../covers/sunbound.jpg', added:daysAgo(10), voice:false, score:true, following:true},
+   img:'../covers/sunbound.jpg', added:daysAgo(10), voice:false, score:true, following:true, tags:['scifi']},
   {id:'i16', kind:'short', creator:'vargacomics', cap:'the last panel is the whole point', ratio:'4/5',
-   img:'../covers/talking-axe.jpg', added:daysAgo(11), voice:false, score:true, following:false},
+   img:'../covers/talking-axe.jpg', added:daysAgo(11), voice:false, score:true, following:false, tags:['gag']},
   {id:'i17', kind:'short', creator:'abusegoblin', cap:'a week of these, back to back', ratio:'1/1',
-   img:'../covers/sunbound.jpg', added:daysAgo(12), voice:true, score:false, following:true},
+   img:'../covers/sunbound.jpg', added:daysAgo(12), voice:true, score:false, following:true, tags:['gag']},
   {id:'i18', kind:'short', creator:'beetlemoses', cap:'redraw of the very first post', ratio:'4/5',
-   img:'../covers/jigoku.jpg', added:daysAgo(14), voice:false, score:false, following:true},
+   img:'../covers/jigoku.jpg', added:daysAgo(14), voice:false, score:false, following:true, tags:['gag']},
   {id:'i19', kind:'long', title:'noise', creator:'tsutomu nihei',
-   img:'../covers/concrete-sky.jpg', added:daysAgo(15), voice:true, score:true, following:false},
+   img:'../covers/concrete-sky.jpg', added:daysAgo(15), voice:true, score:true, following:false, tags:['scifi','horror']},
   {id:'i20', kind:'short', creator:'opokudraws', cap:'a two-parter, part one', ratio:'1/1',
-   img:'../covers/talking-axe.jpg', added:daysAgo(16), voice:false, score:false, following:false}
+   img:'../covers/talking-axe.jpg', added:daysAgo(16), voice:false, score:false, following:false, tags:['sliceoflife']}
 ];
 
 /* ---------- tabs: a name, a set of #tags to AND together, a cap ---------- */
@@ -165,8 +191,12 @@ const BUILTIN_TABS = [
 ];
 const customTabs = [];
 
+/* every tag lives in one list — a genre an author picked (#gag), a shape
+   the item just has (#shortform), and a fact about you (#following,
+   #lastweek) are computed or authored differently but AND together
+   exactly the same way once they're in this array. */
 function tagsOf(item){
-  const t = [item.kind === 'short' ? 'shortform' : 'longform'];
+  const t = [item.kind === 'short' ? 'shortform' : 'longform', ...(item.tags || [])];
   if(item.following) t.push('following');
   if(item.added >= daysAgo(7)) t.push('lastweek');
   return t;
@@ -196,8 +226,89 @@ function blockEl(i){
     <div class="bby"><span class="who">@${esc(i.creator)}</span>
       ${i.kind === 'long' ? '<span class="kind">· eski</span>' : ''}</div>
     <div class="brule"></div>`;
+  b.addEventListener('click', () => openReader(i.id));
   return b;
 }
+
+/* ============================================================
+   comments, faked. this is a static design doc with no Supabase
+   behind it, so this is NOT comments.js (which needs window.eski.sb()
+   and a real table) — it's the same markup comments.js's row() and
+   composer() already produce, by the same classes, in broadsheet.css,
+   fed from a deterministic mock list instead of a query. a real build
+   mounts the genuine eskiComments.mount() here and deletes this. */
+const COMMENT_POOL = [
+  {who:'r. mbeki', body:'the timing on the last panel is perfect'},
+  {who:'j. wren', body:'voiced the lead if anyone wants to hear it — up on #following now'},
+  {who:'samuel opoku', body:'this is the funniest one this month'},
+  {who:'a. varga', body:'scored this last night'}
+];
+function fakeComments(item){
+  let seed = 0; for(const c of item.id) seed = (seed * 31 + c.charCodeAt(0)) & 255;
+  return COMMENT_POOL.slice(0, seed % 4).map((c, i) => ({...c, when: `${(i + 1) * 2}h ago`}));
+}
+function commentsHtml(item){
+  const rows = fakeComments(item);
+  return `<div class="cm-write"><textarea class="cm-box" disabled
+      placeholder="Say something about this eski — static mockup, not wired up"></textarea>
+      <div class="cm-acts"><button class="btn sm p" disabled>Post</button></div></div>`
+    + (rows.length ? rows.map(c => `<div class="cm">
+        <div class="cm-head"><span class="cm-who">${esc(c.who)}</span>
+          <span class="sp"></span><span class="cm-when">${esc(c.when)}</span></div>
+        <p class="cm-body">${esc(c.body)}</p>
+      </div>`).join('') : '<p class="note-line">Nothing here yet. Be the first.</p>');
+}
+
+/* ============================================================
+   the reader. a block tapped in the feed re-renders the same queue
+   full-screen starting there — no route, no reload, comments folded
+   into each item, the same cap the feed itself has.
+   ============================================================ */
+function readerItemEl(i){
+  const el = document.createElement('div');
+  el.className = 'block' + (i.kind === 'long' ? ' long' : '');
+  const ratio = i.kind === 'long' ? '2/3' : i.ratio;
+  const n = fakeComments(i).length;
+  el.innerHTML = `<div class="bplate" style="aspect-ratio:${ratio}">
+      <img src="${esc(i.img)}" alt="" loading="lazy"></div>
+    <div class="baudio">${audioGlyphs(i)}</div>
+    <div class="bcap">${esc(i.kind === 'long' ? i.title : (i.cap || ''))}</div>
+    <div class="bby"><span class="who">@${esc(i.creator)}</span>
+      ${i.kind === 'long' ? '<span class="kind">· eski</span>' : ''}</div>
+    <button class="fold" aria-expanded="false" style="margin-top:var(--s3)">
+      <span class="caret"></span><span>comments</span><span class="sp"></span>
+      <span class="n">${n}</span></button>
+    <div class="folded">${commentsHtml(i)}</div>
+    <div class="brule"></div>`;
+  el.querySelector('.fold').addEventListener('click', e => {
+    const f = e.currentTarget;
+    f.setAttribute('aria-expanded', f.getAttribute('aria-expanded') !== 'true');
+  });
+  return el;
+}
+
+function openReader(fromId){
+  const items = resolve(active).slice(0, CAP);
+  const idx = Math.max(0, items.findIndex(i => i.id === fromId));
+  const queue = items.slice(idx);
+  document.getElementById('reader-list').replaceChildren(...queue.map(readerItemEl));
+  const total = resolve(active).length, capEl = document.getElementById('reader-cap');
+  capEl.hidden = total <= CAP;
+  if(!capEl.hidden) capEl.innerHTML =
+    `<p>that's <b>${items.length} of ${total}</b> in <b>${esc(tabLabel(active))}</b> — everything for now.</p>`;
+  const reader = document.getElementById('reader');
+  reader.hidden = false;
+  reader.scrollTop = 0;
+  document.body.style.overflow = 'hidden';
+}
+function closeReader(){
+  document.getElementById('reader').hidden = true;
+  document.body.style.overflow = '';
+}
+document.getElementById('reader-close').addEventListener('click', closeReader);
+addEventListener('keydown', e => {
+  if(e.key === 'Escape' && !document.getElementById('reader').hidden) closeReader();
+});
 
 function renderTabs(){
   const bar = document.getElementById('tabbar');
@@ -213,7 +324,7 @@ function renderTabs(){
   });
   const compose = document.createElement('div');
   compose.className = 'tabcompose';
-  compose.innerHTML = `<input type="text" placeholder="+ #following #shortform">`;
+  compose.innerHTML = `<input type="text" placeholder="+ #following #gag #lastweek">`;
   compose.querySelector('input').addEventListener('keydown', e => {
     if(e.key !== 'Enter') return;
     const tags = e.target.value.split(/\s+/).map(t => t.replace(/^#/,'').toLowerCase()).filter(Boolean);

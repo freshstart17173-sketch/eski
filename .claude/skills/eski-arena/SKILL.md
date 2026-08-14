@@ -77,6 +77,8 @@ When a feed reaches its cap, the column ends in a **feed cap** module: a stated 
 
 **facet list** *(available, not yet used by the shorts feed)* — a plain-text column of options under a plain heading, a small dot marking the active one. No dropdown. Worth reaching for the next time a browse filter needs redesigning.
 
+**reader** — tapping a block does not navigate. It re-renders the same tab's queue full-screen starting at that block, comments folded into each item (`.fold`/`.folded`, shut by default — a thread is the ending, discussed, and is not fetched until asked for), ending in the same feed cap the list view has. "Next" is never a separate concept from "the rest of the feed you were already in."
+
 ## Rules
 
 - Every feed has a visible cap and a real number attached to it. A feed that would never end is not this style.
