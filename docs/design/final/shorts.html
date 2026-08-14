@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" data-theme="light">
+<html lang="en" data-theme="light-green">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -26,24 +26,20 @@
    ============================================================ */
 
 .wrap{max-width:var(--arena-max);margin:0 auto;padding:0 var(--s4) var(--s7)}
-:root{ --arena-max:640px; --arena-gap:var(--s6); --tab-h:34px; }
+:root{ --arena-max:640px; --arena-gap:var(--s6); }
 
-/* ---------- tab strip: one line, scrolls sideways, never wraps ---------- */
-.tabbar{display:flex;gap:var(--s2);align-items:center;height:var(--tab-h);
-  overflow-x:auto;scrollbar-width:none;margin:var(--s4) 0 var(--s5);
-  border-bottom:1px solid var(--rule)}
-.tabbar::-webkit-scrollbar{display:none}
-.tab{flex:none;height:var(--tab-h);padding:0 2px;background:none;border:0;
-  border-bottom:2px solid transparent;font:inherit;font-size:var(--fs-micro);
-  letter-spacing:.04em;color:var(--label);cursor:pointer;white-space:nowrap;
-  transition:color var(--t-fast) var(--ease),border-color var(--t-fast) var(--ease)}
-.tab:hover{color:var(--ink)}
-.tab[aria-current="true"]{color:var(--accent);border-color:var(--accent)}
-.tab.compose{color:var(--label);font-style:italic}
-.tabcompose{display:flex;flex:none;align-items:center;gap:6px;height:var(--tab-h)}
+/* ---------- the tab strip is NOT a new control ----------
+   .tabs / .tab already exist in broadsheet.css ("used by the profile") —
+   one scrollable row, --mark underline on the selected one, --ui on the
+   rest. Restating its colour or hover here would be exactly the
+   .btn.p:hover trap CLAUDE.md warns about, so this only adds what
+   broadsheet doesn't already cover: the tag composer at the end of
+   the row, which is new to this surface. */
+.wrap > .tabs{margin-bottom:var(--s5)}
+.tabcompose{display:flex;flex:none;align-items:center;height:100%;padding:0 var(--s3)}
 .tabcompose input{border:0;background:none;font:inherit;font-size:var(--fs-micro);
-  color:var(--ink);width:150px;padding:0}
-.tabcompose input::placeholder{color:var(--muted)}
+  color:var(--ui);width:160px;padding:0}
+.tabcompose input::placeholder{color:var(--label);opacity:.6}
 .tabcompose input:focus{outline:0}
 
 /* ---------- the block: art, glyphs, one caption line, a byline, a rule ---------- */
@@ -58,7 +54,8 @@
 .baudio svg{width:13px;height:13px;fill:none;stroke:var(--label);stroke-width:1.4}
 .bcap{margin-top:4px;font-size:var(--fs-sm);color:var(--ink);line-height:1.4}
 .bby{display:flex;gap:var(--s2);align-items:baseline;margin-top:2px;
-  font-size:var(--fs-micro);letter-spacing:.04em;color:var(--label)}
+  font-size:var(--fs-micro);letter-spacing:.04em}
+.bby .who{color:var(--ui)}
 .bby .kind{color:var(--label)}
 .brule{margin-top:var(--arena-gap);border-top:1px solid var(--rule-hair)}
 
@@ -89,7 +86,7 @@
 
 <main><div class="wrap">
 
-  <div class="tabbar" id="tabbar"></div>
+  <div class="tabs" id="tabbar"></div>
   <div class="feed" id="feed"></div>
   <div class="cap" id="cap" hidden></div>
 
@@ -196,7 +193,7 @@ function blockEl(i){
       <img src="${esc(i.img)}" alt="" loading="lazy"></div>
     <div class="baudio">${audioGlyphs(i)}</div>
     <div class="bcap">${esc(i.kind === 'long' ? i.title : (i.cap || ''))}</div>
-    <div class="bby"><span>@${esc(i.creator)}</span>
+    <div class="bby"><span class="who">@${esc(i.creator)}</span>
       ${i.kind === 'long' ? '<span class="kind">· eski</span>' : ''}</div>
     <div class="brule"></div>`;
   return b;
@@ -209,15 +206,14 @@ function renderTabs(){
   all.forEach(t => {
     const btn = document.createElement('button');
     btn.className = 'tab'; btn.type = 'button';
-    btn.setAttribute('aria-current', String(t.tags.join() === active.join()));
+    btn.setAttribute('aria-selected', String(t.tags.join() === active.join()));
     btn.textContent = tabLabel(t.tags);
     btn.addEventListener('click', () => switchTab(t.tags));
     bar.appendChild(btn);
   });
   const compose = document.createElement('div');
   compose.className = 'tabcompose';
-  compose.innerHTML = `<span class="tab compose">+ build a tab</span>
-    <input type="text" placeholder="#following #shortform">`;
+  compose.innerHTML = `<input type="text" placeholder="+ #following #shortform">`;
   compose.querySelector('input').addEventListener('keydown', e => {
     if(e.key !== 'Enter') return;
     const tags = e.target.value.split(/\s+/).map(t => t.replace(/^#/,'').toLowerCase()).filter(Boolean);
@@ -239,14 +235,16 @@ function renderFeed(){
   capEl.hidden = false;
   capEl.innerHTML = `<p>you're through <b>${items.length} of ${total}</b> in <b>${esc(tabLabel(active))}</b>
     — that's everything for now.</p>
-    <div class="keepgoing">keep going in</div>`;
-  capEl.appendChild(document.getElementById('tabbar').cloneNode(true));
-  capEl.querySelectorAll('.tab[aria-current], .tabcompose').forEach(el => {
-    if(el.classList.contains('tabcompose')) el.remove();
-  });
-  capEl.querySelectorAll('.tab').forEach((btn, idx) => {
-    const src = [...BUILTIN_TABS, ...customTabs][idx];
-    if(src) btn.addEventListener('click', () => switchTab(src.tags));
+    <div class="keepgoing">keep going in</div>
+    <div class="tabs" id="cap-tabs"></div>`;
+  const capBar = capEl.querySelector('#cap-tabs');
+  [...BUILTIN_TABS, ...customTabs].forEach(t => {
+    const btn = document.createElement('button');
+    btn.className = 'tab'; btn.type = 'button';
+    btn.setAttribute('aria-selected', String(t.tags.join() === active.join()));
+    btn.textContent = tabLabel(t.tags);
+    btn.addEventListener('click', () => switchTab(t.tags));
+    capBar.appendChild(btn);
   });
 }
 
