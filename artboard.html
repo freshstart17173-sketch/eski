@@ -176,11 +176,16 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--
 .navlink:hover{color:var(--ink)}
 .navlink.active{font-weight:600;color:var(--ink);border-bottom-color:var(--ink)}
 
-/* ---- the wordmark. gnomon, in the accent, "!" set roman not italic,
-   with the same .43em ink-centring nudge broadsheet.css uses. the one
-   sanctioned use of the display face. ---- */
-.wordmark{font-family:var(--font-display);font-weight:700;font-size:28px;letter-spacing:-.01em;
-  color:var(--ink);line-height:1;display:inline-block;transform:translateY(.12em)}
+/* ---- the wordmark. Jost, not Gnomon (2026-08-15) — Gnomon's declared
+   baseline sits 0.26em below where its ink actually ends, so every
+   wordmark needed a translateY(.12em) fudge to sit level with plain text
+   next to it, and that fudge was never quite right at every size and
+   line-height it got used at (see tests/wordmark.js in the pre-pivot
+   history — the same bug, twice, in the old product). Jost has no such
+   quirk: normal baseline alignment just works, no correction term to get
+   wrong. "!" set roman, not italic. ---- */
+.wordmark{font-family:var(--font-body);font-weight:700;font-size:28px;letter-spacing:-.01em;
+  color:var(--ink);line-height:1;display:inline-block}
 .wordmark i{font-style:normal;color:inherit}
 
 /* ---- feed switcher: the active feed is the big editable headline; the

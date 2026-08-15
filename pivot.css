@@ -33,13 +33,21 @@
    and "identical to the artboard" wins over an earlier, more general note. */
 :root{ --pv-r:2px; }
 
-/* ---- the wordmark: Gnomon (already declared once, in tokens.css), in
-   plain --ink rather than the accent-derived --wordmark token every
-   other surface uses — "the wordmark is black" was specifically an
-   instruction to read it as body ink, not a special colour. ---- */
-.wordmark{font-family:var(--font-display);font-weight:700;font-size:28px;
+/* ---- the wordmark. Jost, not Gnomon (2026-08-15) — Gnomon's declared
+   baseline sits 0.26em below where its ink actually ends, so it always
+   needed a translateY(.12em) correction to sit level with plain text
+   next to it, and that correction measurably drifted: on the shared nav
+   row it put the wordmark 3px below Home/Profile/Upload's own centreline
+   (the exact bug tests/wordmark.js existed to catch in the pre-pivot
+   product — see that file's history for why "eyeballed and fixed twice,
+   wrong both times"). Jost has no such quirk: plain baseline alignment
+   just works. Also plain --ink rather than the accent-derived --wordmark
+   token every other surface uses — "the wordmark is black" was
+   specifically an instruction to read it as body ink, not a special
+   colour. ---- */
+.wordmark{font-family:var(--font-body);font-weight:700;font-size:28px;
   letter-spacing:-.01em;color:var(--ink);line-height:1;display:inline-block;
-  transform:translateY(.12em);text-decoration:none}
+  text-decoration:none}
 .wordmark i{font-style:normal;color:inherit}
 
 /* ---- buttons & chips: no outlines, state carried by background fill
