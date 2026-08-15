@@ -1,8 +1,8 @@
 # eski
 
 A place for artists to post anything — audio, video, image, text, other, or a
-combination of several as one post — with versioning, curated collections,
-and criticism in place of like/dislike.
+combination of several as one post — with versioning and curated
+collections.
 
 **2026-08-15: mid-pivot.** eski was a comic-and-soundtrack format; it isn't
 any more. The database was rebuilt from a clean slate for the new model

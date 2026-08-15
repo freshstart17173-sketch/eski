@@ -19,8 +19,7 @@ mechanically. If it fails, this document is what it is holding you to.
 
 eski stopped being a comics-only format and became a place to post anything —
 audio, video, image, text, other, or a combination of several as one post —
-plus curated collections, versioning, and a criticism-based comment system in
-place of like/dislike. The **database is rebuilt for this already**:
+plus curated collections and versioning. The **database is rebuilt for this already**:
 `schema-clean.sql` is what is live, replacing the entire comics-era model
 (comics/pages/tracks/parts/kudos/comic_tags/the old saves) in one pass, no
 migration path kept — see that file's own header for the full accounting.
@@ -216,9 +215,6 @@ Written down rather than left to be rediscovered.
 - **Editing is text-only.** Title/caption/body, not the underlying file —
   swapping `media_key` after publish (and what that should do to a
   `combination`'s `work_items`) is a real design question, not built.
-- **The criticism marks (`!` / `?` / `!!`) are designed, not built.**
-  `comments.mark_type` exists and is unused; a plain Like (`likes` table) is
-  what ships today.
 - **Saved/named feeds have no backing table.** `index.html`'s feed switcher
   is one feed ("Discover"), filtered live. The mockup's rename/add/delete
   affordance was deliberately left out rather than built against nothing —

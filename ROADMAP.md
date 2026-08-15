@@ -1,85 +1,46 @@
 # eski — what's left, in order
 
 Sorted by impact, biggest first. Times are how long the work takes including
-tests and docs. Anything marked half a day is one sitting; anything marked days
-is several.
+tests and docs.
 
 This is the only backlog. If it is not here or in `docs/design/STYLE.md`, it is
 not tracked — there is no issue tracker and there are no other todo files.
 
 ---
 
-## 2026-08-15: the pivot, and what it retired
+## 2026-08-15: the pivot — the rebuild is done
 
 eski stopped being a comic-and-soundtrack format and became a place to post
-anything. `schema-clean.sql` replaced the entire comics-era database in one
-pass — no migration, no data kept, owner's explicit call. `studio.html`,
-`author.html`, `contribute.html`, `read.html`, `spec.html`, `comments.js`,
-`viewer.js`, and `api/comic.mjs` were deleted with it: not just their tables,
-the pages themselves, because they were the old product.
-
-**Everything below tier 0 that used to be about the v3 audio-layering gap
-(voice parts, soundtracks, cue linking, the contribution hub, ducking,
-loudness normalisation as a *product feature*) is gone from this list, not
-because it was finished but because the product direction that needed it no
-longer exists.** `loudness.js` (the meter itself) is still in the tree,
-unused, in case a future audio-upload feature wants it — but there is no
-studio left to wire it into.
+anything — audio, video, image, text, other, or a combination of several as
+one post — plus curated collections and versioning. `schema-clean.sql`
+replaced the entire comics-era database in one pass. `index.html`,
+`profile.html`, `pivot.css`, and `pivot.js` are the real, live, schema-backed
+rebuild — not mockups — measured against `artboard.html` screen by screen
+(all 14) until they matched, including the upload flow, every detail-overlay
+kind, the comment thread, save-folders, and the poster-only edit/version/
+delete chrome. `studio.html`, `author.html`, `contribute.html`, `read.html`,
+`spec.html`, `comments.js`, `viewer.js`, and `api/comic.mjs` are gone with
+the old product they belonged to.
 
 ---
 
-## Tier 0 — wiring the pivot up (do this first)
+## Blocker — do not share this site until these are done
 
-### 0. Rebuild `index.html` and `profile.html` against the new schema · days
+### A. Rebuild `admin.html` · same size as the profile.html rebuild
 
-The single largest thing outstanding. Both pages are still the deleted
-comics product — nav bars linking to a studio that no longer exists, comic
-cards, reader deep-links — and both query tables `schema-clean.sql` dropped.
-Neither will load correctly until this is done.
+**Currently fully broken.** It calls `admin_overview()` and `admin_users()`,
+both dropped in the clean-slate migration, and queries `comics`/`parts`,
+both gone — every load errors. This is the moderation queue, and per the
+CSAM/reporting obligations already noted below (item 3), you cannot
+responsibly open the site to strangers without a working one. Rebuild
+against `reports`/`works`/`collections`/`comments`, reusing `pivot.css`/
+`pivot.js` where it fits rather than a third copy of the card/overlay code.
 
-`artboard.html` is the complete design spec: home feed (feed switcher,
-freeform content tags with a `+` search popover, the modifier-tags panel,
-the 4-col square-bounding-box grid with real aspect ratios), the upload
-modal (drag-drop, same-type-detected collection/versions choice, per-item +
-overall captions), per-kind detail overlays (image/video/audio/text/other/
-collection, the last with dual item-level and collection-level metadata),
-profile tabs (Posts/Saved/Settings), the save-to-folder dropdown, the
-version dropdown, the burger menu (private/delete/archive), threaded
-comments with reply-to and collapse. Build against that, not from scratch —
-every screen in it is already reviewed and settled.
+### B. A report button, anywhere
 
-**Two concrete naming traps to not reintroduce, both already hit once during
-planning:** (1) the upload flow's "post as a collection" choice must write
-`works.kind = 'combination'` + `work_items`, never a row in the `collections`
-table — those are two different features that both happen to be called
-"collection" in the UI. (2) `save_folders` (private, Pinterest-board style)
-is not `collections` (public, curated) — two different "+" buttons on the
-profile, two different tables.
-
-### 0b. A new comment thread widget · half a day, once 0 is underway
-
-`comments.js` was comic_id-shaped and is deleted. The new `comments` table is
-generalized over `target_type`/`target_id`, one level of reply, tombstoned on
-delete, rate-limited at 30/hour (`comments_rate_guard`, already live). The
-widget needs rebuilding against that shape, not restoring — `artboard.html`'s
-`commentsPanel()` is the design to match (reply-to indicator, nesting,
-"show N more" collapse).
-
-### 0c. The new upload flow · ~a day
-
-`api/sign.mjs` and `claim_upload_quota` are untouched and content-agnostic —
-no backend work needed there. What's missing is the client: drag-drop
-multiple files, detect same-type and offer collection-vs-versions, per-item
-+ overall captions, `.md`/`.txt` getting a title field. `artboard.html`'s
-`uploadCard` is the design.
-
-### 0d. Tests, once 0-0c exist
-
-Everything in `tests/` except `structure.js` and `cache.js` drives or asserts
-against the deleted pages and is stale — see `tests/README.md`. `smoke.js`'s
-shape (drive the real page over localhost, zero console errors) and
-`live.js`'s (publish/read/delete for real against prod) are both still the
-right pattern for the new pages once they exist.
+`file_report()` is live and correct (fixed for `work`/`collection`/
+`comment`/`profile` targets). Nothing in the UI calls it — there is no way
+for a reader to flag anything. Small once (A) exists to receive the reports.
 
 ---
 
@@ -90,10 +51,9 @@ name, or a decision that is yours.
 
 ### 1. Move the media off `r2.dev` — 20 minutes, then some waiting
 
-Still worth more than everything else on this page put together, and
-unaffected by the pivot — R2 storage and content-addressed keys didn't
-change. Every object is fetched from one region with no edge cache, on a
-hostname Cloudflare rate-limits on purpose.
+Still the single biggest performance item on this page. Every object is
+fetched from one region with no edge cache, on a hostname Cloudflare
+rate-limits on purpose.
 
 **The full step-by-step is in [`docs/FASTER.md`](docs/FASTER.md) §1.** The
 shape of it: put `eski.lol` on Cloudflare (free plan, **grey**-cloud the
@@ -113,98 +73,107 @@ Still a draft, still says so in red. Needs an address for notices and two
 product calls: may someone reuse a work of yours outside eski, and is
 AI-generated content allowed and must it be labelled.
 
-### 4. Billing alarms — the half that mattered is DONE
+### 4. Turn on leaked-password protection — one Supabase dashboard toggle
+
+Off by default. Checks new passwords against HaveIBeenPwned. Auth settings,
+two minutes.
+
+### 5. Check your Supabase project's region — investigate
+
+Measured live: `/works` queries are taking **1.7–3.4s round-trip against an
+empty table.** A bare REST call with no auth is 585ms TTFB by itself — that's
+network/infra latency, not a query problem (indexes and RLS plans are fine,
+see Tier 1). If the project's region is far from where your traffic actually
+comes from, this is the fix; if it's already close, worth a support ticket
+before blaming the code.
+
+### 6. Billing alarms — the half that mattered is DONE
 
 Inactivity emails are set up. Spend notification is still deferred until
 there are users.
 
-**Do not delete the `harness@eski.test` account.** It is what
-`tests/live-comic.js` and friends sign in as; it has no powers a signed-up
-user lacks. (Its old draft-comic fixture, `harness-fixture`, is gone with
-the comics table — that part of the old note is moot.)
+**Do not delete the `harness@eski.test` account.** It's the real,
+password-based test account this project's own live tests sign in as
+(`tests/live-account.sql`) — no powers a signed-up user lacks.
 
 ---
 
-## Tier 1 — open holes, unaffected by the pivot
+## Tier 1 — backend hygiene
 
-### 5. Upload quota on the signer · DONE
+### 7. RLS query-plan perf · DONE
+
+28 policies called `auth.uid()` unwrapped, which Postgres re-evaluates per
+row instead of once per query. Wrapped as `(select auth.uid())` everywhere
+— `schema-clean.sql` matches what's live. 8 missing foreign-key indexes
+added alongside it (`collections.owner_id`, `comments.user_id`,
+`likes.user_id`, and five more).
+
+### 8. Upload quota on the signer · DONE
 
 `claim_upload_quota` is untouched, still live, still 2000 objects/day,
-still fails closed. Content/table-agnostic, so it covers the new upload flow
-with no changes.
+still fails closed. Content/table-agnostic, covers the whole upload flow.
 
-### 6. Reporting and a moderation queue · mostly done
+### 9. Cache headers · DONE
 
-`reports` (generalized over work/collection/comment/profile) and
-`file_report()` are live and fixed for the new schema. `admin.html` reading
-the queue and a report button on each surface are still 0's job, not a
-separate item.
+`vercel.json`'s asset list matches what's actually served post-pivot.
+`cache.js` walks the HTML and asserts coverage.
 
-### 7. Cache headers · DONE, updated for the pivot
-
-`vercel.json`'s asset list was trimmed for the deleted files
-(`viewer.js`/`comments.js` removed, `/c/:slug` rewrite removed). `cache.js`
-still walks the HTML and asserts coverage — rerun it once 0's new pages
-exist.
-
-### 8. Account deletion · DONE
+### 10. Account deletion · DONE
 
 `delete_my_account()` is live — soft-deletes the profile, drops your draft
 works/collections, save folders, follows, quota and prefs rows.
-`profiles_tombstone()` blanks your public fields and relabels your posts and
-comments "Deleted account." Both were fixed during the pivot (they pointed
-at the dropped `comics` table) — no UI wires to this yet; that's a Settings
-button in 0.
+`profiles_tombstone()` blanks your public fields and relabels your posts
+and comments "Deleted account." Wired to a real button in profile.html's
+Settings tab.
+
+### 11. Video/audio thumbnails · real work, not started
+
+A video or audio post has no `cover_key` — its card shows a bare play glyph
+on a plain box, no poster frame. Needs a canvas frame-grab (video) or a
+generated waveform image (audio) at upload time.
 
 ---
 
-## Tier 2 — product, once 0 ships
+## Tier 2 — smaller product gaps
 
-### 9. The criticism marks (`!` / `?` / `!!`) · designed, not built
+### 12. Saved/named feeds have no backing table
 
-`comments.mark_type` exists and is unused. A plain Like (`likes` table,
-ruby-red in the mockup) is what ships in 0. Whether marks replace or sit
-alongside likes is still open — revisit once there's something to react to.
+`index.html`'s feed switcher is one feed ("Discover"), filtered live. The
+mockup's rename/add/delete affordance was deliberately left out rather than
+built against nothing. Add a table if this turns out to matter.
 
-### 10. Modifier-tag search backing · small, once 0 exists
+### 13. Server-side search · deferred until it's needed
 
-Every modifier tag is a pure query filter, no new storage:
-posted-window (`created_at`), following/not-following (`follows`),
-seen/unseen (`seen_marks`), liked (`likes`), saved (`save_folder_items`),
-updated (has a `version_of` row), kind toggles (`works.kind`). This is query
-code in the pages 0 builds, not a separate backend task.
+`tag_synonyms`/`canonical_tag()` exist, predate the pivot, aren't read by
+anything. Current search is client-side substring matching — genuinely fine
+until the feed outgrows one query.
 
-### 11. Server-side search · deferred until it's needed
+### 14. Post editing is text-only
 
-`tag_synonyms`/`canonical_tag()` exist, predate the pivot, and aren't read by
-anything. Not urgent until the tag list outgrows an in-browser filter.
-
-### 12. Collections, curation UX · the schema is done, the UI is 0's job
-
-`collections`/`collection_items` are live. What's left is entirely UI: the
-profile's "create a collection" flow, adding existing published works to
-one. No backend work remains here.
+Title/caption/body, not the underlying file. Swapping `media_key` after
+publish (and what that does to a `combination`'s `work_items`) is a real
+design question, not built.
 
 ---
 
 ## Tier 3 — hygiene
 
-### 13. Run the tests on every push · needs revisiting
+### 15. Run the tests on every push · needs a rewrite
 
-`.github/workflows/tests.yml` still runs the old ten. It will fail loudly
-once it hits anything beyond `structure.js`/`cache.js`, correctly, because
-the pages those tests drive are gone. Update the workflow once 0d has real
-tests to run instead of leaving CI red for a known reason.
+`.github/workflows/tests.yml` still runs the pre-pivot ten. `structure.js`
+and `cache.js` still mean what they always meant; everything else
+(`smoke.js`, `live.js`, the rest) drives pages that no longer exist. Needs
+real coverage for `index.html`/`profile.html`/`pivot.js` before this is
+worth turning back on.
 
-### 14. Accessibility pass · ~2 hours, once 0 ships
+### 16. Accessibility pass · ~2 hours
 
-Icon-only buttons need labels, a keyboard-help overlay, swipe-to-turn where
-relevant. Wants the new pages to exist first.
+Icon-only buttons need labels, a keyboard-help overlay.
 
-### 15. An offline/PWA pass · small, once 0 ships
+### 17. An offline/PWA pass · small
 
-`sw.js` still precaches the app shell. Revisit what "keep this one" means for
-a work instead of a comic.
+`sw.js` still precaches the app shell. Revisit what "keep this one" means
+for a work instead of a comic.
 
 ---
 
