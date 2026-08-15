@@ -39,7 +39,7 @@
    instruction to read it as body ink, not a special colour. ---- */
 .wordmark{font-family:var(--font-display);font-weight:700;font-size:28px;
   letter-spacing:-.01em;color:var(--ink);line-height:1;display:inline-block;
-  transform:translateY(.12em)}
+  transform:translateY(.12em);text-decoration:none}
 .wordmark i{font-style:normal;color:inherit}
 
 /* ---- buttons & chips: no outlines, state carried by background fill
@@ -140,7 +140,7 @@
 .navarrow:hover{background:var(--ink);color:var(--paper)}
 
 /* ---- upload: drop zone, file filmstrip, form fields ---- */
-.dropzone{border:1.5px dashed var(--rule-hair);background:var(--surface);border-radius:var(--pv-r);
+.dropzone{border:1.5px dashed #C9C9C9;background:var(--surface);border-radius:var(--pv-r);
   display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:36px;
   text-align:center;cursor:pointer;transition:background var(--t-fast) var(--ease),border-color var(--t-fast) var(--ease)}
 .dropzone:hover,.dropzone.dragover{background:var(--plate-bg);border-color:var(--muted)}

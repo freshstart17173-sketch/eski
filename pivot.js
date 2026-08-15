@@ -295,6 +295,34 @@ function collectionPane(work, items, idx){
     ${media}
   </div>`;
 }
+/* a collection shows details for BOTH the item currently on screen and the
+   collection as a whole — two labelled blocks, not one caption trying to
+   speak for both (artboard.html's collectionDetailCard). The item block has
+   to stay in sync with the carousel, so it's re-rendered together with the
+   media pane rather than once at open time. */
+/* the item block alone, so the carousel can refresh just this half — the
+   collection block below it carries the live like/save UI state and must
+   not be re-rendered out from under an in-progress interaction. */
+function collectionItemBlockHtml(items, idx){
+  const it = items[idx];
+  const kindMeta = it ? [['Content type', it.kind]] : [];
+  return `<div id="collection-item-block" style="display:flex;flex-direction:column;gap:12px;padding:64px 24px 18px 24px;box-sizing:border-box;">
+    <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;">this item &middot; ${idx+1} of ${items.length}</div>
+    <div style="font-size:13.5px;font-weight:400;color:var(--soft-ink);line-height:1.5;">${esc((it && it.caption) || '')}</div>
+    ${metaRows(kindMeta, it && it.media_key ? 'this item' : null, it && it.media_key ? eski.mediaUrl(it.media_key) : null)}
+  </div>`;
+}
+function collectionInfoColHtml(work, items, idx, liked, likeCount, poster){
+  const typesLine = [...new Set(items.map(i => i.kind))].join(' · ');
+  return collectionItemBlockHtml(items, idx) + `
+    <div style="display:flex;flex-direction:column;gap:12px;padding:18px 24px;box-sizing:border-box;">
+      <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;">the collection</div>
+      <div style="font-weight:700;font-size:17px;color:var(--ink);line-height:1.3;">${esc(work.title)}</div>
+      <div style="font-size:13.5px;font-weight:400;color:var(--soft-ink);line-height:1.5;">${esc(work.caption||'')}</div>
+      ${metaRows([['Added', fmtWhen(work.created_at)], ['By', work.owner_name], ['Items', items.length], ['Types', typesLine]])}
+      ${poster ? posterActionsHtml(work) : actionBarHtml(work, liked, likeCount)}
+    </div>`;
+}
 function editFormHtml(work){
   const isText = work.kind === 'text';
   return `<div id="edit-form" style="display:flex;flex-direction:column;gap:12px;">
@@ -327,12 +355,14 @@ async function openDetail(workId){
   const liked = user ? (likeRows||[]).some(r => r.user_id === user.id) : false;
   const hasVersions = work.kind !== 'combination' && work.kind !== 'other';
 
+  const likeCount = (likeRows||[]).length;
+  const isCollection = work.kind === 'combination';
   root.innerHTML = `<div class="pv-scrim"><div class="pv-card" style="display:flex;flex-direction:row;width:1100px;max-width:100%;height:760px;max-height:100%;">
     ${overlayControlsHtml(poster, hasVersions, versions||[], work)}
     ${mediaPane(work, items||[])}
     <div style="width:42%;height:100%;display:flex;flex-direction:column;overflow:hidden;">
-      <div style="display:flex;flex-direction:column;gap:16px;padding:64px 24px 20px 24px;" id="info-col">
-        ${infoColHtml(work, liked, (likeRows||[]).length, poster)}
+      <div style="display:flex;flex-direction:column;${isCollection?'':'gap:16px;padding:64px 24px 20px 24px;'}" id="info-col">
+        ${isCollection ? collectionInfoColHtml(work, items||[], 0, liked, likeCount, poster) : infoColHtml(work, liked, likeCount, poster)}
       </div>
       <div style="display:flex;flex-direction:row;gap:24px;padding:0 24px;flex-shrink:0;">
         <button class="dtab active" type="button" data-tab="tags">Tags</button>
@@ -495,14 +525,23 @@ async function wireDetail(root, work, items, poster){
     input.value = ''; replyTarget = null; root.querySelector('#reply-context').style.display = 'none';
     openDetail(work.id);
   });
-  // collection carousel
-  const cprev = root.querySelector('[data-cprev]'), cnext = root.querySelector('[data-cnext]');
-  if(cprev || cnext){
+  // collection carousel — swaps the media pane and the item-info block
+  // together (they share the same idx); the collection block below is left
+  // alone so its live like/save state survives navigating between items.
+  if(root.querySelector('[data-collection]')){
     let idx = 0;
-    const pane = root.querySelector('[data-collection]');
-    const swap = d => { idx = (idx + d + items.length) % items.length; pane.outerHTML = collectionPane(work, items, idx); wireDetail(root, work, items, poster); };
-    if(cprev) cprev.addEventListener('click', () => swap(-1));
-    if(cnext) cnext.addEventListener('click', () => swap(1));
+    const wireCarousel = () => {
+      const cprev = root.querySelector('[data-cprev]'), cnext = root.querySelector('[data-cnext]');
+      const swap = d => {
+        idx = (idx + d + items.length) % items.length;
+        root.querySelector('[data-collection]').outerHTML = collectionPane(work, items, idx);
+        document.getElementById('collection-item-block').outerHTML = collectionItemBlockHtml(items, idx);
+        wireCarousel();
+      };
+      if(cprev) cprev.addEventListener('click', () => swap(-1));
+      if(cnext) cnext.addEventListener('click', () => swap(1));
+    };
+    wireCarousel();
   }
   // add to collection (poster)
   const a2cBtn = root.querySelector('#a2c-btn');
