@@ -200,7 +200,19 @@ or audio (no player, just a broken `<img>`). `work_items` has no
 `cover_key` column on purpose (see the 2026-08-15 entry above) — add one,
 and wire the carousel to use it, when this is worth doing.
 
-### 13. `sw.js` isn't registered by anything
+### 13. "By {name}" in the detail overlay isn't a link
+
+`infoColHtml()`/`collectionInfoColHtml()` in `pivot.js` render the poster's
+name as plain text in the metaRows, not a link to `/u/<handle>`. Not a
+one-line fix: `works`/`collections` only store `owner_name` (a display-name
+snapshot, set at insert time) — no handle. Two ways to get one: query
+`profiles.select('handle').eq('id', work.owner_id)` client-side when the
+overlay opens (one extra small query, consistent with how cheaply this
+codebase already treats similar lookups), or add an `owner_handle` column
+mirroring `owner_name` and populate it at insert time (avoids the query,
+same staleness tradeoff `owner_name` already accepts if someone renames).
+
+### 14. `sw.js` isn't registered by anything
 
 The precache list is correct now (see above), but no live page calls
 `navigator.serviceWorker.register('sw.js')` — grep confirms only stale test
@@ -214,7 +226,7 @@ outright rather than let it sit half-built.
 
 ## Tier 3 — hygiene
 
-### 14. Real UI coverage for the pivot pages
+### 15. Real UI coverage for the pivot pages
 
 The purge (2026-08-15) deleted the tests that were purely dead —
 `smoke.js`, `recording.js`, `live.js`/`live-input.js`/`live-comic.js`,
@@ -231,7 +243,7 @@ detail overlay per kind, upload, settings, sign-in gating. Should lean
 UI-first (the pages ARE the product now), not just the backend-shape
 checks `structure.js`/`cache.js` already cover.
 
-### 15. Accessibility pass · ~2 hours
+### 16. Accessibility pass · ~2 hours
 
 Icon-only buttons need labels, a keyboard-help overlay.
 
