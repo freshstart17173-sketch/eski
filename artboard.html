@@ -187,7 +187,8 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--
    others trail after it in grey, click to switch (then rename in place),
    × on hover to delete. Discover carries data-nodelete and never gets an
    ×. a + at the end makes another feed. no pills, no outlines. ---- */
-.feedswitch{display:flex;align-items:baseline;gap:20px;flex-wrap:wrap}
+.feedswitch{display:flex;align-items:center;gap:20px;flex-wrap:wrap}
+.feedswitch .feed,.feedswitch .feedplus{align-self:baseline}
 .feed{font-family:var(--font-body);font-weight:700;font-size:38px;letter-spacing:-.01em;line-height:1.05;
   color:var(--muted);cursor:pointer;transition:color 120ms ease;display:inline-flex;align-items:baseline;gap:8px}
 .feed:hover{color:var(--ink-soft)}
@@ -274,15 +275,26 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--
 /* ---- masonry-of-squares grid: every card sits in a fixed square box,
    media letterboxed inside it, small non-bold caption below (are.na
    grid). no content-type labels — the media speaks for itself. ---- */
-/* 4 up, one gap value so horizontal and vertical whitespace match. captions
-   may run to two lines, then clamp. */
-.fgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;width:100%}
+/* 4 up, one gap value so horizontal and vertical whitespace match. bigger
+   gutter than the first pass (cards read smaller as a result — that was
+   the point, not a separate resize). captions may run to two lines, then
+   clamp. */
+.fgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:32px;width:100%}
 .gcard{display:flex;flex-direction:column;gap:8px;cursor:pointer}
 .gbox{position:relative;width:100%;aspect-ratio:1/1;background:var(--paper-dim);overflow:hidden;
   display:flex;align-items:center;justify-content:center}
 .gbox .fill{position:absolute;inset:0}
+/* the actual media: an inline SVG placeholder carrying its OWN aspect
+   ratio (16:9, 4:5, whatever), object-fit:contain inside the square box —
+   the box is invisible, the media scales to fit it on whichever axis is
+   larger, exactly like a real photo/video would. */
+.fillmedia{width:100%;height:100%;object-fit:contain;display:block}
 .gcap{font-family:var(--font-body);font-weight:400;font-size:var(--fs-xs);color:var(--ink);line-height:1.35;
   text-align:center;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+/* the "other" card: a file type eski doesn't render — just its name,
+   centred, in the square. */
+.gother{font-family:var(--font-body);font-weight:600;font-size:12.5px;color:var(--ink-soft);
+  text-align:center;padding:0 16px;word-break:break-word}
 .gind{position:absolute;bottom:8px;right:8px;font-family:var(--font-body);font-weight:600;
   font-size:var(--fs-micro);color:var(--paper);background:rgba(17,17,17,.72);padding:3px 6px}
 /* text in a card starts at the top, left-aligned (unless the .md sets its
@@ -314,13 +326,38 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--
 /* ---- like / save action buttons on a detail overlay ---- */
 .actbtn{flex:1;display:flex;align-items:center;justify-content:center;gap:7px;font-family:var(--font-body);
   font-weight:600;font-size:var(--fs-sm);color:var(--ink);background:var(--paper-dim);border:none;
-  border-radius:var(--radius-min);padding:11px 14px;cursor:pointer;transition:background 120ms ease}
+  border-radius:var(--radius-min);padding:11px 14px;cursor:pointer;transition:background 120ms ease,color 120ms ease}
 .actbtn:hover{background:#E4E4E4}
 .actbtn .n{color:var(--muted);font-weight:400}
 .actbtn svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .actbtn.on{background:var(--ink);color:var(--paper)}
 .actbtn.on .n{color:var(--paper)}
 .actbtn.on svg{fill:currentColor}
+/* like turns ruby red on a pale pink fill when active — its own moment,
+   not the generic ink invert every other toggle uses. */
+.actbtn.like.on{background:#FCE4EC;color:#C2185B}
+.actbtn.like.on .n{color:#C2185B}
+.actbtn.like.on svg{fill:#C2185B;stroke:#C2185B}
+
+/* ---- save: a dropdown right under the button, not its own screen ---- */
+.savewrap{position:relative;flex:1}
+.savedrop{position:absolute;top:calc(100% + 6px);left:0;right:0;z-index:20;background:var(--paper);
+  box-shadow:0 8px 30px rgba(0,0,0,.22);display:none;flex-direction:column;padding:8px;min-width:240px}
+.savedrop.open{display:flex}
+.savedrop .sdhead{font-family:var(--font-body);font-size:11px;color:var(--muted);text-transform:uppercase;
+  letter-spacing:.1em;padding:6px 8px}
+
+/* ---- comments: nesting + who's being replied to + collapse ---- */
+.cmt{display:flex;gap:10px}
+.cmt.nested{margin-left:38px;padding-left:14px;box-shadow:inset 2px 0 0 var(--paper-dim)}
+.cmt .avatar{width:28px;height:28px;background:var(--paper);flex-shrink:0}
+.cmt .replyto{font-family:var(--font-body);font-size:11px;color:var(--muted);display:flex;align-items:center;gap:4px;margin-bottom:2px}
+.cmt .replyto b{color:var(--ink-soft);font-weight:600}
+.morecomments{font-family:var(--font-body);font-size:12.5px;font-weight:600;color:var(--accent);cursor:pointer;
+  padding:2px 0;transition:opacity 120ms ease}
+.morecomments:hover{opacity:.7}
+.cmt-extra{display:none;flex-direction:column;gap:16px}
+.cmt-extra.open{display:flex}
 
 /* ---- collection carousel (one item at a time, ig style) ---- */
 .carrow{position:absolute;top:50%;transform:translateY(-50%);width:34px;height:34px;border-radius:50%;
@@ -360,12 +397,17 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--
 .verdrop .vi.add{color:var(--accent);font-weight:600}
 .verdrop .sep{height:1px;background:var(--paper-dim);margin:4px 0}
 
-/* ---- search bar ---- */
-.searchbar{display:flex;align-items:center;gap:10px;background:var(--paper-dim);border-radius:var(--radius-min);
-  padding:11px 14px}
-.searchbar svg{width:16px;height:16px;fill:none;stroke:var(--muted);stroke-width:2;flex-shrink:0}
-.searchbar input{flex:1;border:none;background:none;outline:none;font-family:var(--font-body);font-size:14px;color:var(--ink)}
-.searchbar input::placeholder{color:var(--muted)}
+/* ---- search: minimised to an icon, sits on the feed-tabs row, grows
+   into an input on click instead of owning its own row. ---- */
+.searchmini{display:flex;align-items:center;gap:8px;background:var(--paper-dim);border-radius:999px;
+  height:34px;padding:0 9px;cursor:pointer;width:34px;overflow:hidden;flex-shrink:0;margin-left:auto;
+  transition:width 160ms ease}
+.searchmini.open{width:280px;cursor:default}
+.searchmini svg{width:16px;height:16px;fill:none;stroke:var(--muted);stroke-width:2;flex-shrink:0}
+.searchmini input{border:none;background:none;outline:none;font-family:var(--font-body);font-size:13px;
+  color:var(--ink);flex:1;min-width:0;opacity:0;transition:opacity 120ms ease}
+.searchmini.open input{opacity:1}
+.searchmini input::placeholder{color:var(--muted)}
 
 /* ---- save-to-folder rows ---- */
 .folderrow{display:flex;align-items:center;gap:12px;padding:10px 8px;cursor:pointer;border-radius:var(--radius-min);
@@ -388,8 +430,8 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--
 .a2cdrop .ci:hover{background:var(--paper-dim)}
 .a2cdrop .ci.add{color:var(--accent);font-weight:600}
 .a2cdrop .sep{height:1px;background:var(--paper-dim);margin:4px 0}
-.gplay{width:34px;height:34px;border-radius:50%;background:rgba(17,17,17,.72);display:flex;
-  align-items:center;justify-content:center}
+.gplay{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:34px;height:34px;
+  border-radius:50%;background:rgba(17,17,17,.72);display:flex;align-items:center;justify-content:center}
 .gplay svg{width:14px;height:14px;fill:var(--paper);margin-left:2px}
 </style>
 </head>
@@ -434,13 +476,36 @@ const grid = document.getElementById('grid');
    else. studio is cut from the product (2026-08-15), so it's out of
    the nav here too, not just off the artboard.
    ============================================================ */
-/* one square grid card. `inner` is optional media-box content: a play
-   glyph + duration, a collection count, a pull-quote. no content-type
-   label — the media itself carries the type. caption is small + regular. */
-function gcard(title, handle, inner){
+/* the square grid box is a fixed frame; the media inside keeps its OWN
+   aspect ratio and is contained within it — a 16:9 lands letterboxed
+   top/bottom, a 4:5 letterboxed left/right, a 1:1 fills it. done with a
+   real <img> (an inline svg swatch standing in for the photo) so plain
+   css object-fit does the letterboxing, no js math needed. */
+function svgSwatch(w, h, hex){
+  const svg = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 ${w} ${h}'><rect width='${w}' height='${h}' fill='${hex}'/></svg>`;
+  return 'data:image/svg+xml,' + encodeURIComponent(svg);
+}
+function mediaFill(ratio, hex){
+  const [w, h] = (ratio || '1/1').split('/').map(Number);
+  return `<img class="fillmedia" src="${svgSwatch(w * 60, h * 60, hex || '#E4E4E4')}" alt="">`;
+}
+/* one square grid card. `inner` is optional media-box content laid over
+   the fill: a play glyph + duration, a collection count, a pull-quote.
+   no content-type label — the media itself carries the type. `ratio` is
+   the media's real aspect ratio, e.g. '16/9', '4/5', '9/16'. */
+function gcard(title, handle, inner, ratio){
   return `<div class="gcard selectable">
-    <div class="gbox">${inner||''}</div>
+    <div class="gbox">${ratio ? mediaFill(ratio) : ''}${inner||''}</div>
     <div class="gcap">${esc(title)}</div>
+  </div>`;
+}
+/* a file type eski doesn't render or parse: no thumbnail, just the
+   filename, centred in the square. still a full card — sits in the feed
+   and in collections like anything else. */
+function gother(filename){
+  return `<div class="gcard selectable">
+    <div class="gbox"><div class="gother">${esc(filename)}</div></div>
+    <div class="gcap">${esc(filename)}</div>
   </div>`;
 }
 const PLAY = '<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>';
@@ -501,18 +566,16 @@ const homepageHtml = `
     <div class="btnline filled">Upload</div>
   </div>
 </div>
-<div class="ms selectable" style="width:100%;padding:16px 32px 0 32px;box-sizing:border-box;flex-shrink:0;">
-  <div class="searchbar">
-    <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3" stroke-linecap="round"/></svg>
-    <input placeholder="search tags, captions, text, and authors">
-  </div>
-</div>
 <div class="ms selectable" style="display:flex;flex-direction:column;gap:20px;width:100%;padding:20px 32px 24px 32px;box-sizing:border-box;flex-shrink:0;">
-  <div class="feedswitch" data-feedrow>
+  <div class="feedswitch" data-feedrow style="width:100%;">
     <span class="feed active" data-nodelete contenteditable="true" spellcheck="false">Discover</span>
     <span class="feed">sound<span class="fx" data-feeddel>&times;</span></span>
     <span class="feed">stills<span class="fx" data-feeddel>&times;</span></span>
     <span class="feedplus" data-feedadd>+</span>
+    <div class="searchmini" data-searchmini>
+      <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3" stroke-linecap="round"/></svg>
+      <input placeholder="search tags, captions, text, and authors">
+    </div>
   </div>
   <div style="display:flex;gap:56px;flex-wrap:wrap;align-items:flex-start;">
     <div class="tagpanel">
@@ -536,17 +599,18 @@ const homepageHtml = `
 </div>
 <div style="width:100%;padding:0 32px;box-sizing:border-box;flex-shrink:0;">
   <div class="fgrid">
-    ${gcard('midnight session','@inkwell')}
-    ${gcard('night drive','@lowfreq', aud)}
-    ${gcard('rooftop cut','@camrafilm', vid('2:14'))}
+    ${gcard('midnight session','@inkwell', '', '4/5')}
+    ${gcard('night drive','@lowfreq', aud, '1/1')}
+    ${gcard('rooftop cut','@camrafilm', vid('2:14'), '16/9')}
     ${gtextcard('Rerun, and the case for a slower rebrand', ESSAY, '@studiogruhl')}
-    ${gcard('sketchbook, march','@linewerk', coll('6'))}
-    ${gcard('static','@glasseye')}
-    ${gcard('story bible: HALO','@inkwell', coll('12'))}
-    ${gcard('tape no. 9','@lowfreq', aud)}
-    ${gcard('afterglow','@salt.mv')}
-    ${gcard('loop test','@camrafilm', vid('0:47'))}
-    ${gcard('reference','@glasseye')}
+    ${gcard('sketchbook, march','@linewerk', coll('6'), '1/1')}
+    ${gcard('static','@glasseye', '', '3/2')}
+    ${gother('MyNewComicBook.cbz')}
+    ${gcard('story bible: HALO','@inkwell', coll('12'), '1/1')}
+    ${gcard('tape no. 9','@lowfreq', aud, '1/1')}
+    ${gcard('afterglow','@salt.mv', '', '9/16')}
+    ${gcard('loop test','@camrafilm', vid('0:47'), '16/9')}
+    ${gcard('reference','@glasseye', '', '5/4')}
     ${gcard('letters, unsent','@paperbound', gq('i kept writing your name in the margins.'))}
   </div>
 </div>
@@ -554,10 +618,17 @@ const homepageHtml = `
   <div class="btnline">See more</div>
 </div>`;
 
-function commentRow(handle, when, body){
-  return `<div style="display:flex;gap:10px;">
-    <div style="width:28px;height:28px;background:var(--paper);flex-shrink:0;"></div>
+/* a comment. `opts.replyTo` labels who it's answering (shown above the
+   handle, so the reply reads clearly even out of order); `opts.nested`
+   indents it under its parent with a rule down the left edge. */
+function commentRow(handle, when, body, opts){
+  opts = opts || {};
+  const replyLine = opts.replyTo
+    ? `<div class="replyto">&#8618; replying to <b>${esc(opts.replyTo)}</b></div>` : '';
+  return `<div class="cmt${opts.nested ? ' nested' : ''}">
+    <div class="avatar"></div>
     <div style="display:flex;flex-direction:column;gap:2px;min-width:0;">
+      ${replyLine}
       <div style="display:flex;align-items:baseline;gap:8px;">
         <span style="font-weight:600;font-size:12.5px;color:var(--ink);text-decoration:underline;">${esc(handle)}</span>
         <span style="font-size:11px;color:var(--muted);">${esc(when)}</span>
@@ -587,12 +658,27 @@ function metaRows(rows, download, downloadAll){
   if(downloadAll) html += dlRow('Download all', downloadAll);
   return `<div style="display:flex;flex-direction:column;gap:0;">${html}</div>`;
 }
+const CHECK = '<svg viewBox="0 0 24 24"><path d="M5 12l4 4 10-10"/></svg>';
+function folderRow(name, count, on){
+  return `<div class="folderrow${on?' on':''}"><div class="fcheck">${CHECK}</div><div class="fname">${esc(name)}</div><div class="fmeta">${esc(count)}</div></div>`;
+}
 /* like + save. the criticism marks (!, ?, !!) still live in comments and
-   are deferred; these are the plain engagement actions. */
+   are deferred; these are the plain engagement actions. save opens a
+   dropdown right under the button — never its own screen. */
 function actionBar(likes){
   return `<div style="display:flex;gap:8px;">
-    <div class="actbtn selectable" data-act-toggle><svg viewBox="0 0 24 24"><path d="M12 21s-8-4.9-8-11a4.5 4.5 0 0 1 8-2.6 4.5 4.5 0 0 1 8 2.6c0 6.1-8 11-8 11z"/></svg>Like <span class="n">${esc(likes)}</span></div>
-    <div class="actbtn selectable" data-savebtn><svg viewBox="0 0 24 24"><path d="M6 3h12v18l-6-4-6 4z"/></svg>Save</div>
+    <div class="actbtn like selectable" data-act-toggle><svg viewBox="0 0 24 24"><path d="M12 21s-8-4.9-8-11a4.5 4.5 0 0 1 8-2.6 4.5 4.5 0 0 1 8 2.6c0 6.1-8 11-8 11z"/></svg>Like <span class="n">${esc(likes)}</span></div>
+    <div class="savewrap">
+      <div class="actbtn selectable" data-savebtn><svg viewBox="0 0 24 24"><path d="M6 3h12v18l-6-4-6 4z"/></svg>Save</div>
+      <div class="savedrop">
+        <div class="sdhead">Save to</div>
+        ${folderRow('All saved', '128', true)}
+        ${folderRow('Inspiration', '42')}
+        ${folderRow('Palettes', '17')}
+        ${folderRow('To read', '9')}
+        <div class="folderrow selectable"><div style="width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:18px;color:var(--accent);line-height:1;">+</div><div class="fname" style="color:var(--accent);font-weight:600;">New folder</div></div>
+      </div>
+    </div>
   </div>`;
 }
 /* on your own post: add it to one of your collections (or make one). */
@@ -628,9 +714,13 @@ function versionDrop(poster){
     </div>
   </div>`;
 }
-function overlayControls(poster){
+/* versions only apply to the four leaf kinds (image/video/audio/text) —
+   a collection doesn't stack versions of itself, so `hasVersions` lets
+   collections and "other" leave the selector off entirely. */
+function overlayControls(poster, hasVersions){
+  if(hasVersions === undefined) hasVersions = true;
   return `<div style="position:absolute;top:20px;right:24px;z-index:6;display:flex;align-items:center;gap:8px;">
-    ${versionDrop(poster)}
+    ${hasVersions ? versionDrop(poster) : ''}
     ${poster ? `<div style="position:relative;"><div class="navarrow selectable" data-burger>&#8942;</div>${burgerMenu()}</div>` : ''}
     <div class="navarrow selectable">&lsaquo;</div>
     <div class="navarrow selectable">&rsaquo;</div>
@@ -659,8 +749,15 @@ function commentsPanel(){
   return `<div data-panel="comments" style="display:none;flex-direction:column;gap:16px;padding:16px 24px;flex:1;">
     <div style="display:flex;flex-direction:column;gap:16px;flex:1;">
       ${commentRow('@salt.mv', '2d ago', 'the grain on this is doing a lot of work. what stock did you shoot?')}
+      ${commentRow('@inkwell', '2d ago', 'kodak portra, pushed a stop.', { replyTo: '@salt.mv', nested: true })}
       ${commentRow('@lowfreq', '1d ago', "been staring at this since you posted it. that building really doesn't sleep.")}
-      ${commentRow('@inkwell', '20h ago', 'kodak portra, pushed a stop. glad it reads.')}
+      <div class="morecomments" data-morecomments>Show 4 more comments</div>
+      <div class="cmt-extra">
+        ${commentRow('@paperbound', '20h ago', 'the negative space up top is doing something.')}
+        ${commentRow('@glasseye', '18h ago', 'agreed — reminds me of your march sketchbook actually.', { replyTo: '@paperbound', nested: true })}
+        ${commentRow('@camrafilm', '10h ago', 'what lens?')}
+        ${commentRow('@inkwell', '9h ago', '35mm, wide open.', { replyTo: '@camrafilm', nested: true })}
+      </div>
     </div>
     <div style="display:flex;gap:8px;align-items:center;padding-top:8px;">
       <input placeholder="add a comment" style="flex:1;font:inherit;font-size:12.5px;padding:8px 10px;border:none;background:var(--paper);color:var(--ink);border-radius:var(--radius-min);">
@@ -670,7 +767,7 @@ function commentsPanel(){
 }
 function detailCard(cfg){
   return `<div class="ms selectable" style="position:relative;display:flex;flex-direction:row;width:1100px;height:760px;background:var(--paper);overflow:hidden;">
-    ${overlayControls(cfg.poster)}
+    ${overlayControls(cfg.poster, cfg.hasVersions)}
     ${cfg.media}
     <div style="width:42%;height:100%;display:flex;flex-direction:column;overflow:hidden;">
       <div class="ms selectable" style="display:flex;flex-direction:column;gap:16px;padding:64px 24px 20px 24px;box-sizing:border-box;">
@@ -714,43 +811,58 @@ const mText = `<div class="ms selectable" style="width:58%;height:100%;backgroun
   </div>
 </div>`;
 /* a collection reads like an instagram carousel: one item at a time, arrows
-   and dots to move through it. */
-const mCollection = `<div class="ms selectable" style="width:58%;height:100%;background:#111;flex-shrink:0;position:relative;display:flex;align-items:center;justify-content:center;overflow:hidden;">
-  <div style="width:74%;height:80%;background:#E4E4E4;"></div>
+   and dots to move through it — the item fills the whole pane, full-bleed,
+   same as a plain image would, not boxed in a letterbox. */
+const mCollection = `<div class="ms selectable" style="width:58%;height:100%;background:var(--paper-dim);flex-shrink:0;position:relative;overflow:hidden;">
   <div class="carrow selectable" style="left:16px;">&lsaquo;</div>
   <div class="carrow selectable" style="right:16px;">&rsaquo;</div>
   <div class="ccount">3 / 12</div>
   <div class="cdots"><i></i><i></i><i class="on"></i><i></i><i></i><i></i></div>
+</div>`;
+/* a file type eski can't render — the media pane just names it. */
+const mOther = `<div class="ms selectable" style="width:58%;height:100%;background:var(--paper-dim);flex-shrink:0;display:flex;align-items:center;justify-content:center;padding:40px;box-sizing:border-box;">
+  <span style="font-family:var(--font-body);font-weight:700;font-size:16px;color:var(--ink-soft);text-align:center;word-break:break-word;">MyNewComicBook.cbz</span>
 </div>`;
 
 const imageDetail = detailCard({ media:mImage, caption:'shot this on the walk back from the studio around 2am. the building across the street never turns its lights off.', meta:[['Added','Aug 12'],['By','inkwell',true],['Content type','image/png'],['Resolution','3024 × 4032'],['File size','4.1 MB']], download:'Download .png', tags:['#following','#newuploads','#wip'], likes:'128' });
 const videoDetail = detailCard({ media:mVideo, caption:'one continuous take, no cuts. the light did all the work.', meta:[['Added','3 days ago'],['By','camrafilm',true],['Content type','video/mp4'],['Resolution','1920 × 1080'],['Duration','2:14'],['File size','18.4 MB']], download:'Download .mp4', tags:['#motion','#golden'], likes:'302' });
 const audioDetail = detailCard({ media:mAudio, caption:'tape no. 9 — a slow one for the end of the night.', meta:[['Added','1 week ago'],['By','lowfreq',true],['Content type','audio/mp3'],['Duration','3:20'],['File size','7.6 MB']], download:'Download .mp3', tags:['#beat','#latenight'], likes:'86' });
 const textDetail = detailCard({ media:mText, title:'Rerun, and the case for a slower rebrand', caption:'why we talked them out of the loud version.', meta:[['Added','2 months ago'],['By','studiogruhl',true],['Content type','text/markdown'],['Words','840'],['Reading time','4 min']], download:'Download .md', tags:['#branding','#essay'], likes:'54' });
-const collectionDetail = detailCard({ media:mCollection, caption:'story bible: HALO — reference, palettes, and the pages that started it.', meta:[['Added','1 month ago'],['By','inkwell',true],['Items','12'],['Types','image · text']], download:'this item .png', downloadAll:'all 12 .zip', tags:['#worldbuilding','#reference'], likes:'173' });
+const otherDetail = detailCard({ media:mOther, caption:'the full run, scanned and reassembled from the original floppies.', meta:[['Added','3 weeks ago'],['By','inkwell',true],['Content type','application/octet-stream'],['File size','142 MB']], download:'Download .cbz', tags:['#archive','#comics'], likes:'19', hasVersions:false });
+/* a collection shows details for BOTH the item currently on screen and the
+   collection as a whole — two clearly labelled blocks, not one caption
+   trying to speak for both. */
+function collectionDetailCard(){
+  return `<div class="ms selectable" style="position:relative;display:flex;flex-direction:row;width:1100px;height:760px;background:var(--paper);overflow:hidden;">
+    ${overlayControls(false, false)}
+    ${mCollection}
+    <div style="width:42%;height:100%;display:flex;flex-direction:column;overflow:hidden;">
+      <div class="ms selectable" style="display:flex;flex-direction:column;gap:12px;padding:64px 24px 18px 24px;box-sizing:border-box;">
+        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;">this item &middot; 3 of 12</div>
+        <div style="font-size:13.5px;font-weight:400;color:var(--ink-soft);line-height:1.5;">reference sheet — the alley, second pass.</div>
+        ${metaRows([['Content type','image/png'],['Resolution','2400 × 3000'],['File size','2.8 MB']], 'this item .png')}
+      </div>
+      <div class="ms selectable" style="display:flex;flex-direction:column;gap:12px;padding:18px 24px;box-sizing:border-box;">
+        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;">the collection</div>
+        <div style="font-weight:700;font-size:17px;color:var(--ink);line-height:1.3;">story bible: HALO</div>
+        <div style="font-size:13.5px;font-weight:400;color:var(--ink-soft);line-height:1.5;">reference, palettes, and the pages that started it.</div>
+        ${metaRows([['Added','1 month ago'],['By','inkwell',true],['Items','12'],['Types','image · text']], null, 'all 12 .zip')}
+        ${actionBar('173')}
+      </div>
+      ${detailTabs()}
+      <div style="flex:1;background:var(--paper-dim);box-sizing:border-box;overflow:auto;display:flex;flex-direction:column;">
+        ${tagsPanel(['#worldbuilding','#reference'], false)}
+        ${commentsPanel()}
+      </div>
+    </div>
+  </div>`;
+}
+const collectionDetail = collectionDetailCard();
 const posterDetail = detailCard({ media:mImage, caption:'shot this on the walk back from the studio around 2am. the building across the street never turns its lights off.', meta:[['Added','Aug 12'],['By','inkwell',true],['Content type','image/png'],['Resolution','3024 × 4032'],['File size','4.1 MB']], download:'Download .png', tags:['#following','#newuploads','#wip'], poster:true });
 
-/* ---- small modals: save-to-folder, sign-in, account creation, delete ---- */
-const CHECK = '<svg viewBox="0 0 24 24"><path d="M5 12l4 4 10-10"/></svg>';
-function folderRow(name, count, on){
-  return `<div class="folderrow${on?' on':''}"><div class="fcheck">${CHECK}</div><div class="fname">${esc(name)}</div><div class="fmeta">${esc(count)}</div></div>`;
-}
-const saveCard = `<div style="width:440px;background:var(--paper);display:flex;flex-direction:column;overflow:hidden;box-sizing:border-box;">
-  <div style="display:flex;align-items:center;justify-content:space-between;padding:22px 24px 10px 24px;">
-    <div style="font-weight:700;font-size:20px;color:var(--ink);">Save to…</div>
-    <div class="navarrow selectable" data-close>&times;</div>
-  </div>
-  <div style="padding:0 16px;display:flex;flex-direction:column;">
-    ${folderRow('All saved', '128', true)}
-    ${folderRow('Inspiration', '42')}
-    ${folderRow('Palettes', '17')}
-    ${folderRow('To read', '9')}
-  </div>
-  <div style="padding:6px 16px 20px 16px;display:flex;flex-direction:column;gap:12px;">
-    <div class="folderrow selectable"><div style="width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:20px;color:var(--accent);line-height:1;">+</div><div class="fname" style="color:var(--accent);font-weight:600;">New folder</div></div>
-    <div style="display:flex;justify-content:flex-end;padding:0 8px;"><div class="btnline filled">Done</div></div>
-  </div>
-</div>`;
+/* ---- small modals: sign-in, account creation, delete confirm. save is
+   NOT here — it's a dropdown under the Save button (see actionBar), not
+   its own screen. ---- */
 const GOOGLE = '<svg viewBox="0 0 24 24" width="16" height="16" style="flex-shrink:0;"><path fill="currentColor" d="M12 11v2.7h4.4c-.2 1.2-1.5 3.4-4.4 3.4-2.7 0-4.8-2.2-4.8-4.9S9.3 7.3 12 7.3c1.5 0 2.5.6 3.1 1.2l2-2C15.8 5.3 14.1 4.6 12 4.6 7.8 4.6 4.4 8 4.4 12S7.8 19.4 12 19.4c4.3 0 7.2-3 7.2-7.3 0-.5 0-.8-.1-1.1z"/></svg>';
 const signinCard = `<div style="width:420px;background:var(--paper);padding:40px 36px;display:flex;flex-direction:column;gap:18px;box-sizing:border-box;">
   <div class="wordmark" style="font-size:30px;">eski<i>!</i></div>
@@ -902,11 +1014,24 @@ const uploadCard = `<div style="width:720px;max-height:840px;background:var(--pa
     <div class="ms selectable" style="background:var(--paper-dim);border-radius:var(--radius-min);padding:16px;display:flex;flex-direction:column;gap:12px;">
       <div style="font-weight:600;font-size:14px;color:var(--ink);">All 4 files are images. How should they go up?</div>
       <div class="umode">
-        <span class="chip active" data-umode>Separate posts</span>
-        <span class="chip" data-umode>One collection</span>
-        <span class="chip" data-umode>One post &middot; 4 versions</span>
+        <span class="chip active" data-umode="separate">Separate posts</span>
+        <span class="chip" data-umode="collection">One collection</span>
+        <span class="chip" data-umode="versions">One post &middot; 4 versions</span>
       </div>
       <div style="font-size:11.5px;color:var(--muted);">Collection and versions are only offered when every file is the same type.</div>
+      <div data-collection-extra style="display:none;flex-direction:column;gap:14px;padding-top:4px;">
+        <div class="modgroup">
+          <div class="modgrouplabel">this upload becomes</div>
+          <div class="seg" data-seg>
+            <span class="opt on" data-o>Collection only</span>
+            <span class="opt" data-o>Collection + individual posts</span>
+          </div>
+        </div>
+        <div class="ufield">
+          <div class="ulabel">Collection caption</div>
+          <textarea class="utext" placeholder="Write a caption for the collection as a whole…">reference, palettes, and the pages that started it.</textarea>
+        </div>
+      </div>
     </div>
     <div class="filmstrip">
       <div class="fthumb" data-fthumb></div>
@@ -919,7 +1044,7 @@ const uploadCard = `<div style="width:720px;max-height:840px;background:var(--pa
       <div style="width:180px;height:180px;background:var(--paper-dim);flex-shrink:0;"></div>
       <div style="flex:1;display:flex;flex-direction:column;gap:16px;">
         <div class="ufield">
-          <div class="ulabel">Caption &middot; post 2 of 4</div>
+          <div class="ulabel" data-captionlabel>Caption &middot; post 2 of 4</div>
           <textarea class="utext" placeholder="Write a caption for this post…">golden hour on the rooftop — the second frame is the keeper.</textarea>
         </div>
         ${uploadTags('#rooftop', '#goldenhour')}
@@ -927,7 +1052,7 @@ const uploadCard = `<div style="width:720px;max-height:840px;background:var(--pa
     </div>
     <div style="display:flex;justify-content:flex-end;gap:8px;">
       <div class="btnline">Cancel</div>
-      <div class="btnline filled">Publish 4 posts</div>
+      <div class="btnline filled" data-publishlabel>Publish 4 posts</div>
     </div>
   </div>
 </div>`;
@@ -999,13 +1124,13 @@ placeModal(imageDetail, 0, 2820, 1320, 900, 'DETAIL — image');
 placeModal(videoDetail, 1560, 2820, 1320, 900, 'DETAIL — video');
 placeModal(audioDetail, 3120, 2820, 1320, 900, 'DETAIL — audio');
 placeModal(textDetail, 0, 3860, 1320, 900, 'DETAIL — text / essay');
-placeModal(collectionDetail, 1560, 3860, 1320, 900, 'DETAIL — collection');
-placeModal(posterDetail, 3120, 3860, 1320, 900, "DETAIL — your own post (edit tags · ⋮ menu)");
+placeModal(collectionDetail, 1560, 3860, 1320, 900, 'DETAIL — collection (full-bleed carousel + dual details)');
+placeModal(otherDetail, 3120, 3860, 1320, 900, 'DETAIL — other (unrendered file)');
+placeModal(posterDetail, 0, 4900, 1320, 900, "DETAIL — your own post (edit tags · ⋮ menu · add version)");
 // account + action modals
-placeModal(signinCard, 0, 4900, 760, 640, 'SIGNED OUT — sign-in prompt');
-placeModal(accountCard, 940, 4900, 760, 760, 'ACCOUNT CREATION');
-placeModal(deleteCard, 1880, 4900, 760, 560, 'DELETE CONFIRMATION');
-placeModal(saveCard, 2820, 4900, 760, 640, 'SAVE — to a folder');
+placeModal(signinCard, 0, 5940, 760, 640, 'SIGNED OUT — sign-in prompt');
+placeModal(accountCard, 940, 5940, 760, 760, 'ACCOUNT CREATION');
+placeModal(deleteCard, 1880, 5940, 760, 560, 'DELETE CONFIRMATION');
 
 /* the mockups are live, so their own controls actually work: detail
    tabs switch panels, feed tabs open/close/add, tags add (with a small
@@ -1081,12 +1206,25 @@ world.addEventListener('click', e => {
     return;
   }
 
-  // upload: mode segmented control (separate / collection / versions)
+  // upload: mode segmented control (separate / collection / versions) —
+  // also toggles the collection-only-vs-posts extra block and relabels
+  // the per-item caption and the publish button to match.
   const umode = e.target.closest('[data-umode]');
   if(umode){
     e.stopPropagation();
-    umode.parentElement.querySelectorAll('[data-umode]').forEach(m => m.classList.remove('active'));
+    const group = umode.parentElement;
+    group.querySelectorAll('[data-umode]').forEach(m => m.classList.remove('active'));
     umode.classList.add('active');
+    const mode = umode.dataset.umode;
+    const card = umode.closest('.eski-mockup');
+    const extra = card.querySelector('[data-collection-extra]');
+    if(extra) extra.style.display = mode === 'collection' ? 'flex' : 'none';
+    const capLabel = card.querySelector('[data-captionlabel]');
+    if(capLabel) capLabel.textContent = mode === 'collection' ? 'Caption for this item (optional)'
+      : mode === 'versions' ? 'Caption · version 2 of 4' : 'Caption · post 2 of 4';
+    const pubLabel = card.querySelector('[data-publishlabel]');
+    if(pubLabel) pubLabel.textContent = mode === 'collection' ? 'Publish collection'
+      : mode === 'versions' ? 'Publish 1 post · 4 versions' : 'Publish 4 posts';
     return;
   }
   // upload: filmstrip select
@@ -1114,9 +1252,15 @@ world.addEventListener('click', e => {
   // like toggle
   const act = e.target.closest('[data-act-toggle]');
   if(act){ e.stopPropagation(); act.classList.toggle('on'); return; }
-  // save button → (mockup) toggles; the real save-to-folder flow is its own modal
+  // save button: opens the folder-picker dropdown right under it. picking
+  // folders (below) doesn't close it — same "stays open till you click
+  // away" behaviour as the version/add-to-collection popovers.
   const savebtn = e.target.closest('[data-savebtn]');
-  if(savebtn){ e.stopPropagation(); savebtn.classList.toggle('on'); return; }
+  if(savebtn){
+    e.stopPropagation();
+    savebtn.parentElement.querySelector('.savedrop').classList.toggle('open');
+    return;
+  }
 
   // version dropdown: open/close
   if(e.target.closest('[data-ver]')){
@@ -1154,6 +1298,24 @@ world.addEventListener('click', e => {
   // save-to-folder row toggle
   const frow = e.target.closest('.folderrow');
   if(frow){ e.stopPropagation(); frow.classList.toggle('on'); return; }
+
+  // search: minimised icon opens into an inline input on the feed-tabs row
+  const smini = e.target.closest('[data-searchmini]');
+  if(smini && !smini.classList.contains('open')){
+    e.stopPropagation();
+    smini.classList.add('open');
+    smini.querySelector('input').focus();
+    return;
+  }
+  // comments: reveal the rest of the thread — the toggle and the hidden
+  // block are always adjacent siblings, so this doesn't need to search.
+  if(e.target.closest('[data-morecomments]')){
+    e.stopPropagation();
+    const btn = e.target.closest('[data-morecomments]');
+    btn.nextElementSibling.classList.add('open');
+    btn.style.display = 'none';
+    return;
+  }
 
   // tag chip: remove
   if(e.target.closest('.tagchip') && e.target.classList.contains('x')){
