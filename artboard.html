@@ -362,14 +362,19 @@ const homepageHtml = `
     </div>
     <div class="tagpanel">
       <div class="taghdr" data-toggle>modifier tags <span class="chev">&#9662;</span></div>
-      <div class="tagbody" style="margin-top:10px;">
-        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;max-width:420px;">
-          <span class="chip small active" data-mod>#thisweek</span>
-          <span class="chip small" data-mod>#thismonth</span>
-          <span class="chip small active" data-mod>#fromfollowing</span>
-          <span class="chip small" data-mod>#unseen</span>
-          <span class="chip small" data-mod>#trending</span>
-          <span class="chip small" data-mod>#nearby</span>
+      <div class="tagbody" style="margin-top:10px;position:relative;">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;max-width:420px;" data-tagrow>
+          <span class="tagchip">#thisweek<span class="x">&times;</span></span>
+          <span class="tagchip">#fromfollowing<span class="x">&times;</span></span>
+          <button class="tagadd" data-tagadd>+</button>
+        </div>
+        <div class="tagsearch" data-tagsearch>
+          <input placeholder="search modifiers" data-tagsearchinput>
+          <div class="opt">#thismonth</div>
+          <div class="opt">#unseen</div>
+          <div class="opt">#trending</div>
+          <div class="opt">#nearby</div>
+          <div class="opt">#popular</div>
         </div>
       </div>
     </div>
@@ -409,13 +414,11 @@ function commentRow(handle, when, body){
 }
 const maximisedHtml = `
 <div class="ms selectable" style="position:relative;display:flex;flex-direction:row;width:1100px;height:760px;background:var(--paper);overflow:hidden;">
-  <div style="position:absolute;top:20px;right:24px;z-index:5;display:flex;flex-direction:column;align-items:flex-end;gap:8px;">
-    <div style="display:flex;gap:6px;">
-      <div class="navarrow selectable">&lsaquo;</div>
-      <div class="navarrow selectable">&rsaquo;</div>
-      <div class="navarrow selectable" data-close>&times;</div>
-    </div>
+  <div style="position:absolute;top:20px;right:24px;z-index:5;display:flex;align-items:center;gap:8px;">
     <div class="chip small selectable" style="white-space:nowrap;">v2 of 3&nbsp;&#9662;</div>
+    <div class="navarrow selectable">&lsaquo;</div>
+    <div class="navarrow selectable">&rsaquo;</div>
+    <div class="navarrow selectable" data-close>&times;</div>
   </div>
   <div class="ms selectable" style="width:58%;height:100%;background:var(--paper-dim);flex-shrink:0;"></div>
   <div style="width:42%;height:100%;display:flex;flex-direction:column;overflow:hidden;">
@@ -432,6 +435,9 @@ const maximisedHtml = `
           <span>Resolution</span><span style="color:var(--ink-soft);">3024 × 4032</span></div>
         <div style="display:flex;justify-content:space-between;padding:6px 0;font-size:12.5px;color:var(--muted);">
           <span>File size</span><span style="color:var(--ink-soft);">4.1 MB</span></div>
+      </div>
+      <div class="btnline filled" style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;">
+        <svg viewBox="0 0 24 24" width="15" height="15" style="fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;"><path d="M12 3v12"/><path d="M7 11l5 4 5-4"/><path d="M5 21h14"/></svg>Download .png
       </div>
     </div>
     <div class="ms selectable" style="display:flex;flex-direction:row;gap:24px;padding:0 24px;border-top:0;flex-shrink:0;">
@@ -623,13 +629,6 @@ world.addEventListener('click', e => {
     return;
   }
 
-  // modifier chip: toggle selected
-  const mod = e.target.closest('[data-mod]');
-  if(mod){
-    e.stopPropagation();
-    mod.classList.toggle('active');
-    return;
-  }
 });
 
 /* ---------- pan / zoom ---------- */
