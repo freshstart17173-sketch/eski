@@ -281,13 +281,18 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--
    clamp. */
 .fgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:32px;width:100%}
 .gcard{display:flex;flex-direction:column;gap:8px;cursor:pointer}
-.gbox{position:relative;width:100%;aspect-ratio:1/1;background:var(--paper-dim);overflow:hidden;
+/* the square is a layout box only — genuinely no fill of its own. a real
+   photo/video covers its own shape completely; nothing should read as a
+   "frame" around it. cards with no media of their own (a quote, "other")
+   opt into .framed for a background, since they've got nothing to show. */
+.gbox{position:relative;width:100%;aspect-ratio:1/1;overflow:hidden;
   display:flex;align-items:center;justify-content:center}
+.gbox.framed{background:var(--paper-dim)}
 .gbox .fill{position:absolute;inset:0}
 /* the actual media: an inline SVG placeholder carrying its OWN aspect
-   ratio (16:9, 4:5, whatever), object-fit:contain inside the square box —
-   the box is invisible, the media scales to fit it on whichever axis is
-   larger, exactly like a real photo/video would. */
+   ratio (16:9, 4:5, whatever), object-fit:contain inside the square box.
+   on whichever axis it comes up short, that gutter is just page — no
+   second colour, no visible box. */
 .fillmedia{width:100%;height:100%;object-fit:contain;display:block}
 .gcap{font-family:var(--font-body);font-weight:400;font-size:var(--fs-xs);color:var(--ink);line-height:1.35;
   text-align:center;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
@@ -494,8 +499,10 @@ function mediaFill(ratio, hex){
    no content-type label — the media itself carries the type. `ratio` is
    the media's real aspect ratio, e.g. '16/9', '4/5', '9/16'. */
 function gcard(title, handle, inner, ratio){
+  // .framed only when there's nothing to fill the box with — a real photo
+  // covers itself; a bare icon/quote card still needs a ground to sit on.
   return `<div class="gcard selectable">
-    <div class="gbox">${ratio ? mediaFill(ratio) : ''}${inner||''}</div>
+    <div class="gbox${ratio ? '' : ' framed'}">${ratio ? mediaFill(ratio) : ''}${inner||''}</div>
     <div class="gcap">${esc(title)}</div>
   </div>`;
 }
@@ -504,7 +511,7 @@ function gcard(title, handle, inner, ratio){
    and in collections like anything else. */
 function gother(filename){
   return `<div class="gcard selectable">
-    <div class="gbox"><div class="gother">${esc(filename)}</div></div>
+    <div class="gbox framed"><div class="gother">${esc(filename)}</div></div>
     <div class="gcap">${esc(filename)}</div>
   </div>`;
 }
@@ -517,7 +524,7 @@ const gq = t => `<div class="gquote">"${esc(t)}"</div>`;
    of the body, faded where it runs past the box; the handle sits below. */
 function gtextcard(title, body, handle){
   return `<div class="gcard selectable">
-    <div class="gbox" style="align-items:stretch;justify-content:flex-start;">
+    <div class="gbox framed" style="align-items:stretch;justify-content:flex-start;">
       <div class="gtext"><div class="gtitle">${esc(title)}</div><div class="gbody">${esc(body)}</div></div>
     </div>
     <div class="gcap">${esc(title)}</div>
