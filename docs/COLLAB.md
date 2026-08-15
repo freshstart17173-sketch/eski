@@ -1,558 +1,455 @@
 # eski — the collaboration layer (draft spec)
 
-**Status: draft for review.** This is the "Discord-for-creatives" direction
-worked into a concrete plan — a feature list with a build plan and a reason
-for each, then every screen and button written out so the flows can be walked
-before anything is built. Nothing here is live yet. Flag anything that doesn't
-make sense; the calls I made are marked, and the genuinely-yours decisions are
-collected at the bottom under **Owner's calls**.
+**Status: draft for review.** The "Discord-for-creatives" direction, worked
+into a concrete plan: a feature list (each with a reason and the simplest
+idiotproof way to build it), a data-model sketch, the screens, and two full
+workflow walkthroughs. Nothing here is live yet.
 
-It is grounded in what eski already is (`ARCHITECTURE.md`, `schema-clean.sql`,
+A clickable black-and-white mockup of the main screens lives at
+[`docs/design/collab-mockup.html`](design/collab-mockup.html) — channels + chat,
+the following feed, the drawing/audio review canvas, profile, DMs, and upload
+with format conversion. Read this doc next to it.
+
+It's grounded in what eski already is (`ARCHITECTURE.md`, `schema-clean.sql`,
 `docs/design/STYLE.md`) and in how the reference apps actually work — Discord,
 Slack, Frame.io, Figma, SoundCloud/BandLab, and the one cautionary tale,
-Abstract. Sources are listed at the end.
+Abstract. Sources at the end.
 
 ---
 
-## 0. The one decision everything hangs on
+## 0. The shape of it
 
-Today eski is **public-by-default, single-owner posting.** A `work` has an
-`owner_id`; RLS says *"visible if `status='published'` (everyone) or you own
-it."* There is no notion of "a group of people who can see this and no one
-else."
+### Three layers, one account
 
-The collaboration layer needs the opposite default in one specific place:
-**group content is private-by-default, visible only to members.** That is the
-whole copyright strategy ("private substance, public signal") and the whole
-"studio not gallery" pitch. So the foundational change is:
+The single idea the whole thing hangs on: **every file a person has lives in
+exactly one of three places, and the place decides who can see it.**
 
-> **A work or collection gets a nullable `group_id`.**
-> `group_id IS NULL` → the public personal post it is today (public profile,
-> Discover feed, indexable).
-> `group_id` set → private to that group's members. Never indexed, never in
-> Discover, never shown to a stranger.
-
-Everything else — channels, roles, review pins, presence — is built on top of
-that single column and one new visibility rule. **Get this rule right first;
-it is the schema decision that is expensive to change later.** (§2 has the
-exact policy.)
-
-### What we steal, and the one thing we must NOT
-
-| From | Steal | Because |
+| Layer | Who sees it | What it's for |
 |---|---|---|
-| Discord | server rail, roles as permission bundles, invite links, opt-in public directory, "lurker" preview before joining, three join modes | this is exactly the public-signal→private-substance funnel the writeup wants |
-| Slack | topic-in-channel / reply-in-thread, public-by-default *inside* a group for searchability, curated starter channels for onboarding | keeps a group legible instead of one infinite scroll |
-| Frame.io | frame-accurate comments, automatic version stacking, "comments follow the work across versions", approval state | this is the moat — the contextual-feedback half |
-| Figma | click-to-pin **or** drag-to-select-a-region, comments listed in a side rail *and* pinned on the canvas, @mention, resolve-keeps-archived | the artboard interaction, already half-built in `artboard.html` |
-| SoundCloud/BandLab | timed comments on the waveform, **range** comments across a segment | the audio half of the artboard; eski's player already draws the waveform |
-| Supabase Realtime | Presence for "who's online / what are they working on", Broadcast for typing | the writeup's "lightweight who's online" — no table needed |
+| **Public** | anyone; shows in your followers' feeds | your portfolio — the finished pieces you're known for |
+| **Personal** | only you | your private shelf — drafts, scraps, references, the stuff not ready for anyone |
+| **Work** | the members of the group it's in | live collaboration — WIPs, stems, plates, sessions |
 
-**Do NOT steal Abstract's model.** Abstract brought git-style
-*branch → change → request review → merge* to designers and Adobe shut it down
-in 2023; the documented lesson is that **forcing a developer's branch/merge/PR
-workflow onto artists does not work.** eski's version control must stay what
-the writeup already describes — *one post, an ordered stack of versions, click
-v3 and see what changed* — a **linear lineage, not a branch graph.** The schema
-already has this shape (`works.version_of`, `works.version_label`); resist
-every temptation to add branching, merge conflicts, or a PR step. That
-restraint is a feature.
+Today eski is public-by-default single-owner posting. This adds the other two
+layers. In the schema it's one column — a work's **`visibility`** is `public`,
+`personal`, or `group` (+ a `group_id` when `group`). Get that column and its
+read rule right first; it's the expensive thing to change later (§2).
+
+**Nothing here is publicly discoverable.** There is no directory, no open feed,
+no "browse studios." You find people the way it actually happens — you see
+someone's work on TikTok or at a show, you ask for their eski username, you add
+them. Groups are joined by a **magic link** someone sends you. That's the whole
+funnel, on purpose: it keeps private substance private (the copyright posture
+below) and it matches how collaborators really meet.
+
+### What we take from each app — and the one thing we refuse
+
+| From | Take | Why |
+|---|---|---|
+| Discord | the server rail, **user-created channels**, roles, **add-a-friend-by-username**, voice/video channels | this is the workspace shape people already know |
+| Slack | topic-in-channel / reply-in-thread, **persistent searchable chat** | chat that sticks is what makes it a workspace, not a fancy dropbox |
+| Frame.io | **drawing on a video frame**, automatic version stacking, "notes follow the work across versions", an approval state | half the moat — precise visual feedback |
+| Figma | click-drag to mark a **region**, notes listed in a rail *and* on the canvas, resolve-keeps-it | the canvas interaction, already half-built in `artboard.html` |
+| SoundCloud / BandLab | **highlighting a range on the waveform** to comment on it | the audio half of the canvas; eski's player already draws the waveform |
+| Supabase Realtime | Presence for "who's online / what they're on" | the ambient "the studio is occupied" signal — no table needed |
+
+**We refuse Abstract's model.** Abstract brought git-style
+*branch → change → request review → merge* to designers; Adobe shut it down in
+2023 and the documented lesson is that **forcing a developer's branch/merge
+workflow onto artists does not work.** So eski has **no branching.** Versions
+are just numbers — v1, v2, v3, a straight line. "Fork" is a plain duplicate of a
+file with a credit back to the original, not a branch. That restraint is a
+feature, and it's already the schema's shape (`works.version_of`).
 
 ---
 
 ## 1. Feature list
 
-Each feature is: **why it's here → the simplest idiotproof plan → what it
-touches.** Ordered by the writeup's own build order, with the supporting
-pieces slotted where they're needed. Tier = suggested build order.
+Each: **why it's here → the simplest idiotproof plan → what it touches.**
+Tier = suggested build order.
 
-### Tier 1 — the spine (nothing else works without these)
+### Tier 1 — the workspace spine
 
-#### F1. Groups + membership
-**Why.** A group is the container the whole layer lives in — the "studio" you
-get invited to. Without it there is no private layer and no place to scope a
-feed, a project, or a review.
-**Plan.** Two tables: `groups` (slug, name, genre, `type` ∈ open/approval/
-invite, `accepting`, `listed`, `cover_key`, `owner_id`) and `group_members`
-(group_id, user_id, `role` ∈ owner/mod/member/viewer, `status` ∈ active/
-pending). Membership is the single fact every other policy reads; keep it one
-row per (group, user).
-**Touches.** New tables; a `member_of(gid)` SQL helper used by every group RLS
-policy; the left rail and Create-group flow (§3).
+#### F1. Groups + magic-link join
+**Why.** A group is the studio you get invited to — the container Work-layer
+content lives in. Joining has to be as close to zero-friction as possible.
+**Plan.** `groups` + `group_members`. Joining is a **magic link**
+(`/join/<code>`): open it, you're in — no application, no approval queue, no
+directory. A link can be revoked or capped; that's the only gate.
+**Touches.** two new tables; `/join/<code>`; the rail's "＋" (create / join /
+add friend).
 
-#### F2. Roles (owner / mod / member / viewer)
-**Why.** "Not everyone sees everything — mentors, clients, collaborators." A
-client should review without posting; a viewer should look without touching.
-**Plan.** A **fixed four-role enum on `group_members.role`**, not Discord's
-custom-role builder — four roles cover owner-runs-it, mod-moderates,
-member-posts, viewer-reads, and a fixed set is the idiotproof version. Every
-capability is a plain check against that column (`role in ('owner','mod')` to
-moderate, `role <> 'viewer'` to post). Custom roles are a later, real feature,
-noted under Owner's calls.
-**Touches.** `group_members.role`; the Members screen; every group write policy.
+#### F2. Two roles: admin and member
+**Why.** Someone runs the group; everyone else works in it. That's all the
+distinction a small creative team actually needs on day one.
+**Plan.** `group_members.role` is `admin` or `member` — nothing else. Admins
+manage the group (channels, members, invite links, delete); members do
+everything else. Every capability is a one-line check against that column. More
+roles are a later, deliberate call, not a v1 default.
+**Touches.** `group_members.role`; the Members list; group-admin write policies.
 
-#### F3. Group-scoped feed
-**Why.** "Works posted to and filtered by group membership." This is where
-coordination happens in flow — the Slack/Discord channel, but eski-flavoured.
-**Plan.** Add nullable `group_id` to `works`/`collections` (see §0) and one new
-table `messages` (group_id, user_id, body, `parent_id` for one level of reply,
-created_at) for the chat that isn't a posted work. The Feed screen interleaves
-messages and group works newest-last; a shared work renders as its normal card
-inline. **Reuse the existing comment/like/tag machinery** — a group work is
-still a `work`, just with a `group_id`.
-**Touches.** `works.group_id`, `collections.group_id`, new `messages` table;
-the Feed screen; the visibility rule in §2.
+#### F3. User-created channels + persistent chat
+**Why.** A real workspace is many rooms, not one feed — `#beats`, `#mixing`,
+`#renders`. And the chat has to persist: searchable, exportable history is what
+makes it a studio instead of a file-drop.
+**Plan.** `channels` (group_id, name, kind text/voice, position) — admins add,
+rename, reorder them. `messages` (channel_id, user_id, body, `parent_id` for a
+one-level thread) **stored in Postgres**, so it's searchable and it exports. A
+shared file renders as its card inline in the stream.
+**Touches.** `channels` + `messages` tables; the channel column + chat pane
+(mockup: Workspace).
 
 #### F4. The visibility rule + copyright posture
-**Why.** This is the copyright strategy in one policy: group content is
-invisible to crawlers and strangers, so DMCA volume drops because nothing is
-publicly broadcast. It is also what makes "private substance" true rather than
-aspirational.
-**Plan.** One rewritten `works_read` policy: *visible if
-`(group_id is null and status='published')` — the public post it is today — OR
-`owner_id = uid` OR `member_of(group_id)`.* Same shape for collections,
-comments, tags, likes, messages. Group pages send `noindex`; `sitemap`/OG tags
-are emitted only for `group_id is null` works.
-**Touches.** Every read policy; `<meta name=robots noindex>` on group routes;
-`api/sign.mjs` is unaffected (keys are already opaque).
+**Why.** This is the copyright strategy as one policy: Work and Personal content
+is invisible to crawlers and strangers, so DMCA volume stays low because nothing
+is publicly broadcast.
+**Plan.** One read rule on `works`: visible if `visibility='public'` **or**
+`owner_id = you` **or** (`visibility='group'` and you're a member of its
+`group_id`). Group and personal routes send `noindex`; only `public` works get
+OG tags or appear anywhere a non-member can reach.
+**Touches.** the `works` read policy and its mirrors on comments/messages/files.
 
-### Tier 2 — the moat (why someone picks eski over Discord)
+### Tier 2 — the moat: the review canvas
 
-#### F5. Review mode / the artboard, as a product feature
-**Why.** "Pin a comment at 1:24 on a waveform, on a video frame, or a pixel
-region." Discord will never build this for VFX or music people — it's not
-their market. This is the single most defensible feature.
-**Plan.** The interaction is **already built** in `artboard.html` (pannable
-canvas, click-to-place pin, drag-select). Make it a product feature by adding
-one column: **`comments.anchor jsonb`** — `null` is a normal comment,
-`{"t_ms":84000}` is a timed comment on audio/video, `{"frame":n}` on video,
-`{"x":..,"y":..,"w":..,"h":..}` a region on an image. "Review" is then just the
-detail overlay drawing existing comments as pins on the media, and clicking a
-pin scrolls to its comment. **No new comments table, no new likes, no new
-anything** — a review pin is a comment with an anchor.
-**Touches.** `comments.anchor`; a Review tab/overlay reusing the player
-(audio/video timecode) and the artboard's pin canvas (image regions).
+#### F5. The canvas / scratchpad (drawing + audio highlighting)
+**Why.** This is why someone picks eski over Discord: **draw directly on an
+image or a video frame, highlight a range on a waveform,** and pin a note to
+exactly that mark. "The building edge is ghosting" (circled) and "the drop needs
+low end" (0:42–0:48 highlighted) become unambiguous. Discord will never build
+this.
+**Plan.** The interaction already exists in `artboard.html` (pannable canvas,
+freehand draw, drag-select). Make it a product surface: a **scratchpad** is a
+set of files opened for review; on each file you draw (image/video) or highlight
+a range (audio/video timeline), and each mark carries a threaded note. **No
+pins** — the mark *is* the anchor. Notes resolve (dim, don't delete). Reuse the
+existing `comments` table + a `mark jsonb` (the stroke path, or `{t0,t1}` for an
+audio range, or `{frame}`).
+**Touches.** `comments.mark jsonb`; the Canvas screen reusing the artboard's
+draw canvas and the player's waveform (mockup: Canvas review).
 
-#### F6. Version control (lineage, not branches)
-**Why.** "No more beat_v1, beat_FINAL, beat_FINAL_FINAL. One post, multiple
-versions, full lineage. Click v3, see what changed." Already the schema's
-shape; the writeup just wants it surfaced and, crucially, **feedback to
-follow the work across versions** (the Frame.io behaviour).
-**Plan.** `works.version_of`/`version_label` already exist and
-`works_version_owner_guard()` already restricts adding a version to the
-original poster. Two additions: (a) a **version switcher** in the detail
-overlay (the mockup's `.verwrap`/`.verdrop` already exists) that swaps the
-media and shows `version_label`; (b) comments/pins are keyed to a version so
-"the drop needs low end" stays attached to v2 while v3 gets a clean slate — do
-this by letting `comments.anchor` optionally carry the version's work id, or
-simply by each version being its own `works` row (it already is) so its
-comments are naturally its own. **Keep it linear** — no branch/merge (§0).
-**Touches.** detail-overlay version switcher; a small "what changed" note
-field (`version_label` already carries it).
+#### F6. Workspaces with public / private / semi-private visibility
+**Why.** Not every review happens inside a group. You want to hand a director or
+a mastering engineer *one board* of files — without adding them to the whole
+group — and let them leave notes.
+**Plan.** A **scratchpad/workspace** (a named set of files + its canvas notes)
+has its own visibility: **private** (you), **group** (members), or **link**
+(anyone with the URL, semi-private — not in any feed, not indexed). "Share" on a
+workspace mints a link. This is F5's canvas plus a visibility toggle — the same
+three-layer idea applied to a board instead of a single file.
+**Touches.** `scratchpads` (owner, group_id nullable, visibility, share_code);
+`scratchpad_items`.
 
-#### F7. Group collections / projects
-**Why.** "Structured folders, not just chat" — a producer's stems, a lesson's
-materials, an animation's shots, kept out of the chronological feed so the
-best work isn't 10,000 messages up.
-**Plan.** `collections` already exist and already curate arbitrary published
-works. Give them the same nullable `group_id` and they become group projects
-for free. The Projects tab lists the group's collections; opening one is the
-existing collection carousel. (Fix the known carousel gap — Tier 2 #12 in
-`ROADMAP.md` — while here, since a project of audio stems is the exact case
-that breaks today.)
-**Touches.** `collections.group_id`; the Projects tab; the carousel cover/
-player fix already on the roadmap.
+#### F7. Versions (numbers, not branches) + Fork
+**Why.** No more `beat_FINAL_FINAL.wav`. One file, a numbered stack, click v2 to
+see the older one. And when someone wants to riff on your file, that's a copy
+with your name on it — never a merge.
+**Plan.** `works.version_of` / `version_label` already exist and a trigger
+already restricts adding a version to the original poster. Add a version
+switcher (v1·v2·v3) in the file view; each version keeps its own canvas notes
+(Frame.io's "notes follow the work"). **Fork** is a plain row-copy of a file
+into your own space, with `forked_from` set so the credit line reads "forked
+from @dev's late_bloom_beat." Strictly linear; no branch graph.
+**Touches.** the version switcher; a `forked_from` column; a copy action.
 
-#### F8. Asset library (searchable file view)
-**Why.** "Show me all .wav files tagged drums from this month." Discord search
-genuinely can't do this; it's a real capability gap, not a nicety.
-**Plan.** No new storage — every group file is already a `work`/`work_item`
-with `kind`, `bytes`, `content_tags`, `owner`, `created_at`. The Assets tab is
-**one filtered query over the group's works** with facet chips: kind, uploader,
-tag, date. It's the Discover feed's existing filter code pointed at
-`group_id = this group` instead of `is null`.
-**Touches.** the Assets tab (reuses `index.html`'s filter machinery); no schema.
+#### F8. Attribution / credits (a plain field)
+**Why.** On a collaborative track or shot, everyone needs to know who did what —
+and that credit should travel with the file forever.
+**Plan.** A single free-text **`credits`** field on every work, filled by hand
+at upload and editable after ("prod. jax · vocals rae · mix tomo"). No
+role-graph, no tagging system — just a line of text that shows on the file
+everywhere it appears, including on the public portfolio.
+**Touches.** `works.credits`; the upload form + file detail.
 
-### Tier 3 — the funnel (how people find and join)
+### Tier 3 — files that behave
 
-#### F9. Invite links
-**Why.** "Frictionless onboarding" — the studio-door key. The industry funnel
-is *meet at a show (public), get invited to the studio (link).*
-**Plan.** `group_invites` (short `code`, group_id, created_by, `expires_at`,
-`max_uses`, `uses`). Visiting `/join/<code>` shows the group preview + a Join
-button; accepting inserts a `group_members` row (active for open/invite groups,
-pending for approval groups). Mirror Discord: a link can expire or cap uses.
-**Touches.** new `group_invites` table; `/join/<code>` route; the group
-Settings → Invites panel.
+#### F9. Always caption + tag on upload
+**Why.** The smallest throwaway file becomes important three weeks later. If it
+was captioned and tagged going in, it's findable; if not, it's lost in scroll.
+**Plan.** The upload sheet **always** shows caption + tags (never optional,
+never skippable) plus the credits field. Tags feed the search/filter everywhere.
+**Touches.** the upload sheet (mockup: Upload); `content_tags` already exists.
 
-#### F10. Public group directory
-**Why.** "Public group listing: name, genre, member count, accepting toggle,
-description." The public-signal layer — how a stranger discovers a studio
-without a login.
-**Plan.** A `/groups` page listing groups where `listed = true`, with
-genre/accepting filters — the exact card grid the profile already uses. Only
-public metadata is exposed (name, genre, member count, description, cover);
-never the private content. Invite-only groups set `listed=false` and are
-absent unless you hold the link (Discord's model exactly).
-**Touches.** `/groups` route; `groups.listed`; a public count query.
+#### F10. Auto file-type recognition + autotag
+**Why.** Half the value of tags is the type, and nobody wants to type it.
+Recognizing `.flp`, `.als`, `.exr`, `.nk`, `.aep` and tagging automatically
+makes the library instantly filterable ("all `.exr` from today").
+**Plan.** On upload, read the extension (and magic-bytes where cheap) → attach a
+non-removable auto-tag (`flp`, `wav`, `exr`, …) alongside the file's `kind`.
+Purely additive; the user's own tags sit next to it.
+**Touches.** upload flow (client-side extension map); the auto-tag chips.
 
-#### F11. Public artist profile (the signal layer)
-**Why.** "name, genre, role, open-to-collab, 30-second demo reel" — the public
-face you meet before the studio. eski already has public profiles; this adds
-the collaboration-facing fields.
-**Plan.** Add to `profiles`: `genre`, `roles text[]` (producer/DJ/VFX/
-animator/writer/rapper…), `open_to_collab bool`, `reel_key` (a ≤30s clip).
-Surface them on the existing public `profile.html` header. No new page — extend
-the one that exists.
-**Touches.** `profiles` columns; the profile header + Settings form.
+#### F11. Format conversion (upload once, download what you need)
+**Why.** A collaborator on Ableton can't open your `.flp`, but they can use your
+bounce — and they want it as `wav`, not `mp3`. Handing every file back in the
+format the other person needs removes a whole category of friction.
+**Plan.** For files where it's well-defined (audio first: `mp3`↔`wav`↔`opus`↔
+`ogg`↔`flac`; video later: `mp4`/`webm`/`mov`), a **"get as …"** menu transcodes
+**on demand** server-side and streams the result — you still upload once.
+Project files (`.flp`, `.als`, `.aep`) aren't convertible and just download as-is.
+**Touches.** a small transcode endpoint (ffmpeg); the "get as" menu on a file.
 
-#### F12. @mentions + notifications
-**Why.** "Pulls people back in." A pin is useless if the person who needs to
-see it never learns it exists.
-**Plan.** A `notifications` table (user_id, `kind`, target, `read_at`). A
-mention is parsed from a message/comment body (`@handle`), a row is inserted
-for the mentioned member, and a bell in the header shows unread. Start with
-**in-app only** (a bell + list); email/push is a later, separate call (and the
-CSAM-report notification gap in `ROADMAP.md` is the same missing pipe — build
-one path, use it for both).
-**Touches.** new `notifications` table; a header bell; mention-parse on insert.
+### Tier 4 — people and presence
 
-#### F13. Presence ("who's online / what they're working on")
-**Why.** "Who's online, what are they working on." The ambient sense that the
-studio is occupied — the thing that makes it feel live.
-**Plan.** **No table.** Supabase Realtime **Presence** on a per-group channel:
-each client `.track()`s `{handle, working_on}` on join; the Members rail reads
-the merged presence set for online dots. Presence is exactly built for
-"slow-changing state like online/offline and active document" — don't reach
-for Broadcast unless typing indicators come later.
-**Touches.** a Realtime channel per open group; online dots on the Members
-rail; nothing in the DB.
+#### F12. Following feed (people you've added — never an open feed)
+**Why.** You want to see what the people you rate are putting out, without an
+algorithmic firehose of strangers. It's a portfolio feed of your circle.
+**Plan.** `follows` already exists. The Home feed shows **only `public` works by
+people you follow**, newest first, with the same card grid the current Discover
+feed uses. Work and Personal never appear here.
+**Touches.** the feed query (scope to followees, `visibility='public'`); the
+existing card grid (mockup: Following feed).
 
-### Tier 4 — ownership & safety (the promises the writeup makes)
+#### F13. DMs (add by username)
+**Why.** You meet someone off-platform, get their username, and message them
+directly — the on-ramp before you ever share a group link.
+**Plan.** Add-by-exact-username creates a DM thread; `dm_messages` mirrors the
+`messages` shape. No discovery, no friend suggestions — you must know the
+username. Voice/video (F15) works in a DM too.
+**Touches.** `dm_threads` / `dm_messages`; the DMs screen (mockup: Direct
+messages).
 
-#### F14. Storage quota (soft caps)
-**Why.** "Soft caps using existing bytes tracking" — keeps costs bounded
-without hard-stopping someone mid-session.
-**Plan.** `works.bytes` is already populated at upload and already summed on
-the profile. Sum it per group (or per owner) and **warn at a threshold** rather
-than block; the hard ceiling is already enforced on the signer
-(`claim_upload_quota`, 2000 objects/day). A soft cap is a read + a banner.
-**Touches.** a per-group bytes sum; a banner in the upload flow; no new
-enforcement (the hard limit already exists on `api/sign.mjs`).
+#### F14. Voice + video calls
+**Why.** Remote collaboration needs live rooms — a co-writing session, a
+pre-deadline review, screen-sharing a DAW or a comp. Async review plus a live
+room is the whole loop.
+**Plan.** A **voice/video channel** in a group (and a call button in a DM),
+lightweight, with screen-share. Don't build the media stack from scratch — wire
+a WebRTC SDK (LiveKit/Daily/100ms) into a channel; the room is keyed by
+channel/DM id. Presence already shows who's in a voice channel.
+**Touches.** voice channels in the channel list; a call surface; a WebRTC
+provider *(owner's call: which)*.
 
-#### F15. Takedown / counter-notice / preserve-on-takedown
-**Why.** The writeup's copyright promises are concrete product behaviour:
-human review before removal, one-click pre-filled counter-notice, and
-**never vaporize years of work** — content is preserved in the user's private
-archive with a notice, not deleted.
-**Plan.** `reports` already has a `copyright` category and `admin.html` is
-already the review queue. Add a work `status` value `withheld` (visible only to
-its owner, with a notice banner) so a takedown *hides* rather than *deletes* —
-reusing the existing one-way status machinery. The counter-notice is a
-pre-filled form that files a `report`-shaped record the owner reviews.
-**Touches.** a `withheld` status; a notice banner; a counter-notice form
-writing to `reports`/a sibling table.
+#### F15. @mentions + notifications
+**Why.** A drawn note is useless if the person who needs it never learns it's
+there. Mentions pull people back.
+**Plan.** Parse `@username` in messages/notes → a `notifications` row for the
+mentioned member; a bell in the header shows unread. In-app first; email/push is
+the same missing pipe as the CSAM-report alert in `ROADMAP.md` — build one
+notifier, use it for both.
+**Touches.** `notifications` table; the header bell; mention parsing on insert.
 
-#### F16. Export / "yours, not mine"
-**Why.** "Artists hate platform lock-in." Content-addressed storage already
-means the files are portable; exposing that as a one-click export is the
-trust-builder.
-**Plan.** Because keys are content-addressed (`hash-worker.js` SHA-256), an
-export is a manifest: for a group (owner/mod only) or your own account, generate
-a JSON of works + metadata + signed file URLs and zip client-side. **Read-only,
-no new storage** — it's a query plus a zip.
-**Touches.** an Export button (group Settings, profile Settings); a manifest
-query; client-side zip.
+#### F16. Presence
+**Why.** "dev — sharing FL", "rae — recording": the ambient sense the studio is
+occupied and alive.
+**Plan.** **No table.** Supabase Realtime **Presence** per group: each client
+`.track()`s `{username, doing}`; the Members rail reads the merged set for
+online dots and the "working on" line.
+**Touches.** a Realtime channel per open group; the Members rail.
 
-### Deliberately NOT in v1 (say no on purpose)
+### Tier 5 — ownership & safety
 
-- **Custom roles / per-channel permission overwrites** (Discord's full matrix).
-  Four fixed roles first; the permission calculus is a rabbit hole.
-- **Branch/merge version control.** The Abstract lesson (§0). Linear lineage only.
-- **Voice/video huddles.** Slack's huddle is a whole media stack; text + async
-  review is the product. Revisit only if asked.
-- **DMs.** `ROADMAP.md` already parks direct messages; a group of two is the
-  substitute for v1.
-- **Arbitrary user-created channels inside a group.** v1 gives every group the
-  same four fixed views (Feed/Projects/Review/Assets). Multiple text channels
-  is a real later feature (§ Owner's calls), not a v1 default.
+#### F17. Storage quota (soft caps) · F18. Takedown/counter-notice/preserve · F19. Export
+- **Quota:** `works.bytes` is already summed; warn at a threshold per group/owner
+  rather than hard-block (the hard ceiling already lives on the signer).
+- **Takedown:** a copyright report → admin sets the work `withheld` (hidden from
+  the group, kept in the owner's private archive with a notice) → a one-click,
+  pre-filled **counter-notice**. Content is never vaporized.
+- **Export:** because storage is content-addressed, "export my group / my
+  account" is a manifest + client-side zip of files + metadata. No lock-in.
+
+### Cut on purpose (say no)
+- **Public directory / discovery / open feed** — cut entirely in favour of
+  invite-by-username + magic-link. This is a product stance, not a gap.
+- **Branch/merge version control** — the Abstract lesson. Numbers only.
+- **Custom roles, per-channel permission overwrites** — two roles first.
+- **Approval/lurker join flows** — a magic link replaces all of it.
 
 ---
 
-## 2. Data model changes (sketch, not final DDL)
+## 2. Data model sketch (not final DDL)
 
-Grounded in `schema-clean.sql`. New tables and the one rewritten policy;
-column adds are `add column if not exists` in the project's idempotent style.
+Grounded in `schema-clean.sql`; column adds are `add column if not exists`.
 
 ```
-groups         (id, slug uniq, name, description, genre, cover_key,
-                type check in (open,approval,invite),
-                accepting bool default true, listed bool default false,
-                owner_id → auth.users, created_at)
-group_members  (group_id, user_id, role check in (owner,mod,member,viewer),
-                status check in (active,pending), joined_at,
-                primary key (group_id, user_id))
-group_invites  (code text pk, group_id, created_by, expires_at,
-                max_uses int, uses int default 0)
-messages       (id, group_id, user_id, body, parent_id → messages,
-                created_at)          -- one level of reply, like comments
-notifications  (id, user_id, kind, target_type, target_id, read_at, created_at)
+groups          (id, slug, name, description, cover_key, owner_id, created_at)
+group_members   (group_id, user_id, role in (admin,member), joined_at,
+                 primary key (group_id,user_id))
+group_invites   (code pk, group_id, created_by, expires_at, max_uses, uses)
+channels        (id, group_id, name, kind in (text,voice), position)
+messages        (id, channel_id, user_id, body, parent_id, created_at)   -- persistent chat
+dm_threads      (id, a_user, b_user, created_at)          -- add-by-username
+dm_messages     (id, thread_id, user_id, body, created_at)
+scratchpads     (id, owner_id, group_id null, title,
+                 visibility in (private,group,link), share_code, created_at)
+scratchpad_items(scratchpad_id, work_id, idx)
+notifications   (id, user_id, kind, target_type, target_id, read_at, created_at)
 
-works.group_id        uuid null → groups           -- §0
-collections.group_id  uuid null → groups
-comments.anchor       jsonb null                   -- §F5 review pins
-works.status          + 'withheld'                 -- §F15 preserve-on-takedown
-profiles.genre / roles text[] / open_to_collab bool / reel_key   -- §F11
+works.visibility  text in (public,personal,group)   -- the three layers (§0)
+works.group_id    uuid null → groups
+works.credits     text                               -- F8 attribution
+works.forked_from uuid null → works                  -- F7 fork credit
+comments.mark     jsonb null                          -- F5 draw path / audio range / frame
 ```
 
-The one helper every group policy leans on:
+The helper every group policy leans on, and the one rewritten read rule:
 
 ```sql
 create function member_of(gid uuid) returns boolean language sql stable
-  security definer set search_path = public as $$
-    select exists (select 1 from group_members m
-      where m.group_id = gid and m.user_id = (select auth.uid())
-        and m.status = 'active') $$;
-```
+  security definer set search_path=public as $$
+  select exists(select 1 from group_members m
+    where m.group_id=gid and m.user_id=(select auth.uid())) $$;
 
-The one rewritten visibility rule (works; collections/comments/tags/likes/
-messages mirror it):
-
-```sql
 create policy works_read on works for select using (
-  (group_id is null and status = 'published')   -- the public post it is today
-  or owner_id = (select auth.uid())             -- your own drafts/private
-  or (group_id is not null and member_of(group_id))  -- the private layer
-);
+  visibility='public'                                   -- portfolio, in feeds
+  or owner_id=(select auth.uid())                       -- your own / personal
+  or (visibility='group' and member_of(group_id)));     -- the work layer
 ```
 
-**Follow the project's own rule: the policy is the fence, the UI is the
-signpost.** Every "viewers can't post" / "invite-only is hidden" behaviour is a
-policy first (`ARCHITECTURE.md`: *"The policies are the rule, not the UI"*).
+Follow the project's own rule — **the policy is the fence, the UI is the
+signpost** (`ARCHITECTURE.md`).
 
 ---
 
-## 3. Screen-by-screen layout
+## 3. Screens
 
-Purely functional — what each screen contains and what each control does. No
-visual/design language here (that lives in `docs/design/STYLE.md`); this is the
-inventory you walk a flow against. Access notes in parentheses name the role
-that can see/use a control.
+The main screens are the mockup: [`docs/design/collab-mockup.html`](design/collab-mockup.html).
+Functional notes on what each contains (design language is `docs/design/STYLE.md`
+— black/white/grey, surfaces separated by background step, no borders, "on" is an
+ink fill):
 
-### 3.0 The shell (signed in)
+- **Shell** — group rail (Home, DMs, one icon per group, ＋ create/join/add) ·
+  channel column (text + voice channels, admin-editable) · main chat pane ·
+  members rail (Admin/Member, online + "working on").
+- **Following feed** — the current Discover grid, scoped to public works by
+  people you follow; kind/tag filters; no open/stranger content.
+- **Canvas review** — a file opened big; draw tools (pen/arrow/box/region/text)
+  on an image or video frame, a waveform lane to highlight an audio range;
+  version switcher (v1·v2·v3, add-version); a notes rail (each note anchored to
+  its mark, resolvable); mark-approved. Semi-private "link only" workspaces share
+  this surface.
+- **Profile** — Public / Work / Personal shelves; role chips; open-to-collab;
+  30-second reel; per-file credits line; Add-friend / Message.
+- **DMs** — add-by-username field (no directory), thread list, conversation,
+  call/video buttons.
+- **Upload & convert** — dropzone with auto-detected type chip; always-on
+  caption + tags + credits; visibility (Public / Work-group / Personal / Link);
+  "download as" format list.
 
-Four regions, left to right:
-
-- **Group rail** — vertical list of your groups (one avatar each), plus:
-  - Home (→ the public Discover feed + your profile)
-  - one entry per group you're in (selects it)
-  - unread indicator per group
-  - `+` (→ Create / Join group)
-- **Group nav** — for the selected group:
-  - group name + group menu (Invite people / Group settings / Leave group)
-  - view tabs: Feed · Projects · Review · Assets · Members
-- **Main pane** — the selected view (§3.2–3.5)
-- **Members rail** — members grouped by role (Owner / Mods / Members / Viewers),
-  online indicator + optional "working on" per member; click → member profile;
-  collapse toggle
-- **Top strip** (spans main + members) — notifications bell (unread count) ·
-  Share (→ upload, scoped to this group) · your avatar menu (Profile / Settings
-  / Sign out)
-
-Signed out, only the public layer renders (no group rail) — see §3.6.
-
-### 3.1 Home (existing Discover feed)
-The current `index.html`: public feed of ungrouped published works, tag/
-modifier filters, detail overlay, upload. Adds only the group rail on the left;
-otherwise unchanged.
-
-### 3.2 Group → Feed
-The group's chat, with shared works inline.
-- **Message stream** — messages newest-last; each: avatar, name, timestamp,
-  body; a shared work renders as its feed card inline
-  - per message: Reply (opens one-level thread) · Copy link · More (→ Delete,
-    for author/mod)
-- **Composer** — text field; `@` → member autocomplete; attach / drag-and-drop
-  (→ runs upload, posts the resulting work card); Send
-- **Empty state** — prompt + Share a file
-- **Viewer role** — composer hidden, replaced by a read-only note (posting is
-  refused by policy regardless)
-
-### 3.3 Group → Projects
-Structured folders (collections scoped to this group).
-- **Grid** — project cards: cover, title, item count, owner
-- **New project** (member+) — create-collection form (title, description,
-  cover), `group_id` pre-set
-- **Open a project** — collection carousel (with the Tier-2 carousel fix so
-  audio gets a player and video a frame)
-- **Fork** (member+, on a project you don't own) — copies its item list into a
-  new collection you own, same group *(owner's call: v1 or fast-follow)*
-
-### 3.4 Group → Review (the artboard)
-Anchored feedback on one work. Entered from a work's detail overlay (Review) or
-from this tab's list.
-- **Work list** (tab landing) — group works with open reviews: thumb, title,
-  unresolved-pin count
-- **Review canvas** — the media with pins on it:
-  - audio/video: player + waveform; pins at a timecode; a pin can be a range
-    (segment); video pins can carry a frame
-  - image: pannable canvas; pin is a point or a drag-selected region
-  - mode controls: Select (navigate) · Comment (place a pin)
-- **Pin ↔ comment** — clicking a pin highlights its comment; clicking a comment
-  seeks/scrolls to its pin
-- **Comment rail** — review comments in media order; each: author, anchor chip
-  (timecode / frame / region), body, replies, Resolve (mod/owner/poster —
-  resolved pins stay, dimmed)
-- **Version bar** — version switcher (v1 · v2 · v3 …, with label); switching
-  swaps media and its pin set; Add version (poster only → upload with
-  `version_of` pre-set)
-- **Mark approved** (mod/owner) — stamps the current version *(owner's call:
-  keep or cut for v1)*
-
-### 3.5 Group → Assets
-Searchable file library over the group's works.
-- **Filter bar** — facet chips: Kind (audio/video/image/text/other) · Uploader ·
-  Tag · Date (week/month/all); combinable
-- **Results** — grid/list toggle; each: thumb, title, kind, uploader, size,
-  date; click → detail overlay
-- **Empty state** — message + Clear
-
-### 3.6 Public layer (signed out — no group rail)
-
-**`/groups` — directory**
-- Header: title · genre filter chips · Accepting-members toggle
-- Card grid: per listed group — cover, name, genre, member count, one-line
-  description, Accepting/Full indicator; click → public group page
-- Invite-only groups never appear
-
-**`/g/<slug>` — public group page (preview)**
-- Header: cover, name, genre, member count, description
-- Join control, keyed to group type:
-  - open → Join (instant)
-  - approval → Apply to join (short application field → pending member)
-  - invite-only → page unreachable without a link (see §3.7)
-- Preview strip: a few owner-chosen public sample works (never the private feed)
-- Signed out, Join/Apply routes through sign-in first, then completes
-
-**`/u/<handle>` — public artist profile (extends existing)**
-- Header adds: genre · role chips (producer/DJ/VFX/animator/writer/rapper…) ·
-  Open-to-collab badge · 30-second demo reel player
-- Tabs unchanged (Posts public; Saved/Settings owner-only); Settings gains the
-  new fields
-- Message / Invite-to-group control *(owner's call — needs a destination;
-  parked with DMs)*
-
-### 3.7 Join, create, and manage
-
-**`/join/<code>` — invite link landing**
-- Group preview (name, genre, member count, cover) + Join group
-- On accept: member row added (active for open/invite, pending for approval) →
-  drops into Feed
-- Expired/used-up link: notice + link to the directory
-
-**Create group** (from the rail's `+`)
-- Step 1 — Basics: name, genre, description
-- Step 2 — Access: Open / Approval / Invite-only; List-in-directory toggle
-  (off + disabled for invite-only)
-- Step 3 — Cover (optional); Create group → you're owner, dropped into the new
-  Feed with an invite nudge
-
-**Group settings** (group menu → Group settings; owner/mod)
-- General: name, genre, description, cover; Delete group (owner only, confirms)
-- Access: type · directory-listing · accepting-members toggles
-- Invites: existing links (code, uses, expiry) · New invite link (expiry /
-  max-uses) · Revoke per link
-- Members / requests: member list with per-member role dropdown (owner/mod/
-  member/viewer) · Remove; approval groups also show pending requests with
-  Approve / Decline
-- Export: Export group → manifest + zip (owner/mod)
-- Storage: used/quota bar (summed `bytes`) + soft-cap warning
-
-**Notifications** (bell)
-- List: mentions, approvals, new versions, join requests (mods); each row links
-  to its target; Mark all read
-
-### 3.8 Moderation & safety
-- Report: existing on works/comments/profiles; add on groups and messages (all
-  via `file_report()`)
-- `admin.html` (owner console): adds a Withhold action for copyright takedowns
-  (hide, not delete) and a groups row in the overview
-- Counter-notice: a withheld work's banner shows File a counter-notice →
-  pre-filled form recorded for the owner's review; the work stays in the
-  uploader's private archive throughout
+Management screens not in the mockup: **Create group** (name, cover → magic-link
+nudge); **Group settings** (channels, members + role toggle, invite links,
+export, storage) — admin only; **Notifications** (bell dropdown).
 
 ---
 
-## 4. Flows to walk before building
+## 4. Two workflows
 
-Trace these against §3; if a step has no screen or button, that's a gap to fix.
+Concrete end-to-end walkthroughs. Each names the features it exercises so a flow
+can be checked against §1 and the mockup.
 
-1. **Meet at a show → studio.** Stranger hits `/groups` (F10) → opens `/g/beats`
-   → sees preview, clicks APPLY TO JOIN → sign-in/onboarding → pending → mod
-   approves in Group settings → member lands in Feed. *(Exercises F1, F2, F9,
-   F10, F11.)*
-2. **Drop a WIP, get frame-accurate feedback.** Member drags `beat_v2.wav` into
-   Feed → posts as a card → opens it → REVIEW → drags a range 1:20–1:32, types
-   "needs low end" → @mentions the mixer → mixer gets a bell, opens the pin,
-   replies → poster uploads v3 with ADD VERSION → v2's pins stay on v2, v3 is
-   clean. *(F3, F5, F6, F12.)*
-3. **Mentor teaches.** Mentor makes a Project of stems (F7) → student FORKs it →
-   student posts their attempt → mentor reviews via pins → the whole lesson is
-   preserved for the next student. *(F7, F5.)*
-4. **Takedown, preserved.** A `copyright` report lands → owner reviews in
-   admin.html → sets the work `withheld` (hidden, not deleted) → uploader sees
-   the banner + FILE A COUNTER-NOTICE → owner reviews the counter-notice. Work
-   never leaves the uploader's archive. *(F15.)*
-5. **Leave with your work.** Group owner clicks EXPORT GROUP → gets a zip of
-   files + metadata. No lock-in. *(F16.)*
+### A. A remote album — producers & rappers across Ableton and FL
+
+**The team.** jax (producer, Ableton) and rae (writer/rapper) are admins; dev
+(producer, FL Studio), tomo (mix, Ableton), kofi and nel are members. Nobody's
+in the same city.
+
+1. **Getting everyone in.** jax makes the group **LATE BLOOM LP**, hits *invite*,
+   and texts the **magic link** to the group chat they'd been using. One tap each
+   and they're in — no signup dance, no approvals. (F1, F2)
+2. **Rooms, not one feed.** jax sets up channels: `#announcements`, `#beats`,
+   `#verses`, `#mixing`, `#references`, `#stems-and-sessions`, plus voice rooms
+   *the booth* and *co-writing*. (F3)
+3. **A beat goes up.** dev drags `late_bloom_beat.flp` into `#beats`. eski
+   **auto-tags** it `flp` + `audio`, dev adds the caption "142 bpm, needs a rap
+   pass on the bridge" and the **credits** "prod. jax · arrangement dev." Chat is
+   **persistent**, so this is findable in three weeks. (F9, F10, F8, F3)
+4. **Crossing DAWs.** tomo's on Ableton and can't open a `.flp`, so dev also
+   posts a `wav` bounce. tomo grabs it straight, kofi pulls the same file **as
+   `mp3`** for his phone, nel takes the `flac`. One upload, everyone's format.
+   (F11)
+5. **Precise feedback.** rae opens the bounce in the **canvas**, **highlights
+   0:42–0:48** on the waveform — "low end's muddy right here" — and @mentions
+   tomo. tomo gets a bell, opens the exact range, replies, and marks it resolved.
+   (F5, F15)
+6. **Versions, not chaos.** dev fixes the low end and posts **v3** (v1/v2 still
+   one click away). rae's note stays attached to v2; v3 starts clean. When a
+   guest producer wants to flip the beat, he **forks** it — a copy that reads
+   "forked from dev's late_bloom_beat." (F7)
+7. **A live session.** For the hook, jax, rae and dev jump into the **the booth**
+   voice room; dev **screen-shares FL** while rae tracks a scratch. (F14)
+8. **An outsider, safely.** The mastering engineer isn't in the group. rae makes
+   a **link-only workspace** of the three finals and sends just that URL; he
+   opens it, leaves a drawn/heard note, and never sees the rest of the studio.
+   (F6)
+9. **Meeting new people.** rae saw a vocalist on TikTok, got their username, and
+   **added them by username** in DMs — then sent the group magic link. (F13, F1)
+10. **Shipping.** When "bloom" is done, rae posts the master to her **Public**
+    shelf with credits; it lands in her followers' **feed**. Every WIP, stem and
+    session stays in the **Work** layer, private. At wrap, jax **exports** the
+    group as a zip. (F12, F19)
+
+### B. A VFX shot on a deadline — compositor, animator, mograph, generalist
+
+**The team.** mira (compositor, admin), lin (animator), sol (motion graphics),
+jax (generalist doing cleanup + wrangling). The shot `sh040` is due Friday.
+
+1. **Spin-up.** mira creates **SPECTER — sh040** and drops the **magic link** in
+   the studio's Slack; everyone's in inside a minute. Channels: `#brief`,
+   `#plates`, `#anim`, `#comp`, `#mograph`, `#renders`, voice *review room*. (F1,
+   F3)
+2. **Assets land, already labelled.** lin posts a playblast (`mp4` → auto-tagged
+   `mp4`+`video`), sol posts a title-sequence draft, jax uploads plates as
+   `.exr` — **auto-tagged `exr`** so mira can later filter `#renders` to "all
+   `.exr` from today." Every upload carries a caption + tags by default. (F9,
+   F10)
+3. **The review that only eski can do.** mira opens `sh040_comp` **v3** in the
+   **canvas** and **draws on the frame**: circles the building edge that's
+   ghosting against the sky, arrows the light bloom she wants kept. sol
+   **highlights 0:42–0:48** on the sound-design pass — "whoosh lands a beat late,
+   pull it ~6 frames." lin adds a note; each is anchored to its mark and
+   resolvable. (F5)
+4. **Iterations stay legible.** mira posts **v4** after the fixes; v3 keeps its
+   drawn notes, v4 is clean. No `sh040_comp_FINAL_v2b`. (F7)
+5. **Right format for each seat.** The client wants an `mp4` review copy, the
+   editor wants a `mov`; the render's uploaded once and each pulls the format
+   they need. (F11)
+6. **The client, boxed in.** The director isn't in the group and shouldn't see
+   the plates. mira makes a **link-only workspace** of just the shot's versions
+   and sends the URL; the director draws a note on the frame, and sees nothing
+   else. (F6)
+7. **Crunch call.** Thursday night the four hit the **review room** voice channel;
+   mira **screen-shares the comp** and they clear the last notes live. Presence
+   shows who's still on. (F14, F16)
+8. **Credit and archive.** The final comp's **credits** read "comp mira · anim
+   lin · mograph sol · cleanup jax." mira posts the approved frame to her
+   **Public** reel; the shot's working files stay in **Work**. After delivery she
+   **exports** the group for the archive. (F8, F12, F19)
 
 ---
 
-## 5. Owner's calls (decisions I did not make for you)
+## 5. Owner's calls (what's left to you)
 
-- **Fixed four views vs user-created channels.** v1 ships four fixed views per
-  group (Feed/Projects/Review/Assets). Multiple named text channels inside a
-  group (Discord/Slack) is a real later feature — say when it's worth the
-  channel table + per-channel read scoping.
-- **Fixed four roles vs custom roles.** Same shape — four roles now, Discord's
-  custom-role builder is a rabbit hole to open deliberately, not by default.
-- **Is real-time chat persisted or ephemeral?** `messages` above persists chat
-  in Postgres (searchable, exportable — the eski-native choice). If you'd rather
-  chat be ephemeral/Broadcast-only, that's cheaper but breaks Assets/Export
-  covering conversation. Recommend: persist.
-- **Approval state in Review (F5's MARK APPROVED)** — keep the lightweight
-  approve toggle for v1, or cut until asked?
-- **Fork (F7)** — v1 or fast-follow?
-- **Notifications channel.** In-app bell for v1; email/push is the same missing
-  pipe as the CSAM-report alert in `ROADMAP.md`. Build one notifier, use it for
-  both — but *when* is yours.
-- **DMs / "message this artist".** Parked with the roadmap's DM deferral; a
-  group of two substitutes. Confirm that's acceptable for v1.
+Decided by your adjustments, recorded here: **two roles** (admin/member),
+**user-created channels**, **persistent chat**, **DMs by username**, **no
+discovery** (magic-link + username only), **versions as numbers** (no
+branching), **fork = duplicate + credit**, **no pins** (draw/highlight on the
+canvas), **workspaces are public/private/link**. Still genuinely yours:
+
+- **WebRTC provider for calls (F14)** — LiveKit / Daily / 100ms / self-hosted.
+  A real build-vs-buy and cost decision.
+- **Transcode scope (F11)** — audio only for v1 (clean, cheap), or video from
+  the start (heavier: codecs, storage of derived files or transcode-on-every-
+  request). Recommend audio first.
+- **Where "Fork" is allowed** — any public/work file, or only within a group?
+- **Notifications channel** — in-app bell for v1; email/push shares the CSAM-alert
+  pipe from `ROADMAP.md`. When is yours.
 - **Still yours from `ROADMAP.md`, now load-bearing:** register the DMCA agent
-  (the private layer lowers volume but safe harbour still needs the filing),
-  and the Supabase region (`eu-north-1`) if the collaborator audience isn't in
-  Europe — real-time chat makes the 1.7–3.4s round-trips more noticeable than a
-  feed did.
+  (private layers lower volume but safe harbour still needs the filing), and the
+  Supabase region (`eu-north-1`) if the collaborator audience isn't in Europe —
+  persistent chat and live calls make latency more noticeable than a feed did.
 
 ---
 
 ## Sources
 
-Reference-app behaviour above is from:
-
 - Discord — [permissions & roles](https://support.discord.com/hc/en-us/articles/206029707-Setting-Up-Permissions-FAQ),
-  [developer permissions docs](https://docs.discord.com/developers/topics/permissions),
-  [member applications](https://support.discord.com/hc/en-us/articles/29729107418519-Server-Member-Applications)
-- Slack — [channel organization best practices](https://www.socialintents.com/blog/slack-channel-organization-best-practices/),
-  [what Slack is: channels, huddles, canvas](https://rottenwifi.com/what-is-slack-and-how-does-it-work-a-practical-guide-for-beginners/)
-- Frame.io — [commenting on media](https://help.frame.io/en/articles/9105251-commenting-on-your-media),
-  [Version 4 overview](https://frame.io/v4)
-- Figma — [add comments to files](https://help.frame.io/en/articles/360041068574-Add-comments-to-files),
-  [guide to comments](https://help.figma.com/hc/en-us/articles/360039825314-Guide-to-comments-in-Figma)
-- SoundCloud/BandLab timed comments — [music collaboration tools overview](https://pibox.com/resources/best-music-collaboration-software/),
-  [BandLab collaboration features](https://www.audeobox.com/learn/bandlab/bandlab-collaboration-features/)
+  [invite links & join flow](https://support.discord.com/hc/en-us/articles/29729107418519-Server-Member-Applications)
+- Slack — [channel organization](https://www.socialintents.com/blog/slack-channel-organization-best-practices/),
+  [channels, huddles, canvas](https://rottenwifi.com/what-is-slack-and-how-does-it-work-a-practical-guide-for-beginners/)
+- Frame.io — [commenting & drawing on media](https://help.frame.io/en/articles/9105251-commenting-on-your-media),
+  [Version 4](https://frame.io/v4)
+- Figma — [comments & regions](https://help.figma.com/hc/en-us/articles/360039825314-Guide-to-comments-in-Figma)
+- SoundCloud / BandLab timed comments — [music collaboration tools](https://pibox.com/resources/best-music-collaboration-software/),
+  [BandLab collaboration](https://www.audeobox.com/learn/bandlab/bandlab-collaboration-features/)
 - The Abstract cautionary tale — [version control for creative teams](https://www.anchorpoint.app/blog/version-control-for-the-creative-industry)
-- Supabase Realtime — [Presence](https://supabase.com/docs/guides/realtime/presence),
-  [Realtime guide](https://supabase.com/docs/guides/realtime)
+- Supabase Realtime — [Presence](https://supabase.com/docs/guides/realtime/presence)
 </content>
-</invoke>
