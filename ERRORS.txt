@@ -375,9 +375,6 @@ ESK-5107  home (pivot): making a post private, or deleting it, was refused.
 ESK-5108  home (pivot): a new version could not be published. [42501] here
           is works_version_owner_guard: you can only add a version to your
           own work, checked as a trigger, not just hidden in the UI.
-ESK-5109  the pivot's detail overlay (pivot.js): an edit (title/caption/
-          body) could not be saved. Poster only — the same works_write
-          policy that gates everything else on the row.
 ESK-5110  profile (pivot): a follow/unfollow could not be saved.
 ESK-5111  profile (pivot): your profile settings (name/handle/bio) could
           not be saved. A [23505] on handle means it's taken; the message
@@ -388,6 +385,10 @@ ESK-5112  profile (pivot): the avatar could not upload or save. The bucket
 ESK-5113  profile (pivot): account deletion failed. See delete_my_account()
           in schema-clean.sql — it's a soft delete (profiles.deleted_at),
           your published work stays up credited to "Deleted account".
+ESK-5114  pivot (detail overlay, comments, profile): a report could not be
+          filed. file_report()'s RLS check is reporter_id = auth.uid(), so
+          this only fires signed in; a not-ok response with no error is
+          file_report()'s own refusal (see its `why` in schema-clean.sql).
 
 ESK-5070  profile: a setting did not save (the shelf's public switch).
 ESK-5071  profile: the old avatar did not come off storage. Harmless — the new

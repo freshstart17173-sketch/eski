@@ -184,13 +184,12 @@ const sheet = async (p, btn, panel) => {
     { timeout: 15000 }).catch(()=>{});
 };
 
-/* ONE PER TREATMENT, and deliberately not one per theme. Eighteen themes x
-   nine configs x two viewports is 324 shots nobody will look at. What varies
-   between two themes of the same treatment is six hex values; what varies
-   between treatments is whether the ground is light, whether the text is
-   light, and whether the accent is the page or an accent on it — which is
-   where every colour bug so far has lived. Three covers that. */
-const THEMES = (process.env.THEMES || 'light-neutral,mono-green,dark-pink').split(',');
+/* palettes.css was cut from eighteen themes to two (2026-08-15, see its own
+   header) — light and dark, both sage. Both covers that; there is no longer
+   a "one per treatment" sampling decision to make. This test still targets
+   pre-pivot routes/selectors ('/' , '.card') and is stale until it's
+   rewritten against index.html/profile.html — see ARCHITECTURE.md. */
+const THEMES = (process.env.THEMES || 'light,dark').split(',');
 
 (async () => {
   fs.mkdirSync(OUT, { recursive: true });

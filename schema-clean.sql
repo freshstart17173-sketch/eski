@@ -55,6 +55,7 @@ create table if not exists works (
   cover_key     text,
   thumb_key     text,
   duration_ms   int,
+  bytes         bigint not null default 0,  -- media_key + cover_key size at publish time; profile's storage-used stat sums this
   status        text not null default 'draft' check (status in ('draft','published','private')),
   version_of    uuid references works(id) on delete cascade,
   version_label text,

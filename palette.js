@@ -10,59 +10,34 @@
    theme disappears when I leave profile". Nothing else writes here now. If
    you find yourself adding a second writer, that is the bug coming back.
 
-   A theme is a HUE and a TREATMENT: light, mono or dark. The picker is
-   built from those two lists, so adding a hue is one entry here and three
-   blocks in palettes.css. */
+   TWO THEMES, not the old eighteen-hue picker (2026-08-15). eski has a real
+   accent now — sage, reviewed in artboard.html — so "which hue" stopped
+   being the reader's decision to make; the only axis left is light ground
+   or dark ground. See palettes.css's own header for the full reasoning. */
 (function(){
   var KEY = 'eski-theme';
-  var DEFAULT = 'light-sage';        // the pivot's reviewed look (artboard.html);
-                                      // was 'mono-green', the old comics-era default.
-                                      // only affects a first-time visitor with no
-                                      // saved choice — anyone's own pick still wins.
+  var DEFAULT = 'light';
 
-  var TREATMENTS = [
-    { id:'light', name:'Light', mode:'light' },
-    { id:'mono',  name:'Mono',  mode:'dark'  },   // each mono block sets its own ground
-    { id:'dark',  name:'Dark',  mode:'dark'  }
-  ];
-  var HUES = [
-    { id:'neutral', name:'Neutral' },
-    { id:'sage',    name:'Sage' },
-    { id:'green',   name:'Green' },
-    { id:'blue',    name:'Blue' },
-    { id:'red',     name:'Red' },
-    { id:'amber',   name:'Amber' },
-    { id:'pink',    name:'Pink' }
+  var THEMES = [
+    { id:'light', name:'Light' },
+    { id:'dark',  name:'Dark'  }
   ];
 
-  function parse(id){
-    var bits = String(id || '').split('-');
-    var t = null, h = null, i;
-    for(i = 0; i < TREATMENTS.length; i++) if(TREATMENTS[i].id === bits[0]) t = TREATMENTS[i];
-    for(i = 0; i < HUES.length; i++) if(HUES[i].id === bits[1]) h = HUES[i];
-    return (t && h) ? { id:t.id + '-' + h.id, treatment:t, hue:h } : null;
-  }
+  function valid(id){ return THEMES.some(function(t){ return t.id === id; }); }
 
   function read(){
-    try{ return parse(localStorage.getItem(KEY)) ? localStorage.getItem(KEY) : DEFAULT; }
+    try{ var v = localStorage.getItem(KEY); return valid(v) ? v : DEFAULT; }
     catch(e){ return DEFAULT; }
   }
 
   function apply(id){
-    var t = parse(id) || parse(DEFAULT);
-    var el = document.documentElement;
-    el.setAttribute('data-theme', t.id);
-    el.setAttribute('data-mode', t.treatment.mode);
-    /* one attribute for "this ground is dark", so a rule that only needs to
-       know that can say so without naming twelve themes */
-    if(t.treatment.mode === 'dark') el.setAttribute('data-dark', '');
-    else el.removeAttribute('data-dark');
+    document.documentElement.setAttribute('data-theme', valid(id) ? id : DEFAULT);
   }
 
   apply(read());
 
   function set(id){
-    if(!parse(id)) return;
+    if(!valid(id)) return;
     try{ localStorage.setItem(KEY, id); }catch(e){}
     apply(id);
     document.dispatchEvent(new CustomEvent('eski-theme', { detail:{ theme:id } }));
@@ -70,63 +45,24 @@
   }
 
   /* ---------------------------------------------------------------- picker */
-  /* ONE LINE, no treatment labels: a chip is a miniature of the page it
-     makes, so what treatment it is is the thing you can already see. */
   function chips(current){
-    var out = '';
-    TREATMENTS.forEach(function(t){
-      out += '<span class="pal-set">';
-      HUES.forEach(function(h){
-        var id = t.id + '-' + h.id;
-        /* data-theme AND data-mode on the chip itself, so every token inside
-           resolves to that theme's values and the miniature is the real
-           thing rather than a hard-coded hex */
-        out += '<button class="pal-sw" type="button"' +
-               ' data-theme="' + id + '" data-mode="' + t.mode + '"' +
-               ' data-pick="' + id + '"' +
-               ' aria-pressed="' + (id === current) + '"' +
-               ' title="' + h.name + ' · ' + t.name + '"' +
-               ' aria-label="' + h.name + ' ' + t.name + ' theme">' +
-               '<i></i><b></b><s></s><u></u><em></em></button>';
-      });
-      out += '</span>';
-    });
-    return out;
+    return '<span class="pal-set">' + THEMES.map(function(t){
+      return '<button class="pal-sw" type="button" data-theme="' + t.id + '"' +
+             ' data-pick="' + t.id + '"' +
+             ' aria-pressed="' + (t.id === current) + '"' +
+             ' title="' + t.name + '" aria-label="' + t.name + ' theme">' +
+             '<i></i><b></b><s></s><u></u><em></em></button>';
+    }).join('') + '</span>';
   }
 
   function paint(box){
     if(!box) return;
-    var open = box.classList.contains('open');
     box.classList.add('pal');
-    box.innerHTML =
-      '<button class="pal-toggle" type="button" aria-expanded="' + open + '">Theme</button>' +
-      '<div class="pal-pop">' + chips(read()) + '</div>';
-    if(open) box.classList.add('open');
-
-    box.querySelector('.pal-toggle').addEventListener('click', function(e){
-      e.stopPropagation();
-      var on = !box.classList.contains('open');
-      closeAll();
-      box.classList.toggle('open', on);
-      this.setAttribute('aria-expanded', on);
-    });
+    box.innerHTML = chips(read());
     box.querySelectorAll('[data-pick]').forEach(function(b){
-      b.addEventListener('click', function(e){
-        e.stopPropagation();
-        set(b.getAttribute('data-pick'));
-      });
+      b.addEventListener('click', function(){ set(b.getAttribute('data-pick')); });
     });
   }
-
-  function closeAll(){
-    document.querySelectorAll('.pal.open').forEach(function(p){
-      p.classList.remove('open');
-      var t = p.querySelector('.pal-toggle');
-      if(t) t.setAttribute('aria-expanded', 'false');
-    });
-  }
-  document.addEventListener('click', closeAll);
-  document.addEventListener('keydown', function(e){ if(e.key === 'Escape') closeAll(); });
 
   function paintAll(){
     document.querySelectorAll('[data-palette-picker]').forEach(paint);
@@ -137,11 +73,10 @@
   else paintAll();
 
   window.eskiTheme = {
-    treatments: TREATMENTS.slice(),
-    hues: HUES.slice(),
+    themes: THEMES.slice(),
     get current(){ return read(); },
-    get mode(){ return (parse(read()) || parse(DEFAULT)).treatment.mode; },
     set: set,
+    toggle: function(){ set(read() === 'light' ? 'dark' : 'light'); },
     paint: paintAll
   };
 

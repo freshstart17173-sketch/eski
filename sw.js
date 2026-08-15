@@ -1,31 +1,32 @@
 /* eski service worker.
    HTML is network-first so a deploy lands immediately (no hard-reload needed);
    other assets are cache-first with a background refresh. */
-const CACHE = 'eski-v15';
+/* v16: the pivot. the precache list used to name pages and scripts that
+   are gone (read/author/studio/comments.js/viewer.js/spec.html) and never
+   named pivot.css/pivot.js at all — so a returning visitor could sit on a
+   pre-pivot pivot.css indefinitely (cache-first) even after it shipped a
+   real fix, which is exactly the "correct fix, silently undone" trap this
+   repo keeps warning about. Bumping CACHE forces every asset to refetch
+   once; the list below is what the pivot actually loads. */
+const CACHE = 'eski-v16';
 const ASSETS = [
   './',
   'index.html',
-  'read.html',
-  'author.html',
-  'studio.html',
   'profile.html',
+  'onboarding.html',
+  'admin.html',
+  'legal.html',
   'platform.js',
-  'viewer.js',
   'palette.js',
   'palettes.css',
-  'comments.js',
+  'tokens.css',
+  'pivot.css',
+  'pivot.js',
   'hash-worker.js',
   'vendor/supabase.js',
-  'vendor/panzoom.js',
-  'vendor/webm-muxer.js',
-  'tokens.css',
   'docs/design/final/broadsheet.css',
-  'demo.eski',
   'manifest.json',
-  'spec.html',
-  'legal.html',
-  'eski_logo.png',
-  'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js'
+  'eski_logo.png'
 ];
 
 self.addEventListener('install', e => {

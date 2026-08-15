@@ -25,14 +25,13 @@ const SUPABASE_KEY = 'sb_publishable_cZuZnUhWmEGESYb7BR1Kzg_nPjR8CZR';   // publ
    load. Measured from here: ~1s for a 1 MB page, no Cache-Control header of
    any kind on the response.
 
-   THE FIX IS NOT CODE. Add a custom domain to the bucket in the Cloudflare
-   dashboard (R2 > the bucket > Settings > Custom Domains), point cdn.eski.lol
-   at it, and change the line below. The database stores object KEYS and never
-   urls, so that is the whole migration: no rows change, and everything
-   already published starts being served from the edge.
+   DONE (2026-08-15): cdn.eski.lol is attached and serving — verified live
+   against a real object key, 200 with the rest of the site. The database
+   stores object KEYS and never urls, so this was the whole migration: no
+   rows changed, everything already published is now served from the edge.
 
    https://developers.cloudflare.com/r2/buckets/public-buckets/ */
-const R2_BASE = 'https://pub-b9e7c6b680ca415e9ffd5875bad0df03.r2.dev';
+const R2_BASE = 'https://cdn.eski.lol';
 
 // add 'discord' back once it is enabled in the supabase dashboard. a provider
 // offered here but not enabled there fails at the redirect with a raw error
@@ -130,11 +129,24 @@ function paint(){
   box.append(btn, menu);
 }
 
+/* ARCHITECTURE.md has said since the pivot that onboarding.html "runs once,
+   on first sign-in, via platform.js's maybeOnboard()" — it never existed.
+   The page itself works fine; it was just unreachable except by manually
+   navigating there or hitting profile.html's own "no profile" message.
+   Cheap enough to check on every sign-in (one indexed lookup) rather than
+   trying to track "have we already checked this session" somewhere. */
+async function maybeOnboard(u){
+  if(!u || !sb || /(^|\/)onboarding\.html$/.test(location.pathname)) return;
+  const { data } = await sb.from('profiles').select('id').eq('id', u.id).maybeSingle();
+  if(!data) location.replace('onboarding.html?next=' + encodeURIComponent(location.pathname + location.search));
+}
+
 function setUser(u){
   user = u;
   // the pages are classic scripts and cannot import this module
   document.dispatchEvent(new CustomEvent('eski-auth', { detail: { user: u } }));
   paint();
+  maybeOnboard(u);
 }
 
 document.addEventListener('click',

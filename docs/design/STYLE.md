@@ -38,34 +38,31 @@ stop at the end.
 
 ## 2. Colour
 
-**There is no brand colour.** Sage green was one, and it was the wrong choice
-for a site whose job is to show other people's artwork — every cover had to sit
-inside somebody else's hue. The colour belongs to the reader.
+**eski has a brand colour: sage.** "The colour belongs to the reader" was the
+comics-era premise, and it produced a six-hue/three-treatment picker —
+eighteen themes, written out in full in `palettes.css` — that outlived the
+product direction it was built for. The pivot has a real, reviewed accent
+(sage, `#5B7A6B` light / `#8AA89A` dark, settled in `artboard.html`), so
+"which hue" stopped being a decision a reader needed to make, and the picker
+became old chrome quietly running under the new product: the exact shape of
+bug where a stray pick from an eighteen-swatch footer control looks, from a
+signed-in visitor's side, indistinguishable from something actually broken.
 
-**A theme is a hue and a treatment.** Six hues (neutral, green, blue, red,
-amber, pink) across three treatments:
+**A theme is now just a ground: `light` or `dark`.** Two, not eighteen, both
+sage. Still one attribute on `<html>` with everything already parsed: instant,
+cannot flash a half-applied state.
 
-| Treatment | What it is |
-|---|---|
-| `light` | Near-white ground, near-black text, the hue as the accent |
-| `mono`  | The hue **is** the page — ground, text and accent are one colour at different values. The old sage look. |
-| `dark`  | Near-black ground, near-white text, the hue as the accent |
-
-Eighteen in all, each written out in full in `palettes.css`, so a swap is one
-attribute on `<html>` with everything already parsed: instant, and it cannot
-flash a half-applied state.
-
-**The picker is in the footer of every page**, and nowhere else — a second one
-in settings meant two controls that could disagree about which was
-authoritative. The word THEME is the toggle; the chips unroll to the right of
-it on the same line.
+**The picker is in profile.html's Settings tab.** The old rule — footer only,
+never settings, because two controls could disagree about which was
+authoritative — assumed a control complex enough to need hiding behind a
+"THEME" toggle. Two swatches don't; the "second control" risk it was guarding
+against doesn't apply to a single `palette.js` writer either, which is still
+true and still the actual rule that matters (see below).
 
 **A chip is a miniature of the page it makes** — ground, rule, a heading bar, a
 line of body text and the accent, drawn in its own theme. The first version was
 a ground with an accent block on it, which said "mostly green" for a theme that
-is a dark page with green type on it. There are no LIGHT/MONO/DARK labels: the
-treatment is the thing you can already see, and naming it would be captioning a
-picture with what the picture is.
+is a dark page with green type on it.
 
 A palette sets exactly these and nothing else:
 
@@ -89,7 +86,7 @@ Rules for using them:
   sampled the cover and recoloured the chrome from it, which fought the
   reader's own choice and never looked right.
 
-**One writer.** `palette.js` owns `data-theme`, `data-mode` and `data-dark`. Nothing else
+**One writer.** `palette.js` owns `data-theme` (`light` or `dark`). Nothing else
 writes them. The previous system had seven surfaces setting the theme on load
 from their own local flag, so choosing one and navigating anywhere reset it —
 which read as "the theme disappears when I leave the profile". If you find

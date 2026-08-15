@@ -132,8 +132,8 @@ it again.
 | `docs/design/final/broadsheet.css` | The OLD comics-reader chrome: nav, `.btn`, plates, sheets, folds. Only `admin.html`/`legal.html` still lean on it; not used by any pivot page. |
 | `pivot.css` | **The new product's shared component vocabulary** — buttons, chips, the feed grid, detail overlays, tags, comments, the upload modal. Ported from `artboard.html`'s `.eski-mockup` scope onto real tokens; see its own header comment for the two deliberate deviations (hover colour, corner radius). Used by every pivot page. |
 | `pivot.js` | **The new product's shared runtime** — auth/profile state, the grid card renderer, the entire detail overlay (tags, comments, likes, save-folders, versions, editing, the poster's burger menu), sign-in, and the upload flow. `window.Pivot`. `index.html` and `profile.html` each keep only their own page's logic and call into this for anything that opens over the page. |
-| `palettes.css` | The themes. The only file with raw colour in it. Now nineteen: the original eighteen (light/mono/dark × neutral/green/blue/red/amber/pink) plus **sage** (light/mono/dark), the pivot's reviewed accent (`#5B7A6B`), which `palette.js` sets as `DEFAULT`. |
-| `palette.js` | Reads and stamps the theme, and draws the picker. |
+| `palettes.css` | The themes. The only file with raw colour in it. **Two now, not the old eighteen** (2026-08-15): `light` and `dark`, both the pivot's reviewed sage accent (`#5B7A6B` / `#8AA89A`). The comics-era six-hue/three-treatment picker is gone — see the file's own header. |
+| `palette.js` | Reads and stamps the theme (`data-theme`, `light` or `dark`), and draws the two-swatch picker wherever `data-palette-picker` is mounted (profile.html's Settings tab). |
 | `hash-worker.js` | SHA-256 off the main thread, for content-addressed upload keys. Used by `index.html`'s upload flow exactly as the old studio used it. |
 | `sw.js` | Precaches the app shell. Deliberately refuses media. |
 
@@ -145,7 +145,7 @@ it again.
 | `profile.html` | Your posts, saved folders, and settings — or someone else's Posts tab, at `/u/<handle>`. Shares `pivot.js`/`pivot.css` with `index.html`; owns only its own header/tabs/settings-form logic. |
 | `onboarding.html` | Account creation: pick a handle. Runs once, on first sign-in, via `platform.js`'s `maybeOnboard()`. |
 | `artboard.html` | The complete design mockup for the pivot — every screen and overlay as static HTML, Supabase-backed comments/pins on top for review. Unlisted, `noindex`. This is the spec `index.html`/`profile.html` are being rewritten against. |
-| `admin.html` | The moderation queue. |
+| `admin.html` | The moderation queue — rebuilt 2026-08-15 against `works`/`collections`/`comments`/`reports` and a new `admin_users()` RPC (email/`last_sign_in_at` live in `auth.users`, which PostgREST never exposes even to an admin-RLS'd read). Overview's counts are plain admin-gated reads, not an RPC — `works_admin_read` etc already exist. Reports sort CSAM-category first, client-side (see the table's own comment in `schema-clean.sql`). Deliberately plain: no `pivot.css`, monospace, one table style — see the file's own header. |
 | `legal.html` | Static prose: terms, privacy, takedown. |
 
 ### Server
@@ -219,6 +219,16 @@ Written down rather than left to be rediscovered.
   is one feed ("Discover"), filtered live. The mockup's rename/add/delete
   affordance was deliberately left out rather than built against nothing —
   see `ROADMAP.md` if this becomes worth a real table.
-- **No video or audio thumbnails.** A post of either kind has no `cover_key`
-  yet — its card shows a play glyph on a plain box. Generating one (a canvas
-  frame-grab, a waveform image) is real work, not wired.
+- ~~No video or audio thumbnails~~ — done (2026-08-15). `pivot.js`'s
+  `coverKeyFor()` generates one at upload time: a canvas frame-grab for
+  video, a 600-bar peak waveform (Web Audio API `decodeAudioData`,
+  canvas-rendered) for audio. Best-effort — a file that won't decode still
+  publishes, just without a cover.
+- **A collection's own carousel has no cover art at all, and no player for
+  an audio item.** `collectionPane()` in `pivot.js` renders each item with a
+  plain `<img src="…media_key…">`, which works for image items and shows
+  nothing useful for video (no frame-grab) or audio (no player, just a
+  broken `<img>`). `work_items` doesn't even have a `cover_key` column —
+  deliberately not added along with the rest of the cover-generation work,
+  since nothing would read it yet (ponytail: add the column when the
+  carousel actually wants one).

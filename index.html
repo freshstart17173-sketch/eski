@@ -40,9 +40,9 @@ main{max-width:var(--wrap);margin:0 auto}
 <header class="pivot-top site-header">
   <a class="mark wordmark" href="index.html">eski<i>!</i></a>
   <nav>
-    <button class="navlink active" type="button" data-nav="home">Home</button>
-    <button class="navlink" type="button" data-go="profile.html">Profile</button>
-    <button class="btnline filled" type="button" data-open-upload>Upload</button>
+    <button class="navlink active" type="button" data-nav="home" data-authed hidden>Home</button>
+    <button class="navlink" type="button" data-go="profile.html" data-authed hidden>Profile</button>
+    <button class="btnline filled" type="button" data-open-upload data-authed hidden>Upload</button>
   </nav>
 </header>
 
@@ -50,10 +50,6 @@ main{max-width:var(--wrap);margin:0 auto}
   <div class="feedhead">
     <div class="feedswitch">
       <span class="feed active" data-nodelete>Discover</span>
-      <div class="searchmini" data-searchmini>
-        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3" stroke-linecap="round"/></svg>
-        <input placeholder="search titles, captions, and tags" id="search-input">
-      </div>
     </div>
     <div class="tagpanels">
       <div class="tagpanel" id="tags-panel">
@@ -72,7 +68,6 @@ main{max-width:var(--wrap);margin:0 auto}
     <div class="fgrid" id="feed-grid"></div>
     <div class="empty" id="feed-empty" hidden>
       <b>Nothing published yet</b>
-      <span>Be the first — upload something and it lands right here.</span>
     </div>
   </div>
   <div class="loadmore" id="loadmore-wrap" hidden>
@@ -93,17 +88,24 @@ main{max-width:var(--wrap);margin:0 auto}
    it: one feed, filtered live, nothing saved across a reload. */
 const P = window.Pivot;
 const KINDS = P.KINDS;
-const filters = { tags: [], posted: null, from: null, viewing: null,
+/* filters.tags holds two kinds of token now: a plain string (a content tag
+   or a free-typed word — matched against tags/title/caption/poster) and
+   {user:id,label} (an exact poster filter, from picking a @handle
+   suggestion). One box does what used to be a separate tag filter AND a
+   separate search bar — see openTagSearch() below. */
+const filters = { tags: [], posted: null, from: null, viewing: null, sort: null,
   updated: false, liked: false, saved: false, kinds: new Set() };
-let searchQuery = '';
 let feedRows = [];
 let feedOffset = 0;
 const PAGE = 24;
 
+function syncNav(){
+  document.querySelectorAll('[data-authed]').forEach(el => el.hidden = !P.user);
+}
 async function boot(){
-  await P.init(() => { loadFeed(true); });
+  await P.init(() => { syncNav(); loadFeed(true); });
+  syncNav();
   wireTagPanels();
-  wireSearch();
   renderModifiers();
   document.getElementById('loadmore-btn').addEventListener('click', () => loadFeed(false));
   await loadFeed(true);
@@ -117,41 +119,58 @@ function wireTagPanels(){
   }));
   renderActiveTags();
 }
+function tokenLabel(t){ return typeof t === 'object' ? '@' + t.label : '#' + t; }
 function renderActiveTags(){
   const row = document.getElementById('active-tags');
-  row.innerHTML = filters.tags.map(t => `<span class="tagchip"><span class="tagtext">#${P.esc(t)}</span>` +
-    `<span class="x" data-untag="${P.esc(t)}">&times;</span></span>`).join('') +
+  row.innerHTML = filters.tags.map((t,i) => `<span class="tagchip"><span class="tagtext">${P.esc(tokenLabel(t))}</span>` +
+    `<span class="x" data-untag="${i}">&times;</span></span>`).join('') +
     `<button class="tagadd" type="button" id="tagadd-btn">+</button>`;
   row.querySelectorAll('[data-untag]').forEach(x => x.addEventListener('click', () => {
-    filters.tags = filters.tags.filter(t => t !== x.dataset.untag);
+    filters.tags.splice(+x.dataset.untag, 1);
     renderActiveTags(); loadFeed(true);
   }));
   const addBtn = document.getElementById('tagadd-btn');
   addBtn.addEventListener('click', e => { e.stopPropagation(); openTagSearch(addBtn); });
+}
+/* one box does tag filtering AND what the old search bar did: pick a #tag
+   or a @person from the suggestions below, or just type a word and hit
+   enter to match it against titles, captions and posters too — there's no
+   separate search bar any more (custom feeds plus this box cover it). */
+function addToken(box, anchor, token){
+  filters.tags.push(token); box.remove(); renderActiveTags(); loadFeed(true);
 }
 async function openTagSearch(anchor){
   document.querySelectorAll('.tagsearch').forEach(t => t.remove());
   const box = document.createElement('div');
   box.className = 'tagsearch open';
   box.style.position = 'absolute';
-  box.innerHTML = `<input placeholder="find a tag…"><div class="opts"></div>`;
+  box.innerHTML = `<input placeholder="a tag, a @person, or a word…"><div class="opts"></div>`;
   anchor.parentElement.style.position = 'relative';
   anchor.parentElement.appendChild(box);
   const input = box.querySelector('input'), opts = box.querySelector('.opts');
   input.focus();
+  const seenTags = new Set(filters.tags.filter(t => typeof t === 'string'));
   async function search(q){
-    let query = P.sb.from('content_tags').select('tag').eq('target_type','work').order('tag').limit(8);
-    if(q) query = query.ilike('tag', '%' + q.replace(/[%_]/g,'') + '%');
-    const { data } = await query;
-    const seen = new Set(filters.tags);
-    const uniq = [...new Set((data || []).map(r => r.tag))].filter(t => !seen.has(t));
-    opts.innerHTML = uniq.map(t => `<button type="button" class="opt" data-pick="${P.esc(t)}">#${P.esc(t)}</button>`).join('')
-      || '<div class="opt" style="cursor:default;">no matching tags yet</div>';
-    opts.querySelectorAll('[data-pick]').forEach(o => o.addEventListener('click', () => {
-      filters.tags.push(o.dataset.pick); box.remove(); renderActiveTags(); loadFeed(true);
-    }));
+    const [{ data: tagRows }, { data: profRows }] = await Promise.all([
+      P.sb.from('content_tags').select('tag').eq('target_type','work').order('tag')
+        .ilike('tag', '%' + q.replace(/[%_]/g,'') + '%').limit(6),
+      q.length > 1 ? P.sb.from('profiles').select('id,handle,display_name')
+        .or(`handle.ilike.%${q.replace(/[%_,]/g,'')}%,display_name.ilike.%${q.replace(/[%_,]/g,'')}%`).limit(5)
+        : Promise.resolve({ data: [] })
+    ]);
+    const tags = [...new Set((tagRows||[]).map(r => r.tag))].filter(t => !seenTags.has(t));
+    const people = profRows || [];
+    const rawOpt = q.trim() ? `<button type="button" class="opt" data-raw="${P.esc(q.trim())}">search &ldquo;${P.esc(q.trim())}&rdquo; in titles, captions and tags</button>` : '';
+    opts.innerHTML = tags.map(t => `<button type="button" class="opt" data-pick="${P.esc(t)}">#${P.esc(t)}</button>`).join('') +
+      people.map(p => `<button type="button" class="opt" data-user="${P.esc(p.id)}" data-label="${P.esc(p.handle)}">@${P.esc(p.handle)}${p.display_name ? ' &middot; ' + P.esc(p.display_name) : ''}</button>`).join('') +
+      rawOpt || '<div class="opt" style="cursor:default;">nothing matches yet</div>';
+    opts.querySelectorAll('[data-pick]').forEach(o => o.addEventListener('click', () => addToken(box, anchor, o.dataset.pick)));
+    opts.querySelectorAll('[data-user]').forEach(o => o.addEventListener('click', () => addToken(box, anchor, { user:o.dataset.user, label:o.dataset.label })));
+    const raw = opts.querySelector('[data-raw]');
+    if(raw) raw.addEventListener('click', () => addToken(box, anchor, raw.dataset.raw));
   }
   input.addEventListener('input', () => search(input.value.trim()));
+  input.addEventListener('keydown', e => { if(e.key === 'Enter' && input.value.trim()) addToken(box, anchor, input.value.trim()); });
   search('');
   setTimeout(() => document.addEventListener('click', function outside(e){
     if(!box.contains(e.target) && e.target !== anchor){ box.remove(); document.removeEventListener('click', outside); }
@@ -173,6 +192,7 @@ function kindChip(k){
 function renderModifiers(){
   const el = document.getElementById('modifier-list');
   el.innerHTML = `<div style="display:flex;flex-direction:column;gap:14px;">
+    ${seg('sort', 'sort', [['newest', null],['most liked','popular'],['most commented','commented']])}
     ${seg('posted', 'posted', [['any time', null],['today','day'],['this week','week'],['this month','month'],['this year','year']])}
     <div style="display:flex;gap:28px;flex-wrap:wrap;">
       ${seg('from', 'from', [['anyone', null],['following','following'],['not following','not_following']])}
@@ -202,16 +222,28 @@ function renderModifiers(){
 }
 
 /* -------------------------------------------------------------- search */
-function wireSearch(){
-  const box = document.getElementById('search-input').closest('.searchmini');
-  box.addEventListener('click', e => { if(e.target === box) box.classList.toggle('open'); });
-  const input = document.getElementById('search-input');
-  input.addEventListener('focus', () => box.classList.add('open'));
-  let t;
-  input.addEventListener('input', () => {
-    clearTimeout(t);
-    t = setTimeout(() => { searchQuery = input.value.trim().toLowerCase(); renderGrid(); }, 180);
-  });
+/* a string token matches the db's own way, not a re-fetch-then-filter:
+   title/caption/owner_name via ilike, tags via a lookup into content_tags
+   (there's no tag column on works to ilike directly) folded into the same
+   .or() as an id.in.(...) clause. a @user token is just an eq — already
+   exact, no lookup needed.
+
+   Returns plain descriptors rather than the query builder itself — a
+   supabase query builder is thenable (awaiting it runs the query), so
+   `return q` from an async function silently executes it early and hands
+   the caller a {data,error} result instead of a builder to keep chaining. */
+async function tokenFilterClauses(sb){
+  const clauses = [];
+  for(const token of filters.tags){
+    if(typeof token === 'object'){ clauses.push({ eq: ['owner_id', token.user] }); continue; }
+    const clean = token.replace(/[%_,]/g, '');
+    const { data: tagRows } = await sb.from('content_tags').select('target_id')
+      .eq('target_type', 'work').ilike('tag', '%' + clean + '%');
+    const ids = [...new Set((tagRows || []).map(r => r.target_id))];
+    const idsPart = ids.length ? `,id.in.(${ids.join(',')})` : '';
+    clauses.push({ or: `title.ilike.%${clean}%,caption.ilike.%${clean}%,owner_name.ilike.%${clean}%${idsPart}` });
+  }
+  return clauses;
 }
 
 /* ------------------------------------------------------------- feed */
@@ -220,8 +252,10 @@ async function loadFeed(reset){
   document.getElementById('feed-empty').hidden = true;
   const sb = P.sb;
 
-  let q = sb.from('works').select('*').eq('status','published').is('version_of', null)
-    .order('created_at', { ascending:false }).range(feedOffset, feedOffset + PAGE - 1);
+  const clauses = await tokenFilterClauses(sb);
+  let q = sb.from('works').select('*').eq('status','published').is('version_of', null);
+  clauses.forEach(c => { q = c.eq ? q.eq(c.eq[0], c.eq[1]) : q.or(c.or); });
+  q = q.order('created_at', { ascending:false }).range(feedOffset, feedOffset + PAGE - 1);
   if(filters.kinds.size) q = q.in('kind', [...filters.kinds]);
   if(filters.posted){
     const now = new Date();
@@ -260,33 +294,32 @@ async function annotate(rows){
   if(!rows.length) return;
   const ids = rows.map(r => r.id);
   const sb = P.sb;
-  const [{ data: tagRows }, { data: likeRows }, { data: comboRows }] = await Promise.all([
+  const [{ data: tagRows }, { data: likeRows }, { data: commentRows }, { data: comboRows }] = await Promise.all([
     sb.from('content_tags').select('target_id,tag').eq('target_type','work').in('target_id', ids),
     sb.from('likes').select('target_id').eq('target_type','work').in('target_id', ids),
+    sb.from('comments').select('target_id').eq('target_type','work').is('deleted_at', null).in('target_id', ids),
     sb.from('work_items').select('work_id').in('work_id', rows.filter(r => r.kind === 'combination').map(r => r.id))
   ]);
-  const tagsBy = {}, likesBy = {}, countBy = {};
+  const tagsBy = {}, likesBy = {}, commentsBy = {}, countBy = {};
   (tagRows||[]).forEach(r => (tagsBy[r.target_id] ??= []).push(r.tag));
   (likeRows||[]).forEach(r => likesBy[r.target_id] = (likesBy[r.target_id]||0) + 1);
+  (commentRows||[]).forEach(r => commentsBy[r.target_id] = (commentsBy[r.target_id]||0) + 1);
   (comboRows||[]).forEach(r => countBy[r.work_id] = (countBy[r.work_id]||0) + 1);
-  rows.forEach(r => { r._tags = tagsBy[r.id] || []; r._likes = likesBy[r.id] || 0; r._itemCount = countBy[r.id] || 0; });
+  rows.forEach(r => { r._tags = tagsBy[r.id] || []; r._likes = likesBy[r.id] || 0;
+    r._comments = commentsBy[r.id] || 0; r._itemCount = countBy[r.id] || 0; });
 }
 function renderBatch(rows, reset){
   feedRows = reset ? rows : feedRows.concat(rows);
   document.getElementById('loadmore-wrap').hidden = rows.length < PAGE;
   renderGrid();
 }
-function passesSearch(w){
-  if(!searchQuery) return true;
-  const hay = [w.title, w.caption, w.body, ...(w._tags||[])].filter(Boolean).join(' ').toLowerCase();
-  return hay.includes(searchQuery);
-}
 function renderGrid(){
   const grid = document.getElementById('feed-grid');
-  const filterTags = filters.tags;
-  const rows = feedRows.filter(w => passesSearch(w) &&
-    (!filterTags.length || filterTags.every(t => (w._tags||[]).includes(t))));
+  let rows = feedRows;
+  if(filters.sort === 'popular') rows = rows.slice().sort((a,b) => (b._likes||0) - (a._likes||0));
+  else if(filters.sort === 'commented') rows = rows.slice().sort((a,b) => (b._comments||0) - (a._comments||0));
   grid.innerHTML = rows.map(P.cardHtml).join('');
+  P.wireCardPreviews(grid);
   document.getElementById('feed-empty').hidden = feedRows.length > 0;
 }
 </script>

@@ -16,31 +16,101 @@ one post — plus curated collections and versioning. `schema-clean.sql`
 replaced the entire comics-era database in one pass. `index.html`,
 `profile.html`, `pivot.css`, and `pivot.js` are the real, live, schema-backed
 rebuild — not mockups — measured against `artboard.html` screen by screen
-(all 14) until they matched, including the upload flow, every detail-overlay
-kind, the comment thread, save-folders, and the poster-only edit/version/
-delete chrome. `studio.html`, `author.html`, `contribute.html`, `read.html`,
-`spec.html`, `comments.js`, `viewer.js`, and `api/comic.mjs` are gone with
-the old product they belonged to.
+(all 14) until they matched. `studio.html`, `author.html`, `contribute.html`,
+`read.html`, `spec.html`, `comments.js`, `viewer.js`, and `api/comic.mjs` are
+gone with the old product they belonged to.
 
 ---
 
-## Blocker — do not share this site until these are done
+## 2026-08-15: stabilization + admin rebuild — the site is safe to open now
 
-### A. Rebuild `admin.html` · same size as the profile.html rebuild
+A first real signed-in walkthrough surfaced a pile of bugs the artboard
+review didn't, and both blockers below got closed the same day.
 
-**Currently fully broken.** It calls `admin_overview()` and `admin_users()`,
-both dropped in the clean-slate migration, and queries `comics`/`parts`,
-both gone — every load errors. This is the moderation queue, and per the
-CSAM/reporting obligations already noted below (item 3), you cannot
-responsibly open the site to strangers without a working one. Rebuild
-against `reports`/`works`/`collections`/`comments`, reusing `pivot.css`/
-`pivot.js` where it fits rather than a third copy of the card/overlay code.
+**Bugs found by actually using it, all fixed:**
+- `sw.js` was serving stale bytes — its precache list still named deleted
+  pages and never named `pivot.css`/`pivot.js`, under a cache version that
+  hadn't moved since before the pivot. Likely explanation for "the pink
+  hover is still there" / "the wordmark is still Gnomon" reports on
+  already-fixed code. Bumped to v16, list corrected, dead vendor files
+  (`panzoom.js`, `webm-muxer.js`) dropped from both the list and disk.
+- **The 21-theme picker is gone.** Cut to two: `light` and `dark`, both the
+  pivot's sage accent — see `palettes.css`'s header and `docs/design/STYLE.md`
+  §2. The toggle lives in profile.html's Settings tab now.
+- `.medial` (the detail overlay's media pane) had no CSS — ported from the
+  mockup without its `width:58%` rule, so it collapsed to content size.
+  Worst on audio, where a 76px icon was the only thing holding it open.
+- The audio play button was decorative, wired to nothing.
+- Native `prompt()`/`confirm()` in the live product — replaced with
+  `Pivot.openPrompt()`/`openConfirm()`.
+- Settings required an Edit click before you could type — every field is a
+  live input now.
+- Home/Profile/Upload showed when signed out, with nowhere to go — hidden
+  until a session exists.
+- Account creation was unreachable — `ARCHITECTURE.md` claimed `platform.js`
+  had a `maybeOnboard()` redirecting first-time sign-ins to
+  `onboarding.html`; it never existed. Added.
+- A collection-publish upload would have failed outright — `pivot.js`
+  briefly tried to write `work_items.cover_key`, a column that doesn't
+  exist. Caught by the backend audit before it shipped; reverted (nothing
+  reads it yet — see Tier 2).
 
-### B. A report button, anywhere
+**Product changes made this session, not bug fixes:**
+- Search bar removed; the content-tags box does its job — typing matches
+  tags, `@handle`/display name (exact), or free text against title/caption/
+  poster, and the matching now happens **server-side** in the query itself
+  (was: fetch a page, then filter client-side over just that page).
+- Native `<audio controls>`/`<video controls>` replaced with eski's own
+  player — square track, sage fill, tabular-nums time, click-to-seek. The
+  audio player shows the waveform itself (dense, continuous columns, no
+  gaps — not the spaced-bar "soundcloud" look) instead of a decorative icon.
+- Video/audio thumbnails, generated at upload time (`coverKeyFor()` in
+  `pivot.js`): a canvas frame-grab for video, a high-density peak waveform
+  for audio. Audio cards are always framed (background square, like text/
+  other cards) with the waveform inset, not edge-to-edge.
+- Video cards in the feed autoplay muted, first 5 seconds, on scroll into
+  view (`IntersectionObserver`). **Audio does not autoplay with sound** —
+  browsers block unmuted autoplay without prior interaction, and a muted
+  audio preview has no value, so this was skipped rather than shipped
+  broken. Click-to-open-and-play still works.
+- A storage-used stat on profile Settings (owner-only) — `works.bytes`
+  (new column, migration applied) is populated at upload time and summed.
+- Post editing (title/caption/body after publish) removed — a deliberate
+  product decision, not a gap; adding a version is the supported way to
+  change what's published. Adding a version is untouched.
+- Saved/named feeds dropped as a product (not "not built yet" — the live
+  page never had the add/rename UI, so this was doc/CSS cleanup: dead
+  `.feedplus`/`.feed[contenteditable]` rules removed from `pivot.css`).
+- `R2_BASE` flipped to `cdn.eski.lol` — verified live (200 on a real object
+  key) before flipping. See "Yours, not mine" §1, now done.
+- A report button — `[data-report-work]` in the detail overlay,
+  `[data-report-comment]` next to reply, `#prow-report` on someone else's
+  profile. All call `file_report()` through a styled prompt.
 
-`file_report()` is live and correct (fixed for `work`/`collection`/
-`comment`/`profile` targets). Nothing in the UI calls it — there is no way
-for a reader to flag anything. Small once (A) exists to receive the reports.
+### `admin.html` — rebuilt
+
+Was fully broken: called `admin_overview()`/`admin_users()` (dropped) and
+queried `comics`/`parts` (gone). Rebuilt against `works`/`collections`/
+`comments`/`reports`. Confirmed by a backend audit before rebuilding — see
+below — that RLS already grants admin read/write/delete on all four tables,
+so only Users still needs a security-definer RPC (`admin_users()`, new:
+email/`last_sign_in_at` live in `auth.users`, which PostgREST won't expose
+even to an admin-RLS'd read). Reports sort CSAM-category first — a legal
+reporting obligation, not just severity, per the table's own comment in
+`schema-clean.sql`.
+
+**Backend audit (2026-08-15), for the record:** every `.from()`/`.rpc()` call
+across `index.html`/`profile.html`/`pivot.js`/`admin.html`/`onboarding.html`/
+`api/sign.mjs` was cross-referenced against the live schema and its RLS
+policies. Six gaps found, all in the old `admin.html` (now rebuilt) plus the
+`work_items.cover_key` issue above (reverted). Zero RLS policy gaps —
+everything the frontend writes to or does an ownership-scoped read on has a
+matching policy.
+
+**Still not "shippable and forget it":** the moderation queue exists now,
+but a report only gets seen if someone opens `admin.html` and looks. There's
+no notification path (email, anything) when a report — especially a CSAM
+one — comes in. Worth revisiting before there's real traffic.
 
 ---
 
@@ -49,17 +119,10 @@ for a reader to flag anything. Small once (A) exists to receive the reports.
 Things no amount of code can do, because they need a dashboard login, a legal
 name, or a decision that is yours.
 
-### 1. Move the media off `r2.dev` — 20 minutes, then some waiting
+### 1. Move the media off `r2.dev` · DONE
 
-Still the single biggest performance item on this page. Every object is
-fetched from one region with no edge cache, on a hostname Cloudflare
-rate-limits on purpose.
-
-**The full step-by-step is in [`docs/FASTER.md`](docs/FASTER.md) §1.** The
-shape of it: put `eski.lol` on Cloudflare (free plan, **grey**-cloud the
-Vercel records), attach `cdn.eski.lol` to the R2 bucket, add a cache rule
-with a one-year TTL, turn on Smart Tiered Cache. Then one line in
-`platform.js`: `const R2_BASE = 'https://cdn.eski.lol'`.
+`cdn.eski.lol` is attached and serving — verified live against a real
+object key. `platform.js`'s `R2_BASE` now points there.
 
 ### 2. Register a DMCA agent — DEFERRED until there are users
 
@@ -78,14 +141,14 @@ AI-generated content allowed and must it be labelled.
 Off by default. Checks new passwords against HaveIBeenPwned. Auth settings,
 two minutes.
 
-### 5. Check your Supabase project's region — investigate
+### 5. Supabase project region — confirmed `eu-north-1`
 
-Measured live: `/works` queries are taking **1.7–3.4s round-trip against an
-empty table.** A bare REST call with no auth is 585ms TTFB by itself — that's
-network/infra latency, not a query problem (indexes and RLS plans are fine,
-see Tier 1). If the project's region is far from where your traffic actually
-comes from, this is the fix; if it's already close, worth a support ticket
-before blaming the code.
+That's the whole explanation for the 1.7–3.4s round-trips measured earlier
+(indexes and RLS plans are fine, see Tier 1 below — this was always
+network/infra latency, not a query problem). Whether it's worth moving
+depends on where the audience actually is; Supabase doesn't support an
+in-place region migration, only recreate-and-copy, so this is a real
+tradeoff to weigh, not a quick fix.
 
 ### 6. Billing alarms — the half that mattered is DONE
 
@@ -105,80 +168,85 @@ password-based test account this project's own live tests sign in as
 28 policies called `auth.uid()` unwrapped, which Postgres re-evaluates per
 row instead of once per query. Wrapped as `(select auth.uid())` everywhere
 — `schema-clean.sql` matches what's live. 8 missing foreign-key indexes
-added alongside it (`collections.owner_id`, `comments.user_id`,
-`likes.user_id`, and five more).
+added alongside it.
 
 ### 8. Upload quota on the signer · DONE
 
 `claim_upload_quota` is untouched, still live, still 2000 objects/day,
-still fails closed. Content/table-agnostic, covers the whole upload flow.
+still fails closed.
 
 ### 9. Cache headers · DONE
 
 `vercel.json`'s asset list matches what's actually served post-pivot.
-`cache.js` walks the HTML and asserts coverage.
 
 ### 10. Account deletion · DONE
 
 `delete_my_account()` is live — soft-deletes the profile, drops your draft
 works/collections, save folders, follows, quota and prefs rows.
-`profiles_tombstone()` blanks your public fields and relabels your posts
-and comments "Deleted account." Wired to a real button in profile.html's
-Settings tab.
 
-### 11. Video/audio thumbnails · real work, not started
+### 11. Video/audio thumbnails · DONE
 
-A video or audio post has no `cover_key` — its card shows a bare play glyph
-on a plain box, no poster frame. Needs a canvas frame-grab (video) or a
-generated waveform image (audio) at upload time.
+See the 2026-08-15 entry above.
 
 ---
 
 ## Tier 2 — smaller product gaps
 
-### 12. Saved/named feeds have no backing table
+### 12. A collection's carousel has no cover art or audio player
 
-`index.html`'s feed switcher is one feed ("Discover"), filtered live. The
-mockup's rename/add/delete affordance was deliberately left out rather than
-built against nothing. Add a table if this turns out to matter.
+`collectionPane()` in `pivot.js` renders each item's raw `media_key`
+directly — fine for image, shows nothing useful for video (no frame-grab)
+or audio (no player, just a broken `<img>`). `work_items` has no
+`cover_key` column on purpose (see the 2026-08-15 entry above) — add one,
+and wire the carousel to use it, when this is worth doing.
 
-### 13. Server-side search · deferred until it's needed
+### 13. `sw.js` isn't registered by anything
 
-`tag_synonyms`/`canonical_tag()` exist, predate the pivot, aren't read by
-anything. Current search is client-side substring matching — genuinely fine
-until the feed outgrows one query.
-
-### 14. Post editing is text-only
-
-Title/caption/body, not the underlying file. Swapping `media_key` after
-publish (and what that does to a `combination`'s `work_items`) is a real
-design question, not built.
+The precache list is correct now (see above), but no live page calls
+`navigator.serviceWorker.register('sw.js')` — grep confirms only stale test
+files reference `serviceWorker` at all. If a service worker is showing up
+in production, it's a leftover from an old deploy still running in
+someone's browser, not something this deploy installs fresh. Decide: wire
+registration back up, or delete `sw.js`/`manifest.json`'s offline story
+outright rather than let it sit half-built.
 
 ---
 
 ## Tier 3 — hygiene
 
-### 15. Run the tests on every push · needs a rewrite
+### 14. Run the tests on every push · needs a rewrite
 
 `.github/workflows/tests.yml` still runs the pre-pivot ten. `structure.js`
 and `cache.js` still mean what they always meant; everything else
-(`smoke.js`, `live.js`, the rest) drives pages that no longer exist. Needs
-real coverage for `index.html`/`profile.html`/`pivot.js` before this is
-worth turning back on.
+(`smoke.js`, `errors.js`, `recording.js`, `live*.js`, `wordmark.js`,
+`shots.js`, `viewer-fit.js`) drives pages/selectors that no longer exist —
+confirmed by running the full suite on 2026-08-15: every one of them fails
+on a stale selector (`#player-bar`, `#grid`, `pickMime`) within the first
+few seconds. **Not done this session** — ran out of time. The real work:
+delete the stale ones outright rather than leave them failing "expectedly"
+forever, and write real coverage for `index.html`/`profile.html`/
+`pivot.js` — feed load, tag/search filtering, the detail overlay per kind,
+upload, settings, sign-in gating. Should lean UI-first (the pages ARE the
+product now), not just the backend-shape checks `structure.js`/`cache.js`
+already cover.
 
-### 16. Accessibility pass · ~2 hours
+### 15. Accessibility pass · ~2 hours
 
 Icon-only buttons need labels, a keyboard-help overlay.
-
-### 17. An offline/PWA pass · small
-
-`sw.js` still precaches the app shell. Revisit what "keep this one" means
-for a work instead of a comic.
 
 ---
 
 ## Deliberately not now
 
+- **Editing a published post's text/caption.** Was a Tier 2 gap; now a
+  decided "no" (2026-08-15) — adding a version is the supported way to
+  change what's published. `editFormHtml()` and its wiring were removed
+  from `pivot.js`, not left half-built.
+- **Saved/named feeds.** Was a Tier 2 gap; dropped as a product
+  (2026-08-15) rather than built. "Discover" is the only feed.
+- **Server-side search via `tag_synonyms`/`canonical_tag()`.** Moot —
+  search moved server-side a different way (see the 2026-08-15 entry
+  above), and those tables/functions still aren't read by anything.
 - **A framework.** Still nothing slow here that hand-written DOM code causes.
 - **Series pages, creator dashboard, direct messages.** Reasonable, none of
   them unblock anything.

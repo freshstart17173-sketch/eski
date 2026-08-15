@@ -1,32 +1,19 @@
 /* ============================================================
    eski themes.
 
-   THERE IS NO BRAND COLOUR. Sage green was one, and it was the wrong
-   choice for a site that exists to show other people's artwork: every
-   cover on the shelf had to sit inside somebody else's hue. So the
-   colour belongs to the reader, and the only thing eski insists on is
-   the shape — square corners, hairline rules, dense metadata. Those do
-   not change between themes and are not a setting.
+   CUT DOWN TO TWO (2026-08-15). This used to be six hues across three
+   treatments — eighteen themes, then nineteen once the pivot's own sage
+   accent joined as a reviewed default — on the comics-era belief that
+   "the colour belongs to the reader, not the brand." That premise predates
+   the pivot: eski now has a real accent (sage, chosen and reviewed in
+   artboard.html), and the eighteen-way hue picker was the old direction's
+   own chrome still running underneath the new product — which is how a
+   signed-in visitor who had once tapped a stray pink or mono swatch could
+   land back on eski and see a magenta page with no way to know why. There
+   is no hue to pick any more, so there is nothing left for that picker to
+   do. What's left is the one real axis: light ground or dark ground.
 
-   A THEME IS A HUE AND A TREATMENT.
-
-     light   near-white ground, near-black text, the hue as the accent
-     mono    the hue IS the theme: ground, text and accent are all one
-             colour at different values. the old sage look.
-     dark    near-black ground, near-white text, the hue as the accent
-
-   Six hues across three treatments. The picker draws them as three
-   stacked rows, and a chip is a miniature of the page it makes —
-   ground, text and accent in the proportions they actually appear in —
-   because the previous chip was a ground with an accent block on it,
-   which said "mostly green" for a theme that is a dark page with green
-   type on it.
-
-   Every value is written out rather than derived, so a swap is one
-   attribute on <html> with everything already parsed: instant, and it
-   cannot flash a half-applied state.
-
-   Each theme declares exactly these:
+   Each theme still declares exactly these:
 
      --paper --surface --plate-bg --paper-1   grounds
      --ink --soft-ink --muted --label          text, four steps
@@ -39,202 +26,43 @@
    Shape tokens (--r, --bw) are NOT here. They are the same everywhere.
    ============================================================ */
 
-/* ---------- the two grounds every treatment starts from ----------
-
-   `:root` carries the light ground as well, so a page that somehow renders
-   before palette.js has stamped an attribute — or with scripting off — is a
-   readable light page rather than unstyled text on white. */
+/* `:root` carries the light values too, so a page that somehow renders
+   before palette.js has stamped an attribute — or with scripting off — is
+   a readable light page rather than unstyled text on white. */
 :root,
-[data-mode="light"]{
+[data-theme="light"]{
   --paper:#FCFCFC; --surface:#F1F1F1; --plate-bg:#EAEAEA; --paper-1:#EAEAEA;
   --ink:#111111; --soft-ink:#3A3A3A; --muted:#6B6B6B; --label:#6B6B6B;
   --rule:#141414; --rule-hair:#D6D6D6; --line-1:#D6D6D6; --line-strong:#141414;
   --on-mark:#FCFCFC;
-  /* THE SCRIM BEHIND A MODAL. It used to be one hard-coded rgba of the old
-     sage ground, which meant opening a comic on a pink or a white theme laid
-     GREEN over the whole page — the palette recoloured the sheet and left the
-     thing behind it alone. It is a token now, and it is a neutral dim rather
-     than a tinted one, because a scrim's job is to remove the page, not to
-     add a colour to it. */
+  --accent:#5B7A6B; --mark:#5B7A6B; --ui:#5B7A6B;
+  --ui-hover-bg:#E9F1ED; --wordmark:#3F5A4C;
+  /* THE SCRIM BEHIND A MODAL. A neutral dim, not a tinted one — a scrim's
+     job is to remove the page, not add a colour to it. */
   --scrim:rgba(10,10,10,.42);
   color-scheme:light;
 }
-/* light-neutral is the fallback theme, so its accents belong on :root too */
-:root{
-  --accent:#111111; --mark:#111111; --ui:#111111;
-  --ui-hover-bg:#E4E4E4; --wordmark:#000000;
-}
-[data-mode="dark"]{
+[data-theme="dark"]{
   --paper:#0E0E0E; --surface:#1A1A1A; --plate-bg:#1A1A1A; --paper-1:#1A1A1A;
   --ink:#F0F0F0; --soft-ink:#C9C9C9; --muted:#8C8C8C; --label:#8C8C8C;
   --rule:#3A3A3A; --rule-hair:#262626; --line-1:#262626; --line-strong:#5A5A5A;
   --on-mark:#0E0E0E;
+  --accent:#8AA89A; --mark:#8AA89A; --ui:#8AA89A;
+  --ui-hover-bg:#1E2624; --wordmark:#B8CCC2;
   /* deeper on a dark ground: a 42% dim over near-black is barely a scrim */
   --scrim:rgba(0,0,0,.62);
   color-scheme:dark;
 }
 
 /* ============================================================
-   LIGHT — near-white page, the hue as the accent
+   THE TOGGLE
+
+   One control, two states, mounted wherever `data-palette-picker` appears
+   (currently: profile.html's Settings tab). No unroll-on-click chrome —
+   that existed to hide sixteen extra swatches behind one word, and there
+   is nothing left to hide.
    ============================================================ */
-[data-theme="light-neutral"]{
-  --accent:#111111; --mark:#111111; --ui:#111111;
-  --ui-hover-bg:#E4E4E4; --wordmark:#000000;
-}
-/* the pivot's reviewed look (artboard.html, 2026-08-15) — worked out live
-   against are.na's actual light-mode grid, not a guess: sage accent, pale
-   sage-tinted hover. Set as DEFAULT in palette.js. */
-[data-theme="light-sage"]{
-  --accent:#5B7A6B; --mark:#5B7A6B; --ui:#5B7A6B;
-  --ui-hover-bg:#E9F1ED; --wordmark:#3F5A4C;
-}
-[data-theme="light-green"]{
-  --accent:#1F6B45; --mark:#1F6B45; --ui:#1F6B45;
-  --ui-hover-bg:#DCEAE2; --wordmark:#12472D;
-}
-[data-theme="light-blue"]{
-  --accent:#1B4FCC; --mark:#1B4FCC; --ui:#1B4FCC;
-  --ui-hover-bg:#DCE3F8; --wordmark:#123A99;
-}
-[data-theme="light-red"]{
-  --accent:#B21E3B; --mark:#B21E3B; --ui:#B21E3B;
-  --ui-hover-bg:#F6DCE1; --wordmark:#7E1329;
-}
-[data-theme="light-amber"]{
-  --accent:#8F5300; --mark:#8F5300; --ui:#8F5300;
-  --ui-hover-bg:#F5E6CC; --wordmark:#653A00;
-}
-[data-theme="light-pink"]{
-  --accent:#B01E68; --mark:#B01E68; --ui:#B01E68;
-  --ui-hover-bg:#F8DCEA; --wordmark:#7C1349;
-}
-
-/* ============================================================
-   MONO — the hue IS the page. Ground, text, rules and accent are one
-   colour at different values. This is what the old sage look was, and
-   it is the treatment a chip has to show honestly: almost entirely
-   coloured, not a neutral page with a coloured square on it.
-   ============================================================ */
-[data-theme="mono-neutral"]{
-  --paper:#131313; --surface:#1E1E1E; --plate-bg:#1E1E1E; --paper-1:#1E1E1E;
-  --ink:#D8D8D8; --soft-ink:#B0B0B0; --muted:#7E7E7E; --label:#7E7E7E;
-  --rule:#4A4A4A; --rule-hair:#2C2C2C; --line-1:#2C2C2C; --line-strong:#6A6A6A;
-  --accent:#B8B8B8; --mark:#B8B8B8; --on-mark:#131313; --ui:#B8B8B8;
-  --ui-hover-bg:#2C2C2C; --wordmark:#E6E6E6;
-  color-scheme:dark;
-}
-/* THE ONE THAT WAS ALREADY THERE, kept exactly, so nothing changes for
-   anyone who liked it. It is a choice now rather than the house. */
-[data-theme="mono-sage"]{
-  --paper:#141816; --surface:#1F2624; --plate-bg:#1F2624; --paper-1:#1F2624;
-  --ink:#DCE3DF; --soft-ink:#AEBAB4; --muted:#7E8C86; --label:#7E8C86;
-  --rule:#445048; --rule-hair:#262E2B; --line-1:#262E2B; --line-strong:#5C6C64;
-  --accent:#93A99F; --mark:#93A99F; --on-mark:#141816; --ui:#93A99F;
-  --ui-hover-bg:#262E2B; --wordmark:#C4D3CB;
-  color-scheme:dark;
-}
-[data-theme="mono-green"]{
-  --paper:#0C130F; --surface:#182420; --plate-bg:#182420; --paper-1:#182420;
-  --ink:#D7E6DC; --soft-ink:#A9C4B4; --muted:#7C9788; --label:#7C9788;
-  --rule:#3F5A4C; --rule-hair:#22332B; --line-1:#22332B; --line-strong:#5B7A6B;
-  --accent:#8FC0A4; --mark:#8FC0A4; --on-mark:#0C130F; --ui:#8FC0A4;
-  --ui-hover-bg:#22332B; --wordmark:#BEE2CC;
-  color-scheme:dark;
-}
-[data-theme="mono-blue"]{
-  --paper:#0A1019; --surface:#141F2E; --plate-bg:#141F2E; --paper-1:#141F2E;
-  --ink:#D4E1F2; --soft-ink:#A6BCD8; --muted:#7890AE; --label:#7890AE;
-  --rule:#3B5474; --rule-hair:#1D2B3E; --line-1:#1D2B3E; --line-strong:#547199;
-  --accent:#8FB4E0; --mark:#8FB4E0; --on-mark:#0A1019; --ui:#8FB4E0;
-  --ui-hover-bg:#1D2B3E; --wordmark:#BDD5F0;
-  color-scheme:dark;
-}
-[data-theme="mono-red"]{
-  --paper:#150A0C; --surface:#241316; --plate-bg:#241316; --paper-1:#241316;
-  --ink:#F0D8DC; --soft-ink:#D2A9B1; --muted:#A87C86; --label:#A87C86;
-  --rule:#6B3B44; --rule-hair:#331B1F; --line-1:#331B1F; --line-strong:#8E545E;
-  --accent:#DE94A1; --mark:#DE94A1; --on-mark:#150A0C; --ui:#DE94A1;
-  --ui-hover-bg:#331B1F; --wordmark:#F0BCC5;
-  color-scheme:dark;
-}
-[data-theme="mono-amber"]{
-  --paper:#150F06; --surface:#241B0E; --plate-bg:#241B0E; --paper-1:#241B0E;
-  --ink:#F0E2CB; --soft-ink:#D4C09B; --muted:#A8946F; --label:#A8946F;
-  --rule:#6B5730; --rule-hair:#33280F; --line-1:#33280F; --line-strong:#8E7644;
-  --accent:#DDB877; --mark:#DDB877; --on-mark:#150F06; --ui:#DDB877;
-  --ui-hover-bg:#33280F; --wordmark:#EDD3A3;
-  color-scheme:dark;
-}
-[data-theme="mono-pink"]{
-  --paper:#150A11; --surface:#24131D; --plate-bg:#24131D;
-  --paper-1:#24131D;
-  --ink:#F2D8E7; --soft-ink:#D6A9C3; --muted:#A87C96; --label:#A87C96;
-  --rule:#6B3B56; --rule-hair:#331B29; --line-1:#331B29; --line-strong:#8E5476;
-  --accent:#E094BE; --mark:#E094BE; --on-mark:#150A11; --ui:#E094BE;
-  --ui-hover-bg:#331B29; --wordmark:#F0BCD8;
-  color-scheme:dark;
-}
-
-/* ============================================================
-   DARK — near-black page, the hue as the accent
-   ============================================================ */
-[data-theme="dark-neutral"]{
-  --accent:#FFFFFF; --mark:#FFFFFF; --ui:#FFFFFF;
-  --ui-hover-bg:#2E2E2E; --wordmark:#FFFFFF;
-}
-[data-theme="dark-sage"]{
-  --accent:#8AA89A; --mark:#8AA89A; --ui:#8AA89A;
-  --ui-hover-bg:#1E2624; --wordmark:#B8CCC2;
-}
-[data-theme="dark-green"]{
-  --accent:#6FD79B; --mark:#6FD79B; --ui:#6FD79B;
-  --ui-hover-bg:#1B2C22; --wordmark:#A6E9C4;
-}
-[data-theme="dark-blue"]{
-  --accent:#7FB2FF; --mark:#7FB2FF; --ui:#7FB2FF;
-  --ui-hover-bg:#1B2434; --wordmark:#B4D2FF;
-}
-[data-theme="dark-red"]{
-  --accent:#FF8A8A; --mark:#FF8A8A; --ui:#FF8A8A;
-  --ui-hover-bg:#301C1C; --wordmark:#FFBCBC;
-}
-[data-theme="dark-amber"]{
-  --accent:#E8B45C; --mark:#E8B45C; --ui:#E8B45C;
-  --ui-hover-bg:#2E2517; --wordmark:#F3D496;
-}
-[data-theme="dark-pink"]{
-  --accent:#FF8FB0; --mark:#FF8FB0; --ui:#FF8FB0;
-  --ui-hover-bg:#311E26; --wordmark:#FFC0D2;
-}
-
-/* ============================================================
-   THE PICKER
-
-   Shut until asked for: the word THEME is the toggle, and the chips
-   unroll to the RIGHT of it, on the same line. In a footer that is the
-   difference between a quiet line of text and eighteen coloured squares
-   on every page — and a row rather than a stack keeps it a footer.
-
-   No LIGHT / MONO / DARK labels: a chip is a miniature of the page it
-   makes, so the treatment is the thing you can already see. Naming it
-   would be captioning a picture with what the picture is.
-
-   A chip is drawn IN ITS OWN THEME — ground, a rule, a heading bar, a
-   line of body text and the accent — so it cannot promise something the
-   page will not do.
-   ============================================================ */
-.pal{display:inline-flex;align-items:center;gap:var(--s2);min-width:0}
-.pal-toggle{flex:none;background:none;border:0;padding:3px var(--s2);
-  font:inherit;font-size:var(--fs-micro);letter-spacing:.12em;text-transform:uppercase;
-  color:var(--ui);cursor:pointer;
-  transition:background var(--t-fast) var(--ease),color var(--t-fast) var(--ease)}
-.pal-toggle:hover{background:var(--ui-hover-bg);color:var(--ui)}
-
-/* the chips are part of the line, not a panel over it: they unroll from
-   nothing to their width, so the footer never jumps */
-.pal-pop{display:flex;gap:3px;overflow:hidden;max-width:0;
-  transition:max-width var(--t-mid) var(--ease)}
-.pal.open .pal-pop{max-width:min(70vw, 640px)}
+.pal{display:inline-flex;align-items:center;gap:var(--s3);min-width:0}
 .pal-set{display:flex;gap:3px;flex:none}
 
 /* THE MINIATURE. Big enough to read as a page rather than a swatch: the
@@ -251,7 +79,3 @@
 .pal-sw s{position:absolute;left:3px;top:11px;width:16px;height:2px;background:var(--soft-ink)}
 .pal-sw u{position:absolute;left:3px;top:15px;width:9px;height:4px;background:var(--accent)}
 .pal-sw em{position:absolute;right:3px;top:15px;width:5px;height:4px;background:var(--mark)}
-
-@media(max-width:640px){
-  .pal.open .pal-pop{max-width:62vw;overflow-x:auto}
-}

@@ -78,22 +78,14 @@
 .navlink:hover{color:var(--ink)}
 .navlink.active{font-weight:600;color:var(--ink);border-bottom-color:var(--ink)}
 
-/* ---- feed switcher: the active feed is the big editable headline; a +
-   at the end makes another (v1: UI only — see index.html's own note on
-   why saved feeds have no backing table yet). ---- */
+/* ---- feed switcher: just the "Discover" headline now. Saved/named feeds
+   (rename, add, delete — the rest of this block) were dropped as a product
+   rather than left as a v1 gap; index.html never rendered them. ---- */
 .feedswitch{display:flex;align-items:center;gap:20px;flex-wrap:wrap}
-.feedswitch .feed,.feedswitch .feedplus{align-self:baseline}
+.feedswitch .feed{align-self:baseline}
 .feed{font-family:var(--font-body);font-weight:700;font-size:38px;letter-spacing:-.01em;line-height:1.05;
-  color:var(--muted);cursor:pointer;transition:color var(--t-fast) var(--ease);display:inline-flex;align-items:baseline;gap:8px}
-.feed:hover{color:var(--soft-ink)}
+  color:var(--muted);display:inline-flex;align-items:baseline;gap:8px}
 .feed.active{color:var(--ink)}
-.feed[contenteditable="true"]{outline:none;cursor:text;-webkit-user-select:text;user-select:text}
-.feed .fx{opacity:0;font-size:18px;font-weight:400;color:var(--ink);cursor:pointer;transition:opacity var(--t-fast) var(--ease)}
-.feed:hover .fx{opacity:.85}
-.feed .fx:hover{opacity:1}
-.feedplus{font-family:var(--font-body);font-weight:400;font-size:30px;color:var(--muted);cursor:pointer;
-  line-height:1;align-self:center;transition:color var(--t-fast) var(--ease);user-select:none;background:none;border:none}
-.feedplus:hover{color:var(--ink)}
 
 .tagadd{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;
   font-size:16px;line-height:1;color:var(--ink);background:var(--surface);border:none;
@@ -166,7 +158,9 @@
 
 .filmstrip{display:flex;gap:8px;align-items:center;overflow-x:auto;padding-bottom:4px}
 .fthumb{width:88px;height:88px;background:var(--surface);flex-shrink:0;position:relative;cursor:pointer;
-  display:flex;align-items:center;justify-content:center;overflow:hidden;transition:box-shadow var(--t-fast) var(--ease)}
+  display:flex;align-items:center;justify-content:center;overflow:hidden;
+  transition:box-shadow var(--t-fast) var(--ease),background var(--t-fast) var(--ease)}
+.fthumb:hover{background:var(--plate-bg)}
 .fthumb img{width:100%;height:100%;object-fit:cover;display:block}
 .fthumb.sel{box-shadow:inset 0 0 0 3px var(--ink)}
 .fthumb .ext{font-family:var(--font-body);font-weight:700;font-size:11px;color:var(--muted);letter-spacing:.04em}
@@ -189,6 +183,12 @@
 @media(max-width:900px){.fgrid{grid-template-columns:repeat(2,1fr)}}
 .gcard{display:flex;flex-direction:column;gap:8px;cursor:pointer;border:none;background:none;
   padding:0;text-align:left;font:inherit;color:inherit}
+/* the card itself had no hover feedback at all — a real photo fills .gbox
+   completely (see the note below) so a background swap on the box only
+   shows on a framed card; the caption darkening is what makes every card
+   read as hovered, media or not. */
+.gcard:hover .gbox{background:var(--plate-bg)}
+.gcard:hover .gcap{color:var(--soft-ink)}
 /* the square is a layout box only — genuinely no fill of its own. a real
    photo/video covers its own shape completely; nothing reads as a
    "frame" around it. cards with no media of their own (a quote, "other")
@@ -304,17 +304,6 @@
 .verdrop .vi.add{color:var(--accent);font-weight:600}
 .verdrop .sep{height:1px;background:var(--surface);margin:4px 0}
 
-/* ---- search: minimised to an icon, sits on the feed-tabs row ---- */
-.searchmini{display:flex;align-items:center;gap:8px;background:var(--surface);border-radius:var(--r-track);
-  height:34px;padding:0 9px;cursor:pointer;width:34px;overflow:hidden;flex-shrink:0;margin-left:auto;
-  transition:width var(--t-mid) var(--ease)}
-.searchmini.open{width:280px;cursor:default}
-.searchmini svg{width:16px;height:16px;fill:none;stroke:var(--muted);stroke-width:2;flex-shrink:0}
-.searchmini input{border:none;background:none;outline:none;font-family:var(--font-body);font-size:13px;
-  color:var(--ink);flex:1;min-width:0;opacity:0;transition:opacity var(--t-fast) var(--ease)}
-.searchmini.open input{opacity:1}
-.searchmini input::placeholder{color:var(--muted)}
-
 /* ---- save-to-folder rows ---- */
 .folderrow{display:flex;align-items:center;gap:12px;padding:10px 8px;cursor:pointer;border-radius:var(--pv-r);
   transition:background var(--t-fast) var(--ease);border:none;background:none;width:100%;text-align:left;font:inherit}
@@ -336,6 +325,47 @@
 .a2cdrop .ci:hover{background:var(--surface)}
 .a2cdrop .ci.add{color:var(--accent);font-weight:600}
 .a2cdrop .sep{height:1px;background:var(--surface);margin:4px 0}
+
+/* ---- the overlay's media pane: 58% of the card, artboard.html's own
+   detailCard() split (42% info column gets the rest). Never gave this its
+   own rule when it was ported from the mockup's .ms — with no width of its
+   own a flex child shrinks to its content, so an audio post's 76px play
+   circle was the only thing holding the pane open instead of the pane
+   holding the circle. ---- */
+.medial{width:58%;height:100%;flex-shrink:0;position:relative;overflow:hidden;
+  display:flex;align-items:center;justify-content:center;background:var(--surface)}
+.medial img,.medial video{width:100%;height:100%;object-fit:contain;display:block}
+
+/* ---- the audio/video player: eski's own, not the browser's. square
+   track, sage fill, tabular time — see the eski-pivot skill on why native
+   <audio controls>/<video controls> got replaced (they varied by OS/browser
+   and the play circle sitting on top of one did nothing). ---- */
+.player{display:flex;flex-direction:column;gap:8px;width:100%}
+.player-track{position:relative;width:100%;height:4px;background:var(--plate-bg);cursor:pointer}
+.player-fill{position:absolute;left:0;top:0;height:100%;width:0%;background:var(--accent);pointer-events:none}
+.player-row{display:flex;align-items:center;justify-content:space-between}
+.player-time{font-family:var(--font-body);font-variant-numeric:tabular-nums;font-size:11px;color:var(--muted)}
+/* pinned to the bottom of whatever it's overlaying — a video frame or the
+   waveform image — rather than sitting in normal flow below it. */
+.player-bar{position:absolute;left:16px;right:16px;bottom:14px;display:flex;flex-direction:column;gap:6px}
+
+/* ---- the big circular play/pause, centred on the frame or the waveform.
+   White stays legible on arbitrary video content (same reasoning as
+   .carrow/.ccount below, and their exact literal colours); the waveform is
+   a controlled asset we generate ourselves, but white reads fine on sage
+   bars too, so one button style covers both. ---- */
+.vplay-overlay{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  width:60px;height:60px;border-radius:var(--r-round);background:rgba(255,255,255,.92);
+  border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;
+  transition:background var(--t-fast) var(--ease)}
+.vplay-overlay:hover{background:#fff}
+.vplay-overlay.hide{display:none}
+/* video's bar overlays arbitrary footage, so it needs its own always-legible
+   colours; the audio bar overlays a surface-toned pane and reads fine in
+   the theme's own colours (.player-bar's defaults, no override needed). */
+.vplayer-bar .player-track{background:rgba(255,255,255,.28)}
+.vplayer-bar .player-fill{background:#fff}
+.vplayer-bar .player-time{color:#fff}
 
 /* ---- the overlay chrome: scrim, close row, tabs, panels ---- */
 .pv-scrim{position:fixed;inset:0;background:var(--scrim);z-index:200;display:flex;align-items:center;justify-content:center;padding:32px}

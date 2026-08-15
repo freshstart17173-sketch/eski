@@ -28,6 +28,12 @@ function fmtWhen(iso){
   if(days < 365) return Math.floor(days/30) + 'mo';
   return Math.floor(days/365) + 'y';
 }
+/* the "Added" row wants the real timestamp, not a rounded-off "today" —
+   fmtWhen stays relative for compact contexts (comments, the version list). */
+function fmtDateTime(iso){
+  return new Date(iso).toLocaleString(undefined,
+    { year:'numeric', month:'short', day:'numeric', hour:'numeric', minute:'2-digit' });
+}
 function slugify(s){
   return (s || 'untitled').toString().toLowerCase().trim()
     .replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,60) || 'untitled';
@@ -42,6 +48,8 @@ function toast(msg){
   setTimeout(() => el.remove(), 5200);
 }
 const PLAY = '<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>';
+const PLAY_PATH = '<path d="M8 5v14l11-7z"/>';
+const PAUSE_PATH = '<path d="M7 5h4v14H7zM13 5h4v14h-4z"/>';
 const CHECK = '<svg viewBox="0 0 24 24"><path d="M5 12l4 4 10-10"/></svg>';
 const KINDS = ['image','video','audio','text','other','combination'];
 
@@ -114,9 +122,32 @@ function mediaTag(w, cover){
   if(!key) return '';
   return `<img class="fillmedia" src="${esc(eski.mediaUrl(key))}" alt="" loading="lazy">`;
 }
+/* a <video> with poster="" shows the cover exactly like an <img> until
+   something calls .play() — wireCardPreviews() below is that something,
+   muted and capped to the first 5s once the card scrolls into view. no
+   custom img-then-swap needed; the browser already does that part. */
+function videoPreviewTag(w){
+  if(!w.media_key) return mediaTag(w, w.thumb_key || w.cover_key);
+  const poster = w.thumb_key || w.cover_key;
+  return `<video class="fillmedia" data-preview muted loop playsinline preload="none"` +
+    `${poster ? ` poster="${esc(eski.mediaUrl(poster))}"` : ''} src="${esc(eski.mediaUrl(w.media_key))}"></video>`;
+}
+let previewObserver;
+/* call after inserting cardHtml() output into the DOM — a page's own
+   grid.innerHTML = rows.map(cardHtml).join('') doesn't wire anything by
+   itself, same convention as the [data-open] click delegation below. */
+function wireCardPreviews(root){
+  previewObserver ??= new IntersectionObserver(entries => {
+    entries.forEach(e => e.isIntersecting ? e.target.play().catch(()=>{}) : e.target.pause());
+  }, { threshold: 0.5 });
+  root.querySelectorAll('video[data-preview]').forEach(v => {
+    previewObserver.observe(v);
+    v.addEventListener('timeupdate', () => { if(v.currentTime > 5) v.currentTime = 0; });
+  });
+}
 function cardHtml(w){
   const inner = (() => {
-    if(w.kind === 'video') return mediaTag(w, w.thumb_key || w.cover_key) + `<div class="gplay">${PLAY}</div>`;
+    if(w.kind === 'video') return videoPreviewTag(w) + `<div class="gplay">${PLAY}</div>`;
     if(w.kind === 'audio') return (w.cover_key ? mediaTag(w, w.cover_key) : '') + `<div class="gplay">${PLAY}</div>`;
     if(w.kind === 'combination') return mediaTag(w, w.cover_key) +
       `<div class="gcount"><svg viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12"/><path d="M4 16V4h12"/></svg>${w._itemCount||0}</div>`;
@@ -132,7 +163,9 @@ function cardHtml(w){
       <div class="gbox framed" style="align-items:stretch;justify-content:flex-start;">
         <div class="gtext"><div class="gtitle">${esc(w.title)}</div><div class="gbody">${esc((w.body||'').slice(0,320))}</div></div>
       </div><div class="gcap">${esc(w.title)}</div></button>`;
-  const framed = !inner && !w.media_key && !w.cover_key;
+  // audio is always framed, like text/other — a background square with the
+  // waveform inset, not edge-to-edge media
+  const framed = w.kind === 'audio' || (!inner && !w.media_key && !w.cover_key);
   return `<button class="gcard" type="button" data-open="${w.id}">
     <div class="gbox${framed?' framed':''}">${inner}</div>
     <div class="gcap">${esc(w.title)}</div></button>`;
@@ -206,16 +239,16 @@ async function renderSaveDrop(root, workId){
       already ? mySavedIds.delete(workId) : mySavedIds.add(workId);
     });
   });
-  drop.querySelector('[data-newfolder]').addEventListener('click', async () => {
+  drop.querySelector('[data-newfolder]').addEventListener('click', () => {
     if(!user) return openSignIn();
-    const name = prompt('name this folder');
-    if(!name || !name.trim()) return;
-    const { data, error } = await sb.from('save_folders').insert({ owner_id: user.id, name: name.trim() }).select().single();
-    if(error) return toast(eski.dbError('ESK-5104','the folder could not be created', error));
-    myFolders.push(data);
-    await sb.from('save_folder_items').insert({ folder_id: data.id, target_type:'work', target_id: workId });
-    mySavedIds.add(workId);
-    renderSaveDrop(root, workId);
+    openPrompt('Name this folder', 'e.g. "inspo"', 'Create folder', async name => {
+      const { data, error } = await sb.from('save_folders').insert({ owner_id: user.id, name }).select().single();
+      if(error) return toast(eski.dbError('ESK-5104','the folder could not be created', error));
+      myFolders.push(data);
+      await sb.from('save_folder_items').insert({ folder_id: data.id, target_type:'work', target_id: workId });
+      mySavedIds.add(workId);
+      renderSaveDrop(root, workId);
+    });
   });
 }
 function tagsPanelHtml(work, tags, poster){
@@ -240,7 +273,8 @@ function commentRowHtml(c, replyTo){
         <span style="font-size:11px;color:var(--muted);">${fmtWhen(c.created_at)}</span>
       </div>
       <div style="font-size:12.5px;color:var(--soft-ink);line-height:1.5;">${c.deleted_at ? '<i>deleted</i>' : esc(c.body)}</div>
-      ${!c.deleted_at ? `<button class="dtab" type="button" style="padding:2px 0;font-size:11px;" data-reply="${c.id}" data-who="${esc(c.author_name)}">reply</button>` : ''}
+      ${!c.deleted_at ? `<button class="dtab" type="button" style="padding:2px 0;font-size:11px;" data-reply="${c.id}" data-who="${esc(c.author_name)}">reply</button>
+      <button class="dtab" type="button" style="padding:2px 0;font-size:11px;" data-report-comment="${c.id}">report</button>` : ''}
     </div>
   </div>`;
 }
@@ -265,13 +299,29 @@ function commentsPanelHtml(work, comments){
     </div>
   </div>`;
 }
+function playerHtml(prefix){
+  return `<div class="player">
+    <div class="player-track" id="${prefix}-track"><div class="player-fill" id="${prefix}-fill"></div></div>
+    <div class="player-row"><span class="player-time" id="${prefix}-cur">0:00</span><span class="player-time" id="${prefix}-dur">0:00</span></div>
+  </div>`;
+}
 function mediaPane(work, items){
   if(work.kind === 'image') return `<div class="medial">${work.media_key ? `<img src="${esc(eski.mediaUrl(work.media_key))}" alt="">` : ''}</div>`;
-  if(work.kind === 'video') return `<div class="medial" style="background:#0d0d0d;">${work.media_key ? `<video src="${esc(eski.mediaUrl(work.media_key))}" controls></video>` : ''}</div>`;
-  if(work.kind === 'audio') return `<div class="medial" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;padding:48px;">
-    <div style="width:76px;height:76px;border-radius:var(--r-round);background:var(--ink);display:flex;align-items:center;justify-content:center;">
-      <svg viewBox="0 0 24 24" width="26" height="26" style="fill:var(--paper);"><path d="M8 5v14l11-7z"/></svg></div>
-    ${work.media_key ? `<audio src="${esc(eski.mediaUrl(work.media_key))}" controls style="width:100%;"></audio>` : ''}
+  if(work.kind === 'video') return `<div class="medial" style="background:#0d0d0d;">
+    ${work.media_key ? `<video id="video-el" src="${esc(eski.mediaUrl(work.media_key))}" playsinline></video>
+    <button type="button" class="vplay-overlay" id="video-playtoggle">
+      <svg id="video-playicon" viewBox="0 0 24 24" width="22" height="22" style="fill:#111;">${PLAY_PATH}</svg></button>
+    <div class="player-bar vplayer-bar">${playerHtml('video')}</div>` : ''}
+  </div>`;
+  /* the waveform IS the cover — same generated image as the grid card,
+     shown full size here instead of a decorative icon with a blank
+     player underneath it. */
+  if(work.kind === 'audio') return `<div class="medial">
+    ${work.cover_key ? `<img src="${esc(eski.mediaUrl(work.cover_key))}" alt="" style="padding:40px;box-sizing:border-box;">` : ''}
+    ${work.media_key ? `<audio id="audio-el" src="${esc(eski.mediaUrl(work.media_key))}"></audio>
+    <button type="button" class="vplay-overlay" id="audio-playtoggle">
+      <svg id="audio-playicon" viewBox="0 0 24 24" width="22" height="22" style="fill:#111;">${PLAY_PATH}</svg></button>
+    <div class="player-bar">${playerHtml('audio')}</div>` : ''}
   </div>`;
   if(work.kind === 'text') return `<div class="medial" style="background:var(--paper);overflow:auto;padding:56px 60px;">
     <div style="font-weight:700;font-size:26px;color:var(--ink);line-height:1.25;margin-bottom:20px;">${esc(work.title)}</div>
@@ -319,21 +369,9 @@ function collectionInfoColHtml(work, items, idx, liked, likeCount, poster){
       <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;">the collection</div>
       <div style="font-weight:700;font-size:17px;color:var(--ink);line-height:1.3;">${esc(work.title)}</div>
       <div style="font-size:13.5px;font-weight:400;color:var(--soft-ink);line-height:1.5;">${esc(work.caption||'')}</div>
-      ${metaRows([['Added', fmtWhen(work.created_at)], ['By', work.owner_name], ['Items', items.length], ['Types', typesLine]])}
+      ${metaRows([['Added', fmtDateTime(work.created_at)], ['By', work.owner_name], ['Items', items.length], ['Types', typesLine]])}
       ${poster ? posterActionsHtml(work) : actionBarHtml(work, liked, likeCount)}
     </div>`;
-}
-function editFormHtml(work){
-  const isText = work.kind === 'text';
-  return `<div id="edit-form" style="display:flex;flex-direction:column;gap:12px;">
-    ${isText ? `<div class="ufield"><div class="ulabel">Title</div><input class="uinput" id="edit-title" value="${esc(work.title)}"></div>` : ''}
-    <div class="ufield"><div class="ulabel">Caption</div><textarea class="utext" id="edit-caption" placeholder="Write a caption…">${esc(work.caption||'')}</textarea></div>
-    ${isText ? `<div class="ufield"><div class="ulabel">Body</div><textarea class="utext" id="edit-body" style="min-height:160px;">${esc(work.body||'')}</textarea></div>` : ''}
-    <div style="display:flex;justify-content:flex-end;gap:8px;">
-      <button class="btnline" type="button" id="edit-cancel">Cancel</button>
-      <button class="btnline filled" type="button" id="edit-save">Save</button>
-    </div>
-  </div>`;
 }
 async function openDetail(workId){
   const root = overlayRoot();
@@ -378,9 +416,15 @@ async function openDetail(workId){
   wireDetail(root, work, items||[], poster);
 }
 function infoColHtml(work, liked, likeCount, poster){
-  return `${work.kind==='text' ? '' : `<div style="font-weight:700;font-size:19px;color:var(--ink);line-height:1.3;">${esc(work.title)}</div>`}
+  /* title is a filename with the extension trimmed off (uploadOne() never
+     asks for a real one on image/video/audio) — showing it next to the
+     caption the poster actually wrote just repeats the file name. 'other'
+     is the exception: with no media of its own, the title is the only
+     label the post has. 'text' shows its title inside the media pane
+     itself, so it's already skipped here. */
+  return `${work.kind==='other' ? `<div style="font-weight:700;font-size:19px;color:var(--ink);line-height:1.3;">${esc(work.title)}</div>` : ''}
     <div style="font-size:14px;color:var(--soft-ink);line-height:1.5;">${esc(work.caption||'')}</div>
-    ${metaRows([['Added', fmtWhen(work.created_at)], ['By', work.owner_name]], work.media_key ? 'download' : null, work.media_key ? eski.mediaUrl(work.media_key) : null)}
+    ${metaRows([['Added', fmtDateTime(work.created_at)], ['By', work.owner_name]], work.media_key ? 'download' : null, work.media_key ? eski.mediaUrl(work.media_key) : null)}
     ${poster ? posterActionsHtml(work) : actionBarHtml(work, liked, likeCount)}`;
 }
 function overlayControlsHtml(poster, hasVersions, versions, work){
@@ -395,13 +439,23 @@ function overlayControlsHtml(poster, hasVersions, versions, work){
     </div>` : ''}
     ${poster ? `<div style="position:relative;"><button class="navarrow" type="button" id="burger-btn">&#8942;</button>
       <div class="burger" id="burger-menu">
-        <button class="mi" type="button" id="edit-post-btn">Edit post</button>
         <button class="mi" type="button" data-post-private>Make private</button>
         <div class="sep"></div>
         <button class="mi danger" type="button" data-post-delete>Delete</button>
-      </div></div>` : ''}
+      </div></div>` : `<button class="navarrow" type="button" data-report-work="${work.id}" title="Report">&#9873;</button>`}
     <button class="navarrow" type="button" data-close-detail>&times;</button>
   </div>`;
+}
+/* file_report() covers work/collection/comment/profile — same call, same
+   styled prompt, wherever a report control ends up. Signed-out reporting
+   isn't a thing (reports_file's RLS check is reporter_id = auth.uid()). */
+function reportFlow(targetType, targetId){
+  if(!user) return openSignIn();
+  openPrompt('Report this ' + targetType, 'what\'s wrong with it?', 'Send report', async reason => {
+    const { data, error } = await sb.rpc('file_report', { p_type: targetType, p_id: targetId, p_reason: reason });
+    if(error || !data || data.ok !== true) return toast(eski.dbError('ESK-5114', 'the report could not be sent', error || { message: (data && data.why) || 'unknown' }));
+    toast('reported — thanks, a moderator will look at it');
+  });
 }
 function posterActionsHtml(work){
   return `<div class="a2c">
@@ -410,8 +464,61 @@ function posterActionsHtml(work){
     <div class="a2cdrop" id="a2c-drop"></div>
   </div>`;
 }
+function fmtBytes(n){
+  if(!n) return '0 KB';
+  const units = ['bytes','KB','MB','GB'];
+  let i = 0;
+  while(n >= 1024 && i < units.length - 1){ n /= 1024; i++; }
+  return (i === 0 ? n : n.toFixed(1)) + ' ' + units[i];
+}
+function fmtClock(s){
+  if(!isFinite(s) || s < 0) s = 0;
+  s = Math.floor(s);
+  const m = Math.floor(s / 60), r = s % 60;
+  return m + ':' + (r < 10 ? '0' : '') + r;
+}
+/* one wiring for both the audio and video players — eski's own square
+   track/fill instead of the browser's native controls (which vary by OS
+   and don't take a theme), and a play button that actually does something
+   (it didn't, before: a decorative circle sat on top of a real native
+   player underneath it). prefix is 'audio' or 'video', matching the ids
+   playerHtml()/mediaPane() rendered. */
+function wirePlayer(root, prefix, mediaEl){
+  if(!mediaEl) return;
+  const toggle = root.querySelector('#' + prefix + '-playtoggle');
+  const icon = root.querySelector('#' + prefix + '-playicon');
+  const track = root.querySelector('#' + prefix + '-track');
+  const fill = root.querySelector('#' + prefix + '-fill');
+  const cur = root.querySelector('#' + prefix + '-cur');
+  const dur = root.querySelector('#' + prefix + '-dur');
+  if(toggle) toggle.addEventListener('click', () => mediaEl.paused ? mediaEl.play() : mediaEl.pause());
+  if(prefix === 'video') mediaEl.addEventListener('click', () => mediaEl.paused ? mediaEl.play() : mediaEl.pause());
+  mediaEl.addEventListener('play', () => { if(icon) icon.innerHTML = PAUSE_PATH; if(toggle) toggle.classList.add('hide'); });
+  mediaEl.addEventListener('pause', () => { if(icon) icon.innerHTML = PLAY_PATH; if(toggle) toggle.classList.remove('hide'); });
+  mediaEl.addEventListener('ended', () => { if(icon) icon.innerHTML = PLAY_PATH; if(toggle) toggle.classList.remove('hide'); });
+  if(dur) mediaEl.addEventListener('loadedmetadata', () => { dur.textContent = fmtClock(mediaEl.duration); });
+  if(fill || cur) mediaEl.addEventListener('timeupdate', () => {
+    if(fill) fill.style.width = (mediaEl.duration ? (mediaEl.currentTime / mediaEl.duration * 100) : 0) + '%';
+    if(cur) cur.textContent = fmtClock(mediaEl.currentTime);
+  });
+  if(track) track.addEventListener('click', e => {
+    if(!mediaEl.duration) return;
+    const r = track.getBoundingClientRect();
+    mediaEl.currentTime = Math.min(1, Math.max(0, (e.clientX - r.left) / r.width)) * mediaEl.duration;
+  });
+  /* video only starts with its overlay circle visible; audio's own circle
+     always shows (it's the only play control, not an overlay on content). */
+  if(prefix === 'video' && toggle) toggle.classList.remove('hide');
+}
 async function wireDetail(root, work, items, poster){
   root.querySelector('[data-close-detail]').addEventListener('click', () => root.innerHTML = '');
+  const reportBtn = root.querySelector('[data-report-work]');
+  // 'combination' is still a works row (a bundled multi-item post) — the
+  // separate 'collection' report target is the curated collections table,
+  // which this overlay never opens.
+  if(reportBtn) reportBtn.addEventListener('click', () => reportFlow('work', work.id));
+  wirePlayer(root, 'audio', root.querySelector('#audio-el'));
+  wirePlayer(root, 'video', root.querySelector('#video-el'));
   root.querySelectorAll('.dtab').forEach(t => t.addEventListener('click', () => {
     root.querySelectorAll('.dtab').forEach(x => x.classList.remove('active'));
     t.classList.add('active');
@@ -427,24 +534,6 @@ async function wireDetail(root, work, items, poster){
   // burger
   const burgerBtn = root.querySelector('#burger-btn');
   if(burgerBtn) burgerBtn.addEventListener('click', e => { e.stopPropagation(); root.querySelector('#burger-menu').classList.toggle('open'); });
-  // edit post — swaps the info column for a form; Save writes straight to
-  // works and re-renders the overlay so every other panel picks up the change.
-  const editBtn = root.querySelector('#edit-post-btn');
-  if(editBtn) editBtn.addEventListener('click', () => {
-    root.querySelector('#burger-menu').classList.remove('open');
-    document.getElementById('info-col').innerHTML = editFormHtml(work);
-    document.getElementById('edit-cancel').addEventListener('click', () => openDetail(work.id));
-    document.getElementById('edit-save').addEventListener('click', async () => {
-      const patch = { caption: document.getElementById('edit-caption').value.trim() || null };
-      const titleEl = document.getElementById('edit-title');
-      const bodyEl = document.getElementById('edit-body');
-      if(titleEl) patch.title = titleEl.value.trim() || work.title;
-      if(bodyEl) patch.body = bodyEl.value;
-      const { error } = await sb.from('works').update(patch).eq('id', work.id);
-      if(error) return toast(eski.dbError('ESK-5109','the edit could not be saved', error));
-      toast('saved'); openDetail(work.id);
-    });
-  });
   const priv = root.querySelector('[data-post-private]');
   if(priv) priv.addEventListener('click', async () => {
     root.querySelector('#burger-menu').classList.remove('open');
@@ -487,15 +576,15 @@ async function wireDetail(root, work, items, poster){
   });
   // tags
   const tagAdd = root.querySelector('#detail-tagadd');
-  if(tagAdd) tagAdd.addEventListener('click', async () => {
+  if(tagAdd) tagAdd.addEventListener('click', () => {
     if(!user) return openSignIn();
-    const t = prompt('tag (no #)');
-    if(!t || !t.trim()) return;
-    const tag = t.trim().toLowerCase().replace(/[^a-z0-9-]/g,'');
-    if(tag.length < 2) return;
-    const { error } = await sb.from('content_tags').insert({ target_type:'work', target_id: work.id, tag, added_by: user.id });
-    if(error && error.code !== '23505') return toast(eski.dbError('ESK-5101','tag could not be added', error));
-    openDetail(work.id);
+    openPrompt('Add a tag', 'no # needed', 'Add tag', async t => {
+      const tag = t.toLowerCase().replace(/[^a-z0-9-]/g,'');
+      if(tag.length < 2) return;
+      const { error } = await sb.from('content_tags').insert({ target_type:'work', target_id: work.id, tag, added_by: user.id });
+      if(error && error.code !== '23505') return toast(eski.dbError('ESK-5101','tag could not be added', error));
+      openDetail(work.id);
+    });
   });
   root.querySelectorAll('[data-detag]').forEach(x => x.addEventListener('click', async () => {
     const { error } = await sb.from('content_tags').delete().eq('target_type','work').eq('target_id', work.id).eq('tag', x.dataset.detag);
@@ -503,6 +592,7 @@ async function wireDetail(root, work, items, poster){
     openDetail(work.id);
   }));
   // comments
+  root.querySelectorAll('[data-report-comment]').forEach(b => b.addEventListener('click', () => reportFlow('comment', b.dataset.reportComment)));
   let replyTarget = null;
   root.querySelectorAll('[data-reply]').forEach(b => b.addEventListener('click', () => {
     replyTarget = { id: b.dataset.reply, who: b.dataset.who };
@@ -562,16 +652,16 @@ async function wireDetail(root, work, items, poster){
       if(error && error.code !== '23505') return toast(eski.dbError('ESK-5105','could not add to collection', error));
       toast('added'); drop.classList.remove('open');
     }));
-    drop.querySelector('#new-collection').addEventListener('click', async () => {
-      const title = prompt('name this collection');
-      if(!title || !title.trim()) return;
-      const { data: col, error } = await sb.from('collections').insert({
-        owner_id: user.id, owner_name: ownerName(), title: title.trim(),
-        slug: slugify(title) + '-' + Date.now().toString(36).slice(-5), status: 'published'
-      }).select().single();
-      if(error) return toast(eski.dbError('ESK-5105','collection could not be created', error));
-      await sb.from('collection_items').insert({ collection_id: col.id, work_id: work.id });
-      toast('collection created'); drop.classList.remove('open');
+    drop.querySelector('#new-collection').addEventListener('click', () => {
+      openPrompt('Name this collection', 'untitled', 'Create collection', async title => {
+        const { data: col, error } = await sb.from('collections').insert({
+          owner_id: user.id, owner_name: ownerName(), title,
+          slug: slugify(title) + '-' + Date.now().toString(36).slice(-5), status: 'published'
+        }).select().single();
+        if(error) return toast(eski.dbError('ESK-5105','collection could not be created', error));
+        await sb.from('collection_items').insert({ collection_id: col.id, work_id: work.id });
+        toast('collection created'); drop.classList.remove('open');
+      });
     });
   });
 }
@@ -601,6 +691,33 @@ function openConfirm(title, body, confirmLabel, onConfirm){
   scrimClose(root);
   root.querySelector('#confirm-cancel').addEventListener('click', () => root.innerHTML = '');
   root.querySelector('#confirm-go').addEventListener('click', () => { root.innerHTML = ''; onConfirm(); });
+}
+/* the styled equivalent of window.prompt() — same reasoning and same
+   stacking layer as openConfirm above. optional:true lets an empty
+   submit through (as null) rather than blocking it, for prompts like the
+   version label that don't require an answer. */
+function openPrompt(title, placeholder, confirmLabel, onSubmit, optional){
+  const root = confirmRoot();
+  root.innerHTML = `<div class="pv-scrim" style="z-index:300;"><div class="pv-card" style="width:420px;padding:32px;display:flex;flex-direction:column;gap:16px;">
+    <div style="font-weight:700;font-size:19px;color:var(--ink);">${esc(title)}</div>
+    <input class="uinput" id="prompt-input" placeholder="${esc(placeholder || '')}">
+    <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:4px;">
+      <button class="btnline" type="button" id="prompt-cancel">Cancel</button>
+      <button class="btnline filled" type="button" id="prompt-go">${esc(confirmLabel)}</button>
+    </div>
+  </div></div>`;
+  scrimClose(root);
+  const input = root.querySelector('#prompt-input');
+  input.focus();
+  const go = () => {
+    const v = input.value.trim();
+    if(!v && !optional) return;
+    root.innerHTML = '';
+    onSubmit(v || null);
+  };
+  root.querySelector('#prompt-cancel').addEventListener('click', () => root.innerHTML = '');
+  root.querySelector('#prompt-go').addEventListener('click', go);
+  input.addEventListener('keydown', e => { if(e.key === 'Enter') go(); });
 }
 function openSignIn(){
   const root = overlayRoot();
@@ -740,7 +857,10 @@ function renderUploadDetail(){
   const titEl = box.querySelector('#item-title');
   if(titEl) titEl.addEventListener('input', () => cur.title = titEl.value);
   box.querySelector('#upload-cancel').addEventListener('click', () => root.innerHTML = '');
-  box.querySelector('#upload-publish').addEventListener('click', publish);
+  box.querySelector('#upload-publish').addEventListener('click', () => {
+    if(uploadCtx) openPrompt('Label this version', 'e.g. "remaster" (optional)', 'Publish version', label => publish(label), true);
+    else publish(null);
+  });
 }
 let hashWorker;
 function sha256(blob){
@@ -753,38 +873,108 @@ function sha256(blob){
     hashWorker.postMessage({ id, blob });
   });
 }
-/* NO VIDEO/AUDIO THUMBNAIL YET — see ARCHITECTURE.md. */
-async function uploadOne(item){
-  const hash = await sha256(item.file);
+async function uploadBlob(blob, ext){
+  const hash = await sha256(blob);
   const { data: session } = await sb.auth.getSession();
   const token = session && session.session && session.session.access_token;
   const signRes = await fetch('/api/sign', {
     method: 'POST',
     headers: { 'content-type':'application/json', Authorization: 'Bearer ' + token },
-    body: JSON.stringify({ files: [{ hash, ext: item.ext || 'bin' }] })
+    body: JSON.stringify({ files: [{ hash, ext: ext || 'bin' }] })
   });
   const signJson = await signRes.json().catch(() => null);
   if(!signRes.ok || !signJson || !signJson.files || !signJson.files[0])
     throw new Error((signJson && signJson.error) || ('ESK-3000 upload signing failed (' + signRes.status + ')'));
   const { key, url } = signJson.files[0];
-  const put = await fetch(url, { method:'PUT', body: item.file });
+  const put = await fetch(url, { method:'PUT', body: blob });
   if(!put.ok) throw new Error('ESK-4003 upload failed (' + put.status + ')');
   return key;
 }
-async function publish(){
+function uploadOne(item){ return uploadBlob(item.file, item.ext); }
+
+/* a video's cover is a real frame, grabbed client-side rather than asking
+   for a second file — decode to a hidden <video>, seek partway in (a first
+   frame is disproportionately often a black flash or a title card), draw
+   the current frame to a canvas, encode. */
+function grabVideoFrame(file){
+  return new Promise(resolve => {
+    const video = document.createElement('video');
+    video.muted = true; video.playsInline = true; video.preload = 'metadata';
+    const url = URL.createObjectURL(file);
+    video.src = url;
+    const cleanup = () => URL.revokeObjectURL(url);
+    video.addEventListener('loadedmetadata', () => { video.currentTime = Math.min(1, (video.duration || 0) / 2); });
+    video.addEventListener('seeked', () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = video.videoWidth; canvas.height = video.videoHeight;
+      canvas.getContext('2d').drawImage(video, 0, 0);
+      canvas.toBlob(blob => { cleanup(); resolve(blob); }, 'image/jpeg', 0.85);
+    });
+    video.addEventListener('error', () => { cleanup(); resolve(null); });
+  });
+}
+/* a waveform reads the actual performance rather than showing a generic
+   play glyph on a blank square — decode the whole file with the Web Audio
+   API (the same approach loudness.js uses for loudness, just reading peaks
+   instead of RMS blocks), take the loudest sample in each of a few hundred
+   bins across the file, and draw bars. BINS this high is "the card is a
+   picture of the audio", not a coarse sketch of it. */
+async function generateWaveform(file){
+  const AC = window.AudioContext || window.webkitAudioContext;
+  if(!AC) return null;
+  const ctx = new AC();
+  try{
+    const buf = await ctx.decodeAudioData(await file.arrayBuffer());
+    const data = buf.getChannelData(0);
+    /* one column per pixel, no gap between columns — a soundcloud-style
+       waveform is bars with visible gaps and rounded tops; this is the
+       dense, continuous kind (Audacity/Pro Tools), which is what "high
+       quality" actually looks like at this resolution. */
+    const W = 1800, H = 600;
+    const step = Math.max(1, Math.floor(data.length / W));
+    const canvas = document.createElement('canvas');
+    canvas.width = W; canvas.height = H;
+    const g = canvas.getContext('2d');
+    g.fillStyle = '#5B7A6B';   // baked-in sage: a generated asset, not chrome, so it doesn't need a live theme token
+    for(let x = 0; x < W; x++){
+      const start = x * step, end = Math.min(start + step, data.length);
+      let max = 0;
+      for(let j = start; j < end; j++){ const v = Math.abs(data[j]); if(v > max) max = v; }
+      const h = Math.max(2, max * H);
+      g.fillRect(x, (H - h) / 2, 1, h);
+    }
+    return await new Promise(r => canvas.toBlob(r, 'image/png'));
+  }catch(e){
+    return null;   // an undecodeable file still publishes — just with no waveform
+  }finally{
+    if(ctx.close) ctx.close();
+  }
+}
+/* best-effort: a cover that fails to generate isn't worth blocking a
+   publish over, so this never throws — the post just keeps the plain
+   play-glyph card it had before either feature existed. */
+async function coverKeyFor(item){
+  try{
+    if(item.kind === 'video'){ const b = await grabVideoFrame(item.file); return b ? await uploadBlob(b, 'jpg') : null; }
+    if(item.kind === 'audio'){ const b = await generateWaveform(item.file); return b ? await uploadBlob(b, 'png') : null; }
+  }catch(e){ return null; }
+  return null;
+}
+async function publish(versionLabel){
   const btn = document.getElementById('upload-publish');
   btn.disabled = true; btn.textContent = 'Publishing…';
   try{
     if(uploadCtx){
       const item = pending[0];
       const media_key = item.kind === 'text' ? null : await uploadOne(item);
+      const cover_key = await coverKeyFor(item);
       const title = item.kind === 'text' ? (item.title || item.file.name.replace(/\.[^.]+$/,'')) : item.file.name.replace(/\.[^.]+$/,'');
       const body = item.kind === 'text' ? await item.file.text() : null;
       const { error } = await sb.from('works').insert({
         owner_id: user.id, owner_name: ownerName(), kind: uploadCtx.kind, title,
         slug: slugify(title) + '-' + Date.now().toString(36).slice(-5),
-        caption: item.caption || null, body, media_key,
-        version_of: uploadCtx.versionOf, version_label: prompt('label this version (optional)', '') || null,
+        caption: item.caption || null, body, media_key, cover_key, bytes: item.file.size,
+        version_of: uploadCtx.versionOf, version_label: versionLabel,
         status: 'published'
       });
       if(error) throw new Error(eski.dbError('ESK-5108','the version could not be published', error));
@@ -800,6 +990,9 @@ async function publish(){
       if(error) throw new Error(eski.dbError('ESK-5106','the collection could not be published', error));
       let idx = 0;
       for(const item of pending){
+        // ponytail: work_items has no cover_key column and nothing reads one yet
+        // (collectionPane() renders media_key directly) — skip generating one
+        // until the carousel actually wants it. See ARCHITECTURE.md.
         const media_key = item.kind === 'text' ? null : await uploadOne(item);
         const body = item.kind === 'text' ? await item.file.text() : null;
         const { error: ie } = await sb.from('work_items').insert({
@@ -812,12 +1005,13 @@ async function publish(){
       let rootId = null;
       for(const item of pending){
         const media_key = item.kind === 'text' ? null : await uploadOne(item);
+        const cover_key = await coverKeyFor(item);
         const title = item.title || item.file.name.replace(/\.[^.]+$/,'');
         const body = item.kind === 'text' ? await item.file.text() : null;
         const { data: w, error } = await sb.from('works').insert({
           owner_id: user.id, owner_name: ownerName(), kind: item.kind, title,
           slug: slugify(title) + '-' + Date.now().toString(36).slice(-5),
-          caption: item.caption || null, body, media_key,
+          caption: item.caption || null, body, media_key, cover_key, bytes: item.file.size,
           version_of: rootId, status: 'published'
         }).select().single();
         if(error) throw new Error(eski.dbError('ESK-5106','a version failed to publish', error));
@@ -826,12 +1020,13 @@ async function publish(){
     } else {
       for(const item of pending){
         const media_key = item.kind === 'text' ? null : await uploadOne(item);
+        const cover_key = await coverKeyFor(item);
         const title = item.kind === 'text' ? (item.title || item.file.name.replace(/\.[^.]+$/,'')) : item.file.name.replace(/\.[^.]+$/,'');
         const body = item.kind === 'text' ? await item.file.text() : null;
         const { error } = await sb.from('works').insert({
           owner_id: user.id, owner_name: ownerName(), kind: item.kind, title,
           slug: slugify(title) + '-' + Date.now().toString(36).slice(-5),
-          caption: item.caption || null, body, media_key, status: 'published'
+          caption: item.caption || null, body, media_key, cover_key, bytes: item.file.size, status: 'published'
         });
         if(error) throw new Error(eski.dbError('ESK-5106','the post could not be published', error));
       }
@@ -847,14 +1042,14 @@ async function publish(){
 }
 
 return {
-  esc, fmtWhen, slugify, toast, PLAY, CHECK, KINDS,
+  esc, fmtWhen, fmtDateTime, fmtBytes, slugify, toast, PLAY, CHECK, KINDS,
   init,
   get eski(){ return eski; }, get sb(){ return sb; }, get user(){ return user; },
   get myProfile(){ return myProfile; }, get myFollowing(){ return myFollowing; },
   get myLikes(){ return myLikes; }, get mySavedIds(){ return mySavedIds; },
   get mySeenIds(){ return mySeenIds; }, get myFolders(){ return myFolders; },
   ownerName, loadMyState,
-  cardHtml, mediaTag,
-  openDetail, openSignIn, openUpload, openConfirm
+  cardHtml, mediaTag, wireCardPreviews,
+  openDetail, openSignIn, openUpload, openConfirm, openPrompt, reportFlow
 };
 })();

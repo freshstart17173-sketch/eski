@@ -47,9 +47,9 @@ main{max-width:var(--wrap);margin:0 auto}
 <header class="pivot-top site-header">
   <a class="mark wordmark" href="index.html">eski<i>!</i></a>
   <nav>
-    <button class="navlink" type="button" data-go="index.html">Home</button>
-    <button class="navlink active" type="button" data-nav="profile">Profile</button>
-    <button class="btnline filled" type="button" data-open-upload>Upload</button>
+    <button class="navlink" type="button" data-go="index.html" data-authed hidden>Home</button>
+    <button class="navlink active" type="button" data-nav="profile" data-authed hidden>Profile</button>
+    <button class="btnline filled" type="button" data-open-upload data-authed hidden>Upload</button>
   </nav>
 </header>
 
@@ -67,6 +67,7 @@ main{max-width:var(--wrap);margin:0 auto}
         <div class="pstat"><b id="stat-following">&mdash;</b><span>following</span></div>
       </div>
       <button class="btnline" type="button" id="prow-action" hidden></button>
+      <button class="navarrow" type="button" id="prow-report" title="Report" hidden>&#9873;</button>
     </div>
     <div style="font-size:14px;color:var(--soft-ink);line-height:1.6;max-width:680px;" id="pbio"></div>
   </div>
@@ -113,8 +114,12 @@ function wantedHandle(){
       || new URLSearchParams(location.search).get('u');
 }
 
+function syncNav(){
+  document.querySelectorAll('[data-authed]').forEach(el => el.hidden = !P.user);
+}
 async function boot(){
-  await P.init(() => { if(document.getElementById('main').hidden === false) refresh(); });
+  await P.init(() => { syncNav(); if(document.getElementById('main').hidden === false) refresh(); });
+  syncNav();
   const sb = P.sb;
   const handle = wantedHandle();
 
@@ -193,12 +198,20 @@ function renderHead(){
 }
 function wireProwAction(){
   const btn = document.getElementById('prow-action');
+  const reportBtn = document.getElementById('prow-report');
   if(isMe){
     btn.hidden = false; btn.textContent = 'Edit profile';
     btn.addEventListener('click', () => document.querySelector('[data-ptab="settings"]').click());
+    reportBtn.hidden = true;
     return;
   }
-  if(!P.user){ btn.hidden = true; return; }
+  if(!P.user){ btn.hidden = true; reportBtn.hidden = true; return; }
+  reportBtn.hidden = false;
+  reportBtn.addEventListener('click', () => P.openPrompt('Report this profile', 'what\'s wrong with it?', 'Send report', async reason => {
+    const { data, error } = await P.sb.rpc('file_report', { p_type:'profile', p_id: subject.id, p_reason: reason });
+    if(error || !data || data.ok !== true) return P.toast(P.eski.dbError('ESK-5114','the report could not be sent', error || { message:(data && data.why) || 'unknown' }));
+    P.toast('reported — thanks, a moderator will look at it');
+  }));
   btn.hidden = false;
   const setLabel = on => { btn.textContent = on ? 'Following' : 'Follow'; btn.classList.toggle('filled', !on); };
   P.sb.from('follows').select('followee_id').eq('follower_id', P.user.id).eq('followee_id', subject.id).maybeSingle()
@@ -241,18 +254,20 @@ async function loadPosts(){
   (comboRows||[]).forEach(r => countBy[r.work_id] = (countBy[r.work_id]||0) + 1);
   rows.forEach(r => r._itemCount = countBy[r.id] || 0);
   document.getElementById('posts-count-line').textContent = rows.length + ' post' + (rows.length===1?'':'s');
-  document.getElementById('posts-grid').innerHTML = rows.map(P.cardHtml).join('');
+  const postsGrid = document.getElementById('posts-grid');
+  postsGrid.innerHTML = rows.map(P.cardHtml).join('');
+  P.wireCardPreviews(postsGrid);
   document.getElementById('posts-empty').hidden = rows.length > 0;
 }
-async function createCollection(){
-  const title = prompt('name this collection');
-  if(!title || !title.trim()) return;
-  const { error } = await P.sb.from('collections').insert({
-    owner_id: P.user.id, owner_name: P.ownerName(), title: title.trim(),
-    slug: P.slugify(title) + '-' + Date.now().toString(36).slice(-5), status: 'published'
+function createCollection(){
+  P.openPrompt('Name this collection', 'untitled', 'Create collection', async title => {
+    const { error } = await P.sb.from('collections').insert({
+      owner_id: P.user.id, owner_name: P.ownerName(), title,
+      slug: P.slugify(title) + '-' + Date.now().toString(36).slice(-5), status: 'published'
+    });
+    if(error) return P.toast(P.eski.dbError('ESK-5105','the collection could not be created', error));
+    P.toast('collection created — add posts to it from their detail overlay');
   });
-  if(error) return P.toast(P.eski.dbError('ESK-5105','the collection could not be created', error));
-  P.toast('collection created — add posts to it from their detail overlay');
 }
 
 /* ------------------------------------------------------------- saved */
@@ -290,49 +305,52 @@ async function openFolder(folderId){
 }
 
 /* ----------------------------------------------------------- settings */
-/* matches the mockup's settingRow() exactly: a row is read-only text
-   until its own Edit button is clicked — not a form of always-open
-   inputs behind one bulk Save. Each row edits and saves independently. */
-function settingRow(label, value, id, editable){
-  return `<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 8px;box-shadow:inset 0 -1px 0 var(--surface);" data-row="${id}">
-    <div style="display:flex;flex-direction:column;gap:2px;flex:1;min-width:0;">
-      <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;">${P.esc(label)}</div>
-      <div style="font-size:14px;color:var(--ink);" data-value>${P.esc(value)}</div>
-    </div>
-    ${editable ? `<button class="btnline" type="button" style="padding:6px 14px;" data-edit="${id}">Edit</button>` : ''}
-  </div>`;
-}
+/* every editable field is a live input from the moment Settings renders —
+   no click-Edit-first step. Save starts disabled and lights up once the
+   input differs from what's saved, one Save per field rather than one
+   bulk save for the panel (so editing your bio can't accidentally also
+   submit a half-typed handle). */
 const SETTINGS_FIELDS = {
   name:   { label: 'Display name', get: () => subject.display_name || '', column: 'display_name', multiline: false },
   handle: { label: 'Handle',       get: () => subject.handle || '',       column: 'handle',       multiline: false },
   bio:    { label: 'Bio',          get: () => subject.bio || '',          column: 'bio',          multiline: true }
 };
-function startEditRow(id){
+function fieldRowHtml(id){
   const field = SETTINGS_FIELDS[id];
-  const row = document.querySelector(`[data-row="${id}"]`);
-  const valueDiv = row.querySelector('[data-value]');
-  valueDiv.innerHTML = field.multiline
-    ? `<textarea class="utext" id="row-input-${id}" style="margin-top:4px;">${P.esc(field.get())}</textarea>`
-    : `<input class="uinput" id="row-input-${id}" style="margin-top:4px;" value="${P.esc(field.get())}">`;
-  row.querySelector('[data-edit]').outerHTML = `<div style="display:flex;gap:6px;flex-shrink:0;">
-    <button class="btnline" type="button" data-cancel style="padding:6px 14px;">Cancel</button>
-    <button class="btnline filled" type="button" data-save style="padding:6px 14px;">Save</button>
+  const val = field.get();
+  const control = field.multiline
+    ? `<textarea class="utext" id="field-${id}">${P.esc(val)}</textarea>`
+    : `<input class="uinput" id="field-${id}" value="${P.esc(val)}">`;
+  return `<div style="display:flex;flex-direction:column;gap:6px;padding:14px 8px;box-shadow:inset 0 -1px 0 var(--surface);" data-row="${id}">
+    <div class="ulabel">${P.esc(field.label)}</div>
+    <div style="display:flex;gap:8px;align-items:flex-start;">
+      <div style="flex:1;min-width:0;">${control}</div>
+      <button class="btnline filled" type="button" data-savefield="${id}" disabled style="padding:10px 16px;flex-shrink:0;">Save</button>
+    </div>
   </div>`;
-  row.querySelector('[data-cancel]').addEventListener('click', renderSettings);
-  row.querySelector('[data-save]').addEventListener('click', () => saveRow(id));
-  document.getElementById('row-input-' + id).focus();
 }
-async function saveRow(id){
+function wireFieldRow(id){
   const field = SETTINGS_FIELDS[id];
-  let value = document.getElementById('row-input-' + id).value.trim();
+  const input = document.getElementById('field-' + id);
+  const save = document.querySelector(`[data-savefield="${id}"]`);
+  const original = field.get();
+  input.addEventListener('input', () => { save.disabled = input.value === original; });
+  if(!field.multiline) input.addEventListener('keydown', e => { if(e.key === 'Enter' && !save.disabled) saveField(id); });
+  save.addEventListener('click', () => saveField(id));
+}
+async function saveField(id){
+  const field = SETTINGS_FIELDS[id];
+  const save = document.querySelector(`[data-savefield="${id}"]`);
+  let value = document.getElementById('field-' + id).value.trim();
   if(id === 'handle'){
     value = value.toLowerCase();
     if(!/^[a-z0-9](?:[a-z0-9_-]{1,28}[a-z0-9])$/.test(value))
       return P.toast('a handle is lowercase letters, numbers, - and _, 3-30 characters');
   }
+  save.disabled = true;
   const patch = { [field.column]: value || null };
   const { error } = await P.sb.from('profiles').update(patch).eq('id', subject.id);
-  if(error) return P.toast(P.eski.dbError('ESK-5111', error.code==='23505' ? 'that handle is taken' : 'settings could not be saved', error));
+  if(error){ save.disabled = false; return P.toast(P.eski.dbError('ESK-5111', error.code==='23505' ? 'that handle is taken' : 'settings could not be saved', error)); }
   Object.assign(subject, patch);
   if(id === 'handle') history.replaceState(null, '', '/u/' + encodeURIComponent(value));
   P.toast('saved');
@@ -343,24 +361,44 @@ function renderSettings(){
   const panel = document.getElementById('settings-panel');
   panel.innerHTML = `
     <div style="display:flex;align-items:center;gap:16px;padding:14px 8px;box-shadow:inset 0 -1px 0 var(--surface);">
-      <div class="pavatar" id="settings-avatar" style="width:56px;height:56px;">${subject.avatar_url ? `<img src="${P.esc(subject.avatar_url)}">` : P.esc((subject.display_name||subject.handle||'?').charAt(0).toUpperCase())}</div>
+      <button class="pavatar" type="button" id="avatar-trigger" style="width:56px;height:56px;border:none;cursor:pointer;padding:0;">${subject.avatar_url ? `<img src="${P.esc(subject.avatar_url)}">` : P.esc((subject.display_name||subject.handle||'?').charAt(0).toUpperCase())}</button>
       <div style="flex:1;">
-        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;">Avatar</div>
-        <input type="file" id="avatar-input" accept="image/png,image/jpeg,image/webp,image/gif">
+        <div class="ulabel" style="margin-bottom:6px;">Avatar</div>
+        <button class="btnline" type="button" id="avatar-btn" style="padding:8px 14px;">Change photo</button>
+        <input type="file" id="avatar-input" accept="image/png,image/jpeg,image/webp,image/gif" hidden>
       </div>
     </div>
-    ${settingRow(SETTINGS_FIELDS.name.label, SETTINGS_FIELDS.name.get(), 'name', true)}
-    ${settingRow(SETTINGS_FIELDS.handle.label, SETTINGS_FIELDS.handle.get(), 'handle', true)}
-    ${settingRow(SETTINGS_FIELDS.bio.label, SETTINGS_FIELDS.bio.get(), 'bio', true)}
-    ${settingRow('Email', (P.user && P.user.email) || '', 'email', false)}
+    ${fieldRowHtml('name')}
+    ${fieldRowHtml('handle')}
+    ${fieldRowHtml('bio')}
+    <div style="display:flex;flex-direction:column;gap:2px;padding:14px 8px;box-shadow:inset 0 -1px 0 var(--surface);">
+      <div class="ulabel">Email</div>
+      <div style="font-size:14px;color:var(--soft-ink);">${P.esc((P.user && P.user.email) || '')}</div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:2px;padding:14px 8px;box-shadow:inset 0 -1px 0 var(--surface);">
+      <div class="ulabel">Storage used</div>
+      <div style="font-size:14px;color:var(--soft-ink);" id="storage-used">&mdash;</div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:6px;padding:14px 8px;box-shadow:inset 0 -1px 0 var(--surface);">
+      <div class="ulabel">Theme</div>
+      <div data-palette-picker></div>
+    </div>
     <div style="display:flex;gap:8px;margin-top:20px;">
       <button class="btnline danger" type="button" id="delete-account">Delete account</button>
       <button class="btnline" type="button" id="sign-out">Sign out</button>
     </div>`;
 
-  panel.querySelectorAll('[data-edit]').forEach(btn => btn.addEventListener('click', () => startEditRow(btn.dataset.edit)));
+  ['name','handle','bio'].forEach(wireFieldRow);
+  if(window.eskiTheme) window.eskiTheme.paint();
+  P.sb.from('works').select('bytes').eq('owner_id', subject.id).then(({ data }) => {
+    document.getElementById('storage-used').textContent =
+      P.fmtBytes((data || []).reduce((sum, r) => sum + (r.bytes || 0), 0));
+  });
 
-  document.getElementById('avatar-input').addEventListener('change', async e => {
+  const avatarInput = document.getElementById('avatar-input');
+  document.getElementById('avatar-trigger').addEventListener('click', () => avatarInput.click());
+  document.getElementById('avatar-btn').addEventListener('click', () => avatarInput.click());
+  avatarInput.addEventListener('change', async e => {
     const file = e.target.files[0];
     if(!file) return;
     const ext = (file.name.match(/\.([a-z0-9]+)$/i) || [,'png'])[1].toLowerCase();

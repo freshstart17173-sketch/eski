@@ -59,10 +59,16 @@ separate system, it's the same one with one new hue:
 | `--radius-min` | `--pv-r` (pivot.css) | `2px` — **not** the site's square `--r` (`0`). Measured off the live mockup; "no rounded corners" was the pivot's opening instruction but the reviewed mockup itself settled on a barely-visible 2px on chrome. Media (`.gbox`, `.fillmedia`) stays `0`. |
 | the ruby-red Like state | `--like-bg` / `--like-ink` (tokens.css) | `#FCE4EC` / `#C2185B` — fixed across every theme, same reasoning as `--danger`, not palette-derived |
 
-`sage` is a real theme now (`light-sage`/`mono-sage`/`dark-sage` in
-`palettes.css`), and `light-sage` is `palette.js`'s `DEFAULT` — a
-first-time visitor's starting point only; anyone's own saved choice
-still wins.
+`sage` isn't a theme choice any more, it's just the accent — **the palette
+system was cut to two themes, `light` and `dark`, both sage** (2026-08-15).
+The old six-hue/three-treatment picker (eighteen themes, then nineteen once
+sage joined it) was the comics-era "colour belongs to the reader" premise
+still running underneath the pivot; it's how a signed-in visitor could land
+on eski and get a magenta page with the wrong font with no way to know why
+— a stray pick from the old picker, or a stale service-worker cache serving
+pre-pivot CSS, looked identical from the outside. `palette.js`'s `DEFAULT`
+is `'light'`; the toggle lives in profile.html's Settings tab now, not a
+footer picker (see `docs/design/STYLE.md`, updated to match).
 
 ## Type
 
