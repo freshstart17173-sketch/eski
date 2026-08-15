@@ -36,7 +36,7 @@ a pasted code ambiguous, which is the one thing a code exists to prevent:
   5060-5063  comments.js
   5070-5072  profile.html
   5025-5026  onboarding.html
-  5100-5108  index.html — the pivot rewrite (2026-08-15)
+  5100-5113  index.html, profile.html, pivot.js — the pivot rewrite (2026-08-15)
 
 Take the next free number in your file's block. Do not reuse a retired one.
 
@@ -375,6 +375,19 @@ ESK-5107  home (pivot): making a post private, or deleting it, was refused.
 ESK-5108  home (pivot): a new version could not be published. [42501] here
           is works_version_owner_guard: you can only add a version to your
           own work, checked as a trigger, not just hidden in the UI.
+ESK-5109  the pivot's detail overlay (pivot.js): an edit (title/caption/
+          body) could not be saved. Poster only — the same works_write
+          policy that gates everything else on the row.
+ESK-5110  profile (pivot): a follow/unfollow could not be saved.
+ESK-5111  profile (pivot): your profile settings (name/handle/bio) could
+          not be saved. A [23505] on handle means it's taken; the message
+          already says so rather than showing the raw code.
+ESK-5112  profile (pivot): the avatar could not upload or save. The bucket
+          policy is per-uid folder (schema-states.sql), so an upload
+          outside `<uid>/…` is refused by design.
+ESK-5113  profile (pivot): account deletion failed. See delete_my_account()
+          in schema-clean.sql — it's a soft delete (profiles.deleted_at),
+          your published work stays up credited to "Deleted account".
 
 ESK-5070  profile: a setting did not save (the shelf's public switch).
 ESK-5071  profile: the old avatar did not come off storage. Harmless — the new

@@ -3,821 +3,375 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<!-- this page also answers at /u/<handle>; without this every relative
-     url below would resolve against /u/ and 404 -->
-<base href="/">
-<title>eski profile</title>
-<meta name="description" content="A reader, a voice, or a composer on eski.">
+<title>eski — profile</title>
+<!-- this page also answers at /u/<handle>; see vercel.json's rewrite -->
 <link rel="icon" type="image/png" href="eski_logo.png">
+<link rel="manifest" href="manifest.json">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Jost:wght@400;500;600&display=swap" rel="stylesheet">
-<script type="module" src="platform.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Jost:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="palette.js"></script>
 <link rel="stylesheet" href="tokens.css">
-<link rel="stylesheet" href="docs/design/final/broadsheet.css">
 <link rel="stylesheet" href="palettes.css">
+<link rel="stylesheet" href="pivot.css">
+<script type="module" src="platform.js"></script>
+<script src="pivot.js"></script>
 <style>
-/* ============================================================
-   eski — profile. docs/design/final/home.html's profile pane: the head
-   with its four counts, "reading" and "read" as the same card grid the
-   shelf uses, "contributions" as the dense role rows, and settings.
-
-   Two sections the design did not have are here because the app needs
-   them and nothing else offers them: published and drafts, which is
-   where a comic is published, unpublished or deleted.
-   ============================================================ */
-body{margin:0;min-height:100vh;display:flex;flex-direction:column}
-:root{ --row:19px; }
-.top{position:sticky;top:0;z-index:30}
-/* broadsheet styles the nav itself */
-.top .sp{flex:1}
-.ico{width:13px;height:13px;flex:none;stroke:currentColor;fill:none;stroke-width:2;
-  stroke-linecap:round;stroke-linejoin:round;display:block}
-.wrap{max-width:1280px;margin:0 auto;padding:0 var(--s4) var(--s7);flex:1;width:100%}
-section + section{margin-top:var(--s6)}
-.btn.primary{background:var(--mark);border-color:var(--mark);color:var(--on-mark)}
-.btn.primary:hover{background:var(--accent);border-color:var(--accent)}
-.btn.danger:hover{border-color:var(--rec);background:none;color:var(--rec)}
-/* an empty section must not draw the rule that frames a full one */
-.grid:empty{border-left:0}
-.rolelist:empty{border-top:0}
-
-/* ---------- the head ---------- */
-.phead{display:grid;grid-template-columns:64px minmax(0,1fr) auto;gap:var(--s4);
-  align-items:start;padding:var(--s5) 0 var(--s4);
-  border-bottom:var(--bw) solid var(--rule)}
-/* the edit form is a panel under the head, not a third thing stacked inside
-   the name column where it pushed the stats out of line */
-.editwrap{grid-column:1 / -1}
-.pfp-lg{width:64px;height:64px;border:var(--bw) solid var(--rule);display:grid;place-items:center;
-  font-family:var(--font-body);font-size:22px;color:var(--accent);background:var(--surface);
-  overflow:hidden}
-.pfp-lg img{width:100%;height:100%;object-fit:cover}
-.pmeta h1{font-family:var(--font-body);font-weight:400;font-size:var(--fs-title);
-  margin:0;line-height:1;word-break:break-word}
-.ptag{margin:var(--s2) 0 0;font-size:var(--fs-micro);letter-spacing:.1em;text-transform:uppercase;
-  color:var(--accent)}
-.pbio{margin:var(--s2) 0 0;font-size:var(--fs-xs);color:var(--soft-ink);max-width:56ch;
-  line-height:1.55;white-space:pre-wrap;word-break:break-word}
-/* FOUR EQUAL COLUMNS, not a flex row.
-   These were laid out with `gap` between labels of wildly different widths
-   — "READING" next to "KUDOS RECEIVED" — so the numbers above them landed at
-   four unrelated offsets and the block read as scattered. Equal columns and
-   one shared baseline make it a table, which is what it always was. */
-.pstats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));
-  gap:0;border-left:var(--bw) solid var(--rule-hair);min-width:340px}
-.pstats span{display:grid;gap:3px;padding:0 var(--s3);
-  border-right:var(--bw) solid var(--rule-hair);
-  font-size:var(--fs-micro);letter-spacing:.06em;line-height:1.2;
-  text-transform:uppercase;color:var(--label);text-align:right;align-content:start}
-.pstats b{font-family:var(--font-body);font-size:22px;font-weight:400;
-  line-height:1;font-variant-numeric:tabular-nums}
-.hot{color:var(--accent)}
-.head .n{color:var(--accent)}
-.pacts{display:flex;gap:var(--s2);margin-top:var(--s3);flex-wrap:wrap}
-@media(max-width:760px){
-  .phead{grid-template-columns:56px 1fr}
-  /* the stats drop below the identity rather than squeezing beside it */
-  .pstats{grid-column:1 / -1;min-width:0;margin-top:var(--s3)}
-  .pstats span{padding:0 var(--s2)}
-}
-
-/* ---------- edit ---------- */
-.edit{display:none;margin-top:var(--s4);gap:var(--s3);flex-direction:column;max-width:520px}
-.edit.on{display:flex}
-.edit label{font-size:var(--fs-micro);letter-spacing:.12em;color:var(--label);
-  text-transform:uppercase;font-weight:500}
-.edit input,.edit textarea{width:100%;padding:var(--s2) var(--s3);border:var(--bw) solid var(--rule-hair);
-  background:var(--paper);color:var(--ink);font:inherit;font-size:var(--fs-xs)}
-.edit input:focus,.edit textarea:focus{outline:none;border-color:var(--accent)}
-.edit textarea{min-height:88px;resize:vertical}
-.err{color:var(--rec);font-size:var(--fs-xs)}
-
-/* ---------- the same card grid the shelf uses ---------- */
-.grid{display:grid;grid-template-columns:repeat(5,1fr);border-left:var(--bw) solid var(--rule)}
-@media(max-width:1180px){.grid{grid-template-columns:repeat(4,1fr)}}
-@media(max-width:900px){.grid{grid-template-columns:repeat(3,1fr)}}
-@media(max-width:640px){.grid{grid-template-columns:repeat(2,1fr)}}
-.cell{position:relative;display:flex;background:var(--paper);
-  border-right:var(--bw) solid var(--rule);border-bottom:var(--bw) solid var(--rule)}
-.card{display:flex;flex-direction:column;background:none;text-align:left;border:0;
-  padding:var(--s3);color:inherit;font:inherit;min-width:0;width:100%;cursor:pointer;
-  transition:background var(--t-fast) var(--ease)}
-/* THE WHOLE CARD, and unmistakably. The old hover tinted only the button's
-   own box and by a shade you had to look for; on a dark ground it was
-   invisible. The cell is the target, so the cell is what lights up. */
-.cell:hover{background:var(--surface)}
-.cell:hover .card{background:var(--surface)}
-.cell:hover .plate{border-color:var(--ui)}
-.plate{position:relative;overflow:hidden;border:var(--bw) solid var(--rule-hair);
-  aspect-ratio:2/3;background:var(--plate-bg)}
-.plate img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;
-  transition:transform var(--t-mid) var(--ease)}
-.title{font-family:var(--font-body);font-weight:400;font-size:17px;line-height:24px;
-  height:24px;text-align:center;margin-top:var(--s3)}
-.note{height:var(--row);line-height:var(--row);font-size:var(--fs-micro);
-  color:var(--label);text-align:center;letter-spacing:.04em}
-.cap{margin-top:auto;font-size:var(--fs-xs);color:var(--soft-ink)}
-.cap .r{display:grid;grid-template-columns:42px 1fr;align-items:center;gap:var(--s2);
-  height:var(--row);border-top:var(--bw) solid var(--rule-hair);min-width:0}
-.cap .r:first-child{border-top:0}
-.cap .k{color:var(--label);letter-spacing:.06em;font-size:var(--fs-micro);
-  text-transform:uppercase;white-space:nowrap}
-.cap .v{text-align:right;font-variant-numeric:tabular-nums;min-width:0}
-.progress{height:3px;background:var(--rule-hair);margin-top:var(--s2)}
-.progress i{display:block;height:100%;background:var(--mark)}
-.chip.state{font-size:9px;text-transform:uppercase;letter-spacing:.06em;padding:2px 7px;
-  border:var(--bw) solid var(--rule-hair);color:var(--label);position:absolute;top:0;left:0;z-index:2;
-  background:var(--paper)}
-.chip.state.published{background:var(--mark);color:var(--paper);border-color:var(--mark)}
-.cardacts{display:flex;gap:var(--s1);flex-wrap:wrap;padding:0 var(--s3) var(--s3)}
-
-/* ---------- contributions: the dense role row ---------- */
-.rolelist{border-top:var(--bw) solid var(--rule)}
-.rolerow{display:grid;grid-template-columns:46px 196px 1fr 104px;gap:var(--s3);
-  align-items:center;padding:5px var(--s2);width:100%;text-align:left;background:none;
-  border:0;border-bottom:var(--bw) solid var(--rule-hair);color:inherit;font:inherit;min-width:0}
-.rolerow:hover{background:var(--surface)}
-.portrait{width:46px;height:46px;flex:none;display:block;overflow:hidden;
-  border:var(--bw) solid var(--rule-hair);background:var(--plate-bg)}
-.portrait img{width:100%;height:100%;object-fit:cover}
-.rolename{font-family:var(--font-body);font-size:15px;line-height:20px}
-.rolein{font-size:var(--fs-micro);color:var(--label);line-height:var(--row)}
-.rolerow .where{font-size:var(--fs-micro);color:var(--label);min-width:0}
-.rolerow .where .ttl{color:var(--ink);font-weight:500}
-.rolerow .go{display:flex;justify-content:flex-end;gap:var(--s1);flex-wrap:wrap}
-@media(max-width:760px){
-  .rolerow{grid-template-columns:46px 1fr auto}
-  .rolerow .where{display:none}
-}
-
-/* ---------- the confirm dialog ----------
-   a destructive action asks BEFORE it happens and names what goes with it.
-   the old flow deleted and then told you in a toast, which is the wrong
-   order: a toast tells you after. */
-.confirm{place-items:center}
-.confirm-sheet{width:min(440px,100%);max-height:none}
-.confirm-body{margin:0;padding:var(--s4);font-size:var(--fs-xs);line-height:1.6;
-  color:var(--soft-ink);white-space:pre-wrap}
-.sheetfoot{display:flex;gap:var(--s2);justify-content:flex-end}
-.btn.danger{border-color:var(--rec);color:var(--rec)}
-.btn.danger:hover{background:var(--rec);border-color:var(--rec);color:var(--paper)}
-
-/* ---------- avatar ---------- */
-.avrow{display:flex;align-items:center;gap:var(--s3);flex-wrap:wrap}
-.pfp-lg.sm{width:44px;height:44px;font-size:16px}
-
-/* ---------- settings ---------- */
-.setrow{display:flex;align-items:center;gap:var(--s3);padding:var(--s2) 0;
-  border-bottom:var(--bw) solid var(--rule-hair);font-size:var(--fs-xs)}
-.setrow .sp{flex:1}
-.setrow small{color:var(--label);font-size:var(--fs-micro)}
-
-.state{border:var(--bw) solid var(--rule);padding:var(--s7) var(--s5);text-align:center;
-  color:var(--label);background:var(--surface);font-size:var(--fs-xs)}
-.spinner{width:24px;height:24px;border:2px solid var(--rule-hair);border-top-color:var(--accent);
-  border-radius:50%;animation:spin .8s linear infinite;margin:0 auto var(--s3)}
-@keyframes spin{to{transform:rotate(360deg)}}
-.foot{margin-top:var(--s7);padding-top:var(--s3);border-top:var(--bw) solid var(--rule);
-  display:flex;justify-content:space-between;gap:var(--s3);flex-wrap:wrap;
-  font-size:var(--fs-micro);letter-spacing:.1em;color:var(--label)}
-.foot a{color:inherit;text-decoration:none}
-.foot a:hover{color:var(--ink)}
-
-@media (max-width:640px){
-  .top{gap:var(--s2);padding:var(--s2) var(--s3);overflow-x:auto;scrollbar-width:none}
-  .top::-webkit-scrollbar{display:none}
-  .top>*{flex:none}
-  .top nav{gap:var(--s3)}
-  .wrap{padding:0 var(--s3) var(--s6)}
-}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--font-body);font-size:var(--fs)}
+*{box-sizing:border-box}
+main{max-width:var(--wrap);margin:0 auto}
+.phead{display:flex;flex-direction:column;gap:20px;width:100%;padding:32px 32px 24px 32px}
+.prow{display:flex;flex-direction:row;align-items:center;gap:24px}
+.pavatar{width:72px;height:72px;background:var(--surface);flex-shrink:0;border-radius:var(--r-round);
+  overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:700;color:var(--muted)}
+.pavatar img{width:100%;height:100%;object-fit:cover}
+.pstats{display:flex;gap:32px;flex-shrink:0}
+.pstat{display:flex;flex-direction:column;align-items:center;gap:2px}
+.pstat b{font-family:var(--font-body);font-weight:700;font-size:20px;color:var(--ink)}
+.pstat span{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.ptabs{display:flex;flex-direction:row;gap:24px;width:100%;padding:0 32px}
+.gridwrap{padding:24px 32px 48px 32px}
+.tabpanel{display:none;flex-direction:column;gap:16px}
+.tabpanel.active{display:flex}
+.empty{display:flex;flex-direction:column;align-items:center;gap:10px;padding:96px 32px;text-align:center;color:var(--muted)}
+.empty b{color:var(--ink);font-size:var(--fs-lg)}
+.settingsmax{max-width:640px}
+.toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%);z-index:400;
+  background:var(--ink);color:var(--paper);font-size:13px;padding:10px 18px;max-width:min(90vw,520px);
+  box-shadow:0 8px 30px rgba(0,0,0,.3)}
+[hidden]{display:none!important}
 </style>
 </head>
 <body>
 
-<header class="top site-header">
-  <a class="mark" href="index.html">eski<i>!</i></a>
-  <nav id="nav">
-    <a href="index.html">Home</a>
-    <a href="index.html#browse">Browse</a>
-    <a href="author.html">Studio</a>
-    <a href="profile.html" aria-current="page">Profile</a>
+<header class="pivot-top site-header">
+  <a class="mark wordmark" href="index.html">eski<i>!</i></a>
+  <nav>
+    <button class="navlink" type="button" data-go="index.html">Home</button>
+    <button class="navlink active" type="button" data-nav="profile">Profile</button>
+    <button class="btnline filled" type="button" data-open-upload>Upload</button>
   </nav>
 </header>
 
-<div class="wrap" id="page">
-  <div class="state"><div class="spinner"></div>Loading&#8230;</div>
-</div>
-
-<script>
-/* ================================================================
-   profile. two views from one file: your own, which can edit and shows
-   drafts, and anyone else's, which is what a shared link opens.
-   ?u=<handle> addresses a person. without it you get your own.
-
-   a HANDLE is the identity and comics.owner_name is the byline. renaming
-   yourself does not rewrite work you already published.
-   ================================================================ */
-const ICONS = {
-  "book-open": "<path d=\"M12 7v14\" /> <path d=\"M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z\" />",
-  "moon": "<path d=\"M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401\" />",
-  "sun": "<circle cx=\"12\" cy=\"12\" r=\"4\" /> <path d=\"M12 2v2\" /> <path d=\"M12 20v2\" /> <path d=\"m4.93 4.93 1.41 1.41\" /> <path d=\"m17.66 17.66 1.41 1.41\" /> <path d=\"M2 12h2\" /> <path d=\"M20 12h2\" /> <path d=\"m6.34 17.66-1.41 1.41\" /> <path d=\"m19.07 4.93-1.41 1.41\" />",
-  "trash-2": "<path d=\"M10 11v6\" /> <path d=\"M14 11v6\" /> <path d=\"M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6\" /> <path d=\"M3 6h18\" /> <path d=\"M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2\" />",
-  "upload-cloud": "<path d=\"M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242\" /> <path d=\"M12 12v9\" /> <path d=\"m16 16-4-4-4 4\" />",
-  "link": "<path d=\"M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71\" /> <path d=\"M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71\" />",
-  "pencil": "<path d=\"M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z\" /> <path d=\"m15 5 4 4\" />",
-  "message-circle": "<path d=\"M7.9 20A9 9 0 1 0 4 16.1L2 22Z\" />"
-};
-const $ = id => document.getElementById(id);
-const esc = s => (s ?? '').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
-const nfmt = n => (n||0).toLocaleString('en-US');
-const mq = s => `<span class="mq"><span>${esc(s)}</span></span>`;
-function paintIcons(root){
-  (root||document).querySelectorAll('[data-ico]').forEach(el=>{
-    if(el.querySelector(':scope > svg.ico')) return;
-    el.insertAdjacentHTML('afterbegin',
-      `<svg class="ico" viewBox="0 0 24 24" aria-hidden="true">${ICONS[el.getAttribute('data-ico')]||''}</svg>`);
-  });
-}
-/* the palette picker is palette.js's; it renders into any
-   <div data-palette-picker>, here and in the footer. */
-
-const fmt = d => d ? new Date(d).toISOString().slice(0,10) : '';
-let sb = null, me = null, subject = null, isMe = false;
-let comics = [], parts = [], saves = [], kudosReceived = 0, partsError = '';
-
-function handleSeed(user){
-  const m = user.user_metadata || {};
-  const raw = m.user_name || m.name || m.full_name || (user.email||'').split('@')[0] || 'reader';
-  const base = raw.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,24);
-  return base.length >= 3 ? base : 'reader';
-}
-async function ensureProfile(user){
-  const dbe = window.eski.dbError;
-  const got = await sb.from('profiles').select('*').eq('id', user.id).maybeSingle();
-  if(got.error) throw new Error(dbe('ESK-5012', 'your profile row could not be read', got.error));
-  if(got.data) return got.data;
-  const m = user.user_metadata || {};
-  const seed = handleSeed(user);
-  for(let i = 0; i < 5; i++){
-    const handle = i ? seed.slice(0,24) + '-' + Math.random().toString(36).slice(2,6) : seed;
-    const ins = await sb.from('profiles').insert({
-      id: user.id, handle,
-      display_name: m.full_name || m.name || m.user_name || null,
-      avatar_url: m.avatar_url || null
-    }).select('*').single();
-    if(!ins.error) return ins.data;
-    if(ins.error.code !== '23505')
-      throw new Error(dbe('ESK-5013', 'your profile could not be created', ins.error));
-  }
-  throw new Error('ESK-5014 could not pick a free handle after 5 tries');
-}
-
-async function platform(){
-  if(!window.eski && document.readyState === 'loading')
-    await new Promise(r => document.addEventListener('DOMContentLoaded', r, { once: true }));
-  return window.eski || null;
-}
-
-async function load(){
-  const page = $('page');
-  const eski = await platform();
-  sb = eski && await eski.ready;
-  if(!sb){
-    const why = (eski && eski.bootError) || 'ESK-1005 platform.js did not load at all';
-    page.innerHTML = '<div class="state">Could not reach the server.<br><br>' + esc(why) +
-      '<br><br>if this persists, hard reload once: an old service worker can keep serving a stale page.</div>';
-    return;
-  }
-  /* A PROFILE HAS AN ADDRESS: /u/<handle>. ?u= still works — old links do
-     not break — but the one people copy is the readable one. */
-  const wanted = (location.pathname.match(/^\/u\/([^/]+)\/?$/) || [])[1]
-              || new URLSearchParams(location.search).get('u');
-  me = (await sb.auth.getUser()).data.user || null;
-
-  if(wanted){
-    const r = await sb.from('profiles').select('*').eq('handle', wanted.toLowerCase()).maybeSingle();
-    subject = r.data || null;
-    if(!subject){
-      page.innerHTML = `<div class="phead"><div class="pmeta"><h1>Not found</h1>
-        <p class="pbio">No one here goes by ${esc(wanted)}. <a href="index.html">Back home</a>.</p>
-        </div></div>`;
-      return;
-    }
-  }else{
-    if(!me){
-      page.innerHTML = '<div class="state">Sign in to see your profile, your drafts and what you have saved.</div>';
-      return;
-    }
-    try{ subject = await ensureProfile(me); }
-    catch(e){ page.innerHTML = '<div class="state">Could not set up your profile: '+esc(e.message)+'</div>'; return; }
-  }
-  isMe = !!(me && subject && me.id === subject.id);
-
-  /* rls decides what comes back: a visitor sees published rows only, and the
-     owner also sees drafts. no status filter is needed here. */
-  const [cr, pr, sr] = await Promise.all([
-    sb.from('comics').select('*').eq('owner_id', subject.id).order('created_at', { ascending: false }),
-    sb.from('parts').select('*, comics(id,title,slug,cover_key,thumb_key,owner_name)')
-      .eq('owner_id', subject.id).order('created_at', { ascending: false }),
-    // the shelf. public by policy, which is what puts "reading" on someone
-    // else's profile as well as your own.
-    sb.from('saves').select('*, comics(id,title,cover_key,thumb_key,owner_name)')
-      .eq('user_id', subject.id).order('updated_at', { ascending: false })
-  ]);
-  if(cr.error){
-    page.innerHTML = '<div class="state">' +
-      esc(window.eski.dbError('ESK-5015', 'your shelves could not be read', cr.error)) + '</div>';
-    return;
-  }
-  comics = cr.data || [];
-  // a missing table is not a reason to blank a profile: everything else on
-  // this page is still true, so that shelf just stays empty.
-  parts = pr.error ? [] : (pr.data || []);
-  partsError = pr.error ? window.eski.dbError('ESK-5024', 'contributions could not be read', pr.error) : '';
-  saves = sr.error ? [] : (sr.data || []);
-
-  const ids = comics.map(c=>c.id);
-  if(ids.length){
-    const kr = await sb.from('kudos').select('comic_id').in('comic_id', ids);
-    kudosReceived = kr.error ? 0 : (kr.data || []).length;
-  }
-  paint();
-}
-
-const coverUrl = c => (c && (c.thumb_key || c.cover_key)) ? window.eski.mediaUrl(c.thumb_key || c.cover_key) : '';
-
-/* one card, the same object the shelf shows */
-function cardEl(comic, opts){
-  opts = opts || {};
-  const cell = document.createElement('div');
-  cell.className = 'cell';
-  const cover = coverUrl(comic);
-  const b = document.createElement('button');
-  b.className = 'card';
-  b.type = 'button';
-  b.innerHTML =
-    `<div class="plate">${cover ? `<img src="${esc(cover)}" alt="" loading="lazy">` : ''}</div>
-     <div class="title">${mq(comic.title || 'untitled')}</div>
-     <div class="note">${opts.note ? mq(opts.note) : ''}</div>
-     <div class="cap">
-       <div class="r"><span class="k">by</span><span class="v">${mq(comic.owner_name || subject.display_name || subject.handle)}</span></div>
-       ${opts.rows || ''}
-     </div>`;
-  /* THE CARD OPENS THE COMIC'S PAGE, not the reader. Every eski has one at
-     /c/<slug> whatever its state — a draft and a private one are visible to
-     their owner and to nobody else — so this is the same door everywhere,
-     and it is where read, the mix, the thread and the owner's controls are. */
-  b.onclick = ()=>{
-    location.href = comic.slug
-      ? '/c/' + encodeURIComponent(comic.slug)
-      : 'read.html?read=db:' + encodeURIComponent(comic.id);
-  };
-  cell.appendChild(b);
-  if(opts.progress != null){
-    const bar = document.createElement('div');
-    bar.className = 'progress';
-    bar.innerHTML = `<i style="width:${Math.round(opts.progress*100)}%"></i>`;
-    b.appendChild(bar);
-  }
-  if(opts.badge){
-    cell.insertAdjacentHTML('beforeend',
-      `<span class="chip state ${opts.badge === 'published' ? 'published' : ''}">${esc(opts.badge)}</span>`);
-  }
-  if(opts.acts){
-    const acts = document.createElement('div');
-    acts.className = 'cardacts';
-    acts.innerHTML = opts.acts;
-    cell.querySelector('.card').insertAdjacentElement('afterend', acts);
-    cell.style.flexDirection = 'column';
-  }
-  return cell;
-}
-
-function gridOf(list, emptyMsg){
-  if(!list.length) return `<div class="empty">${esc(emptyMsg)}</div>`;
-  return null;
-}
-
-function paint(){
-  const p = subject;
-  const initial = (p.display_name || p.handle || '?').trim().charAt(0).toLowerCase();
-  const reading = saves.filter(s=>s.status === 'reading' && s.comics);
-  const read    = saves.filter(s=>s.status === 'read' && s.comics);
-  const later   = saves.filter(s=>s.status === 'later' && s.comics);
-  const published = comics.filter(c=>c.status === 'published');
-  const priv      = comics.filter(c=>c.status === 'private');
-  // a draft is now ONLY a comic that has never been published
-  const drafts    = comics.filter(c=>c.status === 'draft');
-
-  /* One row, one panel. `mine` marks the tabs only the owner sees. */
-  /* `mine` marks a tab only the owner ever sees. READ and DRAFTS are always
-     private — what you have finished and what you have not shown anyone are
-     nobody's business. The SHELF is the one that is a real question, so it
-     is a setting (profiles.shelf_public) rather than a rule. */
-  const shelfVisible = isMe || subject.shelf_public;
-  const TABS = [
-    { id:'reading',   label:'Reading',       show:true,          count:()=>'' },
-    { id:'later',     label:'Shelf',         show:shelfVisible,  count:c=>c.later },
-    { id:'read',      label:'Read',          show:isMe,          count:c=>c.read },
-    { id:'parts',     label:'Contributions', show:true,          count:c=>c.parts },
-    { id:'published', label:'Published',     show:true,          count:c=>c.published },
-    { id:'private',   label:'Private',       show:isMe,          count:c=>c.priv },
-    { id:'drafts',    label:'Drafts',        show:isMe,          count:c=>c.drafts },
-    { id:'settings',  label:'Settings',      show:isMe,          count:()=>'' }
-  ];
-
-  const counts = { reading:reading.length, read:read.length, later:later.length,
-                   parts:parts.length, published:published.length,
-                   priv:priv.length, drafts:drafts.length };
-
-  $('page').innerHTML = `
-    <div class="phead">
-      <!-- an oauth avatar url can 404 or be blocked, and a broken-image icon
-           is worse than the initial it was standing in for. -->
-      <div class="pfp-lg">${p.avatar_url
-        ? `<img src="${esc(p.avatar_url)}" alt="" referrerpolicy="no-referrer"
-             onerror="this.remove();this.parentNode.textContent='${esc(initial)}'">`
-        : esc(initial)}</div>
-      <div class="pmeta">
-        <h1>${esc(p.display_name || p.handle)}</h1>
-        <p class="ptag">@${esc(p.handle)}${p.created_at ? ' · here since ' + new Date(p.created_at).getFullYear() : ''}</p>
-        ${p.bio ? `<p class="pbio">${esc(p.bio)}</p>`
-                : (isMe ? '<p class="pbio">No bio yet.</p>' : '')}
-        <div class="pacts">
-          <button class="btn sm" id="share" data-ico="link">Copy link</button>
-          ${isMe ? '<button class="btn sm" id="editbtn" data-ico="pencil">Edit profile</button>' : ''}
-        </div>
+<main id="main" hidden>
+  <div class="phead">
+    <div class="prow">
+      <div class="pavatar" id="pavatar"></div>
+      <div style="display:flex;flex-direction:column;gap:3px;flex:1;min-width:0;">
+        <div style="font-weight:700;font-size:22px;color:var(--ink);line-height:1.1;" id="pname"></div>
+        <div style="font-size:13.5px;color:var(--muted);" id="phandle"></div>
       </div>
       <div class="pstats">
-        <span><b class="hot">${nfmt(parts.length)}</b>Contributions</span>
-        <span><b class="hot">${nfmt(later.length)}</b>Shelf</span>
-        <span><b class="hot">${nfmt(reading.length)}</b>Reading</span>
-        <span><b class="hot">${nfmt(kudosReceived)}</b>Kudos</span>
+        <div class="pstat"><b id="stat-posts">&mdash;</b><span>posts</span></div>
+        <div class="pstat"><b id="stat-followers">&mdash;</b><span>followers</span></div>
+        <div class="pstat"><b id="stat-following">&mdash;</b><span>following</span></div>
       </div>
-      <div class="editwrap">${isMe ? `<div class="edit" id="edit">
-          <div><label for="f-av">Picture</label>
-            <div class="avrow">
-              <span class="pfp-lg sm" id="av-prev">${p.avatar_url
-                ? `<img src="${esc(p.avatar_url)}" alt="">` : esc(initial)}</span>
-              <input type="file" id="f-av" accept="image/png,image/jpeg,image/webp,image/gif" hidden>
-              <button class="btn sm" id="av-pick">Choose a picture</button>
-              ${p.avatar_url ? '<button class="btn sm" id="av-clear">Remove</button>' : ''}
-            </div></div>
-          <div><label for="f-name">Display name</label>
-            <input id="f-name" maxlength="60" value="${esc(p.display_name||'')}"></div>
-          <div><label for="f-handle">Handle</label>
-            <input id="f-handle" maxlength="30" value="${esc(p.handle)}"></div>
-          <div><label for="f-bio">Bio</label>
-            <textarea id="f-bio" maxlength="400"
-              placeholder="What you make, or what you want to be cast in.">${esc(p.bio||'')}</textarea></div>
-          <div class="err" id="f-err"></div>
-          <div class="pacts">
-            <button class="btn primary sm" id="save">Save</button>
-            <button class="btn sm" id="cancel">Cancel</button>
-          </div>
-        </div>` : ''}</div>
+      <button class="btnline" type="button" id="prow-action" hidden></button>
     </div>
-
-    <!-- HORIZONTAL TABS, not six stacked sections. The profile was one long
-         column where every grid was open at once, so the page was mostly
-         empty grids and you scrolled past five to reach the sixth. One row of
-         tabs, one panel, and Reading is what you land on. -->
-    <div class="tabs" id="tabs" role="tablist">
-      ${TABS.filter(t=>t.show).map((t,i)=>
-        `<button class="tab" role="tab" data-tab="${t.id}"
-           aria-selected="${i===0}">${esc(t.label)}<span class="n">${
-           t.count(counts)}</span></button>`).join('')}
+    <div style="font-size:14px;color:var(--soft-ink);line-height:1.6;max-width:680px;" id="pbio"></div>
+  </div>
+  <div class="ptabs">
+    <button class="dtab active" type="button" data-ptab="posts">Posts</button>
+    <button class="dtab" type="button" data-ptab="saved" id="tab-saved" hidden>Saved</button>
+    <button class="dtab" type="button" data-ptab="settings" id="tab-settings" hidden>Settings</button>
+  </div>
+  <div class="gridwrap">
+    <div class="tabpanel active" data-panel="posts">
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <div style="font-size:13px;color:var(--muted);" id="posts-count-line"></div>
+        <button class="btnline" type="button" id="create-collection" hidden style="display:flex;align-items:center;gap:8px;">
+          <svg viewBox="0 0 24 24" width="15" height="15" style="fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;"><path d="M12 5v14M5 12h14"/></svg>Create collection</button>
+      </div>
+      <div class="fgrid" id="posts-grid"></div>
+      <div class="empty" id="posts-empty" hidden><b>Nothing here yet</b></div>
     </div>
+    <div class="tabpanel" data-panel="saved">
+      <div style="font-size:13px;color:var(--muted);">your saved folders</div>
+      <div class="fgrid" id="saved-grid"></div>
+      <div class="empty" id="saved-empty" hidden><b>Nothing saved yet</b><span>Save a post from anywhere and it lands here.</span></div>
+    </div>
+    <div class="tabpanel settingsmax" data-panel="settings" id="settings-panel"></div>
+  </div>
+</main>
+<div class="empty" id="no-subject" hidden><b id="no-subject-msg">Profile not found</b></div>
 
-    <div id="panel"></div>
+<div id="overlay-root"></div>
+<div id="toast-root"></div>
 
-    <div class="foot">
-      <span data-palette-picker></span>
-      <span class="sp"></span>
-      <span><a href="index.html">HOME</a> · <a href="author.html">STUDIO</a></span></div>`;
+<script>
+/* eski profile. real data against schema-clean.sql: profiles, works,
+   follows, save_folders/save_folder_items, delete_my_account(). Shares
+   pivot.js/pivot.css with index.html rather than redefining any of it —
+   the detail overlay, the upload modal, sign-in, and card rendering are
+   the exact same code both pages use. */
+const P = window.Pivot;
+let subject = null;    // the profiles row being shown
+let isMe = false;
 
-  const fillGrid = (id, list, mapper, emptyId, emptyMsg)=>{
-    const box = $(id);
-    if(!box) return;
-    box.replaceChildren(...list.map(mapper));
-    const e = $(emptyId);
-    if(e){ e.hidden = list.length > 0; e.textContent = emptyMsg; }
-    if(!list.length) box.style.borderLeft = '0';
-  };
+function wantedHandle(){
+  return (location.pathname.match(/^\/u\/([^/]+)\/?$/) || [])[1]
+      || new URLSearchParams(location.search).get('u');
+}
 
-  /* ONE PANEL AT A TIME. Each tab builds only its own contents, so five
-     empty grids are never on the page at once. */
-  function showTab(id){
-    $('tabs').querySelectorAll('.tab').forEach(b=>
-      b.setAttribute('aria-selected', b.dataset.tab === id));
-    const box = $('panel');
+async function boot(){
+  await P.init(() => { if(document.getElementById('main').hidden === false) refresh(); });
+  const sb = P.sb;
+  const handle = wantedHandle();
 
-    if(id === 'settings'){
-      /* the theme lives in the footer of every page. having it here as well
-         meant two pickers that could disagree about which was authoritative. */
-      box.innerHTML = `
-        <div class="subhead"><span>Privacy</span></div>
-        <p class="note-line">What you have read and what you have not published
-          are never public. Your shelf is the one that is up to you.</p>
-        ${shelfSwitch()}
-        <div class="subhead" style="margin-top:var(--s5)"><span>Account</span></div>
-        <div class="pacts"><button class="btn sm" id="signout">Sign out</button></div>`;
-      wireShelfSwitch(box);
-      const so = $('signout');
-      if(so) so.addEventListener('click', ()=>{ if(sb) sb.auth.signOut(); });
+  if(handle){
+    const { data } = await sb.from('profiles').select('*').eq('handle', handle.toLowerCase()).maybeSingle();
+    subject = data;
+    isMe = !!(P.user && subject && subject.id === P.user.id);
+  } else if(P.user){
+    subject = P.myProfile;
+    isMe = true;
+    if(!subject){
+      document.getElementById('no-subject-msg').innerHTML =
+        'Finish setting up your account — <a href="onboarding.html" style="color:var(--accent);">pick a handle</a>.';
+      document.getElementById('no-subject').hidden = false;
       return;
     }
-
-    if(id === 'parts'){
-      box.innerHTML = `<div class="rolelist" id="g-parts"></div>
-        <div class="empty" id="e-parts" hidden></div>`;
-      $('g-parts').replaceChildren(...parts.map(pt=>{
-        const c = pt.comics || {};
-        const cover = coverUrl(c);
-        const row = document.createElement('div');
-        row.className = 'rolerow';
-        const what = pt.kind === 'vo' ? 'Voice' : 'Score';
-        row.innerHTML =
-          `<span class="portrait">${cover ? `<img src="${esc(cover)}" alt="">` : ''}</span>
-           <div>
-             <div class="rolename">${mq(pt.character_key || pt.title || 'untitled')}</div>
-             <div class="rolein">${esc(what)}${pt.status === 'published' ? '' : ' · draft'}</div>
-           </div>
-           <div class="where"><div class="ttl">${mq(c.title || '')}</div>
-             <div>${esc(fmt(pt.published_at || pt.created_at))}</div></div>
-           <div class="go">
-             <a class="btn sm" href="read.html?read=db:${encodeURIComponent(c.id||'')}&with=part:${encodeURIComponent(pt.id)}">Listen</a>
-             ${isMe ? `<button class="btn sm" data-part="${esc(pt.id)}"
-                data-act="${pt.status === 'published' ? 'unpublish' : 'publish'}">${
-                pt.status === 'published' ? 'Unpublish' : 'Publish'}</button>
-               <button class="btn sm danger" data-part="${esc(pt.id)}" data-act="delete">Delete</button>` : ''}
-           </div>`;
-        return row;
-      }));
-      const e = $('e-parts');
-      e.hidden = parts.length > 0;
-      e.textContent = partsError || (isMe
-        ? "Voice work and soundtracks you make for other people's comics show up here."
-        : 'No contributions yet.');
-      paintIcons(box); wireActs(box);
-      return;
-    }
-
-    box.innerHTML = `${id === 'later' && isMe ? shelfSwitch() : ''}
-      <div class="grid" id="g-${id}"></div>
-      <div class="empty" id="e-${id}" hidden></div>`;
-
-    const MAP = {
-      reading: [reading, s=>cardEl(s.comics, {
-        progress: s.pages ? Math.min(1, s.last_page / s.pages) : 0,
-        note: s.pages ? `Page ${s.last_page} of ${s.pages}` : '',
-        rows: `<div class="r"><span class="k">at</span><span class="v">${
-          s.pages ? Math.round((s.last_page / s.pages) * 100) + '%' : '—'}</span></div>`
-      }), isMe ? 'Nothing on the go. Open something and it lands here.'
-               : 'Not reading anything right now.'],
-      later: [later, s=>cardEl(s.comics, { note:'On your shelf' }),
-        isMe ? 'Nothing on your shelf yet.' : 'Nothing on this shelf.'],
-      read: [read, s=>cardEl(s.comics, {
-        note:'Finished',
-        rows:`<div class="r"><span class="k">pages</span><span class="v">${nfmt(s.pages)}</span></div>`
-      }), 'Nothing finished yet.'],
-      published: [published, c=>cardEl(c, {
-        rows:`<div class="r"><span class="k">on</span><span class="v">${esc(fmt(c.published_at||c.created_at))}</span></div>`,
-        acts: isMe ? `<button class="btn sm" data-comic="${esc(c.id)}" data-act="private">Make private</button>
-           <button class="btn sm danger" data-comic="${esc(c.id)}" data-act="delete">Delete</button>` : ''
-      }), 'Nothing published yet.'],
-      private: [priv, c=>cardEl(c, {
-        note:'Hidden',
-        rows:`<div class="r"><span class="k">was up</span><span class="v">${esc(fmt(c.published_at))}</span></div>`,
-        acts:`<button class="btn sm" data-comic="${esc(c.id)}" data-act="publish">Make public</button>
-           <button class="btn sm danger" data-comic="${esc(c.id)}" data-act="delete">Delete</button>`
-      }), 'Nothing hidden. A published eski you make private lands here — it stays uneditable.'],
-      drafts: [drafts, c=>cardEl(c, {
-        rows:`<div class="r"><span class="k">made</span><span class="v">${esc(fmt(c.created_at))}</span></div>`,
-        acts:`<button class="btn sm primary" data-comic="${esc(c.id)}" data-act="publish">Publish</button>
-           <button class="btn sm danger" data-comic="${esc(c.id)}" data-act="delete">Delete</button>`
-      }), 'No drafts. The studio saves them here.']
-    }[id];
-
-    fillGrid('g-' + id, MAP[0], MAP[1], 'e-' + id, MAP[2]);
-    paintIcons(box); wireActs(box); wireShelfSwitch(box);
+  } else {
+    document.getElementById('no-subject-msg').innerHTML =
+      'Sign in to see your profile, or open someone\'s at /u/&lt;handle&gt;.';
+    document.getElementById('no-subject').hidden = false;
+    return;
+  }
+  if(!subject){
+    document.getElementById('no-subject').hidden = false;
+    return;
   }
 
-  /* ONE SETTING, TWO PLACES IT MATTERS: settings, and above the shelf itself
-     where you can see what you are exposing. Both render this. */
-  function shelfSwitch(){
-    return `<div class="setrow">
-      <span>Show my shelf on my profile</span><span class="sp"></span>
-      <button class="btn sm" data-shelf aria-pressed="${!!subject.shelf_public}">${
-        subject.shelf_public ? 'Public' : 'Private'}</button></div>`;
-  }
-  function wireShelfSwitch(root){
-    root.querySelectorAll('[data-shelf]').forEach(b=>b.addEventListener('click', async ()=>{
-      const next = !subject.shelf_public;
-      b.disabled = true;
-      const { error } = await sb.from('profiles')
-        .update({ shelf_public: next }).eq('id', me.id);
-      b.disabled = false;
-      if(error){ alert(window.eski.dbError('ESK-5070','that setting did not save',error)); return; }
-      subject.shelf_public = next;
-      b.setAttribute('aria-pressed', next);
-      b.textContent = next ? 'Public' : 'Private';
-    }));
-  }
-
-  const wireActs = root => root.querySelectorAll('[data-act]').forEach(b=>
-    b.addEventListener('click', ev=>{ ev.stopPropagation(); act(b); }));
-
-  paintIcons($('page'));
-  if(window.eskiTheme) window.eskiTheme.paint();
-
-  $('tabs').querySelectorAll('.tab').forEach(b=>
-    b.addEventListener('click', ()=>showTab(b.dataset.tab)));
-  showTab('reading');
-
-  $('share').addEventListener('click', async e=>{
-    const url = location.origin + '/u/' + encodeURIComponent(p.handle);
-    try{ await navigator.clipboard.writeText(url); e.currentTarget.lastChild.textContent = 'Link copied'; }
-    catch(err){ prompt('Copy this link', url); }
-  });
+  document.getElementById('main').hidden = false;
+  wireTabs();
+  renderHead();
+  wireProwAction();
+  document.getElementById('tab-saved').hidden = !isMe;
+  document.getElementById('tab-settings').hidden = !isMe;
+  document.getElementById('create-collection').hidden = !isMe;
+  await loadStats();
+  await loadPosts();
   if(isMe){
-    $('editbtn').addEventListener('click', ()=>$('edit').classList.toggle('on'));
-    $('cancel').addEventListener('click', ()=>$('edit').classList.remove('on'));
-    $('save').addEventListener('click', saveProfile);
-    wireAvatar();
+    document.getElementById('create-collection').addEventListener('click', createCollection);
+    await loadSaved();
+    renderSettings();
   }
 }
+document.addEventListener('DOMContentLoaded', boot);
 
-/* AVATARS GO IN THEIR OWN BUCKET, in a folder named after your uid — the
-   storage policy only lets you write inside that folder, so nobody can
-   overwrite anyone else's. The file is content-addressed by timestamp so a
-   new picture is never served from a stale cache. */
-function wireAvatar(){
-  const pick = $('av-pick'), file = $('f-av'), prev = $('av-prev'), clear = $('av-clear');
-  if(!pick || !file) return;
-  pick.addEventListener('click', ()=>file.click());
-  if(clear) clear.addEventListener('click', async ()=>{
-    clear.disabled = true;
-    const { error } = await sb.from('profiles').update({ avatar_url:null }).eq('id', me.id);
-    clear.disabled = false;
-    if(error){ alert(window.eski.dbError('ESK-5071','the picture did not come off',error)); return; }
-    subject.avatar_url = null; paint();
+/* re-derive isMe and refresh the bits that depend on who's signed in —
+   NOT a location.reload(): supabase's onAuthStateChange fires once on
+   subscribe even with no real change, and reloading from inside that
+   handler reloads into a fresh subscribe that fires again. */
+async function refresh(){
+  isMe = !!(P.user && subject && subject.id === P.user.id);
+  wireProwAction();
+  document.getElementById('tab-saved').hidden = !isMe;
+  document.getElementById('tab-settings').hidden = !isMe;
+  document.getElementById('create-collection').hidden = !isMe;
+  await loadStats();
+  await loadPosts();
+  if(isMe){ await loadSaved(); renderSettings(); }
+}
+
+function wireTabs(){
+  document.querySelectorAll('[data-ptab]').forEach(t => t.addEventListener('click', () => {
+    document.querySelectorAll('[data-ptab]').forEach(x => x.classList.remove('active'));
+    t.classList.add('active');
+    document.querySelectorAll('.tabpanel').forEach(p => p.classList.remove('active'));
+    document.querySelector(`[data-panel="${t.dataset.ptab}"]`).classList.add('active');
+  }));
+}
+function renderHead(){
+  const av = document.getElementById('pavatar');
+  av.innerHTML = subject.avatar_url
+    ? `<img src="${P.esc(subject.avatar_url)}" alt="">`
+    : P.esc((subject.display_name || subject.handle || '?').trim().charAt(0).toUpperCase());
+  document.getElementById('pname').textContent = subject.display_name || subject.handle;
+  document.getElementById('phandle').textContent = '@' + subject.handle;
+  document.getElementById('pbio').textContent = subject.bio || '';
+}
+function wireProwAction(){
+  const btn = document.getElementById('prow-action');
+  if(isMe){
+    btn.hidden = false; btn.textContent = 'Edit profile';
+    btn.addEventListener('click', () => document.querySelector('[data-ptab="settings"]').click());
+    return;
+  }
+  if(!P.user){ btn.hidden = true; return; }
+  btn.hidden = false;
+  const setLabel = on => { btn.textContent = on ? 'Following' : 'Follow'; btn.classList.toggle('filled', !on); };
+  P.sb.from('follows').select('followee_id').eq('follower_id', P.user.id).eq('followee_id', subject.id).maybeSingle()
+    .then(({ data }) => setLabel(!!data));
+  btn.addEventListener('click', async () => {
+    const following = btn.textContent === 'Following';
+    const { error } = following
+      ? await P.sb.from('follows').delete().eq('follower_id', P.user.id).eq('followee_id', subject.id)
+      : await P.sb.from('follows').insert({ follower_id: P.user.id, followee_id: subject.id });
+    if(error) return P.toast(P.eski.dbError('ESK-5110','the follow could not be updated', error));
+    setLabel(!following);
+    loadStats();
   });
-  file.addEventListener('change', async ()=>{
-    const f = file.files && file.files[0];
-    if(!f) return;
-    if(f.size > 2 * 1024 * 1024){ alert('That picture is over 2 MB. Try a smaller one.'); return; }
-    pick.disabled = true; pick.textContent = 'Uploading…';
-    try{
-      const ext = (f.name.split('.').pop() || 'png').toLowerCase().replace(/[^a-z0-9]/g,'');
-      const key = me.id + '/' + Date.now() + '.' + (ext || 'png');
-      const up = await sb.storage.from('avatars').upload(key, f, { upsert:true, contentType:f.type });
-      if(up.error) throw up.error;
-      const { data } = sb.storage.from('avatars').getPublicUrl(key);
-      const url = data.publicUrl;
-      const wr = await sb.from('profiles').update({ avatar_url:url }).eq('id', me.id);
-      if(wr.error) throw wr.error;
-      subject.avatar_url = url;
-      if(prev) prev.innerHTML = `<img src="${esc(url)}" alt="">`;
-      paint();
-    }catch(e){
-      alert(window.eski.dbError('ESK-5072','the picture did not upload', e));
-    }finally{
-      pick.disabled = false; pick.textContent = 'Choose a picture';
+}
+async function loadStats(){
+  const sb = P.sb;
+  const [posts, followers, following] = await Promise.all([
+    sb.from('works').select('id', { count:'exact', head:true }).eq('owner_id', subject.id).eq('status','published'),
+    sb.from('follows').select('follower_id', { count:'exact', head:true }).eq('followee_id', subject.id),
+    sb.from('follows').select('followee_id', { count:'exact', head:true }).eq('follower_id', subject.id)
+  ]);
+  document.getElementById('stat-posts').textContent = posts.count ?? 0;
+  document.getElementById('stat-followers').textContent = followers.count ?? 0;
+  document.getElementById('stat-following').textContent = following.count ?? 0;
+}
+
+/* ------------------------------------------------------------- posts */
+async function loadPosts(){
+  const sb = P.sb;
+  let q = sb.from('works').select('*').eq('owner_id', subject.id).is('version_of', null)
+    .order('created_at', { ascending:false }).limit(96);
+  q = isMe ? q.in('status', ['published','private']) : q.eq('status','published');
+  const { data, error } = await q;
+  if(error){ P.toast(P.eski.dbError('ESK-5100','your posts could not load', error)); return; }
+  const rows = data || [];
+  const ids = rows.map(r => r.id);
+  const combo = rows.filter(r => r.kind === 'combination').map(r => r.id);
+  const { data: comboRows } = combo.length ? await sb.from('work_items').select('work_id').in('work_id', combo) : { data: [] };
+  const countBy = {};
+  (comboRows||[]).forEach(r => countBy[r.work_id] = (countBy[r.work_id]||0) + 1);
+  rows.forEach(r => r._itemCount = countBy[r.id] || 0);
+  document.getElementById('posts-count-line').textContent = rows.length + ' post' + (rows.length===1?'':'s');
+  document.getElementById('posts-grid').innerHTML = rows.map(P.cardHtml).join('');
+  document.getElementById('posts-empty').hidden = rows.length > 0;
+}
+async function createCollection(){
+  const title = prompt('name this collection');
+  if(!title || !title.trim()) return;
+  const { error } = await P.sb.from('collections').insert({
+    owner_id: P.user.id, owner_name: P.ownerName(), title: title.trim(),
+    slug: P.slugify(title) + '-' + Date.now().toString(36).slice(-5), status: 'published'
+  });
+  if(error) return P.toast(P.eski.dbError('ESK-5105','the collection could not be created', error));
+  P.toast('collection created — add posts to it from their detail overlay');
+}
+
+/* ------------------------------------------------------------- saved */
+async function loadSaved(){
+  const grid = document.getElementById('saved-grid');
+  const folders = P.myFolders;
+  if(!folders.length){ grid.innerHTML = ''; document.getElementById('saved-empty').hidden = false; return; }
+  document.getElementById('saved-empty').hidden = true;
+  const { data: counts } = await P.sb.from('save_folder_items').select('folder_id')
+    .in('folder_id', folders.map(f => f.id));
+  const n = {};
+  (counts||[]).forEach(r => n[r.folder_id] = (n[r.folder_id]||0) + 1);
+  grid.innerHTML = folders.map(f => `<button class="gcard" type="button" data-openfolder="${f.id}">
+    <div class="gbox framed"><div class="gcount" style="position:static;background:none;color:var(--ink);font-size:15px;font-weight:700;">${n[f.id]||0}</div></div>
+    <div class="gcap">${P.esc(f.name)}</div></button>`).join('');
+  grid.querySelectorAll('[data-openfolder]').forEach(b => b.addEventListener('click', () => openFolder(b.dataset.openfolder)));
+}
+async function openFolder(folderId){
+  const folder = P.myFolders.find(f => f.id === folderId);
+  const { data: items } = await P.sb.from('save_folder_items').select('target_id').eq('folder_id', folderId).eq('target_type','work');
+  const ids = (items||[]).map(r => r.target_id);
+  const { data: works } = ids.length ? await P.sb.from('works').select('*').in('id', ids) : { data: [] };
+  const root = document.getElementById('overlay-root');
+  root.innerHTML = `<div class="pv-scrim"><div class="pv-card" style="width:1100px;max-width:100%;max-height:85vh;display:flex;flex-direction:column;">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:22px 28px 14px 28px;">
+      <div style="font-weight:700;font-size:20px;color:var(--ink);">${P.esc(folder ? folder.name : 'Folder')}</div>
+      <button class="navarrow" type="button" data-close-detail>&times;</button>
+    </div>
+    <div style="padding:0 28px 28px 28px;overflow:auto;">
+      <div class="fgrid">${(works||[]).map(P.cardHtml).join('') || '<div style="color:var(--muted);font-size:13px;">nothing saved here yet</div>'}</div>
+    </div>
+  </div></div>`;
+  root.querySelector('.pv-scrim').addEventListener('click', e => { if(e.target.classList.contains('pv-scrim')) root.innerHTML=''; });
+  root.querySelector('[data-close-detail]').addEventListener('click', () => root.innerHTML = '');
+}
+
+/* ----------------------------------------------------------- settings */
+function settingRow(label, valueHtml, onEdit){
+  const id = 'sr-' + label.toLowerCase().replace(/[^a-z0-9]+/g,'-');
+  return `<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 8px;box-shadow:inset 0 -1px 0 var(--surface);">
+    <div style="display:flex;flex-direction:column;gap:2px;flex:1;min-width:0;">
+      <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;">${P.esc(label)}</div>
+      <div style="font-size:14px;color:var(--ink);" id="${id}">${valueHtml}</div>
+    </div>
+  </div>`;
+}
+function renderSettings(){
+  const panel = document.getElementById('settings-panel');
+  panel.innerHTML = `
+    <div style="display:flex;align-items:center;gap:16px;padding:14px 8px;box-shadow:inset 0 -1px 0 var(--surface);">
+      <div class="pavatar" id="settings-avatar" style="width:56px;height:56px;">${subject.avatar_url ? `<img src="${P.esc(subject.avatar_url)}">` : P.esc((subject.display_name||subject.handle||'?').charAt(0).toUpperCase())}</div>
+      <div style="flex:1;">
+        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;">Avatar</div>
+        <input type="file" id="avatar-input" accept="image/png,image/jpeg,image/webp,image/gif">
+      </div>
+    </div>
+    <div style="padding:14px 8px;box-shadow:inset 0 -1px 0 var(--surface);display:flex;flex-direction:column;gap:6px;">
+      <div class="ulabel">Display name</div><input class="uinput" id="set-name" value="${P.esc(subject.display_name||'')}">
+    </div>
+    <div style="padding:14px 8px;box-shadow:inset 0 -1px 0 var(--surface);display:flex;flex-direction:column;gap:6px;">
+      <div class="ulabel">Handle</div><input class="uinput" id="set-handle" value="${P.esc(subject.handle||'')}">
+    </div>
+    <div style="padding:14px 8px;box-shadow:inset 0 -1px 0 var(--surface);display:flex;flex-direction:column;gap:6px;">
+      <div class="ulabel">Bio</div><textarea class="utext" id="set-bio">${P.esc(subject.bio||'')}</textarea>
+    </div>
+    ${settingRow('Email', P.esc((P.user && P.user.email) || ''))}
+    <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px;">
+      <button class="btnline filled" type="button" id="settings-save">Save changes</button>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:20px;">
+      <button class="btnline danger" type="button" id="delete-account">Delete account</button>
+      <button class="btnline" type="button" id="sign-out">Sign out</button>
+    </div>`;
+
+  document.getElementById('settings-save').addEventListener('click', async () => {
+    const patch = {
+      display_name: document.getElementById('set-name').value.trim() || null,
+      bio: document.getElementById('set-bio').value.trim() || null
+    };
+    const newHandle = document.getElementById('set-handle').value.trim().toLowerCase();
+    if(newHandle && newHandle !== subject.handle){
+      if(!/^[a-z0-9](?:[a-z0-9_-]{1,28}[a-z0-9])$/.test(newHandle))
+        return P.toast('a handle is lowercase letters, numbers, - and _, 3-30 characters');
+      patch.handle = newHandle;
     }
+    const { error } = await P.sb.from('profiles').update(patch).eq('id', subject.id);
+    if(error) return P.toast(P.eski.dbError('ESK-5111', error.code==='23505' ? 'that handle is taken' : 'settings could not be saved', error));
+    P.toast('saved');
+    Object.assign(subject, patch);
+    await P.loadMyState();
+    renderHead();
+    if(patch.handle) history.replaceState(null, '', '/u/' + encodeURIComponent(patch.handle));
+  });
+
+  document.getElementById('avatar-input').addEventListener('change', async e => {
+    const file = e.target.files[0];
+    if(!file) return;
+    const ext = (file.name.match(/\.([a-z0-9]+)$/i) || [,'png'])[1].toLowerCase();
+    const path = P.user.id + '/avatar.' + ext;
+    const { error: upErr } = await P.sb.storage.from('avatars').upload(path, file, { upsert:true, cacheControl:'60' });
+    if(upErr) return P.toast(P.eski.dbError('ESK-5112','the avatar could not upload', upErr));
+    const { data: pub } = P.sb.storage.from('avatars').getPublicUrl(path);
+    const url = pub.publicUrl + '?t=' + Date.now();
+    const { error } = await P.sb.from('profiles').update({ avatar_url: url }).eq('id', subject.id);
+    if(error) return P.toast(P.eski.dbError('ESK-5112','the avatar could not save', error));
+    subject.avatar_url = url;
+    renderHead();
+    P.toast('avatar updated');
+  });
+
+  document.getElementById('sign-out').addEventListener('click', async () => { await P.sb.auth.signOut(); location.href = 'index.html'; });
+  document.getElementById('delete-account').addEventListener('click', async () => {
+    if(!confirm('Delete your account? Your published work stays up, credited to "Deleted account" — this cannot be undone.')) return;
+    const { data, error } = await P.sb.rpc('delete_my_account');
+    if(error || !data || data.ok !== true) return P.toast(P.eski.dbError('ESK-5113','the account could not be deleted', error || { message: (data && data.why) || 'unknown' }));
+    await P.sb.auth.signOut();
+    location.href = 'index.html';
   });
 }
-
-async function saveProfile(){
-  const handle = $('f-handle').value.trim().toLowerCase();
-  const err = $('f-err');
-  err.textContent = '';
-  if(!/^[a-z0-9](?:[a-z0-9_-]{1,28}[a-z0-9])$/.test(handle)){
-    err.textContent = 'Handles are 3 to 30 characters: letters, numbers, - and _, not at the ends.';
-    return;
-  }
-  const up = await sb.from('profiles').update({
-    handle,
-    display_name: $('f-name').value.trim() || null,
-    bio: $('f-bio').value.trim() || null
-  }).eq('id', me.id).select('*').single();
-  if(up.error){
-    err.textContent = up.error.code === '23505' ? 'That handle is taken.'
-      : window.eski.dbError('ESK-5016', 'your profile did not save', up.error);
-    return;
-  }
-  subject = up.data;
-  paint();
-}
-
-/* a part row and a comic card carry the same three actions against different
-   tables. the shape is identical, so only the table and the id change. */
-/* ============================================================
-   THE THREE THINGS AN OWNER CAN DO, AND WHAT THEY COST.
-
-   Publishing is one way. A comic that has been published can be made
-   PRIVATE or DELETED and nothing else — it can never go back to being a
-   draft, because a draft is editable and other people's voice work and
-   scores are attached to it by then. The database enforces that; this is
-   only the interface to it.
-
-     draft     never published. editable in the studio. only you see it.
-     published public.
-     private   was published, now hidden. still not editable.
-
-   Both destructive actions ask first, in a real dialog that names what is
-   about to happen. "Unpublish" used to do it silently and report with a
-   toast, which is the wrong order: a toast tells you after.
-   ============================================================ */
-const ASK = {
-  private: {
-    title: 'Make this private?',
-    body: c => `“${c.title || 'untitled'}” comes off the shelf. Nobody else can `
-             + `open it, and its comments go with it.\n\nYou can make it public `
-             + `again at any time. It does NOT go back to being a draft — once a `
-             + `comic has been published it stays uneditable, so nobody's voice `
-             + `work or score can be changed underneath them.`,
-    verb: 'Make private'
-  },
-  publish: {
-    title: 'Publish this?',
-    body: c => `“${c.title || 'untitled'}” goes on the shelf for everyone.\n\n`
-             + `After this it can no longer be edited in the studio — only made `
-             + `private again, or deleted. Make sure the pages and audio are `
-             + `how you want them.`,
-    verb: 'Publish'
-  },
-  delete: {
-    title: 'Delete this for good?',
-    body: c => `“${c.title || 'untitled'}” and everything under it — every page, `
-             + `every track, every comment, and every voice or score anybody `
-             + `contributed to it — is removed.\n\nThis cannot be undone.`,
-    verb: 'Delete', danger: true
-  }
-};
-
-function ask(kind, subject){
-  const a = ASK[kind];
-  return new Promise(resolve => {
-    const ov = document.createElement('div');
-    ov.className = 'ov open confirm';
-    ov.innerHTML = `<div class="sheet confirm-sheet" role="alertdialog" aria-modal="true">
-      <div class="sheethead"><span class="ttl">${esc(a.title)}</span></div>
-      <p class="confirm-body">${esc(a.body(subject))}</p>
-      <div class="sheetfoot">
-        <button class="btn" data-no>Cancel</button>
-        <button class="btn ${a.danger ? 'danger' : 'primary'}" data-yes>${esc(a.verb)}</button>
-      </div></div>`;
-    document.body.appendChild(ov);
-    const done = v => { ov.remove(); document.removeEventListener('keydown', key); resolve(v); };
-    const key = e => { if(e.key === 'Escape') done(false); };
-    ov.querySelector('[data-no]').onclick = () => done(false);
-    ov.querySelector('[data-yes]').onclick = () => done(true);
-    ov.onclick = e => { if(e.target === ov) done(false); };
-    document.addEventListener('keydown', key);
-    ov.querySelector('[data-yes]').focus();
-  });
-}
-
-async function act(btn){
-  const what = btn.dataset.act;
-  const isPart = !!btn.dataset.part;
-  const table = isPart ? 'parts' : 'comics';
-  const id = btn.dataset.part || btn.dataset.comic;
-  const subject = isPart
-    ? (parts.find(p => p.id === id) || {})
-    : ([...published, ...drafts].find(c => c.id === id) || {});
-  const label = isPart
-    ? { title: subject.character_key || subject.title || 'this part' }
-    : subject;
-
-  if(ASK[what] && !await ask(what, label)) return;
-
-  btn.disabled = true;
-  let err = null;
-  if(what === 'delete'){
-    ({ error: err } = await sb.from(table).delete().eq('id', id));
-  }else if(what === 'publish'){
-    ({ error: err } = await sb.from(table).update({
-      status: 'published', published_at: new Date().toISOString() }).eq('id', id));
-  }else if(what === 'private'){
-    /* a part has no private state — it is either offered or it is not — so
-       for parts this is still a return to draft. only comics are one way. */
-    ({ error: err } = await sb.from(table)
-      .update({ status: isPart ? 'draft' : 'private' }).eq('id', id));
-  }
-  btn.disabled = false;
-  if(err){
-    alert(window.eski.dbError(what === 'delete' ? 'ESK-5017' : 'ESK-5018',
-      'that did not work', err));
-    return;
-  }
-  load();
-}
-
-load();
 </script>
 </body>
 </html>

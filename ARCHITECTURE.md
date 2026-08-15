@@ -31,15 +31,21 @@ queries against `works`/`content_tags`/`comments`/`likes`/`save_folders`/
 `homepageHtml` mockup and its detail-overlay/upload-modal templates. See
 `pivot.css` below for how the mockup's look became real tokens.
 
-**`profile.html` is still the old comics product** — nav bars that link to
-the deleted studio, comic cards with "Voice this" / "Score it" buttons,
-reader deep-links — and queries tables that no longer exist. Rebuilding it
-against `schema-clean.sql`, matching `artboard.html`'s `profileHtml` mockup,
-is what's left of the pivot's largest remaining item. `index.html`'s upload
-modal, detail overlay, tag/comment/save-folder wiring, and the auth-gating
-pattern are all reusable as-is — `profile.html` needs its own Posts/Saved/
-Settings tabs and the "create a collection" flow, not a second copy of any
-of that.
+**`profile.html` is rebuilt too**, and both pages now share `pivot.js`
+rather than each carrying their own copy of the card renderer, the detail
+overlay, upload, and sign-in — `index.html`'s inline script shrank to just
+the feed query and its filters once that was factored out. `profile.html`
+answers at `/u/<handle>` (or `?u=` — same fallback the old page used) for
+someone else's profile, or your own when signed in with neither; Saved and
+Settings only show on your own. Settings wires display name / handle / bio
+/ avatar (the `avatars` bucket from `schema-states.sql`) to real updates,
+plus sign-out and `delete_my_account()`.
+
+**The edit flow is in now too** — poster's burger menu on the detail
+overlay (`pivot.js`) gained "Edit post" back: swaps the caption/title/body
+fields into an editable form, saves with a plain `works` update. Scoped to
+text fields only; swapping the underlying media file is a separate,
+riskier feature, not built.
 
 **Known v1 gaps in the new `index.html`, left honest rather than faked:**
 the mockup's feed-switcher (rename/add/delete several feeds) has no backing
@@ -125,7 +131,8 @@ it again.
 | `platform.js` | The Supabase client, the current user, `mediaUrl()`, and `dbError()`. The single boot path. Everything else waits on `window.eski.ready`. |
 | `tokens.css` | Spacing, type scale, control heights, timings, and the handful of status colours that are fixed regardless of theme (`--danger`, and now `--like-bg`/`--like-ink` for the ruby-red Like state). **No theme colour.** |
 | `docs/design/final/broadsheet.css` | The OLD comics-reader chrome: nav, `.btn`, plates, sheets, folds. Only `admin.html`/`legal.html` still lean on it; not used by any pivot page. |
-| `pivot.css` | **The new product's shared component vocabulary** — buttons, chips, the feed grid, detail overlays, tags, comments, the upload modal. Ported from `artboard.html`'s `.eski-mockup` scope onto real tokens; see its own header comment for the two deliberate deviations (hover colour, corner radius). Used by `index.html`; `profile.html` should reuse it rather than redefine any of it. |
+| `pivot.css` | **The new product's shared component vocabulary** — buttons, chips, the feed grid, detail overlays, tags, comments, the upload modal. Ported from `artboard.html`'s `.eski-mockup` scope onto real tokens; see its own header comment for the two deliberate deviations (hover colour, corner radius). Used by every pivot page. |
+| `pivot.js` | **The new product's shared runtime** — auth/profile state, the grid card renderer, the entire detail overlay (tags, comments, likes, save-folders, versions, editing, the poster's burger menu), sign-in, and the upload flow. `window.Pivot`. `index.html` and `profile.html` each keep only their own page's logic and call into this for anything that opens over the page. |
 | `palettes.css` | The themes. The only file with raw colour in it. Now nineteen: the original eighteen (light/mono/dark × neutral/green/blue/red/amber/pink) plus **sage** (light/mono/dark), the pivot's reviewed accent (`#5B7A6B`), which `palette.js` sets as `DEFAULT`. |
 | `palette.js` | Reads and stamps the theme, and draws the picker. |
 | `hash-worker.js` | SHA-256 off the main thread, for content-addressed upload keys. Used by `index.html`'s upload flow exactly as the old studio used it. |
@@ -136,7 +143,7 @@ it again.
 | File | Is |
 |---|---|
 | `index.html` | The home feed, rebuilt for the pivot: real `works` query with live tag/modifier filters, per-kind cards, a detail overlay (tags, comments, likes, save-folders, versions, the poster's burger menu), and the upload modal. See the pivot section above for what's still v1-scoped. |
-| `profile.html` | Your comics, parts, shelf and settings — **still the old comics product**, querying tables that no longer exist. Pending rewrite, reusing `pivot.css` and `index.html`'s patterns. |
+| `profile.html` | Your posts, saved folders, and settings — or someone else's Posts tab, at `/u/<handle>`. Shares `pivot.js`/`pivot.css` with `index.html`; owns only its own header/tabs/settings-form logic. |
 | `onboarding.html` | Account creation: pick a handle. Runs once, on first sign-in, via `platform.js`'s `maybeOnboard()`. |
 | `artboard.html` | The complete design mockup for the pivot — every screen and overlay as static HTML, Supabase-backed comments/pins on top for review. Unlisted, `noindex`. This is the spec `index.html`/`profile.html` are being rewritten against. |
 | `admin.html` | The moderation queue. |
@@ -206,9 +213,9 @@ always meant and are worth running now.
 
 Written down rather than left to be rediscovered.
 
-- **`profile.html` is still the old product.** Not a small patch: needs
-  rebuilding against `works`/`collections`, reusing `pivot.css` and
-  `index.html`'s query/overlay patterns. See `ROADMAP.md`.
+- **Editing is text-only.** Title/caption/body, not the underlying file —
+  swapping `media_key` after publish (and what that should do to a
+  `combination`'s `work_items`) is a real design question, not built.
 - **The criticism marks (`!` / `?` / `!!`) are designed, not built.**
   `comments.mark_type` exists and is unused; a plain Like (`likes` table) is
   what ships today.
@@ -219,7 +226,3 @@ Written down rather than left to be rediscovered.
 - **No video or audio thumbnails.** A post of either kind has no `cover_key`
   yet — its card shows a play glyph on a plain box. Generating one (a canvas
   frame-grab, a waveform image) is real work, not wired.
-- **`index.html`'s own inline `<script>` is doing everything** — feed query,
-  filters, the detail overlay, the upload flow. `studio.html` was 3,500
-  lines for the same reason before it was deleted; watch this file the same
-  way if `profile.html`'s build wants to share more than `pivot.css` with it.
