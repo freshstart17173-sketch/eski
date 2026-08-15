@@ -3,2139 +3,1018 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<!-- THIS PAGE ALSO LIVES AT /c/<slug>. Every relative url below — and every
-     one built later in script, like read.html?read=… — would otherwise
-     resolve against /c/ and 404. The base tag is what makes one file able to
-     answer at two depths, and it must stay ahead of the first relative url. -->
-<base href="/">
 <title>eski</title>
-<meta name="description" content="Comics scored with music and voice.">
+<meta name="description" content="post anything — audio, video, image, text, or a combination of several — and find work through the people and tags you follow.">
 <link rel="icon" type="image/png" href="eski_logo.png">
+<link rel="manifest" href="manifest.json">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Jost:wght@400;500;600&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-<script type="module" src="platform.js"></script>
-<script src="comments.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Jost:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="palette.js"></script>
 <link rel="stylesheet" href="tokens.css">
-<link rel="stylesheet" href="docs/design/final/broadsheet.css">
 <link rel="stylesheet" href="palettes.css">
+<link rel="stylesheet" href="pivot.css">
+<script type="module" src="platform.js"></script>
 <style>
-/* ============================================================
-   eski — home and browse (eskis · roles · no score).
-
-   The style block below is docs/design/final/home.html's, kept as it was
-   written: the five-up grid stepping to four, three and two, the 2:3 plate,
-   the gnomon title on a fixed 24px line, three rows of tag chips, and the
-   five caption rows on a fixed 19px baseline so every card in a row ends
-   level with its neighbour.
-
-   Three class names differ from that file, each for a reason:
-     .card    also carries .cover, .title also carries .t, and the grid cell
-              is .cell — the smoke suite locates library cards by those names.
-     .shelved is the "on your shelf" badge. The design's .tag is a tag CHIP
-              and the two used to collide.
-     .bcard   is the browse pane's card. It cannot be .cover or a hidden
-              browse pane would double every count the suite makes.
-   ============================================================ */
-.wrap{max-width:1280px;margin:0 auto;padding:0 var(--s4) var(--s7)}
-.pane{display:none}
-.pane.on{display:block}
-section + section{margin-top:var(--s6)}
-:root{ --row:19px; }
-.top{position:sticky;top:0;z-index:30}
-.portrait{width:46px;height:46px}
-.pfp{width:22px;height:22px}
-
-/* ---------- the header: wordmark, then the four words. broadsheet
-   styles the nav itself. ---------- */
-.top .sp{flex:1}
-.ico{width:13px;height:13px;flex:none;stroke:currentColor;fill:none;stroke-width:2;
-  stroke-linecap:round;stroke-linejoin:round;display:block}
-/* platform.js paints the sign-in control into .site-header itself, in the
-   nav's own type. it is the only thing in the bar besides the wordmark and
-   the four words. */
-
-/* ---------- the grid: five up, then four, three, two ---------- */
-/* ---------- continue reading ----------
-   Cover, credits, and the last five pages you actually saw. A percentage does
-   not help you pick a comic back up — you have to remember what was happening
-   in it, and the pages are the only thing on this row that can tell you.
-
-   THE COVER IS A REAL COVER. --rs-cover is the width a card's plate resolves
-   to in the five-up grid at the 1280 wrap (256 column, less 12px of padding
-   each side), so the comic is the same size here as it is everywhere else on
-   the page. It used to be 132px — half a cover, floating in a row twice its
-   height, with the strip a short way below it and a band of nothing under
-   both.
-
-   The strip BOTTOM-ALIGNS with the cover rather than matching its height:
-   two things side by side that nearly line up read as a mistake, so they
-   share an edge. The pages are smaller than the cover on purpose — the cover
-   identifies the comic, and three thumbnails should not out-shout it. */
-/* FOUR COLUMNS: the comic, where you are, what you will hear, what people
-   said. Each one is a different question, and they get equal-ish room rather
-   than one of them taking the slack — the mix and the thread both hold text
-   that wants to wrap, so neither can be `auto`. */
-/* 200, not 232. The cover was sized to match a card's plate exactly, which
-   was right when a strip of pages stood beside it at the same height and the
-   row was two tall things. With three short columns beside it instead, 348px
-   of cover set a row height nothing else came close to filling. It is still
-   unmistakably a cover — it is just no longer the only thing with a size. */
-.rs{--rs-cover:200px;
-  display:grid;
-  grid-template-columns:var(--rs-cover) minmax(0,1.1fr) minmax(0,1fr) minmax(0,1fr);
-  gap:var(--s5);
-  align-items:start;padding:var(--s5) 0;border-bottom:var(--bw) solid var(--rule-hair)}
-.rs:last-child{border-bottom:0}
-.rs .plate.rs-cover{width:var(--rs-cover);aspect-ratio:2/3;flex:none}
-.rs-meta{min-width:0;display:flex;flex-direction:column;gap:var(--s1)}
-.rs-ttl{font-size:var(--fs-title);font-weight:500;line-height:1.15}
-.rs-by{font-size:var(--fs-sm);color:var(--label)}
-.rs-at{font-size:var(--fs-micro);letter-spacing:.1em;text-transform:uppercase;
-  color:var(--label);margin-top:var(--s2)}
-.rs .progress{height:3px;background:var(--rule-hair);max-width:280px}
-.rs .progress i{display:block;height:100%;background:var(--mark)}
-.rs-acts{display:flex;gap:var(--s2);margin-top:var(--s4);flex-wrap:wrap}
-
-/* ---------- the two columns that replaced the page previews ----------
-   THE PREVIEWS WERE PICTURES OF SOMETHING YOU CAN ALREADY SEE. Three page
-   thumbnails next to a cover told you where you were, which the page count
-   says in four words. What the row never showed is what you are about to
-   HEAR — which is the only thing on this site that no other comic reader
-   has. So the space went to the mix and the thread instead. */
-.rs-col{min-width:0;display:flex;flex-direction:column;gap:var(--s2);
-  border-left:var(--bw) solid var(--rule-hair);padding-left:var(--s4)}
-.rs-h{font-size:var(--fs-micro);letter-spacing:.14em;text-transform:uppercase;
-  color:var(--label)}
-
-/* a caption block, same geometry as the modal's: label left, value right,
-   one --row tall each so the two columns align down the row */
-.rs-mix{margin:0;display:grid;grid-template-columns:auto minmax(0,1fr);
-  gap:0 var(--s3);align-content:start}
-.rs-mix dt{font-size:var(--fs-micro);letter-spacing:.1em;text-transform:uppercase;
-  color:var(--label);line-height:var(--row)}
-.rs-mix dd{margin:0;font-size:var(--fs-xs);color:var(--ink);line-height:var(--row);
-  text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.rs-swap{align-self:start;margin-top:var(--s1)}
-
-/* the comment fold. .fold already styles the control; this only places it. */
-.rs-cmfold{margin-top:0}
-.rs-cmbody{padding-top:var(--s2);display:flex;flex-direction:column;gap:var(--s2)}
-.rs-cm{font-size:var(--fs-xs);line-height:1.45;min-width:0}
-.rs-cm b{display:block;font-weight:500;font-size:var(--fs-micro);letter-spacing:.06em;
-  text-transform:uppercase;color:var(--label)}
-.rs-cm span{color:var(--ink);display:block;overflow:hidden;
-  display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical}
-.rs-cmnote{font-size:var(--fs-micro);color:var(--label)}
-/* a flex column stretches its children, which centred the "all n" link
-   across the column instead of starting it where the comments start */
-.rs-cmbody .lnk{align-self:start}
-
-/* the two added columns fold underneath before they get too narrow to read,
-   and lose the left rule when they do — a divider across a wrapped row points
-   at nothing. */
-@media(max-width:1100px){
-  .rs{grid-template-columns:var(--rs-cover) minmax(0,1fr) minmax(0,1fr)}
-  .rs-col:last-child{grid-column:2 / -1;border-left:0;padding-left:0;
-    border-top:var(--bw) solid var(--rule-hair);padding-top:var(--s3)}
-}
-@media(max-width:880px){
-  .rs{--rs-cover:180px;grid-template-columns:var(--rs-cover) minmax(0,1fr)}
-  .rs-meta{max-width:none}
-  .rs-col{grid-column:1 / -1;border-left:0;padding-left:0;
-    border-top:var(--bw) solid var(--rule-hair);padding-top:var(--s3)}
-  .rs-col:last-child{grid-column:1 / -1}
-}
-@media(max-width:560px){
-  .rs{--rs-cover:132px;gap:var(--s4)}
-  .rs-ttl{font-size:var(--fs-lg)}
-}
-
-.grid{display:grid;grid-template-columns:repeat(5,1fr);border-left:var(--bw) solid var(--rule)}
-@media(max-width:1180px){.grid{grid-template-columns:repeat(4,1fr)}}
-@media(max-width:900px){.grid{grid-template-columns:repeat(3,1fr)}}
-@media(max-width:640px){.grid{grid-template-columns:repeat(2,1fr)}}
-
-/* ---------- a card: plate, title, tags, caption ---------- */
-.cell,.bcell{position:relative;display:flex;background:var(--paper);
-  border-right:var(--bw) solid var(--rule);border-bottom:var(--bw) solid var(--rule)}
-.card{display:flex;flex-direction:column;background:var(--paper);text-align:left;
-  border:0;border-right:var(--bw) solid var(--rule);border-bottom:var(--bw) solid var(--rule);
-  padding:var(--s3);color:inherit;font:inherit;min-width:0;width:100%;cursor:pointer;
-  transition:background var(--t-fast) var(--ease)}
-/* inside a cell the hairlines belong to the cell, not the button */
-.cell > .card,.bcell > .card{border-right:0;border-bottom:0}
-.cell:hover .rm{display:flex}
-/* THE WHOLE CARD, and unmistakably. The old hover tinted only the button's
-   own box and by a shade you had to look for; on a dark ground it was
-   invisible. The cell is the target, so the cell is what lights up. */
-.cell:hover{background:var(--surface)}
-.cell:hover .card{background:var(--surface)}
-.cell:hover .plate{border-color:var(--ui)}
-.plate{position:relative;overflow:hidden;border:var(--bw) solid var(--rule-hair);
-  aspect-ratio:2/3;background:var(--plate-bg)}
-.plate img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
-.plate .ico{width:26px;height:26px;opacity:.35;position:absolute;inset:0;margin:auto}
-.card:hover .plate{border-color:var(--rule)}
-
-.title{font-family:var(--font-body);font-weight:400;font-size:17px;line-height:24px;
-  height:24px;text-align:center;margin-top:var(--s3)}
-/* the note line is in the markup whether or not it has anything in it, so a
-   card that carries one does not push its neighbours a row out of true. */
-.note{height:var(--row);line-height:var(--row);font-size:var(--fs-micro);
-  color:var(--label);text-align:center;letter-spacing:.04em}
-
-/* ---------- tags. ao3 order: the five that matter, then the count. ---------- */
-.tags{display:flex;flex-wrap:wrap;gap:3px;height:54px;overflow:hidden;
-  margin:var(--s1) 0 var(--s2);align-content:flex-start}
-.tags:empty{height:54px}
-
-/* ---------- caption rows: tight, hairline separated, right aligned ---------- */
-.cap{margin-top:auto;font-size:var(--fs-xs);color:var(--soft-ink)}
-.cap .r{display:grid;grid-template-columns:42px 1fr;align-items:center;gap:var(--s2);
-  height:var(--row);border-top:var(--bw) solid var(--rule-hair);min-width:0}
-.cap .r:first-child{border-top:0}
-.cap .k{color:var(--label);letter-spacing:.06em;font-size:var(--fs-micro);
-  text-transform:uppercase;white-space:nowrap}
-.cap .v{text-align:right;font-variant-numeric:tabular-nums;min-width:0}
-.cap .v.want{color:var(--ink);font-weight:500}
-.cap .v.none{color:var(--muted);font-style:italic}
-
-/* the shelved badge. NOT .tag — that is a chip. */
-.shelved{position:absolute;top:0;left:0;background:var(--mark);color:var(--paper);
-  font-size:9px;letter-spacing:.08em;text-transform:uppercase;padding:2px 6px;
-  pointer-events:none;z-index:2}
-.rm{position:absolute;top:0;right:0;width:24px;height:24px;border:0;
-  border-bottom:var(--bw) solid var(--rule-hair);border-left:var(--bw) solid var(--rule-hair);
-  background:var(--paper);color:var(--label);display:none;align-items:center;
-  justify-content:center;padding:0;z-index:2;cursor:pointer}
-.cell:hover .rm{display:flex}
-.rm:hover{background:var(--rec);color:var(--white)}
-
-/* ---------- voiceover needed, on the home page ---------- */
-.rolecard{display:flex;flex-direction:column;background:var(--paper);text-align:left;
-  border:0;border-right:var(--bw) solid var(--rule);border-bottom:var(--bw) solid var(--rule);
-  padding:var(--s3);color:inherit;font:inherit;min-width:0;cursor:pointer;
-  transition:background var(--t-fast) var(--ease)}
-.rolecard:hover{background:var(--surface)}
-.rolehead{display:flex;gap:var(--s2);align-items:flex-start;min-width:0}
-.portrait{width:46px;height:46px;flex:none;display:block;overflow:hidden;
-  border:var(--bw) solid var(--rule-hair);background:var(--plate-bg)}
-.portrait img{width:100%;height:100%;object-fit:cover;
-  transition:transform var(--t-mid) var(--ease)}
-.rolename{font-family:var(--font-body);font-size:15px;line-height:20px;height:20px}
-/* two lines under the name: WHICH ESKI, then who wrote it. the first is what
-   you are scanning for, so it takes the weight and the ink; the second steps
-   down. they used to be identical, which is why the block read as grey. */
-.rolein{font-size:var(--fs-micro);color:var(--label);line-height:var(--row);height:var(--row)}
-.rolein.ttl{color:var(--ink);font-weight:500}
-.blurb{font-size:var(--fs-xs);color:var(--soft-ink);line-height:1.4;margin:var(--s2) 0;
-  height:calc(1.4em * 3);overflow:hidden;
-  display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical}
-.rolefoot{display:flex;align-items:center;justify-content:space-between;gap:var(--s2);
-  margin-top:auto;padding-top:var(--s1);border-top:var(--bw) solid var(--rule-hair);
-  height:var(--row);font-size:var(--fs-micro);letter-spacing:.06em;color:var(--label);
-  font-variant-numeric:tabular-nums}
-
-/* ---------- voiceover needed: one dense row per character ---------- */
-.rolelist{border-top:var(--bw) solid var(--rule)}
-.rolerow{display:grid;grid-template-columns:46px 196px 210px 1fr 84px 104px;gap:var(--s3);
-  align-items:center;padding:5px var(--s2);width:100%;text-align:left;background:none;
-  border:0;border-bottom:var(--bw) solid var(--rule-hair);color:inherit;font:inherit;
-  min-width:0;cursor:pointer;transition:background var(--t-fast) var(--ease)}
-.rolerow:hover{background:var(--surface)}
-.rolerow .who,.rolerow .where{min-width:0}
-.rolerow .where{font-size:var(--fs-micro);color:var(--label);line-height:var(--row)}
-.rolerow .where .ttl{color:var(--ink);font-weight:500}
-.rolerow .blurb{margin:0;height:auto;-webkit-line-clamp:2;font-size:var(--fs-xs)}
-.rolerow .lines{text-align:right;font-size:var(--fs-micro);color:var(--label);
-  font-variant-numeric:tabular-nums;line-height:1.35}
-.rolerow .lines b{display:block;color:var(--ink);font-weight:500;font-size:var(--fs-xs)}
-.rolerow .go{display:flex;justify-content:flex-end}
-.rolerow .go .btn{opacity:.5;transition:opacity var(--t-fast) var(--ease),
-  background var(--t-fast) var(--ease),color var(--t-fast) var(--ease)}
-.rolerow:hover .go .btn{opacity:1}
-@media(max-width:1080px){
-  .rolerow{grid-template-columns:46px 1fr 1fr auto}
-  .rolerow .blurb,.rolerow .lines{display:none}
-}
-
-/* ============================================================
-   details. click outside or press escape to go back.
-   ============================================================ */
-.ov.open{display:grid}
-.sheet{width:min(880px,100%);max-height:88vh;position:relative}
-/* ON A PHONE THERE IS NOWHERE TO TAP "OUTSIDE".
-   The sheet fills the screen, so the tap-the-scrim-to-close that works on a
-   desktop has no target, and escape needs a keyboard. It carries its own way
-   out. On a desktop the scrim is right there, so this stays hidden. */
-.sheet-x{display:none;position:absolute;top:0;right:0;z-index:3;width:44px;height:44px;
-  border:0;border-left:var(--bw) solid var(--rule);border-bottom:var(--bw) solid var(--rule);
-  background:var(--paper);color:var(--ink);font-size:24px;line-height:1;padding:0}
-.sheet-x:active{background:var(--surface)}
-@media(max-width:720px){ .sheet-x{display:block} }
-.sheetbody{display:grid;grid-template-columns:270px 1fr}
-@media(max-width:720px){.sheetbody{grid-template-columns:1fr}}
-.sheetbody .left{padding:var(--s4);border-right:var(--bw) solid var(--rule)}
-.sheetbody .right{padding:var(--s4);min-width:0}
-.sheetbody h3{font-family:var(--font-body);font-weight:400;font-size:var(--fs-title);
-  margin:0 0 var(--s2);line-height:1.05}
-.sheetbody p.desc{margin:var(--s3) 0 0;color:var(--soft-ink);line-height:1.55;
-  font-size:var(--fs-xs);white-space:pre-wrap}
-.subhead{display:flex;align-items:baseline;gap:var(--s3);margin:var(--s5) 0 var(--s2);
-  padding-bottom:3px;border-bottom:var(--bw) solid var(--rule);
-  font-family:var(--font-body);font-weight:400;font-size:15px}
-.subhead .sp{flex:1}
-.subhead .n{font-family:var(--font-body);font-size:var(--fs-micro);
-  color:var(--label);letter-spacing:.1em}
-.charhead{display:flex;align-items:baseline;gap:var(--s2);margin:var(--s3) 0 2px;
-  font-size:var(--fs-micro);letter-spacing:.1em;text-transform:uppercase;color:var(--label)}
-.charhead b{color:var(--ink);font-weight:500;letter-spacing:.06em}
-.charhead .sp{flex:1}
-
-/* one voiceover, one score: a row you can pick. the design drew this as an
-   exclusive radio; SPEC.md §1 says contributions STACK, so it is a checkbox
-   with the design's dot on it — same object, honest behaviour. */
-.pick{display:grid;grid-template-columns:14px 22px 1fr auto;gap:var(--s2);
-  align-items:center;width:100%;text-align:left;background:none;color:inherit;font:inherit;
-  border:0;border-bottom:var(--bw) solid var(--rule-hair);padding:4px var(--s1);cursor:pointer;
-  transition:background var(--t-fast) var(--ease)}
-.pick:hover{background:var(--surface)}
-.pick input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
-.pick .dot{width:11px;height:11px;border:var(--bw) solid var(--line-strong);border-radius:50%;
-  position:relative}
-.pick:has(input:checked) .dot{border-color:var(--mark)}
-.pick:has(input:checked) .dot::after{content:"";position:absolute;inset:2px;
-  border-radius:50%;background:var(--mark)}
-.pick .who{font-size:var(--fs-xs);min-width:0}
-.pick .who b{font-weight:500}
-.pick .who span{color:var(--label)}
-.pick:has(input:checked) .who b{color:var(--ink)}
-
-.openline{display:grid;grid-template-columns:14px 22px 1fr auto;gap:var(--s2);
-  align-items:center;padding:4px var(--s1);border-bottom:var(--bw) solid var(--rule-hair);
-  font-size:var(--fs-xs);color:var(--label)}
-/* the note a performer reads before taking the part */
-.rolenote{margin:2px 0 4px;font-size:var(--fs-xs);color:var(--soft-ink);line-height:1.45}
-
-.mixline{font-size:var(--fs-micro);color:var(--label);letter-spacing:.06em;
-  padding:var(--s2) 0 0}
-.mixline b{color:var(--ink);font-weight:500}
-.acts{display:flex;gap:var(--s2);flex-wrap:wrap;padding:var(--s3) var(--s4);
-  border-top:var(--bw) solid var(--rule);position:sticky;bottom:0;background:var(--paper)}
-
-/* ============================================================
-   ARRIVED ON A LINK, so this is a page.
-   Same markup, same sheet. What changes is that there is no shelf behind it
-   to go back to by tapping past it, so the scrim goes, the rules run to the
-   edges, and the way out is a word rather than a cross in a corner.
-   ============================================================ */
-/* the sheet scrolls itself at 86vh; a page taller than the screen does not,
-   so the scrolling has to move up to the overlay — and it has to start at the
-   top rather than centring, or a long comic page is clipped at both ends */
-body.deep .ov{background:var(--paper);padding:0;overflow-y:auto;place-items:start stretch}
-body.deep .sheet{width:100%;max-height:none;min-height:100dvh;border:0;overflow:visible;
-  animation:none}
-body.deep .sheet-x{display:none}
-body.deep .sheet-home{display:inline-flex}
-.sheet-home{display:none;align-items:center;gap:6px;position:sticky;top:0;z-index:3;
-  width:100%;padding:var(--s3) var(--s4);border:0;border-bottom:var(--bw) solid var(--rule);
-  background:var(--paper);color:var(--label);font:inherit;font-size:var(--fs-micro);
-  letter-spacing:.14em;text-transform:uppercase;cursor:pointer;text-align:left}
-.sheet-home:hover{color:var(--ink)}
-
-/* the thread's styles live in broadsheet.css: the reader mounts the same
-   markup from comments.js. */
-
-.alltags{display:flex;flex-wrap:wrap;gap:3px;align-items:center}
-/* adding a tag: anyone signed in, ao3 style */
-.tagadd{display:flex;gap:var(--s1);align-items:center;margin-top:var(--s2)}
-.tagadd input{height:22px;border:var(--bw) solid var(--rule-hair);background:var(--surface);
-  color:var(--ink);padding:0 var(--s2);font-size:10px;letter-spacing:.06em;min-width:0;flex:1}
-.tagadd input:focus{outline:none;border-color:var(--accent)}
-.tag.mine{border-color:var(--ink);color:var(--ink)}
-.tag.x{cursor:pointer}
-
-/* ---------- shelf progress ---------- */
-.resume{margin-top:var(--s2);font-size:var(--fs-micro);letter-spacing:.08em;
-  text-transform:uppercase;color:var(--accent);font-variant-numeric:tabular-nums}
-.resume.done{color:var(--label)}
-.progress{height:3px;background:var(--rule-hair);margin-top:var(--s1)}
-.progress i{display:block;height:100%;background:var(--mark)}
-
-/* RULE 2, spelled out on this page: sage is on the numbers and counts the eye
-   lands on in a dense view, and nowhere else. every "this one is on" is the
-   near-black mark. */
-.hot{color:var(--accent)}
-.head .n{color:var(--accent)}
-.cap .v.want{color:var(--accent)}
-.rolerow .lines b{color:var(--accent)}
-.seg button[aria-selected="true"]{background:var(--mark);color:var(--on-mark)}
-.bar.modes{border-bottom:0;padding-bottom:0}
-/* prose, not a count */
-.modenote{font-size:var(--fs-micro);letter-spacing:.08em;text-transform:uppercase;
-  color:var(--label)}
-button.link{background:none;border:0;padding:0;font:inherit;font-size:var(--fs-micro);
-  letter-spacing:.1em;color:var(--label);cursor:pointer;
-  transition:color var(--t-fast) var(--ease)}
-button.link:hover{color:var(--ink)}
-
-.foot{margin-top:var(--s7);padding-top:var(--s3);border-top:var(--bw) solid var(--rule);
-  display:flex;justify-content:space-between;gap:var(--s3);flex-wrap:wrap;
-  font-size:var(--fs-micro);letter-spacing:.1em;text-transform:uppercase;color:var(--label)}
-.foot a{color:inherit;text-decoration:none}
-.foot a:hover{color:var(--ink)}
-
-/* ---------- states ---------- */
-.state{border:var(--bw) solid var(--rule);padding:var(--s7) var(--s5);text-align:center;
-  color:var(--label);background:var(--surface);font-size:var(--fs-xs)}
-.state code{background:var(--paper-1);border:var(--bw) solid var(--rule-hair);padding:1px 6px;
-  font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11px;color:var(--ink)}
-.state code.why{user-select:text;display:inline-block;max-width:46ch;text-align:left;
-  white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.5}
-.spinner{width:24px;height:24px;border:2px solid var(--rule-hair);border-top-color:var(--accent);
-  border-radius:50%;animation:spin .8s linear infinite;margin:0 auto var(--s3)}
-@keyframes spin{to{transform:rotate(360deg)}}
-.no-match{grid-column:1/-1;padding:var(--s7) var(--s5);text-align:center;color:var(--label);
-  font-size:var(--fs-xs)}
-
-/* ---------- onboarding ---------- */
-.sheet.wide{width:min(460px,100%);text-align:left;padding:var(--s5);max-height:88vh}
-.sheet.wide .t{margin:0 0 var(--s1);font-size:var(--fs-title);font-family:var(--font-body);
-  font-weight:400;letter-spacing:-.01em}
-.ob-sub{color:var(--label);font-size:var(--fs-xs);margin:0 0 var(--s5)}
-.ob-list{display:grid;gap:var(--s4);margin:0 0 var(--s5)}
-.ob-item{border-left:2px solid var(--rule);padding-left:var(--s3)}
-.ob-item b{display:block;font-weight:500;margin-bottom:2px}
-.ob-item span{display:block;color:var(--soft-ink);font-size:var(--fs-xs);line-height:1.45}
-.btn.primary{background:var(--mark);border-color:var(--mark);color:var(--on-mark)}
-/* inverts, like .btn.p — going to --accent was a no-op, since every palette
-   gives --mark and --accent the same value */
-.btn.primary:hover{background:var(--ink);border-color:var(--ink);color:var(--paper)}
-/* an empty section must not draw the rule that frames a full one */
-.grid:empty{border-left:0}
-.rolelist:empty{border-top:0}
-
-@media (max-width:640px){
-  .top{gap:var(--s2);padding:var(--s2) var(--s3);overflow-x:auto;scrollbar-width:none}
-  .top::-webkit-scrollbar{display:none}
-  .top>*{flex:none}
-  .top nav{gap:var(--s3)}
-  .wrap{padding:0 var(--s3) var(--s6)}
-  .sheetbody .left{border-right:0;border-bottom:var(--bw) solid var(--rule)}
-}
+/* page-specific layout only — every shared control is in pivot.css.
+   what's here: the feed's own scroll rhythm, the empty state, and the
+   handful of overlay/modal scaffolding wires that don't belong to any
+   one component. */
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--font-body);font-size:var(--fs)}
+*{box-sizing:border-box}
+main{max-width:var(--wrap);margin:0 auto}
+.feedhead{display:flex;flex-direction:column;gap:20px;width:100%;padding:20px 32px 24px 32px}
+.tagpanels{display:flex;gap:56px;flex-wrap:wrap;align-items:flex-start}
+.gridwrap{padding:0 32px}
+.empty{display:flex;flex-direction:column;align-items:center;gap:10px;padding:96px 32px;text-align:center;color:var(--muted)}
+.empty b{color:var(--ink);font-size:var(--fs-lg)}
+.loadmore{display:flex;align-items:center;justify-content:center;width:100%;padding:48px 32px}
+.toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%);z-index:400;
+  background:var(--ink);color:var(--paper);font-size:13px;padding:10px 18px;max-width:min(90vw,520px);
+  box-shadow:0 8px 30px rgba(0,0,0,.3)}
+[hidden]{display:none!important}
+.ovwrap{position:relative}
+.taghdr[aria-disabled]{cursor:default;opacity:.7}
+.medial{width:58%;height:100%;flex-shrink:0;position:relative;overflow:hidden;background:var(--surface)}
+.medial img,.medial video{width:100%;height:100%;object-fit:contain;display:block}
+.medial audio{width:100%}
 </style>
 </head>
 <body>
 
-<header class="top site-header">
-  <a class="mark" href="index.html">eski<i>!</i></a>
-  <nav id="nav">
-    <button data-pane="home" aria-current="page">Home</button>
-    <button data-pane="browse">Browse</button>
-    <a href="author.html">Studio</a>
-    <a href="profile.html">Profile</a>
+<header class="pivot-top site-header">
+  <a class="mark wordmark" href="index.html">eski<i>!</i></a>
+  <nav>
+    <button class="navlink active" type="button" data-nav="home">Home</button>
+    <button class="navlink" type="button" data-go="profile.html">Profile</button>
+    <button class="btnline filled" type="button" data-open-upload>Upload</button>
   </nav>
-  <!-- the active nav word already says this. kept in the DOM because the
-       smoke suite reads it, and it pre-dates the nav redesign. -->
-  <span class="hdr-label" hidden>Home</span>
-  <!-- the local shelf was owner staging until publishing existed. this input
-       is the one remaining programmatic path, which the smoke suite drives. -->
-  <input type="file" id="shelf-input" accept=".eski,.cbz,.zip" multiple style="display:none"
-         onchange="shelveFiles(this.files);this.value=''">
 </header>
 
-<!-- ================= HOME ================= -->
-<main class="pane on" id="pane-home"><div class="wrap">
-
-  <!-- CONTINUE READING. The shelf told you a comic was 36% read and made you
-       remember what was happening in it. This shows the last few pages you
-       actually saw, big enough to recognise, beside the cover. -->
-  <section id="sec-resume" hidden>
-    <!-- no count. it is the eski you were last reading; "1 eski" is a
-         tally of a thing there is only ever one of -->
-    <div class="head"><h2>Continue reading</h2></div>
-    <div id="resume"></div>
-  </section>
-
-  <section>
-    <div class="head"><h2>New comics</h2><span class="n" id="new-n"></span>
-      <span class="sp"></span><button class="link" data-pane="browse">All comics</button></div>
-    <div id="grid">
-      <div class="state"><div class="spinner"></div>Loading library&#8230;</div>
+<main>
+  <div class="feedhead">
+    <div class="feedswitch">
+      <span class="feed active" data-nodelete>Discover</span>
+      <div class="searchmini" data-searchmini>
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3" stroke-linecap="round"/></svg>
+        <input placeholder="search titles, captions, and tags" id="search-input">
+      </div>
     </div>
-    <button class="seemore" data-more="new" hidden>See more</button>
-  </section>
-
-  <section id="sec-follow" hidden>
-    <div class="head"><h2>From people you follow</h2><span class="n" id="follow-n"></span>
-      <span class="sp"></span><a href="profile.html">Who you follow</a></div>
-    <div class="grid" id="grid-follow"></div>
-    <button class="seemore" data-more="follow" hidden>See more</button>
-  </section>
-
-  <section>
-    <div class="head"><h2>Voiceover needed</h2><span class="n" id="roles-n"></span>
-      <span class="sp"></span><button class="link" data-browse="roles">See all</button></div>
-    <div class="grid" id="grid-roles"></div>
-    <div class="empty" id="roles-empty" hidden></div>
-    <button class="seemore" data-more="roles" hidden>See more</button>
-  </section>
-
-  <div class="foot">
-    <span data-palette-picker></span>
-    <span class="sp"></span>
-    <span><a href="legal.html#terms">Terms</a> · <a href="legal.html#privacy">Privacy</a> ·
-      <a href="legal.html#takedown">Takedown</a></span></div>
-</div></main>
-
-<!-- ================= BROWSE — eskis, roles, or eskis with no score ====== -->
-<main class="pane" id="pane-browse"><div class="wrap">
-  <div class="head"><h2>Browse</h2><span class="n" id="browse-n"></span></div>
-  <div class="bar modes">
-    <div class="seg" id="browse-modes">
-      <button data-mode="comics" aria-selected="true">eskis</button>
-      <button data-mode="roles" aria-selected="false">Roles that need a voice</button>
-      <button data-mode="scores" aria-selected="false">eskis with no score</button>
-    </div>
-    <span class="sp" style="flex:1"></span>
-    <span class="modenote" id="modenote"></span>
-  </div>
-  <div class="bar">
-    <input type="search" id="b-q" placeholder="Search">
-    <span class="lbl">Sort</span>
-    <select id="b-sort" data-ui></select>
-    <div class="chips" id="b-filters"></div>
-  </div>
-  <div class="grid" id="grid-browse"></div>
-  <div class="rolelist" id="rolelist"></div>
-  <div class="empty" id="browse-empty" hidden>Nothing matches that.</div>
-</div></main>
-
-<div class="ov overlay" id="overlay" onclick="if(event.target===this)close_()">
-  <div class="sheet modal" id="sheet"></div>
-</div>
-
-<div class="ov overlay" id="ob" onclick="if(event.target===this)closeOnboarding()">
-  <div class="sheet wide modal">
-    <div class="t">How eski works</div>
-    <p class="ob-sub">Comics, scored and voiced.</p>
-    <div class="ob-list">
-      <div class="ob-item"><b>The soundtrack follows the page</b>
-        <span>Music is mapped to page ranges, so turning a page changes the score.</span></div>
-      <div class="ob-item"><b>Dialogue is voiced</b>
-        <span>Each character is performed by a voice actor. sound effects sit alongside them.</span></div>
-      <div class="ob-item"><b>You pick the mix</b>
-        <span>Swap in a different cast or a different soundtrack, or read it silent.</span></div>
-      <div class="ob-item"><b>Anyone can contribute</b>
-        <span>Voice a character, score a comic, or publish your own.</span></div>
-    </div>
-    <div class="acts" style="padding:0;border:0;position:static">
-      <button class="btn primary" onclick="closeOnboarding()">Start reading</button>
-      <a class="btn" id="ob-discord" href="#" target="_blank" rel="noopener">Discord</a>
-    </div>
-  </div>
-</div>
-
-<div class="toast" id="toast"></div>
-
-<script>
-/* ================================================================
-   home + browse.
-
-   Every number on this page is a real row. Where a thing cannot be known
-   yet it says so in words rather than showing a plausible zero: a comic
-   with no cast reads "no cast", not "missing 0".
-   ================================================================ */
-const ICONS = {
-  "book-open": "<path d=\"M12 7v14\" /> <path d=\"M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z\" />",
-  "x": "<path d=\"M18 6 6 18\" /> <path d=\"m6 6 12 12\" />",
-  "image": "<rect width=\"18\" height=\"18\" x=\"3\" y=\"3\" rx=\"2\" ry=\"2\" /> <circle cx=\"9\" cy=\"9\" r=\"2\" /> <path d=\"m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21\" />",
-  "message-circle": "<path d=\"M7.9 20A9 9 0 1 0 4 16.1L2 22Z\" />",
-  "search": "<circle cx=\"11\" cy=\"11\" r=\"8\" /> <path d=\"m21 21-4.3-4.3\" />",
-  "moon": "<path d=\"M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401\" />",
-  "sun": "<circle cx=\"12\" cy=\"12\" r=\"4\" /> <path d=\"M12 2v2\" /> <path d=\"M12 20v2\" /> <path d=\"m4.93 4.93 1.41 1.41\" /> <path d=\"m17.66 17.66 1.41 1.41\" /> <path d=\"M2 12h2\" /> <path d=\"M20 12h2\" /> <path d=\"m6.34 17.66-1.41 1.41\" /> <path d=\"m19.07 4.93-1.41 1.41\" />"
-};
-function paintIcons(root){
-  (root||document).querySelectorAll('[data-ico]').forEach(el=>{
-    if(el.querySelector(':scope > svg.ico')) return;
-    el.insertAdjacentHTML('afterbegin',
-      `<svg class="ico" viewBox="0 0 24 24" aria-hidden="true">${ICONS[el.getAttribute('data-ico')]||''}</svg>`);
-  });
-}
-/* the theme is chosen in profile settings and stored under the same
-   'eski-settings' key the reader and the studio read, so it follows you
-   between surfaces. this page only applies it. */
-try{
-  const s = JSON.parse(localStorage.getItem('eski-settings')) || {};
-}catch(e){}
-
-const esc = s => (s??'').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
-const nfmt = n => (n||0).toLocaleString('en-US');
-const initials = name => (name||'').split(/[\s.]+/).filter(Boolean).map(w=>w[0]).join('').slice(0,2);
-const IMG_RE = /\.(jpe?g|png|gif|webp|bmp|avif)$/i;
-const mq = s => `<span class="mq"><span>${esc(s)}</span></span>`;
-document.getElementById('ob-discord').href = 'https://discord.gg/UFNpnHAbD';
-
-let toastTimer;
-function toast(msg){
-  const t = document.getElementById('toast');
-  t.textContent = msg; t.classList.add('on');
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(()=>t.classList.remove('on'), 1800);
-}
-
-/* ---------------- panes ---------------- */
-function go(name){
-  const pane = name === 'roles' || name === 'scores' ? 'browse' : name;
-  document.querySelectorAll('.pane').forEach(p=>p.classList.remove('on'));
-  document.getElementById('pane-' + pane).classList.add('on');
-  document.querySelectorAll('#nav [data-pane]').forEach(b=>{
-    if(b.dataset.pane === pane) b.setAttribute('aria-current','page');
-    else b.removeAttribute('aria-current');
-  });
-  scrollTo(0,0);
-  fitScrollers(document); fitTags(document);
-}
-document.addEventListener('click', e=>{
-  const bm = e.target.closest('[data-browse]');
-  if(bm){ e.preventDefault(); goBrowse(bm.dataset.browse); return; }
-  const t = e.target.closest('[data-pane]');
-  if(t){
-    e.preventDefault();
-    const h = t.dataset.pane === 'browse' ? '#browse' : '';
-    // the nav leaves the comic you are looking at; it does not open a pane
-    // underneath it and leave the sheet sitting on top
-    if(slugFromPath()){ location.href = '/' + h; return; }
-    go(t.dataset.pane);
-    location.hash = h.replace('#','');
-  }
-});
-function fromHash(){
-  const h = (location.hash||'').replace('#','').split('/')[0];
-  if(h === 'browse') go('browse');
-  else if(h === 'roles' || h === 'scores') goBrowse(h);
-  else go('home');
-}
-addEventListener('hashchange', ()=>{ if(!slugFromPath()) fromHash(); });
-
-/* ================================================================
-   EVERY COMIC HAS AN ADDRESS.
-
-   The details used to be a modal and nothing else, which made it the one
-   thing on the site you could look at and not link anybody to. It is now
-   both: opening a card pushes /c/<slug> without navigating, so browsing
-   stays as quick as it was, and that url is real — paste it to someone and
-   they land on the same comic.
-
-   Closing goes back rather than forward, so the browser's back button and
-   the close button are the same gesture and the history does not fill up
-   with one entry per comic you glanced at.
-
-   Arriving cold on /c/<slug> is a PAGE, not a modal floating over a shelf
-   you did not ask for: body.deep drops the scrim, fills the screen, and
-   turns the close button into "all eskis".
-   ================================================================ */
-const comicPath = c => c && c.slug ? '/c/' + encodeURIComponent(c.slug) : null;
-function slugFromPath(){
-  const m = location.pathname.match(/^\/c\/([^/]+)\/?$/);
-  return m ? decodeURIComponent(m[1]) : null;
-}
-// true when this tab began life on a comic url, so there is nothing behind it
-let deepEntry = !!slugFromPath();
-
-/* ---------- overflow: measure once, scroll on hover ---------- */
-function fitScrollers(root){
-  root.querySelectorAll('.mq').forEach(m=>{
-    const inner = m.firstElementChild;
-    if(!inner) return;
-    const over = inner.scrollWidth - m.clientWidth;
-    if(over > 1){
-      m.dataset.over = '1';
-      m.style.setProperty('--mq-x', `-${over + 4}px`);
-      m.style.setProperty('--mq-t', `${Math.round((over + 4) / 40 * 1000)}ms`);
-    }else{
-      m.removeAttribute('data-over');
-      m.style.removeProperty('--mq-x');
-    }
-  });
-}
-const TAGS_SHOWN = 5;
-function fitTags(root){
-  root.querySelectorAll('.tags').forEach(box=>{
-    const chips = [...box.querySelectorAll('.tag:not(.more)')];
-    const more = box.querySelector('.tag.more');
-    if(!more || !chips.length) return;
-    chips.forEach((chip,i)=>{ chip.hidden = i >= TAGS_SHOWN; });
-    more.hidden = false;
-    let vis = Math.min(TAGS_SHOWN, chips.length);
-    const limit = chips[0].offsetTop + 39;      // rows two and three are fine, four is not
-    while(vis > 1 && more.offsetTop > limit) chips[--vis].hidden = true;
-    const rest = chips.length - vis;
-    if(rest <= 0) more.hidden = true; else more.textContent = `+${rest} more`;
-  });
-}
-let fitTimer;
-addEventListener('resize', ()=>{
-  clearTimeout(fitTimer);
-  fitTimer = setTimeout(()=>{ fitScrollers(document); fitTags(document); }, 150);
-});
-
-/* ================================================================
-   the data layer. everything below builds ONE shape — the same shape
-   docs/design/final/home.html invented for its mock data — out of real
-   rows, so the render functions from that file work unchanged.
-   ================================================================ */
-async function platform(){
-  if(!window.eski && document.readyState === 'loading')
-    await new Promise(r => document.addEventListener('DOMContentLoaded', r, { once: true }));
-  return window.eski || null;
-}
-let sb = null, me = null;
-let COMICS = [], ROLES = [];
-let platformDown = false, platformWhy = '';
-
-const byId = id => COMICS.find(c => c.id === id);
-const rolesFor = id => ROLES.filter(r => r.comic === id);
-
-/* the five caption rows, identical on every card */
-function voicesOf(c){
-  // a comic whose author never wrote a cast cannot be "missing" anybody. say
-  // that, rather than reporting a confident 0 of 0.
-  if(!c.castKnown) return {t:'no cast', cls:'none'};
-  const total = c.cast.length + rolesFor(c.id).length;
-  const done = c.cast.length;
-  return done >= total && total > 0
-    ? {t:`${done} of ${total}`, cls:''}
-    : {t:`missing ${total - done}`, cls:'want'};
-}
-const scoreOf = c => c.scores.length
-  ? {t:`${c.scores.length} available`, cls:''}
-  : {t:'empty', cls:'none'};
-
-/* THE SHELF KNOWS WHERE YOU STOPPED, so it should say so.
-   `saves` has carried last_page since the reader started writing it, and the
-   card has drawn a progress bar off it — but the thing you actually want, and
-   that every reading app on earth offers, is a way back to the page you were
-   on. The data was already here; only the sentence was missing. */
-function resumeNote(c){
-  if(c.progress == null || !c.pp) return null;
-  const page = Math.max(1, Math.round(c.progress * c.pp));
-  if(c.shelf === 'read' || page >= c.pp) return 'finished';
-  if(page <= 1) return null;
-  return 'continue · p.' + page;
-}
-function resumeHref(c){
-  const page = Math.max(1, Math.round((c.progress || 0) * (c.pp || 1)));
-  return readHref(c.file) + '#' + slugifyTitle(c.title) + '/page=' + page;
-}
-/* the reader's own slug rule, so a deep link built here lands rather than
-   being ignored as belonging to a different comic */
-const slugifyTitle = t => (t || '').toString().toLowerCase()
-  .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'untitled';
-
-function capRows(c){
-  const v = voicesOf(c), s = scoreOf(c);
-  const extent = c.pp
-    ? `${c.pp} pp${c.chOf > 1 ? ` · ch${c.ch} of ${c.chOf}` : ''}`
-    : '—';
-  return `<div class="cap">
-    <div class="r"><span class="k">by</span><span class="v">${mq(c.by || '—')}</span></div>
-    <div class="r"><span class="k">Extent</span><span class="v">${mq(extent)}</span></div>
-    <div class="r"><span class="k">Voices</span><span class="v ${v.cls}">${esc(v.t)}</span></div>
-    <div class="r"><span class="k">Score</span><span class="v ${s.cls}">${esc(s.t)}</span></div>
-    <div class="r"><span class="k">Kudos</span><span class="v">${nfmt(c.kudos)}</span></div>
-    ${c.commentCount ? `<div class="r"><span class="k">Comments</span>
-      <span class="v">${nfmt(c.commentCount)}</span></div>` : ''}
-  </div>`;
-}
-function tagRow(c){
-  if(!c.tags.length) return `<div class="tags"></div>`;
-  return `<div class="tags">${c.tags.map(t =>
-    `<span class="tag" data-tag="${esc(t)}">${esc(t)}</span>`).join('')
-    }<span class="tag more">+${Math.max(0, c.tags.length - TAGS_SHOWN)} more</span></div>`;
-}
-
-/* a card. .card is the design's class; .cover and .t are what the smoke
-   suite locates, and .cell is its wrapper. */
-/* `browse` is true for the browse and follow rails. Those cards are visually
-   identical but must not carry .cell or .cover: the smoke suite counts both
-   unscoped, and a hidden pane would double every count. */
-function cardEl(c, note, browse){
-  const cell = document.createElement('div');
-  cell.className = browse ? 'bcell' : 'cell';
-  const b = document.createElement('button');
-  b.className = browse ? 'card bcard' : 'card cover';
-  b.type = 'button';
-  b.innerHTML =
-    `<div class="plate">${c.cover
-        ? `<img src="${esc(c.cover)}" alt="" loading="lazy">`
-        : '<span data-ico="image"></span>'}</div>
-     <div class="title t">${mq(c.title)}</div>
-     <div class="note">${note ? mq(note) : ''}</div>
-     ${tagRow(c)}
-     ${capRows(c)}`;
-  b.addEventListener('click', e=>{
-    const tag = e.target.closest('[data-tag]');
-    if(tag){ e.stopPropagation(); searchTag(tag.dataset.tag); return; }
-    openDetails(c);
-  });
-  cell.appendChild(b);
-  if(c.progress != null){
-    const note = resumeNote(c);
-    if(note){
-      const r = document.createElement('div');
-      r.className = 'resume' + (note === 'finished' ? ' done' : '');
-      r.textContent = note;
-      b.appendChild(r);
-    }
-    const bar = document.createElement('div');
-    bar.className = 'progress';
-    bar.innerHTML = `<i style="width:${Math.round(c.progress*100)}%"></i>`;
-    b.appendChild(bar);
-  }
-  if(c.local){
-    cell.insertAdjacentHTML('beforeend', '<span class="shelved">Shelved</span>');
-    const rm = document.createElement('button');
-    rm.className = 'rm'; rm.title = 'Remove from the shelf';
-    rm.setAttribute('data-ico','x');
-    rm.onclick = async e=>{ e.stopPropagation(); await shelfDel(c.localId); boot(); };
-    cell.appendChild(rm);
-  }
-  cell.dataset.search = [c.title, c.by, ...c.tags].filter(Boolean).join(' ').toLowerCase();
-  return cell;
-}
-
-/* the character portrait: a crop of the comic's own art, framed per character
-   so one comic's four open parts do not show the same square four times. */
-function portrait(role){
-  const c = byId(role.comic);
-  let seed = 0; for(const ch of role.id) seed = (seed*31 + ch.charCodeAt(0)) & 255;
-  const x = 20 + (seed % 60), y = 6 + (seed % 34);
-  return `<span class="portrait">${(c && c.cover)
-    ? `<img src="${esc(c.cover)}" alt="${esc(role.name)}" loading="lazy"
-        style="object-position:${x}% ${y}%">` : ''}</span>`;
-}
-function roleCardEl(r){
-  const c = byId(r.comic) || {title:'', by:''};
-  const b = document.createElement('button');
-  b.className = 'rolecard';
-  b.type = 'button';
-  b.innerHTML =
-    `<div class="rolehead">${portrait(r)}
-      <div style="min-width:0;flex:1">
-        <div class="rolename">${mq(r.name)}</div>
-        <div class="rolein ttl">${mq(c.title)}</div>
-        <div class="rolein">${mq(c.by)}</div>
-      </div></div>
-     <p class="blurb">${esc(r.blurb || '')}</p>
-     <div class="rolefoot"><span>${esc(r.kind)}</span><span class="n">${
-        r.lines ? nfmt(r.lines) + ' lines' : 'no lines yet'}</span></div>`;
-  b.addEventListener('click', ()=>{ const cc = byId(r.comic); if(cc) openDetails(cc, r); });
-  return b;
-}
-function roleRowEl(r){
-  const c = byId(r.comic) || {title:'', by:'', pp:0, ch:1, chOf:1};
-  const b = document.createElement('button');
-  b.className = 'rolerow';
-  b.type = 'button';
-  b.innerHTML =
-    `${portrait(r)}
-     <div class="who">
-       <div class="rolename">${mq(r.name)}</div>
-       <div class="rolein">${mq(r.kind)}</div>
-     </div>
-     <div class="where">
-       <div class="ttl">${mq(c.title)}</div>
-       <div>${mq(c.by)}</div>
-     </div>
-     <p class="blurb">${esc(r.blurb || '')}</p>
-     <div class="lines"><b class="n">${r.lines ? nfmt(r.lines) + ' lines' : 'no lines yet'}</b>
-       ${c.pp ? c.pp + ' pp' : ''}</div>
-     <div class="go"><span class="btn sm">Voice this</span></div>`;
-  b.addEventListener('click', ()=>{ const cc = byId(r.comic); if(cc) openDetails(cc, r); });
-  return b;
-}
-function fill(node, els){ node.replaceChildren(...els); fitScrollers(node); fitTags(node); }
-
-/* ================================================================
-   loading. one pass, a handful of queries, then everything renders
-   from memory — which is also why search and browse filter in the
-   browser rather than round-tripping.
-   ================================================================ */
-/* `only` narrows this to a single comic by slug, for the case where somebody
-   followed a shared /c/<slug> link. Same query, same shaping, one row — so a
-   shared link paints its comic without first waiting on the whole shelf, and
-   there is no second copy of this function to keep in step. */
-async function loadPlatform(only){
-  const eski = await platform();
-  sb = eski && await eski.ready;
-  if(!sb){
-    platformDown = true;
-    platformWhy = (eski && eski.bootError) || 'ESK-1005 platform.js did not load at all';
-    return [];
-  }
-  me = eski.user || null;
-
-  /* ONE ROUND TRIP, AND POSTGRES DOES THE COUNTING.
-
-     This used to be TWO SERIAL trips — the comics, then eight queries keyed by
-     their ids, which cannot start until the first returns. On a phone that is
-     two round trips before anything can render.
-
-     The payload was the worse half. Those eight fetched every `pages` row,
-     every `tracks` row, and every kudo, tag and comment for up to 200 comics,
-     and then counted them in javascript: a 45-page comic shipped 45 rows so
-     the browser could learn the number 45. get_shelf() returns the comics with
-     their counts already computed. It is STABLE and not SECURITY DEFINER, so
-     it runs as you and every policy applies exactly as it did.
-
-     It fails loudly rather than falling back to the old path. A fallback here
-     would mean keeping both versions of this function forever to cover a
-     window that closes the moment the migration is applied — and a shelf that
-     silently takes the slow path is a bug nobody ever notices. */
-  const shelf = await sb.rpc('get_shelf',
-    { p_slug: (only && only.slug) || null, p_limit: 200 });
-  if(shelf.error){
-    platformDown = true;
-    platformWhy = shelf.error.code === '42883'
-      ? 'ESK-5035 the shelf needs schema-shelf.sql applying to the database.'
-      : eski.dbError('ESK-5005', 'the shelf query failed', shelf.error);
-    return [];
-  }
-  const rows = shelf.data || [];
-  if(!rows.length) return [];
-
-  /* the aggregates arrive on the row now, so the only thing left to build
-     client-side is the series sibling count, which is a fact about the LIST
-     rather than about any one comic. */
-
-  // series siblings, for "ch1 of 6"
-  const seriesCount = new Map();
-  for(const r of rows) if(r.series_title)
-    seriesCount.set(r.series_title, (seriesCount.get(r.series_title)||0) + 1);
-
-  ROLES = [];
-  const out = rows.map(r=>{
-    const parts = r.parts || [];
-    const lineCounts = r.line_counts || {};
-    const cast = Array.isArray(r.cast_list) ? r.cast_list : [];
-    // a character is "cast" when at least one published vo names it
-    const voFor = new Map();
-    for(const p of parts.filter(p=>p.kind === 'vo')){
-      const k = p.character_key || 'untitled';
-      if(!voFor.has(k)) voFor.set(k, []);
-      voFor.get(k).push({who: p.owner_name || 'someone', partId: p.id,
-        preview: p.preview_key || null, lines: lineCounts[k] || 0});
-    }
-    const castOut = [];
-    for(const ch of cast){
-      const key = ch.key || ch.id || ch.name;
-      if(!key) continue;
-      if(voFor.has(key)) castOut.push({char: ch.name || key, key, vos: voFor.get(key)});
-      else ROLES.push({id: r.id + '::' + key, name: ch.name || key, comic: r.id,
-        kind: ch.kind === 'narrator' ? 'narration' : (ch.kind || 'supporting'),
-        lines: lineCounts[key] || 0,
-        // the note a performer reads before they take the part. the author
-        // writes it in the studio's cast editor.
-        blurb: ch.blurb || ch.description || ''});
-    }
-    // a voice part naming a character the cast list does not have still counts
-    for(const [k, vos] of voFor)
-      if(!cast.some(ch=>(ch.key||ch.id||ch.name) === k)) castOut.push({char:k, key:k, vos});
-
-    const scores = [
-      ...(r.has_music ? [{title:'the author’s score', by:r.owner_name, partId:null, preview:null}] : []),
-      ...parts.filter(p=>p.kind === 'soundtrack')
-        .map(p=>({title: p.title || 'untitled', by: p.owner_name || 'someone',
-                  partId: p.id, preview: p.preview_key || null}))
-    ];
-    const save = r.save || null;
-    const pp = r.page_count || 0;
-    return {
-      id: r.id, dbId: r.id, file: 'db:' + r.id, ownerId: r.owner_id,
-      title: r.title || 'untitled', by: r.owner_name || null, desc: r.description || '',
-      cover: window.eski.mediaUrl(r.thumb_key || r.cover_key),
-      added: r.published_at || r.created_at || '',
-      slug: r.slug || null,
-      readAt: save ? save.updated_at : null,
-      commentCount: r.comment_count || 0,
-      pp, ch: r.series_index || 1, chOf: r.series_title ? (seriesCount.get(r.series_title)||1) : 1,
-      seriesTitle: r.series_title || null,
-      kudos: r.kudos_count || 0, kudosMine: !!r.kudos_mine,
-      tags: r.tags || [],
-      tagRows: (r.tags || []).map(t => ({ comic_id: r.id, tag: t })),
-      castKnown: cast.length > 0 || castOut.length > 0,
-      cast: castOut, scores,
-      follow: r.following ? r.owner_name : null,
-      shelf: save ? save.status : null,
-      shelved: !!(save && save.shelved),
-      /* what the author allows. absent means the column default, which is
-         open — an older row must not read as a refusal. */
-      consent: { vo: r.voice_consent !== 'closed', soundtrack: r.music_consent !== 'closed',
-                 sfx: r.sfx_consent !== 'closed' },
-      progress: save && save.pages ? Math.min(1, save.last_page / save.pages) : null
-    };
-  });
-  return out;
-}
-
-/* ---------------- the local shelf ---------------- */
-const SHELF_DB = 'eski-shelf', SHELF_STORE = 'files';
-function shelfOpen(){
-  return new Promise((res, rej)=>{
-    const r = indexedDB.open(SHELF_DB, 1);
-    r.onupgradeneeded = ()=>{
-      const db = r.result;
-      if(!db.objectStoreNames.contains(SHELF_STORE)) db.createObjectStore(SHELF_STORE, {keyPath:'id'});
-    };
-    r.onsuccess = ()=>res(r.result);
-    r.onerror = ()=>rej(new Error('ESK-7001 the local shelf could not open: ' +
-      ((r.error && r.error.message) || 'indexeddb refused') + '. private browsing blocks it.'));
-  });
-}
-function shelfTx(mode, fn){
-  return shelfOpen().then(db=>new Promise((res, rej)=>{
-    const tx = db.transaction(SHELF_STORE, mode);
-    const req = fn(tx.objectStore(SHELF_STORE));
-    tx.oncomplete = ()=>res(req && req.result);
-    tx.onerror = ()=>rej(tx.error);
-  }));
-}
-const shelfList = ()=>shelfTx('readonly', s=>s.getAll()).catch(()=>[]);
-const shelfGet  = id=>shelfTx('readonly', s=>s.get(id));
-const shelfDel  = id=>shelfTx('readwrite', s=>s.delete(id));
-async function shelfMeta(file){
-  try{
-    const zip = await JSZip.loadAsync(file);
-    const mf = zip.file('.eski/manifest.json');
-    if(!mf) return {kind:'base'};
-    const m = JSON.parse(await mf.async('string'));
-    return {
-      kind: m.kind || 'base',
-      baseId: (m.base && m.base.id) || (m.meta && m.meta.id) || null,
-      character: m.character || null,
-      title: (m.meta && m.meta.title) || (m.base && m.base.title) || null
-    };
-  }catch(e){ return {kind:'base'}; }
-}
-async function shelfAdd(file){
-  const id = 'e' + Date.now().toString(36) + Math.random().toString(36).slice(2,6);
-  const meta = await shelfMeta(file);
-  await shelfTx('readwrite', s=>s.put({id, name:file.name, blob:file, added:Date.now(), ...meta}));
-  return id;
-}
-async function shelveFiles(files){
-  const eskis = [...files].filter(f=>/\.(eski|cbz|zip)$/i.test(f.name));
-  if(!eskis.length) return;
-  for(const f of eskis){
-    try{ await shelfAdd(f); }catch(e){ console.warn('could not shelve ' + f.name, e); }
-  }
-  await boot();
-}
-let shelfParts = [];
-const partsForBase = baseId => shelfParts.filter(p=>!p.baseId || !baseId || p.baseId===baseId);
-
-/* the library/ folder: index.json first (it can carry a title and a small
-   cover, so the grid never downloads a whole comic to read its manifest),
-   then a directory autoindex for zero-config local dev. */
-async function listEskis(){
-  try{
-    const r = await fetch('library/index.json', {cache:'no-store'});
-    if(r.ok){
-      const j = await r.json();
-      const arr = Array.isArray(j) ? j : (j.entries||j.files||[]);
-      const out = arr.map(e=>typeof e==='string'?{file:e}:e).filter(e=>e.file)
-        .map(e=>({...e, file: /^(https?:|\/|library\/)/.test(e.file) ? e.file : 'library/'+e.file}));
-      if(out.length) return out;
-    }
-  }catch(e){}
-  try{
-    const r = await fetch('library/', {cache:'no-store'});
-    if(r.ok){
-      const html = await r.text();
-      const files = [...html.matchAll(/href="([^"?]+\.eski)"/gi)].map(m=>m[1]);
-      if(files.length) return [...new Set(files)].map(f=>({
-        file: /^(https?:|\/)/.test(f) ? f : (f.includes('library/') ? f : 'library/'+f.replace(/^\.?\//,''))
-      }));
-    }
-  }catch(e){}
-  return [];
-}
-async function blobFor(item){
-  if(item.local && item.localId){
-    const rec = await shelfGet(item.localId);
-    if(!rec) throw new Error('ESK-7002 missing from the shelf');
-    return rec.blob;
-  }
-  const res = await fetch(item.file, {cache:'no-store'});
-  if(!res.ok) throw new Error(res.status);
-  return res.blob();
-}
-/* a file-backed eski, read into the same shape as a database one */
-async function fileComic(item){
-  const base = {
-    id: item.file, file: item.file, local: !!item.local, localId: item.localId || null,
-    dbId: null, ownerId: null, by: item.creator || null, desc: '',
-    cover: item.cover || null, added: item.added || '',
-    pp: 0, ch: 1, chOf: 1, seriesTitle: null, kudos: 0,
-    tags: [], tagRows: [], castKnown: false, cast: [], scores: [],
-    follow: null, shelf: null, progress: null,
-    title: item.title || item.file.split('/').pop().replace(/\.eski$/i,'')
-  };
-  if(item.cover && item.title) return base;      // the index told us; do not download
-  try{
-    const zip = await JSZip.loadAsync(await blobFor(item));
-    const mf = zip.file('.eski/manifest.json');
-    let coverBlob = null;
-    if(mf){
-      const m = JSON.parse(await mf.async('string'));
-      base.title = base.title || m.meta?.title || base.title;
-      if(m.meta?.title) base.title = m.meta.title;
-      base.by = m.meta?.creator || null;
-      base.desc = m.meta?.description || '';
-      base.baseId = m.meta?.id || item.baseId || null;
-      if(m.meta?.series){ base.seriesTitle = m.meta.series.title || null; base.ch = m.meta.series.index || 1; }
-      if(Array.isArray(m.meta?.cast) && m.meta.cast.length) base.castKnown = true;
-      if(m.meta?.cover && zip.file(m.meta.cover)) coverBlob = await zip.file(m.meta.cover).async('blob');
-    }
-    const imgs = [];
-    zip.forEach((p,en)=>{ if(!en.dir && !p.startsWith('.eski/') && !p.startsWith('audio/') &&
-      !p.startsWith('__MACOSX/') && IMG_RE.test(p)) imgs.push({p,en}); });
-    base.pp = imgs.length;
-    if(!coverBlob){
-      imgs.sort((a,b)=>a.p.localeCompare(b.p, undefined, {numeric:true, sensitivity:'base'}));
-      if(imgs[0]) coverBlob = await imgs[0].en.async('blob');
-    }
-    if(coverBlob) base.cover = URL.createObjectURL(coverBlob);
-  }catch(e){ base.title += ' (unreadable)'; }
-  return base;
-}
-
-/* ================================================================
-   boot
-   ================================================================ */
-/* boot runs again whenever the session changes, and signing in on a comic
-   page used to start a second one while the first was still awaiting its
-   query — so both reached the fast path, both opened the sheet, and the
-   second render threw away whatever you had done in the first (an open
-   thread, a half-typed comment). Only the newest run may paint. */
-let bootRun = 0;
-async function boot(){
-  const run = ++bootRun;
-  const stale = () => run !== bootRun;
-  const grid = document.getElementById('grid');
-
-  /* SOMEBODY FOLLOWED A LINK. Paint their comic off one row before touching
-     the shelf, so a shared link is not held up by two hundred other comics
-     and five count queries it does not need. The full load still runs right
-     after and replaces COMICS; the sheet is already on screen by then. */
-  const want = slugFromPath();
-  if(want && !ov.classList.contains('open')){
-    try{
-      const one = await loadPlatform({ slug: want });
-      if(stale()) return;
-      if(one[0]){
-        COMICS = one;
-        openDetails(one[0], null, { fromHistory:true, deep:true });
-      }else if(!platformDown){
-        grid.className = '';
-        grid.innerHTML = `<div class="state">No eski lives at that link.
-          <br><br>It may have been unpublished, or the address is a typo.
-          <br><br><a href="/">All eskis</a></div>`;
-      }
-    }catch(e){}
-  }
-
-  const published = await loadPlatform();
-  if(stale()) return;
-
-  let folder = [];
-  try{ folder = await listEskis(); }catch(e){}
-  let local = [];
-  try{
-    const rows = (await shelfList()).sort((a,b)=>b.added-a.added);
-    shelfParts = rows.filter(r=>r.kind && r.kind!=='base');
-    local = rows.filter(r=>!r.kind || r.kind==='base')
-      .map(r=>({ file:'idb:'+r.id, localId:r.id, local:true, baseId:r.baseId||null,
-                 title:(r.title||r.name||'untitled').replace(/\.(eski|cbz|zip)$/i,'') }));
-  }catch(e){}
-
-  const files = await Promise.all([...local, ...folder].map(fileComic));
-  if(stale()) return;
-  COMICS = [...published, ...files];
-
-  if(!COMICS.length){
-    grid.className = '';
-    grid.innerHTML = platformDown
-      ? `<div class="state">Could not reach the shelf.
-           <br><br><code class="why">${esc(platformWhy)}</code><br><br>
-           Anything you drop here still works offline.</div>`
-      : `<div class="state">Nothing published yet. build one in the
-           <a href="author.html">Studio</a>, then publish it or keep it as a draft
-           on your <a href="profile.html">Profile</a>.</div>`;
-    paintIcons();
-    renderRoles(); renderBrowse();
-    return;
-  }
-  grid.className = 'grid';
-  renderHome();
-  renderBrowse();
-  paintIcons();
-  /* the link was followed before the shelf existed, or the fast path missed:
-     open it now that it does */
-  const slug = slugFromPath();
-  if(slug && !ov.classList.contains('open')){
-    const c = COMICS.find(x=>x.slug === slug);
-    if(c) openDetails(c, null, { fromHistory:true, deep: deepEntry });
-  }
-  if(document.fonts && document.fonts.ready)
-    document.fonts.ready.then(()=>{ fitScrollers(document); fitTags(document); });
-}
-
-/* ============================================================
-   CONTINUE READING.
-
-   A percentage does not help you pick the comic back up — you have to
-   remember what was happening in it. So this shows THE LAST FEW PAGES YOU
-   SAW, at a size where you can recognise them, next to the cover and the
-   credits, with one button.
-
-   The pages are the display copies the reader already caches, so this
-   costs no new upload and no new column: page N-2, N-1 and N of where the
-   bookmark is. They are deliberately shorter than the cover — the cover is
-   what identifies the comic, and three thumbnails should not out-shout it.
-   ============================================================ */
-function renderResume(){
-  const sec = document.getElementById('sec-resume');
-  const box = document.getElementById('resume');
-  if(!sec || !box) return;
-
-  const going = COMICS
-    .filter(c => c.progress != null && c.progress > 0 && c.progress < 1 && c.pp)
-    .sort((a, b) => (b.readAt || '').localeCompare(a.readAt || ''))
-    .slice(0, 3);
-
-  sec.hidden = !going.length;
-  if(!going.length){ box.innerHTML = ''; return; }
-
-  box.innerHTML = going.map(c => {
-    const page = Math.max(1, Math.round(c.progress * c.pp));
-
-    /* THE MIX, which is the thing this row was missing. The page previews
-       that used to sit here were pictures of a comic you are already looking
-       at the cover of — they told you where you were, which the page count
-       already says. What you cannot see anywhere on this row is what you are
-       about to hear, and that is the one thing eski has that nothing else
-       does. So: who is voicing whom, and what is playing under it. */
-    const voices = (c.cast || []).filter(v => v.by);
-    const score = (c.scores || [])[0];
-    const mix = `
-      <div class="rs-col">
-        <div class="rs-h">Your mix</div>
-        <dl class="rs-mix">
-          <dt>Score</dt><dd>${score ? esc(score.title) : 'No score'}</dd>
-          <dt>Voices</dt><dd>${voices.length
-            ? voices.slice(0, 3).map(v => esc(v.character || v.name || 'someone')).join(', ') +
-              (voices.length > 3 ? ' +' + (voices.length - 3) : '')
-            : 'No cast'}</dd>
-        </dl>
-        <button class="lnk rs-swap" data-open="${esc(c.id)}">Change it</button>
-      </div>`;
-
-    /* COMMENTS, still a fold. Collapsed by default because this row is a
-       place you pass through on the way back into a comic, and an open
-       thread is a place you stop — and because a comment on a comic you are
-       21 pages into is a spoiler until you have caught up. */
-    const n = c.commentCount || 0;
-    const comments = `
-      <div class="rs-col">
-        <button class="fold rs-cmfold" data-cm="${esc(c.id)}" aria-expanded="false">
-          <span class="caret"></span>Comments<span class="sp"></span><span class="n">${n}</span>
-        </button>
-        <div class="folded rs-cmbody" hidden></div>
-      </div>`;
-
-    return `<article class="rs" data-resume="${esc(c.id)}">
-      <div class="plate rs-cover">${c.cover
-        ? `<img src="${esc(c.cover)}" alt="" loading="lazy">` : ''}</div>
-      <div class="rs-meta">
-        <div class="rs-ttl">${esc(c.title || 'untitled')}</div>
-        <div class="rs-by">${esc(c.by || '—')}</div>
-        <div class="rs-at">Page ${page} of ${c.pp}</div>
-        <div class="progress"><i style="width:${Math.round(c.progress*100)}%"></i></div>
-        <div class="rs-acts">
-          <a class="btn p" href="${esc(resumeHref(c))}">Continue reading</a>
-          <button class="btn" data-open="${esc(c.id)}">Details</button>
+    <div class="tagpanels">
+      <div class="tagpanel" id="tags-panel">
+        <div class="taghdr" data-toggle>content tags <span class="chev">&#9662;</span></div>
+        <div class="tagbody" style="margin-top:10px;">
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;" id="active-tags"></div>
         </div>
       </div>
-      ${mix}
-      ${comments}
-    </article>`;
-  }).join('');
-
-  /* the fold loads its thread the first time it is opened, not on render:
-     three rows each fetching a thread nobody asked for is three queries for
-     nothing, and this row is above the fold on every visit. */
-  box.querySelectorAll('.rs-cmfold').forEach(b => b.addEventListener('click', async e => {
-    e.stopPropagation();
-    const body = b.nextElementSibling;
-    const open = b.getAttribute('aria-expanded') === 'true';
-    b.setAttribute('aria-expanded', String(!open));
-    body.hidden = open;
-    if(open || body.dataset.loaded) return;
-    body.dataset.loaded = '1';
-    body.innerHTML = '<div class="rs-cmnote">Loading&#8230;</div>';
-    const c = byId(b.dataset.cm);
-    const rows = await recentComments(c);
-    body.innerHTML = rows === null
-      ? '<div class="rs-cmnote warn">That thread did not load.</div>'
-      : rows.length
-        ? rows.map(r => `<div class="rs-cm"><b>${esc(r.author_name || 'someone')}</b>
-            <span>${esc((r.body || '').slice(0, 140))}</span></div>`).join('') +
-          `<button class="lnk" data-open="${esc(c.id)}">All ${c.commentCount}</button>`
-        : '<div class="rs-cmnote">No comments yet.</div>';
-    body.querySelectorAll('[data-open]').forEach(x => x.addEventListener('click', ev => {
-      ev.stopPropagation();
-      const cc = byId(x.dataset.open);
-      if(cc) openDetails(cc);
-    }));
-  }));
-
-  box.querySelectorAll('[data-open]').forEach(b => b.addEventListener('click', e => {
-    e.stopPropagation();
-    const c = byId(b.dataset.open);
-    if(c) openDetails(c);
-  }));
-}
-
-/* The last two comments on a comic, for the rail's fold. Deliberately not
-   the whole thread: this is a glance on the way back into a comic, and the
-   full conversation lives in the modal where there is room for it.
-
-   Returns null on failure rather than throwing — a thread that will not load
-   should say so in the fold and leave the rest of the row working. */
-async function recentComments(c){
-  if(!sb || !c || !c.dbId) return [];
-  const r = await sb.from('comments')
-    .select('author_name,body,created_at')
-    .eq('comic_id', c.dbId).is('deleted_at', null)
-    .order('created_at', { ascending: false }).limit(2);
-  if(r.error){ console.warn(window.eski.dbError('ESK-5064','the thread did not load', r.error)); return null; }
-  return r.data || [];
-}
-
-
-/* ---------- home. see more adds one more row of whatever it sits under. ---------- */
-const STEP = 5;
-const shown = {new:STEP, follow:STEP, roles:STEP};
-function renderHome(){
-  renderResume();
-  const fresh = [...COMICS].sort((a,b)=>(b.added||'').localeCompare(a.added||''));
-  fill(document.getElementById('grid'), fresh.slice(0, shown.new).map(c=>cardEl(c)));
-  document.getElementById('new-n').textContent =
-    `${fresh.length} ${fresh.length === 1 ? 'eski' : 'eskis'}`;
-
-  const follows = COMICS.filter(c=>c.follow);
-  const secFollow = document.getElementById('sec-follow');
-  secFollow.hidden = !me || !follows.length;
-  if(!secFollow.hidden){
-    fill(document.getElementById('grid-follow'),
-      follows.slice(0, shown.follow).map(c=>cardEl(c, `you follow ${c.follow}`, true)));
-    document.getElementById('follow-n').textContent =
-      `${follows.length} from ${new Set(follows.map(c=>c.by)).size} people`;
-  }
-
-  renderRoles();
-
-  const totals = {new:fresh.length, follow:follows.length, roles:ROLES.length};
-  document.querySelectorAll('[data-more]').forEach(b=>{
-    const k = b.dataset.more, left = totals[k] - shown[k];
-    b.hidden = left <= 0;
-    b.textContent = `See more · ${left} left`;
-  });
-}
-function renderRoles(){
-  const roles = [...ROLES].sort((a,b)=>b.lines - a.lines);
-  fill(document.getElementById('grid-roles'), roles.slice(0, shown.roles).map(roleCardEl));
-  document.getElementById('roles-n').textContent = ROLES.length
-    ? `${ROLES.length} across ${new Set(ROLES.map(r=>r.comic)).size} comics`
-    : '';
-  const empty = document.getElementById('roles-empty');
-  const anyCast = COMICS.some(c=>c.castKnown);
-  empty.hidden = ROLES.length > 0;
-  empty.textContent = anyCast
-    ? 'Every character has a voice. Nothing is waiting.'
-    : 'No comic has a cast yet. An author writes one in the studio, and every character without a voice shows up here.';
-}
-document.querySelectorAll('[data-more]').forEach(b=>b.addEventListener('click', ()=>{
-  shown[b.dataset.more] += STEP;
-  renderHome();
-}));
-
-/* a tag anywhere on the page is a search */
-function searchTag(tag){
-  bState.mode = 'comics';
-  bState.q = tag;
-  const q = document.getElementById('b-q');
-  if(q) q.value = tag;
-  renderBrowse();
-  go('browse');
-  toast(`tagged “${tag}”`);
-}
-
-/* ================================================================
-   browse. one surface, three modes, and the mode is never in doubt.
-   ================================================================ */
-const bState = {mode:'comics', q:'',
-  sort:{comics:'new', roles:'lines-desc', scores:'need'},
-  filters:{comics:new Set(), roles:new Set(), scores:new Set()}};
-/* SORT AND FILTER LABELS ARE CONTROLS, so they are written in caps here as
-   well as transformed in css — browsers disagree about text-transform inside
-   an opened <option> list, and a dropdown that says "newest" while every
-   other control on the page says SEE ALL is the drift the case rule exists
-   to stop. */
-const B_SORTS = {
-  comics:[['new','NEWEST'],['kudos','MOST KUDOS'],['title','TITLE A–Z'],['short','SHORTEST']],
-  roles:[['lines-desc','MOST LINES'],['lines-asc','FEWEST LINES'],['name','CHARACTER A–Z'],
-         ['comic','ESKI A–Z'],['author','AUTHOR A–Z']],
-  scores:[['need','MOST NEEDED'],['kudos','MOST KUDOS'],['new','NEWEST'],
-          ['long','LONGEST'],['title','TITLE A–Z']]
-};
-const B_FILTERS = {
-  comics:[['cast','fully voiced'],['scored','has a score']],
-  roles:[['lead','lead'],['supporting','supporting'],['narration','narration'],
-         ['short','under 50 lines']],
-  scores:[['none','nothing at all yet'],['more','wants another'],['shortpp','under 150 pp']]
-};
-const B_PLACEHOLDER = {
-  comics:'Search eskis, authors, tags',
-  roles:'Search characters, eskis, authors',
-  scores:'Search eskis, authors, tags'
-};
-/* the note says what this mode is FOR, which only two of the three need.
-   "every eski on the site" over a list of every eski on the site is a
-   caption telling you what you are already looking at. */
-const B_NOTE = {
-  comics:'',
-  roles:'Characters nobody has read yet',
-  scores:'Eskis waiting for music'
-};
-function paintBrowseBar(){
-  const m = bState.mode;
-  document.getElementById('b-q').placeholder = B_PLACEHOLDER[m];
-  document.getElementById('modenote').textContent = B_NOTE[m];
-  document.getElementById('b-sort').innerHTML = B_SORTS[m].map(([v,label])=>
-    `<option value="${v}" ${v === bState.sort[m] ? 'selected' : ''}>${label}</option>`).join('');
-  document.getElementById('b-filters').innerHTML = B_FILTERS[m].map(([f,label])=>
-    `<button class="chip" data-f="${f}" aria-pressed="${bState.filters[m].has(f)}">${label}</button>`).join('');
-  document.querySelectorAll('#browse-modes button').forEach(b=>
-    b.setAttribute('aria-selected', b.dataset.mode === m));
-}
-function scoreRowEl(c){
-  const b = document.createElement('button');
-  b.className = 'rolerow';
-  b.type = 'button';
-  const n = c.scores.length;
-  b.innerHTML =
-    `<span class="portrait">${c.cover ? `<img src="${esc(c.cover)}" alt="" loading="lazy"
-       style="object-position:50% 22%">` : ''}</span>
-     <div class="who">
-       <div class="rolename">${mq(c.title)}</div>
-       <div class="rolein">${mq(c.by || '')}</div>
-     </div>
-     <div class="where">
-       <div class="ttl">${mq(c.pp ? `${c.pp} pp` : '')}</div>
-       <div>${mq(c.tags.slice(0,4).join(' · '))}</div>
-     </div>
-     <p class="blurb">${esc(c.desc || '')}</p>
-     <div class="lines"><b class="n ${n ? '' : 'hot'}">${
-        n ? n + (n === 1 ? ' score' : ' scores') : 'no score'}</b>
-       ${nfmt(c.kudos)} kudos</div>
-     <div class="go"><span class="btn sm">${n ? 'add another' : 'score this'}</span></div>`;
-  b.addEventListener('click', ()=>openDetails(c));
-  return b;
-}
-function renderBrowse(){
-  paintBrowseBar();
-  const m = bState.mode, q = bState.q, f = bState.filters[m];
-  const grid = document.getElementById('grid-browse');
-  const list = document.getElementById('rolelist');
-  let n = 0, count = '', empty = '';
-
-  if(m === 'comics'){
-    let items = COMICS.filter(c=>{
-      const hay = (c.title + ' ' + (c.by||'') + ' ' + c.tags.join(' ')).toLowerCase();
-      if(q && !hay.includes(q)) return false;
-      if(f.has('cast') && voicesOf(c).cls) return false;
-      if(f.has('scored') && !c.scores.length) return false;
-      return true;
-    });
-    const sorts = {
-      new:(a,b)=>(b.added||'').localeCompare(a.added||''),
-      kudos:(a,b)=>b.kudos - a.kudos,
-      title:(a,b)=>a.title.localeCompare(b.title),
-      short:(a,b)=>a.pp - b.pp
-    };
-    items.sort(sorts[bState.sort.comics]);
-    fill(grid, items.map(c=>cardEl(c, null, true)));
-    list.replaceChildren();
-    n = items.length;
-    count = `${n} of ${COMICS.length} eskis`;
-    empty = 'no eski matches that.';
-  }else if(m === 'roles'){
-    let items = ROLES.filter(r=>{
-      const c = byId(r.comic) || {title:'', by:''};
-      const hay = (r.name + ' ' + c.title + ' ' + (c.by||'')).toLowerCase();
-      if(q && !hay.includes(q)) return false;
-      const kinds = [...f].filter(x=>x !== 'short');
-      if(kinds.length && !kinds.includes(r.kind)) return false;
-      if(f.has('short') && r.lines >= 50) return false;
-      return true;
-    });
-    const sorts = {
-      'lines-desc':(a,b)=>b.lines - a.lines,
-      'lines-asc':(a,b)=>a.lines - b.lines,
-      'name':(a,b)=>a.name.localeCompare(b.name),
-      'comic':(a,b)=>(byId(a.comic)||{title:''}).title.localeCompare((byId(b.comic)||{title:''}).title),
-      'author':(a,b)=>((byId(a.comic)||{}).by||'').localeCompare(((byId(b.comic)||{}).by)||'')
-    };
-    items.sort(sorts[bState.sort.roles]);
-    grid.replaceChildren();
-    fill(list, items.map(roleRowEl));
-    n = items.length;
-    count = `${n} of ${ROLES.length} roles with no voice`;
-    empty = COMICS.some(c=>c.castKnown)
-      ? 'no role matches that.'
-      : 'No comic has a cast yet, so nothing is waiting to be voiced.';
-  }else{
-    let items = COMICS.filter(c=>{
-      const hay = (c.title + ' ' + (c.by||'') + ' ' + c.tags.join(' ')).toLowerCase();
-      if(q && !hay.includes(q)) return false;
-      if(f.has('none') && c.scores.length) return false;
-      if(f.has('more') && !c.scores.length) return false;
-      if(f.has('shortpp') && c.pp >= 150) return false;
-      return true;
-    });
-    const sorts = {
-      need:(a,b)=>(a.scores.length - b.scores.length) || (b.kudos - a.kudos),
-      kudos:(a,b)=>b.kudos - a.kudos,
-      new:(a,b)=>(b.added||'').localeCompare(a.added||''),
-      long:(a,b)=>b.pp - a.pp,
-      title:(a,b)=>a.title.localeCompare(b.title)
-    };
-    items.sort(sorts[bState.sort.scores]);
-    grid.replaceChildren();
-    fill(list, items.map(scoreRowEl));
-    n = items.length;
-    const bare = COMICS.filter(c=>!c.scores.length).length;
-    count = `${n} eskis · ${bare} with no score at all`;
-    empty = 'no eski matches that.';
-  }
-  document.getElementById('browse-n').textContent = count;
-  const e = document.getElementById('browse-empty');
-  e.textContent = empty;
-  e.hidden = n > 0;
-}
-function goBrowse(mode){
-  bState.mode = mode === 'roles' ? 'roles' : mode === 'scores' ? 'scores' : 'comics';
-  bState.q = '';
-  const q = document.getElementById('b-q');
-  if(q) q.value = '';
-  renderBrowse();
-  go('browse');
-}
-document.getElementById('browse-modes').addEventListener('click', e=>{
-  const b = e.target.closest('[data-mode]');
-  if(b && b.dataset.mode !== bState.mode) goBrowse(b.dataset.mode);
-});
-document.getElementById('b-q').addEventListener('input', e=>{
-  bState.q = e.target.value.trim().toLowerCase(); renderBrowse();
-});
-document.getElementById('b-sort').addEventListener('change', e=>{
-  bState.sort[bState.mode] = e.target.value; renderBrowse();
-});
-document.getElementById('b-filters').addEventListener('click', e=>{
-  const chip = e.target.closest('.chip');
-  if(!chip) return;
-  const set = bState.filters[bState.mode], f = chip.dataset.f;
-  set.has(f) ? set.delete(f) : set.add(f);
-  renderBrowse();
-});
-
-/* ================================================================
-   details. the mix is picked here.
-   ================================================================ */
-const ov = document.getElementById('overlay'), sheet = document.getElementById('sheet');
-let current = null, lastFocus = null;
-
-function readHref(file){
-  if(file.startsWith('idb:') || file.startsWith('db:'))
-    return 'read.html?read=' + encodeURIComponent(file);
-  return 'read.html?read=' + file.split('/').map(encodeURIComponent).join('/');
-}
-function pickRow(ref, checked, label, sub, previewKey, group){
-  return `<label class="pick">
-    <input type="checkbox" data-ref="${esc(ref)}"${checked?' checked':''}${
-      group ? ` data-group="${esc(group)}"` : ''}>
-    <span class="dot"></span>
-    <span class="pfp">${esc(initials(sub || label))}</span>
-    <span class="who"><b>${esc(label)}</b>${sub ? ` <span>${esc(sub)}</span>` : ''}</span>
-    ${previewKey
-      ? `<button class="prev" data-preview="${esc(window.eski.mediaUrl(previewKey))}"
-           title="Hear a few seconds">${PLAY}</button>`
-      : '<span class="prev ghost" title="No preview clip for this one">' + PLAY + '</span>'}
-  </label>`;
-}
-
-/* one preview at a time, anywhere on the page. drawn rather than typed: the
-   pause character sits off centre in most faces. */
-const PLAY = '<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M3.5 2 10 6l-6.5 4z"/></svg>';
-const PAUSE = '<svg viewBox="0 0 12 12" aria-hidden="true">'
-  + '<rect x="3" y="2.5" width="2.4" height="7"/><rect x="6.6" y="2.5" width="2.4" height="7"/></svg>';
-let previewAudio = null, previewBtn = null;
-function stopPreview(){
-  if(previewAudio){ previewAudio.pause(); previewAudio = null; }
-  if(previewBtn){ previewBtn.classList.remove('playing'); previewBtn.innerHTML = PLAY; previewBtn = null; }
-}
-function playPreview(btn){
-  const url = btn.dataset.preview;
-  if(previewBtn === btn){ stopPreview(); return; }
-  stopPreview();
-  previewAudio = new Audio(url);
-  previewBtn = btn;
-  btn.innerHTML = PAUSE + '<i></i>';
-  previewAudio.addEventListener('loadedmetadata', ()=>{
-    if(previewBtn === btn) btn.style.setProperty('--prev-t', (previewAudio.duration || 9) + 's');
-    requestAnimationFrame(()=>{ if(previewBtn === btn) btn.classList.add('playing'); });
-  });
-  previewAudio.addEventListener('ended', stopPreview);
-  previewAudio.addEventListener('error', ()=>{ toast('That preview would not play'); stopPreview(); });
-  previewAudio.play().catch(()=>{ toast('That preview would not play'); stopPreview(); });
-}
-function siblings(c){
-  if(!c.seriesTitle) return [];
-  return COMICS.filter(x=>x.seriesTitle === c.seriesTitle).sort((a,b)=>(a.ch||0)-(b.ch||0));
-}
-
-function openDetails(c, role, opts){
-  opts = opts || {};
-  /* the sheet is also opened directly with a partial object (the smoke suite
-     does this to check the contribute route), so fill in the collections
-     rather than throwing on a missing array. */
-  c.tags = c.tags || []; c.tagRows = c.tagRows || [];
-  c.cast = c.cast || []; c.scores = c.scores || [];
-  c.id = c.id || c.file;
-  if(!c.dbId && (c.file||'').startsWith('db:')) c.dbId = c.file.slice(3);
-  current = c;
-  const v = voicesOf(c), open = rolesFor(c.id);
-  const sibs = siblings(c);
-  const next = sibs[sibs.findIndex(x=>x.id === c.id) + 1] || null;
-  const localParts = partsForBase(c.baseId);
-
-  const castHtml = c.cast.map(ch=>`
-    <div class="charhead"><b>${esc(ch.char)}</b><span class="sp"></span>
-      <span>${ch.vos.length} ${ch.vos.length === 1 ? 'voiceover' : 'voiceovers'}</span></div>
-    ${ch.vos.map(vo=>pickRow('part:' + vo.partId, false, vo.who,
-        vo.lines ? vo.lines + ' lines' : null, vo.preview)).join('')}`).join('');
-
-  const openHtml = open.map(r=>`
-    <div class="charhead"><b>${esc(r.name)}</b><span class="sp"></span>
-      <span>${esc(r.kind)}</span></div>
-    ${r.blurb ? `<p class="rolenote">${esc(r.blurb)}</p>` : ''}
-    <div class="openline"><span></span><span class="pfp">—</span>
-      <span>nobody has voiced this yet${r.lines ? ' · ' + nfmt(r.lines) + ' lines' : ''}</span>
-      ${c.dbId && (c.consent||{}).vo !== false
-           ? `<a class="btn sm" href="contribute.html?base=${esc(c.dbId)}&as=vo">Voice this</a>`
-               : '<span></span>'}</div>`).join('');
-
-  const localHtml = localParts.map(p=>pickRow('idb:' + p.id, true,
-    p.character || p.title || p.name || 'untitled', 'on your shelf')).join('');
-
-  /* SILENCE IS A CHOICE YOU CAN MAKE HERE.
-     the author's score plays by default and there was no way to say no to it
-     short of muting the reader, which also mutes the voices. this is a real
-     pick in the same list as every other score, and it is exclusive with them
-     — you cannot listen to a score and to no score at once. */
-  const silentRow = pickRow('score:none', false, 'No score',
-    'Read it with voices only', null, 'score');
-  const scoreHtml = (c.scores.length
-    ? c.scores.map(s=>s.partId
-        ? pickRow('part:' + s.partId, false, s.title, 'by ' + s.by, s.preview, 'score')
-        : `<div class="openline"><span></span><span class="pfp">${esc(initials(s.by||''))}</span>
-             <span>${esc(s.title)} · Plays by default</span><span></span></div>`).join('')
-    : `<div class="openline"><span></span><span class="pfp">—</span>
-        <span>No score yet</span>
-        ${c.dbId && (c.consent||{}).soundtrack !== false
-             ? `<a class="btn sm" href="contribute.html?base=${esc(c.dbId)}&as=soundtrack">Score it</a>`
-                 : '<span></span>'}</div>`) + silentRow;
-
-  const mine = !!(me && c.ownerId && me.id === c.ownerId);
-  const later = isLater(c);
-
-  sheet.innerHTML =
-   `<button class="sheet-x" onclick="close_()" title="Close" aria-label="Close">&times;</button>
-    <button class="sheet-home" onclick="close_()">&larr; all eskis</button>
-    <div class="sheetbody">
-      <div class="left">
-        <div class="plate">${c.cover ? `<img src="${esc(c.cover)}" alt="">` : ''}</div>
-        ${capRows(c)}
-        ${c.desc ? `<p class="desc">${esc(c.desc)}</p>` : ''}
-      </div>
-      <div class="right">
-        <h3>${esc(c.title)}</h3>
-        <div class="subhead"><span>Tags</span><span class="sp"></span>
-          <span class="n">${c.tags.length}</span></div>
-        <div class="alltags" id="d-tags"></div>
-        ${c.dbId ? `<div class="tagadd">
-          <input id="d-tag-input" maxlength="40" placeholder="${me ? 'Add a tag' : 'Sign in to add a tag'}"${me?'':' disabled'}>
-          <button class="btn sm" id="d-tag-add"${me?'':' disabled'}>Add</button></div>` : ''}
-
-        ${sibs.length > 1 ? `<div class="subhead"><span>${esc(c.seriesTitle)}</span>
-          <span class="sp"></span><span class="n">${sibs.length}</span></div>
-          <div class="chips">${sibs.map(s=>`<button class="chip" data-sib="${esc(s.id)}"
-            aria-pressed="${s.id===c.id}">${s.ch || '?'}</button>`).join('')}</div>` : ''}
-
-        <button class="fold" aria-expanded="true"><span class="caret"></span>
-          <span>Voices</span><span class="sp"></span><span class="n">${esc(v.t)}</span></button>
-        <div class="folded">${castHtml}${openHtml}${localHtml}${
-          (castHtml||openHtml||localHtml) ? '' :
-          '<div class="openline"><span></span><span class="pfp">—</span><span>No cast written yet</span><span></span></div>'}</div>
-
-        <button class="fold" aria-expanded="true" style="margin-top:var(--s4)">
-          <span class="caret"></span><span>Score</span><span class="sp"></span>
-          <span class="n">${c.scores.length} available</span></button>
-        <div class="folded">${scoreHtml}</div>
-
-        <div class="mixline">Your mix travels with the link you open it from.</div>
-        <div class="mixline">${(()=>{
-          const open = openAxes(c), shut = AXES.filter(a=>!open.includes(a));
-          if(mine) return 'You decide who may add to this in the studio.';
-          if(!open.length) return 'The author has closed this one to contributions.';
-          if(!shut.length) return 'Open to voices, a score and sound effects.';
-          return 'Open to ' + open.map(a=>a.label.toLowerCase()).join(' and ') +
-                 '. The author has not opened it to ' +
-                 shut.map(a=>a.label.toLowerCase()).join(' or ') + '.';
-        })()}</div>
+      <div class="tagpanel" id="mods-panel">
+        <div class="taghdr" data-toggle>modifier tags <span class="chev">&#9662;</span></div>
+        <div class="tagbody" style="margin-top:12px;" id="modifier-list"></div>
       </div>
     </div>
+  </div>
+  <div class="gridwrap">
+    <div class="fgrid" id="feed-grid"></div>
+    <div class="empty" id="feed-empty" hidden>
+      <b>Nothing published yet</b>
+      <span>Be the first — upload something and it lands right here.</span>
+    </div>
+  </div>
+  <div class="loadmore" id="loadmore-wrap" hidden>
+    <button class="btnline" type="button" id="loadmore-btn">See more</button>
+  </div>
+</main>
 
-    ${c.slug ? `<div class="thread" id="d-thread">
-      <button class="fold thread-open" id="d-cm-toggle" aria-expanded="false">
-        <span class="caret"></span><span>Comments</span><span class="sp"></span>
-        <span class="n" id="d-cm-n">${nfmt(c.commentCount || 0)}</span></button>
-      <!-- .folded hides on an ADJACENT sibling selector, so nothing may come
-           between these two -->
-      <div class="folded" id="d-cm-body"></div>
+<div id="overlay-root"></div>
+<div id="toast-root"></div>
+
+<script>
+/* ============================================================
+   eski home feed. real data against schema-clean.sql — no mock content.
+
+   SCOPE, HONESTLY: this is v1. "Discover" is the only feed — the
+   mockup's rename/add/delete feed switcher implies a saved-feed model
+   with no backing table yet (see ROADMAP.md item 0), so this page
+   doesn't pretend to have it: one feed, filtered live, nothing saved
+   across a reload. Modifier tags and content tags are both real query
+   filters, session-only. Video/audio cards show no auto-generated
+   thumbnail yet — that's a real gap, not an oversight, see the note by
+   uploadFiles() below.
+   ============================================================ */
+function esc(s){ return (s ?? '').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;'); }
+function fmtWhen(iso){
+  const d = new Date(iso), now = new Date();
+  const days = Math.floor((now - d) / 86400000);
+  if(days <= 0) return 'today';
+  if(days === 1) return '1d';
+  if(days < 30) return days + 'd';
+  if(days < 365) return Math.floor(days/30) + 'mo';
+  return Math.floor(days/365) + 'y';
+}
+function slugify(s){
+  return (s || 'untitled').toString().toLowerCase().trim()
+    .replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,60) || 'untitled';
+}
+function toast(msg){
+  const root = document.getElementById('toast-root');
+  const el = document.createElement('div');
+  el.className = 'toast';
+  el.textContent = msg;
+  root.appendChild(el);
+  setTimeout(() => el.remove(), 5200);
+}
+const PLAY = '<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>';
+const CHECK = '<svg viewBox="0 0 24 24"><path d="M5 12l4 4 10-10"/></svg>';
+const KINDS = ['image','video','audio','text','other','combination'];
+
+let eski, sb, user = null, myProfile = null;
+let myFollowing = new Set();     // followee_id I follow
+let myLikes = new Set();         // work ids I've liked
+let mySavedIds = new Set();      // work ids saved in ANY of my folders
+let mySeenIds = new Set();       // work ids I've opened before
+let myFolders = [];              // [{id,name}]
+let updatedRootIds = new Set();  // work ids that have at least one version
+
+const filters = { tags: [], posted: null, from: null, viewing: null,
+  updated: false, liked: false, saved: false, kinds: new Set() };
+let searchQuery = '';
+let feedRows = [];   // last loaded batch, kept for client-side search/filter re-render
+let feedOffset = 0;
+const PAGE = 24;
+
+async function boot(){
+  eski = await (window.eski ? Promise.resolve(window.eski) : new Promise(r => {
+    document.addEventListener('eski-auth', () => r(window.eski), { once:true });
+  }));
+  await eski.ready;
+  sb = eski.sb;
+  user = eski.user;
+  document.addEventListener('eski-auth', e => { user = e.detail.user; onAuthChange(); });
+  if(user) await loadMyState();
+  wireHeader();
+  wireTagPanels();
+  wireSearch();
+  renderModifiers();
+  wireGridDelegate();
+  wireUpload();
+  await loadFeed(true);
+}
+document.addEventListener('DOMContentLoaded', boot);
+
+async function onAuthChange(){
+  if(user){ await loadMyState(); } else { myFollowing.clear(); myLikes.clear(); mySavedIds.clear(); myFolders = []; }
+  renderGrid();
+}
+
+async function loadMyState(){
+  if(!sb || !user) return;
+  const [prof, follows, likes, folders] = await Promise.all([
+    sb.from('profiles').select('id,handle,display_name').eq('id', user.id).maybeSingle(),
+    sb.from('follows').select('followee_id').eq('follower_id', user.id),
+    sb.from('likes').select('target_id').eq('user_id', user.id).eq('target_type','work'),
+    sb.from('save_folders').select('id,name').eq('owner_id', user.id).order('created_at')
+  ]);
+  myProfile = prof.data || null;
+  myFollowing = new Set((follows.data || []).map(r => r.followee_id));
+  myLikes = new Set((likes.data || []).map(r => r.target_id));
+  myFolders = folders.data || [];
+  if(myFolders.length){
+    const { data: items } = await sb.from('save_folder_items').select('target_id')
+      .eq('target_type','work').in('folder_id', myFolders.map(f => f.id));
+    mySavedIds = new Set((items || []).map(r => r.target_id));
+  } else mySavedIds = new Set();
+}
+
+function ownerName(){
+  if(myProfile) return (myProfile.display_name || myProfile.handle || '').trim() || fallbackName();
+  return fallbackName();
+}
+function fallbackName(){
+  const m = (user && user.user_metadata) || {};
+  return m.full_name || m.name || m.user_name || (user && user.email) || 'someone';
+}
+
+/* ------------------------------------------------------------ header */
+function wireHeader(){
+  document.querySelectorAll('[data-go]').forEach(b => b.addEventListener('click',
+    () => location.href = b.dataset.go));
+}
+
+/* -------------------------------------------------------- tag panels */
+function wireTagPanels(){
+  document.querySelectorAll('[data-toggle]').forEach(h => h.addEventListener('click', () => {
+    h.closest('.tagpanel').classList.toggle('collapsed');
+  }));
+  renderActiveTags();
+}
+function renderActiveTags(){
+  const row = document.getElementById('active-tags');
+  row.innerHTML = filters.tags.map(t => `<span class="tagchip"><span class="tagtext">#${esc(t)}</span>` +
+    `<span class="x" data-untag="${esc(t)}">&times;</span></span>`).join('') +
+    `<button class="tagadd" type="button" id="tagadd-btn">+</button>`;
+  row.querySelectorAll('[data-untag]').forEach(x => x.addEventListener('click', () => {
+    filters.tags = filters.tags.filter(t => t !== x.dataset.untag);
+    renderActiveTags(); loadFeed(true);
+  }));
+  const addBtn = document.getElementById('tagadd-btn');
+  addBtn.addEventListener('click', e => { e.stopPropagation(); openTagSearch(addBtn); });
+}
+async function openTagSearch(anchor){
+  document.querySelectorAll('.tagsearch').forEach(t => t.remove());
+  const box = document.createElement('div');
+  box.className = 'tagsearch open';
+  box.style.position = 'absolute';
+  box.innerHTML = `<input placeholder="find a tag…"><div class="opts"></div>`;
+  anchor.parentElement.style.position = 'relative';
+  anchor.parentElement.appendChild(box);
+  const input = box.querySelector('input'), opts = box.querySelector('.opts');
+  input.focus();
+  async function search(q){
+    if(!sb) return;
+    let query = sb.from('content_tags').select('tag').eq('target_type','work').order('tag').limit(8);
+    if(q) query = query.ilike('tag', '%' + q.replace(/[%_]/g,'') + '%');
+    const { data } = await query;
+    const seen = new Set(filters.tags);
+    const uniq = [...new Set((data || []).map(r => r.tag))].filter(t => !seen.has(t));
+    opts.innerHTML = uniq.map(t => `<button type="button" class="opt" data-pick="${esc(t)}">#${esc(t)}</button>`).join('')
+      || '<div class="opt" style="cursor:default;">no matching tags yet</div>';
+    opts.querySelectorAll('[data-pick]').forEach(o => o.addEventListener('click', () => {
+      filters.tags.push(o.dataset.pick); box.remove(); renderActiveTags(); loadFeed(true);
+    }));
+  }
+  input.addEventListener('input', () => search(input.value.trim()));
+  search('');
+  setTimeout(() => document.addEventListener('click', function outside(e){
+    if(!box.contains(e.target) && e.target !== anchor){ box.remove(); document.removeEventListener('click', outside); }
+  }), 0);
+}
+
+/* ------------------------------------------------------ modifier tags */
+function seg(group, key, opts){
+  return `<div class="modgroup"><div class="modgrouplabel">${esc(group)}</div>
+    <div class="seg" data-seg="${key}">${opts.map(o => `<span class="opt${filters[key]===o[1]?' on':''}" data-o="${esc(o[1]??'')}">${esc(o[0])}</span>`).join('')}</div></div>`;
+}
+function mchip(label, key){
+  return `<span class="mchip${filters[key]?' on':''}" data-mtoggle="${key}">${esc(label)}</span>`;
+}
+function kindChip(k){
+  const label = k === 'combination' ? 'collection' : k;
+  return `<span class="mchip${filters.kinds.has(k)?' on':''}" data-ktoggle="${k}">${esc(label)}</span>`;
+}
+function renderModifiers(){
+  const el = document.getElementById('modifier-list');
+  el.innerHTML = `<div style="display:flex;flex-direction:column;gap:14px;">
+    ${seg('posted', 'posted', [['any time', null],['today','day'],['this week','week'],['this month','month'],['this year','year']])}
+    <div style="display:flex;gap:28px;flex-wrap:wrap;">
+      ${seg('from', 'from', [['anyone', null],['following','following'],['not following','not_following']])}
+      ${seg('viewing', 'viewing', [['any','any'],['seen','seen'],['unseen','unseen']])}
+    </div>
+    <div class="modgroup"><div class="modgrouplabel">state</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">${mchip('updated','updated')}${mchip('liked','liked')}${mchip('saved','saved')}</div></div>
+    <div class="modgroup"><div class="modgrouplabel">type</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">${KINDS.map(kindChip).join('')}</div></div>
+  </div>`;
+  el.querySelectorAll('[data-seg]').forEach(group => {
+    group.querySelectorAll('[data-o]').forEach(opt => opt.addEventListener('click', () => {
+      const key = group.dataset.seg, val = opt.dataset.o || null;
+      filters[key] = val; renderModifiers(); loadFeed(true);
+    }));
+  });
+  el.querySelectorAll('[data-mtoggle]').forEach(c => c.addEventListener('click', () => {
+    const key = c.dataset.mtoggle;
+    if((key === 'liked' || key === 'saved') && !user){ openSignIn(); return; }
+    filters[key] = !filters[key]; renderModifiers(); loadFeed(true);
+  }));
+  el.querySelectorAll('[data-ktoggle]').forEach(c => c.addEventListener('click', () => {
+    const k = c.dataset.ktoggle;
+    filters.kinds.has(k) ? filters.kinds.delete(k) : filters.kinds.add(k);
+    renderModifiers(); loadFeed(true);
+  }));
+}
+
+/* -------------------------------------------------------------- search */
+function wireSearch(){
+  const box = document.getElementById('search-input').closest('.searchmini');
+  box.addEventListener('click', e => { if(e.target === box) box.classList.toggle('open'); });
+  const input = document.getElementById('search-input');
+  input.addEventListener('focus', () => box.classList.add('open'));
+  let t;
+  input.addEventListener('input', () => {
+    clearTimeout(t);
+    t = setTimeout(() => { searchQuery = input.value.trim().toLowerCase(); renderGrid(); }, 180);
+  });
+}
+
+/* ------------------------------------------------------------- feed */
+async function loadFeed(reset){
+  if(reset){ feedOffset = 0; feedRows = []; }
+  document.getElementById('feed-empty').hidden = true;
+
+  let q = sb.from('works').select('*').eq('status','published').is('version_of', null)
+    .order('created_at', { ascending:false }).range(feedOffset, feedOffset + PAGE - 1);
+  if(filters.kinds.size) q = q.in('kind', [...filters.kinds]);
+  if(filters.posted){
+    const now = new Date();
+    const since = { day:1, week:7, month:30, year:365 }[filters.posted];
+    q = q.gte('created_at', new Date(now - since*86400000).toISOString());
+  }
+  if(filters.from === 'following'){
+    if(!myFollowing.size){ renderBatch([], reset); return; }
+    q = q.in('owner_id', [...myFollowing]);
+  } else if(filters.from === 'not_following'){
+    const exclude = [...myFollowing, ...(user ? [user.id] : [])];
+    if(exclude.length) q = q.not('owner_id', 'in', `(${exclude.join(',')})`);
+  }
+
+  const { data, error } = await q;
+  if(error){ toast(eski.dbError('ESK-5100','the feed could not load', error)); return; }
+  let rows = data || [];
+
+  // updated: has at least one version pointing back at it. cheap set-membership
+  // check rather than a join — computed once per load, reused per card.
+  if(filters.updated || rows.length){
+    const { data: vs } = await sb.from('works').select('version_of').not('version_of','is',null)
+      .in('version_of', rows.map(r => r.id));
+    updatedRootIds = new Set((vs || []).map(r => r.version_of));
+  }
+  if(filters.viewing === 'seen') rows = rows.filter(r => mySeenIds.has(r.id));
+  else if(filters.viewing === 'unseen') rows = rows.filter(r => !mySeenIds.has(r.id));
+  if(filters.updated) rows = rows.filter(r => updatedRootIds.has(r.id));
+  if(filters.liked) rows = rows.filter(r => myLikes.has(r.id));
+  if(filters.saved) rows = rows.filter(r => mySavedIds.has(r.id));
+
+  feedOffset += PAGE;
+  await annotate(rows);
+  renderBatch(rows, reset);
+}
+
+async function annotate(rows){
+  if(!rows.length) return;
+  const ids = rows.map(r => r.id);
+  const [{ data: tagRows }, { data: likeRows }, { data: comboRows }] = await Promise.all([
+    sb.from('content_tags').select('target_id,tag').eq('target_type','work').in('target_id', ids),
+    sb.from('likes').select('target_id').eq('target_type','work').in('target_id', ids),
+    sb.from('work_items').select('work_id').in('work_id', rows.filter(r => r.kind === 'combination').map(r => r.id))
+  ]);
+  const tagsBy = {}, likesBy = {}, countBy = {};
+  (tagRows||[]).forEach(r => (tagsBy[r.target_id] ??= []).push(r.tag));
+  (likeRows||[]).forEach(r => likesBy[r.target_id] = (likesBy[r.target_id]||0) + 1);
+  (comboRows||[]).forEach(r => countBy[r.work_id] = (countBy[r.work_id]||0) + 1);
+  rows.forEach(r => { r._tags = tagsBy[r.id] || []; r._likes = likesBy[r.id] || 0; r._itemCount = countBy[r.id] || 0; });
+}
+
+function renderBatch(rows, reset){
+  feedRows = reset ? rows : feedRows.concat(rows);
+  document.getElementById('loadmore-wrap').hidden = rows.length < PAGE;
+  renderGrid();
+}
+function passesSearch(w){
+  if(!searchQuery) return true;
+  const hay = [w.title, w.caption, w.body, ...(w._tags||[])].filter(Boolean).join(' ').toLowerCase();
+  return hay.includes(searchQuery);
+}
+function renderGrid(){
+  const grid = document.getElementById('feed-grid');
+  const filterTags = filters.tags;
+  const rows = feedRows.filter(w => passesSearch(w) &&
+    (!filterTags.length || filterTags.every(t => (w._tags||[]).includes(t))));
+  grid.innerHTML = rows.map(cardHtml).join('');
+  document.getElementById('feed-empty').hidden = feedRows.length > 0;
+}
+
+function mediaTag(w, cover){
+  const key = cover || w.thumb_key || w.media_key;
+  if(!key) return '';
+  return `<img class="fillmedia" src="${esc(eski.mediaUrl(key))}" alt="" loading="lazy">`;
+}
+function cardHtml(w){
+  const inner = (() => {
+    if(w.kind === 'video') return mediaTag(w, w.thumb_key || w.cover_key) +
+      `<div class="gplay">${PLAY}</div>`;
+    if(w.kind === 'audio') return (w.cover_key ? mediaTag(w, w.cover_key) : '') + `<div class="gplay">${PLAY}</div>`;
+    if(w.kind === 'combination') return mediaTag(w, w.cover_key) +
+      `<div class="gcount"><svg viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12"/><path d="M4 16V4h12"/></svg>${w._itemCount}</div>`;
+    if(w.kind === 'other') return '';
+    return mediaTag(w);
+  })();
+  if(w.kind === 'other')
+    return `<button class="gcard" type="button" data-open="${w.id}">
+      <div class="gbox framed"><div class="gother">${esc(w.title)}</div></div>
+      <div class="gcap">${esc(w.title)}</div></button>`;
+  if(w.kind === 'text')
+    return `<button class="gcard" type="button" data-open="${w.id}">
+      <div class="gbox framed" style="align-items:stretch;justify-content:flex-start;">
+        <div class="gtext"><div class="gtitle">${esc(w.title)}</div><div class="gbody">${esc((w.body||'').slice(0,320))}</div></div>
+      </div><div class="gcap">${esc(w.title)}</div></button>`;
+  const framed = !inner && !w.media_key && !w.cover_key;
+  return `<button class="gcard" type="button" data-open="${w.id}">
+    <div class="gbox${framed?' framed':''}">${inner}</div>
+    <div class="gcap">${esc(w.title)}</div></button>`;
+}
+function wireGridDelegate(){
+  document.getElementById('feed-grid').addEventListener('click', e => {
+    const btn = e.target.closest('[data-open]');
+    if(btn) openDetail(btn.dataset.open);
+  });
+  document.getElementById('loadmore-btn').addEventListener('click', () => loadFeed(false));
+}
+
+/* =========================================================== detail */
+function scrimClose(root){
+  root.querySelector('.pv-scrim').addEventListener('click', e => {
+    if(e.target.classList.contains('pv-scrim')) root.innerHTML = '';
+  });
+}
+function metaRows(rows, download, downloadUrl){
+  let html = rows.map(r => `<div style="display:flex;justify-content:space-between;padding:6px 0;font-size:12.5px;color:var(--muted);">
+      <span>${esc(r[0])}</span><span style="color:var(--soft-ink);">${esc(r[1])}</span></div>`).join('');
+  if(download) html += `<div style="display:flex;justify-content:space-between;padding:6px 0;font-size:12.5px;color:var(--muted);">
+    <span>Download</span><a href="${esc(downloadUrl)}" style="color:var(--ink);font-weight:600;" download>${esc(download)}</a></div>`;
+  return `<div style="display:flex;flex-direction:column;gap:0;">${html}</div>`;
+}
+function folderRowHtml(name, count, on, id){
+  return `<button class="folderrow${on?' on':''}" type="button" data-folder="${esc(id||'')}">
+    <div class="fcheck">${CHECK}</div><div class="fname">${esc(name)}</div><div class="fmeta">${esc(count)}</div></button>`;
+}
+function actionBarHtml(w, liked, likeCount){
+  return `<div style="display:flex;gap:8px;">
+    <button class="actbtn like${liked?' on':''}" type="button" data-like="${w.id}">
+      <svg viewBox="0 0 24 24"><path d="M12 21s-8-4.9-8-11a4.5 4.5 0 0 1 8-2.6 4.5 4.5 0 0 1 8 2.6c0 6.1-8 11-8 11z"/></svg>
+      Like <span class="n">${likeCount}</span></button>
+    <div class="savewrap">
+      <button class="actbtn" type="button" data-savebtn="${w.id}">
+        <svg viewBox="0 0 24 24"><path d="M6 3h12v18l-6-4-6 4z"/></svg>Save</button>
+      <div class="savedrop" data-savedrop="${w.id}"></div>
+    </div>
+  </div>`;
+}
+async function renderSaveDrop(root, workId){
+  const drop = root.querySelector(`[data-savedrop="${workId}"]`);
+  if(!drop) return;
+  drop.innerHTML = `<div class="sdhead">Save to</div>` +
+    myFolders.map(f => folderRowHtml(f.name, '', false, f.id)).join('') +
+    `<button class="folderrow" type="button" data-newfolder="${workId}">
+      <div style="width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:18px;color:var(--accent);line-height:1;">+</div>
+      <div class="fname" style="color:var(--accent);font-weight:600;">New folder</div></button>`;
+  const { data: mine } = user ? await sb.from('save_folder_items').select('folder_id')
+    .eq('target_type','work').eq('target_id', workId).in('folder_id', myFolders.map(f=>f.id)) : { data: [] };
+  const on = new Set((mine||[]).map(r => r.folder_id));
+  drop.querySelectorAll('[data-folder]').forEach(b => {
+    if(on.has(b.dataset.folder)) b.classList.add('on');
+    b.addEventListener('click', async () => {
+      if(!user) return openSignIn();
+      const fid = b.dataset.folder;
+      const already = b.classList.contains('on');
+      const { error } = already
+        ? await sb.from('save_folder_items').delete().eq('folder_id', fid).eq('target_type','work').eq('target_id', workId)
+        : await sb.from('save_folder_items').insert({ folder_id: fid, target_type:'work', target_id: workId });
+      if(error) return toast(eski.dbError('ESK-5104','the save could not be updated', error));
+      b.classList.toggle('on');
+      already ? mySavedIds.delete(workId) : mySavedIds.add(workId);
+    });
+  });
+  drop.querySelector('[data-newfolder]').addEventListener('click', async () => {
+    if(!user) return openSignIn();
+    const name = prompt('name this folder');
+    if(!name || !name.trim()) return;
+    const { data, error } = await sb.from('save_folders').insert({ owner_id: user.id, name: name.trim() }).select().single();
+    if(error) return toast(eski.dbError('ESK-5104','the folder could not be created', error));
+    myFolders.push(data);
+    await sb.from('save_folder_items').insert({ folder_id: data.id, target_type:'work', target_id: workId });
+    mySavedIds.add(workId);
+    renderSaveDrop(root, workId);
+  });
+}
+function tagsPanelHtml(work, tags, poster){
+  const chips = tags.map(t => poster
+    ? `<span class="tagchip"><span class="tagtext">#${esc(t)}</span><span class="x" data-detag="${esc(t)}">&times;</span></span>`
+    : `<span class="chip small" style="background:var(--paper);">#${esc(t)}</span>`).join('');
+  return `<div data-panel="tags" style="display:flex;flex-direction:column;gap:18px;padding:16px 24px;">
+    <div style="display:flex;flex-direction:column;gap:8px;">
+      <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;">content tags${poster?' &middot; edit anytime':''}</div>
+      <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;" id="detail-tags">${chips}<button class="tagadd" type="button" id="detail-tagadd">+</button></div>
+    </div>
+  </div>`;
+}
+function commentRowHtml(c, replyTo){
+  const replyLine = replyTo ? `<div class="replyto">&#8618; replying to <b>${esc(replyTo)}</b></div>` : '';
+  return `<div class="cmt${c.parent_id?' nested':''}">
+    <div class="avatar"></div>
+    <div style="display:flex;flex-direction:column;gap:2px;min-width:0;">
+      ${replyLine}
+      <div style="display:flex;align-items:baseline;gap:8px;">
+        <span style="font-weight:600;font-size:12.5px;color:var(--ink);">${esc(c.author_name)}</span>
+        <span style="font-size:11px;color:var(--muted);">${fmtWhen(c.created_at)}</span>
+      </div>
+      <div style="font-size:12.5px;color:var(--soft-ink);line-height:1.5;">${c.deleted_at ? '<i>deleted</i>' : esc(c.body)}</div>
+      ${!c.deleted_at ? `<button class="dtab" type="button" style="padding:2px 0;font-size:11px;" data-reply="${c.id}" data-who="${esc(c.author_name)}">reply</button>` : ''}
+    </div>
+  </div>`;
+}
+function commentsPanelHtml(work, comments){
+  const top = comments.filter(c => !c.parent_id);
+  const byParent = {};
+  comments.filter(c => c.parent_id).forEach(c => (byParent[c.parent_id] ??= []).push(c));
+  const first = top.slice(0, 3), rest = top.slice(3);
+  const block = list => list.map(c => commentRowHtml(c) + (byParent[c.id]||[])
+    .map(r => commentRowHtml(r, c.author_name)).join('')).join('');
+  return `<div data-panel="comments" style="display:none;flex-direction:column;gap:16px;padding:16px 24px;flex:1;">
+    <div style="display:flex;flex-direction:column;gap:16px;flex:1;" id="comment-list">
+      ${block(first)}
+      ${rest.length ? `<button class="morecomments" type="button" id="morecomments">Show ${rest.length} more comment${rest.length===1?'':'s'}</button>
+      <div class="cmt-extra" id="comment-extra">${block(rest)}</div>` : ''}
+      ${!comments.length ? '<div style="font-size:12.5px;color:var(--muted);">no comments yet</div>' : ''}
+    </div>
+    <div id="reply-context" style="display:none;align-items:center;gap:6px;font-size:11px;color:var(--muted);"></div>
+    <div style="display:flex;gap:8px;align-items:center;padding-top:8px;">
+      <input placeholder="add a comment" id="comment-input" style="flex:1;font:inherit;font-size:12.5px;padding:8px 10px;border:none;background:var(--surface);color:var(--ink);border-radius:var(--r);">
+      <button class="btnline" type="button" id="comment-post" style="padding:8px 14px;">Post</button>
+    </div>
+  </div>`;
+}
+function mediaPane(work, items){
+  if(work.kind === 'image') return `<div class="medial">${work.media_key ? `<img src="${esc(eski.mediaUrl(work.media_key))}" alt="">` : ''}</div>`;
+  if(work.kind === 'video') return `<div class="medial" style="background:#0d0d0d;">${work.media_key ? `<video src="${esc(eski.mediaUrl(work.media_key))}" controls></video>` : ''}</div>`;
+  if(work.kind === 'audio') return `<div class="medial" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;padding:48px;">
+    <div style="width:76px;height:76px;border-radius:var(--r-round);background:var(--ink);display:flex;align-items:center;justify-content:center;">
+      <svg viewBox="0 0 24 24" width="26" height="26" style="fill:var(--paper);"><path d="M8 5v14l11-7z"/></svg></div>
+    ${work.media_key ? `<audio src="${esc(eski.mediaUrl(work.media_key))}" controls style="width:100%;"></audio>` : ''}
+  </div>`;
+  if(work.kind === 'text') return `<div class="medial" style="background:var(--paper);overflow:auto;padding:56px 60px;">
+    <div style="font-weight:700;font-size:26px;color:var(--ink);line-height:1.25;margin-bottom:20px;">${esc(work.title)}</div>
+    <div style="font-size:15px;color:var(--soft-ink);line-height:1.7;white-space:pre-wrap;">${esc(work.body||'')}</div>
+  </div>`;
+  if(work.kind === 'other') return `<div class="medial" style="display:flex;align-items:center;justify-content:center;padding:40px;">
+    <span style="font-weight:700;font-size:16px;color:var(--soft-ink);text-align:center;word-break:break-word;">${esc(work.title)}</span>
+  </div>`;
+  if(work.kind === 'combination') return collectionPane(work, items, 0);
+  return `<div class="medial"></div>`;
+}
+function collectionPane(work, items, idx){
+  const it = items[idx];
+  const media = it ? (it.kind === 'text'
+    ? `<div style="padding:40px;font-size:14px;color:var(--soft-ink);white-space:pre-wrap;">${esc(it.caption||'')}</div>`
+    : `<img src="${esc(eski.mediaUrl(it.media_key))}" alt="" style="width:100%;height:100%;object-fit:contain;">`) : '';
+  return `<div class="medial" data-collection="${work.id}" data-idx="${idx}">
+    ${items.length > 1 ? `<button class="carrow" type="button" style="left:16px;" data-cprev>&lsaquo;</button>
+    <button class="carrow" type="button" style="right:16px;" data-cnext>&rsaquo;</button>` : ''}
+    <div class="ccount">${idx+1} / ${items.length}</div>
+    ${media}
+  </div>`;
+}
+async function openDetail(workId, versionsOverride){
+  const root = document.getElementById('overlay-root');
+  const { data: work, error } = await sb.from('works').select('*').eq('id', workId).single();
+  if(error || !work){ toast(eski.dbError('ESK-5100','that post could not be opened', error||{message:'not found'})); return; }
+
+  const poster = user && user.id === work.owner_id;
+  const rootId = work.version_of || work.id;
+  const [{ data: tags }, { data: comments }, { data: likeRows }, { data: items }, { data: versions }] = await Promise.all([
+    sb.from('content_tags').select('tag').eq('target_type','work').eq('target_id', work.id),
+    sb.from('comments').select('*').eq('target_type','work').eq('target_id', work.id).is('deleted_at', null).order('created_at'),
+    sb.from('likes').select('user_id').eq('target_type','work').eq('target_id', work.id),
+    work.kind === 'combination' ? sb.from('work_items').select('*').eq('work_id', work.id).order('idx') : Promise.resolve({data:[]}),
+    sb.from('works').select('id,version_label,created_at').or(`id.eq.${rootId},version_of.eq.${rootId}`).order('created_at', { ascending:false })
+  ]);
+  if(user){ sb.from('seen_marks').upsert({ user_id:user.id, target_type:'work', target_id:work.id }).then(()=>{}); mySeenIds.add(work.id); }
+
+  const tagList = (tags||[]).map(t => t.tag);
+  const liked = user ? (likeRows||[]).some(r => r.user_id === user.id) : false;
+  const hasVersions = work.kind !== 'combination' && work.kind !== 'other';
+
+  root.innerHTML = `<div class="pv-scrim"><div class="pv-card" style="display:flex;flex-direction:row;width:1100px;max-width:100%;height:760px;max-height:100%;">
+    ${overlayControlsHtml(poster, hasVersions, versions||[], work)}
+    ${mediaPane(work, items||[])}
+    <div style="width:42%;height:100%;display:flex;flex-direction:column;overflow:hidden;">
+      <div style="display:flex;flex-direction:column;gap:16px;padding:64px 24px 20px 24px;">
+        ${work.kind==='text' ? '' : `<div style="font-weight:700;font-size:19px;color:var(--ink);line-height:1.3;">${esc(work.title)}</div>`}
+        <div style="font-size:14px;color:var(--soft-ink);line-height:1.5;">${esc(work.caption||'')}</div>
+        ${metaRows([['Added', fmtWhen(work.created_at)], ['By', work.owner_name]], work.media_key ? 'download' : null, work.media_key ? eski.mediaUrl(work.media_key) : null)}
+        ${poster ? posterActionsHtml(work) : actionBarHtml(work, liked, (likeRows||[]).length)}
+      </div>
+      <div style="display:flex;flex-direction:row;gap:24px;padding:0 24px;flex-shrink:0;">
+        <button class="dtab active" type="button" data-tab="tags">Tags</button>
+        <button class="dtab" type="button" data-tab="comments">Comments</button>
+      </div>
+      <div style="flex:1;background:var(--surface);overflow:auto;display:flex;flex-direction:column;">
+        ${tagsPanelHtml(work, tagList, poster)}
+        ${commentsPanelHtml(work, comments||[])}
+      </div>
+    </div>
+  </div></div>`;
+  scrimClose(root);
+  wireDetail(root, work, items||[], poster);
+}
+function overlayControlsHtml(poster, hasVersions, versions, work){
+  const others = versions.filter(v => v.id !== work.id);
+  return `<div style="position:absolute;top:20px;right:24px;z-index:6;display:flex;align-items:center;gap:8px;">
+    ${hasVersions ? `<div class="verwrap">
+      <button class="chip small" type="button" data-ver style="white-space:nowrap;">${versions.length>1?`v${versions.findIndex(v=>v.id===work.id)+1} of ${versions.length}`:'v1'}&nbsp;&#9662;</button>
+      <div class="verdrop" data-verdrop>
+        ${versions.map(v => `<button class="vi${v.id===work.id?' on':''}" type="button" data-goversion="${v.id}">
+          ${esc(v.version_label || (v.id===work.id?'this version':'version'))} <span style="color:var(--muted);">${fmtWhen(v.created_at)}</span></button>`).join('')}
+        ${poster ? `<div class="sep"></div><button class="vi add" type="button" id="add-version">+ Add version</button>` : ''}
+      </div>
     </div>` : ''}
+    ${poster ? `<div style="position:relative;"><button class="navarrow" type="button" id="burger-btn">&#8942;</button>
+      <div class="burger" id="burger-menu">
+        <button class="mi" type="button" data-post-private>Make private</button>
+        <div class="sep"></div>
+        <button class="mi danger" type="button" data-post-delete>Delete</button>
+      </div></div>` : ''}
+    <button class="navarrow" type="button" data-close-detail>&times;</button>
+  </div>`;
+}
+function posterActionsHtml(work){
+  return `<div class="a2c">
+    <button class="btnline" type="button" id="a2c-btn" style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;">
+      <svg viewBox="0 0 24 24" width="16" height="16" style="fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;"><path d="M12 5v14M5 12h14"/></svg>Add to collection</button>
+    <div class="a2cdrop" id="a2c-drop"></div>
+  </div>`;
+}
+async function wireDetail(root, work, items, poster){
+  root.querySelector('[data-close-detail]').addEventListener('click', () => root.innerHTML = '');
+  root.querySelectorAll('.dtab').forEach(t => t.addEventListener('click', () => {
+    root.querySelectorAll('.dtab').forEach(x => x.classList.remove('active'));
+    t.classList.add('active');
+    root.querySelectorAll('[data-panel]').forEach(p => p.style.display = 'none');
+    root.querySelector(`[data-panel="${t.dataset.tab}"]`).style.display = 'flex';
+  }));
+  // version dropdown
+  const verBtn = root.querySelector('[data-ver]');
+  if(verBtn) verBtn.addEventListener('click', e => { e.stopPropagation(); root.querySelector('[data-verdrop]').classList.toggle('open'); });
+  root.querySelectorAll('[data-goversion]').forEach(b => b.addEventListener('click', () => openDetail(b.dataset.goversion)));
+  const addVer = root.querySelector('#add-version');
+  if(addVer) addVer.addEventListener('click', () => { root.innerHTML=''; openUpload({ versionOf: work.version_of || work.id, kind: work.kind }); });
+  // burger
+  const burgerBtn = root.querySelector('#burger-btn');
+  if(burgerBtn) burgerBtn.addEventListener('click', e => { e.stopPropagation(); root.querySelector('#burger-menu').classList.toggle('open'); });
+  const priv = root.querySelector('[data-post-private]');
+  if(priv) priv.addEventListener('click', async () => {
+    const { error } = await sb.from('works').update({ status:'private' }).eq('id', work.id);
+    if(error) return toast(eski.dbError('ESK-5107','could not change visibility', error));
+    toast('made private'); root.innerHTML=''; loadFeed(true);
+  });
+  const del = root.querySelector('[data-post-delete]');
+  if(del) del.addEventListener('click', async () => {
+    if(!confirm(`Delete "${work.title}"? This can't be undone.`)) return;
+    const { error } = await sb.from('works').delete().eq('id', work.id);
+    if(error) return toast(eski.dbError('ESK-5107','could not delete', error));
+    root.innerHTML=''; loadFeed(true);
+  });
+  // like
+  const likeBtn = root.querySelector('[data-like]');
+  if(likeBtn) likeBtn.addEventListener('click', async () => {
+    if(!user) return openSignIn();
+    const on = likeBtn.classList.contains('on');
+    const { error } = on
+      ? await sb.from('likes').delete().eq('target_type','work').eq('target_id', work.id).eq('user_id', user.id)
+      : await sb.from('likes').insert({ target_type:'work', target_id: work.id, user_id: user.id });
+    if(error) return toast(eski.dbError('ESK-5102','like could not be updated', error));
+    on ? myLikes.delete(work.id) : myLikes.add(work.id);
+    likeBtn.classList.toggle('on');
+    const n = likeBtn.querySelector('.n'); n.textContent = (parseInt(n.textContent||'0',10) + (on?-1:1));
+  });
+  // save dropdown
+  const saveBtn = root.querySelector('[data-savebtn]');
+  if(saveBtn) saveBtn.addEventListener('click', async e => {
+    e.stopPropagation();
+    if(!user) return openSignIn();
+    const drop = root.querySelector(`[data-savedrop="${work.id}"]`);
+    drop.classList.toggle('open');
+    if(drop.classList.contains('open')) await renderSaveDrop(root, work.id);
+  });
+  // tags
+  const tagAdd = root.querySelector('#detail-tagadd');
+  if(tagAdd) tagAdd.addEventListener('click', async () => {
+    if(!user) return openSignIn();
+    const t = prompt('tag (no #)');
+    if(!t || !t.trim()) return;
+    const tag = t.trim().toLowerCase().replace(/[^a-z0-9-]/g,'');
+    if(tag.length < 2) return;
+    const { error } = await sb.from('content_tags').insert({ target_type:'work', target_id: work.id, tag, added_by: user.id });
+    if(error && error.code !== '23505') return toast(eski.dbError('ESK-5101','tag could not be added', error));
+    openDetail(work.id);
+  });
+  root.querySelectorAll('[data-detag]').forEach(x => x.addEventListener('click', async () => {
+    const { error } = await sb.from('content_tags').delete().eq('target_type','work').eq('target_id', work.id).eq('tag', x.dataset.detag);
+    if(error) return toast(eski.dbError('ESK-5101','tag could not be removed', error));
+    openDetail(work.id);
+  }));
+  // comments
+  let replyTarget = null;
+  root.querySelectorAll('[data-reply]').forEach(b => b.addEventListener('click', () => {
+    replyTarget = { id: b.dataset.reply, who: b.dataset.who };
+    const ctx = root.querySelector('#reply-context');
+    ctx.style.display = 'flex';
+    ctx.innerHTML = `replying to <b style="color:var(--soft-ink);">${esc(replyTarget.who)}</b> <button class="dtab" type="button" style="padding:0;" id="cancel-reply">cancel</button>`;
+    root.querySelector('#cancel-reply').addEventListener('click', () => { replyTarget = null; ctx.style.display = 'none'; });
+    root.querySelector('#comment-input').focus();
+  }));
+  const moreBtn = root.querySelector('#morecomments');
+  if(moreBtn) moreBtn.addEventListener('click', () => {
+    root.querySelector('#comment-extra').classList.add('open'); moreBtn.remove();
+  });
+  root.querySelector('#comment-post').addEventListener('click', async () => {
+    if(!user) return openSignIn();
+    const input = root.querySelector('#comment-input');
+    const body = input.value.trim();
+    if(!body) return;
+    const { error } = await sb.from('comments').insert({
+      target_type:'work', target_id: work.id, user_id: user.id,
+      parent_id: replyTarget ? replyTarget.id : null, body
+    });
+    if(error) return toast(eski.dbError('ESK-5103','comment could not post', error));
+    input.value = ''; replyTarget = null; root.querySelector('#reply-context').style.display = 'none';
+    openDetail(work.id);
+  });
+  // collection carousel
+  const cprev = root.querySelector('[data-cprev]'), cnext = root.querySelector('[data-cnext]');
+  if(cprev || cnext){
+    let idx = 0;
+    const pane = root.querySelector('[data-collection]');
+    const swap = d => { idx = (idx + d + items.length) % items.length; pane.outerHTML = collectionPane(work, items, idx); wireDetail(root, work, items, poster); };
+    if(cprev) cprev.addEventListener('click', () => swap(-1));
+    if(cnext) cnext.addEventListener('click', () => swap(1));
+  }
+  // add to collection (poster)
+  const a2cBtn = root.querySelector('#a2c-btn');
+  if(a2cBtn) a2cBtn.addEventListener('click', async e => {
+    e.stopPropagation();
+    const drop = root.querySelector('#a2c-drop');
+    drop.classList.toggle('open');
+    if(!drop.classList.contains('open')) return;
+    const { data: cols } = await sb.from('collections').select('id,title').eq('owner_id', user.id).order('created_at', { ascending:false });
+    drop.innerHTML = (cols||[]).map(c => `<button class="ci" type="button" data-addcol="${c.id}">${esc(c.title)}</button>`).join('') +
+      `<div class="sep"></div><button class="ci add" type="button" id="new-collection">+ New collection</button>`;
+    drop.querySelectorAll('[data-addcol]').forEach(b => b.addEventListener('click', async () => {
+      const { error } = await sb.from('collection_items').insert({ collection_id: b.dataset.addcol, work_id: work.id });
+      if(error && error.code !== '23505') return toast(eski.dbError('ESK-5105','could not add to collection', error));
+      toast('added'); drop.classList.remove('open');
+    }));
+    drop.querySelector('#new-collection').addEventListener('click', async () => {
+      const title = prompt('name this collection');
+      if(!title || !title.trim()) return;
+      const { data: col, error } = await sb.from('collections').insert({
+        owner_id: user.id, owner_name: ownerName(), title: title.trim(),
+        slug: slugify(title) + '-' + Date.now().toString(36).slice(-5), status: 'published'
+      }).select().single();
+      if(error) return toast(eski.dbError('ESK-5105','collection could not be created', error));
+      await sb.from('collection_items').insert({ collection_id: col.id, work_id: work.id });
+      toast('collection created'); drop.classList.remove('open');
+    });
+  });
+}
+function openSignIn(){
+  const root = document.getElementById('overlay-root');
+  root.innerHTML = `<div class="pv-scrim"><div class="pv-card" style="width:420px;padding:40px 36px;display:flex;flex-direction:column;gap:18px;">
+    <div class="wordmark" style="font-size:30px;">eski<i>!</i></div>
+    <div style="font-weight:700;font-size:22px;color:var(--ink);">Sign in to eski</div>
+    <div style="font-size:13.5px;color:var(--soft-ink);line-height:1.55;">to save posts, follow artists, tag your own work and join the conversation.</div>
+    <button class="btnline filled" type="button" id="signin-google" style="display:flex;align-items:center;justify-content:center;gap:8px;margin-top:4px;">Continue with Google</button>
+  </div></div>`;
+  scrimClose(root);
+  root.querySelector('#signin-google').addEventListener('click', async () => {
+    await sb.auth.signInWithOAuth({ provider:'google', options:{ redirectTo: location.href } });
+  });
+}
 
-    <div class="acts">
-      <a class="btn p" id="ov-read" href="#">Read it with this mix</a>
-      <a class="btn" id="ov-restart" href="#" hidden>Read from the beginning</a>
-      <button class="btn" id="ov-later" aria-pressed="${later}">${esc(laterLabel(c))}</button>
-      <button class="btn" id="ov-kudos" aria-pressed="${!!c.kudosMine}"${c.dbId ? '' : ' hidden'}>${
-        c.kudosMine ? 'kudos given · ' : 'kudos '}${nfmt(c.kudos)}</button>
-      <a class="btn" id="ov-contrib" href="${c.dbId ? contribHref(c) : '#'}"
-         ${(!c.dbId || mine || !openAxes(c).length) ? 'hidden' : ''}>Contribute to it</a>
-      <button class="btn" id="ov-share"${c.slug ? '' : ' hidden'}>Copy link</button>
+/* ============================================================ upload */
+let pending = [];        // [{file, kind, ext, caption}]
+let uploadMode = 'separate';
+let uploadCtx = null;    // {versionOf, kind} when adding a version
+
+function wireUpload(){
+  document.querySelectorAll('[data-open-upload]').forEach(b => b.addEventListener('click', () => openUpload()));
+}
+function kindOfFile(f){
+  if(f.type.startsWith('image/')) return 'image';
+  if(f.type.startsWith('video/')) return 'video';
+  if(f.type.startsWith('audio/')) return 'audio';
+  if(f.type === 'text/markdown' || /\.(md|markdown)$/i.test(f.name)) return 'text';
+  if(f.type === 'text/plain' || /\.txt$/i.test(f.name)) return 'text';
+  return 'other';
+}
+function extOfFile(f){
+  const m = /\.([a-z0-9]+)$/i.exec(f.name);
+  return (m ? m[1] : '').toLowerCase();
+}
+function openUpload(ctx){
+  if(!user) return openSignIn();
+  uploadCtx = ctx || null;
+  pending = []; uploadMode = 'separate';
+  const root = document.getElementById('overlay-root');
+  root.innerHTML = `<div class="pv-scrim"><div class="pv-card" style="width:720px;max-height:90vh;display:flex;flex-direction:column;">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:22px 28px 14px 28px;">
+      <div style="font-weight:700;font-size:22px;color:var(--ink);">${uploadCtx ? 'New version' : 'New post'}</div>
+      <button class="navarrow" type="button" data-close-detail>&times;</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:18px;padding:0 28px 28px 28px;overflow:auto;" id="upload-body">
+      <div class="dropzone" id="dropzone">
+        <svg viewBox="0 0 24 24"><path d="M12 16V4"/><path d="M7 9l5-5 5 5"/><path d="M4 20h16"/></svg>
+        <div class="dzbig">Drag files here, or click to browse</div>
+        <div class="dzsub">image · video · audio · text · markdown &middot; other &mdash; up to 20 at once</div>
+      </div>
+      <input type="file" id="file-input" multiple hidden>
+      <div id="upload-detail"></div>
+    </div>
+  </div></div>`;
+  scrimClose(root);
+  root.querySelector('[data-close-detail]').addEventListener('click', () => root.innerHTML = '');
+  const dz = root.querySelector('#dropzone'), fi = root.querySelector('#file-input');
+  dz.addEventListener('click', () => fi.click());
+  fi.addEventListener('change', () => addFiles([...fi.files]));
+  dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('dragover'); });
+  dz.addEventListener('dragleave', () => dz.classList.remove('dragover'));
+  dz.addEventListener('drop', e => {
+    e.preventDefault(); dz.classList.remove('dragover');
+    addFiles([...e.dataTransfer.files]);
+  });
+}
+function addFiles(files){
+  if(!files.length) return;
+  for(const file of files){
+    pending.push({ file, kind: kindOfFile(file), ext: extOfFile(file), caption: '', title: '', body: '' });
+  }
+  if(uploadCtx) pending = pending.slice(-1); // a version replaces the pick, one file only
+  renderUploadDetail();
+}
+function renderUploadDetail(){
+  const root = document.getElementById('overlay-root');
+  const box = root.querySelector('#upload-detail');
+  if(!pending.length){ box.innerHTML = ''; return; }
+  const kinds = new Set(pending.map(p => p.kind));
+  const sameType = kinds.size === 1 && pending.length > 1;
+  const allowGroup = sameType && !uploadCtx && pending[0].kind !== 'text' && pending[0].kind !== 'other';
+  let sel = pending.findIndex(p => p === (window.__selPend || pending[0]));
+  if(sel < 0) sel = 0;
+  const cur = pending[sel];
+
+  const filmstrip = `<div class="filmstrip">
+    ${pending.map((p,i) => `<div class="fthumb${i===sel?' sel':''}" data-fthumb="${i}">
+      ${p.kind==='image' ? `<img src="${URL.createObjectURL(p.file)}">` : `<span class="ext">${esc(p.ext||p.kind)}</span>`}
+    </div>`).join('')}
+    ${!uploadCtx ? '<div class="faddtile" id="fadd">+</div>' : ''}
+  </div>`;
+
+  const modeBlock = allowGroup ? `<div style="background:var(--surface);border-radius:var(--r);padding:16px;display:flex;flex-direction:column;gap:12px;">
+    <div style="font-weight:600;font-size:14px;color:var(--ink);">All ${pending.length} files are ${cur.kind}. How should they go up?</div>
+    <div class="umode">
+      <span class="chip${uploadMode==='separate'?' active':''}" data-umode="separate">Separate posts</span>
+      <span class="chip${uploadMode==='collection'?' active':''}" data-umode="collection">One collection</span>
+      <span class="chip${uploadMode==='versions'?' active':''}" data-umode="versions">One post &middot; ${pending.length} versions</span>
+    </div>
+    ${uploadMode==='collection' ? `<div style="display:flex;flex-direction:column;gap:14px;padding-top:4px;">
+      <div class="ufield"><div class="ulabel">Collection title</div><input class="uinput" id="collection-title" placeholder="untitled"></div>
+      <div class="ufield"><div class="ulabel">Collection caption</div><textarea class="utext" id="collection-caption" placeholder="Write a caption for the collection as a whole…"></textarea></div>
+    </div>` : ''}
+  </div>` : '';
+
+  const isText = cur.kind === 'text';
+  const itemForm = `<div style="display:flex;gap:20px;">
+    ${cur.kind==='image' ? `<img src="${URL.createObjectURL(cur.file)}" style="width:180px;height:180px;object-fit:cover;background:var(--surface);flex-shrink:0;">`
+      : `<div style="width:180px;height:180px;background:var(--surface);flex-shrink:0;display:flex;align-items:center;justify-content:center;">
+          <span style="font-weight:700;font-size:14px;color:var(--muted);">${esc(cur.file.name)}</span></div>`}
+    <div style="flex:1;display:flex;flex-direction:column;gap:16px;">
+      ${isText ? `<div class="ufield"><div class="ulabel">Title</div><input class="uinput" id="item-title" value="${esc(cur.title || cur.file.name.replace(/\.[^.]+$/,''))}"></div>` : ''}
+      <div class="ufield">
+        <div class="ulabel">${uploadMode==='collection' ? 'Caption for this item (optional)' : uploadMode==='versions' ? `Caption &middot; version ${sel+1} of ${pending.length}` : pending.length>1 ? `Caption &middot; post ${sel+1} of ${pending.length}` : 'Caption'}</div>
+        <textarea class="utext" id="item-caption" placeholder="Write a caption…">${esc(cur.caption)}</textarea>
+      </div>
+    </div>
+  </div>`;
+
+  const publishLabel = uploadMode==='collection' ? 'Publish collection'
+    : uploadMode==='versions' ? `Publish 1 post &middot; ${pending.length} versions`
+    : uploadCtx ? 'Publish version'
+    : pending.length>1 ? `Publish ${pending.length} posts` : 'Publish post';
+
+  box.innerHTML = filmstrip + modeBlock + itemForm +
+    `<div style="display:flex;justify-content:flex-end;gap:8px;">
+      <button class="btnline" type="button" id="upload-cancel">Cancel</button>
+      <button class="btnline filled" type="button" id="upload-publish">${publishLabel}</button>
     </div>`;
 
-  paintTags(c);
+  box.querySelectorAll('[data-fthumb]').forEach(t => t.addEventListener('click', () => {
+    window.__selPend = pending[+t.dataset.fthumb]; renderUploadDetail();
+  }));
+  const fadd = box.querySelector('#fadd');
+  if(fadd) fadd.addEventListener('click', () => root.querySelector('#file-input').click());
+  box.querySelectorAll('[data-umode]').forEach(m => m.addEventListener('click', () => { uploadMode = m.dataset.umode; renderUploadDetail(); }));
+  const capEl = box.querySelector('#item-caption');
+  if(capEl) capEl.addEventListener('input', () => cur.caption = capEl.value);
+  const titEl = box.querySelector('#item-title');
+  if(titEl) titEl.addEventListener('input', () => cur.title = titEl.value);
+  box.querySelector('#upload-cancel').addEventListener('click', () => root.innerHTML = '');
+  box.querySelector('#upload-publish').addEventListener('click', publish);
+}
 
-  const sync = ()=>{
-    const on = [...sheet.querySelectorAll('input:checked')].map(i=>i.dataset.ref);
-    const note = resumeNote(c);
-    /* the query half is the same for both buttons; only the page differs */
-    const base = readHref(c.file)
-      + (on.length ? '&with=' + on.map(encodeURIComponent).join(',') : '')
-      + (next ? '&next=' + encodeURIComponent(next.file) + '&nextTitle=' + encodeURIComponent(next.title) : '');
-    const started = note && note !== 'finished';
-    const page = Math.max(1, Math.round((c.progress || 0) * c.pp));
-    // the hash comes last: it is not a query parameter
-    const at = n => base + '#' + slugifyTitle(c.title) + '/page=' + n;
-
-    const btn = document.getElementById('ov-read');
-    btn.href = started ? at(page) : base;
-    btn.textContent = started ? 'Continue · p.' + page : 'Read it with this mix';
-
-    /* A COMIC YOU ARE PART WAY THROUGH still needs a way back to page one.
-       There was only ever one button, so re-reading meant opening it at your
-       bookmark and paging backwards. */
-    const again = document.getElementById('ov-restart');
-    if(again){
-      again.hidden = !started;
-      again.href = at(1);
-    }
-  };
-  sheet.querySelectorAll('input[data-ref]').forEach(i=>{
-    i.onchange = e=>{
-      const t = e.target;
-      if(t.checked && t.dataset.group === 'score')
-        sheet.querySelectorAll('input[data-group="score"]').forEach(x=>{
-          // "no score" and a score are mutually exclusive; two scores are not
-          if(x !== t && (x.dataset.ref === 'score:none' || t.dataset.ref === 'score:none'))
-            x.checked = false;
+let hashWorker;
+function sha256(blob){
+  hashWorker ??= new Worker('hash-worker.js');
+  return new Promise((resolve, reject) => {
+    const id = Math.random();
+    const onMsg = e => { if(e.data.id !== id) return; hashWorker.removeEventListener('message', onMsg);
+      e.data.error ? reject(new Error(e.data.error)) : resolve(e.data.hex); };
+    hashWorker.addEventListener('message', onMsg);
+    hashWorker.postMessage({ id, blob });
+  });
+}
+/* NO VIDEO/AUDIO THUMBNAIL YET. Generating a poster frame (canvas grab from
+   a <video>, or a waveform image) is real work and a separate feature — for
+   now a video/audio post has no cover_key, and its card shows the play glyph
+   on a plain framed box until it does. See ROADMAP.md. */
+async function uploadOne(item){
+  const hash = await sha256(item.file);
+  const { data: session } = await sb.auth.getSession();
+  const token = session && session.session && session.session.access_token;
+  const signRes = await fetch('/api/sign', {
+    method: 'POST',
+    headers: { 'content-type':'application/json', Authorization: 'Bearer ' + token },
+    body: JSON.stringify({ files: [{ hash, ext: item.ext || 'bin' }] })
+  });
+  const signJson = await signRes.json().catch(() => null);
+  if(!signRes.ok || !signJson || !signJson.files || !signJson.files[0])
+    throw new Error((signJson && signJson.error) || ('ESK-3000 upload signing failed (' + signRes.status + ')'));
+  const { key, url } = signJson.files[0];
+  const put = await fetch(url, { method:'PUT', body: item.file });
+  if(!put.ok) throw new Error('ESK-4003 upload failed (' + put.status + ')');
+  return key;
+}
+async function publish(){
+  const btn = document.getElementById('upload-publish');
+  btn.disabled = true; btn.textContent = 'Publishing…';
+  try{
+    if(uploadCtx){
+      const item = pending[0];
+      const media_key = item.kind === 'text' ? null : await uploadOne(item);
+      const title = item.kind === 'text' ? (item.title || item.file.name.replace(/\.[^.]+$/,'')) : item.file.name.replace(/\.[^.]+$/,'');
+      const body = item.kind === 'text' ? await item.file.text() : null;
+      const { error } = await sb.from('works').insert({
+        owner_id: user.id, owner_name: ownerName(), kind: uploadCtx.kind, title,
+        slug: slugify(title) + '-' + Date.now().toString(36).slice(-5),
+        caption: item.caption || null, body, media_key,
+        version_of: uploadCtx.versionOf, version_label: prompt('label this version (optional)', '') || null,
+        status: 'published'
+      });
+      if(error) throw new Error(eski.dbError('ESK-5108','the version could not be published', error));
+    } else if(uploadMode === 'collection'){
+      const titleEl = document.getElementById('collection-title');
+      const capEl = document.getElementById('collection-caption');
+      const title = (titleEl && titleEl.value.trim()) || 'untitled';
+      const { data: work, error } = await sb.from('works').insert({
+        owner_id: user.id, owner_name: ownerName(), kind: 'combination', title,
+        slug: slugify(title) + '-' + Date.now().toString(36).slice(-5),
+        caption: (capEl && capEl.value.trim()) || null, status: 'published'
+      }).select().single();
+      if(error) throw new Error(eski.dbError('ESK-5106','the collection could not be published', error));
+      let idx = 0;
+      for(const item of pending){
+        const media_key = item.kind === 'text' ? null : await uploadOne(item);
+        const body = item.kind === 'text' ? await item.file.text() : null;
+        const { error: ie } = await sb.from('work_items').insert({
+          work_id: work.id, idx: idx++, kind: item.kind, media_key,
+          caption: item.caption || (body ? body.slice(0,200) : null)
         });
-      sync();
-    };
-  });
-  sync();
-
-  const share = document.getElementById('ov-share');
-  if(share) share.onclick = ()=>shareComic(c);
-  const ct = document.getElementById('d-cm-toggle');
-  if(ct) ct.onclick = ()=>toggleThread(c);
-
-  document.getElementById('ov-later').onclick = ()=>toggleLater(c);
-  const kb = document.getElementById('ov-kudos');
-  if(kb) kb.onclick = ()=>giveKudos(c, kb);
-  const add = document.getElementById('d-tag-add');
-  if(add) add.onclick = ()=>addTag(c);
-  const inp = document.getElementById('d-tag-input');
-  if(inp) inp.onkeydown = e=>{ if(e.key === 'Enter'){ e.preventDefault(); addTag(c); } };
-
-  lastFocus = document.activeElement;
-  ov.classList.add('open');
-  /* Hiding the body scrollbar reclaims its width and the whole page slides
-     sideways under the modal. Pad by exactly what was taken away. */
-  const bar = window.innerWidth - document.documentElement.clientWidth;
-  document.body.style.overflow = 'hidden';
-  if(bar > 0) document.body.style.paddingRight = bar + 'px';
-  /* a local .eski file has no slug and no address to share — it is a file on
-     this machine. it still opens exactly as it always did; it just does not
-     pretend to have a url. */
-  const path = comicPath(c);
-  if(path && !opts.fromHistory){
-    // keep the hash: it is which pane you came from, and closing should
-    // return you to it rather than dumping you on home
-    history.pushState({ comic: c.slug }, '', path + location.hash);
-  }
-  document.body.classList.toggle('deep', !!opts.deep);
-  document.title = c.title ? c.title + ' · eski' : 'eski';
-  fitScrollers(sheet);
-  sheet.scrollTop = 0;
-  paintComments(c);
-  if(role){
-    const target = [...sheet.querySelectorAll('.charhead b')].find(b=>b.textContent === role.name);
-    if(target) target.closest('.charhead').scrollIntoView({block:'center'});
-  }
-}
-function close_(opts){
-  opts = opts || {};
-  /* If the url is a comic, closing means going BACK — one gesture, one history
-     entry, and the browser's own back button does the same thing. Except when
-     this tab opened on the comic: there is nothing behind it, so walking back
-     would leave the site entirely. Then closing goes to the shelf for real. */
-  if(!opts.fromHistory && slugFromPath()){
-    if(deepEntry){ location.href = '/'; return; }
-    history.back();
-    return;
-  }
-  ov.classList.remove('open');
-  document.body.classList.remove('deep');
-  document.body.style.overflow = '';
-  document.body.style.paddingRight = '';
-  document.title = 'eski';
-  stopPreview();               // a clip must not keep playing behind a shut sheet
-  if(lastFocus && document.contains(lastFocus)) lastFocus.focus();
-}
-
-/* the url is the source of truth; back and forward just change it */
-addEventListener('popstate', ()=>{
-  const slug = slugFromPath();
-  if(slug){
-    const c = COMICS.find(x=>x.slug === slug);
-    if(c){ openDetails(c, null, { fromHistory:true, deep: deepEntry }); return; }
-    return;                    // shelf not loaded yet; boot() will open it
-  }
-  if(ov.classList.contains('open')) close_({ fromHistory:true });
-  fromHash();
-});
-/* one delegated listener, attached once: openDetails rewrites the sheet on
-   every open, and re-binding there would stack a handler per open. */
-sheet.addEventListener('click', e=>{
-  const prev = e.target.closest('[data-preview]');
-  if(prev){ e.preventDefault(); e.stopPropagation(); playPreview(prev); return; }
-  // .thread-open runs its own toggle, because opening it also fetches
-  const fold = e.target.closest('.fold:not(.thread-open)');
-  if(fold){ fold.setAttribute('aria-expanded', fold.getAttribute('aria-expanded') !== 'true'); return; }
-  const tag = e.target.closest('[data-tag]');
-  if(tag && !e.target.closest('[data-untag]')){ close_(); searchTag(tag.dataset.tag); return; }
-  const un = e.target.closest('[data-untag]');
-  if(un){ e.stopPropagation(); removeTag(current, un.dataset.untag); return; }
-  const sib = e.target.closest('[data-sib]');
-  if(sib){ const s = byId(sib.dataset.sib); if(s) openDetails(s); return; }
-});
-addEventListener('keydown', e=>{
-  if(e.key !== 'Escape') return;
-  if(ov.classList.contains('open')) close_();
-  closeOnboarding();
-});
-
-/* ---------------- tags: anyone signed in ---------------- */
-function paintTags(c){
-  const box = document.getElementById('d-tags');
-  if(!box) return;
-  box.innerHTML = c.tagRows.length
-    ? c.tagRows.map(t=>{
-        const mine = me && t.added_by === me.id;
-        const ownsComic = me && c.ownerId === me.id;
-        return `<span class="tag ${mine?'mine':''}" data-tag="${esc(t.tag)}">${esc(t.tag)}${
-          (mine || ownsComic) ? `<b data-untag="${esc(t.tag)}" class="x" title="Remove"> ×</b>` : ''}</span>`;
-      }).join('')
-    : '<span class="note-line">No tags yet.</span>';
-}
-async function addTag(c){
-  const inp = document.getElementById('d-tag-input');
-  if(!inp || !sb || !me) return;
-  const tag = inp.value.trim().toLowerCase();
-  if(tag.length < 2 || tag.length > 40){ toast('A tag is 2 to 40 characters'); return; }
-  if(c.tagRows.some(t=>t.tag === tag)){ inp.value = ''; toast('Already tagged'); return; }
-  const { error } = await sb.from('comic_tags')
-    .insert({ comic_id: c.dbId, tag, added_by: me.id });
-  // 23505 is someone else adding it first, which is the same outcome
-  if(error && error.code !== '23505'){ toast(window.eski.dbError('ESK-5030','that tag did not save',error)); return; }
-  c.tagRows.push({comic_id:c.dbId, tag, added_by: me.id});
-  c.tags = c.tagRows.map(t=>t.tag).sort();
-  inp.value = '';
-  paintTags(c);
-  renderHome(); renderBrowse();
-}
-async function removeTag(c, tag){
-  if(!sb || !me) return;
-  const { error } = await sb.from('comic_tags').delete().eq('comic_id', c.dbId).eq('tag', tag);
-  if(error){ toast(window.eski.dbError('ESK-5031','that tag did not come off',error)); return; }
-  c.tagRows = c.tagRows.filter(t=>t.tag !== tag);
-  c.tags = c.tagRows.map(t=>t.tag).sort();
-  paintTags(c);
-  renderHome(); renderBrowse();
-}
-
-/* ================================================================
-   COMMENTS.
-
-   Shut until you ask for them. A comic thread is nothing but the ending,
-   discussed, and a section that unrolls the moment the page paints would
-   spoil the comic for everybody who scrolled past it on the way to the read
-   button. So it is a closed fold with a count on it, and the bodies are not
-   even fetched until it is opened.
-
-   One level of reply. The database enforces that (schema-comments.sql), not
-   this file.
-   ================================================================ */
-function shareComic(c){
-  const url = location.origin + comicPath(c);
-  const done = ()=>toast('Link copied');
-  /* the share sheet on a phone is the better answer and the only one that
-     reaches messages and whatsapp; the clipboard is the desktop answer. */
-  if(navigator.share && matchMedia('(pointer:coarse)').matches){
-    navigator.share({ title: c.title, url }).catch(()=>{});
-    return;
-  }
-  if(navigator.clipboard && navigator.clipboard.writeText){
-    navigator.clipboard.writeText(url).then(done, ()=>prompt('Copy this link', url));
-    return;
-  }
-  prompt('Copy this link', url);
-}
-
-/* the thread itself lives in comments.js, because the reader mounts the same
-   one. this is only the fold around it. */
-function shareComic(c){
-  const url = location.origin + comicPath(c);
-  /* the share sheet on a phone is the better answer and the only one that
-     reaches messages and whatsapp; the clipboard is the desktop answer. */
-  if(navigator.share && matchMedia('(pointer:coarse)').matches){
-    navigator.share({ title: c.title, url }).catch(()=>{});
-    return;
-  }
-  if(navigator.clipboard && navigator.clipboard.writeText){
-    navigator.clipboard.writeText(url).then(()=>toast('Link copied'),
-      ()=>prompt('Copy this link', url));
-    return;
-  }
-  prompt('Copy this link', url);
-}
-
-function toggleThread(c, force){
-  const t = document.getElementById('d-cm-toggle');
-  if(!t || !window.eskiComments) return;
-  const open = force != null ? force : t.getAttribute('aria-expanded') !== 'true';
-  t.setAttribute('aria-expanded', open);
-  window.eskiComments.toggle(open);
-}
-
-/* opening the sheet does NOT open the thread. it resets it, so the next comic
-   you look at never flashes the last one's replies — unless it is the SAME
-   comic being re-rendered under you (the session changed, the shelf finished
-   loading), where wiping it would throw away something you opened on purpose. */
-function paintComments(c){
-  const body = document.getElementById('d-cm-body');
-  if(!body || !window.eskiComments) return;
-  const wasOpen = window.eskiComments.isOpen && CM_LAST === c.dbId;
-  CM_LAST = c.dbId;
-  window.eskiComments.mount({
-    root: body, comicId: c.dbId, ownerId: c.ownerId, toast,
-    onCount: n => {
-      c.commentCount = n;
-      const el = document.getElementById('d-cm-n');
-      if(el) el.textContent = nfmt(n);
-      renderHome(); renderBrowse();
-    }
-  });
-  const wanted = wasOpen || (location.hash || '').includes('comments');
-  toggleThread(c, wanted);
-  if(wanted && (location.hash || '').includes('comments'))
-    requestAnimationFrame(()=>{
-      const t = document.getElementById('d-thread');
-      if(t) t.scrollIntoView({ block:'start' });
-    });
-}
-let CM_LAST = null;
-
-
-/* ---------------- the shelf, reading, read ----------------
-   ONE row per (you, comic) with a status. signed out, it falls back to a
-   local list so the button still does something on a first visit. */
-/* ONE ROW PER (YOU, COMIC), CARRYING TWO INDEPENDENT FACTS: that you shelved
-   it, and how far into it you are. They were one column, and one column
-   cannot hold two answers.
-
-   What that cost, in order of how badly it read:
-
-     - SHELVING SOMETHING YOU HAD STARTED WAS REFUSED. The button toasted
-       "this one is already on your shelf" and did nothing, because writing
-       status='later' would have destroyed your place. But a shelf is a
-       bookmark: anything goes on or off it at any time, read, half-read or
-       untouched, and it is nobody's business but yours.
-     - it UPSERT-ed on add, rewriting a row that already held your place and
-       sending last_page back to zero
-     - it DELETED on remove, so taking a comic off your shelf threw away how
-       far you had read it
-
-   `shelved` is its own boolean now and `status` went back to meaning only
-   progress. Shelving writes one field and never touches another, un-shelving
-   keeps the row whenever it still holds a place, and the label is generated
-   in ONE place rather than once in the markup and once here — which is how
-   the two came to disagree about capitals. */
-/* WHAT THE AUTHOR HAS LEFT OPEN, and the words a contributor sees before
-   they start rather than after they have recorded. The gate itself is a
-   database policy — a mode flag in a browser is a hint, and the insert is
-   the rule — but a person who spends an evening voicing a character and
-   only then learns the author said no has been failed by the interface,
-   not by the policy. */
-const AXES = [
-  { key: 'vo',         as: 'vo',         label: 'Voices' },
-  { key: 'soundtrack', as: 'soundtrack', label: 'A score' },
-  { key: 'sfx',        as: 'sfx',        label: 'Sound effects' }
-];
-const openAxes = c => AXES.filter(a => (c.consent || {})[a.key] !== false);
-/* the contribute link carries the first open axis so the studio never opens
-   on a stance the author has closed; it asks for the rest itself. */
-const contribHref = c => 'contribute.html?base=' + encodeURIComponent(c.dbId) +
-  '&as=' + ((openAxes(c)[0] || {}).as || 'vo');
-
-const LATER_KEY = 'eski-later';
-const localLater = ()=>{ try{ return JSON.parse(localStorage.getItem(LATER_KEY)) || []; }catch(e){ return []; } };
-const isLater = c => c.dbId ? !!c.shelved : localLater().includes(c.file);
-/* TWO STATES, and only two. It used to have four — "Reading" and "Read"
-   crept in from progress, which is the other fact this row carries and not
-   this button's job. A toggle that reports somebody else's state cannot say
-   what pressing it does. */
-const laterLabel = c => isLater(c) ? 'Shelved' : 'Add to shelf';
-
-async function toggleLater(c){
-  const btn = document.getElementById('ov-later');
-  if(sb && me && c.dbId){
-    const want = !c.shelved;
-    if(!want && !c.shelf){
-      /* nothing shelved and nothing read: the row has nothing left to say,
-         so it goes rather than sitting there as a false negative */
-      const { error } = await sb.from('saves').delete()
-        .eq('user_id', me.id).eq('comic_id', c.dbId);
-      if(error){ toast(window.eski.dbError('ESK-5032','the shelf did not update',error)); return; }
-    }else{
-      /* UPDATE first, insert only if there was no row. an upsert would carry
-         defaults for last_page and pages and so would reset your place — the
-         exact bug this whole block exists to have fixed. */
-      const up = await sb.from('saves').update({ shelved: want })
-        .eq('user_id', me.id).eq('comic_id', c.dbId).select('comic_id');
-      if(up.error){ toast(window.eski.dbError('ESK-5032','the shelf did not update',up.error)); return; }
-      if(!(up.data || []).length){
-        const { error } = await sb.from('saves')
-          .insert({ user_id: me.id, comic_id: c.dbId, status:'later', shelved: want, pages: c.pp });
-        if(error && error.code !== '23505'){
-          toast(window.eski.dbError('ESK-5033','the shelf did not update',error)); return; }
+        if(ie) throw new Error(eski.dbError('ESK-5106','a collection item failed to save', ie));
+      }
+    } else if(uploadMode === 'versions'){
+      let rootId = null;
+      for(const item of pending){
+        const media_key = item.kind === 'text' ? null : await uploadOne(item);
+        const title = item.title || item.file.name.replace(/\.[^.]+$/,'');
+        const body = item.kind === 'text' ? await item.file.text() : null;
+        const { data: w, error } = await sb.from('works').insert({
+          owner_id: user.id, owner_name: ownerName(), kind: item.kind, title,
+          slug: slugify(title) + '-' + Date.now().toString(36).slice(-5),
+          caption: item.caption || null, body, media_key,
+          version_of: rootId, status: 'published'
+        }).select().single();
+        if(error) throw new Error(eski.dbError('ESK-5106','a version failed to publish', error));
+        if(!rootId) rootId = w.id;
+      }
+    } else {
+      for(const item of pending){
+        const media_key = item.kind === 'text' ? null : await uploadOne(item);
+        const title = item.kind === 'text' ? (item.title || item.file.name.replace(/\.[^.]+$/,'')) : item.file.name.replace(/\.[^.]+$/,'');
+        const body = item.kind === 'text' ? await item.file.text() : null;
+        const { error } = await sb.from('works').insert({
+          owner_id: user.id, owner_name: ownerName(), kind: item.kind, title,
+          slug: slugify(title) + '-' + Date.now().toString(36).slice(-5),
+          caption: item.caption || null, body, media_key, status: 'published'
+        });
+        if(error) throw new Error(eski.dbError('ESK-5106','the post could not be published', error));
       }
     }
-    c.shelved = want;
-  }else{
-    const list = localLater();
-    const on = list.includes(c.file);
-    try{ localStorage.setItem(LATER_KEY,
-      JSON.stringify(on ? list.filter(f=>f !== c.file) : [...list, c.file])); }catch(e){}
+    document.getElementById('overlay-root').innerHTML = '';
+    toast('published');
+    loadFeed(true);
+  }catch(e){
+    toast((e && e.message) || String(e));
+    btn.disabled = false; btn.textContent = btn.textContent.replace('Publishing…', 'Publish');
+    renderUploadDetail();
   }
-  const on = isLater(c);
-  btn.setAttribute('aria-pressed', on);
-  btn.textContent = laterLabel(c);
-  toast(on ? 'Added to your shelf' : 'Removed from your shelf');
-  renderHome(); renderBrowse();
 }
-/* kudos: one row per (comic, user), and removable — the delete policy exists
-   now, so this is a real toggle rather than a one-way count. */
-async function giveKudos(c, btn){
-  if(!sb || !me){ btn.textContent = 'Sign in to give kudos'; return; }
-  btn.disabled = true;
-  let error;
-  if(c.kudosMine){
-    ({ error } = await sb.from('kudos').delete().eq('comic_id', c.dbId).eq('user_id', me.id));
-    if(!error){ c.kudosMine = false; c.kudos = Math.max(0, c.kudos - 1); }
-  }else{
-    ({ error } = await sb.from('kudos').insert({ comic_id: c.dbId, user_id: me.id }));
-    // 23505 means it was already there, which is the state we wanted anyway
-    if(!error || error.code === '23505'){
-      if(!error) c.kudos += 1;
-      c.kudosMine = true;
-      error = null;
-    }
-  }
-  btn.disabled = false;
-  if(error){ toast(window.eski.dbError('ESK-5034','kudos did not save',error)); return; }
-  paintKudos(c, btn);
-  renderHome(); renderBrowse();
-}
-function paintKudos(c, btn){
-  btn.setAttribute('aria-pressed', c.kudosMine ? 'true' : 'false');
-  btn.textContent = (c.kudosMine ? 'Kudos given · ' : 'Kudos ') + nfmt(c.kudos);
-}
-
-/* "/" jumps to browse and its search, which is the only search now */
-document.addEventListener('keydown', e=>{
-  if(e.key === '/' && !/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName)){
-    e.preventDefault();
-    go('browse');
-    const q = document.getElementById('b-q');
-    if(q) q.focus();
-  }
-});
-
-/* ---------------- onboarding: shown once ever ---------------- */
-const OB_KEY = 'eski-onboarded';
-function closeOnboarding(){ document.getElementById('ob').classList.remove('open'); }
-function maybeOnboarding(){
-  try{ if(localStorage.getItem(OB_KEY)) return; localStorage.setItem(OB_KEY,'1'); }catch(e){ return; }
-  document.getElementById('ob').classList.add('open');
-}
-
-// the shelf and the follow rail change the moment you sign in
-document.addEventListener('eski-auth', ()=>{ if(COMICS.length || sb) boot(); });
-
-fromHash();
-maybeOnboarding();
-paintIcons();
-boot();
 </script>
 </body>
 </html>

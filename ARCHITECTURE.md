@@ -15,7 +15,7 @@ mechanically. If it fails, this document is what it is holding you to.
 
 ---
 
-## The pivot, and where things actually stand (2026-08-15)
+## The pivot, and where things actually stand (2026-08-15, updated)
 
 eski stopped being a comics-only format and became a place to post anything —
 audio, video, image, text, other, or a combination of several as one post —
@@ -25,17 +25,29 @@ place of like/dislike. The **database is rebuilt for this already**:
 (comics/pages/tracks/parts/kudos/comic_tags/the old saves) in one pass, no
 migration path kept — see that file's own header for the full accounting.
 
-**The pages are not wired to it yet.** `index.html` and `profile.html` are
-still the old comics product end to end — nav bars that link to the studio,
-comic cards with "Voice this" / "Score it" buttons, reader deep-links — and
-both currently query tables that no longer exist. `artboard.html` is the
-complete design mockup of what they need to become: every screen, every
-overlay, every control, static HTML with no data behind it yet. **Wiring
-`index.html` and `profile.html` (or their replacements) to `schema-clean.sql`
-so `artboard.html`'s designs are the live product is the largest thing left**
-— bigger than everything else in this document combined. Until that lands,
-`tests/structure.js` fails on both pages (dead links to the deleted studio/
-author/contribute/read) and that is expected, not a regression to chase.
+**`index.html` is rebuilt.** It's the real home feed now — genuine Supabase
+queries against `works`/`content_tags`/`comments`/`likes`/`save_folders`/
+`follows`/`seen_marks`, no mock content — built against `artboard.html`'s
+`homepageHtml` mockup and its detail-overlay/upload-modal templates. See
+`pivot.css` below for how the mockup's look became real tokens.
+
+**`profile.html` is still the old comics product** — nav bars that link to
+the deleted studio, comic cards with "Voice this" / "Score it" buttons,
+reader deep-links — and queries tables that no longer exist. Rebuilding it
+against `schema-clean.sql`, matching `artboard.html`'s `profileHtml` mockup,
+is what's left of the pivot's largest remaining item. `index.html`'s upload
+modal, detail overlay, tag/comment/save-folder wiring, and the auth-gating
+pattern are all reusable as-is — `profile.html` needs its own Posts/Saved/
+Settings tabs and the "create a collection" flow, not a second copy of any
+of that.
+
+**Known v1 gaps in the new `index.html`, left honest rather than faked:**
+the mockup's feed-switcher (rename/add/delete several feeds) has no backing
+table — "Discover" is the only feed, filtered live, nothing persisted across
+a reload; video and audio posts get no auto-generated thumbnail yet (real
+work — a canvas frame-grab or a waveform image — deferred, see the comment
+by `uploadOne()`); "Edit post" isn't in the burger menu because there's no
+edit flow yet, only Make private / Delete.
 
 Deleted in the same pass, because they were the old product and not just its
 database: `studio.html` (the composer), `author.html` (the script/cast
@@ -111,19 +123,20 @@ it again.
 | File | Owns |
 |---|---|
 | `platform.js` | The Supabase client, the current user, `mediaUrl()`, and `dbError()`. The single boot path. Everything else waits on `window.eski.ready`. |
-| `tokens.css` | Spacing, type scale, control heights, timings. **No colour.** |
-| `docs/design/final/broadsheet.css` | The house style: chrome, controls, plates, sheets, folds, captions. The foot of the file owns colour and hover for every shared control. |
-| `palettes.css` | The eighteen themes. The only file with raw colour in it. |
+| `tokens.css` | Spacing, type scale, control heights, timings, and the handful of status colours that are fixed regardless of theme (`--danger`, and now `--like-bg`/`--like-ink` for the ruby-red Like state). **No theme colour.** |
+| `docs/design/final/broadsheet.css` | The OLD comics-reader chrome: nav, `.btn`, plates, sheets, folds. Only `admin.html`/`legal.html` still lean on it; not used by any pivot page. |
+| `pivot.css` | **The new product's shared component vocabulary** — buttons, chips, the feed grid, detail overlays, tags, comments, the upload modal. Ported from `artboard.html`'s `.eski-mockup` scope onto real tokens; see its own header comment for the two deliberate deviations (hover colour, corner radius). Used by `index.html`; `profile.html` should reuse it rather than redefine any of it. |
+| `palettes.css` | The themes. The only file with raw colour in it. Now nineteen: the original eighteen (light/mono/dark × neutral/green/blue/red/amber/pink) plus **sage** (light/mono/dark), the pivot's reviewed accent (`#5B7A6B`), which `palette.js` sets as `DEFAULT`. |
 | `palette.js` | Reads and stamps the theme, and draws the picker. |
-| `hash-worker.js` | SHA-256 off the main thread, for content-addressed upload keys. |
+| `hash-worker.js` | SHA-256 off the main thread, for content-addressed upload keys. Used by `index.html`'s upload flow exactly as the old studio used it. |
 | `sw.js` | Precaches the app shell. Deliberately refuses media. |
 
 ### Surfaces
 
 | File | Is |
 |---|---|
-| `index.html` | Home, browse, the comic modal, and the local shelf — **still the old comics product**, querying tables that no longer exist. Pending the pivot rewrite. |
-| `profile.html` | Your comics, parts, shelf and settings — **same state as `index.html`**, pending rewrite. |
+| `index.html` | The home feed, rebuilt for the pivot: real `works` query with live tag/modifier filters, per-kind cards, a detail overlay (tags, comments, likes, save-folders, versions, the poster's burger menu), and the upload modal. See the pivot section above for what's still v1-scoped. |
+| `profile.html` | Your comics, parts, shelf and settings — **still the old comics product**, querying tables that no longer exist. Pending rewrite, reusing `pivot.css` and `index.html`'s patterns. |
 | `onboarding.html` | Account creation: pick a handle. Runs once, on first sign-in, via `platform.js`'s `maybeOnboard()`. |
 | `artboard.html` | The complete design mockup for the pivot — every screen and overlay as static HTML, Supabase-backed comments/pins on top for review. Unlisted, `noindex`. This is the spec `index.html`/`profile.html` are being rewritten against. |
 | `admin.html` | The moderation queue. |
@@ -193,13 +206,20 @@ always meant and are worth running now.
 
 Written down rather than left to be rediscovered.
 
-- **`index.html` and `profile.html` are the old product.** Not a small patch:
-  both need rebuilding against `works`/`collections` from `artboard.html`'s
-  designs. This is the largest thing outstanding — see the pivot section
-  above and `ROADMAP.md`.
+- **`profile.html` is still the old product.** Not a small patch: needs
+  rebuilding against `works`/`collections`, reusing `pivot.css` and
+  `index.html`'s query/overlay patterns. See `ROADMAP.md`.
 - **The criticism marks (`!` / `?` / `!!`) are designed, not built.**
   `comments.mark_type` exists and is unused; a plain Like (`likes` table) is
   what ships today.
-- **`comments.js` needs rewriting, not restoring.** The old widget was
-  comic_id-shaped; the new comments table is generalized over
-  `target_type`/`target_id`, so the widget has to be too.
+- **Saved/named feeds have no backing table.** `index.html`'s feed switcher
+  is one feed ("Discover"), filtered live. The mockup's rename/add/delete
+  affordance was deliberately left out rather than built against nothing —
+  see `ROADMAP.md` if this becomes worth a real table.
+- **No video or audio thumbnails.** A post of either kind has no `cover_key`
+  yet — its card shows a play glyph on a plain box. Generating one (a canvas
+  frame-grab, a waveform image) is real work, not wired.
+- **`index.html`'s own inline `<script>` is doing everything** — feed query,
+  filters, the detail overlay, the upload flow. `studio.html` was 3,500
+  lines for the same reason before it was deleted; watch this file the same
+  way if `profile.html`'s build wants to share more than `pivot.css` with it.

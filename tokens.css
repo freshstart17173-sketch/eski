@@ -48,6 +48,12 @@
      theme, and a pink theme does not get to make a warning look decorative. */
   --success:#486356; --warning:#8A5A12; --danger:#A33028;
 
+  /* the ruby-red Like state (artboard.html, 2026-08-15): its own fixed
+     colour, not the generic ink-invert every other toggle uses — deliberate,
+     same reasoning as the status colours above, so "liked" doesn't vanish
+     into a hue-matched accent on a red or pink theme. */
+  --like-bg:#FCE4EC; --like-ink:#C2185B;
+
   /* page state bars in the studio. two stacked bars under every page card.
      the two soundtrack states are shades of ONE colour on purpose, so the
      reading is "same thing, different intensity" rather than two arbitrary

@@ -15,7 +15,10 @@
    blocks in palettes.css. */
 (function(){
   var KEY = 'eski-theme';
-  var DEFAULT = 'mono-green';        // what the site looked like before this
+  var DEFAULT = 'light-sage';        // the pivot's reviewed look (artboard.html);
+                                      // was 'mono-green', the old comics-era default.
+                                      // only affects a first-time visitor with no
+                                      // saved choice — anyone's own pick still wins.
 
   var TREATMENTS = [
     { id:'light', name:'Light', mode:'light' },
@@ -24,6 +27,7 @@
   ];
   var HUES = [
     { id:'neutral', name:'Neutral' },
+    { id:'sage',    name:'Sage' },
     { id:'green',   name:'Green' },
     { id:'blue',    name:'Blue' },
     { id:'red',     name:'Red' },

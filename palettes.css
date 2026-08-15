@@ -81,6 +81,13 @@
   --accent:#111111; --mark:#111111; --ui:#111111;
   --ui-hover-bg:#E4E4E4; --wordmark:#000000;
 }
+/* the pivot's reviewed look (artboard.html, 2026-08-15) — worked out live
+   against are.na's actual light-mode grid, not a guess: sage accent, pale
+   sage-tinted hover. Set as DEFAULT in palette.js. */
+[data-theme="light-sage"]{
+  --accent:#5B7A6B; --mark:#5B7A6B; --ui:#5B7A6B;
+  --ui-hover-bg:#E9F1ED; --wordmark:#3F5A4C;
+}
 [data-theme="light-green"]{
   --accent:#1F6B45; --mark:#1F6B45; --ui:#1F6B45;
   --ui-hover-bg:#DCEAE2; --wordmark:#12472D;
@@ -118,6 +125,14 @@
 }
 /* THE ONE THAT WAS ALREADY THERE, kept exactly, so nothing changes for
    anyone who liked it. It is a choice now rather than the house. */
+[data-theme="mono-sage"]{
+  --paper:#141816; --surface:#1F2624; --plate-bg:#1F2624; --paper-1:#1F2624;
+  --ink:#DCE3DF; --soft-ink:#AEBAB4; --muted:#7E8C86; --label:#7E8C86;
+  --rule:#445048; --rule-hair:#262E2B; --line-1:#262E2B; --line-strong:#5C6C64;
+  --accent:#93A99F; --mark:#93A99F; --on-mark:#141816; --ui:#93A99F;
+  --ui-hover-bg:#262E2B; --wordmark:#C4D3CB;
+  color-scheme:dark;
+}
 [data-theme="mono-green"]{
   --paper:#0C130F; --surface:#182420; --plate-bg:#182420; --paper-1:#182420;
   --ink:#D7E6DC; --soft-ink:#A9C4B4; --muted:#7C9788; --label:#7C9788;
@@ -166,6 +181,10 @@
 [data-theme="dark-neutral"]{
   --accent:#FFFFFF; --mark:#FFFFFF; --ui:#FFFFFF;
   --ui-hover-bg:#2E2E2E; --wordmark:#FFFFFF;
+}
+[data-theme="dark-sage"]{
+  --accent:#8AA89A; --mark:#8AA89A; --ui:#8AA89A;
+  --ui-hover-bg:#1E2624; --wordmark:#B8CCC2;
 }
 [data-theme="dark-green"]{
   --accent:#6FD79B; --mark:#6FD79B; --ui:#6FD79B;

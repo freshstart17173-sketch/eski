@@ -27,7 +27,7 @@
       ]
     },
     {
-      "source": "/(tokens.css|palettes.css|palette.js|platform.js|loudness.js|hash-worker.js|sw.js)",
+      "source": "/(tokens.css|palettes.css|pivot.css|palette.js|platform.js|loudness.js|hash-worker.js|sw.js)",
       "headers": [
         {
           "key": "Cache-Control",

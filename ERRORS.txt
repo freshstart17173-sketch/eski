@@ -36,6 +36,7 @@ a pasted code ambiguous, which is the one thing a code exists to prevent:
   5060-5063  comments.js
   5070-5072  profile.html
   5025-5026  onboarding.html
+  5100-5108  index.html — the pivot rewrite (2026-08-15)
 
 Take the next free number in your file's block. Do not reuse a retired one.
 
@@ -351,6 +352,29 @@ ESK-5063  comments: a comment did not come off. Deleting writes a tombstone
 ESK-5064  home: the continue-reading row's comment fold could not load its
           thread. The rest of the row still works; the fold says so rather
           than sitting empty.
+
+ESK-5100  home (pivot): the feed, or a single post, could not be read.
+ESK-5101  home (pivot): a content tag could not be added or removed. A
+          [23505] on add is not an error and is swallowed — it only means
+          the post already carries that tag.
+ESK-5102  home (pivot): a like could not be added or removed.
+ESK-5103  home (pivot): a comment could not post. [42501] with the comic —
+          sorry, the POST — not published, or you're rate-limited: see
+          comments_rate_guard (30/hour), which raises its own ESK-5900.
+ESK-5104  home (pivot): a save-folder action (toggle, or creating a new
+          folder) failed.
+ESK-5105  home (pivot): adding a post to a collection, or creating a new
+          collection, failed.
+ESK-5106  home (pivot): the upload's row(s) could not be written to the
+          database. The MEDIA MAY ALREADY BE IN THE BUCKET if this happens
+          partway through a multi-file publish — keys are content-addressed,
+          so retrying costs no re-upload.
+ESK-5107  home (pivot): making a post private, or deleting it, was refused.
+          [42501] means the update/delete policy doesn't cover you — you are
+          not the owner (or not an admin).
+ESK-5108  home (pivot): a new version could not be published. [42501] here
+          is works_version_owner_guard: you can only add a version to your
+          own work, checked as a trigger, not just hidden in the UI.
 
 ESK-5070  profile: a setting did not save (the shelf's public switch).
 ESK-5071  profile: the old avatar did not come off storage. Harmless — the new

@@ -1,0 +1,323 @@
+/* ============================================================
+   eski — the pivot's shared component vocabulary.
+
+   Everything a pivot page (index.html, profile.html, and whatever
+   follows) draws in common: buttons, chips, the feed grid, detail
+   overlays, tags, comments, the upload modal. One file so a control
+   defined here is defined once — the same discipline tokens.css and
+   broadsheet.css already hold each other to, just for a genuinely
+   different component vocabulary than the old comics-reader chrome in
+   broadsheet.css, which this does not touch or reuse.
+
+   SOURCE: artboard.html's `.eski-mockup` scope, worked out and reviewed
+   there across many rounds against real are.na.xyz research. Ported
+   here as the real thing rather than a mockup: every rule below is a
+   var() onto tokens.css/palettes.css, never a literal, so it inherits
+   the theme system rather than fixing one look. Two decisions made in
+   the porting, not in the mockup:
+
+     - the mockup's own hover literals (#E4E4E4 / #EAEAEA, used on
+       nearly every control) collapse onto the existing --plate-bg
+       token, which already sits almost exactly there in every theme —
+       one hover value instead of two near-duplicates.
+     - the mockup's --radius-min:2px is dropped in favour of the site's
+       existing --r (0): "no rounded corners, edge to edge" was the
+       owner's instruction from the start of this pivot, and square
+       reads more true to it than a barely-visible 2px.
+
+   Depends on tokens.css (spacing/type scale) and palettes.css (colour)
+   being loaded first, same load order as every other page.
+   ============================================================ */
+
+/* ---- the wordmark: Gnomon (already declared once, in tokens.css), in
+   plain --ink rather than the accent-derived --wordmark token every
+   other surface uses — "the wordmark is black" was specifically an
+   instruction to read it as body ink, not a special colour. ---- */
+.wordmark{font-family:var(--font-display);font-weight:700;font-size:28px;
+  letter-spacing:-.01em;color:var(--ink);line-height:1;display:inline-block;
+  transform:translateY(.12em)}
+.wordmark i{font-style:normal;color:inherit}
+
+/* ---- buttons & chips: no outlines, state carried by background fill
+   alone, matching are.na's own dark-fill buttons. ---- */
+.chip{font-family:var(--font-body);font-weight:500;font-size:var(--fs-xs);color:var(--ink);
+  background:var(--surface);padding:6px 12px;border:none;border-radius:var(--r);
+  cursor:pointer;transition:background var(--t-fast) var(--ease),color var(--t-fast) var(--ease)}
+.chip:hover{background:var(--plate-bg)}
+.chip.small{font-size:var(--fs-micro);padding:4px 9px}
+.chip.active{background:var(--ink);color:var(--paper)}
+.chip.active:hover{background:var(--soft-ink)}
+
+.btnline{font-family:var(--font-body);font-weight:600;font-size:var(--fs-sm);color:var(--ink);
+  background:var(--surface);text-transform:uppercase;letter-spacing:.06em;padding:10px 18px;
+  border:none;border-radius:var(--r);cursor:pointer;
+  transition:background var(--t-fast) var(--ease),color var(--t-fast) var(--ease)}
+.btnline:hover{background:var(--plate-bg)}
+.btnline.filled{background:var(--ink);color:var(--paper)}
+.btnline.filled:hover{background:var(--accent);color:var(--paper)}
+.btnline.danger{background:var(--danger);color:#fff}
+.btnline:disabled{opacity:.5;cursor:default}
+.btnline:disabled:hover{background:var(--surface)}
+
+.navlink{font-family:var(--font-body);font-weight:500;font-size:13.5px;color:var(--muted);
+  text-transform:uppercase;letter-spacing:.06em;cursor:pointer;padding-bottom:4px;
+  border:none;background:none;
+  border-bottom:2px solid transparent;transition:color var(--t-fast) var(--ease),border-color var(--t-fast) var(--ease)}
+.navlink:hover{color:var(--ink)}
+.navlink.active{font-weight:600;color:var(--ink);border-bottom-color:var(--ink)}
+
+/* ---- feed switcher: the active feed is the big editable headline; a +
+   at the end makes another (v1: UI only — see index.html's own note on
+   why saved feeds have no backing table yet). ---- */
+.feedswitch{display:flex;align-items:center;gap:20px;flex-wrap:wrap}
+.feedswitch .feed,.feedswitch .feedplus{align-self:baseline}
+.feed{font-family:var(--font-body);font-weight:700;font-size:38px;letter-spacing:-.01em;line-height:1.05;
+  color:var(--muted);cursor:pointer;transition:color var(--t-fast) var(--ease);display:inline-flex;align-items:baseline;gap:8px}
+.feed:hover{color:var(--soft-ink)}
+.feed.active{color:var(--ink)}
+.feed[contenteditable="true"]{outline:none;cursor:text;-webkit-user-select:text;user-select:text}
+.feed .fx{opacity:0;font-size:18px;font-weight:400;color:var(--ink);cursor:pointer;transition:opacity var(--t-fast) var(--ease)}
+.feed:hover .fx{opacity:.85}
+.feed .fx:hover{opacity:1}
+.feedplus{font-family:var(--font-body);font-weight:400;font-size:30px;color:var(--muted);cursor:pointer;
+  line-height:1;align-self:center;transition:color var(--t-fast) var(--ease);user-select:none;background:none;border:none}
+.feedplus:hover{color:var(--ink)}
+
+.tagadd{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;
+  font-size:16px;line-height:1;color:var(--ink);background:var(--surface);border:none;
+  border-radius:var(--r);cursor:pointer;transition:background var(--t-fast) var(--ease);font-family:var(--font-body)}
+.tagadd:hover{background:var(--plate-bg)}
+
+/* ---- a collapsible tag panel: click the label to hide/show its chips. ---- */
+.tagpanel .taghdr{display:inline-flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);
+  text-transform:uppercase;letter-spacing:.1em;cursor:pointer;user-select:none;transition:color var(--t-fast) var(--ease)}
+.tagpanel .taghdr:hover{color:var(--ink)}
+.tagpanel .taghdr .chev{font-size:8px;transition:transform var(--t-fast) var(--ease)}
+.tagpanel.collapsed .taghdr .chev{transform:rotate(-90deg)}
+.tagpanel.collapsed .tagbody{display:none}
+
+/* ---- editable tag chip: the × is always shown, dark enough to read. ---- */
+.tagchip{display:inline-flex;align-items:center;gap:7px;font-family:var(--font-body);font-weight:500;
+  font-size:var(--fs-xs);color:var(--ink);background:var(--surface);padding:6px 11px;
+  border-radius:var(--r);cursor:default;transition:background var(--t-fast) var(--ease)}
+.tagchip:hover{background:var(--plate-bg)}
+.tagchip .x{font-size:14px;line-height:1;width:12px;text-align:center;color:var(--ink);opacity:.75;
+  cursor:pointer;transition:opacity var(--t-fast) var(--ease)}
+.tagchip .x:hover{opacity:1}
+.tagchip .tagtext{outline:none}
+.tagchip .tagtext[contenteditable="true"]{-webkit-user-select:text;user-select:text}
+
+/* ---- tag autocomplete popover ---- */
+.tagsearch{position:absolute;top:calc(100% + 4px);left:0;z-index:20;width:220px;background:var(--paper);
+  box-shadow:0 8px 30px rgba(0,0,0,.2);display:none;flex-direction:column}
+.tagsearch.open{display:flex}
+.tagsearch input{font:inherit;font-size:var(--fs-xs);padding:8px 10px;border:none;background:var(--surface);
+  color:var(--ink);outline:none;font-family:var(--font-body)}
+.tagsearch .opt{padding:7px 10px;font-size:var(--fs-xs);color:var(--soft-ink);cursor:pointer;
+  transition:background var(--t-fast) var(--ease);border:none;background:none;width:100%;text-align:left;display:block}
+.tagsearch .opt:hover{background:var(--surface);color:var(--ink)}
+
+/* ---- the shared top bar every pivot page uses ---- */
+.pivot-top{position:sticky;top:0;z-index:50;display:flex;align-items:center;justify-content:space-between;
+  width:100%;height:64px;padding:0 32px;box-sizing:border-box;background:var(--paper);
+  box-shadow:inset 0 -1px 0 var(--rule-hair)}
+.pivot-top nav{display:flex;align-items:center;gap:32px}
+.pivot-top .btnline{padding:9px 20px}
+@media(max-width:640px){.pivot-top{padding:0 var(--s4)}.pivot-top nav{gap:var(--s4)}}
+
+.dtab{font-weight:500;font-size:13px;color:var(--muted);padding:10px 0;cursor:pointer;
+  border:none;background:none;
+  border-bottom:2px solid transparent;transition:color var(--t-fast) var(--ease),border-color var(--t-fast) var(--ease)}
+.dtab:hover{color:var(--ink)}
+.dtab.active{font-weight:600;color:var(--ink);border-bottom-color:var(--ink)}
+
+.navarrow{width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-size:15px;
+  line-height:1;color:var(--ink);background:var(--surface);border:none;border-radius:var(--r);
+  cursor:pointer;transition:background var(--t-fast) var(--ease),color var(--t-fast) var(--ease)}
+.navarrow:hover{background:var(--ink);color:var(--paper)}
+
+/* ---- upload: drop zone, file filmstrip, form fields ---- */
+.dropzone{border:1.5px dashed var(--rule-hair);background:var(--surface);border-radius:var(--r);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:36px;
+  text-align:center;cursor:pointer;transition:background var(--t-fast) var(--ease),border-color var(--t-fast) var(--ease)}
+.dropzone:hover,.dropzone.dragover{background:var(--plate-bg);border-color:var(--muted)}
+.dropzone .dzbig{font-family:var(--font-body);font-weight:600;font-size:15px;color:var(--ink)}
+.dropzone .dzsub{font-family:var(--font-body);font-size:12px;color:var(--muted)}
+.dropzone svg{width:26px;height:26px;fill:none;stroke:var(--muted);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+
+.filmstrip{display:flex;gap:8px;align-items:center;overflow-x:auto;padding-bottom:4px}
+.fthumb{width:88px;height:88px;background:var(--surface);flex-shrink:0;position:relative;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;overflow:hidden;transition:box-shadow var(--t-fast) var(--ease)}
+.fthumb img{width:100%;height:100%;object-fit:cover;display:block}
+.fthumb.sel{box-shadow:inset 0 0 0 3px var(--ink)}
+.fthumb .ext{font-family:var(--font-body);font-weight:700;font-size:11px;color:var(--muted);letter-spacing:.04em}
+.faddtile{width:88px;height:88px;flex-shrink:0;background:var(--surface);display:flex;align-items:center;
+  justify-content:center;font-size:24px;color:var(--muted);cursor:pointer;transition:background var(--t-fast) var(--ease);
+  border:none}
+.faddtile:hover{background:var(--plate-bg)}
+
+.ufield{display:flex;flex-direction:column;gap:6px}
+.ulabel{font-family:var(--font-body);font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em}
+.uinput,.utext{font-family:var(--font-body);font-size:13.5px;color:var(--ink);background:var(--surface);
+  border:none;border-radius:var(--r);padding:10px 12px;width:100%;box-sizing:border-box;outline:none}
+.utext{min-height:76px;resize:vertical;line-height:1.5}
+.umode{display:flex;gap:8px;flex-wrap:wrap}
+
+/* ---- masonry-of-squares grid: every card sits in a fixed square box,
+   media letterboxed inside it, small caption below (are.na grid). no
+   content-type label — the media speaks for itself. ---- */
+.fgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:32px;width:100%}
+@media(max-width:900px){.fgrid{grid-template-columns:repeat(2,1fr)}}
+.gcard{display:flex;flex-direction:column;gap:8px;cursor:pointer;border:none;background:none;
+  padding:0;text-align:left;font:inherit;color:inherit}
+/* the square is a layout box only — genuinely no fill of its own. a real
+   photo/video covers its own shape completely; nothing reads as a
+   "frame" around it. cards with no media of their own (a quote, "other")
+   opt into .framed for a background. */
+.gbox{position:relative;width:100%;aspect-ratio:1/1;overflow:hidden;
+  display:flex;align-items:center;justify-content:center}
+.gbox.framed{background:var(--surface)}
+.gbox .fill{position:absolute;inset:0}
+.fillmedia{width:100%;height:100%;object-fit:contain;display:block}
+.fillmedia.cover{object-fit:cover}
+.gcap{font-family:var(--font-body);font-weight:400;font-size:var(--fs-xs);color:var(--ink);line-height:1.35;
+  text-align:center;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.gother{font-family:var(--font-body);font-weight:600;font-size:12.5px;color:var(--soft-ink);
+  text-align:center;padding:0 16px;word-break:break-word}
+.gind{position:absolute;bottom:8px;right:8px;font-family:var(--font-body);font-weight:600;
+  font-size:var(--fs-micro);color:var(--paper);background:rgba(17,17,17,.72);padding:3px 6px}
+.gquote{position:absolute;inset:0;padding:20px;font-family:var(--font-body);font-weight:500;font-size:15px;
+  color:var(--soft-ink);line-height:1.45;text-align:left;overflow:hidden;
+  -webkit-mask-image:linear-gradient(#000 78%,transparent);mask-image:linear-gradient(#000 78%,transparent)}
+.gtext{position:absolute;inset:0;padding:20px;display:flex;flex-direction:column;gap:10px;overflow:hidden;
+  -webkit-mask-image:linear-gradient(#000 68%,transparent);mask-image:linear-gradient(#000 68%,transparent)}
+.gtext .gtitle{font-family:var(--font-body);font-weight:700;font-size:17px;color:var(--ink);line-height:1.25}
+.gtext .gbody{font-family:var(--font-body);font-weight:400;font-size:12.5px;color:var(--soft-ink);line-height:1.6}
+.gcount{position:absolute;bottom:8px;left:8px;display:inline-flex;align-items:center;gap:5px;
+  font-family:var(--font-body);font-weight:700;font-size:var(--fs-xs);color:var(--paper);
+  background:rgba(17,17,17,.8);padding:4px 8px}
+.gcount svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2.2}
+.gplay{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:34px;height:34px;
+  border-radius:var(--r-round);background:rgba(17,17,17,.72);display:flex;align-items:center;justify-content:center}
+.gplay svg{width:14px;height:14px;fill:var(--paper);margin-left:2px}
+
+/* ---- burger menu on the poster's own post ---- */
+.burger{position:absolute;top:52px;right:0;z-index:10;min-width:170px;background:var(--paper);
+  box-shadow:0 8px 30px rgba(0,0,0,.22);display:none;flex-direction:column;padding:6px 0}
+.burger.open{display:flex}
+.burger .mi{font-family:var(--font-body);font-size:13px;color:var(--ink);padding:9px 16px;cursor:pointer;
+  display:flex;align-items:center;gap:10px;transition:background var(--t-fast) var(--ease);border:none;background:none;width:100%;text-align:left}
+.burger .mi:hover{background:var(--surface)}
+.burger .mi.danger{color:var(--danger)}
+.burger .sep{height:1px;background:var(--surface);margin:4px 0}
+
+/* ---- like / save action buttons on a detail overlay ---- */
+.actbtn{flex:1;display:flex;align-items:center;justify-content:center;gap:7px;font-family:var(--font-body);
+  font-weight:600;font-size:var(--fs-sm);color:var(--ink);background:var(--surface);border:none;
+  border-radius:var(--r);padding:11px 14px;cursor:pointer;transition:background var(--t-fast) var(--ease),color var(--t-fast) var(--ease)}
+.actbtn:hover{background:var(--plate-bg)}
+.actbtn .n{color:var(--muted);font-weight:400}
+.actbtn svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.actbtn.on{background:var(--ink);color:var(--paper)}
+.actbtn.on .n{color:var(--paper)}
+.actbtn.on svg{fill:currentColor}
+/* like turns ruby red on activation — its own fixed colour, not the
+   generic ink-invert every other toggle uses. See tokens.css. */
+.actbtn.like.on{background:var(--like-bg);color:var(--like-ink)}
+.actbtn.like.on .n{color:var(--like-ink)}
+.actbtn.like.on svg{fill:var(--like-ink);stroke:var(--like-ink)}
+
+/* ---- save: a dropdown right under the button, not its own screen ---- */
+.savewrap{position:relative;flex:1}
+.savedrop{position:absolute;top:calc(100% + 6px);left:0;right:0;z-index:20;background:var(--paper);
+  box-shadow:0 8px 30px rgba(0,0,0,.22);display:none;flex-direction:column;padding:8px;min-width:240px}
+.savedrop.open{display:flex}
+.savedrop .sdhead{font-family:var(--font-body);font-size:11px;color:var(--muted);text-transform:uppercase;
+  letter-spacing:.1em;padding:6px 8px}
+
+/* ---- comments: nesting + who's being replied to + collapse ---- */
+.cmt{display:flex;gap:10px}
+.cmt.nested{margin-left:38px;padding-left:14px;box-shadow:inset 2px 0 0 var(--surface)}
+.cmt .avatar{width:28px;height:28px;background:var(--paper-1);flex-shrink:0}
+.cmt .replyto{font-family:var(--font-body);font-size:11px;color:var(--muted);display:flex;align-items:center;gap:4px;margin-bottom:2px}
+.cmt .replyto b{color:var(--soft-ink);font-weight:600}
+.morecomments{font-family:var(--font-body);font-size:12.5px;font-weight:600;color:var(--accent);cursor:pointer;
+  padding:2px 0;transition:opacity var(--t-fast) var(--ease);border:none;background:none}
+.morecomments:hover{opacity:.7}
+.cmt-extra{display:none;flex-direction:column;gap:16px}
+.cmt-extra.open{display:flex}
+
+/* ---- collection carousel (one item at a time, ig style) ---- */
+.carrow{position:absolute;top:50%;transform:translateY(-50%);width:34px;height:34px;border-radius:var(--r-round);
+  background:rgba(255,255,255,.9);display:flex;align-items:center;justify-content:center;font-size:18px;
+  color:#111;cursor:pointer;box-shadow:0 1px 6px rgba(0,0,0,.25);z-index:3;transition:background var(--t-fast) var(--ease);
+  border:none}
+.carrow:hover{background:#fff}
+.cdots{position:absolute;bottom:14px;left:50%;transform:translateX(-50%);display:flex;gap:6px;z-index:3}
+.cdots i{width:6px;height:6px;border-radius:var(--r-round);background:rgba(17,17,17,.28)}
+.cdots i.on{background:var(--ink)}
+.ccount{position:absolute;top:14px;left:14px;font-family:var(--font-body);font-weight:600;font-size:11px;
+  color:#fff;background:rgba(17,17,17,.6);padding:3px 8px;z-index:3}
+
+/* ---- segmented control: connected options, one selectable (opposites) ---- */
+.seg{display:inline-flex;border-radius:var(--r);overflow:hidden;background:var(--surface)}
+.seg .opt{font-family:var(--font-body);font-size:var(--fs-xs);color:var(--ink);padding:6px 12px;cursor:pointer;
+  transition:background var(--t-fast) var(--ease),color var(--t-fast) var(--ease);white-space:nowrap}
+.seg .opt:not(:last-child){box-shadow:1px 0 0 rgba(17,17,17,.12)}
+.seg .opt.on{background:var(--ink);color:var(--paper)}
+.seg .opt:not(.on):hover{background:var(--plate-bg)}
+.mchip{font-family:var(--font-body);font-size:var(--fs-xs);color:var(--ink);background:var(--surface);
+  padding:6px 12px;border-radius:var(--r);cursor:pointer;transition:background var(--t-fast) var(--ease),color var(--t-fast) var(--ease)}
+.mchip:hover{background:var(--plate-bg)}
+.mchip.on{background:var(--ink);color:var(--paper)}
+.modgroup{display:flex;flex-direction:column;gap:8px}
+.modgrouplabel{font-family:var(--font-body);font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.12em}
+
+/* ---- version dropdown ---- */
+.verwrap{position:relative}
+.verdrop{position:absolute;top:calc(100% + 4px);right:0;z-index:20;min-width:180px;background:var(--paper);
+  box-shadow:0 8px 30px rgba(0,0,0,.22);display:none;flex-direction:column;padding:6px 0}
+.verdrop.open{display:flex}
+.verdrop .vi{font-family:var(--font-body);font-size:12.5px;color:var(--ink);padding:8px 14px;cursor:pointer;
+  display:flex;align-items:center;justify-content:space-between;gap:12px;transition:background var(--t-fast) var(--ease)}
+.verdrop .vi:hover{background:var(--surface)}
+.verdrop .vi.on{font-weight:600}
+.verdrop .vi.add{color:var(--accent);font-weight:600}
+.verdrop .sep{height:1px;background:var(--surface);margin:4px 0}
+
+/* ---- search: minimised to an icon, sits on the feed-tabs row ---- */
+.searchmini{display:flex;align-items:center;gap:8px;background:var(--surface);border-radius:var(--r-track);
+  height:34px;padding:0 9px;cursor:pointer;width:34px;overflow:hidden;flex-shrink:0;margin-left:auto;
+  transition:width var(--t-mid) var(--ease)}
+.searchmini.open{width:280px;cursor:default}
+.searchmini svg{width:16px;height:16px;fill:none;stroke:var(--muted);stroke-width:2;flex-shrink:0}
+.searchmini input{border:none;background:none;outline:none;font-family:var(--font-body);font-size:13px;
+  color:var(--ink);flex:1;min-width:0;opacity:0;transition:opacity var(--t-fast) var(--ease)}
+.searchmini.open input{opacity:1}
+.searchmini input::placeholder{color:var(--muted)}
+
+/* ---- save-to-folder rows ---- */
+.folderrow{display:flex;align-items:center;gap:12px;padding:10px 8px;cursor:pointer;border-radius:var(--r);
+  transition:background var(--t-fast) var(--ease);border:none;background:none;width:100%;text-align:left;font:inherit}
+.folderrow:hover{background:var(--surface)}
+.folderrow .fcheck{width:20px;height:20px;flex-shrink:0;background:var(--paper);box-shadow:inset 0 0 0 1.5px var(--ink);
+  display:flex;align-items:center;justify-content:center}
+.folderrow .fcheck svg{display:none;width:12px;height:12px;fill:none;stroke:var(--paper);stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}
+.folderrow.on .fcheck{background:var(--ink)}
+.folderrow.on .fcheck svg{display:block}
+.folderrow .fname{font-family:var(--font-body);font-size:14px;color:var(--ink);flex:1}
+.folderrow .fmeta{font-family:var(--font-body);font-size:12px;color:var(--muted)}
+
+/* ---- add-to-collection dropdown ---- */
+.a2c{position:relative}
+.a2cdrop{position:absolute;bottom:calc(100% + 6px);left:0;z-index:20;min-width:220px;background:var(--paper);
+  box-shadow:0 8px 30px rgba(0,0,0,.22);display:none;flex-direction:column;padding:6px 0}
+.a2cdrop.open{display:flex}
+.a2cdrop .ci{font-family:var(--font-body);font-size:13px;color:var(--ink);padding:9px 14px;cursor:pointer;transition:background var(--t-fast) var(--ease);border:none;background:none;width:100%;text-align:left}
+.a2cdrop .ci:hover{background:var(--surface)}
+.a2cdrop .ci.add{color:var(--accent);font-weight:600}
+.a2cdrop .sep{height:1px;background:var(--surface);margin:4px 0}
+
+/* ---- the overlay chrome: scrim, close row, tabs, panels ---- */
+.pv-scrim{position:fixed;inset:0;background:var(--scrim);z-index:200;display:flex;align-items:center;justify-content:center;padding:32px}
+.pv-card{position:relative;background:var(--paper);box-shadow:0 40px 100px rgba(0,0,0,.5);max-width:calc(100vw - 64px);max-height:calc(100vh - 64px);overflow:hidden}

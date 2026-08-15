@@ -21,10 +21,23 @@ import { AwsClient } from 'aws4fetch';
 /* the extensions a key may end in. this is a security boundary, not a
    convenience: the key is built HERE from a hash and one of these, so a caller
    can never choose a path or an arbitrary suffix.
-   'webm' is the container the studio's opus transcode writes — audio only,
-   despite the name. */
-const EXT = new Set(['png', 'jpg', 'jpeg', 'webp', 'gif', 'avif',
-                     'mp3', 'm4a', 'ogg', 'opus', 'wav', 'flac', 'aac', 'webm']);
+
+   WIDENED FOR THE PIVOT (2026-08-15): the old set was images + audio only,
+   because the old product never took a video upload and had no "other" kind
+   at all. 'other' is explicitly "a file type the app doesn't render" as a
+   product feature now, which is in tension with an allowlist — the answer is
+   a generous bounded list, not an open one, since this is what stands between
+   a signed-in user and writing an arbitrary suffix into the bucket. Add to it
+   deliberately; don't widen it to "anything". */
+const EXT = new Set([
+  'png', 'jpg', 'jpeg', 'webp', 'gif', 'avif',                          // image
+  'mp3', 'm4a', 'ogg', 'opus', 'wav', 'flac', 'aac', 'webm',            // audio (webm from the old opus transcode)
+  'mp4', 'mov', 'avi', 'mkv',                                          // video
+  'txt', 'md',                                                          // text (text-kind posts usually need no file at
+                                                                          // all — the body column holds the prose — this
+                                                                          // is for the rare "attach the source file too")
+  'pdf', 'zip', 'cbz', 'cbr', 'epub', 'doc', 'docx', 'json', 'csv'      // other: unrendered, downloadable as-is
+]);
 
 export default async function handler(req, res){
   try{
