@@ -1,5 +1,15 @@
 # eski tests
 
+**2026-08-15: most of this is stale.** The pivot deleted the reader/studio/
+composer (`read.html`, `studio.html`, `author.html`, `contribute.html`) and
+replaced the database under them. Everything below except `structure.js` and
+`cache.js` drives or asserts against those deleted pages and will not run
+(or will run against nothing) until the pivot pages exist. Left in place
+rather than deleted, because the pivot pages will need equivalent coverage —
+`smoke.js`'s pattern (drive the real page over localhost, zero console
+errors) and `live.js`'s (publish/read/delete for real against prod) are both
+still the right shape, just pointed at the wrong surface.
+
 Seven runners, in two groups.
 
 **Local** — `smoke.js`, `errors.js`, `check-sign.mjs`, `viewer-fit.js`. They

@@ -7,449 +7,214 @@ is several.
 This is the only backlog. If it is not here or in `docs/design/STYLE.md`, it is
 not tracked — there is no issue tracker and there are no other todo files.
 
-Nothing here is a suggestion to do all of it. The four at the bottom are the
-ones I would not leave sitting.
+---
+
+## 2026-08-15: the pivot, and what it retired
+
+eski stopped being a comic-and-soundtrack format and became a place to post
+anything. `schema-clean.sql` replaced the entire comics-era database in one
+pass — no migration, no data kept, owner's explicit call. `studio.html`,
+`author.html`, `contribute.html`, `read.html`, `spec.html`, `comments.js`,
+`viewer.js`, and `api/comic.mjs` were deleted with it: not just their tables,
+the pages themselves, because they were the old product.
+
+**Everything below tier 0 that used to be about the v3 audio-layering gap
+(voice parts, soundtracks, cue linking, the contribution hub, ducking,
+loudness normalisation as a *product feature*) is gone from this list, not
+because it was finished but because the product direction that needed it no
+longer exists.** `loudness.js` (the meter itself) is still in the tree,
+unused, in case a future audio-upload feature wants it — but there is no
+studio left to wire it into.
+
+---
+
+## Tier 0 — wiring the pivot up (do this first)
+
+### 0. Rebuild `index.html` and `profile.html` against the new schema · days
+
+The single largest thing outstanding. Both pages are still the deleted
+comics product — nav bars linking to a studio that no longer exists, comic
+cards, reader deep-links — and both query tables `schema-clean.sql` dropped.
+Neither will load correctly until this is done.
+
+`artboard.html` is the complete design spec: home feed (feed switcher,
+freeform content tags with a `+` search popover, the modifier-tags panel,
+the 4-col square-bounding-box grid with real aspect ratios), the upload
+modal (drag-drop, same-type-detected collection/versions choice, per-item +
+overall captions), per-kind detail overlays (image/video/audio/text/other/
+collection, the last with dual item-level and collection-level metadata),
+profile tabs (Posts/Saved/Settings), the save-to-folder dropdown, the
+version dropdown, the burger menu (private/delete/archive), threaded
+comments with reply-to and collapse. Build against that, not from scratch —
+every screen in it is already reviewed and settled.
+
+**Two concrete naming traps to not reintroduce, both already hit once during
+planning:** (1) the upload flow's "post as a collection" choice must write
+`works.kind = 'combination'` + `work_items`, never a row in the `collections`
+table — those are two different features that both happen to be called
+"collection" in the UI. (2) `save_folders` (private, Pinterest-board style)
+is not `collections` (public, curated) — two different "+" buttons on the
+profile, two different tables.
+
+### 0b. A new comment thread widget · half a day, once 0 is underway
+
+`comments.js` was comic_id-shaped and is deleted. The new `comments` table is
+generalized over `target_type`/`target_id`, one level of reply, tombstoned on
+delete, rate-limited at 30/hour (`comments_rate_guard`, already live). The
+widget needs rebuilding against that shape, not restoring — `artboard.html`'s
+`commentsPanel()` is the design to match (reply-to indicator, nesting,
+"show N more" collapse).
+
+### 0c. The new upload flow · ~a day
+
+`api/sign.mjs` and `claim_upload_quota` are untouched and content-agnostic —
+no backend work needed there. What's missing is the client: drag-drop
+multiple files, detect same-type and offer collection-vs-versions, per-item
++ overall captions, `.md`/`.txt` getting a title field. `artboard.html`'s
+`uploadCard` is the design.
+
+### 0d. Tests, once 0-0c exist
+
+Everything in `tests/` except `structure.js` and `cache.js` drives or asserts
+against the deleted pages and is stale — see `tests/README.md`. `smoke.js`'s
+shape (drive the real page over localhost, zero console errors) and
+`live.js`'s (publish/read/delete for real against prod) are both still the
+right pattern for the new pages once they exist.
 
 ---
 
 ## Yours, not mine
 
-Five things no amount of code can do, because they need a dashboard login, a
-legal name, or a decision that is yours. Most are now done or deliberately
-deferred — **item 1 is the one still worth doing.**
+Things no amount of code can do, because they need a dashboard login, a legal
+name, or a decision that is yours.
 
 ### 1. Move the media off `r2.dev` — 20 minutes, then some waiting
 
-Worth more than everything else on this page put together. Every page and every
-clip is fetched from one region with no edge cache, on a hostname Cloudflare
-rate-limits on purpose and which under real traffic starts answering 429.
+Still worth more than everything else on this page put together, and
+unaffected by the pivot — R2 storage and content-addressed keys didn't
+change. Every object is fetched from one region with no edge cache, on a
+hostname Cloudflare rate-limits on purpose.
 
-**The full step-by-step, with the checks, is in
-[`docs/FASTER.md`](docs/FASTER.md) §1.** The shape of it: put `eski.lol` on
-Cloudflare (free plan, **grey**-cloud the Vercel records — you do not want it
-proxying the app), attach `cdn.eski.lol` to the R2 bucket, add a cache rule
-that overrides origin with a one-year TTL, turn on Smart Tiered Cache. Then one
-line in `platform.js` changes: `const R2_BASE = 'https://cdn.eski.lol'`.
-
-The cache rule is the part not to skip — it is what fixes comics published
-before August, which went up with no cache headers at all.
+**The full step-by-step is in [`docs/FASTER.md`](docs/FASTER.md) §1.** The
+shape of it: put `eski.lol` on Cloudflare (free plan, **grey**-cloud the
+Vercel records), attach `cdn.eski.lol` to the R2 bucket, add a cache rule
+with a one-year TTL, turn on Smart Tiered Cache. Then one line in
+`platform.js`: `const R2_BASE = 'https://cdn.eski.lol'`.
 
 ### 2. Register a DMCA agent — DEFERRED until there are users
 
-Your call, and a reasonable one: with no users there is nothing to receive a
-notice about. Two things to know so the deferral stays deliberate rather than
-forgotten.
-
-Safe harbour is not retroactive — it protects you from the moment you
-register, not from the moment you needed it. So the trigger is **the first
-time somebody who is not you uploads artwork**, not "when it gets busy". That
-may be the same day you show anyone the contribute hub.
-
-<https://www.copyright.gov/dmca-directory/>, 15 minutes and $6, and it expires
-silently after three years.
+Still your call. Safe harbour is not retroactive — the trigger is the first
+time somebody who is not you posts, not "when it gets busy."
+<https://www.copyright.gov/dmca-directory/>, 15 minutes and $6.
 
 ### 3. Fill in the blanks in `legal.html` — 20 minutes
 
-The page exists and the footer links point at it. It is a draft and says so in
-red at the top. It needs an address for notices, your name and postal details
-for the agent block, and two decisions I deliberately left blank because they
-are product calls, not legal ones: can an author reuse a contributed voiceover
-**outside** eski, and is AI-generated voice allowed and must it be labelled.
-Then delete the red box. Have someone who knows this read it.
+Still a draft, still says so in red. Needs an address for notices and two
+product calls: may someone reuse a work of yours outside eski, and is
+AI-generated content allowed and must it be labelled.
 
 ### 4. Billing alarms — the half that mattered is DONE
 
-The inactivity emails are set up, which was the part that is not about
-traffic: a quiet project is more likely to be paused than a busy one, and a
-paused project is a dead site.
+Inactivity emails are set up. Spend notification is still deferred until
+there are users.
 
-The spend notification is deferred until there are users, which is right — R2
-bills per read, and nobody is reading yet.
-
-### 4b. Paste the R2 CORS policy — DONE
-
-Applied in the dashboard. GET and HEAD are `*`; PUT keeps its allowlist.
-ESK-6003 opening an eski in the studio should be gone from preview deploys and
-localhost — worth confirming once, since it is the only way to know the
-dashboard took it.
-
-Two smaller ones, whenever: start filling `tag_synonyms` (the table and `canonical_tag()` exist, nothing
-reads them yet — see item 12), and delete the orphan draft `untitled-76nm`,
-left over from the save-then-publish bug. The bug is fixed; the row is yours to
-remove from the admin console.
-
-**Do not delete `harness-fixture`.** It looks like the same kind of orphan and
-is not: it is a four-page draft owned by `harness@eski.test` carrying a
-five-entry overlapping conversation, and `tests/shots.js` opens it to
-photograph the author studio's cast rows and after/with/over controls. Deleting
-it makes that audit config shoot an empty picker instead.
+**Do not delete the `harness@eski.test` account.** It is what
+`tests/live-comic.js` and friends sign in as; it has no powers a signed-up
+user lacks. (Its old draft-comic fixture, `harness-fixture`, is gone with
+the comics table — that part of the old note is moot.)
 
 ---
 
-## Tier 1 — open holes
+## Tier 1 — open holes, unaffected by the pivot
 
-### 5. Consent controls in the studio · DONE
+### 5. Upload quota on the signer · DONE
 
-Anyone signed in could attach a voice track or a soundtrack to your comic and
-you had no way to say no. The database had the switch and a live policy
-enforcing it; nothing in the app ever showed it to you.
+`claim_upload_quota` is untouched, still live, still 2000 objects/day,
+still fails closed. Content/table-agnostic, so it covers the new upload flow
+with no changes.
 
-Three checkboxes in the studio's settings drawer now — voices, score, sound
-effects — written on every save, and the same words on the comic page so a
-contributor knows before they record rather than after. `sfx_consent` is the
-third axis, applied. A closed axis is never the one the contribute link opens
-on, and a comic closed to all three offers no contribute route at all; both
-are asserted in `smoke.js`.
+### 6. Reporting and a moderation queue · mostly done
 
-Still open: the toggles are not on the profile row, only in the studio.
+`reports` (generalized over work/collection/comment/profile) and
+`file_report()` are live and fixed for the new schema. `admin.html` reading
+the queue and a report button on each surface are still 0's job, not a
+separate item.
 
-### 6. Upload quota on the signer · DONE
+### 7. Cache headers · DONE, updated for the pivot
 
-`api/sign.mjs` signed up to 500 presigned PUTs per call for any signed-in
-user, with no per-user total. One person with a script could fill the bucket
-and the bill overnight, and R2 charges per operation, so the damage lands
-before anyone looks.
+`vercel.json`'s asset list was trimmed for the deleted files
+(`viewer.js`/`comments.js` removed, `/c/:slug` rewrite removed). `cache.js`
+still walks the HTML and asserts coverage — rerun it once 0's new pages
+exist.
 
-`schema-quota.sql` (applied) adds a per-user daily count and
-`claim_upload_quota()`. It is **claimed, not checked**: the function adds
-atomically and answers from the value it wrote, so two calls racing cannot
-both see room. It is SECURITY DEFINER and only ever ADDS, and the table has no
-write policy at all — so a caller cannot reset their own tally, only spend it.
+### 8. Account deletion · DONE
 
-2000 objects a day, about twenty comics. Validation runs before the claim, so
-a malformed request never costs somebody part of their allowance. And it fails
-CLOSED: if the counter cannot be reached the request is refused, because a
-ceiling that disappears when the database is unhappy is not a ceiling.
-
-**Still open:** a per-comic page cap. The signer does not know which comic a
-batch belongs to, so that one belongs in the studio or in a `pages` count.
-
-### 7. Reporting and a moderation queue · ~2–3 hours
-
-Strangers can attach audio to your comic and there is no button anywhere to
-complain about it. Two gaps left now that `admin.html` exists:
-
-- `reports.target_type` only allows `'comic'`. It needs `'vo'` and
-  `'soundtrack'` — one `alter table`, sketched at the foot of
-  `schema-parts.sql`.
-- No report button exists on any surface.
-
-The admin console already reads the table, so the queue half is done. Add a
-Discord webhook on insert (~20 minutes) or reports rot until someone remembers
-to look.
-
-### 8. Cache headers · DONE
-
-`vercel.json` set rewrites and an install command and nothing else, so every
-visitor re-downloaded things that can never change.
-
-Three policies. `/vendor/*` is immutable for a year — those are pinned
-versions, and **re-vendoring must rename the file**, because a browser holding
-an immutable copy will never ask again. App scripts and stylesheets get 60
-seconds plus a day of `stale-while-revalidate`, so a repeat visit paints from
-cache and refreshes behind itself. HTML revalidates every time, which is what
-makes a deploy land instead of leaving people running last week's javascript
-against this week's database.
-
-`tests/cache.js` guards it, and guards the failure that actually happens:
-config fails SILENTLY, so a rule with a typo does not error — it just never
-matches. Rather than checking the config against itself, the test walks the
-HTML for every same-origin asset and asserts each one is covered. It caught
-`manifest.json` immediately, and it would have caught `loudness.js`, which was
-added this week to a rule that names files one at a time.
-
-Its own pattern translator got the bug it exists to catch: escaping the source
-before expanding `(.*)` turned every wildcard into "a run of literal dots", so
-every rule matched nothing and every check passed vacuously until the
-assertions were strong enough to notice.
+`delete_my_account()` is live — soft-deletes the profile, drops your draft
+works/collections, save folders, follows, quota and prefs rows.
+`profiles_tombstone()` blanks your public fields and relabels your posts and
+comments "Deleted account." Both were fixed during the pivot (they pointed
+at the dropped `comics` table) — no UI wires to this yet; that's a Settings
+button in 0.
 
 ---
 
-## Tier 2 — the v3 gap
+## Tier 2 — product, once 0 ships
 
-This is the largest block of work in the project. `SPEC.md` describes layered
-audio and per-line voice performances; the running app implements v2, one
-soundtrack per comic. The design for all three studios is built and styled in
-`docs/design/final/studios/` and hooked to nothing.
+### 9. The criticism marks (`!` / `?` / `!!`) · designed, not built
 
-### 9. The contribution studio · BUILT
+`comments.mark_type` exists and is unused. A plain Like (`likes` table,
+ruby-red in the mockup) is what ships in 0. Whether marks replace or sit
+alongside likes is still open — revisit once there's something to react to.
 
-**Designed and decided — see [`docs/design/CONTRIBUTION.md`](docs/design/CONTRIBUTION.md).**
-The voiceover and composer studios collapse into one screen: rows are pages,
-columns are layers, and the stance you entered with decides which columns are
-live. Everything else stays visible and audible but refuses a drop, which is
-what finally lets a voice actor hear the score they are performing over.
+### 10. Modifier-tag search backing · small, once 0 exists
 
-Settled: **three stances** — voice, score and sound effects — with exactly
-one column writable under each, which is the same sentence for all three. One
-character per voice part, stance fixed at creation (`parts.kind` already holds
-it, and gains `'sfx'`). Effects are a part kind of their own, open to anyone,
-picked by the reader on its own like a score, so no layer ever needs a
-precedence rule.
+Every modifier tag is a pure query filter, no new storage:
+posted-window (`created_at`), following/not-following (`follows`),
+seen/unseen (`seen_marks`), liked (`likes`), saved (`save_folder_items`),
+updated (has a `version_of` row), kind toggles (`works.kind`). This is query
+code in the pages 0 builds, not a separate backend task.
 
-Needs one migration beyond `parts.kind`: `comics.sfx_consent`, because an
-author who agreed to be scored has not thereby agreed to gunshots.
+### 11. Server-side search · deferred until it's needed
 
-`contribute.html` ships it: the author studio's frame exactly, a stance
-segment, and one writable column under each — asserted in `smoke.js`, because
-a live row and a dead row differ by an attribute rather than by much ink.
-Consent is checked twice, once in the studio so nobody wastes an evening and
-once in the policy because that is the rule.
+`tag_synonyms`/`canonical_tag()` exist, predate the pivot, and aren't read by
+anything. Not urgent until the tag list outgrows an in-browser filter.
 
-**Recording is in**, with a level meter and a timer, and every clip is
-measured for loudness on the way in (see 9c). `tests/recording.js` drives the
-whole path against Chromium's fake capture device, so it runs with no
-microphone and no clicking.
+### 12. Collections, curation UX · the schema is done, the UI is 0's job
 
-**Still to do here**, smallest first:
-
-- Two clips on one layer can overlap with nothing deciding which wins.
-- No way to **see a range as a shape** now that the lanes are gone, only as
-  "pages 7–13" in a row. Still the real open question.
-- A part cannot be withdrawn from the studio yet — the policy allows it, so
-  this is a button and a confirm.
-- No fades or crossfades, though the manifest has them.
-
-### 9c. Loudness normalisation · DONE
-
-Every clip is measured with ITU-R BS.1770-4 — the algorithm behind EBU R128 —
-and `tracks.gain_db`, which the reader has always applied and nothing ever
-set, now carries target-minus-measured. `loudness.js` is the meter and
-`tests/loudness.js` holds it to the published EBU conformance cases.
-
-Three things worth knowing about it:
-
-- **The correction is per PART, not per clip.** A whisper and a shout are one
-  performance; pulling each to the same loudness would flatten the acting out
-  of it. What needs fixing is the offset between two contributors, not the
-  range inside one person's work. Same distinction streaming services draw
-  between track and album normalisation.
-- **The composer studio was measuring RMS**, which is amplitude and not
-  loudness, against its own targets. Two studios disagreeing about the same
-  file is precisely the mismatch this exists to remove, so it now goes through
-  the same meter.
-- **Mono is deliberately not BS.1770.** The spec would read a mono file 3 LU
-  quieter, but the browser upmixes mono to both speakers on playback and puts
-  that 3 dB straight back — and a laptop voice take is almost always mono.
-
-### 9d. Ducking · ON THE BACK BURNER, deliberately
-
-Pulling the score down whenever a voice is present is the usual answer to "the
-music buries the dialogue". It needs a sidechain, an attack and a release, and
-it is audible when it mistimes.
-
-Most of what it is for is already done by 9c: the layers arrive at random
-loudnesses, and once they are placed at fixed sensible ones relative to each
-other — speech at -16 LUFS, effects at -18, a score at -22 — a bed sits under
-dialogue without anything moving. `tracks.duck` exists and the reader's DUCK
-table is still there, so picking this up later is wiring rather than design.
-
-Revisit if a real comic turns out to need it. Do not build it speculatively.
-
-### 9b. Overlapping dialogue · BUILT (author side)
-
-**Designed and decided — same document, Part 2.** A cue is relative to the cue
-before it: `after`, `with`, or `over`, and `over` carries a *fraction* of the
-previous entry rather than a millisecond offset, because the audio does not
-exist when the author writes it and there is more than one of it afterwards.
-Two columns on the lines table, one control per row in the author studio, and
-a scheduler in the reader that walks a page's entries at page turn instead of
-firing them all at zero. A group still playing when the page turns is cut.
-
-The author side is live: the control is on every entry after the first, a
-linked run draws one bracket, and `tracks.link` / `tracks.over_pct` are
-applied with the pair kept honest by a check constraint.
-
-**The reader half is not built** — it still fires every one-shot on a page at
-the page turn. That is the scheduler described above, and it belongs with item
-10 rather than here, because both need the same rewrite of how a page's audio
-is started.
-
-### 10. The reader plays layers · PARTLY DONE — cues land, one score
-
-**The cue scheduler is in.** A page's one-shots are scheduled from the
-`after` / `with` / `over` timing the author studio writes, so a page is a
-conversation rather than a chord. Several can sound at once, which is what
-`with` and `over` mean, so playback owns a small pool of elements instead of
-the single one the old stepper used.
-
-Durations are MEASURED before the schedule is built, because `over` is a
-percentage of a take whose length is not known until it loads — that is the
-whole reason it is a percentage and not a millisecond offset.
-
-The stepper is gone with it: a cursor over one element cannot express two
-lines at once, and it was the reason the authored timing had nothing reading
-it. The loop setting was repurposed rather than dropped — it wrapped a cursor,
-and now repeats the page.
-
-**Still one score layer**, deliberately, and that is the remaining half:
-
-- A reader still cannot pick between two published scores mid-read, or hear a
-  contributed voice part instead of the author's. `comicFromApi` already
-  merges parts into the track list when it is handed part ids; nothing lets a
-  reader change that selection without going back to the comic page. That is
-  item 13.
-- A published effects part is not selectable at all yet.
-- No crossfade between two scores, since there is only ever one.
-
-`tests/cues.js` holds the arithmetic — after/with/over, chained runs, the
-clamp on a silly percentage — as a pure function, with no audio and no
-browser needed for the maths.
-
-### 11. The open questions at the foot of `SPEC.md`
-
-Layer precedence, ducking across contributors, per-layer loudness, and what
-happens to page ranges when an author inserts a page. Decisions, not code, and
-9 and 10 will force them.
+`collections`/`collection_items` are live. What's left is entirely UI: the
+profile's "create a collection" flow, adding existing published works to
+one. No backend work remains here.
 
 ---
 
-## Tier 3 — making contribution findable
+## Tier 3 — hygiene
 
-### 12. The contribute hub · ~3–4 hours
+### 13. Run the tests on every push · needs revisiting
 
-Parts work and nobody can find a comic to make one for. Barely a feature: a
-comic with open voice consent and an uncast character **already is** an open
-role. It is a query, not a data model. One page listing comics open for voice
-or music, with the characters nobody has voiced yet, is the main lever against
-the cold-start problem. Pairs with a "filler" badge on comics carrying
-reference tracks.
+`.github/workflows/tests.yml` still runs the old ten. It will fail loudly
+once it hits anything beyond `structure.js`/`cache.js`, correctly, because
+the pages those tests drive are gone. Update the workflow once 0d has real
+tests to run instead of leaving CI red for a known reason.
 
-### 13. Swap voices and soundtracks while reading · DONE
+### 14. Accessibility pass · ~2 hours, once 0 ships
 
-The mix sheet existed and worked, but APPLYING it set `location.href` — the
-hash kept your place, so it looked fine, and it threw away every decoded page
-to fetch the same forty-five images again. A reader comparing two takes of one
-line paid for the whole comic twice, which means nobody does it twice.
+Icon-only buttons need labels, a keyboard-help overlay, swipe-to-turn where
+relevant. Wants the new pages to exist first.
 
-Only the audio changes when the mix changes, so only the audio is rebuilt now:
-a pristine copy of the author's own tracks, the chosen parts merged onto it
-with the SAME function the initial load uses, and the page re-cued. Pages,
-scroll and zoom are never touched, and the url still gets the mix through
-`replaceState` so it still travels with a link.
+### 15. An offline/PWA pass · small, once 0 ships
 
-Keeping the author's tracks pristine is the part that matters: merging a part
-rewrites the slot it fills in place, so without a clean base every swap would
-layer onto the result of the last one.
-
-**Still to do here:** the cast bar on arrival — who is voicing whom, with a
-preview — which is really item 14, and effects parts are not in the sheet yet
-because nothing publishes one.
-
-### 14. Preview clips for voice tracks · ~2–3 hours
-
-You cannot hear a voice actor before committing to their whole track. Generate
-a preview at publish time from the first three lines, store one `preview_key`
-on the part, play it from the cast bar and the contribute hub. Deterministic,
-one small extra upload, and it makes every list above browsable instead of a
-wall of names.
-
-### 15. Server-side search · ~3–4 hours
-
-`tag_synonyms` and `canonical_tag()` exist and nothing reads them. Search still
-filters an already-loaded array in the browser, which is genuinely instant into
-the thousands — so this is not urgent. It becomes urgent the moment the shelf
-outgrows one query, and the synonym table is what makes `slice of life`,
-`slice-of-life` and `sliceoflife` stop being three tags that cannot find each
-other.
-
-### 16. Collections · ~an afternoon of code
-
-The highest-value product idea in `docs/RESEARCH.md`, and the code is the small
-half: a table and a rail on home. **The blurb is the actual product** — with
-twenty comics no algorithm helps, and what does help is four of them put
-together with a sentence about why. MUBI ran on thirty films at a time doing
-exactly this. Blocked on you deciding what a collection is.
-
----
-
-## Tier 4 — the studio, and hygiene
-
-### 17. Autosave, resumable uploads, reopening drafts · ~5–7 hours
-
-Close the tab and lose everything; a failed upload starts over; a draft saved
-to the server cannot be opened again. Three symptoms of one missing thing:
-nothing snapshots your work locally. Save studio state plus media blobs to
-IndexedDB on a debounce and offer to restore on open. The same record makes an
-interrupted upload resumable — content-addressed keys mean an object already in
-the bucket never needs sending twice.
-
-The largest genuine gap in the authoring app.
-
-### 18. Pre-export validation and export progress · ~2 hours
-
-Duplicate trigger pages, tracks past the last page, zero pages — caught before
-export rather than after. Plus a percentage on big exports.
-
-### 19. Kudos and view counts · ~3–4 hours
-
-Two tables that exist and nothing writes to them. Kudos is one button, one
-insert, no removal, count displayed. Views is one insert when a comic opens.
-Attribution history cannot be backfilled, so the insert should start early even
-though payouts are deferred.
-
-### 20. Account deletion · ~2–3 hours
-
-Supabase gives users no way to delete themselves, so today it is a manual job
-in a dashboard. Someone will ask, possibly in the same breath as asking why
-there is no privacy policy.
-
-### 21. Run the tests on every push · DONE
-
-`.github/workflows/tests.yml`. Nothing ran the suites but me, which made "the
-tests are green" a claim rather than a fact — in a codebase whose failure mode
-is a correct fix being silently undone.
-
-Two jobs. The static four need nothing but node and finish in seconds, so they
-fail fast: `structure` runs first because it is the one that catches a fix
-being overwritten. The browser six only start once those pass, so a typo does
-not cost a Playwright download. Chromium only — the reader is not
-browser-specific and three engines is three times the install for one answer.
-
-`npm ci` rather than `npm install`, because the lockfile is tracked and is
-already a deploy requirement: Vercel builds `api/sign.mjs` from it.
-
-### 22. The small performance batch · ~2–3 hours
-
-Gnomon is base64-inlined in `tokens.css` and it is the only remaining reason
-that file is 14 KB — move it to one `.woff2`. Revoke off-screen page blobs so a
-long comic stops growing in memory. Decode with `createImageBitmap`. Add a
-low-resolution placeholder so pages do not flash blank.
-
-### 23. Accessibility pass · ~2 hours
-
-The icon-only buttons say nothing to a screen reader. Labels on every one, a
-keyboard-help overlay, and swipe-to-turn in the reader. Pinch to zoom already
-works — the reader, the author studio and the composer preview all run on the
-vendored Panzoom, which handles two pointers.
-
-### 24. Per-character volume in the reader · ~2 hours
-
-Asked for, never built. Wants item 10 first if it is going to survive the move
-to layers.
-
-### 25. An offline download button · ~2–3 hours
-
-The service worker caches what you have read; there is no way to say "keep this
-one". Small, and the PWA plumbing is already there.
+`sw.js` still precaches the app shell. Revisit what "keep this one" means for
+a work instead of a comic.
 
 ---
 
 ## Deliberately not now
 
-- **A framework.** Measured, not guessed: nothing slow in this project is
-  caused by hand-written DOM code. Revisit only if a second surface needs real
-  routing.
-- **Mixes as first-class rows.** Combination popularity, canonical mixes,
-  payout splits. The parts table can grow into it; nothing today is asking.
-- **Series pages, creator dashboard, troupes, direct messages.** All reasonable.
-  None of them unblock anything.
-- **Panel-level metadata / Guided View.** See `docs/RESEARCH.md` §1 — expensive
-  to author, and the most famous implementation of it was retired.
-
----
-
-## If you only do four things
-
-Items 1 through 4 are yours and take an afternoon between them. Then 5, 6 and 8
-in one sitting — consent, quota, cache headers, call it half a day.
+- **A framework.** Still nothing slow here that hand-written DOM code causes.
+- **Series pages, creator dashboard, direct messages.** Reasonable, none of
+  them unblock anything.
+- **Ducking, per-layer loudness, layered audio contributions.** These were
+  the v3 comics gap. The product direction that needed them is retired; if
+  audio-over-image or audio-over-video posts ever want a layering feature,
+  design it fresh against `works`, don't resurrect the old `parts`/`tracks`
+  model.

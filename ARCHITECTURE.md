@@ -15,6 +15,39 @@ mechanically. If it fails, this document is what it is holding you to.
 
 ---
 
+## The pivot, and where things actually stand (2026-08-15)
+
+eski stopped being a comics-only format and became a place to post anything —
+audio, video, image, text, other, or a combination of several as one post —
+plus curated collections, versioning, and a criticism-based comment system in
+place of like/dislike. The **database is rebuilt for this already**:
+`schema-clean.sql` is what is live, replacing the entire comics-era model
+(comics/pages/tracks/parts/kudos/comic_tags/the old saves) in one pass, no
+migration path kept — see that file's own header for the full accounting.
+
+**The pages are not wired to it yet.** `index.html` and `profile.html` are
+still the old comics product end to end — nav bars that link to the studio,
+comic cards with "Voice this" / "Score it" buttons, reader deep-links — and
+both currently query tables that no longer exist. `artboard.html` is the
+complete design mockup of what they need to become: every screen, every
+overlay, every control, static HTML with no data behind it yet. **Wiring
+`index.html` and `profile.html` (or their replacements) to `schema-clean.sql`
+so `artboard.html`'s designs are the live product is the largest thing left**
+— bigger than everything else in this document combined. Until that lands,
+`tests/structure.js` fails on both pages (dead links to the deleted studio/
+author/contribute/read) and that is expected, not a regression to chase.
+
+Deleted in the same pass, because they were the old product and not just its
+database: `studio.html` (the composer), `author.html` (the script/cast
+editor), `contribute.html` (the vo/soundtrack/sfx studio), `read.html` (the
+reader), `spec.html` (the `.eski` file-format reference), `comments.js` (the
+old comic-thread widget — a new one is needed, generalized over
+work/collection rather than comic_id), `viewer.js` (page-turn pan/zoom, only
+ever used by the reader and the two studios), `api/comic.mjs` (`/c/<slug>`
+og:tag injection for a route that no longer exists).
+
+---
+
 ## The rule that matters most
 
 **One thing is decided in one place.**
@@ -33,27 +66,24 @@ So, concretely:
 - **A page's own `<style>` may not restate a shared control.** If `.btn` needs
   to look different on one surface, that surface has a class of its own.
 - **Every colour comes from a token.** `palettes.css` is the only file that
-  holds raw colour, plus the four entry-kind spines in the two studios, which
-  are categories rather than brand and say so.
+  holds raw colour. (`artboard.html` currently has its own separate,
+  deliberately-not-themed token set — an internal review tool, not a surface
+  — and is not held to this; `tests/structure.js` still flags its hex
+  literals, which is expected there.)
 
 ---
 
 ## Load order, and why it is not negotiable
 
-Every page loads the same head in the same order:
+Every themed page loads the same head in the same order:
 
 ```
-vendor/panzoom.js     classic, sync — viewer.js needs it defined
-viewer.js             classic, sync — exposes mountViewer()
 platform.js           TYPE=MODULE, so it is deferred whatever you do
 palette.js            classic, sync — must run BEFORE the stylesheets
-loudness.js           classic, sync — only where audio is measured
-tokens.css            metrics and type scale
-broadsheet.css        the house style
-palettes.css          the eighteen themes; last, so it wins
+tokens.css             metrics and type scale
+broadsheet.css         the house style
+palettes.css           the eighteen themes; last, so it wins
 ```
-
-Two consequences that have each caused a bug:
 
 **`palette.js` runs before the stylesheets** because it stamps the chosen
 theme onto `<html>`. Load it after and the page paints the default theme and
@@ -64,6 +94,13 @@ then repaints — the flash the whole token system exists to avoid.
 `window.eski` at the top level of a classic script. Every page waits on
 `window.eski.ready`, and the pattern for it is at the top of each page's
 script. This is what ESK-1005 is for.
+
+`viewer.js` and `loudness.js` used to be part of this list on pages that
+needed page-turning or audio measurement. Both are gone from every current
+page (their only callers — the reader and the two studios — are deleted).
+`loudness.js` (the ITU-R BS.1770-4 meter) is generic and left in the tree,
+unused, because whatever the new upload flow does with audio will likely want
+it again.
 
 ---
 
@@ -78,9 +115,6 @@ script. This is what ESK-1005 is for.
 | `docs/design/final/broadsheet.css` | The house style: chrome, controls, plates, sheets, folds, captions. The foot of the file owns colour and hover for every shared control. |
 | `palettes.css` | The eighteen themes. The only file with raw colour in it. |
 | `palette.js` | Reads and stamps the theme, and draws the picker. |
-| `viewer.js` | `mountViewer()` — the pan/zoom page viewer. Used by the reader and both studios, so a viewer fix lands here once. |
-| `loudness.js` | ITU-R BS.1770-4 measurement and the gain targets. Used by both studios so the two cannot disagree about how loud a clip is. |
-| `comments.js` | The comment thread widget, used by the comic page and the reader. |
 | `hash-worker.js` | SHA-256 off the main thread, for content-addressed upload keys. |
 | `sw.js` | Precaches the app shell. Deliberately refuses media. |
 
@@ -88,38 +122,46 @@ script. This is what ESK-1005 is for.
 
 | File | Is |
 |---|---|
-| `index.html` | Home, browse, the comic modal, and the local shelf. The biggest surface and the one most likely to need splitting. |
-| `read.html` | The reader. Pages, the player, the mix and comment sheets. |
-| `studio.html` | The **composer**: import pages and audio, place a soundtrack, publish. The author's own tools. |
-| `author.html` | The **author studio**: the cast, and the script — who says what on which page, and how each line is timed against the one above it. |
-| `contribute.html` | The **contribution studio**: one screen, three stances (voice, score, effects), one writable column under each. For people who are not the author. |
-| `profile.html` | Your comics, parts, shelf and settings. |
+| `index.html` | Home, browse, the comic modal, and the local shelf — **still the old comics product**, querying tables that no longer exist. Pending the pivot rewrite. |
+| `profile.html` | Your comics, parts, shelf and settings — **same state as `index.html`**, pending rewrite. |
+| `onboarding.html` | Account creation: pick a handle. Runs once, on first sign-in, via `platform.js`'s `maybeOnboard()`. |
+| `artboard.html` | The complete design mockup for the pivot — every screen and overlay as static HTML, Supabase-backed comments/pins on top for review. Unlisted, `noindex`. This is the spec `index.html`/`profile.html` are being rewritten against. |
 | `admin.html` | The moderation queue. |
-| `legal.html`, `spec.html` | Static prose. `spec.html` documents v2 and says so. |
+| `legal.html` | Static prose: terms, privacy, takedown. |
 
 ### Server
 
 | File | Is |
 |---|---|
-| `api/sign.mjs` | Signs presigned R2 uploads. A trust boundary — it is the only thing standing between a signed-in user and the bucket. |
-| `api/comic.mjs` | Server-renders `/c/<slug>` for link previews, then hands over to the client. |
+| `api/sign.mjs` | Signs presigned R2 uploads. A trust boundary — it is the only thing standing between a signed-in user and the bucket. Content/table-agnostic; nothing here is comics-specific. |
 
 ### Database
 
-Schema lives in `schema*.sql`, each applied in order and safe to re-run.
+Schema lives in `schema-clean.sql` (the pivot model: works, work_items,
+collections, collection_items, content_tags, comments, likes, save_folders,
+save_folder_items, seen_marks, reports, follows, plus the admin/moderation
+policies) and three narrowly-scoped files applied separately: `schema-quota.sql`
+(upload ceiling), `schema-artboard.sql` (the artboard tool's own table and
+bucket — unrelated to the product schema). All three are safe to re-run.
 
-**Two reads go through an RPC rather than a query**, because both were serial
-round trips that also counted in the browser what Postgres can count:
-`get_comic(id)` for the reader and `get_shelf(slug, limit)` for home and
-browse. Both are `STABLE` and **not** `SECURITY DEFINER` — they run as the
-caller, so `auth.uid()` is the real user and RLS applies exactly as it does to
-the selects they replaced. Keep it that way; `SECURITY DEFINER` here would be
-a way to leak other people's drafts.
+Several more pieces are live in the database with **no schema file at all** —
+applied through migrations directly, undocumented until `schema-clean.sql`'s
+header called them out: `admins`/`is_admin()` (the admin gate), `user_prefs`,
+`rate_events`/`claim_rate()`/`claim_rate_sweep()`/`rate_limit()` (comment and
+report rate limiting), `tag_synonyms`/`canonical_tag()` (tag normalization,
+not read by anything yet), `account_live()`, `touch_updated_at()`, and
+`rls_auto_enable()` — an event trigger that turns RLS on for every new public
+table automatically, which is why every table above already has it on even
+though `schema-clean.sql` also does it explicitly. **If you find a live
+function or trigger this document does not mention, it probably predates the
+pivot and was applied outside this repo's schema files — check
+`pg_get_functiondef` against the live project before assuming it is dead.**
+That gap is exactly how `file_report()`, `profiles_tombstone()`,
+`delete_my_account()` and `comments_rate_guard` were nearly left pointing at
+tables `schema-clean.sql` dropped; see that file's header for the fixes.
 
-`schema.sql` is the base; the rest add a feature each. **The policies are the
-rule, not the UI** — the studio hides a control it knows is refused, but the
-insert is where the refusal actually happens, which is why closing a consent
-axis works even against a stale page.
+**The policies are the rule, not the UI** — a page hides a control it knows is
+refused, but the insert is where the refusal actually happens.
 
 ---
 
@@ -130,9 +172,7 @@ axis works even against a stale page.
 | How a button looks when hovered | the interaction section of `broadsheet.css`, once |
 | A colour, any colour | `palettes.css` — never a literal in a page |
 | A spacing or type step | `tokens.css` |
-| Who may do what | a `schema*.sql` policy first, the UI second |
-| The page viewer | `viewer.js` — all three surfaces get it |
-| How loud something is | `loudness.js` — both studios read it |
+| Who may do what | `schema-clean.sql` (a policy) first, the UI second |
 | A new error condition | a new `ESK-####` **and** a line in `ERRORS.txt` |
 | Anything visual | run `tests/shots.js`, then the `eski-ui-audit` skill |
 
@@ -140,26 +180,12 @@ axis works even against a stale page.
 
 ## The tests, and what each is really for
 
-Ten suites. Four need nothing but node.
-
-| Suite | Catches |
-|---|---|
-| `structure.js` | A fix being silently overwritten. Duplicate colour declarations, unregistered or colliding ESK codes, load order, drift in this document. |
-| `cache.js` | An asset added later that nobody gave a caching policy. Config fails silently, so this walks the HTML rather than trusting the config. |
-| `loudness.js` | The meter, against the published EBU conformance cases. A normaliser that is wrong is worse than none. |
-| `smoke.js` | The reader and both studios, end to end, in a browser. |
-| `errors.js` | That a failure names itself instead of being swallowed. |
-| `recording.js` | A take end to end against a fake capture device — no microphone needed. |
-| `viewer-fit.js` | Every page shape fits its box, at every zoom. |
-| `check-sign.mjs` | The signer's refusals, called as a function with no network. |
-| `wordmark.js` | The logo's ink centred in the bar, measured rather than judged. |
-| `cues.js` | The after/with/over arithmetic, as a pure function of clips and durations. |
-
-**CI runs all ten on every push** — `.github/workflows/tests.yml`, static
-checks first so they fail fast, browser checks only if those pass.
-
-`tests/shots.js` is not a test — it takes pictures across surface × state ×
-theme × viewport. The `eski-ui-audit` skill is how to read them.
+`tests/README.md` has the full list. Most of them — `smoke.js`, `errors.js`,
+`live.js`, `live-input.js`, `live-comic.js`, `cues.js`, `loudness.js`,
+`recording.js`, `viewer-fit.js`, `wordmark.js`, `shots.js` — were written
+against the reader/studio/composer and are stale until the pivot pages exist
+to test. `structure.js` and `cache.js` are the two that still mean what they
+always meant and are worth running now.
 
 ---
 
@@ -167,14 +193,13 @@ theme × viewport. The `eski-ui-audit` skill is how to read them.
 
 Written down rather than left to be rediscovered.
 
-- **`studio.html` is 3,500 lines.** It is the composer, the importer, the
-  exporter and the publisher in one file. It is the next thing that should be
-  split, and the seam is the import/transcode pipeline.
-- **`index.html` is 2,200 lines** and holds four surfaces (home, browse, the
-  modal, the local shelf).
-- **`spec.html` documents v2** while the app is growing v3 parts. It says so at
-  the top, but it will mislead somebody eventually.
-- **The reader hears the timing but not the choice.** Cues are scheduled from
-  `after`/`with`/`over` now, but a reader still cannot pick between published
-  parts mid-read: one score plays, and a contributed voice is only audible if
-  the opening link named it. Roadmap item 13.
+- **`index.html` and `profile.html` are the old product.** Not a small patch:
+  both need rebuilding against `works`/`collections` from `artboard.html`'s
+  designs. This is the largest thing outstanding — see the pivot section
+  above and `ROADMAP.md`.
+- **The criticism marks (`!` / `?` / `!!`) are designed, not built.**
+  `comments.mark_type` exists and is unused; a plain Like (`likes` table) is
+  what ships today.
+- **`comments.js` needs rewriting, not restoring.** The old widget was
+  comic_id-shaped; the new comments table is generalized over
+  `target_type`/`target_id`, so the widget has to be too.

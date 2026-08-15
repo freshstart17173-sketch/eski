@@ -8,6 +8,15 @@ is the fix.
 
 Codes are stable. Do not renumber one. Retire it and take the next free number.
 
+2026-08-15: the comics-era product (studio.html, author.html, contribute.html,
+read.html) was deleted in the pivot to an all-purpose posting model, and
+schema-clean.sql replaced the database underneath it. EVERY CODE BELOW THAT
+NAMES ONE OF THOSE FILES IS NOW HISTORICAL — nothing raises it any more, but
+per the rule above the number is still retired, not free. Do not reuse
+5000-5088 or anything in the 4xxx/6xxx/7xxx/8xxx blocks below for a new
+condition; take the next free number in the relevant range instead. 1xxx, 2xxx
+and 3xxx are unaffected — platform.js and api/sign.mjs are untouched.
+
 WHERE THEY COME FROM
   1xxx  boot: loading the account client at all            platform.js
   2xxx  auth and session                                   platform.js, studio.html
@@ -26,6 +35,7 @@ a pasted code ambiguous, which is the one thing a code exists to prevent:
   5040-5046  author.html — the script
   5060-5063  comments.js
   5070-5072  profile.html
+  5025-5026  onboarding.html
 
 Take the next free number in your file's block. Do not reuse a retired one.
 
@@ -295,6 +305,10 @@ ESK-5023  reader: a chosen voice track or soundtrack could not be loaded. The
           comic still opens; only that layer is missing.
 ESK-5024  profile: the contributions shelf could not be read. With [42P01],
           schema-parts.sql has not been applied to this project.
+
+ESK-5026  onboarding: the account row (handle, display name) could not be
+          created. [23505] means the handle is taken — the ui already
+          special-cases that message; anything else is a real failure.
 
 ESK-5030  home: a tag did not save. A [23505] here is not an error and is
           swallowed — it only means the comic already carries that tag.
