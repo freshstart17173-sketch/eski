@@ -1,5 +1,5 @@
 /* eski platform layer: sign in, and the current session.
-   shared by every surface. the styles below are written in the broadsheet
+   shared by every surface. the styles below are written in tokens.css's
    tokens with plain fallbacks, so the control sits in the nav's voice on a
    page that has them and still renders on a page that does not.
 
@@ -47,23 +47,27 @@ const PROVIDERS = ['google'];
    sign you out. that is what it is now: one word, in the nav's voice.
    signed out it is still the sign-in control, because there the menu really
    does hold something — the providers. */
+/* eski-pivot: no outlines, state is a background fill — see
+   .claude/skills/eski-pivot/SKILL.md. Written in plain tokens rather than
+   pivot.css's own classes, because this file is shared by pages that don't
+   load pivot.css (admin.html, legal.html); the token names are the one
+   thing every page already has. */
 const CSS = `
 .auth{position:relative;display:flex;align-items:center;margin-left:var(--s4,16px)}
-.auth-btn{display:inline-flex;align-items:center;gap:7px;padding:3px 0;border:0;border-radius:0;
-  background:transparent;color:inherit;font:inherit;font-size:var(--fs-micro,11px);
-  letter-spacing:.14em;text-transform:uppercase;cursor:pointer;line-height:1.2;
-  white-space:nowrap;opacity:.55;transition:opacity 160ms}
-.auth-btn:hover{opacity:1}
-.auth-menu{position:absolute;top:calc(100% + 8px);right:0;min-width:200px;z-index:500;
-  display:none;flex-direction:column;gap:6px;padding:10px;border-radius:0;
-  border:1px solid var(--rule,rgba(128,128,128,.4));color:inherit;
+.auth-btn{display:inline-flex;align-items:center;gap:7px;padding:5px 12px;border:0;
+  border-radius:var(--r,0);background:var(--surface,var(--bg-2,#f1f1f1));color:var(--ink,inherit);
+  font:inherit;font-size:var(--fs-xs,12.5px);text-transform:uppercase;letter-spacing:.06em;
+  cursor:pointer;line-height:1.2;white-space:nowrap;transition:background 160ms}
+.auth-btn:hover{background:var(--plate-bg,var(--bg-3,#eaeaea))}
+.auth-menu{position:absolute;top:calc(100% + 8px);right:0;min-width:220px;z-index:500;
+  display:none;flex-direction:column;gap:8px;padding:12px;border-radius:var(--r,0);
+  border:0;box-shadow:0 8px 30px rgba(0,0,0,.22);color:var(--ink,inherit);
   background:var(--paper,var(--bg-1,#fff))}
 .auth-menu.open{display:flex}
-.auth-menu .auth-btn{opacity:1;padding:4px 0}
-.auth-menu small{color:var(--label,#8a8a8a);font-size:12px;text-transform:none;
-  line-height:1.35;letter-spacing:0}
+.auth-menu small{color:var(--muted,var(--label,#6b6b6b));font-size:12.5px;
+  line-height:1.4;letter-spacing:0}
 @media(max-width:640px){.auth{margin-left:var(--s3,12px)}
-  .auth-btn{min-height:42px;letter-spacing:.06em}}
+  .auth-btn{min-height:42px}}
 `;
 
 let sb = null, user = null, bootError = null;
@@ -103,7 +107,7 @@ function paint(){
   {
     btn.title = 'sign in';
     btn.textContent = 'sign in';   // no avatar to fall back on, so never collapses
-    menu.innerHTML = '<small>sign in to publish, to voice a comic, or to score one.</small>';
+    menu.innerHTML = '<small>sign in to publish, follow artists, and join the conversation.</small>';
     for(const p of PROVIDERS){
       const b = document.createElement('button');
       b.type = 'button'; b.className = 'auth-btn'; b.textContent = p;

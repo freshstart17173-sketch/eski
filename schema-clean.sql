@@ -89,7 +89,7 @@ create trigger works_status before update on works
   for each row execute function post_status_guard();
 
 -- ONLY THE ORIGINAL POSTER MAY ADD A VERSION. works_write below already
--- requires owner_id = auth.uid() on the new row; without this a user could
+-- requires owner_id = (select auth.uid()) on the new row; without this a user could
 -- still point version_of at someone ELSE's work while owning the new row,
 -- which would read as "a version of their work" on a post that isn't theirs.
 create or replace function works_version_owner_guard()
@@ -110,10 +110,10 @@ create trigger works_version_owner before insert or update on works
 alter table works enable row level security;
 drop policy if exists works_read on works;
 create policy works_read on works for select
-  using (status = 'published' or owner_id = auth.uid());
+  using (status = 'published' or owner_id = (select auth.uid()));
 drop policy if exists works_write on works;
 create policy works_write on works for all
-  using (owner_id = auth.uid()) with check (owner_id = auth.uid());
+  using (owner_id = (select auth.uid())) with check (owner_id = (select auth.uid()));
 
 -- ========================================================== 2. work_items
 create table if not exists work_items (
@@ -132,11 +132,11 @@ alter table work_items enable row level security;
 drop policy if exists work_items_read on work_items;
 create policy work_items_read on work_items for select using (
   exists (select 1 from works w where w.id = work_items.work_id
-          and (w.status = 'published' or w.owner_id = auth.uid())));
+          and (w.status = 'published' or w.owner_id = (select auth.uid()))));
 drop policy if exists work_items_write on work_items;
 create policy work_items_write on work_items for all
-  using      (exists (select 1 from works w where w.id = work_items.work_id and w.owner_id = auth.uid()))
-  with check (exists (select 1 from works w where w.id = work_items.work_id and w.owner_id = auth.uid()));
+  using      (exists (select 1 from works w where w.id = work_items.work_id and w.owner_id = (select auth.uid())))
+  with check (exists (select 1 from works w where w.id = work_items.work_id and w.owner_id = (select auth.uid())));
 
 -- ========================================================= 3. collections
 create table if not exists collections (
@@ -159,10 +159,10 @@ create trigger collections_status before update on collections
 alter table collections enable row level security;
 drop policy if exists collections_read on collections;
 create policy collections_read on collections for select
-  using (status = 'published' or owner_id = auth.uid());
+  using (status = 'published' or owner_id = (select auth.uid()));
 drop policy if exists collections_write on collections;
 create policy collections_write on collections for all
-  using (owner_id = auth.uid()) with check (owner_id = auth.uid());
+  using (owner_id = (select auth.uid())) with check (owner_id = (select auth.uid()));
 
 create table if not exists collection_items (
   collection_id uuid not null references collections(id) on delete cascade,
@@ -179,15 +179,15 @@ alter table collection_items enable row level security;
 drop policy if exists collection_items_read on collection_items;
 create policy collection_items_read on collection_items for select using (
   exists (select 1 from collections c where c.id = collection_items.collection_id
-          and (c.status = 'published' or c.owner_id = auth.uid())));
+          and (c.status = 'published' or c.owner_id = (select auth.uid()))));
 drop policy if exists collection_items_write on collection_items;
 create policy collection_items_write on collection_items for all
   using (
-    exists (select 1 from collections c where c.id = collection_items.collection_id and c.owner_id = auth.uid()))
+    exists (select 1 from collections c where c.id = collection_items.collection_id and c.owner_id = (select auth.uid())))
   with check (
-    exists (select 1 from collections c where c.id = collection_items.collection_id and c.owner_id = auth.uid())
+    exists (select 1 from collections c where c.id = collection_items.collection_id and c.owner_id = (select auth.uid()))
     and exists (select 1 from works w where w.id = collection_items.work_id
-                and (w.status = 'published' or w.owner_id = auth.uid())));
+                and (w.status = 'published' or w.owner_id = (select auth.uid()))));
 
 -- ========================================================= 4. content_tags
 -- freeform, user-typed, editable by the poster any time and by anyone who
@@ -209,23 +209,23 @@ drop policy if exists content_tags_read on content_tags;
 create policy content_tags_read on content_tags for select using (
   case target_type
     when 'work'       then exists (select 1 from works w where w.id = content_tags.target_id
-                                     and (w.status = 'published' or w.owner_id = auth.uid()))
+                                     and (w.status = 'published' or w.owner_id = (select auth.uid())))
     when 'collection' then exists (select 1 from collections c where c.id = content_tags.target_id
-                                     and (c.status = 'published' or c.owner_id = auth.uid()))
+                                     and (c.status = 'published' or c.owner_id = (select auth.uid())))
     else false
   end);
 drop policy if exists content_tags_add on content_tags;
 create policy content_tags_add on content_tags for insert with check (
-  added_by = auth.uid() and case target_type
+  added_by = (select auth.uid()) and case target_type
     when 'work'       then exists (select 1 from works w where w.id = content_tags.target_id and w.status = 'published')
     when 'collection' then exists (select 1 from collections c where c.id = content_tags.target_id and c.status = 'published')
     else false
   end);
 drop policy if exists content_tags_remove on content_tags;
 create policy content_tags_remove on content_tags for delete using (
-  added_by = auth.uid() or case target_type
-    when 'work'       then exists (select 1 from works w where w.id = content_tags.target_id and w.owner_id = auth.uid())
-    when 'collection' then exists (select 1 from collections c where c.id = content_tags.target_id and c.owner_id = auth.uid())
+  added_by = (select auth.uid()) or case target_type
+    when 'work'       then exists (select 1 from works w where w.id = content_tags.target_id and w.owner_id = (select auth.uid()))
+    when 'collection' then exists (select 1 from collections c where c.id = content_tags.target_id and c.owner_id = (select auth.uid()))
     else false
   end);
 
@@ -302,7 +302,7 @@ begin
     new.body := null; new.mark_type := null;
     return new;
   end if;
-  if new.user_id <> auth.uid() then
+  if new.user_id <> (select auth.uid()) then
     raise exception 'a comment may only be edited by the person who wrote it' using errcode = '42501';
   end if;
   if new.body is distinct from old.body then new.edited_at := now(); end if;
@@ -325,14 +325,14 @@ drop policy if exists comments_read on comments;
 create policy comments_read on comments for select using (
   case target_type
     when 'work'       then exists (select 1 from works w where w.id = comments.target_id
-                                     and (w.status = 'published' or w.owner_id = auth.uid()))
+                                     and (w.status = 'published' or w.owner_id = (select auth.uid())))
     when 'collection' then exists (select 1 from collections c where c.id = comments.target_id
-                                     and (c.status = 'published' or c.owner_id = auth.uid()))
+                                     and (c.status = 'published' or c.owner_id = (select auth.uid())))
     else false
   end);
 drop policy if exists comments_insert on comments;
 create policy comments_insert on comments for insert with check (
-  user_id = auth.uid() and deleted_at is null and case target_type
+  user_id = (select auth.uid()) and deleted_at is null and case target_type
     when 'work'       then exists (select 1 from works w where w.id = comments.target_id and w.status = 'published')
     when 'collection' then exists (select 1 from collections c where c.id = comments.target_id and c.status = 'published')
     else false
@@ -342,22 +342,22 @@ drop policy if exists comments_update on comments;
 create policy comments_update on comments for update
   using (
     deleted_at is null and (
-      user_id = auth.uid() or case target_type
-        when 'work'       then exists (select 1 from works w where w.id = comments.target_id and w.owner_id = auth.uid())
-        when 'collection' then exists (select 1 from collections c where c.id = comments.target_id and c.owner_id = auth.uid())
+      user_id = (select auth.uid()) or case target_type
+        when 'work'       then exists (select 1 from works w where w.id = comments.target_id and w.owner_id = (select auth.uid()))
+        when 'collection' then exists (select 1 from collections c where c.id = comments.target_id and c.owner_id = (select auth.uid()))
         else false
       end))
   with check (
-    user_id = auth.uid() or case target_type
-      when 'work'       then exists (select 1 from works w where w.id = comments.target_id and w.owner_id = auth.uid())
-      when 'collection' then exists (select 1 from collections c where c.id = comments.target_id and c.owner_id = auth.uid())
+    user_id = (select auth.uid()) or case target_type
+      when 'work'       then exists (select 1 from works w where w.id = comments.target_id and w.owner_id = (select auth.uid()))
+      when 'collection' then exists (select 1 from collections c where c.id = comments.target_id and c.owner_id = (select auth.uid()))
       else false
     end);
 drop policy if exists comments_delete on comments;
 create policy comments_delete on comments for delete using (
-  user_id = auth.uid() or case target_type
-    when 'work'       then exists (select 1 from works w where w.id = comments.target_id and w.owner_id = auth.uid())
-    when 'collection' then exists (select 1 from collections c where c.id = comments.target_id and c.owner_id = auth.uid())
+  user_id = (select auth.uid()) or case target_type
+    when 'work'       then exists (select 1 from works w where w.id = comments.target_id and w.owner_id = (select auth.uid()))
+    when 'collection' then exists (select 1 from collections c where c.id = comments.target_id and c.owner_id = (select auth.uid()))
     else false
   end);
 
@@ -378,9 +378,9 @@ alter table likes enable row level security;
 drop policy if exists likes_read on likes;
 create policy likes_read on likes for select using (true);
 drop policy if exists likes_add on likes;
-create policy likes_add on likes for insert with check (user_id = auth.uid());
+create policy likes_add on likes for insert with check (user_id = (select auth.uid()));
 drop policy if exists likes_remove on likes;
-create policy likes_remove on likes for delete using (user_id = auth.uid());
+create policy likes_remove on likes for delete using (user_id = (select auth.uid()));
 
 -- ======================================================= 7. save folders
 -- PRIVATE personal bookmarking, Pinterest-board style — distinct from the
@@ -395,7 +395,7 @@ create table if not exists save_folders (
 alter table save_folders enable row level security;
 drop policy if exists save_folders_owner on save_folders;
 create policy save_folders_owner on save_folders for all
-  using (owner_id = auth.uid()) with check (owner_id = auth.uid());
+  using (owner_id = (select auth.uid())) with check (owner_id = (select auth.uid()));
 
 create table if not exists save_folder_items (
   folder_id   uuid not null references save_folders(id) on delete cascade,
@@ -407,8 +407,8 @@ create table if not exists save_folder_items (
 alter table save_folder_items enable row level security;
 drop policy if exists save_folder_items_owner on save_folder_items;
 create policy save_folder_items_owner on save_folder_items for all
-  using (exists (select 1 from save_folders f where f.id = save_folder_items.folder_id and f.owner_id = auth.uid()))
-  with check (exists (select 1 from save_folders f where f.id = save_folder_items.folder_id and f.owner_id = auth.uid()));
+  using (exists (select 1 from save_folders f where f.id = save_folder_items.folder_id and f.owner_id = (select auth.uid())))
+  with check (exists (select 1 from save_folders f where f.id = save_folder_items.folder_id and f.owner_id = (select auth.uid())));
 
 -- ============================================================ 8. seen marks
 -- backs the seen/unseen modifier filter. upserted when a detail overlay
@@ -423,7 +423,7 @@ create table if not exists seen_marks (
 alter table seen_marks enable row level security;
 drop policy if exists seen_marks_owner on seen_marks;
 create policy seen_marks_owner on seen_marks for all
-  using (user_id = auth.uid()) with check (user_id = auth.uid());
+  using (user_id = (select auth.uid())) with check (user_id = (select auth.uid()));
 
 -- ============================================================== 9. reports
 -- the owner is the sole moderator; the table is the queue. file_report()
@@ -450,12 +450,12 @@ create index if not exists reports_queue_idx on reports (status, category, creat
 
 alter table reports enable row level security;
 drop policy if exists reports_file on reports;
-create policy reports_file on reports for insert with check (reporter_id = auth.uid());
+create policy reports_file on reports for insert with check (reporter_id = (select auth.uid()));
 
 create or replace function file_report(p_type text, p_id uuid, p_reason text)
 returns json language plpgsql security definer set search_path = public as $$
 declare
-  uid uuid := auth.uid();
+  uid uuid := (select auth.uid());
   gate json;
   exists_ok boolean;
 begin
@@ -554,7 +554,7 @@ drop policy if exists follows_read on follows;
 create policy follows_read on follows for select using (true);
 drop policy if exists follows_write on follows;
 create policy follows_write on follows for all
-  using (follower_id = auth.uid()) with check (follower_id = auth.uid());
+  using (follower_id = (select auth.uid())) with check (follower_id = (select auth.uid()));
 
 -- ===================================================== 13. account deletion
 -- profiles_tombstone (predates this file, still live on profiles) wrote
@@ -583,7 +583,7 @@ end $$;
 
 create or replace function delete_my_account()
 returns json language plpgsql set search_path = public as $$
-declare uid uuid := auth.uid();
+declare uid uuid := (select auth.uid());
 begin
   if uid is null then
     return json_build_object('ok', false, 'why', 'not signed in');
