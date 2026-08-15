@@ -114,12 +114,8 @@ function wantedHandle(){
       || new URLSearchParams(location.search).get('u');
 }
 
-function syncNav(){
-  document.querySelectorAll('[data-authed]').forEach(el => el.hidden = !P.user);
-}
 async function boot(){
-  await P.init(() => { syncNav(); if(document.getElementById('main').hidden === false) refresh(); });
-  syncNav();
+  await P.init(() => { if(document.getElementById('main').hidden === false) refresh(); });
   const sb = P.sb;
   const handle = wantedHandle();
 
@@ -207,11 +203,7 @@ function wireProwAction(){
   }
   if(!P.user){ btn.hidden = true; reportBtn.hidden = true; return; }
   reportBtn.hidden = false;
-  reportBtn.addEventListener('click', () => P.openPrompt('Report this profile', 'what\'s wrong with it?', 'Send report', async reason => {
-    const { data, error } = await P.sb.rpc('file_report', { p_type:'profile', p_id: subject.id, p_reason: reason });
-    if(error || !data || data.ok !== true) return P.toast(P.eski.dbError('ESK-5114','the report could not be sent', error || { message:(data && data.why) || 'unknown' }));
-    P.toast('reported — thanks, a moderator will look at it');
-  }));
+  reportBtn.addEventListener('click', () => P.reportFlow('profile', subject.id));
   btn.hidden = false;
   const setLabel = on => { btn.textContent = on ? 'Following' : 'Follow'; btn.classList.toggle('filled', !on); };
   P.sb.from('follows').select('followee_id').eq('follower_id', P.user.id).eq('followee_id', subject.id).maybeSingle()

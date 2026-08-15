@@ -99,12 +99,8 @@ let feedRows = [];
 let feedOffset = 0;
 const PAGE = 24;
 
-function syncNav(){
-  document.querySelectorAll('[data-authed]').forEach(el => el.hidden = !P.user);
-}
 async function boot(){
-  await P.init(() => { syncNav(); loadFeed(true); });
-  syncNav();
+  await P.init(() => loadFeed(true));
   wireTagPanels();
   renderModifiers();
   document.getElementById('loadmore-btn').addEventListener('click', () => loadFeed(false));

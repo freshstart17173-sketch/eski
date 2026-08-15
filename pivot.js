@@ -47,9 +47,9 @@ function toast(msg){
   root.appendChild(el);
   setTimeout(() => el.remove(), 5200);
 }
-const PLAY = '<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>';
 const PLAY_PATH = '<path d="M8 5v14l11-7z"/>';
 const PAUSE_PATH = '<path d="M7 5h4v14H7zM13 5h4v14h-4z"/>';
+const PLAY = '<svg viewBox="0 0 24 24">' + PLAY_PATH + '</svg>';
 const CHECK = '<svg viewBox="0 0 24 24"><path d="M5 12l4 4 10-10"/></svg>';
 const KINDS = ['image','video','audio','text','other','combination'];
 
@@ -60,8 +60,15 @@ let mySavedIds = new Set();      // work ids saved in ANY of my folders
 let mySeenIds = new Set();       // work ids I've opened before
 let myFolders = [];              // [{id,name}]
 let authListeners = [];
+/* [data-authed] is the convention for any control that should only exist
+   signed in (Home/Profile/Upload in the nav) — one place hides them so a
+   page never has to remember to. Runs on init and every future sign-in/out. */
+function syncNav(){
+  document.querySelectorAll('[data-authed]').forEach(el => el.hidden = !user);
+}
 
 async function init(onAuthChange){
+  authListeners.push(syncNav);
   if(onAuthChange) authListeners.push(onAuthChange);
   eski = await (window.eski ? Promise.resolve(window.eski) : new Promise(r => {
     document.addEventListener('eski-auth', () => r(window.eski), { once:true });
@@ -75,6 +82,7 @@ async function init(onAuthChange){
     authListeners.forEach(cb => cb());
   });
   if(user) await loadMyState();
+  syncNav();
   wireGlobalNav();
   return { eski, sb, user, myProfile };
 }
@@ -678,35 +686,38 @@ function confirmRoot(){
   if(!root){ root = document.createElement('div'); root.id = 'confirm-root'; document.body.appendChild(root); }
   return root;
 }
-function openConfirm(title, body, confirmLabel, onConfirm){
+/* the shared scrim/card shell both openConfirm and openPrompt sit in —
+   same stacking layer as confirmRoot()'s own note explains (raised over an
+   already-open detail overlay without wiping it). */
+function promptShell(title, innerHtml){
   const root = confirmRoot();
   root.innerHTML = `<div class="pv-scrim" style="z-index:300;"><div class="pv-card" style="width:420px;padding:32px;display:flex;flex-direction:column;gap:16px;">
     <div style="font-weight:700;font-size:19px;color:var(--ink);">${esc(title)}</div>
+    ${innerHtml}
+  </div></div>`;
+  scrimClose(root);
+  return root;
+}
+function openConfirm(title, body, confirmLabel, onConfirm){
+  const root = promptShell(title, `
     <div style="font-size:13.5px;color:var(--soft-ink);line-height:1.55;">${body}</div>
     <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:4px;">
       <button class="btnline" type="button" id="confirm-cancel">Cancel</button>
       <button class="btnline danger" type="button" id="confirm-go">${esc(confirmLabel)}</button>
-    </div>
-  </div></div>`;
-  scrimClose(root);
+    </div>`);
   root.querySelector('#confirm-cancel').addEventListener('click', () => root.innerHTML = '');
   root.querySelector('#confirm-go').addEventListener('click', () => { root.innerHTML = ''; onConfirm(); });
 }
-/* the styled equivalent of window.prompt() — same reasoning and same
-   stacking layer as openConfirm above. optional:true lets an empty
+/* the styled equivalent of window.prompt(). optional:true lets an empty
    submit through (as null) rather than blocking it, for prompts like the
    version label that don't require an answer. */
 function openPrompt(title, placeholder, confirmLabel, onSubmit, optional){
-  const root = confirmRoot();
-  root.innerHTML = `<div class="pv-scrim" style="z-index:300;"><div class="pv-card" style="width:420px;padding:32px;display:flex;flex-direction:column;gap:16px;">
-    <div style="font-weight:700;font-size:19px;color:var(--ink);">${esc(title)}</div>
+  const root = promptShell(title, `
     <input class="uinput" id="prompt-input" placeholder="${esc(placeholder || '')}">
     <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:4px;">
       <button class="btnline" type="button" id="prompt-cancel">Cancel</button>
       <button class="btnline filled" type="button" id="prompt-go">${esc(confirmLabel)}</button>
-    </div>
-  </div></div>`;
-  scrimClose(root);
+    </div>`);
   const input = root.querySelector('#prompt-input');
   input.focus();
   const go = () => {
@@ -960,20 +971,29 @@ async function coverKeyFor(item){
   }catch(e){ return null; }
   return null;
 }
+/* media_key/cover_key/body/bytes together, the same four calls every
+   full works insert below makes for its item — not the collection branch,
+   which deliberately skips cover_key (see its own comment). */
+async function mediaFieldsFor(item){
+  return {
+    media_key: item.kind === 'text' ? null : await uploadOne(item),
+    cover_key: await coverKeyFor(item),
+    body: item.kind === 'text' ? await item.file.text() : null,
+    bytes: item.file.size
+  };
+}
 async function publish(versionLabel){
   const btn = document.getElementById('upload-publish');
   btn.disabled = true; btn.textContent = 'Publishing…';
   try{
     if(uploadCtx){
       const item = pending[0];
-      const media_key = item.kind === 'text' ? null : await uploadOne(item);
-      const cover_key = await coverKeyFor(item);
+      const { media_key, cover_key, body, bytes } = await mediaFieldsFor(item);
       const title = item.kind === 'text' ? (item.title || item.file.name.replace(/\.[^.]+$/,'')) : item.file.name.replace(/\.[^.]+$/,'');
-      const body = item.kind === 'text' ? await item.file.text() : null;
       const { error } = await sb.from('works').insert({
         owner_id: user.id, owner_name: ownerName(), kind: uploadCtx.kind, title,
         slug: slugify(title) + '-' + Date.now().toString(36).slice(-5),
-        caption: item.caption || null, body, media_key, cover_key, bytes: item.file.size,
+        caption: item.caption || null, body, media_key, cover_key, bytes,
         version_of: uploadCtx.versionOf, version_label: versionLabel,
         status: 'published'
       });
@@ -1004,14 +1024,12 @@ async function publish(versionLabel){
     } else if(uploadMode === 'versions'){
       let rootId = null;
       for(const item of pending){
-        const media_key = item.kind === 'text' ? null : await uploadOne(item);
-        const cover_key = await coverKeyFor(item);
+        const { media_key, cover_key, body, bytes } = await mediaFieldsFor(item);
         const title = item.title || item.file.name.replace(/\.[^.]+$/,'');
-        const body = item.kind === 'text' ? await item.file.text() : null;
         const { data: w, error } = await sb.from('works').insert({
           owner_id: user.id, owner_name: ownerName(), kind: item.kind, title,
           slug: slugify(title) + '-' + Date.now().toString(36).slice(-5),
-          caption: item.caption || null, body, media_key, cover_key, bytes: item.file.size,
+          caption: item.caption || null, body, media_key, cover_key, bytes,
           version_of: rootId, status: 'published'
         }).select().single();
         if(error) throw new Error(eski.dbError('ESK-5106','a version failed to publish', error));
@@ -1019,14 +1037,12 @@ async function publish(versionLabel){
       }
     } else {
       for(const item of pending){
-        const media_key = item.kind === 'text' ? null : await uploadOne(item);
-        const cover_key = await coverKeyFor(item);
+        const { media_key, cover_key, body, bytes } = await mediaFieldsFor(item);
         const title = item.kind === 'text' ? (item.title || item.file.name.replace(/\.[^.]+$/,'')) : item.file.name.replace(/\.[^.]+$/,'');
-        const body = item.kind === 'text' ? await item.file.text() : null;
         const { error } = await sb.from('works').insert({
           owner_id: user.id, owner_name: ownerName(), kind: item.kind, title,
           slug: slugify(title) + '-' + Date.now().toString(36).slice(-5),
-          caption: item.caption || null, body, media_key, cover_key, bytes: item.file.size, status: 'published'
+          caption: item.caption || null, body, media_key, cover_key, bytes, status: 'published'
         });
         if(error) throw new Error(eski.dbError('ESK-5106','the post could not be published', error));
       }

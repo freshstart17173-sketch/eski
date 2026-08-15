@@ -76,7 +76,6 @@
     themes: THEMES.slice(),
     get current(){ return read(); },
     set: set,
-    toggle: function(){ set(read() === 'light' ? 'dark' : 'light'); },
     paint: paintAll
   };
 
