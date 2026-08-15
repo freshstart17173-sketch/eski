@@ -30,16 +30,14 @@ deploys it directly.
 | [`ROADMAP.md`](ROADMAP.md) | what is left, in order, and what is deliberately not being done |
 | `.claude/skills/eski-pivot/SKILL.md` | the pivot's component vocabulary and the mistakes already made once (wordmark font, hover colour, header alignment) |
 
-`SPEC.md` and `docs/design/SURFACES.md` describe the deleted comics product
-and have not been rewritten for the pivot — treat both as historical, not
-current.
+One reference file you go to rather than read:
+[`ERRORS.txt`](ERRORS.txt) — the `ESK-####` registry, every code, its cause,
+its fix.
 
-Two reference files you go to rather than read: [`ERRORS.txt`](ERRORS.txt)
-(the `ESK-####` registry — every code, its cause, its fix) and
-[`ICONS.txt`](ICONS.txt).
-
-There is no `catchup.txt`, `TODO.txt`, or issue tracker. `ROADMAP.md` and
-conversation are the only backlog.
+There is no `catchup.txt`, `TODO.txt`, `SPEC.md`, or issue tracker — the
+comics-era versions of those (the `.eski` file format spec, a surfaces map
+for the deleted reader/studio) were deleted rather than left stale
+(2026-08-15). `ROADMAP.md` and conversation are the only backlog.
 
 ---
 
@@ -115,11 +113,16 @@ schema-artboard.sql    artboard_items + its own storage bucket — the review
                          tool above, unrelated to the product schema
 
 vendor/            vendored supabase-js (no CDN at runtime)
-tests/             see tests/README.md — mostly pre-pivot and stale; only
-                     structure.js and cache.js still mean what they say
-docs/design/       the design work: final/ is the old comics direction,
-                     shots/ is what the site looked like before the pivot,
-                     refs/ is what it steals from
+tests/             see tests/README.md — structure.js, cache.js, loudness.js
+                     and check-sign.mjs are live and pass; errors.js is
+                     partial (its signer checks pass, its page-driven checks
+                     don't); shots.js needs rewriting for the pivot pages
+docs/design/       STYLE.md (the current rules) and final/broadsheet.css
+                     (legal.html's still-live old chrome). The comics-era
+                     mockup explorations, reference screenshots and design
+                     research that used to live here were deleted
+                     (2026-08-15), not left stale — artboard.html is the
+                     current design spec, and it's at the repo root.
 ```
 
 Several more database objects are live with no schema file — `admins`/

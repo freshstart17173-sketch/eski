@@ -214,21 +214,22 @@ outright rather than let it sit half-built.
 
 ## Tier 3 — hygiene
 
-### 14. Run the tests on every push · needs a rewrite
+### 14. Real UI coverage for the pivot pages
 
-`.github/workflows/tests.yml` still runs the pre-pivot ten. `structure.js`
-and `cache.js` still mean what they always meant; everything else
-(`smoke.js`, `errors.js`, `recording.js`, `live*.js`, `wordmark.js`,
-`shots.js`, `viewer-fit.js`) drives pages/selectors that no longer exist —
-confirmed by running the full suite on 2026-08-15: every one of them fails
-on a stale selector (`#player-bar`, `#grid`, `pickMime`) within the first
-few seconds. **Not done this session** — ran out of time. The real work:
-delete the stale ones outright rather than leave them failing "expectedly"
-forever, and write real coverage for `index.html`/`profile.html`/
-`pivot.js` — feed load, tag/search filtering, the detail overlay per kind,
-upload, settings, sign-in gating. Should lean UI-first (the pages ARE the
-product now), not just the backend-shape checks `structure.js`/`cache.js`
-already cover.
+The purge (2026-08-15) deleted the tests that were purely dead —
+`smoke.js`, `recording.js`, `live.js`/`live-input.js`/`live-comic.js`,
+`wordmark.js`, `cues.js`, `viewer-fit.js`, `make-fixtures.js` and their
+fixtures — rather than leave them failing "expectedly" forever.
+`.github/workflows/tests.yml` now runs exactly the four that still mean
+what they say: `structure.js`, `cache.js`, `loudness.js`, `check-sign.mjs`.
+
+What's still missing: `errors.js`'s page-driven half and `shots.js` both
+need rewrites against `index.html`/`profile.html`'s real markup before
+they're worth anything (see `tests/README.md`) — and beyond that, there's
+still no real UI coverage at all: feed load, tag/search filtering, the
+detail overlay per kind, upload, settings, sign-in gating. Should lean
+UI-first (the pages ARE the product now), not just the backend-shape
+checks `structure.js`/`cache.js` already cover.
 
 ### 15. Accessibility pass · ~2 hours
 

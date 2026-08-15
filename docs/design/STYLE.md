@@ -1,11 +1,19 @@
 # The eski style rules
 
-The whole of it. If something on a surface disagrees with this file, the file
-is right and the surface is a bug.
+The whole of it, for the pivot (`index.html`, `profile.html`, `onboarding.html`
+— everything built on `pivot.css`/`pivot.js`). If something on one of those
+surfaces disagrees with this file, the file is right and the surface is a bug.
 
-Implemented in `tokens.css` (scale), `palettes.css` (colour),
-`docs/design/final/broadsheet.css` (chrome). Surface-specific shapes stay in
-each page's own `<style>`.
+Implemented in `tokens.css` (scale), `palettes.css` (colour), `pivot.css`
+(the pivot's own chrome — buttons, cards, the detail overlay, the player).
+The eski-pivot skill (`.claude/skills/eski-pivot/SKILL.md`) has the
+component-level detail this file doesn't try to duplicate; read that one
+when you're building something new in `index.html`/`profile.html`/`pivot.css`.
+
+**`legal.html` is the one surface still on the old system** — it loads
+`docs/design/final/broadsheet.css` and still uses Gnomon for its own
+headings. `admin.html` is deliberately plain and isn't held to this file
+either — see its own header comment. Neither is covered below.
 
 ---
 
@@ -15,24 +23,18 @@ Three registers. Nothing else, anywhere.
 
 | What | Case | Example |
 |---|---|---|
-| **Anything clickable** | UPPERCASE, letterspaced `.12em` | `COPY LINK`, `SEE ALL`, `HOME`, `READING` |
-| **Field labels** | UPPERCASE micro type, `.06–.1em` | `BY`, `EXTENT`, `SORT` |
-| **Everything else** | Sentence case, as typed | `No comic has a cast yet. An author writes one…` |
+| **Anything clickable** | UPPERCASE, letterspaced `.06–.12em` | `HOME`, `UPLOAD`, `MAKE PRIVATE` |
+| **Field labels** | UPPERCASE micro type, `.06–.1em` | `HANDLE`, `BIO`, `SORT` |
+| **Everything else** | Sentence case, as typed | `Nothing published yet.` |
 
 **Clickable is uppercase because it is clickable**, not because it is
 important. That is the whole signal: if it is in caps and it is not a field
-label, you can press it. The site used to have `eskis` beside
-`Roles that need a voice` beside `EVERY ESKI ON THE SITE` and no way to tell a
-control from a caption without hovering it.
+label, you can press it.
 
-**Two things are never transformed**, because they are somebody's words and
-not ours: comic titles, and tags. Also names, handles, and comment bodies.
+**Never transformed**, because they are somebody's words and not ours: post
+titles and captions, tags, names, handles, and comment bodies.
 `text-transform: lowercase` appears nowhere and should never be added — it
-forced other people's words into a house voice, and made `eski`, `Eski` and
-`ESKI` look identical while being three different strings underneath.
-
-Explainer text and titles are written as sentences. Capital at the start, full
-stop at the end.
+forces other people's words into a house voice.
 
 ---
 
@@ -52,17 +54,7 @@ signed-in visitor's side, indistinguishable from something actually broken.
 sage. Still one attribute on `<html>` with everything already parsed: instant,
 cannot flash a half-applied state.
 
-**The picker is in profile.html's Settings tab.** The old rule — footer only,
-never settings, because two controls could disagree about which was
-authoritative — assumed a control complex enough to need hiding behind a
-"THEME" toggle. Two swatches don't; the "second control" risk it was guarding
-against doesn't apply to a single `palette.js` writer either, which is still
-true and still the actual rule that matters (see below).
-
-**A chip is a miniature of the page it makes** — ground, rule, a heading bar, a
-line of body text and the accent, drawn in its own theme. The first version was
-a ground with an accent block on it, which said "mostly green" for a theme that
-is a dark page with green type on it.
+**The picker is in profile.html's Settings tab.**
 
 A palette sets exactly these and nothing else:
 
@@ -82,15 +74,16 @@ Rules for using them:
 - `--accent` colours numbers and counts you scan a dense view for, and the
   focus ring. It never fills anything.
 - `--ui` is for text you can click. Nothing that is not clickable uses it.
-- Art is never tinted, scrimmed or recoloured. **Colour match is gone** — it
-  sampled the cover and recoloured the chrome from it, which fought the
-  reader's own choice and never looked right.
+- Art is never tinted, scrimmed or recoloured — not even a generated
+  waveform cover, which bakes in a fixed sage rather than reading a live
+  theme token (it's a generated asset, not chrome; see `generateWaveform()`
+  in `pivot.js`).
 
-**One writer.** `palette.js` owns `data-theme` (`light` or `dark`). Nothing else
-writes them. The previous system had seven surfaces setting the theme on load
-from their own local flag, so choosing one and navigating anywhere reset it —
-which read as "the theme disappears when I leave the profile". If you find
-yourself adding a second writer, that is the bug coming back.
+**One writer.** `palette.js` owns `data-theme` (`light` or `dark`). Nothing
+else writes it. The system this replaced had seven surfaces setting the
+theme on load from their own local flag, so choosing one and navigating
+anywhere reset it — which read as "the theme disappears when I leave the
+profile."
 
 ---
 
@@ -98,131 +91,116 @@ yourself adding a second writer, that is the bug coming back.
 
 **Does not change between palettes, and is not a setting.**
 
-- `--r: 0`. Square corners. The only round things are genuine discs and
-  tracks (`--r-round`, `--r-track`).
-- `--bw: 1px`. Hairline rules, everywhere, always. Structure is drawn.
-- No shadows. No lift. Nothing floats.
+- `--pv-r: 2px` (`pivot.css`) is the pivot's own corner radius — chrome
+  only. Media (`.gbox`, `.fillmedia`) stays hard `0` via its own rules, not
+  a shared radius token. This is deliberately *not* `tokens.css`'s `--r: 0`
+  (the site's older, fully-square token, still what `legal.html` uses) —
+  "no rounded corners" was the pivot's opening instruction, but the
+  reviewed mockup itself settled on a barely-visible 2px, measured off
+  `artboard.html`, and that measurement won.
+- `--bw: 1px`. Hairline rules.
+- No shadows on flat chrome. The detail overlay's own card
+  (`.pv-card`) and dropdowns are the exception — they float over the page,
+  so they get a real drop shadow to read as raised.
 
 ---
 
 ## 4. Type
 
-One family: **Jost**. Gnomon survives in exactly one place — the wordmark — and
-nowhere else. Headings used to be Gnomon and sat visibly high next to
-everything beside them; they are uppercase Jost now.
+**Jost, everywhere in the pivot, including the wordmark.** This was a direct
+correction (2026-08-15): Gnomon declares a baseline 0.26em above where its
+ink actually sits, so every use of it needed a `translateY()` correction
+term, and that term was wrong often enough (measurably: 3px off the nav
+row's own centreline) that it wasn't worth the inconsistency it bought.
+Gnomon survives only on `legal.html`, which is still on the pre-pivot system.
 
 | Role | Treatment |
 |---|---|
-| Wordmark | Gnomon 21px, `--wordmark`, nudged `.18em` down onto its **bounding-box** centre (its outlines sit high in its own line box). One colour throughout, including the `!` |
-| Section heading | Jost 13px, 500, uppercase, `.16em` |
-| Body | Jost 13.5px, 400 |
-| Field label | Jost 11px, uppercase, `.06–.1em`, `--label` |
-| Numbers | `font-variant-numeric: tabular-nums`, always |
-
-**Weight**: 500 marks the *one* primary field of a row — the thing you scan
-the column for. Everything else in that row is 400 and steps down to `--label`.
-A row where two things are bold has not chosen; a row where nothing is bold is
-a wall of grey.
+| Wordmark | Jost 700, `.wordmark` in `pivot.css`, plain `--ink` (not the accent) |
+| Section heading | Jost, uppercase, letterspaced |
+| Body | Jost 15px, 400 |
+| Field label | Jost 11px, uppercase, `.06–.1em`, `--muted` |
+| Numbers | `font-variant-numeric: tabular-nums`, always — timecodes, byte counts, bitrates |
 
 ---
 
 ## 5. Hover
 
-**Colour only. Nothing moves.**
+**A flat background swap. Nothing moves.**
 
-A clickable thing grows a rectangular box behind it: `--ui-hover-bg` as the
-ground, `--ui` as the text, over `--t-fast` (160ms). Bare text controls carry
-their padding at rest and only the ground appears, so the row never reflows
-under the cursor.
+`--plate-bg` as the ground, 160ms, full stop — that's the whole rule for
+every pivot control (`.chip`, `.btnline`, `.gcard`, `.actbtn`, `.tagchip`,
+the player's controls, all of it). Two named exceptions, and only two:
 
-No underlines on hover. No transforms. No scale. No shift.
+- `.btnline.filled` (a solid-ink button — Upload, Publish) goes to
+  `--accent` on hover instead of `--plate-bg`.
+- `.actbtn.like.on`'s ruby red (`--like-bg`/`--like-ink`) is a **click**
+  state, never a hover — if a hover rule ever references those tokens,
+  that's the bug the eski-pivot skill was written to catch.
 
-The one exception is the comic card, where the **whole cell** lights up rather
-than the button inside it, and the plate's border takes `--ui`. A card is a big
-target and its hover should be unmistakable.
+No underlines on hover, no transforms, no scale, no shift. The one control
+where the *whole cell* lights up rather than a button inside it is `.gcard`
+— a feed card is a big target, and its hover (the box background plus the
+caption darkening) should be unmistakable across its full area.
 
 ---
 
 ## 6. Underlines
 
-One, in the whole chrome: the 2px `--mark` under the nav word for the page you
-are on, and under the selected tab. It is there because nothing else says where
-you are.
+One, in the whole chrome: 2px `--ink` under the nav word for the page you
+are on, and under the selected tab (`.navlink.active`, `.dtab.active`). It's
+there because nothing else says where you are.
 
-A link inside prose may have one. Nothing else does — not on hover, not on a
-title, not on a section link.
+Nothing else gets one — not on hover, not on a title, not on a caption.
 
 ---
 
 ## 7. Layout
 
-- `--wrap: 1280px`, centred. **The header reads it too**, so the wordmark
-  starts where the first heading starts and the nav ends where the rule ends.
-  A surface with a narrower measure overrides `--wrap`.
-- `--row: 19px` — one metadata row, fixed, so columns align down a grid.
+- `--wrap: 1280px`, centred. The header reads it too, so the wordmark starts
+  where the wrap starts and the nav cluster ends where it ends.
 - Space is the 4px scale, `--s1` … `--s9`, and this UI lives at the low end.
-- Tabs, not stacked sections, when a page has more than three lists.
+- The nav cluster (`nav`, then whatever `platform.js` appends after it) is
+  `margin-left:auto` on `nav`, never `justify-content:space-between` on the
+  header — see the eski-pivot skill for why that distinction matters the
+  moment a visitor is signed out.
 
 ---
 
-## 8. What this replaced
+## 8. What a work's status means
 
-Kept here so the same ideas do not get re-proposed.
-
-- **Six full themes** (Broadsheet / Press / eski / Light / Pink / Slate) that
-  each changed typeface, radius and rule width. Too much — the site stopped
-  being one thing, two of them removed the hairlines the layout was built out
-  of, and the choice was overwhelming. Replaced by accent palettes over one
-  fixed shape.
-- **Cover-match tint** in the reader. It sampled the cover and recoloured the
-  chrome from it, which fought whatever theme the reader had chosen.
-- **Gnomon on headings.**
-- **Ten flat palettes** (one accent over a light or dark ground). The chips
-  could not honestly show a monochrome theme, because "ground + accent block"
-  is not what a monochrome page looks like. Replaced by hue × treatment.
-- **Sign out in the top bar** — the one destructive control, permanently one
-  click from every page. It is in the profile's settings tab now.
-
-
----
-
-## 9. What a comic's state means
-
-Not styling, but it drives what the profile and the studio show, so it belongs
+Not styling, but it drives what the feed and profile show, so it belongs
 somewhere findable.
 
-| State | Who sees it | Editable | Can become |
-|---|---|---|---|
-| `draft` | the owner | **yes**, in the studio | `published` |
-| `published` | everyone | no | `private`, deleted |
-| `private` | the owner | no | `published`, deleted |
+| Status | Who sees it | Can become |
+|---|---|---|
+| `draft` | the owner (no upload path currently creates one — the upload flow always publishes directly) | `published` |
+| `published` | everyone | `private`, deleted |
+| `private` | the owner | `published`, deleted |
 
-**Publishing is one way.** A published comic can never go back to being a
-draft. By then other people have voiced and scored it, and a draft is editable
-— so returning one to draft would let an author re-cut a comic underneath the
-people who contributed to it. The database enforces this with a trigger, not
-the interface.
+**Publishing is one way.** A published work can never go back to `draft` —
+by then other people may have liked, commented on, or built a collection
+around it. `post_status_guard()` in `schema-clean.sql` enforces this as a
+trigger, not the interface. "Make private" is the only walk-back there is.
 
-`unpublish` is gone as a word and as an action. The thing it used to do —
-return a comic to `draft` — is exactly what must not happen. **Make private**
-is what it is now.
-
-A draft is therefore only ever a comic that has **never** been published.
+**Editing a published post's text is not a feature** (removed 2026-08-15,
+a deliberate product decision, not a gap) — adding a version is the
+supported way to change what's published, and only the original poster may
+add one (`works_version_owner_guard()`, also a trigger).
 
 ---
 
-## 10. What a profile shows a stranger
+## 9. What a profile shows a stranger
 
 | Tab | Visible to |
 |---|---|
-| Reading, Contributions, Published | everyone |
-| Shelf | the owner, plus everyone **if** `profiles.shelf_public` |
-| Read, Private, Drafts, Settings | the owner only |
+| Posts | everyone (published only, unless you're viewing your own — then private too) |
+| Saved, Settings | the owner only |
 
-What you have finished and what you have not shown anyone are never public and
-have no setting. The shelf is the one where it is a real question — some people
-want it read as a recommendation, some as a private queue.
+That's the whole tab bar — `profile.html` doesn't have a Reading/
+Contributions/Shelf split the way the comics-era product did; a "post" is
+whatever kind it is, and Posts is Posts.
 
-**Unpublish/private and delete appear on the profile and nowhere else**, and
-both ask first in a dialog that names what goes with it. The old flow acted
-immediately and reported afterwards in a toast, which is the wrong order.
+**Make private and delete live in the detail overlay's own burger menu**
+(poster only), not on the profile grid — and both ask first, through
+`Pivot.openConfirm()`, never the browser's native `confirm()`.

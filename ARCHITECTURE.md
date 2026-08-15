@@ -199,12 +199,13 @@ refused, but the insert is where the refusal actually happens.
 
 ## The tests, and what each is really for
 
-`tests/README.md` has the full list. Most of them — `smoke.js`, `errors.js`,
-`live.js`, `live-input.js`, `live-comic.js`, `cues.js`, `loudness.js`,
-`recording.js`, `viewer-fit.js`, `wordmark.js`, `shots.js` — were written
-against the reader/studio/composer and are stale until the pivot pages exist
-to test. `structure.js` and `cache.js` are the two that still mean what they
-always meant and are worth running now.
+`tests/README.md` has the full list. The pre-pivot tests that drove or
+asserted against the deleted reader/studio/composer were deleted with them
+(2026-08-15), not left stale. What's left: `structure.js`, `cache.js`,
+`loudness.js` and `check-sign.mjs` are live and pass, and run on every push.
+`errors.js` is half-live (its signer checks pass; its page-driven checks
+target a selector that no longer exists) and `shots.js` needs its screen
+list rewritten for the pivot pages — see `tests/README.md` for both.
 
 ---
 

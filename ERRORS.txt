@@ -1,48 +1,33 @@
 eski — error codes
 ================================================================================
 Every failure that involves something outside this repo (supabase, vercel,
-cloudflare R2, the browser's own storage) now names itself with an ESK-#### code
-before it says anything else. Copy the whole toast or empty-state line and paste
-it; the code alone is enough to find the site in the source, and the table below
-is the fix.
+cloudflare R2, the browser's own storage) names itself with an ESK-#### code
+before it says anything else. Copy the whole toast or empty-state line and
+paste it; the code alone is enough to find the site in the source, and the
+table below is the fix.
 
-Codes are stable. Do not renumber one. Retire it and take the next free number.
-
-2026-08-15: the comics-era product (studio.html, author.html, contribute.html,
-read.html) was deleted in the pivot to an all-purpose posting model, and
-schema-clean.sql replaced the database underneath it. EVERY CODE BELOW THAT
-NAMES ONE OF THOSE FILES IS NOW HISTORICAL — nothing raises it any more, but
-per the rule above the number is still retired, not free. Do not reuse
-5000-5088 or anything in the 4xxx/6xxx/7xxx/8xxx blocks below for a new
-condition; take the next free number in the relevant range instead. 1xxx, 2xxx
-and 3xxx are unaffected — platform.js and api/sign.mjs are untouched.
+Codes are stable. Do not renumber one. Retire it and take the next free
+number — 2026-08-15's pivot retired 5000-5088, 6000-6004, 7001-7004 and
+8001-8004 (the comics-era reader/studio/author/contribute/comments/local-
+shelf/microphone codes, and the schema-*.sql files they named — parts, sfx,
+comments, social, states, profiles — none of which exist in this repo any
+more). Don't reuse any of those numbers for a new condition.
 
 WHERE THEY COME FROM
   1xxx  boot: loading the account client at all            platform.js
-  2xxx  auth and session                                   platform.js, studio.html
-  3xxx  the signer function and its env vars               api/sign.mjs, studio.html
-  4xxx  uploading to R2                                    studio.html
-  5xxx  the database (postgres + row level security)       every page
-  6xxx  reading media back out of R2                       read.html
-  7xxx  local: the browser's storage and the file itself   index.html, read.html
+  2xxx  auth and session                                   platform.js
+  3xxx  the signer function and its env vars                api/sign.mjs
+  4xxx  uploading to R2                                     pivot.js
+  5xxx  the database (postgres + row level security)        every page
+  6xxx  reading media back out of R2                        every page
 
-THE 5xxx BLOCKS ARE OWNED PER FILE, because two files that share a number make
-a pasted code ambiguous, which is the one thing a code exists to prevent:
+5025-5026 is onboarding.html; 5100-5114 is the pivot rewrite (index.html,
+profile.html, pivot.js) — take the next free number in the 5100s for a new
+one there.
 
-  5000-5018  index.html, studio.html, read.html (the original spread)
-  5019-5024  studio.html — parts
-  5030-5034  index.html — tags, the shelf, kudos
-  5040-5046  author.html — the script
-  5060-5063  comments.js
-  5070-5072  profile.html
-  5025-5026  onboarding.html
-  5100-5113  index.html, profile.html, pivot.js — the pivot rewrite (2026-08-15)
-
-Take the next free number in your file's block. Do not reuse a retired one.
-
-A 5xxx message also carries the raw postgres or postgrest code in [brackets] and,
-when it is one we recognise, the translation. That mapping lives once, in
-platform.js DB_HINTS, and every page shares it.
+A 5xxx message also carries the raw postgres or postgrest code in [brackets]
+and, when it is one we recognise, the translation. That mapping lives once,
+in platform.js's DB_HINTS, and every page shares it.
 
 ================================================================================
 1xxx — BOOT
@@ -128,8 +113,8 @@ ESK-3001  The server is missing env vars. The message names exactly which.
           not what is failing here; the variable genuinely is not set on this
           environment.
 
-ESK-3002  Something sent a GET to /api/sign. Only the studio calls this. If you
-          see it from a browser address bar, that is expected.
+ESK-3002  Something sent a GET to /api/sign. Only the upload flow calls this.
+          If you see it from a browser address bar, that is expected.
 
 ESK-3003  No bearer token reached the signer.
           The request left the browser without an Authorization header. Usually
@@ -143,27 +128,15 @@ ESK-3004  Supabase rejected the session (its /auth/v1/user said no).
           FIX: make the two agree. Compare the project ref in both urls.
           Second cause: the token genuinely expired. Sign out and back in.
 
-ESK-3005  The studio asked for 0 or more than 500 objects in one call.
-          500 is the hard cap in api/sign.mjs. A comic that big has to be split.
-
-ESK-3014  The upload ceiling could not be checked, so nothing was signed.
-          A 404 here means schema-quota.sql has not been applied; anything
-          else means the database is unreachable from the function.
-          THIS FAILS CLOSED ON PURPOSE. A ceiling that stops existing when the
-          database is unhappy is no ceiling, and that is exactly when somebody
-          hammering it would find out.
-ESK-3015  Daily upload limit reached. The message carries the number and the
-          cap; it resets at UTC midnight. Raise it in schema-quota.sql
-          (upload_cap) if 2000 objects a day is genuinely too few — that is
-          roughly twenty comics.
+ESK-3005  A publish asked for 0 or more than 500 objects in one call.
+          500 is the hard cap in api/sign.mjs — not reachable from the current
+          upload UI, which signs one file per call, but still enforced.
 
 ESK-3006  A hash or extension the signer will not sign.
           Keys are derived server-side from a sha256 and an allowlisted
           extension (EXT in api/sign.mjs). A file type outside that set, or a
-          hash that did not compute, produces this.
-          If the studio starts producing a NEW kind of object, this is the
-          list to add it to — that is how the opus transcode first failed,
-          with ext "webm" missing from EXT while everything else worked.
+          hash that did not compute, produces this. If the upload flow starts
+          producing a NEW kind of object, EXT is the list to add it to.
 
 ESK-3007  The signer crashed with an unhandled error. The message carries the
           throw. This is a bug in api/sign.mjs; the other 3xxx codes are the
@@ -193,8 +166,18 @@ ESK-3012  SUPABASE_URL on vercel is not a url.
           A typo, a missing https://, or the anon key pasted into the url slot.
 
 ESK-3013  The signer returned a different number of urls than files asked for.
-          A contract violation between studio.html and api/sign.mjs. A bug, not
-          a configuration problem.
+          A bug in api/sign.mjs, not a configuration problem.
+
+ESK-3014  The upload ceiling could not be checked, so nothing was signed.
+          A 404 here means schema-quota.sql has not been applied; anything
+          else means the database is unreachable from the function.
+          THIS FAILS CLOSED ON PURPOSE. A ceiling that stops existing when the
+          database is unhappy is no ceiling, and that is exactly when somebody
+          hammering it would find out.
+
+ESK-3015  Daily upload limit reached. The message carries the number and the
+          cap; it resets at UTC midnight. Raise it in schema-quota.sql
+          (upload_cap) if 2000 objects a day is genuinely too few.
 
 ================================================================================
 4xxx — UPLOADING TO R2
@@ -204,7 +187,7 @@ ESK-4001  The PUT threw before any status came back: CORS or connectivity.
           bucket must allow it.
           FIX: apply r2-cors.json to the bucket (cloudflare dashboard > R2 >
           the bucket > Settings > CORS policy). AllowedOrigins must contain the
-          deployed origin and http://localhost:3000 if you develop there;
+          deployed origin and http://localhost:8940 if you develop there;
           AllowedMethods must contain PUT.
 
 ESK-4002  403 on the PUT. The signature was refused.
@@ -214,26 +197,7 @@ ESK-4002  403 on the PUT. The signature was refused.
           (they last one hour, so this only happens if a publish sat paused);
           the machine's clock is off by more than fifteen minutes.
 
-ESK-4003  Another 4xx on the PUT. The message carries R2's own xml explanation,
-          which is usually specific.
-
-ESK-4004  Three attempts, all 5xx or all network failures. Genuinely transient
-          on R2's side, or the upload is being cut off by something in the
-          middle. The message names the object size: very large single files are
-          the usual victims.
-
-ESK-4005  (console warning only, never fatal) The cover thumbnail could not be
-          generated, so the full-size cover is used instead. The comic publishes
-          normally; the shelf just loads that one cover slowly.
-
-ESK-4006  (console warning only, never fatal) A page's display copy or its
-          placeholder could not be made, so that page keeps only the author's
-          original. It still reads; it is just the full-size bytes.
-
-ESK-4007  (console warning only, never fatal) A clip could not be transcoded to
-          opus, so the original is what readers get. Usually means WebCodecs is
-          unavailable — note AudioEncoder needs a SECURE CONTEXT and is simply
-          undefined without one — or the re-encode came out no smaller.
+ESK-4003  Another 4xx (or non-ok status) on the PUT.
 
 ================================================================================
 5xxx — THE DATABASE
@@ -241,7 +205,7 @@ ESK-4007  (console warning only, never fatal) A clip could not be transcoded to
 Every 5xxx message ends with the postgres code in [brackets]. The most common
 ones and what they mean:
 
-  [42P01] the table does not exist        schema.sql was never applied
+  [42P01] the table does not exist        schema-clean.sql was never applied
   [42703] the column does not exist       the database is behind the app
   [PGRST204] postgrest has not seen it    re-apply the schema, then reload the
                                           schema cache in supabase
@@ -253,114 +217,18 @@ ones and what they mean:
   [23502] a required column was empty
   [22P02] that id is not a valid uuid
 
-The call sites:
-
-ESK-5000  RETIRED. It was a generic "the shelf query threw"; every call site it
-          covered now names itself. Do not reuse the number.
-ESK-5001  studio: the comic row could not be written. Nothing was published, but
-          the MEDIA IS ALREADY IN THE BUCKET. Republishing costs no re-upload:
-          keys are content-addressed, so the same bytes get the same key.
-ESK-5002  studio: the media uploaded and the comic row exists, but the page rows
-          did not save. The comic is in the database with no pages. Delete it
-          from your profile and publish again.
-ESK-5003  studio: the track rows did not save. Same shape as 5002.
-ESK-5004  studio: everything saved but the status never flipped to published.
-          Nothing is lost — publish it from your profile page.
-ESK-5005  home: the shelf query was refused. With [42P01] this is the one that
-          means schema.sql has not been applied to this project at all.
-ESK-5006  reader: the comic row could not be read.
-ESK-5007  reader: no comic with that id. A draft you do not own, or deleted.
-ESK-5008  reader: the page rows could not be read.
-ESK-5009  reader: the comic exists but has no page rows (see ESK-5002).
-ESK-5010  reader: the track rows could not be read.
-ESK-5011  reader: a page row has no image key. The publish was interrupted.
-ESK-5012  profile: your profile row could not be read.
-ESK-5013  profile: your profile row could not be created. With [42P01], apply
-          schema-profiles.sql; it is a separate file from schema.sql.
-ESK-5014  profile: five handle attempts all collided. Effectively impossible;
-          suspect the unique index is on the wrong column.
-ESK-5015  profile: the shelves query was refused.
-ESK-5016  profile: your profile edits did not save.
-ESK-5017  profile: a delete was refused. [42501] means the delete policy is
-          missing — RLS denies by default, so a table with no delete policy
-          refuses every delete, including the owner's.
-ESK-5018  profile: a state change was refused. Same shape as 5017 when it is
-          [42501]. But a refusal here can also be CORRECT: publishing is one
-          way, and a trigger in schema-states.sql rejects any attempt to move a
-          published or private comic back to `draft`. If the message says the
-          trigger raised it, the interface asked for something that must not
-          happen — fix the caller, not the policy.
-ESK-5019  studio: the author has not opened this comic to voice work (or to
-          music), so a part cannot be attached. Consent lives in the database,
-          not the ui: comics.voice_consent / music_consent must be 'open', and
-          the policy in schema-parts.sql is what enforces it. Not a bug.
-ESK-5020  studio: the part row could not be written. With [42P01], apply
-          schema-parts.sql — it is a third file, after schema.sql and
-          schema-profiles.sql.
-ESK-5021  studio: the part's track rows did not save, so the part header was
-          deleted again rather than left behind empty. The audio is already in
-          the bucket, so retrying costs no re-upload.
-ESK-5022  studio: the part saved but stayed a draft. Publish it from your
-          profile, under "contributed to".
-ESK-5023  reader: a chosen voice track or soundtrack could not be loaded. The
-          comic still opens; only that layer is missing.
-ESK-5024  profile: the contributions shelf could not be read. With [42P01],
-          schema-parts.sql has not been applied to this project.
-
 ESK-5026  onboarding: the account row (handle, display name) could not be
           created. [23505] means the handle is taken — the ui already
           special-cases that message; anything else is a real failure.
-
-ESK-5030  home: a tag did not save. A [23505] here is not an error and is
-          swallowed — it only means the comic already carries that tag.
-ESK-5031  home: a tag did not come off.
-ESK-5032  home: adding to or removing from the shelf was refused (the comic
-          page). With [42P01], apply schema-social.sql — `saves` lives there.
-ESK-5033  home: the same, from the card on the shelf itself.
-ESK-5034  home: kudos did not save.
-
-ESK-5035  home: the shelf needs schema-shelf.sql applied to the database.
-          The list is one rpc (get_shelf) rather than two serial round trips,
-          so a database without the function has nothing to fall back to — by
-          design. Keeping both paths forever to cover a window that closes on
-          the first migration is how a slow path survives unnoticed.
-
-ESK-5036  reader: the mix could not be changed. The comic is still playing
-          whatever it was playing before — the swap rebuilds the track list
-          from a pristine copy of the author's own tracks, so a failure
-          leaves the previous mix intact rather than a half-applied one.
-
-ESK-5040  author studio: your comics could not be listed.
-ESK-5041  author studio: that comic could not be opened.
-ESK-5042  author studio: the pages could not be read.
-ESK-5043  author studio: the cast did not save.
-ESK-5044  author studio: a deleted line did not go. The script is now half
-          saved; reopen the comic to see what actually landed.
-ESK-5045  author studio: the new lines did not save.
-ESK-5046  author studio: an edited line did not save.
-
-ESK-5060  comments: the thread did not load. With [42P01], apply
-          schema-comments.sql — it is its own file.
-ESK-5061  comments: that comment did not post. [42501] on an insert means the
-          author is signed in but the policy refuses — check the comic is
-          published, since the policy keys off that.
-ESK-5062  comments: an edit did not save. Only the writer may edit; the owner
-          of the comic may delete but not rewrite.
-ESK-5063  comments: a comment did not come off. Deleting writes a tombstone
-          rather than removing the row, so replies underneath survive.
-
-ESK-5064  home: the continue-reading row's comment fold could not load its
-          thread. The rest of the row still works; the fold says so rather
-          than sitting empty.
 
 ESK-5100  home (pivot): the feed, or a single post, could not be read.
 ESK-5101  home (pivot): a content tag could not be added or removed. A
           [23505] on add is not an error and is swallowed — it only means
           the post already carries that tag.
 ESK-5102  home (pivot): a like could not be added or removed.
-ESK-5103  home (pivot): a comment could not post. [42501] with the comic —
-          sorry, the POST — not published, or you're rate-limited: see
-          comments_rate_guard (30/hour), which raises its own ESK-5900.
+ESK-5103  home (pivot): a comment could not post. [42501] means the post
+          isn't published, or you're rate-limited: see comments_rate_guard
+          (30/hour), which raises its own ESK-5900.
 ESK-5104  home (pivot): a save-folder action (toggle, or creating a new
           folder) failed.
 ESK-5105  home (pivot): adding a post to a collection, or creating a new
@@ -380,8 +248,8 @@ ESK-5111  profile (pivot): your profile settings (name/handle/bio) could
           not be saved. A [23505] on handle means it's taken; the message
           already says so rather than showing the raw code.
 ESK-5112  profile (pivot): the avatar could not upload or save. The bucket
-          policy is per-uid folder (schema-states.sql), so an upload
-          outside `<uid>/…` is refused by design.
+          policy is per-uid folder, so an upload outside `<uid>/…` is
+          refused by design.
 ESK-5113  profile (pivot): account deletion failed. See delete_my_account()
           in schema-clean.sql — it's a soft delete (profiles.deleted_at),
           your published work stays up credited to "Deleted account".
@@ -390,83 +258,24 @@ ESK-5114  pivot (detail overlay, comments, profile): a report could not be
           this only fires signed in; a not-ok response with no error is
           file_report()'s own refusal (see its `why` in schema-clean.sql).
 
-ESK-5070  profile: a setting did not save (the shelf's public switch).
-ESK-5071  profile: the old avatar did not come off storage. Harmless — the new
-          one is already up; this is the cleanup of the previous file.
-ESK-5072  profile: the avatar did not upload. The bucket's policy is per-uid
-          folder, so an upload outside `<uid>/…` is refused by design.
-
-ESK-5080  contribute: the list of comics open to contributions did not load.
-ESK-5081  contribute: that comic did not open. The studio needs the pages, the
-          author's script and any part of yours, so any one of the four
-          queries failing lands here.
-ESK-5082  contribute: your existing part did not load. The draft is still
-          there; reopen it rather than starting a second one, or you will end
-          up with two parts for the same character.
-ESK-5083  contribute: no character picked. A voice part covers exactly one, and
-          `parts.character_key` is not nullable for kind = 'vo'.
-ESK-5084  contribute: nothing in this part yet. Attach at least one take before
-          saving — an empty part would appear in a reader's mix picker as a
-          choice that plays silence.
-ESK-5085  contribute: the part header could not be created. [42501] here is the
-          consent gate: the author has closed that axis, and the policy checks
-          it on insert rather than trusting the studio. See eski_part_allowed
-          in schema-sfx.sql.
-ESK-5086  contribute: a take you removed did not go.
-ESK-5087  contribute: a take did not save. [42501] is again the consent gate —
-          tracks_write re-checks it, so closing an axis mid-session stops new
-          rows even though the part header already exists.
-ESK-5088  contribute: the part did not publish. It is still saved as a draft;
-          nothing is lost.
-
 ================================================================================
 6xxx — READING MEDIA BACK
 ================================================================================
 ESK-6000  An unexpected status fetching media. The message names the url.
 ESK-6001  404. The object is not in the bucket under that key. Either the
-          publish half-finished (see ESK-5002), or R2_BASE in platform.js points
-          at a different bucket than the signer wrote to.
+          publish half-finished (see ESK-5106), or R2_BASE in platform.js
+          points at a different bucket than the signer wrote to.
 ESK-6002  403. The bucket is not public.
           FIX: cloudflare R2 > the bucket > Settings > Public access. Either
           enable the r2.dev subdomain or attach a custom domain, then set
           R2_BASE in platform.js to match.
 ESK-6003  The fetch threw: offline, or CORS does not allow GET from this origin.
           Same r2-cors.json as ESK-4001, but the GET half.
-ESK-6004  A page has no source at all — no display copy, no original. Nothing
-          was fetched, because there was no key to fetch. This is a data fault
-          upstream of R2: the page row saved without an image key (see
-          ESK-5011), so the publish was interrupted.
 
-Also worth knowing: the r2.dev public subdomain is RATE LIMITED by cloudflare
-and is not meant for production traffic. Under load it starts refusing. Moving
-to a custom domain is one line — R2_BASE in platform.js — because the database
-stores keys, never urls.
-
-================================================================================
-7xxx — LOCAL, NOT A SERVICE
-================================================================================
-ESK-7001  indexeddb would not open, so the local shelf is unavailable. Private
-          browsing blocks it. Published comics still work; dropped files do not
-          persist.
-ESK-7002  A shelved file is referenced but its record is gone. Storage was
-          cleared between page loads.
-ESK-7003  The .eski manifest inside the file is damaged. The pages still load;
-          the soundtrack does not.
-ESK-7004  No page images inside that file. It is not an eski, or it is an empty
-          zip.
-
-================================================================================
-8xxx — THE MICROPHONE
-================================================================================
-ESK-8001  This browser will not hand a page a microphone at all. Almost always
-          an insecure origin: getUserMedia needs https or localhost, so a
-          preview on a plain http host cannot record. Attach a file instead.
-ESK-8002  No MediaRecorder here. Recording is impossible; attaching is not.
-ESK-8003  The microphone was refused, or there is not one. If refused, the
-          permission is remembered per origin — clear it from the padlock in
-          the address bar, because the prompt will not appear a second time.
-ESK-8004  The take came out empty. Usually a muted input or a device that
-          disappeared mid-take; nothing was attached, so record it again.
+Also worth knowing: cdn.eski.lol is a Cloudflare custom domain in front of the
+R2 bucket, not the r2.dev dev hostname — which is rate-limited by cloudflare
+and not meant for production traffic. R2_BASE in platform.js is the one line
+that decides which is in play, because the database stores keys, never urls.
 
 ================================================================================
 HOW TO REPORT ONE
