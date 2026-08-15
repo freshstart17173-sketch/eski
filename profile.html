@@ -22,7 +22,7 @@ body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--font-bo
 main{max-width:var(--wrap);margin:0 auto}
 .phead{display:flex;flex-direction:column;gap:20px;width:100%;padding:32px 32px 24px 32px}
 .prow{display:flex;flex-direction:row;align-items:center;gap:24px}
-.pavatar{width:72px;height:72px;background:var(--surface);flex-shrink:0;border-radius:var(--r-round);
+.pavatar{width:72px;height:72px;background:var(--surface);flex-shrink:0;
   overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:700;color:var(--muted)}
 .pavatar img{width:100%;height:100%;object-fit:cover}
 .pstats{display:flex;gap:32px;flex-shrink:0}
@@ -290,14 +290,54 @@ async function openFolder(folderId){
 }
 
 /* ----------------------------------------------------------- settings */
-function settingRow(label, valueHtml, onEdit){
-  const id = 'sr-' + label.toLowerCase().replace(/[^a-z0-9]+/g,'-');
-  return `<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 8px;box-shadow:inset 0 -1px 0 var(--surface);">
+/* matches the mockup's settingRow() exactly: a row is read-only text
+   until its own Edit button is clicked — not a form of always-open
+   inputs behind one bulk Save. Each row edits and saves independently. */
+function settingRow(label, value, id, editable){
+  return `<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 8px;box-shadow:inset 0 -1px 0 var(--surface);" data-row="${id}">
     <div style="display:flex;flex-direction:column;gap:2px;flex:1;min-width:0;">
       <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;">${P.esc(label)}</div>
-      <div style="font-size:14px;color:var(--ink);" id="${id}">${valueHtml}</div>
+      <div style="font-size:14px;color:var(--ink);" data-value>${P.esc(value)}</div>
     </div>
+    ${editable ? `<button class="btnline" type="button" style="padding:6px 14px;" data-edit="${id}">Edit</button>` : ''}
   </div>`;
+}
+const SETTINGS_FIELDS = {
+  name:   { label: 'Display name', get: () => subject.display_name || '', column: 'display_name', multiline: false },
+  handle: { label: 'Handle',       get: () => subject.handle || '',       column: 'handle',       multiline: false },
+  bio:    { label: 'Bio',          get: () => subject.bio || '',          column: 'bio',          multiline: true }
+};
+function startEditRow(id){
+  const field = SETTINGS_FIELDS[id];
+  const row = document.querySelector(`[data-row="${id}"]`);
+  const valueDiv = row.querySelector('[data-value]');
+  valueDiv.innerHTML = field.multiline
+    ? `<textarea class="utext" id="row-input-${id}" style="margin-top:4px;">${P.esc(field.get())}</textarea>`
+    : `<input class="uinput" id="row-input-${id}" style="margin-top:4px;" value="${P.esc(field.get())}">`;
+  row.querySelector('[data-edit]').outerHTML = `<div style="display:flex;gap:6px;flex-shrink:0;">
+    <button class="btnline" type="button" data-cancel style="padding:6px 14px;">Cancel</button>
+    <button class="btnline filled" type="button" data-save style="padding:6px 14px;">Save</button>
+  </div>`;
+  row.querySelector('[data-cancel]').addEventListener('click', renderSettings);
+  row.querySelector('[data-save]').addEventListener('click', () => saveRow(id));
+  document.getElementById('row-input-' + id).focus();
+}
+async function saveRow(id){
+  const field = SETTINGS_FIELDS[id];
+  let value = document.getElementById('row-input-' + id).value.trim();
+  if(id === 'handle'){
+    value = value.toLowerCase();
+    if(!/^[a-z0-9](?:[a-z0-9_-]{1,28}[a-z0-9])$/.test(value))
+      return P.toast('a handle is lowercase letters, numbers, - and _, 3-30 characters');
+  }
+  const patch = { [field.column]: value || null };
+  const { error } = await P.sb.from('profiles').update(patch).eq('id', subject.id);
+  if(error) return P.toast(P.eski.dbError('ESK-5111', error.code==='23505' ? 'that handle is taken' : 'settings could not be saved', error));
+  Object.assign(subject, patch);
+  if(id === 'handle') history.replaceState(null, '', '/u/' + encodeURIComponent(value));
+  P.toast('saved');
+  renderHead();
+  renderSettings();
 }
 function renderSettings(){
   const panel = document.getElementById('settings-panel');
@@ -309,43 +349,16 @@ function renderSettings(){
         <input type="file" id="avatar-input" accept="image/png,image/jpeg,image/webp,image/gif">
       </div>
     </div>
-    <div style="padding:14px 8px;box-shadow:inset 0 -1px 0 var(--surface);display:flex;flex-direction:column;gap:6px;">
-      <div class="ulabel">Display name</div><input class="uinput" id="set-name" value="${P.esc(subject.display_name||'')}">
-    </div>
-    <div style="padding:14px 8px;box-shadow:inset 0 -1px 0 var(--surface);display:flex;flex-direction:column;gap:6px;">
-      <div class="ulabel">Handle</div><input class="uinput" id="set-handle" value="${P.esc(subject.handle||'')}">
-    </div>
-    <div style="padding:14px 8px;box-shadow:inset 0 -1px 0 var(--surface);display:flex;flex-direction:column;gap:6px;">
-      <div class="ulabel">Bio</div><textarea class="utext" id="set-bio">${P.esc(subject.bio||'')}</textarea>
-    </div>
-    ${settingRow('Email', P.esc((P.user && P.user.email) || ''))}
-    <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px;">
-      <button class="btnline filled" type="button" id="settings-save">Save changes</button>
-    </div>
+    ${settingRow(SETTINGS_FIELDS.name.label, SETTINGS_FIELDS.name.get(), 'name', true)}
+    ${settingRow(SETTINGS_FIELDS.handle.label, SETTINGS_FIELDS.handle.get(), 'handle', true)}
+    ${settingRow(SETTINGS_FIELDS.bio.label, SETTINGS_FIELDS.bio.get(), 'bio', true)}
+    ${settingRow('Email', (P.user && P.user.email) || '', 'email', false)}
     <div style="display:flex;gap:8px;margin-top:20px;">
       <button class="btnline danger" type="button" id="delete-account">Delete account</button>
       <button class="btnline" type="button" id="sign-out">Sign out</button>
     </div>`;
 
-  document.getElementById('settings-save').addEventListener('click', async () => {
-    const patch = {
-      display_name: document.getElementById('set-name').value.trim() || null,
-      bio: document.getElementById('set-bio').value.trim() || null
-    };
-    const newHandle = document.getElementById('set-handle').value.trim().toLowerCase();
-    if(newHandle && newHandle !== subject.handle){
-      if(!/^[a-z0-9](?:[a-z0-9_-]{1,28}[a-z0-9])$/.test(newHandle))
-        return P.toast('a handle is lowercase letters, numbers, - and _, 3-30 characters');
-      patch.handle = newHandle;
-    }
-    const { error } = await P.sb.from('profiles').update(patch).eq('id', subject.id);
-    if(error) return P.toast(P.eski.dbError('ESK-5111', error.code==='23505' ? 'that handle is taken' : 'settings could not be saved', error));
-    P.toast('saved');
-    Object.assign(subject, patch);
-    await P.loadMyState();
-    renderHead();
-    if(patch.handle) history.replaceState(null, '', '/u/' + encodeURIComponent(patch.handle));
-  });
+  panel.querySelectorAll('[data-edit]').forEach(btn => btn.addEventListener('click', () => startEditRow(btn.dataset.edit)));
 
   document.getElementById('avatar-input').addEventListener('change', async e => {
     const file = e.target.files[0];
