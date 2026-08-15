@@ -274,16 +274,22 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--
 /* ---- masonry-of-squares grid: every card sits in a fixed square box,
    media letterboxed inside it, small non-bold caption below (are.na
    grid). no content-type labels — the media speaks for itself. ---- */
-.fgrid{display:grid;grid-template-columns:repeat(5,1fr);gap:16px;width:100%}
-.gcard{display:flex;flex-direction:column;gap:6px;cursor:pointer}
+/* 4 up, one gap value so horizontal and vertical whitespace match. captions
+   may run to two lines, then clamp. */
+.fgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;width:100%}
+.gcard{display:flex;flex-direction:column;gap:8px;cursor:pointer}
 .gbox{position:relative;width:100%;aspect-ratio:1/1;background:var(--paper-dim);overflow:hidden;
   display:flex;align-items:center;justify-content:center}
 .gbox .fill{position:absolute;inset:0}
-.gcap{font-family:var(--font-body);font-weight:400;font-size:var(--fs-xs);color:var(--ink);line-height:1.3;text-align:center}
+.gcap{font-family:var(--font-body);font-weight:400;font-size:var(--fs-xs);color:var(--ink);line-height:1.35;
+  text-align:center;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .gind{position:absolute;bottom:8px;right:8px;font-family:var(--font-body);font-weight:600;
   font-size:var(--fs-micro);color:var(--paper);background:rgba(17,17,17,.72);padding:3px 6px}
-.gquote{padding:22px;font-family:var(--font-body);font-weight:500;font-size:15px;color:var(--ink-soft);
-  line-height:1.4;text-align:left}
+/* text in a card starts at the top, left-aligned (unless the .md sets its
+   own alignment). */
+.gquote{position:absolute;inset:0;padding:20px;font-family:var(--font-body);font-weight:500;font-size:15px;
+  color:var(--ink-soft);line-height:1.45;text-align:left;overflow:hidden;
+  -webkit-mask-image:linear-gradient(#000 78%,transparent);mask-image:linear-gradient(#000 78%,transparent)}
 /* a long text/essay post: title + body filling the square, top-aligned,
    faded out at the bottom where it overflows — a readable preview. */
 .gtext{position:absolute;inset:0;padding:20px;display:flex;flex-direction:column;gap:10px;overflow:hidden;
@@ -315,6 +321,73 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--
 .actbtn.on{background:var(--ink);color:var(--paper)}
 .actbtn.on .n{color:var(--paper)}
 .actbtn.on svg{fill:currentColor}
+
+/* ---- collection carousel (one item at a time, ig style) ---- */
+.carrow{position:absolute;top:50%;transform:translateY(-50%);width:34px;height:34px;border-radius:50%;
+  background:rgba(255,255,255,.9);display:flex;align-items:center;justify-content:center;font-size:18px;
+  color:#111;cursor:pointer;box-shadow:0 1px 6px rgba(0,0,0,.25);z-index:3;transition:background 120ms ease}
+.carrow:hover{background:#fff}
+.cdots{position:absolute;bottom:14px;left:50%;transform:translateX(-50%);display:flex;gap:6px;z-index:3}
+.cdots i{width:6px;height:6px;border-radius:50%;background:rgba(17,17,17,.28)}
+.cdots i.on{background:var(--ink)}
+.ccount{position:absolute;top:14px;left:14px;font-family:var(--font-body);font-weight:600;font-size:11px;
+  color:#fff;background:rgba(17,17,17,.6);padding:3px 8px;z-index:3}
+
+/* ---- segmented control: connected options, one selectable (opposites) ---- */
+.seg{display:inline-flex;border-radius:var(--radius-min);overflow:hidden;background:var(--paper-dim)}
+.seg .opt{font-family:var(--font-body);font-size:var(--fs-xs);color:var(--ink);padding:6px 12px;cursor:pointer;
+  transition:background 120ms ease,color 120ms ease;white-space:nowrap}
+.seg .opt:not(:last-child){box-shadow:1px 0 0 rgba(17,17,17,.12)}
+.seg .opt.on{background:var(--ink);color:var(--paper)}
+.seg .opt:not(.on):hover{background:#E4E4E4}
+/* a stand-alone toggle chip (not part of a pair) */
+.mchip{font-family:var(--font-body);font-size:var(--fs-xs);color:var(--ink);background:var(--paper-dim);
+  padding:6px 12px;border-radius:var(--radius-min);cursor:pointer;transition:background 120ms ease,color 120ms ease}
+.mchip:hover{background:#E4E4E4}
+.mchip.on{background:var(--ink);color:var(--paper)}
+.modgroup{display:flex;flex-direction:column;gap:8px}
+.modgrouplabel{font-family:var(--font-body);font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.12em}
+
+/* ---- version dropdown ---- */
+.verwrap{position:relative}
+.verdrop{position:absolute;top:calc(100% + 4px);right:0;z-index:20;min-width:180px;background:var(--paper);
+  box-shadow:0 8px 30px rgba(0,0,0,.22);display:none;flex-direction:column;padding:6px 0}
+.verdrop.open{display:flex}
+.verdrop .vi{font-family:var(--font-body);font-size:12.5px;color:var(--ink);padding:8px 14px;cursor:pointer;
+  display:flex;align-items:center;justify-content:space-between;gap:12px;transition:background 120ms ease}
+.verdrop .vi:hover{background:var(--paper-dim)}
+.verdrop .vi.on{font-weight:600}
+.verdrop .vi.add{color:var(--accent);font-weight:600}
+.verdrop .sep{height:1px;background:var(--paper-dim);margin:4px 0}
+
+/* ---- search bar ---- */
+.searchbar{display:flex;align-items:center;gap:10px;background:var(--paper-dim);border-radius:var(--radius-min);
+  padding:11px 14px}
+.searchbar svg{width:16px;height:16px;fill:none;stroke:var(--muted);stroke-width:2;flex-shrink:0}
+.searchbar input{flex:1;border:none;background:none;outline:none;font-family:var(--font-body);font-size:14px;color:var(--ink)}
+.searchbar input::placeholder{color:var(--muted)}
+
+/* ---- save-to-folder rows ---- */
+.folderrow{display:flex;align-items:center;gap:12px;padding:10px 8px;cursor:pointer;border-radius:var(--radius-min);
+  transition:background 120ms ease}
+.folderrow:hover{background:var(--paper-dim)}
+.folderrow .fcheck{width:20px;height:20px;flex-shrink:0;background:var(--paper);box-shadow:inset 0 0 0 1.5px var(--ink);
+  display:flex;align-items:center;justify-content:center}
+.folderrow .fcheck svg{display:none;width:12px;height:12px;fill:none;stroke:var(--paper);stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}
+.folderrow.on .fcheck{background:var(--ink)}
+.folderrow.on .fcheck svg{display:block}
+.folderrow .fname{font-family:var(--font-body);font-size:14px;color:var(--ink);flex:1}
+.folderrow .fmeta{font-family:var(--font-body);font-size:12px;color:var(--muted)}
+
+/* ---- add-to-collection dropdown ---- */
+.a2c{position:relative}
+.a2cdrop{position:absolute;bottom:calc(100% + 6px);left:0;z-index:20;min-width:220px;background:var(--paper);
+  box-shadow:0 8px 30px rgba(0,0,0,.22);display:none;flex-direction:column;padding:6px 0}
+.a2cdrop.open{display:flex}
+.a2cdrop .ci{font-family:var(--font-body);font-size:13px;color:var(--ink);padding:9px 14px;cursor:pointer;transition:background 120ms ease}
+.a2cdrop .ci:hover{background:var(--paper-dim)}
+.a2cdrop .ci.add{color:var(--accent);font-weight:600}
+.a2cdrop .sep{height:1px;background:var(--paper-dim);margin:4px 0}
 .gplay{width:34px;height:34px;border-radius:50%;background:rgba(17,17,17,.72);display:flex;
   align-items:center;justify-content:center}
 .gplay svg{width:14px;height:14px;fill:var(--paper);margin-left:2px}
@@ -387,6 +460,37 @@ function gtextcard(title, body, handle){
 }
 const ESSAY = "When Rerun approached @studiogruhl to help them with their new brand identity, they were very excited at the prospect of collaborating on something that felt genuinely new. The old marks had served them for the better part of a decade, but the company they described in the first meeting had almost nothing in common with the one that logo was drawn for. We started, as we usually do, by throwing almost everything away — not the values, but the visual habits that had accreted around them over the years.";
 
+/* modifier tags: a fixed vocabulary you SELECT, not type. opposites are
+   joined in a segmented control where only one side can be on. */
+function seg(group, opts){
+  return `<div class="modgroup"><div class="modgrouplabel">${esc(group)}</div>
+    <div class="seg" data-seg>${opts.map(o => `<span class="opt${o[1]?' on':''}" data-o>${esc(o[0])}</span>`).join('')}</div></div>`;
+}
+function mchips(group, opts){
+  return `<div class="modgroup"><div class="modgrouplabel">${esc(group)}</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">${opts.map(o => `<span class="mchip${o[1]?' on':''}" data-mtoggle>${esc(o[0])}</span>`).join('')}</div></div>`;
+}
+function modifierList(){
+  return `<div style="display:flex;flex-direction:column;gap:14px;">
+    ${seg('posted', [['this day'],['this week',1],['this month'],['this year']])}
+    <div style="display:flex;gap:28px;flex-wrap:wrap;">
+      ${seg('from', [['following',1],['not following']])}
+      ${seg('viewing', [['seen'],['unseen']])}
+    </div>
+    ${mchips('state', [['updated'],['liked'],['saved']])}
+    ${mchips('type', [['image',1],['audio'],['video'],['text'],['collection'],['other']])}
+  </div>`;
+}
+function settingRow(label, value){
+  return `<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 8px;box-shadow:inset 0 -1px 0 var(--paper-dim);">
+    <div style="display:flex;flex-direction:column;gap:2px;">
+      <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;">${esc(label)}</div>
+      <div style="font-size:14px;color:var(--ink);">${esc(value)}</div>
+    </div>
+    <div class="btnline selectable" style="padding:6px 14px;">Edit</div>
+  </div>`;
+}
+
 const homepageHtml = `
 <div class="ms selectable" style="display:flex;flex-direction:row;align-items:center;justify-content:space-between;
     width:100%;height:64px;padding:0 32px;box-sizing:border-box;flex-shrink:0;">
@@ -397,6 +501,12 @@ const homepageHtml = `
     <div class="btnline filled">Upload</div>
   </div>
 </div>
+<div class="ms selectable" style="width:100%;padding:16px 32px 0 32px;box-sizing:border-box;flex-shrink:0;">
+  <div class="searchbar">
+    <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3" stroke-linecap="round"/></svg>
+    <input placeholder="search tags, captions, text, and authors">
+  </div>
+</div>
 <div class="ms selectable" style="display:flex;flex-direction:column;gap:20px;width:100%;padding:20px 32px 24px 32px;box-sizing:border-box;flex-shrink:0;">
   <div class="feedswitch" data-feedrow>
     <span class="feed active" data-nodelete contenteditable="true" spellcheck="false">Discover</span>
@@ -404,7 +514,7 @@ const homepageHtml = `
     <span class="feed">stills<span class="fx" data-feeddel>&times;</span></span>
     <span class="feedplus" data-feedadd>+</span>
   </div>
-  <div style="display:flex;gap:64px;flex-wrap:wrap;align-items:flex-start;">
+  <div style="display:flex;gap:56px;flex-wrap:wrap;align-items:flex-start;">
     <div class="tagpanel">
       <div class="taghdr" data-toggle>content tags <span class="chev">&#9662;</span></div>
       <div class="tagbody" style="margin-top:10px;">
@@ -418,20 +528,8 @@ const homepageHtml = `
     </div>
     <div class="tagpanel">
       <div class="taghdr" data-toggle>modifier tags <span class="chev">&#9662;</span></div>
-      <div class="tagbody" style="margin-top:10px;position:relative;">
-        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;max-width:420px;" data-tagrow>
-          <span class="tagchip">#thisweek<span class="x">&times;</span></span>
-          <span class="tagchip">#fromfollowing<span class="x">&times;</span></span>
-          <button class="tagadd" data-tagadd>+</button>
-        </div>
-        <div class="tagsearch" data-tagsearch>
-          <input placeholder="search modifiers" data-tagsearchinput>
-          <div class="opt">#thismonth</div>
-          <div class="opt">#unseen</div>
-          <div class="opt">#trending</div>
-          <div class="opt">#nearby</div>
-          <div class="opt">#popular</div>
-        </div>
+      <div class="tagbody" style="margin-top:12px;">
+        ${modifierList()}
       </div>
     </div>
   </div>
@@ -478,11 +576,15 @@ function detailTabs(){
     <div class="dtab" data-tab="comments">Comments</div>
   </div>`;
 }
-function metaRows(rows, download){
+function dlRow(label, value){
+  return `<div style="display:flex;justify-content:space-between;padding:6px 0;font-size:12.5px;color:var(--muted);">
+      <span>${esc(label)}</span><span style="color:var(--ink);font-weight:600;cursor:pointer;">${esc(value)}</span></div>`;
+}
+function metaRows(rows, download, downloadAll){
   let html = rows.map(r => `<div style="display:flex;justify-content:space-between;padding:6px 0;font-size:12.5px;color:var(--muted);">
       <span>${esc(r[0])}</span><span style="color:var(--ink-soft);${r[2]?'font-weight:500;text-decoration:underline;':''}">${esc(r[1])}</span></div>`).join('');
-  if(download) html += `<div style="display:flex;justify-content:space-between;padding:6px 0;font-size:12.5px;color:var(--muted);">
-      <span>Download</span><span style="color:var(--ink);font-weight:600;cursor:pointer;">${esc(download)}</span></div>`;
+  if(download) html += dlRow('Download', download);
+  if(downloadAll) html += dlRow('Download all', downloadAll);
   return `<div style="display:flex;flex-direction:column;gap:0;">${html}</div>`;
 }
 /* like + save. the criticism marks (!, ?, !!) still live in comments and
@@ -490,7 +592,20 @@ function metaRows(rows, download){
 function actionBar(likes){
   return `<div style="display:flex;gap:8px;">
     <div class="actbtn selectable" data-act-toggle><svg viewBox="0 0 24 24"><path d="M12 21s-8-4.9-8-11a4.5 4.5 0 0 1 8-2.6 4.5 4.5 0 0 1 8 2.6c0 6.1-8 11-8 11z"/></svg>Like <span class="n">${esc(likes)}</span></div>
-    <div class="actbtn selectable" data-act-toggle><svg viewBox="0 0 24 24"><path d="M6 3h12v18l-6-4-6 4z"/></svg>Save</div>
+    <div class="actbtn selectable" data-savebtn><svg viewBox="0 0 24 24"><path d="M6 3h12v18l-6-4-6 4z"/></svg>Save</div>
+  </div>`;
+}
+/* on your own post: add it to one of your collections (or make one). */
+function posterActions(){
+  return `<div class="a2c">
+    <div class="btnline selectable" data-a2c style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;">
+      <svg viewBox="0 0 24 24" width="16" height="16" style="fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;"><path d="M12 5v14M5 12h14"/></svg>Add to collection</div>
+    <div class="a2cdrop">
+      <div class="ci" data-mi>story bible: HALO</div>
+      <div class="ci" data-mi>night work</div>
+      <div class="sep"></div>
+      <div class="ci add" data-mi>+ New collection</div>
+    </div>
   </div>`;
 }
 function burgerMenu(){
@@ -502,9 +617,20 @@ function burgerMenu(){
     <div class="mi danger" data-mi>Delete</div>
   </div>`;
 }
+function versionDrop(poster){
+  return `<div class="verwrap">
+    <div class="chip small selectable" data-ver style="white-space:nowrap;">v2 of 3&nbsp;&#9662;</div>
+    <div class="verdrop">
+      <div class="vi" data-mi>v3 &middot; latest <span style="color:var(--muted);">2d</span></div>
+      <div class="vi on" data-mi>v2 <span style="color:var(--muted);">1w</span></div>
+      <div class="vi" data-mi>v1 <span style="color:var(--muted);">1mo</span></div>
+      ${poster ? '<div class="sep"></div><div class="vi add" data-mi>+ Add version</div>' : ''}
+    </div>
+  </div>`;
+}
 function overlayControls(poster){
   return `<div style="position:absolute;top:20px;right:24px;z-index:6;display:flex;align-items:center;gap:8px;">
-    <div class="chip small selectable" style="white-space:nowrap;">v2 of 3&nbsp;&#9662;</div>
+    ${versionDrop(poster)}
     ${poster ? `<div style="position:relative;"><div class="navarrow selectable" data-burger>&#8942;</div>${burgerMenu()}</div>` : ''}
     <div class="navarrow selectable">&lsaquo;</div>
     <div class="navarrow selectable">&rsaquo;</div>
@@ -515,10 +641,17 @@ function tagsPanel(tags, poster){
   const chips = tags.map(t => poster
     ? `<span class="tagchip"><span class="tagtext">${esc(t)}</span><span class="x">&times;</span></span>`
     : `<span class="chip small" style="background:var(--paper);">${esc(t)}</span>`).join('');
-  return `<div data-panel="tags" style="display:flex;flex-direction:column;gap:16px;padding:16px 24px;">
+  // tags contributed by commenters — sit just under the poster's own tags.
+  const community = ['#analog','#nightphotography','#longexposure'].map(t =>
+    `<span class="chip small" style="background:var(--paper);">${esc(t)}</span>`).join('');
+  return `<div data-panel="tags" style="display:flex;flex-direction:column;gap:18px;padding:16px 24px;">
     <div style="display:flex;flex-direction:column;gap:8px;">
       <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;">content tags${poster?' &middot; you can edit these anytime':''}</div>
       <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;"${poster?' data-tagrow data-freeform':''}>${chips}${poster?'<button class="tagadd" data-tagadd>+</button>':''}</div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:8px;">
+      <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;">added by others</div>
+      <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">${community}<button class="tagadd" data-tagadd-note title="suggest a tag">+</button></div>
     </div>
   </div>`;
 }
@@ -543,8 +676,8 @@ function detailCard(cfg){
       <div class="ms selectable" style="display:flex;flex-direction:column;gap:16px;padding:64px 24px 20px 24px;box-sizing:border-box;">
         ${cfg.title ? `<div style="font-weight:700;font-size:19px;color:var(--ink);line-height:1.3;">${esc(cfg.title)}</div>` : ''}
         <div style="font-size:14px;font-weight:400;color:var(--ink-soft);line-height:1.5;">${esc(cfg.caption)}</div>
-        ${metaRows(cfg.meta, cfg.download)}
-        ${cfg.poster ? '' : actionBar(cfg.likes)}
+        ${metaRows(cfg.meta, cfg.download, cfg.downloadAll)}
+        ${cfg.poster ? posterActions() : actionBar(cfg.likes)}
       </div>
       ${detailTabs()}
       <div style="flex:1;background:var(--paper-dim);box-sizing:border-box;overflow:auto;display:flex;flex-direction:column;">
@@ -580,20 +713,44 @@ const mText = `<div class="ms selectable" style="width:58%;height:100%;backgroun
     <p style="margin:0;">The octagon at the centre of the new mark is the one flourish we allowed ourselves — a stop and a play button at once.</p>
   </div>
 </div>`;
-const mCollection = `<div class="ms selectable" style="width:58%;height:100%;background:var(--paper-dim);flex-shrink:0;padding:8px;box-sizing:border-box;display:grid;grid-template-columns:1fr 1fr;grid-auto-rows:1fr;gap:8px;overflow:auto;">
-  <div style="background:#E4E4E4;"></div><div style="background:#DDDDDD;"></div>
-  <div style="background:#E4E4E4;"></div><div style="background:#DBDBDB;"></div>
-  <div style="background:#E0E0E0;"></div><div style="background:#E4E4E4;"></div>
+/* a collection reads like an instagram carousel: one item at a time, arrows
+   and dots to move through it. */
+const mCollection = `<div class="ms selectable" style="width:58%;height:100%;background:#111;flex-shrink:0;position:relative;display:flex;align-items:center;justify-content:center;overflow:hidden;">
+  <div style="width:74%;height:80%;background:#E4E4E4;"></div>
+  <div class="carrow selectable" style="left:16px;">&lsaquo;</div>
+  <div class="carrow selectable" style="right:16px;">&rsaquo;</div>
+  <div class="ccount">3 / 12</div>
+  <div class="cdots"><i></i><i></i><i class="on"></i><i></i><i></i><i></i></div>
 </div>`;
 
 const imageDetail = detailCard({ media:mImage, caption:'shot this on the walk back from the studio around 2am. the building across the street never turns its lights off.', meta:[['Added','Aug 12'],['By','inkwell',true],['Content type','image/png'],['Resolution','3024 × 4032'],['File size','4.1 MB']], download:'Download .png', tags:['#following','#newuploads','#wip'], likes:'128' });
 const videoDetail = detailCard({ media:mVideo, caption:'one continuous take, no cuts. the light did all the work.', meta:[['Added','3 days ago'],['By','camrafilm',true],['Content type','video/mp4'],['Resolution','1920 × 1080'],['Duration','2:14'],['File size','18.4 MB']], download:'Download .mp4', tags:['#motion','#golden'], likes:'302' });
 const audioDetail = detailCard({ media:mAudio, caption:'tape no. 9 — a slow one for the end of the night.', meta:[['Added','1 week ago'],['By','lowfreq',true],['Content type','audio/mp3'],['Duration','3:20'],['File size','7.6 MB']], download:'Download .mp3', tags:['#beat','#latenight'], likes:'86' });
 const textDetail = detailCard({ media:mText, title:'Rerun, and the case for a slower rebrand', caption:'why we talked them out of the loud version.', meta:[['Added','2 months ago'],['By','studiogruhl',true],['Content type','text/markdown'],['Words','840'],['Reading time','4 min']], download:'Download .md', tags:['#branding','#essay'], likes:'54' });
-const collectionDetail = detailCard({ media:mCollection, caption:'story bible: HALO — reference, palettes, and the pages that started it.', meta:[['Added','1 month ago'],['By','inkwell',true],['Items','12'],['Types','image · text']], tags:['#worldbuilding','#reference'], likes:'173' });
+const collectionDetail = detailCard({ media:mCollection, caption:'story bible: HALO — reference, palettes, and the pages that started it.', meta:[['Added','1 month ago'],['By','inkwell',true],['Items','12'],['Types','image · text']], download:'this item .png', downloadAll:'all 12 .zip', tags:['#worldbuilding','#reference'], likes:'173' });
 const posterDetail = detailCard({ media:mImage, caption:'shot this on the walk back from the studio around 2am. the building across the street never turns its lights off.', meta:[['Added','Aug 12'],['By','inkwell',true],['Content type','image/png'],['Resolution','3024 × 4032'],['File size','4.1 MB']], download:'Download .png', tags:['#following','#newuploads','#wip'], poster:true });
 
-/* ---- small modals: sign-in, account creation, delete confirm ---- */
+/* ---- small modals: save-to-folder, sign-in, account creation, delete ---- */
+const CHECK = '<svg viewBox="0 0 24 24"><path d="M5 12l4 4 10-10"/></svg>';
+function folderRow(name, count, on){
+  return `<div class="folderrow${on?' on':''}"><div class="fcheck">${CHECK}</div><div class="fname">${esc(name)}</div><div class="fmeta">${esc(count)}</div></div>`;
+}
+const saveCard = `<div style="width:440px;background:var(--paper);display:flex;flex-direction:column;overflow:hidden;box-sizing:border-box;">
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:22px 24px 10px 24px;">
+    <div style="font-weight:700;font-size:20px;color:var(--ink);">Save to…</div>
+    <div class="navarrow selectable" data-close>&times;</div>
+  </div>
+  <div style="padding:0 16px;display:flex;flex-direction:column;">
+    ${folderRow('All saved', '128', true)}
+    ${folderRow('Inspiration', '42')}
+    ${folderRow('Palettes', '17')}
+    ${folderRow('To read', '9')}
+  </div>
+  <div style="padding:6px 16px 20px 16px;display:flex;flex-direction:column;gap:12px;">
+    <div class="folderrow selectable"><div style="width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:20px;color:var(--accent);line-height:1;">+</div><div class="fname" style="color:var(--accent);font-weight:600;">New folder</div></div>
+    <div style="display:flex;justify-content:flex-end;padding:0 8px;"><div class="btnline filled">Done</div></div>
+  </div>
+</div>`;
 const GOOGLE = '<svg viewBox="0 0 24 24" width="16" height="16" style="flex-shrink:0;"><path fill="currentColor" d="M12 11v2.7h4.4c-.2 1.2-1.5 3.4-4.4 3.4-2.7 0-4.8-2.2-4.8-4.9S9.3 7.3 12 7.3c1.5 0 2.5.6 3.1 1.2l2-2C15.8 5.3 14.1 4.6 12 4.6 7.8 4.6 4.4 8 4.4 12S7.8 19.4 12 19.4c4.3 0 7.2-3 7.2-7.3 0-.5 0-.8-.1-1.1z"/></svg>';
 const signinCard = `<div style="width:420px;background:var(--paper);padding:40px 36px;display:flex;flex-direction:column;gap:18px;box-sizing:border-box;">
   <div class="wordmark" style="font-size:30px;">eski<i>!</i></div>
@@ -657,19 +814,48 @@ const profileHtml = `
   <div style="font-size:14px;color:var(--ink-soft);line-height:1.6;max-width:680px;">shoots at night, mostly on film, mostly alone. asks for feedback and rarely takes it. currently working on a long series about the buildings that never turn their lights off — HALO is the story bible for it. open to scoring and collaboration; drop a !! if you want in.</div>
 </div>
 <div class="ms selectable" style="display:flex;flex-direction:row;gap:24px;width:100%;padding:0 32px;box-sizing:border-box;flex-shrink:0;">
-  <div class="dtab active">Posts</div>
-  <div class="dtab">Collections</div>
+  <div class="dtab active" data-tab="posts">Posts</div>
+  <div class="dtab" data-tab="saved">Saved</div>
+  <div class="dtab" data-tab="settings">Settings</div>
 </div>
-<div style="width:100%;padding:24px 32px 48px 32px;box-sizing:border-box;flex-shrink:0;">
-  <div class="fgrid">
-    ${gcard('midnight session','@inkwell')}
-    ${gcard('afterglow','@inkwell')}
-    ${gcard('rooftop cut','@inkwell', vid('2:14'))}
-    ${gcard('reference','@inkwell')}
-    ${gcard('story bible: HALO','@inkwell')}
-    ${gcard('static','@inkwell')}
-    ${gcard('issue no. 4','@inkwell', gq('nobody remembers the flood the same way twice.'))}
-    ${gcard('tape no. 9','@inkwell', aud)}
+<div style="width:100%;box-sizing:border-box;flex-shrink:0;">
+  <div data-panel="posts" style="display:flex;flex-direction:column;gap:16px;padding:24px 32px 48px 32px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;">
+      <div style="font-size:13px;color:var(--muted);">142 posts</div>
+      <div class="btnline selectable" style="display:flex;align-items:center;gap:8px;">
+        <svg viewBox="0 0 24 24" width="15" height="15" style="fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;"><path d="M12 5v14M5 12h14"/></svg>Create collection</div>
+    </div>
+    <div class="fgrid">
+      ${gcard('midnight session','@inkwell')}
+      ${gcard('afterglow','@inkwell')}
+      ${gcard('rooftop cut','@inkwell', vid('2:14'))}
+      ${gcard('reference','@inkwell')}
+      ${gcard('story bible: HALO','@inkwell', coll('12'))}
+      ${gcard('static','@inkwell')}
+      ${gtextcard('Rerun, and the case for a slower rebrand', ESSAY, '@inkwell')}
+      ${gcard('tape no. 9','@inkwell', aud)}
+    </div>
+  </div>
+  <div data-panel="saved" style="display:none;flex-direction:column;gap:16px;padding:24px 32px 48px 32px;">
+    <div style="font-size:13px;color:var(--muted);">your saved folders</div>
+    <div class="fgrid">
+      ${gcard('All saved','',coll('128'))}
+      ${gcard('Inspiration','',coll('42'))}
+      ${gcard('Palettes','',coll('17'))}
+      ${gcard('To read','',coll('9'))}
+    </div>
+  </div>
+  <div data-panel="settings" style="display:none;flex-direction:column;padding:12px 32px 48px 32px;max-width:640px;">
+    ${settingRow('Display name','Ink Well')}
+    ${settingRow('Handle','@inkwell')}
+    ${settingRow('Email','ink@well.studio')}
+    ${settingRow('Default post visibility','Public')}
+    ${settingRow('Theme','Light')}
+    ${settingRow('Allow others to add versions','On')}
+    <div style="display:flex;gap:8px;margin-top:20px;">
+      <div class="btnline" style="background:#A33028;color:#fff;">Delete account</div>
+      <div class="btnline">Sign out</div>
+    </div>
   </div>
 </div>`;
 
@@ -815,10 +1001,11 @@ placeModal(audioDetail, 3120, 2820, 1320, 900, 'DETAIL — audio');
 placeModal(textDetail, 0, 3860, 1320, 900, 'DETAIL — text / essay');
 placeModal(collectionDetail, 1560, 3860, 1320, 900, 'DETAIL — collection');
 placeModal(posterDetail, 3120, 3860, 1320, 900, "DETAIL — your own post (edit tags · ⋮ menu)");
-// account + destructive modals
+// account + action modals
 placeModal(signinCard, 0, 4900, 760, 640, 'SIGNED OUT — sign-in prompt');
 placeModal(accountCard, 940, 4900, 760, 760, 'ACCOUNT CREATION');
 placeModal(deleteCard, 1880, 4900, 760, 560, 'DELETE CONFIRMATION');
+placeModal(saveCard, 2820, 4900, 760, 640, 'SAVE — to a folder');
 
 /* the mockups are live, so their own controls actually work: detail
    tabs switch panels, feed tabs open/close/add, tags add (with a small
@@ -924,9 +1111,49 @@ world.addEventListener('click', e => {
     e.target.closest('.burger').classList.remove('open');
     return;
   }
-  // like / save toggle
+  // like toggle
   const act = e.target.closest('[data-act-toggle]');
   if(act){ e.stopPropagation(); act.classList.toggle('on'); return; }
+  // save button → (mockup) toggles; the real save-to-folder flow is its own modal
+  const savebtn = e.target.closest('[data-savebtn]');
+  if(savebtn){ e.stopPropagation(); savebtn.classList.toggle('on'); return; }
+
+  // version dropdown: open/close
+  if(e.target.closest('[data-ver]')){
+    e.stopPropagation();
+    e.target.closest('.verwrap').querySelector('.verdrop').classList.toggle('open');
+    return;
+  }
+  if(e.target.closest('.verdrop .vi')){
+    e.stopPropagation();
+    e.target.closest('.verdrop').classList.remove('open');
+    return;
+  }
+  // add-to-collection dropdown
+  if(e.target.closest('[data-a2c]')){
+    e.stopPropagation();
+    e.target.closest('.a2c').querySelector('.a2cdrop').classList.toggle('open');
+    return;
+  }
+  if(e.target.closest('.a2cdrop .ci')){
+    e.stopPropagation();
+    e.target.closest('.a2cdrop').classList.remove('open');
+    return;
+  }
+  // modifier: segmented (single-select within the group)
+  const segopt = e.target.closest('[data-seg] [data-o]');
+  if(segopt){
+    e.stopPropagation();
+    segopt.parentElement.querySelectorAll('[data-o]').forEach(o => o.classList.remove('on'));
+    segopt.classList.add('on');
+    return;
+  }
+  // modifier: independent toggle chip
+  const mtog = e.target.closest('[data-mtoggle]');
+  if(mtog){ e.stopPropagation(); mtog.classList.toggle('on'); return; }
+  // save-to-folder row toggle
+  const frow = e.target.closest('.folderrow');
+  if(frow){ e.stopPropagation(); frow.classList.toggle('on'); return; }
 
   // tag chip: remove
   if(e.target.closest('.tagchip') && e.target.classList.contains('x')){
