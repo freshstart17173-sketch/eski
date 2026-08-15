@@ -176,20 +176,43 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--
 .navlink:hover{color:var(--ink)}
 .navlink.active{font-weight:600;color:var(--ink);border-bottom-color:var(--ink)}
 
-/* ---- feed tabs: named saved feeds you can add (+) and close (× on hover),
-   like browser tabs. no outline, fill only. ---- */
-.feedtab{display:inline-flex;align-items:center;gap:6px;font-family:var(--font-body);font-weight:500;
-  font-size:var(--fs-xs);color:var(--ink);background:var(--paper-dim);padding:6px 10px 6px 12px;
-  border-radius:var(--radius-min);cursor:pointer;transition:background 120ms ease,color 120ms ease}
-.feedtab:hover{background:#E4E4E4}
-.feedtab.active{background:var(--ink);color:var(--paper)}
-.feedtab .x{opacity:0;font-size:14px;line-height:1;width:14px;text-align:center;transition:opacity 120ms ease}
-.feedtab:hover .x{opacity:.55}
-.feedtab .x:hover{opacity:1}
-.feedadd,.tagadd{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;
+/* ---- the wordmark. gnomon, in the accent, "!" set roman not italic,
+   with the same .43em ink-centring nudge broadsheet.css uses. the one
+   sanctioned use of the display face. ---- */
+.wordmark{font-family:var(--font-display);font-weight:700;font-size:28px;letter-spacing:-.01em;
+  color:var(--accent);line-height:1;display:inline-block;transform:translateY(.12em)}
+.wordmark i{font-style:normal;color:inherit}
+
+/* ---- feed switcher: the active feed is the big editable headline; the
+   others trail after it in grey, click to switch (then rename in place),
+   × on hover to delete. Discover carries data-nodelete and never gets an
+   ×. a + at the end makes another feed. no pills, no outlines. ---- */
+.feedswitch{display:flex;align-items:baseline;gap:20px;flex-wrap:wrap}
+.feed{font-family:var(--font-body);font-weight:700;font-size:38px;letter-spacing:-.01em;line-height:1.05;
+  color:var(--muted);cursor:pointer;transition:color 120ms ease;display:inline-flex;align-items:baseline;gap:8px}
+.feed:hover{color:var(--ink-soft)}
+.feed.active{color:var(--ink)}
+.feed[contenteditable="true"]{outline:none;cursor:text;-webkit-user-select:text;user-select:text}
+.feed .fx{opacity:0;font-size:18px;font-weight:400;cursor:pointer;transition:opacity 120ms ease}
+.feed:hover .fx{opacity:.5}
+.feed .fx:hover{opacity:1}
+.feedplus{font-family:var(--font-body);font-weight:400;font-size:30px;color:var(--muted);cursor:pointer;
+  line-height:1;align-self:center;transition:color 120ms ease;user-select:none}
+.feedplus:hover{color:var(--ink)}
+
+.tagadd{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;
   font-size:16px;line-height:1;color:var(--ink);background:var(--paper-dim);border:none;
   border-radius:var(--radius-min);cursor:pointer;transition:background 120ms ease;font-family:var(--font-body)}
-.feedadd:hover,.tagadd:hover{background:#E4E4E4}
+.tagadd:hover{background:#E4E4E4}
+
+/* ---- a collapsible tag panel: click the label to hide/show its chips.
+   modifier tags can be folded away entirely this way. ---- */
+.tagpanel .taghdr{display:inline-flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);
+  text-transform:uppercase;letter-spacing:.1em;cursor:pointer;user-select:none;transition:color 120ms ease}
+.tagpanel .taghdr:hover{color:var(--ink)}
+.tagpanel .taghdr .chev{font-size:8px;transition:transform 120ms ease}
+.tagpanel.collapsed .taghdr .chev{transform:rotate(-90deg)}
+.tagpanel.collapsed .tagbody{display:none}
 
 /* ---- editable tag chip: × appears on hover ---- */
 .tagchip{display:inline-flex;align-items:center;gap:5px;font-family:var(--font-body);font-weight:500;
@@ -234,7 +257,10 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--
   font-size:var(--fs-micro);color:var(--paper);background:rgba(17,17,17,.72);padding:3px 6px}
 .gquote{padding:22px;font-family:var(--font-body);font-weight:500;font-size:15px;color:var(--ink-soft);
   line-height:1.4;text-align:left}
-.gcount{position:absolute;bottom:8px;left:8px;font-size:var(--fs-xs);color:var(--muted)}
+.gcount{position:absolute;bottom:8px;left:8px;display:inline-flex;align-items:center;gap:5px;
+  font-family:var(--font-body);font-weight:700;font-size:var(--fs-xs);color:var(--paper);
+  background:rgba(17,17,17,.8);padding:4px 8px}
+.gcount svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2.2}
 .gplay{width:34px;height:34px;border-radius:50%;background:rgba(17,17,17,.72);display:flex;
   align-items:center;justify-content:center}
 .gplay svg{width:14px;height:14px;fill:var(--paper);margin-left:2px}
@@ -294,55 +320,57 @@ function gcard(title, handle, inner){
 const PLAY = '<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>';
 const vid = d => `<div class="gplay">${PLAY}</div><div class="gind">${esc(d)}</div>`;
 const aud = `<div class="gplay">${PLAY}</div>`;
-const coll = n => `<div class="gcount">${esc(n)}</div>`;
+const coll = n => `<div class="gcount"><svg viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12"/><path d="M4 16V4h12"/></svg>${esc(n)}</div>`;
 const gq = t => `<div class="gquote">"${esc(t)}"</div>`;
 
 const homepageHtml = `
 <div class="ms selectable" style="display:flex;flex-direction:row;align-items:center;justify-content:space-between;
     width:100%;height:64px;padding:0 32px;box-sizing:border-box;flex-shrink:0;">
-  <div style="font-family:var(--font-display);font-weight:700;font-size:22px;color:var(--ink);">eski</div>
+  <div class="wordmark">eski<i>!</i></div>
   <div style="display:flex;flex-direction:row;align-items:center;gap:32px;">
     <div class="navlink active">Home</div>
     <div class="navlink">Profile</div>
     <div class="btnline filled">Upload</div>
   </div>
 </div>
-<div class="ms selectable" style="display:flex;align-items:center;gap:8px;width:100%;
-    padding:20px 32px 0 32px;box-sizing:border-box;flex-shrink:0;" data-feedrow>
-  <div class="feedtab active">Discover<span class="x" data-feedclose>&times;</span></div>
-  <div class="feedtab">sound<span class="x" data-feedclose>&times;</span></div>
-  <div class="feedtab">stills<span class="x" data-feedclose>&times;</span></div>
-  <button class="feedadd" data-feedadd>+</button>
-</div>
 <div class="ms selectable" style="display:flex;flex-direction:column;gap:20px;width:100%;padding:20px 32px 24px 32px;box-sizing:border-box;flex-shrink:0;">
-  <div style="font-family:var(--font-body);font-weight:700;font-size:44px;color:var(--ink);letter-spacing:-.01em;">Discover</div>
+  <div class="feedswitch" data-feedrow>
+    <span class="feed active" data-nodelete contenteditable="true" spellcheck="false">Discover</span>
+    <span class="feed">sound<span class="fx" data-feeddel>&times;</span></span>
+    <span class="feed">stills<span class="fx" data-feeddel>&times;</span></span>
+    <span class="feedplus" data-feedadd>+</span>
+  </div>
   <div style="display:flex;gap:64px;flex-wrap:wrap;align-items:flex-start;">
-    <div style="display:flex;flex-direction:column;gap:10px;position:relative;">
-      <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;">content tags</div>
-      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;" data-tagrow>
-        <span class="tagchip">#following<span class="x">&times;</span></span>
-        <span class="tagchip">#newuploads<span class="x">&times;</span></span>
-        <span class="tagchip">#wip<span class="x">&times;</span></span>
-        <button class="tagadd" data-tagadd>+</button>
-      </div>
-      <div class="tagsearch" data-tagsearch>
-        <input placeholder="search tags" data-tagsearchinput>
-        <div class="opt">#analog</div>
-        <div class="opt">#nightshots</div>
-        <div class="opt">#longexposure</div>
-        <div class="opt">#grain</div>
-        <div class="opt">#cityscape</div>
+    <div class="tagpanel">
+      <div class="taghdr" data-toggle>content tags <span class="chev">&#9662;</span></div>
+      <div class="tagbody" style="margin-top:10px;position:relative;">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;" data-tagrow>
+          <span class="tagchip">#following<span class="x">&times;</span></span>
+          <span class="tagchip">#newuploads<span class="x">&times;</span></span>
+          <span class="tagchip">#wip<span class="x">&times;</span></span>
+          <button class="tagadd" data-tagadd>+</button>
+        </div>
+        <div class="tagsearch" data-tagsearch>
+          <input placeholder="search tags" data-tagsearchinput>
+          <div class="opt">#analog</div>
+          <div class="opt">#nightshots</div>
+          <div class="opt">#longexposure</div>
+          <div class="opt">#grain</div>
+          <div class="opt">#cityscape</div>
+        </div>
       </div>
     </div>
-    <div style="display:flex;flex-direction:column;gap:10px;">
-      <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;">modifier tags</div>
-      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;max-width:420px;">
-        <span class="chip small active" data-mod>#thisweek</span>
-        <span class="chip small" data-mod>#thismonth</span>
-        <span class="chip small active" data-mod>#fromfollowing</span>
-        <span class="chip small" data-mod>#unseen</span>
-        <span class="chip small" data-mod>#trending</span>
-        <span class="chip small" data-mod>#nearby</span>
+    <div class="tagpanel">
+      <div class="taghdr" data-toggle>modifier tags <span class="chev">&#9662;</span></div>
+      <div class="tagbody" style="margin-top:10px;">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;max-width:420px;">
+          <span class="chip small active" data-mod>#thisweek</span>
+          <span class="chip small" data-mod>#thismonth</span>
+          <span class="chip small active" data-mod>#fromfollowing</span>
+          <span class="chip small" data-mod>#unseen</span>
+          <span class="chip small" data-mod>#trending</span>
+          <span class="chip small" data-mod>#nearby</span>
+        </div>
       </div>
     </div>
   </div>
@@ -353,9 +381,9 @@ const homepageHtml = `
     ${gcard('night drive','@lowfreq', aud)}
     ${gcard('rooftop cut','@camrafilm', vid('2:14'))}
     ${gcard('issue no. 4','@paperbound', gq('nobody remembers the flood the same way twice.'))}
-    ${gcard('sketchbook, march','@linewerk', coll('collection · 6'))}
+    ${gcard('sketchbook, march','@linewerk', coll('6'))}
     ${gcard('static','@glasseye')}
-    ${gcard('story bible: HALO','@inkwell', coll('collection · 12'))}
+    ${gcard('story bible: HALO','@inkwell', coll('12'))}
     ${gcard('tape no. 9','@lowfreq', aud)}
     ${gcard('afterglow','@salt.mv')}
     ${gcard('loop test','@camrafilm', vid('0:47'))}
@@ -392,7 +420,7 @@ const maximisedHtml = `
   <div class="ms selectable" style="width:58%;height:100%;background:var(--paper-dim);flex-shrink:0;"></div>
   <div style="width:42%;height:100%;display:flex;flex-direction:column;overflow:hidden;">
     <div class="ms selectable" style="display:flex;flex-direction:column;gap:16px;padding:64px 24px 24px 24px;box-sizing:border-box;">
-      <div style="font-weight:700;font-size:22px;color:var(--ink);">midnight session</div>
+      <div style="font-size:14px;font-weight:400;color:var(--ink-soft);line-height:1.5;">shot this on the walk back from the studio around 2am. the building across the street never turns its lights off.</div>
       <div style="display:flex;flex-direction:column;gap:0;">
         <div style="display:flex;justify-content:space-between;padding:6px 0;font-size:12.5px;color:var(--muted);">
           <span>Added</span><span style="color:var(--ink-soft);">Aug 12</span></div>
@@ -405,7 +433,6 @@ const maximisedHtml = `
         <div style="display:flex;justify-content:space-between;padding:6px 0;font-size:12.5px;color:var(--muted);">
           <span>File size</span><span style="color:var(--ink-soft);">4.1 MB</span></div>
       </div>
-      <div style="font-size:13px;font-weight:400;color:var(--muted);line-height:1.5;">shot this on the walk back from the studio around 2am. the building across the street never turns its lights off.</div>
     </div>
     <div class="ms selectable" style="display:flex;flex-direction:row;gap:24px;padding:0 24px;border-top:0;flex-shrink:0;">
       <div class="dtab active" data-tab="tags">Tags</div>
@@ -441,7 +468,7 @@ const maximisedHtml = `
 const profileHtml = `
 <div class="ms selectable" style="display:flex;flex-direction:row;align-items:center;justify-content:space-between;
     width:100%;height:64px;padding:0 32px;box-sizing:border-box;flex-shrink:0;">
-  <div style="font-family:var(--font-display);font-weight:700;font-size:22px;color:var(--ink);">eski</div>
+  <div class="wordmark">eski<i>!</i></div>
   <div style="display:flex;flex-direction:row;align-items:center;gap:32px;">
     <div class="navlink">Home</div>
     <div class="navlink active">Profile</div>
@@ -451,9 +478,10 @@ const profileHtml = `
 <div class="ms selectable" style="display:flex;flex-direction:row;align-items:center;gap:24px;width:100%;
     padding:32px 32px 24px 32px;box-sizing:border-box;flex-shrink:0;">
   <div style="width:72px;height:72px;background:var(--paper-dim);flex-shrink:0;"></div>
-  <div style="display:flex;flex-direction:column;gap:6px;flex:1;">
-    <div style="font-weight:700;font-size:22px;color:var(--ink);">inkwell</div>
-    <div style="font-size:13.5px;color:var(--muted);">shoots at night. asks for feedback. rarely takes it.</div>
+  <div style="display:flex;flex-direction:column;gap:4px;flex:1;">
+    <div style="font-weight:700;font-size:22px;color:var(--ink);line-height:1.1;">Ink Well</div>
+    <div style="font-size:13.5px;color:var(--muted);">@inkwell</div>
+    <div style="font-size:13.5px;color:var(--ink-soft);margin-top:4px;">shoots at night. asks for feedback. rarely takes it.</div>
   </div>
   <div style="display:flex;gap:32px;flex-shrink:0;">
     <div style="display:flex;flex-direction:column;align-items:center;gap:2px;">
@@ -481,7 +509,7 @@ const profileHtml = `
     ${gcard('afterglow','@inkwell')}
     ${gcard('rooftop cut','@inkwell', vid('2:14'))}
     ${gcard('reference','@inkwell')}
-    ${gcard('story bible: HALO','@inkwell', coll('collection · 12'))}
+    ${gcard('story bible: HALO','@inkwell')}
     ${gcard('static','@inkwell')}
     ${gcard('issue no. 4','@inkwell', gq('nobody remembers the flood the same way twice.'))}
     ${gcard('tape no. 9','@inkwell', aud)}
@@ -533,28 +561,41 @@ world.addEventListener('click', e => {
     return;
   }
 
-  // feed tab: close
-  if(e.target.closest('[data-feedclose]')){
+  // collapsible tag panel: fold/unfold its chips
+  const toggle = e.target.closest('[data-toggle]');
+  if(toggle){
     e.stopPropagation();
-    e.target.closest('.feedtab').remove();
+    toggle.closest('.tagpanel').classList.toggle('collapsed');
     return;
   }
-  // feed tab: add
+
+  // feed: delete (only feeds that carry an ×; Discover has data-nodelete)
+  if(e.target.closest('[data-feeddel]')){
+    e.stopPropagation();
+    e.target.closest('.feed').remove();
+    return;
+  }
+  // feed: add another
   if(e.target.closest('[data-feedadd]')){
     e.stopPropagation();
     const add = e.target.closest('[data-feedadd]');
-    const t = document.createElement('div');
-    t.className = 'feedtab';
-    t.innerHTML = 'new feed<span class="x" data-feedclose>&times;</span>';
-    add.parentElement.insertBefore(t, add);
+    const f = document.createElement('span');
+    f.className = 'feed';
+    f.innerHTML = 'new feed<span class="fx" data-feeddel>&times;</span>';
+    add.parentElement.insertBefore(f, add);
     return;
   }
-  // feed tab: activate
-  const feedtab = e.target.closest('.feedtab');
-  if(feedtab){
+  // feed: switch active (and make it editable in place); clicking the
+  // already-active feed does nothing so its caret/rename works.
+  const feed = e.target.closest('.feed');
+  if(feed){
     e.stopPropagation();
-    feedtab.parentElement.querySelectorAll('.feedtab').forEach(t => t.classList.remove('active'));
-    feedtab.classList.add('active');
+    if(!feed.classList.contains('active')){
+      feed.parentElement.querySelectorAll('.feed').forEach(f => {
+        f.classList.remove('active'); f.setAttribute('contenteditable', 'false');
+      });
+      feed.classList.add('active'); feed.setAttribute('contenteditable', 'true');
+    }
     return;
   }
 
