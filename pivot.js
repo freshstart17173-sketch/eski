@@ -34,6 +34,7 @@ function fmtDateTime(iso){
   return new Date(iso).toLocaleString(undefined,
     { year:'numeric', month:'short', day:'numeric', hour:'numeric', minute:'2-digit' });
 }
+function fmtDate(iso){ return new Date(iso).toLocaleDateString(); }
 function slugify(s){
   return (s || 'untitled').toString().toLowerCase().trim()
     .replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,60) || 'untitled';
@@ -165,7 +166,7 @@ function cardHtml(w){
   if(w.kind === 'other')
     return `<button class="gcard" type="button" data-open="${w.id}">
       <div class="gbox framed"><div class="gother">${esc(w.title)}</div></div>
-      <div class="gcap">${esc(w.title)}</div></button>`;
+      <div class="gcap">${esc(w.caption || w.title)}</div></button>`;
   if(w.kind === 'text')
     return `<button class="gcard" type="button" data-open="${w.id}">
       <div class="gbox framed" style="align-items:stretch;justify-content:flex-start;">
@@ -174,9 +175,12 @@ function cardHtml(w){
   // audio is always framed, like text/other — a background square with the
   // waveform inset, not edge-to-edge media
   const framed = w.kind === 'audio' || (!inner && !w.media_key && !w.cover_key);
+  // the caption is what the poster wrote; title is a bare filename for
+  // every kind except text (real title) and other (no media, so the
+  // filename is the only label it has) — the card shows what was written.
   return `<button class="gcard" type="button" data-open="${w.id}">
     <div class="gbox${framed?' framed':''}">${inner}</div>
-    <div class="gcap">${esc(w.title)}</div></button>`;
+    <div class="gcap">${esc(w.caption || w.title)}</div></button>`;
 }
 /* delegate [data-open] clicks anywhere on the page to the detail overlay —
    a page just has to render cards from cardHtml(); it never wires the click
@@ -265,8 +269,9 @@ function tagsPanelHtml(work, tags, poster){
     : `<span class="chip small" style="background:var(--paper);">#${esc(t)}</span>`).join('');
   return `<div data-panel="tags" style="display:flex;flex-direction:column;gap:18px;padding:16px 24px;">
     <div style="display:flex;flex-direction:column;gap:8px;">
-      <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;">content tags${poster?' &middot; edit anytime':''}</div>
-      <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;" id="detail-tags">${chips}<button class="tagadd" type="button" id="detail-tagadd">+</button></div>
+      <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;">content tags${poster?' &middot; type + enter, backspace to remove':''}</div>
+      <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;" id="detail-tags">${chips}
+        ${poster ? `<input class="taginput" id="detail-taginput" placeholder="+ tag" size="6">` : ''}</div>
     </div>
   </div>`;
 }
@@ -393,7 +398,7 @@ async function openDetail(workId){
     sb.from('comments').select('*').eq('target_type','work').eq('target_id', work.id).is('deleted_at', null).order('created_at'),
     sb.from('likes').select('user_id').eq('target_type','work').eq('target_id', work.id),
     work.kind === 'combination' ? sb.from('work_items').select('*').eq('work_id', work.id).order('idx') : Promise.resolve({data:[]}),
-    sb.from('works').select('id,version_label,created_at').or(`id.eq.${rootId},version_of.eq.${rootId}`).order('created_at', { ascending:false })
+    sb.from('works').select('id,title,version_label,created_at').or(`id.eq.${rootId},version_of.eq.${rootId}`).order('created_at', { ascending:false })
   ]);
   if(user){ sb.from('seen_marks').upsert({ user_id:user.id, target_type:'work', target_id:work.id }).then(()=>{}); mySeenIds.add(work.id); }
 
@@ -423,6 +428,19 @@ async function openDetail(workId){
   scrimClose(root);
   wireDetail(root, work, items||[], poster);
 }
+/* format/length/bitrate — media_key's own extension for format (no column
+   for it, the key already carries it: <hash>.<ext>), duration_ms from
+   upload-time decode, bitrate estimated from bytes over duration since
+   nothing decodes the container to read an encoded bitrate directly. */
+function mediaMetaRows(work){
+  if(work.kind !== 'audio' && work.kind !== 'video') return [];
+  const rows = [];
+  const ext = (work.media_key || '').split('.').pop();
+  if(ext) rows.push(['Format', ext.toUpperCase()]);
+  if(work.duration_ms) rows.push(['Length', fmtClock(work.duration_ms / 1000)]);
+  if(work.duration_ms && work.bytes) rows.push(['Bitrate', Math.round(work.bytes * 8 / (work.duration_ms / 1000) / 1000) + ' kbps']);
+  return rows;
+}
 function infoColHtml(work, liked, likeCount, poster){
   /* title is a filename with the extension trimmed off (uploadOne() never
      asks for a real one on image/video/audio) — showing it next to the
@@ -432,16 +450,24 @@ function infoColHtml(work, liked, likeCount, poster){
      itself, so it's already skipped here. */
   return `${work.kind==='other' ? `<div style="font-weight:700;font-size:19px;color:var(--ink);line-height:1.3;">${esc(work.title)}</div>` : ''}
     <div style="font-size:14px;color:var(--soft-ink);line-height:1.5;">${esc(work.caption||'')}</div>
-    ${metaRows([['Added', fmtDateTime(work.created_at)], ['By', work.owner_name]], work.media_key ? 'download' : null, work.media_key ? eski.mediaUrl(work.media_key) : null)}
+    ${metaRows([['Added', fmtDateTime(work.created_at)], ['By', work.owner_name], ...mediaMetaRows(work)], work.media_key ? 'download' : null, work.media_key ? eski.mediaUrl(work.media_key) : null)}
     ${poster ? posterActionsHtml(work) : actionBarHtml(work, liked, likeCount)}`;
 }
 function overlayControlsHtml(poster, hasVersions, versions, work){
+  /* versions arrives newest-first (the fetch order); the number shown has
+     to be chronological (the original is v1) regardless of that, so it's
+     computed from a separate oldest-first sort rather than the display
+     index — otherwise adding a version relabels the original from v1 to
+     v2 while the new one confusingly becomes v1. */
+  const byAge = [...versions].sort((a,b) => new Date(a.created_at) - new Date(b.created_at));
+  const vnum = id => byAge.findIndex(v => v.id === id) + 1;
   return `<div style="position:absolute;top:20px;right:24px;z-index:6;display:flex;align-items:center;gap:8px;">
     ${hasVersions ? `<div class="verwrap">
-      <button class="chip small" type="button" data-ver style="white-space:nowrap;">${versions.length>1?`v${versions.findIndex(v=>v.id===work.id)+1} of ${versions.length}`:'v1'}&nbsp;&#9662;</button>
+      <button class="chip small" type="button" data-ver style="white-space:nowrap;">v${vnum(work.id)} of ${versions.length}&nbsp;&#9662;</button>
       <div class="verdrop" data-verdrop>
         ${versions.map(v => `<button class="vi${v.id===work.id?' on':''}" type="button" data-goversion="${v.id}">
-          ${esc(v.version_label || (v.id===work.id?'this version':'version'))} <span style="color:var(--muted);">${fmtWhen(v.created_at)}</span></button>`).join('')}
+          <span class="vi-name">v${vnum(v.id)} &middot; ${esc(v.version_label || v.title)}</span>
+          <span style="color:var(--muted);flex-shrink:0;">${fmtDate(v.created_at)}</span></button>`).join('')}
         ${poster ? `<div class="sep"></div><button class="vi add" type="button" id="add-version">+ Add version</button>` : ''}
       </div>
     </div>` : ''}
@@ -583,16 +609,25 @@ async function wireDetail(root, work, items, poster){
     if(drop.classList.contains('open')) await renderSaveDrop(root, work.id);
   });
   // tags
-  const tagAdd = root.querySelector('#detail-tagadd');
-  if(tagAdd) tagAdd.addEventListener('click', () => {
-    if(!user) return openSignIn();
-    openPrompt('Add a tag', 'no # needed', 'Add tag', async t => {
-      const tag = t.toLowerCase().replace(/[^a-z0-9-]/g,'');
+  // tag input: type, enter/space commits, backspace on an empty box drops
+  // the last tag — no modal, the chip row updates in place
+  const tagInput = root.querySelector('#detail-taginput');
+  if(tagInput) tagInput.addEventListener('keydown', async e => {
+    if(e.key === 'Enter' || e.key === ' '){
+      e.preventDefault();
+      const tag = tagInput.value.trim().toLowerCase().replace(/[^a-z0-9-]/g,'');
       if(tag.length < 2) return;
+      tagInput.value = '';
       const { error } = await sb.from('content_tags').insert({ target_type:'work', target_id: work.id, tag, added_by: user.id });
       if(error && error.code !== '23505') return toast(eski.dbError('ESK-5101','tag could not be added', error));
       openDetail(work.id);
-    });
+    } else if(e.key === 'Backspace' && !tagInput.value){
+      const last = [...root.querySelectorAll('[data-detag]')].pop();
+      if(!last) return;
+      const { error } = await sb.from('content_tags').delete().eq('target_type','work').eq('target_id', work.id).eq('tag', last.dataset.detag);
+      if(error) return toast(eski.dbError('ESK-5101','tag could not be removed', error));
+      openDetail(work.id);
+    }
   });
   root.querySelectorAll('[data-detag]').forEach(x => x.addEventListener('click', async () => {
     const { error } = await sb.from('content_tags').delete().eq('target_type','work').eq('target_id', work.id).eq('tag', x.dataset.detag);
@@ -913,13 +948,17 @@ function grabVideoFrame(file){
     video.muted = true; video.playsInline = true; video.preload = 'metadata';
     const url = URL.createObjectURL(file);
     video.src = url;
+    let durationMs = null;
     const cleanup = () => URL.revokeObjectURL(url);
-    video.addEventListener('loadedmetadata', () => { video.currentTime = Math.min(1, (video.duration || 0) / 2); });
+    video.addEventListener('loadedmetadata', () => {
+      durationMs = Math.round((video.duration || 0) * 1000);
+      video.currentTime = Math.min(1, (video.duration || 0) / 2);
+    });
     video.addEventListener('seeked', () => {
       const canvas = document.createElement('canvas');
       canvas.width = video.videoWidth; canvas.height = video.videoHeight;
       canvas.getContext('2d').drawImage(video, 0, 0);
-      canvas.toBlob(blob => { cleanup(); resolve(blob); }, 'image/jpeg', 0.85);
+      canvas.toBlob(blob => { cleanup(); resolve({ blob, durationMs }); }, 'image/jpeg', 0.85);
     });
     video.addEventListener('error', () => { cleanup(); resolve(null); });
   });
@@ -936,6 +975,7 @@ async function generateWaveform(file){
   const ctx = new AC();
   try{
     const buf = await ctx.decodeAudioData(await file.arrayBuffer());
+    const durationMs = Math.round(buf.duration * 1000);
     const data = buf.getChannelData(0);
     /* one column per pixel, no gap between columns — a soundcloud-style
        waveform is bars with visible gaps and rounded tops; this is the
@@ -966,18 +1006,19 @@ async function generateWaveform(file){
    play-glyph card it had before either feature existed. */
 async function coverKeyFor(item){
   try{
-    if(item.kind === 'video'){ const b = await grabVideoFrame(item.file); return b ? await uploadBlob(b, 'jpg') : null; }
-    if(item.kind === 'audio'){ const b = await generateWaveform(item.file); return b ? await uploadBlob(b, 'png') : null; }
-  }catch(e){ return null; }
-  return null;
+    if(item.kind === 'video'){ const g = await grabVideoFrame(item.file); return g ? { cover_key: await uploadBlob(g.blob, 'jpg'), duration_ms: g.durationMs } : {}; }
+    if(item.kind === 'audio'){ const g = await generateWaveform(item.file); return g ? { cover_key: await uploadBlob(g.blob, 'png'), duration_ms: g.durationMs } : {}; }
+  }catch(e){ return {}; }
+  return {};
 }
-/* media_key/cover_key/body/bytes together, the same four calls every
-   full works insert below makes for its item — not the collection branch,
-   which deliberately skips cover_key (see its own comment). */
+/* media_key/cover_key/duration_ms/body/bytes together, the same calls
+   every full works insert below makes for its item — not the collection
+   branch, which deliberately skips cover_key (see its own comment). */
 async function mediaFieldsFor(item){
+  const media_key = item.kind === 'text' ? null : await uploadOne(item);
+  const { cover_key = null, duration_ms = null } = await coverKeyFor(item);
   return {
-    media_key: item.kind === 'text' ? null : await uploadOne(item),
-    cover_key: await coverKeyFor(item),
+    media_key, cover_key, duration_ms,
     body: item.kind === 'text' ? await item.file.text() : null,
     bytes: item.file.size
   };
@@ -988,12 +1029,12 @@ async function publish(versionLabel){
   try{
     if(uploadCtx){
       const item = pending[0];
-      const { media_key, cover_key, body, bytes } = await mediaFieldsFor(item);
+      const { media_key, cover_key, duration_ms, body, bytes } = await mediaFieldsFor(item);
       const title = item.kind === 'text' ? (item.title || item.file.name.replace(/\.[^.]+$/,'')) : item.file.name.replace(/\.[^.]+$/,'');
       const { error } = await sb.from('works').insert({
         owner_id: user.id, owner_name: ownerName(), kind: uploadCtx.kind, title,
         slug: slugify(title) + '-' + Date.now().toString(36).slice(-5),
-        caption: item.caption || null, body, media_key, cover_key, bytes,
+        caption: item.caption || null, body, media_key, cover_key, duration_ms, bytes,
         version_of: uploadCtx.versionOf, version_label: versionLabel,
         status: 'published'
       });
@@ -1024,12 +1065,12 @@ async function publish(versionLabel){
     } else if(uploadMode === 'versions'){
       let rootId = null;
       for(const item of pending){
-        const { media_key, cover_key, body, bytes } = await mediaFieldsFor(item);
+        const { media_key, cover_key, duration_ms, body, bytes } = await mediaFieldsFor(item);
         const title = item.title || item.file.name.replace(/\.[^.]+$/,'');
         const { data: w, error } = await sb.from('works').insert({
           owner_id: user.id, owner_name: ownerName(), kind: item.kind, title,
           slug: slugify(title) + '-' + Date.now().toString(36).slice(-5),
-          caption: item.caption || null, body, media_key, cover_key, bytes,
+          caption: item.caption || null, body, media_key, cover_key, duration_ms, bytes,
           version_of: rootId, status: 'published'
         }).select().single();
         if(error) throw new Error(eski.dbError('ESK-5106','a version failed to publish', error));
@@ -1037,12 +1078,12 @@ async function publish(versionLabel){
       }
     } else {
       for(const item of pending){
-        const { media_key, cover_key, body, bytes } = await mediaFieldsFor(item);
+        const { media_key, cover_key, duration_ms, body, bytes } = await mediaFieldsFor(item);
         const title = item.kind === 'text' ? (item.title || item.file.name.replace(/\.[^.]+$/,'')) : item.file.name.replace(/\.[^.]+$/,'');
         const { error } = await sb.from('works').insert({
           owner_id: user.id, owner_name: ownerName(), kind: item.kind, title,
           slug: slugify(title) + '-' + Date.now().toString(36).slice(-5),
-          caption: item.caption || null, body, media_key, cover_key, bytes, status: 'published'
+          caption: item.caption || null, body, media_key, cover_key, duration_ms, bytes, status: 'published'
         });
         if(error) throw new Error(eski.dbError('ESK-5106','the post could not be published', error));
       }

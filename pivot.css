@@ -92,6 +92,14 @@
   border-radius:var(--pv-r);cursor:pointer;transition:background var(--t-fast) var(--ease);font-family:var(--font-body)}
 .tagadd:hover{background:var(--plate-bg)}
 
+/* ---- the detail overlay's own inline tag input: sits in the chip row
+   itself, type + enter/space to add, backspace on empty to drop the last
+   chip — no modal. ---- */
+.taginput{font-family:var(--font-body);font-size:var(--fs-xs);color:var(--ink);
+  background:var(--surface);border:none;border-radius:var(--pv-r);padding:6px 11px;
+  outline:none;min-width:60px}
+.taginput::placeholder{color:var(--muted)}
+
 /* ---- a collapsible tag panel: click the label to hide/show its chips. ---- */
 .tagpanel .taghdr{display:inline-flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);
   text-transform:uppercase;letter-spacing:.1em;cursor:pointer;user-select:none;transition:color var(--t-fast) var(--ease)}
@@ -294,12 +302,13 @@
 
 /* ---- version dropdown ---- */
 .verwrap{position:relative}
-.verdrop{position:absolute;top:calc(100% + 4px);right:0;z-index:20;min-width:180px;background:var(--paper);
+.verdrop{position:absolute;top:calc(100% + 4px);right:0;z-index:20;min-width:180px;max-width:280px;background:var(--paper);
   box-shadow:0 8px 30px rgba(0,0,0,.22);display:none;flex-direction:column;padding:6px 0}
 .verdrop.open{display:flex}
 .verdrop .vi{font-family:var(--font-body);font-size:12.5px;color:var(--ink);padding:8px 14px;cursor:pointer;
   display:flex;align-items:center;justify-content:space-between;gap:12px;transition:background var(--t-fast) var(--ease)}
 .verdrop .vi:hover{background:var(--surface)}
+.verdrop .vi .vi-name{overflow-x:auto;white-space:nowrap;min-width:0}
 .verdrop .vi.on{font-weight:600}
 .verdrop .vi.add{color:var(--accent);font-weight:600}
 .verdrop .sep{height:1px;background:var(--surface);margin:4px 0}
