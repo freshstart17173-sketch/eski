@@ -13,21 +13,25 @@
    there across many rounds against real are.na.xyz research. Ported
    here as the real thing rather than a mockup: every rule below is a
    var() onto tokens.css/palettes.css, never a literal, so it inherits
-   the theme system rather than fixing one look. Two decisions made in
-   the porting, not in the mockup:
-
-     - the mockup's own hover literals (#E4E4E4 / #EAEAEA, used on
-       nearly every control) collapse onto the existing --plate-bg
-       token, which already sits almost exactly there in every theme —
-       one hover value instead of two near-duplicates.
-     - the mockup's --radius-min:2px is dropped in favour of the site's
-       existing --r (0): "no rounded corners, edge to edge" was the
-       owner's instruction from the start of this pivot, and square
-       reads more true to it than a barely-visible 2px.
+   the theme system rather than fixing one look. One decision made in
+   the porting, not in the mockup: the mockup's own hover literals
+   (#E4E4E4 / #EAEAEA, used on nearly every control) collapse onto the
+   existing --plate-bg token, which already sits almost exactly there in
+   every theme — one hover value instead of two near-duplicates.
+   Everything else here is measured against the live artboard.html's
+   computed styles, not eyeballed — see --pv-r below for the one place
+   that measurement caught a wrong call.
 
    Depends on tokens.css (spacing/type scale) and palettes.css (colour)
    being loaded first, same load order as every other page.
    ============================================================ */
+
+/* the mockup's own --radius-min, matched exactly (2px) rather than the
+   site's square --r (0) — measured against the live artboard.html, not
+   guessed. "No rounded corners" was the pivot's opening instruction, but
+   the reviewed mockup itself settled on a barely-visible 2px on chrome,
+   and "identical to the artboard" wins over an earlier, more general note. */
+:root{ --pv-r:2px; }
 
 /* ---- the wordmark: Gnomon (already declared once, in tokens.css), in
    plain --ink rather than the accent-derived --wordmark token every
@@ -41,7 +45,7 @@
 /* ---- buttons & chips: no outlines, state carried by background fill
    alone, matching are.na's own dark-fill buttons. ---- */
 .chip{font-family:var(--font-body);font-weight:500;font-size:var(--fs-xs);color:var(--ink);
-  background:var(--surface);padding:6px 12px;border:none;border-radius:var(--r);
+  background:var(--surface);padding:6px 12px;border:none;border-radius:var(--pv-r);
   cursor:pointer;transition:background var(--t-fast) var(--ease),color var(--t-fast) var(--ease)}
 .chip:hover{background:var(--plate-bg)}
 .chip.small{font-size:var(--fs-micro);padding:4px 9px}
@@ -50,7 +54,7 @@
 
 .btnline{font-family:var(--font-body);font-weight:600;font-size:var(--fs-sm);color:var(--ink);
   background:var(--surface);text-transform:uppercase;letter-spacing:.06em;padding:10px 18px;
-  border:none;border-radius:var(--r);cursor:pointer;
+  border:none;border-radius:var(--pv-r);cursor:pointer;
   transition:background var(--t-fast) var(--ease),color var(--t-fast) var(--ease)}
 .btnline:hover{background:var(--plate-bg)}
 .btnline.filled{background:var(--ink);color:var(--paper)}
@@ -85,7 +89,7 @@
 
 .tagadd{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;
   font-size:16px;line-height:1;color:var(--ink);background:var(--surface);border:none;
-  border-radius:var(--r);cursor:pointer;transition:background var(--t-fast) var(--ease);font-family:var(--font-body)}
+  border-radius:var(--pv-r);cursor:pointer;transition:background var(--t-fast) var(--ease);font-family:var(--font-body)}
 .tagadd:hover{background:var(--plate-bg)}
 
 /* ---- a collapsible tag panel: click the label to hide/show its chips. ---- */
@@ -99,7 +103,7 @@
 /* ---- editable tag chip: the × is always shown, dark enough to read. ---- */
 .tagchip{display:inline-flex;align-items:center;gap:7px;font-family:var(--font-body);font-weight:500;
   font-size:var(--fs-xs);color:var(--ink);background:var(--surface);padding:6px 11px;
-  border-radius:var(--r);cursor:default;transition:background var(--t-fast) var(--ease)}
+  border-radius:var(--pv-r);cursor:default;transition:background var(--t-fast) var(--ease)}
 .tagchip:hover{background:var(--plate-bg)}
 .tagchip .x{font-size:14px;line-height:1;width:12px;text-align:center;color:var(--ink);opacity:.75;
   cursor:pointer;transition:opacity var(--t-fast) var(--ease)}
@@ -122,7 +126,6 @@
   width:100%;height:64px;padding:0 32px;box-sizing:border-box;background:var(--paper);
   box-shadow:inset 0 -1px 0 var(--rule-hair)}
 .pivot-top nav{display:flex;align-items:center;gap:32px}
-.pivot-top .btnline{padding:9px 20px}
 @media(max-width:640px){.pivot-top{padding:0 var(--s4)}.pivot-top nav{gap:var(--s4)}}
 
 .dtab{font-weight:500;font-size:13px;color:var(--muted);padding:10px 0;cursor:pointer;
@@ -132,12 +135,12 @@
 .dtab.active{font-weight:600;color:var(--ink);border-bottom-color:var(--ink)}
 
 .navarrow{width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-size:15px;
-  line-height:1;color:var(--ink);background:var(--surface);border:none;border-radius:var(--r);
+  line-height:1;color:var(--ink);background:var(--surface);border:none;border-radius:var(--pv-r);
   cursor:pointer;transition:background var(--t-fast) var(--ease),color var(--t-fast) var(--ease)}
 .navarrow:hover{background:var(--ink);color:var(--paper)}
 
 /* ---- upload: drop zone, file filmstrip, form fields ---- */
-.dropzone{border:1.5px dashed var(--rule-hair);background:var(--surface);border-radius:var(--r);
+.dropzone{border:1.5px dashed var(--rule-hair);background:var(--surface);border-radius:var(--pv-r);
   display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:36px;
   text-align:center;cursor:pointer;transition:background var(--t-fast) var(--ease),border-color var(--t-fast) var(--ease)}
 .dropzone:hover,.dropzone.dragover{background:var(--plate-bg);border-color:var(--muted)}
@@ -159,7 +162,7 @@
 .ufield{display:flex;flex-direction:column;gap:6px}
 .ulabel{font-family:var(--font-body);font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em}
 .uinput,.utext{font-family:var(--font-body);font-size:13.5px;color:var(--ink);background:var(--surface);
-  border:none;border-radius:var(--r);padding:10px 12px;width:100%;box-sizing:border-box;outline:none}
+  border:none;border-radius:var(--pv-r);padding:10px 12px;width:100%;box-sizing:border-box;outline:none}
 .utext{min-height:76px;resize:vertical;line-height:1.5}
 .umode{display:flex;gap:8px;flex-wrap:wrap}
 
@@ -214,7 +217,7 @@
 /* ---- like / save action buttons on a detail overlay ---- */
 .actbtn{flex:1;display:flex;align-items:center;justify-content:center;gap:7px;font-family:var(--font-body);
   font-weight:600;font-size:var(--fs-sm);color:var(--ink);background:var(--surface);border:none;
-  border-radius:var(--r);padding:11px 14px;cursor:pointer;transition:background var(--t-fast) var(--ease),color var(--t-fast) var(--ease)}
+  border-radius:var(--pv-r);padding:11px 14px;cursor:pointer;transition:background var(--t-fast) var(--ease),color var(--t-fast) var(--ease)}
 .actbtn:hover{background:var(--plate-bg)}
 .actbtn .n{color:var(--muted);font-weight:400}
 .actbtn svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
@@ -260,14 +263,14 @@
   color:#fff;background:rgba(17,17,17,.6);padding:3px 8px;z-index:3}
 
 /* ---- segmented control: connected options, one selectable (opposites) ---- */
-.seg{display:inline-flex;border-radius:var(--r);overflow:hidden;background:var(--surface)}
+.seg{display:inline-flex;border-radius:var(--pv-r);overflow:hidden;background:var(--surface)}
 .seg .opt{font-family:var(--font-body);font-size:var(--fs-xs);color:var(--ink);padding:6px 12px;cursor:pointer;
   transition:background var(--t-fast) var(--ease),color var(--t-fast) var(--ease);white-space:nowrap}
 .seg .opt:not(:last-child){box-shadow:1px 0 0 rgba(17,17,17,.12)}
 .seg .opt.on{background:var(--ink);color:var(--paper)}
 .seg .opt:not(.on):hover{background:var(--plate-bg)}
 .mchip{font-family:var(--font-body);font-size:var(--fs-xs);color:var(--ink);background:var(--surface);
-  padding:6px 12px;border-radius:var(--r);cursor:pointer;transition:background var(--t-fast) var(--ease),color var(--t-fast) var(--ease)}
+  padding:6px 12px;border-radius:var(--pv-r);cursor:pointer;transition:background var(--t-fast) var(--ease),color var(--t-fast) var(--ease)}
 .mchip:hover{background:var(--plate-bg)}
 .mchip.on{background:var(--ink);color:var(--paper)}
 .modgroup{display:flex;flex-direction:column;gap:8px}
@@ -297,7 +300,7 @@
 .searchmini input::placeholder{color:var(--muted)}
 
 /* ---- save-to-folder rows ---- */
-.folderrow{display:flex;align-items:center;gap:12px;padding:10px 8px;cursor:pointer;border-radius:var(--r);
+.folderrow{display:flex;align-items:center;gap:12px;padding:10px 8px;cursor:pointer;border-radius:var(--pv-r);
   transition:background var(--t-fast) var(--ease);border:none;background:none;width:100%;text-align:left;font:inherit}
 .folderrow:hover{background:var(--surface)}
 .folderrow .fcheck{width:20px;height:20px;flex-shrink:0;background:var(--paper);box-shadow:inset 0 0 0 1.5px var(--ink);
