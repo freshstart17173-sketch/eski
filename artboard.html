@@ -243,6 +243,31 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--
   cursor:pointer;transition:background 120ms ease,color 120ms ease}
 .navarrow:hover{background:var(--ink);color:var(--paper)}
 
+/* ---- upload: drop zone, file filmstrip, form fields ---- */
+.dropzone{border:1.5px dashed #C9C9C9;background:var(--paper-dim);border-radius:var(--radius-min);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:36px;
+  text-align:center;cursor:pointer;transition:background 120ms ease,border-color 120ms ease}
+.dropzone:hover{background:#EAEAEA;border-color:var(--muted)}
+.dropzone .dzbig{font-family:var(--font-body);font-weight:600;font-size:15px;color:var(--ink)}
+.dropzone .dzsub{font-family:var(--font-body);font-size:12px;color:var(--muted)}
+.dropzone svg{width:26px;height:26px;fill:none;stroke:var(--muted);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+
+.filmstrip{display:flex;gap:8px;align-items:center;overflow-x:auto;padding-bottom:4px}
+.fthumb{width:88px;height:88px;background:var(--paper-dim);flex-shrink:0;position:relative;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;overflow:hidden;transition:box-shadow 120ms ease}
+.fthumb.sel{box-shadow:inset 0 0 0 3px var(--ink)}
+.fthumb .ext{font-family:var(--font-body);font-weight:700;font-size:11px;color:var(--muted);letter-spacing:.04em}
+.faddtile{width:88px;height:88px;flex-shrink:0;background:var(--paper-dim);display:flex;align-items:center;
+  justify-content:center;font-size:24px;color:var(--muted);cursor:pointer;transition:background 120ms ease}
+.faddtile:hover{background:#E4E4E4}
+
+.ufield{display:flex;flex-direction:column;gap:6px}
+.ulabel{font-family:var(--font-body);font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em}
+.uinput,.utext{font-family:var(--font-body);font-size:13.5px;color:var(--ink);background:var(--paper-dim);
+  border:none;border-radius:var(--radius-min);padding:10px 12px;width:100%;box-sizing:border-box;outline:none}
+.utext{min-height:76px;resize:vertical;line-height:1.5}
+.umode{display:flex;gap:8px;flex-wrap:wrap}
+
 /* ---- masonry-of-squares grid: every card sits in a fixed square box,
    media letterboxed inside it, small non-bold caption below (are.na
    grid). no content-type labels — the media speaks for itself. ---- */
@@ -539,6 +564,114 @@ const profileHtml = `
   </div>
 </div>`;
 
+function uploadNav(){
+  return `<div class="ms selectable" style="display:flex;flex-direction:row;align-items:center;justify-content:space-between;
+      width:100%;height:64px;padding:0 40px;box-sizing:border-box;flex-shrink:0;">
+    <div class="wordmark">eski<i>!</i></div>
+    <div style="display:flex;flex-direction:row;align-items:center;gap:32px;">
+      <div class="navlink">Home</div>
+      <div class="navlink">Profile</div>
+      <div class="btnline filled">Upload</div>
+    </div>
+  </div>`;
+}
+function uploadTags(a, b){
+  return `<div class="ufield" style="position:relative;">
+    <div class="ulabel">Content tags</div>
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;" data-tagrow>
+      <span class="tagchip">${esc(a)}<span class="x">&times;</span></span>
+      <span class="tagchip">${esc(b)}<span class="x">&times;</span></span>
+      <button class="tagadd" data-tagadd>+</button>
+    </div>
+    <div class="tagsearch" data-tagsearch>
+      <input placeholder="search tags" data-tagsearchinput>
+      <div class="opt">#analog</div><div class="opt">#studio</div><div class="opt">#process</div>
+      <div class="opt">#wip</div><div class="opt">#2026</div>
+    </div>
+  </div>`;
+}
+
+/* upload — the common case: several files of one type dropped at once, so
+   eski asks whether they're separate posts, one collection, or one post
+   with versions. a filmstrip of what was dropped, each with its own
+   caption. */
+const uploadHtml = `
+${uploadNav()}
+<div class="ms selectable" style="padding:32px 40px 4px 40px;box-sizing:border-box;flex-shrink:0;">
+  <div style="font-family:var(--font-body);font-weight:700;font-size:40px;color:var(--ink);letter-spacing:-.01em;">Upload</div>
+</div>
+<div style="display:flex;flex-direction:column;gap:20px;width:100%;padding:12px 40px 40px 40px;box-sizing:border-box;flex-shrink:0;">
+  <div class="dropzone selectable">
+    <svg viewBox="0 0 24 24"><path d="M12 16V4"/><path d="M7 9l5-5 5 5"/><path d="M4 20h16"/></svg>
+    <div class="dzbig">Drag files here, or click to browse</div>
+    <div class="dzsub">image · video · audio · text · markdown — up to 20 at once</div>
+  </div>
+  <div class="ms selectable" style="background:var(--paper-dim);border-radius:var(--radius-min);padding:16px;display:flex;flex-direction:column;gap:12px;">
+    <div style="font-family:var(--font-body);font-weight:600;font-size:14px;color:var(--ink);">All 4 files are images. How should they go up?</div>
+    <div class="umode">
+      <span class="chip active" data-umode>Separate posts</span>
+      <span class="chip" data-umode>One collection</span>
+      <span class="chip" data-umode>One post &middot; 4 versions</span>
+    </div>
+    <div style="font-family:var(--font-body);font-size:11.5px;color:var(--muted);">Collection and versions are only offered when every file is the same type.</div>
+  </div>
+  <div class="filmstrip">
+    <div class="fthumb" data-fthumb></div>
+    <div class="fthumb sel" data-fthumb></div>
+    <div class="fthumb" data-fthumb></div>
+    <div class="fthumb" data-fthumb></div>
+    <div class="faddtile">+</div>
+  </div>
+  <div style="display:flex;gap:24px;">
+    <div style="width:240px;height:240px;background:var(--paper-dim);flex-shrink:0;"></div>
+    <div style="flex:1;display:flex;flex-direction:column;gap:16px;">
+      <div class="ufield">
+        <div class="ulabel">Caption &middot; post 2 of 4</div>
+        <textarea class="utext" placeholder="Write a caption for this post…">golden hour on the rooftop — the second frame is the keeper.</textarea>
+      </div>
+      ${uploadTags('#rooftop', '#goldenhour')}
+    </div>
+  </div>
+  <div style="display:flex;justify-content:flex-end;gap:8px;">
+    <div class="btnline">Cancel</div>
+    <div class="btnline filled">Publish 4 posts</div>
+  </div>
+</div>`;
+
+/* upload — a single markdown/text file, which additionally gets a Title. */
+const uploadTextHtml = `
+${uploadNav()}
+<div class="ms selectable" style="padding:32px 40px 4px 40px;box-sizing:border-box;flex-shrink:0;">
+  <div style="font-family:var(--font-body);font-weight:700;font-size:40px;color:var(--ink);letter-spacing:-.01em;">Upload</div>
+</div>
+<div style="display:flex;flex-direction:column;gap:20px;width:100%;padding:12px 40px 40px 40px;box-sizing:border-box;flex-shrink:0;">
+  <div class="filmstrip">
+    <div class="fthumb sel" data-fthumb><span class="ext">MD</span></div>
+    <div class="faddtile">+</div>
+  </div>
+  <div style="font-family:var(--font-body);font-size:12.5px;color:var(--muted);">1 markdown file — text &amp; markdown posts get a title as well as a caption.</div>
+  <div style="display:flex;gap:24px;">
+    <div style="width:240px;height:240px;background:var(--paper-dim);flex-shrink:0;display:flex;align-items:center;justify-content:center;">
+      <span class="ext" style="font-family:var(--font-body);font-weight:700;font-size:15px;color:var(--muted);">essay.md</span>
+    </div>
+    <div style="flex:1;display:flex;flex-direction:column;gap:16px;">
+      <div class="ufield">
+        <div class="ulabel">Title</div>
+        <input class="uinput" value="Rerun, and the case for a slower rebrand">
+      </div>
+      <div class="ufield">
+        <div class="ulabel">Caption</div>
+        <textarea class="utext" placeholder="A short line shown under the title in the feed…">why we talked them out of the loud version.</textarea>
+      </div>
+      ${uploadTags('#branding', '#essay')}
+    </div>
+  </div>
+  <div style="display:flex;justify-content:flex-end;gap:8px;">
+    <div class="btnline">Cancel</div>
+    <div class="btnline filled">Publish post</div>
+  </div>
+</div>`;
+
 function placeMockup(html, x, y, w, label){
   const el = document.createElement('div');
   el.className = 'eski-mockup';
@@ -550,6 +683,8 @@ function placeMockup(html, x, y, w, label){
 placeMockup(homepageHtml, 0, 60, 1440, 'homepage');
 placeMockup(maximisedHtml, 1560, 60, 1100, 'maximised post — detail overlay');
 placeMockup(profileHtml, 0, 940, 1440, 'profile');
+placeMockup(uploadHtml, 0, 1980, 1000, 'upload — multiple files, one type');
+placeMockup(uploadTextHtml, 1120, 1980, 1000, 'upload — text / markdown post');
 
 /* the mockups are live, so their own controls actually work: detail
    tabs switch panels, feed tabs open/close/add, tags add (with a small
@@ -619,6 +754,23 @@ world.addEventListener('click', e => {
       });
       feed.classList.add('active'); feed.setAttribute('contenteditable', 'true');
     }
+    return;
+  }
+
+  // upload: mode segmented control (separate / collection / versions)
+  const umode = e.target.closest('[data-umode]');
+  if(umode){
+    e.stopPropagation();
+    umode.parentElement.querySelectorAll('[data-umode]').forEach(m => m.classList.remove('active'));
+    umode.classList.add('active');
+    return;
+  }
+  // upload: filmstrip select
+  const fthumb = e.target.closest('[data-fthumb]');
+  if(fthumb){
+    e.stopPropagation();
+    fthumb.parentElement.querySelectorAll('[data-fthumb]').forEach(t => t.classList.remove('sel'));
+    fthumb.classList.add('sel');
     return;
   }
 
