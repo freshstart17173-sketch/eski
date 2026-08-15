@@ -151,24 +151,24 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--
   box-shadow:0 30px 90px rgba(0,0,0,.6);
 }
 .eski-mockup .ms{position:relative} /* generic wrapper so .section-label can anchor */
-.badge{font-family:var(--font-body);font-weight:700;font-size:var(--fs-micro);color:var(--paper);
-  background:var(--ink);text-transform:uppercase;letter-spacing:.06em;padding:4px 7px}
 
-.chip{font-family:var(--font-body);font-weight:500;font-size:var(--fs-xs);color:var(--ink-soft);
-  background:var(--paper);padding:6px 12px;border:1.5px solid var(--ink);border-radius:var(--radius-min);
-  cursor:pointer;transition:background 120ms ease,border-color 120ms ease}
-.chip:hover{background:var(--accent-tint);border-color:var(--accent)}
+/* ---- buttons & chips: NO OUTLINES. state is carried by background fill
+   alone (2026-08-15), matching are.na's own dark-fill buttons. ---- */
+.chip{font-family:var(--font-body);font-weight:500;font-size:var(--fs-xs);color:var(--ink);
+  background:var(--paper-dim);padding:6px 12px;border:none;border-radius:var(--radius-min);
+  cursor:pointer;transition:background 120ms ease,color 120ms ease}
+.chip:hover{background:#E4E4E4}
 .chip.small{font-size:var(--fs-micro);padding:4px 9px}
 .chip.active{background:var(--ink);color:var(--paper)}
-.chip.active:hover{background:var(--ink-soft);border-color:var(--ink-soft)}
+.chip.active:hover{background:var(--ink-soft)}
 
 .btnline{font-family:var(--font-body);font-weight:600;font-size:var(--fs-sm);color:var(--ink);
-  background:var(--paper);text-transform:uppercase;letter-spacing:.06em;padding:10px 18px;
-  border:1.5px solid var(--ink);border-radius:var(--radius-min);cursor:pointer;
-  transition:background 120ms ease,color 120ms ease,border-color 120ms ease}
-.btnline:hover{background:var(--ink);color:var(--paper)}
+  background:var(--paper-dim);text-transform:uppercase;letter-spacing:.06em;padding:10px 18px;
+  border:none;border-radius:var(--radius-min);cursor:pointer;
+  transition:background 120ms ease,color 120ms ease}
+.btnline:hover{background:#E4E4E4}
 .btnline.filled{background:var(--ink);color:var(--paper)}
-.btnline.filled:hover{background:var(--accent);border-color:var(--accent);color:var(--paper)}
+.btnline.filled:hover{background:var(--accent);color:var(--paper)}
 
 .navlink{font-family:var(--font-body);font-weight:500;font-size:13.5px;color:var(--muted);
   text-transform:uppercase;letter-spacing:.06em;cursor:pointer;padding-bottom:4px;
@@ -176,23 +176,68 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--
 .navlink:hover{color:var(--ink)}
 .navlink.active{font-weight:600;color:var(--ink);border-bottom-color:var(--ink)}
 
-.tab{font-family:var(--font-body);font-weight:500;font-size:var(--fs-xs);color:var(--ink);
-  background:var(--paper);text-transform:uppercase;letter-spacing:.06em;padding:9px 16px;
-  border:1.5px solid var(--ink);border-radius:var(--radius-min);cursor:pointer;
-  transition:background 120ms ease,color 120ms ease}
-.tab:hover{background:var(--paper-dim)}
-.tab.active{background:var(--ink);color:var(--paper)}
-.tab.active:hover{background:var(--ink-soft)}
+/* ---- feed tabs: named saved feeds you can add (+) and close (× on hover),
+   like browser tabs. no outline, fill only. ---- */
+.feedtab{display:inline-flex;align-items:center;gap:6px;font-family:var(--font-body);font-weight:500;
+  font-size:var(--fs-xs);color:var(--ink);background:var(--paper-dim);padding:6px 10px 6px 12px;
+  border-radius:var(--radius-min);cursor:pointer;transition:background 120ms ease,color 120ms ease}
+.feedtab:hover{background:#E4E4E4}
+.feedtab.active{background:var(--ink);color:var(--paper)}
+.feedtab .x{opacity:0;font-size:14px;line-height:1;width:14px;text-align:center;transition:opacity 120ms ease}
+.feedtab:hover .x{opacity:.55}
+.feedtab .x:hover{opacity:1}
+.feedadd,.tagadd{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;
+  font-size:16px;line-height:1;color:var(--ink);background:var(--paper-dim);border:none;
+  border-radius:var(--radius-min);cursor:pointer;transition:background 120ms ease;font-family:var(--font-body)}
+.feedadd:hover,.tagadd:hover{background:#E4E4E4}
+
+/* ---- editable tag chip: × appears on hover ---- */
+.tagchip{display:inline-flex;align-items:center;gap:5px;font-family:var(--font-body);font-weight:500;
+  font-size:var(--fs-xs);color:var(--ink);background:var(--paper-dim);padding:6px 8px 6px 12px;
+  border-radius:var(--radius-min);cursor:default;transition:background 120ms ease}
+.tagchip:hover{background:#E4E4E4}
+.tagchip .x{opacity:0;font-size:13px;line-height:1;width:13px;text-align:center;cursor:pointer;transition:opacity 120ms ease}
+.tagchip:hover .x{opacity:.55}
+.tagchip .x:hover{opacity:1}
+
+/* ---- tag autocomplete popover ---- */
+.tagsearch{position:absolute;top:calc(100% + 4px);left:0;z-index:20;width:220px;background:var(--paper);
+  box-shadow:0 8px 30px rgba(0,0,0,.2);display:none;flex-direction:column}
+.tagsearch.open{display:flex}
+.tagsearch input{font:inherit;font-size:var(--fs-xs);padding:8px 10px;border:none;background:var(--paper-dim);
+  color:var(--ink);outline:none;font-family:var(--font-body)}
+.tagsearch .opt{padding:7px 10px;font-size:var(--fs-xs);color:var(--ink-soft);cursor:pointer;
+  transition:background 120ms ease}
+.tagsearch .opt:hover{background:var(--paper-dim);color:var(--ink)}
 
 .dtab{font-weight:500;font-size:13px;color:var(--muted);padding:10px 0;cursor:pointer;
   border-bottom:2px solid transparent;transition:color 120ms ease,border-color 120ms ease}
 .dtab:hover{color:var(--ink)}
 .dtab.active{font-weight:600;color:var(--ink);border-bottom-color:var(--ink)}
 
-.navarrow{width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:14px;
-  color:var(--ink);background:var(--paper);border:1.5px solid var(--ink);border-radius:var(--radius-min);
+.navarrow{width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-size:15px;
+  line-height:1;color:var(--ink);background:var(--paper-dim);border:none;border-radius:var(--radius-min);
   cursor:pointer;transition:background 120ms ease,color 120ms ease}
 .navarrow:hover{background:var(--ink);color:var(--paper)}
+
+/* ---- masonry-of-squares grid: every card sits in a fixed square box,
+   media letterboxed inside it, small non-bold caption below (are.na
+   grid). no content-type labels — the media speaks for itself. ---- */
+.fgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;width:100%}
+.gcard{display:flex;flex-direction:column;gap:6px;cursor:pointer}
+.gbox{position:relative;width:100%;aspect-ratio:1/1;background:var(--paper-dim);overflow:hidden;
+  display:flex;align-items:center;justify-content:center}
+.gbox .fill{position:absolute;inset:0}
+.gcap{font-family:var(--font-body);font-weight:400;font-size:var(--fs-xs);color:var(--ink);line-height:1.3}
+.ghandle{font-family:var(--font-body);font-weight:400;font-size:var(--fs-micro);color:var(--muted)}
+.gind{position:absolute;bottom:8px;right:8px;font-family:var(--font-body);font-weight:600;
+  font-size:var(--fs-micro);color:var(--paper);background:rgba(17,17,17,.72);padding:3px 6px}
+.gquote{padding:22px;font-family:var(--font-body);font-weight:500;font-size:15px;color:var(--ink-soft);
+  line-height:1.4;text-align:left}
+.gcount{position:absolute;bottom:8px;left:8px;font-size:var(--fs-xs);color:var(--muted)}
+.gplay{width:34px;height:34px;border-radius:50%;background:rgba(17,17,17,.72);display:flex;
+  align-items:center;justify-content:center}
+.gplay svg{width:14px;height:14px;fill:var(--paper);margin-left:2px}
 </style>
 </head>
 <body>
@@ -236,21 +281,21 @@ const grid = document.getElementById('grid');
    else. studio is cut from the product (2026-08-15), so it's out of
    the nav here too, not just off the artboard.
    ============================================================ */
-function card(badge, title, handle, h, extra){
-  return `<div class="ms selectable" style="display:flex;flex-direction:column;width:100%;">
-    <div class="ms selectable" style="position:relative;width:100%;height:${h}px;background:var(--paper-dim);overflow:hidden;">
-      <div class="badge" style="position:absolute;top:8px;left:8px;">${esc(badge)}</div>
-      ${extra||''}
-    </div>
-    <div style="display:flex;flex-direction:column;gap:2px;padding:8px 0 0 0;">
-      <div style="font-weight:500;font-size:var(--fs);color:var(--ink);">${esc(title)}</div>
-      <div style="font-size:var(--fs-xs);color:var(--muted);">${esc(handle)}</div>
-    </div>
+/* one square grid card. `inner` is optional media-box content: a play
+   glyph + duration, a collection count, a pull-quote. no content-type
+   label — the media itself carries the type. caption is small + regular. */
+function gcard(title, handle, inner){
+  return `<div class="gcard selectable">
+    <div class="gbox">${inner||''}</div>
+    <div class="gcap">${esc(title)}</div>
+    <div class="ghandle">${esc(handle)}</div>
   </div>`;
 }
-const quote = t => `<div class="badge" style="position:absolute;top:8px;left:8px;">Text</div>
-  <div style="display:flex;align-items:center;height:100%;padding:24px;box-sizing:border-box;
-    font-family:var(--font-body);font-weight:600;font-size:20px;color:var(--ink-soft);line-height:1.3;">"${esc(t)}"</div>`;
+const PLAY = '<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>';
+const vid = d => `<div class="gplay">${PLAY}</div><div class="gind">${esc(d)}</div>`;
+const aud = `<div class="gplay">${PLAY}</div>`;
+const coll = n => `<div class="gcount">${esc(n)}</div>`;
+const gq = t => `<div class="gquote">"${esc(t)}"</div>`;
 
 const homepageHtml = `
 <div class="ms selectable" style="display:flex;flex-direction:row;align-items:center;justify-content:space-between;
@@ -258,44 +303,64 @@ const homepageHtml = `
   <div style="font-family:var(--font-display);font-weight:700;font-size:22px;color:var(--ink);">eski</div>
   <div style="display:flex;flex-direction:row;align-items:center;gap:32px;">
     <div class="navlink active">Home</div>
-    <div class="navlink">Browse</div>
     <div class="navlink">Profile</div>
     <div class="btnline filled">Upload</div>
   </div>
 </div>
-<div class="ms selectable" style="display:flex;flex-direction:row;align-items:center;gap:8px;width:100%;
-    padding:24px 32px 0 32px;box-sizing:border-box;flex-shrink:0;">
-  <div class="tab active">Following</div>
-  <div class="tab">Beats</div><div class="tab">Stories</div><div class="tab">Visual</div><div class="tab">Last Week</div>
+<div class="ms selectable" style="display:flex;align-items:center;gap:8px;width:100%;
+    padding:20px 32px 0 32px;box-sizing:border-box;flex-shrink:0;" data-feedrow>
+  <div class="feedtab active">Discover<span class="x" data-feedclose>&times;</span></div>
+  <div class="feedtab">sound<span class="x" data-feedclose>&times;</span></div>
+  <div class="feedtab">stills<span class="x" data-feedclose>&times;</span></div>
+  <button class="feedadd" data-feedadd>+</button>
 </div>
-<div class="ms selectable" style="display:flex;flex-direction:column;gap:12px;width:100%;padding:24px 32px 24px 32px;box-sizing:border-box;flex-shrink:0;">
-  <div style="position:relative;font-family:var(--font-body);font-weight:700;font-size:44px;color:var(--ink);letter-spacing:-.01em;">Following</div>
-  <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;">content tags</div>
-  <div style="display:flex;gap:8px;">
-    <div class="chip small">#following</div><div class="chip small">#newuploads</div>
-    <div class="chip small">#thisweek</div><div class="chip small">#wip</div>
+<div class="ms selectable" style="display:flex;flex-direction:column;gap:20px;width:100%;padding:20px 32px 24px 32px;box-sizing:border-box;flex-shrink:0;">
+  <div style="font-family:var(--font-body);font-weight:700;font-size:44px;color:var(--ink);letter-spacing:-.01em;">Discover</div>
+  <div style="display:flex;gap:64px;flex-wrap:wrap;align-items:flex-start;">
+    <div style="display:flex;flex-direction:column;gap:10px;position:relative;">
+      <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;">content tags</div>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;" data-tagrow>
+        <span class="tagchip">#following<span class="x">&times;</span></span>
+        <span class="tagchip">#newuploads<span class="x">&times;</span></span>
+        <span class="tagchip">#wip<span class="x">&times;</span></span>
+        <button class="tagadd" data-tagadd>+</button>
+      </div>
+      <div class="tagsearch" data-tagsearch>
+        <input placeholder="search tags" data-tagsearchinput>
+        <div class="opt">#analog</div>
+        <div class="opt">#nightshots</div>
+        <div class="opt">#longexposure</div>
+        <div class="opt">#grain</div>
+        <div class="opt">#cityscape</div>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;">modifier tags</div>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;max-width:420px;">
+        <span class="chip small active" data-mod>#thisweek</span>
+        <span class="chip small" data-mod>#thismonth</span>
+        <span class="chip small active" data-mod>#fromfollowing</span>
+        <span class="chip small" data-mod>#unseen</span>
+        <span class="chip small" data-mod>#trending</span>
+        <span class="chip small" data-mod>#nearby</span>
+      </div>
+    </div>
   </div>
 </div>
-<div style="display:flex;flex-direction:row;gap:8px;width:100%;padding:0 32px;box-sizing:border-box;flex-shrink:0;">
-  <div style="display:flex;flex-direction:column;gap:8px;flex:1;">
-    ${card('Image','midnight session','@inkwell',420)}
-    ${card('Audio','night drive','@lowfreq',260)}
-    ${card('Video','rooftop cut','@camrafilm',300,'<div class="badge" style="position:absolute;bottom:8px;right:8px;">2:14</div>')}
-  </div>
-  <div style="display:flex;flex-direction:column;gap:8px;flex:1;">
-    ${card('Text','issue no. 4','@paperbound',340,quote('nobody remembers the flood the same way twice.'))}
-    ${card('Collection','sketchbook, march','@linewerk',380,'<div class="badge" style="position:absolute;bottom:8px;right:8px;">1/6</div>')}
-    ${card('Image','static','@glasseye',240)}
-  </div>
-  <div style="display:flex;flex-direction:column;gap:8px;flex:1;">
-    ${card('Collection','story bible: HALO','@inkwell',300,'<div style="position:absolute;bottom:8px;left:8px;font-size:13.5px;color:var(--muted);">12 items</div>')}
-    ${card('Audio','tape no. 9','@lowfreq',400)}
-    ${card('Image','afterglow','@salt.mv',280)}
-  </div>
-  <div style="display:flex;flex-direction:column;gap:8px;flex:1;">
-    ${card('Video','loop test','@camrafilm',420,'<div class="badge" style="position:absolute;bottom:8px;right:8px;">0:47</div>')}
-    ${card('Image','reference','@glasseye',230)}
-    ${card('Text','letters, unsent','@paperbound',330,quote('i kept writing your name in the margins.'))}
+<div style="width:100%;padding:0 32px;box-sizing:border-box;flex-shrink:0;">
+  <div class="fgrid">
+    ${gcard('midnight session','@inkwell')}
+    ${gcard('night drive','@lowfreq', aud)}
+    ${gcard('rooftop cut','@camrafilm', vid('2:14'))}
+    ${gcard('issue no. 4','@paperbound', gq('nobody remembers the flood the same way twice.'))}
+    ${gcard('sketchbook, march','@linewerk', coll('collection · 6'))}
+    ${gcard('static','@glasseye')}
+    ${gcard('story bible: HALO','@inkwell', coll('collection · 12'))}
+    ${gcard('tape no. 9','@lowfreq', aud)}
+    ${gcard('afterglow','@salt.mv')}
+    ${gcard('loop test','@camrafilm', vid('0:47'))}
+    ${gcard('reference','@glasseye')}
+    ${gcard('letters, unsent','@paperbound', gq('i kept writing your name in the margins.'))}
   </div>
 </div>
 <div style="display:flex;align-items:center;justify-content:center;width:100%;padding:48px 32px;box-sizing:border-box;flex-shrink:0;">
@@ -304,7 +369,7 @@ const homepageHtml = `
 
 function commentRow(handle, when, body){
   return `<div style="display:flex;gap:10px;">
-    <div style="width:28px;height:28px;background:var(--paper);border:1.5px solid var(--ink);flex-shrink:0;"></div>
+    <div style="width:28px;height:28px;background:var(--paper);flex-shrink:0;"></div>
     <div style="display:flex;flex-direction:column;gap:2px;min-width:0;">
       <div style="display:flex;align-items:baseline;gap:8px;">
         <span style="font-weight:600;font-size:12.5px;color:var(--ink);text-decoration:underline;">${esc(handle)}</span>
@@ -316,23 +381,18 @@ function commentRow(handle, when, body){
 }
 const maximisedHtml = `
 <div class="ms selectable" style="position:relative;display:flex;flex-direction:row;width:1100px;height:760px;background:var(--paper);overflow:hidden;">
-  <div class="grp" style="position:absolute;top:16px;right:16px;z-index:5;display:flex;gap:6px;">
-    <div class="navarrow selectable">&lsaquo;</div>
-    <div class="navarrow selectable">&rsaquo;</div>
-    <div class="navarrow selectable" data-close>&times;</div>
+  <div style="position:absolute;top:20px;right:24px;z-index:5;display:flex;flex-direction:column;align-items:flex-end;gap:8px;">
+    <div style="display:flex;gap:6px;">
+      <div class="navarrow selectable">&lsaquo;</div>
+      <div class="navarrow selectable">&rsaquo;</div>
+      <div class="navarrow selectable" data-close>&times;</div>
+    </div>
+    <div class="chip small selectable" style="white-space:nowrap;">v2 of 3&nbsp;&#9662;</div>
   </div>
   <div class="ms selectable" style="width:58%;height:100%;background:var(--paper-dim);flex-shrink:0;"></div>
   <div style="width:42%;height:100%;display:flex;flex-direction:column;overflow:hidden;">
-    <div class="ms selectable" style="display:flex;flex-direction:column;gap:16px;padding:48px 24px 24px 24px;box-sizing:border-box;">
-      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;">
-        <div style="font-weight:700;font-size:22px;color:var(--ink);">midnight session</div>
-        <div class="chip small selectable" style="flex-shrink:0;white-space:nowrap;">v2 of 3&nbsp;&#9662;</div>
-      </div>
-      <div style="display:flex;align-items:center;gap:12px;">
-        <div style="width:32px;height:32px;background:var(--paper-dim);border:1.5px solid var(--ink);flex-shrink:0;"></div>
-        <div style="font-weight:600;font-size:13.5px;color:var(--ink);text-decoration:underline;flex:1;">@inkwell</div>
-        <div class="chip small">Follow</div>
-      </div>
+    <div class="ms selectable" style="display:flex;flex-direction:column;gap:16px;padding:64px 24px 24px 24px;box-sizing:border-box;">
+      <div style="font-weight:700;font-size:22px;color:var(--ink);">midnight session</div>
       <div style="display:flex;flex-direction:column;gap:0;">
         <div style="display:flex;justify-content:space-between;padding:6px 0;font-size:12.5px;color:var(--muted);">
           <span>Added</span><span style="color:var(--ink-soft);">Aug 12</span></div>
@@ -345,19 +405,21 @@ const maximisedHtml = `
         <div style="display:flex;justify-content:space-between;padding:6px 0;font-size:12.5px;color:var(--muted);">
           <span>File size</span><span style="color:var(--ink-soft);">4.1 MB</span></div>
       </div>
-      <div style="font-size:14px;color:var(--ink-soft);line-height:1.5;">shot this on the walk back from the studio around 2am. the building across the street never turns its lights off.</div>
+      <div style="font-size:13px;font-weight:400;color:var(--muted);line-height:1.5;">shot this on the walk back from the studio around 2am. the building across the street never turns its lights off.</div>
     </div>
     <div class="ms selectable" style="display:flex;flex-direction:row;gap:24px;padding:0 24px;border-top:0;flex-shrink:0;">
       <div class="dtab active" data-tab="tags">Tags</div>
       <div class="dtab" data-tab="comments">Comments</div>
     </div>
     <div style="flex:1;background:var(--paper-dim);box-sizing:border-box;overflow:auto;display:flex;flex-direction:column;">
-      <div data-panel="tags" style="display:flex;flex-direction:column;gap:8px;padding:16px 24px;">
-        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px;">content tags</div>
-        <div style="display:flex;gap:6px;flex-wrap:wrap;">
-          <div class="chip small" style="background:var(--paper);">#following</div>
-          <div class="chip small" style="background:var(--paper);">#newuploads</div>
-          <div class="chip small" style="background:var(--paper);">#wip</div>
+      <div data-panel="tags" style="display:flex;flex-direction:column;gap:16px;padding:16px 24px;">
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;">content tags</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;">
+            <span class="chip small" style="background:var(--paper);">#following</span>
+            <span class="chip small" style="background:var(--paper);">#newuploads</span>
+            <span class="chip small" style="background:var(--paper);">#wip</span>
+          </div>
         </div>
       </div>
       <div data-panel="comments" style="display:none;flex-direction:column;gap:16px;padding:16px 24px;flex:1;">
@@ -368,7 +430,7 @@ const maximisedHtml = `
         </div>
         <div style="display:flex;gap:8px;align-items:center;padding-top:8px;">
           <input placeholder="add a comment" style="flex:1;font:inherit;font-size:12.5px;padding:8px 10px;
-            border:1.5px solid var(--ink);background:var(--paper);color:var(--ink);border-radius:var(--radius-min);">
+            border:none;background:var(--paper);color:var(--ink);border-radius:var(--radius-min);">
           <div class="btnline" style="padding:8px 14px;">Post</div>
         </div>
       </div>
@@ -382,14 +444,13 @@ const profileHtml = `
   <div style="font-family:var(--font-display);font-weight:700;font-size:22px;color:var(--ink);">eski</div>
   <div style="display:flex;flex-direction:row;align-items:center;gap:32px;">
     <div class="navlink">Home</div>
-    <div class="navlink">Browse</div>
     <div class="navlink active">Profile</div>
     <div class="btnline filled">Upload</div>
   </div>
 </div>
 <div class="ms selectable" style="display:flex;flex-direction:row;align-items:center;gap:24px;width:100%;
     padding:32px 32px 24px 32px;box-sizing:border-box;flex-shrink:0;">
-  <div style="width:72px;height:72px;background:var(--paper-dim);border:1.5px solid var(--ink);flex-shrink:0;"></div>
+  <div style="width:72px;height:72px;background:var(--paper-dim);flex-shrink:0;"></div>
   <div style="display:flex;flex-direction:column;gap:6px;flex:1;">
     <div style="font-weight:700;font-size:22px;color:var(--ink);">inkwell</div>
     <div style="font-size:13.5px;color:var(--muted);">shoots at night. asks for feedback. rarely takes it.</div>
@@ -414,22 +475,16 @@ const profileHtml = `
   <div class="dtab active">Posts</div>
   <div class="dtab">Collections</div>
 </div>
-<div style="display:flex;flex-direction:row;gap:8px;width:100%;padding:24px 32px 48px 32px;box-sizing:border-box;flex-shrink:0;">
-  <div style="display:flex;flex-direction:column;gap:8px;flex:1;">
-    ${card('Image','midnight session','@inkwell',300)}
-    ${card('Collection','story bible: HALO','@inkwell',380,'<div style="position:absolute;bottom:8px;left:8px;font-size:13.5px;color:var(--muted);">12 items</div>')}
-  </div>
-  <div style="display:flex;flex-direction:column;gap:8px;flex:1;">
-    ${card('Image','afterglow','@inkwell',420)}
-    ${card('Image','static','@inkwell',260)}
-  </div>
-  <div style="display:flex;flex-direction:column;gap:8px;flex:1;">
-    ${card('Video','rooftop cut','@inkwell',340,'<div class="badge" style="position:absolute;bottom:8px;right:8px;">2:14</div>')}
-    ${card('Text','issue no. 4','@inkwell',320,quote('nobody remembers the flood the same way twice.'))}
-  </div>
-  <div style="display:flex;flex-direction:column;gap:8px;flex:1;">
-    ${card('Image','reference','@inkwell',280)}
-    ${card('Audio','tape no. 9','@inkwell',400)}
+<div style="width:100%;padding:24px 32px 48px 32px;box-sizing:border-box;flex-shrink:0;">
+  <div class="fgrid">
+    ${gcard('midnight session','@inkwell')}
+    ${gcard('afterglow','@inkwell')}
+    ${gcard('rooftop cut','@inkwell', vid('2:14'))}
+    ${gcard('reference','@inkwell')}
+    ${gcard('story bible: HALO','@inkwell', coll('collection · 12'))}
+    ${gcard('static','@inkwell')}
+    ${gcard('issue no. 4','@inkwell', gq('nobody remembers the flood the same way twice.'))}
+    ${gcard('tape no. 9','@inkwell', aud)}
   </div>
 </div>`;
 
@@ -441,27 +496,99 @@ function placeMockup(html, x, y, w, label){
   world.appendChild(el);
   return el;
 }
-placeMockup(homepageHtml, 0, 60, 1440, 'homepage — masonry feed');
+placeMockup(homepageHtml, 0, 60, 1440, 'homepage');
 placeMockup(maximisedHtml, 1560, 60, 1100, 'maximised post — detail overlay');
 placeMockup(profileHtml, 0, 940, 1440, 'profile');
 
-/* dtab rows switch their own active state, and — where a matching
-   data-panel exists below them — which panel shows. clicking a dtab
-   is real interaction, not a mode click, so it's handled here rather
-   than falling through to select/comment. */
+/* the mockups are live, so their own controls actually work: detail
+   tabs switch panels, feed tabs open/close/add, tags add (with a small
+   autocomplete) and remove, modifier chips toggle. all of it runs on
+   `world` so it fires BEFORE the viewport's select handler and can
+   stopPropagation to keep a control-click from also selecting the box.
+   in comment mode nothing here fires — a click is a note, everywhere. */
+function makeTagChip(label){
+  const s = document.createElement('span');
+  s.className = 'tagchip';
+  s.innerHTML = esc(label) + '<span class="x">&times;</span>';
+  return s;
+}
 world.addEventListener('click', e => {
-  const tab = e.target.closest('.dtab');
-  if(!tab) return;
-  e.stopPropagation();
-  const row = tab.parentElement;
-  row.querySelectorAll(':scope > .dtab').forEach(t => t.classList.remove('active'));
-  tab.classList.add('active');
-  const name = tab.dataset.tab;
-  if(!name) return;
-  const stack = row.parentElement.querySelector('[data-panel="' + name + '"]')?.parentElement;
-  if(!stack) return;
-  stack.querySelectorAll('[data-panel]').forEach(p => p.style.display = 'none');
-  stack.querySelector('[data-panel="' + name + '"]').style.display = 'flex';
+  if(mode === 'comment') return;
+
+  // detail Tags/Comments tabs
+  const dtab = e.target.closest('.dtab');
+  if(dtab){
+    e.stopPropagation();
+    const row = dtab.parentElement;
+    row.querySelectorAll(':scope > .dtab').forEach(t => t.classList.remove('active'));
+    dtab.classList.add('active');
+    const name = dtab.dataset.tab;
+    if(name){
+      const stack = row.parentElement.querySelector('[data-panel="' + name + '"]')?.parentElement;
+      if(stack){
+        stack.querySelectorAll('[data-panel]').forEach(p => p.style.display = 'none');
+        stack.querySelector('[data-panel="' + name + '"]').style.display = 'flex';
+      }
+    }
+    return;
+  }
+
+  // feed tab: close
+  if(e.target.closest('[data-feedclose]')){
+    e.stopPropagation();
+    e.target.closest('.feedtab').remove();
+    return;
+  }
+  // feed tab: add
+  if(e.target.closest('[data-feedadd]')){
+    e.stopPropagation();
+    const add = e.target.closest('[data-feedadd]');
+    const t = document.createElement('div');
+    t.className = 'feedtab';
+    t.innerHTML = 'new feed<span class="x" data-feedclose>&times;</span>';
+    add.parentElement.insertBefore(t, add);
+    return;
+  }
+  // feed tab: activate
+  const feedtab = e.target.closest('.feedtab');
+  if(feedtab){
+    e.stopPropagation();
+    feedtab.parentElement.querySelectorAll('.feedtab').forEach(t => t.classList.remove('active'));
+    feedtab.classList.add('active');
+    return;
+  }
+
+  // tag chip: remove
+  if(e.target.closest('.tagchip') && e.target.classList.contains('x')){
+    e.stopPropagation();
+    e.target.closest('.tagchip').remove();
+    return;
+  }
+  // tag add: toggle the autocomplete
+  if(e.target.closest('[data-tagadd]')){
+    e.stopPropagation();
+    const search = e.target.closest('[data-tagrow]').parentElement.querySelector('[data-tagsearch]');
+    if(search) search.classList.toggle('open');
+    return;
+  }
+  // autocomplete option: add it as a chip
+  const opt = e.target.closest('.tagsearch .opt');
+  if(opt){
+    e.stopPropagation();
+    const search = opt.closest('[data-tagsearch]');
+    const row = search.parentElement.querySelector('[data-tagrow]');
+    row.insertBefore(makeTagChip(opt.textContent.trim()), row.querySelector('[data-tagadd]'));
+    search.classList.remove('open');
+    return;
+  }
+
+  // modifier chip: toggle selected
+  const mod = e.target.closest('[data-mod]');
+  if(mod){
+    e.stopPropagation();
+    mod.classList.toggle('active');
+    return;
+  }
 });
 
 /* ---------- pan / zoom ---------- */
