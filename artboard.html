@@ -180,7 +180,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--
    with the same .43em ink-centring nudge broadsheet.css uses. the one
    sanctioned use of the display face. ---- */
 .wordmark{font-family:var(--font-display);font-weight:700;font-size:28px;letter-spacing:-.01em;
-  color:var(--accent);line-height:1;display:inline-block;transform:translateY(.12em)}
+  color:var(--ink);line-height:1;display:inline-block;transform:translateY(.12em)}
 .wordmark i{font-style:normal;color:inherit}
 
 /* ---- feed switcher: the active feed is the big editable headline; the
@@ -193,8 +193,8 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--
 .feed:hover{color:var(--ink-soft)}
 .feed.active{color:var(--ink)}
 .feed[contenteditable="true"]{outline:none;cursor:text;-webkit-user-select:text;user-select:text}
-.feed .fx{opacity:0;font-size:18px;font-weight:400;cursor:pointer;transition:opacity 120ms ease}
-.feed:hover .fx{opacity:.5}
+.feed .fx{opacity:0;font-size:18px;font-weight:400;color:var(--ink);cursor:pointer;transition:opacity 120ms ease}
+.feed:hover .fx{opacity:.85}
 .feed .fx:hover{opacity:1}
 .feedplus{font-family:var(--font-body);font-weight:400;font-size:30px;color:var(--muted);cursor:pointer;
   line-height:1;align-self:center;transition:color 120ms ease;user-select:none}
@@ -214,14 +214,17 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--
 .tagpanel.collapsed .taghdr .chev{transform:rotate(-90deg)}
 .tagpanel.collapsed .tagbody{display:none}
 
-/* ---- editable tag chip: × appears on hover ---- */
-.tagchip{display:inline-flex;align-items:center;gap:5px;font-family:var(--font-body);font-weight:500;
-  font-size:var(--fs-xs);color:var(--ink);background:var(--paper-dim);padding:6px 8px 6px 12px;
+/* ---- editable tag chip: the × is always shown (so the chip never looks
+   lopsided) and dark enough to read. ---- */
+.tagchip{display:inline-flex;align-items:center;gap:7px;font-family:var(--font-body);font-weight:500;
+  font-size:var(--fs-xs);color:var(--ink);background:var(--paper-dim);padding:6px 11px;
   border-radius:var(--radius-min);cursor:default;transition:background 120ms ease}
 .tagchip:hover{background:#E4E4E4}
-.tagchip .x{opacity:0;font-size:13px;line-height:1;width:13px;text-align:center;cursor:pointer;transition:opacity 120ms ease}
-.tagchip:hover .x{opacity:.55}
+.tagchip .x{font-size:14px;line-height:1;width:12px;text-align:center;color:var(--ink);opacity:.75;
+  cursor:pointer;transition:opacity 120ms ease}
 .tagchip .x:hover{opacity:1}
+.tagchip .tagtext{outline:none}
+.tagchip .tagtext[contenteditable="true"]{-webkit-user-select:text;user-select:text}
 
 /* ---- tag autocomplete popover ---- */
 .tagsearch{position:absolute;top:calc(100% + 4px);left:0;z-index:20;width:220px;background:var(--paper);
@@ -271,13 +274,12 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--
 /* ---- masonry-of-squares grid: every card sits in a fixed square box,
    media letterboxed inside it, small non-bold caption below (are.na
    grid). no content-type labels — the media speaks for itself. ---- */
-.fgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;width:100%}
+.fgrid{display:grid;grid-template-columns:repeat(5,1fr);gap:16px;width:100%}
 .gcard{display:flex;flex-direction:column;gap:6px;cursor:pointer}
 .gbox{position:relative;width:100%;aspect-ratio:1/1;background:var(--paper-dim);overflow:hidden;
   display:flex;align-items:center;justify-content:center}
 .gbox .fill{position:absolute;inset:0}
-.gcap{font-family:var(--font-body);font-weight:400;font-size:var(--fs-xs);color:var(--ink);line-height:1.3}
-.ghandle{font-family:var(--font-body);font-weight:400;font-size:var(--fs-micro);color:var(--muted)}
+.gcap{font-family:var(--font-body);font-weight:400;font-size:var(--fs-xs);color:var(--ink);line-height:1.3;text-align:center}
 .gind{position:absolute;bottom:8px;right:8px;font-family:var(--font-body);font-weight:600;
   font-size:var(--fs-micro);color:var(--paper);background:rgba(17,17,17,.72);padding:3px 6px}
 .gquote{padding:22px;font-family:var(--font-body);font-weight:500;font-size:15px;color:var(--ink-soft);
@@ -292,6 +294,27 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--
   font-family:var(--font-body);font-weight:700;font-size:var(--fs-xs);color:var(--paper);
   background:rgba(17,17,17,.8);padding:4px 8px}
 .gcount svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2.2}
+
+/* ---- burger menu on the poster's own post ---- */
+.burger{position:absolute;top:52px;right:0;z-index:10;min-width:170px;background:var(--paper);
+  box-shadow:0 8px 30px rgba(0,0,0,.22);display:none;flex-direction:column;padding:6px 0}
+.burger.open{display:flex}
+.burger .mi{font-family:var(--font-body);font-size:13px;color:var(--ink);padding:9px 16px;cursor:pointer;
+  display:flex;align-items:center;gap:10px;transition:background 120ms ease}
+.burger .mi:hover{background:var(--paper-dim)}
+.burger .mi.danger{color:#A33028}
+.burger .sep{height:1px;background:var(--paper-dim);margin:4px 0}
+
+/* ---- like / save action buttons on a detail overlay ---- */
+.actbtn{flex:1;display:flex;align-items:center;justify-content:center;gap:7px;font-family:var(--font-body);
+  font-weight:600;font-size:var(--fs-sm);color:var(--ink);background:var(--paper-dim);border:none;
+  border-radius:var(--radius-min);padding:11px 14px;cursor:pointer;transition:background 120ms ease}
+.actbtn:hover{background:#E4E4E4}
+.actbtn .n{color:var(--muted);font-weight:400}
+.actbtn svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.actbtn.on{background:var(--ink);color:var(--paper)}
+.actbtn.on .n{color:var(--paper)}
+.actbtn.on svg{fill:currentColor}
 .gplay{width:34px;height:34px;border-radius:50%;background:rgba(17,17,17,.72);display:flex;
   align-items:center;justify-content:center}
 .gplay svg{width:14px;height:14px;fill:var(--paper);margin-left:2px}
@@ -345,7 +368,6 @@ function gcard(title, handle, inner){
   return `<div class="gcard selectable">
     <div class="gbox">${inner||''}</div>
     <div class="gcap">${esc(title)}</div>
-    <div class="ghandle">${esc(handle)}</div>
   </div>`;
 }
 const PLAY = '<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>';
@@ -361,7 +383,6 @@ function gtextcard(title, body, handle){
       <div class="gtext"><div class="gtitle">${esc(title)}</div><div class="gbody">${esc(body)}</div></div>
     </div>
     <div class="gcap">${esc(title)}</div>
-    <div class="ghandle">${esc(handle)}</div>
   </div>`;
 }
 const ESSAY = "When Rerun approached @studiogruhl to help them with their new brand identity, they were very excited at the prospect of collaborating on something that felt genuinely new. The old marks had served them for the better part of a decade, but the company they described in the first meeting had almost nothing in common with the one that logo was drawn for. We started, as we usually do, by throwing almost everything away — not the values, but the visual habits that had accreted around them over the years.";
@@ -386,20 +407,12 @@ const homepageHtml = `
   <div style="display:flex;gap:64px;flex-wrap:wrap;align-items:flex-start;">
     <div class="tagpanel">
       <div class="taghdr" data-toggle>content tags <span class="chev">&#9662;</span></div>
-      <div class="tagbody" style="margin-top:10px;position:relative;">
-        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;" data-tagrow>
-          <span class="tagchip">#following<span class="x">&times;</span></span>
-          <span class="tagchip">#newuploads<span class="x">&times;</span></span>
-          <span class="tagchip">#wip<span class="x">&times;</span></span>
+      <div class="tagbody" style="margin-top:10px;">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;" data-tagrow data-freeform>
+          <span class="tagchip"><span class="tagtext">#following</span><span class="x">&times;</span></span>
+          <span class="tagchip"><span class="tagtext">#newuploads</span><span class="x">&times;</span></span>
+          <span class="tagchip"><span class="tagtext">#wip</span><span class="x">&times;</span></span>
           <button class="tagadd" data-tagadd>+</button>
-        </div>
-        <div class="tagsearch" data-tagsearch>
-          <input placeholder="search tags" data-tagsearchinput>
-          <div class="opt">#analog</div>
-          <div class="opt">#nightshots</div>
-          <div class="opt">#longexposure</div>
-          <div class="opt">#grain</div>
-          <div class="opt">#cityscape</div>
         </div>
       </div>
     </div>
@@ -455,61 +468,155 @@ function commentRow(handle, when, body){
     </div>
   </div>`;
 }
-const maximisedHtml = `
-<div class="ms selectable" style="position:relative;display:flex;flex-direction:row;width:1100px;height:760px;background:var(--paper);overflow:hidden;">
-  <div style="position:absolute;top:20px;right:24px;z-index:5;display:flex;align-items:center;gap:8px;">
+/* ============================================================
+   detail overlays. one generator; a card per content type plus the
+   poster's-own-post variant. every one opens as a modal over a scrim.
+   ============================================================ */
+function detailTabs(){
+  return `<div class="ms selectable" style="display:flex;flex-direction:row;gap:24px;padding:0 24px;flex-shrink:0;">
+    <div class="dtab active" data-tab="tags">Tags</div>
+    <div class="dtab" data-tab="comments">Comments</div>
+  </div>`;
+}
+function metaRows(rows, download){
+  let html = rows.map(r => `<div style="display:flex;justify-content:space-between;padding:6px 0;font-size:12.5px;color:var(--muted);">
+      <span>${esc(r[0])}</span><span style="color:var(--ink-soft);${r[2]?'font-weight:500;text-decoration:underline;':''}">${esc(r[1])}</span></div>`).join('');
+  if(download) html += `<div style="display:flex;justify-content:space-between;padding:6px 0;font-size:12.5px;color:var(--muted);">
+      <span>Download</span><span style="color:var(--ink);font-weight:600;cursor:pointer;">${esc(download)}</span></div>`;
+  return `<div style="display:flex;flex-direction:column;gap:0;">${html}</div>`;
+}
+/* like + save. the criticism marks (!, ?, !!) still live in comments and
+   are deferred; these are the plain engagement actions. */
+function actionBar(likes){
+  return `<div style="display:flex;gap:8px;">
+    <div class="actbtn selectable" data-act-toggle><svg viewBox="0 0 24 24"><path d="M12 21s-8-4.9-8-11a4.5 4.5 0 0 1 8-2.6 4.5 4.5 0 0 1 8 2.6c0 6.1-8 11-8 11z"/></svg>Like <span class="n">${esc(likes)}</span></div>
+    <div class="actbtn selectable" data-act-toggle><svg viewBox="0 0 24 24"><path d="M6 3h12v18l-6-4-6 4z"/></svg>Save</div>
+  </div>`;
+}
+function burgerMenu(){
+  return `<div class="burger">
+    <div class="mi" data-mi>Edit post</div>
+    <div class="mi" data-mi>Make private</div>
+    <div class="mi" data-mi>Archive</div>
+    <div class="sep"></div>
+    <div class="mi danger" data-mi>Delete</div>
+  </div>`;
+}
+function overlayControls(poster){
+  return `<div style="position:absolute;top:20px;right:24px;z-index:6;display:flex;align-items:center;gap:8px;">
     <div class="chip small selectable" style="white-space:nowrap;">v2 of 3&nbsp;&#9662;</div>
+    ${poster ? `<div style="position:relative;"><div class="navarrow selectable" data-burger>&#8942;</div>${burgerMenu()}</div>` : ''}
     <div class="navarrow selectable">&lsaquo;</div>
     <div class="navarrow selectable">&rsaquo;</div>
     <div class="navarrow selectable" data-close>&times;</div>
+  </div>`;
+}
+function tagsPanel(tags, poster){
+  const chips = tags.map(t => poster
+    ? `<span class="tagchip"><span class="tagtext">${esc(t)}</span><span class="x">&times;</span></span>`
+    : `<span class="chip small" style="background:var(--paper);">${esc(t)}</span>`).join('');
+  return `<div data-panel="tags" style="display:flex;flex-direction:column;gap:16px;padding:16px 24px;">
+    <div style="display:flex;flex-direction:column;gap:8px;">
+      <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;">content tags${poster?' &middot; you can edit these anytime':''}</div>
+      <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;"${poster?' data-tagrow data-freeform':''}>${chips}${poster?'<button class="tagadd" data-tagadd>+</button>':''}</div>
+    </div>
+  </div>`;
+}
+function commentsPanel(){
+  return `<div data-panel="comments" style="display:none;flex-direction:column;gap:16px;padding:16px 24px;flex:1;">
+    <div style="display:flex;flex-direction:column;gap:16px;flex:1;">
+      ${commentRow('@salt.mv', '2d ago', 'the grain on this is doing a lot of work. what stock did you shoot?')}
+      ${commentRow('@lowfreq', '1d ago', "been staring at this since you posted it. that building really doesn't sleep.")}
+      ${commentRow('@inkwell', '20h ago', 'kodak portra, pushed a stop. glad it reads.')}
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;padding-top:8px;">
+      <input placeholder="add a comment" style="flex:1;font:inherit;font-size:12.5px;padding:8px 10px;border:none;background:var(--paper);color:var(--ink);border-radius:var(--radius-min);">
+      <div class="btnline" style="padding:8px 14px;">Post</div>
+    </div>
+  </div>`;
+}
+function detailCard(cfg){
+  return `<div class="ms selectable" style="position:relative;display:flex;flex-direction:row;width:1100px;height:760px;background:var(--paper);overflow:hidden;">
+    ${overlayControls(cfg.poster)}
+    ${cfg.media}
+    <div style="width:42%;height:100%;display:flex;flex-direction:column;overflow:hidden;">
+      <div class="ms selectable" style="display:flex;flex-direction:column;gap:16px;padding:64px 24px 20px 24px;box-sizing:border-box;">
+        ${cfg.title ? `<div style="font-weight:700;font-size:19px;color:var(--ink);line-height:1.3;">${esc(cfg.title)}</div>` : ''}
+        <div style="font-size:14px;font-weight:400;color:var(--ink-soft);line-height:1.5;">${esc(cfg.caption)}</div>
+        ${metaRows(cfg.meta, cfg.download)}
+        ${cfg.poster ? '' : actionBar(cfg.likes)}
+      </div>
+      ${detailTabs()}
+      <div style="flex:1;background:var(--paper-dim);box-sizing:border-box;overflow:auto;display:flex;flex-direction:column;">
+        ${tagsPanel(cfg.tags, cfg.poster)}
+        ${commentsPanel()}
+      </div>
+    </div>
+  </div>`;
+}
+
+function waveform(){
+  const hs=[30,55,40,70,45,85,60,35,50,75,90,55,40,65,80,45,30,60,70,50,85,40,55,75,35,60,45,80,50,65,40,55,70,45,60,35,50,75,40,55];
+  return hs.map(h => `<div style="width:4px;height:${h}%;background:var(--muted);border-radius:1px;"></div>`).join('');
+}
+const mImage = `<div class="ms selectable" style="width:58%;height:100%;background:var(--paper-dim);flex-shrink:0;"></div>`;
+const mVideo = `<div class="ms selectable" style="width:58%;height:100%;background:#0d0d0d;flex-shrink:0;position:relative;display:flex;align-items:center;justify-content:center;">
+  <div style="width:60px;height:60px;border-radius:50%;background:rgba(255,255,255,.92);display:flex;align-items:center;justify-content:center;"><svg viewBox="0 0 24 24" width="22" height="22" style="fill:#111;"><path d="M8 5v14l11-7z"/></svg></div>
+  <div style="position:absolute;left:16px;right:16px;bottom:14px;display:flex;align-items:center;gap:10px;color:#fff;font-size:11px;">
+    <span>0:41</span><div style="flex:1;height:3px;background:rgba(255,255,255,.28);"><div style="width:32%;height:100%;background:#fff;"></div></div><span>2:14</span>
   </div>
-  <div class="ms selectable" style="width:58%;height:100%;background:var(--paper-dim);flex-shrink:0;"></div>
-  <div style="width:42%;height:100%;display:flex;flex-direction:column;overflow:hidden;">
-    <div class="ms selectable" style="display:flex;flex-direction:column;gap:16px;padding:64px 24px 24px 24px;box-sizing:border-box;">
-      <div style="font-size:14px;font-weight:400;color:var(--ink-soft);line-height:1.5;">shot this on the walk back from the studio around 2am. the building across the street never turns its lights off.</div>
-      <div style="display:flex;flex-direction:column;gap:0;">
-        <div style="display:flex;justify-content:space-between;padding:6px 0;font-size:12.5px;color:var(--muted);">
-          <span>Added</span><span style="color:var(--ink-soft);">Aug 12</span></div>
-        <div style="display:flex;justify-content:space-between;padding:6px 0;font-size:12.5px;color:var(--muted);">
-          <span>By</span><span style="color:var(--ink-soft);font-weight:500;text-decoration:underline;">inkwell</span></div>
-        <div style="display:flex;justify-content:space-between;padding:6px 0;font-size:12.5px;color:var(--muted);">
-          <span>Content type</span><span style="color:var(--ink-soft);">image/png</span></div>
-        <div style="display:flex;justify-content:space-between;padding:6px 0;font-size:12.5px;color:var(--muted);">
-          <span>Resolution</span><span style="color:var(--ink-soft);">3024 × 4032</span></div>
-        <div style="display:flex;justify-content:space-between;padding:6px 0;font-size:12.5px;color:var(--muted);">
-          <span>File size</span><span style="color:var(--ink-soft);">4.1 MB</span></div>
-        <div style="display:flex;justify-content:space-between;padding:6px 0;font-size:12.5px;color:var(--muted);">
-          <span>Download</span><span style="color:var(--ink);font-weight:600;cursor:pointer;">Download .png</span></div>
-      </div>
-    </div>
-    <div class="ms selectable" style="display:flex;flex-direction:row;gap:24px;padding:0 24px;border-top:0;flex-shrink:0;">
-      <div class="dtab active" data-tab="tags">Tags</div>
-      <div class="dtab" data-tab="comments">Comments</div>
-    </div>
-    <div style="flex:1;background:var(--paper-dim);box-sizing:border-box;overflow:auto;display:flex;flex-direction:column;">
-      <div data-panel="tags" style="display:flex;flex-direction:column;gap:16px;padding:16px 24px;">
-        <div style="display:flex;flex-direction:column;gap:8px;">
-          <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;">content tags</div>
-          <div style="display:flex;gap:6px;flex-wrap:wrap;">
-            <span class="chip small" style="background:var(--paper);">#following</span>
-            <span class="chip small" style="background:var(--paper);">#newuploads</span>
-            <span class="chip small" style="background:var(--paper);">#wip</span>
-          </div>
-        </div>
-      </div>
-      <div data-panel="comments" style="display:none;flex-direction:column;gap:16px;padding:16px 24px;flex:1;">
-        <div style="display:flex;flex-direction:column;gap:16px;flex:1;">
-          ${commentRow('@salt.mv', '2d ago', 'the grain on this is doing a lot of work. what stock did you shoot?')}
-          ${commentRow('@lowfreq', '1d ago', "been staring at this since you posted it. that building really doesn't sleep.")}
-          ${commentRow('@inkwell', '20h ago', 'kodak portra, pushed a stop. glad it reads.')}
-        </div>
-        <div style="display:flex;gap:8px;align-items:center;padding-top:8px;">
-          <input placeholder="add a comment" style="flex:1;font:inherit;font-size:12.5px;padding:8px 10px;
-            border:none;background:var(--paper);color:var(--ink);border-radius:var(--radius-min);">
-          <div class="btnline" style="padding:8px 14px;">Post</div>
-        </div>
-      </div>
-    </div>
+</div>`;
+const mAudio = `<div class="ms selectable" style="width:58%;height:100%;background:var(--paper-dim);flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:28px;padding:48px;box-sizing:border-box;">
+  <div style="width:76px;height:76px;border-radius:50%;background:var(--ink);display:flex;align-items:center;justify-content:center;"><svg viewBox="0 0 24 24" width="26" height="26" style="fill:var(--paper);"><path d="M8 5v14l11-7z"/></svg></div>
+  <div style="display:flex;align-items:center;gap:3px;height:90px;width:100%;justify-content:center;">${waveform()}</div>
+  <div style="font-size:12px;color:var(--muted);">1:48 / 3:20</div>
+</div>`;
+const mText = `<div class="ms selectable" style="width:58%;height:100%;background:var(--paper);flex-shrink:0;overflow:auto;padding:56px 60px;box-sizing:border-box;">
+  <div style="font-weight:700;font-size:26px;color:var(--ink);line-height:1.25;margin-bottom:20px;">Rerun, and the case for a slower rebrand</div>
+  <div style="font-size:15px;color:var(--ink-soft);line-height:1.7;display:flex;flex-direction:column;gap:14px;">
+    <p style="margin:0;">When Rerun approached @studiogruhl to help them with their new brand identity, they were very excited at the prospect of collaborating on something that felt genuinely new.</p>
+    <p style="margin:0;">We started, as we usually do, by throwing almost everything away — not the values, but the visual habits that had accreted around them over the years.</p>
+    <p style="margin:0;">What replaced them is quieter than what came before, and that was the hardest thing to sell. A brand that whispers asks more of the people using it.</p>
+    <p style="margin:0;">The octagon at the centre of the new mark is the one flourish we allowed ourselves — a stop and a play button at once.</p>
+  </div>
+</div>`;
+const mCollection = `<div class="ms selectable" style="width:58%;height:100%;background:var(--paper-dim);flex-shrink:0;padding:8px;box-sizing:border-box;display:grid;grid-template-columns:1fr 1fr;grid-auto-rows:1fr;gap:8px;overflow:auto;">
+  <div style="background:#E4E4E4;"></div><div style="background:#DDDDDD;"></div>
+  <div style="background:#E4E4E4;"></div><div style="background:#DBDBDB;"></div>
+  <div style="background:#E0E0E0;"></div><div style="background:#E4E4E4;"></div>
+</div>`;
+
+const imageDetail = detailCard({ media:mImage, caption:'shot this on the walk back from the studio around 2am. the building across the street never turns its lights off.', meta:[['Added','Aug 12'],['By','inkwell',true],['Content type','image/png'],['Resolution','3024 × 4032'],['File size','4.1 MB']], download:'Download .png', tags:['#following','#newuploads','#wip'], likes:'128' });
+const videoDetail = detailCard({ media:mVideo, caption:'one continuous take, no cuts. the light did all the work.', meta:[['Added','3 days ago'],['By','camrafilm',true],['Content type','video/mp4'],['Resolution','1920 × 1080'],['Duration','2:14'],['File size','18.4 MB']], download:'Download .mp4', tags:['#motion','#golden'], likes:'302' });
+const audioDetail = detailCard({ media:mAudio, caption:'tape no. 9 — a slow one for the end of the night.', meta:[['Added','1 week ago'],['By','lowfreq',true],['Content type','audio/mp3'],['Duration','3:20'],['File size','7.6 MB']], download:'Download .mp3', tags:['#beat','#latenight'], likes:'86' });
+const textDetail = detailCard({ media:mText, title:'Rerun, and the case for a slower rebrand', caption:'why we talked them out of the loud version.', meta:[['Added','2 months ago'],['By','studiogruhl',true],['Content type','text/markdown'],['Words','840'],['Reading time','4 min']], download:'Download .md', tags:['#branding','#essay'], likes:'54' });
+const collectionDetail = detailCard({ media:mCollection, caption:'story bible: HALO — reference, palettes, and the pages that started it.', meta:[['Added','1 month ago'],['By','inkwell',true],['Items','12'],['Types','image · text']], tags:['#worldbuilding','#reference'], likes:'173' });
+const posterDetail = detailCard({ media:mImage, caption:'shot this on the walk back from the studio around 2am. the building across the street never turns its lights off.', meta:[['Added','Aug 12'],['By','inkwell',true],['Content type','image/png'],['Resolution','3024 × 4032'],['File size','4.1 MB']], download:'Download .png', tags:['#following','#newuploads','#wip'], poster:true });
+
+/* ---- small modals: sign-in, account creation, delete confirm ---- */
+const GOOGLE = '<svg viewBox="0 0 24 24" width="16" height="16" style="flex-shrink:0;"><path fill="currentColor" d="M12 11v2.7h4.4c-.2 1.2-1.5 3.4-4.4 3.4-2.7 0-4.8-2.2-4.8-4.9S9.3 7.3 12 7.3c1.5 0 2.5.6 3.1 1.2l2-2C15.8 5.3 14.1 4.6 12 4.6 7.8 4.6 4.4 8 4.4 12S7.8 19.4 12 19.4c4.3 0 7.2-3 7.2-7.3 0-.5 0-.8-.1-1.1z"/></svg>';
+const signinCard = `<div style="width:420px;background:var(--paper);padding:40px 36px;display:flex;flex-direction:column;gap:18px;box-sizing:border-box;">
+  <div class="wordmark" style="font-size:30px;">eski<i>!</i></div>
+  <div style="font-weight:700;font-size:22px;color:var(--ink);">Sign in to eski</div>
+  <div style="font-size:13.5px;color:var(--ink-soft);line-height:1.55;">to save posts, follow artists, tag your own work and join the conversation.</div>
+  <div class="btnline filled" style="display:flex;align-items:center;justify-content:center;gap:8px;margin-top:4px;">${GOOGLE}Continue with Google</div>
+  <div style="font-size:11.5px;color:var(--muted);text-align:center;line-height:1.5;">by continuing you agree to the terms and privacy policy.</div>
+</div>`;
+const accountCard = `<div style="width:460px;background:var(--paper);padding:40px 36px;display:flex;flex-direction:column;gap:16px;box-sizing:border-box;">
+  <div class="wordmark" style="font-size:28px;">eski<i>!</i></div>
+  <div style="font-weight:700;font-size:22px;color:var(--ink);">Set up your account</div>
+  <div style="font-size:13px;color:var(--ink-soft);line-height:1.5;">your handle is how people find your work. you can change it later.</div>
+  <div class="ufield"><div class="ulabel">handle</div><input class="uinput" value="inkwell"></div>
+  <div class="ufield"><div class="ulabel">display name</div><input class="uinput" value="Ink Well"></div>
+  <div class="ufield"><div class="ulabel">bio</div><textarea class="utext" placeholder="what you make, in a sentence…"></textarea></div>
+  <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:4px;"><div class="btnline">Skip for now</div><div class="btnline filled">Create account</div></div>
+</div>`;
+const deleteCard = `<div style="width:420px;background:var(--paper);padding:32px;display:flex;flex-direction:column;gap:16px;box-sizing:border-box;">
+  <div style="font-weight:700;font-size:19px;color:var(--ink);">Delete this post?</div>
+  <div style="font-size:13.5px;color:var(--ink-soft);line-height:1.55;">&ldquo;midnight session&rdquo; and its 24 comments will be permanently removed. This can't be undone.</div>
+  <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:4px;">
+    <div class="btnline">Cancel</div>
+    <div class="btnline" style="background:#A33028;color:#fff;">Delete post</div>
   </div>
 </div>`;
 
@@ -523,29 +630,31 @@ const profileHtml = `
     <div class="btnline filled">Upload</div>
   </div>
 </div>
-<div class="ms selectable" style="display:flex;flex-direction:row;align-items:center;gap:24px;width:100%;
+<div class="ms selectable" style="display:flex;flex-direction:column;gap:20px;width:100%;
     padding:32px 32px 24px 32px;box-sizing:border-box;flex-shrink:0;">
-  <div style="width:72px;height:72px;background:var(--paper-dim);flex-shrink:0;"></div>
-  <div style="display:flex;flex-direction:column;gap:4px;flex:1;">
-    <div style="font-weight:700;font-size:22px;color:var(--ink);line-height:1.1;">Ink Well</div>
-    <div style="font-size:13.5px;color:var(--muted);">@inkwell</div>
-    <div style="font-size:13.5px;color:var(--ink-soft);margin-top:4px;">shoots at night. asks for feedback. rarely takes it.</div>
+  <div style="display:flex;flex-direction:row;align-items:center;gap:24px;">
+    <div style="width:72px;height:72px;background:var(--paper-dim);flex-shrink:0;"></div>
+    <div style="display:flex;flex-direction:column;gap:3px;flex:1;">
+      <div style="font-weight:700;font-size:22px;color:var(--ink);line-height:1.1;">Ink Well</div>
+      <div style="font-size:13.5px;color:var(--muted);">@inkwell</div>
+    </div>
+    <div style="display:flex;gap:32px;flex-shrink:0;">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:2px;">
+        <div style="font-family:var(--font-body);font-weight:700;font-size:20px;color:var(--ink);">142</div>
+        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;">posts</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:2px;">
+        <div style="font-family:var(--font-body);font-weight:700;font-size:20px;color:var(--ink);">1.8k</div>
+        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;">followers</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:2px;">
+        <div style="font-family:var(--font-body);font-weight:700;font-size:20px;color:var(--ink);">96</div>
+        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;">following</div>
+      </div>
+    </div>
+    <div class="btnline">Edit profile</div>
   </div>
-  <div style="display:flex;gap:32px;flex-shrink:0;">
-    <div style="display:flex;flex-direction:column;align-items:center;gap:2px;">
-      <div style="font-family:var(--font-body);font-weight:700;font-size:20px;color:var(--ink);">142</div>
-      <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;">posts</div>
-    </div>
-    <div style="display:flex;flex-direction:column;align-items:center;gap:2px;">
-      <div style="font-family:var(--font-body);font-weight:700;font-size:20px;color:var(--ink);">1.8k</div>
-      <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;">followers</div>
-    </div>
-    <div style="display:flex;flex-direction:column;align-items:center;gap:2px;">
-      <div style="font-family:var(--font-body);font-weight:700;font-size:20px;color:var(--ink);">96</div>
-      <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;">following</div>
-    </div>
-  </div>
-  <div class="btnline">Edit profile</div>
+  <div style="font-size:14px;color:var(--ink-soft);line-height:1.6;max-width:680px;">shoots at night, mostly on film, mostly alone. asks for feedback and rarely takes it. currently working on a long series about the buildings that never turn their lights off — HALO is the story bible for it. open to scoring and collaboration; drop a !! if you want in.</div>
 </div>
 <div class="ms selectable" style="display:flex;flex-direction:row;gap:24px;width:100%;padding:0 32px;box-sizing:border-box;flex-shrink:0;">
   <div class="dtab active">Posts</div>
@@ -576,99 +685,96 @@ function uploadNav(){
   </div>`;
 }
 function uploadTags(a, b){
-  return `<div class="ufield" style="position:relative;">
+  return `<div class="ufield">
     <div class="ulabel">Content tags</div>
-    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;" data-tagrow>
-      <span class="tagchip">${esc(a)}<span class="x">&times;</span></span>
-      <span class="tagchip">${esc(b)}<span class="x">&times;</span></span>
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;" data-tagrow data-freeform>
+      <span class="tagchip"><span class="tagtext">${esc(a)}</span><span class="x">&times;</span></span>
+      <span class="tagchip"><span class="tagtext">${esc(b)}</span><span class="x">&times;</span></span>
       <button class="tagadd" data-tagadd>+</button>
-    </div>
-    <div class="tagsearch" data-tagsearch>
-      <input placeholder="search tags" data-tagsearchinput>
-      <div class="opt">#analog</div><div class="opt">#studio</div><div class="opt">#process</div>
-      <div class="opt">#wip</div><div class="opt">#2026</div>
     </div>
   </div>`;
 }
 
-/* upload — the common case: several files of one type dropped at once, so
-   eski asks whether they're separate posts, one collection, or one post
-   with versions. a filmstrip of what was dropped, each with its own
-   caption. */
-const uploadHtml = `
-${uploadNav()}
-<div class="ms selectable" style="padding:32px 40px 4px 40px;box-sizing:border-box;flex-shrink:0;">
-  <div style="font-family:var(--font-body);font-weight:700;font-size:40px;color:var(--ink);letter-spacing:-.01em;">Upload</div>
-</div>
-<div style="display:flex;flex-direction:column;gap:20px;width:100%;padding:12px 40px 40px 40px;box-sizing:border-box;flex-shrink:0;">
-  <div class="dropzone selectable">
-    <svg viewBox="0 0 24 24"><path d="M12 16V4"/><path d="M7 9l5-5 5 5"/><path d="M4 20h16"/></svg>
-    <div class="dzbig">Drag files here, or click to browse</div>
-    <div class="dzsub">image · video · audio · text · markdown — up to 20 at once</div>
-  </div>
-  <div class="ms selectable" style="background:var(--paper-dim);border-radius:var(--radius-min);padding:16px;display:flex;flex-direction:column;gap:12px;">
-    <div style="font-family:var(--font-body);font-weight:600;font-size:14px;color:var(--ink);">All 4 files are images. How should they go up?</div>
-    <div class="umode">
-      <span class="chip active" data-umode>Separate posts</span>
-      <span class="chip" data-umode>One collection</span>
-      <span class="chip" data-umode>One post &middot; 4 versions</span>
+/* upload — a modal (not a screen). the common case: several files of one
+   type dropped at once, so eski asks whether they're separate posts, one
+   collection, or one post with versions. a filmstrip of what was dropped,
+   each with its own caption. */
+function uploadHead(){
+  return `<div style="display:flex;align-items:center;justify-content:space-between;padding:22px 28px 14px 28px;flex-shrink:0;">
+    <div style="font-weight:700;font-size:22px;color:var(--ink);">New post</div>
+    <div class="navarrow selectable" data-close>&times;</div>
+  </div>`;
+}
+const uploadCard = `<div style="width:720px;max-height:840px;background:var(--paper);display:flex;flex-direction:column;overflow:hidden;box-sizing:border-box;">
+  ${uploadHead()}
+  <div style="display:flex;flex-direction:column;gap:18px;padding:0 28px 28px 28px;overflow:auto;">
+    <div class="dropzone selectable">
+      <svg viewBox="0 0 24 24"><path d="M12 16V4"/><path d="M7 9l5-5 5 5"/><path d="M4 20h16"/></svg>
+      <div class="dzbig">Drag files here, or click to browse</div>
+      <div class="dzsub">image · video · audio · text · markdown — up to 20 at once</div>
     </div>
-    <div style="font-family:var(--font-body);font-size:11.5px;color:var(--muted);">Collection and versions are only offered when every file is the same type.</div>
-  </div>
-  <div class="filmstrip">
-    <div class="fthumb" data-fthumb></div>
-    <div class="fthumb sel" data-fthumb></div>
-    <div class="fthumb" data-fthumb></div>
-    <div class="fthumb" data-fthumb></div>
-    <div class="faddtile">+</div>
-  </div>
-  <div style="display:flex;gap:24px;">
-    <div style="width:240px;height:240px;background:var(--paper-dim);flex-shrink:0;"></div>
-    <div style="flex:1;display:flex;flex-direction:column;gap:16px;">
-      <div class="ufield">
-        <div class="ulabel">Caption &middot; post 2 of 4</div>
-        <textarea class="utext" placeholder="Write a caption for this post…">golden hour on the rooftop — the second frame is the keeper.</textarea>
+    <div class="ms selectable" style="background:var(--paper-dim);border-radius:var(--radius-min);padding:16px;display:flex;flex-direction:column;gap:12px;">
+      <div style="font-weight:600;font-size:14px;color:var(--ink);">All 4 files are images. How should they go up?</div>
+      <div class="umode">
+        <span class="chip active" data-umode>Separate posts</span>
+        <span class="chip" data-umode>One collection</span>
+        <span class="chip" data-umode>One post &middot; 4 versions</span>
       </div>
-      ${uploadTags('#rooftop', '#goldenhour')}
+      <div style="font-size:11.5px;color:var(--muted);">Collection and versions are only offered when every file is the same type.</div>
     </div>
-  </div>
-  <div style="display:flex;justify-content:flex-end;gap:8px;">
-    <div class="btnline">Cancel</div>
-    <div class="btnline filled">Publish 4 posts</div>
+    <div class="filmstrip">
+      <div class="fthumb" data-fthumb></div>
+      <div class="fthumb sel" data-fthumb></div>
+      <div class="fthumb" data-fthumb></div>
+      <div class="fthumb" data-fthumb></div>
+      <div class="faddtile">+</div>
+    </div>
+    <div style="display:flex;gap:20px;">
+      <div style="width:180px;height:180px;background:var(--paper-dim);flex-shrink:0;"></div>
+      <div style="flex:1;display:flex;flex-direction:column;gap:16px;">
+        <div class="ufield">
+          <div class="ulabel">Caption &middot; post 2 of 4</div>
+          <textarea class="utext" placeholder="Write a caption for this post…">golden hour on the rooftop — the second frame is the keeper.</textarea>
+        </div>
+        ${uploadTags('#rooftop', '#goldenhour')}
+      </div>
+    </div>
+    <div style="display:flex;justify-content:flex-end;gap:8px;">
+      <div class="btnline">Cancel</div>
+      <div class="btnline filled">Publish 4 posts</div>
+    </div>
   </div>
 </div>`;
 
 /* upload — a single markdown/text file, which additionally gets a Title. */
-const uploadTextHtml = `
-${uploadNav()}
-<div class="ms selectable" style="padding:32px 40px 4px 40px;box-sizing:border-box;flex-shrink:0;">
-  <div style="font-family:var(--font-body);font-weight:700;font-size:40px;color:var(--ink);letter-spacing:-.01em;">Upload</div>
-</div>
-<div style="display:flex;flex-direction:column;gap:20px;width:100%;padding:12px 40px 40px 40px;box-sizing:border-box;flex-shrink:0;">
-  <div class="filmstrip">
-    <div class="fthumb sel" data-fthumb><span class="ext">MD</span></div>
-    <div class="faddtile">+</div>
-  </div>
-  <div style="font-family:var(--font-body);font-size:12.5px;color:var(--muted);">1 markdown file — text &amp; markdown posts get a title as well as a caption.</div>
-  <div style="display:flex;gap:24px;">
-    <div style="width:240px;height:240px;background:var(--paper-dim);flex-shrink:0;display:flex;align-items:center;justify-content:center;">
-      <span class="ext" style="font-family:var(--font-body);font-weight:700;font-size:15px;color:var(--muted);">essay.md</span>
+const uploadTextCard = `<div style="width:720px;max-height:840px;background:var(--paper);display:flex;flex-direction:column;overflow:hidden;box-sizing:border-box;">
+  ${uploadHead()}
+  <div style="display:flex;flex-direction:column;gap:18px;padding:0 28px 28px 28px;overflow:auto;">
+    <div class="filmstrip">
+      <div class="fthumb sel" data-fthumb><span class="ext">MD</span></div>
+      <div class="faddtile">+</div>
     </div>
-    <div style="flex:1;display:flex;flex-direction:column;gap:16px;">
-      <div class="ufield">
-        <div class="ulabel">Title</div>
-        <input class="uinput" value="Rerun, and the case for a slower rebrand">
+    <div style="font-size:12.5px;color:var(--muted);">1 markdown file — text &amp; markdown posts get a title as well as a caption.</div>
+    <div style="display:flex;gap:20px;">
+      <div style="width:180px;height:180px;background:var(--paper-dim);flex-shrink:0;display:flex;align-items:center;justify-content:center;">
+        <span style="font-weight:700;font-size:14px;color:var(--muted);">essay.md</span>
       </div>
-      <div class="ufield">
-        <div class="ulabel">Caption</div>
-        <textarea class="utext" placeholder="A short line shown under the title in the feed…">why we talked them out of the loud version.</textarea>
+      <div style="flex:1;display:flex;flex-direction:column;gap:16px;">
+        <div class="ufield">
+          <div class="ulabel">Title</div>
+          <input class="uinput" value="Rerun, and the case for a slower rebrand">
+        </div>
+        <div class="ufield">
+          <div class="ulabel">Caption</div>
+          <textarea class="utext" placeholder="A short line shown under the title in the feed…">why we talked them out of the loud version.</textarea>
+        </div>
+        ${uploadTags('#branding', '#essay')}
       </div>
-      ${uploadTags('#branding', '#essay')}
     </div>
-  </div>
-  <div style="display:flex;justify-content:flex-end;gap:8px;">
-    <div class="btnline">Cancel</div>
-    <div class="btnline filled">Publish post</div>
+    <div style="display:flex;justify-content:flex-end;gap:8px;">
+      <div class="btnline">Cancel</div>
+      <div class="btnline filled">Publish post</div>
+    </div>
   </div>
 </div>`;
 
@@ -680,11 +786,39 @@ function placeMockup(html, x, y, w, label){
   world.appendChild(el);
   return el;
 }
-placeMockup(homepageHtml, 0, 60, 1440, 'homepage');
-placeMockup(maximisedHtml, 1560, 60, 1100, 'maximised post — detail overlay');
-placeMockup(profileHtml, 0, 940, 1440, 'profile');
-placeMockup(uploadHtml, 0, 1980, 1000, 'upload — multiple files, one type');
-placeMockup(uploadTextHtml, 1120, 1980, 1000, 'upload — text / markdown post');
+/* a modal/overlay screen: the card centred on its own scrim, so it reads
+   the way it will in the app. fixed size so the scrim margin shows. */
+function placeModal(cardHtml, x, y, w, h, label){
+  const el = document.createElement('div');
+  el.className = 'eski-mockup';
+  el.style.left = x + 'px'; el.style.top = y + 'px'; el.style.width = w + 'px'; el.style.height = h + 'px';
+  el.style.background = 'rgba(15,18,16,.5)'; el.style.boxShadow = 'none';
+  el.style.display = 'flex'; el.style.alignItems = 'center'; el.style.justifyContent = 'center';
+  el.innerHTML = `<div class="section-label" style="position:absolute;top:-24px;left:0;color:#cfcfcf;font-size:11px;">${esc(label)}</div>`
+    + `<div style="box-shadow:0 40px 100px rgba(0,0,0,.5);">${cardHtml}</div>`;
+  world.appendChild(el);
+  return el;
+}
+
+/* laid out on a labelled grid, grouped by kind, big gaps between so each
+   screen is clearly its own thing (this goes to prod). */
+// core screens
+placeMockup(homepageHtml, 0, 60, 1440, 'HOME — the feed');
+placeMockup(profileHtml, 1780, 60, 1440, 'PROFILE');
+// upload (modal)
+placeModal(uploadCard, 0, 1720, 1240, 940, 'UPLOAD — multiple files, one type (modal)');
+placeModal(uploadTextCard, 1480, 1720, 1240, 940, 'UPLOAD — text / markdown (modal)');
+// detail overlays, viewer POV — one per content type
+placeModal(imageDetail, 0, 2820, 1320, 900, 'DETAIL — image');
+placeModal(videoDetail, 1560, 2820, 1320, 900, 'DETAIL — video');
+placeModal(audioDetail, 3120, 2820, 1320, 900, 'DETAIL — audio');
+placeModal(textDetail, 0, 3860, 1320, 900, 'DETAIL — text / essay');
+placeModal(collectionDetail, 1560, 3860, 1320, 900, 'DETAIL — collection');
+placeModal(posterDetail, 3120, 3860, 1320, 900, "DETAIL — your own post (edit tags · ⋮ menu)");
+// account + destructive modals
+placeModal(signinCard, 0, 4900, 760, 640, 'SIGNED OUT — sign-in prompt');
+placeModal(accountCard, 940, 4900, 760, 760, 'ACCOUNT CREATION');
+placeModal(deleteCard, 1880, 4900, 760, 560, 'DELETE CONFIRMATION');
 
 /* the mockups are live, so their own controls actually work: detail
    tabs switch panels, feed tabs open/close/add, tags add (with a small
@@ -692,14 +826,17 @@ placeMockup(uploadTextHtml, 1120, 1980, 1000, 'upload — text / markdown post')
    `world` so it fires BEFORE the viewport's select handler and can
    stopPropagation to keep a control-click from also selecting the box.
    in comment mode nothing here fires — a click is a note, everywhere. */
-function makeTagChip(label){
+function makeTagChip(label, editable){
   const s = document.createElement('span');
   s.className = 'tagchip';
-  s.innerHTML = esc(label) + '<span class="x">&times;</span>';
+  s.innerHTML = `<span class="tagtext"${editable ? ' contenteditable="true" spellcheck="false"' : ''}>${esc(label)}</span><span class="x">&times;</span>`;
   return s;
 }
 world.addEventListener('click', e => {
   if(mode === 'comment') return;
+  // let clicks into any editable field (feed rename, freeform tag, caption)
+  // place the caret instead of triggering select/interaction below.
+  if(e.target.isContentEditable) return;
 
   // detail Tags/Comments tabs
   const dtab = e.target.closest('.dtab');
@@ -774,16 +911,45 @@ world.addEventListener('click', e => {
     return;
   }
 
+  // poster's burger menu: open/close
+  if(e.target.closest('[data-burger]')){
+    e.stopPropagation();
+    const menu = e.target.closest('[data-burger]').parentElement.querySelector('.burger');
+    if(menu) menu.classList.toggle('open');
+    return;
+  }
+  // a burger menu item: (mockup) just close the menu
+  if(e.target.closest('.burger .mi')){
+    e.stopPropagation();
+    e.target.closest('.burger').classList.remove('open');
+    return;
+  }
+  // like / save toggle
+  const act = e.target.closest('[data-act-toggle]');
+  if(act){ e.stopPropagation(); act.classList.toggle('on'); return; }
+
   // tag chip: remove
   if(e.target.closest('.tagchip') && e.target.classList.contains('x')){
     e.stopPropagation();
     e.target.closest('.tagchip').remove();
     return;
   }
-  // tag add: toggle the autocomplete
+  // tag add: freeform rows get a new editable chip; search rows open the
+  // autocomplete popover.
   if(e.target.closest('[data-tagadd]')){
     e.stopPropagation();
-    const search = e.target.closest('[data-tagrow]').parentElement.querySelector('[data-tagsearch]');
+    const add = e.target.closest('[data-tagadd]');
+    const row = add.closest('[data-tagrow]');
+    if(row && row.hasAttribute('data-freeform')){
+      const chip = makeTagChip('#', true);
+      row.insertBefore(chip, add);
+      const t = chip.querySelector('.tagtext');
+      t.focus();
+      const sel = window.getSelection(), rg = document.createRange();
+      rg.selectNodeContents(t); rg.collapse(false); sel.removeAllRanges(); sel.addRange(rg);
+      return;
+    }
+    const search = row.parentElement.querySelector('[data-tagsearch]');
     if(search) search.classList.toggle('open');
     return;
   }
