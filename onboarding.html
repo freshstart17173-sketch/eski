@@ -8,79 +8,39 @@
 <link rel="icon" type="image/png" href="eski_logo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Jost:wght@400;500;600&display=swap" rel="stylesheet">
-<script type="module" src="platform.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Jost:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="palette.js"></script>
 <link rel="stylesheet" href="tokens.css">
-<link rel="stylesheet" href="docs/design/final/broadsheet.css">
+<link rel="stylesheet" href="palettes.css">
+<link rel="stylesheet" href="pivot.css">
+<script type="module" src="platform.js"></script>
 <style>
-/* ============================================================
-   eski — onboarding. a deliberate account-setup step instead of the
-   silent auto-seeded handle profile.html's ensureProfile() falls back
-   to. one form, one job: pick a handle before the shelf opens.
-   ============================================================ */
-body{margin:0;min-height:100vh;display:flex;flex-direction:column}
-.top nav a,.top nav button{font:inherit;font-size:var(--fs-micro);letter-spacing:.14em;
-  text-transform:lowercase;cursor:pointer;line-height:1.2}
-.top .sp{flex:1}
-.auth{margin-left:var(--s4)}
-.auth-btn{font-size:var(--fs-micro)!important;letter-spacing:.1em!important;
-  text-transform:lowercase!important;border-color:var(--rule-hair)!important}
-
-.wrap{max-width:520px;margin:0 auto;padding:var(--s8) var(--s4) var(--s7);flex:1;width:100%}
-.eyebrow{font-size:var(--fs-micro);letter-spacing:.16em;text-transform:uppercase;color:var(--accent)}
-h1{font-family:var(--font-display);font-weight:400;font-size:var(--fs-title);
-  margin:var(--s2) 0 0;line-height:1.1}
-.lede{margin:var(--s3) 0 0;color:var(--soft-ink);font-size:var(--fs-xs);line-height:1.6;max-width:46ch}
-
-.who{display:flex;align-items:center;gap:var(--s3);margin:var(--s6) 0 var(--s5)}
-.pfp{width:48px;height:48px;border:1px solid var(--rule);flex:none;overflow:hidden;
-  display:grid;place-items:center;font-family:var(--font-display);font-size:18px;
-  color:var(--accent);background:var(--surface)}
-.pfp img{width:100%;height:100%;object-fit:cover}
-.who span{font-size:var(--fs-xs);color:var(--label)}
-
-form{display:flex;flex-direction:column;gap:var(--s4)}
-label{font-size:var(--fs-micro);letter-spacing:.12em;color:var(--label);
-  text-transform:uppercase;font-weight:500}
-.field{display:flex;flex-direction:column;gap:var(--s1)}
-.at{position:relative}
-.at input{padding-left:22px!important}
-.at::before{content:"@";position:absolute;left:var(--s3);top:50%;transform:translateY(-50%);
-  color:var(--label);font-size:var(--fs-xs)}
-input,textarea{width:100%;padding:var(--s2) var(--s3);border:1px solid var(--rule-hair);
-  background:var(--paper);color:var(--ink);font:inherit;font-size:var(--fs-xs);box-sizing:border-box}
-input:focus,textarea:focus{outline:none;border-color:var(--accent)}
-textarea{min-height:72px;resize:vertical}
-.hint{font-size:10px;color:var(--label);letter-spacing:.02em}
-.err{color:var(--rec);font-size:var(--fs-xs);min-height:1em}
-
-.acts{display:flex;align-items:center;gap:var(--s4);margin-top:var(--s2)}
-.btn.p{min-width:160px}
-.skip{font-size:var(--fs-micro);letter-spacing:.08em;color:var(--label);
-  text-decoration:none;text-transform:lowercase}
-.skip:hover{color:var(--ink)}
-
-.state{padding:var(--s7) 0;color:var(--label);font-size:var(--fs-xs);line-height:1.6}
-.state a{color:var(--accent)}
+/* eski — onboarding. accountCard from artboard.html, as a real page rather
+   than a modal: there's nothing to layer over here, this IS the
+   destination after first sign-in, so the card sits centred on a plain
+   page instead of a scrim. Same header every pivot page uses, so nobody
+   lands here with no way to navigate. */
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--font-body);font-size:var(--fs)}
+*{box-sizing:border-box}
+.center{display:flex;align-items:center;justify-content:center;min-height:calc(100vh - 64px);padding:32px}
+.err{color:var(--danger);font-size:12.5px;min-height:1em}
+[hidden]{display:none!important}
 </style>
 </head>
 <body>
 
-<header class="top site-header">
-  <a class="mark" href="index.html">eski<i>!</i></a>
-  <nav id="nav">
-    <button data-pane="home" aria-current="page">home</button>
-    <button data-pane="browse">browse</button>
-    <a href="profile.html">profile</a>
+<header class="pivot-top site-header">
+  <a class="mark wordmark" href="index.html">eski<i>!</i></a>
+  <nav>
+    <button class="navlink" type="button" data-go="index.html">Home</button>
+    <button class="navlink" type="button" data-go="profile.html">Profile</button>
   </nav>
 </header>
 
-<div class="wrap" id="page">
-  <div class="eyebrow">one more step</div>
-  <h1>set up your account</h1>
-  <p class="lede">your handle is the address your work lives under — bylines, follows,
-    comments, credit. pick one now; you can change it later from your profile.</p>
-  <div id="body"></div>
+<div class="center">
+  <div class="pv-card" style="width:460px;padding:40px 36px;display:flex;flex-direction:column;gap:16px;" id="card">
+    <div style="font-size:13.5px;color:var(--muted);">loading…</div>
+  </div>
 </div>
 
 <script>
@@ -91,6 +51,7 @@ function handleSeed(user){
   const base = raw.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,24);
   return base.length >= 3 ? base : 'reader';
 }
+document.querySelectorAll('[data-go]').forEach(b => b.addEventListener('click', () => location.href = b.dataset.go));
 
 async function platform(){
   if(!window.eski && document.readyState === 'loading')
@@ -99,17 +60,18 @@ async function platform(){
 }
 
 (async function load(){
-  const body = document.getElementById('body');
+  const card = document.getElementById('card');
   const eski = await platform();
   const sb = eski && await eski.ready;
   if(!sb){
     const why = (eski && eski.bootError) || 'ESK-1005 platform.js did not load at all';
-    body.innerHTML = '<div class="state">could not reach the server.<br><br>' + esc(why) + '</div>';
+    card.innerHTML = `<div style="font-size:13.5px;color:var(--soft-ink);line-height:1.5;">could not reach the server.<br><br>${esc(why)}</div>`;
     return;
   }
   const me = (await sb.auth.getUser()).data.user || null;
   if(!me){
-    body.innerHTML = '<div class="state">sign in first, then come back here to set up your handle.</div>';
+    card.innerHTML = `<div class="wordmark" style="font-size:28px;">eski<i>!</i></div>
+      <div style="font-size:13.5px;color:var(--soft-ink);line-height:1.5;">sign in first, then come back here to set up your handle.</div>`;
     return;
   }
 
@@ -123,36 +85,21 @@ async function platform(){
   const avatar = m.avatar_url || null;
   const seed = handleSeed(me);
   const displayName = m.full_name || m.name || m.user_name || '';
-  const initial = (displayName || seed || '?').trim().charAt(0).toLowerCase();
 
-  body.innerHTML = `
-    <div class="who">
-      <div class="pfp">${avatar ? `<img src="${esc(avatar)}" alt="">` : esc(initial)}</div>
-      <span>signed in as ${esc(displayName || me.email || 'you')}</span>
-    </div>
-    <form id="f">
-      <div class="field">
-        <label for="f-handle">handle</label>
-        <div class="at"><input id="f-handle" maxlength="30" value="${esc(seed)}" autocomplete="off"></div>
-        <span class="hint">3–30 characters: lowercase letters, numbers, - and _, not at the ends.</span>
-      </div>
-      <div class="field">
-        <label for="f-name">display name</label>
-        <input id="f-name" maxlength="60" value="${esc(displayName)}" placeholder="optional">
-      </div>
-      <div class="field">
-        <label for="f-bio">bio</label>
-        <textarea id="f-bio" maxlength="400" placeholder="what you make, or what you're into. optional."></textarea>
-      </div>
-      <div class="err" id="f-err"></div>
-      <div class="acts">
-        <button type="submit" class="btn p">create account</button>
-        <a class="skip" id="skip" href="index.html">skip for now →</a>
-      </div>
-    </form>`;
+  card.innerHTML = `
+    <div class="wordmark" style="font-size:28px;">eski<i>!</i></div>
+    <div style="font-weight:700;font-size:22px;color:var(--ink);">Set up your account</div>
+    <div style="font-size:13px;color:var(--soft-ink);line-height:1.5;">your handle is how people find your work. you can change it later.</div>
+    <div class="ufield"><div class="ulabel">handle</div><input class="uinput" id="f-handle" maxlength="30" value="${esc(seed)}" autocomplete="off"></div>
+    <div class="ufield"><div class="ulabel">display name</div><input class="uinput" id="f-name" maxlength="60" value="${esc(displayName)}" placeholder="optional"></div>
+    <div class="ufield"><div class="ulabel">bio</div><textarea class="utext" id="f-bio" maxlength="400" placeholder="what you make, in a sentence…"></textarea></div>
+    <div class="err" id="f-err"></div>
+    <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:4px;">
+      <a class="btnline" href="index.html" style="text-decoration:none;display:inline-flex;align-items:center;">Skip for now</a>
+      <button class="btnline filled" type="button" id="f-submit">Create account</button>
+    </div>`;
 
-  document.getElementById('f').addEventListener('submit', async ev => {
-    ev.preventDefault();
+  document.getElementById('f-submit').addEventListener('click', async () => {
     const err = document.getElementById('f-err');
     err.textContent = '';
     const handle = document.getElementById('f-handle').value.trim().toLowerCase();
@@ -160,7 +107,7 @@ async function platform(){
       err.textContent = 'handles are 3 to 30 characters: letters, numbers, - and _, not at the ends.';
       return;
     }
-    const btn = ev.target.querySelector('button[type=submit]');
+    const btn = document.getElementById('f-submit');
     btn.disabled = true;
     const ins = await sb.from('profiles').insert({
       id: me.id, handle,

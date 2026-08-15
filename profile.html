@@ -377,12 +377,15 @@ function renderSettings(){
   });
 
   document.getElementById('sign-out').addEventListener('click', async () => { await P.sb.auth.signOut(); location.href = 'index.html'; });
-  document.getElementById('delete-account').addEventListener('click', async () => {
-    if(!confirm('Delete your account? Your published work stays up, credited to "Deleted account" — this cannot be undone.')) return;
-    const { data, error } = await P.sb.rpc('delete_my_account');
-    if(error || !data || data.ok !== true) return P.toast(P.eski.dbError('ESK-5113','the account could not be deleted', error || { message: (data && data.why) || 'unknown' }));
-    await P.sb.auth.signOut();
-    location.href = 'index.html';
+  document.getElementById('delete-account').addEventListener('click', () => {
+    P.openConfirm('Delete your account?',
+      'Your published work stays up, credited to &ldquo;Deleted account&rdquo;. This can\'t be undone.',
+      'Delete account', async () => {
+        const { data, error } = await P.sb.rpc('delete_my_account');
+        if(error || !data || data.ok !== true) return P.toast(P.eski.dbError('ESK-5113','the account could not be deleted', error || { message: (data && data.why) || 'unknown' }));
+        await P.sb.auth.signOut();
+        location.href = 'index.html';
+      });
   });
 }
 </script>

@@ -121,11 +121,19 @@
   transition:background var(--t-fast) var(--ease);border:none;background:none;width:100%;text-align:left;display:block}
 .tagsearch .opt:hover{background:var(--surface);color:var(--ink)}
 
-/* ---- the shared top bar every pivot page uses ---- */
-.pivot-top{position:sticky;top:0;z-index:50;display:flex;align-items:center;justify-content:space-between;
+/* ---- the shared top bar every pivot page uses ----
+   NOT justify-content:space-between: that only holds nav flush right
+   while the wordmark and nav are the row's only two children. Signed out,
+   platform.js appends a third child (.auth, the Sign-in control) straight
+   onto this element, and space-between spreads three items with even gaps
+   instead of keeping the last two clustered at the edge — nav drifted
+   toward the middle. margin-left:auto on nav pushes the whole right-hand
+   cluster (nav, then whatever platform.js appends after it) to the edge
+   as a unit, however many children end up there. */
+.pivot-top{position:sticky;top:0;z-index:50;display:flex;align-items:center;
   width:100%;height:64px;padding:0 32px;box-sizing:border-box;background:var(--paper);
   box-shadow:inset 0 -1px 0 var(--rule-hair)}
-.pivot-top nav{display:flex;align-items:center;gap:32px}
+.pivot-top nav{display:flex;align-items:center;gap:32px;margin-left:auto}
 @media(max-width:640px){.pivot-top{padding:0 var(--s4)}.pivot-top nav{gap:var(--s4)}}
 
 .dtab{font-weight:500;font-size:13px;color:var(--muted);padding:10px 0;cursor:pointer;

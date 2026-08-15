@@ -453,11 +453,15 @@ async function wireDetail(root, work, items, poster){
     toast('made private'); root.innerHTML=''; authListeners.forEach(cb => cb());
   });
   const del = root.querySelector('[data-post-delete]');
-  if(del) del.addEventListener('click', async () => {
-    if(!confirm(`Delete "${work.title}"? This can't be undone.`)) return;
-    const { error } = await sb.from('works').delete().eq('id', work.id);
-    if(error) return toast(eski.dbError('ESK-5107','could not delete', error));
-    root.innerHTML=''; authListeners.forEach(cb => cb());
+  if(del) del.addEventListener('click', () => {
+    root.querySelector('#burger-menu').classList.remove('open');
+    openConfirm('Delete this post?',
+      `&ldquo;${esc(work.title)}&rdquo; will be permanently removed. This can't be undone.`,
+      'Delete post', async () => {
+        const { error } = await sb.from('works').delete().eq('id', work.id);
+        if(error) return toast(eski.dbError('ESK-5107','could not delete', error));
+        overlayRoot().innerHTML=''; authListeners.forEach(cb => cb());
+      });
   });
   // like
   const likeBtn = root.querySelector('[data-like]');
@@ -571,13 +575,41 @@ async function wireDetail(root, work, items, poster){
     });
   });
 }
+const GOOGLE = '<svg viewBox="0 0 24 24" width="16" height="16" style="flex-shrink:0;"><path fill="currentColor" d="M12 11v2.7h4.4c-.2 1.2-1.5 3.4-4.4 3.4-2.7 0-4.8-2.2-4.8-4.9S9.3 7.3 12 7.3c1.5 0 2.5.6 3.1 1.2l2-2C15.8 5.3 14.1 4.6 12 4.6 7.8 4.6 4.4 8 4.4 12S7.8 19.4 12 19.4c4.3 0 7.2-3 7.2-7.3 0-.5 0-.8-.1-1.1z"/></svg>';
+/* deleteCard from artboard.html — a styled confirm, not the native
+   browser one, so a destructive action looks like the rest of the
+   product instead of an OS dialog that stops the theme dead. Its own
+   stacking layer, separate from #overlay-root: a confirm is very often
+   raised FROM an already-open detail overlay (delete this post), and
+   overlayRoot() there is mid-render — reusing it would wipe the detail
+   overlay out from under the confirm instead of layering over it. */
+function confirmRoot(){
+  let root = document.getElementById('confirm-root');
+  if(!root){ root = document.createElement('div'); root.id = 'confirm-root'; document.body.appendChild(root); }
+  return root;
+}
+function openConfirm(title, body, confirmLabel, onConfirm){
+  const root = confirmRoot();
+  root.innerHTML = `<div class="pv-scrim" style="z-index:300;"><div class="pv-card" style="width:420px;padding:32px;display:flex;flex-direction:column;gap:16px;">
+    <div style="font-weight:700;font-size:19px;color:var(--ink);">${esc(title)}</div>
+    <div style="font-size:13.5px;color:var(--soft-ink);line-height:1.55;">${body}</div>
+    <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:4px;">
+      <button class="btnline" type="button" id="confirm-cancel">Cancel</button>
+      <button class="btnline danger" type="button" id="confirm-go">${esc(confirmLabel)}</button>
+    </div>
+  </div></div>`;
+  scrimClose(root);
+  root.querySelector('#confirm-cancel').addEventListener('click', () => root.innerHTML = '');
+  root.querySelector('#confirm-go').addEventListener('click', () => { root.innerHTML = ''; onConfirm(); });
+}
 function openSignIn(){
   const root = overlayRoot();
   root.innerHTML = `<div class="pv-scrim"><div class="pv-card" style="width:420px;padding:40px 36px;display:flex;flex-direction:column;gap:18px;">
     <div class="wordmark" style="font-size:30px;">eski<i>!</i></div>
     <div style="font-weight:700;font-size:22px;color:var(--ink);">Sign in to eski</div>
     <div style="font-size:13.5px;color:var(--soft-ink);line-height:1.55;">to save posts, follow artists, tag your own work and join the conversation.</div>
-    <button class="btnline filled" type="button" id="signin-google" style="display:flex;align-items:center;justify-content:center;gap:8px;margin-top:4px;">Continue with Google</button>
+    <button class="btnline filled" type="button" id="signin-google" style="display:flex;align-items:center;justify-content:center;gap:8px;margin-top:4px;">${GOOGLE}Continue with Google</button>
+    <div style="font-size:11.5px;color:var(--muted);text-align:center;line-height:1.5;">by continuing you agree to the terms and privacy policy.</div>
   </div></div>`;
   scrimClose(root);
   root.querySelector('#signin-google').addEventListener('click', async () => {
@@ -823,6 +855,6 @@ return {
   get mySeenIds(){ return mySeenIds; }, get myFolders(){ return myFolders; },
   ownerName, loadMyState,
   cardHtml, mediaTag,
-  openDetail, openSignIn, openUpload
+  openDetail, openSignIn, openUpload, openConfirm
 };
 })();
