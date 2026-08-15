@@ -257,6 +257,12 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--
   font-size:var(--fs-micro);color:var(--paper);background:rgba(17,17,17,.72);padding:3px 6px}
 .gquote{padding:22px;font-family:var(--font-body);font-weight:500;font-size:15px;color:var(--ink-soft);
   line-height:1.4;text-align:left}
+/* a long text/essay post: title + body filling the square, top-aligned,
+   faded out at the bottom where it overflows — a readable preview. */
+.gtext{position:absolute;inset:0;padding:20px;display:flex;flex-direction:column;gap:10px;overflow:hidden;
+  -webkit-mask-image:linear-gradient(#000 68%,transparent);mask-image:linear-gradient(#000 68%,transparent)}
+.gtext .gtitle{font-family:var(--font-body);font-weight:700;font-size:17px;color:var(--ink);line-height:1.25}
+.gtext .gbody{font-family:var(--font-body);font-weight:400;font-size:12.5px;color:var(--ink-soft);line-height:1.6}
 .gcount{position:absolute;bottom:8px;left:8px;display:inline-flex;align-items:center;gap:5px;
   font-family:var(--font-body);font-weight:700;font-size:var(--fs-xs);color:var(--paper);
   background:rgba(17,17,17,.8);padding:4px 8px}
@@ -322,6 +328,18 @@ const vid = d => `<div class="gplay">${PLAY}</div><div class="gind">${esc(d)}</d
 const aud = `<div class="gplay">${PLAY}</div>`;
 const coll = n => `<div class="gcount"><svg viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12"/><path d="M4 16V4h12"/></svg>${esc(n)}</div>`;
 const gq = t => `<div class="gquote">"${esc(t)}"</div>`;
+/* a titled essay post in the grid: the square shows the title + the start
+   of the body, faded where it runs past the box; the handle sits below. */
+function gtextcard(title, body, handle){
+  return `<div class="gcard selectable">
+    <div class="gbox" style="align-items:stretch;justify-content:flex-start;">
+      <div class="gtext"><div class="gtitle">${esc(title)}</div><div class="gbody">${esc(body)}</div></div>
+    </div>
+    <div class="gcap">${esc(title)}</div>
+    <div class="ghandle">${esc(handle)}</div>
+  </div>`;
+}
+const ESSAY = "When Rerun approached @studiogruhl to help them with their new brand identity, they were very excited at the prospect of collaborating on something that felt genuinely new. The old marks had served them for the better part of a decade, but the company they described in the first meeting had almost nothing in common with the one that logo was drawn for. We started, as we usually do, by throwing almost everything away — not the values, but the visual habits that had accreted around them over the years.";
 
 const homepageHtml = `
 <div class="ms selectable" style="display:flex;flex-direction:row;align-items:center;justify-content:space-between;
@@ -385,7 +403,7 @@ const homepageHtml = `
     ${gcard('midnight session','@inkwell')}
     ${gcard('night drive','@lowfreq', aud)}
     ${gcard('rooftop cut','@camrafilm', vid('2:14'))}
-    ${gcard('issue no. 4','@paperbound', gq('nobody remembers the flood the same way twice.'))}
+    ${gtextcard('Rerun, and the case for a slower rebrand', ESSAY, '@studiogruhl')}
     ${gcard('sketchbook, march','@linewerk', coll('6'))}
     ${gcard('static','@glasseye')}
     ${gcard('story bible: HALO','@inkwell', coll('12'))}
