@@ -494,6 +494,44 @@ input{font:inherit;color:inherit}
 .kav{width:20px;height:20px;border-radius:50%;color:#fff;display:grid;place-items:center;font-size:9px;font-weight:700;margin-left:auto}
 .kadd{font-size:var(--fs-xs);color:var(--muted);padding:6px 4px;text-align:left;display:flex;align-items:center;gap:6px}
 .kadd:hover{color:var(--ink)}
+/* board upgrades: views, custom fields, due dates (gap #12) */
+.kbviews{display:flex;gap:2px;background:var(--plate);border-radius:var(--r);padding:2px}
+.kbview{display:inline-flex;align-items:center;gap:6px;padding:6px 11px;border-radius:calc(var(--r) - 1px);font-size:var(--fs-xs);color:var(--soft)}
+.kbview .ic{width:14px;height:14px;color:var(--muted)}
+.kbview.on{background:var(--paper);color:var(--ink);font-weight:600}.kbview.on .ic{color:var(--ink)}
+.kview[hidden]{display:none}
+/* custom-field chips on a card (due date, priority, effort) */
+.kchips{display:flex;flex-wrap:wrap;gap:5px;margin-top:9px}
+.kchip{display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:600;border-radius:2px;padding:2px 7px;background:var(--tagbg);color:var(--soft)}
+.kchip .ic{width:11px;height:11px;color:var(--muted)}
+.kchip.due.soon{color:var(--ink)}.kchip.due.soon .ic{color:var(--ink)}
+.kchip.due.over{color:var(--m1)}.kchip.due.over .ic{color:var(--m1)}
+.kchip.prio .dotp{width:7px;height:7px;border-radius:50%;background:var(--muted)}
+.kchip.prio.hi .dotp{background:var(--ink)}
+/* table view: same list idiom as the rest of the app, aligned by a grid, no borders */
+.ktable{flex:1;overflow:auto;padding:14px 24px 24px}
+.kthead,.ktrow{display:grid;grid-template-columns:minmax(220px,1fr) 130px 120px 110px 96px;gap:14px;align-items:center;padding:9px 12px}
+.kthead{font-size:var(--fs-xs);color:var(--muted);font-weight:600;position:sticky;top:0;background:var(--paper);z-index:2}
+.ktrow{border-radius:var(--r);font-size:var(--fs-sm);cursor:pointer}
+.ktrow+.ktrow{box-shadow:inset 0 1px 0 var(--line)}
+.ktrow:hover{background:var(--surface)}
+.ktrow .task{font-weight:500;color:var(--ink)}
+.tstatus{display:inline-flex;align-items:center;gap:6px;font-size:var(--fs-xs);color:var(--soft)}
+.tstatus .dotp{width:7px;height:7px;border-radius:50%;background:var(--muted)}
+.tstatus.prog .dotp{background:var(--soft)}.tstatus.review .dotp{background:var(--ink)}.tstatus.done .dotp{background:var(--line2)}
+.tassign{display:inline-flex;align-items:center;gap:7px;font-size:var(--fs-xs);color:var(--soft)}
+.tdue{font-size:var(--fs-xs);color:var(--soft)}.tdue.over{color:var(--m1);font-weight:600}
+.tprio{display:inline-flex;align-items:center;gap:6px;font-size:var(--fs-xs);color:var(--soft)}
+.tprio .dotp{width:7px;height:7px;border-radius:50%;background:var(--muted)}.tprio.hi .dotp{background:var(--ink)}
+/* calendar view: an agenda grouped by due date */
+.kcal{flex:1;overflow:auto;padding:14px 24px 24px;max-width:780px}
+.kcalday{margin-top:20px}.kcalday:first-child{margin-top:2px}
+.kcaldate{font-size:var(--fs-sm);font-weight:600;color:var(--ink);padding-bottom:7px;box-shadow:inset 0 -1px 0 var(--line);margin-bottom:10px}
+.kcaldate small{color:var(--muted);font-weight:400;margin-left:8px}
+.kcaldate.over{color:var(--m1)}
+.kcalrow{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:var(--r);cursor:pointer}
+.kcalrow:hover{background:var(--surface)}
+.kcalrow .task{flex:1;min-width:0;font-size:var(--fs-sm)}
 
 /* group settings */
 .settings{flex:1;min-width:0;display:flex;overflow:hidden;background:var(--paper)}
@@ -1217,31 +1255,63 @@ input{font:inherit;color:inherit}
     <div class="screen" data-screen="board" hidden>
       <div class="kb">
         <div class="kbhd"><svg class="ic"><use href="#i-board"/></svg><span class="t">shot tasks</span><span class="sub">Late Bloom LP</span>
-          <div class="acts"><button class="btn sm"><svg class="ic sm"><use href="#i-plus"/></svg>Add card</button></div></div>
-        <div class="kbcols">
+          <div class="acts" style="display:flex;align-items:center;gap:12px">
+            <div class="kbviews">
+              <button class="kbview on" data-kview="board"><svg class="ic"><use href="#i-board"/></svg>Board</button>
+              <button class="kbview" data-kview="table"><svg class="ic"><use href="#i-grid"/></svg>Table</button>
+              <button class="kbview" data-kview="calendar"><svg class="ic"><use href="#i-version"/></svg>Calendar</button>
+            </div>
+            <button class="btn sm"><svg class="ic sm"><use href="#i-settings"/></svg>Fields</button>
+            <button class="btn sm"><svg class="ic sm"><use href="#i-plus"/></svg>Add card</button></div></div>
+
+        <div class="kview kbcols" data-kview="board">
           <div class="kbcol">
             <div class="kbcolhd">To do<span class="n">2</span></div>
-            <div class="kcard"><div class="kt">Re-cut the bridge drums</div><div class="kfile"><svg class="ic sm"><use href="#i-voice"/></svg>late_bloom_beat.flp</div><div class="kmeta"><span class="klabel">beats</span><span class="kav" style="background:var(--m3)">DV</span></div></div>
-            <div class="kcard"><div class="kt">Write second verse</div><div class="kmeta"><span class="klabel">verses</span><span class="kav" style="background:var(--m1)">RA</span></div></div>
+            <div class="kcard"><div class="kt">Re-cut the bridge drums</div><div class="kfile"><svg class="ic sm"><use href="#i-voice"/></svg>late_bloom_beat.flp</div><div class="kchips"><span class="kchip due soon"><svg class="ic"><use href="#i-version"/></svg>Aug 18</span><span class="kchip prio hi"><span class="dotp"></span>High</span></div><div class="kmeta"><span class="klabel">beats</span><span class="kav" style="background:var(--m3)">DV</span></div></div>
+            <div class="kcard"><div class="kt">Write second verse</div><div class="kchips"><span class="kchip due"><svg class="ic"><use href="#i-version"/></svg>Aug 22</span><span class="kchip prio"><span class="dotp"></span>Med</span></div><div class="kmeta"><span class="klabel">verses</span><span class="kav" style="background:var(--m1)">RA</span></div></div>
             <button class="kadd"><svg class="ic sm"><use href="#i-plus"/></svg>Add card</button>
           </div>
           <div class="kbcol">
             <div class="kbcolhd">In progress<span class="n">2</span></div>
-            <div class="kcard"><div class="kt">Rough mix pass</div><div class="kfile"><svg class="ic sm"><use href="#i-voice"/></svg>bloom_mix_rough.wav</div><div class="kmeta"><span class="klabel">mixing</span><span class="kav" style="background:var(--m2)">TM</span></div></div>
-            <div class="kcard"><div class="kt">Source the drum break sample</div><div class="kmeta"><span class="klabel">references</span><span class="kav" style="background:var(--m5)">JX</span></div></div>
+            <div class="kcard"><div class="kt">Rough mix pass</div><div class="kfile"><svg class="ic sm"><use href="#i-voice"/></svg>bloom_mix_rough.wav</div><div class="kchips"><span class="kchip due soon"><svg class="ic"><use href="#i-version"/></svg>Aug 17</span><span class="kchip prio hi"><span class="dotp"></span>High</span></div><div class="kmeta"><span class="klabel">mixing</span><span class="kav" style="background:var(--m2)">TM</span></div></div>
+            <div class="kcard"><div class="kt">Source the drum break sample</div><div class="kchips"><span class="kchip due"><svg class="ic"><use href="#i-version"/></svg>Aug 20</span><span class="kchip prio"><span class="dotp"></span>Low</span></div><div class="kmeta"><span class="klabel">references</span><span class="kav" style="background:var(--m5)">JX</span></div></div>
             <button class="kadd"><svg class="ic sm"><use href="#i-plus"/></svg>Add card</button>
           </div>
           <div class="kbcol">
             <div class="kbcolhd">Review<span class="n">1</span></div>
-            <div class="kcard"><div class="kt">Low end on the bridge</div><div class="kfile"><svg class="ic sm"><use href="#i-canvas"/></svg>in canvas, sh040 review</div><div class="kmeta"><span class="klabel">mixing</span><span class="kav" style="background:var(--m2)">TM</span></div></div>
+            <div class="kcard"><div class="kt">Low end on the bridge</div><div class="kfile"><svg class="ic sm"><use href="#i-canvas"/></svg>in canvas, sh040 review</div><div class="kchips"><span class="kchip due over"><svg class="ic"><use href="#i-version"/></svg>Aug 15 · overdue</span><span class="kchip prio"><span class="dotp"></span>Med</span></div><div class="kmeta"><span class="klabel">mixing</span><span class="kav" style="background:var(--m2)">TM</span></div></div>
             <button class="kadd"><svg class="ic sm"><use href="#i-plus"/></svg>Add card</button>
           </div>
           <div class="kbcol">
             <div class="kbcolhd">Done<span class="n">2</span></div>
-            <div class="kcard"><div class="kt">Lock the tempo at 142</div><div class="kmeta"><span class="klabel">beats</span><span class="kav" style="background:var(--m3)">DV</span></div></div>
-            <div class="kcard"><div class="kt">Pick the cover direction</div><div class="kmeta"><span class="klabel">art</span><span class="kav" style="background:var(--m6)">NL</span></div></div>
+            <div class="kcard"><div class="kt">Lock the tempo at 142</div><div class="kchips"><span class="kchip prio hi"><span class="dotp"></span>High</span></div><div class="kmeta"><span class="klabel">beats</span><span class="kav" style="background:var(--m3)">DV</span></div></div>
+            <div class="kcard"><div class="kt">Pick the cover direction</div><div class="kchips"><span class="kchip prio"><span class="dotp"></span>Low</span></div><div class="kmeta"><span class="klabel">art</span><span class="kav" style="background:var(--m6)">NL</span></div></div>
             <button class="kadd"><svg class="ic sm"><use href="#i-plus"/></svg>Add card</button>
           </div>
+        </div>
+
+        <div class="kview ktable" data-kview="table" hidden>
+          <div class="kthead"><span>Task</span><span>Status</span><span>Assignee</span><span>Due</span><span>Priority</span></div>
+          <div class="ktrow"><span class="task">Re-cut the bridge drums</span><span class="tstatus"><span class="dotp"></span>To do</span><span class="tassign"><span class="kav" style="background:var(--m3)">DV</span>dev</span><span class="tdue">Aug 18</span><span class="tprio hi"><span class="dotp"></span>High</span></div>
+          <div class="ktrow"><span class="task">Write second verse</span><span class="tstatus"><span class="dotp"></span>To do</span><span class="tassign"><span class="kav" style="background:var(--m1)">RA</span>rae</span><span class="tdue">Aug 22</span><span class="tprio"><span class="dotp"></span>Med</span></div>
+          <div class="ktrow"><span class="task">Rough mix pass</span><span class="tstatus prog"><span class="dotp"></span>In progress</span><span class="tassign"><span class="kav" style="background:var(--m2)">TM</span>tomo</span><span class="tdue">Aug 17</span><span class="tprio hi"><span class="dotp"></span>High</span></div>
+          <div class="ktrow"><span class="task">Source the drum break sample</span><span class="tstatus prog"><span class="dotp"></span>In progress</span><span class="tassign"><span class="kav" style="background:var(--m5)">JX</span>jax</span><span class="tdue">Aug 20</span><span class="tprio"><span class="dotp"></span>Low</span></div>
+          <div class="ktrow"><span class="task">Low end on the bridge</span><span class="tstatus review"><span class="dotp"></span>Review</span><span class="tassign"><span class="kav" style="background:var(--m2)">TM</span>tomo</span><span class="tdue over">Aug 15 · overdue</span><span class="tprio"><span class="dotp"></span>Med</span></div>
+          <div class="ktrow"><span class="task">Lock the tempo at 142</span><span class="tstatus done"><span class="dotp"></span>Done</span><span class="tassign"><span class="kav" style="background:var(--m3)">DV</span>dev</span><span class="tdue" style="color:var(--muted)">no date</span><span class="tprio hi"><span class="dotp"></span>High</span></div>
+          <div class="ktrow"><span class="task">Pick the cover direction</span><span class="tstatus done"><span class="dotp"></span>Done</span><span class="tassign"><span class="kav" style="background:var(--m6)">NL</span>nel</span><span class="tdue" style="color:var(--muted)">no date</span><span class="tprio"><span class="dotp"></span>Low</span></div>
+        </div>
+
+        <div class="kview kcal" data-kview="calendar" hidden>
+          <div class="kcalday"><div class="kcaldate over">Sat, Aug 15<small>overdue</small></div>
+            <div class="kcalrow"><span class="tstatus review"><span class="dotp"></span></span><span class="task">Low end on the bridge</span><span class="klabel">mixing</span><span class="kav" style="background:var(--m2)">TM</span></div></div>
+          <div class="kcalday"><div class="kcaldate">Mon, Aug 17<small>tomorrow</small></div>
+            <div class="kcalrow"><span class="tstatus prog"><span class="dotp"></span></span><span class="task">Rough mix pass</span><span class="klabel">mixing</span><span class="kav" style="background:var(--m2)">TM</span></div></div>
+          <div class="kcalday"><div class="kcaldate">Tue, Aug 18</div>
+            <div class="kcalrow"><span class="tstatus"><span class="dotp"></span></span><span class="task">Re-cut the bridge drums</span><span class="klabel">beats</span><span class="kav" style="background:var(--m3)">DV</span></div></div>
+          <div class="kcalday"><div class="kcaldate">Thu, Aug 20</div>
+            <div class="kcalrow"><span class="tstatus prog"><span class="dotp"></span></span><span class="task">Source the drum break sample</span><span class="klabel">references</span><span class="kav" style="background:var(--m5)">JX</span></div></div>
+          <div class="kcalday"><div class="kcaldate">Sat, Aug 22</div>
+            <div class="kcalrow"><span class="tstatus"><span class="dotp"></span></span><span class="task">Write second verse</span><span class="klabel">verses</span><span class="kav" style="background:var(--m1)">RA</span></div></div>
         </div>
       </div>
     </div>
@@ -1882,6 +1952,10 @@ input{font:inherit;color:inherit}
     var open=d.classList.toggle('open');b.classList.toggle('on',open);});});
   // on/off switches (private channel, etc.)
   document.querySelectorAll('.tgl').forEach(function(t){t.addEventListener('click',function(e){e.stopPropagation();t.classList.toggle('on');});});
+  // board views: Board / Table / Calendar
+  document.querySelectorAll('.kbviews .kbview').forEach(function(v){v.addEventListener('click',function(){
+    document.querySelectorAll('.kbviews .kbview').forEach(function(x){x.classList.remove('on');});v.classList.add('on');
+    var k=v.dataset.kview;document.querySelectorAll('.kview').forEach(function(p){p.hidden=p.dataset.kview!==k;});});});
   // notification tabs: switch panels (All / Mentions / Threads / Saved)
   document.querySelectorAll('.ntabs .ntab').forEach(function(t){t.addEventListener('click',function(){
     document.querySelectorAll('.ntabs .ntab').forEach(function(x){x.classList.remove('on');});t.classList.add('on');

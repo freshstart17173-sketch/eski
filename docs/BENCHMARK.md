@@ -30,7 +30,7 @@ Sorted by leverage; each is being built and pushed one at a time.
 9. Notifications upgrades (inline reply, Threads tab, Saved/Later, filters)  ·  **done**
 10. Group settings: moderation (bans/timeouts, audit log, per-channel settings)  ·  **done**
 11. Media explorer actions (grid actions, lightbox, shared-in)  ·  **done**
-12. Board upgrades (custom fields, views, due dates)
+12. Board upgrades (custom fields, views, due dates)  ·  **done**
 13. Sign-in / onboarding / username claim
 
 ---
