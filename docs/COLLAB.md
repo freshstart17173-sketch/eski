@@ -92,12 +92,26 @@ roles are a later, deliberate call, not a v1 default.
 **Why.** A real workspace is many rooms, not one feed, `#beats`, `#mixing`,
 `#renders`. And the chat has to persist: searchable, exportable history is what
 makes it a studio instead of a file-drop.
-**Plan.** `channels` (group_id, name, kind text/voice, position), admins add,
-rename, reorder them. `messages` (channel_id, user_id, body, `parent_id` for a
-one-level thread) **stored in Postgres**, so it's searchable and it exports. A
-shared file renders as its card inline in the stream.
+**Plan.** `channels` (group_id, name, `kind` in text/voice/board, position),
+admins add, rename, reorder them. `messages` (channel_id, user_id, body,
+`parent_id` for a one-level thread) **stored in Postgres**, so it's searchable
+and exports. A shared file renders as its card inline in the stream. The channel
+column also lists the group's **Media** (the explorer, F8), its **Canvases**
+(F5), its **Boards** (F3a) and **Voice** rooms (F14), each a `kind` in the same
+column, so everything the group makes lives in one navigable rail.
 **Touches.** `channels` + `messages` tables; the channel column + chat pane
 (mockup: Workspace).
+
+#### F3a. Kanban boards
+**Why.** A remote team on a deadline needs to see who owns what and what's left,
+without it living in someone's head or a pinned message. A board is the lightest
+thing that does that.
+**Plan.** A **board** is a channel `kind`: columns (To do / In progress / Review
+/ Done, admin-editable) of cards. A card has a title, an optional label, an
+assignee (their avatar in group colour, F12a), and can **link a file or a canvas**
+(so "low end on the bridge" points straight at the review). `boards` /
+`board_columns` / `board_cards`. Deliberately simple, no sprints or automation.
+**Touches.** three small tables; the Board screen (mockup: Board).
 
 #### F4. The visibility rule + copyright posture
 **Why.** This is the copyright strategy as one policy: Work and Personal content
@@ -147,13 +161,15 @@ see the older one.
 **Plan.** `works.version_of` / `version_label` already exist. **Anyone can add a
 version, not just the original poster** (the old owner-only trigger is dropped),
 so a collaborator can push a fix without re-posting. **A new version requires a
-mandatory reason** ("what changed"), a short line stored per version. The
-version control in the details pane opens a dropdown listing every version by
-its **file name** (the one place you see file names, since posts show titles)
-with its reason and author; each version keeps its own canvas notes (Frame.io's
-"notes follow the work"). Strictly linear, no branch graph. **No Fork:** to riff
-on someone's file you download it, change it, reupload it as your own with
-credit.
+mandatory reason** ("what changed"), a short line stored per version. A version
+must be the **same media type** as the post; drop several at once and they
+become **ordered** versions (upload order sets v4, v5, …, reorderable before you
+commit), each with its own required reason. The details pane's version control
+opens a dropdown listing every version by its **file name** (the one place you
+see file names, since posts show titles); the **reason lives in the details
+pane body**, not the dropdown. Each version keeps its own canvas notes. Strictly
+linear, no branch graph. **No Fork:** to riff on someone's file you download it,
+change it, reupload it as your own with credit.
 **Touches.** `works.version_note` (required on a version); the version dropdown;
 drop `works_version_owner_guard`.
 
@@ -182,14 +198,16 @@ leads with the **file name**. Inline lists show the **first 5 tags** with a
 **Touches.** `works.title` (nullable, falls back to file name); the upload sheet
 and the card renderer; `content_tags` already exists.
 
-#### F10. Auto file-type recognition + autotag
-**Why.** Half the value of tags is the type, and nobody wants to type it.
-Recognizing `.flp`, `.als`, `.exr`, `.nk`, `.aep` and tagging automatically
-makes the library instantly filterable ("all `.exr` from today").
-**Plan.** On upload, read the extension (and magic-bytes where cheap) → attach a
-non-removable auto-tag (`flp`, `wav`, `exr`, …) alongside the file's `kind`.
-Purely additive; the user's own tags sit next to it.
-**Touches.** upload flow (client-side extension map); the auto-tag chips.
+#### F10. File-type recognition (no visible auto-tags for now)
+**Why.** The type is worth knowing (filter "all `.exr` from today"), but showing
+it as a tag chip on every card clutters the tag row with `wav`/`flp`/`audio`.
+**Plan.** On upload, read the extension (and magic-bytes where cheap) and store
+it (`works.file_ext`, and `kind`) so the Type filter and the file icon work.
+**Do not render it as a tag for now**, the icon and the Type dropdown carry it;
+only the user's own tags show as chips. (Auto-tag chips can come back later if
+they earn it.)
+**Touches.** upload flow (client-side extension map); the Type filter; the file
+icon. No auto-tag chips.
 
 #### F11. Format conversion (upload once, download what you need)
 **Why.** A collaborator on Ableton can't open your `.flp`, but they can use your
@@ -219,10 +237,11 @@ waveform, text its own words) and the **title** beneath it (mockup: Feed).
 you scan by person. Giving each member one colour, and only inside that group,
 makes authorship legible without turning the UI into confetti.
 **Plan.** Assign each `group_members` row a colour from a small fixed palette on
-join. That colour renders **only where a member's name appears as a chip** (chat
-byline, the Members rail, contributor chips in the details pane, canvas-note
-authors) and **only within that group**, never on their profile or the public
-feed. It is not a role and carries no meaning beyond identity.
+join. That colour renders **only inside the group**, on a member's name or
+avatar (chat byline, Members rail, contributor chips in the details pane,
+canvas-comment authors, board-card assignees) and **nowhere else**, never on a
+profile or the public feed (both were scrubbed of colour). It is not a role and
+carries no meaning beyond identity.
 **Touches.** `group_members.color`; the name-chip component.
 
 #### F13. DMs (add by username)
@@ -295,9 +314,12 @@ groups          (id, slug, name, description, cover_key, owner_id, created_at)
 group_members   (group_id, user_id, role in (admin,member), color, joined_at,
                  primary key (group_id,user_id))   -- color: per-group identity (F12a)
 group_invites   (code pk, group_id, created_by, expires_at, max_uses, uses)
-channels        (id, group_id, name, kind in (text,voice), position)
+channels        (id, group_id, name, kind in (text,voice,board), position)
 messages        (id, channel_id, user_id, body, parent_id, created_at)   -- persistent chat
 reactions       (message_id, user_id, emoji, primary key(message_id,user_id,emoji))
+boards          (id, group_id, name)                       -- F3a kanban (a channel kind)
+board_columns   (id, board_id, name, position)
+board_cards     (id, column_id, title, label, assignee_id, work_id null, scratchpad_id null, position)
 dm_threads      (id, a_user, b_user, created_at)          -- add-by-username
 dm_messages     (id, thread_id, user_id, body, created_at)
 scratchpads     (id, owner_id, group_id null, title,
@@ -310,6 +332,7 @@ notifications   (id, user_id, kind, target_type, target_id, read_at, created_at)
 works.visibility   text in (public,personal,group)  -- the three layers (§0)
 works.group_id     uuid null → groups
 works.title        text null                         -- F9: optional, file name is the default
+works.file_ext     text                              -- F10: type for icon + filter, not shown as a tag
 works.credits      text                              -- F8 attribution
 works.version_note text                              -- F7: required "what changed" on a version
 comments.mark      jsonb null                         -- F5 draw path / audio range / frame / box / point
@@ -345,11 +368,11 @@ member's per-group identity colour (F12a). Interactive fields carry a visible
 border so they read as editable. What each contains:
 
 - **Workspace**, group rail (Home, Messages, one icon per group, ＋, and your own
-  **profile picture** at the foot) · channel column (admin-editable text + voice
-  channels, people shown live in a voice room) · chat pane (persistent; a shared
-  file leads with its **file name**; each message has an **emoji-reaction** button
-  on hover) · members rail (Admins / Members, presence dot + "working on", names
-  in group colour).
+  **profile picture** at the foot) · channel column listing **Media**, text
+  **Channels**, **Boards**, **Canvases** and **Voice** rooms (admin-editable) ·
+  chat pane (persistent; a shared file leads with its **file name**; each message
+  has an **emoji-reaction** button on hover) · members rail (Admins / Members,
+  presence dot + "working on", names in group colour).
 - **Feed**, the follows-only portfolio grid with a **search bar** and dropdown
   filters; cards have **no background** (video → play overlay, audio → high-res
   waveform, image → real-aspect thumbnail, text → its words) and show the
@@ -358,11 +381,12 @@ border so they read as editable. What each contains:
   strip, with a search bar + dropdown filters (channel, type, uploader, sort),
   Reddit-style, no tag modifiers; reuses the details pane.
 - **Details pane**, opened from any card: media on one side; on the other the
-  title, a **version control** that opens the versions by **file name** (+ their
-  change reasons), all metadata, tags (all, with a ＋), contributor chips (in
-  group colours), and comments **scoped to context** (a group thread and a public
-  thread never mix); **Download** (formats on click), **Save** (to a folder), and
-  **Open in canvas** (pick which shared canvas).
+  title, a **version control** that opens the versions **by file name** (the one
+  place file names show), the current version's **change reason in the pane body**
+  (not in the dropdown), all metadata, tags (user tags only, with a ＋), contributor
+  chips (in group colours), and comments **scoped to context** (group vs public
+  never mix); **Download** (formats on click), **Save** (to a folder), and **Open
+  in canvas** (pick which shared canvas).
 - **Canvas**, a shared scratch workspace holding **multiple files as tiles**;
   a canvas picker (many canvases, not one per group or item). **Annotation and
   commenting are separate:** annotation tools (pen/arrow/box/freeform + colour)
@@ -370,16 +394,25 @@ border so they read as editable. What each contains:
   shown as just the author's avatar, expanding on click to its selection (a
   point, a box, or a freeform region, or an audio range on a waveform tile) and
   thread; the canvas has its own visibility (group or link-only).
+- **Board** (F3a), a kanban of columns (To do / In progress / Review / Done) of
+  cards; each card has a title, a label, an assignee (avatar in group colour),
+  and can link a file or a canvas.
+- **Call** (F14), the voice/video room: a large screen-share pane (someone
+  sharing a DAW or comp), a strip of participant tiles (camera or avatar, name in
+  group colour, mute indicator), and a control bar (mic, camera, screen-share,
+  participants, leave).
 - **Profile**, Public / Shared / Private shelves (the three visibility layers)
   plus a **Settings** tab; name, handle, bio, Add-friend / Message. No roles, no
-  reel, no explainer text.
+  reel, **no coloured names** (colour is group-only), no explainer text.
 - **Messages**, add-by-username field (no directory), thread list, conversation,
   call/video buttons.
-- **Upload**, multi-file dropzone with auto-detected type chips; an optional
-  title (file name is the default), tags + contributors; a **Visibility** choice
-  (Everyone / This group / No one), saved to your profile by default. When the
-  upload is a **new version** of a post, the sheet swaps to a version mode with a
-  **mandatory "what changed" field** and inherits the post's visibility (F7).
+- **Upload**, multi-file dropzone; type is recognised for the icon and filter but
+  **not shown as a tag** (F10); an optional title (file name is the default),
+  user tags + contributors; a **Visibility** choice (Everyone / This group / No
+  one), saved to your profile by default. A **new-version** upload swaps to
+  version mode: **same media type only**, several files become **ordered**
+  versions, each with a **mandatory "what changed"**, inheriting the post's
+  visibility (F7).
 
 Management screens not in the mockup: **Create group** (name, cover → magic-link
 nudge); **Group settings** (channels, members + role toggle, invite links,
