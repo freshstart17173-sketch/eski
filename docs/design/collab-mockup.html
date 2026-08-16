@@ -527,6 +527,34 @@ input{font:inherit;color:inherit}
 .nrow .nctx{font-size:var(--fs-xs);color:var(--muted);margin-top:2px}
 .nrow time{font-size:var(--fs-xs);color:var(--muted);flex:none}
 .nrow .quote{margin-top:6px;font-size:var(--fs-xs);color:var(--soft);padding-left:10px;box-shadow:inset 2px 0 0 var(--line)}
+/* per-group filter row: chips scope the list to one group */
+.nfilter{flex:none;display:flex;align-items:center;gap:var(--s3);padding:0 var(--s5) var(--s3);background:var(--surface);flex-wrap:wrap}
+.nfilter .nfl{font-size:var(--fs-xs);color:var(--muted);font-weight:600}
+.ngroups{display:flex;gap:6px;flex-wrap:wrap}
+.ngrp{padding:5px 11px;border-radius:var(--r);font-size:var(--fs-xs);color:var(--soft);background:var(--plate)}
+.ngrp:hover{background:var(--paper1)}
+.ngrp.on{background:var(--ink);color:var(--on-ink);font-weight:600}
+/* tab panels, so Threads and Saved are their own surfaces not just filters */
+.npanel{flex:1;overflow-y:auto;padding:var(--s3) var(--s5) var(--s5)}
+.nempty{padding:calc(var(--s5)*2) var(--s5);text-align:center;color:var(--muted);font-size:var(--fs-sm)}
+/* hover actions on a notification: reply inline, save for later, mark done */
+.nrow .nacts{position:absolute;top:7px;right:7px;display:none;gap:2px;background:var(--paper);border-radius:var(--r);box-shadow:0 2px 12px rgba(0,0,0,.16)}
+.nrow:hover .nacts,.nrow.replying .nacts{display:flex}
+.nrow .nacts button{width:28px;height:28px;display:grid;place-items:center;color:var(--muted);border-radius:var(--r)}
+.nrow .nacts button:hover{background:var(--surface);color:var(--ink)}
+.nrow .nacts button.on{color:var(--ink)}
+.nrow.saved .nacts button.savebtn{color:var(--ink)}
+.nreply{margin-top:8px;display:none}
+.nrow.replying .nreply{display:block}
+.nreply .field{background:var(--surface)}
+/* Threads tab rows */
+.nthread{position:relative;display:flex;gap:var(--s3);padding:11px var(--s4);border-radius:var(--r);cursor:pointer}
+.nthread:hover{background:var(--surface)}
+.nthread .tbd{flex:1;min-width:0}
+.nthread .tt{font-size:var(--fs-sm);color:var(--ink);font-weight:600}
+.nthread .tt small{color:var(--muted);font-weight:400}
+.nthread .tlast{font-size:var(--fs-xs);color:var(--muted);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nthread .tct{flex:none;font-size:var(--fs-xs);color:var(--on-ink);background:var(--ink);border-radius:10px;padding:1px 8px;align-self:center}
 
 /* search results */
 .fchips{display:flex;gap:6px;flex-wrap:wrap}
@@ -1363,17 +1391,54 @@ input{font:inherit;color:inherit}
     <div class="screen" data-screen="notifications" hidden>
       <div class="notif">
         <div class="notifhd"><span class="t">Notifications</span>
-          <div class="ntabs"><a class="ntab on">All</a><a class="ntab">Mentions</a><a class="ntab">Unread</a></div>
+          <div class="ntabs"><a class="ntab on" data-ntab="all">All</a><a class="ntab" data-ntab="mentions">Mentions</a><a class="ntab" data-ntab="threads">Threads</a><a class="ntab" data-ntab="saved">Saved</a></div>
           <a class="mark">Mark all read</a></div>
-        <div class="notiflist">
+        <div class="nfilter"><span class="nfl">Group</span>
+          <div class="ngroups"><a class="ngrp on">All</a><a class="ngrp">Late Bloom LP</a><a class="ngrp">Specter, sh040</a><a class="ngrp">sh040 crew</a></div></div>
+
+        <div class="npanel" data-nview="all">
           <div class="ndate">Today</div>
-          <div class="nrow unread"><div class="nic"><svg class="ic sm"><use href="#i-at"/></svg></div><div class="nbd"><div class="ntx"><b>rae</b> mentioned you in <b>#beats</b></div><div class="nctx">Late Bloom LP</div><div class="quote">@jax can you re-cut the bridge drums before the session?</div></div><time>2:31 PM</time></div>
-          <div class="nrow unread"><div class="nic"><svg class="ic sm"><use href="#i-comment"/></svg></div><div class="nbd"><div class="ntx"><b>mira</b> left a comment on <b>sh040_comp.mov</b></div><div class="nctx">Specter, sh040 · canvas sh040 review</div><div class="quote">near building edge is ghosting, needs a garbage matte</div></div><time>1:04 PM</time></div>
-          <div class="nrow unread"><div class="nic"><svg class="ic sm"><use href="#i-version"/></svg></div><div class="nbd"><div class="ntx"><b>tomo</b> added <b>v3</b> to a post you follow</div><div class="nctx">Late Bloom LP · Back half rework</div><div class="quote">brought the low end down</div></div><time>12:20 PM</time></div>
+          <div class="nrow unread"><div class="nic"><svg class="ic sm"><use href="#i-at"/></svg></div><div class="nbd"><div class="ntx"><b>rae</b> mentioned you in <b>#beats</b></div><div class="nctx">Late Bloom LP</div><div class="quote">@jax can you re-cut the bridge drums before the session?</div>
+            <div class="nreply"><div class="field"><input placeholder="Reply to rae"><button class="snd"><svg class="ic sm"><use href="#i-send"/></svg></button></div></div></div>
+            <time>2:31 PM</time>
+            <div class="nacts"><button class="replybtn" title="Reply"><svg class="ic sm"><use href="#i-reply"/></svg></button><button class="savebtn" title="Save for later"><svg class="ic sm"><use href="#i-save"/></svg></button><button class="donebtn" title="Mark done"><svg class="ic sm"><use href="#i-check"/></svg></button></div></div>
+          <div class="nrow unread"><div class="nic"><svg class="ic sm"><use href="#i-comment"/></svg></div><div class="nbd"><div class="ntx"><b>mira</b> left a comment on <b>sh040_comp.mov</b></div><div class="nctx">Specter, sh040 · canvas sh040 review</div><div class="quote">near building edge is ghosting, needs a garbage matte</div>
+            <div class="nreply"><div class="field"><input placeholder="Reply to mira"><button class="snd"><svg class="ic sm"><use href="#i-send"/></svg></button></div></div></div>
+            <time>1:04 PM</time>
+            <div class="nacts"><button class="replybtn" title="Reply"><svg class="ic sm"><use href="#i-reply"/></svg></button><button class="savebtn" title="Save for later"><svg class="ic sm"><use href="#i-save"/></svg></button><button class="donebtn" title="Mark done"><svg class="ic sm"><use href="#i-check"/></svg></button></div></div>
+          <div class="nrow unread"><div class="nic"><svg class="ic sm"><use href="#i-version"/></svg></div><div class="nbd"><div class="ntx"><b>tomo</b> added <b>v3</b> to a post you follow</div><div class="nctx">Late Bloom LP · Back half rework</div><div class="quote">brought the low end down</div></div><time>12:20 PM</time>
+            <div class="nacts"><button class="savebtn" title="Save for later"><svg class="ic sm"><use href="#i-save"/></svg></button><button class="donebtn" title="Mark done"><svg class="ic sm"><use href="#i-check"/></svg></button></div></div>
           <div class="ndate">Earlier</div>
-          <div class="nrow"><div class="nic"><svg class="ic sm"><use href="#i-board"/></svg></div><div class="nbd"><div class="ntx"><b>mira</b> assigned you <b>Low end on the bridge</b></div><div class="nctx">Specter, sh040 · shot tasks</div></div><time>Yesterday</time></div>
-          <div class="nrow"><div class="nic"><svg class="ic sm"><use href="#i-user"/></svg></div><div class="nbd"><div class="ntx"><b>nel</b> joined <b>Late Bloom LP</b> from your invite link</div><div class="nctx">Late Bloom LP</div></div><time>Tue</time></div>
-          <div class="nrow"><div class="nic"><svg class="ic sm"><use href="#i-smile"/></svg></div><div class="nbd"><div class="ntx"><b>dev</b> reacted 🔥 to your message</div><div class="nctx">Late Bloom LP · #beats</div></div><time>Tue</time></div>
+          <div class="nrow"><div class="nic"><svg class="ic sm"><use href="#i-board"/></svg></div><div class="nbd"><div class="ntx"><b>mira</b> assigned you <b>Low end on the bridge</b></div><div class="nctx">Specter, sh040 · shot tasks</div></div><time>Yesterday</time>
+            <div class="nacts"><button class="savebtn" title="Save for later"><svg class="ic sm"><use href="#i-save"/></svg></button><button class="donebtn" title="Mark done"><svg class="ic sm"><use href="#i-check"/></svg></button></div></div>
+          <div class="nrow"><div class="nic"><svg class="ic sm"><use href="#i-user"/></svg></div><div class="nbd"><div class="ntx"><b>nel</b> joined <b>Late Bloom LP</b> from your invite link</div><div class="nctx">Late Bloom LP</div></div><time>Tue</time>
+            <div class="nacts"><button class="donebtn" title="Mark done"><svg class="ic sm"><use href="#i-check"/></svg></button></div></div>
+          <div class="nrow"><div class="nic"><svg class="ic sm"><use href="#i-smile"/></svg></div><div class="nbd"><div class="ntx"><b>dev</b> reacted 🔥 to your message</div><div class="nctx">Late Bloom LP · #beats</div></div><time>Tue</time>
+            <div class="nacts"><button class="donebtn" title="Mark done"><svg class="ic sm"><use href="#i-check"/></svg></button></div></div>
+        </div>
+
+        <div class="npanel" data-nview="mentions" hidden>
+          <div class="ndate">Today</div>
+          <div class="nrow unread"><div class="nic"><svg class="ic sm"><use href="#i-at"/></svg></div><div class="nbd"><div class="ntx"><b>rae</b> mentioned you in <b>#beats</b></div><div class="nctx">Late Bloom LP</div><div class="quote">@jax can you re-cut the bridge drums before the session?</div>
+            <div class="nreply"><div class="field"><input placeholder="Reply to rae"><button class="snd"><svg class="ic sm"><use href="#i-send"/></svg></button></div></div></div>
+            <time>2:31 PM</time>
+            <div class="nacts"><button class="replybtn" title="Reply"><svg class="ic sm"><use href="#i-reply"/></svg></button><button class="savebtn" title="Save for later"><svg class="ic sm"><use href="#i-save"/></svg></button><button class="donebtn" title="Mark done"><svg class="ic sm"><use href="#i-check"/></svg></button></div></div>
+          <div class="ndate">Tuesday</div>
+          <div class="nrow"><div class="nic"><svg class="ic sm"><use href="#i-at"/></svg></div><div class="nbd"><div class="ntx"><b>sol</b> mentioned you in <b>sh040 crew</b></div><div class="nctx">Direct message</div><div class="quote">@jax pushed the new specter build, drops you straight into the sh040 review</div>
+            <div class="nreply"><div class="field"><input placeholder="Reply to sol"><button class="snd"><svg class="ic sm"><use href="#i-send"/></svg></button></div></div></div>
+            <time>Tue</time>
+            <div class="nacts"><button class="replybtn" title="Reply"><svg class="ic sm"><use href="#i-reply"/></svg></button><button class="savebtn" title="Save for later"><svg class="ic sm"><use href="#i-save"/></svg></button><button class="donebtn" title="Mark done"><svg class="ic sm"><use href="#i-check"/></svg></button></div></div>
+        </div>
+
+        <div class="npanel" data-nview="threads" hidden>
+          <div class="ndate">Threads you follow</div>
+          <div class="nthread"><div class="nic"><svg class="ic sm"><use href="#i-comment"/></svg></div><div class="tbd"><div class="tt">Bridge drums re-cut <small>· #beats, Late Bloom LP</small></div><div class="tlast">rae: @jax can you re-cut the bridge drums before the session?</div></div><span class="tct">3 new</span></div>
+          <div class="nthread"><div class="nic"><svg class="ic sm"><use href="#i-canvas"/></svg></div><div class="tbd"><div class="tt">Ghosting on the building edge <small>· sh040 review, Specter</small></div><div class="tlast">mira: near building edge is ghosting, needs a garbage matte</div></div><span class="tct">1 new</span></div>
+          <div class="nthread"><div class="nic"><svg class="ic sm"><use href="#i-version"/></svg></div><div class="tbd"><div class="tt">Back half rework <small>· Late Bloom LP</small></div><div class="tlast">tomo: brought the low end down, take another pass?</div></div></div>
+        </div>
+
+        <div class="npanel" data-nview="saved" hidden>
+          <div class="nempty">Nothing saved yet. Save a notification for later with the bookmark on hover, and it lands here.</div>
         </div>
       </div>
     </div>
@@ -1636,9 +1701,39 @@ input{font:inherit;color:inherit}
     document.querySelectorAll('.setnav [data-setpanel]').forEach(function(x){x.classList.remove('on');});b.classList.add('on');
     var name=b.dataset.setpanel;
     document.querySelectorAll('.setpanel').forEach(function(p){p.hidden=p.dataset.panel!==name;});});});
-  // notification tabs (visual)
+  // notification tabs: switch panels (All / Mentions / Threads / Saved)
   document.querySelectorAll('.ntabs .ntab').forEach(function(t){t.addEventListener('click',function(){
-    document.querySelectorAll('.ntabs .ntab').forEach(function(x){x.classList.remove('on');});t.classList.add('on');});});
+    document.querySelectorAll('.ntabs .ntab').forEach(function(x){x.classList.remove('on');});t.classList.add('on');
+    var v=t.dataset.ntab;document.querySelectorAll('.npanel').forEach(function(p){p.hidden=p.dataset.nview!==v;});});});
+  // per-group filter chips (visual scope)
+  document.querySelectorAll('.ngroups .ngrp').forEach(function(c){c.addEventListener('click',function(){
+    document.querySelectorAll('.ngroups .ngrp').forEach(function(x){x.classList.remove('on');});c.classList.add('on');});});
+  // notification row actions: inline reply, save-for-later, mark done
+  var savedPanel=document.querySelector('.npanel[data-nview="saved"]');
+  function savedEmpty(){return savedPanel&&savedPanel.querySelector('.nempty');}
+  document.querySelectorAll('.npanel[data-nview="all"] .nrow, .npanel[data-nview="mentions"] .nrow').forEach(function(row){
+    var acts=row.querySelector('.nacts');if(!acts)return;
+    var reply=acts.querySelector('.replybtn');
+    if(reply)reply.addEventListener('click',function(e){e.stopPropagation();
+      var open=row.classList.toggle('replying');reply.classList.toggle('on',open);
+      if(open){var i=row.querySelector('.nreply input');if(i)i.focus();}});
+    var save=acts.querySelector('.savebtn');
+    if(save)save.addEventListener('click',function(e){e.stopPropagation();
+      var now=row.classList.toggle('saved');
+      if(now){ // drop a light copy into the Saved tab so it is not just a flag
+        var empty=savedEmpty();if(empty)empty.remove();
+        if(!row.dataset.savedId){row.dataset.savedId='s'+(++window.__nsave||(window.__nsave=1));}
+        var clone=row.cloneNode(true);clone.classList.remove('replying');clone.dataset.clone=row.dataset.savedId;
+        var cr=clone.querySelector('.replying');if(cr)cr.classList.remove('replying');
+        savedPanel.appendChild(clone);
+      }else{
+        var ex=savedPanel.querySelector('[data-clone="'+row.dataset.savedId+'"]');if(ex)ex.remove();
+        if(!savedPanel.querySelector('.nrow')){var m=document.createElement('div');m.className='nempty';
+          m.textContent='Nothing saved yet. Save a notification for later with the bookmark on hover, and it lands here.';savedPanel.appendChild(m);}
+      }});
+    var done=acts.querySelector('.donebtn');
+    if(done)done.addEventListener('click',function(e){e.stopPropagation();row.classList.remove('unread');row.style.opacity='.4';});
+  });
   // search filter chips (visual)
   document.querySelectorAll('.fchips .fchip').forEach(function(c){c.addEventListener('click',function(){
     document.querySelectorAll('.fchips .fchip').forEach(function(x){x.classList.remove('on');});c.classList.add('on');});});

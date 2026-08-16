@@ -570,7 +570,7 @@ group · Join by link · Notifications.
 6. Member / profile popout + status/presence · **done**
 7. Call upgrades (share controls, in-call chat/notes, layout toggle, speaking ring, reactions) · **done**
 8. DMs upgrades (group DMs, friends/requests surface, mute/pin) · **done**
-9. Notifications upgrades (inline reply, Threads tab, Saved/Later, per-group filters) · todo
+9. Notifications upgrades (inline reply, Threads tab, Saved/Later, per-group filters) · **done**
 10. Group settings: moderation (bans/timeouts, audit log, per-channel settings) · todo
 11. Media explorer actions (grid actions, lightbox, "shared in") · todo
 12. Board upgrades (custom fields, views, due dates) · todo
