@@ -397,6 +397,7 @@ input{font:inherit;color:inherit}
 <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M23 4v6h-6M1 20v-6h6M3.5 9a9 9 0 0 1 14.9-3.4L23 10M1 14l4.6 4.4A9 9 0 0 0 20.5 15"/></symbol>
 <symbol id="i-version" viewBox="0 0 24 24"><path d="M12 3v6M12 21a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM6 9a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm12 0a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM6 9v3a3 3 0 0 0 3 3h6a3 3 0 0 0 3-3V9"/></symbol>
 <symbol id="i-link" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></symbol>
+<symbol id="i-pin" viewBox="0 0 24 24"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/></symbol>
 </defs></svg>
 
 <style>
@@ -583,6 +584,27 @@ input{font:inherit;color:inherit}
 .alsosend .cbx{width:15px;height:15px;flex:none;border-radius:3px;background:var(--paper);box-shadow:inset 0 0 0 1.5px var(--line2);display:grid;place-items:center;color:var(--paper)}
 .alsosend.on .cbx{background:var(--ink);box-shadow:none}
 .alsosend.on .cbx svg{display:block}.alsosend .cbx svg{display:none;width:11px;height:11px}
+
+/* per-channel tabs (Messages / Pins / Files) */
+.chtabs{flex:none;display:flex;gap:2px;padding:0 var(--s4);background:var(--surface)}
+.chtab{display:flex;align-items:center;gap:7px;padding:9px 10px;color:var(--soft);font-size:var(--fs-sm);position:relative}
+.chtab .ic{color:var(--muted)}
+.chtab .n{color:var(--muted);font-size:var(--fs-xs)}
+.chtab:hover{color:var(--ink)}
+.chtab.on{color:var(--ink);font-weight:600}
+.chtab.on .ic{color:var(--ink)}
+.chtab.on::after{content:"";position:absolute;left:0;right:0;bottom:0;height:2px;background:var(--ink)}
+.chpanel{flex:1;overflow-y:auto;padding:var(--s4) var(--s5)}
+.chpanel[hidden]{display:none}
+.chpanel .lb{color:var(--muted);font-size:var(--fs-xs);font-weight:600;margin-bottom:var(--s3)}
+.pinrow{display:flex;gap:var(--s3);padding:12px;border-radius:var(--r);max-width:720px}
+.pinrow:hover{background:var(--surface)}
+.pinrow:hover .unpin{opacity:1}
+.pinrow .bd2{flex:1;min-width:0}
+.pinrow .pinby{font-size:10px;color:var(--muted);margin-bottom:5px;display:flex;align-items:center;gap:5px}
+.pinrow .by{display:flex;align-items:baseline;gap:8px}.pinrow .by time{font-size:10px;color:var(--muted)}
+.pinrow .tx{font-size:var(--fs-sm);color:var(--soft);margin-top:2px}
+.pinrow .unpin{opacity:0;color:var(--muted);align-self:flex-start}.pinrow .unpin:hover{color:var(--m1)}
 </style>
 
 <div class="proto">
@@ -678,7 +700,12 @@ input{font:inherit;color:inherit}
             <button class="iconbtn" title="Members"><svg class="ic"><use href="#i-users"/></svg></button>
           </div>
         </div>
-        <div class="stream">
+        <div class="chtabs">
+          <button class="chtab on" data-chtab="messages"><svg class="ic sm"><use href="#i-hash"/></svg>Messages</button>
+          <button class="chtab" data-chtab="pins"><svg class="ic sm"><use href="#i-pin"/></svg>Pins <span class="n">3</span></button>
+          <button class="chtab" data-chtab="files"><svg class="ic sm"><use href="#i-grid"/></svg>Files <span class="n">12</span></button>
+        </div>
+        <div class="stream" id="chMessages">
           <div class="day"><span>Today</span></div>
           <div class="msg">
             <div class="hoveracts"><button class="iconbtn" title="React"><svg class="ic sm"><use href="#i-smile"/></svg></button><button class="iconbtn" title="Reply"><svg class="ic sm"><use href="#i-reply"/></svg></button><button class="iconbtn" title="More"><svg class="ic sm"><use href="#i-more"/></svg></button></div>
@@ -721,12 +748,29 @@ input{font:inherit;color:inherit}
             </div>
           </div>
         </div>
-        <div class="composer">
+        <div class="composer" id="chComposer">
           <div class="field">
             <button class="iconbtn" style="width:26px;height:26px" title="Attach files" id="showUpload3"><svg class="ic sm"><use href="#i-clip"/></svg></button>
             <input placeholder="Message #beats">
             <svg class="ic sm" style="color:var(--muted)"><use href="#i-at"/></svg>
             <button class="snd"><svg class="ic sm"><use href="#i-send"/></svg></button>
+          </div>
+        </div>
+
+        <div class="chpanel" data-chview="pins" hidden>
+          <div class="lb">3 pinned messages in #beats</div>
+          <div class="pinrow"><div class="av sm">JX</div><div class="bd2"><div class="pinby"><svg class="ic" style="width:11px;height:11px"><use href="#i-pin"/></svg>pinned by jax</div><div class="by"><span class="u m5">jax</span><time>Mon</time></div><div class="tx">session is Fri 3pm. bring stems bounced at 24/48, not the project files.</div></div><button class="unpin"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
+          <div class="pinrow"><div class="av sm">DV</div><div class="bd2"><div class="pinby"><svg class="ic" style="width:11px;height:11px"><use href="#i-pin"/></svg>pinned by rae</div><div class="by"><span class="u m3">dev</span><time>2:14 PM</time></div><div class="tx">latest beat</div><div class="filecard" style="max-width:360px" data-open-details><div class="fbody"><div class="fname">late_bloom_beat.flp <span class="ver">v3</span></div></div></div></div><button class="unpin"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
+          <div class="pinrow"><div class="av sm">TM</div><div class="bd2"><div class="pinby"><svg class="ic" style="width:11px;height:11px"><use href="#i-pin"/></svg>pinned by jax</div><div class="by"><span class="u m2">tomo</span><time>Tue</time></div><div class="tx">reference for the drum sound, the break at 0:48 is what we're chasing</div></div><button class="unpin"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
+        </div>
+
+        <div class="chpanel" data-chview="files" hidden>
+          <div class="lb">12 files in #beats</div>
+          <div class="masonry">
+            <button class="card" data-open-details><div class="media audio"><div class="wave" data-wf="150"></div></div><div class="title">late_bloom_beat.flp</div><div class="who">dev · v3</div></button>
+            <button class="card" data-open-details><div class="media audio"><div class="wave" data-wf="150"></div></div><div class="title">bridge_scratch_rae.wav</div><div class="who">rae</div></button>
+            <button class="card" data-open-details><div class="media"><div class="shot c" style="aspect-ratio:3/2"></div></div><div class="title">ref_drums.png</div><div class="who">rae</div></button>
+            <button class="card" data-open-details><div class="media audio"><div class="wave" data-wf="150"></div></div><div class="title">bounce_v2.wav</div><div class="who">dev</div></button>
           </div>
         </div>
       </main>
@@ -1387,6 +1431,14 @@ input{font:inherit;color:inherit}
   document.getElementById('threadOpen').addEventListener('click',openThread);
   document.getElementById('threadClose').addEventListener('click',closeThread);
   var also=document.getElementById('alsoSend');also.addEventListener('click',function(){also.classList.toggle('on');});
+
+  // per-channel tabs (Messages / Pins / Files)
+  document.querySelectorAll('.chtab').forEach(function(t){t.addEventListener('click',function(){
+    document.querySelectorAll('.chtab').forEach(function(x){x.classList.remove('on');});t.classList.add('on');
+    var v=t.dataset.chtab;
+    document.getElementById('chMessages').hidden=v!=='messages';
+    document.getElementById('chComposer').hidden=v!=='messages';
+    document.querySelectorAll('.chpanel').forEach(function(p){p.hidden=p.dataset.chview!==v;});});});
 
   // group-settings sub-panel switching
   document.querySelectorAll('.setnav [data-setpanel]').forEach(function(b){b.addEventListener('click',function(){

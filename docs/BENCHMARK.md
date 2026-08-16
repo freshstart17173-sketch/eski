@@ -22,7 +22,7 @@ Sorted by leverage; each is being built and pushed one at a time.
 1. Search results (global, filters + modifiers)  ·  **done**
 2. Quick switcher (Cmd/Ctrl+K)  ·  **done**
 3. Thread view (reply thread panel)  ·  **done**
-4. Channel tabs + pinned messages (Pins / Files per channel)
+4. Channel tabs + pinned messages (Pins / Files per channel)  ·  **done**
 5. Rich composer + message actions (formatting, emoji picker, edit/pin/mark-unread, typing)
 6. Member / profile popout + status/presence
 7. Call upgrades (share controls, in-call chat/notes, layout, speaking, reactions)
