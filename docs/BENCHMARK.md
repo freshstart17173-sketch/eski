@@ -20,7 +20,7 @@ branching), it is tagged **[by design]** so it is not mistaken for an oversight.
 Sorted by leverage; each is being built and pushed one at a time.
 
 1. Search results (global, filters + modifiers)  ·  **done**
-2. Quick switcher (Cmd/Ctrl+K)
+2. Quick switcher (Cmd/Ctrl+K)  ·  **done**
 3. Thread view (reply thread panel)
 4. Channel tabs + pinned messages (Pins / Files per channel)
 5. Rich composer + message actions (formatting, emoji picker, edit/pin/mark-unread, typing)
