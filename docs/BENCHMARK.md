@@ -15,6 +15,26 @@ branching), it is tagged **[by design]** so it is not mistaken for an oversight.
 
 ---
 
+## Build order (in progress)
+
+Sorted by leverage; each is being built and pushed one at a time.
+
+1. Search results (global, filters + modifiers)  ·  **done**
+2. Quick switcher (Cmd/Ctrl+K)
+3. Thread view (reply thread panel)
+4. Channel tabs + pinned messages (Pins / Files per channel)
+5. Rich composer + message actions (formatting, emoji picker, edit/pin/mark-unread, typing)
+6. Member / profile popout + status/presence
+7. Call upgrades (share controls, in-call chat/notes, layout, speaking, reactions)
+8. DMs upgrades (group DMs, friends/requests, mute/pin)
+9. Notifications upgrades (inline reply, Threads tab, Saved/Later, filters)
+10. Group settings: moderation (bans/timeouts, audit log, per-channel settings)
+11. Media explorer actions (grid actions, lightbox, shared-in)
+12. Board upgrades (custom fields, views, due dates)
+13. Sign-in / onboarding / username claim
+
+---
+
 ## 0. Cross-cutting, things both apps have on most screens that eski has nowhere
 
 These are not one screen, they show up everywhere and are the biggest gaps.

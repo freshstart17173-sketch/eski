@@ -525,6 +525,29 @@ input{font:inherit;color:inherit}
 .nrow .nctx{font-size:var(--fs-xs);color:var(--muted);margin-top:2px}
 .nrow time{font-size:var(--fs-xs);color:var(--muted);flex:none}
 .nrow .quote{margin-top:6px;font-size:var(--fs-xs);color:var(--soft);padding-left:10px;box-shadow:inset 2px 0 0 var(--line)}
+
+/* search results */
+.fchips{display:flex;gap:6px;flex-wrap:wrap}
+.fchip{padding:6px 12px;border-radius:var(--r);font-size:var(--fs-xs);color:var(--soft);background:var(--surface)}
+.fchip:hover{background:var(--plate)}
+.fchip.on{background:var(--ink);color:var(--on-ink)}
+.fchip .n{opacity:.55;margin-left:5px;font-variant-numeric:tabular-nums}
+.sres{max-width:840px}
+.sgroup{margin-bottom:var(--s5)}
+.sglabel{font-size:var(--fs-xs);color:var(--muted);font-weight:600;margin-bottom:var(--s2);display:flex;align-items:center;justify-content:space-between}
+.sglabel a{color:var(--muted)}.sglabel a:hover{color:var(--ink)}
+.srow{display:flex;gap:var(--s3);padding:10px var(--s3);border-radius:var(--r);cursor:pointer}
+.srow:hover{background:var(--surface)}
+.srow .stx{min-width:0;flex:1}
+.srow .smeta{font-size:var(--fs-xs);color:var(--muted)}
+.srow .smeta b{color:var(--ink);font-weight:600}
+.srow .sbody{font-size:var(--fs-sm);color:var(--soft);margin-top:2px}
+.srow mark{background:var(--tagbg);color:var(--ink);font-weight:600;border-radius:2px;padding:0 2px}
+.srow .sthumb{width:46px;height:46px;flex:none;background:var(--paper1);border-radius:var(--r);overflow:hidden;display:grid;place-items:center;color:var(--muted)}
+.srow .sthumb .wave{padding:0 5px}
+.srow .sact{margin-left:auto;align-self:center;display:flex;gap:6px}
+.smod{font-size:var(--fs-xs);color:var(--muted);margin-left:var(--s2)}
+.smod b{color:var(--soft);font-weight:600;background:var(--surface);border-radius:2px;padding:1px 5px}
 </style>
 
 <div class="proto">
@@ -542,6 +565,7 @@ input{font:inherit;color:inherit}
     <button class="ptab" data-s="join">Join link</button>
     <button class="ptab" data-s="profile">Profile</button>
     <button class="ptab" data-s="dms">Messages</button>
+    <button class="ptab" data-s="search">Search</button>
   </div>
   <div class="pright">
     <button class="pbtn" id="showDetails">Details pane</button>
@@ -613,7 +637,7 @@ input{font:inherit;color:inherit}
             <button class="iconbtn" data-s="vc" title="Voice"><svg class="ic"><use href="#i-phone"/></svg></button>
             <button class="iconbtn" data-s="vc" title="Video"><svg class="ic"><use href="#i-video"/></svg></button>
             <button class="iconbtn" data-s="notifications" title="Notifications"><svg class="ic"><use href="#i-bell"/></svg></button>
-            <button class="iconbtn" title="Search"><svg class="ic"><use href="#i-search"/></svg></button>
+            <button class="iconbtn" data-s="search" title="Search"><svg class="ic"><use href="#i-search"/></svg></button>
             <button class="iconbtn" title="Members"><svg class="ic"><use href="#i-users"/></svg></button>
           </div>
         </div>
@@ -1030,6 +1054,52 @@ input{font:inherit;color:inherit}
       </div>
     </div>
 
+    <!-- SEARCH RESULTS -->
+    <div class="screen" data-screen="search" hidden>
+      <div class="pane">
+        <div class="panehd"><div class="title">Search</div></div>
+        <div class="toolbar">
+          <div class="field" style="max-width:560px"><svg class="ic sm"><use href="#i-search"/></svg><input value="bridge drums"><svg class="ic sm" style="color:var(--muted);cursor:pointer"><use href="#i-x"/></svg></div>
+          <button class="selbtn"><svg class="ic sm"><use href="#i-user"/></svg>From<svg class="ic sm"><use href="#i-chev"/></svg></button>
+          <button class="selbtn"><svg class="ic sm"><use href="#i-hash"/></svg>In<svg class="ic sm"><use href="#i-chev"/></svg></button>
+          <button class="selbtn">Anytime<svg class="ic sm"><use href="#i-chev"/></svg></button>
+          <span class="smod">try <b>from:tomo</b> <b>in:#mixing</b> <b>has:file</b></span>
+        </div>
+        <div class="toolbar" style="padding-top:0">
+          <div class="fchips">
+            <button class="fchip on">All<span class="n">7</span></button>
+            <button class="fchip">Messages<span class="n">3</span></button>
+            <button class="fchip">Files<span class="n">2</span></button>
+            <button class="fchip">People<span class="n">1</span></button>
+            <button class="fchip">Canvases<span class="n">1</span></button>
+          </div>
+        </div>
+        <div class="panebody">
+          <div class="sres">
+            <div class="sgroup">
+              <div class="sglabel">Messages<a href="#">See all 3</a></div>
+              <div class="srow"><div class="av sm">TM</div><div class="stx"><div class="smeta"><b class="m2">tomo</b> in <b>#mixing</b> · Late Bloom LP · 2:47 PM</div><div class="sbody">one note on the low end, the <mark>bridge</mark> <mark>drums</mark> sit a touch loud against the bass</div></div></div>
+              <div class="srow"><div class="av sm">RA</div><div class="stx"><div class="smeta"><b class="m1">rae</b> in <b>#beats</b> · Late Bloom LP · 2:31 PM</div><div class="sbody">this is the one, swapped the <mark>drums</mark> to the ones i liked</div></div></div>
+              <div class="srow"><div class="av sm">DV</div><div class="stx"><div class="smeta"><b class="m3">dev</b> in <b>#beats</b> · Late Bloom LP · 2:14 PM</div><div class="sbody">reworked the back half, swapped the <mark>drums</mark></div></div></div>
+            </div>
+            <div class="sgroup">
+              <div class="sglabel">Files<a href="#">See all 2</a></div>
+              <div class="srow" data-open-details><div class="sthumb"><div class="wave" data-wf="40"></div></div><div class="stx"><div class="smeta"><b>late_bloom_beat.flp</b> · v3</div><div class="sbody">dev · #beats · tags <mark>drums</mark>, 142bpm, <mark>bridge</mark></div></div><div class="sact"><button class="btn sm"><svg class="ic sm"><use href="#i-download"/></svg></button></div></div>
+              <div class="srow" data-open-details><div class="sthumb"><svg class="ic" style="color:var(--muted)"><use href="#i-image"/></svg></div><div class="stx"><div class="smeta"><b>ref_drums.png</b></div><div class="sbody">rae · #references · the <mark>drum</mark> sound we keep coming back to</div></div></div>
+            </div>
+            <div class="sgroup">
+              <div class="sglabel">People</div>
+              <div class="srow"><div class="av sm">DV</div><div class="stx"><div class="smeta"><b>dev</b> · @devmakesbeats</div><div class="sbody">producer, makes the <mark>drums</mark></div></div><div class="sact"><button class="btn sm">Message</button></div></div>
+            </div>
+            <div class="sgroup">
+              <div class="sglabel">Canvases</div>
+              <div class="srow" data-s="canvas"><div class="sthumb"><svg class="ic" style="color:var(--muted)"><use href="#i-canvas"/></svg></div><div class="stx"><div class="smeta"><b>sh040 review</b> · Specter, sh040</div><div class="sbody">a comment mentions the <mark>drum</mark> hit timing</div></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- NOTIFICATIONS -->
     <div class="screen" data-screen="notifications" hidden>
       <div class="notif">
@@ -1231,6 +1301,9 @@ input{font:inherit;color:inherit}
   // notification tabs (visual)
   document.querySelectorAll('.ntabs .ntab').forEach(function(t){t.addEventListener('click',function(){
     document.querySelectorAll('.ntabs .ntab').forEach(function(x){x.classList.remove('on');});t.classList.add('on');});});
+  // search filter chips (visual)
+  document.querySelectorAll('.fchips .fchip').forEach(function(c){c.addEventListener('click',function(){
+    document.querySelectorAll('.fchips .fchip').forEach(function(x){x.classList.remove('on');});c.classList.add('on');});});
 
   show('workspace');
 })();
