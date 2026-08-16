@@ -568,8 +568,8 @@ group · Join by link · Notifications.
 4. Channel tabs + pinned messages (Pins / Files) · **done**
 5. Rich composer + message actions (formatting, emoji picker, message menu, typing, edited) · **done**
 6. Member / profile popout + status/presence · **done**
-7. Call upgrades (share controls, in-call chat/notes, layout toggle, speaking ring, reactions) · todo
-8. DMs upgrades (group DMs, friends/requests surface, mute/pin) · todo
+7. Call upgrades (share controls, in-call chat/notes, layout toggle, speaking ring, reactions) · **done**
+8. DMs upgrades (group DMs, friends/requests surface, mute/pin) · **done**
 9. Notifications upgrades (inline reply, Threads tab, Saved/Later, per-group filters) · todo
 10. Group settings: moderation (bans/timeouts, audit log, per-channel settings) · todo
 11. Media explorer actions (grid actions, lightbox, "shared in") · todo
