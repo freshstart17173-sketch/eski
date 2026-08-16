@@ -569,6 +569,20 @@ input{font:inherit;color:inherit}
 .qs .qrow .qav{width:20px;height:20px;font-size:9px}
 .qs .qfoot{display:flex;gap:16px;padding:9px 14px;background:var(--paper);font-size:var(--fs-xs);color:var(--muted)}
 .qs kbd{background:var(--surface);border-radius:3px;padding:1px 6px;font:inherit;font-size:11px}
+
+/* thread panel */
+.threadpane{flex:none;width:360px;background:var(--surface);display:flex;flex-direction:column;overflow:hidden}
+.tphd{height:48px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 var(--s4);background:var(--plate)}
+.tphd .lbl{display:flex;align-items:center;gap:8px;font-weight:600;font-size:var(--fs-sm)}
+.tphd .lbl .sub{color:var(--muted);font-size:var(--fs-xs);font-weight:400}
+.tphd .ic{color:var(--muted)}
+.tpbody{flex:1;overflow-y:auto;padding:var(--s4)}
+.tpdiv{display:flex;align-items:center;gap:var(--s3);color:var(--muted);font-size:var(--fs-xs);margin:var(--s2) 0}
+.tpdiv::after{content:"";flex:1;height:1px;background:var(--line)}
+.alsosend{display:flex;align-items:center;gap:8px;font-size:var(--fs-xs);color:var(--muted);margin-top:9px;cursor:pointer}
+.alsosend .cbx{width:15px;height:15px;flex:none;border-radius:3px;background:var(--paper);box-shadow:inset 0 0 0 1.5px var(--line2);display:grid;place-items:center;color:var(--paper)}
+.alsosend.on .cbx{background:var(--ink);box-shadow:none}
+.alsosend.on .cbx svg{display:block}.alsosend .cbx svg{display:none;width:11px;height:11px}
 </style>
 
 <div class="proto">
@@ -593,6 +607,7 @@ input{font:inherit;color:inherit}
     <button class="pbtn" id="showUpload">Upload</button>
     <button class="pbtn" id="showUploadV">Upload (version)</button>
     <button class="pbtn" id="qsOpen">Quick switch</button>
+    <button class="pbtn" id="threadOpen">Thread</button>
     <button class="pbtn" id="themebtn">Dark</button>
   </div>
 </div>
@@ -728,6 +743,29 @@ input{font:inherit;color:inherit}
           <div class="mrow"><div class="av sm">TM<span class="pr"></span></div><div class="info"><div class="nm"><span class="u m2">tomo</span></div><div class="doing">reviewing beat v3</div></div></div>
           <div class="mrow off"><div class="av sm">KO<span class="pr off"></span></div><div class="info"><div class="nm"><span class="u m4">kofi</span></div><div class="doing">offline</div></div></div>
           <div class="mrow off"><div class="av sm">NL<span class="pr off"></span></div><div class="info"><div class="nm"><span class="u m6">nel</span></div><div class="doing">offline</div></div></div>
+        </div>
+      </aside>
+
+      <aside class="threadpane" id="threadPane" hidden>
+        <div class="tphd"><span class="lbl"><svg class="ic sm"><use href="#i-reply"/></svg>Thread<span class="sub">#beats</span></span><button class="iconbtn" id="threadClose"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
+        <div class="tpbody">
+          <div class="msg">
+            <div class="av sm">DV</div>
+            <div class="bd">
+              <div class="by"><span class="u m3">dev</span><time>2:14 PM</time></div>
+              <div class="tx">reworked the back half. same bpm, swapped the drums</div>
+              <div class="filecard" style="max-width:100%"><div class="fcwave"><div class="wave" data-wf="90"></div></div>
+                <div class="fbody"><div class="fname">late_bloom_beat.flp <span class="ver">v3</span></div></div></div>
+            </div>
+          </div>
+          <div class="tpdiv">3 replies</div>
+          <div class="msg"><div class="av sm">RA</div><div class="bd"><div class="by"><span class="u m1">rae</span><time>2:18 PM</time></div><div class="tx">low end's a bit much on the bridge, otherwise this is the one</div></div></div>
+          <div class="msg"><div class="av sm">JX</div><div class="bd"><div class="by"><span class="u m5">jax</span><time>2:22 PM</time></div><div class="tx">agreed. <span class="men m2">@tomo</span> can you pull it down a couple db and bounce a rough?</div></div></div>
+          <div class="msg"><div class="av sm">TM</div><div class="bd"><div class="by"><span class="u m2">tomo</span><time>2:26 PM</time></div><div class="tx">on it, pushing a v3 in a sec</div></div></div>
+        </div>
+        <div class="composer">
+          <div class="field"><button class="iconbtn" style="width:26px;height:26px"><svg class="ic sm"><use href="#i-clip"/></svg></button><input placeholder="Reply in thread"><button class="snd"><svg class="ic sm"><use href="#i-send"/></svg></button></div>
+          <label class="alsosend" id="alsoSend"><span class="cbx"><svg class="ic"><use href="#i-check"/></svg></span>Also send to #beats</label>
         </div>
       </aside>
     </div>
@@ -1339,6 +1377,16 @@ input{font:inherit;color:inherit}
 
   document.querySelectorAll('.visopt').forEach(function(o){o.addEventListener('click',function(){
     document.querySelectorAll('.visopt').forEach(function(x){x.classList.remove('on');});o.classList.add('on');});});
+
+  // thread panel (opens beside the chat, replacing the members rail)
+  var threadPane=document.getElementById('threadPane');
+  var wsMem=document.querySelector('.screen[data-screen="workspace"] .mem');
+  function openThread(){show('workspace');if(wsMem)wsMem.hidden=true;threadPane.hidden=false;}
+  function closeThread(){threadPane.hidden=true;if(wsMem)wsMem.hidden=false;}
+  document.querySelectorAll('.screen[data-screen="workspace"] .reply, .screen[data-screen="workspace"] .hoveracts [title="Reply"]').forEach(function(el){el.addEventListener('click',openThread);});
+  document.getElementById('threadOpen').addEventListener('click',openThread);
+  document.getElementById('threadClose').addEventListener('click',closeThread);
+  var also=document.getElementById('alsoSend');also.addEventListener('click',function(){also.classList.toggle('on');});
 
   // group-settings sub-panel switching
   document.querySelectorAll('.setnav [data-setpanel]').forEach(function(b){b.addEventListener('click',function(){
