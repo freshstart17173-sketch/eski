@@ -626,6 +626,22 @@ input{font:inherit;color:inherit}
 .typing .dots i:nth-child(2){animation-delay:.2s}.typing .dots i:nth-child(3){animation-delay:.4s}
 @keyframes tblink{0%,60%,100%{opacity:.3}30%{opacity:1}}
 .menu button.danger{color:var(--m1)}
+
+/* profile popout */
+.ppop{position:fixed;z-index:97;width:300px;background:var(--paper);border-radius:8px;box-shadow:0 22px 64px rgba(0,0,0,.42);overflow:hidden}
+.ppop .ppbanner{height:54px;background:linear-gradient(120deg,#4a4a4a,#232323)}
+.ppop .ppav{width:64px;height:64px;border-radius:50%;background:var(--paper1);color:var(--soft);display:grid;place-items:center;font-weight:700;font-size:22px;margin:-32px 0 0 16px;box-shadow:0 0 0 5px var(--paper);position:relative}
+.ppop .ppav .pres{position:absolute;right:1px;bottom:1px;width:16px;height:16px;border-radius:50%;background:var(--ink);box-shadow:0 0 0 4px var(--paper)}
+.ppop .ppbody{padding:8px 16px 16px}
+.ppop .ppname{font-size:var(--fs-lg);font-weight:600}
+.ppop .pphandle{color:var(--muted);font-size:var(--fs-sm)}
+.ppop .ppstatus{margin-top:10px;font-size:var(--fs-sm);background:var(--surface);border-radius:6px;padding:8px 10px}
+.ppop .ppsec{margin-top:12px}
+.ppop .ppsec .l{display:block;font-size:10px;color:var(--muted);font-weight:600;letter-spacing:.04em;margin-bottom:5px}
+.ppop .ppsec .v{font-size:var(--fs-sm);color:var(--soft);display:flex;align-items:center;gap:6px}
+.ppop .prole{display:inline-flex;align-items:center;gap:6px;background:var(--surface);border-radius:var(--r);padding:3px 9px;font-size:var(--fs-xs);font-weight:600}
+.ppop .ppacts{display:flex;gap:8px;margin-top:14px}
+.ppop .ppacts .btn{flex:1;justify-content:center}
 </style>
 
 <div class="proto">
@@ -651,6 +667,7 @@ input{font:inherit;color:inherit}
     <button class="pbtn" id="showUploadV">Upload (version)</button>
     <button class="pbtn" id="qsOpen">Quick switch</button>
     <button class="pbtn" id="threadOpen">Thread</button>
+    <button class="pbtn" id="profileCardBtn">Profile card</button>
     <button class="pbtn" id="themebtn">Dark</button>
   </div>
 </div>
@@ -1261,6 +1278,22 @@ input{font:inherit;color:inherit}
   </div>
 </div>
 
+<!-- PROFILE POPOUT -->
+<div class="ppop" id="profilePop" hidden>
+  <div class="ppbanner"></div>
+  <div class="ppav">DV<span class="pres"></span></div>
+  <div class="ppbody">
+    <div class="ppname">dev</div>
+    <div class="pphandle">@devmakesbeats</div>
+    <div class="ppstatus">🎧 in the zone, back later</div>
+    <div class="ppsec"><span class="l">STATUS</span><span class="v"><span style="width:9px;height:9px;border-radius:50%;background:var(--ink);display:inline-block"></span>Online · 3:24 PM local time</span></div>
+    <div class="ppsec"><span class="l">ROLE IN LATE BLOOM LP</span><span class="v"><span class="prole m3">Member</span></span></div>
+    <div class="ppsec"><span class="l">WORKING ON</span><span class="v">a beat, in FL Studio</span></div>
+    <div class="ppsec"><span class="l">MUTUAL GROUPS</span><span class="v">Late Bloom LP, beat swap</span></div>
+    <div class="ppacts"><button class="btn primary"><svg class="ic sm"><use href="#i-mail"/></svg>Message</button><button class="btn"><svg class="ic sm"><use href="#i-phone"/></svg>Call</button></div>
+  </div>
+</div>
+
 <!-- QUICK SWITCHER (Cmd/Ctrl+K) -->
 <div class="qs-scrim" id="qsScrim" hidden></div>
 <div class="qs" id="qs" hidden>
@@ -1522,6 +1555,19 @@ input{font:inherit;color:inherit}
     else if(e.key==='ArrowUp'){e.preventDefault();qsel(-1);}
     else if(e.key==='Enter'){e.preventDefault();var s=qs.querySelector('.qrow.sel');if(s)s.click();}
   });
+
+  // profile popout (click a member, or the review button)
+  var ppop=document.getElementById('profilePop');
+  function openPop(anchor){ppop.hidden=false;var r=anchor?anchor.getBoundingClientRect():null;
+    var left=r?(r.left-ppop.offsetWidth-10):((window.innerWidth-ppop.offsetWidth)/2);
+    if(left<8)left=r?(r.right+10):8; if(left+ppop.offsetWidth>window.innerWidth-8)left=window.innerWidth-ppop.offsetWidth-8;
+    var top=r?Math.min(r.top-20,window.innerHeight-ppop.offsetHeight-10):100; if(top<52)top=52;
+    ppop.style.left=left+'px';ppop.style.top=top+'px';}
+  function closePop(){ppop.hidden=true;}
+  document.querySelectorAll('.mem .mrow').forEach(function(m){m.addEventListener('click',function(e){e.stopPropagation();openPop(m);});});
+  document.getElementById('profileCardBtn').addEventListener('click',function(e){e.stopPropagation();openPop(null);});
+  document.addEventListener('click',function(e){if(!e.target.closest('#profilePop')&&!e.target.closest('.mrow'))closePop();});
+  document.addEventListener('keydown',function(e){if(e.key==='Escape')closePop();});
 
   show('workspace');
 })();

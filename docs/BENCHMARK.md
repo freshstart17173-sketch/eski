@@ -24,7 +24,7 @@ Sorted by leverage; each is being built and pushed one at a time.
 3. Thread view (reply thread panel)  ·  **done**
 4. Channel tabs + pinned messages (Pins / Files per channel)  ·  **done**
 5. Rich composer + message actions (formatting, emoji picker, edit/pin/mark-unread, typing)  ·  **done**
-6. Member / profile popout + status/presence
+6. Member / profile popout + status/presence  ·  **done**
 7. Call upgrades (share controls, in-call chat/notes, layout, speaking, reactions)
 8. DMs upgrades (group DMs, friends/requests, mute/pin)
 9. Notifications upgrades (inline reply, Threads tab, Saved/Later, filters)
