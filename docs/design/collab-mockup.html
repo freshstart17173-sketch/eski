@@ -234,7 +234,7 @@ input{font:inherit;color:inherit}
 .selbar button:hover{background:rgba(255,255,255,.14)}
 .selbar button .ic{color:var(--on-ink)}
 /* lightbox: a media viewer, deliberately dark in every theme like any viewer */
-.lb{position:fixed;inset:0;z-index:80;background:rgba(10,10,10,.92);display:flex;flex-direction:column}
+.lbox{position:fixed;inset:0;z-index:80;background:rgba(10,10,10,.92);display:flex;flex-direction:column}
 .lbhd{flex:none;height:52px;display:flex;align-items:center;gap:10px;padding:0 var(--s4);color:#ededed}
 .lbhd .t{font-weight:600;font-size:var(--fs-sm)}
 .lbhd .mt{color:#9a9a9a;font-size:var(--fs-xs)}
@@ -611,6 +611,26 @@ input{font:inherit;color:inherit}
 .jmeta{display:flex;align-items:center;gap:var(--s3);color:var(--muted);font-size:var(--fs-sm);margin-top:var(--s3)}
 .stackav{display:flex}.stackav .av{margin-left:-8px;box-shadow:0 0 0 2px var(--paper)}.stackav .av:first-child{margin-left:0}
 .invited{display:flex;align-items:center;gap:9px;background:var(--surface);border-radius:var(--r);padding:10px var(--s3);margin-top:var(--s4);font-size:var(--fs-sm)}
+/* sign-in / onboarding / username claim (gap #13) */
+.authwrap{flex:1;min-width:0;overflow-y:auto;background:var(--surface);display:flex;flex-direction:column;align-items:center;padding:var(--s6) var(--s4)}
+.authbrand{font-size:var(--fs-xl);font-weight:700;letter-spacing:.01em;margin-bottom:var(--s5)}
+.astep[hidden]{display:none}
+.field .at{color:var(--muted);font-size:var(--fs-sm);font-weight:600;flex:none}
+.unamestate{display:flex;align-items:center;gap:6px;font-size:var(--fs-xs);margin-top:7px;min-height:16px;color:var(--muted)}
+.unamestate.ok{color:var(--ink)}
+.unamestate.taken{color:var(--m1)}
+.unamestate .ic{width:13px;height:13px}
+.avatarpick{display:flex;align-items:center;gap:var(--s3);margin-top:6px}
+.avatarpick .apv{width:56px;height:56px;border-radius:50%;background:var(--ink);color:var(--on-ink);display:grid;place-items:center;font-weight:700;font-size:var(--fs-lg);flex:none}
+.sentbox{display:flex;gap:var(--s3);align-items:flex-start;background:var(--surface);border-radius:var(--r);padding:var(--s4);margin-top:var(--s4)}
+.sentbox .ic{color:var(--muted);flex:none;margin-top:2px}
+.sentbox b{font-size:var(--fs-sm)}.sentbox small{color:var(--muted);font-size:var(--fs-xs);display:block;margin-top:3px}
+.orline{display:flex;align-items:center;gap:var(--s3);color:var(--muted);font-size:var(--fs-xs);margin:var(--s4) 0}
+.orline::before,.orline::after{content:"";flex:1;height:1px;background:var(--line)}
+.authbtns{display:flex;flex-direction:column;gap:8px;margin-top:var(--s4)}
+.authbtns .btn{justify-content:center}
+.authalt{margin-top:var(--s5);text-align:center;color:var(--muted);font-size:var(--fs-xs)}
+.authalt a{color:var(--ink);font-weight:600;cursor:pointer}
 
 /* notifications */
 .notif{flex:1;min-width:0;display:flex;flex-direction:column;background:var(--paper)}
@@ -853,6 +873,7 @@ input{font:inherit;color:inherit}
     <button class="ptab" data-s="settings">Group settings</button>
     <button class="ptab" data-s="create">Create group</button>
     <button class="ptab" data-s="join">Join link</button>
+    <button class="ptab" data-s="auth">Sign in</button>
     <button class="ptab" data-s="profile">Profile</button>
     <button class="ptab" data-s="dms">Messages</button>
     <button class="ptab" data-s="search">Search</button>
@@ -1545,6 +1566,46 @@ input{font:inherit;color:inherit}
       </div>
     </div>
 
+    <!-- SIGN IN / ONBOARDING -->
+    <div class="screen" data-screen="auth" hidden>
+      <div class="authwrap">
+        <div class="authbrand">eski</div>
+
+        <div class="ocard astep" data-astep="signin">
+          <h1>Sign in</h1>
+          <div class="lead">We email you a link. No passwords to forget, nothing to leak.</div>
+          <label class="ulab">Email</label>
+          <div class="field"><svg class="ic sm"><use href="#i-mail"/></svg><input id="authEmail" type="email" placeholder="you@studio.com" value="jax@late-bloom.co"></div>
+          <div class="authbtns"><button class="btn primary" id="authSend"><svg class="ic sm"><use href="#i-mail"/></svg>Email me a link</button></div>
+          <div class="orline">or</div>
+          <div class="authbtns"><button class="btn"><svg class="ic sm"><use href="#i-lock"/></svg>Use a passkey</button></div>
+          <div class="authalt">New here? A link signs you up the same way.</div>
+        </div>
+
+        <div class="ocard astep" data-astep="sent" hidden>
+          <h1>Check your email</h1>
+          <div class="lead">We sent a sign-in link to your inbox. It is good for 15 minutes.</div>
+          <div class="sentbox"><svg class="ic"><use href="#i-mail"/></svg><div><b id="sentTo">jax@late-bloom.co</b><small>Open the link on this device to continue. Wrong address? Go back and fix it.</small></div></div>
+          <div class="authbtns"><button class="btn primary" id="authOpened">I opened the link</button><button class="btn" id="authBack">Use a different email</button></div>
+          <div class="authalt">No email after a minute? Check spam, or resend.</div>
+        </div>
+
+        <div class="ocard astep" data-astep="claim" hidden>
+          <h1>Claim your username</h1>
+          <div class="lead">This is how people add you and how your public files are found. You can change it later.</div>
+          <label class="ulab">Username</label>
+          <div class="field"><span class="at">@</span><input id="authUser" placeholder="yourname" value="jax"></div>
+          <div class="unamestate ok" id="unameState"><svg class="ic"><use href="#i-check"/></svg>jax is available</div>
+          <label class="ulab">Display name</label>
+          <div class="field"><svg class="ic sm"><use href="#i-user"/></svg><input placeholder="What people see" value="jax"></div>
+          <label class="ulab">Avatar</label>
+          <div class="avatarpick"><span class="apv" id="authAv">JX</span><button class="btn sm"><svg class="ic sm"><use href="#i-image"/></svg>Upload</button></div>
+          <div class="authbtns"><button class="btn primary" id="authEnter">Enter eski</button></div>
+          <div class="authalt">By continuing you agree to the terms and privacy notice.</div>
+        </div>
+      </div>
+    </div>
+
     <!-- SEARCH RESULTS -->
     <div class="screen" data-screen="search" hidden>
       <div class="pane">
@@ -1666,7 +1727,7 @@ input{font:inherit;color:inherit}
 </div>
 
 <!-- LIGHTBOX (image / video viewer, opened from the media grid) -->
-<div class="lb" id="lightbox" hidden>
+<div class="lbox" id="lightbox" hidden>
   <div class="lbhd"><span class="t" id="lbTitle">ref_drums.png</span><span class="mt" id="lbMeta">rae · #references · 2.1 MB</span>
     <div class="acts"><button title="Download"><svg class="ic"><use href="#i-download"/></svg></button><button title="Copy link"><svg class="ic"><use href="#i-link"/></svg></button><button title="Details"><svg class="ic"><use href="#i-more"/></svg></button><button id="lbClose" title="Close"><svg class="ic"><use href="#i-x"/></svg></button></div></div>
   <div class="lbstage"><span class="lbnav prev" id="lbPrev"><svg class="ic"><use href="#i-chev"/></svg></span>
@@ -1956,6 +2017,30 @@ input{font:inherit;color:inherit}
   document.querySelectorAll('.kbviews .kbview').forEach(function(v){v.addEventListener('click',function(){
     document.querySelectorAll('.kbviews .kbview').forEach(function(x){x.classList.remove('on');});v.classList.add('on');
     var k=v.dataset.kview;document.querySelectorAll('.kview').forEach(function(p){p.hidden=p.dataset.kview!==k;});});});
+
+  // sign-in / onboarding / username claim (gap #13)
+  (function(){
+    var steps=document.querySelectorAll('.screen[data-screen="auth"] .astep');
+    if(!steps.length)return;
+    function astep(name){steps.forEach(function(s){s.hidden=s.dataset.astep!==name;});}
+    var send=document.getElementById('authSend');
+    if(send)send.addEventListener('click',function(){
+      var e=document.getElementById('authEmail').value.trim();
+      if(e)document.getElementById('sentTo').textContent=e;astep('sent');});
+    var opened=document.getElementById('authOpened');if(opened)opened.addEventListener('click',function(){astep('claim');});
+    var back=document.getElementById('authBack');if(back)back.addEventListener('click',function(){astep('signin');});
+    var enter=document.getElementById('authEnter');if(enter)enter.addEventListener('click',function(){astep('signin');show('workspace');});
+    // live username availability
+    var taken={mira:1,rae:1,dev:1,tomo:1,sol:1,nel:1,kofi:1,lin:1,eski:1,admin:1};
+    var u=document.getElementById('authUser'),st=document.getElementById('unameState'),av=document.getElementById('authAv');
+    function checkName(){var v=(u.value||'').trim().toLowerCase().replace(/[^a-z0-9_]/g,'');
+      if(av)av.textContent=v?v.slice(0,2).toUpperCase():'?';
+      st.className='unamestate';
+      if(!v){st.innerHTML='Letters, numbers and underscores.';return;}
+      if(taken[v]){st.classList.add('taken');st.innerHTML='<svg class="ic"><use href="#i-x"/></svg>'+v+' is taken';}
+      else{st.classList.add('ok');st.innerHTML='<svg class="ic"><use href="#i-check"/></svg>'+v+' is available';}}
+    if(u){u.addEventListener('input',checkName);}
+  })();
   // notification tabs: switch panels (All / Mentions / Threads / Saved)
   document.querySelectorAll('.ntabs .ntab').forEach(function(t){t.addEventListener('click',function(){
     document.querySelectorAll('.ntabs .ntab').forEach(function(x){x.classList.remove('on');});t.classList.add('on');

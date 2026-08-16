@@ -574,7 +574,7 @@ group · Join by link · Notifications.
 10. Group settings: moderation (bans/timeouts, audit log, per-channel settings) · **done**
 11. Media explorer actions (grid actions, lightbox, "shared in") · **done**
 12. Board upgrades (custom fields, views, due dates) · **done**
-13. Sign-in / onboarding / username claim · todo
+13. Sign-in / onboarding / username claim · **done**
 
 ### Owner decisions still open (see also §5)
 WebRTC provider (F14) · transcode scope audio-first vs video (F11) · member-colour
