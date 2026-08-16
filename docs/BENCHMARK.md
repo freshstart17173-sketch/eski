@@ -15,9 +15,10 @@ branching), it is tagged **[by design]** so it is not mistaken for an oversight.
 
 ---
 
-## Build order (in progress)
+## Build order (all mocked)
 
-Sorted by leverage; each is being built and pushed one at a time.
+Sorted by leverage; each was built and pushed one at a time. All 13 are now
+in the mockup.
 
 1. Search results (global, filters + modifiers)  ·  **done**
 2. Quick switcher (Cmd/Ctrl+K)  ·  **done**

@@ -561,7 +561,7 @@ members) · Feed · Media explorer (+ Collections) · Details pane · Canvas · 
 Call · Profile · Messages · Upload (+ version mode) · Group settings · Create
 group · Join by link · Notifications.
 
-### Parity pass vs Discord/Slack (13, from `BENCHMARK.md`)
+### Parity pass vs Discord/Slack (13, from `BENCHMARK.md`) · all 13 mocked
 1. Search results · **done** (mockup)
 2. Quick switcher (Cmd/Ctrl+K) · **done**
 3. Thread view · **done**
