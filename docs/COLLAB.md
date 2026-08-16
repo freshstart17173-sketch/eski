@@ -572,7 +572,7 @@ group · Join by link · Notifications.
 8. DMs upgrades (group DMs, friends/requests surface, mute/pin) · **done**
 9. Notifications upgrades (inline reply, Threads tab, Saved/Later, per-group filters) · **done**
 10. Group settings: moderation (bans/timeouts, audit log, per-channel settings) · **done**
-11. Media explorer actions (grid actions, lightbox, "shared in") · todo
+11. Media explorer actions (grid actions, lightbox, "shared in") · **done**
 12. Board upgrades (custom fields, views, due dates) · todo
 13. Sign-in / onboarding / username claim · todo
 
