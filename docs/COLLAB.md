@@ -414,9 +414,18 @@ border so they read as editable. What each contains:
   versions, each with a **mandatory "what changed"**, inheriting the post's
   visibility (F7).
 
-Management screens not in the mockup: **Create group** (name, cover → magic-link
-nudge); **Group settings** (channels, members + role toggle, invite links,
-export, storage), admin only; **Notifications** (bell dropdown).
+- **Group settings** (admin only), a left-nav of General (name, cover, delete),
+  Channels & boards (reorder/add/remove), Members (role toggle admin/member,
+  remove), Invite links (list with uses/expiry, copy, revoke, new link), and
+  Export & storage (a used bar + export). Reached from the group-name header.
+- **Create group**, a centered card: name, cover, starter channels, and the note
+  that an invite link is minted with the group. Reached from the rail's ＋.
+- **Join by magic link** (`/join/<code>`), a centered preview card: cover, name,
+  member count and avatars, who invited you, and one **Join group** button, no
+  application or approval.
+- **Notifications**, All / Mentions / Unread, grouped by day; rows for mentions,
+  comments, new versions, board assignments, joins, and reactions, each linking to
+  its target. Reached from the header bell.
 
 ---
 

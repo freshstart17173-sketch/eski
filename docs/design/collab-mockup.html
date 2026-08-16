@@ -390,6 +390,13 @@ input{font:inherit;color:inherit}
 <symbol id="i-screen" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></symbol>
 <symbol id="i-drag" viewBox="0 0 24 24"><circle cx="9" cy="6" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="18" r="1"/><circle cx="15" cy="6" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="18" r="1"/></symbol>
 <symbol id="i-leave" viewBox="0 0 24 24"><path d="M10 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5M16 17l5-5-5-5M21 12H9"/></symbol>
+<symbol id="i-bell" viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0"/></symbol>
+<symbol id="i-trash" viewBox="0 0 24 24"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6M10 11v6M14 11v6"/></symbol>
+<symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></symbol>
+<symbol id="i-image" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></symbol>
+<symbol id="i-refresh" viewBox="0 0 24 24"><path d="M23 4v6h-6M1 20v-6h6M3.5 9a9 9 0 0 1 14.9-3.4L23 10M1 14l4.6 4.4A9 9 0 0 0 20.5 15"/></symbol>
+<symbol id="i-version" viewBox="0 0 24 24"><path d="M12 3v6M12 21a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM6 9a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm12 0a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM6 9v3a3 3 0 0 0 3 3h6a3 3 0 0 0 3-3V9"/></symbol>
+<symbol id="i-link" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></symbol>
 </defs></svg>
 
 <style>
@@ -447,6 +454,77 @@ input{font:inherit;color:inherit}
 .kav{width:20px;height:20px;border-radius:50%;color:#fff;display:grid;place-items:center;font-size:9px;font-weight:700;margin-left:auto}
 .kadd{font-size:var(--fs-xs);color:var(--muted);padding:6px 4px;text-align:left;display:flex;align-items:center;gap:6px}
 .kadd:hover{color:var(--ink)}
+
+/* group settings */
+.settings{flex:1;min-width:0;display:flex;overflow:hidden;background:var(--paper)}
+.setnav{flex:none;width:220px;background:var(--surface);padding:var(--s4) var(--s2);overflow-y:auto}
+.setnav .sgh{font-size:var(--fs-xs);color:var(--muted);font-weight:600;padding:6px var(--s3) 6px}
+.setnav button{display:flex;align-items:center;gap:9px;width:100%;text-align:left;padding:8px var(--s3);border-radius:var(--r);color:var(--soft);font-size:var(--fs-sm)}
+.setnav button:hover{background:var(--plate)}
+.setnav button.on{background:var(--plate);color:var(--ink);font-weight:600}
+.setnav button .ic{color:var(--muted)}
+.setnav button.on .ic{color:var(--ink)}
+.setnav .sep{height:1px;background:var(--line);margin:var(--s2) var(--s3)}
+.setnav .danger{color:var(--m1)}.setnav .danger .ic{color:var(--m1)}
+.setmain{flex:1;min-width:0;overflow-y:auto;padding:var(--s5)}
+.setmain h2{font-size:var(--fs-lg);font-weight:600;margin-bottom:var(--s2)}
+.setmain .h2sub{color:var(--muted);font-size:var(--fs-sm);margin-bottom:var(--s5)}
+.setpanel[hidden]{display:none}
+.frow{max-width:560px;margin-bottom:var(--s4)}
+.coverpick{display:flex;gap:var(--s3);align-items:center}
+.coverpick .cv{width:132px;height:78px;background:var(--paper1);border-radius:var(--r);display:grid;place-items:center;color:var(--muted)}
+.dangerbox{max-width:560px;margin-top:var(--s5);padding:var(--s4);background:var(--surface);border-radius:var(--r);display:flex;align-items:center;gap:var(--s4)}
+.dangerbox .t{flex:1}.dangerbox .t b{display:block;font-size:var(--fs-sm)}.dangerbox .t small{color:var(--muted);font-size:var(--fs-xs)}
+.btn.danger{background:var(--m1);color:#fff}.btn.danger:hover{background:var(--m1);opacity:.9}
+.setlist{max-width:660px}
+.mtrow{display:flex;align-items:center;gap:var(--s3);padding:10px var(--s2);border-radius:var(--r)}
+.mtrow:hover{background:var(--surface)}
+.mtrow .info{flex:1;min-width:0}.mtrow .info b{font-size:var(--fs-sm);font-weight:600}.mtrow .info small{color:var(--muted);font-size:var(--fs-xs);display:block}
+.mtrow .rolesel{display:inline-flex;align-items:center;gap:6px;background:var(--surface);border-radius:var(--r);padding:6px 10px;font-size:var(--fs-xs);color:var(--soft)}
+.mtrow:hover .rolesel{background:var(--plate)}
+.mtrow .rm{color:var(--muted)}.mtrow .rm:hover{color:var(--m1)}
+.invrow{display:flex;align-items:center;gap:var(--s3);background:var(--surface);border-radius:var(--r);padding:11px var(--s3);max-width:660px;margin-bottom:8px}
+.invrow .lk{flex:1;min-width:0;font-size:var(--fs-sm);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.invrow .mt{color:var(--muted);font-size:var(--fs-xs);flex:none}
+.bar{height:9px;background:var(--plate);border-radius:999px;overflow:hidden;max-width:560px;margin:6px 0}
+.bar i{display:block;height:100%;background:var(--ink)}
+
+/* onboarding: create / join */
+.onboard{flex:1;min-width:0;overflow-y:auto;background:var(--surface);display:flex;justify-content:center;padding:var(--s6) var(--s4)}
+.ocard{width:min(500px,100%);background:var(--paper);border-radius:6px;box-shadow:0 10px 44px rgba(0,0,0,.14);padding:var(--s5);align-self:flex-start}
+.ocard h1{font-size:var(--fs-xl);font-weight:600}
+.ocard .lead{color:var(--muted);font-size:var(--fs-sm);margin:4px 0 var(--s5)}
+.ocard .ulab{margin-top:var(--s4)}
+.starter{display:flex;flex-wrap:wrap;gap:6px}
+.ocard .go{margin-top:var(--s5);display:flex;gap:var(--s2);justify-content:flex-end}
+.magic{display:flex;align-items:center;gap:var(--s2);background:var(--surface);border-radius:var(--r);padding:10px var(--s3);margin-top:var(--s4)}
+.magic .lk{flex:1;min-width:0;font-size:var(--fs-sm);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.jcover{height:132px;border-radius:6px 6px 0 0;margin:calc(-1*var(--s5)) calc(-1*var(--s5)) var(--s4);background:linear-gradient(135deg,#5a5a5a,#232323);position:relative}
+.jbadge{position:absolute;bottom:10px;left:14px;background:rgba(0,0,0,.55);color:#fff;font-size:var(--fs-xs);padding:3px 9px;border-radius:3px;display:flex;align-items:center;gap:6px}
+.jmeta{display:flex;align-items:center;gap:var(--s3);color:var(--muted);font-size:var(--fs-sm);margin-top:var(--s3)}
+.stackav{display:flex}.stackav .av{margin-left:-8px;box-shadow:0 0 0 2px var(--paper)}.stackav .av:first-child{margin-left:0}
+.invited{display:flex;align-items:center;gap:9px;background:var(--surface);border-radius:var(--r);padding:10px var(--s3);margin-top:var(--s4);font-size:var(--fs-sm)}
+
+/* notifications */
+.notif{flex:1;min-width:0;display:flex;flex-direction:column;background:var(--paper)}
+.notifhd{flex:none;min-height:56px;display:flex;align-items:center;gap:var(--s4);padding:var(--s3) var(--s5);background:var(--surface);flex-wrap:wrap}
+.notifhd .t{font-weight:600;font-size:var(--fs-lg)}
+.ntabs{display:flex;gap:var(--s4)}
+.ntab{color:var(--soft);font-size:var(--fs-sm);padding-bottom:2px}
+.ntab.on{color:var(--ink);font-weight:600;box-shadow:inset 0 -2px 0 var(--ink)}
+.notifhd .mark{margin-left:auto;font-size:var(--fs-xs);color:var(--muted)}.notifhd .mark:hover{color:var(--ink)}
+.notiflist{flex:1;overflow-y:auto;padding:var(--s3) var(--s5) var(--s5)}
+.ndate{font-size:var(--fs-xs);color:var(--muted);font-weight:600;margin:var(--s4) 0 var(--s2)}
+.nrow{position:relative;display:flex;gap:var(--s3);padding:11px var(--s3) 11px var(--s4);border-radius:var(--r);cursor:pointer}
+.nrow:hover{background:var(--surface)}
+.nrow.unread::before{content:"";position:absolute;left:6px;top:50%;transform:translateY(-50%);width:7px;height:7px;border-radius:50%;background:var(--ink)}
+.nrow .nic{flex:none;width:30px;height:30px;border-radius:50%;background:var(--surface);color:var(--soft);display:grid;place-items:center}
+.nrow:hover .nic{background:var(--plate)}
+.nrow .nbd{flex:1;min-width:0}
+.nrow .ntx{font-size:var(--fs-sm);color:var(--soft)}.nrow .ntx b{color:var(--ink);font-weight:600}
+.nrow .nctx{font-size:var(--fs-xs);color:var(--muted);margin-top:2px}
+.nrow time{font-size:var(--fs-xs);color:var(--muted);flex:none}
+.nrow .quote{margin-top:6px;font-size:var(--fs-xs);color:var(--soft);padding-left:10px;box-shadow:inset 2px 0 0 var(--line)}
 </style>
 
 <div class="proto">
@@ -458,6 +536,10 @@ input{font:inherit;color:inherit}
     <button class="ptab" data-s="canvas">Canvas</button>
     <button class="ptab" data-s="board">Board</button>
     <button class="ptab" data-s="vc">Call</button>
+    <button class="ptab" data-s="notifications">Notifications</button>
+    <button class="ptab" data-s="settings">Group settings</button>
+    <button class="ptab" data-s="create">Create group</button>
+    <button class="ptab" data-s="join">Join link</button>
     <button class="ptab" data-s="profile">Profile</button>
     <button class="ptab" data-s="dms">Messages</button>
   </div>
@@ -478,7 +560,7 @@ input{font:inherit;color:inherit}
     <button class="railbtn" data-s="canvas" title="Specter, sh040">SP<span class="ct">7</span></button>
     <button class="railbtn" title="Beat swap">BS</button>
     <div class="railsep"></div>
-    <button class="railbtn" id="showUpload2" title="Create, join a link, add a friend"><svg class="ic"><use href="#i-plus"/></svg></button>
+    <button class="railbtn" data-s="create" title="Create or join a group"><svg class="ic"><use href="#i-plus"/></svg></button>
     <button class="railbtn user" data-s="profile" title="jax, your profile"><span class="pfp">JX</span></button>
   </aside>
 
@@ -486,7 +568,7 @@ input{font:inherit;color:inherit}
     <!-- WORKSPACE -->
     <div class="screen" data-screen="workspace">
       <nav class="chan">
-        <div class="chanhd"><b>Late Bloom LP</b><svg class="ic sm" style="color:var(--muted)"><use href="#i-chev"/></svg></div>
+        <div class="chanhd" data-s="settings" style="cursor:pointer" title="Group settings"><b>Late Bloom LP</b><svg class="ic sm" style="color:var(--muted)"><use href="#i-chev"/></svg></div>
         <div class="chanbody">
           <div class="cgroup">
             <button class="crow" data-s="explorer"><svg class="ic"><use href="#i-grid"/></svg><span class="nm">Media</span></button>
@@ -528,8 +610,9 @@ input{font:inherit;color:inherit}
           <svg class="ic"><use href="#i-hash"/></svg><span class="t">beats</span>
           <span class="sub">put the session name in the file name</span>
           <div class="acts">
-            <button class="iconbtn" title="Voice"><svg class="ic"><use href="#i-phone"/></svg></button>
-            <button class="iconbtn" title="Video"><svg class="ic"><use href="#i-video"/></svg></button>
+            <button class="iconbtn" data-s="vc" title="Voice"><svg class="ic"><use href="#i-phone"/></svg></button>
+            <button class="iconbtn" data-s="vc" title="Video"><svg class="ic"><use href="#i-video"/></svg></button>
+            <button class="iconbtn" data-s="notifications" title="Notifications"><svg class="ic"><use href="#i-bell"/></svg></button>
             <button class="iconbtn" title="Search"><svg class="ic"><use href="#i-search"/></svg></button>
             <button class="iconbtn" title="Members"><svg class="ic"><use href="#i-users"/></svg></button>
           </div>
@@ -854,6 +937,117 @@ input{font:inherit;color:inherit}
         <div class="composer"><div class="field"><button class="iconbtn" style="width:26px;height:26px"><svg class="ic sm"><use href="#i-clip"/></svg></button><input placeholder="Message mira"><button class="snd"><svg class="ic sm"><use href="#i-send"/></svg></button></div></div>
       </main>
     </div>
+
+    <!-- GROUP SETTINGS (admin) -->
+    <div class="screen" data-screen="settings" hidden>
+      <div class="settings">
+        <nav class="setnav">
+          <div class="sgh">Late Bloom LP</div>
+          <button data-setpanel="general" class="on"><svg class="ic sm"><use href="#i-settings"/></svg>General</button>
+          <button data-setpanel="channels"><svg class="ic sm"><use href="#i-hash"/></svg>Channels &amp; boards</button>
+          <button data-setpanel="members"><svg class="ic sm"><use href="#i-users"/></svg>Members</button>
+          <button data-setpanel="invites"><svg class="ic sm"><use href="#i-link"/></svg>Invite links</button>
+          <button data-setpanel="storage"><svg class="ic sm"><use href="#i-download"/></svg>Export &amp; storage</button>
+          <div class="sep"></div>
+          <button class="danger"><svg class="ic sm"><use href="#i-trash"/></svg>Delete group</button>
+        </nav>
+        <div class="setmain">
+          <div class="setpanel" data-panel="general">
+            <h2>General</h2><div class="h2sub">Admins only.</div>
+            <div class="frow"><label class="ulab">Group name</label><div class="field"><input value="Late Bloom LP"></div></div>
+            <div class="frow"><label class="ulab">Description</label><div class="field"><input value="a remote LP, producers and rappers"></div></div>
+            <div class="frow"><label class="ulab">Cover</label><div class="coverpick"><div class="cv"><svg class="ic"><use href="#i-image"/></svg></div><button class="btn sm"><svg class="ic sm"><use href="#i-image"/></svg>Upload</button></div></div>
+            <div class="dangerbox"><div class="t"><b>Delete this group</b><small>Removes every channel, board and canvas. Members keep their own copies of files they uploaded.</small></div><button class="btn danger"><svg class="ic sm"><use href="#i-trash"/></svg>Delete</button></div>
+          </div>
+          <div class="setpanel" data-panel="channels" hidden>
+            <h2>Channels &amp; boards</h2><div class="h2sub">Drag to reorder. Members see them in this order.</div>
+            <div class="setlist">
+              <div class="mtrow"><svg class="ic sm drag" style="color:var(--muted)"><use href="#i-drag"/></svg><svg class="ic sm" style="color:var(--muted)"><use href="#i-hash"/></svg><div class="info"><b>beats</b></div><span class="rolesel">text</span><button class="rm"><svg class="ic sm"><use href="#i-trash"/></svg></button></div>
+              <div class="mtrow"><svg class="ic sm drag" style="color:var(--muted)"><use href="#i-drag"/></svg><svg class="ic sm" style="color:var(--muted)"><use href="#i-hash"/></svg><div class="info"><b>mixing</b></div><span class="rolesel">text</span><button class="rm"><svg class="ic sm"><use href="#i-trash"/></svg></button></div>
+              <div class="mtrow"><svg class="ic sm drag" style="color:var(--muted)"><use href="#i-drag"/></svg><svg class="ic sm" style="color:var(--muted)"><use href="#i-board"/></svg><div class="info"><b>shot tasks</b></div><span class="rolesel">board</span><button class="rm"><svg class="ic sm"><use href="#i-trash"/></svg></button></div>
+              <div class="mtrow"><svg class="ic sm drag" style="color:var(--muted)"><use href="#i-drag"/></svg><svg class="ic sm" style="color:var(--muted)"><use href="#i-canvas"/></svg><div class="info"><b>sh040 review</b></div><span class="rolesel">canvas</span><button class="rm"><svg class="ic sm"><use href="#i-trash"/></svg></button></div>
+              <div class="mtrow"><svg class="ic sm drag" style="color:var(--muted)"><use href="#i-drag"/></svg><svg class="ic sm" style="color:var(--muted)"><use href="#i-voice"/></svg><div class="info"><b>the booth</b></div><span class="rolesel">voice</span><button class="rm"><svg class="ic sm"><use href="#i-trash"/></svg></button></div>
+            </div>
+            <button class="btn sm" style="margin-top:14px"><svg class="ic sm"><use href="#i-plus"/></svg>Add channel</button>
+          </div>
+          <div class="setpanel" data-panel="members" hidden>
+            <h2>Members</h2><div class="h2sub">6 members. Admins manage the group; members do everything else.</div>
+            <div class="setlist">
+              <div class="mtrow"><div class="av sm">JX</div><div class="info"><b>jax</b><small>@jax</small></div><span class="rolesel">Admin<svg class="ic sm"><use href="#i-chev"/></svg></span><button class="rm"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
+              <div class="mtrow"><div class="av sm">RA</div><div class="info"><b>rae</b><small>@rae</small></div><span class="rolesel">Admin<svg class="ic sm"><use href="#i-chev"/></svg></span><button class="rm"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
+              <div class="mtrow"><div class="av sm">DV</div><div class="info"><b>dev</b><small>@devmakesbeats</small></div><span class="rolesel">Member<svg class="ic sm"><use href="#i-chev"/></svg></span><button class="rm"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
+              <div class="mtrow"><div class="av sm">TM</div><div class="info"><b>tomo</b><small>@tomo</small></div><span class="rolesel">Member<svg class="ic sm"><use href="#i-chev"/></svg></span><button class="rm"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
+              <div class="mtrow"><div class="av sm">KO</div><div class="info"><b>kofi</b><small>@kofi</small></div><span class="rolesel">Member<svg class="ic sm"><use href="#i-chev"/></svg></span><button class="rm"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
+              <div class="mtrow"><div class="av sm">NL</div><div class="info"><b>nel</b><small>@nel</small></div><span class="rolesel">Member<svg class="ic sm"><use href="#i-chev"/></svg></span><button class="rm"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
+            </div>
+          </div>
+          <div class="setpanel" data-panel="invites" hidden>
+            <h2>Invite links</h2><div class="h2sub">Anyone with a link joins instantly. Revoke to cut one off.</div>
+            <div class="setlist">
+              <div class="invrow"><svg class="ic sm" style="color:var(--muted)"><use href="#i-link"/></svg><span class="lk">join.eski.lol/late-bloom-a1b2</span><span class="mt">12 uses · no expiry</span><button class="iconbtn" title="Copy"><svg class="ic sm"><use href="#i-copy"/></svg></button><button class="rm" title="Revoke"><svg class="ic sm"><use href="#i-trash"/></svg></button></div>
+              <div class="invrow"><svg class="ic sm" style="color:var(--muted)"><use href="#i-link"/></svg><span class="lk">join.eski.lol/lb-guest-9f3c</span><span class="mt">3 of 5 uses · 6d left</span><button class="iconbtn" title="Copy"><svg class="ic sm"><use href="#i-copy"/></svg></button><button class="rm" title="Revoke"><svg class="ic sm"><use href="#i-trash"/></svg></button></div>
+            </div>
+            <button class="btn sm" style="margin-top:14px"><svg class="ic sm"><use href="#i-plus"/></svg>New invite link</button>
+          </div>
+          <div class="setpanel" data-panel="storage" hidden>
+            <h2>Export &amp; storage</h2><div class="h2sub">Content is content-addressed, so an export is just a zip of the files plus their metadata.</div>
+            <div class="frow"><label class="ulab">Storage used</label><div class="bar"><i style="width:46%"></i></div><small style="color:var(--muted);font-size:var(--fs-xs)">9.2 GB of 20 GB</small></div>
+            <div class="dangerbox" style="margin-top:24px"><div class="t"><b>Export this group</b><small>Every file and its metadata, as a zip. Yours to keep, no lock-in.</small></div><button class="btn"><svg class="ic sm"><use href="#i-download"/></svg>Export</button></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CREATE GROUP -->
+    <div class="screen" data-screen="create" hidden>
+      <div class="onboard">
+        <div class="ocard">
+          <h1>Create a group</h1>
+          <div class="lead">A private studio. You invite people with a link; there is no public listing.</div>
+          <label class="ulab">Group name</label><div class="field"><input placeholder="e.g. Late Bloom LP"></div>
+          <label class="ulab">Cover <span style="font-weight:400;color:var(--muted)">optional</span></label>
+          <div class="coverpick"><div class="cv"><svg class="ic"><use href="#i-image"/></svg></div><button class="btn sm"><svg class="ic sm"><use href="#i-image"/></svg>Upload</button></div>
+          <label class="ulab">Starter channels</label>
+          <div class="starter"><span class="tag">general</span><span class="tag">wips</span><span class="tag">references</span><button class="addtag"><svg class="ic sm"><use href="#i-plus"/></svg></button></div>
+          <div class="magic"><svg class="ic sm" style="color:var(--muted)"><use href="#i-link"/></svg><span class="lk">An invite link is created with the group</span></div>
+          <div class="go"><button class="btn">Cancel</button><button class="btn primary">Create group</button></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- JOIN VIA MAGIC LINK -->
+    <div class="screen" data-screen="join" hidden>
+      <div class="onboard">
+        <div class="ocard">
+          <div class="jcover"><span class="jbadge"><svg class="ic sm"><use href="#i-users"/></svg>Specter, sh040</span></div>
+          <h1>Specter, sh040</h1>
+          <div class="lead">a vfx shot, on a deadline</div>
+          <div class="jmeta"><span class="stackav"><span class="av sm">MI</span><span class="av sm">LN</span><span class="av sm">SO</span><span class="av sm">JX</span></span>4 members</div>
+          <div class="invited"><svg class="ic sm" style="color:var(--muted)"><use href="#i-user"/></svg><span><b>mira</b> invited you to join</span></div>
+          <div class="go" style="margin-top:24px"><button class="btn primary" style="flex:1;justify-content:center">Join group</button></div>
+          <div class="lead" style="margin:14px 0 0;text-align:center">One click and you are in. No application, no approval.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- NOTIFICATIONS -->
+    <div class="screen" data-screen="notifications" hidden>
+      <div class="notif">
+        <div class="notifhd"><span class="t">Notifications</span>
+          <div class="ntabs"><a class="ntab on">All</a><a class="ntab">Mentions</a><a class="ntab">Unread</a></div>
+          <a class="mark">Mark all read</a></div>
+        <div class="notiflist">
+          <div class="ndate">Today</div>
+          <div class="nrow unread"><div class="nic"><svg class="ic sm"><use href="#i-at"/></svg></div><div class="nbd"><div class="ntx"><b>rae</b> mentioned you in <b>#beats</b></div><div class="nctx">Late Bloom LP</div><div class="quote">@jax can you re-cut the bridge drums before the session?</div></div><time>2:31 PM</time></div>
+          <div class="nrow unread"><div class="nic"><svg class="ic sm"><use href="#i-comment"/></svg></div><div class="nbd"><div class="ntx"><b>mira</b> left a comment on <b>sh040_comp.mov</b></div><div class="nctx">Specter, sh040 · canvas sh040 review</div><div class="quote">near building edge is ghosting, needs a garbage matte</div></div><time>1:04 PM</time></div>
+          <div class="nrow unread"><div class="nic"><svg class="ic sm"><use href="#i-version"/></svg></div><div class="nbd"><div class="ntx"><b>tomo</b> added <b>v3</b> to a post you follow</div><div class="nctx">Late Bloom LP · Back half rework</div><div class="quote">brought the low end down</div></div><time>12:20 PM</time></div>
+          <div class="ndate">Earlier</div>
+          <div class="nrow"><div class="nic"><svg class="ic sm"><use href="#i-board"/></svg></div><div class="nbd"><div class="ntx"><b>mira</b> assigned you <b>Low end on the bridge</b></div><div class="nctx">Specter, sh040 · shot tasks</div></div><time>Yesterday</time></div>
+          <div class="nrow"><div class="nic"><svg class="ic sm"><use href="#i-user"/></svg></div><div class="nbd"><div class="ntx"><b>nel</b> joined <b>Late Bloom LP</b> from your invite link</div><div class="nctx">Late Bloom LP</div></div><time>Tue</time></div>
+          <div class="nrow"><div class="nic"><svg class="ic sm"><use href="#i-smile"/></svg></div><div class="nbd"><div class="ntx"><b>dev</b> reacted 🔥 to your message</div><div class="nctx">Late Bloom LP · #beats</div></div><time>Tue</time></div>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -1028,6 +1222,15 @@ input{font:inherit;color:inherit}
 
   document.querySelectorAll('.visopt').forEach(function(o){o.addEventListener('click',function(){
     document.querySelectorAll('.visopt').forEach(function(x){x.classList.remove('on');});o.classList.add('on');});});
+
+  // group-settings sub-panel switching
+  document.querySelectorAll('.setnav [data-setpanel]').forEach(function(b){b.addEventListener('click',function(){
+    document.querySelectorAll('.setnav [data-setpanel]').forEach(function(x){x.classList.remove('on');});b.classList.add('on');
+    var name=b.dataset.setpanel;
+    document.querySelectorAll('.setpanel').forEach(function(p){p.hidden=p.dataset.panel!==name;});});});
+  // notification tabs (visual)
+  document.querySelectorAll('.ntabs .ntab').forEach(function(t){t.addEventListener('click',function(){
+    document.querySelectorAll('.ntabs .ntab').forEach(function(x){x.classList.remove('on');});t.classList.add('on');});});
 
   show('workspace');
 })();
