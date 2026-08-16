@@ -5,10 +5,14 @@ into a concrete plan: a feature list (each with a reason and the simplest
 idiotproof way to build it), a data-model sketch, the screens, and two full
 workflow walkthroughs. Nothing here is live yet.
 
-A clickable black-and-white mockup of the main screens lives at
-[`docs/design/collab-mockup.html`](design/collab-mockup.html), channels + chat,
-the following feed, the drawing/audio review canvas, profile, DMs, and upload
-with format conversion. Read this doc next to it.
+A clickable black-and-white mockup of every screen lives at
+[`docs/design/collab-mockup.html`](design/collab-mockup.html): workspace (channels,
+boards, canvases, media, chat, members), following feed, media explorer, review
+canvas, kanban board, call, details pane, profile, DMs, upload, group settings,
+create/join, notifications, search, quick switcher, thread view, channel pins,
+and profile popouts. Its tokens and components are documented 1:1 in
+[`docs/design/styleguide.html`](design/styleguide.html) (§8). Read this doc next
+to both.
 
 It's grounded in what eski already is (`ARCHITECTURE.md`, `schema-clean.sql`,
 `docs/design/STYLE.md`) and in how the reference apps actually work, Discord,
@@ -540,8 +544,231 @@ on a profile**, **per-group member colours**, three consistent visibility layers
   pipe from `ROADMAP.md`. When is yours.
 - **Still yours from `ROADMAP.md`, now load-bearing:** register the DMCA agent
   (private layers lower volume but safe harbour still needs the filing), and the
-  Supabase region (`eu-north-1`) if the collaborator audience isn't in Europe , 
+  Supabase region (`eu-north-1`) if the collaborator audience isn't in Europe;
   persistent chat and live calls make latency more noticeable than a feed did.
+
+---
+
+## 6. Build status and todo
+
+Nothing is live yet. This tracks the **mockup** (the design target) and the
+**parity** pass against Discord/Slack (from `BENCHMARK.md`). Backend for all of
+it is §7.
+
+### Core screens, all mocked 1:1 (the design target)
+Workspace (channel column of Media / Channels / Boards / Canvases / Voice, chat,
+members) · Feed · Media explorer (+ Collections) · Details pane · Canvas · Board ·
+Call · Profile · Messages · Upload (+ version mode) · Group settings · Create
+group · Join by link · Notifications.
+
+### Parity pass vs Discord/Slack (13, from `BENCHMARK.md`)
+1. Search results — **done** (mockup)
+2. Quick switcher (Cmd/Ctrl+K) — **done**
+3. Thread view — **done**
+4. Channel tabs + pinned messages (Pins / Files) — **done**
+5. Rich composer + message actions (formatting, emoji picker, message menu, typing, edited) — **done**
+6. Member / profile popout + status/presence — **done**
+7. Call upgrades (share controls, in-call chat/notes, layout toggle, speaking ring, reactions) — todo
+8. DMs upgrades (group DMs, friends/requests surface, mute/pin) — todo
+9. Notifications upgrades (inline reply, Threads tab, Saved/Later, per-group filters) — todo
+10. Group settings: moderation (bans/timeouts, audit log, per-channel settings) — todo
+11. Media explorer actions (grid actions, lightbox, "shared in") — todo
+12. Board upgrades (custom fields, views, due dates) — todo
+13. Sign-in / onboarding / username claim — todo
+
+### Owner decisions still open (see also §5)
+WebRTC provider (F14) · transcode scope audio-first vs video (F11) · member-colour
+palette size (F12a) · notifications email/push channel (F15) · DMCA agent + region.
+
+---
+
+## 7. Backend plan (hand-off ready)
+
+Everything below is derived from the mockup. Stack is unchanged: **Supabase**
+(Postgres + Auth + Realtime), **R2** for media behind `api/sign.mjs`, **Vercel**
+for pages/functions. The project's rule holds: **the RLS policy is the fence, the
+UI is the signpost** (`ARCHITECTURE.md`) — every table ships with RLS. Column adds
+are `add column if not exists`; new tables `create table if not exists`, mirroring
+`schema-clean.sql`. Build each unit at the smallest size that works, and prefer a
+proven package only where the DIY version is a real time-sink (§7.6).
+
+### 7.1 New tables
+Each row: purpose · columns · RLS summary. `uid()` = `(select auth.uid())`.
+
+| Table | Purpose | Columns (beyond `id uuid pk default gen_random_uuid()`, `created_at`) | RLS |
+|---|---|---|---|
+| `groups` | a studio | `slug uniq, name, description, cover_key, owner_id→auth.users` | read: `member_of(id)`; write: `is_group_admin(id)` |
+| `group_members` | membership + role + colour | `group_id, user_id, role in(admin,member), color smallint, status in(active), timeout_until timestamptz, joined_at, pk(group_id,user_id)` | read: `member_of(group_id)`; self-leave; admin manages |
+| `group_invites` | magic links | `code text pk, group_id, created_by, expires_at, max_uses int, uses int default 0` | read: admin; use via RPC |
+| `channels` | rooms | `group_id, name, kind in(text,voice,board), topic, slowmode_sec int default 0, position int` | read: `member_of(group_id)`; write: admin |
+| `messages` | persistent chat | `channel_id, user_id, body, parent_id→messages, also_to_channel bool, edited_at, deleted_at, body_tsv tsvector generated` | read: member; insert: member & not timed-out; update/delete own (tombstone) |
+| `message_reactions` | emoji reactions | `message_id, user_id, emoji text, pk(message_id,user_id,emoji)` | read: member; add/remove own |
+| `message_pins` | per-channel pins | `channel_id, message_id, pinned_by, pk(channel_id,message_id)` | read: member; write: member (mod can unpin any) |
+| `channel_reads` | unread/mention state | `user_id, channel_id, last_read_at, pk(user_id,channel_id)` | owner only |
+| `mentions` | @-index for badges | `message_id, mentioned_user, group_id` | read: mentioned user |
+| `boards` | kanban (a channel kind) | `group_id, name` | member read; admin write |
+| `board_columns` | columns | `board_id, name, position` | member read; admin write |
+| `board_cards` | cards | `column_id, title, label text, assignee_id, work_id null, scratchpad_id null, due_date date, fields jsonb, position` | member read/write; admin delete |
+| `scratchpads` | canvases | `owner_id, group_id null, title, visibility in(private,group,link), share_code text uniq null` | read: owner OR (group & member) OR (link & code); write: owner/member |
+| `scratchpad_items` | files on a canvas | `scratchpad_id, work_id, x,y,z, pk(scratchpad_id,work_id)` | follows scratchpad |
+| `annotations` | drawings on a tile | `scratchpad_id, work_id, author_id, tool in(pen,arrow,box,freeform), color smallint, path jsonb` | follows scratchpad |
+| `dm_channels` | 1:1 and group DMs | `is_group bool, name null` | member of it |
+| `dm_members` | who's in a DM | `dm_channel_id, user_id, muted bool, pinned bool, last_read_at, pk(...)` | self |
+| `dm_messages` | DM chat | mirrors `messages` (dm_channel_id, user_id, body, parent_id, edited_at, deleted_at) | member of the DM |
+| `friendships` | add-by-username | `a_user, b_user, status in(pending,accepted,blocked), requested_by, pk(a_user,b_user)` ordered pair | either party |
+| `notifications` | the bell | `user_id, kind in(mention,comment,version,board_assign,join,reaction,invite,friend), actor_id, group_id null, target_type, target_id, excerpt text, read_at` | owner only |
+| `saved_items` | Save / Later | `user_id, target_type, target_id, folder_id null→save_folders, pk(user_id,target_type,target_id)` | owner only |
+| `group_bans` | moderation | `group_id, user_id, banned_by, reason, until timestamptz null` | admin |
+| `audit_log` | moderation trail | `group_id, actor_id, action, target_type, target_id, meta jsonb` | admin read; server-written |
+
+**Already live, reused as-is:** `works`, `work_items`, `collections`,
+`collection_items`, `content_tags`, `comments`, `likes` (unused, keep dormant),
+`save_folders`/`save_folder_items`, `seen_marks`, `reports`, `follows`,
+`profiles`, `upload_quota`, `admins`/`is_admin()`, the rate-limit machinery.
+
+### 7.2 Columns added to existing tables
+```
+works.visibility    text in(public,personal,group) default 'public'   -- §0
+works.group_id      uuid null → groups
+works.title         text null                    -- F9 (file name is the default)
+works.file_ext      text                         -- F10 (icon + Type filter, not a tag)
+works.credits       text                         -- F8
+works.version_note  text                         -- F7 (required on a version)
+works.search_tsv    tsvector generated           -- title+tags+owner for search
+comments.mark       jsonb null                   -- F5 {point}|{box}|{path}|{t0,t1}|{frame}
+comments.context    text                         -- 'public' or a group_id, threads never mix
+comments.resolved_at timestamptz null            -- canvas comments resolve
+collections.group_id uuid null → groups          -- group Collections in the explorer
+profiles.status_emoji text / status_text text / status_expires_at timestamptz  -- custom status
+profiles.presence_state text in(online,idle,dnd,invisible) default 'online'
+profiles.tz         text                         -- local-time on the popout
+profiles.pronouns   text
+profiles.links      jsonb                         -- external connections on the popout
+```
+**Dropped:** `works_version_owner_guard` (anyone can add a version now, F7).
+
+### 7.3 RPCs, triggers, functions (all `security definer`, `search_path=public`)
+- `member_of(gid)` / `is_group_admin(gid)` — the two gate helpers every policy calls.
+- `join_via_invite(code)` — validate code (exists, not expired, uses<max) → insert `group_members` active, assign next free colour, `uses+1`; returns group. (Powers `/join/<code>`.)
+- `add_version(parent_id, media_key, ext, version_note)` — require `version_note`, require same `kind` as parent, insert `works` with `version_of`; for a multi-file batch the client calls it N times in order.
+- `mark_channel_read(channel_id)` — upsert `channel_reads.last_read_at=now()`.
+- `toggle_reaction(message_id, emoji)` — insert/delete `message_reactions`.
+- `pin_message(message_id)` / `unpin_message(message_id)`.
+- `create_dm(handle)` / `create_group_dm(handles[])` — resolve handles→users, find-or-create `dm_channels` + `dm_members`.
+- `add_friend(handle)` / `respond_friend(user, accept)` / `block_user(user)`.
+- `move_card(card_id, column_id, position)`.
+- `ban_member` / `timeout_member` / `kick_member` (admin) — each writes `audit_log`.
+- `export_manifest(group_id|'account')` — returns JSON of works+metadata; client fetches signed URLs and zips.
+- **Triggers:** `messages` fanout on insert → parse `@handle`, write `mentions` + `notifications`; `set edited_at` on body change; tombstone on `deleted_at`. `works` insert → maintain `search_tsv`. `comments` insert with a mention → `notifications`. Reuse `post_status_guard`, `comments_*` guards, `claim_rate` (comments/reports already rate-limited; extend to `messages` at e.g. 60/min).
+- **Kept as-is:** `file_report`, `delete_my_account`, `profiles_tombstone`, `claim_upload_quota`.
+
+### 7.4 Realtime (Supabase)
+| Channel | Mode | Carries |
+|---|---|---|
+| `group:{id}` | **Presence** | who's online + `{doing}` (Members rail, F16) |
+| `channel:{id}` | **Postgres Changes** | live `messages` insert/update/delete |
+| `channel:{id}:typing` | **Broadcast** | typing indicators (ephemeral, no table) |
+| `canvas:{id}` | **Broadcast** + Changes | live cursors (later) + `comments`/`annotations` |
+| `user:{id}` | **Postgres Changes** | `notifications` insert (the bell) |
+Add the relevant tables to the `supabase_realtime` publication.
+
+### 7.5 Server / edge functions
+- `api/sign.mjs` — **exists**, presigned R2 uploads. Unchanged.
+- `transcode` — audio on demand (F11). **Not** a Supabase Edge Function (no ffmpeg
+  there); a Vercel Node function with `ffmpeg-static`, or a tiny worker. Video is
+  a later, heavier call (Mux/Cloudflare Stream).
+- `notify` — email/push fanout off `notifications` (later; shares the CSAM-alert pipe).
+- Export can stay client-side (JSZip) reading `export_manifest`; move server-side only if zips get large.
+- WebRTC signaling is the provider's (LiveKit/Daily), not ours.
+
+### 7.6 Client packages: build vs buy (smallest unit each)
+| Unit | Decide | Why |
+|---|---|---|
+| Voice/video calls (F14) | **Buy: LiveKit** (cloud or self-host) | media/SFU stack is months of work; rooms key by channel/DM id |
+| Full-text search (#1) | **Build: Postgres FTS** (`tsvector` + GIN) | built in, enough for one group's scale; revisit Meilisearch only if it strains |
+| Emoji picker (#5) | **Buy: emoji-mart** (data + search) | emoji dataset + skin tones is not worth hand-rolling |
+| Message formatting (#5) | **Build tiny** | plain textarea + toolbar that inserts markdown; render with `marked` (small). No ProseMirror/Slate for v1 |
+| Mentions / channel autocomplete | **Build** | a prefix query over members/channels; trivial |
+| Drag-reorder (channels, cards, versions) | **Buy: SortableJS** | DnD edge cases (touch, autoscroll) are the time-sink |
+| Waveform render | **Build (already have)** | `generateWaveform()` exists and is theme-aware; keep |
+| Canvas draw / pan / zoom (F5) | **Build (already have)** | `artboard.html` has it; store paths as `annotations.path` |
+| Multiplayer cursors (later) | **Build** on Realtime Broadcast | small once Realtime is wired |
+| Zip export (F19) | **Buy: JSZip** | standard, client-side |
+| Local time / dates | **Build: `Intl`** | built in; store `profiles.tz` |
+| Quick switcher / shortcuts (#2) | **Build** | already mocked; a keydown map + fuzzy filter |
+| Invite codes | **Buy: `nanoid`** | 1-line, collision-safe short codes |
+| Transcode (F11) | **Buy the binary: `ffmpeg-static`**, glue is ours | don't reimplement codecs |
+| Rich profile / status / presence (#6) | **Build** | plain columns + Realtime presence |
+
+### 7.7 Indexes and search
+- GIN on `messages.body_tsv`, `works.search_tsv`; one `search_all(q, scope)` RPC
+  unions the three (messages, works, comments) with `ts_rank`, feeding screen #1
+  and the quick switcher. Modifiers (`from:`, `in:`, `has:`) parse client-side into
+  query args.
+- FK indexes on every `*_id` used in a policy or a join (`messages.channel_id`,
+  `board_cards.column_id`, `notifications.user_id, read_at`, `channel_reads`, …) —
+  same discipline as the existing `works_*_idx`.
+
+### 7.8 Migration order (each a re-runnable file, `schema-*.sql` convention)
+1. `groups`, `group_members`, `group_invites` + `member_of`/`is_group_admin`.
+2. `works` column adds + the rewritten `works_read` (§2) and mirrors on comments/tags.
+3. `channels`, `messages` (+tsv), `message_reactions`, `message_pins`, `channel_reads`, `mentions`.
+4. `comments.mark/context/resolved_at`; `annotations`; `scratchpads`/`scratchpad_items`.
+5. `boards`/`board_columns`/`board_cards`.
+6. `dm_channels`/`dm_members`/`dm_messages`; `friendships`.
+7. `notifications`; `saved_items`; message/comment→notification triggers.
+8. `profiles` additions (status, presence, tz, pronouns, links).
+9. moderation: `group_bans`, `audit_log`, `group_members.timeout_until`.
+10. RPCs (§7.3), FTS indexes (§7.7), grants, `notify pgrst 'reload schema'`, realtime publication.
+
+### 7.9 Per-screen backend checklist (so nothing is missed)
+- **Workspace** — `group_members`→rail; `channels`→column; `messages`+Realtime→chat; `channel_reads`→unread badges; `message_reactions`; Presence→members.
+- **Thread view** — `messages.parent_id`; `also_to_channel`.
+- **Channel Pins/Files** — `message_pins`; `works where group_id & channel` for Files.
+- **Search / quick switcher** — `search_all()` + FTS indexes.
+- **Feed** — `works` public by `follows`.
+- **Media explorer** — `works where group_id` + `collections where group_id`.
+- **Details pane** — `works` + `version_of`/`version_note` + `content_tags` + `comments(context)` + `saved_items` + transcode.
+- **Canvas** — `scratchpads`/`scratchpad_items` + `comments.mark` + `annotations` + Realtime.
+- **Board** — `boards`/`board_columns`/`board_cards` + `move_card`.
+- **Call** — LiveKit room per `channel/dm` id; Presence for who's in.
+- **Profile / popout** — `profiles` (status/tz/pronouns/links) + `group_members.role` + mutual groups (a join) + `friendships`.
+- **Messages** — `dm_channels`/`dm_members`/`dm_messages` + `friendships`.
+- **Group settings** — `channels`/`board_*` (manage), `group_members` (roles), `group_invites`, `group_bans`, `audit_log`, storage sum of `works.bytes`, `export_manifest`.
+- **Create / Join** — `groups` insert + `group_invites` + `join_via_invite`.
+- **Notifications** — `notifications` + Realtime `user:{id}`; inline reply reuses `messages`/`comments`.
+- **Sign-in / onboarding** — Supabase Auth + `onboarding.html` (exists) + unique `profiles.handle` claim.
+
+---
+
+## 8. Design tokens
+
+The mockup's tokens, and the live source of truth, are in
+[`docs/design/styleguide.html`](design/styleguide.html) — a self-contained page
+that renders every token and component **1:1 with the mockup** (same CSS, same
+embedded Jost, a light/dark toggle). When the live pages are built they consume
+these exact values; `docs/design/STYLE.md` is the older pre-collab pivot's guide
+and is superseded for the collab layer by the style guide.
+
+**Grounds (light → dark).** `--paper` #FCFCFC→#0E0E0E · `--surface` #F1F1F1→#181818
+· `--plate` #E7E7E7→#232323 · `--paper1` #E4E4E4→#242424 · `--railbg` #E6E6E6→#080808
+· `--tagbg` #DFDFDF→#2A2A2A.
+**Ink (four steps).** `--ink` #141414→#F0F0F0 · `--soft` #3A3A3A→#C6C6C6 · `--muted`
+#6B6B6B→#8C8C8C · `--on-ink` #FCFCFC→#0E0E0E.
+**Lines** (used only for the rare divider/field border). `--line` #DADADA→#2A2A2A ·
+`--line2` #C4C4C4→#3A3A3A.
+**Member colours** (the only hue, group-scoped, F12a) light→dark: `--m1`
+#B0503F→#D98A7A · `--m2` #A9791F→#D6B26B · `--m3` #3F7A4E→#82BE91 · `--m4`
+#2F7480→#6FB9C4 · `--m5` #3F65A6→#89A6D6 · `--m6` #77558F→#B294C7.
+**Type** — Jost only. Scale: `--fs-mi` 11 · `--fs-xs` 12 · `--fs-sm` 13 · `--fs`
+14.5 · `--fs-lg` 16 · `--fs-xl` 20. Weights 400/600/700. Sentence case everywhere.
+**Space** — 4px scale: `--s1` 4 · `--s2` 8 · `--s3` 12 · `--s4` 16 · `--s5` 24.
+**Shape** — `--r` 3px on chrome; media stays square. **Motion** — `--t` 150ms ease.
+**Layout widths** — `--rail` 58 · `--chan` 232 · `--mem` 210.
+**Rules that are not tokens:** "on/selected/primary" is an **ink fill** (not a
+colour); surfaces separate by **background step**, not borders (the one exception
+is an interactive **field**, which gets a `--line2` border for affordance); the
+Like state is retired; icons are monochrome inline SVG.
 
 ---
 
