@@ -398,6 +398,7 @@ input{font:inherit;color:inherit}
 <symbol id="i-version" viewBox="0 0 24 24"><path d="M12 3v6M12 21a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM6 9a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm12 0a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM6 9v3a3 3 0 0 0 3 3h6a3 3 0 0 0 3-3V9"/></symbol>
 <symbol id="i-link" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></symbol>
 <symbol id="i-pin" viewBox="0 0 24 24"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/></symbol>
+<symbol id="i-hand" viewBox="0 0 24 24"><path d="M9 11V5.5a1.5 1.5 0 0 1 3 0V10M12 10V4a1.5 1.5 0 0 1 3 0v6M15 10V6a1.5 1.5 0 0 1 3 0v7a6 6 0 0 1-6 6h-1a6 6 0 0 1-5-2.7l-2.3-3.5a1.5 1.5 0 0 1 2.5-1.6L9 13V6a1.5 1.5 0 0 1 3 0"/></symbol>
 </defs></svg>
 
 <style>
@@ -642,6 +643,35 @@ input{font:inherit;color:inherit}
 .ppop .prole{display:inline-flex;align-items:center;gap:6px;background:var(--surface);border-radius:var(--r);padding:3px 9px;font-size:var(--fs-xs);font-weight:600}
 .ppop .ppacts{display:flex;gap:8px;margin-top:14px}
 .ppop .ppacts .btn{flex:1;justify-content:center}
+
+/* call upgrades */
+.vc{position:relative}
+.vchd .lt{margin-left:14px;display:flex;gap:2px;background:#242424;border-radius:6px;padding:3px}
+.vchd .lt button{width:30px;height:24px;display:grid;place-items:center;border-radius:4px;color:#9a9a9a}
+.vchd .lt button:hover{color:#ededed}.vchd .lt button.on{background:#3a3a3a;color:#ededed}
+.vcsharebar{position:absolute;top:10px;left:50%;transform:translateX(-50%);display:flex;gap:4px;background:rgba(18,18,18,.8);border-radius:8px;padding:5px;z-index:2}
+.vcsharebar button{display:flex;align-items:center;gap:6px;color:#ededed;font-size:var(--fs-xs);padding:5px 9px;border-radius:5px}
+.vcsharebar button:hover{background:rgba(255,255,255,.12)}
+.vcsharebar .stop{color:#e8a99b}.vcsharebar .ic{width:14px;height:14px}
+.vtile.speaking{outline:2px solid #dfe6ea;outline-offset:-2px}
+.vtile .vhand{position:absolute;top:6px;left:6px;background:rgba(20,20,20,.6);color:#ededed;border-radius:5px;padding:3px;display:grid;place-items:center}
+.vtile .vhand .ic{width:14px;height:14px}
+.vtile .vmore{position:absolute;top:6px;right:6px;color:#cfcfcf;opacity:0;width:24px;height:24px;display:grid;place-items:center;border-radius:4px}
+.vtile:hover .vmore{opacity:1}.vtile .vmore:hover{background:rgba(255,255,255,.14)}
+.vcpanel{flex:none;width:280px;background:#161616;display:flex;flex-direction:column;border-radius:4px;overflow:hidden}
+.vcptabs{display:flex;gap:2px;padding:8px;background:#1c1c1c}
+.vcptabs button{flex:1;padding:7px;border-radius:4px;color:#9a9a9a;font-size:var(--fs-sm)}
+.vcptabs button.on{background:#2a2a2a;color:#ededed;font-weight:600}
+.vcpbody{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:12px}
+.vcpbody[hidden]{display:none}
+.vcpmsg .by{font-size:var(--fs-mi);color:#8f8f8f}.vcpmsg .tx{font-size:var(--fs-sm);color:#dcdcdc;margin-top:2px}
+.vcpnote{font-size:var(--fs-sm);color:#c9c9c9;line-height:1.7}
+.vcpcompose{padding:10px;background:#1c1c1c}
+.vcpcompose input{width:100%;background:#2a2a2a;border:0;border-radius:5px;padding:8px 10px;color:#ededed;font-size:var(--fs-sm);outline:none}
+.vcreacts{position:absolute;bottom:74px;left:50%;transform:translateX(-50%);display:none;gap:4px;background:#1c1c1c;border-radius:12px;padding:8px;z-index:4;box-shadow:0 8px 30px rgba(0,0,0,.5)}
+.vcreacts.open{display:flex}
+.vcreacts button{font-size:20px;padding:4px 7px;border-radius:8px;line-height:1}
+.vcreacts button:hover{background:#2a2a2a}
 </style>
 
 <div class="proto">
@@ -999,9 +1029,12 @@ input{font:inherit;color:inherit}
     <!-- CALL (voice / video) -->
     <div class="screen" data-screen="vc" hidden>
       <div class="vc">
-        <div class="vchd"><svg class="ic"><use href="#i-voice"/></svg><span class="t">the booth</span><span class="sub">Late Bloom LP</span><span class="cnt">4 in call · 08:12</span></div>
+        <div class="vchd"><svg class="ic"><use href="#i-voice"/></svg><span class="t">the booth</span><span class="sub">Late Bloom LP</span>
+          <div class="lt"><button class="on" title="Grid"><svg class="ic sm"><use href="#i-grid"/></svg></button><button title="Focus the share"><svg class="ic sm"><use href="#i-screen"/></svg></button></div>
+          <span class="cnt">4 in call · 08:12</span></div>
         <div class="vcstage">
           <div class="vcshare">
+            <div class="vcsharebar"><button class="stop"><svg class="ic"><use href="#i-screen"/></svg>Stop sharing</button><button><svg class="ic"><use href="#i-pen"/></svg>Annotate</button><button>HD</button></div>
             <div class="daw">
               <div class="lane"><i style="left:4%;width:22%"></i><i style="left:30%;width:14%"></i><i style="left:50%;width:30%"></i></div>
               <div class="lane"><i style="left:8%;width:40%"></i><i style="left:56%;width:18%"></i></div>
@@ -1012,19 +1045,36 @@ input{font:inherit;color:inherit}
             <div class="lbl"><svg class="ic sm"><use href="#i-screen"/></svg>dev is sharing FL Studio</div>
           </div>
           <div class="vcstrip">
-            <div class="vtile cam"><div class="vnm" style="color:var(--m5)">jax</div></div>
-            <div class="vtile"><div class="vav">RA</div><div class="vnm" style="color:var(--m1)">rae</div></div>
-            <div class="vtile"><div class="vav">DV</div><div class="vnm" style="color:var(--m3)">dev</div></div>
-            <div class="vtile"><div class="vav">TM</div><div class="vnm" style="color:var(--m2)">tomo</div><span class="vmute"><svg class="ic sm"><use href="#i-mic-off"/></svg></span></div>
+            <div class="vtile cam speaking"><div class="vnm" style="color:var(--m5)">jax</div><button class="vmore"><svg class="ic sm"><use href="#i-more"/></svg></button></div>
+            <div class="vtile"><div class="vav">RA</div><div class="vnm" style="color:var(--m1)">rae</div><button class="vmore"><svg class="ic sm"><use href="#i-more"/></svg></button></div>
+            <div class="vtile"><div class="vav">DV</div><div class="vnm" style="color:var(--m3)">dev</div><button class="vmore"><svg class="ic sm"><use href="#i-more"/></svg></button></div>
+            <div class="vtile"><span class="vhand"><svg class="ic sm"><use href="#i-hand"/></svg></span><div class="vav">TM</div><div class="vnm" style="color:var(--m2)">tomo</div><span class="vmute"><svg class="ic sm"><use href="#i-mic-off"/></svg></span></div>
           </div>
+          <aside class="vcpanel" id="vcPanel" hidden>
+            <div class="vcptabs"><button class="on" data-vctab="chat">Chat</button><button data-vctab="notes">Notes</button></div>
+            <div class="vcpbody" data-vcview="chat">
+              <div class="vcpmsg"><div class="by">rae</div><div class="tx">can you loop the bridge?</div></div>
+              <div class="vcpmsg"><div class="by">dev</div><div class="tx">yep, looping now</div></div>
+              <div class="vcpmsg"><div class="by">jax</div><div class="tx">low end sounds way better already</div></div>
+            </div>
+            <div class="vcpbody" data-vcview="notes" hidden>
+              <div class="vcpnote"><b style="color:#ededed">Booth notes</b><br>· re-cut bridge drums (dev)<br>· pull low end 2db (tomo)<br>· rae retracks the hook<br>· rough bounce by Fri</div>
+            </div>
+            <div class="vcpcompose"><input placeholder="Message the call"></div>
+          </aside>
         </div>
         <div class="vcbar">
           <button class="vcbtn on" title="Mic"><svg class="ic"><use href="#i-mic"/></svg></button>
+          <button class="vcbtn" title="Deafen"><svg class="ic"><use href="#i-voice"/></svg></button>
           <button class="vcbtn" title="Camera"><svg class="ic"><use href="#i-camera"/></svg></button>
           <button class="vcbtn on" title="Share screen"><svg class="ic"><use href="#i-screen"/></svg></button>
+          <button class="vcbtn" id="vcReactBtn" title="React"><svg class="ic"><use href="#i-smile"/></svg></button>
+          <button class="vcbtn" title="Raise hand"><svg class="ic"><use href="#i-hand"/></svg></button>
+          <button class="vcbtn" id="vcChatBtn" title="Chat and notes"><svg class="ic"><use href="#i-comment"/></svg></button>
           <button class="vcbtn" title="Participants"><svg class="ic"><use href="#i-users"/></svg></button>
           <button class="vcbtn leave" title="Leave"><svg class="ic"><use href="#i-leave"/></svg></button>
         </div>
+        <div class="vcreacts" id="vcReacts"><button>🔥</button><button>👏</button><button>❤️</button><button>😂</button><button>🎉</button><button>🙌</button></div>
       </div>
     </div>
 
@@ -1555,6 +1605,16 @@ input{font:inherit;color:inherit}
     else if(e.key==='ArrowUp'){e.preventDefault();qsel(-1);}
     else if(e.key==='Enter'){e.preventDefault();var s=qs.querySelector('.qrow.sel');if(s)s.click();}
   });
+
+  // call: chat/notes panel, reactions, tabs
+  var vcPanel=document.getElementById('vcPanel'),vcReacts=document.getElementById('vcReacts');
+  var vcChatBtn=document.getElementById('vcChatBtn'),vcReactBtn=document.getElementById('vcReactBtn');
+  if(vcChatBtn)vcChatBtn.addEventListener('click',function(){var open=vcPanel.hidden;vcPanel.hidden=!open;vcChatBtn.classList.toggle('on',open);});
+  if(vcReactBtn)vcReactBtn.addEventListener('click',function(e){e.stopPropagation();vcReacts.classList.toggle('open');});
+  document.addEventListener('click',function(e){if(vcReacts&&!e.target.closest('#vcReacts')&&!e.target.closest('#vcReactBtn'))vcReacts.classList.remove('open');});
+  document.querySelectorAll('.vcptabs button').forEach(function(b){b.addEventListener('click',function(){
+    document.querySelectorAll('.vcptabs button').forEach(function(x){x.classList.remove('on');});b.classList.add('on');
+    var v=b.dataset.vctab;document.querySelectorAll('.vcpbody').forEach(function(p){p.hidden=p.dataset.vcview!==v;});});});
 
   // profile popout (click a member, or the review button)
   var ppop=document.getElementById('profilePop');
