@@ -490,6 +490,35 @@ input{font:inherit;color:inherit}
 .invrow .mt{color:var(--muted);font-size:var(--fs-xs);flex:none}
 .bar{height:9px;background:var(--plate);border-radius:999px;overflow:hidden;max-width:560px;margin:6px 0}
 .bar i{display:block;height:100%;background:var(--ink)}
+/* moderation, audit log, per-channel settings (gap #10) */
+.subh{font-size:var(--fs-sm);font-weight:600;color:var(--ink);margin:var(--s5) 0 var(--s2)}
+.subh:first-child{margin-top:0}
+.subh .mut{color:var(--muted);font-weight:400;font-size:var(--fs-xs);margin-left:6px}
+.mtrow .mmeta{color:var(--muted);font-size:var(--fs-xs);flex:none;text-align:right}
+.mtrow .info small.warn{color:var(--m1)}
+/* a plain on/off switch; ink fill is "on", per the interaction rules */
+.tgl{width:34px;height:20px;border-radius:10px;background:var(--line2);position:relative;flex:none;cursor:pointer;transition:background var(--t)}
+.tgl::after{content:"";position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:var(--paper);transition:transform var(--t)}
+.tgl.on{background:var(--ink)}.tgl.on::after{transform:translateX(14px)}
+/* channel-settings gear: its own icon button, so it never picks up the
+   ink-fill of .iconbtn.on when the drawer is expanded (that read as a black box) */
+.chsetbtn{width:32px;height:32px;display:grid;place-items:center;border-radius:var(--r);color:var(--muted);transition:background var(--t)}
+.chsetbtn:hover{background:var(--plate);color:var(--ink)}.chsetbtn.on{color:var(--ink)}
+/* the per-channel settings drawer that a channel row expands into */
+.chset{display:none;max-width:660px;margin:2px 0 var(--s3) 34px;padding:var(--s3) var(--s4);background:var(--surface);border-radius:var(--r)}
+.chset.open{display:block}
+.chset .cr{display:flex;align-items:center;gap:var(--s3);padding:7px 0}
+.chset .cr .cl{flex:1;min-width:0}.chset .cr .cl b{font-size:var(--fs-sm);font-weight:600;display:block}.chset .cr .cl small{color:var(--muted);font-size:var(--fs-xs)}
+.chset .selpill{display:inline-flex;align-items:center;gap:6px;background:var(--plate);border-radius:var(--r);padding:6px 10px;font-size:var(--fs-xs);color:var(--soft)}
+/* audit log: one action per row, monospace-free, time on the right */
+.auditrow{display:flex;gap:var(--s3);align-items:flex-start;padding:10px var(--s2);border-radius:var(--r)}
+.auditrow:hover{background:var(--surface)}
+.auditrow .aic{flex:none;width:28px;height:28px;border-radius:50%;background:var(--surface);color:var(--soft);display:grid;place-items:center}
+.auditrow:hover .aic{background:var(--plate)}
+.auditrow .abd{flex:1;min-width:0}
+.auditrow .atx{font-size:var(--fs-sm);color:var(--soft)}.auditrow .atx b{color:var(--ink);font-weight:600}
+.auditrow .actx{font-size:var(--fs-xs);color:var(--muted);margin-top:2px}
+.auditrow time{font-size:var(--fs-xs);color:var(--muted);flex:none}
 
 /* onboarding: create / join */
 .onboard{flex:1;min-width:0;overflow-y:auto;background:var(--surface);display:flex;justify-content:center;padding:var(--s6) var(--s4)}
@@ -1257,6 +1286,8 @@ input{font:inherit;color:inherit}
           <button data-setpanel="general" class="on"><svg class="ic sm"><use href="#i-settings"/></svg>General</button>
           <button data-setpanel="channels"><svg class="ic sm"><use href="#i-hash"/></svg>Channels &amp; boards</button>
           <button data-setpanel="members"><svg class="ic sm"><use href="#i-users"/></svg>Members</button>
+          <button data-setpanel="moderation"><svg class="ic sm"><use href="#i-hand"/></svg>Moderation</button>
+          <button data-setpanel="audit"><svg class="ic sm"><use href="#i-refresh"/></svg>Audit log</button>
           <button data-setpanel="invites"><svg class="ic sm"><use href="#i-link"/></svg>Invite links</button>
           <button data-setpanel="storage"><svg class="ic sm"><use href="#i-download"/></svg>Export &amp; storage</button>
           <div class="sep"></div>
@@ -1271,15 +1302,73 @@ input{font:inherit;color:inherit}
             <div class="dangerbox"><div class="t"><b>Delete this group</b><small>Removes every channel, board and canvas. Members keep their own copies of files they uploaded.</small></div><button class="btn danger"><svg class="ic sm"><use href="#i-trash"/></svg>Delete</button></div>
           </div>
           <div class="setpanel" data-panel="channels" hidden>
-            <h2>Channels &amp; boards</h2><div class="h2sub">Drag to reorder. Members see them in this order.</div>
+            <h2>Channels &amp; boards</h2><div class="h2sub">Drag to reorder. Members see them in this order. Open a channel's settings for who can post, slow mode and privacy.</div>
             <div class="setlist">
-              <div class="mtrow"><svg class="ic sm drag" style="color:var(--muted)"><use href="#i-drag"/></svg><svg class="ic sm" style="color:var(--muted)"><use href="#i-hash"/></svg><div class="info"><b>beats</b></div><span class="rolesel">text</span><button class="rm"><svg class="ic sm"><use href="#i-trash"/></svg></button></div>
-              <div class="mtrow"><svg class="ic sm drag" style="color:var(--muted)"><use href="#i-drag"/></svg><svg class="ic sm" style="color:var(--muted)"><use href="#i-hash"/></svg><div class="info"><b>mixing</b></div><span class="rolesel">text</span><button class="rm"><svg class="ic sm"><use href="#i-trash"/></svg></button></div>
-              <div class="mtrow"><svg class="ic sm drag" style="color:var(--muted)"><use href="#i-drag"/></svg><svg class="ic sm" style="color:var(--muted)"><use href="#i-board"/></svg><div class="info"><b>shot tasks</b></div><span class="rolesel">board</span><button class="rm"><svg class="ic sm"><use href="#i-trash"/></svg></button></div>
-              <div class="mtrow"><svg class="ic sm drag" style="color:var(--muted)"><use href="#i-drag"/></svg><svg class="ic sm" style="color:var(--muted)"><use href="#i-canvas"/></svg><div class="info"><b>sh040 review</b></div><span class="rolesel">canvas</span><button class="rm"><svg class="ic sm"><use href="#i-trash"/></svg></button></div>
-              <div class="mtrow"><svg class="ic sm drag" style="color:var(--muted)"><use href="#i-drag"/></svg><svg class="ic sm" style="color:var(--muted)"><use href="#i-voice"/></svg><div class="info"><b>the booth</b></div><span class="rolesel">voice</span><button class="rm"><svg class="ic sm"><use href="#i-trash"/></svg></button></div>
+              <div class="chwrap">
+                <div class="mtrow"><svg class="ic sm drag" style="color:var(--muted)"><use href="#i-drag"/></svg><svg class="ic sm" style="color:var(--muted)"><use href="#i-hash"/></svg><div class="info"><b>beats</b></div><span class="rolesel">text</span><button class="chsetbtn" title="Channel settings"><svg class="ic sm"><use href="#i-settings"/></svg></button><button class="rm"><svg class="ic sm"><use href="#i-trash"/></svg></button></div>
+                <div class="chset">
+                  <div class="cr"><div class="cl"><b>Who can post</b><small>Everyone can read; posting can be limited to admins.</small></div><span class="selpill">Everyone<svg class="ic sm"><use href="#i-chev"/></svg></span></div>
+                  <div class="cr"><div class="cl"><b>Slow mode</b><small>One message per member per interval.</small></div><span class="selpill">Off<svg class="ic sm"><use href="#i-chev"/></svg></span></div>
+                  <div class="cr"><div class="cl"><b>Private channel</b><small>Only invited members see it in the rail.</small></div><span class="tgl"></span></div>
+                </div>
+              </div>
+              <div class="chwrap">
+                <div class="mtrow"><svg class="ic sm drag" style="color:var(--muted)"><use href="#i-drag"/></svg><svg class="ic sm" style="color:var(--muted)"><use href="#i-hash"/></svg><div class="info"><b>mixing</b></div><span class="rolesel">text</span><button class="chsetbtn" title="Channel settings"><svg class="ic sm"><use href="#i-settings"/></svg></button><button class="rm"><svg class="ic sm"><use href="#i-trash"/></svg></button></div>
+                <div class="chset">
+                  <div class="cr"><div class="cl"><b>Who can post</b><small>Everyone can read; posting can be limited to admins.</small></div><span class="selpill">Everyone<svg class="ic sm"><use href="#i-chev"/></svg></span></div>
+                  <div class="cr"><div class="cl"><b>Slow mode</b><small>One message per member per interval.</small></div><span class="selpill">30s<svg class="ic sm"><use href="#i-chev"/></svg></span></div>
+                  <div class="cr"><div class="cl"><b>Private channel</b><small>Only invited members see it in the rail.</small></div><span class="tgl"></span></div>
+                </div>
+              </div>
+              <div class="chwrap">
+                <div class="mtrow"><svg class="ic sm drag" style="color:var(--muted)"><use href="#i-drag"/></svg><svg class="ic sm" style="color:var(--muted)"><use href="#i-board"/></svg><div class="info"><b>shot tasks</b></div><span class="rolesel">board</span><button class="chsetbtn" title="Channel settings"><svg class="ic sm"><use href="#i-settings"/></svg></button><button class="rm"><svg class="ic sm"><use href="#i-trash"/></svg></button></div>
+                <div class="chset">
+                  <div class="cr"><div class="cl"><b>Who can edit</b><small>Admins always can; members can be read only.</small></div><span class="selpill">Members<svg class="ic sm"><use href="#i-chev"/></svg></span></div>
+                  <div class="cr"><div class="cl"><b>Private board</b><small>Only invited members see it in the rail.</small></div><span class="tgl on"></span></div>
+                </div>
+              </div>
+              <div class="chwrap">
+                <div class="mtrow"><svg class="ic sm drag" style="color:var(--muted)"><use href="#i-drag"/></svg><svg class="ic sm" style="color:var(--muted)"><use href="#i-canvas"/></svg><div class="info"><b>sh040 review</b></div><span class="rolesel">canvas</span><button class="chsetbtn" title="Channel settings"><svg class="ic sm"><use href="#i-settings"/></svg></button><button class="rm"><svg class="ic sm"><use href="#i-trash"/></svg></button></div>
+                <div class="chset">
+                  <div class="cr"><div class="cl"><b>Who can comment</b><small>Pins and threads on the canvas.</small></div><span class="selpill">Everyone<svg class="ic sm"><use href="#i-chev"/></svg></span></div>
+                  <div class="cr"><div class="cl"><b>Private canvas</b><small>Only invited members see it in the rail.</small></div><span class="tgl"></span></div>
+                </div>
+              </div>
+              <div class="chwrap">
+                <div class="mtrow"><svg class="ic sm drag" style="color:var(--muted)"><use href="#i-drag"/></svg><svg class="ic sm" style="color:var(--muted)"><use href="#i-voice"/></svg><div class="info"><b>the booth</b></div><span class="rolesel">voice</span><button class="chsetbtn" title="Channel settings"><svg class="ic sm"><use href="#i-settings"/></svg></button><button class="rm"><svg class="ic sm"><use href="#i-trash"/></svg></button></div>
+                <div class="chset">
+                  <div class="cr"><div class="cl"><b>Who can speak</b><small>Others join muted and request to speak.</small></div><span class="selpill">Everyone<svg class="ic sm"><use href="#i-chev"/></svg></span></div>
+                  <div class="cr"><div class="cl"><b>User limit</b><small>Cap how many can join at once.</small></div><span class="selpill">8<svg class="ic sm"><use href="#i-chev"/></svg></span></div>
+                </div>
+              </div>
             </div>
             <button class="btn sm" style="margin-top:14px"><svg class="ic sm"><use href="#i-plus"/></svg>Add channel</button>
+          </div>
+          <div class="setpanel" data-panel="moderation" hidden>
+            <h2>Moderation</h2><div class="h2sub">Timeouts silence a member for a while; a ban removes them and blocks their account from rejoining on any invite link.</div>
+            <div class="subh">Active timeouts<span class="mut">2</span></div>
+            <div class="setlist">
+              <div class="mtrow"><div class="av sm">KO</div><div class="info"><b>kofi</b><small class="warn">spamming #beats, muted by rae</small></div><span class="mmeta">ends in 3h 40m</span><button class="btn sm">Lift</button></div>
+              <div class="mtrow"><div class="av sm">NL</div><div class="info"><b>nel</b><small class="warn">reposting the leak, muted by jax</small></div><span class="mmeta">ends in 22h</span><button class="btn sm">Lift</button></div>
+            </div>
+            <div class="subh">Banned<span class="mut">1</span></div>
+            <div class="setlist">
+              <div class="mtrow"><div class="av sm">ZZ</div><div class="info"><b>zane</b><small class="warn">leaked the sh040 cut, banned by jax</small></div><span class="mmeta">Aug 9</span><button class="btn sm">Unban</button></div>
+            </div>
+            <div class="subh">Take action</div>
+            <div class="frow" style="max-width:660px"><div class="field"><svg class="ic sm"><use href="#i-user"/></svg><input placeholder="Member to time out or ban"></div></div>
+            <div style="display:flex;gap:8px"><button class="btn sm"><svg class="ic sm"><use href="#i-hand"/></svg>Time out</button><button class="btn sm danger"><svg class="ic sm"><use href="#i-leave"/></svg>Ban</button></div>
+          </div>
+          <div class="setpanel" data-panel="audit" hidden>
+            <h2>Audit log</h2><div class="h2sub">Every admin action, newest first. Kept 90 days.</div>
+            <div class="setlist">
+              <div class="auditrow"><div class="aic"><svg class="ic sm"><use href="#i-hand"/></svg></div><div class="abd"><div class="atx"><b>rae</b> timed out <b>kofi</b> for 4h</div><div class="actx">reason: spamming #beats</div></div><time>2:44 PM</time></div>
+              <div class="auditrow"><div class="aic"><svg class="ic sm"><use href="#i-hash"/></svg></div><div class="abd"><div class="atx"><b>jax</b> set <b>#mixing</b> slow mode to 30s</div><div class="actx">channel settings</div></div><time>1:10 PM</time></div>
+              <div class="auditrow"><div class="aic"><svg class="ic sm"><use href="#i-users"/></svg></div><div class="abd"><div class="atx"><b>jax</b> changed <b>dev</b> to Member</div><div class="actx">was Admin</div></div><time>11:52 AM</time></div>
+              <div class="auditrow"><div class="aic"><svg class="ic sm"><use href="#i-leave"/></svg></div><div class="abd"><div class="atx"><b>jax</b> banned <b>zane</b></div><div class="actx">reason: leaked the sh040 cut</div></div><time>Aug 9</time></div>
+              <div class="auditrow"><div class="aic"><svg class="ic sm"><use href="#i-link"/></svg></div><div class="abd"><div class="atx"><b>rae</b> revoked an invite link</div><div class="actx">join.eski.lol/lb-open-77 · 41 uses</div></div><time>Aug 8</time></div>
+              <div class="auditrow"><div class="aic"><svg class="ic sm"><use href="#i-settings"/></svg></div><div class="abd"><div class="atx"><b>jax</b> made <b>shot tasks</b> private</div><div class="actx">channel settings</div></div><time>Aug 7</time></div>
+            </div>
           </div>
           <div class="setpanel" data-panel="members" hidden>
             <h2>Members</h2><div class="h2sub">6 members. Admins manage the group; members do everything else.</div>
@@ -1701,6 +1790,12 @@ input{font:inherit;color:inherit}
     document.querySelectorAll('.setnav [data-setpanel]').forEach(function(x){x.classList.remove('on');});b.classList.add('on');
     var name=b.dataset.setpanel;
     document.querySelectorAll('.setpanel').forEach(function(p){p.hidden=p.dataset.panel!==name;});});});
+  // per-channel settings: gear expands the channel's own drawer
+  document.querySelectorAll('.chwrap .chsetbtn').forEach(function(b){b.addEventListener('click',function(e){e.stopPropagation();
+    var d=b.closest('.chwrap').querySelector('.chset');if(!d)return;
+    var open=d.classList.toggle('open');b.classList.toggle('on',open);});});
+  // on/off switches (private channel, etc.)
+  document.querySelectorAll('.tgl').forEach(function(t){t.addEventListener('click',function(e){e.stopPropagation();t.classList.toggle('on');});});
   // notification tabs: switch panels (All / Mentions / Threads / Saved)
   document.querySelectorAll('.ntabs .ntab').forEach(function(t){t.addEventListener('click',function(){
     document.querySelectorAll('.ntabs .ntab').forEach(function(x){x.classList.remove('on');});t.classList.add('on');
