@@ -562,19 +562,19 @@ Call · Profile · Messages · Upload (+ version mode) · Group settings · Crea
 group · Join by link · Notifications.
 
 ### Parity pass vs Discord/Slack (13, from `BENCHMARK.md`)
-1. Search results — **done** (mockup)
-2. Quick switcher (Cmd/Ctrl+K) — **done**
-3. Thread view — **done**
-4. Channel tabs + pinned messages (Pins / Files) — **done**
-5. Rich composer + message actions (formatting, emoji picker, message menu, typing, edited) — **done**
-6. Member / profile popout + status/presence — **done**
-7. Call upgrades (share controls, in-call chat/notes, layout toggle, speaking ring, reactions) — todo
-8. DMs upgrades (group DMs, friends/requests surface, mute/pin) — todo
-9. Notifications upgrades (inline reply, Threads tab, Saved/Later, per-group filters) — todo
-10. Group settings: moderation (bans/timeouts, audit log, per-channel settings) — todo
-11. Media explorer actions (grid actions, lightbox, "shared in") — todo
-12. Board upgrades (custom fields, views, due dates) — todo
-13. Sign-in / onboarding / username claim — todo
+1. Search results · **done** (mockup)
+2. Quick switcher (Cmd/Ctrl+K) · **done**
+3. Thread view · **done**
+4. Channel tabs + pinned messages (Pins / Files) · **done**
+5. Rich composer + message actions (formatting, emoji picker, message menu, typing, edited) · **done**
+6. Member / profile popout + status/presence · **done**
+7. Call upgrades (share controls, in-call chat/notes, layout toggle, speaking ring, reactions) · todo
+8. DMs upgrades (group DMs, friends/requests surface, mute/pin) · todo
+9. Notifications upgrades (inline reply, Threads tab, Saved/Later, per-group filters) · todo
+10. Group settings: moderation (bans/timeouts, audit log, per-channel settings) · todo
+11. Media explorer actions (grid actions, lightbox, "shared in") · todo
+12. Board upgrades (custom fields, views, due dates) · todo
+13. Sign-in / onboarding / username claim · todo
 
 ### Owner decisions still open (see also §5)
 WebRTC provider (F14) · transcode scope audio-first vs video (F11) · member-colour
@@ -587,7 +587,7 @@ palette size (F12a) · notifications email/push channel (F15) · DMCA agent + re
 Everything below is derived from the mockup. Stack is unchanged: **Supabase**
 (Postgres + Auth + Realtime), **R2** for media behind `api/sign.mjs`, **Vercel**
 for pages/functions. The project's rule holds: **the RLS policy is the fence, the
-UI is the signpost** (`ARCHITECTURE.md`) — every table ships with RLS. Column adds
+UI is the signpost** (`ARCHITECTURE.md`), every table ships with RLS. Column adds
 are `add column if not exists`; new tables `create table if not exists`, mirroring
 `schema-clean.sql`. Build each unit at the smallest size that works, and prefer a
 proven package only where the DIY version is a real time-sink (§7.6).
@@ -648,17 +648,17 @@ profiles.links      jsonb                         -- external connections on the
 **Dropped:** `works_version_owner_guard` (anyone can add a version now, F7).
 
 ### 7.3 RPCs, triggers, functions (all `security definer`, `search_path=public`)
-- `member_of(gid)` / `is_group_admin(gid)` — the two gate helpers every policy calls.
-- `join_via_invite(code)` — validate code (exists, not expired, uses<max) → insert `group_members` active, assign next free colour, `uses+1`; returns group. (Powers `/join/<code>`.)
-- `add_version(parent_id, media_key, ext, version_note)` — require `version_note`, require same `kind` as parent, insert `works` with `version_of`; for a multi-file batch the client calls it N times in order.
-- `mark_channel_read(channel_id)` — upsert `channel_reads.last_read_at=now()`.
-- `toggle_reaction(message_id, emoji)` — insert/delete `message_reactions`.
+- `member_of(gid)` / `is_group_admin(gid)`, the two gate helpers every policy calls.
+- `join_via_invite(code)`, validate code (exists, not expired, uses<max) → insert `group_members` active, assign next free colour, `uses+1`; returns group. (Powers `/join/<code>`.)
+- `add_version(parent_id, media_key, ext, version_note)`, require `version_note`, require same `kind` as parent, insert `works` with `version_of`; for a multi-file batch the client calls it N times in order.
+- `mark_channel_read(channel_id)`, upsert `channel_reads.last_read_at=now()`.
+- `toggle_reaction(message_id, emoji)`, insert/delete `message_reactions`.
 - `pin_message(message_id)` / `unpin_message(message_id)`.
-- `create_dm(handle)` / `create_group_dm(handles[])` — resolve handles→users, find-or-create `dm_channels` + `dm_members`.
+- `create_dm(handle)` / `create_group_dm(handles[])`, resolve handles→users, find-or-create `dm_channels` + `dm_members`.
 - `add_friend(handle)` / `respond_friend(user, accept)` / `block_user(user)`.
 - `move_card(card_id, column_id, position)`.
-- `ban_member` / `timeout_member` / `kick_member` (admin) — each writes `audit_log`.
-- `export_manifest(group_id|'account')` — returns JSON of works+metadata; client fetches signed URLs and zips.
+- `ban_member` / `timeout_member` / `kick_member` (admin), each writes `audit_log`.
+- `export_manifest(group_id|'account')`, returns JSON of works+metadata; client fetches signed URLs and zips.
 - **Triggers:** `messages` fanout on insert → parse `@handle`, write `mentions` + `notifications`; `set edited_at` on body change; tombstone on `deleted_at`. `works` insert → maintain `search_tsv`. `comments` insert with a mention → `notifications`. Reuse `post_status_guard`, `comments_*` guards, `claim_rate` (comments/reports already rate-limited; extend to `messages` at e.g. 60/min).
 - **Kept as-is:** `file_report`, `delete_my_account`, `profiles_tombstone`, `claim_upload_quota`.
 
@@ -673,11 +673,11 @@ profiles.links      jsonb                         -- external connections on the
 Add the relevant tables to the `supabase_realtime` publication.
 
 ### 7.5 Server / edge functions
-- `api/sign.mjs` — **exists**, presigned R2 uploads. Unchanged.
-- `transcode` — audio on demand (F11). **Not** a Supabase Edge Function (no ffmpeg
+- `api/sign.mjs`, **exists**, presigned R2 uploads. Unchanged.
+- `transcode`, audio on demand (F11). **Not** a Supabase Edge Function (no ffmpeg
   there); a Vercel Node function with `ffmpeg-static`, or a tiny worker. Video is
   a later, heavier call (Mux/Cloudflare Stream).
-- `notify` — email/push fanout off `notifications` (later; shares the CSAM-alert pipe).
+- `notify`, email/push fanout off `notifications` (later; shares the CSAM-alert pipe).
 - Export can stay client-side (JSZip) reading `export_manifest`; move server-side only if zips get large.
 - WebRTC signaling is the provider's (LiveKit/Daily), not ours.
 
@@ -706,7 +706,7 @@ Add the relevant tables to the `supabase_realtime` publication.
   and the quick switcher. Modifiers (`from:`, `in:`, `has:`) parse client-side into
   query args.
 - FK indexes on every `*_id` used in a policy or a join (`messages.channel_id`,
-  `board_cards.column_id`, `notifications.user_id, read_at`, `channel_reads`, …) —
+  `board_cards.column_id`, `notifications.user_id, read_at`, `channel_reads`, …) , 
   same discipline as the existing `works_*_idx`.
 
 ### 7.8 Migration order (each a re-runnable file, `schema-*.sql` convention)
@@ -722,29 +722,29 @@ Add the relevant tables to the `supabase_realtime` publication.
 10. RPCs (§7.3), FTS indexes (§7.7), grants, `notify pgrst 'reload schema'`, realtime publication.
 
 ### 7.9 Per-screen backend checklist (so nothing is missed)
-- **Workspace** — `group_members`→rail; `channels`→column; `messages`+Realtime→chat; `channel_reads`→unread badges; `message_reactions`; Presence→members.
-- **Thread view** — `messages.parent_id`; `also_to_channel`.
-- **Channel Pins/Files** — `message_pins`; `works where group_id & channel` for Files.
-- **Search / quick switcher** — `search_all()` + FTS indexes.
-- **Feed** — `works` public by `follows`.
-- **Media explorer** — `works where group_id` + `collections where group_id`.
-- **Details pane** — `works` + `version_of`/`version_note` + `content_tags` + `comments(context)` + `saved_items` + transcode.
-- **Canvas** — `scratchpads`/`scratchpad_items` + `comments.mark` + `annotations` + Realtime.
-- **Board** — `boards`/`board_columns`/`board_cards` + `move_card`.
-- **Call** — LiveKit room per `channel/dm` id; Presence for who's in.
-- **Profile / popout** — `profiles` (status/tz/pronouns/links) + `group_members.role` + mutual groups (a join) + `friendships`.
-- **Messages** — `dm_channels`/`dm_members`/`dm_messages` + `friendships`.
-- **Group settings** — `channels`/`board_*` (manage), `group_members` (roles), `group_invites`, `group_bans`, `audit_log`, storage sum of `works.bytes`, `export_manifest`.
-- **Create / Join** — `groups` insert + `group_invites` + `join_via_invite`.
-- **Notifications** — `notifications` + Realtime `user:{id}`; inline reply reuses `messages`/`comments`.
-- **Sign-in / onboarding** — Supabase Auth + `onboarding.html` (exists) + unique `profiles.handle` claim.
+- **Workspace**, `group_members`→rail; `channels`→column; `messages`+Realtime→chat; `channel_reads`→unread badges; `message_reactions`; Presence→members.
+- **Thread view**, `messages.parent_id`; `also_to_channel`.
+- **Channel Pins/Files**, `message_pins`; `works where group_id & channel` for Files.
+- **Search / quick switcher**, `search_all()` + FTS indexes.
+- **Feed**, `works` public by `follows`.
+- **Media explorer**, `works where group_id` + `collections where group_id`.
+- **Details pane**, `works` + `version_of`/`version_note` + `content_tags` + `comments(context)` + `saved_items` + transcode.
+- **Canvas**, `scratchpads`/`scratchpad_items` + `comments.mark` + `annotations` + Realtime.
+- **Board**, `boards`/`board_columns`/`board_cards` + `move_card`.
+- **Call**, LiveKit room per `channel/dm` id; Presence for who's in.
+- **Profile / popout**, `profiles` (status/tz/pronouns/links) + `group_members.role` + mutual groups (a join) + `friendships`.
+- **Messages**, `dm_channels`/`dm_members`/`dm_messages` + `friendships`.
+- **Group settings**, `channels`/`board_*` (manage), `group_members` (roles), `group_invites`, `group_bans`, `audit_log`, storage sum of `works.bytes`, `export_manifest`.
+- **Create / Join**, `groups` insert + `group_invites` + `join_via_invite`.
+- **Notifications**, `notifications` + Realtime `user:{id}`; inline reply reuses `messages`/`comments`.
+- **Sign-in / onboarding**, Supabase Auth + `onboarding.html` (exists) + unique `profiles.handle` claim.
 
 ---
 
 ## 8. Design tokens
 
 The mockup's tokens, and the live source of truth, are in
-[`docs/design/styleguide.html`](design/styleguide.html) — a self-contained page
+[`docs/design/styleguide.html`](design/styleguide.html), a self-contained page
 that renders every token and component **1:1 with the mockup** (same CSS, same
 embedded Jost, a light/dark toggle). When the live pages are built they consume
 these exact values; `docs/design/STYLE.md` is the older pre-collab pivot's guide
@@ -760,11 +760,11 @@ and is superseded for the collab layer by the style guide.
 **Member colours** (the only hue, group-scoped, F12a) light→dark: `--m1`
 #B0503F→#D98A7A · `--m2` #A9791F→#D6B26B · `--m3` #3F7A4E→#82BE91 · `--m4`
 #2F7480→#6FB9C4 · `--m5` #3F65A6→#89A6D6 · `--m6` #77558F→#B294C7.
-**Type** — Jost only. Scale: `--fs-mi` 11 · `--fs-xs` 12 · `--fs-sm` 13 · `--fs`
+**Type**, Jost only. Scale: `--fs-mi` 11 · `--fs-xs` 12 · `--fs-sm` 13 · `--fs`
 14.5 · `--fs-lg` 16 · `--fs-xl` 20. Weights 400/600/700. Sentence case everywhere.
-**Space** — 4px scale: `--s1` 4 · `--s2` 8 · `--s3` 12 · `--s4` 16 · `--s5` 24.
-**Shape** — `--r` 3px on chrome; media stays square. **Motion** — `--t` 150ms ease.
-**Layout widths** — `--rail` 58 · `--chan` 232 · `--mem` 210.
+**Space**, 4px scale: `--s1` 4 · `--s2` 8 · `--s3` 12 · `--s4` 16 · `--s5` 24.
+**Shape**, `--r` 3px on chrome; media stays square. **Motion**, `--t` 150ms ease.
+**Layout widths**, `--rail` 58 · `--chan` 232 · `--mem` 210.
 **Rules that are not tokens:** "on/selected/primary" is an **ink fill** (not a
 colour); surfaces separate by **background step**, not borders (the one exception
 is an interactive **field**, which gets a `--line2` border for affordance); the
