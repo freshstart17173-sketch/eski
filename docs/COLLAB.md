@@ -111,21 +111,23 @@ OG tags or appear anywhere a non-member can reach.
 
 ### Tier 2, the moat: the review canvas
 
-#### F5. The canvas / scratchpad (drawing + audio highlighting)
-**Why.** This is why someone picks eski over Discord: **draw directly on an
-image or a video frame, highlight a range on a waveform,** and attach a note to
-exactly that mark. "The building edge is ghosting" (circled) and "the drop needs
-low end" (0:42–0:48 highlighted) become unambiguous. Discord will never build
-this.
-**Plan.** The interaction already exists in `artboard.html` (pannable canvas,
-freehand draw, drag-select). Make it a product surface: a **scratchpad** is a
-set of files opened for review; on each file you draw (image/video) or highlight
-a range (audio/video timeline), and each mark carries a threaded note. **No
-pins**, the mark *is* the anchor. Notes resolve (dim, don't delete). Reuse the
-existing `comments` table + a `mark jsonb` (the stroke path, or `{t0,t1}` for an
-audio range, or `{frame}`).
-**Touches.** `comments.mark jsonb`; the Canvas screen reusing the artboard's
-draw canvas and the player's waveform (mockup: Canvas review).
+#### F5. The canvas / scratchpad (annotation + floating comments)
+**Why.** This is why someone picks eski over Discord: precise, visual review on
+the actual media. Discord will never build it. Two distinct things live here:
+**annotation** (drawing on the media) and **commenting** (a discussion anchored
+to a spot).
+**Plan.** A **canvas** is a scratch workspace holding several files as tiles
+(the interaction already exists in `artboard.html`: pannable, freehand draw,
+drag-select). **Annotation tools** (pen / arrow / box / freeform + colour) draw
+directly on an image or video tile; audio is a waveform tile you can mark a
+range on. **Comments are separate and Figma/paper.design-style:** the comment
+tool drops a **floating pin shown as just the author's avatar**; click it to
+expand the thread and its **selection**, a point, a box, a freeform region, or an
+audio range. Comments resolve (don't delete). Reuse the `comments` table + a
+`mark jsonb` holding the selection (`{point}`, `{box}`, `{path}`, or `{t0,t1}`);
+annotations are their own drawing layer on the tile.
+**Touches.** `comments.mark jsonb`; the Canvas screen (mockup: Canvas), reusing
+the artboard's draw canvas and the waveform renderer.
 
 #### F6. Workspaces with public / private / semi-private visibility
 **Why.** Not every review happens inside a group. You want to hand a director or
@@ -142,14 +144,18 @@ three-layer idea applied to a board instead of a single file.
 #### F7. Versions (numbers, not branches)
 **Why.** No more `beat_FINAL_FINAL.wav`. One file, a numbered stack, click v2 to
 see the older one.
-**Plan.** `works.version_of` / `version_label` already exist and a trigger
-already restricts adding a version to the original poster. Add a version
-switcher (v1·v2·v3) in the file view and the details pane; each version keeps
-its own canvas notes (Frame.io's "notes follow the work"). Strictly linear, no
-branch graph. **There is no Fork feature:** to riff on someone's file you
-download it, change it, and reupload it as your own, with credit in the credits
-field. Building a copy-with-lineage action isn't worth the concept it adds.
-**Touches.** the version switcher only.
+**Plan.** `works.version_of` / `version_label` already exist. **Anyone can add a
+version, not just the original poster** (the old owner-only trigger is dropped),
+so a collaborator can push a fix without re-posting. **A new version requires a
+mandatory reason** ("what changed"), a short line stored per version. The
+version control in the details pane opens a dropdown listing every version by
+its **file name** (the one place you see file names, since posts show titles)
+with its reason and author; each version keeps its own canvas notes (Frame.io's
+"notes follow the work"). Strictly linear, no branch graph. **No Fork:** to riff
+on someone's file you download it, change it, reupload it as your own with
+credit.
+**Touches.** `works.version_note` (required on a version); the version dropdown;
+drop `works_version_owner_guard`.
 
 #### F8. Attribution / credits (a plain field)
 **Why.** On a collaborative track or shot, everyone needs to know who did what,
@@ -164,12 +170,17 @@ each contributor's name renders as a **chip in that member's group colour**
 
 ### Tier 3, files that behave
 
-#### F9. Always caption + tag on upload
-**Why.** The smallest throwaway file becomes important three weeks later. If it
-was captioned and tagged going in, it's findable; if not, it's lost in scroll.
-**Plan.** The upload sheet **always** shows caption + tags (never optional,
-never skippable) plus the credits field. Tags feed the search/filter everywhere.
-**Touches.** the upload sheet (mockup: Upload); `content_tags` already exists.
+#### F9. Titles and tags, no captions
+**Why.** The smallest throwaway file becomes important three weeks later; if it
+was named and tagged going in, it's findable. A caption reads like a social post,
+so posts have a **title, not a caption**, and the title is optional, the **file
+name is the default title** when it's blank.
+**Plan.** The upload sheet always shows tags + credits and an optional title.
+Feeds and the explorer show the title; a file shared into a channel or message
+leads with the **file name**. Inline lists show the **first 5 tags** with a
+"+N"; the rest live in the details pane, which shows all with a ＋ to add more.
+**Touches.** `works.title` (nullable, falls back to file name); the upload sheet
+and the card renderer; `content_tags` already exists.
 
 #### F10. Auto file-type recognition + autotag
 **Why.** Half the value of tags is the type, and nobody wants to type it.
@@ -199,10 +210,9 @@ algorithmic firehose of strangers. It's a portfolio feed of your circle.
 people you follow**, newest first, with the same card grid the current Discover
 feed uses. Work and Personal never appear here.
 **Touches.** the feed query (scope to followees, `visibility='public'`); the
-existing card grid (mockup: Following feed). Note the card shows the work's
-**caption**, not its title (most posts are just a caption; a text post is the
-exception and shows its title). When the same file is shared into a channel or a
-message, the **filename** leads instead.
+card grid, which shows the media at its natural aspect with **no card background
+or type badge** (video gets a play overlay, audio a high-resolution mirrored
+waveform, text its own words) and the **title** beneath it (mockup: Feed).
 
 #### F12a. Per-group member colours
 **Why.** eski's chrome is otherwise pure black-and-white, but in a busy group
@@ -287,18 +297,23 @@ group_members   (group_id, user_id, role in (admin,member), color, joined_at,
 group_invites   (code pk, group_id, created_by, expires_at, max_uses, uses)
 channels        (id, group_id, name, kind in (text,voice), position)
 messages        (id, channel_id, user_id, body, parent_id, created_at)   -- persistent chat
+reactions       (message_id, user_id, emoji, primary key(message_id,user_id,emoji))
 dm_threads      (id, a_user, b_user, created_at)          -- add-by-username
 dm_messages     (id, thread_id, user_id, body, created_at)
 scratchpads     (id, owner_id, group_id null, title,
                  visibility in (private,group,link), share_code, created_at)
 scratchpad_items(scratchpad_id, work_id, idx)
+save_folders    (id, owner_id, name)                      -- private bookmarks (details "Save")
+save_folder_items(folder_id, work_id)                     -- both already exist in schema-clean.sql
 notifications   (id, user_id, kind, target_type, target_id, read_at, created_at)
 
-works.visibility  text in (public,personal,group)   -- the three layers (§0)
-works.group_id    uuid null → groups
-works.credits     text                               -- F8 attribution
-comments.mark     jsonb null                          -- F5 draw path / audio range / frame
-comments.context  text                                -- scope: 'public' vs a group_id, so public and group threads never mix
+works.visibility   text in (public,personal,group)  -- the three layers (§0)
+works.group_id     uuid null → groups
+works.title        text null                         -- F9: optional, file name is the default
+works.credits      text                              -- F8 attribution
+works.version_note text                              -- F7: required "what changed" on a version
+comments.mark      jsonb null                         -- F5 draw path / audio range / frame / box / point
+comments.context   text                              -- scope: 'public' vs a group_id, so threads never mix
 ```
 
 The helper every group policy leans on, and the one rewritten read rule:
@@ -325,40 +340,46 @@ signpost** (`ARCHITECTURE.md`).
 The main screens are the mockup: [`docs/design/collab-mockup.html`](design/collab-mockup.html).
 Design language is `docs/design/STYLE.md`: black/white/grey, surfaces separated
 by background step (no borders, no hairline dividers), "on" is an ink fill,
-sentence case throughout, monochrome SVG icons, the only colour is a member's
-per-group identity colour (F12a). Interactive fields carry a visible border so
-they read as editable. What each contains:
+sentence case throughout, monochrome SVG icons, no likes. The only colour is a
+member's per-group identity colour (F12a). Interactive fields carry a visible
+border so they read as editable. What each contains:
 
-- **Workspace**, group rail (Home, Messages, one icon per group, ＋ create/join/
-  add) · channel column (admin-editable text + voice channels, people shown live
-  in a voice room) · chat pane (persistent; a shared file shows its **filename**
-  first, caption under) · members rail (Admins / Members, presence dot + "working
-  on", names in group colour).
-- **Feed**, the follows-only portfolio grid with a **search bar** and a couple of
-  dropdown filters; cards show the **caption** (a text post shows its title);
-  clicking a card opens the details pane.
-- **Media explorer**, the group's files as the same grid, with a search bar +
-  dropdown filters (channel, type, uploader, sort), Reddit-style, no tag
-  modifiers; reuses the details pane.
+- **Workspace**, group rail (Home, Messages, one icon per group, ＋, and your own
+  **profile picture** at the foot) · channel column (admin-editable text + voice
+  channels, people shown live in a voice room) · chat pane (persistent; a shared
+  file leads with its **file name**; each message has an **emoji-reaction** button
+  on hover) · members rail (Admins / Members, presence dot + "working on", names
+  in group colour).
+- **Feed**, the follows-only portfolio grid with a **search bar** and dropdown
+  filters; cards have **no background** (video → play overlay, audio → high-res
+  waveform, image → real-aspect thumbnail, text → its words) and show the
+  **title**; clicking a card opens the details pane.
+- **Media explorer**, the group's files as the same grid plus a **Collections**
+  strip, with a search bar + dropdown filters (channel, type, uploader, sort),
+  Reddit-style, no tag modifiers; reuses the details pane.
 - **Details pane**, opened from any card: media on one side; on the other the
-  filename, visibility, version switcher, all metadata, tags, contributor chips
-  (in group colours), and comments **scoped to context** (a group thread and a
-  public thread never mix); a **Download** button (formats on click) and **Open
-  in canvas** (pick which shared canvas).
+  title, a **version control** that opens the versions by **file name** (+ their
+  change reasons), all metadata, tags (all, with a ＋), contributor chips (in
+  group colours), and comments **scoped to context** (a group thread and a public
+  thread never mix); **Download** (formats on click), **Save** (to a folder), and
+  **Open in canvas** (pick which shared canvas).
 - **Canvas**, a shared scratch workspace holding **multiple files as tiles**;
-  draw tools (move/pen/arrow/box/region/text + colour) on an image or video
-  tile, and audio sits **in the canvas** as a waveform tile whose ranges you
-  highlight and annotate; a canvas picker (many canvases, not one per group or
-  item); a notes rail (each note anchored to its mark, resolvable, author in
-  group colour); its own visibility (group or link-only).
+  a canvas picker (many canvases, not one per group or item). **Annotation and
+  commenting are separate:** annotation tools (pen/arrow/box/freeform + colour)
+  draw on a tile, while the **comment** tool drops a Figma-style floating pin
+  shown as just the author's avatar, expanding on click to its selection (a
+  point, a box, or a freeform region, or an audio range on a waveform tile) and
+  thread; the canvas has its own visibility (group or link-only).
 - **Profile**, Public / Shared / Private shelves (the three visibility layers)
   plus a **Settings** tab; name, handle, bio, Add-friend / Message. No roles, no
   reel, no explainer text.
 - **Messages**, add-by-username field (no directory), thread list, conversation,
   call/video buttons.
-- **Upload**, multi-file dropzone with auto-detected type chips; always-on
-  caption + tags + contributors; a **Visibility** choice (Everyone / This group /
-  No one), saved to your profile by default.
+- **Upload**, multi-file dropzone with auto-detected type chips; an optional
+  title (file name is the default), tags + contributors; a **Visibility** choice
+  (Everyone / This group / No one), saved to your profile by default. When the
+  upload is a **new version** of a post, the sheet swaps to a version mode with a
+  **mandatory "what changed" field** and inherits the post's visibility (F7).
 
 Management screens not in the mockup: **Create group** (name, cover → magic-link
 nudge); **Group settings** (channels, members + role toggle, invite links,
@@ -384,8 +405,9 @@ in the same city.
    `#verses`, `#mixing`, `#references`, `#stems-and-sessions`, plus voice rooms
    *the booth* and *co-writing*. (F3)
 3. **A beat goes up.** dev drags `late_bloom_beat.flp` into `#beats`. eski
-   **auto-tags** it `flp` + `audio`, dev adds the caption "142 bpm, needs a rap
-   pass on the bridge" and the **credits** "prod. jax · arrangement dev." Chat is
+   **auto-tags** it `flp` + `audio`, dev leaves the title as the file name, tags
+   it `142bpm` and `bridge`, and sets the **credits** "prod. jax · arrangement
+   dev." Chat is
    **persistent**, so this is findable in three weeks. (F9, F10, F8, F3)
 4. **Crossing DAWs.** tomo's on Ableton and can't open a `.flp`, so dev also
    posts a `wav` bounce. tomo grabs it straight, kofi pulls the same file **as
@@ -395,10 +417,12 @@ in the same city.
    0:42–0:48** on the waveform, "low end's muddy right here", and @mentions
    tomo. tomo gets a bell, opens the exact range, replies, and marks it resolved.
    (F5, F15)
-6. **Versions, not chaos.** dev fixes the low end and posts **v3** (v1/v2 still
-   one click away). rae's note stays attached to v2; v3 starts clean. When a
-   guest producer wants to flip the beat, he just **downloads** it, reworks it,
-   and reuploads his own with dev credited. No fork, no merge. (F7)
+6. **Versions, not chaos.** tomo (not the original poster, and that's fine, any
+   member can) adds **v3** with the required note "brought the low end down." v1
+   and v2 stay one click away in the version dropdown, each listed by file name;
+   rae's canvas note stays on v2, v3 starts clean. A guest who wants to flip the
+   beat just **downloads** it, reworks it, and reuploads his own with dev
+   credited. No fork, no merge. (F7)
 7. **A live session.** For the hook, jax, rae and dev jump into the **the booth**
    voice room; dev **screen-shares FL** while rae tracks a scratch. (F14)
 8. **An outsider, safely.** The mastering engineer isn't in the group. rae makes
@@ -424,7 +448,7 @@ jax (generalist doing cleanup + wrangling). The shot `sh040` is due Friday.
 2. **Assets land, already labelled.** lin posts a playblast (`mp4` → auto-tagged
    `mp4`+`video`), sol posts a title-sequence draft, jax uploads plates as
    `.exr`, **auto-tagged `exr`** so mira can later filter `#renders` to "all
-   `.exr` from today." Every upload carries a caption + tags by default. (F9,
+   `.exr` from today." Every upload carries tags by default. (F9,
    F10)
 3. **The review that only eski can do.** mira opens `sh040_comp` **v3** in the
    **canvas** and **draws on the frame**: circles the building edge that's
@@ -446,7 +470,7 @@ jax (generalist doing cleanup + wrangling). The shot `sh040` is due Friday.
    shows who's still on. (F14, F16)
 8. **Credit and archive.** The final comp's **credits** read "comp mira · anim
    lin · mograph sol · cleanup jax." mira posts the approved frame to her
-   **Public** reel; the shot's working files stay in **Work**. After delivery she
+   **Public** shelf; the shot's working files stay in **Work**. After delivery she
    **exports** the group for the archive. (F8, F12, F19)
 
 ---
@@ -454,11 +478,13 @@ jax (generalist doing cleanup + wrangling). The shot `sh040` is due Friday.
 ## 5. Owner's calls (what's left to you)
 
 Decided by your adjustments, recorded here: **two roles** (admin/member),
-**user-created channels**, **persistent chat**, **DMs by username**, **no
-discovery** (magic-link + username only), **versions as numbers** (no
-branching), **no fork** (download, change, reupload with credit), **no likes**,
-**no pins** (draw/highlight on the canvas), **roles never on a profile**,
-**per-group member colours**, three consistent visibility layers
+**user-created channels**, **persistent chat** with **emoji reactions**, **DMs by
+username**, **no discovery** (magic-link + username only), **versions as numbers**
+(no branching), **anyone can add a version** with a **mandatory "what changed"
+reason**, **no fork** (download, change, reupload with credit), **no likes**,
+**titles not captions** (file name is the default title), **Figma-style floating
+comment pins** distinct from annotation (no anchored pins-as-notes), **roles never
+on a profile**, **per-group member colours**, three consistent visibility layers
 (public / shared / private). Still genuinely yours:
 
 - **WebRTC provider for calls (F14)**, LiveKit / Daily / 100ms / self-hosted.

@@ -5,10 +5,9 @@
   font-weight:100 900;font-style:normal;font-display:swap}
 
 :root{
-  --paper:#FCFCFC; --surface:#F1F1F1; --plate:#EAEAEA; --paper1:#EAEAEA;
-  --ink:#141414; --soft:#3A3A3A; --muted:#6B6B6B; --line:#DADADA; --line2:#C8C8C8;
-  --on-ink:#FCFCFC; --railbg:#E6E6E6;
-  /* per-group member identity colours (the only colour in the product) */
+  --paper:#FCFCFC; --surface:#F1F1F1; --plate:#E7E7E7; --paper1:#E4E4E4;
+  --ink:#141414; --soft:#3A3A3A; --muted:#6B6B6B; --line:#DADADA; --line2:#C4C4C4;
+  --on-ink:#FCFCFC; --railbg:#E6E6E6; --tagbg:#DFDFDF;
   --m1:#B0503F; --m2:#A9791F; --m3:#3F7A4E; --m4:#2F7480; --m5:#3F65A6; --m6:#77558F;
   --proto-bg:#17191A; --proto-ink:#E7ECEA; --proto-dim:#9AA4A1; --proto-line:#2A2E2F;
   --fs-mi:11px; --fs-xs:12px; --fs-sm:13px; --fs:14.5px; --fs-lg:16px; --fs-xl:20px;
@@ -17,15 +16,15 @@
   --rail:58px; --chan:232px; --mem:210px;
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
-  --paper:#0E0E0E; --surface:#181818; --plate:#212121; --paper1:#1E1E1E;
+  --paper:#0E0E0E; --surface:#181818; --plate:#232323; --paper1:#242424;
   --ink:#F0F0F0; --soft:#C6C6C6; --muted:#8C8C8C; --line:#2A2A2A; --line2:#3A3A3A;
-  --on-ink:#0E0E0E; --railbg:#080808;
+  --on-ink:#0E0E0E; --railbg:#080808; --tagbg:#2A2A2A;
   --m1:#D98A7A; --m2:#D6B26B; --m3:#82BE91; --m4:#6FB9C4; --m5:#89A6D6; --m6:#B294C7;
 }}
 :root[data-theme="dark"]{
-  --paper:#0E0E0E; --surface:#181818; --plate:#212121; --paper1:#1E1E1E;
+  --paper:#0E0E0E; --surface:#181818; --plate:#232323; --paper1:#242424;
   --ink:#F0F0F0; --soft:#C6C6C6; --muted:#8C8C8C; --line:#2A2A2A; --line2:#3A3A3A;
-  --on-ink:#0E0E0E; --railbg:#080808;
+  --on-ink:#0E0E0E; --railbg:#080808; --tagbg:#2A2A2A;
   --m1:#D98A7A; --m2:#D6B26B; --m3:#82BE91; --m4:#6FB9C4; --m5:#89A6D6; --m6:#B294C7;
 }
 
@@ -40,25 +39,26 @@ input{font:inherit;color:inherit}
 .ic.sm{width:14px;height:14px}.ic.f{fill:currentColor;stroke:none}
 .u{font-weight:600}
 .m1{color:var(--m1)}.m2{color:var(--m2)}.m3{color:var(--m3)}.m4{color:var(--m4)}.m5{color:var(--m5)}.m6{color:var(--m6)}
-
-/* member colour tag: name shown in its group colour on a neutral chip */
-.uchip{display:inline-flex;align-items:center;gap:5px;background:var(--plate);border-radius:var(--r);
+.uchip{display:inline-flex;align-items:center;gap:5px;background:var(--surface);border-radius:var(--r);
   padding:3px 8px;font-size:var(--fs-xs);font-weight:600}
 .uchip .dot{width:7px;height:7px;border-radius:50%;background:currentColor;flex:none}
 
-/* ---------- field affordance: interactive inputs look interactive ---------- */
+/* waveform: high-res, mirrored top+bottom, no background */
+.wave{display:block;width:100%;height:100%}
+.wave svg{display:block;width:100%;height:100%}
+.wave rect{fill:var(--ink);opacity:.8}
+
 .field{display:flex;align-items:center;gap:var(--s2);background:var(--paper);border:1px solid var(--line2);
   border-radius:var(--r);padding:8px 11px;transition:border-color var(--t)}
 .field:focus-within{border-color:var(--ink)}
 .field input{flex:1;border:0;background:none;outline:none;font-size:var(--fs-sm);min-width:0}
 .field input::placeholder{color:var(--muted)}
 .field .ic{color:var(--muted)}
+.field.req{border-color:var(--soft)}
 .selbtn{display:inline-flex;align-items:center;gap:7px;background:var(--paper);border:1px solid var(--line2);
   border-radius:var(--r);padding:8px 11px;font-size:var(--fs-sm);color:var(--soft);transition:border-color var(--t),background var(--t)}
 .selbtn:hover{border-color:var(--ink)}
 .selbtn .ic{color:var(--muted)}
-
-/* ---------- buttons ---------- */
 .btn{display:inline-flex;align-items:center;gap:7px;background:var(--surface);border-radius:var(--r);
   padding:8px 14px;font-size:var(--fs-sm);font-weight:500;color:var(--ink);transition:background var(--t)}
 .btn:hover{background:var(--plate)}
@@ -69,17 +69,16 @@ input{font:inherit;color:inherit}
 .iconbtn:hover{background:var(--plate)}
 .iconbtn.on{background:var(--ink);color:var(--on-ink)}
 
-/* ---------- tags ---------- */
-.tag{display:inline-block;background:var(--plate);color:var(--soft);border-radius:var(--r);padding:3px 9px;font-size:var(--fs-xs)}
-.tag.auto{color:var(--ink);font-weight:600}
-
-/* ---------- visibility marker (one consistent language everywhere) ---------- */
+/* tags: distinct chip, more contrast */
+.tag{display:inline-flex;align-items:center;background:var(--tagbg);color:var(--ink);border-radius:var(--r);padding:3px 9px;font-size:var(--fs-xs);font-weight:500}
+.tag.auto{background:var(--ink);color:var(--on-ink)}
+.tagmore{font-size:var(--fs-xs);color:var(--muted);align-self:center}
+.addtag{width:24px;height:24px;display:grid;place-items:center;border-radius:var(--r);background:var(--surface);color:var(--muted)}
+.addtag:hover{background:var(--plate);color:var(--ink)}
 .vis{display:inline-flex;align-items:center;gap:5px;font-size:var(--fs-xs);color:var(--muted)}
 .vis .ic{width:14px;height:14px}
 
-/* ============ proto scaffolding bar (not product chrome) ============ */
-.proto{position:sticky;top:0;z-index:60;display:flex;align-items:center;gap:var(--s3);height:44px;
-  padding:0 var(--s4);background:var(--proto-bg);color:var(--proto-ink)}
+.proto{position:sticky;top:0;z-index:60;display:flex;align-items:center;gap:var(--s3);height:44px;padding:0 var(--s4);background:var(--proto-bg);color:var(--proto-ink)}
 .proto .brand{font-weight:700;font-size:var(--fs-sm)}
 .proto .brand span{color:var(--proto-dim);font-weight:400;font-size:var(--fs-mi);margin-left:8px}
 .ptabs{display:flex;gap:2px;flex-wrap:wrap}
@@ -90,23 +89,21 @@ input{font:inherit;color:inherit}
 .pbtn{padding:5px 10px;border:1px solid var(--proto-line);border-radius:var(--r);color:var(--proto-dim);font-size:var(--fs-xs)}
 .pbtn:hover{color:var(--proto-ink);border-color:var(--proto-dim)}
 
-/* ============ app shell ============ */
 .app{display:flex;height:calc(100vh - 44px);overflow:hidden}
-.rail{flex:none;width:var(--rail);background:var(--railbg);display:flex;flex-direction:column;align-items:center;
-  gap:var(--s2);padding:var(--s2) 0;overflow-y:auto}
-.railbtn{position:relative;width:38px;height:38px;flex:none;display:grid;place-items:center;border-radius:var(--r);
-  background:var(--surface);color:var(--soft);font-weight:700;font-size:var(--fs-sm);transition:background var(--t),color var(--t)}
+.rail{flex:none;width:var(--rail);background:var(--railbg);display:flex;flex-direction:column;align-items:center;gap:var(--s2);padding:var(--s2) 0;overflow-y:auto}
+.railbtn{position:relative;width:38px;height:38px;flex:none;display:grid;place-items:center;border-radius:var(--r);background:var(--surface);color:var(--soft);font-weight:700;font-size:var(--fs-sm);transition:background var(--t),color var(--t)}
 .railbtn:hover{background:var(--plate)}
 .railbtn.on{background:var(--ink);color:var(--on-ink)}
-.railbtn .ct{position:absolute;top:-2px;right:-2px;min-width:15px;height:15px;padding:0 4px;background:var(--ink);
-  color:var(--on-ink);border-radius:999px;font-size:9px;font-weight:700;display:grid;place-items:center}
+.railbtn .ct{position:absolute;top:-2px;right:-2px;min-width:15px;height:15px;padding:0 4px;background:var(--ink);color:var(--on-ink);border-radius:999px;font-size:9px;font-weight:700;display:grid;place-items:center}
 .railbtn.on .ct{background:var(--paper);color:var(--ink)}
 .railsep{width:22px;height:1px;background:var(--line);flex:none;margin:1px 0}
+.railuser{margin-top:auto}
+.railuser .pfp{width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#8f8f8f,#565656);color:#fff;display:grid;place-items:center;font-weight:700;font-size:var(--fs-sm)}
+.railuser.on .pfp{box-shadow:0 0 0 2px var(--paper),0 0 0 4px var(--ink)}
 .stage{flex:1;min-width:0;display:flex;overflow:hidden}
 .screen{flex:1;min-width:0;display:flex;overflow:hidden}
 .screen[hidden]{display:none}
 
-/* ---------- channel column ---------- */
 .chan{flex:none;width:var(--chan);background:var(--surface);display:flex;flex-direction:column;overflow:hidden}
 .chanhd{flex:none;height:48px;display:flex;align-items:center;justify-content:space-between;padding:0 var(--s3);background:var(--plate)}
 .chanhd b{font-size:var(--fs-sm);font-weight:600}
@@ -114,8 +111,7 @@ input{font:inherit;color:inherit}
 .cgroup{margin-bottom:var(--s4)}
 .cglabel{display:flex;align-items:center;justify-content:space-between;padding:0 var(--s2) var(--s1);color:var(--muted);font-size:var(--fs-xs);font-weight:600}
 .cglabel .ic{color:var(--muted);cursor:pointer}
-.crow{display:flex;align-items:center;gap:8px;width:100%;text-align:left;padding:6px var(--s2);border-radius:var(--r);
-  color:var(--soft);transition:background var(--t),color var(--t)}
+.crow{display:flex;align-items:center;gap:8px;width:100%;text-align:left;padding:6px var(--s2);border-radius:var(--r);color:var(--soft);transition:background var(--t),color var(--t)}
 .crow:hover{background:var(--plate)}
 .crow.on{background:var(--plate);color:var(--ink);font-weight:600}
 .crow .ic{color:var(--muted);width:15px;height:15px}
@@ -124,16 +120,11 @@ input{font:inherit;color:inherit}
 .vpeople{padding:2px 0 4px 30px;display:flex;flex-direction:column;gap:4px}
 .vp{display:flex;align-items:center;gap:7px;font-size:var(--fs-xs)}
 .vp .live{width:6px;height:6px;border-radius:50%;background:currentColor;flex:none}
-.chanfoot{flex:none;background:var(--plate);padding:var(--s2) var(--s3);display:flex;align-items:center;gap:var(--s2)}
-.av{flex:none;border-radius:var(--r);background:var(--paper1);color:var(--soft);display:grid;place-items:center;font-weight:700;
-  width:28px;height:28px;font-size:var(--fs-xs)}
-.av.lg{width:76px;height:76px;font-size:26px;border-radius:var(--r)}
-.av.sm{width:20px;height:20px;font-size:10px}
-.me{min-width:0}.me b{display:block;font-size:var(--fs-xs);font-weight:600}
-.me small{color:var(--muted);font-size:10px}
-.chanfoot .iconbtn{margin-left:auto;width:28px;height:28px}
 
-/* ---------- main pane ---------- */
+.av{flex:none;border-radius:var(--r);background:var(--paper1);color:var(--soft);display:grid;place-items:center;font-weight:700;width:28px;height:28px;font-size:var(--fs-xs)}
+.av.lg{width:76px;height:76px;font-size:26px}
+.av.sm{width:20px;height:20px;font-size:10px}
+
 .main{flex:1;min-width:0;display:flex;flex-direction:column;background:var(--paper);overflow:hidden}
 .mainhd{flex:none;height:48px;display:flex;align-items:center;gap:var(--s3);padding:0 var(--s4);background:var(--surface)}
 .mainhd .ic{color:var(--muted)}
@@ -143,37 +134,36 @@ input{font:inherit;color:inherit}
 .stream{flex:1;overflow-y:auto;padding:var(--s4)}
 .day{display:flex;align-items:center;gap:var(--s3);margin:var(--s3) 0;color:var(--muted);font-size:var(--fs-xs)}
 .day::before,.day::after{content:"";flex:1;height:1px;background:var(--line)}
-.msg{display:flex;gap:var(--s3);padding:5px var(--s2);border-radius:var(--r)}
+.msg{position:relative;display:flex;gap:var(--s3);padding:5px var(--s2);border-radius:var(--r)}
 .msg:hover{background:var(--surface)}
 .msg .bd{flex:1;min-width:0}
 .msg .by{display:flex;align-items:baseline;gap:var(--s2)}
 .msg .by time{font-size:var(--fs-mi);color:var(--muted)}
 .msg .tx{font-size:var(--fs-sm);color:var(--soft);margin-top:1px}
 .msg .tx .men{font-weight:600}
+.hoveracts{position:absolute;top:-10px;right:10px;display:none;gap:2px;background:var(--paper);border-radius:var(--r);box-shadow:0 2px 10px rgba(0,0,0,.16);padding:2px}
+.msg:hover .hoveracts{display:flex}
+.hoveracts .iconbtn{width:26px;height:26px;color:var(--muted)}
+.reactions{display:flex;gap:6px;margin-top:6px}
+.react{display:inline-flex;align-items:center;gap:5px;background:var(--surface);border-radius:999px;padding:2px 8px;font-size:var(--fs-xs);color:var(--soft)}
+.react .n{font-variant-numeric:tabular-nums}
 .reply{margin-top:5px;font-size:var(--fs-xs);color:var(--muted);display:inline-flex;align-items:center;gap:5px;cursor:pointer}
 .reply:hover{color:var(--ink)}
 
-/* file share in a channel: filename leads */
+/* file share in a channel: filename leads, no caption */
 .filecard{margin-top:8px;max-width:420px;background:var(--surface);border-radius:var(--r);overflow:hidden;cursor:pointer;transition:background var(--t)}
 .filecard:hover{background:var(--plate)}
-.thumb{position:relative;height:120px;background:linear-gradient(135deg,#3a3a3a,#1c1c1c);display:grid;place-items:center}
-.thumb.audio{height:96px;background:var(--paper1)}
-.thumb .wf{display:flex;align-items:center;gap:2px;height:56px;width:88%}
-.thumb .wf i{flex:1;background:var(--soft);opacity:.55;border-radius:1px}
-.thumb .play{position:absolute;width:38px;height:38px;border-radius:50%;background:rgba(0,0,0,.45);color:#fff;display:grid;place-items:center}
+.fcwave{height:74px;padding:10px 14px;background:var(--paper1)}
 .fbody{padding:9px var(--s3)}
 .fname{display:flex;align-items:center;gap:8px;font-size:var(--fs-sm);font-weight:600}
 .fname .ver{font-size:10px;font-weight:700;background:var(--ink);color:var(--on-ink);padding:1px 5px;border-radius:2px}
-.fcap{font-size:var(--fs-xs);color:var(--muted);margin-top:2px}
-.ftags{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
+.ftags{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px;align-items:center}
 
-/* composer */
 .composer{flex:none;padding:0 var(--s4) var(--s4)}
 .composer .field{padding:9px var(--s3)}
 .composer .field .snd{color:var(--muted)}
 .composer .field .snd:hover{color:var(--ink)}
 
-/* members rail */
 .mem{flex:none;width:var(--mem);background:var(--surface);overflow-y:auto;padding:var(--s4) 0}
 .memg{padding:0 var(--s3) var(--s4)}
 .memg .lb{padding:0 var(--s2) 7px;color:var(--muted);font-size:var(--fs-xs);font-weight:600}
@@ -187,7 +177,7 @@ input{font:inherit;color:inherit}
 .mrow .doing{font-size:var(--fs-mi);color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .mrow.off{opacity:.55}
 
-/* ============ feed / explorer ============ */
+/* feed / explorer */
 .pane{flex:1;min-width:0;display:flex;flex-direction:column;background:var(--paper);overflow:hidden}
 .panehd{flex:none;min-height:56px;display:flex;align-items:center;gap:var(--s4);padding:var(--s3) var(--s5);background:var(--surface);flex-wrap:wrap}
 .panehd .wm{font-weight:700;font-size:var(--fs-xl)}
@@ -198,63 +188,74 @@ input{font:inherit;color:inherit}
 .toolbar{flex:none;display:flex;align-items:center;gap:var(--s2);padding:var(--s3) var(--s5);background:var(--paper);flex-wrap:wrap}
 .toolbar .field{flex:1;min-width:200px;max-width:420px}
 .panebody{flex:1;overflow-y:auto;padding:var(--s4) var(--s5) var(--s5)}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:var(--s4)}
-.card{display:flex;flex-direction:column;gap:8px;cursor:pointer;text-align:left}
-.card .box{position:relative;aspect-ratio:1/1;background:linear-gradient(135deg,#383838,#1b1b1b);overflow:hidden;transition:opacity var(--t)}
-.card:hover .box{opacity:.9}
-.card .box.frame{background:var(--paper1);display:flex;align-items:center;justify-content:center}
-.card .box .wf{display:flex;align-items:flex-end;gap:2px;height:46px;width:82%;position:absolute;bottom:12px;left:9%}
-.card .box .wf i{flex:1;background:var(--soft);opacity:.5;border-radius:1px}
-.card .box .textbody{position:absolute;inset:0;padding:16px;font-size:var(--fs-sm);color:var(--soft);overflow:hidden;
-  -webkit-mask-image:linear-gradient(#000 70%,transparent);mask-image:linear-gradient(#000 70%,transparent)}
-.card .box .vtag{position:absolute;top:8px;right:8px;background:rgba(0,0,0,.5);color:#fff;border-radius:2px;padding:3px}
-.card .box .vtag .ic{width:13px;height:13px}
-.card .cap{font-size:var(--fs-sm);color:var(--ink);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.card .who{display:flex;align-items:center;gap:6px;color:var(--muted);font-size:var(--fs-xs)}
+.seclabel{color:var(--muted);font-size:var(--fs-xs);font-weight:600;margin:0 0 var(--s3)}
 
-/* ============ canvas ============ */
-.cvwrap{flex:1;min-width:0;display:flex;overflow:hidden;background:var(--paper)}
-.cvmain{flex:1;min-width:0;display:flex;flex-direction:column}
+/* collections strip */
+.colls{display:flex;gap:var(--s4);overflow-x:auto;padding-bottom:var(--s3);margin-bottom:var(--s5)}
+.coll{flex:none;width:180px;cursor:pointer}
+.coll .stack{position:relative;height:110px}
+.coll .stack .s{position:absolute;inset:0;background:var(--paper1)}
+.coll .stack .s:nth-child(1){transform:translate(6px,6px);background:var(--plate)}
+.coll .stack .s:nth-child(2){transform:translate(3px,3px);background:var(--paper1)}
+.coll .stack .s:nth-child(3){display:grid;place-items:center;color:var(--muted)}
+.coll .ct{font-size:var(--fs-sm);font-weight:600;margin-top:8px}
+.coll .mt{font-size:var(--fs-xs);color:var(--muted)}
+
+/* masonry feed: no card backgrounds */
+.masonry{column-width:230px;column-gap:var(--s5)}
+.card{display:inline-block;width:100%;margin-bottom:var(--s5);cursor:pointer;text-align:left;break-inside:avoid}
+.card .media{position:relative;width:100%;overflow:hidden}
+.shot{width:100%;display:block;background:linear-gradient(150deg,#9a9a9a,#4d4d4d)}
+.shot.b{background:linear-gradient(150deg,#8a8a8a,#3a3a3a)}
+.shot.c{background:linear-gradient(150deg,#a7a7a7,#606060)}
+.playover{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:46px;height:46px;border-radius:50%;background:rgba(0,0,0,.42);color:#fff;display:grid;place-items:center}
+.card .media.audio{height:84px;display:flex;align-items:center;justify-content:center;color:var(--ink)}
+.card .media.text{padding:2px 0}
+.card .media.text .body{font-size:var(--fs-sm);color:var(--soft);display:-webkit-box;-webkit-line-clamp:5;-webkit-box-orient:vertical;overflow:hidden}
+.card .title{font-size:var(--fs-sm);color:var(--ink);font-weight:600;margin-top:8px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.card .who{display:flex;align-items:center;gap:6px;color:var(--muted);font-size:var(--fs-xs);margin-top:5px}
+
+/* canvas */
+.cvwrap{flex:1;min-width:0;display:flex;flex-direction:column;background:var(--paper)}
 .cvhd{flex:none;height:48px;display:flex;align-items:center;gap:var(--s3);padding:0 var(--s4);background:var(--surface)}
-.cvhd .acts{margin-left:auto;display:flex;gap:var(--s1)}
+.cvhd .acts{margin-left:auto;display:flex;gap:var(--s1);align-items:center}
+.cvhd .cmtcount{font-size:var(--fs-xs);color:var(--muted);display:inline-flex;align-items:center;gap:5px}
 .cvtools{flex:none;display:flex;align-items:center;gap:var(--s1);padding:8px var(--s4);background:var(--plate)}
 .cvtools .sep{width:1px;height:20px;background:var(--line2);margin:0 6px}
+.cvtools .grp{font-size:10px;color:var(--muted);margin-right:2px}
 .sw{width:18px;height:18px;border-radius:50%;cursor:pointer;box-shadow:0 0 0 1px rgba(0,0,0,.15)}
-.canvas{flex:1;overflow:auto;padding:var(--s5);display:flex;flex-wrap:wrap;gap:var(--s4);align-content:flex-start;
+.canvas{flex:1;overflow:auto;padding:var(--s5);display:flex;flex-wrap:wrap;gap:var(--s5);align-content:flex-start;
   background:repeating-conic-gradient(var(--surface) 0 25%,transparent 0 50%) 0 0/16px 16px}
-.tile{background:var(--paper);box-shadow:0 1px 4px rgba(0,0,0,.18);position:relative}
+.tile{position:relative;background:var(--paper);box-shadow:0 1px 5px rgba(0,0,0,.18)}
 .tile.sel{outline:2px solid var(--ink);outline-offset:2px}
-.tile .tmedia{position:relative;overflow:hidden}
-.tile.img .tmedia{width:360px;height:203px;background:radial-gradient(120% 90% at 70% 15%,#3a4046,#111417)}
-.tile.img .tmedia .ground{position:absolute;inset:58% 0 0 0;background:linear-gradient(#2a2e31,#0d0f11)}
-.tile.img .tmedia .o1{position:absolute;left:34%;top:40%;width:52px;height:104px;background:#0c1216;box-shadow:0 0 0 1px #26303a}
-.tile.img .tmedia .o2{position:absolute;left:52%;top:52%;width:40px;height:78px;background:#0d151b;box-shadow:0 0 0 1px #26303a}
-.tile .anno{position:absolute;inset:0;pointer-events:none}
-.tile.audio{width:360px}
-.tile.audio .tmedia{position:relative;height:110px;background:var(--paper1);display:flex;align-items:center;padding:0 12px}
-.awave{position:relative;display:flex;align-items:center;gap:2px;height:66px;width:100%}
-.awave i{flex:1;background:var(--soft);opacity:.5;border-radius:1px}
-.asel{position:absolute;top:10px;bottom:10px;background:rgba(120,120,120,.28);box-shadow:inset 2px 0 0 var(--ink),inset -2px 0 0 var(--ink)}
-.asel .fl{position:absolute;top:2px;left:2px;background:var(--ink);color:var(--on-ink);font-size:10px;padding:1px 5px;border-radius:2px;white-space:nowrap}
-.tlabel{display:flex;align-items:center;gap:7px;padding:8px 11px;font-size:var(--fs-xs)}
-.tlabel .nm{font-weight:600}
-.tlabel .note{margin-left:auto;color:var(--muted);display:inline-flex;align-items:center;gap:4px}
-.cvnotes{flex:none;width:284px;background:var(--surface);display:flex;flex-direction:column}
-.cvnhd{flex:none;height:48px;display:flex;align-items:center;justify-content:space-between;padding:0 var(--s3);background:var(--plate)}
-.cvnhd b{font-size:var(--fs-sm);font-weight:600}
-.cvnlist{flex:1;overflow-y:auto;padding:var(--s3)}
-.note{padding:var(--s2);border-radius:var(--r)}
-.note:hover{background:var(--plate)}
-.note.done{opacity:.5}
-.note .top{display:flex;align-items:center;gap:7px}
-.note .anchor{margin-left:auto;font-size:10px;color:var(--muted);background:var(--paper);border-radius:2px;padding:1px 6px}
-.note .tx{font-size:var(--fs-xs);color:var(--soft);margin-top:5px}
-.note .foot{display:flex;gap:var(--s3);margin-top:7px}
-.note .foot button{font-size:11px;color:var(--muted)}
-.note .foot button:hover{color:var(--ink)}
-.cvncompose{flex:none;padding:var(--s2) var(--s3)}
+.tname{position:absolute;top:6px;left:6px;z-index:4;background:rgba(20,20,20,.62);color:#fff;font-size:10px;padding:2px 6px;border-radius:2px;display:inline-flex;gap:6px;align-items:center}
+.tname .ver{opacity:.85}
+.tile.img{width:380px;height:214px}
+.tile.img .scene{position:absolute;inset:0;background:radial-gradient(120% 90% at 70% 15%,#3a4046,#111417)}
+.tile.img .scene .ground{position:absolute;inset:58% 0 0 0;background:linear-gradient(#2a2e31,#0d0f11)}
+.tile.img .scene .o1{position:absolute;left:34%;top:40%;width:52px;height:104px;background:#0c1216;box-shadow:0 0 0 1px #26303a}
+.tile.img .scene .o2{position:absolute;left:52%;top:52%;width:40px;height:78px;background:#0d151b;box-shadow:0 0 0 1px #26303a}
+.tile.img.warm .scene{background:radial-gradient(120% 90% at 30% 20%,#463a3a,#141010)}
+.tile.img.warm .scene .ground{background:linear-gradient(#2e2a2a,#100d0d)}
+.tile.audio{width:380px;height:150px;display:flex;align-items:center;padding:0 16px}
+.tile.audio .wavewrap{position:relative;width:100%;height:78px}
+.anno{position:absolute;inset:0;pointer-events:none;z-index:2}
 
-/* ============ profile ============ */
+/* comment pins (figma-style): minimized pfp, expand on click */
+.pin{position:absolute;z-index:6;transform:translate(-50%,-50%)}
+.pin .pfp{width:26px;height:26px;border-radius:50% 50% 50% 3px;display:grid;place-items:center;font-size:10px;font-weight:700;color:#fff;
+  box-shadow:0 2px 6px rgba(0,0,0,.4);cursor:pointer;border:2px solid var(--paper)}
+.pin .pop{display:none;position:absolute;top:14px;left:18px;width:230px;background:var(--paper);border-radius:var(--r);box-shadow:0 14px 44px rgba(0,0,0,.34);padding:11px;z-index:8}
+.pin.open .pop{display:block}
+.pin.open .pfp{outline:2px solid var(--ink);outline-offset:2px}
+.pin .pop .ph{display:flex;align-items:center;gap:7px;margin-bottom:6px}
+.pin .pop .tx{font-size:var(--fs-xs);color:var(--soft)}
+.pin .pop .rl{margin-top:9px}
+.pin .pop .rl input{width:100%;background:var(--surface);border:0;border-radius:var(--r);padding:7px 9px;font-size:var(--fs-xs);outline:none;color:var(--ink)}
+.selbox{position:absolute;border:1.5px dashed var(--ink);z-index:3}
+.selrange{position:absolute;top:0;bottom:0;background:rgba(120,120,120,.22);box-shadow:inset 2px 0 0 var(--ink),inset -2px 0 0 var(--ink);z-index:1}
+
+/* profile */
 .prof{flex:1;min-width:0;overflow-y:auto;background:var(--paper)}
 .phero{padding:var(--s5) var(--s5) var(--s4)}
 .phero .top{display:flex;gap:var(--s5);align-items:flex-start}
@@ -271,7 +272,7 @@ input{font:inherit;color:inherit}
 .ptab2.on::after{content:"";position:absolute;left:0;right:0;bottom:0;height:2px;background:var(--ink)}
 .pbody{padding:var(--s5)}
 
-/* ============ dms ============ */
+/* dms */
 .dmlist{flex:none;width:var(--chan);background:var(--surface);display:flex;flex-direction:column;overflow:hidden}
 .dmlist .hd{height:48px;flex:none;display:flex;align-items:center;padding:0 var(--s3);background:var(--plate);font-weight:600;font-size:var(--fs-sm)}
 .dmadd{padding:var(--s3)}
@@ -283,30 +284,27 @@ input{font:inherit;color:inherit}
 .dmrow .pr.off{background:var(--muted)}
 .dmrow .nm{font-size:var(--fs-sm)}
 
-/* ============ overlays: details sheet + upload + dropdowns ============ */
+/* overlays */
 .scrim{position:fixed;inset:0;background:rgba(10,10,10,.5);z-index:80}
 :root[data-theme="dark"] .scrim,:root:not([data-theme="light"]) .scrim{background:rgba(0,0,0,.66)}
 .sheet{position:fixed;z-index:81;inset:0;display:grid;place-items:center;padding:var(--s5);pointer-events:none}
-.sheet .card2{pointer-events:auto;width:min(920px,96vw);max-height:90vh;background:var(--paper);border-radius:var(--r);
-  box-shadow:0 30px 80px rgba(0,0,0,.5);display:flex;overflow:hidden}
-.sheet .dmedia{flex:none;width:52%;background:var(--paper1);display:flex;align-items:center;justify-content:center;position:relative;min-height:420px}
-.sheet .dmedia .wf{display:flex;align-items:flex-end;gap:2px;height:120px;width:82%}
-.sheet .dmedia .wf i{flex:1;background:var(--soft);opacity:.5;border-radius:1px}
+.sheet .card2{pointer-events:auto;width:min(920px,96vw);max-height:90vh;background:var(--paper);border-radius:var(--r);box-shadow:0 30px 80px rgba(0,0,0,.5);display:flex;overflow:hidden}
+.sheet .dmedia{flex:none;width:52%;background:var(--paper1);display:flex;align-items:center;justify-content:center;position:relative;min-height:420px;padding:24px}
+.sheet .dmedia .wave{height:150px}
 .sheet .dmedia .close{position:absolute;top:12px;left:12px;background:rgba(0,0,0,.4);color:#fff;width:30px;height:30px;border-radius:50%;display:grid;place-items:center}
 .dinfo{flex:1;min-width:0;display:flex;flex-direction:column;overflow:hidden}
 .dinfo .scroll{flex:1;overflow-y:auto;padding:var(--s4)}
-.dinfo h2{font-size:var(--fs-lg);font-weight:600;display:flex;align-items:center;gap:8px}
-.dinfo h2 .ver{font-size:10px;font-weight:700;background:var(--ink);color:var(--on-ink);padding:1px 6px;border-radius:2px}
-.vrow{display:flex;gap:4px;margin:var(--s3) 0}
-.vpill{font-size:var(--fs-xs);padding:4px 9px;border-radius:var(--r);color:var(--soft);background:var(--surface)}
-.vpill.on{background:var(--ink);color:var(--on-ink);font-weight:600}
-.meta{display:flex;flex-direction:column;gap:9px;margin:var(--s4) 0;font-size:var(--fs-sm)}
+.dinfo h2{font-size:var(--fs-lg);font-weight:600}
+.dinfo .verbtn{margin:var(--s2) 0 var(--s3);display:inline-flex;align-items:center;gap:7px;background:var(--surface);border-radius:var(--r);padding:6px 10px;font-size:var(--fs-xs);color:var(--soft)}
+.dinfo .verbtn:hover{background:var(--plate)}
+.dinfo .verbtn .v{font-weight:700;color:var(--ink)}
+.meta{display:flex;flex-direction:column;gap:9px;margin:0 0 var(--s4);font-size:var(--fs-sm)}
 .meta .row{display:flex;gap:var(--s3)}
 .meta .k{width:96px;flex:none;color:var(--muted);font-size:var(--fs-xs)}
 .meta .v{color:var(--ink);min-width:0}
 .dsec{margin-top:var(--s4)}
 .dsec .lb{color:var(--muted);font-size:var(--fs-xs);font-weight:600;margin-bottom:8px}
-.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
 .dinfo .foot{flex:none;padding:var(--s3) var(--s4);background:var(--surface);display:flex;gap:var(--s2)}
 .cmt{display:flex;gap:9px;margin-bottom:var(--s3)}
 .cmt .bd{min-width:0}
@@ -314,27 +312,29 @@ input{font:inherit;color:inherit}
 .cmt .by time{color:var(--muted);font-size:10px}
 .cmt .tx{font-size:var(--fs-sm);color:var(--soft)}
 
-/* dropdown menu */
-.menu{position:fixed;z-index:90;background:var(--paper);border-radius:var(--r);box-shadow:0 12px 40px rgba(0,0,0,.28);
-  padding:5px;min-width:180px;display:none}
+.menu{position:fixed;z-index:90;background:var(--paper);border-radius:var(--r);box-shadow:0 12px 40px rgba(0,0,0,.28);padding:5px;min-width:200px;display:none}
 .menu.open{display:block}
 .menu .mlabel{font-size:10px;color:var(--muted);padding:6px 10px 3px}
 .menu button{display:flex;align-items:center;gap:9px;width:100%;text-align:left;padding:8px 10px;border-radius:var(--r);font-size:var(--fs-sm);color:var(--ink)}
 .menu button:hover{background:var(--surface)}
+.menu .verline{display:flex;flex-direction:column;gap:1px}
+.menu .verline .fn{font-size:var(--fs-xs);color:var(--soft)}
+.menu .verline .rs{font-size:10px;color:var(--muted)}
 .menu .sep{height:1px;background:var(--line);margin:4px 0}
 
-/* upload modal */
-.umodal{position:fixed;z-index:81;top:50%;left:50%;transform:translate(-50%,-50%);width:min(540px,95vw);max-height:90vh;
-  overflow:auto;background:var(--paper);border-radius:var(--r);box-shadow:0 30px 80px rgba(0,0,0,.5)}
+.umodal{position:fixed;z-index:81;top:50%;left:50%;transform:translate(-50%,-50%);width:min(540px,95vw);max-height:90vh;overflow:auto;background:var(--paper);border-radius:var(--r);box-shadow:0 30px 80px rgba(0,0,0,.5)}
 .uhd{display:flex;align-items:center;justify-content:space-between;padding:var(--s3) var(--s4);background:var(--surface)}
 .uhd b{font-size:var(--fs);font-weight:600}
 .ubody{padding:var(--s4)}
+.uvbanner{display:flex;align-items:center;gap:9px;background:var(--surface);border-radius:var(--r);padding:9px 12px;font-size:var(--fs-sm);margin-bottom:var(--s3)}
+.uvbanner .ic{color:var(--muted)}
 .drop{border:1.5px dashed var(--line2);border-radius:var(--r);padding:var(--s4);text-align:center;background:var(--surface)}
 .drop .big{font-weight:600}.drop .sub{font-size:var(--fs-xs);color:var(--muted);margin-top:3px}
 .ufiles{display:flex;flex-direction:column;gap:6px;margin-top:var(--s3)}
 .ufile{display:flex;align-items:center;gap:9px;background:var(--surface);border-radius:var(--r);padding:8px 11px;font-size:var(--fs-sm)}
 .ufile .auto{margin-left:auto}
-.ulab{display:block;font-size:var(--fs-xs);color:var(--muted);font-weight:600;margin:var(--s4) 0 7px}
+.ulab{display:flex;align-items:center;gap:8px;font-size:var(--fs-xs);color:var(--muted);font-weight:600;margin:var(--s4) 0 7px}
+.ulab .rq{color:var(--m1);font-weight:600}
 .urow{display:flex;gap:6px;flex-wrap:wrap}
 .visopt{display:flex;align-items:center;gap:8px;flex:1;min-width:140px;background:var(--surface);border-radius:var(--r);padding:10px 12px;transition:background var(--t)}
 .visopt:hover{background:var(--plate)}
@@ -367,7 +367,8 @@ input{font:inherit;color:inherit}
 <symbol id="i-pen" viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></symbol>
 <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M7 17L17 7M8 7h9v9"/></symbol>
 <symbol id="i-square" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="1"/></symbol>
-<symbol id="i-region" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="1" stroke-dasharray="3 3"/></symbol>
+<symbol id="i-scribble" viewBox="0 0 24 24"><path d="M3 13c2-5 4 4 6 0s3-7 5-3 3 6 7 2"/></symbol>
+<symbol id="i-comment" viewBox="0 0 24 24"><path d="M21 11.5a8.4 8.4 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.4 8.4 0 0 1 3.8-.9h.5a8.5 8.5 0 0 1 8 8z"/></symbol>
 <symbol id="i-type" viewBox="0 0 24 24"><path d="M4 7V4h16v3M9 20h6M12 4v16"/></symbol>
 <symbol id="i-undo" viewBox="0 0 24 24"><path d="M1 4v6h6M3.5 15a9 9 0 1 0 2.1-9.4L1 10"/></symbol>
 <symbol id="i-expand" viewBox="0 0 24 24"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></symbol>
@@ -380,6 +381,8 @@ input{font:inherit;color:inherit}
 <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></symbol>
 <symbol id="i-canvas" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></symbol>
 <symbol id="i-move" viewBox="0 0 24 24"><path d="M5 9l-3 3 3 3M9 5l3-3 3 3M15 19l-3 3-3-3M19 9l3 3-3 3M2 12h20M12 2v20"/></symbol>
+<symbol id="i-smile" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2M9 9h.01M15 9h.01"/></symbol>
+<symbol id="i-save" viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></symbol>
 </defs></svg>
 
 <div class="proto">
@@ -395,6 +398,7 @@ input{font:inherit;color:inherit}
   <div class="pright">
     <button class="pbtn" id="showDetails">Details pane</button>
     <button class="pbtn" id="showUpload">Upload</button>
+    <button class="pbtn" id="showUploadV">Upload (version)</button>
     <button class="pbtn" id="themebtn">Dark</button>
   </div>
 </div>
@@ -409,10 +413,11 @@ input{font:inherit;color:inherit}
     <button class="railbtn" title="Beat swap">BS</button>
     <div class="railsep"></div>
     <button class="railbtn" id="showUpload2" title="Create, join a link, add a friend"><svg class="ic"><use href="#i-plus"/></svg></button>
+    <button class="railbtn user" data-s="profile" title="jax, your profile"><span class="pfp">JX</span></button>
   </aside>
 
   <div class="stage">
-    <!-- ===================== WORKSPACE ===================== -->
+    <!-- WORKSPACE -->
     <div class="screen" data-screen="workspace">
       <nav class="chan">
         <div class="chanhd"><b>Late Bloom LP</b><svg class="ic sm" style="color:var(--muted)"><use href="#i-chev"/></svg></div>
@@ -436,18 +441,12 @@ input{font:inherit;color:inherit}
             <button class="crow"><svg class="ic"><use href="#i-voice"/></svg><span class="nm">co-writing</span></button>
           </div>
         </div>
-        <div class="chanfoot">
-          <div class="av">JX</div>
-          <div class="me"><b class="m5">jax</b><small>admin</small></div>
-          <button class="iconbtn" title="Mic"><svg class="ic sm"><use href="#i-mic"/></svg></button>
-          <button class="iconbtn" title="Settings"><svg class="ic sm"><use href="#i-settings"/></svg></button>
-        </div>
       </nav>
 
       <main class="main">
         <div class="mainhd">
           <svg class="ic"><use href="#i-hash"/></svg><span class="t">beats</span>
-          <span class="sub">wips only, put the session name in the caption</span>
+          <span class="sub">put the session name in the file name</span>
           <div class="acts">
             <button class="iconbtn" title="Voice"><svg class="ic"><use href="#i-phone"/></svg></button>
             <button class="iconbtn" title="Video"><svg class="ic"><use href="#i-video"/></svg></button>
@@ -458,37 +457,39 @@ input{font:inherit;color:inherit}
         <div class="stream">
           <div class="day"><span>Today</span></div>
           <div class="msg">
+            <div class="hoveracts"><button class="iconbtn" title="React"><svg class="ic sm"><use href="#i-smile"/></svg></button><button class="iconbtn" title="Reply"><svg class="ic sm"><use href="#i-reply"/></svg></button><button class="iconbtn" title="More"><svg class="ic sm"><use href="#i-more"/></svg></button></div>
             <div class="av sm">DV</div>
             <div class="bd">
               <div class="by"><span class="u m3">dev</span><time>2:14 PM</time></div>
               <div class="tx">reworked the back half. same bpm, swapped the drums to the ones <span class="men m1">@rae</span> liked</div>
               <button class="filecard" data-open-details>
-                <div class="thumb audio"><div class="wf" data-wf="70"></div><div class="play"><svg class="ic f sm"><use href="#i-play"/></svg></div></div>
+                <div class="fcwave"><div class="wave" data-wf="150"></div></div>
                 <div class="fbody">
                   <div class="fname">late_bloom_beat.flp <span class="ver">v3</span></div>
-                  <div class="fcap">142 bpm, needs a rap pass on the bridge</div>
-                  <div class="ftags"><span class="tag auto">flp</span><span class="tag auto">audio</span><span class="tag">drums</span><span class="tag">142bpm</span></div>
+                  <div class="ftags"><span class="tag auto">flp</span><span class="tag auto">audio</span><span class="tag">drums</span><span class="tag">142bpm</span><span class="tag">bridge</span><span class="tagmore">+2</span></div>
                 </div>
               </button>
+              <div class="reactions"><span class="react">🔥<span class="n">3</span></span><span class="react">👀<span class="n">1</span></span></div>
               <div class="reply"><svg class="ic sm"><use href="#i-reply"/></svg>3 replies</div>
             </div>
           </div>
           <div class="msg">
+            <div class="hoveracts"><button class="iconbtn" title="React"><svg class="ic sm"><use href="#i-smile"/></svg></button><button class="iconbtn" title="Reply"><svg class="ic sm"><use href="#i-reply"/></svg></button><button class="iconbtn" title="More"><svg class="ic sm"><use href="#i-more"/></svg></button></div>
             <div class="av sm">RA</div>
             <div class="bd">
               <div class="by"><span class="u m1">rae</span><time>2:31 PM</time></div>
               <div class="tx">this is the one. pulling it into <span class="men">#mixing</span>, dropping a scratch verse now</div>
               <button class="filecard" data-open-details>
-                <div class="thumb audio"><div class="wf" data-wf="70"></div><div class="play"><svg class="ic f sm"><use href="#i-play"/></svg></div></div>
+                <div class="fcwave"><div class="wave" data-wf="150"></div></div>
                 <div class="fbody">
                   <div class="fname">bridge_scratch_rae.wav</div>
-                  <div class="fcap">one take, phone mic, just for the cadence</div>
                   <div class="ftags"><span class="tag auto">wav</span><span class="tag auto">audio</span><span class="tag">acapella</span></div>
                 </div>
               </button>
             </div>
           </div>
           <div class="msg">
+            <div class="hoveracts"><button class="iconbtn" title="React"><svg class="ic sm"><use href="#i-smile"/></svg></button><button class="iconbtn" title="Reply"><svg class="ic sm"><use href="#i-reply"/></svg></button><button class="iconbtn" title="More"><svg class="ic sm"><use href="#i-more"/></svg></button></div>
             <div class="av sm">TM</div>
             <div class="bd">
               <div class="by"><span class="u m2">tomo</span><time>2:47 PM</time></div>
@@ -509,65 +510,52 @@ input{font:inherit;color:inherit}
       <aside class="mem">
         <div class="memg">
           <div class="lb">Admins, 2</div>
-          <div class="mrow"><div class="av sm">JX<span class="pr"></span></div>
-            <div class="info"><div class="nm"><span class="u m5">jax</span></div><div class="doing">arranging, Ableton</div></div></div>
-          <div class="mrow"><div class="av sm">RA<span class="pr"></span></div>
-            <div class="info"><div class="nm"><span class="u m1">rae</span></div><div class="doing">recording</div></div></div>
+          <div class="mrow"><div class="av sm">JX<span class="pr"></span></div><div class="info"><div class="nm"><span class="u m5">jax</span></div><div class="doing">arranging, Ableton</div></div></div>
+          <div class="mrow"><div class="av sm">RA<span class="pr"></span></div><div class="info"><div class="nm"><span class="u m1">rae</span></div><div class="doing">recording</div></div></div>
         </div>
         <div class="memg">
           <div class="lb">Members, 4</div>
-          <div class="mrow"><div class="av sm">DV<span class="pr"></span></div>
-            <div class="info"><div class="nm"><span class="u m3">dev</span></div><div class="doing">in FL Studio</div></div></div>
-          <div class="mrow"><div class="av sm">TM<span class="pr"></span></div>
-            <div class="info"><div class="nm"><span class="u m2">tomo</span></div><div class="doing">reviewing beat v3</div></div></div>
-          <div class="mrow off"><div class="av sm">KO<span class="pr off"></span></div>
-            <div class="info"><div class="nm"><span class="u m4">kofi</span></div><div class="doing">offline</div></div></div>
-          <div class="mrow off"><div class="av sm">NL<span class="pr off"></span></div>
-            <div class="info"><div class="nm"><span class="u m6">nel</span></div><div class="doing">offline</div></div></div>
+          <div class="mrow"><div class="av sm">DV<span class="pr"></span></div><div class="info"><div class="nm"><span class="u m3">dev</span></div><div class="doing">in FL Studio</div></div></div>
+          <div class="mrow"><div class="av sm">TM<span class="pr"></span></div><div class="info"><div class="nm"><span class="u m2">tomo</span></div><div class="doing">reviewing beat v3</div></div></div>
+          <div class="mrow off"><div class="av sm">KO<span class="pr off"></span></div><div class="info"><div class="nm"><span class="u m4">kofi</span></div><div class="doing">offline</div></div></div>
+          <div class="mrow off"><div class="av sm">NL<span class="pr off"></span></div><div class="info"><div class="nm"><span class="u m6">nel</span></div><div class="doing">offline</div></div></div>
         </div>
       </aside>
     </div>
 
-    <!-- ===================== FEED ===================== -->
+    <!-- FEED -->
     <div class="screen" data-screen="feed" hidden>
       <div class="pane">
-        <div class="panehd">
-          <div class="wm">eski</div>
-          <nav>
-            <a class="nav on">Feed</a><a class="nav">Notifications</a><a class="nav">You</a>
-          </nav>
-        </div>
+        <div class="panehd"><div class="wm">eski</div><nav><a class="nav on">Feed</a><a class="nav">Notifications</a><a class="nav">You</a></nav></div>
         <div class="toolbar">
           <div class="field"><svg class="ic sm"><use href="#i-search"/></svg><input placeholder="Search the people you follow"></div>
           <button class="selbtn">Type<svg class="ic sm"><use href="#i-chev"/></svg></button>
           <button class="selbtn">Latest<svg class="ic sm"><use href="#i-chev"/></svg></button>
         </div>
         <div class="panebody">
-          <div class="grid">
-            <button class="card" data-open-details><div class="box frame"><div class="wf" data-wf="52"></div></div>
-              <div class="cap">back half rework, drums finally sit right</div>
-              <div class="who"><span class="uchip m3"><span class="dot"></span>dev</span></div></button>
-            <button class="card" data-open-details><div class="box"><span class="vtag"><svg class="ic"><use href="#i-video"/></svg></span></div>
-              <div class="cap">q3 comp reel, first pass</div>
-              <div class="who"><span class="uchip m4"><span class="dot"></span>mira</span></div></button>
-            <button class="card" data-open-details><div class="box"></div>
-              <div class="cap">keyframe study, the falling sequence</div>
-              <div class="who"><span class="uchip m3"><span class="dot"></span>lin</span></div></button>
-            <button class="card" data-open-details><div class="box frame"><div class="wf" data-wf="52"></div></div>
-              <div class="cap">low ceilings, verse idea</div>
-              <div class="who"><span class="uchip m1"><span class="dot"></span>rae</span></div></button>
-            <button class="card" data-open-details><div class="box"><div class="textbody"><b>on finishing things.</b> a short note about why the last 10% takes 90% of the time, and what i do about it now.</div></div>
-              <div class="cap" style="font-weight:600">On finishing things</div>
-              <div class="who"><span class="uchip m5"><span class="dot"></span>jax</span></div></button>
-            <button class="card" data-open-details><div class="box frame"><div class="wf" data-wf="52"></div></div>
-              <div class="cap">drum one-shots, vol 2</div>
-              <div class="who"><span class="uchip m5"><span class="dot"></span>jax</span></div></button>
+          <div class="masonry">
+            <button class="card" data-open-details><div class="media"><div class="shot" style="aspect-ratio:4/5"></div></div>
+              <div class="title">keyframe study, the falling sequence</div><div class="who"><span class="uchip m3"><span class="dot"></span>lin</span></div></button>
+            <button class="card" data-open-details><div class="media audio"><div class="wave" data-wf="150"></div></div>
+              <div class="title">back half rework, drums finally sit right</div><div class="who"><span class="uchip m3"><span class="dot"></span>dev</span></div></button>
+            <button class="card" data-open-details><div class="media"><div class="shot b" style="aspect-ratio:16/9"></div><div class="playover"><svg class="ic f"><use href="#i-play"/></svg></div></div>
+              <div class="title">q3 comp reel, first pass</div><div class="who"><span class="uchip m4"><span class="dot"></span>mira</span></div></button>
+            <button class="card" data-open-details><div class="media text"><div class="body">The last 10 percent takes 90 percent of the time. A short note on how I stopped letting that stall a release, and the two rules I keep now.</div></div>
+              <div class="title">On finishing things</div><div class="who"><span class="uchip m5"><span class="dot"></span>jax</span></div></button>
+            <button class="card" data-open-details><div class="media"><div class="shot c" style="aspect-ratio:3/2"></div></div>
+              <div class="title">cover art studies, warm set</div><div class="who"><span class="uchip m6"><span class="dot"></span>nel</span></div></button>
+            <button class="card" data-open-details><div class="media audio"><div class="wave" data-wf="150"></div></div>
+              <div class="title">low ceilings, verse idea</div><div class="who"><span class="uchip m1"><span class="dot"></span>rae</span></div></button>
+            <button class="card" data-open-details><div class="media"><div class="shot" style="aspect-ratio:1/1"></div><div class="playover"><svg class="ic f"><use href="#i-play"/></svg></div></div>
+              <div class="title">title sequence, draft</div><div class="who"><span class="uchip m2"><span class="dot"></span>sol</span></div></button>
+            <button class="card" data-open-details><div class="media audio"><div class="wave" data-wf="150"></div></div>
+              <div class="title">drum one-shots, vol 2</div><div class="who"><span class="uchip m5"><span class="dot"></span>jax</span></div></button>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- ===================== MEDIA EXPLORER ===================== -->
+    <!-- MEDIA EXPLORER -->
     <div class="screen" data-screen="explorer" hidden>
       <div class="pane">
         <div class="panehd"><div class="title">Late Bloom LP, media</div></div>
@@ -579,113 +567,100 @@ input{font:inherit;color:inherit}
           <button class="selbtn">Latest<svg class="ic sm"><use href="#i-chev"/></svg></button>
         </div>
         <div class="panebody">
-          <div class="grid">
-            <button class="card" data-open-details><div class="box frame"><div class="wf" data-wf="52"></div></div>
-              <div class="cap">142 bpm, needs a rap pass on the bridge</div>
-              <div class="who">late_bloom_beat.flp, <span class="uchip m3" style="padding:1px 6px"><span class="dot"></span>dev</span></div></button>
-            <button class="card" data-open-details><div class="box frame"><div class="wf" data-wf="52"></div></div>
-              <div class="cap">one take, phone mic, just for the cadence</div>
-              <div class="who">bridge_scratch_rae.wav</div></button>
-            <button class="card" data-open-details><div class="box"></div>
-              <div class="cap">reference, the drum sound we keep coming back to</div>
-              <div class="who">ref_drums.png</div></button>
-            <button class="card" data-open-details><div class="box frame"><div class="wf" data-wf="52"></div></div>
-              <div class="cap">full mix, rough</div>
-              <div class="who">bloom_mix_rough.wav</div></button>
-            <button class="card" data-open-details><div class="box"><span class="vtag"><svg class="ic"><use href="#i-video"/></svg></span></div>
-              <div class="cap">studio session clip</div>
-              <div class="who">booth_2min.mp4</div></button>
-            <button class="card" data-open-details><div class="box frame" style="display:grid;place-items:center"><svg class="ic" style="width:34px;height:34px;color:var(--muted)"><use href="#i-canvas"/></svg></div>
-              <div class="cap">project file</div>
-              <div class="who">bloom_master.als</div></button>
+          <div class="seclabel">Collections</div>
+          <div class="colls">
+            <div class="coll"><div class="stack"><div class="s"></div><div class="s"></div><div class="s"><svg class="ic"><use href="#i-canvas"/></svg></div></div><div class="ct">bloom, single</div><div class="mt">6 files</div></div>
+            <div class="coll"><div class="stack"><div class="s"></div><div class="s"></div><div class="s"><svg class="ic"><use href="#i-canvas"/></svg></div></div><div class="ct">drum kit, shared</div><div class="mt">22 files</div></div>
+            <div class="coll"><div class="stack"><div class="s"></div><div class="s"></div><div class="s"><svg class="ic"><use href="#i-canvas"/></svg></div></div><div class="ct">references</div><div class="mt">9 files</div></div>
+          </div>
+          <div class="seclabel">Files</div>
+          <div class="masonry">
+            <button class="card" data-open-details><div class="media audio"><div class="wave" data-wf="150"></div></div>
+              <div class="title">late_bloom_beat.flp</div><div class="who"><span class="uchip m3"><span class="dot"></span>dev</span> · #beats</div></button>
+            <button class="card" data-open-details><div class="media audio"><div class="wave" data-wf="150"></div></div>
+              <div class="title">bridge_scratch_rae.wav</div><div class="who"><span class="uchip m1"><span class="dot"></span>rae</span> · #beats</div></button>
+            <button class="card" data-open-details><div class="media"><div class="shot c" style="aspect-ratio:3/2"></div></div>
+              <div class="title">ref_drums.png</div><div class="who"><span class="uchip m1"><span class="dot"></span>rae</span> · #references</div></button>
+            <button class="card" data-open-details><div class="media audio"><div class="wave" data-wf="150"></div></div>
+              <div class="title">bloom_mix_rough.wav</div><div class="who"><span class="uchip m2"><span class="dot"></span>tomo</span> · #mixing</div></button>
+            <button class="card" data-open-details><div class="media"><div class="shot b" style="aspect-ratio:16/9"></div><div class="playover"><svg class="ic f"><use href="#i-play"/></svg></div></div>
+              <div class="title">booth_2min.mp4</div><div class="who"><span class="uchip m5"><span class="dot"></span>jax</span> · #announcements</div></button>
+            <button class="card" data-open-details><div class="media audio"><div class="wave" data-wf="150"></div></div>
+              <div class="title">bloom_master.als</div><div class="who"><span class="uchip m5"><span class="dot"></span>jax</span> · #stems and sessions</div></button>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- ===================== CANVAS ===================== -->
+    <!-- CANVAS -->
     <div class="screen" data-screen="canvas" hidden>
       <div class="cvwrap">
-        <div class="cvmain">
-          <div class="cvhd">
-            <button class="selbtn" id="canvasPick"><svg class="ic sm"><use href="#i-canvas"/></svg>sh040 review<svg class="ic sm"><use href="#i-chev"/></svg></button>
-            <span class="vis"><svg class="ic"><use href="#i-users"/></svg>Specter, group</span>
-            <div class="acts">
-              <button class="btn sm"><svg class="ic sm"><use href="#i-plus"/></svg>Add file</button>
-              <button class="btn sm">Share</button>
-            </div>
-          </div>
-          <div class="cvtools">
-            <button class="iconbtn" title="Move"><svg class="ic"><use href="#i-move"/></svg></button>
-            <button class="iconbtn on" title="Draw"><svg class="ic"><use href="#i-pen"/></svg></button>
-            <button class="iconbtn" title="Arrow"><svg class="ic"><use href="#i-arrow"/></svg></button>
-            <button class="iconbtn" title="Box"><svg class="ic"><use href="#i-square"/></svg></button>
-            <button class="iconbtn" title="Highlight a range"><svg class="ic"><use href="#i-region"/></svg></button>
-            <button class="iconbtn" title="Text"><svg class="ic"><use href="#i-type"/></svg></button>
-            <div class="sep"></div>
-            <span class="sw" style="background:#B0503F"></span>
-            <span class="sw" style="background:#A9791F"></span>
-            <span class="sw" style="background:#3F7A4E"></span>
-            <div class="sep"></div>
-            <button class="iconbtn" title="Undo"><svg class="ic"><use href="#i-undo"/></svg></button>
-            <button class="iconbtn" title="Fit"><svg class="ic"><use href="#i-expand"/></svg></button>
-          </div>
-          <div class="canvas">
-            <div class="tile img sel">
-              <div class="tmedia"><div class="ground"></div><div class="o1"></div><div class="o2"></div>
-                <svg class="anno" viewBox="0 0 360 203" preserveAspectRatio="none">
-                  <ellipse cx="132" cy="124" rx="40" ry="32" fill="none" stroke="#B0503F" stroke-width="2.5"/>
-                  <path d="M250 48 C 222 74, 190 86, 158 108" fill="none" stroke="#A9791F" stroke-width="2.5" stroke-linecap="round"/>
-                  <path d="M158 108 l 11 -3 l -5 11 z" fill="#A9791F"/>
-                </svg>
-              </div>
-              <div class="tlabel"><span class="nm">sh040_comp.mov</span><span class="ver" style="font-size:10px;font-weight:700;background:var(--ink);color:var(--on-ink);padding:1px 5px;border-radius:2px">v3</span><span class="note"><svg class="ic sm"><use href="#i-pen"/></svg>2</span></div>
-            </div>
-            <div class="tile audio">
-              <div class="tmedia"><div class="awave" data-wf="90"></div><div class="asel" style="left:33%;width:14%"><span class="fl">0:42 to 0:48</span></div></div>
-              <div class="tlabel"><span class="nm">sounddesign_pass.wav</span><span class="note"><svg class="ic sm"><use href="#i-region"/></svg>1</span></div>
-            </div>
-            <div class="tile img" style="opacity:.9">
-              <div class="tmedia" style="background:radial-gradient(120% 90% at 30% 20%,#463a3a,#141010)"><div class="ground" style="background:linear-gradient(#2e2a2a,#100d0d)"></div></div>
-              <div class="tlabel"><span class="nm">grade_ref.png</span></div>
-            </div>
+        <div class="cvhd">
+          <button class="selbtn" id="canvasPick"><svg class="ic sm"><use href="#i-canvas"/></svg>sh040 review<svg class="ic sm"><use href="#i-chev"/></svg></button>
+          <span class="vis"><svg class="ic"><use href="#i-users"/></svg>Specter, group</span>
+          <div class="acts">
+            <span class="cmtcount"><svg class="ic sm"><use href="#i-comment"/></svg>4 comments</span>
+            <button class="btn sm"><svg class="ic sm"><use href="#i-plus"/></svg>Add file</button>
+            <button class="btn sm">Share</button>
           </div>
         </div>
-        <aside class="cvnotes">
-          <div class="cvnhd"><b>Notes</b><span style="color:var(--muted);font-size:var(--fs-xs)">3 open</span></div>
-          <div class="cvnlist">
-            <div class="note"><div class="top"><span class="uchip m4"><span class="dot"></span>mira</span><span class="anchor">on frame</span></div>
-              <div class="tx">near building edge is ghosting against the sky, needs a garbage matte where circled.</div>
-              <div class="foot"><button>Reply</button><button>Resolve</button></div></div>
-            <div class="note"><div class="top"><span class="uchip m2"><span class="dot"></span>sol</span><span class="anchor">0:42 to 0:48</span></div>
-              <div class="tx">whoosh lands a beat late against the camera move, pull it about 6 frames earlier.</div>
-              <div class="foot"><button>Reply</button><button>Resolve</button></div></div>
-            <div class="note"><div class="top"><span class="uchip m3"><span class="dot"></span>lin</span><span class="anchor">arrow</span></div>
-              <div class="tx">light bloom from frame left reads great, keep it.</div>
-              <div class="foot"><button>Reply</button><button>Resolve</button></div></div>
-            <div class="note done"><div class="top"><span class="uchip m5"><span class="dot"></span>jax</span><span class="anchor">on frame</span></div>
-              <div class="tx">grade felt cold, warmed. resolved in v3.</div></div>
+        <div class="cvtools">
+          <button class="iconbtn on" title="Select and move"><svg class="ic"><use href="#i-move"/></svg></button>
+          <div class="sep"></div>
+          <span class="grp">Annotate</span>
+          <button class="iconbtn" title="Pen"><svg class="ic"><use href="#i-pen"/></svg></button>
+          <button class="iconbtn" title="Arrow"><svg class="ic"><use href="#i-arrow"/></svg></button>
+          <button class="iconbtn" title="Box"><svg class="ic"><use href="#i-square"/></svg></button>
+          <button class="iconbtn" title="Freeform"><svg class="ic"><use href="#i-scribble"/></svg></button>
+          <span class="sw" style="background:#B0503F"></span><span class="sw" style="background:#A9791F"></span><span class="sw" style="background:#3F7A4E"></span>
+          <div class="sep"></div>
+          <span class="grp">Comment</span>
+          <button class="iconbtn" title="Drop a comment (point, box, or freeform)"><svg class="ic"><use href="#i-comment"/></svg></button>
+          <div class="sep"></div>
+          <button class="iconbtn" title="Undo"><svg class="ic"><use href="#i-undo"/></svg></button>
+          <button class="iconbtn" title="Fit"><svg class="ic"><use href="#i-expand"/></svg></button>
+        </div>
+        <div class="canvas">
+          <div class="tile img sel">
+            <div class="tname"><span>sh040_comp.mov</span><span class="ver">v3</span></div>
+            <div class="scene"><div class="ground"></div><div class="o1"></div><div class="o2"></div></div>
+            <svg class="anno" viewBox="0 0 380 214" preserveAspectRatio="none">
+              <path d="M262 50 C 232 74, 200 86, 168 108" fill="none" stroke="#A9791F" stroke-width="2.5" stroke-linecap="round"/>
+              <path d="M168 108 l 11 -3 l -5 11 z" fill="#A9791F"/>
+            </svg>
+            <div class="selbox" style="left:26%;top:44%;width:20%;height:34%"></div>
+            <div class="pin open" style="left:26%;top:44%"><div class="pfp" style="background:var(--m4)">MI</div>
+              <div class="pop"><div class="ph"><span class="uchip m4"><span class="dot"></span>mira</span></div>
+                <div class="tx">near building edge is ghosting against the sky, needs a garbage matte inside this box.</div>
+                <div class="rl"><input placeholder="Reply"></div></div></div>
+            <div class="pin" style="left:70%;top:30%"><div class="pfp" style="background:var(--m3)">LN</div></div>
           </div>
-          <div class="cvncompose"><div class="field"><input placeholder="Add a note, or draw one on a file"></div></div>
-        </aside>
+          <div class="tile audio">
+            <div class="tname"><span>sounddesign_pass.wav</span></div>
+            <div class="wavewrap">
+              <div class="wave" data-wf="150"></div>
+              <div class="selrange" style="left:33%;width:14%"></div>
+              <div class="pin" style="left:40%;top:0"><div class="pfp" style="background:var(--m2)">SO</div></div>
+            </div>
+          </div>
+          <div class="tile img warm" style="width:300px;height:180px">
+            <div class="tname"><span>grade_ref.png</span></div>
+            <div class="scene"><div class="ground"></div></div>
+            <div class="pin" style="left:55%;top:50%"><div class="pfp" style="background:var(--m5)">JX</div></div>
+          </div>
+        </div>
       </div>
     </div>
 
-    <!-- ===================== PROFILE ===================== -->
+    <!-- PROFILE -->
     <div class="screen" data-screen="profile" hidden>
       <div class="prof">
         <div class="phero">
           <div class="top">
             <div class="av lg">RA</div>
-            <div class="who">
-              <h1>rae okonkwo</h1>
-              <div class="handle">@rae</div>
-              <div class="bio">writer and rapper. building the Late Bloom LP with a few people.</div>
-            </div>
-            <div class="actions">
-              <button class="btn primary"><svg class="ic sm"><use href="#i-user"/></svg>Add friend</button>
-              <button class="btn"><svg class="ic sm"><use href="#i-mail"/></svg>Message</button>
-            </div>
+            <div class="who"><h1>rae okonkwo</h1><div class="handle">@rae</div>
+              <div class="bio">writer and rapper. building the Late Bloom LP with a few people.</div></div>
+            <div class="actions"><button class="btn primary"><svg class="ic sm"><use href="#i-user"/></svg>Add friend</button><button class="btn"><svg class="ic sm"><use href="#i-mail"/></svg>Message</button></div>
           </div>
         </div>
         <div class="ptabs2">
@@ -695,21 +670,21 @@ input{font:inherit;color:inherit}
           <button class="ptab2"><svg class="ic"><use href="#i-settings"/></svg>Settings</button>
         </div>
         <div class="pbody">
-          <div class="grid">
-            <button class="card" data-open-details><div class="box frame"><div class="wf" data-wf="52"></div></div>
-              <div class="cap">low ceilings, the finished verse</div><div class="who"><span class="uchip m1"><span class="dot"></span>rae</span>, jax, tomo</div></button>
-            <button class="card" data-open-details><div class="box frame"><div class="wf" data-wf="52"></div></div>
-              <div class="cap">bloom, single</div><div class="who">rae, dev, tomo</div></button>
-            <button class="card" data-open-details><div class="box"></div>
-              <div class="cap">cover art, bloom</div><div class="who">nel, rae</div></button>
-            <button class="card" data-open-details><div class="box"><span class="vtag"><svg class="ic"><use href="#i-video"/></svg></span></div>
-              <div class="cap">lyric visual</div><div class="who">sol</div></button>
+          <div class="masonry">
+            <button class="card" data-open-details><div class="media audio"><div class="wave" data-wf="150"></div></div>
+              <div class="title">low ceilings, the finished verse</div><div class="who"><span class="uchip m1"><span class="dot"></span>rae</span>, jax, tomo</div></button>
+            <button class="card" data-open-details><div class="media"><div class="shot c" style="aspect-ratio:1/1"></div></div>
+              <div class="title">cover art, bloom</div><div class="who">nel, rae</div></button>
+            <button class="card" data-open-details><div class="media audio"><div class="wave" data-wf="150"></div></div>
+              <div class="title">bloom, single</div><div class="who">rae, dev, tomo</div></button>
+            <button class="card" data-open-details><div class="media"><div class="shot b" style="aspect-ratio:16/9"></div><div class="playover"><svg class="ic f"><use href="#i-play"/></svg></div></div>
+              <div class="title">lyric visual</div><div class="who">sol</div></button>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- ===================== MESSAGES ===================== -->
+    <!-- MESSAGES -->
     <div class="screen" data-screen="dms" hidden>
       <div class="dmlist">
         <div class="hd">Messages</div>
@@ -726,13 +701,10 @@ input{font:inherit;color:inherit}
           <div class="acts"><button class="iconbtn"><svg class="ic"><use href="#i-phone"/></svg></button><button class="iconbtn"><svg class="ic"><use href="#i-video"/></svg></button></div></div>
         <div class="stream">
           <div class="day"><span>Yesterday</span></div>
-          <div class="msg"><div class="av sm">MI</div><div class="bd"><div class="by"><span class="u">mira</span><time>6:02 PM</time></div>
-            <div class="tx">saw your comps on tiktok, insane. username's mira if you want to add me</div></div></div>
-          <div class="msg"><div class="av sm">RA</div><div class="bd"><div class="by"><span class="u">rae</span><time>6:03 PM</time></div>
-            <div class="tx">added. sending you the Specter link now, it drops you straight in</div>
-            <button class="filecard" style="max-width:320px" data-open-details><div class="fbody"><div class="fname"><svg class="ic sm" style="color:var(--muted)"><use href="#i-users"/></svg>join.eski.lol/specter-sh040</div><div class="fcap">one click and you're in the group</div></div></button></div></div>
-          <div class="msg"><div class="av sm">MI</div><div class="bd"><div class="by"><span class="u">mira</span><time>6:10 PM</time></div>
-            <div class="tx">in. this is so much cleaner than a drive folder</div></div></div>
+          <div class="msg"><div class="av sm">MI</div><div class="bd"><div class="by"><span class="u">mira</span><time>6:02 PM</time></div><div class="tx">saw your comps on tiktok, insane. username's mira if you want to add me</div></div></div>
+          <div class="msg"><div class="av sm">RA</div><div class="bd"><div class="by"><span class="u">rae</span><time>6:03 PM</time></div><div class="tx">added. sending you the Specter link now, it drops you straight in</div>
+            <button class="filecard" style="max-width:320px" data-open-details><div class="fbody"><div class="fname"><svg class="ic sm" style="color:var(--muted)"><use href="#i-users"/></svg>join.eski.lol/specter-sh040</div></div></button></div></div>
+          <div class="msg"><div class="av sm">MI</div><div class="bd"><div class="by"><span class="u">mira</span><time>6:10 PM</time></div><div class="tx">in. this is so much cleaner than a drive folder</div></div></div>
         </div>
         <div class="composer"><div class="field"><button class="iconbtn" style="width:26px;height:26px"><svg class="ic sm"><use href="#i-clip"/></svg></button><input placeholder="Message mira"><button class="snd"><svg class="ic sm"><use href="#i-send"/></svg></button></div></div>
       </main>
@@ -740,20 +712,18 @@ input{font:inherit;color:inherit}
   </div>
 </div>
 
-<!-- ===================== DETAILS SHEET ===================== -->
+<!-- DETAILS SHEET -->
 <div class="scrim" id="scrim" hidden></div>
 <div class="sheet" id="detailsSheet" hidden>
   <div class="card2">
     <div class="dmedia">
       <button class="close" id="detailsClose"><svg class="ic sm"><use href="#i-x"/></svg></button>
-      <div class="wf" data-wf="120"></div>
-      <div class="play" style="position:absolute;width:56px;height:56px;border-radius:50%;background:rgba(0,0,0,.4);color:#fff;display:grid;place-items:center"><svg class="ic f"><use href="#i-play"/></svg></div>
+      <div class="wave" data-wf="200"></div>
     </div>
     <div class="dinfo">
       <div class="scroll">
-        <h2>late_bloom_beat.flp <span class="ver">v3</span></h2>
-        <div class="vrow"><span class="vpill">v1</span><span class="vpill">v2</span><span class="vpill on">v3</span></div>
-        <div style="font-size:var(--fs-sm);color:var(--soft)">142 bpm, needs a rap pass on the bridge</div>
+        <h2>Back half rework</h2>
+        <button class="verbtn" id="verBtn"><span class="v">v3</span> of 3<svg class="ic sm"><use href="#i-chev"/></svg></button>
         <div class="meta">
           <div class="row"><span class="k">Visibility</span><span class="v"><span class="vis"><svg class="ic"><use href="#i-users"/></svg>Late Bloom LP, group</span></span></div>
           <div class="row"><span class="k">Uploaded by</span><span class="v"><span class="uchip m3"><span class="dot"></span>dev</span></span></div>
@@ -763,82 +733,85 @@ input{font:inherit;color:inherit}
           <div class="row"><span class="k">Size</span><span class="v">8.4 MB</span></div>
         </div>
         <div class="dsec"><div class="lb">Tags</div><div class="chips">
-          <span class="tag auto">flp</span><span class="tag auto">audio</span><span class="tag">drums</span><span class="tag">142bpm</span><span class="tag">bridge</span></div></div>
+          <span class="tag auto">flp</span><span class="tag auto">audio</span><span class="tag">drums</span><span class="tag">142bpm</span><span class="tag">bridge</span><span class="tag">sampled</span><span class="tag">wip</span>
+          <button class="addtag" title="Add tag"><svg class="ic sm"><use href="#i-plus"/></svg></button></div></div>
         <div class="dsec"><div class="lb">Contributors</div><div class="chips">
-          <span class="uchip m5"><span class="dot"></span>jax, prod</span>
-          <span class="uchip m3"><span class="dot"></span>dev, arrangement</span>
-          <span class="uchip m1"><span class="dot"></span>rae, vocals</span>
-          <span class="uchip m2"><span class="dot"></span>tomo, mix</span></div></div>
+          <span class="uchip m5"><span class="dot"></span>jax, prod</span><span class="uchip m3"><span class="dot"></span>dev, arrangement</span>
+          <span class="uchip m1"><span class="dot"></span>rae, vocals</span><span class="uchip m2"><span class="dot"></span>tomo, mix</span></div></div>
         <div class="dsec"><div class="lb">Group comments</div>
-          <div class="cmt"><div class="av sm">TM</div><div class="bd"><div class="by"><span class="u m2">tomo</span><time>2:47 PM</time></div>
-            <div class="tx">low end note is on the waveform in canvas</div></div></div>
-          <div class="cmt"><div class="av sm">RA</div><div class="bd"><div class="by"><span class="u m1">rae</span><time>2:31 PM</time></div>
-            <div class="tx">this is the one, pulling it into mixing</div></div></div>
+          <div class="cmt"><div class="av sm">TM</div><div class="bd"><div class="by"><span class="u m2">tomo</span><time>2:47 PM</time></div><div class="tx">low end note is on the waveform in canvas</div></div></div>
+          <div class="cmt"><div class="av sm">RA</div><div class="bd"><div class="by"><span class="u m1">rae</span><time>2:31 PM</time></div><div class="tx">this is the one, pulling it into mixing</div></div></div>
           <div class="field" style="margin-top:8px"><input placeholder="Comment in the group"></div>
         </div>
       </div>
       <div class="foot">
         <button class="btn primary" id="dlBtn"><svg class="ic sm"><use href="#i-download"/></svg>Download<svg class="ic sm"><use href="#i-chev"/></svg></button>
+        <button class="btn" id="saveBtn"><svg class="ic sm"><use href="#i-save"/></svg>Save</button>
         <button class="btn" id="canvasBtn"><svg class="ic sm"><use href="#i-canvas"/></svg>Open in canvas<svg class="ic sm"><use href="#i-chev"/></svg></button>
       </div>
     </div>
   </div>
 </div>
 
-<!-- dropdown menus -->
-<div class="menu" id="dlMenu">
-  <div class="mlabel">Download as</div>
-  <button>Original (.flp)</button><div class="sep"></div>
-  <button>wav</button><button>mp3</button><button>opus</button><button>ogg</button><button>flac</button>
-</div>
-<div class="menu" id="canvasMenu">
-  <div class="mlabel">Open in canvas</div>
-  <button><svg class="ic sm"><use href="#i-canvas"/></svg>sh040 review</button>
-  <button><svg class="ic sm"><use href="#i-canvas"/></svg>drum picks</button>
-  <button><svg class="ic sm"><use href="#i-canvas"/></svg>mix references</button>
-  <div class="sep"></div>
-  <button><svg class="ic sm"><use href="#i-plus"/></svg>New canvas</button>
-</div>
-<div class="menu" id="canvasPickMenu">
-  <div class="mlabel">Canvas</div>
-  <button><svg class="ic sm"><use href="#i-canvas"/></svg>sh040 review</button>
-  <button><svg class="ic sm"><use href="#i-canvas"/></svg>colour tests</button>
-  <button><svg class="ic sm"><use href="#i-canvas"/></svg>plate cleanup</button>
-  <div class="sep"></div>
-  <button><svg class="ic sm"><use href="#i-plus"/></svg>New canvas</button>
-</div>
+<div class="menu" id="dlMenu"><div class="mlabel">Download as</div>
+  <button>Original (.flp)</button><div class="sep"></div><button>wav</button><button>mp3</button><button>opus</button><button>ogg</button><button>flac</button></div>
+<div class="menu" id="saveMenu"><div class="mlabel">Save to</div>
+  <button><svg class="ic sm"><use href="#i-save"/></svg>Liked</button><button><svg class="ic sm"><use href="#i-save"/></svg>Drum picks</button><button><svg class="ic sm"><use href="#i-save"/></svg>Mix references</button>
+  <div class="sep"></div><button><svg class="ic sm"><use href="#i-plus"/></svg>New folder</button></div>
+<div class="menu" id="canvasMenu"><div class="mlabel">Open in canvas</div>
+  <button><svg class="ic sm"><use href="#i-canvas"/></svg>sh040 review</button><button><svg class="ic sm"><use href="#i-canvas"/></svg>drum picks</button><button><svg class="ic sm"><use href="#i-canvas"/></svg>mix references</button>
+  <div class="sep"></div><button><svg class="ic sm"><use href="#i-plus"/></svg>New canvas</button></div>
+<div class="menu" id="verMenu"><div class="mlabel">Versions, newest first</div>
+  <button><span class="ver" style="font-size:10px;font-weight:700;background:var(--ink);color:var(--on-ink);padding:1px 5px;border-radius:2px">v3</span><span class="verline"><span class="fn">late_bloom_beat.flp</span><span class="rs">swapped the bridge drums · dev</span></span></button>
+  <button><span class="ver" style="font-size:10px;font-weight:700;background:var(--surface);padding:1px 5px;border-radius:2px">v2</span><span class="verline"><span class="fn">late_bloom_beat_v2.flp</span><span class="rs">tightened the low end · tomo</span></span></button>
+  <button><span class="ver" style="font-size:10px;font-weight:700;background:var(--surface);padding:1px 5px;border-radius:2px">v1</span><span class="verline"><span class="fn">late_bloom_beat_draft.flp</span><span class="rs">first pass · dev</span></span></button>
+  <div class="sep"></div><button id="addVerBtn"><svg class="ic sm"><use href="#i-plus"/></svg>Add a version</button></div>
 
-<!-- ===================== UPLOAD ===================== -->
+<!-- UPLOAD -->
 <div class="scrim" id="uScrim" hidden></div>
 <div class="umodal" id="uModal" hidden>
-  <div class="uhd"><b>Upload</b><button class="iconbtn" id="uClose"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
+  <div class="uhd"><b id="uTitle">Upload</b><button class="iconbtn" id="uClose"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
   <div class="ubody">
+    <div class="uvbanner" id="uvBanner" hidden><svg class="ic"><use href="#i-canvas"/></svg><span>New version of <b>Back half rework</b>, currently v3</span></div>
     <div class="drop"><div class="big">Drop files here</div><div class="sub">or click to choose, several at once</div></div>
     <div class="ufiles">
       <div class="ufile"><svg class="ic sm" style="color:var(--muted)"><use href="#i-canvas"/></svg>late_bloom_beat.flp<span class="tag auto">flp</span></div>
       <div class="ufile"><svg class="ic sm" style="color:var(--muted)"><use href="#i-voice"/></svg>bloom_mix_rough.wav<span class="tag auto">wav</span></div>
     </div>
-    <label class="ulab">Caption</label>
-    <div class="field"><input value="reworked the back half, needs a rap pass on the bridge"></div>
+    <div id="uvReason" hidden>
+      <label class="ulab">What changed <span class="rq">· required</span></label>
+      <div class="field req"><input placeholder="e.g. re-cut the bridge drums, brought the low end down"></div>
+    </div>
+    <label class="ulab">Title <span style="font-weight:400;color:var(--muted)">optional, the file name is used if blank</span></label>
+    <div class="field"><input placeholder="Back half rework"></div>
     <label class="ulab">Tags</label>
-    <div class="chips" style="margin-top:2px"><span class="tag auto">flp</span><span class="tag">drums</span><span class="tag">142bpm</span><span class="tag" style="border:1px dashed var(--line2);background:none;color:var(--muted)">Add</span></div>
+    <div class="chips" style="margin-top:2px"><span class="tag auto">flp</span><span class="tag">drums</span><span class="tag">142bpm</span><button class="addtag"><svg class="ic sm"><use href="#i-plus"/></svg></button></div>
     <label class="ulab">Contributors</label>
     <div class="field"><input value="prod jax, arrangement dev, vocals rae"></div>
-    <label class="ulab">Visibility</label>
-    <div class="urow">
+    <label class="ulab" id="visLab">Visibility</label>
+    <div class="urow" id="visRow">
       <button class="visopt"><svg class="ic"><use href="#i-globe"/></svg><span>Everyone<small>on your public profile</small></span></button>
       <button class="visopt on"><svg class="ic"><use href="#i-users"/></svg><span>This group<small>Late Bloom LP</small></span></button>
       <button class="visopt"><svg class="ic"><use href="#i-lock"/></svg><span>No one<small>private to you</small></span></button>
     </div>
   </div>
-  <div class="ufoot"><button class="btn" id="uCancel">Cancel</button><button class="btn primary">Upload</button></div>
+  <div class="ufoot"><button class="btn" id="uCancel">Cancel</button><button class="btn primary" id="uSubmit">Upload</button></div>
 </div>
 
 <script>
 (function(){
-  document.querySelectorAll('[data-wf]').forEach(function(el){
-    var n=+el.dataset.wf,h='';for(var i=0;i<n;i++){var v=18+Math.round(72*Math.abs(Math.sin(i*.7)*Math.cos(i*.23)+Math.sin(i*.11)));if(v>96)v=96;h+='<i style="height:'+v+'%"></i>';}el.innerHTML=h;
-  });
+  // high-res mirrored waveform (top + bottom, no background)
+  function wave(el){
+    var n=+el.dataset.wf||150, parts='';
+    for(var i=0;i<n;i++){
+      var a=Math.abs(Math.sin(i*0.5)*Math.cos(i*0.17)+Math.sin(i*0.09)*0.6);
+      a=Math.min(1,a)*0.5+0.04; var h=a*48;
+      parts+='<rect x="'+(i+0.12)+'" y="'+(50-h)+'" width="0.76" height="'+(2*h)+'"/>';
+    }
+    el.innerHTML='<svg viewBox="0 0 '+n+' 100" preserveAspectRatio="none">'+parts+'</svg>';
+  }
+  document.querySelectorAll('.wave[data-wf]').forEach(wave);
+
   var screens=document.querySelectorAll('.screen'),ptabs=document.querySelectorAll('.ptab');
   function show(n){screens.forEach(function(s){s.hidden=s.dataset.screen!==n;});
     ptabs.forEach(function(t){t.setAttribute('aria-current',t.dataset.s===n?'true':'false');});
@@ -850,6 +823,15 @@ input{font:inherit;color:inherit}
   function paint(){tb.textContent=dark()?'Light':'Dark';}
   tb.addEventListener('click',function(){root.setAttribute('data-theme',dark()?'light':'dark');paint();});paint();
 
+  // comment pins expand/collapse
+  document.querySelectorAll('.pin').forEach(function(p){
+    var pfp=p.querySelector('.pfp');
+    pfp.addEventListener('click',function(e){e.stopPropagation();
+      var wasOpen=p.classList.contains('open');
+      document.querySelectorAll('.pin.open').forEach(function(o){o.classList.remove('open');});
+      if(!wasOpen)p.classList.add('open');});
+  });
+
   var scrim=document.getElementById('scrim'),sheet=document.getElementById('detailsSheet');
   function openD(){scrim.hidden=false;sheet.hidden=false;}
   function closeD(){scrim.hidden=true;sheet.hidden=true;closeMenus();}
@@ -858,19 +840,32 @@ input{font:inherit;color:inherit}
   document.getElementById('detailsClose').addEventListener('click',closeD);
   scrim.addEventListener('click',closeD);
 
-  var menus=[document.getElementById('dlMenu'),document.getElementById('canvasMenu'),document.getElementById('canvasPickMenu')];
+  var menus=['dlMenu','saveMenu','canvasMenu','verMenu','canvasPickMenu2'].map(function(id){return document.getElementById(id);}).filter(Boolean);
   function closeMenus(){menus.forEach(function(m){m.classList.remove('open');});}
-  function toggleMenu(m,anchor){var open=m.classList.contains('open');closeMenus();if(open)return;
-    var r=anchor.getBoundingClientRect();m.style.left=r.left+'px';m.style.top=(r.top-8-m.offsetHeight)+'px';m.classList.add('open');
-    var r2=m.getBoundingClientRect();if(r2.top<50){m.style.top=(r.bottom+8)+'px';}}
-  function wire(btnId,menu){var b=document.getElementById(btnId);b.addEventListener('click',function(e){e.stopPropagation();toggleMenu(menu,b);});}
-  wire('dlBtn',menus[0]);wire('canvasBtn',menus[1]);wire('canvasPick',menus[2]);
+  function toggleMenu(m,anchor,above){var open=m.classList.contains('open');closeMenus();if(open)return;
+    m.classList.add('open');var r=anchor.getBoundingClientRect();
+    var top=above?(r.top-8-m.offsetHeight):(r.bottom+6);
+    if(above&&top<50)top=r.bottom+6;
+    m.style.left=Math.min(r.left,window.innerWidth-m.offsetWidth-8)+'px';m.style.top=top+'px';}
+  function wire(id,menu,above){var b=document.getElementById(id);if(b)b.addEventListener('click',function(e){e.stopPropagation();toggleMenu(menu,b,above);});}
+  wire('dlBtn',document.getElementById('dlMenu'),true);
+  wire('saveBtn',document.getElementById('saveMenu'),true);
+  wire('canvasBtn',document.getElementById('canvasMenu'),true);
+  wire('verBtn',document.getElementById('verMenu'),false);
   document.addEventListener('click',function(e){if(!e.target.closest('.menu'))closeMenus();});
 
   var uScrim=document.getElementById('uScrim'),uModal=document.getElementById('uModal');
-  function openU(){uScrim.hidden=false;uModal.hidden=false;}
+  function openU(version){uScrim.hidden=false;uModal.hidden=false;
+    document.getElementById('uTitle').textContent=version?'Add a version':'Upload';
+    document.getElementById('uvBanner').hidden=!version;
+    document.getElementById('uvReason').hidden=!version;
+    document.getElementById('visLab').hidden=version;
+    document.getElementById('visRow').hidden=version;
+    document.getElementById('uSubmit').textContent=version?'Upload version':'Upload';}
   function closeU(){uScrim.hidden=true;uModal.hidden=true;}
-  ['showUpload','showUpload2','showUpload3'].forEach(function(id){var e=document.getElementById(id);if(e)e.addEventListener('click',openU);});
+  ['showUpload','showUpload2','showUpload3'].forEach(function(id){var e=document.getElementById(id);if(e)e.addEventListener('click',function(){openU(false);});});
+  document.getElementById('showUploadV').addEventListener('click',function(){openU(true);});
+  document.getElementById('addVerBtn').addEventListener('click',function(){closeMenus();closeD();openU(true);});
   document.getElementById('uClose').addEventListener('click',closeU);
   document.getElementById('uCancel').addEventListener('click',closeU);
   uScrim.addEventListener('click',closeU);
