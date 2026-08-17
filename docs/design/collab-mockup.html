@@ -1887,12 +1887,23 @@ input{font:inherit;color:inherit}
   function show(n){screens.forEach(function(s){s.hidden=s.dataset.screen!==n;});
     ptabs.forEach(function(t){t.setAttribute('aria-current',t.dataset.s===n?'true':'false');});
     document.querySelectorAll('.rail .railbtn').forEach(function(b){b.classList.toggle('on',b.dataset.s===n);});}
-  document.querySelectorAll('[data-s]').forEach(function(el){el.addEventListener('click',function(){show(el.dataset.s);});});
+  document.querySelectorAll('[data-s]').forEach(function(el){el.addEventListener('click',function(){show(el.dataset.s);location.hash=el.dataset.s;});});
+
+  // Hash routing: lets gallery.html embed a specific screen via
+  // collab-mockup.html#canvas. Additive — the click handlers above still work;
+  // this only adds deep-linking so each screen has a stable URL. An optional
+  // ?theme=dark|light query pins the theme for a screenshot/iframe.
+  function applyHash(){var n=(location.hash||'').replace('#','');
+    if(n && document.querySelector('.screen[data-screen="'+n+'"]'))show(n);}
+  window.addEventListener('hashchange',applyHash);
 
   var root=document.documentElement,tb=document.getElementById('themebtn');
+  var qp=new URLSearchParams(location.search),qt=qp.get('theme');
+  if(qt==='dark'||qt==='light')root.setAttribute('data-theme',qt);
   function dark(){var t=root.getAttribute('data-theme');return t?t==='dark':matchMedia('(prefers-color-scheme:dark)').matches;}
   function paint(){tb.textContent=dark()?'Light':'Dark';}
   tb.addEventListener('click',function(){root.setAttribute('data-theme',dark()?'light':'dark');paint();});paint();
+  applyHash();
 
   // comment pins expand/collapse
   document.querySelectorAll('.pin').forEach(function(p){
