@@ -208,6 +208,10 @@ input{font:inherit;color:inherit}
 .masonry.even .media>.shot{width:100%!important;height:100%!important;aspect-ratio:auto!important}
 .masonry.even .media.audio{aspect-ratio:1;background:var(--surface);display:grid;place-items:center;overflow:hidden}
 .masonry.even .media.audio .wave{width:84%;height:46%}
+.media.file{background:var(--surface);display:grid;place-items:center;gap:7px}
+.masonry.even .media.file{aspect-ratio:1}
+.media.file .fic{width:30px;height:30px;color:var(--muted)}
+.media.file .ext{font-size:12px;font-weight:700;color:var(--soft);letter-spacing:.5px}
 .masonry.even .media .playover{align-self:center;justify-self:center}
 .card{display:inline-block;width:100%;margin-bottom:var(--s5);cursor:pointer;text-align:left;break-inside:avoid}
 .card .media{position:relative;width:100%;overflow:hidden}
@@ -1823,7 +1827,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
             <div class="av sm">TM</div>
             <div class="bd">
               <div class="by"><span class="u m2">tomo</span><time>2:47 PM</time></div>
-              <div class="tx">ableton user here, opened dev's stems fine. one note on the low end, left it on the waveform in canvas</div>
+              <div class="tx">ableton user here, opened dev's stems fine. one note on the low end, left it on the waveform in canvas</div><div class="filecard" style="max-width:300px;display:flex;align-items:center;gap:11px;padding:10px 12px;margin-top:6px"><svg class="ic"><use href="#i-clip"/></svg><div><div class="fn">stems_sh040.zip</div><div style="font-size:11px;color:var(--muted)">48 MB &middot; ZIP</div></div></div>
             </div>
           </div>
         </div>
@@ -1861,7 +1865,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
         <div class="chpanel" data-chview="files" hidden>
           <div class="lb">12 files in #beats</div>
           <div class="masonry even">
-            <button class="card" data-open-details><div class="media audio"><div class="wave" data-wf="150"></div></div><div class="title">late_bloom_beat.flp</div><div class="who">dev · v3</div></button>
+            <button class="card" data-open-details><div class="media file"><svg class="ic fic"><use href="#i-clip"/></svg><span class="ext">FLP</span></div><div class="title">late_bloom_beat.flp</div><div class="who">dev · v3</div></button>
             <button class="card" data-open-details><div class="media audio"><div class="wave" data-wf="150"></div></div><div class="title">bridge_scratch_rae.wav</div><div class="who">rae</div></button>
             <button class="card" data-open-details><div class="media"><div class="shot c" style="aspect-ratio:3/2"></div></div><div class="title">ref_drums.png</div><div class="who">rae</div></button>
             <button class="card" data-open-details><div class="media audio"><div class="wave" data-wf="150"></div></div><div class="title">bounce_v2.wav</div><div class="who">dev</div></button>
@@ -1935,6 +1939,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
               <div class="title">title sequence, draft</div><div class="who">sol</div></button>
             <button class="card" data-open-details><div class="media audio"><div class="wave" data-wf="150"></div></div>
               <div class="title">drum one-shots, vol 2</div><div class="who">jax</div></button>
+            <button class="card" data-open-details><div class="media file"><svg class="ic fic"><use href="#i-clip"/></svg><span class="ext">ZIP</span></div><div class="title">session backup, aug</div><div class="who">dev</div></button>
           </div>
         </div>
       </div>
