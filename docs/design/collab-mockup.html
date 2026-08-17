@@ -79,7 +79,7 @@ input{font:inherit;color:inherit}
 .vis{display:inline-flex;align-items:center;gap:5px;font-size:var(--fs-xs);color:var(--muted)}
 .vis .ic{width:14px;height:14px}
 
-.proto{position:sticky;top:0;z-index:60;display:flex;align-items:center;gap:var(--s3);height:44px;padding:0 var(--s4);background:var(--proto-bg);color:var(--proto-ink)}
+.proto{display:none;position:sticky;top:0;z-index:60;align-items:center;gap:var(--s3);height:44px;padding:0 var(--s4);background:var(--proto-bg);color:var(--proto-ink)}
 .proto .brand{font-weight:700;font-size:var(--fs-sm)}
 .proto .brand span{color:var(--proto-dim);font-weight:400;font-size:var(--fs-mi);margin-left:8px}
 .ptabs{display:flex;gap:2px;flex-wrap:wrap}
@@ -2140,7 +2140,9 @@ input{font:inherit;color:inherit}
   document.addEventListener('click',function(e){if(!e.target.closest('#profilePop')&&!e.target.closest('.mrow'))closePop();});
   document.addEventListener('keydown',function(e){if(e.key==='Escape')closePop();});
 
-  show('workspace');
+  // Default to Workspace only when there's no deep-link hash; otherwise the
+  // hash (used by gallery.html's per-screen iframes) decides the screen.
+  if(location.hash)applyHash();else show('workspace');
 })();
 </script>
 </content>
