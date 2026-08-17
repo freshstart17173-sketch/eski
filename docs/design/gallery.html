@@ -1303,10 +1303,14 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
 <section class="gsec" id="canvas">
   <h2>④ Canvas suite <span class="n">— the moat; critique this hardest</span></h2>
   <p class="lede">
-    Files as <b>tiles</b> with two separate interactions: <b>annotation</b>
-    (drawing on a tile) and <b>commenting</b> (a floating pin — just the author’s
-    avatar — expanding to a thread anchored to a <b>mark</b>). The live canvas,
-    then every dialog and mark type.
+    Files as <b>tiles</b>. Three tool groups: <b>Move</b>, <b>Annotate</b>
+    (point / rectangle / lasso — each a <b>mark</b> carrying a comment, hidden
+    until clicked; point = a rectangular labelled tail, rect/lasso = a hover-only
+    dotted outline), and <b>Pen + eraser</b> ink (size + colour, whole-stroke
+    erase). A <b>comments sidebar</b> lists every comment; the details pane never
+    opens here. Per-media: image/video <b>screencap</b>, video pins collapse to a
+    <b>count badge</b>, audio point opens an <b>expanded player view</b>. The live
+    canvas, then every dialog and mark type.
   </p>
 
   <h3 class="subh">The canvas itself (live)</h3>
@@ -1372,13 +1376,12 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
           <div class="tname"><span>sounddesign.wav</span></div>
           <div class="wavewrap"><div class="wave" data-wf="120"></div>
             <div class="selrange" style="left:33%;width:16%"></div>
-            <div class="pin" style="left:40%;top:0"><div class="pfp" style="background:var(--m2)">SO</div></div></div>
+            <div class="ptmark" style="--pc:var(--m2);left:36%;top:6px">sol</div></div>
         </div>
       </div>
-      <div class="pcap"><b>Mark: audio range</b>
-        <span class="m">Drag a range on the waveform to comment on a span.</span>
-        <span class="db">comments.mark = {t0,t1}</span>
-        <span class="st live">in mockup</span></div>
+      <div class="pcap"><b>Audio — point &rarr; expanded view</b>
+        <span class="m">A point on the waveform; clicking it opens the expanded audio view (player + its annotations). Drag a range and <b>duplicate</b> that section as a new tile.</span>
+        <span class="db">comments.mark = {t0,t1} · duplicate &rarr; canvas_items</span></div>
     </div>
 
     <!-- mark: video frame -->
@@ -1387,14 +1390,14 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
         <div class="tile img" style="width:220px;height:130px;position:relative">
           <div class="tname"><span>sh040.mov</span><span class="ver">v3</span></div>
           <div class="scene"><div class="ground"></div><div class="o1"></div></div>
-          <div style="position:absolute;left:0;right:0;bottom:0;height:5px;background:var(--line2)">
-            <i style="position:absolute;left:42%;top:-3px;width:2px;height:11px;background:var(--m5)"></i></div>
-          <div class="pin" style="left:42%;top:40%"><div class="pfp" style="background:var(--m5)">JX</div></div>
+          <button class="capbtn" title="Screencap"><svg class="ic sm"><use href="#i-image"/></svg></button>
+          <div style="position:absolute;left:0;right:0;bottom:0;height:5px;background:var(--line2)"><i style="position:absolute;left:42%;top:-3px;width:2px;height:11px;background:var(--m5)"></i></div>
+          <div class="pinbadge" style="left:60%;top:40%;background:var(--m5)">5</div>
         </div>
       </div>
-      <div class="pcap"><b>Mark: video frame</b>
-        <span class="m">A comment pinned to a timecode; the scrubber shows where notes sit.</span>
-        <span class="db">comments.mark = {frame, point}</span></div>
+      <div class="pcap"><b>Video — pins &rarr; count badge &rarr; list</b>
+        <span class="m">Pins on the frame collapse into a count badge as they pile up; click it for the annotation list. Screencap grabs the current frame (full-res &rarr; clipboard).</span>
+        <span class="db">comments.mark = {frame} · screencap = client-side</span></div>
     </div>
 
     <!-- canvas picker -->
@@ -1436,15 +1439,48 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
     <!-- tile menu -->
     <div>
       <div class="stage"><div class="menu show">
-        <button class="mi"><svg class="ic"><use href="#i-expand"/></svg>Open details</button>
+        <button class="mi"><svg class="ic"><use href="#i-expand"/></svg>Open expanded view</button>
         <button class="mi"><svg class="ic"><use href="#i-version"/></svg>Compare versions</button>
         <button class="mi"><svg class="ic"><use href="#i-download"/></svg>Download…</button>
         <div class="dsep"></div>
         <button class="mi danger"><svg class="ic"><use href="#i-x"/></svg>Remove from canvas</button>
       </div></div>
       <div class="pcap"><b>Tile ⋯ menu</b>
-        <span class="m">Per-tile actions. “Remove from canvas” drops the tile, not the file.</span>
+        <span class="m">Per-tile actions. The details pane never opens in the canvas — audio/video open the expanded view instead. “Remove from canvas” drops the tile, not the file.</span>
         <span class="db">canvas_items delete</span></div>
+    </div>
+
+    <!-- comments sidebar -->
+    <div>
+      <div class="stage"><div style="width:232px;background:var(--surface);border-radius:var(--r);padding:8px">
+        <div class="cvsidehd">Comments <span class="ct">4</span></div>
+        <button class="cvcom on"><span class="cvtop"><span class="uchip m4"><span class="dot"></span>mira</span><span class="cvtype">rect &middot; v3</span></span><span class="cvsnip">near building edge is ghosting&hellip;</span></button>
+        <button class="cvcom"><span class="cvtop"><span class="uchip m3"><span class="dot"></span>lin</span><span class="cvtype">point</span></span><span class="cvsnip">love this framing, keep the bloom</span></button>
+        <button class="cvcom resolved"><span class="cvtop"><span class="uchip m5"><span class="dot"></span>jax</span><span class="cvtype">point &middot; resolved</span></span><span class="cvsnip">grade ref for the sky, matched</span></button>
+      </div></div>
+      <div class="pcap"><b>Comments sidebar</b>
+        <span class="m">Lists every comment on the canvas; clicking one jumps to its mark and opens the thread. The canvas&rsquo;s own comment nav.</span>
+        <span class="db">comments where canvas_id &middot; §D.6.5</span></div>
+    </div>
+
+    <!-- audio expanded view -->
+    <div>
+      <div class="stage scrim"><div class="modal wide">
+        <div class="uhd"><b>sounddesign_pass.wav</b><button class="iconbtn"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
+        <div class="mbody">
+          <div class="wavewrap" style="height:64px;background:var(--plate);border-radius:var(--r);overflow:hidden"><div class="wave" data-wf="140"></div><div class="selrange" style="left:33%;width:16%"></div></div>
+          <div style="display:flex;align-items:center;gap:10px;margin:12px 0">
+            <button class="iconbtn"><svg class="ic"><use href="#i-play"/></svg></button>
+            <span style="font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums">0:44 / 2:18</span>
+            <button class="btn sm" style="margin-left:auto"><svg class="ic sm"><use href="#i-plus"/></svg>Duplicate selection</button>
+          </div>
+          <div class="mhd" style="padding-left:0">Annotations</div>
+          <button class="cvcom"><span class="cvtop"><span class="uchip m2"><span class="dot"></span>sol</span><span class="cvtype">0:42&ndash;0:48</span></span><span class="cvsnip">whoosh lands a beat late, pull ~6 frames</span></button>
+        </div>
+      </div></div>
+      <div class="pcap"><b>Audio expanded view</b>
+        <span class="m">Opened from an audio point: player + that audio&rsquo;s annotations. Trim a range and duplicate it into the canvas. Distinct from the details pane, which never opens in the canvas.</span>
+        <span class="db">canvas-scoped &middot; duplicate &rarr; canvas_items</span></div>
     </div>
 
     <!-- empty canvas -->
