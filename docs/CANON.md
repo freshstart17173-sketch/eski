@@ -358,26 +358,34 @@ Breakpoints (to confirm against the style guide): **≥1100px** full four-pane �
 bottom tabs. Every element row below only notes mobile behaviour where it
 differs from this contract.
 
-### C.3 Screen manifest (14) — build order follows §7.8
+### C.3 Screen manifest (~21 surfaces) — build order follows §7.8
+
+Registry column points at the section that specifies each surface. All rows are
+now written; Screen 7 (Call) is the one deferral.
 
 | # | Screen | `data-screen` | Sub-states already mocked | Registry |
 |---|---|---|---|---|
-| 1 | Workspace | `workspace` | chat / pins / files (`chtab`), thread view | **worked below (template)** |
-| 2 | Feed | `feed` | — | to fill |
-| 3 | Media explorer | `explorer` | files / collections | to fill |
-| 4 | Details pane | *(overlay)* | version dropdown, per-context comments | to fill |
-| 5 | Canvas | `canvas` | files / pins (`chview`), annotate vs comment | to fill |
-| 6 | Board | `board` | board / table / calendar (`kview`) | to fill |
+| 1 | Workspace | `workspace` | chat / pins / files (`chtab`), thread view | §C.4 (template) |
+| 2 | Feed | `feed` | — | §C.5 |
+| 3 | Media explorer | `explorer` | files / folders | §C.6 |
+| 4 | Details pane | *(overlay)* | version dropdown, per-context comments | §C.7 |
+| 5 | Canvas | `canvas` | files / pins (`chview`), annotate vs comment | §C.8 · §E |
+| 6 | Board | `board` | board / table / calendar (`kview`) | §C.9 |
 | 7 | Call | `vc` | chat / notes (`vctab`) | **v2 — deferred, not built** |
-| 8 | Profile | `profile` | Public / Server / Private shelves, Settings | to fill |
-| 9 | Messages (DMs) | `dms` | thread list, conversation | to fill |
-| 10 | Upload | *(sheet)* | new-post vs new-version mode | to fill |
-| 11 | Server settings | `settings` | general/channels/members/invites/moderation/audit/storage | to fill |
-| 12 | Create server | `create` | — | to fill |
-| 13 | Join by link | `join` | — | to fill |
-| 14 | Notifications | `notifications` | all / mentions / threads / saved (`ntab`) | to fill |
-| + | Search / quick switcher | `search` | results, Cmd/Ctrl+K | to fill |
-| + | Auth / onboarding | `auth` | signin / claim / sent (`astep`) | to fill |
+| 8 | Profile | `profile` | Public / Server / Private shelves, Settings | §C.10 |
+| 9 | Messages (DMs) | `dms` | thread list, conversation | §C.11 |
+| 10 | Upload | *(sheet)* | new-post vs new-version mode | §C.12 |
+| 11 | Server settings | `settings` | general/channels/members/roles/invites/moderation/audit/storage | §C.4–C.13 + C.16, C.19 |
+| 12 | Create server | `create` | — | §C.14 |
+| 13 | Join by link | `join` | — | §C.14 |
+| 14 | Notifications | `notifications` | all / mentions / threads / saved (`ntab`) | §C.13 |
+| + | Search / quick switcher | `search` | results, Cmd/Ctrl+K | §C.15 |
+| + | Auth / onboarding | `auth` | signin / claim / sent (`astep`) | §C.14 |
+| + | Roles editor | `settings/roles` | roles list + permission matrix | §C.16 |
+| + | Assign roles to member | *(modal)* | multi-select checklist | §C.17 |
+| + | Channel permissions | *(modal)* | allow-list (roles + members) | §C.18 |
+| + | Storage & billing | `settings/storage` | personal + server pools, plan | §C.19 |
+| + | 404 · Dead invite · Access denied | *(cards)* | expired/revoked/full/member; no-access | §C.20 |
 
 ### C.4 TEMPLATE — Screen 1: Workspace
 
@@ -533,14 +541,79 @@ Kanban (a channel kind).
 | Row | Mention / annotation / version / board-assign / join / reaction; links to target; inline reply. | `notifications` · RT `user:{id}` | List | List |
 | Mark all read | Clears unread. | `notifications.read_at` | Header | Header |
 
-### C.14 Still to fill
+### C.14 Screen 11/12/13 — Create · Join · Sign-in (focus screens)
 
-Create / Join / Sign-in (mostly single-card, low element count), Search / quick
-switcher, and the **§D.4 admin/utility screens** (roles editor, assign roles,
-channel permissions, storage & billing, 404, dead invite, access-denied) — the
-last group is TO-BUILD, so their registry lands with the build. Screen 7 (Call)
-stays **v2 — deferred**. Registry rule holds: every row names a real
-table/RPC/Realtime channel from §7 (or an explicit "—").
+Single-card, no server rail, scrim-free (§D.6.4). Vertically centred in a
+full-height column; the card never touches the top edge.
+
+| Element | Behaviour & states | DB | Desktop | Mobile |
+|---|---|---|---|---|
+| **Create server** — name + avatar + first channel | One card: server name, square avatar upload, seed a first text channel. Owner becomes `owner_id`, gets an implicit all-flags @everyone + Admin role. | W `servers` insert · `roles` seed · `member_roles` | Centred card, ~460px | Full-width card, gutters |
+| **Join by link** — preview card | `/join/<code>` valid: server name, member count, "You were invited by X", Join. States: valid (this) / dead (→ C.17). | R `invites where code` · `servers` · W `member_roles(@everyone)` | Centred card | Full-width |
+| **Sign-in / sign-up** | Email + magic-link / OAuth; toggle sign-in ⇄ create-account; error line under the field. | Supabase Auth | Centred card | Full-width |
+
+### C.15 Search / quick-switcher (⌘K)
+
+Global overlay, opens over any screen; not its own route.
+
+| Element | Behaviour & states | DB | Desktop | Mobile |
+|---|---|---|---|---|
+| Query field | Debounced prefix search; empty state = recent + jump-to. | R `search_all(q, scope)` | Overlay top | Full-screen sheet |
+| Result groups | Servers · channels · people · files, each capped, keyboard-navigable (↑↓/⏎). | R `servers`,`channels`,`profiles`,`works` (scoped to `member_of`) | Grouped list | Grouped list |
+| Scope note | Only surfaces what you can see — private channels gate on `can_view_channel`. | gate `can_view_channel` | — | — |
+
+### C.16 Server settings → Roles (gated `manage_roles`)
+
+| Element | Behaviour & states | DB | Desktop | Mobile |
+|---|---|---|---|---|
+| Roles list | Each role: colour dot, name, member count; `@everyone` pinned last, un-deletable; drag to reorder (position). New role button. | R `roles where server_id` · W `roles` insert/`position` | Left 190px column | Stacked; list then editor |
+| Colour picker | Swatches from the 30 member hues; sets `roles.color`. | W `roles.color` | Editor top | Editor top |
+| Permission matrix | Flags grouped **Server / Members / Content** (D.1); each a square `.cbx` toggle; `@everyone` edits the baseline. | W `roles.permissions` bitmask | Editor body | Editor body |
+| Delete role | Removes role + its `member_roles`/`channel_roles` rows; confirm modal. | W cascade delete | Danger row | Danger row |
+
+### C.17 Assign roles to a member (gated `manage_roles`)
+
+Modal from the role chip on a Members row, or the member popout's manage menu.
+
+| Element | Behaviour & states | DB | Desktop | Mobile |
+|---|---|---|---|---|
+| Member header | Avatar + name of the member being edited. | R `server_members` · `profiles` | Modal head | Sheet head |
+| Role checklist | Every server role as a `.cbx` row (colour dot + name); **multi-select** — a member holds several. `@everyone` shown checked + locked. | W `member_roles` ← `set_member_roles(user, role_ids[])` | Checklist | Checklist |
+| Effect note | "Permissions are the union of checked roles." | — | Footer | Footer |
+
+### C.18 Channel permissions — private-channel allow-list (gated `manage_channels`)
+
+Modal that appears when a channel/board/canvas is toggled **Private** in its
+settings. v1 = allow-list only (D.1 LOCKED D-i).
+
+| Element | Behaviour & states | DB | Desktop | Mobile |
+|---|---|---|---|---|
+| Roles section | Each role a `.cbx` row; checked roles see the channel. Zero rows total = open to all members. | W `channel_roles` ← `set_channel_access(channel, role_ids[], member_ids[])` | Modal | Sheet |
+| Members section | Individual members (avatar + handle) grantable directly, same `.cbx`. | W `channel_roles`/member grant | Modal | Sheet |
+| Add field | Type-ahead to add a role or member to the list. | R `roles`,`server_members` | Field | Field |
+| Fence note | UI is the signpost; **`can_view_channel` RLS is the fence.** v2 migrates this to full allow/deny overwrites with no reshape. | gate `can_view_channel` | — | — |
+
+### C.19 Server settings → Storage & billing (gated `manage_billing`)
+
+| Element | Behaviour & states | DB | Desktop | Mobile |
+|---|---|---|---|---|
+| Personal pool bar | Usage / cap for the signed-in user's personal + public works; "pay-as-you-go". | R `storage_meters(user, you)` | Bar + label | Bar |
+| Server pool bar | This server's usage / cap; "billed to {owner}". | R `storage_meters(server, id)` | Bar + label | Bar |
+| Manage plan / Add storage | Open billing (plan, PAYG toggle, payment); owner/`manage_billing` only. | R/W `billing_accounts` | Button row | Button row |
+| Export | Zip of every server file + metadata (content-addressed, no lock-in). | job → R2 zip | Danger-box row | Row |
+
+### C.20 Utility screens — 404 · Dead invite · Access denied
+
+Minimal, on-brand, no rail; centred card (§D.4).
+
+| Screen | Behaviour & states | DB | Notes |
+|---|---|---|---|
+| **404 / not found** | Bad URL. One card: glyph, "This page doesn't exist", back-to-Feed. | — | Never leaks whether a private thing exists. |
+| **Dead invite** | `/join/<code>` invalid. States: **expired · revoked · full · already-a-member** (each its own copy + CTA). | R `invites` (null/expired/at-cap) | Distinct from the valid preview (C.14). |
+| **Access denied** | Private channel/server you can't see (`can_view_channel` false). Quiet "You don't have access" — **never a 404 that leaks existence**. | gate `can_view_channel` | Deliberately not a 404. |
+
+Screen 7 (Call) stays **v2 — deferred**. Registry rule holds: every row names a
+real table/RPC/Realtime channel from §7 (or an explicit "—").
 
 ---
 
