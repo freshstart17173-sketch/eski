@@ -430,12 +430,116 @@ timed-out composer, network-lost (Realtime reconnecting banner).
 
 ---
 
-### C.5 To fill (after format sign-off)
+### C.5 Screen 2 — Feed
 
-Screens 2–6, 8–14 and the two extras, each to the depth of §C.4: element ·
-behaviour/states · DB binding · desktop · mobile, plus a per-screen empty/edge
-list. Screen 7 (Call) is stubbed as **v2 — deferred**. The registry is done
-when every element on every mocked screen has a row and every row names a real
+The friends-only portfolio grid.
+
+| Element | Behaviour & states | DB | Desktop | Mobile |
+|---|---|---|---|---|
+| Header nav (Feed / Notifications / You) | Switch top-level views; active = underline. | — | Top bar | Bottom tabs |
+| Search field | Filter posts by title/tag/handle; server-side. | R `search_all(q,'feed')` | Toolbar | Full-width, filters in a sheet |
+| Type / sort dropdowns | Filter by media type; sort newest/…; Reddit-style, no tag modifiers. | R `works` filters | Toolbar | In filter sheet |
+| Layout toggle | Switch **even square grid ⇄ masonry**; default even. | — (client) | Toolbar icon | Toolbar icon |
+| Post card | Square invisible cell (even) or natural aspect (masonry); media renders by kind (image thumb, video play-overlay, audio waveform, text words, **non-previewable → type card** icon+ext); title + author below. Click → Details pane. | R `works` where `visibility='public'` and author ∈ friends | Grid, full width | 2-col grid |
+| Empty | "No posts yet — add friends to see their work." | — | Centered | Centered |
+
+### C.6 Screen 3 — Media explorer
+
+The server's files.
+
+| Element | Behaviour & states | DB | Desktop | Mobile |
+|---|---|---|---|---|
+| Search field | Search this server's files. | R `works where server_id` FTS | Toolbar | Full-width |
+| Filter dropdowns (Channel / Type / Uploader / Sort) | Narrow the grid. | R `works` filters | Toolbar | Filter sheet |
+| Layout toggle | Even grid ⇄ masonry. | — | Toolbar | Toolbar |
+| **Folders** strip | Named folders (renamed from Collections); each shows a stacked-icon cover + file count. Click → open folder. | R `collections where server_id` (`folder` UI label) | Row of cards | Horizontal scroll |
+| File card | Same card renderer as Feed; leads with **file name**; author chip (server colour) + channel tag. | R `works` | Grid | 2-col |
+| Grid select + bulk bar | Multi-select cards → action bar (download / move / delete). | — / RPCs | Hover checkbox | Long-press |
+| Lightbox | Full media viewer + "shared in" strip. | R `works` | Overlay | Full-screen |
+
+### C.7 Screen 4 — Details pane
+
+Opens from any card (never inside the canvas).
+
+| Element | Behaviour & states | DB | Desktop | Mobile |
+|---|---|---|---|---|
+| Media + **player controls** | Play/pause, scrubber, tabular time; waveform/video/image. | R `works` (signed URL) | Left/top | Top |
+| Storage badge | "Server: NAME" vs "Personal (crossposted)". | `works.storage_source` | Header | Header |
+| Version control | Dropdown of versions **by file name**; current reason in the pane body. | R `works.version_of` · `add_version()` | Under title | Under title |
+| Title / credits / tags | Title (or file name); contributor chips (server colour); user tags + ＋. | `works.title/credits` · `content_tags` | Body | Body |
+| Actions | Download (get-as formats), Save (folder), Open in canvas (picker). | transcode · `saved_items` · `canvases` | Button row | Button row |
+| Comments | **Post-level** comments (distinct from canvas annotations). | `comments` (context) | List | List |
+| Mobile | Slides up as a **full-height bottom sheet**. | — | — | Bottom sheet |
+
+### C.8 Screen 5 — Canvas
+
+Review surface (§E). Comments here are **annotations**.
+
+| Element | Behaviour & states | DB | Desktop | Mobile |
+|---|---|---|---|---|
+| Header | Canvas picker (dropdown), visibility chip, zoom (−/%/+/Fit/Reset), Add file, Share. | `canvases` | Top bar | Top bar; zoom in a menu |
+| Tool palette | Move · Annotate (point/rectangle/lasso) · Pen + whole-stroke eraser + size/colour. No shapes/arrows. | `annotations` · `ink` | Toolbar | Toolbar |
+| Tile | A file as a tile; author labels top-right, **square count badge** = total annotations, **maximize** button; point marks as dots, rect = dotted box; audio → play + waveform; pen ink overlay. Screencap lives in the **expanded view** only. | `canvas_items` · `annotations` | Pannable canvas | Pinch-pan |
+| Annotation thread | Click a mark → thread (author chip, snippet, Resolve, replies, reply field); **no version number**. | `annotations` (mark, resolved_at) | On canvas | Sheet |
+| **Annotations sidebar** | Lists every annotation (author, mark type, snippet, resolved); click → jump to its mark. | R `annotations where canvas_id` | Right rail | Sheet |
+| Expanded view | All media open to details + annotations + player; audio-trim → **duplicate** into canvas. | `annotations` · duplicate → `canvas_items` | Modal | Full-screen |
+| Empty | "Nothing on this canvas yet — drop files or add from Media." | — | Centered | Centered |
+
+### C.9 Screen 6 — Board
+
+Kanban (a channel kind).
+
+| Element | Behaviour & states | DB | Desktop | Mobile |
+|---|---|---|---|---|
+| Header | Board name; view switcher **Board / Table / Calendar**; Fields; Add card. | `boards` | Top | Top |
+| Column | To do / In progress / Review / Done (admin-editable); count badge; Add card. | `board_columns` | Columns | Horizontal scroll |
+| Card | Title, label, assignee (avatar in server colour), due date (overdue = danger), linked file/canvas; drag to move. | `board_cards` · `move_card()` | Draggable | Long-press drag |
+| Card detail | Modal: title, label picker, assignee, due-date, linked work/canvas. | `board_cards` | Modal | Sheet |
+
+### C.10 Screen 8 — Profile
+
+| Element | Behaviour & states | DB | Desktop | Mobile |
+|---|---|---|---|---|
+| Header | **Square** avatar image, name, @handle, bio; Add friend / Message (own profile → Edit). | `profiles` · `friendships` | Top | Top |
+| Shelf tabs | **Public / Server / Private** (counts) + Settings; **search** button. | R `works` by visibility | Tab bar | Tab bar |
+| Grid | Even square grid ⇄ masonry toggle; same card renderer. | `works` | Grid | 2-col |
+| Settings tab | Name, handle, bio, avatar, theme, status, storage (owner). | `profiles` | Form | Form |
+
+### C.11 Screen 9 — Messages (DMs)
+
+| Element | Behaviour & states | DB | Desktop | Mobile |
+|---|---|---|---|---|
+| **Add-by-handle field** | Inline at top of the thread list (**not a modal**); exact handle only. | `create_dm(handle)` · `friendships` | Left column | Full-screen list |
+| Friends / requests | Friends count + pending requests surface. | `friendships` | Left | List |
+| Thread list | Pinned + DMs; unread dot, mute/pin. | `dm_channels` · `dm_members` | Left | List |
+| Conversation | Messages, composer (attach, send); header with (v2) call buttons. | `dm_messages` · RT | Main | Full-screen |
+
+### C.12 Screen 10 — Upload
+
+| Element | Behaviour & states | DB | Desktop | Mobile |
+|---|---|---|---|---|
+| Dropzone | Multi-file; type recognised (icon/filter), **not shown as a tag**. | `works.file_ext` | Modal | Sheet |
+| Title | Optional; **file name is the default**. | `works.title` | Field | Field |
+| Tags · Credits | **Separate** fields; Credits = **type-ahead chip input** (handle → Enter → member chip in colour). | `content_tags` · `works.credits` | Fields | Fields |
+| Visibility | **Per post**: Public / Server / Private. | `works.visibility` | Segmented | Segmented |
+| **Which server** | When Server: pick the target server. | `works.server_id` | Picker | Picker |
+| Version mode | Flips to same-media-type ordered versions, each a **mandatory reason**. | `add_version()` | — | — |
+
+### C.13 Screen 14 — Notifications
+
+| Element | Behaviour & states | DB | Desktop | Mobile |
+|---|---|---|---|---|
+| Tabs | All / Mentions / Threads / Saved; grouped by day. | `notifications` | Tabs | Tabs |
+| Row | Mention / annotation / version / board-assign / join / reaction; links to target; inline reply. | `notifications` · RT `user:{id}` | List | List |
+| Mark all read | Clears unread. | `notifications.read_at` | Header | Header |
+
+### C.14 Still to fill
+
+Create / Join / Sign-in (mostly single-card, low element count), Search / quick
+switcher, and the **§D.4 admin/utility screens** (roles editor, assign roles,
+channel permissions, storage & billing, 404, dead invite, access-denied) — the
+last group is TO-BUILD, so their registry lands with the build. Screen 7 (Call)
+stays **v2 — deferred**. Registry rule holds: every row names a real
 table/RPC/Realtime channel from §7 (or an explicit "—").
 
 ---
