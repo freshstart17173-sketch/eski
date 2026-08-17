@@ -1,49 +1,80 @@
-Solo project, one user. There's no staging — changes go straight to `main` and straight to prod (Vercel deploys `main` directly). No issue tracker, no triage labels, no wayfinder maps: work is tracked in `ROADMAP.md` and in conversation, not GitHub Issues.
+Solo project, one user. There's no staging — changes go straight to `main` and
+straight to prod (Vercel deploys `main` directly). No issue tracker: work is
+tracked in `docs/COLLAB.md`, `docs/CANON.md`, and in conversation, not GitHub
+Issues.
 
-## Read this before editing
+## What this is right now
 
-**[`ARCHITECTURE.md`](ARCHITECTURE.md) says what each file owns.** Read it
-first. There is no build step and every page holds its own behaviour inline,
-so nothing mechanically stops you from defining the same thing twice — the
-discipline has to come from knowing where a thing already lives.
+eski is mid-**rebuild** into a collaboration app — "Discord for creatives":
+**servers** (studios you're invited into), user-created channels, persistent
+chat, kanban boards, a review **canvas** (annotate + comment on media), numbered
+versions, friends/DMs, and three visibility layers (public / server / private).
+The old single-page "pivot" product is **retired** and being removed. **Nothing
+is live yet — this is the planning-and-design phase**, producing the contract a
+code-generation model will build against.
 
-The failure mode this project actually has is **not** broken features. It is a
-correct fix being silently undone. `.btn.p:hover` was defined near the top of
-`broadsheet.css` and again 330 lines later with a different value; source order
-decided it, the later one won, and it was "fixed" twice with no visible change
-either time. Assume that trap is still out there in some other form.
+## Read this before doing anything
 
-So, before you change something:
+Three files, in this order:
 
-- **Search for the thing you are about to define.** If a selector, a token, an
-  ESK code or a helper already exists, edit it where it is rather than adding
-  a second one nearby.
-- **Colour and hover for shared controls live in one place** — the interaction
-  section at the foot of `broadsheet.css`. Never in a page's own `<style>`.
-- **Every colour comes from `palettes.css`.** A hex literal in a page is how
-  the green scrim survived eighteen themes.
-- **A new failure needs an `ESK-####` and a line in `ERRORS.txt`.** The file
-  is what stops two features claiming one number.
+1. **[`docs/CANON.md`](docs/CANON.md) — the build contract.** The single source
+   of truth: §A the canonical vocabulary (one name per concept, aliases we
+   kill), §B roles & permissions mapped to the RLS/RPC that enforces them, §C
+   the per-screen UI element registry (behaviour → database → desktop/mobile),
+   §D the added scope (granular roles, PAYG storage, storage source, utility
+   screens). **When anything disagrees with CANON, CANON wins.**
+2. **[`docs/COLLAB.md`](docs/COLLAB.md) — the narrative spec.** The why behind
+   every feature, the data model, and the two end-to-end workflows.
+3. **The design sources in [`docs/design/`](docs/design/):**
+   - **`collab-mockup.html` — the 14 screens are LAW.** The real, measured
+     target for what each screen looks like. Do not deviate from it without a
+     reason.
+   - `styleguide.html` — the token & component source of truth (the values the
+     built pages consume).
+   - `gallery.html` — every screen embedded live **plus** every dialog, menu and
+     modal as a standalone panel, and the member-colour palette. The critique
+     surface.
 
-## Before you say it's done
+## Design rules (durable — enforce them, don't relitigate them)
 
-```
-node tests/structure.js    # nothing runs it for you; it is the one that
-node tests/cache.js        # catches a fix being overwritten
-node tests/loudness.js
-node tests/smoke.js
-node tests/errors.js
-node tests/recording.js
-node tests/viewer-fit.js   # needs the folder served on :8940
-```
+The failure mode this project has is **not** broken features — it's a correct
+decision being silently undone, or a new element quietly breaking an
+established pattern. So:
 
-Anything visual also wants `node tests/shots.js` and the **`eski-ui-audit`**
-skill, which knows which surface × state × theme combinations hide bugs. A
-screenshot of a page at rest in the default theme is the easy half.
+- **Search for the thing before you define it.** If a token, selector,
+  component, or name already exists, edit it where it lives — never add a second
+  one nearby. (A selector defined twice, source-order deciding the winner, is a
+  real bug this repo has shipped.)
+- **One canonical name per concept** — the name in the UI copy, the code, and
+  the docs is identical (CANON §A). Adding a synonym is the same failure mode as
+  a duplicate selector, in words.
+- **Every colour comes from the tokens.** No hex literals in a component. The
+  member-identity hue is the **only** colour, it is **server-scoped**, and it
+  renders nowhere on a public profile or the Feed.
+- **Radius is `--r` (3px) on chrome; media stays square.** Round is reserved for
+  **avatars and presence dots only** — do not introduce new circular elements
+  (no pill tabs, no round badges, no round close buttons).
+- **Square icon buttons and square close buttons** (`.iconbtn`, `#i-x`) — the
+  established pattern. Continue it; don't invent a second close style.
+- **Modals darken the background (a scrim) — no drop shadows.** Dialogs sit on a
+  dark backdrop, not a floating shadow.
+- **Be exacting about alignment, balance, borders, type hierarchy (size *and*
+  colour), and aspect ratio.** No super-tall buttons, no super-wide bars,
+  nothing wonky. Surfaces separate by **background step**, not borders; the one
+  exception is an interactive **field**, which gets a `--line2` border for
+  affordance.
+- **Mobile is its own layout**, not a squeezed desktop — the three-pane shell
+  collapses to one pane + bottom tabs (CANON §C.2).
+
+## Backend
+
+Supabase (Postgres + Auth + Realtime) · R2 for media behind `api/sign.mjs` ·
+Vercel. **The RLS policy is the fence; the UI is only the signpost.** Every
+table ships with RLS. Backend is a **true clean slate** — design the schema
+fresh for this product, don't inherit the retired one.
 
 ## Writing style
 
-Comments explain **why**, especially why an obvious alternative is wrong —
-that is what stops the next pass from "simplifying" a deliberate choice back
-into a bug. Sentence case in prose; the UI's own case rules are in
-`docs/design/STYLE.md`.
+Comments explain **why**, especially why an obvious alternative is wrong — that
+is what stops the next pass from "simplifying" a deliberate choice back into a
+bug. Sentence case in prose; the UI's own case rules live in the style guide.

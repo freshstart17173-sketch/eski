@@ -801,119 +801,165 @@ input{font:inherit;color:inherit}
 .rbtn{width:32px;height:32px;display:grid;place-items:center;border-radius:50%;background:var(--surface);color:var(--soft)}
 .rbtn:hover{background:var(--plate);color:var(--ink)}.rbtn.ok:hover{color:var(--m3)}.rbtn.no:hover{color:var(--m1)}
 
-/* ---- gallery shell (loaded after the mockup CSS so it wins) ---- */
-:root{ --danger:#C0392B; }
-:root[data-theme="dark"]{ --danger:#E58275; }
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){ --danger:#E58275; }}
+/* ================================================================
+   gallery shell — loaded AFTER the mockup CSS so it wins.
+   Rules it enforces (from CANON + the mockup, which is law):
+   · radius is --r (3px) on everything; round is ONLY avatars + dots
+   · modals darken the background (a scrim) — never a drop shadow
+   · square icon/close buttons (.iconbtn + #i-x), one close style
+   · sentence case; type hierarchy by size AND colour
+   · short controls — no tall buttons, no wide bars
+   ================================================================ */
+:root{ --danger:#B0503F; }
+:root[data-theme="dark"]{ --danger:#D98A7A; }
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){ --danger:#D98A7A; }}
 
 html,body{height:auto;min-height:100%;overflow:auto}
 body{background:var(--paper);padding-bottom:80px}
-.gtop{position:sticky;top:0;z-index:60;display:flex;align-items:center;gap:16px;
-  padding:13px 22px;background:var(--surface);border-bottom:1px solid var(--line)}
+
+/* top bar + toc */
+.gtop{position:sticky;top:0;z-index:60;display:flex;align-items:center;gap:var(--s4);
+  padding:13px var(--s5);background:var(--surface)}
 .gtop h1{font-size:var(--fs-xl);font-weight:700;letter-spacing:.2px}
 .gtop .sub{font-size:var(--fs-sm);color:var(--muted)}
 .gtop .sp{flex:1}
-.gtop button{padding:7px 13px;border-radius:var(--r);background:var(--plate);font-size:var(--fs-sm)}
+.gtop button{padding:7px 14px;border-radius:var(--r);background:var(--plate);font-size:var(--fs-sm);font-weight:600}
 .gtop button:hover{background:var(--paper1)}
-.gtoc{position:sticky;top:52px;z-index:55;display:flex;flex-wrap:wrap;gap:7px;
-  padding:10px 22px;background:var(--paper1);border-bottom:1px solid var(--line)}
-.gtoc a{font-size:var(--fs-sm);color:var(--soft);text-decoration:none;padding:4px 11px;border-radius:20px;background:var(--surface)}
+.gtoc{position:sticky;top:52px;z-index:55;display:flex;flex-wrap:wrap;gap:6px;
+  padding:9px var(--s5);background:var(--paper1)}
+.gtoc a{font-size:var(--fs-sm);color:var(--soft);text-decoration:none;padding:5px 11px;border-radius:var(--r);background:var(--surface)}
 .gtoc a:hover{background:var(--plate);color:var(--ink)}
-.gsec{padding:26px 22px;border-bottom:1px solid var(--line)}
+
+.gsec{padding:26px var(--s5)}
+.gsec+.gsec{border-top:1px solid var(--line)}
 .gsec>h2{font-size:var(--fs-lg);font-weight:700;margin-bottom:5px}
 .gsec>h2 .n{color:var(--muted);font-weight:400;font-size:var(--fs-sm)}
-.gsec>.lede{font-size:var(--fs-sm);color:var(--muted);max-width:78ch;margin-bottom:18px;line-height:1.5}
+.gsec>.lede{font-size:var(--fs-sm);color:var(--muted);max-width:80ch;margin-bottom:18px;line-height:1.55}
 .gsec>.lede code{background:var(--tagbg);padding:1px 5px;border-radius:4px;font-size:12px}
-h3.sub{font-size:var(--fs);font-weight:600;margin:22px 0 12px;color:var(--soft)}
+h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)}
 
 /* embedded live screens */
 .gscreens{display:grid;gap:26px}
 .gfig{margin:0}
-.gfig .cap{display:flex;align-items:baseline;gap:10px;margin-bottom:7px}
+.gfig .cap{display:flex;align-items:baseline;gap:10px;margin-bottom:8px}
 .gfig .cap b{font-size:var(--fs)}
 .gfig .cap .m{font-size:var(--fs-sm);color:var(--muted)}
-.gfig .cap .badge{margin-left:auto;font-size:var(--fs-mi);text-transform:uppercase;letter-spacing:.5px;
-  color:var(--muted);border:1px solid var(--line2);padding:2px 7px;border-radius:20px}
-.gframe{width:100%;height:660px;border:1px solid var(--line2);border-radius:8px;overflow:hidden;background:var(--paper)}
+.gfig .cap .badge{margin-left:auto;font-size:var(--fs-mi);color:var(--muted);
+  background:var(--tagbg);padding:2px 8px;border-radius:var(--r)}
+.gframe{width:100%;height:660px;background:var(--plate);overflow:hidden;border-radius:var(--r)}
 .gframe iframe{width:100%;height:100%;border:0;display:block}
 
-/* dialog/menu stages */
-.stagewrap{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:20px}
-.stage{background:var(--surface);border:1px solid var(--line);border-radius:9px;
-  min-height:210px;padding:26px;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}
-.stage.tall{min-height:320px}
-.stage.dark-note::after{content:"";}
-.pcap{margin-top:9px}
-.pcap b{font-size:var(--fs-sm)}
-.pcap .m{display:block;font-size:12px;color:var(--muted);margin-top:2px;line-height:1.45}
-.pcap .db{display:block;font-size:11px;color:var(--soft);margin-top:4px;
-  font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
-.pcap .st{display:inline-block;margin-top:5px;font-size:10.5px;text-transform:uppercase;letter-spacing:.4px;
-  padding:1px 7px;border-radius:20px;background:var(--tagbg);color:var(--muted)}
-.pcap .st.live{background:#3F7A4E22;color:#3F7A4E}
-:root[data-theme="dark"] .pcap .st.live{color:#82BE91}
+/* panel grid + stages ------------------------------------------------ */
+.stagewrap{display:grid;grid-template-columns:repeat(auto-fill,minmax(360px,1fr));gap:20px;align-items:start}
+.stage{background:var(--surface);border-radius:var(--r);min-height:210px;
+  padding:26px;display:flex;align-items:center;justify-content:center;position:relative}
+.stage.tall{min-height:330px}
+/* a modal is shown on a DARKENED backdrop — no drop shadow (the rule) */
+.stage.scrim{background:var(--ink)}
+.stage.scrim::before{content:"";position:absolute;inset:0;background:rgba(0,0,0,.32);border-radius:var(--r)}
+:root:not([data-theme="light"]) .stage.scrim::before{background:rgba(0,0,0,.5)}
+.stage.scrim>*{position:relative;z-index:1}
 
-/* generic authored menu + dialog atoms (structure the mockup doesn't expose) */
-.menu.show{position:static;display:block;min-width:0;width:100%;max-width:260px}
+.pcap{margin-top:9px}
+.pcap b{font-size:var(--fs-sm);color:var(--ink)}
+.pcap .m{display:block;font-size:12px;color:var(--muted);margin-top:3px;line-height:1.5}
+.pcap .db{display:block;font-size:11px;color:var(--soft);margin-top:5px;font-family:ui-monospace,Menlo,monospace}
+.pcap .st{display:inline-block;margin-top:6px;font-size:11px;color:var(--muted);
+  background:var(--tagbg);padding:1px 8px;border-radius:var(--r)}
+.pcap .st.live{background:rgba(63,122,78,.16);color:#3F7A4E}
+:root:not([data-theme="light"]) .pcap .st.live{color:#82BE91;background:rgba(130,190,145,.16)}
+
+/* MODAL — matches the mockup's .umodal/.uhd law: flat card, no shadow,
+   surface header bar with title + a SQUARE close, surface footer bar. */
+.modal{width:340px;max-width:100%;background:var(--paper);border-radius:var(--r);overflow:hidden}
+.modal.wide{width:440px}
+.modal .uhd{display:flex;align-items:center;justify-content:space-between;
+  padding:var(--s3) var(--s4);background:var(--surface)}
+.modal .uhd b{font-size:var(--fs);font-weight:600}
+.modal .mbody{padding:var(--s4)}
+.modal .mbody>p{font-size:var(--fs-sm);color:var(--soft);line-height:1.55}
+.modal .mfoot{display:flex;justify-content:flex-end;gap:var(--s2);
+  padding:var(--s3) var(--s4);background:var(--surface)}
+.fl{display:block;font-size:12px;color:var(--muted);margin:14px 0 6px}
+.fl:first-child{margin-top:0}
+.modal .field{width:100%}
+
+/* segmented control — short, horizontal (not tall stacked boxes) */
+.seg{display:flex;gap:6px}
+.seg .o{flex:1;display:flex;align-items:center;justify-content:center;gap:7px;
+  padding:9px 8px;background:var(--surface);border-radius:var(--r);
+  font-size:var(--fs-sm);color:var(--soft)}
+.seg .o .ic{width:15px;height:15px}
+.seg .o.on{background:var(--ink);color:var(--on-ink)}
+.copyrow{display:flex;gap:var(--s2)}
+
+/* menu (dropdown / context) — reuses the mockup .menu; shown inline here */
+.menu.show{position:static;display:block;width:100%;max-width:260px;min-width:0}
 .mi{display:flex;align-items:center;gap:11px;padding:8px 10px;border-radius:var(--r);
   font-size:var(--fs-sm);width:100%;text-align:left;color:var(--ink)}
 .mi:hover{background:var(--surface)}
-.mi .ic{color:var(--muted);width:16px;height:16px}
+.mi .ic{color:var(--muted);width:16px;height:16px;flex:none}
 .mi .k{margin-left:auto;font-size:11px;color:var(--muted)}
-.mi.danger{color:var(--danger)} .mi.danger .ic{color:var(--danger)}
-.mhd{font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);padding:6px 10px 3px}
-.dsep{height:1px;background:var(--line);margin:5px 6px}
-.dlg{background:var(--paper);border-radius:8px;box-shadow:0 20px 54px rgba(0,0,0,.34);
-  padding:17px 18px;width:320px;max-width:100%}
-.dlg.wide{width:420px}
-.dlg h4{font-size:var(--fs);font-weight:600;margin-bottom:4px;display:flex;align-items:center;gap:8px}
-.dlg h4 .ic{color:var(--muted)}
-.dlg .desc{font-size:var(--fs-sm);color:var(--soft);line-height:1.5;margin-bottom:12px}
-.dlg .drow{display:flex;gap:9px;justify-content:flex-end;margin-top:15px}
-.dlg .field{width:100%}
-.dlg label.fl{display:block;font-size:12px;color:var(--muted);margin:10px 0 5px}
-.choice{display:flex;gap:8px}
-.choice .opt{flex:1;border:1px solid var(--line2);border-radius:var(--r);padding:9px;font-size:12.5px;text-align:center;cursor:pointer}
-.choice .opt.on{background:var(--ink);color:var(--on-ink);border-color:var(--ink)}
-.choice .opt .ic{display:block;margin:0 auto 4px}
+.mi.danger,.mi.danger .ic{color:var(--danger)}
+.mi.on{background:var(--surface)}
+.mhd{font-size:12px;color:var(--muted);padding:7px 10px 4px}
+.dsep{height:1px;background:var(--line);margin:5px 8px}
 
-/* phone frame for mobile states */
-.phone{width:288px;height:560px;border:9px solid var(--ink);border-radius:30px;overflow:hidden;
-  background:var(--paper);position:relative;box-shadow:0 16px 40px rgba(0,0,0,.28)}
-.phone .pbar{position:absolute;left:0;right:0;bottom:0;height:54px;background:var(--railbg);
-  display:flex;align-items:center;justify-content:space-around;border-top:1px solid var(--line)}
-.phone .pbar button{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:9px;color:var(--muted)}
+/* comment thread card (canvas) — flat, no shadow */
+.thread{width:250px;background:var(--paper);border-radius:var(--r);padding:12px}
+.thread .th{display:flex;align-items:center;gap:8px;margin-bottom:7px}
+.thread .meta{margin-left:auto;font-size:11px;color:var(--muted)}
+.thread .tx{font-size:var(--fs-sm);color:var(--ink);line-height:1.5}
+.thread .actions{display:flex;align-items:center;gap:12px;margin:9px 0;font-size:12px;color:var(--muted)}
+.thread .actions button{display:flex;align-items:center;gap:5px;color:var(--soft)}
+
+/* phone frame — a device, so its rounded shell is allowed */
+.phone{width:288px;height:560px;border:9px solid var(--ink);border-radius:28px;overflow:hidden;
+  background:var(--paper);position:relative}
+.phone .ptop{height:48px;display:flex;align-items:center;gap:11px;padding:0 14px;background:var(--surface)}
+.phone .ptop b{font-size:var(--fs)}
+.phone .ptop .sp{flex:1}
+.phone .pbar{position:absolute;left:0;right:0;bottom:0;height:56px;background:var(--railbg);
+  display:flex;align-items:stretch}
+.phone .pbar button{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;
+  font-size:9.5px;color:var(--muted)}
 .phone .pbar button.on{color:var(--ink)}
-.phone .pbar .dot{position:absolute}
-.phone .ptop{height:46px;display:flex;align-items:center;gap:10px;padding:0 14px;background:var(--surface);border-bottom:1px solid var(--line)}
-.phone .ptop b{font-size:14px}
-.phone .drawer{position:absolute;top:46px;left:0;bottom:0;width:210px;background:var(--railbg);padding:10px;
-  box-shadow:6px 0 24px rgba(0,0,0,.25)}
-.phone .scrim{position:absolute;inset:46px 0 0 210px;background:rgba(0,0,0,.35)}
+.phone .drawer{position:absolute;top:48px;left:0;bottom:0;width:212px;background:var(--railbg);padding:10px 8px}
+.phone .veil{position:absolute;inset:48px 0 0 212px;background:rgba(0,0,0,.4)}
 
-/* palette */
+/* bare avatar: the mockup only styles .pfp in context (.railuser/.pin/…),
+   so a standalone one needs its own round rule or it renders as a square. */
+.pfp{border-radius:50%;display:grid;place-items:center;overflow:hidden;
+  color:#fff;font-weight:700;font-size:var(--fs-sm);background:#7a7a7a}
+.btn{white-space:nowrap}
+
+/* palette — prefixed classes so they don't collide with the mockup's
+   .sw (colour swatch) / .lb (lightbox) which would leak position:fixed etc. */
 .pal{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:10px}
-.sw{border-radius:7px;overflow:hidden;border:1px solid var(--line)}
-.sw .cc{height:44px;display:flex}
-.sw .cc i{flex:1}
-.sw .lb{font-size:10px;padding:5px 7px;background:var(--surface);color:var(--soft);
-  font-family:ui-monospace,monospace;display:flex;justify-content:space-between}
-.sw .lb b{color:var(--ink)}
-.palnote{display:flex;gap:16px;flex-wrap:wrap;margin-top:14px;font-size:12px;color:var(--muted)}
-.chipdemo{display:flex;flex-wrap:wrap;gap:7px;margin-top:14px}
+.palsw{border-radius:var(--r);overflow:hidden;background:var(--surface)}
+.palsw .palcc{height:46px;display:flex}
+.palsw .palcc i{flex:1}
+.palsw .pallb{font-size:10.5px;padding:5px 7px;color:var(--soft);
+  font-family:ui-monospace,Menlo,monospace;display:flex;justify-content:space-between}
+.palsw .pallb b{color:var(--ink)}
+.chipdemo{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+.palnote{display:flex;gap:18px;flex-wrap:wrap;margin-top:16px;font-size:12px;color:var(--muted)}
 
-.note{font-size:12.5px;color:var(--muted);background:var(--surface);border-left:2px solid var(--line2);
-  padding:9px 13px;border-radius:0 6px 6px 0;margin:14px 0;line-height:1.5}
+.note{font-size:12.5px;color:var(--muted);background:var(--surface);
+  padding:11px 14px;border-radius:var(--r);margin:14px 0;line-height:1.55}
 
 /* inventory table */
-.inv{width:100%;border-collapse:collapse;font-size:12.5px}
-.inv th,.inv td{text-align:left;padding:7px 10px;border-bottom:1px solid var(--line);vertical-align:top}
-.inv th{font-size:11px;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);font-weight:600;position:sticky;top:96px;background:var(--paper)}
-.inv td code{font-family:ui-monospace,monospace;font-size:11px;color:var(--soft)}
-.inv .s{white-space:nowrap;font-size:10.5px;text-transform:uppercase;letter-spacing:.3px}
-.inv .s.m{color:#3F7A4E}.inv .s.a{color:#3F65A6}.inv .s.t{color:var(--muted)}
-:root[data-theme="dark"] .inv .s.m{color:#82BE91}:root[data-theme="dark"] .inv .s.a{color:#89A6D6}
 .invwrap{overflow-x:auto}
+.inv{width:100%;border-collapse:collapse;font-size:12.5px}
+.inv th,.inv td{text-align:left;padding:7px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+.inv th{font-size:12px;color:var(--muted);font-weight:600;position:sticky;top:94px;background:var(--paper)}
+.inv td code{font-family:ui-monospace,Menlo,monospace;font-size:11px;color:var(--soft)}
+.inv .s{white-space:nowrap;font-size:11px}
+.inv .s.m{color:#3F7A4E}.inv .s.a{color:#3F65A6}.inv .s.t{color:var(--muted)}
+:root:not([data-theme="light"]) .inv .s.m{color:#82BE91}
+:root:not([data-theme="light"]) .inv .s.a{color:#89A6D6}
+
+@media(max-width:640px){ .gsec{padding:20px var(--s4)} .stagewrap{grid-template-columns:1fr} }
 </style>
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
@@ -973,70 +1019,66 @@ h3.sub{font-size:var(--fs);font-weight:600;margin:22px 0 12px;color:var(--soft)}
 
 <div class="gtop">
   <h1>eski gallery</h1>
-  <span class="sub">every screen · every dialog · every modal — for critique</span>
+  <span class="sub">every screen · every dialog · every modal</span>
   <span class="sp"></span>
   <button id="themebtn">Dark</button>
 </div>
 
 <nav class="gtoc">
-  <a href="#read">how to read this</a>
-  <a href="#palette">① member colours</a>
-  <a href="#screens">② the 14 screens</a>
-  <a href="#global">③ global dialogs</a>
-  <a href="#canvas">④ canvas suite</a>
-  <a href="#key">⑤ key screen dialogs</a>
-  <a href="#inventory">⑥ full dialog inventory</a>
+  <a href="#read">Read me</a>
+  <a href="#palette">① Member colours</a>
+  <a href="#screens">② The 14 screens</a>
+  <a href="#global">③ Global dialogs</a>
+  <a href="#canvas">④ Canvas suite</a>
+  <a href="#key">⑤ Key dialogs</a>
+  <a href="#inventory">⑥ Inventory</a>
 </nav>
 
 <section class="gsec" id="read">
   <h2>How to read this</h2>
   <p class="lede">
-    This is the visual companion to <code>docs/CANON.md</code>. <b>Screens</b> are the
-    <em>live</em> mockup embedded via iframe (interact with them). <b>Dialogs, menus and
-    modals</b> are authored panels floating on a grey stage — the layer the mockup can't
-    show at rest. Every panel carries a caption: what it is, what triggers it, and its
-    database binding. Use the <b>Dark</b> button to check both themes.
-    <br><br>
-    <b>Two known cosmetic lags</b> in the embedded screens: they still say “group”
-    (renamed to <b>server</b> — a text-only pass is pending) and the Feed still says
-    “follows” (now <b>friends</b>). The dialog panels below already use the new terms.
-    “Desktop” everywhere means <b>the web app in a wide browser</b> — not a native build.
+    The visual companion to <code>docs/CANON.md</code>. <b>Screens</b> are the
+    live mockup, embedded (interact with them). <b>Dialogs, menus and modals</b>
+    are authored panels — modals sit on a <b>darkened backdrop, no drop shadow</b>
+    (the rule); menus float flat. Every panel names what it is, its trigger, and
+    its database binding. Toggle <b>Dark</b> to check both themes. Radius is 3px
+    everywhere; round is only avatars and presence dots; closes are square.
+    “Desktop” means the web app in a wide browser. The embedded screens still
+    read “group” (renamed to <b>server</b> — a text pass is pending).
   </p>
 </section>
 
 <section class="gsec" id="palette">
   <h2>① Member colours <span class="n">— the one hue in the UI, proposed at 30</span></h2>
   <p class="lede">
-    Chrome is black/white/grey; the only colour is a member’s <b>per-server identity hue</b>,
-    shown <em>only inside that server</em> (chat bylines, Members rail, contributor chips,
-    canvas-comment authors, board assignees) and never on a public profile or the Feed.
-    Servers hold a lot of people, so the palette is widened from the original 6 to
-    <b>30</b> evenly-spaced hues (<code>--m1 … --m30</code>), each with a light + dark pair.
-    <code>join_via_invite</code> assigns the next free index and <b>cycles</b> past 30 —
-    identity colour is a legibility aid, not a uniqueness guarantee at scale. These are a
-    generated <b>proposal</b> for you to critique before they’re written into
-    <code>styleguide.html</code>.
+    Chrome is black/white/grey; the only colour is a member’s <b>per-server
+    identity hue</b>, shown only inside that server and never on a public profile
+    or the Feed. Widened from 6 to <b>30</b> evenly-spaced hues
+    (<code>--m1 … --m30</code>), each a light + dark pair; <code>join_via_invite</code>
+    assigns the next free index and cycles past 30. A generated proposal to
+    critique before it’s written into <code>styleguide.html</code>.
   </p>
   <div class="pal" id="pal"></div>
   <div class="chipdemo" id="chipdemo"></div>
   <div class="palnote">
-    <span>▸ Swatch shows the <b>current theme’s</b> hex.</span>
-    <span>▸ Chips above preview names rendered in each hue.</span>
-    <span>▸ Critique: enough separation? too saturated on dark? cap at 24 instead of 30?</span>
+    <span>▸ Each swatch: light half · dark half, current-theme hex below.</span>
+    <span>▸ Chips preview names in each hue.</span>
+    <span>▸ Critique: separation? too saturated on dark? cap at 24?</span>
   </div>
 </section>
 
 <section class="gsec" id="screens">
-  <h2>② The 14 screens <span class="n">— live, embedded</span></h2>
-  <p class="lede">Each is the real mockup at <code>collab-mockup.html#screen</code>. Their
-    own dialogs (details pane, lightbox, menus) are reachable by clicking inside.</p>
+  <h2>② The 14 screens <span class="n">— live, embedded (these are law)</span></h2>
+  <p class="lede">Each is the real mockup at <code>collab-mockup.html#screen</code>.
+    Their own overlays (details pane, lightbox) are reachable by clicking in.</p>
   <div class="gscreens" id="gscreens"></div>
 </section>
 
 <section class="gsec" id="global">
   <h2>③ Global dialogs, menus &amp; mobile chrome</h2>
-  <p class="lede">The shared layer that appears across screens — including the humble
-    things (burger nav, confirm, prompt, toast) that still need a planned design.</p>
+  <p class="lede">The shared layer, including the small things (burger nav,
+    confirm, prompt, toast) that still need a planned design. Modals on a scrim,
+    square closes, short buttons.</p>
   <div class="stagewrap">
 
     <!-- mobile bottom tabs -->
@@ -1044,23 +1086,23 @@ h3.sub{font-size:var(--fs);font-weight:600;margin:22px 0 12px;color:var(--soft)}
       <div class="stage tall">
         <div class="phone">
           <div class="ptop"><svg class="ic"><use href="#i-hash"/></svg><b>beats</b>
-            <span class="sp" style="flex:1"></span><svg class="ic"><use href="#i-users"/></svg></div>
-          <div style="padding:12px;font-size:12px;color:var(--muted)">chat fills the screen…</div>
+            <span class="sp"></span><svg class="ic" style="color:var(--muted)"><use href="#i-users"/></svg></div>
+          <div style="padding:14px;font-size:12px;color:var(--muted)">Chat fills the screen; the channel column and members are one tap away.</div>
           <div class="pbar">
-            <button class="on"><svg class="ic"><use href="#i-home"/></svg>Home</button>
-            <button><svg class="ic"><use href="#i-mail"/></svg>DMs</button>
-            <button><svg class="ic"><use href="#i-grid"/></svg>Servers</button>
-            <button><svg class="ic"><use href="#i-bell"/></svg>Alerts</button>
-            <button><svg class="ic"><use href="#i-user"/></svg>You</button>
+            <button class="on"><svg class="ic sm"><use href="#i-home"/></svg>Home</button>
+            <button><svg class="ic sm"><use href="#i-mail"/></svg>Messages</button>
+            <button><svg class="ic sm"><use href="#i-grid"/></svg>Servers</button>
+            <button><svg class="ic sm"><use href="#i-bell"/></svg>Alerts</button>
+            <button><svg class="ic sm"><use href="#i-user"/></svg>You</button>
           </div>
         </div>
       </div>
       <div class="pcap"><b>Mobile bottom tabs</b>
-        <span class="m">Replaces the server rail on &lt;720px. Home · DMs · Servers · Alerts · You.</span>
-        <span class="db">— (nav shell) · badges from channel_reads / notifications</span></div>
+        <span class="m">Replaces the server rail under 720px: Home · Messages · Servers · Alerts · You.</span>
+        <span class="db">badges ← channel_reads / notifications</span></div>
     </div>
 
-    <!-- mobile burger drawer -->
+    <!-- mobile drawer -->
     <div>
       <div class="stage tall">
         <div class="phone">
@@ -1068,16 +1110,16 @@ h3.sub{font-size:var(--fs);font-weight:600;margin:22px 0 12px;color:var(--soft)}
           <div class="drawer">
             <div class="mhd">Channels</div>
             <button class="mi"><svg class="ic"><use href="#i-hash"/></svg>announcements</button>
-            <button class="mi" style="background:var(--surface)"><svg class="ic"><use href="#i-hash"/></svg>beats</button>
+            <button class="mi on"><svg class="ic"><use href="#i-hash"/></svg>beats</button>
             <button class="mi"><svg class="ic"><use href="#i-hash"/></svg>verses</button>
             <div class="mhd">Boards</div>
             <button class="mi"><svg class="ic"><use href="#i-board"/></svg>shot tasks</button>
           </div>
-          <div class="scrim"></div>
+          <div class="veil"></div>
         </div>
       </div>
       <div class="pcap"><b>Burger → channel drawer</b>
-        <span class="m">Tapping the server name (or ☰) slides the channel column in; tapping a channel closes it.</span>
+        <span class="m">Tapping the server name slides the channel column in; picking one closes it.</span>
         <span class="db">R channels where server_id · channel_reads</span></div>
     </div>
 
@@ -1089,7 +1131,7 @@ h3.sub{font-size:var(--fs);font-weight:600;margin:22px 0 12px;color:var(--soft)}
         <button class="mi"><svg class="ic"><use href="#i-at"/></svg>Add a friend</button>
       </div></div>
       <div class="pcap"><b>＋ menu (server rail)</b>
-        <span class="m">The whole “grow” funnel: create, join a link, or add by handle. No directory.</span>
+        <span class="m">The whole growth funnel: create, join a link, add by handle. No directory.</span>
         <span class="db">→ create · /join/&lt;code&gt; · add_friend(handle)</span>
         <span class="st live">in mockup</span></div>
     </div>
@@ -1098,7 +1140,7 @@ h3.sub{font-size:var(--fs);font-weight:600;margin:22px 0 12px;color:var(--soft)}
     <div>
       <div class="stage"><div class="menu show">
         <div style="display:flex;gap:10px;align-items:center;padding:6px 10px 9px">
-          <span class="pfp" style="background:var(--m5)">JX</span>
+          <span class="pfp" style="width:34px;height:34px;background:var(--m5)">JX</span>
           <div><div style="font-weight:600;font-size:13px">jax</div>
           <div style="font-size:11px;color:var(--muted)">@jax · online</div></div></div>
         <div class="dsep"></div>
@@ -1109,108 +1151,110 @@ h3.sub{font-size:var(--fs);font-weight:600;margin:22px 0 12px;color:var(--soft)}
         <button class="mi danger"><svg class="ic"><use href="#i-leave"/></svg>Sign out</button>
       </div></div>
       <div class="pcap"><b>Avatar menu</b>
-        <span class="m">Foot of the server rail. Presence dot + quick jump.</span>
+        <span class="m">Foot of the server rail; presence dot on the avatar.</span>
         <span class="db">R profiles · presence_state</span></div>
     </div>
 
-    <!-- status picker -->
+    <!-- status -->
     <div>
-      <div class="stage"><div class="dlg">
-        <h4><svg class="ic"><use href="#i-smile"/></svg>Set your status</h4>
-        <div class="choice">
-          <div class="opt on"><svg class="ic"><use href="#i-globe"/></svg>Online</div>
-          <div class="opt"><svg class="ic"><use href="#i-play"/></svg>Idle</div>
-          <div class="opt"><svg class="ic"><use href="#i-lock"/></svg>Do not disturb</div>
+      <div class="stage scrim"><div class="modal">
+        <div class="uhd"><b>Set your status</b><button class="iconbtn"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
+        <div class="mbody">
+          <div class="seg">
+            <div class="o on"><svg class="ic"><use href="#i-globe"/></svg>Online</div>
+            <div class="o"><svg class="ic"><use href="#i-play"/></svg>Idle</div>
+            <div class="o"><svg class="ic"><use href="#i-lock"/></svg>Busy</div>
+          </div>
+          <label class="fl">Custom status</label>
+          <div class="field"><input placeholder="mixing, sharing FL"></div>
+          <label class="fl">Clear after</label>
+          <div class="field"><input value="4 hours"></div>
         </div>
-        <label class="fl">Custom status</label>
-        <input class="field" placeholder="e.g. mixing, sharing FL">
-        <label class="fl">Clear after</label>
-        <input class="field" value="4 hours">
-        <div class="drow"><button class="btn">Cancel</button><button class="btn primary">Save</button></div>
+        <div class="mfoot"><button class="btn">Cancel</button><button class="btn primary">Save</button></div>
       </div></div>
       <div class="pcap"><b>Status picker</b>
-        <span class="m">Presence state + the “working on” line that feeds the Members rail.</span>
+        <span class="m">Presence + the “working on” line the Members rail reads.</span>
         <span class="db">W profiles.presence_state / status_text / status_expires_at</span></div>
     </div>
 
     <!-- confirm -->
     <div>
-      <div class="stage"><div class="dlg">
-        <h4>Delete #references?</h4>
-        <p class="desc">This removes the channel and its 214 messages for everyone in the
-          server. This can’t be undone.</p>
-        <div class="drow"><button class="btn">Cancel</button>
-          <button class="btn primary" style="background:var(--danger);border-color:var(--danger)">Delete channel</button></div>
+      <div class="stage scrim"><div class="modal">
+        <div class="uhd"><b>Delete #references?</b><button class="iconbtn"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
+        <div class="mbody"><p>This removes the channel and its 214 messages for everyone in the server. It can’t be undone.</p></div>
+        <div class="mfoot"><button class="btn">Cancel</button>
+          <button class="btn primary" style="background:var(--danger)">Delete channel</button></div>
       </div></div>
       <div class="pcap"><b>Confirm (destructive)</b>
-        <span class="m">Generic pattern for any irreversible admin action — red primary, named consequence.</span>
-        <span class="db">gated by is_server_admin</span></div>
+        <span class="m">Generic irreversible-action pattern — named consequence, danger primary.</span>
+        <span class="db">gated by has_perm(manage_channels)</span></div>
     </div>
 
     <!-- prompt -->
     <div>
-      <div class="stage"><div class="dlg">
-        <h4>Rename channel</h4>
-        <input class="field" value="mixing">
-        <div class="drow"><button class="btn">Cancel</button><button class="btn primary">Rename</button></div>
+      <div class="stage scrim"><div class="modal">
+        <div class="uhd"><b>Rename channel</b><button class="iconbtn"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
+        <div class="mbody"><div class="field"><input value="mixing"></div></div>
+        <div class="mfoot"><button class="btn">Cancel</button><button class="btn primary">Rename</button></div>
       </div></div>
       <div class="pcap"><b>Prompt (single field)</b>
-        <span class="m">Reusable text-input modal (rename, new folder, new label…).</span>
+        <span class="m">Reusable text-input modal: rename, new folder, new label.</span>
         <span class="db">varies per caller</span></div>
     </div>
 
-    <!-- emoji picker -->
+    <!-- emoji -->
     <div>
-      <div class="stage"><div class="dlg" style="width:270px">
-        <input class="field" placeholder="Search emoji">
-        <div class="mhd" style="padding-left:0">Smileys</div>
-        <div style="font-size:22px;display:grid;grid-template-columns:repeat(7,1fr);gap:4px;line-height:1.5">
+      <div class="stage"><div class="menu show" style="max-width:250px">
+        <div class="field" style="margin:2px 4px 6px"><input placeholder="Search emoji"></div>
+        <div class="mhd">Smileys &amp; people</div>
+        <div style="font-size:21px;display:grid;grid-template-columns:repeat(7,1fr);gap:3px;padding:0 6px 6px;line-height:1.5">
           <span>😀</span><span>😂</span><span>😍</span><span>😎</span><span>🤔</span><span>👍</span><span>🔥</span>
           <span>🎧</span><span>🎚️</span><span>🥁</span><span>✅</span><span>👀</span><span>💯</span><span>🙌</span></div>
       </div></div>
       <div class="pcap"><b>Emoji picker</b>
-        <span class="m">Composer + message reactions. Bought: emoji-mart (data + search).</span>
-        <span class="db">W message_reactions via toggle_reaction</span></div>
+        <span class="m">Composer + reactions. Bought: emoji-mart (data + search).</span>
+        <span class="db">W message_reactions ← toggle_reaction</span></div>
     </div>
 
-    <!-- mention autocomplete -->
+    <!-- mention -->
     <div>
       <div class="stage"><div class="menu show">
         <div class="mhd">Members — @mi</div>
-        <button class="mi"><span class="pfp sm" style="background:var(--m4);width:22px;height:22px;font-size:10px">MI</span>mira <span class="k">@mira</span></button>
-        <button class="mi"><span class="pfp sm" style="background:var(--m2);width:22px;height:22px;font-size:10px">MK</span>mikah <span class="k">@mikah</span></button>
+        <button class="mi"><span class="pfp" style="width:22px;height:22px;font-size:9px;background:var(--m4)">MI</span>mira<span class="k">@mira</span></button>
+        <button class="mi"><span class="pfp" style="width:22px;height:22px;font-size:9px;background:var(--m2)">MK</span>mikah<span class="k">@mikah</span></button>
       </div></div>
       <div class="pcap"><b>@mention / #channel autocomplete</b>
-        <span class="m">Prefix query over members/channels as you type. Build (trivial).</span>
-        <span class="db">R server_members / channels → writes mentions on send</span></div>
+        <span class="m">Prefix query over members/channels while typing.</span>
+        <span class="db">R server_members / channels → mentions</span></div>
     </div>
 
     <!-- toast -->
     <div>
       <div class="stage">
         <div style="display:flex;align-items:center;gap:11px;background:var(--ink);color:var(--on-ink);
-          padding:11px 15px;border-radius:7px;font-size:13px;box-shadow:0 12px 30px rgba(0,0,0,.3)">
-          <svg class="ic" style="color:var(--on-ink)"><use href="#i-check"/></svg>
-          Invite link copied<button style="margin-left:8px;color:var(--on-ink);opacity:.7;text-decoration:underline">Undo</button></div>
+          padding:11px 14px;border-radius:var(--r);font-size:13px">
+          <svg class="ic sm" style="color:var(--on-ink)"><use href="#i-check"/></svg>Invite link copied
+          <button style="margin-left:6px;color:var(--on-ink);opacity:.75;text-decoration:underline">Undo</button></div>
       </div>
-      <div class="pcap"><b>Toast / snackbar</b>
+      <div class="pcap"><b>Toast</b>
         <span class="m">Transient confirmation (copied, saved, sent). Auto-dismiss, optional Undo.</span>
         <span class="db">— (client only)</span></div>
     </div>
 
     <!-- report -->
     <div>
-      <div class="stage"><div class="dlg">
-        <h4>Report this file</h4>
-        <p class="desc">What’s wrong with it? Reports go to the server admins (CSAM also to eski).</p>
-        <button class="mi"><svg class="ic"><use href="#i-x"/></svg>Copyright / not their work</button>
-        <button class="mi"><svg class="ic"><use href="#i-x"/></svg>Sexual content involving minors</button>
-        <button class="mi"><svg class="ic"><use href="#i-x"/></svg>Harassment or abuse</button>
-        <button class="mi"><svg class="ic"><use href="#i-x"/></svg>Something else</button>
+      <div class="stage scrim"><div class="modal">
+        <div class="uhd"><b>Report this file</b><button class="iconbtn"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
+        <div class="mbody" style="padding:8px">
+          <button class="mi">Copyright — not their work</button>
+          <button class="mi">Sexual content involving minors</button>
+          <button class="mi">Harassment or abuse</button>
+          <button class="mi">Something else</button>
+        </div>
       </div></div>
-      <div class="pcap"><b>Report dialog</b>
-        <span class="m">On any work, comment, or profile. CSAM category sorts first in the queue.</span>
-        <span class="db">W reports via file_report</span>
+      <div class="pcap"><b>Report</b>
+        <span class="m">On any work, comment, or profile. CSAM sorts first in the queue.</span>
+        <span class="db">W reports ← file_report</span>
         <span class="st live">in mockup</span></div>
     </div>
 
@@ -1218,21 +1262,21 @@ h3.sub{font-size:var(--fs);font-weight:600;margin:22px 0 12px;color:var(--soft)}
 </section>
 
 <section class="gsec" id="canvas">
-  <h2>④ Canvas suite <span class="n">— the moat, and the thing to critique hardest</span></h2>
+  <h2>④ Canvas suite <span class="n">— the moat; critique this hardest</span></h2>
   <p class="lede">
-    The review surface: files as <b>tiles</b>, with two <em>separate</em> interactions —
-    <b>annotation</b> (drawing on a tile) and <b>commenting</b> (a Figma-style floating pin,
-    just the author’s avatar, expanding to a thread anchored to a <b>mark</b>). Below: the
-    live canvas, then every dialog and every mark type. This is where your eye matters most.
+    Files as <b>tiles</b> with two separate interactions: <b>annotation</b>
+    (drawing on a tile) and <b>commenting</b> (a floating pin — just the author’s
+    avatar — expanding to a thread anchored to a <b>mark</b>). The live canvas,
+    then every dialog and mark type.
   </p>
 
-  <h3 class="sub">The canvas itself (live)</h3>
+  <h3 class="subh">The canvas itself (live)</h3>
   <div class="gfig">
     <div class="cap"><b>Canvas</b><span class="m">pan · tiles · annotations · comment pins</span></div>
     <div class="gframe"><iframe data-screen="canvas" loading="lazy"></iframe></div>
   </div>
 
-  <h3 class="sub">Its dialogs, menus &amp; every mark type</h3>
+  <h3 class="subh">Its dialogs, menus &amp; every mark type</h3>
   <div class="stagewrap">
 
     <!-- tools -->
@@ -1244,30 +1288,28 @@ h3.sub{font-size:var(--fs);font-weight:600;margin:22px 0 12px;color:var(--soft)}
         <button class="iconbtn"><svg class="ic"><use href="#i-arrow"/></svg></button>
         <button class="iconbtn"><svg class="ic"><use href="#i-square"/></svg></button>
         <button class="iconbtn"><svg class="ic"><use href="#i-scribble"/></svg></button>
-        <span class="sw" style="background:var(--m1)"></span><span class="sw" style="background:var(--m2)"></span>
-        <span class="sw" style="background:var(--m3)"></span><span class="sw" style="background:var(--m4)"></span>
+        <span class="sw" style="background:var(--m1)"></span><span class="sw" style="background:var(--m3)"></span>
+        <span class="sw" style="background:var(--m5)"></span>
         <div class="sep"></div><span class="grp">Comment</span>
         <button class="iconbtn"><svg class="ic"><use href="#i-comment"/></svg></button>
       </div></div>
       <div class="pcap"><b>Tool palette</b>
-        <span class="m">Annotate (pen/arrow/box/freeform + colour) vs Comment are visibly separated groups.</span>
+        <span class="m">Annotate (pen/arrow/box/freeform + colour) and Comment are visibly separate groups.</span>
         <span class="db">annotations.tool/color · comments</span>
         <span class="st live">in mockup</span></div>
     </div>
 
     <!-- comment thread: box mark -->
     <div>
-      <div class="stage"><div class="dlg" style="width:250px;padding:12px">
-        <div class="ph"><span class="uchip m4"><span class="dot"></span>mira</span>
-          <span style="font-size:11px;color:var(--muted);margin-left:auto">box · v3</span></div>
-        <div class="tx">near building edge is ghosting against the sky — needs a garbage matte inside this box.</div>
-        <div style="display:flex;gap:8px;margin:8px 0;font-size:11px;color:var(--muted)">
-          <button style="color:var(--soft)"><svg class="ic sm"><use href="#i-check"/></svg> Resolve</button>
-          <span>2 replies</span></div>
-        <div class="rl"><input placeholder="Reply"></div>
+      <div class="stage"><div class="thread">
+        <div class="th"><span class="uchip m4"><span class="dot"></span>mira</span>
+          <span class="meta">box · v3</span></div>
+        <div class="tx">Near building edge is ghosting against the sky — needs a garbage matte inside this box.</div>
+        <div class="actions"><button><svg class="ic sm"><use href="#i-check"/></svg>Resolve</button><span>2 replies</span></div>
+        <div class="field"><input placeholder="Reply"></div>
       </div></div>
       <div class="pcap"><b>Comment thread — box mark</b>
-        <span class="m">Pin = avatar; click expands to thread + its selection. Resolves, never deletes.</span>
+        <span class="m">Pin = avatar; click expands to the thread + its selection. Resolves, never deletes.</span>
         <span class="db">comments.mark = {box} · resolved_at</span>
         <span class="st live">in mockup</span></div>
     </div>
@@ -1275,12 +1317,11 @@ h3.sub{font-size:var(--fs);font-weight:600;margin:22px 0 12px;color:var(--soft)}
     <!-- mark: point -->
     <div>
       <div class="stage">
-        <div style="position:relative;width:200px;height:120px;background:var(--plate);border-radius:6px">
-          <div class="pin open" style="position:absolute;left:40%;top:35%">
-            <div class="pfp" style="background:var(--m3)">LN</div></div></div>
+        <div style="position:relative;width:200px;height:120px;background:var(--plate);border-radius:var(--r)">
+          <div class="pin open" style="position:absolute;left:40%;top:35%"><div class="pfp" style="background:var(--m3)">LN</div></div></div>
       </div>
       <div class="pcap"><b>Mark: point</b>
-        <span class="m">Single pin dropped anywhere on an image/text tile.</span>
+        <span class="m">A single pin dropped anywhere on an image/text tile.</span>
         <span class="db">comments.mark = {point:[x,y]}</span></div>
     </div>
 
@@ -1295,7 +1336,7 @@ h3.sub{font-size:var(--fs);font-weight:600;margin:22px 0 12px;color:var(--soft)}
         </div>
       </div>
       <div class="pcap"><b>Mark: audio range</b>
-        <span class="m">Drag a range on the waveform (SoundCloud-style) to comment on a span.</span>
+        <span class="m">Drag a range on the waveform to comment on a span.</span>
         <span class="db">comments.mark = {t0,t1}</span>
         <span class="st live">in mockup</span></div>
     </div>
@@ -1320,7 +1361,7 @@ h3.sub{font-size:var(--fs);font-weight:600;margin:22px 0 12px;color:var(--soft)}
     <div>
       <div class="stage"><div class="menu show">
         <div class="mhd">Canvases in this server</div>
-        <button class="mi" style="background:var(--surface)"><svg class="ic"><use href="#i-canvas"/></svg>sh040 review <span class="k">4</span></button>
+        <button class="mi on"><svg class="ic"><use href="#i-canvas"/></svg>sh040 review<span class="k">4</span></button>
         <button class="mi"><svg class="ic"><use href="#i-canvas"/></svg>title sequence</button>
         <button class="mi"><svg class="ic"><use href="#i-canvas"/></svg>colour tests</button>
         <div class="dsep"></div>
@@ -1333,17 +1374,19 @@ h3.sub{font-size:var(--fs);font-weight:600;margin:22px 0 12px;color:var(--soft)}
 
     <!-- share / visibility -->
     <div>
-      <div class="stage"><div class="dlg">
-        <h4><svg class="ic"><use href="#i-link"/></svg>Share “sh040 review”</h4>
-        <label class="fl">Who can open this canvas</label>
-        <div class="choice">
-          <div class="opt"><svg class="ic"><use href="#i-lock"/></svg>Private</div>
-          <div class="opt on"><svg class="ic"><use href="#i-users"/></svg>Server</div>
-          <div class="opt"><svg class="ic"><use href="#i-link"/></svg>Link</div>
+      <div class="stage scrim"><div class="modal">
+        <div class="uhd"><b>Share “sh040 review”</b><button class="iconbtn"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
+        <div class="mbody">
+          <label class="fl">Who can open this canvas</label>
+          <div class="seg">
+            <div class="o"><svg class="ic"><use href="#i-lock"/></svg>Private</div>
+            <div class="o on"><svg class="ic"><use href="#i-users"/></svg>Server</div>
+            <div class="o"><svg class="ic"><use href="#i-link"/></svg>Link</div>
+          </div>
+          <label class="fl">Link — anyone with it can view &amp; comment</label>
+          <div class="copyrow"><div class="field"><input value="eski.lol/c/aH3k9" readonly></div>
+            <button class="iconbtn" title="Copy"><svg class="ic sm"><use href="#i-copy"/></svg></button></div>
         </div>
-        <label class="fl">Link (anyone with it can view + comment)</label>
-        <div style="display:flex;gap:8px"><input class="field" value="eski.lol/c/aH3k9" readonly>
-          <button class="btn"><svg class="ic sm"><use href="#i-copy"/></svg></button></div>
       </div></div>
       <div class="pcap"><b>Share / visibility</b>
         <span class="m">The three-layer idea on a canvas: Private / Server / Link. “Link” lets an outsider comment on just this board.</span>
@@ -1367,9 +1410,9 @@ h3.sub{font-size:var(--fs);font-weight:600;margin:22px 0 12px;color:var(--soft)}
     <!-- empty canvas -->
     <div>
       <div class="stage tall">
-        <div style="text-align:center;color:var(--muted)">
-          <svg class="ic" style="width:34px;height:34px;margin-bottom:10px"><use href="#i-canvas"/></svg>
-          <div style="font-size:14px;color:var(--soft);margin-bottom:6px">Nothing on this canvas yet</div>
+        <div style="text-align:center;color:var(--muted);max-width:220px">
+          <svg class="ic" style="width:30px;height:30px;margin-bottom:10px;color:var(--muted)"><use href="#i-canvas"/></svg>
+          <div style="font-size:14px;color:var(--soft);margin-bottom:5px">Nothing on this canvas yet</div>
           <div style="font-size:12px;margin-bottom:14px">Drop files here, or add from the server’s Media.</div>
           <button class="btn primary"><svg class="ic sm"><use href="#i-plus"/></svg>Add file</button></div>
       </div>
@@ -1383,30 +1426,32 @@ h3.sub{font-size:var(--fs);font-weight:600;margin:22px 0 12px;color:var(--soft)}
 
 <section class="gsec" id="key">
   <h2>⑤ Key per-screen dialogs</h2>
-  <p class="lede">The highest-traffic modals outside the global + canvas sets. The rest are
-    enumerated in ⑥.</p>
+  <p class="lede">The highest-traffic modals outside the global + canvas sets. The
+    rest are enumerated in ⑥.</p>
   <div class="stagewrap">
 
-    <!-- upload sheet -->
+    <!-- upload -->
     <div>
-      <div class="stage tall"><div class="dlg wide">
-        <h4><svg class="ic"><use href="#i-clip"/></svg>Upload</h4>
-        <div style="border:1.5px dashed var(--line2);border-radius:6px;padding:14px;font-size:12px;color:var(--muted);text-align:center;margin-bottom:10px">
-          late_bloom_beat.wav · 3 files</div>
-        <label class="fl">Title <span style="color:var(--muted)">(optional — file name is the default)</span></label>
-        <input class="field" placeholder="late_bloom_beat.wav">
-        <label class="fl">Tags &amp; credits</label>
-        <input class="field" placeholder="142bpm, bridge · prod. jax">
-        <label class="fl">Visibility</label>
-        <div class="choice">
-          <div class="opt"><svg class="ic"><use href="#i-globe"/></svg>Public</div>
-          <div class="opt on"><svg class="ic"><use href="#i-users"/></svg>Server</div>
-          <div class="opt"><svg class="ic"><use href="#i-lock"/></svg>Private</div>
+      <div class="stage scrim"><div class="modal wide">
+        <div class="uhd"><b>Upload</b><button class="iconbtn"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
+        <div class="mbody">
+          <div style="background:var(--surface);border-radius:var(--r);padding:14px;font-size:12px;color:var(--muted);text-align:center">
+            late_bloom_beat.wav · 3 files</div>
+          <label class="fl">Title <span style="color:var(--muted)">— optional, file name is the default</span></label>
+          <div class="field"><input placeholder="late_bloom_beat.wav"></div>
+          <label class="fl">Tags &amp; credits</label>
+          <div class="field"><input placeholder="142bpm, bridge · prod. jax"></div>
+          <label class="fl">Visibility</label>
+          <div class="seg">
+            <div class="o"><svg class="ic"><use href="#i-globe"/></svg>Public</div>
+            <div class="o on"><svg class="ic"><use href="#i-users"/></svg>Server</div>
+            <div class="o"><svg class="ic"><use href="#i-lock"/></svg>Private</div>
+          </div>
         </div>
-        <div class="drow"><button class="btn">Cancel</button><button class="btn primary">Upload 3 files</button></div>
+        <div class="mfoot"><button class="btn">Cancel</button><button class="btn primary">Upload 3 files</button></div>
       </div></div>
       <div class="pcap"><b>Upload sheet</b>
-        <span class="m">Title optional, type recognised but not shown as a tag, one visibility choice. Same sheet flips to “new version” mode.</span>
+        <span class="m">Title optional, type recognised but not a tag, one visibility choice. Flips to “new version” mode.</span>
         <span class="db">works insert · file_ext · visibility</span>
         <span class="st live">in mockup</span></div>
     </div>
@@ -1415,22 +1460,22 @@ h3.sub{font-size:var(--fs);font-weight:600;margin:22px 0 12px;color:var(--soft)}
     <div>
       <div class="stage"><div class="menu show">
         <div class="mhd">Versions — by file name</div>
-        <button class="mi" style="background:var(--surface)"><svg class="ic"><use href="#i-version"/></svg>sh040_comp_v3.mov <span class="k">v3</span></button>
-        <button class="mi"><svg class="ic"><use href="#i-version"/></svg>sh040_comp_v2.mov <span class="k">v2</span></button>
-        <button class="mi"><svg class="ic"><use href="#i-version"/></svg>sh040_comp_v1.mov <span class="k">v1</span></button>
+        <button class="mi on"><svg class="ic"><use href="#i-version"/></svg>sh040_comp_v3.mov<span class="k">v3</span></button>
+        <button class="mi"><svg class="ic"><use href="#i-version"/></svg>sh040_comp_v2.mov<span class="k">v2</span></button>
+        <button class="mi"><svg class="ic"><use href="#i-version"/></svg>sh040_comp_v1.mov<span class="k">v1</span></button>
         <div class="dsep"></div>
         <button class="mi"><svg class="ic"><use href="#i-plus"/></svg>Add a version…</button>
       </div></div>
       <div class="pcap"><b>Version dropdown</b>
-        <span class="m">The one place file names show. Any member can add; the change reason lives in the pane body.</span>
+        <span class="m">The one place file names show. Any member can add; the reason lives in the pane body.</span>
         <span class="db">works.version_of · add_version()</span></div>
     </div>
 
-    <!-- download format -->
+    <!-- download -->
     <div>
       <div class="stage"><div class="menu show">
         <div class="mhd">Download as</div>
-        <button class="mi">wav <span class="k">original</span></button>
+        <button class="mi">wav<span class="k">original</span></button>
         <button class="mi">mp3</button>
         <button class="mi">flac</button>
         <button class="mi">opus</button>
@@ -1440,11 +1485,11 @@ h3.sub{font-size:var(--fs);font-weight:600;margin:22px 0 12px;color:var(--soft)}
         <span class="db">transcode endpoint (ffmpeg-static)</span></div>
     </div>
 
-    <!-- save to folder -->
+    <!-- save -->
     <div>
       <div class="stage"><div class="menu show">
         <div class="mhd">Save to</div>
-        <button class="mi"><svg class="ic"><use href="#i-save"/></svg>References <span class="k">✓</span></button>
+        <button class="mi"><svg class="ic"><use href="#i-save"/></svg>References<span class="k">✓</span></button>
         <button class="mi"><svg class="ic"><use href="#i-save"/></svg>To flip</button>
         <div class="dsep"></div>
         <button class="mi"><svg class="ic"><use href="#i-plus"/></svg>New folder…</button>
@@ -1456,45 +1501,50 @@ h3.sub{font-size:var(--fs);font-weight:600;margin:22px 0 12px;color:var(--soft)}
 
     <!-- member popout -->
     <div>
-      <div class="stage tall"><div class="dlg" style="width:250px;padding:0;overflow:hidden">
+      <div class="stage tall"><div class="modal" style="width:250px">
         <div style="height:52px;background:var(--m4)"></div>
-        <div style="padding:0 15px 15px;margin-top:-20px">
-          <span class="pfp" style="width:44px;height:44px;background:var(--m4);border:3px solid var(--paper)">MI</span>
-          <div style="font-weight:600;margin-top:6px">mira <span class="uchip m4" style="font-size:10px"><span class="dot"></span>admin</span></div>
-          <div style="font-size:11px;color:var(--muted)">@mira · compositor · 3pm local</div>
-          <div style="font-size:12px;color:var(--soft);margin:9px 0">Shared servers: Specter, LATE BLOOM</div>
+        <div style="padding:0 15px 15px;margin-top:-18px">
+          <span class="pfp" style="width:46px;height:46px;background:var(--m4);box-shadow:0 0 0 3px var(--paper)">MI</span>
+          <div style="font-weight:600;margin-top:7px">mira <span class="uchip m4" style="font-size:10px"><span class="dot"></span>admin</span></div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px">@mira · compositor · 3pm local</div>
+          <div style="font-size:12px;color:var(--soft);margin:10px 0">Shared servers: Specter, LATE BLOOM</div>
           <div style="display:flex;gap:8px"><button class="btn primary" style="flex:1"><svg class="ic sm"><use href="#i-at"/></svg>Add friend</button>
             <button class="btn" style="flex:1"><svg class="ic sm"><use href="#i-mail"/></svg>Message</button></div>
         </div>
       </div></div>
       <div class="pcap"><b>Member / profile popout</b>
-        <span class="m">Name in server colour, role chip, local time, mutual servers, add-friend/message.</span>
+        <span class="m">Name in server colour, role chip, local time, mutual servers, add-friend/message. The cover uses the member hue — the one colour.</span>
         <span class="db">profiles · server_members.role · friendships</span></div>
     </div>
 
     <!-- board card -->
     <div>
-      <div class="stage tall"><div class="dlg">
-        <h4>Low end on the bridge</h4>
-        <div style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:10px">
-          <span class="tag" style="background:var(--m1);color:#fff">mix</span>
-          <span class="uchip m3"><span class="dot"></span>tomo</span>
-          <span style="font-size:11px;color:var(--muted)">due Fri</span></div>
-        <div style="font-size:12.5px;color:var(--soft);margin-bottom:10px">Bring the sub down ~2dB through the bridge.</div>
-        <button class="mi" style="border:1px solid var(--line);border-radius:6px"><svg class="ic"><use href="#i-canvas"/></svg>Linked: sh040 review</button>
+      <div class="stage tall"><div class="modal">
+        <div class="uhd"><b>Low end on the bridge</b><button class="iconbtn"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
+        <div class="mbody">
+          <div style="display:flex;gap:7px;align-items:center;flex-wrap:wrap;margin-bottom:11px">
+            <span class="tag" style="background:var(--m1);color:#fff">mix</span>
+            <span class="uchip m3"><span class="dot"></span>tomo</span>
+            <span style="font-size:11px;color:var(--muted);margin-left:auto">due Fri</span></div>
+          <div style="font-size:12.5px;color:var(--soft);line-height:1.5;margin-bottom:11px">Bring the sub down ~2dB through the bridge.</div>
+          <button class="mi" style="background:var(--surface)"><svg class="ic"><use href="#i-canvas"/></svg>Linked: sh040 review</button>
+        </div>
       </div></div>
       <div class="pcap"><b>Board card detail</b>
-        <span class="m">Title, label, assignee (server colour), due date, and a linked file/canvas.</span>
+        <span class="m">Title, label, assignee (server colour), due date, linked file/canvas.</span>
         <span class="db">board_cards (label, assignee_id, work_id/scratchpad_id, due_date)</span></div>
     </div>
 
     <!-- new DM -->
     <div>
-      <div class="stage"><div class="dlg">
-        <h4><svg class="ic"><use href="#i-at"/></svg>New message</h4>
-        <p class="desc">Enter an exact handle — there’s no directory or suggestions.</p>
-        <input class="field" placeholder="@handle">
-        <div class="drow"><button class="btn primary">Start chat</button></div>
+      <div class="stage scrim"><div class="modal">
+        <div class="uhd"><b>New message</b><button class="iconbtn"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
+        <div class="mbody">
+          <p>Enter an exact handle — there’s no directory or suggestions.</p>
+          <label class="fl">Handle</label>
+          <div class="field"><input placeholder="@handle"></div>
+        </div>
+        <div class="mfoot"><button class="btn primary">Start chat</button></div>
       </div></div>
       <div class="pcap"><b>New DM (add by handle)</b>
         <span class="m">Friendship-gated. Group DMs add several handles.</span>
@@ -1506,9 +1556,9 @@ h3.sub{font-size:var(--fs);font-weight:600;margin:22px 0 12px;color:var(--soft)}
 
 <section class="gsec" id="inventory">
   <h2>⑥ Full dialog inventory <span class="n">— so nothing is missed</span></h2>
-  <p class="lede">Every planned overlay per screen. <span class="s m">MOCKUP</span> already
-    exists in the embedded screens · <span class="s a">AUTHORED</span> rendered as a panel
-    above · <span class="s t">TO&nbsp;BUILD</span> specified, not yet drawn.</p>
+  <p class="lede"><span class="s m">MOCKUP</span> already in the embedded screens ·
+    <span class="s a">AUTHORED</span> rendered as a panel above ·
+    <span class="s t">TO BUILD</span> specified, not yet drawn.</p>
   <div class="invwrap"><table class="inv">
     <thead><tr><th>Screen</th><th>Dialog / menu / modal</th><th>Trigger</th><th>DB / RPC</th><th>Status</th></tr></thead>
     <tbody id="invbody"></tbody>
@@ -1520,30 +1570,27 @@ h3.sub{font-size:var(--fs);font-weight:600;margin:22px 0 12px;color:var(--soft)}
   var root=document.documentElement, tb=document.getElementById('themebtn');
   function isDark(){var t=root.getAttribute('data-theme');return t?t==='dark':matchMedia('(prefers-color-scheme:dark)').matches;}
 
-  // ---- member colour palette (30 hues, generated proposal) ----
-  function hsl2hex(h,s,l){s/=100;l/=100;var k=function(n){return (n+h/30)%12;},a=s*Math.min(l,1-l);
-    var f=function(n){var x=l-a*Math.max(-1,Math.min(k(n)-3,Math.min(9-k(n),1)));
+  // member palette (30 hues, generated proposal)
+  function hsl2hex(h,s,l){s/=100;l/=100;var a=s*Math.min(l,1-l);
+    var f=function(n){var k=(n+h/30)%12;var x=l-a*Math.max(-1,Math.min(k-3,Math.min(9-k,1)));
       return Math.round(255*x).toString(16).padStart(2,'0');};
     return '#'+f(0)+f(8)+f(4);}
   var N=30, pal=document.getElementById('pal'), chip=document.getElementById('chipdemo');
   var names=['jax','rae','dev','tomo','kofi','nel','mira','lin','sol','ana'];
   for(var i=0;i<N;i++){
-    var h=Math.round(i*360/N);
-    var light=hsl2hex(h,42,44), dark=hsl2hex(h,45,64);
-    var hex=isDark()?dark:light;
-    var d=document.createElement('div');d.className='sw';d.dataset.l=light;d.dataset.d=dark;
-    d.innerHTML='<div class="cc"><i style="background:'+light+'"></i><i style="background:'+dark+'"></i></div>'+
-      '<div class="lb"><b>m'+(i+1)+'</b><span class="hx">'+hex+'</span></div>';
+    var h=Math.round(i*360/N), light=hsl2hex(h,42,44), dark=hsl2hex(h,45,64), hex=isDark()?dark:light;
+    var d=document.createElement('div');d.className='palsw';d.dataset.l=light;d.dataset.d=dark;
+    d.innerHTML='<div class="palcc"><i style="background:'+light+'"></i><i style="background:'+dark+'"></i></div>'+
+      '<div class="pallb"><b>m'+(i+1)+'</b><span class="hx">'+hex+'</span></div>';
     pal.appendChild(d);
     if(i<10){var c=document.createElement('span');c.className='uchip';
-      c.style.cssText='--mc:'+hex;c.innerHTML='<span class="dot" style="background:'+hex+'"></span>'+
-      '<span style="color:'+hex+'">'+names[i]+'</span>';chip.appendChild(c);}
+      c.innerHTML='<span class="dot" style="background:'+hex+'"></span><span style="color:'+hex+'">'+names[i]+'</span>';
+      chip.appendChild(c);}
   }
-  function repaintPalette(){var d=isDark();
-    document.querySelectorAll('#pal .sw').forEach(function(s){
-      s.querySelector('.hx').textContent=d?s.dataset.d:s.dataset.l;});}
+  function repaintPalette(){var dk=isDark();
+    document.querySelectorAll('#pal .palsw').forEach(function(s){s.querySelector('.hx').textContent=dk?s.dataset.d:s.dataset.l;});}
 
-  // ---- embed the 14 screens ----
+  // embed the 14 screens
   var screens=[
     ['workspace','Workspace','server three-pane — rail · channels · chat · members',''],
     ['feed','Feed','friends-only public posts, card grid',''],
@@ -1568,20 +1615,17 @@ h3.sub{font-size:var(--fs);font-weight:600;margin:22px 0 12px;color:var(--soft)}
       '<div class="gframe"><iframe data-screen="'+s[0]+'" loading="lazy" src="'+frameSrc(s[0])+'"></iframe></div>';
     host.appendChild(fig);
   });
-  // canvas iframe (in §4) src
-  function retheme(){document.querySelectorAll('iframe[data-screen]').forEach(function(f){
-    f.src=frameSrc(f.dataset.screen);});}
+  function retheme(){document.querySelectorAll('iframe[data-screen]').forEach(function(f){f.src=frameSrc(f.dataset.screen);});}
   document.querySelector('#canvas iframe[data-screen]').src=frameSrc('canvas');
 
-  // ---- full inventory ----
+  // inventory
   var inv=[
     ['Workspace','＋ create/join/friend','rail ＋','create · /join · add_friend','m'],
     ['Workspace','Avatar menu','rail avatar','profiles','a'],
-    ['Workspace','Server header menu (settings/invite/leave/mute)','server name','is_server_admin','t'],
-    ['Workspace','Add / rename / reorder channel','admin ＋ / ⋯','channels (admin)','t'],
+    ['Workspace','Server header menu','server name','has_perm(manage_server)','t'],
+    ['Workspace','Add / rename / reorder channel','admin ＋ / ⋯','channels','t'],
     ['Workspace','Message ⋯ (edit/delete/pin/copy/report)','message hover','messages · message_pins','m'],
-    ['Workspace','Reaction picker','react button','toggle_reaction','a'],
-    ['Workspace','Emoji picker','composer','message_reactions','a'],
+    ['Workspace','Emoji picker','react button','message_reactions','a'],
     ['Workspace','@mention / #channel autocomplete','typing @ or #','server_members · channels','a'],
     ['Workspace','Thread panel','“N replies”','messages.parent_id','m'],
     ['Workspace','Pins / Files tab','channel header','message_pins · works','m'],
@@ -1591,7 +1635,7 @@ h3.sub{font-size:var(--fs);font-weight:600;margin:22px 0 12px;color:var(--soft)}
     ['Global','Bottom tab bar (mobile)','always (mobile)','reads/notifications','a'],
     ['Global','Confirm (destructive)','any delete','varies','a'],
     ['Global','Prompt (single field)','rename / new','varies','a'],
-    ['Global','Toast / snackbar','after an action','—','a'],
+    ['Global','Toast','after an action','—','a'],
     ['Global','Status picker','avatar → status','profiles.presence/status','a'],
     ['Global','Report','report action','file_report','m'],
     ['Feed','Card → details pane','click card','works','m'],
@@ -1605,6 +1649,8 @@ h3.sub{font-size:var(--fs);font-weight:600;margin:22px 0 12px;color:var(--soft)}
     ['Details','Download “get as…” (audio)','Download','transcode','a'],
     ['Details','Save-to-folder (+ new folder)','Save','saved_items','a'],
     ['Details','Open-in-canvas picker','Open in canvas','canvases','t'],
+    ['Details','Storage source badge (server vs personal)','open details','works.storage_source','t'],
+    ['Details','Crosspost to server (personal storage)','Crosspost','works.storage_source=personal','t'],
     ['Canvas','Canvas picker','header dropdown','canvases','a'],
     ['Canvas','Share / visibility (mint link)','Share','canvases.visibility/share_code','a'],
     ['Canvas','Comment thread (point/box/freeform/audio/frame)','click pin','comments.mark','a'],
@@ -1613,7 +1659,7 @@ h3.sub{font-size:var(--fs);font-weight:600;margin:22px 0 12px;color:var(--soft)}
     ['Canvas','Add file to canvas','Add file','canvas_items','t'],
     ['Board','Add / edit card','＋ / click','board_cards','a'],
     ['Board','Label / assignee / due pickers','on a card','board_cards','t'],
-    ['Board','Add / rename column','column header','board_columns (admin)','t'],
+    ['Board','Add / rename column','column header','board_columns','t'],
     ['Board','View switcher (board/table/calendar)','header tabs','—','m'],
     ['Profile','Edit profile','Edit','profiles','t'],
     ['Profile','Settings tabs','Settings tab','profiles','m'],
@@ -1624,41 +1670,35 @@ h3.sub{font-size:var(--fs);font-weight:600;margin:22px 0 12px;color:var(--soft)}
     ['Notifications','Row actions + inline reply','on a row','messages/comments','m'],
     ['Notifications','Filter tabs + mark all read','header','notifications','m'],
     ['Settings','Invite link create / revoke','Invites panel','server_invites','m'],
-    ['Settings','Role toggle (admin/member)','Members panel','server_members.role','m'],
+    ['Settings','Roles editor (perms matrix)','Roles panel','roles','t'],
+    ['Settings','Assign roles to member','member → roles','member_roles','t'],
+    ['Settings','Channel permissions (private channels)','channel → perms','channel_roles','t'],
     ['Settings','Ban / timeout / kick','Moderation panel','RPC + audit_log','m'],
+    ['Settings','Storage & billing (PAYG, usage)','Storage panel','storage_meters · billing','t'],
     ['Settings','Delete server (confirm)','General panel','owner only','a'],
     ['Settings','Export (manifest → zip)','Storage panel','export_manifest','t'],
     ['Create','Create server card','rail ＋','servers insert + invite','m'],
     ['Join','Join preview card','/join/&lt;code&gt;','join_via_invite','m'],
-    ['Search','Quick switcher (⌘K)','shortcut','search_all()','m'],
+    ['System','Dead invite (expired/revoked/full)','bad /join','join_via_invite error','t'],
     ['System','404 / not found','bad URL','—','t'],
-    ['System','Dead invite (expired / revoked / full)','/join/&lt;code&gt; invalid','join_via_invite error','t'],
-    ['System','Access denied (private channel/server)','no permission','can_view_channel','t'],
-    ['Details','Storage source badge (server vs personal)','open details','works.storage_source','t'],
-    ['Details','Crosspost to server (draws personal storage)','Crosspost','works.storage_source=personal','t'],
-    ['Admin','Storage &amp; billing (usage bars, PAYG, plan)','settings → storage','storage usage · billing','t'],
-    ['Admin','Roles editor (create role, colour, permissions)','settings → roles','roles','t'],
-    ['Admin','Assign roles to member','member → roles','member_roles','t'],
-    ['Admin','Permission matrix (add tags, view channels…)','role → permissions','roles.permissions','t'],
-    ['Admin','Channel permissions / private channels','channel → permissions','channel_overwrites','t']
+    ['System','Access denied (private channel)','no permission','can_view_channel','t'],
+    ['Search','Quick switcher (⌘K)','shortcut','search_all()','m']
   ];
-  var sc={m:'MOCKUP',a:'AUTHORED',t:'TO BUILD'};
-  var tb2=document.getElementById('invbody');
+  var sc={m:'MOCKUP',a:'AUTHORED',t:'TO BUILD'}, ib=document.getElementById('invbody');
   inv.forEach(function(r){var tr=document.createElement('tr');
     tr.innerHTML='<td>'+r[0]+'</td><td>'+r[1]+'</td><td>'+r[2]+'</td><td><code>'+r[3]+'</code></td>'+
-      '<td><span class="s '+r[4]+'">'+sc[r[4]]+'</span></td>';tb2.appendChild(tr);});
+      '<td><span class="s '+r[4]+'">'+sc[r[4]]+'</span></td>';ib.appendChild(tr);});
 
-  // ---- theme toggle ----
+  // theme toggle
   function paint(){tb.textContent=isDark()?'Light':'Dark';}
-  tb.addEventListener('click',function(){root.setAttribute('data-theme',isDark()?'light':'dark');
-    paint();repaintPalette();retheme();});
+  tb.addEventListener('click',function(){root.setAttribute('data-theme',isDark()?'light':'dark');paint();repaintPalette();retheme();});
   paint();
 
-  // waveforms in authored canvas tiles
+  // waveforms in authored tiles
   document.querySelectorAll('.wave[data-wf]').forEach(function(el){
     var n=+el.dataset.wf||120,p='';
     for(var i=0;i<n;i++){var a=Math.abs(Math.sin(i*0.5)*Math.cos(i*0.17)+Math.sin(i*0.09)*0.6);
-      a=Math.min(1,a)*0.5+0.04;var h=a*48;p+='<rect x="'+(i+0.12)+'" y="'+(50-h)+'" width="0.76" height="'+(2*h)+'"/>';}
+      a=Math.min(1,a)*0.5+0.04;var hh=a*48;p+='<rect x="'+(i+0.12)+'" y="'+(50-hh)+'" width="0.76" height="'+(2*hh)+'"/>';}
     el.innerHTML='<svg viewBox="0 0 '+n+' 100" preserveAspectRatio="none">'+p+'</svg>';});
 })();
 </script>
