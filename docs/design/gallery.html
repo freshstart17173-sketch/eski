@@ -2402,6 +2402,40 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
     </div>
 
     <!-- SIGN IN / ONBOARDING -->
+    <div class="screen" data-screen="e404" hidden>
+      <div class="onboard">
+        <div class="ocard" style="text-align:center">
+          <div style="font-size:46px;font-weight:700;letter-spacing:.02em;color:var(--soft)">404</div>
+          <h1 style="margin-top:4px">Page not found</h1>
+          <div class="lead">That link doesn't lead anywhere &mdash; it may have moved, or never existed.</div>
+          <div class="authbtns"><button class="btn primary" style="justify-content:center"><svg class="ic sm"><use href="#i-home"/></svg>Go to your feed</button></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="screen" data-screen="deadinvite" hidden>
+      <div class="onboard">
+        <div class="ocard" style="text-align:center">
+          <div style="height:64px;border-radius:var(--r);background:var(--plate);display:grid;place-items:center;margin-bottom:12px"><svg class="ic" style="width:26px;height:26px;color:var(--muted)"><use href="#i-link"/></svg></div>
+          <h1>This invite is no longer valid</h1>
+          <div class="lead">It may have <b>expired</b>, been <b>revoked</b>, or hit its <b>member cap</b>. Ask whoever sent it for a fresh link.</div>
+          <div class="authbtns"><button class="btn" style="justify-content:center"><svg class="ic sm"><use href="#i-home"/></svg>Back to your servers</button></div>
+          <div class="authalt">Already a member? <a>Open the server</a></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="screen" data-screen="denied" hidden>
+      <div class="onboard">
+        <div class="ocard" style="text-align:center">
+          <div style="display:grid;place-items:center;margin-bottom:8px"><svg class="ic" style="width:30px;height:30px;color:var(--muted)"><use href="#i-lock"/></svg></div>
+          <h1>You don't have access</h1>
+          <div class="lead">This channel is private to certain roles. Ask a server admin if you think you should be in it.</div>
+          <div class="authbtns"><button class="btn" style="justify-content:center"><svg class="ic sm"><use href="#i-home"/></svg>Back to the server</button></div>
+        </div>
+      </div>
+    </div>
+
     <div class="screen" data-screen="auth" hidden>
       <div class="authwrap">
         <div class="authbrand">eski</div>
@@ -3033,6 +3067,9 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
     ['search','Search','results + quick switcher (⌘K)',''],
     ['create','Create server','name, cover, starter channels',''],
     ['join','Join by link','preview card, one Join button',''],
+    ['e404','404 / not found','bad URL','system'],
+    ['deadinvite','Dead invite','expired / revoked / full','system'],
+    ['denied','Access denied','private channel/server','system'],
     ['auth','Sign in','sign in · claim handle · magic link',''],
     ['vc','Call','voice/video room','v2 — deferred']
   ];
@@ -3109,9 +3146,9 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
     ['Settings','Export (manifest → zip)','Storage panel','export_manifest','t'],
     ['Create','Create server card','rail ＋','servers insert + invite','m'],
     ['Join','Join preview card','/join/&lt;code&gt;','join_via_invite','m'],
-    ['System','Dead invite (expired/revoked/full)','bad /join','join_via_invite error','t'],
-    ['System','404 / not found','bad URL','—','t'],
-    ['System','Access denied (private channel)','no permission','can_view_channel','t'],
+    ['System','Dead invite (expired/revoked/full)','bad /join','join_via_invite error','a'],
+    ['System','404 / not found','bad URL','—','a'],
+    ['System','Access denied (private channel)','no permission','can_view_channel','a'],
     ['Search','Quick switcher (⌘K)','shortcut','search_all()','m']
   ];
   var sc={m:'MOCKUP',a:'AUTHORED',t:'TO BUILD'}, ib=document.getElementById('invbody');
