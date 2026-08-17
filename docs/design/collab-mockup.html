@@ -13,7 +13,7 @@
   --proto-bg:#17191A; --proto-ink:#E7ECEA; --proto-dim:#9AA4A1; --proto-line:#2A2E2F;
   --fs-mi:11px; --fs-xs:12px; --fs-sm:13px; --fs:14.5px; --fs-lg:16px; --fs-xl:20px;
   --font:'Jost','Avenir Next','Segoe UI',Arial,sans-serif;
-  --s1:4px; --s2:8px; --s3:12px; --s4:16px; --s5:24px; --r:3px; --t:150ms ease;
+  --s1:4px; --s2:8px; --s3:12px; --s4:16px; --s5:24px; --s6:40px; --r:3px; --t:150ms ease;
   --rail:58px; --chan:232px; --mem:210px;
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
@@ -598,8 +598,8 @@ input{font:inherit;color:inherit}
 .auditrow time{font-size:var(--fs-xs);color:var(--muted);flex:none}
 
 /* onboarding: create / join */
-.onboard{flex:1;min-width:0;overflow-y:auto;background:var(--surface);display:flex;justify-content:center;padding:var(--s6) var(--s4)}
-.ocard{width:min(500px,100%);background:var(--paper);border-radius:6px;box-shadow:0 10px 44px rgba(0,0,0,.14);padding:var(--s5);align-self:flex-start}
+.onboard{flex:1;min-width:0;overflow-y:auto;background:var(--surface);display:flex;justify-content:center;align-items:center;padding:var(--s6) var(--s4)}
+.ocard{width:min(500px,100%);background:var(--paper);border-radius:6px;box-shadow:0 10px 44px rgba(0,0,0,.14);padding:var(--s5);align-self:center}
 .ocard h1{font-size:var(--fs-xl);font-weight:600}
 .ocard .lead{color:var(--muted);font-size:var(--fs-sm);margin:4px 0 var(--s5)}
 .ocard .ulab{margin-top:var(--s4)}
@@ -613,7 +613,8 @@ input{font:inherit;color:inherit}
 .stackav{display:flex}.stackav .av{margin-left:-8px;box-shadow:0 0 0 2px var(--paper)}.stackav .av:first-child{margin-left:0}
 .invited{display:flex;align-items:center;gap:9px;background:var(--surface);border-radius:var(--r);padding:10px var(--s3);margin-top:var(--s4);font-size:var(--fs-sm)}
 /* sign-in / onboarding / username claim (gap #13) */
-.authwrap{flex:1;min-width:0;overflow-y:auto;background:var(--surface);display:flex;flex-direction:column;align-items:center;padding:var(--s6) var(--s4)}
+.authwrap{flex:1;min-width:0;overflow-y:auto;background:var(--surface);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:var(--s6) var(--s4)}
+.app:has(.screen[data-screen="auth"]:not([hidden])) .rail{display:none}
 .authbrand{font-size:var(--fs-xl);font-weight:700;letter-spacing:.01em;margin-bottom:var(--s5)}
 .astep[hidden]{display:none}
 .field .at{color:var(--muted);font-size:var(--fs-sm);font-weight:600;flex:none}
@@ -1130,13 +1131,13 @@ input{font:inherit;color:inherit}
         </div>
         <div class="selbar" id="selbar"><span class="n"><span id="seln">0</span> selected</span>
           <button><svg class="ic sm"><use href="#i-download"/></svg>Download</button>
-          <button><svg class="ic sm"><use href="#i-plus"/></svg>Add to collection</button>
+          <button><svg class="ic sm"><use href="#i-plus"/></svg>Add to folder</button>
           <button><svg class="ic sm"><use href="#i-move"/></svg>Move</button>
           <button><svg class="ic sm"><use href="#i-trash"/></svg>Delete</button>
           <span class="sp"></span>
           <button id="selClear"><svg class="ic sm"><use href="#i-x"/></svg>Clear</button></div>
         <div class="panebody">
-          <div class="seclabel">Collections</div>
+          <div class="seclabel">Folders</div>
           <div class="colls">
             <div class="coll"><div class="stack"><div class="s"></div><div class="s"></div><div class="s"><svg class="ic"><use href="#i-canvas"/></svg></div></div><div class="ct">bloom, single</div><div class="mt">6 files</div></div>
             <div class="coll"><div class="stack"><div class="s"></div><div class="s"></div><div class="s"><svg class="ic"><use href="#i-canvas"/></svg></div></div><div class="ct">drum kit, shared</div><div class="mt">22 files</div></div>
