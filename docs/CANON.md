@@ -1,10 +1,12 @@
 # eski collab — the canonical model
 
-**Status: planning. Source of truth for the Kimi K3 hand-off.** Where
+**Status: planning. Source of truth for the code-generation hand-off.** Where
 [`COLLAB.md`](COLLAB.md) is the narrative spec and the mockup is the picture,
 this file is the *contract*: one vocabulary, one permission model, and one
 registry of every functional UI element (behaviour → database → responsive
-layout). When a Kimi prompt and this file disagree, this file wins.
+layout). When a codegen prompt and this file disagree, this file wins. The
+build itself is sliced into individually-testable prompts in
+[`CODEGEN.md`](CODEGEN.md).
 
 Three parts:
 - **§A Terminology** — the canonical word for every concept, its database

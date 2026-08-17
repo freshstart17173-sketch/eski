@@ -1,0 +1,400 @@
+# CODEGEN — the micro-prompt build plan
+
+The hand-off from **spec** to **working app**, sliced so small that any one
+prompt either passes its own test or fails in isolation. Nothing here is new
+design: every prompt points back at [`CANON.md`](CANON.md) (the contract) and
+[`design/gallery.html`](design/gallery.html) (the pixels). If a prompt and CANON
+disagree, **CANON wins** — fix the prompt.
+
+> **Vocabulary note.** [`COLLAB.md §7`](COLLAB.md) is the mechanical backend
+> reference (RPCs, triggers, Realtime channels, indexes) but predates the
+> terminology streamline and still says `groups`/`scratchpads`/`is_group_admin`
+> and folds annotations into `comments`. **Use CANON names everywhere:**
+> `server(s)` · `server_members` · `is_server_admin`/`has_perm` · `canvas` +
+> `canvas_items` · `annotations` (canvas marks) vs `comments` (post-level) ·
+> `folders` (UI label for `collections`) · `roles`/`member_roles`/`channel_roles`
+> (CANON §D.1, replaces the flat role enum). When you copy a §7 RPC into a
+> prompt, rename it on the way in.
+
+---
+
+## §0. How to use this
+
+### Two runners, one queue
+
+Per the division of labour: **the backend + logic is authored here (SQL, RLS,
+RPCs, policy tests) and applied via the Supabase MCP / migrations — treat those
+prompts as already-correct spec to apply and verify, not creative work.** The
+**UI prompts are what the code-generation model (DeepSeek V4 Flash) runs**, one
+component/state/dialog at a time, against the gallery. Each prompt is tagged:
+
+- **`[BE]`** backend — a migration, an RPC, a policy, or a policy test. Small,
+  deterministic, has a SQL-level pass/fail.
+- **`[UI]`** front-end — one component, one screen-state, or one dialog, built to
+  match a named gallery panel. This is the DeepSeek spend.
+- **`[GL]`** glue — a client data hook, a Realtime subscription, a signing call.
+
+### The prompt template (every `[UI]`/`[GL]` prompt fills this in)
+
+```
+TITLE:      <phase>.<n> — <one thing>
+CONTEXT:    Stack = <Vite+React+TS | the chosen shell>. Tokens & primitives from
+            styleguide.html; this screen’s law is gallery.html panel "<name>".
+BUILD:      <the single unit — one component / one state / one dialog>
+PROPS/DATA: <exact inputs; which table/RPC/Realtime channel it reads or writes>
+STATES:     <every visual state to cover: default/hover/active/empty/loading/error/
+            disabled + the mobile layout per CANON §C.2>
+DO NOT:     <the guardrails: no new colours (tokens only), no hex, --r on chrome,
+            square media, square close/icon buttons, no drop shadows on modals,
+            member hue is server-scoped & never on public/Feed>
+DONE WHEN:  <a concrete, testable assertion — see below>
+```
+
+### Definition of done (what "testable" means per tag)
+
+- **`[BE]`** — a `pgTAP`/SQL snippet proves the policy: e.g. *"a non-member
+  `select` on `messages` in a server they’re not in returns 0 rows; a member
+  gets N."* Every RLS prompt ships its own allow-and-deny test.
+- **`[UI]`** — renders with no console error, matches the named gallery panel at
+  desktop **and** the CANON §C.2 mobile layout, and every state in `STATES:` is
+  reachable via a prop/story. A Playwright screenshot diff vs the gallery panel
+  is the acceptance gate (the harness already has Chromium wired).
+- **`[GL]`** — a scripted round-trip: perform the action, assert the row/Realtime
+  event, assert the optimistic UI and the reconciled UI match.
+
+### The golden rules (repeat in every prompt’s `DO NOT`)
+
+1. **Search before you define** — reuse the token/selector/component that exists;
+   never add a second one nearby.
+2. **One canonical name** — UI copy = code = docs (CANON §A).
+3. **Every colour from a token**, no hex in a component; member hue is the only
+   colour, **server-scoped**, absent from public profile and Feed.
+4. **`--r` (3px) on chrome; media stays square.** Round = avatars + presence dots
+   only.
+5. **Square icon/close buttons** (`.iconbtn`, `#i-x`) — don’t invent a second
+   style. **Modals darken the background (scrim), no drop shadows.**
+6. **Mobile is its own layout** (three-pane → one pane + bottom tabs), not a
+   squeezed desktop.
+7. **The RLS policy is the fence; the UI is the signpost.** A `[UI]` gate is
+   never the only thing standing between a user and data.
+
+---
+
+## §1. Phase map & dependency order
+
+Backend precedes the UI that reads it; primitives precede screens; screens
+precede their dialogs. Follow COLLAB §7.8 for the migration sub-order.
+
+| Phase | What | Tag mix | Gate before next phase |
+|---|---|---|---|
+| **P0** | Scaffold: app shell, Supabase client, token/CSS import, icon sprite | GL | App boots, tokens resolve, sprite renders |
+| **P1** | Schema + RLS (servers → messages → canvas → boards → DMs → notifs → profiles → moderation → roles/storage) | BE | Every table has an allow+deny test that passes |
+| **P2** | RPCs + triggers (§7.3, renamed) + `has_perm`/`can_view_channel` (§D.1) | BE | Each RPC has a round-trip test |
+| **P3** | Design-system primitives (button, field, modal, menu, avatar, tag, chip, toggle, checkbox, bar, toast) | UI | Each matches its styleguide spec, both themes |
+| **P4** | The 3-pane shell + Workspace states | UI+GL | Workspace renders live messages |
+| **P5** | Content screens: Feed, Explorer, Details, Profile, Upload | UI+GL | Cards render every media kind incl. type-cards |
+| **P6** | Canvas suite (screen + tools + every mark + annotations sidebar + expanded view + dialogs) | UI+GL | Every §E behaviour + gallery ④ panel built |
+| **P7** | Boards, Messages/DMs, Notifications | UI+GL | Drag, DM round-trip, live bell |
+| **P8** | Admin: settings shell, roles editor, assign-roles, channel perms, storage & billing, moderation, audit, invites | UI+GL | Perm gates match the matrix |
+| **P9** | Utility + focus: Create, Join, Sign-in, 404, dead-invite, access-denied, quick-switcher | UI | Every state in §C.14/C.20 reachable |
+
+---
+
+## §2. The prompt queue
+
+Each line is one prompt. Format: **`ID` — build · *DONE WHEN* · refs.** Expand a
+line into the §0 template when you run it. Counts per phase are at the head.
+
+### P0 — Scaffold · 4 prompts, all GL
+
+- **P0.1** — Init the app shell (Vite + React + TS, or the chosen framework),
+  routing skeleton for the §C.3 manifest routes. *Done: every route mounts an
+  empty labelled screen; `?app=1#route` parity with the gallery preserved.*
+- **P0.2** — Supabase client + typed env, auth session provider, a `useSession`
+  hook. *Done: anon boot works; a signed-in session exposes `uid`.*
+- **P0.3** — Import the design tokens & base CSS from `styleguide.html` as the
+  global stylesheet; wire the theme-swap (`data-theme` + `prefers-color-scheme`).
+  *Done: `--r`, `--m1..30`, `--ink`, surfaces all resolve in both themes.*
+- **P0.4** — Mount the SVG icon sprite (`#i-*`) once; a `<Icon name>` wrapper.
+  *Done: `#i-x`, `#i-hash`, `#i-canvas`… all render at `.ic`/`.ic.sm` sizes.*
+
+### P1 — Schema + RLS · ~24 prompts, all BE (one migration-unit each, COLLAB §7.8 order)
+
+Each: `create table if not exists` + RLS enable + policies + the allow/deny test.
+
+- **P1.1** `servers` (was `groups`) + `server_members` + `server_invites`;
+  helpers `member_of(sid)`, `is_server_admin(sid)`. *Test: non-member sees no
+  server row; member does; only admin writes.*
+- **P1.2** `works` column adds (`visibility in(public,personal,server)`,
+  `server_id`, `title`, `file_ext`, `credits`, `version_note`, `search_tsv`) +
+  the rewritten `works_read` (CANON §B.3). *Test: the visibility read rule —
+  public to friends, server to members, private to owner.*
+- **P1.3** `channels` (+`kind in(text,voice,board,canvas)`, `slowmode_sec`,
+  `position`). *Test: member reads, admin writes, position orders.*
+- **P1.4** `messages` (+`body_tsv` generated, `parent_id`, `also_to_channel`,
+  tombstones). *Test: member insert allowed unless timed-out; update/delete own
+  only; deleted row tombstones not vanishes.*
+- **P1.5** `message_reactions`, **P1.6** `message_pins`, **P1.7** `channel_reads`,
+  **P1.8** `mentions` — each its own prompt + test.
+- **P1.9** `comments` adds (`mark jsonb`, `context`, `resolved_at`) — **post-level
+  comments**, threads never mix context. *Test: a public-context comment is
+  invisible in a server context and vice-versa.*
+- **P1.10** `annotations` (canvas marks: `canvas_id`, `work_id`, `author_id`,
+  `kind in(point,rect,lasso,ink)`, `color smallint`, `path jsonb`,
+  `resolved_at`) — **distinct table from comments** (CANON §E.7). *Test: follows
+  the canvas’s visibility.*
+- **P1.11** `canvas` (was `scratchpads`: `owner_id`, `server_id null`, `title`,
+  `visibility in(private,server,link)`, `share_code`) + **P1.12** `canvas_items`
+  (`canvas_id`, `work_id`, `x,y,z`). *Test: private/owner, server/member,
+  link/code read paths.*
+- **P1.13** `boards`, **P1.14** `board_columns`, **P1.15** `board_cards`
+  (`label`, `assignee_id`, `work_id|canvas_id`, `due_date`, `fields jsonb`,
+  `position`).
+- **P1.16** `dm_channels`, **P1.17** `dm_members`, **P1.18** `dm_messages`,
+  **P1.19** `friendships` (ordered pair, `status`). *Test: DM visible only to its
+  members; friendship gates a DM create.*
+- **P1.20** `notifications` (+Realtime-ready). **P1.21** `saved_items`
+  (`folder_id → save_folders`).
+- **P1.22** `profiles` adds (status emoji/text/expires, `presence_state`, `tz`,
+  `pronouns`, `links`).
+- **P1.23** moderation: `server_bans`, `audit_log`, `server_members.timeout_until`.
+- **P1.24** **granular roles (CANON §D.1):** `roles(server_id, name, color,
+  position, permissions bigint, is_default)`, `member_roles`, `channel_roles`
+  (allow-list); drop `server_members.role`; helpers `has_perm(sid, flag)` and
+  `can_view_channel(channel_id)`. Channel-scoped reads (messages/pins/files +
+  a work in a private channel) re-gate on `can_view_channel`. **PAYG storage
+  (§D.2):** `works.storage_source`, `works.billing_server_id`, `storage_meters`,
+  `billing_accounts`. *Test: union-of-roles permission; a private channel hides
+  from a non-granted member; a crosspost’s bytes hit the personal meter, never
+  the server meter.*
+
+### P2 — RPCs, triggers, search · ~16 prompts, all BE
+
+One function + its round-trip test each: `join_via_invite` · `add_version`
+(requires `version_note`, same kind) · `mark_channel_read` · `toggle_reaction` ·
+`pin_message`/`unpin_message` · `create_dm`/`create_group_dm` ·
+`add_friend`/`respond_friend`/`block_user` · `move_card` ·
+`ban_member`/`timeout_member`/`kick_member` (each writes `audit_log`) ·
+`set_member_roles(user, role_ids[])` · `set_channel_access(channel, role_ids[],
+member_ids[])` · `export_manifest(server|'account')` · the **triggers**
+(message-fanout → `mentions`+`notifications`; `edited_at`; tombstone;
+`works.search_tsv`; comment-mention → notification; storage-meter maintenance) ·
+`search_all(q, scope)` + the GIN indexes (§7.7). *Each done when: the action
+produces exactly the rows/notification/meter delta asserted, and is rejected
+when the gate fails.*
+
+### P3 — Design-system primitives · ~14 prompts, all UI
+
+Build each **once**, from the styleguide, reused everywhere. `Button` (primary/
+default/sm/danger/icon) · `IconButton` + `CloseButton` (square, `#i-x`) ·
+`Field` (the one `--line2` border) · `Modal` (scrim, no shadow) · `Menu` +
+`MenuItem` + `.mlabel`/`.sep` · `Avatar` (round) + `PresenceDot` · `Tag`/`Chip`
+(server-hue `uchip`) · `Toggle` · `Checkbox` (`.cbx`) · `Bar` (usage) · `Toast` ·
+`Tabs` · `SegmentedControl` (visibility) · `Dropdown`/`SelectPill`. *Each done
+when: matches its styleguide row in both themes, all states, and uses only
+tokens.*
+
+### P4 — Shell + Workspace · ~11 prompts, UI+GL
+
+- **P4.1 [UI]** the 3-pane shell (server rail 58 · channel column 232 · main ·
+  members rail 210) + the mobile one-pane + bottom-tabs collapse (§C.2).
+- **P4.2 [UI]** server rail items (badge states: default/hover-tooltip/active/
+  unread-dot/mention-count) + the ＋ menu + own-avatar menu.
+- **P4.3 [UI]** channel column: server-name header, Media entry, channel list by
+  kind (unread bold, mention badge), admin drag-handle, ＋ add channel.
+- **P4.4 [UI]** channel header (Messages/Pins/Files tabs, members icon, search).
+- **P4.5 [UI]** message list + message row (grouped, member-colour byline;
+  hover/long-press actions; edited tag; reactions).
+- **P4.6 [UI]** composer (toolbar-inserts-markdown, emoji-mart, @/# autocomplete,
+  attach) + its states (empty/typing/slowmode/timed-out-disabled).
+- **P4.7 [UI]** shared-file card inline (leads with file name) → opens Details.
+- **P4.8 [UI]** thread view (`parent_id`) + `also_to_channel`.
+- **P4.9 [UI]** members rail (Admins/Members groups, presence dot, "working on").
+- **P4.10 [GL]** wire `channel:{id}` Postgres-changes → live insert/edit/delete;
+  `:typing` broadcast; `mark_channel_read` on view.
+- **P4.11 [GL]** `server:{id}` Presence → members rail online/doing.
+- **Edge states** (own prompts): no-channels-yet, zero-messages, no-presence,
+  timed-out composer, Realtime-reconnecting banner.
+
+### P5 — Content screens · ~13 prompts, UI+GL
+
+Feed (header nav, search, type/sort, **layout toggle even⇄masonry**, post card
+per kind incl. **type-card** for `.flp/.zip/.exe`, empty) · Media explorer
+(filters, **Folders** strip, file card, bulk select-bar, lightbox) · Details
+pane (player controls, **storage badge** server-vs-personal, version dropdown by
+file name, title/credits/tags, actions, **post-level comments**, mobile bottom
+sheet) · Profile (square avatar, Public/Server/Private shelves + counts +
+**search**, grid toggle, Settings) · Upload sheet (dropzone, title=filename
+default, **separate** tags & credits chip-input, **per-post visibility**,
+**which-server picker**, version mode with mandatory reason). *Each card/state is
+its own sub-prompt; the type-card renderer and the even-grid square cell are
+each isolated prompts.*
+
+### P6 — Canvas suite · ~16 prompts, UI+GL — *the moat; smallest slices here*
+
+Reference CANON §E + gallery ④. One prompt each:
+
+- Canvas screen shell + header (picker, visibility chip, zoom −/%/+/Fit/Reset,
+  Add file, Share).
+- Tool palette — **exactly three groups** (Move · Annotate{point/rect/lasso} ·
+  Pen+eraser+size/colour); no shapes/arrows.
+- Tile renderer: author label **top-right outside edge**, **square count badge**
+  (= every annotation on the post), **maximize** button, per-media base (image/
+  video-frame/audio play+waveform), pen-ink overlay. **Screencap UI lives only
+  in the expanded view.**
+- Mark: **point** (dot). · Mark: **rect** (dotted box). · Mark: **lasso**. ·
+  **Ink** stroke + whole-stroke eraser.
+- Annotation thread (author chip, snippet, Resolve, replies, reply field) —
+  **no version number**.
+- Annotations **sidebar** (lists every annotation; click → jump to its mark).
+- **Expanded view** (all openable media): details-like pane + **all relevant
+  annotations** (separate from post comments) + **player controls**; audio
+  expanded view fixed; audio-trim → **duplicate** into canvas.
+- Dialogs (each its own prompt, gallery ④ panels): canvas picker · share/
+  visibility · tile ⋯ menu · empty state.
+- **[GL]** `canvas:{id}` Broadcast+Changes → live annotations; duplicate-not-copy
+  write path.
+
+### P7 — Boards · Messages · Notifications · ~11 prompts, UI+GL
+
+Board (columns, card, **SortableJS** drag → `move_card`, card-detail modal,
+Board/Table/Calendar switch) · Messages (add-by-handle **inline** field,
+friends/requests, thread list mute/pin, conversation + composer) + **[GL]**
+`create_dm` round-trip · Notifications (tabs, row kinds + inline reply, mark-all)
++ **[GL]** `user:{id}` live bell.
+
+### P8 — Admin · ~14 prompts, UI+GL
+
+Settings shell + nav · General · Channels-&-boards (per-channel who-can-post/
+slowmode/**Private toggle → reveals the allow-list**) · **Roles editor** (list,
+new-role, colour swatches, **permission matrix** grouped Server/Members/Content,
+`.cbx` toggles → `roles.permissions`) · **Assign-roles-to-member** modal
+(multi-select checklist, @everyone locked → `set_member_roles`) · **Channel
+permissions** allow-list modal (roles + members `.cbx` → `set_channel_access`) ·
+Moderation (timeouts, bans, take-action) · Audit log · Invite links (create/
+revoke) · **Storage & billing** (personal + server usage bars, Manage plan / Add
+storage, gated `manage_billing`) · Export. Plus **[GL]** each perm-gated control
+reads `has_perm`/`can_view_channel` so the signpost matches the fence.
+
+### P9 — Utility & focus · ~9 prompts, UI
+
+Create-server card · Join-preview card · Sign-in/up (magic-link/OAuth, toggle,
+error line) — all **centred, no rail, card never touches top** (§D.6.4) · 404 ·
+Dead invite (**expired/revoked/full/already-member** — one prompt, four copy
+states) · Access-denied (quiet, **never a 404 that leaks existence**) · Quick
+switcher (⌘K overlay, grouped results, keyboard nav, scoped to `can_view_channel`).
+
+---
+
+## §3. Two fully-expanded exemplars
+
+To calibrate the detail level a runnable prompt carries.
+
+### Exemplar A — `P6.4 [UI]` Mark: point
+
+```
+TITLE:   P6.4 — Canvas point-annotation mark + its thread trigger
+CONTEXT: Stack React+TS. Tokens/primitives from styleguide.html. Law =
+         gallery.html panel "Mark: point" and "Annotation thread"; behaviour =
+         CANON §E.2–E.5, §E.7.
+BUILD:   The point mark only — a single positioned dot on a canvas tile that
+         represents one annotation of kind='point'. Not the rect, not the lasso,
+         not ink (those are P6.5–P6.7).
+PROPS:   { x, y (0..1 of tile), authorColorIdx (member hue, server-scoped),
+         resolved:boolean, count?:n } ; on click → emits openThread(annotationId).
+         Reads a row of `annotations` where kind='point'.
+STATES:  default · hover (lifts, shows author initial) · active/open (ring) ·
+         resolved (muted) · stacked (two marks near each other keep both
+         clickable). Mobile: same dot, thread opens as a bottom sheet.
+DO NOT:  no version number in the thread (§E.7). Dot is round (allowed:
+         it is a presence-like marker) but the count BADGE is square (--r).
+         Colour ONLY from the member hue token; nothing on a public surface.
+         No drop shadow on the thread panel — it is a scrim modal on mobile.
+DONE:    Rendering N point rows places N dots at the right coords; clicking one
+         opens exactly that annotation’s thread; a resolved mark reads muted;
+         Playwright diff vs the "Mark: point" gallery panel < threshold; zero
+         console errors; mobile sheet reachable.
+```
+
+### Exemplar B — `P1.24 [BE]` granular roles + PAYG (the load-bearing migration)
+
+```
+TITLE:   P1.24 — roles/member_roles/channel_roles + has_perm/can_view_channel + PAYG columns
+CONTEXT: Supabase Postgres. CANON §D.1–D.3 supersede COLLAB §7’s flat role enum.
+         Re-runnable schema-*.sql; RLS on every new table.
+BUILD:   (1) roles(id, server_id, name, color smallint, position int,
+         permissions bigint, is_default bool) — one is_default @everyone/server.
+         (2) member_roles(server_id,user_id,role_id) pk all three.
+         (3) channel_roles(channel_id, role_id) pk both — allow-list; zero rows =
+         open to all members (LOCKED D-i; design for v2 overwrites, don’t build).
+         (4) drop server_members.role. (5) has_perm(sid,flag bigint) = OR of the
+         member’s roles’ permissions, owner = all flags. (6) can_view_channel(cid)
+         = member_of AND (no channel_roles rows OR a granted role). (7) works
+         adds storage_source text in(personal,server), billing_server_id uuid null.
+         (8) storage_meters(owner_type,owner_id,bytes_used,updated_at) +
+         billing_accounts(owner_type,owner_id,plan,payg,stripe_customer,status),
+         maintained by the works-bytes trigger keyed by pool.
+STATES:  n/a (schema).
+DO NOT:  don’t reshape for v2 — channel_roles is the allow-only subset of the
+         future channel_overwrites; keep can_view_channel written to that grain.
+         A crosspost (storage_source='personal') never counts against the server
+         pool.
+DONE:    pgTAP: (a) a member holding two roles has the UNION of their flags;
+         (b) has_perm false → the gated RPC is rejected; (c) a private channel
+         (has channel_roles rows) returns 0 messages to a non-granted member and
+         N to a granted one; (d) inserting a personal crosspost bumps the user
+         meter, not the server meter; a native server post bumps the server meter.
+```
+
+---
+
+## §4. Token budget — DeepSeek V4 Flash
+
+Only **`[UI]`** (and light `[GL]`) prompts are DeepSeek spend; `[BE]` is applied
+via the Supabase MCP and costs no model tokens. Counts:
+
+| Phase | Prompts | of which UI/GL | Notes |
+|---|---:|---:|---|
+| P0 | 4 | 4 | scaffold |
+| P1 | 24 | 0 | backend |
+| P2 | 16 | 0 | backend |
+| P3 | 14 | 14 | primitives |
+| P4 | 11 | 11 | shell + workspace |
+| P5 | 13 | 13 | content screens |
+| P6 | 16 | 16 | canvas suite |
+| P7 | 11 | 11 | boards/DMs/notifs |
+| P8 | 14 | 14 | admin |
+| P9 | 9 | 9 | utility/focus |
+| **Total** | **~132** | **~92** | + iteration |
+
+**Per-UI-prompt cost.** A rich prompt carries: the §0 template + the relevant
+CANON slice + the gallery panel’s HTML/CSS excerpt as reference ≈ **1.5–3k input
+tokens**. A component/state generation returns ≈ **1.5–4k output tokens**. Budget
+one **re-roll** per prompt (screenshot diff fails → one correction round) and
+occasional 2nd re-rolls on the canvas.
+
+- First-pass, 92 UI/GL prompts × ~5k (in+out) = **~0.46M tokens.**
+- With a correction round on ~all and 2nd rounds on the canvas 16:
+  ~92×5k + ~92×5k + 16×5k ≈ **~1.0M tokens.**
+- Realistic ceiling with exploratory re-prompts, context re-sends, and a few
+  screens fought over: **budget 3–4M tokens.** (Earlier 4–6M/8M figures assumed
+  the model also generated the backend; it doesn’t — that trims it.)
+
+**Recommendation: buy ~4M tokens** for a comfortable first build with iteration
+headroom; the true floor if prompts land clean is under 1M.
+
+---
+
+## §5. Sequencing rules the operator must not break
+
+1. **A `[UI]` prompt never runs before the `[BE]`/`[GL]` it reads exists** —
+   otherwise its "DONE WHEN" can’t assert real data. P1/P2 first.
+2. **Primitives (P3) before any screen (P4+).** A screen prompt that invents its
+   own button is a rejected prompt.
+3. **One panel, one prompt.** If a "screen" has a dialog, the dialog is its own
+   prompt (gallery already enumerates them — §④/§⑤/§⑥).
+4. **Every prompt ends by updating the gallery inventory status** (`t`→`a`→`m`)
+   so the burn-down is visible.
+5. **When a prompt and CANON drift, stop and fix CANON or the prompt — never let
+   the code become a third source of truth.** This repo’s one failure mode is a
+   correct decision silently undone.
