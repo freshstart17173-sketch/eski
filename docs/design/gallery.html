@@ -969,7 +969,12 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
 :root:not([data-theme="light"]) .inv .s.a{color:#89A6D6}
 
 @media(max-width:640px){ .gsec{padding:20px var(--s4)} .stagewrap{grid-template-columns:1fr} }
+:root[data-mode="app"] .gallery-ui{display:none}
+:root[data-mode="catalog"] .app{display:none}
+.app{height:100vh}
+.proto{display:none}   /* dev picker bar — killed everywhere; gallery drives nav */
 </style>
+<script>document.documentElement.setAttribute("data-mode",new URLSearchParams(location.search).has("app")?"app":"catalog")</script>
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
 <symbol id="i-home" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></symbol>
@@ -1025,6 +1030,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
 <symbol id="i-pin" viewBox="0 0 24 24"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/></symbol>
 <symbol id="i-hand" viewBox="0 0 24 24"><path d="M9 11V5.5a1.5 1.5 0 0 1 3 0V10M12 10V4a1.5 1.5 0 0 1 3 0v6M15 10V6a1.5 1.5 0 0 1 3 0v7a6 6 0 0 1-6 6h-1a6 6 0 0 1-5-2.7l-2.3-3.5a1.5 1.5 0 0 1 2.5-1.6L9 13V6a1.5 1.5 0 0 1 3 0"/></symbol>
 </defs></svg>
+<div class="gallery-ui">
 
 <div class="gtop">
   <h1>eski gallery</h1>
@@ -1574,7 +1580,1296 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   </table></div>
 </section>
 
+</div>
+
+<div class="proto">
+  <div class="brand">eski<span>collaboration mockup</span></div>
+  <div class="ptabs" id="ptabs">
+    <button class="ptab" data-s="workspace">Workspace</button>
+    <button class="ptab" data-s="feed">Feed</button>
+    <button class="ptab" data-s="explorer">Media explorer</button>
+    <button class="ptab" data-s="canvas">Canvas</button>
+    <button class="ptab" data-s="board">Board</button>
+    <button class="ptab" data-s="vc">Call</button>
+    <button class="ptab" data-s="notifications">Notifications</button>
+    <button class="ptab" data-s="settings">Server settings</button>
+    <button class="ptab" data-s="create">Create server</button>
+    <button class="ptab" data-s="join">Join link</button>
+    <button class="ptab" data-s="auth">Sign in</button>
+    <button class="ptab" data-s="profile">Profile</button>
+    <button class="ptab" data-s="dms">Messages</button>
+    <button class="ptab" data-s="search">Search</button>
+  </div>
+  <div class="pright">
+    <button class="pbtn" id="showDetails">Details pane</button>
+    <button class="pbtn" id="showUpload">Upload</button>
+    <button class="pbtn" id="showUploadV">Upload (version)</button>
+    <button class="pbtn" id="qsOpen">Quick switch</button>
+    <button class="pbtn" id="threadOpen">Thread</button>
+    <button class="pbtn" id="profileCardBtn">Profile card</button>
+    <button class="pbtn" id="appthemebtn">Dark</button>
+  </div>
+</div>
+
+<div class="app">
+  <aside class="rail">
+    <button class="railbtn" data-s="feed" title="Feed"><svg class="ic"><use href="#i-home"/></svg></button>
+    <button class="railbtn" data-s="dms" title="Messages"><svg class="ic"><use href="#i-mail"/></svg><span class="ct">3</span></button>
+    <div class="railsep"></div>
+    <button class="railbtn on" data-s="workspace" title="Late Bloom LP">LB</button>
+    <button class="railbtn" data-s="canvas" title="Specter, sh040">SP<span class="ct">7</span></button>
+    <button class="railbtn" title="Beat swap">BS</button>
+    <div class="railsep"></div>
+    <button class="railbtn" data-s="create" title="Create or join a server"><svg class="ic"><use href="#i-plus"/></svg></button>
+    <button class="railbtn user" data-s="profile" title="jax, your profile"><span class="pfp">JX</span></button>
+  </aside>
+
+  <div class="stage">
+    <!-- WORKSPACE -->
+    <div class="screen" data-screen="workspace">
+      <nav class="chan">
+        <div class="chanhd" data-s="settings" style="cursor:pointer" title="Server settings"><b>Late Bloom LP</b><svg class="ic sm" style="color:var(--muted)"><use href="#i-chev"/></svg></div>
+        <div class="chanbody">
+          <div class="cgroup">
+            <button class="crow" data-s="explorer"><svg class="ic"><use href="#i-grid"/></svg><span class="nm">Media</span></button>
+          </div>
+          <div class="cgroup">
+            <div class="cglabel">Channels <svg class="ic sm"><use href="#i-plus"/></svg></div>
+            <button class="crow"><svg class="ic"><use href="#i-hash"/></svg><span class="nm">announcements</span></button>
+            <button class="crow on"><svg class="ic"><use href="#i-hash"/></svg><span class="nm">beats</span></button>
+            <button class="crow"><svg class="ic"><use href="#i-hash"/></svg><span class="nm">verses</span><span class="ct">4</span></button>
+            <button class="crow"><svg class="ic"><use href="#i-hash"/></svg><span class="nm">mixing</span></button>
+            <button class="crow"><svg class="ic"><use href="#i-hash"/></svg><span class="nm">references</span></button>
+            <button class="crow"><svg class="ic"><use href="#i-hash"/></svg><span class="nm">stems and sessions</span></button>
+          </div>
+          <div class="cgroup">
+            <div class="cglabel">Boards <svg class="ic sm"><use href="#i-plus"/></svg></div>
+            <button class="crow" data-s="board"><svg class="ic"><use href="#i-board"/></svg><span class="nm">shot tasks</span></button>
+            <button class="crow" data-s="board"><svg class="ic"><use href="#i-board"/></svg><span class="nm">release checklist</span></button>
+          </div>
+          <div class="cgroup">
+            <div class="cglabel">Canvases <svg class="ic sm"><use href="#i-plus"/></svg></div>
+            <button class="crow" data-s="canvas"><svg class="ic"><use href="#i-canvas"/></svg><span class="nm">sh040 review</span></button>
+            <button class="crow" data-s="canvas"><svg class="ic"><use href="#i-canvas"/></svg><span class="nm">colour tests</span></button>
+            <button class="crow" data-s="canvas"><svg class="ic"><use href="#i-canvas"/></svg><span class="nm">mix references</span></button>
+          </div>
+          <div class="cgroup">
+            <div class="cglabel">Voice <svg class="ic sm"><use href="#i-plus"/></svg></div>
+            <button class="crow" data-s="vc"><svg class="ic"><use href="#i-voice"/></svg><span class="nm">the booth</span></button>
+            <div class="vpeople">
+              <div class="vp m3"><span class="live"></span><span class="u m3">dev</span><span style="color:var(--muted)">sharing FL</span></div>
+              <div class="vp m1"><span class="live"></span><span class="u m1">rae</span></div>
+            </div>
+            <button class="crow" data-s="vc"><svg class="ic"><use href="#i-voice"/></svg><span class="nm">co-writing</span></button>
+          </div>
+        </div>
+      </nav>
+
+      <main class="main">
+        <div class="mainhd">
+          <svg class="ic"><use href="#i-hash"/></svg><span class="t">beats</span>
+          <span class="sub">put the session name in the file name</span>
+          <div class="acts">
+            <button class="iconbtn" data-s="vc" title="Voice"><svg class="ic"><use href="#i-phone"/></svg></button>
+            <button class="iconbtn" data-s="vc" title="Video"><svg class="ic"><use href="#i-video"/></svg></button>
+            <button class="iconbtn" data-s="notifications" title="Notifications"><svg class="ic"><use href="#i-bell"/></svg></button>
+            <button class="iconbtn" data-s="search" title="Search"><svg class="ic"><use href="#i-search"/></svg></button>
+            <button class="iconbtn" title="Members"><svg class="ic"><use href="#i-users"/></svg></button>
+          </div>
+        </div>
+        <div class="chtabs">
+          <button class="chtab on" data-chtab="messages"><svg class="ic sm"><use href="#i-hash"/></svg>Messages</button>
+          <button class="chtab" data-chtab="pins"><svg class="ic sm"><use href="#i-pin"/></svg>Pins <span class="n">3</span></button>
+          <button class="chtab" data-chtab="files"><svg class="ic sm"><use href="#i-grid"/></svg>Files <span class="n">12</span></button>
+        </div>
+        <div class="stream" id="chMessages">
+          <div class="day"><span>Today</span></div>
+          <div class="msg">
+            <div class="hoveracts"><button class="iconbtn" title="React"><svg class="ic sm"><use href="#i-smile"/></svg></button><button class="iconbtn" title="Reply"><svg class="ic sm"><use href="#i-reply"/></svg></button><button class="iconbtn" title="More"><svg class="ic sm"><use href="#i-more"/></svg></button></div>
+            <div class="av sm">DV</div>
+            <div class="bd">
+              <div class="by"><span class="u m3">dev</span><time>2:14 PM</time></div>
+              <div class="tx">reworked the back half. same bpm, swapped the drums to the ones <span class="men m1">@rae</span> liked</div>
+              <button class="filecard" data-open-details>
+                <div class="fcwave"><div class="wave" data-wf="150"></div></div>
+                <div class="fbody">
+                  <div class="fname">late_bloom_beat.flp <span class="ver">v3</span></div>
+                  <div class="ftags"><span class="tag">drums</span><span class="tag">142bpm</span><span class="tag">bridge</span></div>
+                </div>
+              </button>
+              <div class="reactions"><span class="react">🔥<span class="n">3</span></span><span class="react">👀<span class="n">1</span></span></div>
+              <div class="reply"><svg class="ic sm"><use href="#i-reply"/></svg>3 replies</div>
+            </div>
+          </div>
+          <div class="msg">
+            <div class="hoveracts"><button class="iconbtn" title="React"><svg class="ic sm"><use href="#i-smile"/></svg></button><button class="iconbtn" title="Reply"><svg class="ic sm"><use href="#i-reply"/></svg></button><button class="iconbtn" title="More"><svg class="ic sm"><use href="#i-more"/></svg></button></div>
+            <div class="av sm">RA</div>
+            <div class="bd">
+              <div class="by"><span class="u m1">rae</span><time>2:31 PM</time></div>
+              <div class="tx">this is the one. pulling it into <span class="men">#mixing</span>, dropping a scratch verse now <span class="edited">(edited)</span></div>
+              <button class="filecard" data-open-details>
+                <div class="fcwave"><div class="wave" data-wf="150"></div></div>
+                <div class="fbody">
+                  <div class="fname">bridge_scratch_rae.wav</div>
+                  <div class="ftags"><span class="tag">acapella</span></div>
+                </div>
+              </button>
+            </div>
+          </div>
+          <div class="msg">
+            <div class="hoveracts"><button class="iconbtn" title="React"><svg class="ic sm"><use href="#i-smile"/></svg></button><button class="iconbtn" title="Reply"><svg class="ic sm"><use href="#i-reply"/></svg></button><button class="iconbtn" title="More"><svg class="ic sm"><use href="#i-more"/></svg></button></div>
+            <div class="av sm">TM</div>
+            <div class="bd">
+              <div class="by"><span class="u m2">tomo</span><time>2:47 PM</time></div>
+              <div class="tx">ableton user here, opened dev's stems fine. one note on the low end, left it on the waveform in canvas</div>
+            </div>
+          </div>
+        </div>
+        <div class="typing"><span class="dots"><i></i><i></i><i></i></span>tomo is typing</div>
+        <div class="composer" id="chComposer">
+          <div class="richcomposer">
+            <div class="cbar">
+              <button class="fbtn" style="font-weight:700" title="Bold">B</button>
+              <button class="fbtn" style="font-style:italic" title="Italic">I</button>
+              <button class="fbtn" style="text-decoration:line-through" title="Strikethrough">S</button>
+              <button class="fbtn" title="Code" style="font-family:monospace;font-size:12px">&lt;/&gt;</button>
+              <button class="fbtn" title="Link"><svg class="ic sm"><use href="#i-link"/></svg></button>
+              <span class="sep"></span>
+              <button class="fbtn" title="Bulleted list">&#8226;</button>
+              <button class="fbtn" title="Quote" style="font-weight:700">&rdquo;</button>
+              <button class="fbtn" title="Emoji" id="emojiBtn"><svg class="ic sm"><use href="#i-smile"/></svg></button>
+              <span class="slash">type <b>/</b> for commands</span>
+            </div>
+            <div class="field">
+              <button class="iconbtn" style="width:26px;height:26px" title="Attach files" id="showUpload3"><svg class="ic sm"><use href="#i-clip"/></svg></button>
+              <input placeholder="Message #beats">
+              <svg class="ic sm" style="color:var(--muted)"><use href="#i-at"/></svg>
+              <button class="snd"><svg class="ic sm"><use href="#i-send"/></svg></button>
+            </div>
+          </div>
+        </div>
+
+        <div class="chpanel" data-chview="pins" hidden>
+          <div class="lb">3 pinned messages in #beats</div>
+          <div class="pinrow"><div class="av sm">JX</div><div class="bd2"><div class="pinby"><svg class="ic" style="width:11px;height:11px"><use href="#i-pin"/></svg>pinned by jax</div><div class="by"><span class="u m5">jax</span><time>Mon</time></div><div class="tx">session is Fri 3pm. bring stems bounced at 24/48, not the project files.</div></div><button class="unpin"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
+          <div class="pinrow"><div class="av sm">DV</div><div class="bd2"><div class="pinby"><svg class="ic" style="width:11px;height:11px"><use href="#i-pin"/></svg>pinned by rae</div><div class="by"><span class="u m3">dev</span><time>2:14 PM</time></div><div class="tx">latest beat</div><div class="filecard" style="max-width:360px" data-open-details><div class="fbody"><div class="fname">late_bloom_beat.flp <span class="ver">v3</span></div></div></div></div><button class="unpin"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
+          <div class="pinrow"><div class="av sm">TM</div><div class="bd2"><div class="pinby"><svg class="ic" style="width:11px;height:11px"><use href="#i-pin"/></svg>pinned by jax</div><div class="by"><span class="u m2">tomo</span><time>Tue</time></div><div class="tx">reference for the drum sound, the break at 0:48 is what we're chasing</div></div><button class="unpin"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
+        </div>
+
+        <div class="chpanel" data-chview="files" hidden>
+          <div class="lb">12 files in #beats</div>
+          <div class="masonry">
+            <button class="card" data-open-details><div class="media audio"><div class="wave" data-wf="150"></div></div><div class="title">late_bloom_beat.flp</div><div class="who">dev · v3</div></button>
+            <button class="card" data-open-details><div class="media audio"><div class="wave" data-wf="150"></div></div><div class="title">bridge_scratch_rae.wav</div><div class="who">rae</div></button>
+            <button class="card" data-open-details><div class="media"><div class="shot c" style="aspect-ratio:3/2"></div></div><div class="title">ref_drums.png</div><div class="who">rae</div></button>
+            <button class="card" data-open-details><div class="media audio"><div class="wave" data-wf="150"></div></div><div class="title">bounce_v2.wav</div><div class="who">dev</div></button>
+          </div>
+        </div>
+      </main>
+
+      <aside class="mem">
+        <div class="memg">
+          <div class="lb">Admins, 2</div>
+          <div class="mrow"><div class="av sm">JX<span class="pr"></span></div><div class="info"><div class="nm"><span class="u m5">jax</span></div><div class="doing">arranging, Ableton</div></div></div>
+          <div class="mrow"><div class="av sm">RA<span class="pr"></span></div><div class="info"><div class="nm"><span class="u m1">rae</span></div><div class="doing">recording</div></div></div>
+        </div>
+        <div class="memg">
+          <div class="lb">Members, 4</div>
+          <div class="mrow"><div class="av sm">DV<span class="pr"></span></div><div class="info"><div class="nm"><span class="u m3">dev</span></div><div class="doing">in FL Studio</div></div></div>
+          <div class="mrow"><div class="av sm">TM<span class="pr"></span></div><div class="info"><div class="nm"><span class="u m2">tomo</span></div><div class="doing">reviewing beat v3</div></div></div>
+          <div class="mrow off"><div class="av sm">KO<span class="pr off"></span></div><div class="info"><div class="nm"><span class="u m4">kofi</span></div><div class="doing">offline</div></div></div>
+          <div class="mrow off"><div class="av sm">NL<span class="pr off"></span></div><div class="info"><div class="nm"><span class="u m6">nel</span></div><div class="doing">offline</div></div></div>
+        </div>
+      </aside>
+
+      <aside class="threadpane" id="threadPane" hidden>
+        <div class="tphd"><span class="lbl"><svg class="ic sm"><use href="#i-reply"/></svg>Thread<span class="sub">#beats</span></span><button class="iconbtn" id="threadClose"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
+        <div class="tpbody">
+          <div class="msg">
+            <div class="av sm">DV</div>
+            <div class="bd">
+              <div class="by"><span class="u m3">dev</span><time>2:14 PM</time></div>
+              <div class="tx">reworked the back half. same bpm, swapped the drums</div>
+              <div class="filecard" style="max-width:100%"><div class="fcwave"><div class="wave" data-wf="90"></div></div>
+                <div class="fbody"><div class="fname">late_bloom_beat.flp <span class="ver">v3</span></div></div></div>
+            </div>
+          </div>
+          <div class="tpdiv">3 replies</div>
+          <div class="msg"><div class="av sm">RA</div><div class="bd"><div class="by"><span class="u m1">rae</span><time>2:18 PM</time></div><div class="tx">low end's a bit much on the bridge, otherwise this is the one</div></div></div>
+          <div class="msg"><div class="av sm">JX</div><div class="bd"><div class="by"><span class="u m5">jax</span><time>2:22 PM</time></div><div class="tx">agreed. <span class="men m2">@tomo</span> can you pull it down a couple db and bounce a rough?</div></div></div>
+          <div class="msg"><div class="av sm">TM</div><div class="bd"><div class="by"><span class="u m2">tomo</span><time>2:26 PM</time></div><div class="tx">on it, pushing a v3 in a sec</div></div></div>
+        </div>
+        <div class="composer">
+          <div class="field"><button class="iconbtn" style="width:26px;height:26px"><svg class="ic sm"><use href="#i-clip"/></svg></button><input placeholder="Reply in thread"><button class="snd"><svg class="ic sm"><use href="#i-send"/></svg></button></div>
+          <label class="alsosend" id="alsoSend"><span class="cbx"><svg class="ic"><use href="#i-check"/></svg></span>Also send to #beats</label>
+        </div>
+      </aside>
+    </div>
+
+    <!-- FEED -->
+    <div class="screen" data-screen="feed" hidden>
+      <div class="pane">
+        <div class="panehd"><div class="wm">eski</div><nav><a class="nav on">Feed</a><a class="nav">Notifications</a><a class="nav">You</a></nav></div>
+        <div class="toolbar">
+          <div class="field"><svg class="ic sm"><use href="#i-search"/></svg><input placeholder="Search your friends"></div>
+          <button class="selbtn">Type<svg class="ic sm"><use href="#i-chev"/></svg></button>
+          <button class="selbtn">Latest<svg class="ic sm"><use href="#i-chev"/></svg></button>
+        </div>
+        <div class="panebody">
+          <div class="masonry">
+            <button class="card" data-open-details><div class="media"><div class="shot" style="aspect-ratio:4/5"></div></div>
+              <div class="title">keyframe study, the falling sequence</div><div class="who">lin</div></button>
+            <button class="card" data-open-details><div class="media audio"><div class="wave" data-wf="150"></div></div>
+              <div class="title">back half rework, drums finally sit right</div><div class="who">dev</div></button>
+            <button class="card" data-open-details><div class="media"><div class="shot b" style="aspect-ratio:16/9"></div><div class="playover"><svg class="ic f"><use href="#i-play"/></svg></div></div>
+              <div class="title">q3 comp reel, first pass</div><div class="who">mira</div></button>
+            <button class="card" data-open-details><div class="media text"><div class="body">The last 10 percent takes 90 percent of the time. A short note on how I stopped letting that stall a release, and the two rules I keep now.</div></div>
+              <div class="title">On finishing things</div><div class="who">jax</div></button>
+            <button class="card" data-open-details><div class="media"><div class="shot c" style="aspect-ratio:3/2"></div></div>
+              <div class="title">cover art studies, warm set</div><div class="who">nel</div></button>
+            <button class="card" data-open-details><div class="media audio"><div class="wave" data-wf="150"></div></div>
+              <div class="title">low ceilings, verse idea</div><div class="who">rae</div></button>
+            <button class="card" data-open-details><div class="media"><div class="shot" style="aspect-ratio:1/1"></div><div class="playover"><svg class="ic f"><use href="#i-play"/></svg></div></div>
+              <div class="title">title sequence, draft</div><div class="who">sol</div></button>
+            <button class="card" data-open-details><div class="media audio"><div class="wave" data-wf="150"></div></div>
+              <div class="title">drum one-shots, vol 2</div><div class="who">jax</div></button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MEDIA EXPLORER -->
+    <div class="screen" data-screen="explorer" hidden>
+      <div class="pane">
+        <div class="panehd"><div class="title">Late Bloom LP, media</div></div>
+        <div class="toolbar">
+          <div class="field"><svg class="ic sm"><use href="#i-search"/></svg><input placeholder="Search this server's files"></div>
+          <button class="selbtn"><svg class="ic sm"><use href="#i-hash"/></svg>Channel<svg class="ic sm"><use href="#i-chev"/></svg></button>
+          <button class="selbtn">Type<svg class="ic sm"><use href="#i-chev"/></svg></button>
+          <button class="selbtn">Uploader<svg class="ic sm"><use href="#i-chev"/></svg></button>
+          <button class="selbtn">Latest<svg class="ic sm"><use href="#i-chev"/></svg></button>
+        </div>
+        <div class="selbar" id="selbar"><span class="n"><span id="seln">0</span> selected</span>
+          <button><svg class="ic sm"><use href="#i-download"/></svg>Download</button>
+          <button><svg class="ic sm"><use href="#i-plus"/></svg>Add to folder</button>
+          <button><svg class="ic sm"><use href="#i-move"/></svg>Move</button>
+          <button><svg class="ic sm"><use href="#i-trash"/></svg>Delete</button>
+          <span class="sp"></span>
+          <button id="selClear"><svg class="ic sm"><use href="#i-x"/></svg>Clear</button></div>
+        <div class="panebody">
+          <div class="seclabel">Folders</div>
+          <div class="colls">
+            <div class="coll"><div class="stack"><div class="s"></div><div class="s"></div><div class="s"><svg class="ic"><use href="#i-canvas"/></svg></div></div><div class="ct">bloom, single</div><div class="mt">6 files</div></div>
+            <div class="coll"><div class="stack"><div class="s"></div><div class="s"></div><div class="s"><svg class="ic"><use href="#i-canvas"/></svg></div></div><div class="ct">drum kit, shared</div><div class="mt">22 files</div></div>
+            <div class="coll"><div class="stack"><div class="s"></div><div class="s"></div><div class="s"><svg class="ic"><use href="#i-canvas"/></svg></div></div><div class="ct">references</div><div class="mt">9 files</div></div>
+          </div>
+          <div class="seclabel">Files</div>
+          <div class="masonry">
+            <div class="card" data-open-details><div class="media audio"><span class="cardsel"><svg class="ic"><use href="#i-check"/></svg></span><div class="cardacts"><button data-act="dl" title="Download"><svg class="ic"><use href="#i-download"/></svg></button><button data-act="link" title="Copy link"><svg class="ic"><use href="#i-link"/></svg></button><button data-act="more" title="More"><svg class="ic"><use href="#i-more"/></svg></button></div><div class="wave" data-wf="150"></div></div>
+              <div class="title">late_bloom_beat.flp</div><div class="who"><span class="uchip m3"><span class="dot"></span>dev</span> · #beats</div></div>
+            <div class="card" data-open-details><div class="media audio"><span class="cardsel"><svg class="ic"><use href="#i-check"/></svg></span><div class="cardacts"><button data-act="dl" title="Download"><svg class="ic"><use href="#i-download"/></svg></button><button data-act="link" title="Copy link"><svg class="ic"><use href="#i-link"/></svg></button><button data-act="more" title="More"><svg class="ic"><use href="#i-more"/></svg></button></div><div class="wave" data-wf="150"></div></div>
+              <div class="title">bridge_scratch_rae.wav</div><div class="who"><span class="uchip m1"><span class="dot"></span>rae</span> · #beats</div></div>
+            <div class="card" data-lightbox data-lbkind="image"><div class="media"><span class="cardsel"><svg class="ic"><use href="#i-check"/></svg></span><div class="cardacts"><button data-act="dl" title="Download"><svg class="ic"><use href="#i-download"/></svg></button><button data-act="link" title="Copy link"><svg class="ic"><use href="#i-link"/></svg></button><button data-act="more" title="More"><svg class="ic"><use href="#i-more"/></svg></button></div><div class="shot c" style="aspect-ratio:3/2"></div></div>
+              <div class="title">ref_drums.png</div><div class="who"><span class="uchip m1"><span class="dot"></span>rae</span> · #references</div></div>
+            <div class="card" data-open-details><div class="media audio"><span class="cardsel"><svg class="ic"><use href="#i-check"/></svg></span><div class="cardacts"><button data-act="dl" title="Download"><svg class="ic"><use href="#i-download"/></svg></button><button data-act="link" title="Copy link"><svg class="ic"><use href="#i-link"/></svg></button><button data-act="more" title="More"><svg class="ic"><use href="#i-more"/></svg></button></div><div class="wave" data-wf="150"></div></div>
+              <div class="title">bloom_mix_rough.wav</div><div class="who"><span class="uchip m2"><span class="dot"></span>tomo</span> · #mixing</div></div>
+            <div class="card" data-lightbox data-lbkind="video"><div class="media"><span class="cardsel"><svg class="ic"><use href="#i-check"/></svg></span><div class="cardacts"><button data-act="dl" title="Download"><svg class="ic"><use href="#i-download"/></svg></button><button data-act="link" title="Copy link"><svg class="ic"><use href="#i-link"/></svg></button><button data-act="more" title="More"><svg class="ic"><use href="#i-more"/></svg></button></div><div class="shot b" style="aspect-ratio:16/9"></div><div class="playover"><svg class="ic f"><use href="#i-play"/></svg></div></div>
+              <div class="title">booth_2min.mp4</div><div class="who"><span class="uchip m5"><span class="dot"></span>jax</span> · #announcements</div></div>
+            <div class="card" data-open-details><div class="media audio"><span class="cardsel"><svg class="ic"><use href="#i-check"/></svg></span><div class="cardacts"><button data-act="dl" title="Download"><svg class="ic"><use href="#i-download"/></svg></button><button data-act="link" title="Copy link"><svg class="ic"><use href="#i-link"/></svg></button><button data-act="more" title="More"><svg class="ic"><use href="#i-more"/></svg></button></div><div class="wave" data-wf="150"></div></div>
+              <div class="title">bloom_master.als</div><div class="who"><span class="uchip m5"><span class="dot"></span>jax</span> · #stems and sessions</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CANVAS -->
+    <div class="screen" data-screen="canvas" hidden>
+      <div class="cvwrap">
+        <div class="cvhd">
+          <button class="selbtn" id="canvasPick"><svg class="ic sm"><use href="#i-canvas"/></svg>sh040 review<svg class="ic sm"><use href="#i-chev"/></svg></button>
+          <span class="vis"><svg class="ic"><use href="#i-users"/></svg>Specter, server</span>
+          <div class="acts">
+            <span class="cmtcount"><svg class="ic sm"><use href="#i-comment"/></svg>4 comments</span>
+            <button class="btn sm"><svg class="ic sm"><use href="#i-plus"/></svg>Add file</button>
+            <button class="btn sm">Share</button>
+          </div>
+        </div>
+        <div class="cvtools">
+          <button class="iconbtn on" title="Select and move"><svg class="ic"><use href="#i-move"/></svg></button>
+          <div class="sep"></div>
+          <span class="grp">Annotate</span>
+          <button class="iconbtn" title="Pen"><svg class="ic"><use href="#i-pen"/></svg></button>
+          <button class="iconbtn" title="Arrow"><svg class="ic"><use href="#i-arrow"/></svg></button>
+          <button class="iconbtn" title="Box"><svg class="ic"><use href="#i-square"/></svg></button>
+          <button class="iconbtn" title="Freeform"><svg class="ic"><use href="#i-scribble"/></svg></button>
+          <span class="sw" style="background:#B0503F"></span><span class="sw" style="background:#A9791F"></span><span class="sw" style="background:#3F7A4E"></span>
+          <div class="sep"></div>
+          <span class="grp">Comment</span>
+          <button class="iconbtn" title="Drop a comment (point, box, or freeform)"><svg class="ic"><use href="#i-comment"/></svg></button>
+          <div class="sep"></div>
+          <button class="iconbtn" title="Undo"><svg class="ic"><use href="#i-undo"/></svg></button>
+          <button class="iconbtn" title="Fit"><svg class="ic"><use href="#i-expand"/></svg></button>
+        </div>
+        <div class="canvas">
+          <div class="tile img sel">
+            <div class="tname"><span>sh040_comp.mov</span><span class="ver">v3</span></div>
+            <div class="scene"><div class="ground"></div><div class="o1"></div><div class="o2"></div></div>
+            <svg class="anno" viewBox="0 0 380 214" preserveAspectRatio="none">
+              <path d="M262 50 C 232 74, 200 86, 168 108" fill="none" stroke="#A9791F" stroke-width="2.5" stroke-linecap="round"/>
+              <path d="M168 108 l 11 -3 l -5 11 z" fill="#A9791F"/>
+            </svg>
+            <div class="selbox" style="left:26%;top:44%;width:20%;height:34%"></div>
+            <div class="pin open" style="left:26%;top:44%"><div class="pfp" style="background:var(--m4)">MI</div>
+              <div class="pop"><div class="ph"><span class="uchip m4"><span class="dot"></span>mira</span></div>
+                <div class="tx">near building edge is ghosting against the sky, needs a garbage matte inside this box.</div>
+                <div class="rl"><input placeholder="Reply"></div></div></div>
+            <div class="pin" style="left:70%;top:30%"><div class="pfp" style="background:var(--m3)">LN</div></div>
+          </div>
+          <div class="tile audio">
+            <div class="tname"><span>sounddesign_pass.wav</span></div>
+            <div class="wavewrap">
+              <div class="wave" data-wf="150"></div>
+              <div class="selrange" style="left:33%;width:14%"></div>
+              <div class="pin" style="left:40%;top:0"><div class="pfp" style="background:var(--m2)">SO</div></div>
+            </div>
+          </div>
+          <div class="tile img warm" style="width:300px;height:180px">
+            <div class="tname"><span>grade_ref.png</span></div>
+            <div class="scene"><div class="ground"></div></div>
+            <div class="pin" style="left:55%;top:50%"><div class="pfp" style="background:var(--m5)">JX</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CALL (voice / video) -->
+    <div class="screen" data-screen="vc" hidden>
+      <div class="vc">
+        <div class="vchd"><svg class="ic"><use href="#i-voice"/></svg><span class="t">the booth</span><span class="sub">Late Bloom LP</span>
+          <div class="lt"><button class="on" title="Grid"><svg class="ic sm"><use href="#i-grid"/></svg></button><button title="Focus the share"><svg class="ic sm"><use href="#i-screen"/></svg></button></div>
+          <span class="cnt">4 in call · 08:12</span></div>
+        <div class="vcstage">
+          <div class="vcshare">
+            <div class="vcsharebar"><button class="stop"><svg class="ic"><use href="#i-screen"/></svg>Stop sharing</button><button><svg class="ic"><use href="#i-pen"/></svg>Annotate</button><button>HD</button></div>
+            <div class="daw">
+              <div class="lane"><i style="left:4%;width:22%"></i><i style="left:30%;width:14%"></i><i style="left:50%;width:30%"></i></div>
+              <div class="lane"><i style="left:8%;width:40%"></i><i style="left:56%;width:18%"></i></div>
+              <div class="lane"><i style="left:2%;width:12%"></i><i style="left:20%;width:12%"></i><i style="left:38%;width:12%"></i><i style="left:56%;width:12%"></i><i style="left:74%;width:12%"></i></div>
+              <div class="lane"><i style="left:12%;width:60%"></i></div>
+              <div class="lane"><i style="left:4%;width:20%"></i><i style="left:44%;width:36%"></i></div>
+            </div>
+            <div class="lbl"><svg class="ic sm"><use href="#i-screen"/></svg>dev is sharing FL Studio</div>
+          </div>
+          <div class="vcstrip">
+            <div class="vtile cam speaking"><div class="vnm" style="color:var(--m5)">jax</div><button class="vmore"><svg class="ic sm"><use href="#i-more"/></svg></button></div>
+            <div class="vtile"><div class="vav">RA</div><div class="vnm" style="color:var(--m1)">rae</div><button class="vmore"><svg class="ic sm"><use href="#i-more"/></svg></button></div>
+            <div class="vtile"><div class="vav">DV</div><div class="vnm" style="color:var(--m3)">dev</div><button class="vmore"><svg class="ic sm"><use href="#i-more"/></svg></button></div>
+            <div class="vtile"><span class="vhand"><svg class="ic sm"><use href="#i-hand"/></svg></span><div class="vav">TM</div><div class="vnm" style="color:var(--m2)">tomo</div><span class="vmute"><svg class="ic sm"><use href="#i-mic-off"/></svg></span></div>
+          </div>
+          <aside class="vcpanel" id="vcPanel" hidden>
+            <div class="vcptabs"><button class="on" data-vctab="chat">Chat</button><button data-vctab="notes">Notes</button></div>
+            <div class="vcpbody" data-vcview="chat">
+              <div class="vcpmsg"><div class="by">rae</div><div class="tx">can you loop the bridge?</div></div>
+              <div class="vcpmsg"><div class="by">dev</div><div class="tx">yep, looping now</div></div>
+              <div class="vcpmsg"><div class="by">jax</div><div class="tx">low end sounds way better already</div></div>
+            </div>
+            <div class="vcpbody" data-vcview="notes" hidden>
+              <div class="vcpnote"><b style="color:#ededed">Booth notes</b><br>· re-cut bridge drums (dev)<br>· pull low end 2db (tomo)<br>· rae retracks the hook<br>· rough bounce by Fri</div>
+            </div>
+            <div class="vcpcompose"><input placeholder="Message the call"></div>
+          </aside>
+        </div>
+        <div class="vcbar">
+          <button class="vcbtn on" title="Mic"><svg class="ic"><use href="#i-mic"/></svg></button>
+          <button class="vcbtn" title="Deafen"><svg class="ic"><use href="#i-voice"/></svg></button>
+          <button class="vcbtn" title="Camera"><svg class="ic"><use href="#i-camera"/></svg></button>
+          <button class="vcbtn on" title="Share screen"><svg class="ic"><use href="#i-screen"/></svg></button>
+          <button class="vcbtn" id="vcReactBtn" title="React"><svg class="ic"><use href="#i-smile"/></svg></button>
+          <button class="vcbtn" title="Raise hand"><svg class="ic"><use href="#i-hand"/></svg></button>
+          <button class="vcbtn" id="vcChatBtn" title="Chat and notes"><svg class="ic"><use href="#i-comment"/></svg></button>
+          <button class="vcbtn" title="Participants"><svg class="ic"><use href="#i-users"/></svg></button>
+          <button class="vcbtn leave" title="Leave"><svg class="ic"><use href="#i-leave"/></svg></button>
+        </div>
+        <div class="vcreacts" id="vcReacts"><button>🔥</button><button>👏</button><button>❤️</button><button>😂</button><button>🎉</button><button>🙌</button></div>
+      </div>
+    </div>
+
+    <!-- BOARD (kanban) -->
+    <div class="screen" data-screen="board" hidden>
+      <div class="kb">
+        <div class="kbhd"><svg class="ic"><use href="#i-board"/></svg><span class="t">shot tasks</span><span class="sub">Late Bloom LP</span>
+          <div class="acts" style="display:flex;align-items:center;gap:12px">
+            <div class="kbviews">
+              <button class="kbview on" data-kview="board"><svg class="ic"><use href="#i-board"/></svg>Board</button>
+              <button class="kbview" data-kview="table"><svg class="ic"><use href="#i-grid"/></svg>Table</button>
+              <button class="kbview" data-kview="calendar"><svg class="ic"><use href="#i-version"/></svg>Calendar</button>
+            </div>
+            <button class="btn sm"><svg class="ic sm"><use href="#i-settings"/></svg>Fields</button>
+            <button class="btn sm"><svg class="ic sm"><use href="#i-plus"/></svg>Add card</button></div></div>
+
+        <div class="kview kbcols" data-kview="board">
+          <div class="kbcol">
+            <div class="kbcolhd">To do<span class="n">2</span></div>
+            <div class="kcard"><div class="kt">Re-cut the bridge drums</div><div class="kfile"><svg class="ic sm"><use href="#i-voice"/></svg>late_bloom_beat.flp</div><div class="kchips"><span class="kchip due soon"><svg class="ic"><use href="#i-version"/></svg>Aug 18</span><span class="kchip prio hi"><span class="dotp"></span>High</span></div><div class="kmeta"><span class="klabel">beats</span><span class="kav" style="background:var(--m3)">DV</span></div></div>
+            <div class="kcard"><div class="kt">Write second verse</div><div class="kchips"><span class="kchip due"><svg class="ic"><use href="#i-version"/></svg>Aug 22</span><span class="kchip prio"><span class="dotp"></span>Med</span></div><div class="kmeta"><span class="klabel">verses</span><span class="kav" style="background:var(--m1)">RA</span></div></div>
+            <button class="kadd"><svg class="ic sm"><use href="#i-plus"/></svg>Add card</button>
+          </div>
+          <div class="kbcol">
+            <div class="kbcolhd">In progress<span class="n">2</span></div>
+            <div class="kcard"><div class="kt">Rough mix pass</div><div class="kfile"><svg class="ic sm"><use href="#i-voice"/></svg>bloom_mix_rough.wav</div><div class="kchips"><span class="kchip due soon"><svg class="ic"><use href="#i-version"/></svg>Aug 17</span><span class="kchip prio hi"><span class="dotp"></span>High</span></div><div class="kmeta"><span class="klabel">mixing</span><span class="kav" style="background:var(--m2)">TM</span></div></div>
+            <div class="kcard"><div class="kt">Source the drum break sample</div><div class="kchips"><span class="kchip due"><svg class="ic"><use href="#i-version"/></svg>Aug 20</span><span class="kchip prio"><span class="dotp"></span>Low</span></div><div class="kmeta"><span class="klabel">references</span><span class="kav" style="background:var(--m5)">JX</span></div></div>
+            <button class="kadd"><svg class="ic sm"><use href="#i-plus"/></svg>Add card</button>
+          </div>
+          <div class="kbcol">
+            <div class="kbcolhd">Review<span class="n">1</span></div>
+            <div class="kcard"><div class="kt">Low end on the bridge</div><div class="kfile"><svg class="ic sm"><use href="#i-canvas"/></svg>in canvas, sh040 review</div><div class="kchips"><span class="kchip due over"><svg class="ic"><use href="#i-version"/></svg>Aug 15 · overdue</span><span class="kchip prio"><span class="dotp"></span>Med</span></div><div class="kmeta"><span class="klabel">mixing</span><span class="kav" style="background:var(--m2)">TM</span></div></div>
+            <button class="kadd"><svg class="ic sm"><use href="#i-plus"/></svg>Add card</button>
+          </div>
+          <div class="kbcol">
+            <div class="kbcolhd">Done<span class="n">2</span></div>
+            <div class="kcard"><div class="kt">Lock the tempo at 142</div><div class="kchips"><span class="kchip prio hi"><span class="dotp"></span>High</span></div><div class="kmeta"><span class="klabel">beats</span><span class="kav" style="background:var(--m3)">DV</span></div></div>
+            <div class="kcard"><div class="kt">Pick the cover direction</div><div class="kchips"><span class="kchip prio"><span class="dotp"></span>Low</span></div><div class="kmeta"><span class="klabel">art</span><span class="kav" style="background:var(--m6)">NL</span></div></div>
+            <button class="kadd"><svg class="ic sm"><use href="#i-plus"/></svg>Add card</button>
+          </div>
+        </div>
+
+        <div class="kview ktable" data-kview="table" hidden>
+          <div class="kthead"><span>Task</span><span>Status</span><span>Assignee</span><span>Due</span><span>Priority</span></div>
+          <div class="ktrow"><span class="task">Re-cut the bridge drums</span><span class="tstatus"><span class="dotp"></span>To do</span><span class="tassign"><span class="kav" style="background:var(--m3)">DV</span>dev</span><span class="tdue">Aug 18</span><span class="tprio hi"><span class="dotp"></span>High</span></div>
+          <div class="ktrow"><span class="task">Write second verse</span><span class="tstatus"><span class="dotp"></span>To do</span><span class="tassign"><span class="kav" style="background:var(--m1)">RA</span>rae</span><span class="tdue">Aug 22</span><span class="tprio"><span class="dotp"></span>Med</span></div>
+          <div class="ktrow"><span class="task">Rough mix pass</span><span class="tstatus prog"><span class="dotp"></span>In progress</span><span class="tassign"><span class="kav" style="background:var(--m2)">TM</span>tomo</span><span class="tdue">Aug 17</span><span class="tprio hi"><span class="dotp"></span>High</span></div>
+          <div class="ktrow"><span class="task">Source the drum break sample</span><span class="tstatus prog"><span class="dotp"></span>In progress</span><span class="tassign"><span class="kav" style="background:var(--m5)">JX</span>jax</span><span class="tdue">Aug 20</span><span class="tprio"><span class="dotp"></span>Low</span></div>
+          <div class="ktrow"><span class="task">Low end on the bridge</span><span class="tstatus review"><span class="dotp"></span>Review</span><span class="tassign"><span class="kav" style="background:var(--m2)">TM</span>tomo</span><span class="tdue over">Aug 15 · overdue</span><span class="tprio"><span class="dotp"></span>Med</span></div>
+          <div class="ktrow"><span class="task">Lock the tempo at 142</span><span class="tstatus done"><span class="dotp"></span>Done</span><span class="tassign"><span class="kav" style="background:var(--m3)">DV</span>dev</span><span class="tdue" style="color:var(--muted)">no date</span><span class="tprio hi"><span class="dotp"></span>High</span></div>
+          <div class="ktrow"><span class="task">Pick the cover direction</span><span class="tstatus done"><span class="dotp"></span>Done</span><span class="tassign"><span class="kav" style="background:var(--m6)">NL</span>nel</span><span class="tdue" style="color:var(--muted)">no date</span><span class="tprio"><span class="dotp"></span>Low</span></div>
+        </div>
+
+        <div class="kview kcal" data-kview="calendar" hidden>
+          <div class="kcalday"><div class="kcaldate over">Sat, Aug 15<small>overdue</small></div>
+            <div class="kcalrow"><span class="tstatus review"><span class="dotp"></span></span><span class="task">Low end on the bridge</span><span class="klabel">mixing</span><span class="kav" style="background:var(--m2)">TM</span></div></div>
+          <div class="kcalday"><div class="kcaldate">Mon, Aug 17<small>tomorrow</small></div>
+            <div class="kcalrow"><span class="tstatus prog"><span class="dotp"></span></span><span class="task">Rough mix pass</span><span class="klabel">mixing</span><span class="kav" style="background:var(--m2)">TM</span></div></div>
+          <div class="kcalday"><div class="kcaldate">Tue, Aug 18</div>
+            <div class="kcalrow"><span class="tstatus"><span class="dotp"></span></span><span class="task">Re-cut the bridge drums</span><span class="klabel">beats</span><span class="kav" style="background:var(--m3)">DV</span></div></div>
+          <div class="kcalday"><div class="kcaldate">Thu, Aug 20</div>
+            <div class="kcalrow"><span class="tstatus prog"><span class="dotp"></span></span><span class="task">Source the drum break sample</span><span class="klabel">references</span><span class="kav" style="background:var(--m5)">JX</span></div></div>
+          <div class="kcalday"><div class="kcaldate">Sat, Aug 22</div>
+            <div class="kcalrow"><span class="tstatus"><span class="dotp"></span></span><span class="task">Write second verse</span><span class="klabel">verses</span><span class="kav" style="background:var(--m1)">RA</span></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PROFILE -->
+    <div class="screen" data-screen="profile" hidden>
+      <div class="prof">
+        <div class="phero">
+          <div class="top">
+            <div class="av lg">RA</div>
+            <div class="who"><h1>rae okonkwo</h1><div class="handle">@rae</div>
+              <div class="bio">writer and rapper. building the Late Bloom LP with a few people.</div></div>
+            <div class="actions"><button class="btn primary"><svg class="ic sm"><use href="#i-user"/></svg>Add friend</button><button class="btn"><svg class="ic sm"><use href="#i-mail"/></svg>Message</button></div>
+          </div>
+        </div>
+        <div class="ptabs2">
+          <button class="ptab2 on"><svg class="ic"><use href="#i-globe"/></svg>Public<span class="ct">18</span></button>
+          <button class="ptab2"><svg class="ic"><use href="#i-users"/></svg>Shared<span class="ct">9</span></button>
+          <button class="ptab2"><svg class="ic"><use href="#i-lock"/></svg>Private<span class="ct">24</span></button>
+          <button class="ptab2"><svg class="ic"><use href="#i-settings"/></svg>Settings</button>
+        </div>
+        <div class="pbody">
+          <div class="masonry">
+            <button class="card" data-open-details><div class="media audio"><div class="wave" data-wf="150"></div></div>
+              <div class="title">low ceilings, the finished verse</div><div class="who">rae, jax, tomo</div></button>
+            <button class="card" data-open-details><div class="media"><div class="shot c" style="aspect-ratio:1/1"></div></div>
+              <div class="title">cover art, bloom</div><div class="who">nel, rae</div></button>
+            <button class="card" data-open-details><div class="media audio"><div class="wave" data-wf="150"></div></div>
+              <div class="title">bloom, single</div><div class="who">rae, dev, tomo</div></button>
+            <button class="card" data-open-details><div class="media"><div class="shot b" style="aspect-ratio:16/9"></div><div class="playover"><svg class="ic f"><use href="#i-play"/></svg></div></div>
+              <div class="title">lyric visual</div><div class="who">sol</div></button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MESSAGES -->
+    <div class="screen" data-screen="dms" hidden>
+      <div class="dmlist">
+        <div class="hd">Messages</div>
+        <button class="dmfriends" id="dmFriendsBtn"><svg class="ic sm"><use href="#i-users"/></svg>Friends<span class="ct">2</span></button>
+        <div class="dmadd"><div class="field"><svg class="ic sm"><use href="#i-user"/></svg><input placeholder="Add by username"><button style="color:var(--muted)"><svg class="ic sm"><use href="#i-plus"/></svg></button></div></div>
+        <div class="dmrows">
+          <div class="dmsec">Pinned</div>
+          <div class="dmrow on dmconvo"><div class="av sm">MI<span class="pr"></span></div><span class="nm"><span class="u">mira</span></span><svg class="ic sm pini"><use href="#i-pin"/></svg></div>
+          <div class="dmsec">Direct messages</div>
+          <div class="dmrow group dmconvo"><span class="gav"><span class="av sm">MI</span><span class="av sm">LN</span><span class="av sm">SO</span></span><span class="nm">sh040 crew</span><svg class="ic sm mutei"><use href="#i-bell"/></svg></div>
+          <div class="dmrow dmconvo"><div class="av sm">DV<span class="pr"></span></div><span class="nm">dev</span><button class="more2"><svg class="ic sm"><use href="#i-more"/></svg></button></div>
+          <div class="dmrow dmconvo"><div class="av sm">TM<span class="pr off"></span></div><span class="nm">tomo</span><button class="more2"><svg class="ic sm"><use href="#i-more"/></svg></button></div>
+          <div class="dmrow dmconvo"><div class="av sm">SO<span class="pr off"></span></div><span class="nm">sol</span><button class="more2"><svg class="ic sm"><use href="#i-more"/></svg></button></div>
+        </div>
+      </div>
+      <main class="main" id="dmConvo">
+        <div class="mainhd"><div class="av sm">MI</div><span class="t">mira</span><span class="sub">compositor</span>
+          <div class="acts"><button class="iconbtn"><svg class="ic"><use href="#i-phone"/></svg></button><button class="iconbtn"><svg class="ic"><use href="#i-video"/></svg></button><button class="iconbtn" title="Pin"><svg class="ic"><use href="#i-pin"/></svg></button><button class="iconbtn" title="More"><svg class="ic"><use href="#i-more"/></svg></button></div></div>
+        <div class="stream">
+          <div class="day"><span>Yesterday</span></div>
+          <div class="msg"><div class="av sm">MI</div><div class="bd"><div class="by"><span class="u">mira</span><time>6:02 PM</time></div><div class="tx">saw your comps on tiktok, insane. username's mira if you want to add me</div></div></div>
+          <div class="msg"><div class="av sm">RA</div><div class="bd"><div class="by"><span class="u">rae</span><time>6:03 PM</time></div><div class="tx">added. sending you the Specter link now, it drops you straight in</div>
+            <button class="filecard" style="max-width:320px" data-open-details><div class="fbody"><div class="fname"><svg class="ic sm" style="color:var(--muted)"><use href="#i-users"/></svg>join.eski.lol/specter-sh040</div></div></button></div></div>
+          <div class="msg"><div class="av sm">MI</div><div class="bd"><div class="by"><span class="u">mira</span><time>6:10 PM</time></div><div class="tx">in. this is so much cleaner than a drive folder</div></div></div>
+        </div>
+        <div class="composer"><div class="field"><button class="iconbtn" style="width:26px;height:26px"><svg class="ic sm"><use href="#i-clip"/></svg></button><input placeholder="Message mira"><button class="snd"><svg class="ic sm"><use href="#i-send"/></svg></button></div></div>
+      </main>
+
+      <div class="friends" id="dmFriends" hidden>
+        <div class="frhd"><svg class="ic"><use href="#i-users"/></svg><span class="t">Friends</span>
+          <div class="frtabs"><a class="frtab on">Online</a><a class="frtab">All</a><a class="frtab">Pending<span class="ct">2</span></a><a class="frtab">Blocked</a></div></div>
+        <div class="frbody">
+          <div class="fradd"><div class="field"><svg class="ic sm"><use href="#i-user"/></svg><input placeholder="Add a friend by their exact username"></div><button class="btn primary">Send request</button></div>
+          <div class="frsec">Pending, 2</div>
+          <div class="frrow"><div class="av sm">LN</div><div class="info"><b>lin</b><small>incoming friend request</small></div><div class="fracts"><button class="rbtn ok" title="Accept"><svg class="ic sm"><use href="#i-check"/></svg></button><button class="rbtn no" title="Decline"><svg class="ic sm"><use href="#i-x"/></svg></button></div></div>
+          <div class="frrow"><div class="av sm">SO</div><div class="info"><b>sol</b><small>outgoing request</small></div><span class="pendlbl">pending</span></div>
+          <div class="frsec">Online, 3</div>
+          <div class="frrow"><div class="av sm">DV<span class="pr"></span></div><div class="info"><b>dev</b><small>@devmakesbeats</small></div><div class="fracts"><button class="rbtn" title="Message"><svg class="ic sm"><use href="#i-mail"/></svg></button><button class="rbtn" title="Call"><svg class="ic sm"><use href="#i-phone"/></svg></button><button class="rbtn" title="More"><svg class="ic sm"><use href="#i-more"/></svg></button></div></div>
+          <div class="frrow"><div class="av sm">MI<span class="pr"></span></div><div class="info"><b>mira</b><small>@mira</small></div><div class="fracts"><button class="rbtn" title="Message"><svg class="ic sm"><use href="#i-mail"/></svg></button><button class="rbtn" title="Call"><svg class="ic sm"><use href="#i-phone"/></svg></button><button class="rbtn" title="More"><svg class="ic sm"><use href="#i-more"/></svg></button></div></div>
+          <div class="frrow"><div class="av sm">RA<span class="pr"></span></div><div class="info"><b>rae</b><small>@rae</small></div><div class="fracts"><button class="rbtn" title="Message"><svg class="ic sm"><use href="#i-mail"/></svg></button><button class="rbtn" title="Call"><svg class="ic sm"><use href="#i-phone"/></svg></button><button class="rbtn" title="More"><svg class="ic sm"><use href="#i-more"/></svg></button></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- GROUP SETTINGS (admin) -->
+    <div class="screen" data-screen="settings" hidden>
+      <div class="settings">
+        <nav class="setnav">
+          <div class="sgh">Late Bloom LP</div>
+          <button data-setpanel="general" class="on"><svg class="ic sm"><use href="#i-settings"/></svg>General</button>
+          <button data-setpanel="channels"><svg class="ic sm"><use href="#i-hash"/></svg>Channels &amp; boards</button>
+          <button data-setpanel="members"><svg class="ic sm"><use href="#i-users"/></svg>Members</button>
+          <button data-setpanel="moderation"><svg class="ic sm"><use href="#i-hand"/></svg>Moderation</button>
+          <button data-setpanel="audit"><svg class="ic sm"><use href="#i-refresh"/></svg>Audit log</button>
+          <button data-setpanel="invites"><svg class="ic sm"><use href="#i-link"/></svg>Invite links</button>
+          <button data-setpanel="storage"><svg class="ic sm"><use href="#i-download"/></svg>Export &amp; storage</button>
+          <div class="sep"></div>
+          <button class="danger"><svg class="ic sm"><use href="#i-trash"/></svg>Delete server</button>
+        </nav>
+        <div class="setmain">
+          <div class="setpanel" data-panel="general">
+            <h2>General</h2><div class="h2sub">Admins only.</div>
+            <div class="frow"><label class="ulab">Server name</label><div class="field"><input value="Late Bloom LP"></div></div>
+            <div class="frow"><label class="ulab">Description</label><div class="field"><input value="a remote LP, producers and rappers"></div></div>
+            <div class="frow"><label class="ulab">Cover</label><div class="coverpick"><div class="cv"><svg class="ic"><use href="#i-image"/></svg></div><button class="btn sm"><svg class="ic sm"><use href="#i-image"/></svg>Upload</button></div></div>
+            <div class="dangerbox"><div class="t"><b>Delete this server</b><small>Removes every channel, board and canvas. Members keep their own copies of files they uploaded.</small></div><button class="btn danger"><svg class="ic sm"><use href="#i-trash"/></svg>Delete</button></div>
+          </div>
+          <div class="setpanel" data-panel="channels" hidden>
+            <h2>Channels &amp; boards</h2><div class="h2sub">Drag to reorder. Members see them in this order. Open a channel's settings for who can post, slow mode and privacy.</div>
+            <div class="setlist">
+              <div class="chwrap">
+                <div class="mtrow"><svg class="ic sm drag" style="color:var(--muted)"><use href="#i-drag"/></svg><svg class="ic sm" style="color:var(--muted)"><use href="#i-hash"/></svg><div class="info"><b>beats</b></div><span class="rolesel">text</span><button class="chsetbtn" title="Channel settings"><svg class="ic sm"><use href="#i-settings"/></svg></button><button class="rm"><svg class="ic sm"><use href="#i-trash"/></svg></button></div>
+                <div class="chset">
+                  <div class="cr"><div class="cl"><b>Who can post</b><small>Everyone can read; posting can be limited to admins.</small></div><span class="selpill">Everyone<svg class="ic sm"><use href="#i-chev"/></svg></span></div>
+                  <div class="cr"><div class="cl"><b>Slow mode</b><small>One message per member per interval.</small></div><span class="selpill">Off<svg class="ic sm"><use href="#i-chev"/></svg></span></div>
+                  <div class="cr"><div class="cl"><b>Private channel</b><small>Only invited members see it in the rail.</small></div><span class="tgl"></span></div>
+                </div>
+              </div>
+              <div class="chwrap">
+                <div class="mtrow"><svg class="ic sm drag" style="color:var(--muted)"><use href="#i-drag"/></svg><svg class="ic sm" style="color:var(--muted)"><use href="#i-hash"/></svg><div class="info"><b>mixing</b></div><span class="rolesel">text</span><button class="chsetbtn" title="Channel settings"><svg class="ic sm"><use href="#i-settings"/></svg></button><button class="rm"><svg class="ic sm"><use href="#i-trash"/></svg></button></div>
+                <div class="chset">
+                  <div class="cr"><div class="cl"><b>Who can post</b><small>Everyone can read; posting can be limited to admins.</small></div><span class="selpill">Everyone<svg class="ic sm"><use href="#i-chev"/></svg></span></div>
+                  <div class="cr"><div class="cl"><b>Slow mode</b><small>One message per member per interval.</small></div><span class="selpill">30s<svg class="ic sm"><use href="#i-chev"/></svg></span></div>
+                  <div class="cr"><div class="cl"><b>Private channel</b><small>Only invited members see it in the rail.</small></div><span class="tgl"></span></div>
+                </div>
+              </div>
+              <div class="chwrap">
+                <div class="mtrow"><svg class="ic sm drag" style="color:var(--muted)"><use href="#i-drag"/></svg><svg class="ic sm" style="color:var(--muted)"><use href="#i-board"/></svg><div class="info"><b>shot tasks</b></div><span class="rolesel">board</span><button class="chsetbtn" title="Channel settings"><svg class="ic sm"><use href="#i-settings"/></svg></button><button class="rm"><svg class="ic sm"><use href="#i-trash"/></svg></button></div>
+                <div class="chset">
+                  <div class="cr"><div class="cl"><b>Who can edit</b><small>Admins always can; members can be read only.</small></div><span class="selpill">Members<svg class="ic sm"><use href="#i-chev"/></svg></span></div>
+                  <div class="cr"><div class="cl"><b>Private board</b><small>Only invited members see it in the rail.</small></div><span class="tgl on"></span></div>
+                </div>
+              </div>
+              <div class="chwrap">
+                <div class="mtrow"><svg class="ic sm drag" style="color:var(--muted)"><use href="#i-drag"/></svg><svg class="ic sm" style="color:var(--muted)"><use href="#i-canvas"/></svg><div class="info"><b>sh040 review</b></div><span class="rolesel">canvas</span><button class="chsetbtn" title="Channel settings"><svg class="ic sm"><use href="#i-settings"/></svg></button><button class="rm"><svg class="ic sm"><use href="#i-trash"/></svg></button></div>
+                <div class="chset">
+                  <div class="cr"><div class="cl"><b>Who can comment</b><small>Pins and threads on the canvas.</small></div><span class="selpill">Everyone<svg class="ic sm"><use href="#i-chev"/></svg></span></div>
+                  <div class="cr"><div class="cl"><b>Private canvas</b><small>Only invited members see it in the rail.</small></div><span class="tgl"></span></div>
+                </div>
+              </div>
+              <div class="chwrap">
+                <div class="mtrow"><svg class="ic sm drag" style="color:var(--muted)"><use href="#i-drag"/></svg><svg class="ic sm" style="color:var(--muted)"><use href="#i-voice"/></svg><div class="info"><b>the booth</b></div><span class="rolesel">voice</span><button class="chsetbtn" title="Channel settings"><svg class="ic sm"><use href="#i-settings"/></svg></button><button class="rm"><svg class="ic sm"><use href="#i-trash"/></svg></button></div>
+                <div class="chset">
+                  <div class="cr"><div class="cl"><b>Who can speak</b><small>Others join muted and request to speak.</small></div><span class="selpill">Everyone<svg class="ic sm"><use href="#i-chev"/></svg></span></div>
+                  <div class="cr"><div class="cl"><b>User limit</b><small>Cap how many can join at once.</small></div><span class="selpill">8<svg class="ic sm"><use href="#i-chev"/></svg></span></div>
+                </div>
+              </div>
+            </div>
+            <button class="btn sm" style="margin-top:14px"><svg class="ic sm"><use href="#i-plus"/></svg>Add channel</button>
+          </div>
+          <div class="setpanel" data-panel="moderation" hidden>
+            <h2>Moderation</h2><div class="h2sub">Timeouts silence a member for a while; a ban removes them and blocks their account from rejoining on any invite link.</div>
+            <div class="subh">Active timeouts<span class="mut">2</span></div>
+            <div class="setlist">
+              <div class="mtrow"><div class="av sm">KO</div><div class="info"><b>kofi</b><small class="warn">spamming #beats, muted by rae</small></div><span class="mmeta">ends in 3h 40m</span><button class="btn sm">Lift</button></div>
+              <div class="mtrow"><div class="av sm">NL</div><div class="info"><b>nel</b><small class="warn">reposting the leak, muted by jax</small></div><span class="mmeta">ends in 22h</span><button class="btn sm">Lift</button></div>
+            </div>
+            <div class="subh">Banned<span class="mut">1</span></div>
+            <div class="setlist">
+              <div class="mtrow"><div class="av sm">ZZ</div><div class="info"><b>zane</b><small class="warn">leaked the sh040 cut, banned by jax</small></div><span class="mmeta">Aug 9</span><button class="btn sm">Unban</button></div>
+            </div>
+            <div class="subh">Take action</div>
+            <div class="frow" style="max-width:660px"><div class="field"><svg class="ic sm"><use href="#i-user"/></svg><input placeholder="Member to time out or ban"></div></div>
+            <div style="display:flex;gap:8px"><button class="btn sm"><svg class="ic sm"><use href="#i-hand"/></svg>Time out</button><button class="btn sm danger"><svg class="ic sm"><use href="#i-leave"/></svg>Ban</button></div>
+          </div>
+          <div class="setpanel" data-panel="audit" hidden>
+            <h2>Audit log</h2><div class="h2sub">Every admin action, newest first. Kept 90 days.</div>
+            <div class="setlist">
+              <div class="auditrow"><div class="aic"><svg class="ic sm"><use href="#i-hand"/></svg></div><div class="abd"><div class="atx"><b>rae</b> timed out <b>kofi</b> for 4h</div><div class="actx">reason: spamming #beats</div></div><time>2:44 PM</time></div>
+              <div class="auditrow"><div class="aic"><svg class="ic sm"><use href="#i-hash"/></svg></div><div class="abd"><div class="atx"><b>jax</b> set <b>#mixing</b> slow mode to 30s</div><div class="actx">channel settings</div></div><time>1:10 PM</time></div>
+              <div class="auditrow"><div class="aic"><svg class="ic sm"><use href="#i-users"/></svg></div><div class="abd"><div class="atx"><b>jax</b> changed <b>dev</b> to Member</div><div class="actx">was Admin</div></div><time>11:52 AM</time></div>
+              <div class="auditrow"><div class="aic"><svg class="ic sm"><use href="#i-leave"/></svg></div><div class="abd"><div class="atx"><b>jax</b> banned <b>zane</b></div><div class="actx">reason: leaked the sh040 cut</div></div><time>Aug 9</time></div>
+              <div class="auditrow"><div class="aic"><svg class="ic sm"><use href="#i-link"/></svg></div><div class="abd"><div class="atx"><b>rae</b> revoked an invite link</div><div class="actx">join.eski.lol/lb-open-77 · 41 uses</div></div><time>Aug 8</time></div>
+              <div class="auditrow"><div class="aic"><svg class="ic sm"><use href="#i-settings"/></svg></div><div class="abd"><div class="atx"><b>jax</b> made <b>shot tasks</b> private</div><div class="actx">channel settings</div></div><time>Aug 7</time></div>
+            </div>
+          </div>
+          <div class="setpanel" data-panel="members" hidden>
+            <h2>Members</h2><div class="h2sub">6 members. Admins manage the server; members do everything else.</div>
+            <div class="setlist">
+              <div class="mtrow"><div class="av sm">JX</div><div class="info"><b>jax</b><small>@jax</small></div><span class="rolesel">Admin<svg class="ic sm"><use href="#i-chev"/></svg></span><button class="rm"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
+              <div class="mtrow"><div class="av sm">RA</div><div class="info"><b>rae</b><small>@rae</small></div><span class="rolesel">Admin<svg class="ic sm"><use href="#i-chev"/></svg></span><button class="rm"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
+              <div class="mtrow"><div class="av sm">DV</div><div class="info"><b>dev</b><small>@devmakesbeats</small></div><span class="rolesel">Member<svg class="ic sm"><use href="#i-chev"/></svg></span><button class="rm"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
+              <div class="mtrow"><div class="av sm">TM</div><div class="info"><b>tomo</b><small>@tomo</small></div><span class="rolesel">Member<svg class="ic sm"><use href="#i-chev"/></svg></span><button class="rm"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
+              <div class="mtrow"><div class="av sm">KO</div><div class="info"><b>kofi</b><small>@kofi</small></div><span class="rolesel">Member<svg class="ic sm"><use href="#i-chev"/></svg></span><button class="rm"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
+              <div class="mtrow"><div class="av sm">NL</div><div class="info"><b>nel</b><small>@nel</small></div><span class="rolesel">Member<svg class="ic sm"><use href="#i-chev"/></svg></span><button class="rm"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
+            </div>
+          </div>
+          <div class="setpanel" data-panel="invites" hidden>
+            <h2>Invite links</h2><div class="h2sub">Anyone with a link joins instantly. Revoke to cut one off.</div>
+            <div class="setlist">
+              <div class="invrow"><svg class="ic sm" style="color:var(--muted)"><use href="#i-link"/></svg><span class="lk">join.eski.lol/late-bloom-a1b2</span><span class="mt">12 uses · no expiry</span><button class="iconbtn" title="Copy"><svg class="ic sm"><use href="#i-copy"/></svg></button><button class="rm" title="Revoke"><svg class="ic sm"><use href="#i-trash"/></svg></button></div>
+              <div class="invrow"><svg class="ic sm" style="color:var(--muted)"><use href="#i-link"/></svg><span class="lk">join.eski.lol/lb-guest-9f3c</span><span class="mt">3 of 5 uses · 6d left</span><button class="iconbtn" title="Copy"><svg class="ic sm"><use href="#i-copy"/></svg></button><button class="rm" title="Revoke"><svg class="ic sm"><use href="#i-trash"/></svg></button></div>
+            </div>
+            <button class="btn sm" style="margin-top:14px"><svg class="ic sm"><use href="#i-plus"/></svg>New invite link</button>
+          </div>
+          <div class="setpanel" data-panel="storage" hidden>
+            <h2>Export &amp; storage</h2><div class="h2sub">Content is content-addressed, so an export is just a zip of the files plus their metadata.</div>
+            <div class="frow"><label class="ulab">Storage used</label><div class="bar"><i style="width:46%"></i></div><small style="color:var(--muted);font-size:var(--fs-xs)">9.2 GB of 20 GB</small></div>
+            <div class="dangerbox" style="margin-top:24px"><div class="t"><b>Export this server</b><small>Every file and its metadata, as a zip. Yours to keep, no lock-in.</small></div><button class="btn"><svg class="ic sm"><use href="#i-download"/></svg>Export</button></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CREATE GROUP -->
+    <div class="screen" data-screen="create" hidden>
+      <div class="onboard">
+        <div class="ocard">
+          <h1>Create a server</h1>
+          <div class="lead">A private studio. You invite people with a link; there is no public listing.</div>
+          <label class="ulab">Server name</label><div class="field"><input placeholder="e.g. Late Bloom LP"></div>
+          <label class="ulab">Cover <span style="font-weight:400;color:var(--muted)">optional</span></label>
+          <div class="coverpick"><div class="cv"><svg class="ic"><use href="#i-image"/></svg></div><button class="btn sm"><svg class="ic sm"><use href="#i-image"/></svg>Upload</button></div>
+          <label class="ulab">Starter channels</label>
+          <div class="starter"><span class="tag">general</span><span class="tag">wips</span><span class="tag">references</span><button class="addtag"><svg class="ic sm"><use href="#i-plus"/></svg></button></div>
+          <div class="magic"><svg class="ic sm" style="color:var(--muted)"><use href="#i-link"/></svg><span class="lk">An invite link is created with the server</span></div>
+          <div class="go"><button class="btn">Cancel</button><button class="btn primary">Create server</button></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- JOIN VIA MAGIC LINK -->
+    <div class="screen" data-screen="join" hidden>
+      <div class="onboard">
+        <div class="ocard">
+          <div class="jcover"><span class="jbadge"><svg class="ic sm"><use href="#i-users"/></svg>Specter, sh040</span></div>
+          <h1>Specter, sh040</h1>
+          <div class="lead">a vfx shot, on a deadline</div>
+          <div class="jmeta"><span class="stackav"><span class="av sm">MI</span><span class="av sm">LN</span><span class="av sm">SO</span><span class="av sm">JX</span></span>4 members</div>
+          <div class="invited"><svg class="ic sm" style="color:var(--muted)"><use href="#i-user"/></svg><span><b>mira</b> invited you to join</span></div>
+          <div class="go" style="margin-top:24px"><button class="btn primary" style="flex:1;justify-content:center">Join server</button></div>
+          <div class="lead" style="margin:14px 0 0;text-align:center">One click and you are in. No application, no approval.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SIGN IN / ONBOARDING -->
+    <div class="screen" data-screen="auth" hidden>
+      <div class="authwrap">
+        <div class="authbrand">eski</div>
+
+        <div class="ocard astep" data-astep="signin">
+          <h1>Sign in</h1>
+          <div class="lead">We email you a link. No passwords to forget, nothing to leak.</div>
+          <label class="ulab">Email</label>
+          <div class="field"><svg class="ic sm"><use href="#i-mail"/></svg><input id="authEmail" type="email" placeholder="you@studio.com" value="jax@late-bloom.co"></div>
+          <div class="authbtns"><button class="btn primary" id="authSend"><svg class="ic sm"><use href="#i-mail"/></svg>Email me a link</button></div>
+          <div class="orline">or</div>
+          <div class="authbtns"><button class="btn"><svg class="ic sm"><use href="#i-lock"/></svg>Use a passkey</button></div>
+          <div class="authalt">New here? A link signs you up the same way.</div>
+        </div>
+
+        <div class="ocard astep" data-astep="sent" hidden>
+          <h1>Check your email</h1>
+          <div class="lead">We sent a sign-in link to your inbox. It is good for 15 minutes.</div>
+          <div class="sentbox"><svg class="ic"><use href="#i-mail"/></svg><div><b id="sentTo">jax@late-bloom.co</b><small>Open the link on this device to continue. Wrong address? Go back and fix it.</small></div></div>
+          <div class="authbtns"><button class="btn primary" id="authOpened">I opened the link</button><button class="btn" id="authBack">Use a different email</button></div>
+          <div class="authalt">No email after a minute? Check spam, or resend.</div>
+        </div>
+
+        <div class="ocard astep" data-astep="claim" hidden>
+          <h1>Claim your username</h1>
+          <div class="lead">This is how people add you and how your public files are found. You can change it later.</div>
+          <label class="ulab">Username</label>
+          <div class="field"><span class="at">@</span><input id="authUser" placeholder="yourname" value="jax"></div>
+          <div class="unamestate ok" id="unameState"><svg class="ic"><use href="#i-check"/></svg>jax is available</div>
+          <label class="ulab">Display name</label>
+          <div class="field"><svg class="ic sm"><use href="#i-user"/></svg><input placeholder="What people see" value="jax"></div>
+          <label class="ulab">Avatar</label>
+          <div class="avatarpick"><span class="apv" id="authAv">JX</span><button class="btn sm"><svg class="ic sm"><use href="#i-image"/></svg>Upload</button></div>
+          <div class="authbtns"><button class="btn primary" id="authEnter">Enter eski</button></div>
+          <div class="authalt">By continuing you agree to the terms and privacy notice.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SEARCH RESULTS -->
+    <div class="screen" data-screen="search" hidden>
+      <div class="pane">
+        <div class="panehd"><div class="title">Search</div></div>
+        <div class="toolbar">
+          <div class="field" style="max-width:560px"><svg class="ic sm"><use href="#i-search"/></svg><input value="bridge drums"><svg class="ic sm" style="color:var(--muted);cursor:pointer"><use href="#i-x"/></svg></div>
+          <button class="selbtn"><svg class="ic sm"><use href="#i-user"/></svg>From<svg class="ic sm"><use href="#i-chev"/></svg></button>
+          <button class="selbtn"><svg class="ic sm"><use href="#i-hash"/></svg>In<svg class="ic sm"><use href="#i-chev"/></svg></button>
+          <button class="selbtn">Anytime<svg class="ic sm"><use href="#i-chev"/></svg></button>
+          <span class="smod">try <b>from:tomo</b> <b>in:#mixing</b> <b>has:file</b></span>
+        </div>
+        <div class="toolbar" style="padding-top:0">
+          <div class="fchips">
+            <button class="fchip on">All<span class="n">7</span></button>
+            <button class="fchip">Messages<span class="n">3</span></button>
+            <button class="fchip">Files<span class="n">2</span></button>
+            <button class="fchip">People<span class="n">1</span></button>
+            <button class="fchip">Canvases<span class="n">1</span></button>
+          </div>
+        </div>
+        <div class="panebody">
+          <div class="sres">
+            <div class="sgroup">
+              <div class="sglabel">Messages<a href="#">See all 3</a></div>
+              <div class="srow"><div class="av sm">TM</div><div class="stx"><div class="smeta"><b class="m2">tomo</b> in <b>#mixing</b> · Late Bloom LP · 2:47 PM</div><div class="sbody">one note on the low end, the <mark>bridge</mark> <mark>drums</mark> sit a touch loud against the bass</div></div></div>
+              <div class="srow"><div class="av sm">RA</div><div class="stx"><div class="smeta"><b class="m1">rae</b> in <b>#beats</b> · Late Bloom LP · 2:31 PM</div><div class="sbody">this is the one, swapped the <mark>drums</mark> to the ones i liked</div></div></div>
+              <div class="srow"><div class="av sm">DV</div><div class="stx"><div class="smeta"><b class="m3">dev</b> in <b>#beats</b> · Late Bloom LP · 2:14 PM</div><div class="sbody">reworked the back half, swapped the <mark>drums</mark></div></div></div>
+            </div>
+            <div class="sgroup">
+              <div class="sglabel">Files<a href="#">See all 2</a></div>
+              <div class="srow" data-open-details><div class="sthumb"><div class="wave" data-wf="40"></div></div><div class="stx"><div class="smeta"><b>late_bloom_beat.flp</b> · v3</div><div class="sbody">dev · #beats · tags <mark>drums</mark>, 142bpm, <mark>bridge</mark></div></div><div class="sact"><button class="btn sm"><svg class="ic sm"><use href="#i-download"/></svg></button></div></div>
+              <div class="srow" data-open-details><div class="sthumb"><svg class="ic" style="color:var(--muted)"><use href="#i-image"/></svg></div><div class="stx"><div class="smeta"><b>ref_drums.png</b></div><div class="sbody">rae · #references · the <mark>drum</mark> sound we keep coming back to</div></div></div>
+            </div>
+            <div class="sgroup">
+              <div class="sglabel">People</div>
+              <div class="srow"><div class="av sm">DV</div><div class="stx"><div class="smeta"><b>dev</b> · @devmakesbeats</div><div class="sbody">producer, makes the <mark>drums</mark></div></div><div class="sact"><button class="btn sm">Message</button></div></div>
+            </div>
+            <div class="sgroup">
+              <div class="sglabel">Canvases</div>
+              <div class="srow" data-s="canvas"><div class="sthumb"><svg class="ic" style="color:var(--muted)"><use href="#i-canvas"/></svg></div><div class="stx"><div class="smeta"><b>sh040 review</b> · Specter, sh040</div><div class="sbody">a comment mentions the <mark>drum</mark> hit timing</div></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- NOTIFICATIONS -->
+    <div class="screen" data-screen="notifications" hidden>
+      <div class="notif">
+        <div class="notifhd"><span class="t">Notifications</span>
+          <div class="ntabs"><a class="ntab on" data-ntab="all">All</a><a class="ntab" data-ntab="mentions">Mentions</a><a class="ntab" data-ntab="threads">Threads</a><a class="ntab" data-ntab="saved">Saved</a></div>
+          <a class="mark">Mark all read</a></div>
+        <div class="nfilter"><span class="nfl">Server</span>
+          <div class="ngroups"><a class="ngrp on">All</a><a class="ngrp">Late Bloom LP</a><a class="ngrp">Specter, sh040</a><a class="ngrp">sh040 crew</a></div></div>
+
+        <div class="npanel" data-nview="all">
+          <div class="ndate">Today</div>
+          <div class="nrow unread"><div class="nic"><svg class="ic sm"><use href="#i-at"/></svg></div><div class="nbd"><div class="ntx"><b>rae</b> mentioned you in <b>#beats</b></div><div class="nctx">Late Bloom LP</div><div class="quote">@jax can you re-cut the bridge drums before the session?</div>
+            <div class="nreply"><div class="field"><input placeholder="Reply to rae"><button class="snd"><svg class="ic sm"><use href="#i-send"/></svg></button></div></div></div>
+            <time>2:31 PM</time>
+            <div class="nacts"><button class="replybtn" title="Reply"><svg class="ic sm"><use href="#i-reply"/></svg></button><button class="savebtn" title="Save for later"><svg class="ic sm"><use href="#i-save"/></svg></button><button class="donebtn" title="Mark done"><svg class="ic sm"><use href="#i-check"/></svg></button></div></div>
+          <div class="nrow unread"><div class="nic"><svg class="ic sm"><use href="#i-comment"/></svg></div><div class="nbd"><div class="ntx"><b>mira</b> left a comment on <b>sh040_comp.mov</b></div><div class="nctx">Specter, sh040 · canvas sh040 review</div><div class="quote">near building edge is ghosting, needs a garbage matte</div>
+            <div class="nreply"><div class="field"><input placeholder="Reply to mira"><button class="snd"><svg class="ic sm"><use href="#i-send"/></svg></button></div></div></div>
+            <time>1:04 PM</time>
+            <div class="nacts"><button class="replybtn" title="Reply"><svg class="ic sm"><use href="#i-reply"/></svg></button><button class="savebtn" title="Save for later"><svg class="ic sm"><use href="#i-save"/></svg></button><button class="donebtn" title="Mark done"><svg class="ic sm"><use href="#i-check"/></svg></button></div></div>
+          <div class="nrow unread"><div class="nic"><svg class="ic sm"><use href="#i-version"/></svg></div><div class="nbd"><div class="ntx"><b>tomo</b> added <b>v3</b> to a friend's post</div><div class="nctx">Late Bloom LP · Back half rework</div><div class="quote">brought the low end down</div></div><time>12:20 PM</time>
+            <div class="nacts"><button class="savebtn" title="Save for later"><svg class="ic sm"><use href="#i-save"/></svg></button><button class="donebtn" title="Mark done"><svg class="ic sm"><use href="#i-check"/></svg></button></div></div>
+          <div class="ndate">Earlier</div>
+          <div class="nrow"><div class="nic"><svg class="ic sm"><use href="#i-board"/></svg></div><div class="nbd"><div class="ntx"><b>mira</b> assigned you <b>Low end on the bridge</b></div><div class="nctx">Specter, sh040 · shot tasks</div></div><time>Yesterday</time>
+            <div class="nacts"><button class="savebtn" title="Save for later"><svg class="ic sm"><use href="#i-save"/></svg></button><button class="donebtn" title="Mark done"><svg class="ic sm"><use href="#i-check"/></svg></button></div></div>
+          <div class="nrow"><div class="nic"><svg class="ic sm"><use href="#i-user"/></svg></div><div class="nbd"><div class="ntx"><b>nel</b> joined <b>Late Bloom LP</b> from your invite link</div><div class="nctx">Late Bloom LP</div></div><time>Tue</time>
+            <div class="nacts"><button class="donebtn" title="Mark done"><svg class="ic sm"><use href="#i-check"/></svg></button></div></div>
+          <div class="nrow"><div class="nic"><svg class="ic sm"><use href="#i-smile"/></svg></div><div class="nbd"><div class="ntx"><b>dev</b> reacted 🔥 to your message</div><div class="nctx">Late Bloom LP · #beats</div></div><time>Tue</time>
+            <div class="nacts"><button class="donebtn" title="Mark done"><svg class="ic sm"><use href="#i-check"/></svg></button></div></div>
+        </div>
+
+        <div class="npanel" data-nview="mentions" hidden>
+          <div class="ndate">Today</div>
+          <div class="nrow unread"><div class="nic"><svg class="ic sm"><use href="#i-at"/></svg></div><div class="nbd"><div class="ntx"><b>rae</b> mentioned you in <b>#beats</b></div><div class="nctx">Late Bloom LP</div><div class="quote">@jax can you re-cut the bridge drums before the session?</div>
+            <div class="nreply"><div class="field"><input placeholder="Reply to rae"><button class="snd"><svg class="ic sm"><use href="#i-send"/></svg></button></div></div></div>
+            <time>2:31 PM</time>
+            <div class="nacts"><button class="replybtn" title="Reply"><svg class="ic sm"><use href="#i-reply"/></svg></button><button class="savebtn" title="Save for later"><svg class="ic sm"><use href="#i-save"/></svg></button><button class="donebtn" title="Mark done"><svg class="ic sm"><use href="#i-check"/></svg></button></div></div>
+          <div class="ndate">Tuesday</div>
+          <div class="nrow"><div class="nic"><svg class="ic sm"><use href="#i-at"/></svg></div><div class="nbd"><div class="ntx"><b>sol</b> mentioned you in <b>sh040 crew</b></div><div class="nctx">Direct message</div><div class="quote">@jax pushed the new specter build, drops you straight into the sh040 review</div>
+            <div class="nreply"><div class="field"><input placeholder="Reply to sol"><button class="snd"><svg class="ic sm"><use href="#i-send"/></svg></button></div></div></div>
+            <time>Tue</time>
+            <div class="nacts"><button class="replybtn" title="Reply"><svg class="ic sm"><use href="#i-reply"/></svg></button><button class="savebtn" title="Save for later"><svg class="ic sm"><use href="#i-save"/></svg></button><button class="donebtn" title="Mark done"><svg class="ic sm"><use href="#i-check"/></svg></button></div></div>
+        </div>
+
+        <div class="npanel" data-nview="threads" hidden>
+          <div class="ndate">Threads you're in</div>
+          <div class="nthread"><div class="nic"><svg class="ic sm"><use href="#i-comment"/></svg></div><div class="tbd"><div class="tt">Bridge drums re-cut <small>· #beats, Late Bloom LP</small></div><div class="tlast">rae: @jax can you re-cut the bridge drums before the session?</div></div><span class="tct">3 new</span></div>
+          <div class="nthread"><div class="nic"><svg class="ic sm"><use href="#i-canvas"/></svg></div><div class="tbd"><div class="tt">Ghosting on the building edge <small>· sh040 review, Specter</small></div><div class="tlast">mira: near building edge is ghosting, needs a garbage matte</div></div><span class="tct">1 new</span></div>
+          <div class="nthread"><div class="nic"><svg class="ic sm"><use href="#i-version"/></svg></div><div class="tbd"><div class="tt">Back half rework <small>· Late Bloom LP</small></div><div class="tlast">tomo: brought the low end down, take another pass?</div></div></div>
+        </div>
+
+        <div class="npanel" data-nview="saved" hidden>
+          <div class="nempty">Nothing saved yet. Save a notification for later with the bookmark on hover, and it lands here.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PROFILE POPOUT -->
+<div class="ppop" id="profilePop" hidden>
+  <div class="ppbanner"></div>
+  <div class="ppav">DV<span class="pres"></span></div>
+  <div class="ppbody">
+    <div class="ppname">dev</div>
+    <div class="pphandle">@devmakesbeats</div>
+    <div class="ppstatus">🎧 in the zone, back later</div>
+    <div class="ppsec"><span class="l">STATUS</span><span class="v"><span style="width:9px;height:9px;border-radius:50%;background:var(--ink);display:inline-block"></span>Online · 3:24 PM local time</span></div>
+    <div class="ppsec"><span class="l">ROLE IN LATE BLOOM LP</span><span class="v"><span class="prole m3">Member</span></span></div>
+    <div class="ppsec"><span class="l">WORKING ON</span><span class="v">a beat, in FL Studio</span></div>
+    <div class="ppsec"><span class="l">MUTUAL SERVERS</span><span class="v">Late Bloom LP, beat swap</span></div>
+    <div class="ppacts"><button class="btn primary"><svg class="ic sm"><use href="#i-mail"/></svg>Message</button><button class="btn"><svg class="ic sm"><use href="#i-phone"/></svg>Call</button></div>
+  </div>
+</div>
+
+<!-- LIGHTBOX (image / video viewer, opened from the media grid) -->
+<div class="lbox" id="lightbox" hidden>
+  <div class="lbhd"><span class="t" id="lbTitle">ref_drums.png</span><span class="mt" id="lbMeta">rae · #references · 2.1 MB</span>
+    <div class="acts"><button title="Download"><svg class="ic"><use href="#i-download"/></svg></button><button title="Copy link"><svg class="ic"><use href="#i-link"/></svg></button><button title="Details"><svg class="ic"><use href="#i-more"/></svg></button><button id="lbClose" title="Close"><svg class="ic"><use href="#i-x"/></svg></button></div></div>
+  <div class="lbstage"><span class="lbnav prev" id="lbPrev"><svg class="ic"><use href="#i-chev"/></svg></span>
+    <div class="shot c" id="lbShot"></div>
+    <div class="playover" id="lbPlay" hidden><svg class="ic f"><use href="#i-play"/></svg></div>
+    <span class="lbnav next" id="lbNext"><svg class="ic"><use href="#i-chev"/></svg></span></div>
+  <div class="lbmeta"><div class="sh">Shared in</div>
+    <div class="lbshared"><span class="lbchip"><svg class="ic"><use href="#i-hash"/></svg>references</span><span class="lbchip"><svg class="ic"><use href="#i-canvas"/></svg>sh040 review</span><span class="lbchip"><svg class="ic"><use href="#i-users"/></svg>sh040 crew</span><span class="lbchip"><svg class="ic"><use href="#i-mail"/></svg>mira</span></div></div>
+</div>
+
+<!-- QUICK SWITCHER (Cmd/Ctrl+K) -->
+<div class="qs-scrim" id="qsScrim" hidden></div>
+<div class="qs" id="qs" hidden>
+  <div class="qhead"><svg class="ic"><use href="#i-search"/></svg><input placeholder="Jump to a channel, person, board, or file"><kbd>esc</kbd></div>
+  <div class="qlist">
+    <div class="qsec">Recent</div>
+    <div class="qrow sel" data-s="workspace"><svg class="ic sm qic"><use href="#i-hash"/></svg><span class="qn">beats</span><span class="qctx">Late Bloom LP</span></div>
+    <div class="qrow" data-s="canvas"><svg class="ic sm qic"><use href="#i-canvas"/></svg><span class="qn">sh040 review</span><span class="qctx">Specter, sh040</span></div>
+    <div class="qrow" data-s="board"><svg class="ic sm qic"><use href="#i-board"/></svg><span class="qn">shot tasks</span><span class="qctx">Late Bloom LP</span></div>
+    <div class="qsec">Channels</div>
+    <div class="qrow" data-s="workspace"><svg class="ic sm qic"><use href="#i-hash"/></svg><span class="qn">mixing</span><span class="qctx">Late Bloom LP</span></div>
+    <div class="qrow" data-s="workspace"><svg class="ic sm qic"><use href="#i-hash"/></svg><span class="qn">verses</span><span class="qctx">Late Bloom LP</span></div>
+    <div class="qrow" data-s="vc"><svg class="ic sm qic"><use href="#i-voice"/></svg><span class="qn">the booth</span><span class="qctx">Late Bloom LP · voice</span></div>
+    <div class="qsec">People</div>
+    <div class="qrow" data-s="dms"><div class="av qav">DV</div><span class="qn">dev</span><span class="qctx">@devmakesbeats</span></div>
+    <div class="qrow" data-s="dms"><div class="av qav">MI</div><span class="qn">mira</span><span class="qctx">@mira</span></div>
+    <div class="qsec">Servers</div>
+    <div class="qrow" data-s="workspace"><div class="av qav">LB</div><span class="qn">Late Bloom LP</span></div>
+    <div class="qrow" data-s="canvas"><div class="av qav">SP</div><span class="qn">Specter, sh040</span></div>
+    <div class="qsec">Files</div>
+    <div class="qrow" data-open-details><svg class="ic sm qic"><use href="#i-voice"/></svg><span class="qn">late_bloom_beat.flp</span><span class="qctx">#beats</span></div>
+  </div>
+  <div class="qfoot"><span><kbd>↑</kbd><kbd>↓</kbd> navigate</span><span><kbd>↵</kbd> open</span><span><kbd>esc</kbd> close</span></div>
+</div>
+
+<!-- DETAILS SHEET -->
+<div class="scrim" id="scrim" hidden></div>
+<div class="sheet" id="detailsSheet" hidden>
+  <div class="card2">
+    <div class="dmedia">
+      <button class="close" id="detailsClose"><svg class="ic sm"><use href="#i-x"/></svg></button>
+      <div class="wave" data-wf="200"></div>
+    </div>
+    <div class="dinfo">
+      <div class="scroll">
+        <h2>Back half rework</h2>
+        <button class="verbtn" id="verBtn"><span class="v">v3</span> of 3<svg class="ic sm"><use href="#i-chev"/></svg></button>
+        <div class="vernote">Changed in v3: swapped the bridge drums, brought the low end down. <span class="by">tomo</span></div>
+        <div class="meta">
+          <div class="row"><span class="k">Visibility</span><span class="v"><span class="vis"><svg class="ic"><use href="#i-users"/></svg>Late Bloom LP, server</span></span></div>
+          <div class="row"><span class="k">Uploaded by</span><span class="v"><span class="uchip m3"><span class="dot"></span>dev</span></span></div>
+          <div class="row"><span class="k">Channel</span><span class="v">#beats</span></div>
+          <div class="row"><span class="k">Date</span><span class="v">15 Aug 2026, 2:14 PM</span></div>
+          <div class="row"><span class="k">Type</span><span class="v">FL Studio project (.flp)</span></div>
+          <div class="row"><span class="k">Size</span><span class="v">8.4 MB</span></div>
+        </div>
+        <div class="dsec"><div class="lb">Tags</div><div class="chips">
+          <span class="tag">drums</span><span class="tag">142bpm</span><span class="tag">bridge</span><span class="tag">sampled</span><span class="tag">wip</span>
+          <button class="addtag" title="Add tag"><svg class="ic sm"><use href="#i-plus"/></svg></button></div></div>
+        <div class="dsec"><div class="lb">Contributors</div><div class="chips">
+          <span class="uchip m5"><span class="dot"></span>jax, prod</span><span class="uchip m3"><span class="dot"></span>dev, arrangement</span>
+          <span class="uchip m1"><span class="dot"></span>rae, vocals</span><span class="uchip m2"><span class="dot"></span>tomo, mix</span></div></div>
+        <div class="dsec"><div class="lb">Server comments</div>
+          <div class="cmt"><div class="av sm">TM</div><div class="bd"><div class="by"><span class="u m2">tomo</span><time>2:47 PM</time></div><div class="tx">low end note is on the waveform in canvas</div></div></div>
+          <div class="cmt"><div class="av sm">RA</div><div class="bd"><div class="by"><span class="u m1">rae</span><time>2:31 PM</time></div><div class="tx">this is the one, pulling it into mixing</div></div></div>
+          <div class="field" style="margin-top:8px"><input placeholder="Comment in the server"></div>
+        </div>
+      </div>
+      <div class="foot">
+        <button class="btn primary" id="dlBtn"><svg class="ic sm"><use href="#i-download"/></svg>Download<svg class="ic sm"><use href="#i-chev"/></svg></button>
+        <button class="btn" id="saveBtn"><svg class="ic sm"><use href="#i-save"/></svg>Save</button>
+        <button class="btn" id="canvasBtn"><svg class="ic sm"><use href="#i-canvas"/></svg>Open in canvas<svg class="ic sm"><use href="#i-chev"/></svg></button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="menu" id="dlMenu"><div class="mlabel">Download as</div>
+  <button>Original (.flp)</button><div class="sep"></div><button>wav</button><button>mp3</button><button>opus</button><button>ogg</button><button>flac</button></div>
+<div class="menu" id="saveMenu"><div class="mlabel">Save to</div>
+  <button><svg class="ic sm"><use href="#i-save"/></svg>Liked</button><button><svg class="ic sm"><use href="#i-save"/></svg>Drum picks</button><button><svg class="ic sm"><use href="#i-save"/></svg>Mix references</button>
+  <div class="sep"></div><button><svg class="ic sm"><use href="#i-plus"/></svg>New folder</button></div>
+<div class="menu" id="canvasMenu"><div class="mlabel">Open in canvas</div>
+  <button><svg class="ic sm"><use href="#i-canvas"/></svg>sh040 review</button><button><svg class="ic sm"><use href="#i-canvas"/></svg>drum picks</button><button><svg class="ic sm"><use href="#i-canvas"/></svg>mix references</button>
+  <div class="sep"></div><button><svg class="ic sm"><use href="#i-plus"/></svg>New canvas</button></div>
+<div class="menu emojimenu" id="emojiMenu"><div class="mlabel">Reactions</div>
+  <div class="egrid"><button>🔥</button><button>👀</button><button>😂</button><button>❤️</button><button>🎧</button><button>🥁</button><button>🎹</button><button>🎤</button><button>✅</button><button>👍</button><button>🙌</button><button>💯</button><button>👏</button><button>😮</button><button>🫡</button><button>➕</button></div></div>
+<div class="menu" id="msgMenu"><div class="mlabel">Message</div>
+  <button><svg class="ic sm"><use href="#i-smile"/></svg>Add reaction</button>
+  <button><svg class="ic sm"><use href="#i-reply"/></svg>Reply in thread</button>
+  <button><svg class="ic sm"><use href="#i-pin"/></svg>Pin to channel</button>
+  <button><svg class="ic sm"><use href="#i-link"/></svg>Copy link</button>
+  <button><svg class="ic sm"><use href="#i-mail"/></svg>Mark unread</button>
+  <button><svg class="ic sm"><use href="#i-pen"/></svg>Edit message</button>
+  <div class="sep"></div>
+  <button class="danger"><svg class="ic sm"><use href="#i-trash"/></svg>Delete</button></div>
+<div class="menu" id="verMenu"><div class="mlabel">Versions, newest first</div>
+  <button><span class="ver" style="font-size:10px;font-weight:700;background:var(--ink);color:var(--on-ink);padding:1px 5px;border-radius:2px">v3</span><span class="fn">late_bloom_beat.flp</span></button>
+  <button><span class="ver" style="font-size:10px;font-weight:700;background:var(--surface);padding:1px 5px;border-radius:2px">v2</span><span class="fn">late_bloom_beat_v2.flp</span></button>
+  <button><span class="ver" style="font-size:10px;font-weight:700;background:var(--surface);padding:1px 5px;border-radius:2px">v1</span><span class="fn">late_bloom_beat_draft.flp</span></button>
+  <div class="sep"></div><button id="addVerBtn"><svg class="ic sm"><use href="#i-plus"/></svg>Add a version</button></div>
+
+<!-- UPLOAD -->
+<div class="scrim" id="uScrim" hidden></div>
+<div class="umodal" id="uModal" hidden>
+  <div class="uhd"><b id="uTitle">Upload</b><button class="iconbtn" id="uClose"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
+  <div class="ubody">
+    <div class="uvbanner" id="uvBanner" hidden><svg class="ic"><use href="#i-canvas"/></svg><span>New version of <b>Back half rework</b>, currently v3 · audio post</span></div>
+    <div class="drop"><div class="big">Drop files here</div><div class="sub" id="dropSub">or click to choose, several at once</div></div>
+
+    <div class="ufiles" id="ufilesNew">
+      <div class="ufile"><svg class="ic sm" style="color:var(--muted)"><use href="#i-canvas"/></svg>late_bloom_beat.flp</div>
+      <div class="ufile"><svg class="ic sm" style="color:var(--muted)"><use href="#i-voice"/></svg>bloom_mix_rough.wav</div>
+    </div>
+
+    <div id="ufilesVer" hidden>
+      <div class="uvnote"><svg class="ic sm"><use href="#i-check"/></svg>Same type as the post only (audio). Drag to reorder, top to bottom sets v4, v5, and so on.</div>
+      <div class="verfile"><svg class="ic sm drag"><use href="#i-drag"/></svg><span class="vb">v4</span><span class="fn"><svg class="ic sm" style="color:var(--muted)"><use href="#i-voice"/></svg>bridge_fix.wav</span>
+        <div class="field req"><input placeholder="What changed, required"></div></div>
+      <div class="verfile"><svg class="ic sm drag"><use href="#i-drag"/></svg><span class="vb">v5</span><span class="fn"><svg class="ic sm" style="color:var(--muted)"><use href="#i-voice"/></svg>bridge_fix_master.wav</span>
+        <div class="field req"><input placeholder="What changed, required"></div></div>
+    </div>
+
+    <div id="uNewFields">
+      <label class="ulab">Title <span style="font-weight:400;color:var(--muted)">optional, the file name is used if blank</span></label>
+      <div class="field"><input placeholder="Back half rework"></div>
+      <label class="ulab">Tags</label>
+      <div class="chips" style="margin-top:2px"><span class="tag">drums</span><span class="tag">142bpm</span><button class="addtag"><svg class="ic sm"><use href="#i-plus"/></svg></button></div>
+      <label class="ulab">Contributors</label>
+      <div class="field"><input value="prod jax, arrangement dev, vocals rae"></div>
+      <label class="ulab">Visibility</label>
+      <div class="urow">
+        <button class="visopt"><svg class="ic"><use href="#i-globe"/></svg><span>Everyone<small>on your public profile</small></span></button>
+        <button class="visopt on"><svg class="ic"><use href="#i-users"/></svg><span>This server<small>Late Bloom LP</small></span></button>
+        <button class="visopt"><svg class="ic"><use href="#i-lock"/></svg><span>No one<small>private to you</small></span></button>
+      </div>
+    </div>
+  </div>
+  <div class="ufoot"><button class="btn" id="uCancel">Cancel</button><button class="btn primary" id="uSubmit">Upload</button></div>
+</div>
+
 <script>
+(function(){var APP=new URLSearchParams(location.search).has("app");if(APP){
+
+(function(){
+  // high-res mirrored waveform (top + bottom, no background)
+  function wave(el){
+    var n=+el.dataset.wf||150, parts='';
+    for(var i=0;i<n;i++){
+      var a=Math.abs(Math.sin(i*0.5)*Math.cos(i*0.17)+Math.sin(i*0.09)*0.6);
+      a=Math.min(1,a)*0.5+0.04; var h=a*48;
+      parts+='<rect x="'+(i+0.12)+'" y="'+(50-h)+'" width="0.76" height="'+(2*h)+'"/>';
+    }
+    el.innerHTML='<svg viewBox="0 0 '+n+' 100" preserveAspectRatio="none">'+parts+'</svg>';
+  }
+  document.querySelectorAll('.wave[data-wf]').forEach(wave);
+
+  var screens=document.querySelectorAll('.screen'),ptabs=document.querySelectorAll('.ptab');
+  function show(n){screens.forEach(function(s){s.hidden=s.dataset.screen!==n;});
+    ptabs.forEach(function(t){t.setAttribute('aria-current',t.dataset.s===n?'true':'false');});
+    document.querySelectorAll('.rail .railbtn').forEach(function(b){b.classList.toggle('on',b.dataset.s===n);});}
+  document.querySelectorAll('[data-s]').forEach(function(el){el.addEventListener('click',function(){show(el.dataset.s);location.hash=el.dataset.s;});});
+
+  // Hash routing: lets gallery.html embed a specific screen via
+  // collab-mockup.html#canvas. Additive — the click handlers above still work;
+  // this only adds deep-linking so each screen has a stable URL. An optional
+  // ?theme=dark|light query pins the theme for a screenshot/iframe.
+  function applyHash(){var n=(location.hash||'').replace('#','');
+    if(n && document.querySelector('.screen[data-screen="'+n+'"]'))show(n);}
+  window.addEventListener('hashchange',applyHash);
+
+  var root=document.documentElement,tb=document.getElementById('appthemebtn');
+  var qp=new URLSearchParams(location.search),qt=qp.get('theme');
+  if(qt==='dark'||qt==='light')root.setAttribute('data-theme',qt);
+  function dark(){var t=root.getAttribute('data-theme');return t?t==='dark':matchMedia('(prefers-color-scheme:dark)').matches;}
+  function paint(){tb.textContent=dark()?'Light':'Dark';}
+  tb.addEventListener('click',function(){root.setAttribute('data-theme',dark()?'light':'dark');paint();});paint();
+  applyHash();
+
+  // comment pins expand/collapse
+  document.querySelectorAll('.pin').forEach(function(p){
+    var pfp=p.querySelector('.pfp');
+    // .pin is the canvas comment pin; guard so an unrelated element that
+    // happens to carry the class (e.g. a stray icon) cannot throw here and
+    // abort the rest of this init block, silently killing later handlers.
+    if(!pfp)return;
+    pfp.addEventListener('click',function(e){e.stopPropagation();
+      var wasOpen=p.classList.contains('open');
+      document.querySelectorAll('.pin.open').forEach(function(o){o.classList.remove('open');});
+      if(!wasOpen)p.classList.add('open');});
+  });
+
+  var scrim=document.getElementById('scrim'),sheet=document.getElementById('detailsSheet');
+  function openD(){scrim.hidden=false;sheet.hidden=false;}
+  function closeD(){scrim.hidden=true;sheet.hidden=true;closeMenus();}
+  document.querySelectorAll('[data-open-details]').forEach(function(c){c.addEventListener('click',openD);});
+  document.getElementById('showDetails').addEventListener('click',openD);
+  document.getElementById('detailsClose').addEventListener('click',closeD);
+  scrim.addEventListener('click',closeD);
+
+  // explorer: grid selection + per-card actions (gap #11)
+  var selbar=document.getElementById('selbar');
+  function refreshSel(){var n=document.querySelectorAll('.masonry .card.sel').length;
+    if(selbar){document.getElementById('seln').textContent=n;selbar.classList.toggle('open',n>0);}}
+  document.querySelectorAll('.masonry .cardsel').forEach(function(s){s.addEventListener('click',function(e){
+    e.stopPropagation();s.closest('.card').classList.toggle('sel');refreshSel();});});
+  document.querySelectorAll('.masonry .cardacts button').forEach(function(b){
+    b.addEventListener('click',function(e){e.stopPropagation();/* download / link / more are stubs in the mockup */});});
+  var selClear=document.getElementById('selClear');
+  if(selClear)selClear.addEventListener('click',function(){document.querySelectorAll('.masonry .card.sel').forEach(function(c){c.classList.remove('sel');});refreshSel();});
+
+  // lightbox: image/video cards open a full viewer with a shared-in strip
+  var lb=document.getElementById('lightbox'),lbShot=document.getElementById('lbShot'),lbPlay=document.getElementById('lbPlay');
+  var lbCards=[].slice.call(document.querySelectorAll('.masonry .card[data-lightbox]')),lbIdx=0;
+  function lbShow(i){if(!lbCards.length)return;lbIdx=(i+lbCards.length)%lbCards.length;var card=lbCards[lbIdx];
+    var kind=card.dataset.lbkind,shot=card.querySelector('.shot');
+    lbShot.className='shot '+(shot?(shot.className.replace('shot','').trim()||''):'');lbShot.style.aspectRatio='16/9';
+    lbPlay.hidden=kind!=='video';
+    document.getElementById('lbTitle').textContent=(card.querySelector('.title')||{}).textContent||'';
+    var who=card.querySelector('.who');document.getElementById('lbMeta').textContent=who?who.textContent.replace(/\s+/g,' ').trim():'';}
+  function lbOpen(card){lbIdx=lbCards.indexOf(card);lb.hidden=false;lbShow(lbIdx);}
+  function lbClose(){lb.hidden=true;}
+  lbCards.forEach(function(card){card.addEventListener('click',function(){lbOpen(card);});});
+  document.getElementById('lbClose').addEventListener('click',lbClose);
+  document.getElementById('lbPrev').addEventListener('click',function(e){e.stopPropagation();lbShow(lbIdx-1);});
+  document.getElementById('lbNext').addEventListener('click',function(e){e.stopPropagation();lbShow(lbIdx+1);});
+  document.addEventListener('keydown',function(e){if(lb.hidden)return;
+    if(e.key==='Escape')lbClose();else if(e.key==='ArrowLeft')lbShow(lbIdx-1);else if(e.key==='ArrowRight')lbShow(lbIdx+1);});
+
+  var menus=['dlMenu','saveMenu','canvasMenu','verMenu','emojiMenu','msgMenu'].map(function(id){return document.getElementById(id);}).filter(Boolean);
+  function closeMenus(){menus.forEach(function(m){m.classList.remove('open');});}
+  function toggleMenu(m,anchor,above){var open=m.classList.contains('open');closeMenus();if(open)return;
+    m.classList.add('open');var r=anchor.getBoundingClientRect();
+    var top=above?(r.top-8-m.offsetHeight):(r.bottom+6);
+    if(above&&top<50)top=r.bottom+6;
+    m.style.left=Math.min(r.left,window.innerWidth-m.offsetWidth-8)+'px';m.style.top=top+'px';}
+  function wire(id,menu,above){var b=document.getElementById(id);if(b)b.addEventListener('click',function(e){e.stopPropagation();toggleMenu(menu,b,above);});}
+  wire('dlBtn',document.getElementById('dlMenu'),true);
+  wire('saveBtn',document.getElementById('saveMenu'),true);
+  wire('canvasBtn',document.getElementById('canvasMenu'),true);
+  wire('verBtn',document.getElementById('verMenu'),false);
+  // emoji picker + message action menu
+  var emojiMenu=document.getElementById('emojiMenu'),msgMenu=document.getElementById('msgMenu');
+  var eb=document.getElementById('emojiBtn');if(eb)eb.addEventListener('click',function(e){e.stopPropagation();toggleMenu(emojiMenu,eb,true);});
+  document.querySelectorAll('.hoveracts [title="React"]').forEach(function(b){b.addEventListener('click',function(e){e.stopPropagation();toggleMenu(emojiMenu,b,true);});});
+  document.querySelectorAll('.hoveracts [title="More"]').forEach(function(b){b.addEventListener('click',function(e){e.stopPropagation();toggleMenu(msgMenu,b,true);});});
+  document.addEventListener('click',function(e){if(!e.target.closest('.menu'))closeMenus();});
+
+  var uScrim=document.getElementById('uScrim'),uModal=document.getElementById('uModal');
+  function openU(version){uScrim.hidden=false;uModal.hidden=false;
+    document.getElementById('uTitle').textContent=version?'Add a version':'Upload';
+    document.getElementById('uvBanner').hidden=!version;
+    document.getElementById('ufilesNew').hidden=version;
+    document.getElementById('ufilesVer').hidden=!version;
+    document.getElementById('uNewFields').hidden=version;
+    document.getElementById('dropSub').textContent=version?'same type as the post, several become ordered versions':'or click to choose, several at once';
+    document.getElementById('uSubmit').textContent=version?'Upload version':'Upload';}
+  function closeU(){uScrim.hidden=true;uModal.hidden=true;}
+  ['showUpload','showUpload2','showUpload3'].forEach(function(id){var e=document.getElementById(id);if(e)e.addEventListener('click',function(){openU(false);});});
+  document.getElementById('showUploadV').addEventListener('click',function(){openU(true);});
+  document.getElementById('addVerBtn').addEventListener('click',function(){closeMenus();closeD();openU(true);});
+  document.getElementById('uClose').addEventListener('click',closeU);
+  document.getElementById('uCancel').addEventListener('click',closeU);
+  uScrim.addEventListener('click',closeU);
+  document.addEventListener('keydown',function(e){if(e.key==='Escape'){closeD();closeU();}});
+
+  document.querySelectorAll('.visopt').forEach(function(o){o.addEventListener('click',function(){
+    document.querySelectorAll('.visopt').forEach(function(x){x.classList.remove('on');});o.classList.add('on');});});
+
+  // thread panel (opens beside the chat, replacing the members rail)
+  var threadPane=document.getElementById('threadPane');
+  var wsMem=document.querySelector('.screen[data-screen="workspace"] .mem');
+  function openThread(){show('workspace');if(wsMem)wsMem.hidden=true;threadPane.hidden=false;}
+  function closeThread(){threadPane.hidden=true;if(wsMem)wsMem.hidden=false;}
+  document.querySelectorAll('.screen[data-screen="workspace"] .reply, .screen[data-screen="workspace"] .hoveracts [title="Reply"]').forEach(function(el){el.addEventListener('click',openThread);});
+  document.getElementById('threadOpen').addEventListener('click',openThread);
+  document.getElementById('threadClose').addEventListener('click',closeThread);
+  var also=document.getElementById('alsoSend');also.addEventListener('click',function(){also.classList.toggle('on');});
+
+  // per-channel tabs (Messages / Pins / Files)
+  document.querySelectorAll('.chtab').forEach(function(t){t.addEventListener('click',function(){
+    document.querySelectorAll('.chtab').forEach(function(x){x.classList.remove('on');});t.classList.add('on');
+    var v=t.dataset.chtab;
+    document.getElementById('chMessages').hidden=v!=='messages';
+    document.getElementById('chComposer').hidden=v!=='messages';
+    document.querySelectorAll('.chpanel').forEach(function(p){p.hidden=p.dataset.chview!==v;});});});
+
+  // group-settings sub-panel switching
+  document.querySelectorAll('.setnav [data-setpanel]').forEach(function(b){b.addEventListener('click',function(){
+    document.querySelectorAll('.setnav [data-setpanel]').forEach(function(x){x.classList.remove('on');});b.classList.add('on');
+    var name=b.dataset.setpanel;
+    document.querySelectorAll('.setpanel').forEach(function(p){p.hidden=p.dataset.panel!==name;});});});
+  // per-channel settings: gear expands the channel's own drawer
+  document.querySelectorAll('.chwrap .chsetbtn').forEach(function(b){b.addEventListener('click',function(e){e.stopPropagation();
+    var d=b.closest('.chwrap').querySelector('.chset');if(!d)return;
+    var open=d.classList.toggle('open');b.classList.toggle('on',open);});});
+  // on/off switches (private channel, etc.)
+  document.querySelectorAll('.tgl').forEach(function(t){t.addEventListener('click',function(e){e.stopPropagation();t.classList.toggle('on');});});
+  // board views: Board / Table / Calendar
+  document.querySelectorAll('.kbviews .kbview').forEach(function(v){v.addEventListener('click',function(){
+    document.querySelectorAll('.kbviews .kbview').forEach(function(x){x.classList.remove('on');});v.classList.add('on');
+    var k=v.dataset.kview;document.querySelectorAll('.kview').forEach(function(p){p.hidden=p.dataset.kview!==k;});});});
+
+  // sign-in / onboarding / username claim (gap #13)
+  (function(){
+    var steps=document.querySelectorAll('.screen[data-screen="auth"] .astep');
+    if(!steps.length)return;
+    function astep(name){steps.forEach(function(s){s.hidden=s.dataset.astep!==name;});}
+    var send=document.getElementById('authSend');
+    if(send)send.addEventListener('click',function(){
+      var e=document.getElementById('authEmail').value.trim();
+      if(e)document.getElementById('sentTo').textContent=e;astep('sent');});
+    var opened=document.getElementById('authOpened');if(opened)opened.addEventListener('click',function(){astep('claim');});
+    var back=document.getElementById('authBack');if(back)back.addEventListener('click',function(){astep('signin');});
+    var enter=document.getElementById('authEnter');if(enter)enter.addEventListener('click',function(){astep('signin');show('workspace');});
+    // live username availability
+    var taken={mira:1,rae:1,dev:1,tomo:1,sol:1,nel:1,kofi:1,lin:1,eski:1,admin:1};
+    var u=document.getElementById('authUser'),st=document.getElementById('unameState'),av=document.getElementById('authAv');
+    function checkName(){var v=(u.value||'').trim().toLowerCase().replace(/[^a-z0-9_]/g,'');
+      if(av)av.textContent=v?v.slice(0,2).toUpperCase():'?';
+      st.className='unamestate';
+      if(!v){st.innerHTML='Letters, numbers and underscores.';return;}
+      if(taken[v]){st.classList.add('taken');st.innerHTML='<svg class="ic"><use href="#i-x"/></svg>'+v+' is taken';}
+      else{st.classList.add('ok');st.innerHTML='<svg class="ic"><use href="#i-check"/></svg>'+v+' is available';}}
+    if(u){u.addEventListener('input',checkName);}
+  })();
+  // notification tabs: switch panels (All / Mentions / Threads / Saved)
+  document.querySelectorAll('.ntabs .ntab').forEach(function(t){t.addEventListener('click',function(){
+    document.querySelectorAll('.ntabs .ntab').forEach(function(x){x.classList.remove('on');});t.classList.add('on');
+    var v=t.dataset.ntab;document.querySelectorAll('.npanel').forEach(function(p){p.hidden=p.dataset.nview!==v;});});});
+  // per-group filter chips (visual scope)
+  document.querySelectorAll('.ngroups .ngrp').forEach(function(c){c.addEventListener('click',function(){
+    document.querySelectorAll('.ngroups .ngrp').forEach(function(x){x.classList.remove('on');});c.classList.add('on');});});
+  // notification row actions: inline reply, save-for-later, mark done
+  var savedPanel=document.querySelector('.npanel[data-nview="saved"]');
+  function savedEmpty(){return savedPanel&&savedPanel.querySelector('.nempty');}
+  document.querySelectorAll('.npanel[data-nview="all"] .nrow, .npanel[data-nview="mentions"] .nrow').forEach(function(row){
+    var acts=row.querySelector('.nacts');if(!acts)return;
+    var reply=acts.querySelector('.replybtn');
+    if(reply)reply.addEventListener('click',function(e){e.stopPropagation();
+      var open=row.classList.toggle('replying');reply.classList.toggle('on',open);
+      if(open){var i=row.querySelector('.nreply input');if(i)i.focus();}});
+    var save=acts.querySelector('.savebtn');
+    if(save)save.addEventListener('click',function(e){e.stopPropagation();
+      var now=row.classList.toggle('saved');
+      if(now){ // drop a light copy into the Saved tab so it is not just a flag
+        var empty=savedEmpty();if(empty)empty.remove();
+        if(!row.dataset.savedId){row.dataset.savedId='s'+(++window.__nsave||(window.__nsave=1));}
+        var clone=row.cloneNode(true);clone.classList.remove('replying');clone.dataset.clone=row.dataset.savedId;
+        var cr=clone.querySelector('.replying');if(cr)cr.classList.remove('replying');
+        savedPanel.appendChild(clone);
+      }else{
+        var ex=savedPanel.querySelector('[data-clone="'+row.dataset.savedId+'"]');if(ex)ex.remove();
+        if(!savedPanel.querySelector('.nrow')){var m=document.createElement('div');m.className='nempty';
+          m.textContent='Nothing saved yet. Save a notification for later with the bookmark on hover, and it lands here.';savedPanel.appendChild(m);}
+      }});
+    var done=acts.querySelector('.donebtn');
+    if(done)done.addEventListener('click',function(e){e.stopPropagation();row.classList.remove('unread');row.style.opacity='.4';});
+  });
+  // search filter chips (visual)
+  document.querySelectorAll('.fchips .fchip').forEach(function(c){c.addEventListener('click',function(){
+    document.querySelectorAll('.fchips .fchip').forEach(function(x){x.classList.remove('on');});c.classList.add('on');});});
+
+  // quick switcher (Cmd/Ctrl+K)
+  var qs=document.getElementById('qs'),qsScrim=document.getElementById('qsScrim');
+  var qrows=[].slice.call(qs.querySelectorAll('.qrow'));
+  function qsOpen(){qsScrim.hidden=false;qs.hidden=false;var i=qs.querySelector('.qhead input');if(i)i.focus();}
+  function qsClose(){qsScrim.hidden=true;qs.hidden=true;}
+  document.getElementById('qsOpen').addEventListener('click',qsOpen);
+  qsScrim.addEventListener('click',qsClose);
+  qrows.forEach(function(r){r.addEventListener('click',qsClose);});
+  function qsel(d){var cur=qs.querySelector('.qrow.sel'),i=qrows.indexOf(cur);if(cur)cur.classList.remove('sel');
+    var n=(i+d+qrows.length)%qrows.length;qrows[n].classList.add('sel');qrows[n].scrollIntoView({block:'nearest'});}
+  document.addEventListener('keydown',function(e){
+    if((e.metaKey||e.ctrlKey)&&(e.key==='k'||e.key==='K')){e.preventDefault();qs.hidden?qsOpen():qsClose();return;}
+    if(qs.hidden)return;
+    if(e.key==='Escape')qsClose();
+    else if(e.key==='ArrowDown'){e.preventDefault();qsel(1);}
+    else if(e.key==='ArrowUp'){e.preventDefault();qsel(-1);}
+    else if(e.key==='Enter'){e.preventDefault();var s=qs.querySelector('.qrow.sel');if(s)s.click();}
+  });
+
+  // dms: friends surface toggle + tabs
+  var dmFriends=document.getElementById('dmFriends'),dmConvo=document.getElementById('dmConvo'),dmFriendsBtn=document.getElementById('dmFriendsBtn');
+  if(dmFriendsBtn){
+    dmFriendsBtn.addEventListener('click',function(){dmFriends.hidden=false;dmConvo.hidden=true;dmFriendsBtn.classList.add('on');});
+    document.querySelectorAll('.dmconvo').forEach(function(r){r.addEventListener('click',function(){dmFriends.hidden=true;dmConvo.hidden=false;dmFriendsBtn.classList.remove('on');});});
+    document.querySelectorAll('.frtabs .frtab').forEach(function(t){t.addEventListener('click',function(){document.querySelectorAll('.frtabs .frtab').forEach(function(x){x.classList.remove('on');});t.classList.add('on');});});
+  }
+
+  // call: chat/notes panel, reactions, tabs
+  var vcPanel=document.getElementById('vcPanel'),vcReacts=document.getElementById('vcReacts');
+  var vcChatBtn=document.getElementById('vcChatBtn'),vcReactBtn=document.getElementById('vcReactBtn');
+  if(vcChatBtn)vcChatBtn.addEventListener('click',function(){var open=vcPanel.hidden;vcPanel.hidden=!open;vcChatBtn.classList.toggle('on',open);});
+  if(vcReactBtn)vcReactBtn.addEventListener('click',function(e){e.stopPropagation();vcReacts.classList.toggle('open');});
+  document.addEventListener('click',function(e){if(vcReacts&&!e.target.closest('#vcReacts')&&!e.target.closest('#vcReactBtn'))vcReacts.classList.remove('open');});
+  document.querySelectorAll('.vcptabs button').forEach(function(b){b.addEventListener('click',function(){
+    document.querySelectorAll('.vcptabs button').forEach(function(x){x.classList.remove('on');});b.classList.add('on');
+    var v=b.dataset.vctab;document.querySelectorAll('.vcpbody').forEach(function(p){p.hidden=p.dataset.vcview!==v;});});});
+
+  // profile popout (click a member, or the review button)
+  var ppop=document.getElementById('profilePop');
+  function openPop(anchor){ppop.hidden=false;var r=anchor?anchor.getBoundingClientRect():null;
+    var left=r?(r.left-ppop.offsetWidth-10):((window.innerWidth-ppop.offsetWidth)/2);
+    if(left<8)left=r?(r.right+10):8; if(left+ppop.offsetWidth>window.innerWidth-8)left=window.innerWidth-ppop.offsetWidth-8;
+    var top=r?Math.min(r.top-20,window.innerHeight-ppop.offsetHeight-10):100; if(top<52)top=52;
+    ppop.style.left=left+'px';ppop.style.top=top+'px';}
+  function closePop(){ppop.hidden=true;}
+  document.querySelectorAll('.mem .mrow').forEach(function(m){m.addEventListener('click',function(e){e.stopPropagation();openPop(m);});});
+  document.getElementById('profileCardBtn').addEventListener('click',function(e){e.stopPropagation();openPop(null);});
+  document.addEventListener('click',function(e){if(!e.target.closest('#profilePop')&&!e.target.closest('.mrow'))closePop();});
+  document.addEventListener('keydown',function(e){if(e.key==='Escape')closePop();});
+
+  // Default to Workspace only when there's no deep-link hash; otherwise the
+  // hash (used by gallery.html's per-screen iframes) decides the screen.
+  if(location.hash)applyHash();else show('workspace');
+})();
+
+}else{
+
 (function(){
   var root=document.documentElement, tb=document.getElementById('themebtn');
   function isDark(){var t=root.getAttribute('data-theme');return t?t==='dark':matchMedia('(prefers-color-scheme:dark)').matches;}
@@ -1627,7 +2922,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
     ['vc','Call','voice/video room','v2 — deferred']
   ];
   var host=document.getElementById('gscreens');
-  function frameSrc(id){return 'collab-mockup.html?theme='+(isDark()?'dark':'light')+'#'+id;}
+  function frameSrc(id){return 'gallery.html?app=1&theme='+(isDark()?'dark':'light')+'#'+id;}
   screens.forEach(function(s){
     var fig=document.createElement('figure');fig.className='gfig';
     fig.innerHTML='<div class="cap"><b>'+s[1]+'</b><span class="m">'+s[2]+'</span>'+
@@ -1721,4 +3016,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
       a=Math.min(1,a)*0.5+0.04;var hh=a*48;p+='<rect x="'+(i+0.12)+'" y="'+(50-hh)+'" width="0.76" height="'+(2*hh)+'"/>';}
     el.innerHTML='<svg viewBox="0 0 '+n+' 100" preserveAspectRatio="none">'+p+'</svg>';});
 })();
+
+}})();
 </script>
+
