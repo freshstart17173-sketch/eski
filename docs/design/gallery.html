@@ -892,6 +892,15 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
 .seg .o .ic{width:15px;height:15px}
 .seg .o.on{background:var(--ink);color:var(--on-ink)}
 .copyrow{display:flex;gap:var(--s2)}
+/* credits = colour-chip autocomplete input */
+.field.credits{flex-wrap:wrap;gap:5px}
+.field.credits input{width:70px}
+/* point mark = rectangular labelled tail (holds a full username, scrolls) */
+.ptmark{position:absolute;display:block;max-width:120px;overflow-x:auto;white-space:nowrap;
+  background:var(--pc,var(--m3));color:#fff;font-size:12px;font-weight:600;padding:4px 9px;border-radius:var(--r);scrollbar-width:none}
+.ptmark::-webkit-scrollbar{display:none}
+.ptmark::after{content:"";position:absolute;left:11px;bottom:-6px;border:6px solid transparent;
+  border-top-color:var(--pc,var(--m3));border-bottom-width:0}
 
 /* menu (dropdown / context) — reuses the mockup .menu; shown inline here */
 .menu.show{position:static;display:block;width:100%;max-width:260px;min-width:0}
@@ -1193,12 +1202,12 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
     <!-- prompt -->
     <div>
       <div class="stage scrim"><div class="modal">
-        <div class="uhd"><b>Rename channel</b><button class="iconbtn"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
-        <div class="mbody"><div class="field"><input value="mixing"></div></div>
-        <div class="mfoot"><button class="btn">Cancel</button><button class="btn primary">Rename</button></div>
+        <div class="uhd"><b>New folder</b><button class="iconbtn"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
+        <div class="mbody"><div class="field"><input placeholder="Folder name"></div></div>
+        <div class="mfoot"><button class="btn">Cancel</button><button class="btn primary">Create</button></div>
       </div></div>
       <div class="pcap"><b>Prompt (single field)</b>
-        <span class="m">Reusable text-input modal: rename, new folder, new label.</span>
+        <span class="m">Reusable text-input modal: new folder, new label. (Channel rename lives in Server settings → Channels, not here.)</span>
         <span class="db">varies per caller</span></div>
     </div>
 
@@ -1282,20 +1291,21 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
     <!-- tools -->
     <div>
       <div class="stage"><div class="cvtools" style="position:static">
-        <button class="iconbtn on" title="Select"><svg class="ic"><use href="#i-move"/></svg></button>
+        <button class="iconbtn on" title="Move / select"><svg class="ic"><use href="#i-move"/></svg></button>
         <div class="sep"></div><span class="grp">Annotate</span>
-        <button class="iconbtn"><svg class="ic"><use href="#i-pen"/></svg></button>
-        <button class="iconbtn"><svg class="ic"><use href="#i-arrow"/></svg></button>
-        <button class="iconbtn"><svg class="ic"><use href="#i-square"/></svg></button>
-        <button class="iconbtn"><svg class="ic"><use href="#i-scribble"/></svg></button>
+        <button class="iconbtn" title="Point"><svg class="ic"><use href="#i-pin"/></svg></button>
+        <button class="iconbtn" title="Rectangle"><svg class="ic"><use href="#i-square"/></svg></button>
+        <button class="iconbtn" title="Freehand (lasso)"><svg class="ic"><use href="#i-scribble"/></svg></button>
+        <div class="sep"></div><span class="grp">Pen</span>
+        <button class="iconbtn" title="Pen"><svg class="ic"><use href="#i-pen"/></svg></button>
+        <button class="iconbtn" title="Eraser — whole stroke"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M4 15l7-7 6 6-4 4H8z"/><path d="M9 20h9"/></svg></button>
         <span class="sw" style="background:var(--m1)"></span><span class="sw" style="background:var(--m3)"></span>
         <span class="sw" style="background:var(--m5)"></span>
-        <div class="sep"></div><span class="grp">Comment</span>
-        <button class="iconbtn"><svg class="ic"><use href="#i-comment"/></svg></button>
+        <span style="font-size:11px;color:var(--muted)">size</span>
       </div></div>
       <div class="pcap"><b>Tool palette</b>
-        <span class="m">Annotate (pen/arrow/box/freeform + colour) and Comment are visibly separate groups.</span>
-        <span class="db">annotations.tool/color · comments</span>
+        <span class="m">Three groups only: Move · Annotate (point / rectangle / lasso — each carries a comment) · Pen + whole-stroke eraser (size + colour). No arrows, no shapes.</span>
+        <span class="db">comments.mark · ink(path,color,size)</span>
         <span class="st live">in mockup</span></div>
     </div>
 
@@ -1318,10 +1328,10 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
     <div>
       <div class="stage">
         <div style="position:relative;width:200px;height:120px;background:var(--plate);border-radius:var(--r)">
-          <div class="pin open" style="position:absolute;left:40%;top:35%"><div class="pfp" style="background:var(--m3)">LN</div></div></div>
+          <div class="ptmark" style="--pc:var(--m3);left:34%;top:30%">lin_nakamura</div></div>
       </div>
       <div class="pcap"><b>Mark: point</b>
-        <span class="m">A single pin dropped anywhere on an image/text tile.</span>
+        <span class="m">A rectangular labelled tail — the tip marks the exact spot. Holds the full username (scrolls if long), in the member colour.</span>
         <span class="db">comments.mark = {point:[x,y]}</span></div>
     </div>
 
@@ -1439,8 +1449,10 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
             late_bloom_beat.wav · 3 files</div>
           <label class="fl">Title <span style="color:var(--muted)">— optional, file name is the default</span></label>
           <div class="field"><input placeholder="late_bloom_beat.wav"></div>
-          <label class="fl">Tags &amp; credits</label>
-          <div class="field"><input placeholder="142bpm, bridge · prod. jax"></div>
+          <label class="fl">Tags</label>
+          <div class="field"><input placeholder="142bpm, bridge"></div>
+          <label class="fl">Credits <span style="color:var(--muted)">— type a name, it autocompletes, Enter to credit</span></label>
+          <div class="field credits"><span class="uchip m5"><span class="dot"></span>jax</span><span class="uchip m3"><span class="dot"></span>tomo</span><input placeholder="add…"></div>
           <label class="fl">Visibility</label>
           <div class="seg">
             <div class="o"><svg class="ic"><use href="#i-globe"/></svg>Public</div>
@@ -1504,7 +1516,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
       <div class="stage tall"><div class="modal" style="width:250px">
         <div style="height:52px;background:var(--m4)"></div>
         <div style="padding:0 15px 15px;margin-top:-18px">
-          <span class="pfp" style="width:46px;height:46px;background:var(--m4);box-shadow:0 0 0 3px var(--paper)">MI</span>
+          <span class="pfp" style="width:46px;height:46px;background:var(--m4);border-radius:var(--r);box-shadow:0 0 0 3px var(--paper)">MI</span>
           <div style="font-weight:600;margin-top:7px">mira <span class="uchip m4" style="font-size:10px"><span class="dot"></span>admin</span></div>
           <div style="font-size:11px;color:var(--muted);margin-top:2px">@mira · compositor · 3pm local</div>
           <div style="font-size:12px;color:var(--soft);margin:10px 0">Shared servers: Specter, LATE BLOOM</div>
@@ -1537,17 +1549,14 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
 
     <!-- new DM -->
     <div>
-      <div class="stage scrim"><div class="modal">
-        <div class="uhd"><b>New message</b><button class="iconbtn"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
-        <div class="mbody">
-          <p>Enter an exact handle — there’s no directory or suggestions.</p>
-          <label class="fl">Handle</label>
-          <div class="field"><input placeholder="@handle"></div>
+      <div class="stage">
+        <div style="width:264px;background:var(--surface);border-radius:var(--r);padding:11px">
+          <div style="font-size:12px;color:var(--muted);margin-bottom:7px">New message</div>
+          <div class="field"><svg class="ic sm" style="color:var(--muted)"><use href="#i-at"/></svg><input placeholder="handle"></div>
         </div>
-        <div class="mfoot"><button class="btn primary">Start chat</button></div>
-      </div></div>
-      <div class="pcap"><b>New DM (add by handle)</b>
-        <span class="m">Friendship-gated. Group DMs add several handles.</span>
+      </div>
+      <div class="pcap"><b>New message — inline in Messages</b>
+        <span class="m">Not a modal: an add-by-handle field at the top of the DM thread list. Friendship-gated; group DMs add several handles.</span>
         <span class="db">create_dm(handle) · friendships</span></div>
     </div>
 
