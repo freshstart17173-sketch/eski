@@ -851,14 +851,14 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
 
 /* panel grid + stages ------------------------------------------------ */
 .stagewrap{display:grid;grid-template-columns:repeat(auto-fill,minmax(360px,1fr));gap:20px;align-items:start}
-.stage{background:var(--surface);border-radius:var(--r);min-height:210px;
+.gallery-ui .stage{background:var(--surface);border-radius:var(--r);min-height:210px;
   padding:26px;display:flex;align-items:center;justify-content:center;position:relative}
-.stage.tall{min-height:330px}
+.gallery-ui .stage.tall{min-height:330px}
 /* a modal is shown on a DARKENED backdrop — no drop shadow (the rule) */
-.stage.scrim{background:var(--ink)}
-.stage.scrim::before{content:"";position:absolute;inset:0;background:rgba(0,0,0,.32);border-radius:var(--r)}
-:root:not([data-theme="light"]) .stage.scrim::before{background:rgba(0,0,0,.5)}
-.stage.scrim>*{position:relative;z-index:1}
+.gallery-ui .stage.scrim{background:var(--ink)}
+.gallery-ui .stage.scrim::before{content:"";position:absolute;inset:0;background:rgba(0,0,0,.32);border-radius:var(--r)}
+:root:not([data-theme="light"]) .gallery-ui .stage.scrim::before{background:rgba(0,0,0,.5)}
+.gallery-ui .stage.scrim>*{position:relative;z-index:1}
 
 .pcap{margin-top:9px}
 .pcap b{font-size:var(--fs-sm);color:var(--ink)}
@@ -973,6 +973,8 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
 :root[data-mode="catalog"] .app{display:none}
 .app{height:100vh}
 .proto{display:none}   /* dev picker bar — killed everywhere; gallery drives nav */
+/* app-mode layout: fill the viewport, no stray padding, screens stretch */
+:root[data-mode="app"] body{padding-bottom:0}
 /* --- rebuilt canvas (screen §E + comments sidebar §D.6.5) --- */
 .cvmain{flex:1;min-height:0;display:flex}
 .cvmain .canvas{flex:1;min-width:0}
