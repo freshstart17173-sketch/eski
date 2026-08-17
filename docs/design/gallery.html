@@ -997,6 +997,12 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
 .pensz i{width:9px;height:9px;border-radius:50%;background:var(--ink);display:block}
 .audiohint{font-size:10.5px;color:var(--muted);padding:5px 8px;display:flex;align-items:center;gap:5px}
 .cvhd .acts{display:flex;align-items:center;gap:8px}
+.tbar{position:absolute;top:7px;right:7px;z-index:5;display:flex;align-items:center;gap:5px}
+.tilebtn{width:26px;height:26px;border-radius:var(--r);background:rgba(20,20,20,.55);color:#fff;display:grid;place-items:center}
+.tilebtn:hover{background:rgba(20,20,20,.82)}
+.cbadge{min-width:22px;height:22px;padding:0 6px;border-radius:var(--r);background:var(--ink);color:var(--on-ink);font-size:11px;font-weight:700;display:grid;place-items:center}
+.pdot{position:absolute;transform:translate(-50%,-50%);width:12px;height:12px;border-radius:50%;background:var(--pc,var(--m3));box-shadow:0 0 0 2px var(--paper);z-index:4}
+.exsel{position:absolute;top:8px;bottom:8px;background:rgba(20,20,20,.12);border-left:2px solid var(--ink);border-right:2px solid var(--ink)}
 </style>
 <script>document.documentElement.setAttribute("data-mode",new URLSearchParams(location.search).has("app")?"app":"catalog")</script>
 
@@ -1304,10 +1310,10 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   <h2>④ Canvas suite <span class="n">— the moat; critique this hardest</span></h2>
   <p class="lede">
     Files as <b>tiles</b>. Three tool groups: <b>Move</b>, <b>Annotate</b>
-    (point / rectangle / lasso — each a <b>mark</b> carrying a comment, hidden
-    until clicked; point = a rectangular labelled tail, rect/lasso = a hover-only
+    (point / rectangle / lasso — each a <b>mark</b> carrying an <b>annotation</b> (its own thing, not a post comment), hidden
+    until clicked; author labels sit at the top-right, off the media, rect/lasso = a hover-only
     dotted outline), and <b>Pen + eraser</b> ink (size + colour, whole-stroke
-    erase). A <b>comments sidebar</b> lists every comment; the details pane never
+    erase). An <b>annotations sidebar</b> lists every annotation; the details pane never
     opens here. Per-media: image/video <b>screencap</b>, video pins collapse to a
     <b>count badge</b>, audio point opens an <b>expanded player view</b>. The live
     canvas, then every dialog and mark type.
@@ -1352,7 +1358,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
         <div class="actions"><button><svg class="ic sm"><use href="#i-check"/></svg>Resolve</button><span>2 replies</span></div>
         <div class="field"><input placeholder="Reply"></div>
       </div></div>
-      <div class="pcap"><b>Comment thread — box mark</b>
+      <div class="pcap"><b>Annotation — rectangle</b>
         <span class="m">Pin = avatar; click expands to the thread + its selection. Resolves, never deletes.</span>
         <span class="db">comments.mark = {box} · resolved_at</span>
         <span class="st live">in mockup</span></div>
@@ -1463,24 +1469,26 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
         <span class="db">comments where canvas_id &middot; §D.6.5</span></div>
     </div>
 
-    <!-- audio expanded view -->
+    <!-- expanded view (all media) -->
     <div>
       <div class="stage scrim"><div class="modal wide">
-        <div class="uhd"><b>sounddesign_pass.wav</b><button class="iconbtn"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
+        <div class="uhd"><b>sounddesign_pass.wav</b><span class="ver" style="margin-left:8px">v2</span><button class="iconbtn" style="margin-left:auto"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
         <div class="mbody">
-          <div class="wavewrap" style="height:64px;background:var(--plate);border-radius:var(--r);overflow:hidden"><div class="wave" data-wf="140"></div><div class="selrange" style="left:33%;width:16%"></div></div>
-          <div style="display:flex;align-items:center;gap:10px;margin:12px 0">
+          <div style="position:relative;height:70px;background:var(--plate);border-radius:var(--r);overflow:hidden;padding:8px"><div class="wave" data-wf="150"></div><span class="exsel" style="left:33%;width:16%"></span></div>
+          <div style="display:flex;align-items:center;gap:11px;margin:11px 0 13px">
             <button class="iconbtn"><svg class="ic"><use href="#i-play"/></svg></button>
             <span style="font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums">0:44 / 2:18</span>
             <button class="btn sm" style="margin-left:auto"><svg class="ic sm"><use href="#i-plus"/></svg>Duplicate selection</button>
           </div>
-          <div class="mhd" style="padding-left:0">Annotations</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px"><span class="tag">142bpm</span><span class="tag">bridge</span><span class="uchip m5"><span class="dot"></span>jax</span><span class="uchip m2"><span class="dot"></span>sol</span></div>
+          <div class="mhd" style="padding-left:0">Annotations <span style="color:var(--muted)">2</span></div>
           <button class="cvcom"><span class="cvtop"><span class="uchip m2"><span class="dot"></span>sol</span><span class="cvtype">0:42&ndash;0:48</span></span><span class="cvsnip">whoosh lands a beat late, pull ~6 frames</span></button>
+          <button class="cvcom"><span class="cvtop"><span class="uchip m5"><span class="dot"></span>jax</span><span class="cvtype">1:10</span></span><span class="cvsnip">low end sits right here</span></button>
         </div>
       </div></div>
-      <div class="pcap"><b>Audio expanded view</b>
-        <span class="m">Opened from an audio point: player + that audio&rsquo;s annotations. Trim a range and duplicate it into the canvas. Distinct from the details pane, which never opens in the canvas.</span>
-        <span class="db">canvas-scoped &middot; duplicate &rarr; canvas_items</span></div>
+      <div class="pcap"><b>Expanded view (all media)</b>
+        <span class="m">Any file can be opened to an expanded view: player + details (title, version, tags, credits) plus its <b>annotations</b> &mdash; separate from a post&rsquo;s comments. Trim a range and duplicate it into the canvas.</span>
+        <span class="db">annotations where work_id &middot; duplicate &rarr; canvas_items</span></div>
     </div>
 
     <!-- empty canvas -->
@@ -1505,6 +1513,30 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   <p class="lede">The highest-traffic modals outside the global + canvas sets. The
     rest are enumerated in ⑥.</p>
   <div class="stagewrap">
+
+    <!-- details pane -->
+    <div>
+      <div class="stage tall"><div class="modal wide" style="width:420px">
+        <div class="uhd"><b>bloom, single</b><button class="iconbtn" style="margin-left:auto"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
+        <div class="mbody">
+          <div style="height:66px;background:var(--plate);border-radius:var(--r);overflow:hidden;padding:8px"><div class="wave" data-wf="150"></div></div>
+          <div style="display:flex;align-items:center;gap:11px;margin:11px 0 14px">
+            <button class="iconbtn"><svg class="ic"><use href="#i-play"/></svg></button>
+            <div style="flex:1;height:4px;background:var(--line);border-radius:2px;position:relative"><i style="position:absolute;left:0;top:0;bottom:0;width:34%;background:var(--ink);border-radius:2px"></i></div>
+            <span style="font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums">0:47 / 2:18</span>
+          </div>
+          <button class="selbtn" style="margin-bottom:11px">v2 &middot; bloom_master_v2.wav<svg class="ic sm"><use href="#i-chev"/></svg></button>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px"><span class="tag">bloom</span><span class="tag">single</span><span class="tag">master</span></div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:13px"><span class="uchip m1"><span class="dot"></span>rae</span><span class="uchip m3"><span class="dot"></span>dev</span><span class="uchip m4"><span class="dot"></span>tomo</span></div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn sm"><svg class="ic sm"><use href="#i-download"/></svg>Download</button><button class="btn sm"><svg class="ic sm"><use href="#i-save"/></svg>Save</button><button class="btn sm"><svg class="ic sm"><use href="#i-canvas"/></svg>Open in canvas</button></div>
+          <div class="mhd" style="padding-left:0;margin-top:8px">Comments</div>
+          <div style="font-size:12.5px;color:var(--soft)"><b class="u m1">rae</b> final master, this is the one</div>
+        </div>
+      </div></div>
+      <div class="pcap"><b>Details pane</b>
+        <span class="m">Full post details + player controls (scrubber, time), version dropdown, tags, credits, actions, and <b>post comments</b> (distinct from canvas annotations). Opens from any card; never inside the canvas.</span>
+        <span class="db">works + versions + content_tags + comments</span></div>
+    </div>
 
     <!-- upload -->
     <div>
@@ -1970,35 +2002,33 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
           <div class="canvas">
             <div class="tile img sel">
               <div class="tname"><span>sh040_comp.mov</span><span class="ver">v3</span></div>
+              <div class="tbar"><span class="cbadge">5</span><button class="tilebtn" title="Open expanded view"><svg class="ic sm"><use href="#i-expand"/></svg></button></div>
               <div class="scene"><div class="ground"></div><div class="o1"></div><div class="o2"></div></div>
               <svg class="anno" viewBox="0 0 380 214" preserveAspectRatio="none"><path d="M250 60 C 224 82, 196 92, 170 112" fill="none" stroke="var(--m2)" stroke-width="3" stroke-linecap="round"/></svg>
-              <button class="capbtn" title="Screencap this frame (full-res, to clipboard)"><svg class="ic sm"><use href="#i-image"/></svg></button>
               <div class="selbox" style="left:26%;top:44%;width:20%;height:34%"></div>
-              <div class="ptmark" style="--pc:var(--m4);left:26%;top:40%">mira</div>
-              <div class="thread" style="position:absolute;left:48%;top:42%;width:224px;z-index:9;box-shadow:0 14px 40px rgba(0,0,0,.22)">
-                <div class="th"><span class="uchip m4"><span class="dot"></span>mira</span><span class="meta">rectangle &middot; v3</span></div>
+              <span class="pdot" style="--pc:var(--m4);left:26%;top:44%"></span>
+              <div class="thread" style="position:absolute;left:48%;top:40%;width:224px;z-index:9;box-shadow:0 14px 40px rgba(0,0,0,.22)">
+                <div class="th"><span class="uchip m4"><span class="dot"></span>mira</span><span class="meta">rectangle</span></div>
                 <div class="tx">Near building edge is ghosting against the sky &mdash; needs a garbage matte inside this box.</div>
                 <div class="actions"><button><svg class="ic sm"><use href="#i-check"/></svg>Resolve</button><span>2 replies</span></div>
                 <div class="field"><input placeholder="Reply"></div>
               </div>
-              <div class="pinbadge" style="left:80%;top:24%;background:var(--m3)">3</div>
             </div>
             <div class="tile audio">
               <div class="tname"><span>sounddesign_pass.wav</span></div>
-              <div class="wavewrap"><div class="wave" data-wf="150"></div>
-                <div class="ptmark" style="--pc:var(--m2);left:38%;top:8px">sol</div></div>
-              <div class="audiohint"><svg class="ic sm"><use href="#i-expand"/></svg>click a point to open the audio view</div>
+              <div class="tbar"><span class="uchip m2"><span class="dot"></span>sol</span><button class="tilebtn" title="Play"><svg class="ic sm"><use href="#i-play"/></svg></button><button class="tilebtn" title="Open expanded view"><svg class="ic sm"><use href="#i-expand"/></svg></button></div>
+              <div class="wavewrap"><div class="wave" data-wf="150"></div><span class="pdot" style="--pc:var(--m2);left:38%;top:50%"></span></div>
             </div>
             <div class="tile img warm" style="width:300px;height:180px">
               <div class="tname"><span>grade_ref.png</span></div>
+              <div class="tbar"><span class="uchip m5"><span class="dot"></span>jax</span><button class="tilebtn" title="Open expanded view"><svg class="ic sm"><use href="#i-expand"/></svg></button></div>
               <div class="scene"><div class="ground"></div></div>
-              <button class="capbtn" title="Screencap (full-res, to clipboard)"><svg class="ic sm"><use href="#i-image"/></svg></button>
-              <div class="ptmark" style="--pc:var(--m5);left:52%;top:46%">jax</div>
+              <span class="pdot" style="--pc:var(--m5);left:52%;top:46%"></span>
             </div>
           </div>
           <aside class="cvside">
-            <div class="cvsidehd">Comments <span class="ct">4</span></div>
-            <button class="cvcom on"><span class="cvtop"><span class="uchip m4"><span class="dot"></span>mira</span><span class="cvtype">rect &middot; v3</span></span><span class="cvsnip">near building edge is ghosting against the sky&hellip;</span></button>
+            <div class="cvsidehd">Annotations <span class="ct">4</span></div>
+            <button class="cvcom on"><span class="cvtop"><span class="uchip m4"><span class="dot"></span>mira</span><span class="cvtype">rectangle</span></span><span class="cvsnip">near building edge is ghosting against the sky&hellip;</span></button>
             <button class="cvcom"><span class="cvtop"><span class="uchip m3"><span class="dot"></span>lin</span><span class="cvtype">point</span></span><span class="cvsnip">love this framing, keep the bloom</span></button>
             <button class="cvcom"><span class="cvtop"><span class="uchip m2"><span class="dot"></span>sol</span><span class="cvtype">audio 0:42&ndash;0:48</span></span><span class="cvsnip">whoosh lands a beat late, pull ~6 frames</span></button>
             <button class="cvcom resolved"><span class="cvtop"><span class="uchip m5"><span class="dot"></span>jax</span><span class="cvtype">point &middot; resolved</span></span><span class="cvsnip">grade ref for the sky, matched</span></button>
