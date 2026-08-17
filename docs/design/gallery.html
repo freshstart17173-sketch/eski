@@ -506,6 +506,8 @@ input{font:inherit;color:inherit}
 .permrow{display:flex;align-items:center;gap:12px;padding:7px 0}
 .permrow .cl{flex:1;font-size:var(--fs-sm)}
 .permrow small{display:block;color:var(--muted);font-size:11px}
+.cbx{width:18px;height:18px;flex:none;border-radius:3px;background:var(--paper);box-shadow:inset 0 0 0 1.5px var(--line2);display:grid;place-items:center;color:transparent}
+.cbx svg{width:12px;height:12px}
 .cbx.on{background:var(--ink);box-shadow:none;color:var(--on-ink)}
 .setmain h2{font-size:var(--fs-lg);font-weight:600;margin-bottom:var(--s2)}
 .setmain .h2sub{color:var(--muted);font-size:var(--fs-sm);margin-bottom:var(--s5)}
@@ -1681,6 +1683,42 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
       <div class="pcap"><b>New message — inline in Messages</b>
         <span class="m">Not a modal: an add-by-handle field at the top of the DM thread list. Friendship-gated; group DMs add several handles.</span>
         <span class="db">create_dm(handle) · friendships</span></div>
+    </div>
+
+    <!-- assign roles to member -->
+    <div>
+      <div class="stage scrim tall"><div class="modal" style="width:280px">
+        <div class="uhd"><div style="display:flex;align-items:center;gap:9px"><span class="pfp" style="width:26px;height:26px;font-size:10px;background:var(--m3)">DV</span><b>dev's roles</b></div><button class="iconbtn"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
+        <div class="mbody" style="padding:6px 8px">
+          <button class="mi" style="justify-content:flex-start;gap:9px"><span class="cbx"><svg class="ic sm"><use href="#i-check"/></svg></span><span class="dot" style="width:9px;height:9px;background:var(--m5)"></span>Admin</button>
+          <button class="mi" style="justify-content:flex-start;gap:9px"><span class="cbx on"><svg class="ic sm"><use href="#i-check"/></svg></span><span class="dot" style="width:9px;height:9px;background:var(--m3)"></span>Producer</button>
+          <button class="mi" style="justify-content:flex-start;gap:9px;opacity:.6"><span class="cbx on"><svg class="ic sm"><use href="#i-check"/></svg></span><span class="dot" style="width:9px;height:9px;background:var(--muted)"></span>@everyone<span class="k" style="margin-left:auto">baseline</span></button>
+        </div>
+      </div></div>
+      <div class="pcap"><b>Assign roles to a member</b>
+        <span class="m">Opens from the role chip on a Members row. Granular: a member holds several roles at once (checklist, not a single picker); @everyone is always on and locked. Effective permissions are the union.</span>
+        <span class="db">W member_roles ← set_member_roles(member, role_ids[]) · gated by has_perm(manage_roles)</span>
+        <span class="st live">AUTHORED</span></div>
+    </div>
+
+    <!-- private channel allow-list -->
+    <div>
+      <div class="stage scrim tall"><div class="modal" style="width:290px">
+        <div class="uhd"><b>Who can see #shot tasks</b><button class="iconbtn"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
+        <div class="mbody" style="padding:6px 8px">
+          <div class="mhd" style="padding:4px 8px">Roles</div>
+          <button class="mi" style="justify-content:flex-start;gap:9px"><span class="cbx on"><svg class="ic sm"><use href="#i-check"/></svg></span><span class="dot" style="width:9px;height:9px;background:var(--m5)"></span>Admin</button>
+          <button class="mi" style="justify-content:flex-start;gap:9px"><span class="cbx on"><svg class="ic sm"><use href="#i-check"/></svg></span><span class="dot" style="width:9px;height:9px;background:var(--m3)"></span>Producer</button>
+          <div class="mhd" style="padding:4px 8px">Members</div>
+          <button class="mi" style="justify-content:flex-start;gap:9px"><span class="cbx on"><svg class="ic sm"><use href="#i-check"/></svg></span><span class="pfp" style="width:20px;height:20px;font-size:8px;background:var(--m2)">TM</span>tomo</button>
+          <button class="mi" style="justify-content:flex-start;gap:9px"><span class="cbx"><svg class="ic sm"><use href="#i-check"/></svg></span><span class="pfp" style="width:20px;height:20px;font-size:8px;background:var(--m4)">KO</span>kofi</button>
+          <div class="field" style="margin:6px 4px 2px"><svg class="ic sm" style="color:var(--muted)"><use href="#i-search"/></svg><input placeholder="Add a role or member"></div>
+        </div>
+      </div></div>
+      <div class="pcap"><b>Private-channel allow-list</b>
+        <span class="m">Appears when a channel/board/canvas is toggled Private in its settings. v1 is allow-list only (grant, don't deny): pick the roles and members who see it in the rail. This is the signpost — the RLS policy on <code>channel_members</code> is the fence.</span>
+        <span class="db">W channel_members ← set_channel_access(channel, role_ids[], member_ids[])</span>
+        <span class="st live">AUTHORED</span></div>
     </div>
 
   </div>
