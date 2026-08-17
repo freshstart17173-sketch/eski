@@ -498,6 +498,15 @@ input{font:inherit;color:inherit}
 .setnav .sep{height:1px;background:var(--line);margin:var(--s2) var(--s3)}
 .setnav .danger{color:var(--m1)}.setnav .danger .ic{color:var(--m1)}
 .setmain{flex:1;min-width:0;overflow-y:auto;padding:var(--s5)}
+.rolerow{display:flex;align-items:center;gap:9px;width:100%;text-align:left;padding:8px 10px;border-radius:var(--r);font-size:var(--fs-sm)}
+.rolerow:hover,.rolerow.on{background:var(--surface)}
+.rolerow .dot{width:9px;height:9px}
+.rolerow .rc{margin-left:auto;font-size:11px;color:var(--muted)}
+.pgh{font-size:11px;color:var(--muted);margin:16px 0 4px;font-weight:600;text-transform:none}
+.permrow{display:flex;align-items:center;gap:12px;padding:7px 0}
+.permrow .cl{flex:1;font-size:var(--fs-sm)}
+.permrow small{display:block;color:var(--muted);font-size:11px}
+.cbx.on{background:var(--ink);box-shadow:none;color:var(--on-ink)}
 .setmain h2{font-size:var(--fs-lg);font-weight:600;margin-bottom:var(--s2)}
 .setmain .h2sub{color:var(--muted);font-size:var(--fs-sm);margin-bottom:var(--s5)}
 .setpanel[hidden]{display:none}
@@ -2257,10 +2266,11 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
           <button data-setpanel="general" class="on"><svg class="ic sm"><use href="#i-settings"/></svg>General</button>
           <button data-setpanel="channels"><svg class="ic sm"><use href="#i-hash"/></svg>Channels &amp; boards</button>
           <button data-setpanel="members"><svg class="ic sm"><use href="#i-users"/></svg>Members</button>
+          <button data-setpanel="roles"><svg class="ic sm"><use href="#i-user"/></svg>Roles</button>
           <button data-setpanel="moderation"><svg class="ic sm"><use href="#i-hand"/></svg>Moderation</button>
           <button data-setpanel="audit"><svg class="ic sm"><use href="#i-refresh"/></svg>Audit log</button>
           <button data-setpanel="invites"><svg class="ic sm"><use href="#i-link"/></svg>Invite links</button>
-          <button data-setpanel="storage"><svg class="ic sm"><use href="#i-download"/></svg>Export &amp; storage</button>
+          <button data-setpanel="storage"><svg class="ic sm"><use href="#i-download"/></svg>Storage &amp; billing</button>
           <div class="sep"></div>
           <button class="danger"><svg class="ic sm"><use href="#i-trash"/></svg>Delete server</button>
         </nav>
@@ -2315,6 +2325,36 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
             </div>
             <button class="btn sm" style="margin-top:14px"><svg class="ic sm"><use href="#i-plus"/></svg>Add channel</button>
           </div>
+          <div class="setpanel" data-panel="roles" hidden>
+            <h2>Roles</h2><div class="h2sub">Roles carry permissions; a member can hold several. @everyone is the baseline.</div>
+            <div style="display:flex;gap:24px">
+              <div style="width:190px;flex:none">
+                <div class="setlist">
+                  <button class="rolerow on"><span class="dot" style="background:var(--m5)"></span>Admin<span class="rc">2</span></button>
+                  <button class="rolerow"><span class="dot" style="background:var(--m3)"></span>Producer<span class="rc">3</span></button>
+                  <button class="rolerow"><span class="dot" style="background:var(--muted)"></span>@everyone<span class="rc">6</span></button>
+                </div>
+                <button class="btn sm" style="margin-top:10px;width:100%;justify-content:center"><svg class="ic sm"><use href="#i-plus"/></svg>New role</button>
+              </div>
+              <div style="flex:1;min-width:0">
+                <label class="ulab">Colour</label>
+                <div style="display:flex;gap:6px;margin-bottom:6px"><span class="sw" style="background:var(--m1)"></span><span class="sw" style="background:var(--m2)"></span><span class="sw" style="background:var(--m3)"></span><span class="sw" style="outline:2px solid var(--ink);outline-offset:2px;background:var(--m5)"></span><span class="sw" style="background:var(--m6)"></span></div>
+                <div class="pgh">Server</div>
+                <div class="permrow"><span class="cl">Manage server<small>name, cover, delete</small></span><span class="cbx on"><svg class="ic sm"><use href="#i-check"/></svg></span></div>
+                <div class="permrow"><span class="cl">Manage roles &amp; permissions</span><span class="cbx on"><svg class="ic sm"><use href="#i-check"/></svg></span></div>
+                <div class="permrow"><span class="cl">Manage channels &amp; boards</span><span class="cbx on"><svg class="ic sm"><use href="#i-check"/></svg></span></div>
+                <div class="permrow"><span class="cl">Manage billing &amp; storage</span><span class="cbx"></span></div>
+                <div class="pgh">Members</div>
+                <div class="permrow"><span class="cl">Kick / ban / timeout</span><span class="cbx on"><svg class="ic sm"><use href="#i-check"/></svg></span></div>
+                <div class="permrow"><span class="cl">Create invite links</span><span class="cbx on"><svg class="ic sm"><use href="#i-check"/></svg></span></div>
+                <div class="pgh">Content</div>
+                <div class="permrow"><span class="cl">Upload &amp; add versions</span><span class="cbx on"><svg class="ic sm"><use href="#i-check"/></svg></span></div>
+                <div class="permrow"><span class="cl">Add tags</span><span class="cbx on"><svg class="ic sm"><use href="#i-check"/></svg></span></div>
+                <div class="permrow"><span class="cl">Annotate &amp; comment</span><span class="cbx on"><svg class="ic sm"><use href="#i-check"/></svg></span></div>
+                <div class="permrow"><span class="cl">Delete anyone's message</span><span class="cbx on"><svg class="ic sm"><use href="#i-check"/></svg></span></div>
+              </div>
+            </div>
+          </div>
           <div class="setpanel" data-panel="moderation" hidden>
             <h2>Moderation</h2><div class="h2sub">Timeouts silence a member for a while; a ban removes them and blocks their account from rejoining on any invite link.</div>
             <div class="subh">Active timeouts<span class="mut">2</span></div>
@@ -2361,7 +2401,14 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
             <button class="btn sm" style="margin-top:14px"><svg class="ic sm"><use href="#i-plus"/></svg>New invite link</button>
           </div>
           <div class="setpanel" data-panel="storage" hidden>
-            <h2>Export &amp; storage</h2><div class="h2sub">Content is content-addressed, so an export is just a zip of the files plus their metadata.</div>
+            <h2>Storage &amp; billing</h2><div class="h2sub">Storage is pay-as-you-go, per pool. This server's storage is billed to whoever manages billing.
+            </div>
+            <label class="ulab">Personal storage <span style="color:var(--muted);font-weight:400">(your public + private works)</span></label>
+            <div class="bar"><i style="width:38%"></i></div><small style="color:var(--muted)">3.8 GB of 10 GB &middot; pay-as-you-go</small>
+            <label class="ulab" style="margin-top:16px">This server's storage</label>
+            <div class="bar"><i style="width:62%"></i></div><small style="color:var(--muted)">31 GB of 50 GB &middot; billed to jax</small>
+            <div style="display:flex;gap:8px;margin-top:13px"><button class="btn sm"><svg class="ic sm"><use href="#i-settings"/></svg>Manage plan</button><button class="btn sm"><svg class="ic sm"><use href="#i-plus"/></svg>Add storage</button></div>
+            <div class="h2sub" style="margin-top:22px">Content is content-addressed, so an export is just a zip of the files plus their metadata.</div>
             <div class="frow"><label class="ulab">Storage used</label><div class="bar"><i style="width:46%"></i></div><small style="color:var(--muted);font-size:var(--fs-xs)">9.2 GB of 20 GB</small></div>
             <div class="dangerbox" style="margin-top:24px"><div class="t"><b>Export this server</b><small>Every file and its metadata, as a zip. Yours to keep, no lock-in.</small></div><button class="btn"><svg class="ic sm"><use href="#i-download"/></svg>Export</button></div>
           </div>
