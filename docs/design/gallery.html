@@ -1043,8 +1043,8 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
     (the rule); menus float flat. Every panel names what it is, its trigger, and
     its database binding. Toggle <b>Dark</b> to check both themes. Radius is 3px
     everywhere; round is only avatars and presence dots; closes are square.
-    “Desktop” means the web app in a wide browser. The embedded screens still
-    read “group” (renamed to <b>server</b> — a text pass is pending).
+    “Desktop” means the web app in a wide browser. The embedded screens now say
+    <b>server</b> and <b>friends</b> (renamed from group/follows).
   </p>
 </section>
 
@@ -1053,7 +1053,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   <p class="lede">
     Chrome is black/white/grey; the only colour is a member’s <b>per-server
     identity hue</b>, shown only inside that server and never on a public profile
-    or the Feed. Widened from 6 to <b>30</b> evenly-spaced hues
+    or the Feed. Widened from 6 to <b>30</b> perceptually-even hues (OKLCH, so neighbours are equally distinguishable)
     (<code>--m1 … --m30</code>), each a light + dark pair; <code>join_via_invite</code>
     assigns the next free index and cycles past 30. A generated proposal to
     critique before it’s written into <code>styleguide.html</code>.
@@ -1570,15 +1570,26 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   var root=document.documentElement, tb=document.getElementById('themebtn');
   function isDark(){var t=root.getAttribute('data-theme');return t?t==='dark':matchMedia('(prefers-color-scheme:dark)').matches;}
 
-  // member palette (30 hues, generated proposal)
-  function hsl2hex(h,s,l){s/=100;l/=100;var a=s*Math.min(l,1-l);
-    var f=function(n){var k=(n+h/30)%12;var x=l-a*Math.max(-1,Math.min(k-3,Math.min(9-k,1)));
-      return Math.round(255*x).toString(16).padStart(2,'0');};
-    return '#'+f(0)+f(8)+f(4);}
+  // member palette — 30 hues in OKLCH so the steps are PERCEPTUALLY even
+  // (HSL clusters greens/blues; OKLCH keeps constant lightness+chroma so
+  // every neighbour is equally distinguishable). Light + dark pair per hue.
+  function oklch2hex(L,C,h){
+    var hr=h*Math.PI/180, a=C*Math.cos(hr), b=C*Math.sin(hr);
+    var l_=L+0.3963377774*a+0.2158037573*b,
+        m_=L-0.1055613458*a-0.0638541728*b,
+        s_=L-0.0894841775*a-1.2914855480*b;
+    var l=l_*l_*l_, m=m_*m_*m_, s=s_*s_*s_;
+    var R= 4.0767416621*l-3.3077115913*m+0.2309699292*s,
+        G=-1.2684380046*l+2.6097574011*m-0.3413193965*s,
+        B=-0.0041960863*l-0.7034186147*m+1.7076147010*s;
+    function g(x){x=x<=0.0031308?12.92*x:1.055*Math.pow(x,1/2.4)-0.055;
+      return Math.round(Math.max(0,Math.min(1,x))*255).toString(16).padStart(2,'0');}
+    return '#'+g(R)+g(G)+g(B);
+  }
   var N=30, pal=document.getElementById('pal'), chip=document.getElementById('chipdemo');
   var names=['jax','rae','dev','tomo','kofi','nel','mira','lin','sol','ana'];
   for(var i=0;i<N;i++){
-    var h=Math.round(i*360/N), light=hsl2hex(h,42,44), dark=hsl2hex(h,45,64), hex=isDark()?dark:light;
+    var H=(i*360/N+25)%360, light=oklch2hex(0.585,0.125,H), dark=oklch2hex(0.79,0.112,H), hex=isDark()?dark:light;
     var d=document.createElement('div');d.className='palsw';d.dataset.l=light;d.dataset.d=dark;
     d.innerHTML='<div class="palcc"><i style="background:'+light+'"></i><i style="background:'+dark+'"></i></div>'+
       '<div class="pallb"><b>m'+(i+1)+'</b><span class="hx">'+hex+'</span></div>';

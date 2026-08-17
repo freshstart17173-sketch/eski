@@ -871,8 +871,8 @@ input{font:inherit;color:inherit}
     <button class="ptab" data-s="board">Board</button>
     <button class="ptab" data-s="vc">Call</button>
     <button class="ptab" data-s="notifications">Notifications</button>
-    <button class="ptab" data-s="settings">Group settings</button>
-    <button class="ptab" data-s="create">Create group</button>
+    <button class="ptab" data-s="settings">Server settings</button>
+    <button class="ptab" data-s="create">Create server</button>
     <button class="ptab" data-s="join">Join link</button>
     <button class="ptab" data-s="auth">Sign in</button>
     <button class="ptab" data-s="profile">Profile</button>
@@ -899,7 +899,7 @@ input{font:inherit;color:inherit}
     <button class="railbtn" data-s="canvas" title="Specter, sh040">SP<span class="ct">7</span></button>
     <button class="railbtn" title="Beat swap">BS</button>
     <div class="railsep"></div>
-    <button class="railbtn" data-s="create" title="Create or join a group"><svg class="ic"><use href="#i-plus"/></svg></button>
+    <button class="railbtn" data-s="create" title="Create or join a server"><svg class="ic"><use href="#i-plus"/></svg></button>
     <button class="railbtn user" data-s="profile" title="jax, your profile"><span class="pfp">JX</span></button>
   </aside>
 
@@ -907,7 +907,7 @@ input{font:inherit;color:inherit}
     <!-- WORKSPACE -->
     <div class="screen" data-screen="workspace">
       <nav class="chan">
-        <div class="chanhd" data-s="settings" style="cursor:pointer" title="Group settings"><b>Late Bloom LP</b><svg class="ic sm" style="color:var(--muted)"><use href="#i-chev"/></svg></div>
+        <div class="chanhd" data-s="settings" style="cursor:pointer" title="Server settings"><b>Late Bloom LP</b><svg class="ic sm" style="color:var(--muted)"><use href="#i-chev"/></svg></div>
         <div class="chanbody">
           <div class="cgroup">
             <button class="crow" data-s="explorer"><svg class="ic"><use href="#i-grid"/></svg><span class="nm">Media</span></button>
@@ -1090,7 +1090,7 @@ input{font:inherit;color:inherit}
       <div class="pane">
         <div class="panehd"><div class="wm">eski</div><nav><a class="nav on">Feed</a><a class="nav">Notifications</a><a class="nav">You</a></nav></div>
         <div class="toolbar">
-          <div class="field"><svg class="ic sm"><use href="#i-search"/></svg><input placeholder="Search the people you follow"></div>
+          <div class="field"><svg class="ic sm"><use href="#i-search"/></svg><input placeholder="Search your friends"></div>
           <button class="selbtn">Type<svg class="ic sm"><use href="#i-chev"/></svg></button>
           <button class="selbtn">Latest<svg class="ic sm"><use href="#i-chev"/></svg></button>
         </div>
@@ -1122,7 +1122,7 @@ input{font:inherit;color:inherit}
       <div class="pane">
         <div class="panehd"><div class="title">Late Bloom LP, media</div></div>
         <div class="toolbar">
-          <div class="field"><svg class="ic sm"><use href="#i-search"/></svg><input placeholder="Search this group's files"></div>
+          <div class="field"><svg class="ic sm"><use href="#i-search"/></svg><input placeholder="Search this server's files"></div>
           <button class="selbtn"><svg class="ic sm"><use href="#i-hash"/></svg>Channel<svg class="ic sm"><use href="#i-chev"/></svg></button>
           <button class="selbtn">Type<svg class="ic sm"><use href="#i-chev"/></svg></button>
           <button class="selbtn">Uploader<svg class="ic sm"><use href="#i-chev"/></svg></button>
@@ -1166,7 +1166,7 @@ input{font:inherit;color:inherit}
       <div class="cvwrap">
         <div class="cvhd">
           <button class="selbtn" id="canvasPick"><svg class="ic sm"><use href="#i-canvas"/></svg>sh040 review<svg class="ic sm"><use href="#i-chev"/></svg></button>
-          <span class="vis"><svg class="ic"><use href="#i-users"/></svg>Specter, group</span>
+          <span class="vis"><svg class="ic"><use href="#i-users"/></svg>Specter, server</span>
           <div class="acts">
             <span class="cmtcount"><svg class="ic sm"><use href="#i-comment"/></svg>4 comments</span>
             <button class="btn sm"><svg class="ic sm"><use href="#i-plus"/></svg>Add file</button>
@@ -1428,15 +1428,15 @@ input{font:inherit;color:inherit}
           <button data-setpanel="invites"><svg class="ic sm"><use href="#i-link"/></svg>Invite links</button>
           <button data-setpanel="storage"><svg class="ic sm"><use href="#i-download"/></svg>Export &amp; storage</button>
           <div class="sep"></div>
-          <button class="danger"><svg class="ic sm"><use href="#i-trash"/></svg>Delete group</button>
+          <button class="danger"><svg class="ic sm"><use href="#i-trash"/></svg>Delete server</button>
         </nav>
         <div class="setmain">
           <div class="setpanel" data-panel="general">
             <h2>General</h2><div class="h2sub">Admins only.</div>
-            <div class="frow"><label class="ulab">Group name</label><div class="field"><input value="Late Bloom LP"></div></div>
+            <div class="frow"><label class="ulab">Server name</label><div class="field"><input value="Late Bloom LP"></div></div>
             <div class="frow"><label class="ulab">Description</label><div class="field"><input value="a remote LP, producers and rappers"></div></div>
             <div class="frow"><label class="ulab">Cover</label><div class="coverpick"><div class="cv"><svg class="ic"><use href="#i-image"/></svg></div><button class="btn sm"><svg class="ic sm"><use href="#i-image"/></svg>Upload</button></div></div>
-            <div class="dangerbox"><div class="t"><b>Delete this group</b><small>Removes every channel, board and canvas. Members keep their own copies of files they uploaded.</small></div><button class="btn danger"><svg class="ic sm"><use href="#i-trash"/></svg>Delete</button></div>
+            <div class="dangerbox"><div class="t"><b>Delete this server</b><small>Removes every channel, board and canvas. Members keep their own copies of files they uploaded.</small></div><button class="btn danger"><svg class="ic sm"><use href="#i-trash"/></svg>Delete</button></div>
           </div>
           <div class="setpanel" data-panel="channels" hidden>
             <h2>Channels &amp; boards</h2><div class="h2sub">Drag to reorder. Members see them in this order. Open a channel's settings for who can post, slow mode and privacy.</div>
@@ -1508,7 +1508,7 @@ input{font:inherit;color:inherit}
             </div>
           </div>
           <div class="setpanel" data-panel="members" hidden>
-            <h2>Members</h2><div class="h2sub">6 members. Admins manage the group; members do everything else.</div>
+            <h2>Members</h2><div class="h2sub">6 members. Admins manage the server; members do everything else.</div>
             <div class="setlist">
               <div class="mtrow"><div class="av sm">JX</div><div class="info"><b>jax</b><small>@jax</small></div><span class="rolesel">Admin<svg class="ic sm"><use href="#i-chev"/></svg></span><button class="rm"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
               <div class="mtrow"><div class="av sm">RA</div><div class="info"><b>rae</b><small>@rae</small></div><span class="rolesel">Admin<svg class="ic sm"><use href="#i-chev"/></svg></span><button class="rm"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
@@ -1529,7 +1529,7 @@ input{font:inherit;color:inherit}
           <div class="setpanel" data-panel="storage" hidden>
             <h2>Export &amp; storage</h2><div class="h2sub">Content is content-addressed, so an export is just a zip of the files plus their metadata.</div>
             <div class="frow"><label class="ulab">Storage used</label><div class="bar"><i style="width:46%"></i></div><small style="color:var(--muted);font-size:var(--fs-xs)">9.2 GB of 20 GB</small></div>
-            <div class="dangerbox" style="margin-top:24px"><div class="t"><b>Export this group</b><small>Every file and its metadata, as a zip. Yours to keep, no lock-in.</small></div><button class="btn"><svg class="ic sm"><use href="#i-download"/></svg>Export</button></div>
+            <div class="dangerbox" style="margin-top:24px"><div class="t"><b>Export this server</b><small>Every file and its metadata, as a zip. Yours to keep, no lock-in.</small></div><button class="btn"><svg class="ic sm"><use href="#i-download"/></svg>Export</button></div>
           </div>
         </div>
       </div>
@@ -1539,15 +1539,15 @@ input{font:inherit;color:inherit}
     <div class="screen" data-screen="create" hidden>
       <div class="onboard">
         <div class="ocard">
-          <h1>Create a group</h1>
+          <h1>Create a server</h1>
           <div class="lead">A private studio. You invite people with a link; there is no public listing.</div>
-          <label class="ulab">Group name</label><div class="field"><input placeholder="e.g. Late Bloom LP"></div>
+          <label class="ulab">Server name</label><div class="field"><input placeholder="e.g. Late Bloom LP"></div>
           <label class="ulab">Cover <span style="font-weight:400;color:var(--muted)">optional</span></label>
           <div class="coverpick"><div class="cv"><svg class="ic"><use href="#i-image"/></svg></div><button class="btn sm"><svg class="ic sm"><use href="#i-image"/></svg>Upload</button></div>
           <label class="ulab">Starter channels</label>
           <div class="starter"><span class="tag">general</span><span class="tag">wips</span><span class="tag">references</span><button class="addtag"><svg class="ic sm"><use href="#i-plus"/></svg></button></div>
-          <div class="magic"><svg class="ic sm" style="color:var(--muted)"><use href="#i-link"/></svg><span class="lk">An invite link is created with the group</span></div>
-          <div class="go"><button class="btn">Cancel</button><button class="btn primary">Create group</button></div>
+          <div class="magic"><svg class="ic sm" style="color:var(--muted)"><use href="#i-link"/></svg><span class="lk">An invite link is created with the server</span></div>
+          <div class="go"><button class="btn">Cancel</button><button class="btn primary">Create server</button></div>
         </div>
       </div>
     </div>
@@ -1561,7 +1561,7 @@ input{font:inherit;color:inherit}
           <div class="lead">a vfx shot, on a deadline</div>
           <div class="jmeta"><span class="stackav"><span class="av sm">MI</span><span class="av sm">LN</span><span class="av sm">SO</span><span class="av sm">JX</span></span>4 members</div>
           <div class="invited"><svg class="ic sm" style="color:var(--muted)"><use href="#i-user"/></svg><span><b>mira</b> invited you to join</span></div>
-          <div class="go" style="margin-top:24px"><button class="btn primary" style="flex:1;justify-content:center">Join group</button></div>
+          <div class="go" style="margin-top:24px"><button class="btn primary" style="flex:1;justify-content:center">Join server</button></div>
           <div class="lead" style="margin:14px 0 0;text-align:center">One click and you are in. No application, no approval.</div>
         </div>
       </div>
@@ -1659,7 +1659,7 @@ input{font:inherit;color:inherit}
         <div class="notifhd"><span class="t">Notifications</span>
           <div class="ntabs"><a class="ntab on" data-ntab="all">All</a><a class="ntab" data-ntab="mentions">Mentions</a><a class="ntab" data-ntab="threads">Threads</a><a class="ntab" data-ntab="saved">Saved</a></div>
           <a class="mark">Mark all read</a></div>
-        <div class="nfilter"><span class="nfl">Group</span>
+        <div class="nfilter"><span class="nfl">Server</span>
           <div class="ngroups"><a class="ngrp on">All</a><a class="ngrp">Late Bloom LP</a><a class="ngrp">Specter, sh040</a><a class="ngrp">sh040 crew</a></div></div>
 
         <div class="npanel" data-nview="all">
@@ -1672,7 +1672,7 @@ input{font:inherit;color:inherit}
             <div class="nreply"><div class="field"><input placeholder="Reply to mira"><button class="snd"><svg class="ic sm"><use href="#i-send"/></svg></button></div></div></div>
             <time>1:04 PM</time>
             <div class="nacts"><button class="replybtn" title="Reply"><svg class="ic sm"><use href="#i-reply"/></svg></button><button class="savebtn" title="Save for later"><svg class="ic sm"><use href="#i-save"/></svg></button><button class="donebtn" title="Mark done"><svg class="ic sm"><use href="#i-check"/></svg></button></div></div>
-          <div class="nrow unread"><div class="nic"><svg class="ic sm"><use href="#i-version"/></svg></div><div class="nbd"><div class="ntx"><b>tomo</b> added <b>v3</b> to a post you follow</div><div class="nctx">Late Bloom LP · Back half rework</div><div class="quote">brought the low end down</div></div><time>12:20 PM</time>
+          <div class="nrow unread"><div class="nic"><svg class="ic sm"><use href="#i-version"/></svg></div><div class="nbd"><div class="ntx"><b>tomo</b> added <b>v3</b> to a friend's post</div><div class="nctx">Late Bloom LP · Back half rework</div><div class="quote">brought the low end down</div></div><time>12:20 PM</time>
             <div class="nacts"><button class="savebtn" title="Save for later"><svg class="ic sm"><use href="#i-save"/></svg></button><button class="donebtn" title="Mark done"><svg class="ic sm"><use href="#i-check"/></svg></button></div></div>
           <div class="ndate">Earlier</div>
           <div class="nrow"><div class="nic"><svg class="ic sm"><use href="#i-board"/></svg></div><div class="nbd"><div class="ntx"><b>mira</b> assigned you <b>Low end on the bridge</b></div><div class="nctx">Specter, sh040 · shot tasks</div></div><time>Yesterday</time>
@@ -1697,7 +1697,7 @@ input{font:inherit;color:inherit}
         </div>
 
         <div class="npanel" data-nview="threads" hidden>
-          <div class="ndate">Threads you follow</div>
+          <div class="ndate">Threads you're in</div>
           <div class="nthread"><div class="nic"><svg class="ic sm"><use href="#i-comment"/></svg></div><div class="tbd"><div class="tt">Bridge drums re-cut <small>· #beats, Late Bloom LP</small></div><div class="tlast">rae: @jax can you re-cut the bridge drums before the session?</div></div><span class="tct">3 new</span></div>
           <div class="nthread"><div class="nic"><svg class="ic sm"><use href="#i-canvas"/></svg></div><div class="tbd"><div class="tt">Ghosting on the building edge <small>· sh040 review, Specter</small></div><div class="tlast">mira: near building edge is ghosting, needs a garbage matte</div></div><span class="tct">1 new</span></div>
           <div class="nthread"><div class="nic"><svg class="ic sm"><use href="#i-version"/></svg></div><div class="tbd"><div class="tt">Back half rework <small>· Late Bloom LP</small></div><div class="tlast">tomo: brought the low end down, take another pass?</div></div></div>
@@ -1722,7 +1722,7 @@ input{font:inherit;color:inherit}
     <div class="ppsec"><span class="l">STATUS</span><span class="v"><span style="width:9px;height:9px;border-radius:50%;background:var(--ink);display:inline-block"></span>Online · 3:24 PM local time</span></div>
     <div class="ppsec"><span class="l">ROLE IN LATE BLOOM LP</span><span class="v"><span class="prole m3">Member</span></span></div>
     <div class="ppsec"><span class="l">WORKING ON</span><span class="v">a beat, in FL Studio</span></div>
-    <div class="ppsec"><span class="l">MUTUAL GROUPS</span><span class="v">Late Bloom LP, beat swap</span></div>
+    <div class="ppsec"><span class="l">MUTUAL SERVERS</span><span class="v">Late Bloom LP, beat swap</span></div>
     <div class="ppacts"><button class="btn primary"><svg class="ic sm"><use href="#i-mail"/></svg>Message</button><button class="btn"><svg class="ic sm"><use href="#i-phone"/></svg>Call</button></div>
   </div>
 </div>
@@ -1755,7 +1755,7 @@ input{font:inherit;color:inherit}
     <div class="qsec">People</div>
     <div class="qrow" data-s="dms"><div class="av qav">DV</div><span class="qn">dev</span><span class="qctx">@devmakesbeats</span></div>
     <div class="qrow" data-s="dms"><div class="av qav">MI</div><span class="qn">mira</span><span class="qctx">@mira</span></div>
-    <div class="qsec">Groups</div>
+    <div class="qsec">Servers</div>
     <div class="qrow" data-s="workspace"><div class="av qav">LB</div><span class="qn">Late Bloom LP</span></div>
     <div class="qrow" data-s="canvas"><div class="av qav">SP</div><span class="qn">Specter, sh040</span></div>
     <div class="qsec">Files</div>
@@ -1778,7 +1778,7 @@ input{font:inherit;color:inherit}
         <button class="verbtn" id="verBtn"><span class="v">v3</span> of 3<svg class="ic sm"><use href="#i-chev"/></svg></button>
         <div class="vernote">Changed in v3: swapped the bridge drums, brought the low end down. <span class="by">tomo</span></div>
         <div class="meta">
-          <div class="row"><span class="k">Visibility</span><span class="v"><span class="vis"><svg class="ic"><use href="#i-users"/></svg>Late Bloom LP, group</span></span></div>
+          <div class="row"><span class="k">Visibility</span><span class="v"><span class="vis"><svg class="ic"><use href="#i-users"/></svg>Late Bloom LP, server</span></span></div>
           <div class="row"><span class="k">Uploaded by</span><span class="v"><span class="uchip m3"><span class="dot"></span>dev</span></span></div>
           <div class="row"><span class="k">Channel</span><span class="v">#beats</span></div>
           <div class="row"><span class="k">Date</span><span class="v">15 Aug 2026, 2:14 PM</span></div>
@@ -1791,10 +1791,10 @@ input{font:inherit;color:inherit}
         <div class="dsec"><div class="lb">Contributors</div><div class="chips">
           <span class="uchip m5"><span class="dot"></span>jax, prod</span><span class="uchip m3"><span class="dot"></span>dev, arrangement</span>
           <span class="uchip m1"><span class="dot"></span>rae, vocals</span><span class="uchip m2"><span class="dot"></span>tomo, mix</span></div></div>
-        <div class="dsec"><div class="lb">Group comments</div>
+        <div class="dsec"><div class="lb">Server comments</div>
           <div class="cmt"><div class="av sm">TM</div><div class="bd"><div class="by"><span class="u m2">tomo</span><time>2:47 PM</time></div><div class="tx">low end note is on the waveform in canvas</div></div></div>
           <div class="cmt"><div class="av sm">RA</div><div class="bd"><div class="by"><span class="u m1">rae</span><time>2:31 PM</time></div><div class="tx">this is the one, pulling it into mixing</div></div></div>
-          <div class="field" style="margin-top:8px"><input placeholder="Comment in the group"></div>
+          <div class="field" style="margin-top:8px"><input placeholder="Comment in the server"></div>
         </div>
       </div>
       <div class="foot">
@@ -1862,7 +1862,7 @@ input{font:inherit;color:inherit}
       <label class="ulab">Visibility</label>
       <div class="urow">
         <button class="visopt"><svg class="ic"><use href="#i-globe"/></svg><span>Everyone<small>on your public profile</small></span></button>
-        <button class="visopt on"><svg class="ic"><use href="#i-users"/></svg><span>This group<small>Late Bloom LP</small></span></button>
+        <button class="visopt on"><svg class="ic"><use href="#i-users"/></svg><span>This server<small>Late Bloom LP</small></span></button>
         <button class="visopt"><svg class="ic"><use href="#i-lock"/></svg><span>No one<small>private to you</small></span></button>
       </div>
     </div>
