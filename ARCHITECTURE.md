@@ -1,186 +1,132 @@
 # How eski is put together
 
-**Read this before changing anything.** It says what each file owns, so a
-change lands in one place instead of being added next to the thing that
-already does it.
+**Read this before changing anything.** It says where each decision lives, so a
+change lands in one place instead of next to the thing that already does it.
 
-There is no build step. Every `.html` file is served as written, loads a few
-shared scripts, and holds its own behaviour in one `<script>` at the bottom.
-That is deliberate — the whole app is inspectable with view-source — but it
-means **the discipline has to come from knowing what owns what**, because
-nothing stops you defining the same thing twice.
+**eski is mid-rebuild into a collaboration app and nothing is built yet** — this
+is the planning-and-design phase (see [`README.md`](README.md) and
+[`CLAUDE.md`](CLAUDE.md)). So this document is in two halves:
 
-`tests/structure.js` enforces the parts of this that can be checked
-mechanically. If it fails, this document is what it is holding you to.
+1. **The architecture of the work as it stands now** — a spec, a design system,
+   and a build plan. This is what actually exists in the repo today.
+2. **The architecture the build will have** — the shape the code-generation model
+   is being pointed at. Decided, written down, not yet code.
 
----
-
-## The pivot, and where things actually stand (2026-08-15, updated)
-
-eski stopped being a comics-only format and became a place to post anything —
-audio, video, image, text, other, or a combination of several as one post —
-plus curated collections and versioning. The **database is rebuilt for this already**:
-`schema-clean.sql` is what is live, replacing the entire comics-era model
-(comics/pages/tracks/parts/kudos/comic_tags/the old saves) in one pass, no
-migration path kept — see that file's own header for the full accounting.
-
-**`index.html` is rebuilt.** It's the real home feed now — genuine Supabase
-queries against `works`/`content_tags`/`comments`/`likes`/`save_folders`/
-`follows`/`seen_marks`, no mock content — built against `artboard.html`'s
-`homepageHtml` mockup and its detail-overlay/upload-modal templates. See
-`pivot.css` below for how the mockup's look became real tokens.
-
-**`profile.html` is rebuilt too**, and both pages now share `pivot.js`
-rather than each carrying their own copy of the card renderer, the detail
-overlay, upload, and sign-in — `index.html`'s inline script shrank to just
-the feed query and its filters once that was factored out. `profile.html`
-answers at `/u/<handle>` (or `?u=` — same fallback the old page used) for
-someone else's profile, or your own when signed in with neither; Saved and
-Settings only show on your own. Settings wires display name / handle / bio
-/ avatar (the `avatars` bucket from `schema-states.sql`) to real updates,
-plus sign-out and `delete_my_account()`.
-
-**The edit flow is in now too** — poster's burger menu on the detail
-overlay (`pivot.js`) gained "Edit post" back: swaps the caption/title/body
-fields into an editable form, saves with a plain `works` update. Scoped to
-text fields only; swapping the underlying media file is a separate,
-riskier feature, not built.
-
-**Known v1 gaps in the new `index.html`, left honest rather than faked:**
-the mockup's feed-switcher (rename/add/delete several feeds) has no backing
-table — "Discover" is the only feed, filtered live, nothing persisted across
-a reload; video and audio posts get no auto-generated thumbnail yet (real
-work — a canvas frame-grab or a waveform image — deferred, see the comment
-by `uploadOne()`); "Edit post" isn't in the burger menu because there's no
-edit flow yet, only Make private / Delete.
-
-Deleted in the same pass, because they were the old product and not just its
-database: `studio.html` (the composer), `author.html` (the script/cast
-editor), `contribute.html` (the vo/soundtrack/sfx studio), `read.html` (the
-reader), `spec.html` (the `.eski` file-format reference), `comments.js` (the
-old comic-thread widget — a new one is needed, generalized over
-work/collection rather than comic_id), `viewer.js` (page-turn pan/zoom, only
-ever used by the reader and the two studios), `api/comic.mjs` (`/c/<slug>`
-og:tag injection for a route that no longer exists).
+The retired single-page "pivot" product still sits in the repo root and is being
+removed; its files are listed at the end so you know not to build on them.
 
 ---
 
-## The rule that matters most
+## The rule that matters most (carries across every era of this project)
 
 **One thing is decided in one place.**
 
-The bug this codebase keeps producing is not a broken feature — it is a
-correct fix that gets silently undone. `.btn.p:hover` was defined near the top
-of `broadsheet.css` and again 330 lines later with a different value. Same
-specificity, so source order won. It was fixed twice, and both times the site
-did not change.
+The bug this codebase keeps producing is not a broken feature — it is a correct
+decision that gets silently undone. A selector defined twice with source-order
+deciding the winner; a fix applied twice while the page never changed; a second
+name quietly minted for a concept that already had one. Everything below exists
+to make that failure mode hard.
 
-So, concretely:
+Concretely, for the rebuild:
 
-- **Colour and hover for a shared control live in the interaction section at
-  the foot of `broadsheet.css`,** and nowhere else. The structural rule higher
-  up sets size, spacing, borders and type only.
-- **A page's own `<style>` may not restate a shared control.** If `.btn` needs
-  to look different on one surface, that surface has a class of its own.
-- **Every colour comes from a token.** `palettes.css` is the only file that
-  holds raw colour. (`artboard.html` currently has its own separate,
-  deliberately-not-themed token set — an internal review tool, not a surface
-  — and is not held to this; `tests/structure.js` still flags its hex
-  literals, which is expected there.)
-
----
-
-## Load order, and why it is not negotiable
-
-Every themed page loads the same head in the same order:
-
-```
-platform.js           TYPE=MODULE, so it is deferred whatever you do
-palette.js            classic, sync — must run BEFORE the stylesheets
-tokens.css             metrics and type scale
-broadsheet.css         the house style
-palettes.css           the eighteen themes; last, so it wins
-```
-
-**`palette.js` runs before the stylesheets** because it stamps the chosen
-theme onto `<html>`. Load it after and the page paints the default theme and
-then repaints — the flash the whole token system exists to avoid.
-`tests/structure.js` checks this on every page.
-
-**`platform.js` is a module, so it never runs during parse.** Nothing may read
-`window.eski` at the top level of a classic script. Every page waits on
-`window.eski.ready`, and the pattern for it is at the top of each page's
-script. This is what ESK-1005 is for.
-
-`viewer.js` and `loudness.js` used to be part of this list on pages that
-needed page-turning or audio measurement. Both are gone from every current
-page (their only callers — the reader and the two studios — are deleted).
-`loudness.js` (the ITU-R BS.1770-4 meter) is generic and left in the tree,
-unused, because whatever the new upload flow does with audio will likely want
-it again.
+- **Every colour comes from a token.** [`docs/design/styleguide.html`](docs/design/styleguide.html)
+  holds the values; a component references them and never carries a hex literal.
+  The member-identity hue is the only colour, it is **server-scoped**, and it
+  appears nowhere on a public profile or the Feed.
+- **One canonical name per concept** — the name in UI copy, in code, and in the
+  docs is identical. The register of names is [`docs/CANON.md`](docs/CANON.md) §A;
+  adding a synonym is the same failure mode as a duplicate selector, in words.
+- **Search for the thing before you define it.** If a token, selector, component,
+  or name already exists, edit it where it lives.
+- **The RLS policy is the fence; the UI is only the signpost.** A control the UI
+  hides is not access control — the row-level policy is where a refusal actually
+  happens. Every table ships with RLS.
 
 ---
 
-## What each file owns
+## Part 1 — what exists now: the contract
 
-### Shared
+The whole deliverable at this phase is a set of documents precise enough that a
+code-generation model builds the app from them with a tiny failure surface. They
+have a strict hierarchy — **when they disagree, the one higher in this list
+wins.**
 
-| File | Owns |
-|---|---|
-| `platform.js` | The Supabase client, the current user, `mediaUrl()`, and `dbError()`. The single boot path. Everything else waits on `window.eski.ready`. |
-| `tokens.css` | Spacing, type scale, control heights, timings, and the handful of status colours that are fixed regardless of theme (`--danger`, and now `--like-bg`/`--like-ink` for the ruby-red Like state). **No theme colour.** |
-| `docs/design/final/broadsheet.css` | The OLD comics-reader chrome: nav, `.btn`, plates, sheets, folds. Only `admin.html`/`legal.html` still lean on it; not used by any pivot page. |
-| `pivot.css` | **The new product's shared component vocabulary** — buttons, chips, the feed grid, detail overlays, tags, comments, the upload modal. Ported from `artboard.html`'s `.eski-mockup` scope onto real tokens; see its own header comment for the two deliberate deviations (hover colour, corner radius). Used by every pivot page. |
-| `pivot.js` | **The new product's shared runtime** — auth/profile state, the grid card renderer, the entire detail overlay (tags, comments, likes, save-folders, versions, editing, the poster's burger menu), sign-in, and the upload flow. `window.Pivot`. `index.html` and `profile.html` each keep only their own page's logic and call into this for anything that opens over the page. |
-| `palettes.css` | The themes. The only file with raw colour in it. **Two now, not the old eighteen** (2026-08-15): `light` and `dark`, both the pivot's reviewed sage accent (`#5B7A6B` / `#8AA89A`). The comics-era six-hue/three-treatment picker is gone — see the file's own header. |
-| `palette.js` | Reads and stamps the theme (`data-theme`, `light` or `dark`), and draws the two-swatch picker wherever `data-palette-picker` is mounted (profile.html's Settings tab). |
-| `hash-worker.js` | SHA-256 off the main thread, for content-addressed upload keys. Used by `index.html`'s upload flow exactly as the old studio used it. |
-| `sw.js` | Precaches the app shell. Deliberately refuses media. |
+| Artifact | Owns | Authority |
+|---|---|---|
+| [`docs/CANON.md`](docs/CANON.md) | The build contract. §A vocabulary · §B roles/permissions → the RLS/RPC that enforces them · §C the per-screen UI element registry (behaviour → database → desktop/mobile) · §D added scope (granular roles, PAYG storage, storage source, utility screens) · §E canvas mechanics. | **Top. CANON wins over everything, including this file.** |
+| [`docs/design/gallery.html`](docs/design/gallery.html) | The pixels. ~21 screens embedded live, plus every dialog/menu/modal as a standalone panel, plus the member palette and a build-status inventory. The visual law. | Wins over prose on anything visual. |
+| [`docs/design/styleguide.html`](docs/design/styleguide.html) | The token & component source of truth — the values the built pages consume. `_fonts.css` holds the extracted Jost faces. | The only home for raw design values. |
+| [`docs/COLLAB.md`](docs/COLLAB.md) | The narrative spec: why each feature exists, the data-model sketch, the two end-to-end workflows, and **§7 the hand-off-ready backend plan** (tables, RPCs, triggers, Realtime channels, indexes, migration order). | Mechanical reference. **Predates the terminology streamline — where its names differ from CANON, CANON's win.** |
+| [`docs/CODEGEN.md`](docs/CODEGEN.md) | The build plan: the app sliced into ~132 individually-testable micro-prompts across 10 phases, each tagged `[BE]`/`[UI]`/`[GL]` with a definition-of-done, plus the token budget. | How the above becomes code. |
 
-### Surfaces
+**Why the gallery is one file.** It was two (a mockup plus a gallery) and they
+drifted — the canvas got updated in one and not the other. They were merged so
+there is a single visual source. The file self-iframes its own screens in catalog
+mode and renders one screen in app mode (`?app=1#<screen>`); that mode-gating is
+why the app screens and the catalog can coexist without two files or a JS
+collision.
 
-| File | Is |
-|---|---|
-| `index.html` | The home feed, rebuilt for the pivot: real `works` query with live tag/modifier filters, per-kind cards, a detail overlay (tags, comments, likes, save-folders, versions, the poster's burger menu), and the upload modal. See the pivot section above for what's still v1-scoped. |
-| `profile.html` | Your posts, saved folders, and settings — or someone else's Posts tab, at `/u/<handle>`. Shares `pivot.js`/`pivot.css` with `index.html`; owns only its own header/tabs/settings-form logic. |
-| `onboarding.html` | Account creation: pick a handle. Runs once, on first sign-in, via `platform.js`'s `maybeOnboard()`. |
-| `artboard.html` | The complete design mockup for the pivot — every screen and overlay as static HTML, Supabase-backed comments/pins on top for review. Unlisted, `noindex`. This is the spec `index.html`/`profile.html` are being rewritten against. |
-| `admin.html` | The moderation queue — rebuilt 2026-08-15 against `works`/`collections`/`comments`/`reports` and a new `admin_users()` RPC (email/`last_sign_in_at` live in `auth.users`, which PostgREST never exposes even to an admin-RLS'd read). Overview's counts are plain admin-gated reads, not an RPC — `works_admin_read` etc already exist. Reports sort CSAM-category first, client-side (see the table's own comment in `schema-clean.sql`). Deliberately plain: no `pivot.css`, monospace, one table style — see the file's own header. |
-| `legal.html` | Static prose: terms, privacy, takedown. |
+---
 
-### Server
+## Part 2 — the architecture the build will have
 
-| File | Is |
-|---|---|
-| `api/sign.mjs` | Signs presigned R2 uploads. A trust boundary — it is the only thing standing between a signed-in user and the bucket. Content/table-agnostic; nothing here is comics-specific. |
+Decided at the level the prompts need; the unfilled specifics (the exact
+front-end framework) are the first prompts in `CODEGEN.md` (phase P0), not
+guesses to make here.
 
-### Database
+### The stack
 
-Schema lives in `schema-clean.sql` (the pivot model: works, work_items,
-collections, collection_items, content_tags, comments, likes, save_folders,
-save_folder_items, seen_marks, reports, follows, plus the admin/moderation
-policies) and three narrowly-scoped files applied separately: `schema-quota.sql`
-(upload ceiling), `schema-artboard.sql` (the artboard tool's own table and
-bucket — unrelated to the product schema). All three are safe to re-run.
+- **Supabase** (Postgres + Auth + Realtime). Postgres is where ownership,
+  visibility and consent are decided — via RLS and `security definer` RPCs, not
+  application code. Realtime carries five channels (COLLAB §7.4): `server:{id}`
+  presence, `channel:{id}` live messages, `channel:{id}:typing`, `canvas:{id}`
+  live annotations, `user:{id}` the notification bell.
+- **Cloudflare R2** for media, behind `api/sign.mjs` — the one existing serverless
+  function, content-agnostic presigned uploads; the browser uploads straight to
+  R2, nothing streams through Vercel. Storage is **pay-as-you-go, two pools**
+  (personal and per-server), metered by a trigger that sums `works.bytes` per pool
+  (CANON §D.2).
+- **Vercel** hosts the app plus serverless functions and deploys `main` directly.
+  No staging.
 
-Several more pieces are live in the database with **no schema file at all** —
-applied through migrations directly, undocumented until `schema-clean.sql`'s
-header called them out: `admins`/`is_admin()` (the admin gate), `user_prefs`,
-`rate_events`/`claim_rate()`/`claim_rate_sweep()`/`rate_limit()` (comment and
-report rate limiting), `tag_synonyms`/`canonical_tag()` (tag normalization,
-not read by anything yet), `account_live()`, `touch_updated_at()`, and
-`rls_auto_enable()` — an event trigger that turns RLS on for every new public
-table automatically, which is why every table above already has it on even
-though `schema-clean.sql` also does it explicitly. **If you find a live
-function or trigger this document does not mention, it probably predates the
-pivot and was applied outside this repo's schema files — check
-`pg_get_functiondef` against the live project before assuming it is dead.**
-That gap is exactly how `file_report()`, `profiles_tombstone()`,
-`delete_my_account()` and `comments_rate_guard` were nearly left pointing at
-tables `schema-clean.sql` dropped; see that file's header for the fixes.
+### The backend is a true clean slate
 
-**The policies are the rule, not the UI** — a page hides a control it knows is
-refused, but the insert is where the refusal actually happens.
+The schema is designed fresh for this product; **the pivot's `schema-clean.sql`
+is not inherited.** The plan of record is COLLAB §7 (the tables, RPCs, triggers,
+migration order) as amended by CANON §D:
+
+- **Granular roles replace the flat role enum** (CANON §D.1): `roles` carry a
+  permission bitmask, `member_roles` join members to roles (a member holds
+  several; power is the OR of their roles), `channel_roles` is the v1
+  private-channel allow-list. Two RLS helpers, `has_perm(server_id, flag)` and
+  `can_view_channel(channel_id)`, join `member_of`/`is_server_admin`, and
+  channel-scoped reads gate on `can_view_channel`. The layout is written to the
+  future full-overwrite grain so v2 is additive, no reshape (LOCKED D-i).
+- **Storage source on a work** (CANON §D.3): `storage_source` + `billing_server_id`
+  distinguish a native server post (server pool pays) from a crosspost of a
+  personal work into a server (personal pool pays; the file stays the owner's).
+
+Follow the CANON vocabulary when reading §7: `servers`/`server_members`/
+`is_server_admin` (not `groups`), `canvas`/`canvas_items` (not `scratchpads`),
+and **`annotations` for canvas marks vs `comments` for post-level threads** —
+CANON §E.7 splits these, COLLAB §7 still folds them together.
+
+### The front end
+
+- **The design system is authored, the app is not.** `styleguide.html` is the
+  token/primitive source; `gallery.html` is every screen and dialog. The build
+  (P3 in `CODEGEN.md`) turns the styleguide primitives into components **once**,
+  then assembles screens from them — a screen that reinvents a button is a
+  rejected prompt.
+- **Mobile is its own layout**, not a squeezed desktop: the three-pane shell
+  (server rail · channel column · main · members rail) collapses to one pane +
+  bottom tabs (CANON §C.2).
+- **Durable visual invariants** (CANON / styleguide, non-negotiable): radius
+  `--r` (3px) on chrome and media stays square; round is avatars and presence
+  dots only; square icon and close buttons (`.iconbtn`, `#i-x`); modals darken
+  the background with a scrim and carry no drop shadow; surfaces separate by
+  background step, not borders, except an interactive field which gets a
+  `--line2` border for affordance.
 
 ---
 
@@ -188,48 +134,30 @@ refused, but the insert is where the refusal actually happens.
 
 | If you are changing… | It goes in |
 |---|---|
-| How a button looks when hovered | the interaction section of `broadsheet.css`, once |
-| A colour, any colour | `palettes.css` — never a literal in a page |
-| A spacing or type step | `tokens.css` |
-| Who may do what | `schema-clean.sql` (a policy) first, the UI second |
-| A new error condition | a new `ESK-####` **and** a line in `ERRORS.txt` |
-| Anything visual | run `tests/shots.js`, then the `eski-ui-audit` skill |
+| A concept's name | `docs/CANON.md` §A first — then everywhere, identically |
+| Who may do what | the RLS policy / RPC (CANON §B, §D.1) first; the UI signpost second |
+| What a screen or dialog looks like | `docs/design/gallery.html` (and the token in `styleguide.html`) |
+| A design value — colour, spacing, type, radius | `styleguide.html`; never a literal in a component |
+| The shape of a feature or the data model | `docs/COLLAB.md` (narrative) and `docs/CANON.md` (contract) |
+| How the build is sliced or sequenced | `docs/CODEGEN.md` |
+| Anything at all | keep the four docs consistent — never let the code become a third source of truth |
 
 ---
 
-## The tests, and what each is really for
+## Retired: the pivot, still in the tree
 
-`tests/README.md` has the full list. The pre-pivot tests that drove or
-asserted against the deleted reader/studio/composer were deleted with them
-(2026-08-15), not left stale. What's left: `structure.js`, `cache.js`,
-`loudness.js` and `check-sign.mjs` are live and pass, and run on every push.
-`errors.js` is half-live (its signer checks pass; its page-driven checks
-target a selector that no longer exists) and `shots.js` needs its screen
-list rewritten for the pivot pages — see `tests/README.md` for both.
+These files backed the old single-page product (a portfolio feed with versioning
+and collections). That product is **retired**; the files remain only until the
+cleanup pass finishes. **Do not build new work on them, and do not treat them as
+the architecture.**
 
----
+- **Pages:** `index.html`, `profile.html`, `admin.html`, `onboarding.html`,
+  `legal.html`, `artboard.html`.
+- **Runtime:** `pivot.js`, `pivot.css`, `platform.js`, `palette.js`,
+  `palettes.css`, `tokens.css`, `hash-worker.js`.
+- **Schema:** `schema-quota.sql` (the pivot's `schema-clean.sql` has already been
+  removed; the collab schema will be authored fresh per COLLAB §7).
 
-## Known shape problems
-
-Written down rather than left to be rediscovered.
-
-- **Editing is text-only.** Title/caption/body, not the underlying file —
-  swapping `media_key` after publish (and what that should do to a
-  `combination`'s `work_items`) is a real design question, not built.
-- **Saved/named feeds have no backing table.** `index.html`'s feed switcher
-  is one feed ("Discover"), filtered live. The mockup's rename/add/delete
-  affordance was deliberately left out rather than built against nothing —
-  see `ROADMAP.md` if this becomes worth a real table.
-- ~~No video or audio thumbnails~~ — done (2026-08-15). `pivot.js`'s
-  `coverKeyFor()` generates one at upload time: a canvas frame-grab for
-  video, a 600-bar peak waveform (Web Audio API `decodeAudioData`,
-  canvas-rendered) for audio. Best-effort — a file that won't decode still
-  publishes, just without a cover.
-- **A collection's own carousel has no cover art at all, and no player for
-  an audio item.** `collectionPane()` in `pivot.js` renders each item with a
-  plain `<img src="…media_key…">`, which works for image items and shows
-  nothing useful for video (no frame-grab) or audio (no player, just a
-  broken `<img>`). `work_items` doesn't even have a `cover_key` column —
-  deliberately not added along with the rest of the cover-generation work,
-  since nothing would read it yet (ponytail: add the column when the
-  carousel actually wants one).
+`ERRORS.txt` (the `ESK-####` registry) and `tests/` likewise describe the pivot
+and will be rewritten or retired as the collab build lands. Treat both as
+historical until then.
