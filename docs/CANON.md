@@ -726,3 +726,29 @@ still never opens in the canvas, §E).
   chosen per upload and editable per post. Backend: `works.visibility` +
   `works.server_id` (the chosen server) already carry this; the UI must expose
   the server picker, not assume the current one.
+
+---
+
+## §E.7 Annotations vs comments — terminology correction (2026-08-17e)
+
+**The canvas marks are ANNOTATIONS, not comments.** (They were called "comments"
+throughout §E by mistake.) Two distinct concepts:
+
+- **Annotation** — a canvas **mark** (point / rectangle / lasso) + its note/thread,
+  anchored to a spot on a media file. Lives on the canvas, resolves, and is
+  listed in the canvas **Annotations sidebar**. Own table: `annotations`
+  (work_id, author_id, mark jsonb, body, resolved_at). **Separate from ink**
+  (pen strokes) and **separate from comments**.
+- **Comment** — a **post-level** comment (Feed / details pane), on the work as a
+  whole. Table: `comments`. Not a canvas thing.
+
+Canvas UI consequences (built into the canvas screen + panels):
+- Sidebar header is **Annotations**; annotations show **no version number**.
+- Author **labels sit at the tile's top-right, off the media** (neat); a
+  **square count badge** = the **total** annotations on that post.
+- **Screencap** lives in the **expanded view only**, not on the tile.
+- Each tile has a **maximize button**; **all media** open an **expanded view**
+  = details (player controls, title, version, tags, credits) **+ its
+  annotations**. This is the details brought into the canvas — the details
+  *pane* still never opens inside the canvas.
+- **Duplicate, not copy**: audio-trim duplicates a clip straight into the canvas.
