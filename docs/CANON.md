@@ -671,3 +671,58 @@ Smaller corrections from the gallery review — all fold into §C when it's fill
   for small inline avatars and presence dots; the popout's hero image is square.
 - **The details pane never opens inside the canvas** (see §E) — a canvas tile's
   expanded state is the audio/video expanded view, not the details pane.
+
+---
+
+## §D.6 Feed, profile, layout & visibility (2026-08-17d)
+
+Gallery-review batch. All fold into §C/§E when filled; mockup screens updated where noted.
+
+### D.6.1 Feed / profile / explorer grid
+- **Full-width.** The card grid fills the pane width (no narrow max-width column).
+- **Square containers, invisible.** Each work sits in a **square cell** (aspect
+  1:1) with **no background/border** — the media shows at its natural aspect
+  inside; audio → waveform, video → play overlay, text → its words, image →
+  thumbnail. The cell is a layout unit, not a visible card.
+- **Layout toggle.** A control switches between the default even grid and a
+  **denser masonry** (variable-height, Pinterest-style) view. Applies to Feed,
+  Profile shelves, and Media explorer.
+- **Search in Profile.** Profile gets a **search button** (same pattern as Feed /
+  explorer) to filter that person's shelves.
+
+### D.6.2 Non-previewable file types
+Feed **and** message attachments must render **files with no visual preview**
+(`.flp`, `.zip`, `.exe`, `.als`, `.aep`, project files…) as a **type card**: the
+file icon + extension + name, square cell, no fake thumbnail. Add examples to the
+mockup feed and a chat message.
+
+### D.6.3 Collections → **Folders** (rename)
+The server-level **Collections** (explorer strip) are renamed **Folders**
+everywhere (UI copy + these docs). Keep the entity; kill the word "collection".
+(Distinct from personal **save folders**, which stay.)
+
+### D.6.4 Focused screens — create / join / sign-in
+These looked wonky (content flush to the top, unclear whether the rail belongs):
+- **Sign in / auth** — **no server rail** (you're signed out). A single centered
+  card, vertically + horizontally centered, generous padding, never touching the
+  top edge.
+- **Create server / Join by link** — reached signed-in, but they're single-task
+  focus screens: **center the card** both axes with breathing room. Keep the
+  server rail visible (you're inside the app) but the main area is a centered
+  card, not top-flush content.
+
+### D.6.5 Canvas comments sidebar
+The canvas gets a **comments sidebar** (a rail listing **every comment** on the
+canvas — author chip in member colour, snippet, mark type, resolved state).
+**Clicking a comment opens/ًjumps to its mark** on the canvas and expands its
+thread. This is the canvas's own navigation for its comments (the details pane
+still never opens in the canvas, §E).
+
+### D.6.6 Visibility — more rigorous, per-post, with server target
+- Visibility is set **per individual post/work**, not a global default only.
+- When visibility is **Server**, the user **picks which server** the post goes
+  into (a server selector). A post can target a specific server.
+- So the visibility control is: **Public / Server → [which server] / Private**,
+  chosen per upload and editable per post. Backend: `works.visibility` +
+  `works.server_id` (the chosen server) already carry this; the UI must expose
+  the server picker, not assume the current one.
