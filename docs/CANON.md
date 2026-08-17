@@ -111,6 +111,12 @@ Kill: **scratchpad** (→ canvas), **workspace** as used in F6 (→ canvas),
 **note** (→ comment; "leave a note" becomes "leave a comment"), "sticky",
 "marker" (→ mark or pin per context).
 
+> **Superseded by §E (2026-08-17c):** the tool set and annotation model above are
+> redefined — **no arrows/boxes**; annotation = **3 mark types** (point /
+> rectangle / lasso), each carrying a comment; plus a separate **pen + eraser**
+> ink tool. The **point renders as a rectangular labelled tail, not a bare
+> avatar**. See §E for the full mechanics.
+
 ### A.6 Boards
 
 | Canonical | Means | DB |
@@ -569,3 +575,99 @@ Not in the mockup yet; all **TO BUILD**:
 These extend §C's 14-screen manifest to a **~21-surface** registry; each still
 gets the full element · behaviour · DB · desktop · mobile treatment when §C is
 filled.
+
+---
+
+## §E. Canvas mechanics (detailed) — 2026-08-17c
+
+The review canvas got a full redesign pass. This **supersedes the tool/annotation
+parts of §A.5** (the glossary row stays; the mechanics live here). The through-line:
+**the canvas is its own workspace with its own expanded views — the details pane
+never opens inside the canvas.**
+
+### E.1 Navigation
+Pan + zoom, plus **zoom presets**: **Fit** (frame all tiles), **Reset** (100%),
+zoom-to-selection. A small zoom control (−/●/＋ with a % readout and Fit/Reset).
+
+### E.2 The tool palette — exactly three groups, nothing else
+**No shapes, no arrows.** The palette is:
+
+1. **Move** — pan the canvas / select & drag tiles.
+2. **Annotate** — drops a **comment anchor**. Three mark types only:
+   - **Point** — a single anchor. Renders as a **rectangular label with a
+     pointer/tail** (not a bare circle) carrying the **full username** in the
+     member colour; **scrolls** if the name is long. The tail shows exactly what
+     it's attached to.
+   - **Rectangle** — a rectangular region. Renders as a **dotted outline that
+     appears only on hover**, with the point-label pointing to it.
+   - **Freehand (lasso)** — a freeform region. Same treatment: **hover-only
+     dotted outline** + point-label.
+   Every annotation **carries a comment thread, hidden until the mark is
+   clicked**. (So on the canvas, annotation and comment are coupled: the mark is
+   the anchor, the comment is its thread.)
+3. **Pen + Eraser** — freehand **ink** markup, with **size + colour**.
+   - Strokes are stored as **SVG paths**.
+   - Eraser is **OneNote-style: whole-stroke erase** — touching a stroke removes
+     the entire path at once, never pixel-scrubbing.
+   Ink is pure visual markup — it is **not** a comment.
+
+Removed for good: arrow, box/shape, and the old pen/arrow/box/freeform set.
+
+### E.3 Per-media behaviour (this is the important part)
+- **Image** — annotations (point/rect/lasso) + pen ink drawn directly on the
+  tile. A **screencap** button copies the image at **full resolution to the
+  clipboard**.
+- **Video** — annotation pins sit on the frame; **as they pile up they collapse
+  into a number badge** (app-notification style). Click a pin/badge → a **list
+  of that video's annotations** (canvas-specific, *not* the details pane). A
+  **screencap** button grabs **the current frame at full resolution → clipboard**.
+- **Audio** — the point marker still applies, but clicking it opens an
+  **expanded audio view**: the waveform + a **player** + the list of that audio's
+  **annotations** (canvas-scoped, distinct from comments). **Trim**: select a
+  waveform section and **duplicate** it as a **new audio tile in the canvas**.
+
+### E.4 Duplicate, not copy
+Wherever the old spec said "copy", the action is **duplicate** — it spawns a copy
+**straight into the canvas**, never onto the clipboard. The one clipboard action
+is **screencap** (a frame/image, for use outside eski). Audio-trim → **duplicate
+into canvas**.
+
+### E.5 Three distinct layers on a tile (name them right)
+| Layer | What it is | Visibility |
+|---|---|---|
+| **annotation** | a mark (point/rectangle/lasso) that anchors a **comment** | mark's label always visible; region outline **on hover**; thread **on click** |
+| **ink** | pen strokes (size/colour, SVG, whole-stroke erase) | always visible |
+| **media annotations** (audio/video) | timeline/region marks inside the **expanded** audio/video view | inside that view only |
+
+### E.6 Data implications (for §7 backend)
+- `comments.mark` gains `{lasso: path}` and keeps `{point}`/`{box→rect}`; the
+  point renders as a labelled tail, not a bare pin.
+- New `ink` table (or `annotations` repurposed): `canvas_id, work_id, author_id,
+  color, size, path jsonb` — one row per stroke (whole-stroke erase = delete row).
+- Audio/video **media annotations** are their own rows keyed to the work +
+  timecode/region, separate from canvas `comments`.
+- Duplicate = insert a new `works`/`canvas_items` row (for audio-trim, a derived
+  clip); no clipboard.
+- Screencap is **client-side** (canvas/`<video>` frame grab → Clipboard API); no
+  backend.
+
+---
+
+## §D.5 UI refinements (2026-08-17c)
+
+Smaller corrections from the gallery review — all fold into §C when it's filled:
+
+- **Upload — split Tags and Credits into two fields.** Credits is a
+  **type-ahead chip input**: start typing a handle → it autocompletes members →
+  **space/Enter** commits them as a **chip in their member colour**. Not a
+  free-text line.
+- **Channel rename lives in Server settings → Channels**, not a standalone
+  prompt modal. (The generic single-field prompt still exists for new folder /
+  new label / etc.)
+- **New message is not a modal** — the add-by-handle field is **integrated into
+  the Messages (DMs) screen** itself (inline at the top of the thread list),
+  not a popped dialog.
+- **Member popout uses a SQUARE profile image** (the large avatar). Round stays
+  for small inline avatars and presence dots; the popout's hero image is square.
+- **The details pane never opens inside the canvas** (see §E) — a canvas tile's
+  expanded state is the audio/video expanded view, not the details pane.
