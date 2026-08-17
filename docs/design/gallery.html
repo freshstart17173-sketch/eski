@@ -973,6 +973,30 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
 :root[data-mode="catalog"] .app{display:none}
 .app{height:100vh}
 .proto{display:none}   /* dev picker bar — killed everywhere; gallery drives nav */
+/* --- rebuilt canvas (screen §E + comments sidebar §D.6.5) --- */
+.cvmain{flex:1;min-height:0;display:flex}
+.cvmain .canvas{flex:1;min-width:0}
+.cvside{width:250px;flex:none;background:var(--surface);overflow-y:auto;padding:10px 8px}
+.cvsidehd{display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--muted);padding:4px 8px 10px}
+.cvcom{display:block;width:100%;text-align:left;padding:9px 8px;border-radius:var(--r)}
+.cvcom+.cvcom{margin-top:2px}
+.cvcom:hover,.cvcom.on{background:var(--plate)}
+.cvcom .cvtop{display:flex;align-items:center;gap:7px}
+.cvcom .cvtype{font-size:10.5px;color:var(--muted)}
+.cvcom .cvsnip{display:block;font-size:12px;color:var(--soft);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cvcom.resolved{opacity:.5}
+.capbtn{position:absolute;top:7px;right:7px;z-index:5;width:26px;height:26px;border-radius:var(--r);background:rgba(20,20,20,.55);color:#fff;display:grid;place-items:center}
+.capbtn:hover{background:rgba(20,20,20,.82)}
+.pinbadge{position:absolute;transform:translate(-50%,-50%);z-index:6;min-width:20px;height:20px;padding:0 6px;border-radius:10px;color:#fff;font-size:11px;font-weight:700;display:grid;place-items:center;box-shadow:0 0 0 2px var(--paper)}
+.cvzoom{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--soft);margin-left:auto}
+.cvzoom button{padding:2px 8px;border-radius:var(--r);background:var(--plate)}
+.cvzoom button:hover{background:var(--paper1)}
+.cvzoom b{min-width:40px;text-align:center;color:var(--ink)}
+.cvzoom .sep2{width:1px;height:16px;background:var(--line);margin:0 2px}
+.pensz{width:22px;height:22px;display:grid;place-items:center}
+.pensz i{width:9px;height:9px;border-radius:50%;background:var(--ink);display:block}
+.audiohint{font-size:10.5px;color:var(--muted);padding:5px 8px;display:flex;align-items:center;gap:5px}
+.cvhd .acts{display:flex;align-items:center;gap:8px}
 </style>
 <script>document.documentElement.setAttribute("data-mode",new URLSearchParams(location.search).has("app")?"app":"catalog")</script>
 
@@ -1888,56 +1912,61 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
         <div class="cvhd">
           <button class="selbtn" id="canvasPick"><svg class="ic sm"><use href="#i-canvas"/></svg>sh040 review<svg class="ic sm"><use href="#i-chev"/></svg></button>
           <span class="vis"><svg class="ic"><use href="#i-users"/></svg>Specter, server</span>
+          <div class="cvzoom"><button title="Zoom out">&minus;</button><b>100%</b><button title="Zoom in">+</button><span class="sep2"></span><button title="Fit to screen">Fit</button><button title="Reset">Reset</button></div>
           <div class="acts">
-            <span class="cmtcount"><svg class="ic sm"><use href="#i-comment"/></svg>4 comments</span>
             <button class="btn sm"><svg class="ic sm"><use href="#i-plus"/></svg>Add file</button>
             <button class="btn sm">Share</button>
           </div>
         </div>
         <div class="cvtools">
-          <button class="iconbtn on" title="Select and move"><svg class="ic"><use href="#i-move"/></svg></button>
-          <div class="sep"></div>
-          <span class="grp">Annotate</span>
+          <button class="iconbtn on" title="Move / select"><svg class="ic"><use href="#i-move"/></svg></button>
+          <div class="sep"></div><span class="grp">Annotate</span>
+          <button class="iconbtn" title="Point"><svg class="ic"><use href="#i-pin"/></svg></button>
+          <button class="iconbtn" title="Rectangle"><svg class="ic"><use href="#i-square"/></svg></button>
+          <button class="iconbtn" title="Lasso"><svg class="ic"><use href="#i-scribble"/></svg></button>
+          <div class="sep"></div><span class="grp">Pen</span>
           <button class="iconbtn" title="Pen"><svg class="ic"><use href="#i-pen"/></svg></button>
-          <button class="iconbtn" title="Arrow"><svg class="ic"><use href="#i-arrow"/></svg></button>
-          <button class="iconbtn" title="Box"><svg class="ic"><use href="#i-square"/></svg></button>
-          <button class="iconbtn" title="Freeform"><svg class="ic"><use href="#i-scribble"/></svg></button>
-          <span class="sw" style="background:#B0503F"></span><span class="sw" style="background:#A9791F"></span><span class="sw" style="background:#3F7A4E"></span>
-          <div class="sep"></div>
-          <span class="grp">Comment</span>
-          <button class="iconbtn" title="Drop a comment (point, box, or freeform)"><svg class="ic"><use href="#i-comment"/></svg></button>
-          <div class="sep"></div>
-          <button class="iconbtn" title="Undo"><svg class="ic"><use href="#i-undo"/></svg></button>
-          <button class="iconbtn" title="Fit"><svg class="ic"><use href="#i-expand"/></svg></button>
+          <button class="iconbtn" title="Eraser (whole stroke)"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M4 15l7-7 6 6-4 4H8z"/><path d="M9 20h9"/></svg></button>
+          <span class="sw" style="background:var(--m1)"></span><span class="sw" style="background:var(--m3)"></span><span class="sw" style="background:var(--m5)"></span>
+          <span class="pensz" title="Stroke size"><i></i></span>
         </div>
-        <div class="canvas">
-          <div class="tile img sel">
-            <div class="tname"><span>sh040_comp.mov</span><span class="ver">v3</span></div>
-            <div class="scene"><div class="ground"></div><div class="o1"></div><div class="o2"></div></div>
-            <svg class="anno" viewBox="0 0 380 214" preserveAspectRatio="none">
-              <path d="M262 50 C 232 74, 200 86, 168 108" fill="none" stroke="#A9791F" stroke-width="2.5" stroke-linecap="round"/>
-              <path d="M168 108 l 11 -3 l -5 11 z" fill="#A9791F"/>
-            </svg>
-            <div class="selbox" style="left:26%;top:44%;width:20%;height:34%"></div>
-            <div class="pin open" style="left:26%;top:44%"><div class="pfp" style="background:var(--m4)">MI</div>
-              <div class="pop"><div class="ph"><span class="uchip m4"><span class="dot"></span>mira</span></div>
-                <div class="tx">near building edge is ghosting against the sky, needs a garbage matte inside this box.</div>
-                <div class="rl"><input placeholder="Reply"></div></div></div>
-            <div class="pin" style="left:70%;top:30%"><div class="pfp" style="background:var(--m3)">LN</div></div>
-          </div>
-          <div class="tile audio">
-            <div class="tname"><span>sounddesign_pass.wav</span></div>
-            <div class="wavewrap">
-              <div class="wave" data-wf="150"></div>
-              <div class="selrange" style="left:33%;width:14%"></div>
-              <div class="pin" style="left:40%;top:0"><div class="pfp" style="background:var(--m2)">SO</div></div>
+        <div class="cvmain">
+          <div class="canvas">
+            <div class="tile img sel">
+              <div class="tname"><span>sh040_comp.mov</span><span class="ver">v3</span></div>
+              <div class="scene"><div class="ground"></div><div class="o1"></div><div class="o2"></div></div>
+              <svg class="anno" viewBox="0 0 380 214" preserveAspectRatio="none"><path d="M250 60 C 224 82, 196 92, 170 112" fill="none" stroke="var(--m2)" stroke-width="3" stroke-linecap="round"/></svg>
+              <button class="capbtn" title="Screencap this frame (full-res, to clipboard)"><svg class="ic sm"><use href="#i-image"/></svg></button>
+              <div class="selbox" style="left:26%;top:44%;width:20%;height:34%"></div>
+              <div class="ptmark" style="--pc:var(--m4);left:26%;top:40%">mira</div>
+              <div class="thread" style="position:absolute;left:48%;top:42%;width:224px;z-index:9;box-shadow:0 14px 40px rgba(0,0,0,.22)">
+                <div class="th"><span class="uchip m4"><span class="dot"></span>mira</span><span class="meta">rectangle &middot; v3</span></div>
+                <div class="tx">Near building edge is ghosting against the sky &mdash; needs a garbage matte inside this box.</div>
+                <div class="actions"><button><svg class="ic sm"><use href="#i-check"/></svg>Resolve</button><span>2 replies</span></div>
+                <div class="field"><input placeholder="Reply"></div>
+              </div>
+              <div class="pinbadge" style="left:80%;top:24%;background:var(--m3)">3</div>
+            </div>
+            <div class="tile audio">
+              <div class="tname"><span>sounddesign_pass.wav</span></div>
+              <div class="wavewrap"><div class="wave" data-wf="150"></div>
+                <div class="ptmark" style="--pc:var(--m2);left:38%;top:8px">sol</div></div>
+              <div class="audiohint"><svg class="ic sm"><use href="#i-expand"/></svg>click a point to open the audio view</div>
+            </div>
+            <div class="tile img warm" style="width:300px;height:180px">
+              <div class="tname"><span>grade_ref.png</span></div>
+              <div class="scene"><div class="ground"></div></div>
+              <button class="capbtn" title="Screencap (full-res, to clipboard)"><svg class="ic sm"><use href="#i-image"/></svg></button>
+              <div class="ptmark" style="--pc:var(--m5);left:52%;top:46%">jax</div>
             </div>
           </div>
-          <div class="tile img warm" style="width:300px;height:180px">
-            <div class="tname"><span>grade_ref.png</span></div>
-            <div class="scene"><div class="ground"></div></div>
-            <div class="pin" style="left:55%;top:50%"><div class="pfp" style="background:var(--m5)">JX</div></div>
-          </div>
+          <aside class="cvside">
+            <div class="cvsidehd">Comments <span class="ct">4</span></div>
+            <button class="cvcom on"><span class="cvtop"><span class="uchip m4"><span class="dot"></span>mira</span><span class="cvtype">rect &middot; v3</span></span><span class="cvsnip">near building edge is ghosting against the sky&hellip;</span></button>
+            <button class="cvcom"><span class="cvtop"><span class="uchip m3"><span class="dot"></span>lin</span><span class="cvtype">point</span></span><span class="cvsnip">love this framing, keep the bloom</span></button>
+            <button class="cvcom"><span class="cvtop"><span class="uchip m2"><span class="dot"></span>sol</span><span class="cvtype">audio 0:42&ndash;0:48</span></span><span class="cvsnip">whoosh lands a beat late, pull ~6 frames</span></button>
+            <button class="cvcom resolved"><span class="cvtop"><span class="uchip m5"><span class="dot"></span>jax</span><span class="cvtype">point &middot; resolved</span></span><span class="cvsnip">grade ref for the sky, matched</span></button>
+          </aside>
         </div>
       </div>
     </div>
