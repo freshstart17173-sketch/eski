@@ -41,20 +41,28 @@ Folders strip renders; bulk select shows the action bar; lightbox opens with a
 server's files and folders; a work in a private channel is hidden from a
 non-granted member; bulk actions call the right RPCs.
 
-### P5.6 [UI] — Details pane — audio & video
-Media + **player controls** (play/pause, scrubber, tabular time), **storage badge**
-(server vs personal-crossposted), version dropdown **by file name**, title/credits
-(server-hue chips)/tags, actions (Download/Save/Open in canvas), **post comments**.
-Mobile = full-height bottom sheet. **DONE:** audio (waveform) and video (poster +
-play) both render with transport; the storage badge reads correctly; matches the
-gallery "Details pane — audio/video".
+### P5.6 [UI] — Details pane — arena shell + audio & video
+**Arena layout (CANON §C.7):** a near-full-screen split over a scrim — media fills
+the left and grows, a fixed **~380px info rail** on the right, **no drop shadow**.
+The rail's **top bar** holds the version dropdown (collapsed `v3 of 3`, opens to
+**full file names**) + report + close; **prev/next arrows** on the media edges step
+through the calling grid. Rail body: title, version note, **storage badge** (server
+vs personal-crossposted), meta, credits (server-hue chips), tags, actions
+(Download/Save/Open in canvas), **post comments**. Audio/video: **player controls
+pinned to the foot of the media** (big play, scrubber, tabular time). Mobile:
+full-screen **column** — media ~42vh on top, rail below. **DONE:** the pane is
+arena-scale (media dominates); the version dropdown reveals file names on click;
+prev/next move between items without closing; audio and video render with transport;
+the storage badge reads correctly; mobile stacks.
 
-### P5.7 [UI] — Details pane — image, other, folder
-Image: full still, no transport, Open in canvas. Other (non-previewable): a **type
-card**, versioned, **no Open in canvas**. Folder: a cover mosaic + count/size, Open
-/ Download-all, **no version/tags** (items keep their own). **DONE:** each matches
-its gallery "Details pane — image/other/folder" panel; the "other" pane omits
-canvas; the folder pane omits work-only controls.
+### P5.7 [UI] — Details pane — image, other, folder (same arena shell)
+Reuse the P5.6 arena shell; only the media area + rail specifics change. Image:
+full still, no transport, Open in canvas. Other (non-previewable): a **type card**
+(icon + ext) in the media area, versioned, **no Open in canvas**. Folder: a cover
+mosaic + count/size in the media area, Open / Download-all, **no version dropdown
+or tags** (items keep their own). **DONE:** each renders in the arena shell; the
+"other" pane omits canvas; the folder pane omits the version dropdown and
+work-only controls.
 
 ### P5.8 [GL] — Details data + actions
 `works` + `version_of`/`version_note` + `content_tags` + `comments(context)` +
