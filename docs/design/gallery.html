@@ -945,10 +945,12 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
 /* full-width arena detail-pane panels shown inline in the catalog (not compact) */
 .gallery-ui .arenapanel{grid-column:1/-1}
 .gallery-ui .arenapanel .stage{min-height:0;padding:20px}
-.gallery-ui .arena{width:min(1180px,100%);height:440px;background:var(--paper);border-radius:var(--r);display:flex;overflow:hidden;text-align:left}
-.gallery-ui .arena .dmedia{flex:1;min-width:0;background:var(--paper1);position:relative;display:flex;align-items:center;justify-content:center;padding:26px}
-.gallery-ui .arena .dinfo{flex:none;height:100%}
-@media(max-width:760px){.gallery-ui .arena{flex-direction:column;height:auto}.gallery-ui .arena .dmedia{height:200px}.gallery-ui .arena .dinfo{width:100%}}
+.gallery-ui .arena{width:min(1180px,100%);min-height:600px;background:var(--paper);border-radius:var(--r);display:flex;overflow:hidden;text-align:left}
+.gallery-ui .arena .dmedia{flex:1;min-width:0;min-height:600px;background:var(--paper1);position:relative;display:flex;align-items:center;justify-content:center;padding:26px}
+.gallery-ui .arena .dinfo{flex:none;height:auto}
+/* in the catalog the pane shows at full height — the rail doesn't scroll internally */
+.gallery-ui .arena .dinfo .scroll{overflow:visible}
+@media(max-width:760px){.gallery-ui .arena{flex-direction:column;min-height:0}.gallery-ui .arena .dmedia{min-height:220px;height:220px}.gallery-ui .arena .dinfo{width:100%}}
 .pcap{margin-top:9px}
 .pcap b{font-size:var(--fs-sm);color:var(--ink)}
 .pcap .m{display:block;font-size:12px;color:var(--muted);margin-top:3px;line-height:1.5}
@@ -1679,7 +1681,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
     navigation list (CANON §C.7).</p>
   <div class="stagewrap">
 
-    <!-- details pane — AUDIO (arena) -->
+    <!-- details pane — POST (public work; has comments) -->
     <div class="arenapanel">
       <div class="stage scrim"><div class="arena">
         <div class="dmedia">
@@ -1687,27 +1689,24 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
           <div class="dmtransport"><button class="tbtn" title="Back 10s"><svg class="ic"><use href="#i-rewind"/></svg></button><span>0:47</span><span class="track"><i style="width:34%"></i><span class="knob" style="left:34%"></span></span><span>2:18</span><button class="tbtn" title="Forward 10s"><svg class="ic"><use href="#i-ff"/></svg></button><button class="tbtn" title="Mute"><svg class="ic"><use href="#i-volume"/></svg></button></div>
         </div>
         <div class="dinfo">
-          <div class="dtop"><details class="verdrop"><summary><span class="v">v2</span> of 2<svg class="ic sm chev"><use href="#i-chev"/></svg></summary><div class="vermenu"><div class="mlabel">Versions — newest first</div><button class="on"><span class="vt cur">v2</span><span class="vfn">bloom_master_v2.wav</span></button><button><span class="vt">v1</span><span class="vfn">bloom_master.wav</span></button><div class="sep"></div><button><svg class="ic sm"><use href="#i-plus"/></svg>Add a version</button></div></details><button class="iconbtn sp" title="Report"><svg class="ic sm"><use href="#i-flag"/></svg></button><button class="iconbtn" title="Close"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
+          <div class="dtop"><details class="verdrop"><summary><span class="v">v2</span> of 2<svg class="ic sm chev"><use href="#i-chev"/></svg></summary><div class="vermenu"><div class="mlabel">Versions — newest first</div><button class="on"><span class="vt cur">v2</span><span class="vfn">late_bloom_master.wav</span></button><button><span class="vt">v1</span><span class="vfn">late_bloom_rough.wav</span></button><div class="sep"></div><button><svg class="ic sm"><use href="#i-plus"/></svg>Add a version</button></div></details><button class="iconbtn sp" title="Report"><svg class="ic sm"><use href="#i-flag"/></svg></button><button class="iconbtn" title="Close"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
           <div class="scroll">
-            <h2>bloom, single</h2>
-            <div class="vernote">v2: final master, brought the vocal up 1dB. <span class="by">rae</span></div>
-            <div class="meta"><div class="row"><span class="k">Visibility</span><span class="v"><span class="stbadge"><svg class="ic"><use href="#i-server"/></svg>Late Bloom LP</span></span></div><div class="row"><span class="k">Uploaded by</span><span class="v"><span class="uchip m1"><span class="dot"></span>rae</span></span></div><div class="row"><span class="k">Channel</span><span class="v">#mixing</span></div><div class="row"><span class="k">Added</span><span class="v">15 Aug 2026, 2:14 PM</span></div><div class="row"><span class="k">Length</span><span class="v">2:18</span></div><div class="row"><span class="k">Format</span><span class="v">WAV · 44.1 kHz · 24-bit</span></div><div class="row"><span class="k">Size</span><span class="v">32.1 MB</span></div><div class="row"><span class="k">Plays</span><span class="v">37</span></div></div>
+            <h2>late bloom</h2>
+            <div class="vernote">v2: final master. <span class="by">rae</span></div>
+            <div class="meta"><div class="row"><span class="k">Visibility</span><span class="v"><span class="stbadge personal"><svg class="ic"><use href="#i-globe"/></svg>Public · your storage</span></span></div><div class="row"><span class="k">Posted by</span><span class="v"><span class="uchip m1"><span class="dot"></span>rae</span></span></div><div class="row"><span class="k">Added</span><span class="v">15 Aug 2026, 2:14 PM</span></div><div class="row"><span class="k">Length</span><span class="v">2:18</span></div><div class="row"><span class="k">Format</span><span class="v">WAV · 44.1 kHz · 24-bit</span></div><div class="row"><span class="k">Size</span><span class="v">32.1 MB</span></div></div>
             <div class="dsec"><div class="lb">Tags</div><div class="chips"><span class="tag">bloom</span><span class="tag">single</span><span class="tag">master</span><button class="addtag"><svg class="ic sm"><use href="#i-plus"/></svg></button></div></div>
             <div class="dsec"><div class="lb">Credits</div><div class="chips"><span class="uchip m1"><span class="dot"></span>rae, vocals</span><span class="uchip m3"><span class="dot"></span>dev, beat</span><span class="uchip m4"><span class="dot"></span>tomo, mix</span></div></div>
-            <div class="dsec"><div class="lb">Comments</div>
-              <div class="cmt"><div class="av sm">TM</div><div class="bd"><div class="by"><span class="u m4">tomo</span><time>3:02 PM</time></div><div class="tx">this is the one, master sounds huge</div></div></div>
-              <div class="field" style="margin-top:8px"><input placeholder="Comment in the server"></div>
-            </div>
+            <div class="dsec"><div class="lb">Comments</div><div class="cmt"><div class="av sm">MI</div><div class="bd"><div class="by"><span class="u m4">mira</span><time>3:02 PM</time></div><div class="tx">the falling section finally reads, love it</div></div></div><div class="cmt"><div class="av sm">KO</div><div class="bd"><div class="by"><span class="u m2">kofi</span><time>2:40 PM</time></div><div class="tx">what bpm is this?</div></div></div><div class="field" style="margin-top:8px"><input placeholder="Add a comment"></div></div>
           </div>
           <div class="foot"><button class="btn primary"><svg class="ic sm"><use href="#i-download"/></svg>Download<svg class="ic sm"><use href="#i-chev"/></svg></button><button class="btn"><svg class="ic sm"><use href="#i-save"/></svg>Save</button><button class="btn"><svg class="ic sm"><use href="#i-canvas"/></svg>Canvas</button></div>
         </div>
       </div></div>
-      <div class="pcap"><b>Details pane — audio (arena)</b>
-        <span class="m">The real pane, full size: media takes the room with the full transport at its foot (play/pause, skip ±10s, seek, volume), and the fixed right rail — a <b>working version dropdown</b> (open it: full file names) + report + close on top, then rich metadata, credits, tags, <b>post comments</b> (distinct from canvas annotations), actions. Single works have no media arrows — only a folder does.</span>
-        <span class="db">works + versions + content_tags + comments · works.storage_source</span></div>
+      <div class="pcap"><b>Details pane — post (public)</b>
+        <span class="m">A <b>post</b> is a public work on your profile/feed — it draws <b>your personal storage</b>. Its detail pane is the classic one: a public <b>comment thread</b>, tags, credits, versions. Media takes the room; the rail is fixed. No channel (it isn't in a server).</span>
+        <span class="db">works visibility=public · storage_source=personal · comments (context=public)</span></div>
     </div>
 
-    <!-- details pane — VIDEO (arena) -->
+    <!-- details pane — SERVER FILE — video (no comments; chat handles replies) -->
     <div class="arenapanel">
       <div class="stage scrim"><div class="arena">
         <div class="dmedia" style="background:linear-gradient(135deg,#3a4a55,#12181c)">
@@ -1722,20 +1721,17 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
             <div class="meta"><div class="row"><span class="k">Visibility</span><span class="v"><span class="stbadge"><svg class="ic"><use href="#i-server"/></svg>Specter, sh040</span></span></div><div class="row"><span class="k">Uploaded by</span><span class="v"><span class="uchip m4"><span class="dot"></span>mira</span></span></div><div class="row"><span class="k">Channel</span><span class="v">#sh040 review</span></div><div class="row"><span class="k">Added</span><span class="v">16 Aug 2026, 9:40 AM</span></div><div class="row"><span class="k">Length</span><span class="v">0:34</span></div><div class="row"><span class="k">Dimensions</span><span class="v">1920×1080 · 24 fps</span></div><div class="row"><span class="k">Format</span><span class="v">MP4 · H.264</span></div><div class="row"><span class="k">Size</span><span class="v">214 MB</span></div></div>
             <div class="dsec"><div class="lb">Tags</div><div class="chips"><span class="tag">comp</span><span class="tag">sh040</span><button class="addtag"><svg class="ic sm"><use href="#i-plus"/></svg></button></div></div>
             <div class="dsec"><div class="lb">Credits</div><div class="chips"><span class="uchip m4"><span class="dot"></span>mira, comp</span><span class="uchip m2"><span class="dot"></span>sol, sound</span></div></div>
-            <div class="dsec"><div class="lb">Comments</div>
-              <div class="cmt"><div class="av sm">SO</div><div class="bd"><div class="by"><span class="u m2">sol</span><time>11:20 AM</time></div><div class="tx">matte edge at 0:12 flagged in canvas</div></div></div>
-              <div class="field" style="margin-top:8px"><input placeholder="Comment in the server"></div>
-            </div>
+            <div class="dsec"><div class="lb">Discussion</div><button class="mi" style="background:var(--surface);justify-content:flex-start;gap:8px"><svg class="ic sm" style="color:var(--muted)"><use href="#i-hash"/></svg>Replies happen in <b style="margin-left:3px">#sh040 review</b><svg class="ic sm" style="margin-left:auto;color:var(--muted)"><use href="#i-chev"/></svg></button></div>
           </div>
           <div class="foot"><button class="btn primary"><svg class="ic sm"><use href="#i-download"/></svg>Download<svg class="ic sm"><use href="#i-chev"/></svg></button><button class="btn"><svg class="ic sm"><use href="#i-save"/></svg>Save</button><button class="btn"><svg class="ic sm"><use href="#i-canvas"/></svg>Canvas</button></div>
         </div>
       </div></div>
-      <div class="pcap"><b>Details pane — video (arena)</b>
-        <span class="m">Same arena shell; the media is the video frame and the transport gains a fullscreen control. Dimensions/fps and codec sit in the metadata.</span>
-        <span class="db">works (kind=video) · works.storage_source</span></div>
+      <div class="pcap"><b>Details pane — server file (video)</b>
+        <span class="m">A <b>file shared in a server</b> looks the same expanded but has <b>no comment thread</b> — replies live in the channel chat. It keeps <b>tags</b>, credits and versions; annotations are unchanged (they live on the canvas). Draws the <b>server's</b> storage pool.</span>
+        <span class="db">works visibility=server · no comments · content_tags · annotations on canvas</span></div>
     </div>
 
-    <!-- details pane — IMAGE (arena) -->
+    <!-- details pane — SERVER FILE — image (crosspost) -->
     <div class="arenapanel">
       <div class="stage scrim"><div class="arena">
         <div class="dmedia" style="background:linear-gradient(135deg,#6b5a4a,#241c16);padding:0"></div>
@@ -1746,20 +1742,17 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
             <div class="meta"><div class="row"><span class="k">Visibility</span><span class="v"><span class="stbadge personal"><svg class="ic"><use href="#i-user"/></svg>Personal · crossposted</span></span></div><div class="row"><span class="k">Uploaded by</span><span class="v"><span class="uchip m6"><span class="dot"></span>nel</span></span></div><div class="row"><span class="k">Channel</span><span class="v">#references</span></div><div class="row"><span class="k">Added</span><span class="v">14 Aug 2026, 6:02 PM</span></div><div class="row"><span class="k">Dimensions</span><span class="v">3000×2400</span></div><div class="row"><span class="k">Format</span><span class="v">PNG · sRGB</span></div><div class="row"><span class="k">Size</span><span class="v">4.8 MB</span></div></div>
             <div class="dsec"><div class="lb">Tags</div><div class="chips"><span class="tag">cover</span><span class="tag">bloom</span><span class="tag">wip</span><button class="addtag"><svg class="ic sm"><use href="#i-plus"/></svg></button></div></div>
             <div class="dsec"><div class="lb">Credits</div><div class="chips"><span class="uchip m6"><span class="dot"></span>nel, art</span><span class="uchip m1"><span class="dot"></span>rae, direction</span></div></div>
-            <div class="dsec"><div class="lb">Comments</div>
-              <div class="cmt"><div class="av sm">RA</div><div class="bd"><div class="by"><span class="u m1">rae</span><time>9:14 AM</time></div><div class="tx">warmer than v1, closer</div></div></div>
-              <div class="field" style="margin-top:8px"><input placeholder="Comment in the server"></div>
-            </div>
+            <div class="dsec"><div class="lb">Discussion</div><button class="mi" style="background:var(--surface);justify-content:flex-start;gap:8px"><svg class="ic sm" style="color:var(--muted)"><use href="#i-hash"/></svg>Replies happen in <b style="margin-left:3px">#references</b><svg class="ic sm" style="margin-left:auto;color:var(--muted)"><use href="#i-chev"/></svg></button></div>
           </div>
           <div class="foot"><button class="btn primary"><svg class="ic sm"><use href="#i-download"/></svg>Download<svg class="ic sm"><use href="#i-chev"/></svg></button><button class="btn"><svg class="ic sm"><use href="#i-save"/></svg>Save</button><button class="btn"><svg class="ic sm"><use href="#i-canvas"/></svg>Canvas</button></div>
         </div>
       </div></div>
-      <div class="pcap"><b>Details pane — image (arena)</b>
-        <span class="m">Full still, no transport. The <b>storage badge reads "Personal · crossposted"</b> — the file draws the owner's personal pool even though it shows in a server (CANON §D.3).</span>
-        <span class="db">works (kind=image) · storage_source=personal, billing_server_id=null</span></div>
+      <div class="pcap"><b>Details pane — server file (image, crosspost)</b>
+        <span class="m">A personal work <b>crossposted</b> into a server: the badge reads <b>"Personal · crossposted"</b> (it draws the owner's personal pool, CANON §D.3), and as a server file it has <b>no comment thread</b> — chat handles replies — but keeps tags.</span>
+        <span class="db">works storage_source=personal, billing_server_id=null · no comments</span></div>
     </div>
 
-    <!-- details pane — OTHER (arena) -->
+    <!-- details pane — SERVER FILE — other (non-previewable) -->
     <div class="arenapanel">
       <div class="stage scrim"><div class="arena">
         <div class="dmedia">
@@ -1773,17 +1766,14 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
             <div class="meta"><div class="row"><span class="k">Visibility</span><span class="v"><span class="stbadge"><svg class="ic"><use href="#i-server"/></svg>Late Bloom LP</span></span></div><div class="row"><span class="k">Uploaded by</span><span class="v"><span class="uchip m3"><span class="dot"></span>dev</span></span></div><div class="row"><span class="k">Channel</span><span class="v">#beats</span></div><div class="row"><span class="k">Added</span><span class="v">15 Aug 2026, 2:14 PM</span></div><div class="row"><span class="k">Format</span><span class="v">FL Studio project (.flp)</span></div><div class="row"><span class="k">Opens with</span><span class="v">FL Studio 21</span></div><div class="row"><span class="k">Size</span><span class="v">8.4 MB</span></div></div>
             <div class="dsec"><div class="lb">Tags</div><div class="chips"><span class="tag">drums</span><span class="tag">142bpm</span><span class="tag">bridge</span><button class="addtag"><svg class="ic sm"><use href="#i-plus"/></svg></button></div></div>
             <div class="dsec"><div class="lb">Credits</div><div class="chips"><span class="uchip m5"><span class="dot"></span>jax, prod</span><span class="uchip m3"><span class="dot"></span>dev, arrangement</span></div></div>
-            <div class="dsec"><div class="lb">Comments</div>
-              <div class="cmt"><div class="av sm">DV</div><div class="bd"><div class="by"><span class="u m3">dev</span><time>2:14 PM</time></div><div class="tx">stems bounced in the zip next to it</div></div></div>
-              <div class="field" style="margin-top:8px"><input placeholder="Comment in the server"></div>
-            </div>
+            <div class="dsec"><div class="lb">Discussion</div><button class="mi" style="background:var(--surface);justify-content:flex-start;gap:8px"><svg class="ic sm" style="color:var(--muted)"><use href="#i-hash"/></svg>Replies happen in <b style="margin-left:3px">#beats</b><svg class="ic sm" style="margin-left:auto;color:var(--muted)"><use href="#i-chev"/></svg></button></div>
           </div>
           <div class="foot"><button class="btn primary"><svg class="ic sm"><use href="#i-download"/></svg>Download<svg class="ic sm"><use href="#i-chev"/></svg></button><button class="btn"><svg class="ic sm"><use href="#i-save"/></svg>Save</button></div>
         </div>
       </div></div>
-      <div class="pcap"><b>Details pane — other (non-previewable, arena)</b>
-        <span class="m">Project files, archives, binaries (.flp, .zip, .exe, .als, .aep) — a <b>type card</b> fills the media area, no fake thumbnail. Still versioned; <b>no Canvas action</b> — you can't annotate a file with no visual surface.</span>
-        <span class="db">works (kind=other) · works.file_ext</span></div>
+      <div class="pcap"><b>Details pane — server file (other, non-previewable)</b>
+        <span class="m">Project files, archives, binaries (.flp, .zip, .exe, .als, .aep) — a <b>type card</b> fills the media area, no fake thumbnail. Versioned, tagged; <b>no comments</b> (chat) and <b>no Canvas</b> (nothing to annotate).</span>
+        <span class="db">works kind=other · works.file_ext · no comments</span></div>
     </div>
 
     <!-- details pane — FOLDER (arena — the only pane with media arrows) -->
@@ -1810,7 +1800,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
         </div>
       </div></div>
       <div class="pcap"><b>Details pane — folder (arena)</b>
-        <span class="m">A server <b>Folder</b> (renamed from Collection). <b>The only pane with arrows over the media</b> — you page through the items — plus a clickable <b>navigation list on the side</b>. Not a work: no version dropdown or tags; each item carries its own.</span>
+        <span class="m">A server <b>Folder</b> (renamed from Collection). <b>The only pane with arrows over the media</b> — you page through the items — plus a clickable <b>navigation list on the side</b>. Not a work: no version dropdown, tags or comments; each item carries its own.</span>
         <span class="db">collections (folder) · collection_items → works</span></div>
     </div>
 
@@ -3012,10 +3002,8 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
         <div class="dsec"><div class="lb">Contributors</div><div class="chips">
           <span class="uchip m5"><span class="dot"></span>jax, prod</span><span class="uchip m3"><span class="dot"></span>dev, arrangement</span>
           <span class="uchip m1"><span class="dot"></span>rae, vocals</span><span class="uchip m2"><span class="dot"></span>tomo, mix</span></div></div>
-        <div class="dsec"><div class="lb">Server comments</div>
-          <div class="cmt"><div class="av sm">TM</div><div class="bd"><div class="by"><span class="u m2">tomo</span><time>2:47 PM</time></div><div class="tx">low end note is on the waveform in canvas</div></div></div>
-          <div class="cmt"><div class="av sm">RA</div><div class="bd"><div class="by"><span class="u m1">rae</span><time>2:31 PM</time></div><div class="tx">this is the one, pulling it into mixing</div></div></div>
-          <div class="field" style="margin-top:8px"><input placeholder="Comment in the server"></div>
+        <div class="dsec"><div class="lb">Discussion</div>
+          <button class="mi" style="background:var(--surface);justify-content:flex-start;gap:8px"><svg class="ic sm" style="color:var(--muted)"><use href="#i-hash"/></svg>Replies happen in <b style="margin-left:3px">#beats</b><svg class="ic sm" style="margin-left:auto;color:var(--muted)"><use href="#i-chev"/></svg></button>
         </div>
       </div>
       <div class="foot">

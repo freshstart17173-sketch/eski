@@ -474,17 +474,32 @@ near-full-screen split over a scrim — the **media takes the room** (left, grow
 fill), a **fixed ~380px info rail** on the right. No drop shadow (scrim
 separates). Bigger than a modal on purpose: the media is the point.
 
+**Post vs server file — the load-bearing distinction (2026-08-18b).** The *same*
+arena shell serves two things; what differs is the discussion surface and the
+storage pool:
+
+- **Post** — a **public** work on a profile/Feed. Draws the owner's **personal
+  storage** (`storage_source='personal'`). Its pane is the classic one: a **public
+  comment thread** (`comments`, context=public), tags, credits, versions. **No
+  channel** (it isn't in a server).
+- **Server file** — a work shared **in a server**. Looks identical expanded but has
+  **no comment thread** — replies happen in the **channel chat**; the rail shows a
+  "Replies happen in #channel →" link instead. It **keeps tags** (+ credits,
+  versions), and **annotations are unchanged** (they live on the canvas, not here).
+  Draws the **server** pool, unless it's a personal **crosspost** (then the
+  personal pool, badge "Personal · crossposted", §D.3).
+
 | Element | Behaviour & states | DB | Desktop | Mobile |
 |---|---|---|---|---|
-| Media area | Fills the left; **player controls pinned to its foot** (big play, scrubber, tabular time); waveform/video/image/type-card/folder-mosaic per kind. | R `works` (signed URL) | Left, grows | Top ~42vh |
-| **Prev / next arrows — folder only** | A single work has **no** media arrows. A **folder** is the one pane that shows prev/next **over the media** (page its items) plus a clickable **navigation list in the rail**. | `collection_items` order | Folder media edges + rail list | Same |
-| **Version dropdown (top of rail)** | A **functional** dropdown (native `<details>`, no JS): collapsed shows just **`v3 of 3`**; **opens to the full file names** per version + "Add a version" (requires a reason). A folder has no version dropdown. | R `works.version_of` · `add_version()` | Rail top bar | Rail top bar |
-| Metadata | Rich per kind: storage badge, uploaded-by, channel, **added** date, **length** (a/v), **dimensions/fps** (image/video), **format/codec/bit-depth**, **size**, plays. Folder: where, item count, made-by, created, visibility. | `works` cols | Rail | Rail |
+| Media area | Fills the left; **player controls pinned to its foot** (big play, skip ±, seek, volume, tabular time); waveform/video/image/type-card/folder-preview per kind. | R `works` (signed URL) | Left, grows | Top ~42vh |
+| **Prev / next arrows — folder only** | A single work (post or file) has **no** media arrows. A **folder** is the one pane that shows prev/next **over the media** (page its items) plus a clickable **navigation list in the rail**. | `collection_items` order | Folder media edges + rail list | Same |
+| **Version dropdown (top of rail)** | A **functional** dropdown (native `<details>`, no JS): collapsed shows just **`v3 of 3`**; **opens to the full file names** per version + "Add a version" (requires a reason). Folder has no version dropdown. | R `works.version_of` · `add_version()` | Rail top bar | Rail top bar |
+| Metadata | Rich per kind: storage badge, posted/uploaded-by, **channel** (server file only), **added** date, **length** (a/v), **dimensions/fps** (image/video), **format/codec/bit-depth**, **size**. Folder: where, item count, made-by, created, visibility. | `works` cols | Rail | Rail |
 | Report + close | Flag (report) and × sit in the rail's top bar beside the version dropdown. | `file_report` | Rail top bar | Rail top bar |
-| Storage badge | "Server: NAME" vs "Personal · crossposted". | `works.storage_source` | Rail meta | Rail meta |
-| Title / credits / tags | Title (or file name); contributor chips (server colour); user tags + ＋. | `works.title/credits` · `content_tags` | Rail | Rail |
-| Actions | Download (get-as formats), Save (folder), Open in canvas (picker). | transcode · `saved_items` · `canvas` | Rail foot | Rail foot |
-| Comments | **Post-level** comments (distinct from canvas annotations). | `comments` (context) | Rail list | Rail list |
+| Storage badge | **Post** "Public · your storage"; **server file** "Server: NAME"; **crosspost** "Personal · crossposted". | `works.storage_source` | Rail meta | Rail meta |
+| Title / credits / tags | Title (or file name); contributor chips (server colour); user tags + ＋. **Both** posts and server files have tags. | `works.title/credits` · `content_tags` | Rail | Rail |
+| Actions | Download (get-as formats), Save (folder), Open in canvas (picker; not for `other`/folder). | transcode · `saved_items` · `canvas` | Rail foot | Rail foot |
+| **Discussion** | **Post** → a public **comment thread** (`comments`, context=public) with an add-comment field. **Server file** → **no thread**; a "Replies happen in #channel →" link to the chat. | `comments` (posts) / channel chat (server files) | Rail list / link | Rail |
 | Mobile | Card goes full-screen, **column**: media on top (~42vh), the rail below. | — | — | Full-screen column |
 
 ### C.8 Screen 5 — Canvas

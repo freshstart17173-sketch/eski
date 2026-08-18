@@ -48,31 +48,44 @@ The rail's **top bar** holds a **functional version dropdown** + report + close.
 The version control is a real dropdown (a native `<details>` is enough — no JS
 framework): collapsed it shows just `v3 of 3`; **click it open** and it lists the
 **full file names** per version (current highlighted) + "Add a version". A single
-work has **no media arrows** (only a folder does, P5.7). Rail body: title, version
-note, **rich metadata** (storage badge, uploaded-by, channel, added date, length
-for a/v, dimensions/fps for image/video, format/codec/bit-depth, size, plays),
-credits (server-hue chips), tags, actions (Download/Save/Open in canvas), **post
-comments**. Audio/video: use the **`MediaPlayer` primitive (P3.15)** — real
-play/pause, skip ±10s, seek, time, volume, fullscreen — pinned to the foot of the
-media. Mobile: full-screen **column** — media ~42vh on top, rail below. **DONE:**
-the pane is arena-scale (media dominates); the version dropdown actually opens and
-reveals file names on click; the metadata is populated (not just 2–3 fields);
-audio and video render with a working transport; the storage badge reads
-correctly; mobile stacks.
+work (post or file) has **no media arrows** (only a folder does, P5.7). Rail body:
+title, version note, **rich metadata** (storage badge, posted/uploaded-by, channel
+[server files only], added date, length for a/v, dimensions/fps for image/video,
+format/codec/bit-depth, size), credits (server-hue chips), tags.
+
+**Post vs server file (CANON §C.7) — the same shell, two discussion surfaces:**
+- A **post** is a public work (Feed/profile) drawing the owner's **personal**
+  storage; the badge reads "Public · your storage", there is **no channel**, and
+  the rail ends in a public **comment thread** (`comments`, context=public) + an
+  add-comment field.
+- A **server file** is shared in a server; it looks identical but has **no comment
+  thread** — the rail shows a "Replies happen in #channel →" link (discussion is
+  the chat). It **keeps tags**, credits and versions; annotations are unchanged
+  (canvas). Badge "Server: NAME" (or "Personal · crossposted" for a crosspost).
+
+Audio/video: use the **`MediaPlayer` primitive (P3.15)** — real play/pause, skip
+±10s, seek, time, volume, fullscreen — pinned to the foot of the media. Mobile:
+full-screen **column** — media ~42vh on top, rail below. **DONE:** the pane is
+arena-scale (media dominates); the version dropdown actually opens and reveals file
+names on click; metadata is populated (not 2–3 fields); a **post shows the comment
+thread**, a **server file shows the #channel link instead** and both keep tags;
+audio/video have a working transport; the storage badge reads correctly; mobile
+stacks.
 
 ### P5.7 [UI] — Details pane — image, other, folder (same arena shell)
-Reuse the P5.6 arena shell; only the media area + rail specifics change. Image:
-full still, no transport, no media arrows, Open in canvas. Other (non-previewable):
-a **type card** (icon + ext) fills the media, versioned, **no Open in canvas**.
+Reuse the P5.6 arena shell (incl. the post-vs-server-file discussion rule for
+image/other). Image: full still, no transport, no media arrows, Open in canvas.
+Other (non-previewable): a **type card** (icon + ext) fills the media, versioned,
+**no Open in canvas** (nothing to annotate).
 **Folder — the one pane with arrows over the media:** the media shows the **current
 item** (preview + a small play control + "name · N of M") with **prev/next arrows**
 to page items; the rail carries a clickable **navigation list** of all items
 (thumb + name + type, current highlighted) plus folder meta (where, item count,
-made-by, created), and **no version dropdown or tags** (items keep their own);
-actions are Open folder / Download all. **DONE:** the "other" pane omits canvas;
-only the folder shows media arrows and the side item-list, and paging/clicking the
-list changes the previewed item; the folder omits the version dropdown and
-work-only controls.
+made-by, created, visibility), and **no version dropdown, tags or comments** (it's
+not a work — items keep their own); actions are Open folder / Download all.
+**DONE:** the "other" pane omits canvas; only the folder shows media arrows and the
+side item-list, and paging/clicking the list changes the previewed item; the folder
+omits the version dropdown, tags and comments.
 
 ### P5.8 [GL] — Details data + actions
 `works` + `version_of`/`version_note` + `content_tags` + `comments(context)` +
