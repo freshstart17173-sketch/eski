@@ -880,15 +880,20 @@ The server-level **Collections** (explorer strip) are renamed **Folders**
 everywhere (UI copy + these docs). Keep the entity; kill the word "collection".
 (Distinct from personal **save folders**, which stay.)
 
-### D.6.4 Focused screens — create / join / sign-in
-These looked wonky (content flush to the top, unclear whether the rail belongs):
-- **Sign in / auth** — **no server rail** (you're signed out). A single centered
-  card, vertically + horizontally centered, generous padding, never touching the
-  top edge.
-- **Create server / Join by link** — reached signed-in, but they're single-task
-  focus screens: **center the card** both axes with breathing room. Keep the
-  server rail visible (you're inside the app) but the main area is a centered
-  card, not top-flush content.
+### D.6.4 Focused screens — create / join / sign-in / system
+**Superseded 2026-08-17f — all focus/system screens are scrim modals, no rail.**
+They looked wonky (content flush to the top, an in-app rail beside a single-task
+card). The rule now, for **sign-in/auth, create server, join by link, 404, dead
+invite, and access-denied** alike:
+- **No server rail, no in-app chrome.** The whole viewport is a **dimmed backdrop
+  (scrim)** with the card centered on **both** axes, generous padding, never
+  top-flush.
+- **The scrim is the separation — no drop shadow on the card** (the standing
+  no-shadow rule; a shadow was removed here). Auth's "eski" wordmark sits on the
+  scrim above the card in the on-ink colour.
+- Implementation note: the app shell toggles a `focusmode` class that hides the
+  rail; `.onboard`/`.authwrap` are `position:fixed` scrims. (This overrides the
+  earlier "keep the rail on create/join" line.)
 
 ### D.6.5 Canvas comments sidebar
 The canvas gets a **comments sidebar** (a rail listing **every comment** on the

@@ -560,9 +560,15 @@ input{font:inherit;color:inherit}
 .auditrow .actx{font-size:var(--fs-xs);color:var(--muted);margin-top:2px}
 .auditrow time{font-size:var(--fs-xs);color:var(--muted);flex:none}
 
-/* onboarding: create / join */
-.onboard{flex:1;min-width:0;overflow-y:auto;background:var(--surface);display:flex;justify-content:center;padding:var(--s6) var(--s4)}
-.ocard{width:min(500px,100%);background:var(--paper);border-radius:6px;box-shadow:0 10px 44px rgba(0,0,0,.14);padding:var(--s5);align-self:flex-start}
+/* onboarding & system screens: a centered card over a dimmed backdrop (scrim),
+   no server rail — these are full-screen focus states, not in-app panes. The
+   scrim (not a drop shadow) is what separates the card from what's behind it. */
+.onboard,.authwrap{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.55);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:var(--s4);padding:var(--s6) var(--s4);overflow-y:auto}
+:root:not([data-theme="light"]) .onboard,:root:not([data-theme="light"]) .authwrap{background:rgba(0,0,0,.66)}
+.ocard{width:min(460px,100%);background:var(--paper);border-radius:6px;padding:var(--s5);flex:none}
+.app.focusmode .rail{display:none}
 .ocard h1{font-size:var(--fs-xl);font-weight:600}
 .ocard .lead{color:var(--muted);font-size:var(--fs-sm);margin:4px 0 var(--s5)}
 .ocard .ulab{margin-top:var(--s4)}
@@ -575,9 +581,8 @@ input{font:inherit;color:inherit}
 .jmeta{display:flex;align-items:center;gap:var(--s3);color:var(--muted);font-size:var(--fs-sm);margin-top:var(--s3)}
 .stackav{display:flex}.stackav .av{margin-left:-8px;box-shadow:0 0 0 2px var(--paper)}.stackav .av:first-child{margin-left:0}
 .invited{display:flex;align-items:center;gap:9px;background:var(--surface);border-radius:var(--r);padding:10px var(--s3);margin-top:var(--s4);font-size:var(--fs-sm)}
-/* sign-in / onboarding / username claim (gap #13) */
-.authwrap{flex:1;min-width:0;overflow-y:auto;background:var(--surface);display:flex;flex-direction:column;align-items:center;padding:var(--s6) var(--s4)}
-.authbrand{font-size:var(--fs-xl);font-weight:700;letter-spacing:.01em;margin-bottom:var(--s5)}
+/* sign-in / onboarding / username claim (gap #13) — layout shared with .onboard above */
+.authbrand{font-size:var(--fs-xl);font-weight:700;letter-spacing:.01em;color:var(--on-ink)}
 .astep[hidden]{display:none}
 .field .at{color:var(--muted);font-size:var(--fs-sm);font-weight:600;flex:none}
 .unamestate{display:flex;align-items:center;gap:6px;font-size:var(--fs-xs);margin-top:7px;min-height:16px;color:var(--muted)}
@@ -900,6 +905,21 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
 .modal .uhd b{font-size:var(--fs);font-weight:600}
 .modal .mbody{padding:var(--s4)}
 .modal .mbody>p{font-size:var(--fs-sm);color:var(--soft);line-height:1.55}
+/* storage-source badge (details pane) — metadata, never a member hue */
+.stbadge{display:inline-flex;align-items:center;gap:6px;background:var(--surface);color:var(--soft);
+  font-size:var(--fs-xs);font-weight:600;padding:4px 9px;border-radius:var(--r)}
+.stbadge .ic{width:13px;height:13px;color:var(--muted)}
+.stbadge.personal{background:var(--plate)}
+/* file-type media block for a details pane (other/non-previewable) */
+.dtype{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;
+  height:130px;background:var(--plate);border-radius:var(--r);color:var(--muted)}
+.dtype .ext{font-size:var(--fs);font-weight:700;letter-spacing:.04em;color:var(--soft)}
+.dtype .ic{width:30px;height:30px}
+/* folder contents grid inside a details pane */
+.dfolder{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}
+.dfolder .cell{aspect-ratio:1;background:var(--plate);border-radius:3px;overflow:hidden;position:relative}
+.dfolder .cell .wave{padding:0 6px}
+.dfolder .cell.more{display:grid;place-items:center;color:var(--muted);font-size:var(--fs-sm);font-weight:600;background:var(--surface)}
 .modal .mfoot{display:flex;justify-content:flex-end;gap:var(--s2);
   padding:var(--s3) var(--s4);background:var(--surface)}
 .fl{display:block;font-size:12px;color:var(--muted);margin:14px 0 6px}
@@ -1070,6 +1090,11 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
 <symbol id="i-save" viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></symbol>
 <symbol id="i-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></symbol>
 <symbol id="i-board" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M15 3v18"/></symbol>
+<symbol id="i-server" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="8" rx="2"/><rect x="2" y="13" width="20" height="8" rx="2"/><path d="M6 7h.01M6 17h.01"/></symbol>
+<symbol id="i-folder" viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></symbol>
+<symbol id="i-file" viewBox="0 0 24 24"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M13 2v7h7"/></symbol>
+<symbol id="i-pause" viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></symbol>
+<symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></symbol>
 <symbol id="i-mic-off" viewBox="0 0 24 24"><path d="M1 1l22 22M9 9v3a3 3 0 0 0 5.1 2.1M15 9.3V5a3 3 0 0 0-5.9-.7M19 10v2a7 7 0 0 1-.5 2.6M12 19v3M8 23h8"/></symbol>
 <symbol id="i-camera" viewBox="0 0 24 24"><path d="M23 7l-7 5 7 5z"/><rect x="1" y="5" width="15" height="14" rx="2"/></symbol>
 <symbol id="i-screen" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></symbol>
@@ -1454,7 +1479,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
           <label class="fl">Who can open this canvas</label>
           <div class="seg">
             <div class="o"><svg class="ic"><use href="#i-lock"/></svg>Private</div>
-            <div class="o on"><svg class="ic"><use href="#i-users"/></svg>Server</div>
+            <div class="o on"><svg class="ic"><use href="#i-server"/></svg>Server</div>
             <div class="o"><svg class="ic"><use href="#i-link"/></svg>Link</div>
           </div>
           <label class="fl">Link — anyone with it can view &amp; comment</label>
@@ -1511,9 +1536,53 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
           <button class="cvcom"><span class="cvtop"><span class="uchip m5"><span class="dot"></span>jax</span><span class="cvtype">1:10</span></span><span class="cvsnip">low end sits right here</span></button>
         </div>
       </div></div>
-      <div class="pcap"><b>Expanded view (all media)</b>
-        <span class="m">Any file can be opened to an expanded view: player + details (title, version, tags, credits) plus its <b>annotations</b> &mdash; separate from a post&rsquo;s comments. Trim a range and duplicate it into the canvas.</span>
+      <div class="pcap"><b>Expanded view — audio (+ annotations)</b>
+        <span class="m">Any file opens to an expanded view: player + details (title, version, tags, credits) plus its <b>annotations</b> &mdash; separate from a post&rsquo;s comments. Audio: trim a range and duplicate it into the canvas.</span>
         <span class="db">annotations where work_id &middot; duplicate &rarr; canvas_items</span></div>
+    </div>
+
+    <!-- expanded view — image (+ annotations) -->
+    <div>
+      <div class="stage scrim"><div class="modal wide">
+        <div class="uhd"><b>sh040_grade_ref.png</b><span class="ver" style="margin-left:8px">v1</span><button class="iconbtn" style="margin-left:auto"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
+        <div class="mbody">
+          <div style="position:relative;aspect-ratio:16/10;background:linear-gradient(135deg,#33414a,#12181c);border-radius:var(--r);overflow:hidden">
+            <span class="ptmark" style="left:28%;top:38%"></span>
+            <span style="position:absolute;left:52%;top:30%;width:26%;height:34%;border:1.5px dashed var(--paper);border-radius:2px"></span>
+          </div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin:12px 0 12px"><span class="tag">grade</span><span class="tag">sky</span><span class="uchip m4"><span class="dot"></span>mira</span><span class="uchip m5"><span class="dot"></span>jax</span></div>
+          <div class="mhd" style="padding-left:0">Annotations <span style="color:var(--muted)">2</span></div>
+          <button class="cvcom"><span class="cvtop"><span class="uchip m4"><span class="dot"></span>mira</span><span class="cvtype">rectangle</span></span><span class="cvsnip">garbage matte the ghosting inside this box</span></button>
+          <button class="cvcom"><span class="cvtop"><span class="uchip m5"><span class="dot"></span>jax</span><span class="cvtype">point &middot; resolved</span></span><span class="cvsnip">grade ref for the sky, matched</span></button>
+        </div>
+      </div></div>
+      <div class="pcap"><b>Expanded view — image (+ annotations)</b>
+        <span class="m">Full still with its <b>point</b> and <b>rectangle</b> marks overlaid, and the annotation list below (author in member colour, mark type, resolved state). Clicking a row highlights its mark.</span>
+        <span class="db">annotations where work_id (kind point/rect)</span></div>
+    </div>
+
+    <!-- expanded view — video (+ annotations) -->
+    <div>
+      <div class="stage scrim"><div class="modal wide">
+        <div class="uhd"><b>sh040_comp.mov</b><span class="ver" style="margin-left:8px">v3</span><button class="iconbtn" style="margin-left:auto"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
+        <div class="mbody">
+          <div style="aspect-ratio:16/9;background:linear-gradient(135deg,#3a4a55,#12181c);border-radius:var(--r);position:relative;display:grid;place-items:center"><button class="playover" style="position:static"><svg class="ic"><use href="#i-play"/></svg></button></div>
+          <div style="display:flex;align-items:center;gap:9px;margin:11px 0 12px">
+            <button class="iconbtn"><svg class="ic"><use href="#i-play"/></svg></button>
+            <div style="flex:1;height:5px;background:var(--line);border-radius:3px;position:relative">
+              <i style="position:absolute;left:0;top:0;bottom:0;width:36%;background:var(--ink);border-radius:3px"></i>
+              <span class="pdot" style="left:20%"></span><span class="pdot" style="left:52%"></span>
+            </div>
+            <span style="font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums">0:12 / 0:34</span>
+          </div>
+          <div class="mhd" style="padding-left:0">Annotations <span style="color:var(--muted)">2</span></div>
+          <button class="cvcom"><span class="cvtop"><span class="uchip m4"><span class="dot"></span>mira</span><span class="cvtype">0:12 &middot; rectangle</span></span><span class="cvsnip">matte edge ghosting against the sky</span></button>
+          <button class="cvcom"><span class="cvtop"><span class="uchip m2"><span class="dot"></span>sol</span><span class="cvtype">0:26 &middot; point</span></span><span class="cvsnip">sfx hit should land on this frame</span></button>
+        </div>
+      </div></div>
+      <div class="pcap"><b>Expanded view — video (+ annotations)</b>
+        <span class="m">Frame + transport with <b>timecode pins</b> on the scrubber; each annotation is anchored to a frame/region and listed below. Same annotation model as image and audio, keyed by timecode.</span>
+        <span class="db">annotations where work_id (kind point/rect, t)</span></div>
     </div>
 
     <!-- empty canvas -->
@@ -1539,28 +1608,116 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
     rest are enumerated in ⑥.</p>
   <div class="stagewrap">
 
-    <!-- details pane -->
+    <!-- details pane — AUDIO -->
     <div>
       <div class="stage tall"><div class="modal wide" style="width:420px">
         <div class="uhd"><b>bloom, single</b><button class="iconbtn" style="margin-left:auto"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
         <div class="mbody">
           <div style="height:66px;background:var(--plate);border-radius:var(--r);overflow:hidden;padding:8px"><div class="wave" data-wf="150"></div></div>
-          <div style="display:flex;align-items:center;gap:11px;margin:11px 0 14px">
+          <div style="display:flex;align-items:center;gap:11px;margin:11px 0 12px">
             <button class="iconbtn"><svg class="ic"><use href="#i-play"/></svg></button>
             <div style="flex:1;height:4px;background:var(--line);border-radius:2px;position:relative"><i style="position:absolute;left:0;top:0;bottom:0;width:34%;background:var(--ink);border-radius:2px"></i></div>
             <span style="font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums">0:47 / 2:18</span>
           </div>
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:11px"><span class="stbadge"><svg class="ic"><use href="#i-server"/></svg>Late Bloom LP</span><span style="font-size:11px;color:var(--muted)">WAV · 32.1 MB</span></div>
           <button class="selbtn" style="margin-bottom:11px">v2 &middot; bloom_master_v2.wav<svg class="ic sm"><use href="#i-chev"/></svg></button>
           <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px"><span class="tag">bloom</span><span class="tag">single</span><span class="tag">master</span></div>
           <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:13px"><span class="uchip m1"><span class="dot"></span>rae</span><span class="uchip m3"><span class="dot"></span>dev</span><span class="uchip m4"><span class="dot"></span>tomo</span></div>
           <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn sm"><svg class="ic sm"><use href="#i-download"/></svg>Download</button><button class="btn sm"><svg class="ic sm"><use href="#i-save"/></svg>Save</button><button class="btn sm"><svg class="ic sm"><use href="#i-canvas"/></svg>Open in canvas</button></div>
-          <div class="mhd" style="padding-left:0;margin-top:8px">Comments</div>
+          <div class="mhd" style="padding-left:0;margin-top:12px">Comments</div>
           <div style="font-size:12.5px;color:var(--soft)"><b class="u m1">rae</b> final master, this is the one</div>
         </div>
       </div></div>
-      <div class="pcap"><b>Details pane</b>
-        <span class="m">Full post details + player controls (scrubber, time), version dropdown, tags, credits, actions, and <b>post comments</b> (distinct from canvas annotations). Opens from any card; never inside the canvas.</span>
-        <span class="db">works + versions + content_tags + comments</span></div>
+      <div class="pcap"><b>Details pane — audio</b>
+        <span class="m">Waveform + transport (play, scrubber, tabular time), <b>storage badge</b>, version dropdown, tags, credits, actions, and <b>post comments</b> (distinct from canvas annotations). Opens from any card; never inside the canvas.</span>
+        <span class="db">works + versions + content_tags + comments · works.storage_source</span></div>
+    </div>
+
+    <!-- details pane — VIDEO -->
+    <div>
+      <div class="stage tall"><div class="modal wide" style="width:420px">
+        <div class="uhd"><b>q3 comp reel, first pass</b><button class="iconbtn" style="margin-left:auto"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
+        <div class="mbody">
+          <div style="aspect-ratio:16/9;background:linear-gradient(135deg,#3a4a55,#161d22);border-radius:var(--r);position:relative;display:grid;place-items:center"><button class="playover" style="position:static"><svg class="ic"><use href="#i-play"/></svg></button></div>
+          <div style="display:flex;align-items:center;gap:11px;margin:11px 0 12px">
+            <button class="iconbtn"><svg class="ic"><use href="#i-play"/></svg></button>
+            <div style="flex:1;height:4px;background:var(--line);border-radius:2px;position:relative"><i style="position:absolute;left:0;top:0;bottom:0;width:18%;background:var(--ink);border-radius:2px"></i></div>
+            <span style="font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums">0:06 / 0:34</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:11px"><span class="stbadge"><svg class="ic"><use href="#i-server"/></svg>Specter, sh040</span><span style="font-size:11px;color:var(--muted)">MP4 · 214 MB · 1920×1080</span></div>
+          <button class="selbtn" style="margin-bottom:11px">v3 &middot; sh040_comp_v3.mp4<svg class="ic sm"><use href="#i-chev"/></svg></button>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px"><span class="tag">comp</span><span class="tag">sh040</span></div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:13px"><span class="uchip m4"><span class="dot"></span>mira, comp</span><span class="uchip m2"><span class="dot"></span>sol, sound</span></div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn sm"><svg class="ic sm"><use href="#i-download"/></svg>Download</button><button class="btn sm"><svg class="ic sm"><use href="#i-save"/></svg>Save</button><button class="btn sm"><svg class="ic sm"><use href="#i-canvas"/></svg>Open in canvas</button></div>
+          <div class="mhd" style="padding-left:0;margin-top:12px">Comments</div>
+          <div style="font-size:12.5px;color:var(--soft)"><b class="u m4">mira</b> matte edge at 0:12 flagged in canvas</div>
+        </div>
+      </div></div>
+      <div class="pcap"><b>Details pane — video</b>
+        <span class="m">Poster frame + play overlay, transport, resolution in the meta line. Same skeleton as audio; the media block and the Type/size line change per kind.</span>
+        <span class="db">works (kind=video) · works.storage_source</span></div>
+    </div>
+
+    <!-- details pane — IMAGE -->
+    <div>
+      <div class="stage tall"><div class="modal wide" style="width:420px">
+        <div class="uhd"><b>cover art, bloom</b><button class="iconbtn" style="margin-left:auto"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
+        <div class="mbody">
+          <div style="aspect-ratio:4/3;background:linear-gradient(135deg,#6b5a4a,#241c16);border-radius:var(--r)"></div>
+          <div style="display:flex;align-items:center;gap:8px;margin:12px 0 11px"><span class="stbadge personal"><svg class="ic"><use href="#i-user"/></svg>Personal · crossposted</span><span style="font-size:11px;color:var(--muted)">PNG · 4.8 MB · 3000×2400</span></div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px"><span class="tag">cover</span><span class="tag">bloom</span><span class="tag">wip</span></div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:13px"><span class="uchip m6"><span class="dot"></span>nel</span><span class="uchip m1"><span class="dot"></span>rae</span></div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn sm"><svg class="ic sm"><use href="#i-download"/></svg>Download</button><button class="btn sm"><svg class="ic sm"><use href="#i-save"/></svg>Save</button><button class="btn sm"><svg class="ic sm"><use href="#i-canvas"/></svg>Open in canvas</button></div>
+          <div class="mhd" style="padding-left:0;margin-top:12px">Comments</div>
+          <div style="font-size:12.5px;color:var(--soft)"><b class="u m6">nel</b> warmer than v1, closer</div>
+        </div>
+      </div></div>
+      <div class="pcap"><b>Details pane — image</b>
+        <span class="m">Full still (no transport). Here the <b>storage badge is "Personal · crossposted"</b> — the file draws the owner's personal pool even though it shows in a server (CANON §D.3).</span>
+        <span class="db">works (kind=image) · storage_source=personal, billing_server_id=null</span></div>
+    </div>
+
+    <!-- details pane — OTHER (non-previewable) -->
+    <div>
+      <div class="stage tall"><div class="modal wide" style="width:420px">
+        <div class="uhd"><b>Back half rework</b><button class="iconbtn" style="margin-left:auto"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
+        <div class="mbody">
+          <div class="dtype"><svg class="ic"><use href="#i-file"/></svg><span class="ext">.FLP</span><span style="font-size:11px">no preview — download to open</span></div>
+          <div style="display:flex;align-items:center;gap:8px;margin:12px 0 11px"><span class="stbadge"><svg class="ic"><use href="#i-server"/></svg>Late Bloom LP</span><span style="font-size:11px;color:var(--muted)">FL Studio project · 8.4 MB</span></div>
+          <button class="selbtn" style="margin-bottom:11px">v3 &middot; late_bloom_beat.flp<svg class="ic sm"><use href="#i-chev"/></svg></button>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px"><span class="tag">drums</span><span class="tag">142bpm</span><span class="tag">bridge</span></div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:13px"><span class="uchip m5"><span class="dot"></span>jax</span><span class="uchip m3"><span class="dot"></span>dev</span></div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn sm"><svg class="ic sm"><use href="#i-download"/></svg>Download</button><button class="btn sm"><svg class="ic sm"><use href="#i-save"/></svg>Save</button></div>
+          <div class="mhd" style="padding-left:0;margin-top:12px">Comments</div>
+          <div style="font-size:12.5px;color:var(--soft)"><b class="u m3">dev</b> stems bounced in the zip next to it</div>
+        </div>
+      </div></div>
+      <div class="pcap"><b>Details pane — other (non-previewable)</b>
+        <span class="m">Project files, archives, binaries (.flp, .zip, .exe, .als, .aep) — a <b>type card</b> (icon + ext), no fake thumbnail. Still versioned; <b>no "Open in canvas"</b> — you can't annotate a file with no visual surface.</span>
+        <span class="db">works (kind=other) · works.file_ext</span></div>
+    </div>
+
+    <!-- details pane — FOLDER -->
+    <div>
+      <div class="stage tall"><div class="modal wide" style="width:420px">
+        <div class="uhd"><div style="display:flex;align-items:center;gap:8px"><svg class="ic sm" style="color:var(--muted)"><use href="#i-folder"/></svg><b>Drum picks</b></div><button class="iconbtn"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
+        <div class="mbody">
+          <div class="dfolder">
+            <div class="cell" style="background:linear-gradient(135deg,#4a4a4a,#1c1c1c)"></div>
+            <div class="cell" style="padding:6px 0"><div class="wave" data-wf="60"></div></div>
+            <div class="cell" style="background:linear-gradient(135deg,#5a4a4a,#201818)"></div>
+            <div class="cell" style="padding:6px 0"><div class="wave" data-wf="60"></div></div>
+            <div class="cell" style="display:grid;place-items:center;color:var(--muted)"><svg class="ic"><use href="#i-file"/></svg></div>
+            <div class="cell more">+8</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;margin:12px 0 11px"><span class="stbadge"><svg class="ic"><use href="#i-server"/></svg>Late Bloom LP</span><span style="font-size:11px;color:var(--muted)">12 items · 61 MB</span></div>
+          <div style="font-size:12px;color:var(--muted);margin-bottom:11px">A named folder in this server's explorer. Grouping only — each item keeps its own storage and visibility.</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn sm"><svg class="ic sm"><use href="#i-folder"/></svg>Open folder</button><button class="btn sm"><svg class="ic sm"><use href="#i-download"/></svg>Download all</button></div>
+        </div>
+      </div></div>
+      <div class="pcap"><b>Details pane — folder</b>
+        <span class="m">A server <b>Folder</b> (renamed from Collection): a cover mosaic of its items, count + total size, open / download-all. Not a work — no version, tags or canvas; the items inside carry their own.</span>
+        <span class="db">collections (folder) · collection_items → works</span></div>
     </div>
 
     <!-- upload -->
@@ -1579,7 +1736,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
           <label class="fl">Visibility</label>
           <div class="seg">
             <div class="o"><svg class="ic"><use href="#i-globe"/></svg>Public</div>
-            <div class="o on"><svg class="ic"><use href="#i-users"/></svg>Server</div>
+            <div class="o on"><svg class="ic"><use href="#i-server"/></svg>Server</div>
             <div class="o"><svg class="ic"><use href="#i-lock"/></svg>Private</div>
           </div>
           <label class="fl">Which server</label>
@@ -2043,7 +2200,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
       <div class="cvwrap">
         <div class="cvhd">
           <button class="selbtn" id="canvasPick"><svg class="ic sm"><use href="#i-canvas"/></svg>sh040 review<svg class="ic sm"><use href="#i-chev"/></svg></button>
-          <span class="vis"><svg class="ic"><use href="#i-users"/></svg>Specter, server</span>
+          <span class="vis"><svg class="ic"><use href="#i-server"/></svg>Specter, server</span>
           <div class="cvzoom"><button title="Zoom out">&minus;</button><b>100%</b><button title="Zoom in">+</button><span class="sep2"></span><button title="Fit to screen">Fit</button><button title="Reset">Reset</button></div>
           <div class="acts">
             <button class="btn sm"><svg class="ic sm"><use href="#i-plus"/></svg>Add file</button>
@@ -2231,7 +2388,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
         </div>
         <div class="ptabs2">
           <button class="ptab2 on"><svg class="ic"><use href="#i-globe"/></svg>Public<span class="ct">18</span></button>
-          <button class="ptab2"><svg class="ic"><use href="#i-users"/></svg>Shared<span class="ct">9</span></button>
+          <button class="ptab2"><svg class="ic"><use href="#i-server"/></svg>Server<span class="ct">9</span></button>
           <button class="ptab2"><svg class="ic"><use href="#i-lock"/></svg>Private<span class="ct">24</span></button>
           <button class="ptab2"><svg class="ic"><use href="#i-settings"/></svg>Settings</button>
           <button class="iconbtn" style="margin-left:auto" title="Search this profile"><svg class="ic"><use href="#i-search"/></svg></button>
@@ -2731,7 +2888,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
         <button class="verbtn" id="verBtn"><span class="v">v3</span> of 3<svg class="ic sm"><use href="#i-chev"/></svg></button>
         <div class="vernote">Changed in v3: swapped the bridge drums, brought the low end down. <span class="by">tomo</span></div>
         <div class="meta">
-          <div class="row"><span class="k">Visibility</span><span class="v"><span class="vis"><svg class="ic"><use href="#i-users"/></svg>Late Bloom LP, server</span></span></div>
+          <div class="row"><span class="k">Visibility</span><span class="v"><span class="vis"><svg class="ic"><use href="#i-server"/></svg>Late Bloom LP, server</span></span></div>
           <div class="row"><span class="k">Uploaded by</span><span class="v"><span class="uchip m3"><span class="dot"></span>dev</span></span></div>
           <div class="row"><span class="k">Channel</span><span class="v">#beats</span></div>
           <div class="row"><span class="k">Date</span><span class="v">15 Aug 2026, 2:14 PM</span></div>
@@ -2815,7 +2972,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
       <label class="ulab">Visibility <span style="font-weight:400;color:var(--muted)">— set per post</span></label>
       <div class="urow">
         <button class="visopt"><svg class="ic"><use href="#i-globe"/></svg><span>Public<small>on your public profile</small></span></button>
-        <button class="visopt on"><svg class="ic"><use href="#i-users"/></svg><span>Server<small>members of the server</small></span></button>
+        <button class="visopt on"><svg class="ic"><use href="#i-server"/></svg><span>Server<small>members of the server</small></span></button>
         <button class="visopt"><svg class="ic"><use href="#i-lock"/></svg><span>Private<small>only you</small></span></button>
       </div>
       <label class="ulab">Which server</label>
@@ -2842,8 +2999,11 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   document.querySelectorAll('.wave[data-wf]').forEach(wave);
 
   var screens=document.querySelectorAll('.screen'),ptabs=document.querySelectorAll('.ptab');
+  // Focus/system screens are full-screen scrim modals — no rail, no in-app chrome.
+  var FOCUS={auth:1,create:1,join:1,deadinvite:1,denied:1,e404:1};
   function show(n){screens.forEach(function(s){s.hidden=s.dataset.screen!==n;});
     ptabs.forEach(function(t){t.setAttribute('aria-current',t.dataset.s===n?'true':'false');});
+    document.querySelector('.app').classList.toggle('focusmode',!!FOCUS[n]);
     document.querySelectorAll('.rail .railbtn').forEach(function(b){b.classList.toggle('on',b.dataset.s===n);});}
   document.querySelectorAll('[data-s]').forEach(function(el){el.addEventListener('click',function(){show(el.dataset.s);location.hash=el.dataset.s;});});
 
