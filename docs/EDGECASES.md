@@ -272,3 +272,31 @@ still receives files and forwards.
   not the destination. → D1.
 - **Jira / Linear** — deactivating an assignee unassigns their issues rather than
   deleting them. → M4.
+
+---
+
+## 12. Resolutions (2026-08-18) — the ⚑DECIDE rows, decided
+
+| # | Decision | Choice | Notes |
+|---|---|---|---|
+| 1 | Data model | **Full placement model** | Work = one home + one storage owner; placements reference it into feed/server/dm/canvas. Discussion + audience attach to the placement. Closes V1/V4/V5/D1/P6/DM1/S5. |
+| 2 | Social in v1 | **Work-first; social is v2** | Ship the artist/collab product. Friends can chat + share, but voice/watch-together/streaming wait for v2. |
+| 3 | Publish (server → public) | **Fork a personal copy** | A new work owned by you, `version_of=null`, crediting the original; the server file stays. Histories diverge by design. |
+| 4 | Credits consent | **Auto for friends/co-members, pending for strangers** | Instagram-style. Credited person can always self-remove. `work_credits(work_id, user_id, role)`. |
+| 5 | Billing exit | **Transfer, else grace then read-only** | On biller exit: prompt transfer → grace window → read-only until paid. Never deleted. |
+| 6 | Who can tag | **Owner + credited collaborators** | Global tags shaped only by the makers; server-local labels (if any) live on the placement. |
+| 7 | Forward out (server file → DM non-member) | **Copy to sender's personal storage** | A new work referencing the same dedup blob (near-zero bytes), owned by the sender. No live cross-server grant. |
+| 8 | Canvas Link visibility with non-public works | **Everything on the canvas is shared (Google-Docs style) — but WARN** | Link exposes every work placed on the canvas; the share dialog lists what becomes visible. No silent leak; the warning is the guardrail. |
+| — | Storage model | **Revised** — see CANON §D.2 | One owner/payer per byte, content-addressed **dedup**, **free quota + flat subscriptions** (not scary PAYG), servers own their native files' bytes, biller continuity. |
+| — | Storage×visibility badge | **Three states** | Personal · Private / Personal · Public / Server. Provenance (crosspost/fork) is not shown. |
+| — | Annotations scope | **Work + server, not canvas** | One file on many canvases shares one annotation set; annotations are a canvas surface only (no details-pane element). |
+
+**Handled without asking (obvious):** global custom status (per-server nickname/
+colour); search filters every hit through the live read policy; departed-member
+content greys, isn't deleted; mentions resolve only to members; blocking suppresses
+notifications + hides content per-viewer both directions; making a work Private
+retracts its placements; deleting a work GC's its dedup blob at refcount 0.
+
+**Still open — the user wants to design this together:** a **generous, flexible**
+storage/billing shape (the tier numbers in §D.2 are a placeholder). See the live
+discussion; §D.2 will be rewritten once we land it.

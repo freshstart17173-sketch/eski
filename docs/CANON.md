@@ -488,9 +488,18 @@ storage pool:
 - **Server file** — a work shared **in a server**. Looks identical expanded but has
   **no comment thread** — replies happen in the **channel chat**; the rail shows a
   "Replies happen in #channel →" link instead. It **keeps tags** (+ credits,
-  versions), and **annotations are unchanged** (they live on the canvas, not here).
-  Draws the **server** pool, unless it's a personal **crosspost** (then the
-  personal pool, badge "Personal · crossposted", §D.3).
+  versions). Server-stored, server-visible.
+
+**Annotations belong to the work-in-server, and the details pane has none
+(2026-08-18c).** Annotations are scoped to the **work within its server**, not to a
+canvas — **a single file can be opened on several canvases in the same server and
+shares one set of annotations** across them (`annotations(server_id, work_id, …)`,
+never `canvas_id`). Consequence: the **details pane** (opened from a card *outside*
+the canvas) carries **no annotations element** — it's context-neutral and a file can
+be on many canvases. Annotations are viewed **and created** in the canvas
+**expanded view** (§E.3) — where you make a selection (image marquee / audio region /
+video range) and attach a note — plus the tile count badge and the canvas
+annotations sidebar.
 
 | Element | Behaviour & states | DB | Desktop | Mobile |
 |---|---|---|---|---|
@@ -499,7 +508,7 @@ storage pool:
 | **Version dropdown (top of rail)** | A **functional** dropdown (native `<details>`, no JS): collapsed shows just **`v3 of 3`**; **opens to the full file names** per version + "Add a version" (requires a reason). Folder has no version dropdown. | R `works.version_of` · `add_version()` | Rail top bar | Rail top bar |
 | Metadata | Rich per kind: storage badge, posted/uploaded-by, **channel** (server file only), **added** date, **length** (a/v), **dimensions/fps** (image/video), **format/codec/bit-depth**, **size**. Folder: where, item count, made-by, created, visibility. | `works` cols | Rail | Rail |
 | Report + close | Flag (report) and × sit in the rail's top bar beside the version dropdown. | `file_report` | Rail top bar | Rail top bar |
-| Storage badge | **Post** "Public · your storage"; **server file** "Server: NAME"; **crosspost** "Personal · crossposted". | `works.storage_source` | Rail meta | Rail meta |
+| Storage×visibility badge | One of three, verbatim: **Personal · Private**, **Personal · Public**, or **Server** (with the server name). Storage and visibility coincide except a crosspost (personal-stored, server-seen); provenance is **not** shown. | `works.owner_type` + `visibility` | Rail meta | Rail meta |
 | Title / credits / tags | Title (or file name); contributor chips (server colour); user tags + ＋. **Both** posts and server files have tags. | `works.title/credits` · `content_tags` | Rail | Rail |
 | Actions | Download (get-as formats), Save (folder), Open in canvas (picker; not for `other`/folder). | transcode · `saved_items` · `canvas` | Rail foot | Rail foot |
 | **Discussion** | **Post** → a public **comment thread** (`comments`, context=public) with an add-comment field. **Server file** → **no thread**; a "Replies happen in #channel →" link to the chat. | `comments` (posts) / channel chat (server files) | Rail list / link | Rail |
@@ -705,56 +714,115 @@ the §B.3 read rule for channel content.
 > bitmask) is a documented, additive step — no data reshape. Every prompt that
 > touches channel permissions references this two-phase plan.
 
-### D.2 PAYG storage & billing — new pillar
+### D.2 Storage & billing — **revised 2026-08-18** (supersedes the PAYG-per-pool model)
 
-**Storage is paid, per pool.** Two pools, each metered and billed pay-as-you-go:
+The old model (a shared **server pool billed to one person** + raw per-GB PAYG)
+created exactly the failures the [`EDGECASES.md`](EDGECASES.md) audit surfaced: a
+biller can be bankrupted by others' uploads, a rage-quitting owner holds storage
+hostage, and "the server has room but I can't upload" (crosspost drew the personal
+pool). The revised model — chosen with the ⚑DECIDE answers — fixes the root cause.
 
-- **Personal storage** — the signed-in user pays for their own personal + public
-  works. Pool = `sum(works.bytes)` where `owner_id = you AND storage_source='personal'`.
-- **Server storage** — someone pays per server (the owner, or an admin with
-  `manage_billing`). Pool = `sum(works.bytes)` where `billing_server_id = <server>`.
+**Four principles:**
 
-Schema on `works` (extends the F-series columns):
+1. **One owner, one payer per byte.** Every `work` is owned by exactly one account
+   — a **user** or (if adopted, §D.3) a **server** — and its bytes count against
+   *that* account's quota. **There is no pool that charges one member for another
+   member's uploads.** This alone deletes the biller-bankruptcy and
+   crosspost-confusion rows.
+2. **Content-addressed dedup.** Media is stored by `sha256` (the existing hash
+   addressing). A quota counts the **unique** blobs you own — a clip reposted ten
+   times, or a sample reused across versions, is stored (and billed) **once**.
+   This is the big lever for both a social group's reposting and an artist's
+   version history.
+3. **Free quota + flat subscriptions, not scary PAYG.** Every account gets a
+   generous **free quota**; **eski Pro** (flat monthly) raises it and the
+   per-file cap. At the ceiling, uploads are **blocked with a clear "free space or
+   upgrade"** — never a surprise charge. (Metered PAYG **overage** exists only as
+   an *opt-in* for a Pro user who wants it.)
+4. **Storage and visibility coincide — that combo is the model's spine.** A work is
+   in exactly one of three states, and the details-pane badge shows it verbatim:
+   - **Personal · Private** — your storage, only you.
+   - **Personal · Public** — your storage, world (portfolio / Feed). *A public post
+     draws your personal quota* — that's the price of a portfolio.
+   - **Server** — the **server's** storage, visible to the server's members. Native
+     server files are **server-owned** (the server pays), so storing-here and
+     seeing-here are the same act.
+
+   The single case where storage ≠ visibility is a **crosspost** — a personal work
+   *placed* into a server (§D.3): it stays **personal-stored** but is seen in the
+   server. We do **not** badge provenance ("crossposted"/"forked") — the badge just
+   shows the work's own state (Personal · Public/Private); the server context is
+   implied by where you're viewing it.
+
+   Billing continuity (⚑DECIDE answer): if a server's biller leaves or lapses, prompt
+   to **transfer** billing to another admin; if nobody takes it, a **grace window**,
+   then the server goes **read-only** until someone pays — never deleted.
+
+**Tiers (proposed numbers — final prices are the owner's call):**
+
+| Plan | Who | Quota | Max upload | Extras |
+|---|---|---|---|---|
+| **Free** | every account | ~5 GB | 200 MB/file | standard transcode |
+| **eski Pro** | an individual | ~100 GB | 2 GB/file | priority transcode, profile extras, opt-in PAYG overage |
+| **Server plan** | a server | ~250 GB pooled | 5 GB/file | adopt files, longer audit retention, more invites |
+
+**Economics that make this safe:** on R2 storage is ~$0.015/GB-month and **egress
+is free** (Cloudflare in front) — so stored GB is the only real cost, and dedup
+shrinks it. 100 GB ≈ $1.50/mo of cost against a ~$6–8 Pro price: comfortable
+margin, and the free tier is cheap to subsidise.
+
+**Schema (replaces `storage_source`/`billing_server_id`):**
+```
+media_blobs      (sha256 pk, bytes, refcount)          -- content-addressed; dedup
+works.blob_sha   text → media_blobs                    -- a work references a blob
+works.owner_type text in (user, server)                -- who owns + PAYS for the bytes
+works.owner_id   uuid                                   -- the paying account
+storage_meters   (owner_type, owner_id, bytes_used)    -- sum of DISTINCT owned blobs
+billing_accounts (owner_type, owner_id, plan, status, stripe_customer, payg bool)
+adopt_work(work_id)   -- rpc: transfer owner_type/id → the server (Server plan; needs manage_billing)
+```
+`bytes_used` counts distinct owned blobs; **a placement adds zero bytes.** The
+signer (`api/sign.mjs`) checks the owner's remaining quota before issuing a PUT.
+
+### D.3 Placements — one work, many surfaces (supersedes storage-source/crosspost)
+
+**⚑DECIDE→LOCKED:** adopt the **placement model**. A `work` has one **home**
+(owner + storage) and its own tags/credits/versions; **placements** are lightweight
+references that put it onto a surface. Discussion and audience attach to the
+**placement**, not the work.
 
 ```
-works.storage_source   text in (personal, server)   -- which pool pays
-works.billing_server_id uuid null → servers          -- set when storage_source='server'
+placement (id, work_id → works, surface text in (feed,server,dm,canvas),
+           surface_id uuid, channel_id uuid null, placed_by uuid, created_at)
 ```
 
-Billing/metering (details are owner's calls — provider, prices):
-```
-storage_meters   (owner_type in(user,server), owner_id, bytes_used, updated_at)
-billing_accounts (owner_type, owner_id, plan, payg bool, stripe_customer, status)
-```
-`storage_meters` is maintained by the same trigger that sums `works.bytes` today,
-keyed by pool. A soft cap warns; the hard ceiling stays on the signer.
+- **Post to a server** = a `server` placement of a work you own. Your bytes; the
+  file shows in the server; **members read it via the placement** (the read rule
+  gains "readable if you can see any placement", closing the old dead-end where a
+  personal work in a server was owner-only).
+- **Crosspost** = the *same* thing — a placement of an already-owned personal work
+  into a server. No copy, no separate storage source; **it's just another
+  placement**, so the confusing "personal vs server pool" split disappears.
+- **Multi-share** (one work in several servers/DMs) = several placements. Storage
+  counted once (dedup + single owner). "Remove from server" detaches **one
+  placement**; the work and its other placements are untouched.
+- **DM / forward** = a `dm` placement (grants read to the DM). **Forwarding a
+  server file to a non-member copies it to the sender's personal storage** (a new
+  work referencing the same dedup blob — near-zero bytes — owned by the sender),
+  never a live cross-server grant. (⚑DECIDE answer.)
+- **Publish (server file → public portfolio)** = **fork a personal copy**
+  (⚑DECIDE answer): a new work owned by you, `version_of=null`, crediting the
+  original; the server file stays put. Server and public histories then diverge by
+  design. The details pane's "Publish" action is this fork.
 
-### D.3 Storage source on a work — post vs crosspost
-
-The distinction the details pane must surface:
-
-| Action | `storage_source` | `billing_server_id` | Where it "lives" |
-|---|---|---|---|
-| **Post to a server** (native server file) | `server` | that server | Server pool pays |
-| **Crosspost** a personal work into a server | `personal` | null | **Personal pool pays**; it stays *yours*, just shown in the server |
-| Post to Public / Private (portfolio, shelf) | `personal` | null | Personal pool |
-
-So a crosspost is a *reference* into a server that draws the owner's personal
-storage, not a copy on the server's dime. The **details pane** shows a **storage
-badge** — "Server: SPECTER" vs "Personal (crossposted)" — and the crosspost path
-is a distinct action from a native server upload. RLS: a crossposted work is
-readable by server members (it appears in the server) but its bytes never count
-against the server pool.
-
-> **LOCKED (D-ii):** ownership and moderation are split.
-> **Storage + editing stay with the owner** — a crosspost draws the *personal*
-> pool and only the owner can edit it or add versions. **But server admins CAN
-> manage it inside the server**: an admin (with `delete_any_message`/moderation
-> perm) can **remove the crosspost from the server** and moderate it there.
-> Removing-from-server is a *server-scoped detach* (drops the reference /
-> `withheld` in that server), **never a delete of the personal original** — the
-> owner's file and its bytes are untouched. So: owner controls the file, the
-> server controls its presence in the server.
+> **LOCKED (D-ii, revised):** ownership vs presence stay split. **The owner
+> controls the file** (edit, versions, delete). **The server controls its
+> presence** — an admin with moderation perm can **detach a placement** (remove it
+> from the server), which never touches the owner's file or bytes. Making a work
+> **Private retracts all its placements** (they show "author made this private"),
+> and **deleting a work removes every placement + decrements the blob refcount**
+> (the blob is GC'd when refcount hits 0). Saves resolve through the live read
+> rule, so a lost placement shows "no longer available", never a dangling open.
 
 ### D.4 New utility & admin screens (added to the registry + gallery inventory)
 
@@ -843,12 +911,19 @@ into canvas**.
 | **media annotations** (audio/video) | timeline/region marks inside the **expanded** audio/video view | inside that view only |
 
 ### E.6 Data implications (for §7 backend)
-- `comments.mark` gains `{lasso: path}` and keeps `{point}`/`{box→rect}`; the
-  point renders as a labelled tail, not a bare pin.
-- New `ink` table (or `annotations` repurposed): `canvas_id, work_id, author_id,
-  color, size, path jsonb` — one row per stroke (whole-stroke erase = delete row).
-- Audio/video **media annotations** are their own rows keyed to the work +
-  timecode/region, separate from canvas `comments`.
+- **Annotations are scoped to the work *within the server*, not to a canvas
+  (2026-08-18c).** `annotations(server_id, work_id, author_id, kind in
+  (point,rect,lasso), color, path jsonb, t numrange null, resolved_at)` — **no
+  `canvas_id`.** The **same file can be placed on several canvases in one server and
+  shares one annotation set** across them; opening it anywhere shows the same marks.
+  (This also deletes the "annotation orphaned when removed from a canvas" hazard —
+  EDGECASES D3.)
+- **Ink** is the same shape, one row per stroke (whole-stroke erase = delete row),
+  likewise `server_id, work_id`-scoped.
+- Audio/video timeline marks are annotations with a `t` (timecode/region), same
+  table.
+- Annotations are **not** shown in the details/expanded pane — only on the canvas
+  (tile count badge + canvas annotations sidebar).
 - Duplicate = insert a new `works`/`canvas_items` row (for audio-trim, a derived
   clip); no clipboard.
 - Screencap is **client-side** (canvas/`<video>` frame grab → Clipboard API); no
