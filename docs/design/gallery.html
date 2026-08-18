@@ -975,11 +975,6 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
 .strow{display:flex;justify-content:space-between;align-items:baseline;margin:9px 0 5px}
 .stnum{font-size:var(--fs-sm);color:var(--soft)}.stnum b{color:var(--ink);font-size:var(--fs);font-weight:600}
 .stprice{font-size:var(--fs-sm);color:var(--soft)}.stprice b{color:var(--ink);font-weight:600}
-.allocrow{display:grid;grid-template-columns:minmax(150px,1.3fr) 2fr minmax(120px,auto);align-items:center;gap:12px;margin-top:11px}
-.allocname{font-size:var(--fs-sm);font-weight:600;display:flex;align-items:center;gap:7px}
-.allocname .mdot{width:9px;height:9px;border-radius:50%;flex:none}
-.allocgb{font-size:var(--fs-sm);font-weight:600;text-align:right;white-space:nowrap}
-.allocgb small{font-weight:400}
 /* storage-source badge (details pane) — metadata, never a member hue */
 .stbadge{display:inline-flex;align-items:center;gap:6px;background:var(--surface);color:var(--soft);
   font-size:var(--fs-xs);font-weight:600;padding:4px 9px;border-radius:var(--r)}
@@ -2677,20 +2672,23 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
             <button class="btn sm" style="margin-top:14px"><svg class="ic sm"><use href="#i-plus"/></svg>New invite link</button>
           </div>
           <div class="setpanel" data-panel="storage" hidden>
-            <h2>Storage &amp; billing</h2><div class="h2sub">One storage slider — buy GB, then point them wherever you like. No plans, no features to unlock; per-GB price drops as you buy more. 10&nbsp;GB is free forever.</div>
+            <h2>Storage &amp; billing</h2><div class="h2sub">Storage is a slider — buy GB, no plans, no features to unlock; per-GB price drops as you buy more. Two independent sliders: your own storage, and this server's. Nothing is pooled or shared between accounts.</div>
 
-            <label class="ulab">Your storage</label>
-            <div class="stbuy">
-              <input id="stSlider" class="strange" type="range" min="10" max="2000" step="10" value="250" aria-label="Storage in gigabytes">
-              <div class="strow"><span class="stnum"><b id="stGb">250 GB</b> total</span><span class="stprice"><b id="stMo">$6.50</b>/mo &middot; <span id="stPer">$0.026</span>/GB</span></div>
-              <small style="color:var(--muted)">First 10&nbsp;GB free. Slide up or down anytime — you're billed on the level you hold, so re-allocating mid-month never prorates.</small>
+            <label class="ulab">Your storage <span style="color:var(--muted);font-weight:400">— your public + private works</span></label>
+            <div class="bar" style="margin:6px 0 4px"><i style="width:38%"></i></div><small style="color:var(--muted)">3.8 GB used <span style="opacity:.7">(from 5.1 GB of files)</span> of 90 GB</small>
+            <div class="stbuy" data-st="user" data-free="10">
+              <input class="strange stSlider" type="range" min="10" max="2000" step="10" value="90" aria-label="Your storage in gigabytes">
+              <div class="strow"><span class="stnum"><b class="stGb">90 GB</b> total</span><span class="stprice"><b class="stMo">$3.20</b>/mo &middot; <span class="stPer">$0.040</span>/GB</span></div>
+              <small style="color:var(--muted)">First 10&nbsp;GB free. Slide up or down anytime — you're billed on the level you hold, so mid-month changes never prorate.</small>
             </div>
 
-            <label class="ulab" style="margin-top:20px">Where your GB go <span style="color:var(--muted);font-weight:400">(allocate across personal + servers — free 10&nbsp;GB can't go to a server)</span></label>
-            <div class="allocrow"><span class="allocname">Personal <span style="color:var(--muted);font-weight:400">— your public + private works</span></span><div class="bar"><i style="width:38%"></i></div><span class="allocgb">80 GB <small style="color:var(--muted)">(3.8 used)</small></span></div>
-            <div class="allocrow"><span class="allocname"><span class="mdot" style="background:var(--m4)"></span> lunar studio</span><div class="bar"><i style="width:62%"></i></div><span class="allocgb">120 GB <small style="color:var(--muted)">(74 used)</small></span></div>
-            <div class="allocrow"><span class="allocname"><span class="mdot" style="background:var(--m9)"></span> the void</span><div class="bar"><i style="width:20%"></i></div><span class="allocgb">50 GB <small style="color:var(--muted)">(9.2 used)</small></span></div>
-            <small style="color:var(--muted);display:block;margin-top:9px">This server's pool = its 5&nbsp;GB free baseline + everything members allocate to it. Friends chip in their own paid GB directly — eski never holds a shared server wallet, so there's no biller to bankrupt. Nothing is ever deleted for non-payment: over cap just goes read-only.</small>
+            <label class="ulab" style="margin-top:22px">This server's storage <span style="color:var(--muted);font-weight:400">— <span class="mdot" style="background:var(--m4);display:inline-block;width:9px;height:9px;border-radius:50%;vertical-align:middle"></span> lunar studio</span></label>
+            <div class="bar" style="margin:6px 0 4px"><i style="width:62%"></i></div><small style="color:var(--muted)">74 GB used of 120 GB &middot; server's own slider (not member contributions)</small>
+            <div class="stbuy" data-st="server" data-free="5">
+              <input class="strange stSlider" type="range" min="5" max="2000" step="10" value="120" aria-label="Server storage in gigabytes">
+              <div class="strow"><span class="stnum"><b class="stGb">120 GB</b> total</span><span class="stprice"><b class="stMo">$4.50</b>/mo &middot; <span class="stPer">$0.039</span>/GB</span></div>
+              <small style="color:var(--muted)">One billing admin funds the server, bounded by this slider — members filling it just hit read-only, never a bigger bill. Nothing is ever deleted for non-payment.</small>
+            </div>
 
             <div class="dangerbox" style="margin-top:24px"><div class="t"><b>Export this server</b><small>Every file and its metadata, as a zip. Content-addressed, yours to keep, no lock-in.</small></div><button class="btn"><svg class="ic sm"><use href="#i-download"/></svg>Export</button></div>
           </div>
@@ -3232,19 +3230,20 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
     document.querySelectorAll('.setnav [data-setpanel]').forEach(function(x){x.classList.remove('on');});b.classList.add('on');
     var name=b.dataset.setpanel;
     document.querySelectorAll('.setpanel').forEach(function(p){p.hidden=p.dataset.panel!==name;});});});
-  // storage slider — bracketed price/GB drops as you buy more (CANON §D.2)
-  var _st=document.getElementById('stSlider');
-  if(_st){
-    // marginal $/GB by band: 10→110 = .030, 110→510 = .025, 510→2000 = .020; first 10 free
-    var stPrice=function(gb){var c=0,prev=10;var bands=[[110,.030],[510,.025],[2000,.020]];
-      for(var i=0;i<bands.length;i++){var top=bands[i][0],rate=bands[i][1];if(gb>prev){c+=(Math.min(gb,top)-prev)*rate;prev=top;}}
-      return c;};
-    var stRender=function(){var gb=+_st.value;var mo=stPrice(gb);var paid=Math.max(0,gb-10);
-      document.getElementById('stGb').textContent=gb+' GB';
-      document.getElementById('stMo').textContent='$'+mo.toFixed(2);
-      document.getElementById('stPer').textContent=paid>0?('$'+(mo/paid).toFixed(3)):'—';};
-    _st.addEventListener('input',stRender);stRender();
-  }
+  // storage sliders — bracketed price/GB drops as you buy more (CANON §D.2).
+  // marginal $/GB by band: 10→110 = .040, 110→510 = .030, 510→2000 = .025.
+  // First 10 GB free for a user, 5 for a server (data-free); paid GB only are charged.
+  var stPrice=function(gb,free){var c=0,prev=free;var bands=[[110,.040],[510,.030],[2000,.025]];
+    for(var i=0;i<bands.length;i++){var top=bands[i][0],rate=bands[i][1];if(gb>prev){c+=(Math.min(gb,top)-prev)*rate;prev=top;}}
+    return c;};
+  document.querySelectorAll('.stbuy').forEach(function(box){
+    var s=box.querySelector('.stSlider');if(!s)return;var free=+box.dataset.free||10;
+    var render=function(){var gb=+s.value;var mo=stPrice(gb,free);var paid=Math.max(0,gb-free);
+      box.querySelector('.stGb').textContent=gb+' GB';
+      box.querySelector('.stMo').textContent='$'+mo.toFixed(2);
+      box.querySelector('.stPer').textContent=paid>0?('$'+(mo/paid).toFixed(3)):'—';};
+    s.addEventListener('input',render);render();
+  });
   // per-channel settings: gear expands the channel's own drawer
   document.querySelectorAll('.chwrap .chsetbtn').forEach(function(b){b.addEventListener('click',function(e){e.stopPropagation();
     var d=b.closest('.chwrap').querySelector('.chset');if(!d)return;
@@ -3495,7 +3494,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
     ['Settings','Assign roles to member','member → roles','member_roles','a'],
     ['Settings','Channel permissions (private channels)','channel → perms','channel_roles','a'],
     ['Settings','Ban / timeout / kick','Moderation panel','RPC + audit_log','m'],
-    ['Settings','Storage slider + allocations','Storage panel','storage_balance · storage_allocations · storage_meters','a'],
+    ['Settings','Storage sliders (personal + server)','Storage panel','storage_balance · storage_meters','a'],
     ['Settings','Delete server (confirm)','General panel','owner only','a'],
     ['Settings','Export (manifest → zip)','Storage panel','export_manifest','a'],
     ['Create','Create server card','rail ＋','servers insert + invite','m'],

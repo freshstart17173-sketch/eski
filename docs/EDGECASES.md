@@ -287,7 +287,7 @@ still receives files and forwards.
 | 6 | Who can tag | **Owner + credited collaborators** | Global tags shaped only by the makers; server-local labels (if any) live on the placement. |
 | 7 | Forward out (server file → DM non-member) | **Copy to sender's personal storage** | A new work referencing the same dedup blob (near-zero bytes), owned by the sender. No live cross-server grant. |
 | 8 | Canvas Link visibility with non-public works | **Everything on the canvas is shared (Google-Docs style) — but WARN** | Link exposes every work placed on the canvas; the share dialog lists what becomes visible. No silent leak; the warning is the guardrail. |
-| — | Storage model | **Landed (dynamic slider)** — see CANON §D.2 | One owner/payer per byte, content-addressed **dedup**, **10 GB free floor + a per-GB slider whose price drops as you buy more** (no feature tiers). Storage is **allocated** to personal/servers; **pooling of free space is cut** (only paid GB fund a server), which kills the free-account mega-server and the biller-bankruptcy at once. Each paid GB is priced above R2 cost, so every payer is margin-positive. |
+| — | Storage model | **Landed (dynamic slider, no pooling)** — see CANON §D.2 | One account/payer per byte, content-addressed **dedup**, **10 GB free floor + a per-GB slider whose price drops as you buy more** (no feature tiers). **Pooling is gone entirely** — no donated free space, no allocating paid GB into a server. A **user** funds their own slider; a **server** funds its own slider (one bounded billing admin). Two independent single-payer accounts, never combined — which kills the free-account mega-server, biller-bankruptcy, and storage-hostage at once. Prices sit a notch above the giants (too-cheap storage reads as "what's the catch"), so every payer is comfortably margin-positive. |
 | — | Storage×visibility badge | **Three states** | Personal · Private / Personal · Public / Server. Provenance (crosspost/fork) is not shown. |
 | — | Annotations scope | **Work + server, not canvas** | One file on many canvases shares one annotation set; annotations are a canvas surface only (no details-pane element). |
 
@@ -298,8 +298,10 @@ notifications + hides content per-viewer both directions; making a work Private
 retracts its placements; deleting a work GC's its dedup blob at refcount 0.
 
 **Storage/billing — landed 2026-08-18.** The generous/flexible shape is now the
-**dynamic per-GB slider** in CANON §D.2 (10 GB free, volume-discount pricing,
-allocate-anywhere, no pooling, no feature tiers). The cluster-P "server pool billed
-to one person" findings (72, P1–P4) are structurally closed: there is no shared
-server wallet — members fund a server by allocating their own paid GB, so no single
-biller can be bankrupted or hold storage hostage.
+**dynamic per-GB slider** in CANON §D.2 (10 GB free, volume-discount pricing, no
+feature tiers, **no pooling at all**). A user has one slider, a server has its own
+slider (one bounded billing admin) — two independent single-payer accounts that
+never combine or allocate across each other. The cluster-P "server pool billed to
+one person" findings (72, P1–P4) are structurally closed: there is no shared pot to
+bankrupt, no member contributions to reclaim on exit, and a server's cost is bounded
+by the admin's own slider (members filling it just hit read-only).

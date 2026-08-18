@@ -67,8 +67,8 @@ Unchanged from the pivot at the service level; the schema is new.
 - **Cloudflare R2** — media behind `api/sign.mjs` (the one existing Vercel
   function, content-agnostic presigned uploads); the browser uploads straight to
   R2. Storage is a **dynamic per-GB slider** (10 GB free; price/GB drops as you buy
-  more) whose GB you **allocate** to your personal space and to servers — no feature
-  tiers, no pooling (CANON §D.2).
+  more) — no feature tiers and no pooling: a user funds their own slider, a server
+  funds its own, two independent single-payer accounts (CANON §D.2).
 - **Vercel** — the app plus serverless functions; deploys `main` directly.
 - **No build step, no framework** in the pivot; the collab build's framework is a
   P0 decision in `CODEGEN.md`.
