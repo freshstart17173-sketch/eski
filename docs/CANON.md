@@ -786,25 +786,29 @@ The per-GB price *drops* as the slider goes up.**
   It's **flat per server**, not per member, so it can't be farmed. Beyond it, a server
   needs its **own** paid slider (bought by a billing admin) — not member contributions.
 
-**The paid slider (indicative brackets — owner sets final; all $/GB-month). Priced a
-notch above the giants on purpose: storage that's suspiciously cheap reads as "what's
-the catch / who's the product," and these bytes have to be here for good.**
+**The paid slider (indicative brackets — owner sets final; all $/GB-month). Priced to
+hold ~60% gross margin *even when an account is packed 100% full* — because the
+"slide down so you never overpay" feature pushes utilization up, so we can't lean on
+the unused headroom storage incumbents run on. It's also a notch above the giants on
+purpose: storage that's suspiciously cheap reads as "what's the catch / who's the
+product," and these bytes have to be here for good.**
 
 | Band (total held) | Marginal $/GB | Blended $/GB at top of band |
 |---|---:|---:|
 | 0–10 GB | **free** | — |
-| 10 → 110 GB | **$0.040** | $0.040 |
-| 110 → 510 GB | **$0.030** | ~$0.032 |
-| 510 GB → 2 TB | **$0.025** | ~$0.028 |
+| 10 → 110 GB | **$0.050** | $0.050 |
+| 110 → 510 GB | **$0.045** | ~$0.046 |
+| 510 GB → 2 TB | **$0.040** | ~$0.042 |
 
 Worked points (paid GB only; free 10 excluded from the charge):
-`60 GB → $2.00/mo` · `110 GB → $4.00` · `250 GB → $8.20` · `510 GB → $16.00` ·
-`1 TB → ~$28.5` (blended $0.029/GB) · `2 TB → ~$53` (blended $0.027/GB). Every paid GB
-is priced **well above** the ~$0.015 R2 cost — unlike the old $8/TB tier, **every
-paying account is comfortably margin-positive from the first paid GB**, and the price
-is confident enough to say "this is a real, funded service." A **minimum paid step of
-~$2/mo** (~60 GB) keeps Stripe's $0.30 fixed fee a small % of the charge; below that,
-stay on the free 10 GB.
+`50 GB → $2.00/mo` · `110 GB → $5.00` · `250 GB → $11.30` · `510 GB → $23.00` ·
+`1 TB → ~$42.6` (blended $0.043/GB) · `2 TB → ~$83` (blended $0.042/GB). **110 GB for
+$5 is the anchor** — a genuinely good deal that still clears cost with room. Every
+paid GB is priced **well above** the ~$0.015 R2 cost, so **every paying account is
+comfortably margin-positive from the first paid GB** at a real ~60% gross margin, and
+the price is confident enough to say "this is a funded service that will keep your
+files." A **minimum paid step of ~$2/mo** (~50 GB) keeps Stripe's $0.30 fixed fee a
+small % of the charge; below that, stay on the free 10 GB.
 
 **Two guarantees that remove the anxiety:**
 - **Never surprise-charged.** At any ceiling (personal or server), new uploads are
@@ -849,41 +853,47 @@ tiers. Dedup means real stored GB < uploaded GB. The structural win of this revi
 **paid GB are priced above cost**, so paid users are individually profitable and the
 only thing to subsidise is the small, hard-capped free floor.
 
-**Per-account unit economics (per month), at the bracket prices above:**
+**Per-account unit economics (per month), at the bracket prices above, packed 100%
+full (the conservative case — see gross margin below):**
 
-| Account | Slider | Revenue | Storage cost | Stripe | Net |
-|---|---|---:|---:|---:|---:|
-| Free (avg) | 10 GB | $0 | ~2 GB → $0.03 | — | **−$0.03** |
-| Free (maxed) | 10 GB | $0 | $0.15 | — | −$0.15 |
-| Light paid | 110 GB | $4.00 | $1.65 | $0.42 | **+$1.93** |
-| Mid paid | 250 GB | $8.20 | $3.75 | $0.54 | **+$3.91** |
-| Heavy paid | 1 TB | ~$28.5 | $15.15 | $1.13 | **+$12.22** |
+| Account | Slider | Revenue | Storage cost | Stripe | Net | Gross margin |
+|---|---|---:|---:|---:|---:|---:|
+| Free (avg) | 10 GB | $0 | ~2 GB → $0.03 | — | **−$0.03** | — |
+| Free (maxed) | 10 GB | $0 | $0.15 | — | −$0.15 | — |
+| Light paid | 110 GB | $5.00 | $1.65 | $0.45 | **+$2.91** | **58%** |
+| Mid paid | 250 GB | $11.30 | $3.75 | $0.63 | **+$6.92** | **61%** |
+| Heavy paid | 1 TB | ~$42.6 | $15.00 | $1.54 | **+$26.07** | **61%** |
+
+**Gross margin ≈ 60%** across the paid range even at full utilization — the target for
+a healthy software business, reached here despite real per-GB COGS by pricing above
+cost. It only goes *up* with unused headroom (a 250 GB account 70% full runs ~70%
+gross). Small accounts sit a touch under 60% (the free 10 GB + Stripe's flat $0.30
+drag them); everything ≥250 GB clears it.
 
 **Three scenarios** (conv. = % of accounts holding paid GB; avg paid buyer ≈ the
-250 GB row → ~+$3.91/mo; free-user avg cost as noted; servers, themselves paying
+250 GB row → ~+$6.92/mo; free-user avg cost as noted; servers, themselves paying
 accounts, add margin on top and are folded in lightly):
 
 | Scenario | Paid conv. | Free avg cost | Margin / user / mo | Break-even (at $45 infra) | Profit / 1,000 users / mo |
 |---|---:|---:|---:|---:|---:|
-| **Base** | 4% | $0.04 | ~$0.118 | **~380** | **~+$73** |
-| **Optimistic** | 6% | $0.03 | ~$0.206 | **~220** | **~+$161** |
-| **Pessimistic** | 2% | $0.06 (heavy) | ~$0.019 | **~2,300** | **~+$19** |
+| **Base** | 4% | $0.04 | ~$0.238 | **~190** | **~+$193** |
+| **Optimistic** | 6% | $0.03 | ~$0.387 | **~120** | **~+$342** |
+| **Pessimistic** | 2% | $0.06 (heavy) | ~$0.080 | **~565** | **~+$35** |
 
 **Read-outs:**
 - **Below a few hundred users you're on free Supabase/Vercel tiers ($0 fixed), and
-  paid GB are now comfortably margin-positive, so you're cash-positive almost
-  immediately** — a *single* mid-tier paid account (~+$3.91) covers ~100 average free
+  paid GB carry a full ~60% gross margin, so you're cash-positive almost
+  immediately** — a *single* mid-tier paid account (~+$6.92) covers ~170 average free
   users. The ~$45/mo Pro-infra step only bites around the scale where you also have
   more paying users to cover it.
-- **Break-even ≈ 220–380 total users** in the base/optimistic cases once you're on
-  paid infra — down from ~550–1,350 in the old model and ~400–900 at the earlier
-  (cheaper) prices, because the price bump lifts every paid account's margin.
-- **Even the pessimistic case now stays positive per user** (~+$0.019) — it just needs
-  scale (~2,300 users) to cover fixed infra, rather than losing money forever. The
-  price bump is what moved that row from red to black.
-- **Out-of-pocket to get there is small.** You run under break-even only in the window
+- **Break-even ≈ 120–190 total users** in the base/optimistic cases once you're on
+  paid infra — down from ~550–1,350 in the first model, because the 25% price bump
+  lifts every paid account's margin to ~60%.
+- **The pessimistic case (low conversion) still breaks even at ~565 users** and is
+  positive per user (~+$0.08) — no scenario loses money forever.
+- **Out-of-pocket to get there is tiny.** You run under break-even only in the window
   where you've moved to paid infra but conversion is still ramping; burn there is
-  **~$5–20/mo**, **cumulative ≈ $50–200** over the ramp — trivially self-fundable.
+  **~$5–15/mo**, **cumulative ≈ $30–150** over the ramp.
 - **The free floor is bounded.** The **10 GB cap is hard**, so a free user costs **at
   most $0.15/mo**. Levers, in order: **dedup** (cuts real GB most); the hard cap
   itself; nudge heavy users to add a cheap slice of paid GB rather than hit the wall.

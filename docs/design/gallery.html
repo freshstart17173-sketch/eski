@@ -2678,15 +2678,15 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
             <div class="bar" style="margin:6px 0 4px"><i style="width:38%"></i></div><small style="color:var(--muted)">3.8 GB used <span style="opacity:.7">(from 5.1 GB of files)</span> of 90 GB</small>
             <div class="stbuy" data-st="user" data-free="10">
               <input class="strange stSlider" type="range" min="10" max="2000" step="10" value="90" aria-label="Your storage in gigabytes">
-              <div class="strow"><span class="stnum"><b class="stGb">90 GB</b> total</span><span class="stprice"><b class="stMo">$3.20</b>/mo &middot; <span class="stPer">$0.040</span>/GB</span></div>
+              <div class="strow"><span class="stnum"><b class="stGb">90 GB</b> total</span><span class="stprice"><b class="stMo">$4.00</b>/mo &middot; <span class="stPer">$0.050</span>/GB</span></div>
               <small style="color:var(--muted)">First 10&nbsp;GB free. Slide up or down anytime — you're billed on the level you hold, so mid-month changes never prorate.</small>
             </div>
 
             <label class="ulab" style="margin-top:22px">This server's storage <span style="color:var(--muted);font-weight:400">— <span class="mdot" style="background:var(--m4);display:inline-block;width:9px;height:9px;border-radius:50%;vertical-align:middle"></span> lunar studio</span></label>
             <div class="bar" style="margin:6px 0 4px"><i style="width:62%"></i></div><small style="color:var(--muted)">74 GB used of 120 GB &middot; server's own slider (not member contributions)</small>
             <div class="stbuy" data-st="server" data-free="5">
-              <input class="strange stSlider" type="range" min="5" max="2000" step="10" value="120" aria-label="Server storage in gigabytes">
-              <div class="strow"><span class="stnum"><b class="stGb">120 GB</b> total</span><span class="stprice"><b class="stMo">$4.50</b>/mo &middot; <span class="stPer">$0.039</span>/GB</span></div>
+              <input class="strange stSlider" type="range" min="5" max="2000" step="5" value="120" aria-label="Server storage in gigabytes">
+              <div class="strow"><span class="stnum"><b class="stGb">120 GB</b> total</span><span class="stprice"><b class="stMo">$5.70</b>/mo &middot; <span class="stPer">$0.050</span>/GB</span></div>
               <small style="color:var(--muted)">One billing admin funds the server, bounded by this slider — members filling it just hit read-only, never a bigger bill. Nothing is ever deleted for non-payment.</small>
             </div>
 
@@ -3231,9 +3231,9 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
     var name=b.dataset.setpanel;
     document.querySelectorAll('.setpanel').forEach(function(p){p.hidden=p.dataset.panel!==name;});});});
   // storage sliders — bracketed price/GB drops as you buy more (CANON §D.2).
-  // marginal $/GB by band: 10→110 = .040, 110→510 = .030, 510→2000 = .025.
+  // marginal $/GB by band: 10→110 = .050, 110→510 = .045, 510→2000 = .040 (~60% gross margin).
   // First 10 GB free for a user, 5 for a server (data-free); paid GB only are charged.
-  var stPrice=function(gb,free){var c=0,prev=free;var bands=[[110,.040],[510,.030],[2000,.025]];
+  var stPrice=function(gb,free){var c=0,prev=free;var bands=[[110,.050],[510,.045],[2000,.040]];
     for(var i=0;i<bands.length;i++){var top=bands[i][0],rate=bands[i][1];if(gb>prev){c+=(Math.min(gb,top)-prev)*rate;prev=top;}}
     return c;};
   document.querySelectorAll('.stbuy').forEach(function(box){
