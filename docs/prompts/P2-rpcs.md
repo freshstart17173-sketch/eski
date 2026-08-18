@@ -107,13 +107,17 @@ insert with a mention → `notification`. **DONE:** editing sets `edited_at` and
 keeps the row; deleting empties the body but keeps the row; a new work is
 searchable by title immediately.
 
-### P2.15 [BE] — storage-meter trigger (PAYG)
+### P2.15 [BE] — storage-meter trigger + blob refcount (dedup)
 
-On `works` insert/delete/update of `bytes`: adjust `storage_meters` for the right
-pool — `storage_source='server'` → the `billing_server_id` server meter;
-`storage_source='personal'` → the owner's user meter. **DONE:** a native server
-post increases the server meter by its bytes; a personal crosspost increases the
-user meter and leaves the server meter unchanged; deleting reverses it.
+On `works` insert/delete/update of `blob_sha`: maintain `media_blobs.refcount` and
+adjust `storage_meters` for the work's owner — keyed by `works.owner_type`/`owner_id`
+(a `user` work → that user meter; a `server` work → that server meter). A meter
+counts **distinct** owned blobs, so the Nth work referencing a blob the owner already
+holds adds **zero** bytes (dedup); the blob's bytes leave the meter only when the
+owner's last reference to it goes. **DONE:** a `user`-owned work bumps that user
+meter, a `server`-owned work bumps that server meter; a second work referencing the
+same blob for the same owner adds 0 bytes and bumps refcount; deleting reverses both,
+and the blob is GC-eligible at refcount 0.
 
 ### P2.16 [BE] — `search_all(q text, scope text)` + FTS indexes
 

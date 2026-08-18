@@ -328,21 +328,30 @@ insert (P1.4 test).
   (no `channel_roles` rows for the channel OR the member holds a granted role).
 - Re-point the channel-scoped read policies (messages, pins, files, a work in a
   private channel) from bare `member_of` to `can_view_channel`.
-- PAYG (§D.2–D.3): `works.storage_source text check in ('personal','server')`,
-  `works.billing_server_id uuid null → servers`; `storage_meters(owner_type text
-  check in ('user','server'), owner_id uuid, bytes_used bigint, updated_at)`;
-  `billing_accounts(owner_type, owner_id, plan text, payg bool, stripe_customer
-  text, status text)`. The works-bytes trigger maintains `storage_meters` **keyed
-  by pool**: a `server` post hits the server meter; a `personal` crosspost hits
-  the owner's personal meter.
+- Storage/billing (§D.2 — **dynamic slider, no plans, no pooling**): content-address
+  the media with `media_blobs(sha256 pk, bytes, refcount)`; a work references a blob
+  and names its paying owner — `works.blob_sha text → media_blobs`, `works.owner_type
+  text check in ('user','server')`, `works.owner_id uuid`. Meter: `storage_meters(
+  owner_type check in ('user','server'), owner_id uuid, bytes_used bigint, updated_at)`
+  = sum of **distinct** owned blobs (dedup; a placement adds zero bytes). Billing:
+  `storage_balance(user_id pk, purchased_gb int, status text, stripe_customer text)`
+  — the slider level, billed on the bracket schedule — and `storage_allocations(
+  user_id, target_type text check in ('personal','server'), target_id uuid, gb int)`
+  where `Σ gb ≤ purchased_gb`. **No `billing_accounts`, no `plan`, no `storage_grants`.**
+  A user's quota for a target = (10 GB free if `personal`, else 0) + allocated gb; a
+  server's = ~5 GB baseline + Σ allocations pointing at it (free GB can't target a
+  server). The works-bytes trigger maintains `storage_meters` keyed by `owner_type`/
+  `owner_id`.
 
 **DONE WHEN.** (a) a member holding two roles has the **union** of their flags;
 (b) `has_perm` false → a gated RPC is rejected; (c) a private channel (has
 `channel_roles` rows) returns 0 messages to a non-granted member and N to a
-granted one; (d) inserting a `personal` crosspost bumps the **user** meter and
-not the server meter, while a native `server` post bumps the **server** meter;
-(e) the flag permission set matches CANON §D.1 (Server/Members/Content/per-channel
-groups).
+granted one; (d) a work with `owner_type='user'` bumps that **user** meter and a
+work with `owner_type='server'` bumps the **server** meter; the same blob owned by
+two works counts **once** (dedup); `Σ storage_allocations.gb` for a user is
+rejected when it exceeds `purchased_gb`, and an allocation with `target_type=
+'server'` funded from free GB is rejected; (e) the flag permission set matches CANON
+§D.1 (Server/Members/Content/per-channel groups).
 
 ---
 

@@ -969,6 +969,17 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
 .modal .uhd b{font-size:var(--fs);font-weight:600}
 .modal .mbody{padding:var(--s4)}
 .modal .mbody>p{font-size:var(--fs-sm);color:var(--soft);line-height:1.55}
+/* storage slider + allocations (settings → storage) */
+.stbuy{margin-top:9px;background:var(--surface);border-radius:var(--r);padding:14px 15px}
+.strange{width:100%;accent-color:var(--ink);cursor:pointer}
+.strow{display:flex;justify-content:space-between;align-items:baseline;margin:9px 0 5px}
+.stnum{font-size:var(--fs-sm);color:var(--soft)}.stnum b{color:var(--ink);font-size:var(--fs);font-weight:600}
+.stprice{font-size:var(--fs-sm);color:var(--soft)}.stprice b{color:var(--ink);font-weight:600}
+.allocrow{display:grid;grid-template-columns:minmax(150px,1.3fr) 2fr minmax(120px,auto);align-items:center;gap:12px;margin-top:11px}
+.allocname{font-size:var(--fs-sm);font-weight:600;display:flex;align-items:center;gap:7px}
+.allocname .mdot{width:9px;height:9px;border-radius:50%;flex:none}
+.allocgb{font-size:var(--fs-sm);font-weight:600;text-align:right;white-space:nowrap}
+.allocgb small{font-weight:400}
 /* storage-source badge (details pane) — metadata, never a member hue */
 .stbadge{display:inline-flex;align-items:center;gap:6px;background:var(--surface);color:var(--soft);
   font-size:var(--fs-xs);font-weight:600;padding:4px 9px;border-radius:var(--r)}
@@ -1714,7 +1725,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
         </div>
       </div></div>
       <div class="pcap"><b>Details pane — server file (video)</b>
-        <span class="m">A <b>file shared in a server</b> looks the same expanded but has <b>no comment thread</b> — replies live in the channel chat. It keeps <b>tags</b>, credits and versions; annotations are unchanged (they live on the canvas). Draws the <b>server's</b> storage pool.</span>
+        <span class="m">A <b>file shared in a server</b> looks the same expanded but has <b>no comment thread</b> — replies live in the channel chat. It keeps <b>tags</b>, credits and versions; annotations are unchanged (they live on the canvas). Draws the <b>server's</b> storage.</span>
         <span class="db">works visibility=server · no comments · content_tags · annotations on canvas</span></div>
     </div>
 
@@ -2666,16 +2677,22 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
             <button class="btn sm" style="margin-top:14px"><svg class="ic sm"><use href="#i-plus"/></svg>New invite link</button>
           </div>
           <div class="setpanel" data-panel="storage" hidden>
-            <h2>Storage &amp; billing</h2><div class="h2sub">Storage is pay-as-you-go, per pool. This server's storage is billed to whoever manages billing.
+            <h2>Storage &amp; billing</h2><div class="h2sub">One storage slider — buy GB, then point them wherever you like. No plans, no features to unlock; per-GB price drops as you buy more. 10&nbsp;GB is free forever.</div>
+
+            <label class="ulab">Your storage</label>
+            <div class="stbuy">
+              <input id="stSlider" class="strange" type="range" min="10" max="2000" step="10" value="250" aria-label="Storage in gigabytes">
+              <div class="strow"><span class="stnum"><b id="stGb">250 GB</b> total</span><span class="stprice"><b id="stMo">$6.50</b>/mo &middot; <span id="stPer">$0.026</span>/GB</span></div>
+              <small style="color:var(--muted)">First 10&nbsp;GB free. Slide up or down anytime — you're billed on the level you hold, so re-allocating mid-month never prorates.</small>
             </div>
-            <label class="ulab">Personal storage <span style="color:var(--muted);font-weight:400">(your public + private works)</span></label>
-            <div class="bar"><i style="width:38%"></i></div><small style="color:var(--muted)">3.8 GB of 10 GB &middot; pay-as-you-go</small>
-            <label class="ulab" style="margin-top:16px">This server's storage</label>
-            <div class="bar"><i style="width:62%"></i></div><small style="color:var(--muted)">31 GB of 50 GB &middot; billed to jax</small>
-            <div style="display:flex;gap:8px;margin-top:13px"><button class="btn sm"><svg class="ic sm"><use href="#i-settings"/></svg>Manage plan</button><button class="btn sm"><svg class="ic sm"><use href="#i-plus"/></svg>Add storage</button></div>
-            <div class="h2sub" style="margin-top:22px">Content is content-addressed, so an export is just a zip of the files plus their metadata.</div>
-            <div class="frow"><label class="ulab">Storage used</label><div class="bar"><i style="width:46%"></i></div><small style="color:var(--muted);font-size:var(--fs-xs)">9.2 GB of 20 GB</small></div>
-            <div class="dangerbox" style="margin-top:24px"><div class="t"><b>Export this server</b><small>Every file and its metadata, as a zip. Yours to keep, no lock-in.</small></div><button class="btn"><svg class="ic sm"><use href="#i-download"/></svg>Export</button></div>
+
+            <label class="ulab" style="margin-top:20px">Where your GB go <span style="color:var(--muted);font-weight:400">(allocate across personal + servers — free 10&nbsp;GB can't go to a server)</span></label>
+            <div class="allocrow"><span class="allocname">Personal <span style="color:var(--muted);font-weight:400">— your public + private works</span></span><div class="bar"><i style="width:38%"></i></div><span class="allocgb">80 GB <small style="color:var(--muted)">(3.8 used)</small></span></div>
+            <div class="allocrow"><span class="allocname"><span class="mdot" style="background:var(--m4)"></span> lunar studio</span><div class="bar"><i style="width:62%"></i></div><span class="allocgb">120 GB <small style="color:var(--muted)">(74 used)</small></span></div>
+            <div class="allocrow"><span class="allocname"><span class="mdot" style="background:var(--m9)"></span> the void</span><div class="bar"><i style="width:20%"></i></div><span class="allocgb">50 GB <small style="color:var(--muted)">(9.2 used)</small></span></div>
+            <small style="color:var(--muted);display:block;margin-top:9px">This server's pool = its 5&nbsp;GB free baseline + everything members allocate to it. Friends chip in their own paid GB directly — eski never holds a shared server wallet, so there's no biller to bankrupt. Nothing is ever deleted for non-payment: over cap just goes read-only.</small>
+
+            <div class="dangerbox" style="margin-top:24px"><div class="t"><b>Export this server</b><small>Every file and its metadata, as a zip. Content-addressed, yours to keep, no lock-in.</small></div><button class="btn"><svg class="ic sm"><use href="#i-download"/></svg>Export</button></div>
           </div>
         </div>
       </div>
@@ -3215,6 +3232,19 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
     document.querySelectorAll('.setnav [data-setpanel]').forEach(function(x){x.classList.remove('on');});b.classList.add('on');
     var name=b.dataset.setpanel;
     document.querySelectorAll('.setpanel').forEach(function(p){p.hidden=p.dataset.panel!==name;});});});
+  // storage slider — bracketed price/GB drops as you buy more (CANON §D.2)
+  var _st=document.getElementById('stSlider');
+  if(_st){
+    // marginal $/GB by band: 10→110 = .030, 110→510 = .025, 510→2000 = .020; first 10 free
+    var stPrice=function(gb){var c=0,prev=10;var bands=[[110,.030],[510,.025],[2000,.020]];
+      for(var i=0;i<bands.length;i++){var top=bands[i][0],rate=bands[i][1];if(gb>prev){c+=(Math.min(gb,top)-prev)*rate;prev=top;}}
+      return c;};
+    var stRender=function(){var gb=+_st.value;var mo=stPrice(gb);var paid=Math.max(0,gb-10);
+      document.getElementById('stGb').textContent=gb+' GB';
+      document.getElementById('stMo').textContent='$'+mo.toFixed(2);
+      document.getElementById('stPer').textContent=paid>0?('$'+(mo/paid).toFixed(3)):'—';};
+    _st.addEventListener('input',stRender);stRender();
+  }
   // per-channel settings: gear expands the channel's own drawer
   document.querySelectorAll('.chwrap .chsetbtn').forEach(function(b){b.addEventListener('click',function(e){e.stopPropagation();
     var d=b.closest('.chwrap').querySelector('.chset');if(!d)return;
@@ -3465,7 +3495,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
     ['Settings','Assign roles to member','member → roles','member_roles','a'],
     ['Settings','Channel permissions (private channels)','channel → perms','channel_roles','a'],
     ['Settings','Ban / timeout / kick','Moderation panel','RPC + audit_log','m'],
-    ['Settings','Storage & billing (PAYG, usage)','Storage panel','storage_meters · billing','a'],
+    ['Settings','Storage slider + allocations','Storage panel','storage_balance · storage_allocations · storage_meters','a'],
     ['Settings','Delete server (confirm)','General panel','owner only','a'],
     ['Settings','Export (manifest → zip)','Storage panel','export_manifest','a'],
     ['Create','Create server card','rail ＋','servers insert + invite','m'],

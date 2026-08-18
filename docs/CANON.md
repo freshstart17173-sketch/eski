@@ -389,7 +389,7 @@ now written; Screen 7 (Call) is the one deferral.
 | + | Roles editor | `settings/roles` | roles list + permission matrix | §C.16 |
 | + | Assign roles to member | *(modal)* | multi-select checklist | §C.17 |
 | + | Channel permissions | *(modal)* | allow-list (roles + members) | §C.18 |
-| + | Storage & billing | `settings/storage` | personal + server pools, plan | §C.19 |
+| + | Storage & billing | `settings/storage` | storage slider + allocations | §C.19 |
 | + | 404 · Dead invite · Access denied | *(cards)* | expired/revoked/full/member; no-access | §C.20 |
 
 ### C.4 TEMPLATE — Screen 1: Workspace
@@ -478,8 +478,8 @@ fill), a **fixed ~380px info rail** on the right. No drop shadow (scrim
 separates). Bigger than a modal on purpose: the media is the point.
 
 **Post vs server file — the load-bearing distinction (2026-08-18b).** The *same*
-arena shell serves two things; what differs is the discussion surface and the
-storage pool:
+arena shell serves two things; what differs is the discussion surface and which
+storage the bytes draw:
 
 - **Post** — a **public** work on a profile/Feed. Draws the owner's **personal
   storage** (`storage_source='personal'`). Its pane is the classic one: a **public
@@ -630,11 +630,16 @@ settings. v1 = allow-list only (D.1 LOCKED D-i).
 
 ### C.19 Server settings → Storage & billing (gated `manage_billing`)
 
+Storage is bought on **one dynamic slider** (no feature tiers) and **allocated** to
+your personal space and/or to servers; per-GB price drops as the slider goes up
+(CANON §D.2). This screen is where a user sets that slider and points their GB.
+
 | Element | Behaviour & states | DB | Desktop | Mobile |
 |---|---|---|---|---|
-| Personal pool bar | Usage / cap for the signed-in user's personal + public works; "pay-as-you-go". | R `storage_meters(user, you)` | Bar + label | Bar |
-| Server pool bar | This server's usage / cap; "billed to {owner}". | R `storage_meters(server, id)` | Bar + label | Bar |
-| Manage plan / Add storage | Open billing (plan, PAYG toggle, payment); owner/`manage_billing` only. | R/W `billing_accounts` | Button row | Button row |
+| Personal usage bar | Usage / cap for the signed-in user's personal + public works; cap = 10 GB free + GB allocated to personal. Reads "X GB used *(from Y GB of files)*" (dedup win). | R `storage_meters(user, you)`, `storage_allocations` | Bar + label | Bar |
+| Server usage bar | This server's usage / cap; cap = ~5 GB baseline + Σ members' allocations to it. No "billed to" — no single payer. | R `storage_meters(server, id)`, `storage_allocations` | Bar + label | Bar |
+| **Storage slider** | One continuous GB scale; drag to buy. Live blended **$/GB** drops as it rises (bracket schedule); shows monthly total; **min paid step ~$2/mo**. | R/W `storage_balance` | Slider + live price | Slider |
+| **Allocation rows** | Split your purchased GB across Personal + each server (Σ ≤ purchased). Slide a row to point GB there; free GB can't go to a server. Instant, no proration. | R/W `storage_allocations` | Row per target | Rows |
 | Export | Zip of every server file + metadata (content-addressed, no lock-in). | job → R2 zip | Danger-box row | Row |
 
 ### C.20 Utility screens — 404 · Dead invite · Access denied
@@ -714,146 +719,171 @@ the §B.3 read rule for channel content.
 > bitmask) is a documented, additive step — no data reshape. Every prompt that
 > touches channel permissions references this two-phase plan.
 
-### D.2 Storage & billing — **revised 2026-08-18** (supersedes the PAYG-per-pool model)
+### D.2 Storage & billing — **revised 2026-08-18** (dynamic per-GB slider; supersedes tiers + pooling)
 
 The old model (a shared **server pool billed to one person** + raw per-GB PAYG)
 created exactly the failures the [`EDGECASES.md`](EDGECASES.md) audit surfaced: a
 biller can be bankrupted by others' uploads, a rage-quitting owner holds storage
-hostage, and "the server has room but I can't upload" (crosspost drew the personal
-pool). The revised model — chosen with the ⚑DECIDE answers — fixes the root cause.
+hostage, and "the server has room but I can't upload." The interim fix (25 GB free
++ **flat feature tiers** + free-space **pooling**) fixed those but was wrong on two
+counts: **1 TB Pro at ~$8 is below R2 cost** (~$0.015/GB → a packed terabyte costs
+~$15, so every heavy Pro user *lost* money and the model needed a mountain of light
+users to average out), and **pooling** let N free accounts donate their way to a
+mega-server. This revision removes both.
 
-**Four principles:**
+**The model in one line: buy storage on a dynamic slider — one continuous scale of
+GB, no feature tiers — and allocate the GB you bought to your personal space and/or
+to any servers you choose. The per-GB price *drops* as the slider goes up.**
 
-1. **One owner, one payer per byte.** Every `work` is owned by exactly one account
-   — a **user** or (if adopted, §D.3) a **server** — and its bytes count against
-   *that* account's quota. **There is no pool that charges one member for another
-   member's uploads.** This alone deletes the biller-bankruptcy and
-   crosspost-confusion rows.
-2. **Content-addressed dedup.** Media is stored by `sha256` (the existing hash
-   addressing). A quota counts the **unique** blobs you own — a clip reposted ten
-   times, or a sample reused across versions, is stored (and billed) **once**.
-   This is the big lever for both a social group's reposting and an artist's
-   version history.
-3. **Free quota + flat subscriptions, not scary PAYG.** Every account gets a
-   generous **free quota**; **eski Pro** (flat monthly) raises it and the
-   per-file cap. At the ceiling, uploads are **blocked with a clear "free space or
-   upgrade"** — never a surprise charge. (Metered PAYG **overage** exists only as
-   an *opt-in* for a Pro user who wants it.)
-4. **Storage and visibility coincide — that combo is the model's spine.** A work is
-   in exactly one of three states, and the details-pane badge shows it verbatim:
+**Five principles:**
+
+1. **One owner, one payer per byte.** Every `work` is owned by exactly one account —
+   a **user** or (if adopted, §D.3) a **server** — and its bytes count against *that*
+   account's quota. **No pool charges one member for another's uploads.** Deletes the
+   biller-bankruptcy and crosspost-confusion rows.
+2. **Content-addressed dedup.** Media is stored by `sha256`. A quota counts the
+   **unique** blobs you own — a clip reposted ten times, or a sample reused across
+   versions, is stored (and billed) **once**. The big lever for both a social group's
+   reposting and an artist's version history.
+3. **Storage only — no feature tiers.** Paid GB unlock nothing but space; every
+   account has every feature. What you buy is a **number of GB on a slider**, not a
+   plan. Upgrading = **sliding the scale**, never jumping a tier. You never pay for
+   more than the range you're in, and downgrading is sliding back down.
+4. **Dynamic per-GB price (volume discount).** The slider is **bracketed** like tax
+   bands — each additional band of GB costs less per GB — so the **marginal** and
+   **blended** price per GB both fall as you buy more. The UI shows the live blended
+   "$/GB" dropping as you drag. Because you're billed on the **GB you hold**, not on
+   transfers, GB you buy or re-allocate mid-month never creates a proration mess —
+   the balance is just a level.
+5. **Storage and visibility coincide — that combo is the model's spine.** A work is
+   in exactly one of three states; the details-pane badge shows it verbatim:
    - **Personal · Private** — your storage, only you.
    - **Personal · Public** — your storage, world (portfolio / Feed). *A public post
-     draws your personal quota* — that's the price of a portfolio.
+     draws your personal quota* — the price of a portfolio.
    - **Server** — the **server's** storage, visible to the server's members. Native
-     server files are **server-owned** (the server pays), so storing-here and
-     seeing-here are the same act.
+     server files are **server-owned**, so storing-here and seeing-here are one act.
 
    The single case where storage ≠ visibility is a **crosspost** — a personal work
    *placed* into a server (§D.3): it stays **personal-stored** but is seen in the
-   server. We do **not** badge provenance ("crossposted"/"forked") — the badge just
-   shows the work's own state (Personal · Public/Private); the server context is
-   implied by where you're viewing it.
+   server. We do **not** badge provenance; the badge shows the work's own state.
 
-   Billing continuity (⚑DECIDE answer): if a server's biller leaves or lapses, prompt
-   to **transfer** billing to another admin; if nobody takes it, a **grace window**,
-   then the server goes **read-only** until someone pays — never deleted.
+**Free floor:**
+- **Every account: 10 GB free**, no card. Hard cap (not a soft target) — at 10 GB new
+  uploads are **blocked** with "free space or add storage", never a surprise charge.
+- **Every server: a small free baseline (~5 GB)** so a casual server works day one.
+  It's **flat per server**, not per member, so it can't be farmed into a mega-server.
+  Beyond it, a server's storage is **only** paid GB its members allocate to it.
 
-**Tiers (decided 2026-08-18 — prices indicative, owner sets final):**
+**The paid slider (indicative brackets — owner sets final; all $/GB-month):**
 
-| Plan | Who | Quota | Max upload | Extras |
-|---|---|---|---|---|
-| **Free** | every account | **~25 GB** | 500 MB/file | standard transcode — generous on purpose (dedup + free R2 egress make it cheap) |
-| **eski Pro** (~$8/mo) | an individual | **~1 TB** | 5 GB/file | priority transcode, profile extras, add-on blocks, opt-in PAYG overage |
-| **Server plan** (~$12/mo) | a server | **~500 GB** owned | 5 GB/file | adopt files, longer audit retention, more invites, add-on blocks |
+| Band (total held) | Marginal $/GB | Blended $/GB at top of band |
+|---|---:|---:|
+| 0–10 GB | **free** | — |
+| 10 → 110 GB | **$0.030** | $0.030 |
+| 110 → 510 GB | **$0.025** | ~$0.026 |
+| 510 GB → 2 TB | **$0.020** | ~$0.022 |
+
+Worked points (paid GB only; free 10 excluded from the charge):
+`50 GB → $1.20/mo` · `110 GB → $3.00` · `250 GB → $6.50` · `510 GB → $13.00` ·
+`1 TB → ~$23` (blended $0.023/GB) · `2 TB → ~$43` (blended $0.022/GB). Every paid GB
+is priced **above** the ~$0.015 R2 cost, so — unlike the old $8/TB tier — **every
+paying account is margin-positive from the first paid GB.** A **minimum paid step of
+~$2/mo** (~70 GB) keeps Stripe's $0.30 fixed fee a small % of the charge; below that,
+stay on the free 10 GB.
+
+**Servers are funded by allocated paid GB — pooling is gone.** A member buys GB on
+their own slider and **allocates a slice to a server** (the allocation UI, §C.19); the
+server's quota = its ~5 GB baseline + Σ allocations pointing at it. Free GB **cannot**
+be allocated to a server — only paid GB — which is what stops free-account
+mega-servers while keeping servers cheap and accessible (any one friend can chip in a
+few paid GB). Co-funders each buy and allocate their own share; **money is pooled
+out-of-band** (the members agree among themselves who buys how much) — eski never
+holds a shared server wallet, so there's no biller to bankrupt or hold hostage.
+Withdraw or leave and your allocation returns to you; the server's files fall back
+toward its baseline and go **read-only if over**, never deleted.
 
 **Two guarantees that remove the anxiety:**
-- **Never surprise-charged.** At the ceiling, new uploads are **blocked** (read-only
-  over cap), never auto-billed. PAYG overage is strictly opt-in for a Pro user.
-- **Never deleted for non-payment.** Over quota / lapsed = read-only; your files stay
-  and you can always download them. (Deletion is only ever the owner's own action or
-  GC of an unreferenced blob.)
-
-**Servers fund storage two ways (both — the flexible/generous choice):**
-1. **Pool free space** — members **donate** part of their free quota to a server; the
-   server's effective pool = `Σ donations` (+ any Server-plan quota). A 5-friend
-   server can run **entirely free** off everyone's spare GB. Donated GB **returns to
-   the member if they leave** or withdraw it (their own files fall back to their
-   personal quota — read-only if that overflows, never deleted).
-2. **Server plan** — a flat subscription gives the server its own big pool, adopt +
-   retention. For studios that outgrow pooling.
-
-Both stack; **add-on storage blocks** (e.g. +250 GB) scale either without a tier jump.
-
-**Economics that make the generosity safe:** on R2 storage is ~$0.015/GB-month and
-**egress is free** (Cloudflare in front), so stored GB is the only real cost and
-**dedup** shrinks it hard. 25 GB free ≈ **$0.38/mo** of raw cost per active user
-(pre-dedup, worst case) — cheap to subsidise; 1 TB Pro ≈ $15/mo cost is the one to
-watch, so Pro quota is a soft target with fair-use, not a promise of a packed
-terabyte per user.
+- **Never surprise-charged.** At any ceiling (personal or server), new uploads are
+  **blocked** (read-only over cap), never auto-billed. Buying more is always an
+  explicit slide.
+- **Never deleted for non-payment.** Over quota / lapsed card = read-only; your files
+  stay and you can always download them. Deletion is only ever the owner's own action
+  or GC of an unreferenced blob.
 
 **Meter shows the dedup win:** the storage bar reads "X GB used *(from Y GB of
 files)*" so people see reposts/versions cost nothing.
 
-**Schema (replaces `storage_source`/`billing_server_id`):**
+**Schema (replaces `storage_source`/`billing_server_id`; no `plan`, no `storage_grants`):**
 ```
-media_blobs      (sha256 pk, bytes, refcount)          -- content-addressed; dedup
-works.blob_sha   text → media_blobs                    -- a work references a blob
-works.owner_type text in (user, server)                -- who owns + PAYS for the bytes
-works.owner_id   uuid                                   -- the paying account
-storage_meters   (owner_type, owner_id, bytes_used)    -- sum of DISTINCT owned blobs
-billing_accounts (owner_type, owner_id, plan, status, stripe_customer, payg bool)
-storage_grants   (server_id, user_id, gb)              -- pooled/donated free space; returns on leave/withdraw
-adopt_work(work_id)   -- rpc: transfer owner_type/id → the server (Server plan; needs manage_billing)
+media_blobs         (sha256 pk, bytes, refcount)          -- content-addressed; dedup
+works.blob_sha      text → media_blobs                    -- a work references a blob
+works.owner_type    text in (user, server)                -- who owns + PAYS for the bytes
+works.owner_id      uuid                                   -- the paying account
+storage_meters      (owner_type, owner_id, bytes_used)    -- sum of DISTINCT owned blobs
+storage_balance     (user_id pk, purchased_gb, status, stripe_customer)
+                                                          -- what the slider is set to; billed on this level
+storage_allocations (user_id, target_type in (personal,server), target_id, gb)
+                                                          -- where the user points their paid GB; Σ ≤ purchased_gb
+adopt_work(work_id)   -- rpc: transfer owner_type/id → a server (needs manage_billing)
 ```
-A server's **quota** = its Server-plan quota (if any) + `Σ storage_grants.gb`. A
-user's **available** = their plan quota − `bytes_used` − `Σ grants they donated`.
+A **user's** quota for a target = (10 GB free if `target=personal`, else 0) + the
+`storage_allocations.gb` they point there. A **server's** quota = ~5 GB baseline +
+`Σ storage_allocations` where `target_type='server' AND target_id=server`. Billing is
+a single monthly charge per user computed from `purchased_gb` against the bracket
+schedule — **allocation is free and instant**, it only moves where the GB point.
 `bytes_used` counts distinct owned blobs; **a placement adds zero bytes.** The signer
-(`api/sign.mjs`) checks the paying owner's remaining quota before issuing a PUT;
-over quota → read-only, never a charge, never a delete.
+(`api/sign.mjs`) checks the paying owner's remaining quota before issuing a PUT; over
+quota → read-only, never a charge, never a delete.
 
 #### D.2.1 Economics model (indicative — validate before pricing)
 
 **Cost inputs.** R2 storage **$0.015/GB-mo**, **egress $0** (the killer advantage);
 Stripe **2.9% + $0.30**/charge; fixed infra **~$45/mo** once you outgrow free tiers
 (Supabase Pro $25 + Vercel Pro $20) — effectively **~$0–5/mo** at tiny scale on free
-tiers. Dedup means real stored GB < uploaded GB.
+tiers. Dedup means real stored GB < uploaded GB. The structural win of this revision:
+**paid GB are priced above cost**, so paid users are individually profitable and the
+only thing to subsidise is the small, hard-capped free floor.
 
-**Per-user unit economics (per month):**
+**Per-account unit economics (per month), at the bracket prices above:**
 
-| User | Revenue | Storage assumed | Storage cost | Stripe | Net |
+| Account | Slider | Revenue | Storage cost | Stripe | Net |
+|---|---|---:|---:|---:|---:|
+| Free (avg) | 10 GB | $0 | ~2 GB → $0.03 | — | **−$0.03** |
+| Free (maxed) | 10 GB | $0 | $0.15 | — | −$0.15 |
+| Light paid | 110 GB | $3.00 | $1.65 | $0.39 | **+$0.96** |
+| Mid paid | 250 GB | $6.50 | $3.75 | $0.49 | **+$2.26** |
+| Heavy paid | 1 TB | ~$23 | $15.15 | $0.97 | **+$6.88** |
+
+**Three scenarios** (conv. = % of accounts holding paid GB; avg paid buyer ≈ the
+250 GB row; free-user avg cost as noted):
+
+| Scenario | Paid conv. | Free avg cost | Margin / user / mo | Break-even (at $45 infra) | Profit / 1,000 users / mo |
 |---|---:|---:|---:|---:|---:|
-| Free (avg) | $0 | ~4 GB of 25 | $0.06 | — | **−$0.06** |
-| Free (maxed) | $0 | 25 GB | $0.375 | — | −$0.375 |
-| eski Pro | $8 | ~200 GB of 1 TB | $3.00 | $0.53 | **+$4.47** |
-| Server plan | $12 | ~400 GB of 500 | $6.00 | $0.65 | **+$5.35** |
-
-**Three scenarios** (conversion = % of users on Pro; servers add margin, folded in
-lightly):
-
-| Scenario | Pro conv. | Free avg | Margin / user / mo | Break-even users | Profit / 1,000 users / mo |
-|---|---:|---:|---:|---:|---:|
-| **Base** | 3% | 4 GB | ~$0.08 | **~550** | **~+$30** |
-| **Optimistic** | 5% | 3 GB | ~$0.24 | **~190** | **~+$196** |
-| **Pessimistic** | 2% | 8 GB | −$0.06 | **never** | **−$100** |
+| **Base** | 4% | $0.04 | ~$0.052 | **~870** | **~+$7** |
+| **Optimistic** | 6% | $0.03 | ~$0.107 | **~420** | **~+$62** |
+| **Pessimistic** | 2% | $0.06 (heavy) | ~−$0.014 | **never at $45** | **−$14** |
 
 **Read-outs:**
-- **Break-even ≈ 400–600 total users** in the base case (covers the ~$45/mo infra);
-  ~190 if conversion is healthy.
-- **Out-of-pocket to get there:** you run below break-even only while small, and the
-  burn is tiny — **~$5–40/mo** during the first few hundred users, tapering to $0.
-  **Cumulative ≈ $200–500 total** to reach break-even over ~6–9 months. A solo
-  project can self-fund this out of pocket comfortably.
-- **The one real risk is the free tier** (pessimistic row): if conversion is low
-  **and** free users actually store a lot, free-storage cost outruns paid revenue.
-  Levers, in order: **dedup** (already in — cuts real GB most); the free *average*
-  matters more than the 25 GB cap (most users store little — monitor the average, not
-  the ceiling, and trim the cap only if it bites); push big uploads / retention /
-  servers toward paid; **Server plans cross-subsidise** free social users.
+- **Below a few hundred users you're on free Supabase/Vercel tiers ($0 fixed), and
+  paid GB are margin-positive, so you're cash-positive almost immediately** — a
+  handful of paid accounts covers a large free crowd. The ~$45/mo Pro-infra step
+  only kicks in around the scale where you also have more paying users to cover it.
+- **Break-even ≈ 400–900 total users** once you're paying for Pro infra, depending on
+  conversion — roughly half the old model's ~550–1,350, because paid GB now clear
+  cost instead of losing on it.
+- **Out-of-pocket to get there is small.** You run under break-even only in the window
+  where you've moved to paid infra but conversion is still ramping; burn there is
+  **~$5–30/mo**, **cumulative ≈ $100–300** over the ramp — comfortably self-fundable.
+- **The one real risk is still the free floor** (pessimistic row): low conversion +
+  heavy free storers. But the **10 GB cap is now hard**, so a free user costs **at
+  most $0.15/mo** — the downside is bounded in a way the old 25 GB soft cap wasn't.
+  Levers, in order: **dedup** (cuts real GB most); the hard cap itself; nudge heavy
+  users to add a cheap slice of paid GB rather than hit the wall.
 - **Egress being free on R2 is what makes a media app viable here** — on S3, serving
   video would dwarf storage cost and flip every scenario negative.
 
-*(These are modelling assumptions, not measured. Instrument the real free-user
-average and conversion in the first months and re-run.)*
+*(Modelling assumptions, not measured. Instrument real free-user average and paid
+conversion in the first months and re-run.)*
 
 ### D.3 Placements — one work, many surfaces (supersedes storage-source/crosspost)
 

@@ -66,7 +66,9 @@ Unchanged from the pivot at the service level; the schema is new.
   typing, the notification bell and live canvas all ride Realtime (COLLAB §7.4).
 - **Cloudflare R2** — media behind `api/sign.mjs` (the one existing Vercel
   function, content-agnostic presigned uploads); the browser uploads straight to
-  R2. Storage is **pay-as-you-go per pool** — personal and per-server (CANON §D.2).
+  R2. Storage is a **dynamic per-GB slider** (10 GB free; price/GB drops as you buy
+  more) whose GB you **allocate** to your personal space and to servers — no feature
+  tiers, no pooling (CANON §D.2).
 - **Vercel** — the app plus serverless functions; deploys `main` directly.
 - **No build step, no framework** in the pivot; the collab build's framework is a
   P0 decision in `CODEGEN.md`.

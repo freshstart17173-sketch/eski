@@ -62,10 +62,15 @@ List (link, uses/expiry, copy, revoke) + New invite link. **DONE:** matches the
 panel; create/revoke gated `manage_invites`/`create_invite`; copy shows a toast.
 
 ### P8.11 [UI] — Storage & billing panel
-**Personal** usage bar (your public + private works) and **this server's** usage
-bar (billed to the owner), Manage plan / Add storage, Export. **DONE:** matches the
-"Storage & billing" panel; bars read `storage_meters` per pool; Manage plan is
-gated `manage_billing`/owner.
+**One dynamic storage slider** (`storage_balance.purchased_gb`, min 10 free) with a
+**live blended $/GB that drops as it rises** (bracket schedule, CANON §D.2) + monthly
+total; below it, **allocation rows** splitting your purchased GB across Personal +
+each server (`storage_allocations`, Σ ≤ purchased). Each row shows a usage bar reading
+`storage_meters` ("X used of Y", dedup wording). Free 10 GB can't be allocated to a
+server. Export at the foot. **No plan/tier picker, no pooling/donate UI.** **DONE:**
+matches the "Storage & billing" panel; dragging the slider updates GB, $/mo and the
+falling $/GB; allocation rows sum-clamp to purchased; server rows reject free GB;
+bars read `storage_meters`.
 
 ### P8.12 [GL] — Perm-gated visibility wiring
 A shared `hasPerm(serverId, flag)` function (reads the caller's roles); every admin
@@ -73,10 +78,14 @@ control calls it so the UI matches `has_perm`. **DONE:** a member without a flag
 its nav item; the owner sees all; toggling a role's flags updates what the member
 sees.
 
-### P8.13 [GL] — Billing/export actions
-Manage plan / Add storage open the billing flow (`billing_accounts`); Export runs
-`export_manifest` → client zips (JSZip). **DONE:** export produces a zip of exactly
-the readable works + metadata; billing actions are owner/`manage_billing` only.
+### P8.13 [GL] — Billing/allocation/export actions
+The slider commits `storage_balance.purchased_gb` through the Stripe flow (charge =
+the bracket schedule; min paid step ~$2/mo); allocation rows write
+`storage_allocations` (instant, no proration — you're billed on the level held).
+Export runs `export_manifest` → client zips (JSZip). **DONE:** raising the slider
+charges the bracket amount and lifts the caps; re-allocating GB never triggers a
+charge; `Σ allocations` can't exceed `purchased_gb`; a server allocation can't draw
+free GB; export produces a zip of exactly the readable works + metadata.
 
 ### P8.14 [UI] — Confirm & prompt modals (admin)
 The destructive-confirm (named consequence, danger primary) and single-field
