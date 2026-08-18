@@ -29,8 +29,8 @@ here instead of in all 132:
 |---|---|---:|---|
 | P0 | [P0-scaffold.md](P0-scaffold.md) | 4 | GL |
 | P1 | [P1-schema.md](P1-schema.md) | 24 | BE |
-| P2 | P2-rpcs.md | 16 | BE |
-| P3 | P3-primitives.md | 14 | UI |
+| P2 | [P2-rpcs.md](P2-rpcs.md) | 16 | BE |
+| P3 | [P3-primitives.md](P3-primitives.md) | 14 | UI |
 | P4 | P4-shell-workspace.md | 11 | UI+GL |
 | P5 | P5-content.md | 13 | UI+GL |
 | P6 | P6-canvas.md | 16 | UI+GL |
@@ -38,4 +38,5 @@ here instead of in all 132:
 | P8 | P8-admin.md | 14 | UI+GL |
 | P9 | P9-utility.md | 9 | UI |
 
-Written so far: **P0, P1** (foundation). The rest land in dependency order.
+Written so far: **P0–P3** (the full backend + design-system foundation). P4–P9
+(the screens, canvas, admin and utility UI) land next, in dependency order.
