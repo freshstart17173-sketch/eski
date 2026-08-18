@@ -27,7 +27,7 @@ v1 decisions of record: **calls deferred to v2**, **audio-only transcode**,
 > in public contexts and a **file** in server/personal — the split is kept;
 > **(2)** one relationship only — **friend** (mutual); one-way `follows` is
 > dropped; **(3)** one user-facing label set everywhere — **Public / Server /
-> Private** (+ **Link** for canvases). These are final and baked in below.
+> Private**. These are final and baked in below.
 
 ---
 
@@ -47,9 +47,9 @@ failure mode `CLAUDE.md` warns about, applied to words instead of CSS.
 | Canonical | Means | DB | Kill these aliases |
 |---|---|---|---|
 | **Server** | The studio/team you create, join, and invite into. The container all Work-layer content lives in. Named "server" (Discord's word) because it's the mental model people already have. | `servers` | studio, group, guild, team, workspace *(as an entity)* |
-| **Workspace** | The three-pane **screen** you land in when you open a server. **Only ever a screen name — never a data entity.** | *(screen, not a table)* | "the workspace" meaning a server or a canvas |
+| **Workspace** | The three-pane **screen** you land in when you open a server. **Only ever a screen name — never a data entity.** | *(screen, not a table)* | "the workspace" meaning a server |
 | **Server rail** | Far-left 58px strip: Home, Messages, one badge per server, ＋, your avatar. | — (`--rail`) | group rail, sidebar |
-| **Channel column** | 232px column listing a server's Media, Channels, Boards, Canvases, Voice. | — (`--chan`) | channel list, sidebar |
+| **Channel column** | 232px column listing a server's Media, Channels, Voice. | — (`--chan`) | channel list, sidebar |
 | **Members rail** | 210px right strip: Admins / Members, presence, "working on". | — (`--mem`) | members list, members panel |
 | **Details pane** | The slide-in that opens from any card. | — | details panel, info panel, inspector |
 
@@ -61,8 +61,6 @@ kind lives in the same channel column so the whole server is one navigable rail.
 | Canonical | `channels.kind` | Means |
 |---|---|---|
 | **Text channel** | `text` | Persistent, searchable chat. `#beats`, `#renders`. |
-| **Board** | `board` | A kanban (§A.6). |
-| **Canvas** | `canvas` | A review surface (§A.5). *A canvas is reached as a channel, and is also its own entity — see A.5.* |
 | **Voice channel** | `voice` | **Reserved in the enum; not built in v1** (calls deferred). Kill "voice room". |
 | **Media** | *(not a channel row)* | The server's file explorer — one fixed entry in the column, not a `channels` row. Kill "media channel". |
 
@@ -78,62 +76,31 @@ context-split:
 |---|---|---|
 | **work** | The data entity. Use in schema, RLS, RPCs, these docs. | `works` (+ `work_items` for a multi-item work) |
 | **post** | A `work` seen in a **public** context — the Feed, a public profile shelf. Has a title, appears to friends. | same row, `visibility='public'` |
-| **file** | A `work` seen in a **server/personal** context — a channel, the Media explorer, a canvas tile. Leads with its **file name**. | same row, `visibility in (server,personal)` |
+| **file** | A `work` seen in a **server/personal** context — a channel, the Media explorer. Leads with its **file name**. | same row, `visibility in (server,personal)` |
 
 > **LOCKED:** the post/file split is kept (F9). Kimi prompts say **post** on the
 > Feed and public Profile shelves, **file** in every server/personal context (a
-> channel, the Media explorer, a canvas tile, the Upload sheet in server mode).
+> channel, the Media explorer, the Upload sheet in server mode).
 
 Sub-terms (not renamed, pinned for clarity):
 
 | Canonical | Means | DB |
 |---|---|---|
-| **version** | A numbered iteration of a work (v1, v2…). Linear, no branches. Any member can add one; a **change reason is mandatory**. | `works.version_of`, `works.version_note` |
 | **credits** | Free-text attribution on a work ("prod. jax · mix tomo"). | `works.credits` |
 | **contributor chip** | A name from `credits` rendered as a chip in that member's server colour. | derived |
 | **tag** | A user-added label. First 5 show inline, "+N" for the rest. | `content_tags` |
 | **file type** | The extension/kind, for the icon and Type filter. **Never rendered as a tag** (F10). | `works.file_ext`, `works.kind` |
 | **collection** | A named, ordered set of works. Rendered as a **carousel** in the explorer. | `collections` / `collection_items` |
 
-Kill: "asset", "media item", "attachment", "revision" (→ version), "carousel"
-as an entity (it's how a collection *renders*).
+Kill: "asset", "media item", "attachment", "carousel" as an entity (it's how a
+collection *renders*).
 
-### A.5 The review surface — `canvas`
-
-F5/F6's "canvas / scratchpad / workspace-with-visibility" are **one entity**.
-Canonical name: **canvas**. The table is renamed `scratchpads` → **`canvases`**
-for the clean slate.
-
-| Canonical | Means | DB |
-|---|---|---|
-| **canvas** | A scratch surface holding several files as **tiles**; has its own visibility (private / server / link). Reached as a channel kind or opened from a card ("Open in canvas"). | `canvases` (owner_id, server_id?, visibility, share_code) |
-| **tile** | One file placed on a canvas. Only a file *on a canvas* is a tile; elsewhere it's a card. | `canvas_items` (was `scratchpad_items`) |
-| **annotation** | A **drawing** on a tile — pen / arrow / box / freeform + colour. A visual mark, not a thread. | `annotations` (tool, color, path jsonb) |
-| **comment** | A **Figma-style floating pin** (shown as the author's avatar) anchored to a selection, expanding to a thread. Resolves, never deletes. **Distinct from annotation** (F5 is emphatic). | `comments` (+ `mark jsonb`, `context`, `resolved_at`) |
-| **mark** | The anchor a comment points at: a point, box, freeform region, video frame, or audio range. | `comments.mark jsonb` = `{point}｜{box}｜{path}｜{frame}｜{t0,t1}` |
-
-Kill: **scratchpad** (→ canvas), **workspace** as used in F6 (→ canvas),
-**note** (→ comment; "leave a note" becomes "leave a comment"), "sticky",
-"marker" (→ mark or pin per context).
-
-> **Superseded by §E (2026-08-17c):** the tool set and annotation model above are
-> redefined — **no arrows/boxes**; annotation = **3 mark types** (point /
-> rectangle / lasso), each carrying a comment; plus a separate **pen + eraser**
-> ink tool. The **point renders as a rectangular labelled tail, not a bare
-> avatar**. See §E for the full mechanics.
-
-### A.6 Boards
-
-| Canonical | Means | DB |
-|---|---|---|
-| **board** | A kanban, itself a channel kind. | `boards` |
-| **column** | To do / In progress / Review / Done (admin-editable). | `board_columns` |
-| **card** *(board card)* | A task: title, label, assignee, optional linked work or canvas. | `board_cards` |
-
-Note the one collision we accept: **card** means a board card here *and* a
-work's thumbnail card in the Feed/explorer. Disambiguate by context ("board
-card" vs "work card") only when both are on screen. A file on a canvas is never
-a card — it's a **tile**.
+> **Cut for beta (2026-08-18e):** **numbered versions are removed** — the
+> `version`/`version_of`/`version_note` concept was confusing and is gone. A new
+> take is just a new upload. **Canvas** (the old §A.5 review surface) and **Kanban
+> boards** (old §A.6) are also cut from the beta; their §A vocab, §C screens, §E
+> mechanics and prompts are removed. Section numbers §A.5/§A.6 are retired (left as
+> a gap) rather than renumbered, to keep cross-references stable.
 
 ### A.7 People & relationships
 
@@ -173,29 +140,28 @@ the word), "notif".
 
 ### A.9 Visibility — the enum vs the label
 
-Data enum on `works.visibility` (and `canvases.visibility`): **`public` |
-`personal` | `server`** (+ `link` for canvases). The spec currently shows *three
-different label sets* for this one enum — that is the sharpest drift in the doc:
+Data enum on `works.visibility`: **`public` | `personal` | `server`**. The spec
+currently shows *three different label sets* for this one enum — that is the
+sharpest drift in the doc:
 
 | `visibility` | Profile shelf (mockup) | Upload choice (mockup) | Canonical UI label (LOCKED) |
 |---|---|---|---|
 | `public` | "Public" | "Everyone" | **Public** |
 | `server` | "Shared" | "This server" | **Server** |
 | `personal` | "Private" | "No one" | **Private** |
-| `link` *(canvas only)* | — | — | **Link** |
 
-> **LOCKED:** **Public / Server / Private** (+ **Link** for canvases), identical
-> on the upload sheet, the profile shelves, and every visibility marker. "Shared",
-> "Everyone", "This server", "No one" are killed. One word per value, no
-> context-dependent synonyms. The data enum stays `public｜personal｜server`
-> (+`link`); only the label is fixed.
+> **LOCKED:** **Public / Server / Private**, identical on the upload sheet, the
+> profile shelves, and every visibility marker. "Shared", "Everyone", "This
+> server", "No one" are killed. One word per value, no context-dependent synonyms.
+> The data enum is `public｜personal｜server`; only the label is fixed. (The old
+> canvas-only **Link** value is removed with the canvas feature.)
 
 ### A.10 Member colours (the one hue in the UI)
 
 The chrome is black/white/grey; the **only** colour is a member's per-server
 identity hue (F12a), and it renders **only inside that server** — on chat
-bylines, the Members rail, contributor chips, canvas-comment authors, and
-board-card assignees. Never on a public profile or the Feed.
+bylines, the Members rail, and contributor chips. Never on a public profile or
+the Feed.
 
 **Scale (LOCKED approach — "add a lot"):** servers can hold many people, so the
 palette is **large, not the original six**. Store `server_members.color` as a
@@ -231,7 +197,6 @@ policy already forbids (`ARCHITECTURE.md`).
 | **Member** | Works in the server. | `server_members.role='member'` |
 | **Timed-out member** | A member temporarily muted. | `server_members.timeout_until > now()` |
 | **Banned / non-member** | Removed or never joined. | not in `server_members` / `server_bans` |
-| **Link-holder** | Anyone with a canvas share link — no account rights beyond that one canvas. | `canvases.share_code` |
 | **Self** | Acting on your own row, any server. | `owner_id = uid()` |
 
 Two gate helpers every server policy calls (`security definer`,
@@ -244,20 +209,16 @@ Two gate helpers every server policy calls (`security definer`,
 
 | Capability | Owner | Admin | Member | Timed-out | Non-member | Enforced by |
 |---|:--:|:--:|:--:|:--:|:--:|---|
-| Read server content (works, messages, boards, canvases) | ✅ | ✅ | ✅ | ✅ | ⛔ | `member_of(server_id)` |
+| Read server content (works, messages) | ✅ | ✅ | ✅ | ✅ | ⛔ | `member_of(server_id)` |
 | Join via invite link | — | — | — | — | ✅*(rpc)* | `join_via_invite(code)` |
 | Post a message | ✅ | ✅ | ✅ | ⛔ | ⛔ | insert: member & `timeout_until` null/past |
 | React / pin a message | ✅ | ✅ | ✅ | ⛔ | ⛔ | member; unpin-any = admin |
 | Edit / delete **own** message | self | self | self | self | ⛔ | own row, tombstone |
 | Delete **any** message (moderate) | ✅ | ✅ | ⛔ | ⛔ | ⛔ | `is_server_admin` |
 | Upload a work to the server | ✅ | ✅ | ✅ | ⛔ | ⛔ | member; `visibility='server'` |
-| Add a **version** to any work | ✅ | ✅ | ✅ | ⛔ | ⛔ | `add_version` *(rpc)* — reason required, same kind |
 | Delete **own** work | self | self | self | self | ⛔ | own row |
 | Withhold a work (takedown) | ✅ | ✅ | ⛔ | ⛔ | ⛔ | `is_server_admin`, writes `audit_log` |
-| Create / edit a board card | ✅ | ✅ | ✅ | ⛔ | ⛔ | member; delete = admin |
-| Comment / annotate on a canvas | ✅ | ✅ | ✅ | ⛔ | link-holder✅ | canvas visibility + membership |
-| Create a canvas | ✅ | ✅ | ✅ | ⛔ | ⛔ | member (server canvas) or self (private) |
-| Add / rename / reorder channels & boards | ✅ | ✅ | ⛔ | ⛔ | ⛔ | `is_server_admin` |
+| Add / rename / reorder channels | ✅ | ✅ | ⛔ | ⛔ | ⛔ | `is_server_admin` |
 | Manage members (role toggle, kick) | ✅ | ✅ | ⛔ | ⛔ | ⛔ | `is_server_admin`; owner can't be kicked |
 | Ban / timeout a member | ✅ | ✅ | ⛔ | ⛔ | ⛔ | `ban_member`/`timeout_member` *(rpc)* + `audit_log` |
 | Create / revoke invite links | ✅ | ✅ | ⛔ | ⛔ | ⛔ | `is_server_admin` |
@@ -275,7 +236,7 @@ else an owner does, they do *as* an admin.
 One policy, mirrored onto every server-scoped table:
 
 ```sql
--- works (and mirrored on comments, messages, board_*, canvases, collections)
+-- works (and mirrored on comments, messages, collections)
 create policy works_read on works for select using (
   visibility = 'public'                              -- portfolio / Feed
   or owner_id = (select auth.uid())                  -- your own + Private
@@ -290,8 +251,6 @@ Consequences that drive the UI (§C references these):
   `server` visibility, gated by `member_of`.
 - **Profile shelves**: Public = anyone; Server = a viewer sees only servers you
   share; Private = self only.
-- **Canvas `link`** visibility is the one non-member read path, scoped to that
-  single canvas by `share_code` — never widens to the server.
 - Non-public routes send `noindex`; only `public` works get OG tags.
 
 ### B.4 Relationship gates (friend-only)
@@ -363,23 +322,23 @@ Breakpoints (to confirm against the style guide): **≥1100px** full four-pane �
 bottom tabs. Every element row below only notes mobile behaviour where it
 differs from this contract.
 
-### C.3 Screen manifest (~21 surfaces) — build order follows §7.8
+### C.3 Screen manifest — build order follows §7.8
 
-Registry column points at the section that specifies each surface. All rows are
-now written; Screen 7 (Call) is the one deferral.
+Registry column points at the section that specifies each surface. **Canvas (old
+Screen 5) and Board (old Screen 6) are cut from the beta** — their rows, §C.8/§C.9
+sections and §E mechanics are removed; those screen numbers are retired (left as a
+gap) rather than renumbered. Screen 7 (Call) remains a v2 deferral.
 
 | # | Screen | `data-screen` | Sub-states already mocked | Registry |
 |---|---|---|---|---|
 | 1 | Workspace | `workspace` | chat / pins / files (`chtab`), thread view | §C.4 (template) |
 | 2 | Feed | `feed` | — | §C.5 |
 | 3 | Media explorer | `explorer` | files / folders | §C.6 |
-| 4 | Details pane | *(overlay)* | version dropdown, per-context comments | §C.7 |
-| 5 | Canvas | `canvas` | files / pins (`chview`), annotate vs comment | §C.8 · §E |
-| 6 | Board | `board` | board / table / calendar (`kview`) | §C.9 |
+| 4 | Details pane | *(overlay)* | per-context comments | §C.7 |
 | 7 | Call | `vc` | chat / notes (`vctab`) | **v2 — deferred, not built** |
 | 8 | Profile | `profile` | Public / Server / Private shelves, Settings | §C.10 |
 | 9 | Messages (DMs) | `dms` | thread list, conversation | §C.11 |
-| 10 | Upload | *(sheet)* | new-post vs new-version mode | §C.12 |
+| 10 | Upload | *(sheet)* | file upload | §C.12 |
 | 11 | Server settings | `settings` | general/channels/members/roles/invites/moderation/audit/storage | §C.4–C.13 + C.16, C.19 |
 | 12 | Create server | `create` | — | §C.14 |
 | 13 | Join by link | `join` | — | §C.14 |
@@ -413,7 +372,7 @@ The three-pane server view. Legend: **R**=reads, **W**=writes, **RT**=Realtime.
 | Server name header | Tap → server menu (settings if admin, leave, invite). | R `servers`; gate `is_server_admin` | Column top | Drawer top |
 | Media entry | Open the Media explorer. | R `works where server_id` | Fixed row | In left drawer |
 | Channel list (text) | Each: name, unread bold, mention badge. Click → load channel. Admin sees drag-handle to reorder. | R `channels kind='text'`, `channel_reads`; W `is_server_admin` reorder | Grouped list | Left drawer |
-| Boards / Canvases / Voice servers | Same list, by `kind`. Voice = **disabled/hidden in v1**. | R `channels`, `boards`, `canvases` | Sections | Left drawer |
+| Voice channels | Listed by `kind`. Voice = **disabled/hidden in v1**. | R `channels` | Section | Left drawer |
 | ＋ add channel (admin) | Inline create; name + kind. Hidden for members. | W `channels` insert, admin | Per section | Drawer |
 
 #### Main — chat pane
@@ -472,10 +431,10 @@ The server's files.
 
 ### C.7 Screen 4 — Details pane
 
-Opens from any card (never inside the canvas). **Arena layout (2026-08-18):** a
-near-full-screen split over a scrim — the **media takes the room** (left, grows to
-fill), a **fixed ~380px info rail** on the right. No drop shadow (scrim
-separates). Bigger than a modal on purpose: the media is the point.
+Opens from any card. **Arena layout (2026-08-18):** a near-full-screen split over a
+scrim — the **media takes the room** (left, grows to fill), a **fixed ~380px info
+rail** on the right. No drop shadow (scrim separates). Bigger than a modal on
+purpose: the media is the point.
 
 **Post vs server file — the load-bearing distinction (2026-08-18b).** The *same*
 arena shell serves two things; what differs is the discussion surface and which
@@ -483,61 +442,24 @@ storage the bytes draw:
 
 - **Post** — a **public** work on a profile/Feed. Draws the owner's **personal
   storage** (`storage_source='personal'`). Its pane is the classic one: a **public
-  comment thread** (`comments`, context=public), tags, credits, versions. **No
-  channel** (it isn't in a server).
+  comment thread** (`comments`, context=public), tags, credits. **No channel** (it
+  isn't in a server).
 - **Server file** — a work shared **in a server**. Looks identical expanded but has
   **no comment thread** — replies happen in the **channel chat**; the rail shows a
-  "Replies happen in #channel →" link instead. It **keeps tags** (+ credits,
-  versions). Server-stored, server-visible.
-
-**Annotations belong to the work-in-server, and the details pane has none
-(2026-08-18c).** Annotations are scoped to the **work within its server**, not to a
-canvas — **a single file can be opened on several canvases in the same server and
-shares one set of annotations** across them (`annotations(server_id, work_id, …)`,
-never `canvas_id`). Consequence: the **details pane** (opened from a card *outside*
-the canvas) carries **no annotations element** — it's context-neutral and a file can
-be on many canvases. Annotations are viewed **and created** in the canvas
-**expanded view** (§E.3) — where you make a selection (image marquee / audio region /
-video range) and attach a note — plus the tile count badge and the canvas
-annotations sidebar.
+  "Replies happen in #channel →" link instead. It **keeps tags** (+ credits).
+  Server-stored, server-visible.
 
 | Element | Behaviour & states | DB | Desktop | Mobile |
 |---|---|---|---|---|
 | Media area | Fills the left; **player controls pinned to its foot** (big play, skip ±, seek, volume, tabular time); waveform/video/image/type-card/folder-preview per kind. | R `works` (signed URL) | Left, grows | Top ~42vh |
 | **Prev / next arrows — folder only** | A single work (post or file) has **no** media arrows. A **folder** is the one pane that shows prev/next **over the media** (page its items) plus a clickable **navigation list in the rail**. | `collection_items` order | Folder media edges + rail list | Same |
-| **Version dropdown (top of rail)** | A **functional** dropdown (native `<details>`, no JS): collapsed shows just **`v3 of 3`**; **opens to the full file names** per version + "Add a version" (requires a reason). Folder has no version dropdown. | R `works.version_of` · `add_version()` | Rail top bar | Rail top bar |
 | Metadata | Rich per kind: storage badge, posted/uploaded-by, **channel** (server file only), **added** date, **length** (a/v), **dimensions/fps** (image/video), **format/codec/bit-depth**, **size**. Folder: where, item count, made-by, created, visibility. | `works` cols | Rail | Rail |
-| Report + close | Flag (report) and × sit in the rail's top bar beside the version dropdown. | `file_report` | Rail top bar | Rail top bar |
+| Report + close | Flag (report) and × sit in the rail's top bar. | `file_report` | Rail top bar | Rail top bar |
 | Storage×visibility badge | One of three, verbatim: **Personal · Private**, **Personal · Public**, or **Server** (with the server name). Storage and visibility coincide except a crosspost (personal-stored, server-seen); provenance is **not** shown. | `works.owner_type` + `visibility` | Rail meta | Rail meta |
 | Title / credits / tags | Title (or file name); contributor chips (server colour); user tags + ＋. **Both** posts and server files have tags. | `works.title/credits` · `content_tags` | Rail | Rail |
-| Actions | Download (get-as formats), Save (folder), Open in canvas (picker; not for `other`/folder). | transcode · `saved_items` · `canvas` | Rail foot | Rail foot |
+| Actions | Download (get-as formats), Save (folder). | transcode · `saved_items` | Rail foot | Rail foot |
 | **Discussion** | **Post** → a public **comment thread** (`comments`, context=public) with an add-comment field. **Server file** → **no thread**; a "Replies happen in #channel →" link to the chat. | `comments` (posts) / channel chat (server files) | Rail list / link | Rail |
 | Mobile | Card goes full-screen, **column**: media on top (~42vh), the rail below. | — | — | Full-screen column |
-
-### C.8 Screen 5 — Canvas
-
-Review surface (§E). Comments here are **annotations**.
-
-| Element | Behaviour & states | DB | Desktop | Mobile |
-|---|---|---|---|---|
-| Header | Canvas picker (dropdown), visibility chip, zoom (−/%/+/Fit/Reset), Add file, Share. | `canvases` | Top bar | Top bar; zoom in a menu |
-| Tool palette | Move · Annotate (point/rectangle/lasso) · Pen + whole-stroke eraser + size/colour. No shapes/arrows. | `annotations` · `ink` | Toolbar | Toolbar |
-| Tile | A file as a tile; author labels top-right, **square count badge** = total annotations, **maximize** button; point marks as dots, rect = dotted box; audio → play + waveform; pen ink overlay. Screencap lives in the **expanded view** only. | `canvas_items` · `annotations` | Pannable canvas | Pinch-pan |
-| Annotation thread | Click a mark → thread (author chip, snippet, Resolve, replies, reply field); **no version number**. | `annotations` (mark, resolved_at) | On canvas | Sheet |
-| **Annotations sidebar** | Lists every annotation (author, mark type, snippet, resolved); click → jump to its mark. | R `annotations where canvas_id` | Right rail | Sheet |
-| Expanded view | All media open to details + annotations + player; audio-trim → **duplicate** into canvas. | `annotations` · duplicate → `canvas_items` | Modal | Full-screen |
-| Empty | "Nothing on this canvas yet — drop files or add from Media." | — | Centered | Centered |
-
-### C.9 Screen 6 — Board
-
-Kanban (a channel kind).
-
-| Element | Behaviour & states | DB | Desktop | Mobile |
-|---|---|---|---|---|
-| Header | Board name; view switcher **Board / Table / Calendar**; Fields; Add card. | `boards` | Top | Top |
-| Column | To do / In progress / Review / Done (admin-editable); count badge; Add card. | `board_columns` | Columns | Horizontal scroll |
-| Card | Title, label, assignee (avatar in server colour), due date (overdue = danger), linked file/canvas; drag to move. | `board_cards` · `move_card()` | Draggable | Long-press drag |
-| Card detail | Modal: title, label picker, assignee, due-date, linked work/canvas. | `board_cards` | Modal | Sheet |
 
 ### C.10 Screen 8 — Profile
 
@@ -566,14 +488,13 @@ Kanban (a channel kind).
 | Tags · Credits | **Separate** fields; Credits = **type-ahead chip input** (handle → Enter → member chip in colour). | `content_tags` · `works.credits` | Fields | Fields |
 | Visibility | **Per post**: Public / Server / Private. | `works.visibility` | Segmented | Segmented |
 | **Which server** | When Server: pick the target server. | `works.server_id` | Picker | Picker |
-| Version mode | Flips to same-media-type ordered versions, each a **mandatory reason**. | `add_version()` | — | — |
 
 ### C.13 Screen 14 — Notifications
 
 | Element | Behaviour & states | DB | Desktop | Mobile |
 |---|---|---|---|---|
 | Tabs | All / Mentions / Threads / Saved; grouped by day. | `notifications` | Tabs | Tabs |
-| Row | Mention / annotation / version / board-assign / join / reaction; links to target; inline reply. | `notifications` · RT `user:{id}` | List | List |
+| Row | Mention / comment / join / reaction; links to target; inline reply. | `notifications` · RT `user:{id}` | List | List |
 | Mark all read | Clears unread. | `notifications.read_at` | Header | Header |
 
 ### C.14 Screen 11/12/13 — Create · Join · Sign-in (focus screens)
@@ -618,8 +539,8 @@ Modal from the role chip on a Members row, or the member popout's manage menu.
 
 ### C.18 Channel permissions — private-channel allow-list (gated `manage_channels`)
 
-Modal that appears when a channel/board/canvas is toggled **Private** in its
-settings. v1 = allow-list only (D.1 LOCKED D-i).
+Modal that appears when a channel is toggled **Private** in its settings.
+v1 = allow-list only (D.1 LOCKED D-i).
 
 | Element | Behaviour & states | DB | Desktop | Mobile |
 |---|---|---|---|---|
@@ -701,7 +622,7 @@ and the only biller (§D.2).
 |---|---|
 | Server | `manage_server`, `manage_roles`, `manage_channels`, `manage_invites`, `view_audit`, `manage_billing` |
 | Members | `kick`, `ban`, `timeout`, `create_invite` |
-| Content | `upload`, `add_version`, `add_tags`, `comment`, `annotate`, `manage_board`, `pin_message`, `delete_any_message` |
+| Content | `upload`, `add_tags`, `comment`, `pin_message`, `delete_any_message` |
 | Per-channel (via overwrite) | `view_channel`, `send_messages` |
 
 Two RLS helpers join `member_of`/`is_server_admin`:
@@ -752,8 +673,8 @@ The per-GB price *drops* as the slider goes up.**
    once — there is no shared pot to bankrupt, hold, or farm.
 2. **Content-addressed dedup.** Media is stored by `sha256`. A quota counts the
    **unique** blobs the account owns — a clip reposted ten times, or a sample reused
-   across versions, is stored (and billed) **once**. The big lever for both a social
-   group's reposting and an artist's version history.
+   is stored (and billed) **once**. The big lever for a social group's reposting and
+   an artist reusing the same source across works.
 3. **Storage only — no feature tiers.** Paid GB unlock nothing but space; every
    account has every feature. What you buy is a **number of GB on a slider**, not a
    plan. Upgrading = **sliding the scale**, never jumping a tier; downgrading is
@@ -821,7 +742,7 @@ small % of the charge; below that, stay on the free 10 GB.
   deleted).
 
 **Meter shows the dedup win:** the storage bar reads "X GB used *(from Y GB of
-files)*" so people see reposts/versions cost nothing.
+files)*" so people see reposts cost nothing.
 
 **Schema (replaces `storage_source`/`billing_server_id`; no `plan`, no pooling — so no
 `storage_grants`, no `storage_allocations`):**
@@ -906,12 +827,12 @@ conversion in the first months and re-run.)*
 ### D.3 Placements — one work, many surfaces (supersedes storage-source/crosspost)
 
 **⚑DECIDE→LOCKED:** adopt the **placement model**. A `work` has one **home**
-(owner + storage) and its own tags/credits/versions; **placements** are lightweight
+(owner + storage) and its own tags/credits; **placements** are lightweight
 references that put it onto a surface. Discussion and audience attach to the
 **placement**, not the work.
 
 ```
-placement (id, work_id → works, surface text in (feed,server,dm,canvas),
+placement (id, work_id → works, surface text in (feed,server,dm),
            surface_id uuid, channel_id uuid null, placed_by uuid, created_at)
 ```
 
@@ -930,12 +851,12 @@ placement (id, work_id → works, surface text in (feed,server,dm,canvas),
   work referencing the same dedup blob — near-zero bytes — owned by the sender),
   never a live cross-server grant. (⚑DECIDE answer.)
 - **Publish (server file → public portfolio)** = **fork a personal copy**
-  (⚑DECIDE answer): a new work owned by you, `version_of=null`, crediting the
-  original; the server file stays put. Server and public histories then diverge by
-  design. The details pane's "Publish" action is this fork.
+  (⚑DECIDE answer): a new work owned by you, crediting the original; the server file
+  stays put. Server and public copies then diverge by design. The details pane's
+  "Publish" action is this fork.
 
 > **LOCKED (D-ii, revised):** ownership vs presence stay split. **The owner
-> controls the file** (edit, versions, delete). **The server controls its
+> controls the file** (edit, delete). **The server controls its
 > presence** — an admin with moderation perm can **detach a placement** (remove it
 > from the server), which never touches the owner's file or bytes. Making a work
 > **Private retracts all its placements** (they show "author made this private"),
@@ -953,8 +874,8 @@ Not in the mockup yet; all **TO BUILD**:
   expired, revoked, full, already-a-member.
 - **Access denied** — a private channel/server you can't see (`can_view_channel`
   false) — a quiet "you don't have access", never a 404 that leaks existence.
-- **Server settings → Storage & billing** — usage bars (personal vs this
-  server), current plan, PAYG toggle, upgrade; gated by `manage_billing`.
+- **Server settings → Storage & billing** — usage bars + **two storage sliders**
+  (personal + this server), no plans/pooling (§C.19, §D.2); gated by `manage_billing`.
 - **Server settings → Roles** — create/rename/colour a role, the permission
   matrix (D.1 flags), drag to reorder; gated by `manage_roles`.
 - **Assign roles to a member** — from the member popout/manage; writes
@@ -965,87 +886,6 @@ Not in the mockup yet; all **TO BUILD**:
 These extend §C's 14-screen manifest to a **~21-surface** registry; each still
 gets the full element · behaviour · DB · desktop · mobile treatment when §C is
 filled.
-
----
-
-## §E. Canvas mechanics (detailed) — 2026-08-17c
-
-The review canvas got a full redesign pass. This **supersedes the tool/annotation
-parts of §A.5** (the glossary row stays; the mechanics live here). The through-line:
-**the canvas is its own workspace with its own expanded views — the details pane
-never opens inside the canvas.**
-
-### E.1 Navigation
-Pan + zoom, plus **zoom presets**: **Fit** (frame all tiles), **Reset** (100%),
-zoom-to-selection. A small zoom control (−/●/＋ with a % readout and Fit/Reset).
-
-### E.2 The tool palette — three tools (simplified 2026-08-18d)
-
-**Annotations are freeform canvas comments, like Figma / paper.design — not
-attached to a specific file/region.** You drop them anywhere on the board; a
-rounded name-tag pin **with a pointer on one corner** shows what it's aimed at.
-The palette is exactly:
-
-1. **Move** — pan the canvas / select & drag tiles.
-2. **Annotate** — click anywhere to drop a **comment pin**: a **rounded name tag**
-   (the author, in member colour) with **a small pointer on one corner** you aim at
-   whatever you're referring to; a **dialogue box pops up** to write the note. That's
-   the only mark type — **no point/rectangle/lasso/region**. The pin lives on the
-   **canvas surface** (freeform x/y), not inside a file, so it doesn't matter which
-   tile is near it. Clicking a pin reopens its note/thread.
-3. **Pen + Eraser** — freehand **ink** markup, **size + colour**. SVG paths;
-   **whole-stroke erase** (OneNote-style). Ink is pure visual markup, not a comment.
-
-**Removed for good:** rectangle, freehand/lasso, point-region, arrow, box/shape,
-and any per-file / per-timecode annotation selection. There is **no annotate
-"mode" chooser** beyond picking the Annotate tool — writing a note is just a
-dialogue box, like a comment.
-
-### E.3 Per-media behaviour
-Tiles are still per-media (image shows the still, audio a waveform, video a frame),
-and each tile has a **Maximize** → a simple **fullscreen viewer/player** (big media +
-transport for a/v) for inspecting it. But **annotations are not attached to the media
-any more** — they're freeform pins on the board next to whatever they discuss. So:
-- **No per-file annotation composer, no waveform-region / video-range / image-marquee
-  selection.** Timecode-specific feedback is written as text in the pin ("0:42 —
-  whoosh late") next to the audio tile.
-- **Screencap** stays: a button copies the current frame/image at full resolution to
-  the clipboard (client-side), for use outside eski.
-- **Duplicate** stays for audio: from the fullscreen player you can still trim a
-  range and **duplicate** it as a new audio tile.
-
-### E.4 Duplicate, not copy
-Wherever the old spec said "copy", the action is **duplicate** — it spawns a copy
-**straight into the canvas**, never onto the clipboard. The one clipboard action
-is **screencap** (a frame/image, for use outside eski).
-
-### E.5 Two layers on the canvas
-| Layer | What it is | Visibility |
-|---|---|---|
-| **annotation** | a freeform **comment pin** — a rounded name tag with a corner pointer, carrying a note/thread | pin always visible; the note **on click** (dialogue box) |
-| **ink** | pen strokes (size/colour, SVG, whole-stroke erase) | always visible |
-
-(The old third layer — per-file "media annotations" inside an expanded view — is
-gone; annotations are freeform board pins.)
-
-### E.6 Data implications (for §7 backend)
-- **Annotations are freeform, canvas-scoped comment pins (2026-08-18d).**
-  `annotations(canvas_id, author_id, x real, y real, corner in (tl,tr,bl,br), body,
-  resolved_at, created_at)` — placed anywhere on the board; `corner` is which corner
-  of the name tag the pointer sticks out of; `x/y` are canvas coordinates. **No
-  `work_id`, no `kind`, no region/timecode.** They belong to the **canvas** (a
-  Figma-style board comment), not to a file — so "which tile / which canvas" and the
-  file-in-many-canvases problem simply don't apply. (Supersedes the 2026-08-18c
-  work+server scoping.)
-- **Ink** — `ink(canvas_id, author_id, path jsonb, color, size)`, one row per stroke
-  (whole-stroke erase = delete row).
-- **Ink** is the same shape, one row per stroke (whole-stroke erase = delete row),
-- Annotations are **not** shown in the details/expanded pane — they're board pins,
-  viewed on the canvas and enumerated in the **canvas annotations sidebar**.
-- Duplicate (audio-trim) = insert a new `works`/`canvas_items` row (a derived clip);
-  no clipboard.
-- Screencap is **client-side** (canvas/`<video>` frame grab → Clipboard API); no
-  backend.
 
 ---
 
@@ -1065,8 +905,6 @@ Smaller corrections from the gallery review — all fold into §C when it's fill
   not a popped dialog.
 - **Member popout uses a SQUARE profile image** (the large avatar). Round stays
   for small inline avatars and presence dots; the popout's hero image is square.
-- **The details pane never opens inside the canvas** (see §E) — a canvas tile's
-  expanded state is the audio/video expanded view, not the details pane.
 
 ---
 
@@ -1112,13 +950,6 @@ invite, and access-denied** alike:
   rail; `.onboard`/`.authwrap` are `position:fixed` scrims. (This overrides the
   earlier "keep the rail on create/join" line.)
 
-### D.6.5 Canvas comments sidebar
-The canvas gets a **comments sidebar** (a rail listing **every comment** on the
-canvas — author chip in member colour, snippet, mark type, resolved state).
-**Clicking a comment opens/ًjumps to its mark** on the canvas and expands its
-thread. This is the canvas's own navigation for its comments (the details pane
-still never opens in the canvas, §E).
-
 ### D.6.6 Visibility — more rigorous, per-post, with server target
 - Visibility is set **per individual post/work**, not a global default only.
 - When visibility is **Server**, the user **picks which server** the post goes
@@ -1127,29 +958,3 @@ still never opens in the canvas, §E).
   chosen per upload and editable per post. Backend: `works.visibility` +
   `works.server_id` (the chosen server) already carry this; the UI must expose
   the server picker, not assume the current one.
-
----
-
-## §E.7 Annotations vs comments — terminology correction (2026-08-17e)
-
-**The canvas marks are ANNOTATIONS, not comments.** (They were called "comments"
-throughout §E by mistake.) Two distinct concepts:
-
-- **Annotation** — a canvas **mark** (point / rectangle / lasso) + its note/thread,
-  anchored to a spot on a media file. Lives on the canvas, resolves, and is
-  listed in the canvas **Annotations sidebar**. Own table: `annotations`
-  (work_id, author_id, mark jsonb, body, resolved_at). **Separate from ink**
-  (pen strokes) and **separate from comments**.
-- **Comment** — a **post-level** comment (Feed / details pane), on the work as a
-  whole. Table: `comments`. Not a canvas thing.
-
-Canvas UI consequences (built into the canvas screen + panels):
-- Sidebar header is **Annotations**; annotations show **no version number**.
-- Author **labels sit at the tile's top-right, off the media** (neat); a
-  **square count badge** = the **total** annotations on that post.
-- **Screencap** lives in the **expanded view only**, not on the tile.
-- Each tile has a **maximize button**; **all media** open an **expanded view**
-  = details (player controls, title, version, tags, credits) **+ its
-  annotations**. This is the details brought into the canvas — the details
-  *pane* still never opens inside the canvas.
-- **Duplicate, not copy**: audio-trim duplicates a clip straight into the canvas.

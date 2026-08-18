@@ -5,12 +5,22 @@ into a concrete plan: a feature list (each with a reason and the simplest
 idiotproof way to build it), a data-model sketch, the screens, and two full
 workflow walkthroughs. Nothing here is live yet.
 
+> **Beta scope cut (2026-08-18e) — CANON is authoritative.** Three features are
+> **removed from the beta**: the **review canvas** (F5/F6 + annotations/ink),
+> **kanban boards** (F3a), and **numbered versions** (F7). Their tables, RPCs,
+> screens and Realtime channels below are **historical** — do not build them. A new
+> take is just a new upload; feedback lives in chat and post comments. Storage is
+> the **two-slider, no-pooling** model priced **$0.050/$0.045/$0.040 per GB**
+> (10 GB free); see CANON §D.2. Where this narrative still describes a cut feature or
+> old pricing, **CANON wins.**
+
 A clickable black-and-white mockup of every screen lives at
 [`docs/design/collab-mockup.html`](design/collab-mockup.html): workspace (channels,
-boards, canvases, media, chat, members), following feed, media explorer, review
-canvas, kanban board, call, details pane, profile, DMs, upload, group settings,
-create/join, notifications, search, quick switcher, thread view, channel pins,
-and profile popouts. Its tokens and components are documented 1:1 in
+media, chat, members), following feed, media explorer, call, details pane, profile,
+DMs, upload, group settings, create/join, notifications, search, quick switcher,
+thread view, channel pins, and profile popouts. *(The mockup still contains the
+now-cut review canvas and kanban board — beta cut 2026-08-18e; ignore them.)* Its
+tokens and components are documented 1:1 in
 [`docs/design/styleguide.html`](design/styleguide.html) (§8). Read this doc next
 to both.
 
@@ -52,18 +62,16 @@ below) and it matches how collaborators really meet.
 |---|---|---|
 | Discord | the server rail, **user-created channels**, roles, **add-a-friend-by-username**, voice/video channels | this is the workspace shape people already know |
 | Slack | topic-in-channel / reply-in-thread, **persistent searchable chat** | chat that sticks is what makes it a workspace, not a fancy dropbox |
-| Frame.io | **drawing on a video frame**, automatic version stacking, "notes follow the work across versions", an approval state | half the moat, precise visual feedback |
-| Figma | click-drag to mark a **region**, notes listed in a rail *and* on the canvas, resolve-keeps-it | the canvas interaction, already half-built in `artboard.html` |
-| SoundCloud / BandLab | **highlighting a range on the waveform** to comment on it | the audio half of the canvas; eski's player already draws the waveform |
+| Frame.io / Figma / SoundCloud | on-media review (draw on a frame, mark a region, highlight a waveform range) | *the review-canvas moat — **deferred past the beta** (F5 cut); listed here as the eventual differentiator* |
 | Supabase Realtime | Presence for "who's online / what they're on" | the ambient "the studio is occupied" signal, no table needed |
 
 **We refuse Abstract's model.** Abstract brought git-style
 *branch → change → request review → merge* to designers; Adobe shut it down in
 2023 and the documented lesson is that **forcing a developer's branch/merge
-workflow onto artists does not work.** So eski has **no branching.** Versions
-are just numbers, v1, v2, v3, a straight line. "Fork" is a plain duplicate of a
-file with a credit back to the original, not a branch. That restraint is a
-feature, and it's already the schema's shape (`works.version_of`).
+workflow onto artists does not work.** So eski has **no branching** and (as of the
+beta cut) **no version stacking either** — a new take is just a new upload. "Fork"
+is a plain duplicate of a file with a credit back to the original, not a branch.
+That restraint is a feature.
 
 ---
 
@@ -96,26 +104,15 @@ roles are a later, deliberate call, not a v1 default.
 **Why.** A real workspace is many rooms, not one feed, `#beats`, `#mixing`,
 `#renders`. And the chat has to persist: searchable, exportable history is what
 makes it a studio instead of a file-drop.
-**Plan.** `channels` (group_id, name, `kind` in text/voice/board, position),
+**Plan.** `channels` (group_id, name, `kind` in text/voice, position),
 admins add, rename, reorder them. `messages` (channel_id, user_id, body,
 `parent_id` for a one-level thread) **stored in Postgres**, so it's searchable
 and exports. A shared file renders as its card inline in the stream. The channel
-column also lists the group's **Media** (the explorer, F8), its **Canvases**
-(F5), its **Boards** (F3a) and **Voice** rooms (F14), each a `kind` in the same
-column, so everything the group makes lives in one navigable rail.
+column also lists the group's **Media** (the explorer, F8) and **Voice** rooms
+(F14), each a `kind` in the same column, so everything the group makes lives in
+one navigable rail.
 **Touches.** `channels` + `messages` tables; the channel column + chat pane
 (mockup: Workspace).
-
-#### F3a. Kanban boards
-**Why.** A remote team on a deadline needs to see who owns what and what's left,
-without it living in someone's head or a pinned message. A board is the lightest
-thing that does that.
-**Plan.** A **board** is a channel `kind`: columns (To do / In progress / Review
-/ Done, admin-editable) of cards. A card has a title, an optional label, an
-assignee (their avatar in group colour, F12a), and can **link a file or a canvas**
-(so "low end on the bridge" points straight at the review). `boards` /
-`board_columns` / `board_cards`. Deliberately simple, no sprints or automation.
-**Touches.** three small tables; the Board screen (mockup: Board).
 
 #### F4. The visibility rule + copyright posture
 **Why.** This is the copyright strategy as one policy: Work and Personal content
@@ -127,55 +124,13 @@ is publicly broadcast.
 OG tags or appear anywhere a non-member can reach.
 **Touches.** the `works` read policy and its mirrors on comments/messages/files.
 
-### Tier 2, the moat: the review canvas
-
-#### F5. The canvas / scratchpad (annotation + floating comments)
-**Why.** This is why someone picks eski over Discord: precise, visual review on
-the actual media. Discord will never build it. Two distinct things live here:
-**annotation** (drawing on the media) and **commenting** (a discussion anchored
-to a spot).
-**Plan.** A **canvas** is a scratch workspace holding several files as tiles
-(the interaction already exists in `artboard.html`: pannable, freehand draw,
-drag-select). **Annotation tools** (pen / arrow / box / freeform + colour) draw
-directly on an image or video tile; audio is a waveform tile you can mark a
-range on. **Comments are separate and Figma/paper.design-style:** the comment
-tool drops a **floating pin shown as just the author's avatar**; click it to
-expand the thread and its **selection**, a point, a box, a freeform region, or an
-audio range. Comments resolve (don't delete). Reuse the `comments` table + a
-`mark jsonb` holding the selection (`{point}`, `{box}`, `{path}`, or `{t0,t1}`);
-annotations are their own drawing layer on the tile.
-**Touches.** `comments.mark jsonb`; the Canvas screen (mockup: Canvas), reusing
-the artboard's draw canvas and the waveform renderer.
-
-#### F6. Workspaces with public / private / semi-private visibility
-**Why.** Not every review happens inside a group. You want to hand a director or
-a mastering engineer *one board* of files, without adding them to the whole
-group, and let them leave notes.
-**Plan.** A **scratchpad/workspace** (a named set of files + its canvas notes)
-has its own visibility: **private** (you), **group** (members), or **link**
-(anyone with the URL, semi-private, not in any feed, not indexed). "Share" on a
-workspace mints a link. This is F5's canvas plus a visibility toggle, the same
-three-layer idea applied to a board instead of a single file.
-**Touches.** `scratchpads` (owner, group_id nullable, visibility, share_code);
-`scratchpad_items`.
-
-#### F7. Versions (numbers, not branches)
-**Why.** No more `beat_FINAL_FINAL.wav`. One file, a numbered stack, click v2 to
-see the older one.
-**Plan.** `works.version_of` / `version_label` already exist. **Anyone can add a
-version, not just the original poster** (the old owner-only trigger is dropped),
-so a collaborator can push a fix without re-posting. **A new version requires a
-mandatory reason** ("what changed"), a short line stored per version. A version
-must be the **same media type** as the post; drop several at once and they
-become **ordered** versions (upload order sets v4, v5, …, reorderable before you
-commit), each with its own required reason. The details pane's version control
-opens a dropdown listing every version by its **file name** (the one place you
-see file names, since posts show titles); the **reason lives in the details
-pane body**, not the dropdown. Each version keeps its own canvas notes. Strictly
-linear, no branch graph. **No Fork:** to riff on someone's file you download it,
-change it, reupload it as your own with credit.
-**Touches.** `works.version_note` (required on a version); the version dropdown;
-drop `works_version_owner_guard`.
+> **F5 / F6 / F7 removed (beta cut, 2026-08-18e).** The review canvas + floating
+> comments (F5), link-shareable scratchpad workspaces (F6), and numbered versions
+> (F7) are **cut from the beta**. Precise on-media review and version stacking are
+> gone; feedback lives in **chat and post comments**, and a new take is just a new
+> upload. Their old tables (`scratchpads`, `scratchpad_items`, `annotations`,
+> `works.version_of/version_note`) are not built. This is a deliberate simplification
+> toward "Discord + Google Drive" — see the CANON beta-cut note.
 
 #### F8. Attribution / credits (a plain field)
 **Why.** On a collaborative track or shot, everyone needs to know who did what,
@@ -242,9 +197,9 @@ you scan by person. Giving each member one colour, and only inside that group,
 makes authorship legible without turning the UI into confetti.
 **Plan.** Assign each `group_members` row a colour from a small fixed palette on
 join. That colour renders **only inside the group**, on a member's name or
-avatar (chat byline, Members rail, contributor chips in the details pane,
-canvas-comment authors, board-card assignees) and **nowhere else**, never on a
-profile or the public feed (both were scrubbed of colour). It is not a role and
+avatar (chat byline, Members rail, contributor chips in the details pane) and
+**nowhere else**, never on a profile or the public feed (both were scrubbed of
+colour). It is not a role and
 carries no meaning beyond identity.
 **Touches.** `group_members.color`; the name-chip component.
 
@@ -299,7 +254,8 @@ online dots and the "working on" line.
 ### Cut on purpose (say no)
 - **Public directory / discovery / open feed**, cut entirely in favour of
   invite-by-username + magic-link. This is a product stance, not a gap.
-- **Branch/merge version control**, the Abstract lesson. Numbers only.
+- **Branch/merge version control**, the Abstract lesson. (And in the beta, numbered
+  versions too — a new take is just a new upload.)
 - **Fork**, dropped entirely. To riff on a file, download, change, reupload with
   credit. A copy-with-lineage action isn't worth the concept.
 - **Like / reactions**, dropped. This is a workspace, not a like economy.
@@ -318,17 +274,11 @@ groups          (id, slug, name, description, cover_key, owner_id, created_at)
 group_members   (group_id, user_id, role in (admin,member), color, joined_at,
                  primary key (group_id,user_id))   -- color: per-group identity (F12a)
 group_invites   (code pk, group_id, created_by, expires_at, max_uses, uses)
-channels        (id, group_id, name, kind in (text,voice,board), position)
+channels        (id, group_id, name, kind in (text,voice), position)
 messages        (id, channel_id, user_id, body, parent_id, created_at)   -- persistent chat
 reactions       (message_id, user_id, emoji, primary key(message_id,user_id,emoji))
-boards          (id, group_id, name)                       -- F3a kanban (a channel kind)
-board_columns   (id, board_id, name, position)
-board_cards     (id, column_id, title, label, assignee_id, work_id null, scratchpad_id null, position)
 dm_threads      (id, a_user, b_user, created_at)          -- add-by-username
 dm_messages     (id, thread_id, user_id, body, created_at)
-scratchpads     (id, owner_id, group_id null, title,
-                 visibility in (private,group,link), share_code, created_at)
-scratchpad_items(scratchpad_id, work_id, idx)
 save_folders    (id, owner_id, name)                      -- private bookmarks (details "Save")
 save_folder_items(folder_id, work_id)                     -- both already exist in schema-clean.sql
 notifications   (id, user_id, kind, target_type, target_id, read_at, created_at)
@@ -338,10 +288,11 @@ works.group_id     uuid null → groups
 works.title        text null                         -- F9: optional, file name is the default
 works.file_ext     text                              -- F10: type for icon + filter, not shown as a tag
 works.credits      text                              -- F8 attribution
-works.version_note text                              -- F7: required "what changed" on a version
-comments.mark      jsonb null                         -- F5 draw path / audio range / frame / box / point
 comments.context   text                              -- scope: 'public' vs a group_id, so threads never mix
 ```
+*(Cut in the beta — not in the schema: `boards`/`board_columns`/`board_cards` (F3a),
+`scratchpads`/`scratchpad_items`/`annotations` (F5/F6 canvas), `works.version_of`/
+`version_note` and `comments.mark` (F7 versions / canvas marks).)*
 
 The helper every group policy leans on, and the one rewritten read rule:
 
@@ -373,10 +324,10 @@ border so they read as editable. What each contains:
 
 - **Workspace**, group rail (Home, Messages, one icon per group, ＋, and your own
   **profile picture** at the foot) · channel column listing **Media**, text
-  **Channels**, **Boards**, **Canvases** and **Voice** rooms (admin-editable) ·
-  chat pane (persistent; a shared file leads with its **file name**; each message
-  has an **emoji-reaction** button on hover) · members rail (Admins / Members,
-  presence dot + "working on", names in group colour).
+  **Channels** and **Voice** rooms (admin-editable) · chat pane (persistent; a
+  shared file leads with its **file name**; each message has an **emoji-reaction**
+  button on hover) · members rail (Admins / Members, presence dot + "working on",
+  names in group colour).
 - **Feed**, the follows-only portfolio grid with a **search bar** and dropdown
   filters; cards have **no background** (video → play overlay, audio → high-res
   waveform, image → real-aspect thumbnail, text → its words) and show the
@@ -385,22 +336,9 @@ border so they read as editable. What each contains:
   strip, with a search bar + dropdown filters (channel, type, uploader, sort),
   Reddit-style, no tag modifiers; reuses the details pane.
 - **Details pane**, opened from any card: media on one side; on the other the
-  title, a **version control** that opens the versions **by file name** (the one
-  place file names show), the current version's **change reason in the pane body**
-  (not in the dropdown), all metadata, tags (user tags only, with a ＋), contributor
+  title (or file name), all metadata, tags (user tags only, with a ＋), contributor
   chips (in group colours), and comments **scoped to context** (group vs public
-  never mix); **Download** (formats on click), **Save** (to a folder), and **Open
-  in canvas** (pick which shared canvas).
-- **Canvas**, a shared scratch workspace holding **multiple files as tiles**;
-  a canvas picker (many canvases, not one per group or item). **Annotation and
-  commenting are separate:** annotation tools (pen/arrow/box/freeform + colour)
-  draw on a tile, while the **comment** tool drops a Figma-style floating pin
-  shown as just the author's avatar, expanding on click to its selection (a
-  point, a box, or a freeform region, or an audio range on a waveform tile) and
-  thread; the canvas has its own visibility (group or link-only).
-- **Board** (F3a), a kanban of columns (To do / In progress / Review / Done) of
-  cards; each card has a title, a label, an assignee (avatar in group colour),
-  and can link a file or a canvas.
+  never mix); **Download** (formats on click) and **Save** (to a folder).
 - **Call** (F14), the voice/video room: a large screen-share pane (someone
   sharing a DAW or comp), a strip of participant tiles (camera or avatar, name in
   group colour, mute indicator), and a control bar (mic, camera, screen-share,
@@ -413,23 +351,20 @@ border so they read as editable. What each contains:
 - **Upload**, multi-file dropzone; type is recognised for the icon and filter but
   **not shown as a tag** (F10); an optional title (file name is the default),
   user tags + contributors; a **Visibility** choice (Everyone / This group / No
-  one), saved to your profile by default. A **new-version** upload swaps to
-  version mode: **same media type only**, several files become **ordered**
-  versions, each with a **mandatory "what changed"**, inheriting the post's
-  visibility (F7).
+  one), saved to your profile by default.
 
 - **Group settings** (admin only), a left-nav of General (name, cover, delete),
-  Channels & boards (reorder/add/remove), Members (role toggle admin/member,
+  Channels (reorder/add/remove), Members (role toggle admin/member,
   remove), Invite links (list with uses/expiry, copy, revoke, new link), and
-  Export & storage (a used bar + export). Reached from the group-name header.
+  Export & storage (usage bars + storage sliders + export). Reached from the group-name header.
 - **Create group**, a centered card: name, cover, starter channels, and the note
   that an invite link is minted with the group. Reached from the rail's ＋.
 - **Join by magic link** (`/join/<code>`), a centered preview card: cover, name,
   member count and avatars, who invited you, and one **Join group** button, no
   application or approval.
 - **Notifications**, All / Mentions / Unread, grouped by day; rows for mentions,
-  comments, new versions, board assignments, joins, and reactions, each linking to
-  its target. Reached from the header bell.
+  comments, joins, and reactions, each linking to its target. Reached from the
+  header bell.
 
 ---
 
@@ -525,11 +460,10 @@ jax (generalist doing cleanup + wrangling). The shot `sh040` is due Friday.
 
 Decided by your adjustments, recorded here: **two roles** (admin/member),
 **user-created channels**, **persistent chat** with **emoji reactions**, **DMs by
-username**, **no discovery** (magic-link + username only), **versions as numbers**
-(no branching), **anyone can add a version** with a **mandatory "what changed"
-reason**, **no fork** (download, change, reupload with credit), **no likes**,
-**titles not captions** (file name is the default title), **Figma-style floating
-comment pins** distinct from annotation (no anchored pins-as-notes), **roles never
+username**, **no discovery** (magic-link + username only), **no branching and (beta)
+no numbered versions** — a new take is just a new upload, **no fork** (download,
+change, reupload with credit), **no likes**, **titles not captions** (file name is
+the default title), **no review canvas or kanban boards in the beta**, **roles never
 on a profile**, **per-group member colours**, three consistent visibility layers
 (public / shared / private). Still genuinely yours:
 
@@ -555,11 +489,11 @@ Nothing is live yet. This tracks the **mockup** (the design target) and the
 **parity** pass against Discord/Slack (from `BENCHMARK.md`). Backend for all of
 it is §7.
 
-### Core screens, all mocked 1:1 (the design target)
-Workspace (channel column of Media / Channels / Boards / Canvases / Voice, chat,
-members) · Feed · Media explorer (+ Collections) · Details pane · Canvas · Board ·
-Call · Profile · Messages · Upload (+ version mode) · Group settings · Create
-group · Join by link · Notifications.
+### Core screens (the design target)
+Workspace (channel column of Media / Channels / Voice, chat, members) · Feed ·
+Media explorer (+ Folders) · Details pane · Call · Profile · Messages · Upload ·
+Group settings · Create group · Join by link · Notifications. *(Canvas, Board and
+version mode are **cut from the beta**, 2026-08-18e.)*
 
 ### Parity pass vs Discord/Slack (13, from `BENCHMARK.md`) · all 13 mocked
 1. Search results · **done** (mockup)
@@ -573,7 +507,7 @@ group · Join by link · Notifications.
 9. Notifications upgrades (inline reply, Threads tab, Saved/Later, per-group filters) · **done**
 10. Group settings: moderation (bans/timeouts, audit log, per-channel settings) · **done**
 11. Media explorer actions (grid actions, lightbox, "shared in") · **done**
-12. Board upgrades (custom fields, views, due dates) · **done**
+12. ~~Board upgrades (custom fields, views, due dates)~~ · **cut (beta)**
 13. Sign-in / onboarding / username claim · **done**
 
 ### Owner decisions still open (see also §5)
@@ -600,23 +534,17 @@ Each row: purpose · columns · RLS summary. `uid()` = `(select auth.uid())`.
 | `groups` | a studio | `slug uniq, name, description, cover_key, owner_id→auth.users` | read: `member_of(id)`; write: `is_group_admin(id)` |
 | `group_members` | membership + role + colour | `group_id, user_id, role in(admin,member), color smallint, status in(active), timeout_until timestamptz, joined_at, pk(group_id,user_id)` | read: `member_of(group_id)`; self-leave; admin manages |
 | `group_invites` | magic links | `code text pk, group_id, created_by, expires_at, max_uses int, uses int default 0` | read: admin; use via RPC |
-| `channels` | rooms | `group_id, name, kind in(text,voice,board), topic, slowmode_sec int default 0, position int` | read: `member_of(group_id)`; write: admin |
+| `channels` | rooms | `group_id, name, kind in(text,voice), topic, slowmode_sec int default 0, position int` | read: `member_of(group_id)`; write: admin |
 | `messages` | persistent chat | `channel_id, user_id, body, parent_id→messages, also_to_channel bool, edited_at, deleted_at, body_tsv tsvector generated` | read: member; insert: member & not timed-out; update/delete own (tombstone) |
 | `message_reactions` | emoji reactions | `message_id, user_id, emoji text, pk(message_id,user_id,emoji)` | read: member; add/remove own |
 | `message_pins` | per-channel pins | `channel_id, message_id, pinned_by, pk(channel_id,message_id)` | read: member; write: member (mod can unpin any) |
 | `channel_reads` | unread/mention state | `user_id, channel_id, last_read_at, pk(user_id,channel_id)` | owner only |
 | `mentions` | @-index for badges | `message_id, mentioned_user, group_id` | read: mentioned user |
-| `boards` | kanban (a channel kind) | `group_id, name` | member read; admin write |
-| `board_columns` | columns | `board_id, name, position` | member read; admin write |
-| `board_cards` | cards | `column_id, title, label text, assignee_id, work_id null, scratchpad_id null, due_date date, fields jsonb, position` | member read/write; admin delete |
-| `scratchpads` | canvases | `owner_id, group_id null, title, visibility in(private,group,link), share_code text uniq null` | read: owner OR (group & member) OR (link & code); write: owner/member |
-| `scratchpad_items` | files on a canvas | `scratchpad_id, work_id, x,y,z, pk(scratchpad_id,work_id)` | follows scratchpad |
-| `annotations` | drawings on a tile | `scratchpad_id, work_id, author_id, tool in(pen,arrow,box,freeform), color smallint, path jsonb` | follows scratchpad |
 | `dm_channels` | 1:1 and group DMs | `is_group bool, name null` | member of it |
 | `dm_members` | who's in a DM | `dm_channel_id, user_id, muted bool, pinned bool, last_read_at, pk(...)` | self |
 | `dm_messages` | DM chat | mirrors `messages` (dm_channel_id, user_id, body, parent_id, edited_at, deleted_at) | member of the DM |
 | `friendships` | add-by-username | `a_user, b_user, status in(pending,accepted,blocked), requested_by, pk(a_user,b_user)` ordered pair | either party |
-| `notifications` | the bell | `user_id, kind in(mention,comment,version,board_assign,join,reaction,invite,friend), actor_id, group_id null, target_type, target_id, excerpt text, read_at` | owner only |
+| `notifications` | the bell | `user_id, kind in(mention,comment,join,reaction,invite,friend), actor_id, group_id null, target_type, target_id, excerpt text, read_at` | owner only |
 | `saved_items` | Save / Later | `user_id, target_type, target_id, folder_id null→save_folders, pk(user_id,target_type,target_id)` | owner only |
 | `group_bans` | moderation | `group_id, user_id, banned_by, reason, until timestamptz null` | admin |
 | `audit_log` | moderation trail | `group_id, actor_id, action, target_type, target_id, meta jsonb` | admin read; server-written |
@@ -633,30 +561,26 @@ works.group_id      uuid null → groups
 works.title         text null                    -- F9 (file name is the default)
 works.file_ext      text                         -- F10 (icon + Type filter, not a tag)
 works.credits       text                         -- F8
-works.version_note  text                         -- F7 (required on a version)
 works.search_tsv    tsvector generated           -- title+tags+owner for search
-comments.mark       jsonb null                   -- F5 {point}|{box}|{path}|{t0,t1}|{frame}
 comments.context    text                         -- 'public' or a group_id, threads never mix
-comments.resolved_at timestamptz null            -- canvas comments resolve
-collections.group_id uuid null → groups          -- group Collections in the explorer
+comments.resolved_at timestamptz null            -- post comments resolve
+collections.group_id uuid null → groups          -- group Folders in the explorer
 profiles.status_emoji text / status_text text / status_expires_at timestamptz  -- custom status
 profiles.presence_state text in(online,idle,dnd,invisible) default 'online'
 profiles.tz         text                         -- local-time on the popout
 profiles.pronouns   text
 profiles.links      jsonb                         -- external connections on the popout
 ```
-**Dropped:** `works_version_owner_guard` (anyone can add a version now, F7).
+**Dropped:** `works_version_owner_guard` (numbered versions are cut, F7).
 
 ### 7.3 RPCs, triggers, functions (all `security definer`, `search_path=public`)
 - `member_of(gid)` / `is_group_admin(gid)`, the two gate helpers every policy calls.
 - `join_via_invite(code)`, validate code (exists, not expired, uses<max) → insert `group_members` active, assign next free colour, `uses+1`; returns group. (Powers `/join/<code>`.)
-- `add_version(parent_id, media_key, ext, version_note)`, require `version_note`, require same `kind` as parent, insert `works` with `version_of`; for a multi-file batch the client calls it N times in order.
 - `mark_channel_read(channel_id)`, upsert `channel_reads.last_read_at=now()`.
 - `toggle_reaction(message_id, emoji)`, insert/delete `message_reactions`.
 - `pin_message(message_id)` / `unpin_message(message_id)`.
 - `create_dm(handle)` / `create_group_dm(handles[])`, resolve handles→users, find-or-create `dm_channels` + `dm_members`.
 - `add_friend(handle)` / `respond_friend(user, accept)` / `block_user(user)`.
-- `move_card(card_id, column_id, position)`.
 - `ban_member` / `timeout_member` / `kick_member` (admin), each writes `audit_log`.
 - `export_manifest(group_id|'account')`, returns JSON of works+metadata; client fetches signed URLs and zips.
 - **Triggers:** `messages` fanout on insert → parse `@handle`, write `mentions` + `notifications`; `set edited_at` on body change; tombstone on `deleted_at`. `works` insert → maintain `search_tsv`. `comments` insert with a mention → `notifications`. Reuse `post_status_guard`, `comments_*` guards, `claim_rate` (comments/reports already rate-limited; extend to `messages` at e.g. 60/min).
@@ -668,7 +592,6 @@ profiles.links      jsonb                         -- external connections on the
 | `group:{id}` | **Presence** | who's online + `{doing}` (Members rail, F16) |
 | `channel:{id}` | **Postgres Changes** | live `messages` insert/update/delete |
 | `channel:{id}:typing` | **Broadcast** | typing indicators (ephemeral, no table) |
-| `canvas:{id}` | **Broadcast** + Changes | live cursors (later) + `comments`/`annotations` |
 | `user:{id}` | **Postgres Changes** | `notifications` insert (the bell) |
 Add the relevant tables to the `supabase_realtime` publication.
 
@@ -689,10 +612,8 @@ Add the relevant tables to the `supabase_realtime` publication.
 | Emoji picker (#5) | **Buy: emoji-mart** (data + search) | emoji dataset + skin tones is not worth hand-rolling |
 | Message formatting (#5) | **Build tiny** | plain textarea + toolbar that inserts markdown; render with `marked` (small). No ProseMirror/Slate for v1 |
 | Mentions / channel autocomplete | **Build** | a prefix query over members/channels; trivial |
-| Drag-reorder (channels, cards, versions) | **Buy: SortableJS** | DnD edge cases (touch, autoscroll) are the time-sink |
+| Drag-reorder (channels) | **Buy: SortableJS** | DnD edge cases (touch, autoscroll) are the time-sink |
 | Waveform render | **Build (already have)** | `generateWaveform()` exists and is theme-aware; keep |
-| Canvas draw / pan / zoom (F5) | **Build (already have)** | `artboard.html` has it; store paths as `annotations.path` |
-| Multiplayer cursors (later) | **Build** on Realtime Broadcast | small once Realtime is wired |
 | Zip export (F19) | **Buy: JSZip** | standard, client-side |
 | Local time / dates | **Build: `Intl`** | built in; store `profiles.tz` |
 | Quick switcher / shortcuts (#2) | **Build** | already mocked; a keydown map + fuzzy filter |
@@ -706,16 +627,15 @@ Add the relevant tables to the `supabase_realtime` publication.
   and the quick switcher. Modifiers (`from:`, `in:`, `has:`) parse client-side into
   query args.
 - FK indexes on every `*_id` used in a policy or a join (`messages.channel_id`,
-  `board_cards.column_id`, `notifications.user_id, read_at`, `channel_reads`, …) , 
-  same discipline as the existing `works_*_idx`.
+  `notifications.user_id, read_at`, `channel_reads`, …) , same discipline as the
+  existing `works_*_idx`.
 
 ### 7.8 Migration order (each a re-runnable file, `schema-*.sql` convention)
 1. `groups`, `group_members`, `group_invites` + `member_of`/`is_group_admin`.
 2. `works` column adds + the rewritten `works_read` (§2) and mirrors on comments/tags.
 3. `channels`, `messages` (+tsv), `message_reactions`, `message_pins`, `channel_reads`, `mentions`.
-4. `comments.mark/context/resolved_at`; `annotations`; `scratchpads`/`scratchpad_items`.
-5. `boards`/`board_columns`/`board_cards`.
-6. `dm_channels`/`dm_members`/`dm_messages`; `friendships`.
+4. `comments.context/resolved_at`.
+5. `dm_channels`/`dm_members`/`dm_messages`; `friendships`.
 7. `notifications`; `saved_items`; message/comment→notification triggers.
 8. `profiles` additions (status, presence, tz, pronouns, links).
 9. moderation: `group_bans`, `audit_log`, `group_members.timeout_until`.
@@ -728,13 +648,11 @@ Add the relevant tables to the `supabase_realtime` publication.
 - **Search / quick switcher**, `search_all()` + FTS indexes.
 - **Feed**, `works` public by `follows`.
 - **Media explorer**, `works where group_id` + `collections where group_id`.
-- **Details pane**, `works` + `version_of`/`version_note` + `content_tags` + `comments(context)` + `saved_items` + transcode.
-- **Canvas**, `scratchpads`/`scratchpad_items` + `comments.mark` + `annotations` + Realtime.
-- **Board**, `boards`/`board_columns`/`board_cards` + `move_card`.
+- **Details pane**, `works` + `content_tags` + `comments(context)` + `saved_items` + transcode.
 - **Call**, LiveKit room per `channel/dm` id; Presence for who's in.
 - **Profile / popout**, `profiles` (status/tz/pronouns/links) + `group_members.role` + mutual groups (a join) + `friendships`.
 - **Messages**, `dm_channels`/`dm_members`/`dm_messages` + `friendships`.
-- **Group settings**, `channels`/`board_*` (manage), `group_members` (roles), `group_invites`, `group_bans`, `audit_log`, storage sum of `works.bytes`, `export_manifest`.
+- **Group settings**, `channels` (manage), `group_members` (roles), `group_invites`, `group_bans`, `audit_log`, `storage_balance`/`storage_meters` (two sliders), `export_manifest`.
 - **Create / Join**, `groups` insert + `group_invites` + `join_via_invite`.
 - **Notifications**, `notifications` + Realtime `user:{id}`; inline reply reuses `messages`/`comments`.
 - **Sign-in / onboarding**, Supabase Auth + `onboarding.html` (exists) + unique `profiles.handle` claim.
