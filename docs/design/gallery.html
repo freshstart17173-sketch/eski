@@ -1007,6 +1007,22 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
 .ptmark::-webkit-scrollbar{display:none}
 .ptmark::after{content:"";position:absolute;left:11px;bottom:-6px;border:6px solid transparent;
   border-top-color:var(--pc,var(--m3));border-bottom-width:0}
+/* freeform canvas comment pin — a rounded name tag with a pointer on one corner */
+.cvpin{position:absolute;display:inline-flex;align-items:center;gap:6px;background:var(--pc,var(--m3));
+  color:#fff;font-size:12px;font-weight:600;padding:5px 11px;border-radius:14px;white-space:nowrap;
+  box-shadow:0 2px 6px rgba(0,0,0,.35);cursor:pointer}
+.cvpin .pfp{width:18px;height:18px;font-size:9px;background:rgba(255,255,255,.28);color:#fff}
+/* corner pointer — a little tail out of the bottom-left corner by default */
+.cvpin::after{content:"";position:absolute;left:-3px;bottom:-3px;width:11px;height:11px;
+  background:var(--pc,var(--m3));border-radius:0 0 0 3px;transform:rotate(45deg)}
+.cvpin.tr::after{left:auto;right:-3px;bottom:auto;top:-3px;border-radius:3px 0 0 0}
+.cvpin.br::after{left:auto;right:-3px;bottom:-3px;border-radius:0 0 3px 0}
+.cvpin.tl::after{bottom:auto;top:-3px;border-radius:3px 0 0 0}
+/* the dialogue box that pops up when you place / click a pin */
+.cvdlg{position:absolute;width:230px;background:var(--paper);border-radius:var(--r);
+  box-shadow:0 14px 40px rgba(0,0,0,.3);padding:11px;z-index:6}
+.cvdlg .dhd{display:flex;align-items:center;gap:7px;margin-bottom:7px}
+.cvdlg .dtx{font-size:12.5px;color:var(--soft);line-height:1.5;margin-bottom:8px}
 
 /* menu (dropdown / context) — reuses the mockup .menu; shown inline here */
 .menu.show{position:static;display:block;width:100%;max-width:260px;min-width:0}
@@ -1484,10 +1500,8 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
     <div>
       <div class="stage"><div class="cvtools" style="position:static">
         <button class="iconbtn on" title="Move / select"><svg class="ic"><use href="#i-move"/></svg></button>
-        <div class="sep"></div><span class="grp">Annotate</span>
-        <button class="iconbtn" title="Point"><svg class="ic"><use href="#i-pin"/></svg></button>
-        <button class="iconbtn" title="Rectangle"><svg class="ic"><use href="#i-square"/></svg></button>
-        <button class="iconbtn" title="Freehand (lasso)"><svg class="ic"><use href="#i-scribble"/></svg></button>
+        <div class="sep"></div>
+        <button class="iconbtn" title="Annotate — drop a comment pin"><svg class="ic"><use href="#i-comment"/></svg></button>
         <div class="sep"></div><span class="grp">Pen</span>
         <button class="iconbtn" title="Pen"><svg class="ic"><use href="#i-pen"/></svg></button>
         <button class="iconbtn" title="Eraser — whole stroke"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M4 15l7-7 6 6-4 4H8z"/><path d="M9 20h9"/></svg></button>
@@ -1496,66 +1510,53 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
         <span style="font-size:11px;color:var(--muted)">size</span>
       </div></div>
       <div class="pcap"><b>Tool palette</b>
-        <span class="m">Three groups only: Move · Annotate (point / rectangle / lasso — each carries a comment) · Pen + whole-stroke eraser (size + colour). No arrows, no shapes.</span>
-        <span class="db">comments.mark · ink(path,color,size)</span>
+        <span class="m"><b>Simplified:</b> Move · <b>Annotate</b> (drop a freeform comment pin) · Pen + whole-stroke eraser (size + colour). <b>Rectangle and lasso are gone</b> — annotations are Figma-style board pins, not region marks.</span>
+        <span class="db">annotations(canvas_id,x,y,corner,body) · ink(path,color,size)</span>
         <span class="st live">in mockup</span></div>
     </div>
 
-    <!-- comment thread: box mark -->
+    <!-- annotation: comment pin + dialogue -->
     <div>
-      <div class="stage"><div class="thread">
-        <div class="th"><span class="uchip m4"><span class="dot"></span>mira</span>
-          <span class="meta">box · v3</span></div>
-        <div class="tx">Near building edge is ghosting against the sky — needs a garbage matte inside this box.</div>
-        <div class="actions"><button><svg class="ic sm"><use href="#i-check"/></svg>Resolve</button><span>2 replies</span></div>
-        <div class="field"><input placeholder="Reply"></div>
-      </div></div>
-      <div class="pcap"><b>Annotation — rectangle</b>
-        <span class="m">Pin = avatar; click expands to the thread + its selection. Resolves, never deletes.</span>
-        <span class="db">comments.mark = {box} · resolved_at</span>
-        <span class="st live">in mockup</span></div>
-    </div>
-
-    <!-- mark: point -->
-    <div>
-      <div class="stage">
-        <div style="position:relative;width:200px;height:120px;background:var(--plate);border-radius:var(--r)">
-          <div class="ptmark" style="--pc:var(--m3);left:34%;top:30%">lin_nakamura</div></div>
+      <div class="stage tall" style="background:var(--surface)">
+        <div style="position:relative;width:100%;height:100%">
+          <div class="cvpin" style="--pc:var(--m4);left:16%;top:24%"><span class="pfp">MI</span>mira</div>
+          <div class="cvpin br" style="--pc:var(--m2);left:60%;top:20%"><span class="pfp">SO</span>sol</div>
+          <div class="cvdlg" style="left:22%;top:42%">
+            <div class="dhd"><span class="uchip m4"><span class="dot"></span>mira</span><time style="font-size:11px;color:var(--muted);margin-left:auto">now</time></div>
+            <div class="dtx">Ghosting on the building edge here — needs a garbage matte.</div>
+            <div class="actions" style="display:flex;gap:12px;font-size:11px;color:var(--muted);margin-bottom:7px"><button><svg class="ic sm"><use href="#i-check"/></svg> Resolve</button><span>2 replies</span></div>
+            <div class="field"><input placeholder="Reply…"></div>
+          </div>
+        </div>
       </div>
-      <div class="pcap"><b>Mark: point</b>
-        <span class="m">A rectangular labelled tail — the tip marks the exact spot. Holds the full username (scrolls if long), in the member colour.</span>
-        <span class="db">comments.mark = {point:[x,y]}</span></div>
+      <div class="pcap"><b>Annotation — freeform comment pin</b>
+        <span class="m">The <b>only</b> mark: click anywhere to drop a <b>rounded name-tag pin</b> (author in member colour) with a <b>pointer on one corner</b> aimed at what you mean; a <b>dialogue box</b> pops up to write it. Click a pin to reopen its note + replies. Resolves, never deletes. Like Figma / paper.design comments.</span>
+        <span class="db">annotations(canvas_id, author_id, x, y, corner, body, resolved_at)</span>
+        <span class="st live">AUTHORED</span></div>
     </div>
 
-    <!-- mark: audio range -->
+    <!-- pen ink -->
+    <div>
+      <div class="stage" style="background:var(--surface)">
+        <svg viewBox="0 0 200 110" style="width:200px;height:110px"><path d="M18 78 C40 20 70 96 96 54 S150 12 184 46" fill="none" stroke="var(--m1)" stroke-width="3" stroke-linecap="round"/></svg>
+      </div>
+      <div class="pcap"><b>Pen ink</b>
+        <span class="m">Freehand markup — size + colour, SVG paths. <b>Whole-stroke eraser</b> (OneNote-style) removes a whole path at a touch. Pure visual markup, not a comment.</span>
+        <span class="db">ink(canvas_id, author_id, path, color, size)</span></div>
+    </div>
+
+    <!-- tile → maximize (fullscreen player) -->
     <div>
       <div class="stage">
         <div class="tile audio" style="width:230px">
           <div class="tname"><span>sounddesign.wav</span></div>
-          <div class="wavewrap"><div class="wave" data-wf="120"></div>
-            <div class="selrange" style="left:33%;width:16%"></div>
-            <div class="ptmark" style="--pc:var(--m2);left:36%;top:6px">sol</div></div>
+          <div class="wavewrap"><div class="wave" data-wf="120"></div></div>
+          <div class="tbar"><button class="tilebtn" title="Play"><svg class="ic sm"><use href="#i-play"/></svg></button><button class="tilebtn" title="Maximize"><svg class="ic sm"><use href="#i-expand"/></svg></button><button class="tilebtn" title="Screencap"><svg class="ic sm"><use href="#i-image"/></svg></button></div>
         </div>
       </div>
-      <div class="pcap"><b>Audio — point &rarr; expanded view</b>
-        <span class="m">A point on the waveform; clicking it opens the expanded audio view (player + its annotations). Drag a range and <b>duplicate</b> that section as a new tile.</span>
-        <span class="db">comments.mark = {t0,t1} · duplicate &rarr; canvas_items</span></div>
-    </div>
-
-    <!-- mark: video frame -->
-    <div>
-      <div class="stage">
-        <div class="tile img" style="width:220px;height:130px;position:relative">
-          <div class="tname"><span>sh040.mov</span><span class="ver">v3</span></div>
-          <div class="scene"><div class="ground"></div><div class="o1"></div></div>
-          <button class="capbtn" title="Screencap"><svg class="ic sm"><use href="#i-image"/></svg></button>
-          <div style="position:absolute;left:0;right:0;bottom:0;height:5px;background:var(--line2)"><i style="position:absolute;left:42%;top:-3px;width:2px;height:11px;background:var(--m5)"></i></div>
-          <div class="pinbadge" style="left:60%;top:40%;background:var(--m5)">5</div>
-        </div>
-      </div>
-      <div class="pcap"><b>Video — pins &rarr; count badge &rarr; list</b>
-        <span class="m">Pins on the frame collapse into a count badge as they pile up; click it for the annotation list. Screencap grabs the current frame (full-res &rarr; clipboard).</span>
-        <span class="db">comments.mark = {frame} · screencap = client-side</span></div>
+      <div class="pcap"><b>Tile → Maximize</b>
+        <span class="m">A tile <b>maximizes</b> to a simple fullscreen player (big media + transport) for a close look — <b>no annotations inside</b> (those are board pins; see them in the sidebar). Audio/video: <b>screencap</b> the frame, or from the player <b>duplicate</b> a trimmed range as a new tile.</span>
+        <span class="db">canvas_items · screencap = client-side · duplicate → canvas_items</span></div>
     </div>
 
     <!-- canvas picker -->
@@ -1621,80 +1622,23 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
         <span class="db">comments where canvas_id &middot; §D.6.5</span></div>
     </div>
 
-    <!-- expanded view — AUDIO: region select + add annotation -->
+    <!-- expanded view — fullscreen player (no annotations; those are board pins) -->
     <div>
       <div class="stage scrim"><div class="modal wide">
-        <div class="uhd"><b>sounddesign_pass.wav</b><span class="ver" style="margin-left:8px">v2</span><button class="iconbtn" style="margin-left:auto"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
-        <div class="mbody">
-          <div class="wfwrap">
-            <div class="wave" data-wf="150"></div>
-            <div class="wfhead" style="left:44%"></div>
-            <div class="wfregion" style="left:33%;width:16%"><span class="rlab">0:42 – 0:48</span><span class="gh l"></span><span class="gh r"></span></div>
-          </div>
-          <div class="annbar">
-            <button class="iconbtn" title="Back 10s"><svg class="ic"><use href="#i-rewind"/></svg></button><button class="iconbtn" title="Play / pause"><svg class="ic"><use href="#i-play"/></svg></button><button class="iconbtn" title="Forward 10s"><svg class="ic"><use href="#i-ff"/></svg></button>
-            <span style="font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums">0:44 / 2:18</span>
-            <button class="btn sm" style="margin-left:auto"><svg class="ic sm"><use href="#i-plus"/></svg>Duplicate selection</button>
-          </div>
-          <div class="mhd" style="padding-left:0;margin-top:14px">Annotations <span style="color:var(--muted)">2</span></div>
-          <button class="cvcom"><span class="cvtop"><span class="uchip m2"><span class="dot"></span>sol</span><span class="cvtype">0:42&ndash;0:48</span></span><span class="cvsnip">whoosh lands a beat late, pull ~6 frames</span></button>
-          <button class="cvcom"><span class="cvtop"><span class="uchip m5"><span class="dot"></span>jax</span><span class="cvtype">1:10</span></span><span class="cvsnip">low end sits right here</span></button>
-          <div class="anncompose"><span class="selchip"><svg class="ic sm"><use href="#i-comment"/></svg>0:42–0:48</span><div class="field"><input placeholder="Add an annotation…"></div><button class="btn sm primary">Post</button></div>
-        </div>
-      </div></div>
-      <div class="pcap"><b>Expanded view — audio: annotations</b>
-        <span class="m">Annotations are a <b>comment section</b> for the file. <b>Drag on the waveform</b> to shade a region (handles to resize, drag to move) so a note anchors to that range — or just write one un-anchored. <b>Duplicate selection</b> spins the range into a new tile. (Frame.io / DAW pattern.)</span>
-        <span class="db">insert annotations(server_id, work_id, t=range) · duplicate → canvas_items</span></div>
-    </div>
-
-    <!-- expanded view — IMAGE: marquee select + add annotation -->
-    <div>
-      <div class="stage scrim"><div class="modal wide">
-        <div class="uhd"><b>sh040_grade_ref.png</b><span class="ver" style="margin-left:8px">v1</span><button class="iconbtn" style="margin-left:auto"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
-        <div class="mbody">
-          <div class="imstage">
-            <span class="imptn" style="left:28%;top:42%">1</span>
-            <div class="immarq" style="left:50%;top:28%;width:28%;height:36%"><span class="imnum">2</span><span class="ch tl"></span><span class="ch tr"></span><span class="ch bl"></span><span class="ch br"></span></div>
-          </div>
-          <div class="mhd" style="padding-left:0;margin-top:14px">Annotations <span style="color:var(--muted)">2</span></div>
-          <button class="cvcom"><span class="cvtop"><span class="uchip m5"><span class="dot"></span>jax</span><span class="cvtype">① point · resolved</span></span><span class="cvsnip">grade ref for the sky, matched</span></button>
-          <button class="cvcom"><span class="cvtop"><span class="uchip m4"><span class="dot"></span>mira</span><span class="cvtype">② rectangle</span></span><span class="cvsnip">garbage matte the ghosting inside this box</span></button>
-          <div class="anncompose"><span class="selchip"><svg class="ic sm"><use href="#i-square"/></svg>region 2</span><div class="field"><input placeholder="Add an annotation…"></div><button class="btn sm primary">Post</button></div>
-        </div>
-      </div></div>
-      <div class="pcap"><b>Expanded view — image: annotations</b>
-        <span class="m">Annotations are a <b>comment section</b> for the file — no separate mode. Drag on the image to pin the note to a region (solid frame + corner handles) or drop a point; the marks are numbered to their rows. Leaving the field un-anchored posts a plain note. (Figma / Markup marks, replacing the old dashed box.)</span>
-        <span class="db">insert annotations(server_id, work_id, kind point/rect, path)</span></div>
-    </div>
-
-    <!-- expanded view — VIDEO: range/frame select + add annotation -->
-    <div>
-      <div class="stage scrim"><div class="modal wide">
-        <div class="uhd"><b>sh040_comp.mov</b><span class="ver" style="margin-left:8px">v3</span><button class="iconbtn" style="margin-left:auto"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
+        <div class="uhd"><b>sh040_comp.mov</b><span class="ver" style="margin-left:8px">v3</span><button class="iconbtn" title="Screencap" style="margin-left:auto"><svg class="ic sm"><use href="#i-image"/></svg></button><button class="iconbtn" title="Close"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
         <div class="mbody">
           <div class="vreel"><button class="playover" style="position:static"><svg class="ic"><use href="#i-play"/></svg></button></div>
-          <div class="vtl">
-            <div class="trk">
-              <div class="fill" style="width:36%"></div>
-              <div class="vrange" style="left:30%;width:22%"><span class="gh l"></span><span class="gh r"></span></div>
-              <span class="vpin" style="left:12%;--pc:var(--m4)"></span><span class="vpin" style="left:66%;--pc:var(--m2)"></span>
-              <div class="vhead" style="left:36%"></div>
-            </div>
-          </div>
-          <div class="annbar">
-            <button class="iconbtn" title="Back 1 frame"><svg class="ic"><use href="#i-rewind"/></svg></button><button class="iconbtn" title="Play / pause"><svg class="ic"><use href="#i-play"/></svg></button><button class="iconbtn" title="Forward 1 frame"><svg class="ic"><use href="#i-ff"/></svg></button>
+          <div style="display:flex;align-items:center;gap:9px;margin-top:11px">
+            <button class="iconbtn" title="Back 10s"><svg class="ic"><use href="#i-rewind"/></svg></button><button class="iconbtn" title="Play / pause"><svg class="ic"><use href="#i-play"/></svg></button><button class="iconbtn" title="Forward 10s"><svg class="ic"><use href="#i-ff"/></svg></button>
+            <div style="flex:1;height:5px;background:var(--line);border-radius:3px;position:relative"><i style="position:absolute;left:0;top:0;bottom:0;width:36%;background:var(--ink);border-radius:3px"></i></div>
             <span style="font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums">0:12 / 0:34</span>
-            <button class="btn sm" style="margin-left:auto"><svg class="ic sm"><use href="#i-plus"/></svg>Duplicate range</button>
+            <button class="tbtn" title="Fullscreen"><svg class="ic"><use href="#i-expand"/></svg></button>
           </div>
-          <div class="mhd" style="padding-left:0;margin-top:14px">Annotations <span style="color:var(--muted)">2</span></div>
-          <button class="cvcom"><span class="cvtop"><span class="uchip m4"><span class="dot"></span>mira</span><span class="cvtype">0:12 · rectangle</span></span><span class="cvsnip">matte edge ghosting against the sky</span></button>
-          <button class="cvcom"><span class="cvtop"><span class="uchip m2"><span class="dot"></span>sol</span><span class="cvtype">0:26 · point</span></span><span class="cvsnip">sfx hit should land on this frame</span></button>
-          <div class="anncompose"><span class="selchip"><svg class="ic sm"><use href="#i-comment"/></svg>0:09 – 0:16</span><div class="field"><input placeholder="Add an annotation…"></div><button class="btn sm primary">Post</button></div>
         </div>
       </div></div>
-      <div class="pcap"><b>Expanded view — video: annotations</b>
-        <span class="m">Annotations are a <b>comment section</b> for the file. A review <b>timeline</b> under the frame: drag <b>in/out handles</b> to shade a range (or scrub to a single frame) so a note anchors to it; existing marks sit as <b>pins</b>, the white line is the playhead. Frame-step buttons for precision. (Frame.io / Vimeo review pattern.)</span>
-        <span class="db">insert annotations(server_id, work_id, kind point/rect, t=range)</span></div>
+      <div class="pcap"><b>Expanded view — fullscreen player</b>
+        <span class="m">Maximizing a tile opens a simple <b>fullscreen viewer/player</b> (big media + transport) to inspect it — <b>no annotations inside</b> (they're freeform board pins; the sidebar lists them). <b>Screencap</b> grabs the frame; audio can <b>duplicate</b> a trimmed range into a new tile.</span>
+        <span class="db">canvas_items · screencap = client-side · duplicate → canvas_items</span></div>
     </div>
 
     <!-- empty canvas -->
@@ -2336,10 +2280,8 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
         </div>
         <div class="cvtools">
           <button class="iconbtn on" title="Move / select"><svg class="ic"><use href="#i-move"/></svg></button>
-          <div class="sep"></div><span class="grp">Annotate</span>
-          <button class="iconbtn" title="Point"><svg class="ic"><use href="#i-pin"/></svg></button>
-          <button class="iconbtn" title="Rectangle"><svg class="ic"><use href="#i-square"/></svg></button>
-          <button class="iconbtn" title="Lasso"><svg class="ic"><use href="#i-scribble"/></svg></button>
+          <div class="sep"></div>
+          <button class="iconbtn" title="Annotate — drop a comment pin"><svg class="ic"><use href="#i-comment"/></svg></button>
           <div class="sep"></div><span class="grp">Pen</span>
           <button class="iconbtn" title="Pen"><svg class="ic"><use href="#i-pen"/></svg></button>
           <button class="iconbtn" title="Eraser (whole stroke)"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M4 15l7-7 6 6-4 4H8z"/><path d="M9 20h9"/></svg></button>
@@ -2353,33 +2295,34 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
               <div class="tbar"><span class="cbadge">5</span><button class="tilebtn" title="Open expanded view"><svg class="ic sm"><use href="#i-expand"/></svg></button></div>
               <div class="scene"><div class="ground"></div><div class="o1"></div><div class="o2"></div></div>
               <svg class="anno" viewBox="0 0 380 214" preserveAspectRatio="none"><path d="M250 60 C 224 82, 196 92, 170 112" fill="none" stroke="var(--m2)" stroke-width="3" stroke-linecap="round"/></svg>
-              <div class="selbox" style="left:26%;top:44%;width:20%;height:34%"></div>
-              <span class="pdot" style="--pc:var(--m4);left:26%;top:44%"></span>
-              <div class="thread" style="position:absolute;left:48%;top:40%;width:224px;z-index:9;box-shadow:0 14px 40px rgba(0,0,0,.22)">
-                <div class="th"><span class="uchip m4"><span class="dot"></span>mira</span><span class="meta">rectangle</span></div>
-                <div class="tx">Near building edge is ghosting against the sky &mdash; needs a garbage matte inside this box.</div>
-                <div class="actions"><button><svg class="ic sm"><use href="#i-check"/></svg>Resolve</button><span>2 replies</span></div>
-                <div class="field"><input placeholder="Reply"></div>
-              </div>
             </div>
             <div class="tile audio">
               <div class="tname"><span>sounddesign_pass.wav</span></div>
-              <div class="tbar"><span class="uchip m2"><span class="dot"></span>sol</span><button class="tilebtn" title="Play"><svg class="ic sm"><use href="#i-play"/></svg></button><button class="tilebtn" title="Open expanded view"><svg class="ic sm"><use href="#i-expand"/></svg></button></div>
-              <div class="wavewrap"><div class="wave" data-wf="150"></div><span class="pdot" style="--pc:var(--m2);left:38%;top:50%"></span></div>
+              <div class="tbar"><button class="tilebtn" title="Play"><svg class="ic sm"><use href="#i-play"/></svg></button><button class="tilebtn" title="Maximize"><svg class="ic sm"><use href="#i-expand"/></svg></button></div>
+              <div class="wavewrap"><div class="wave" data-wf="150"></div></div>
             </div>
             <div class="tile img warm" style="width:300px;height:180px">
               <div class="tname"><span>grade_ref.png</span></div>
-              <div class="tbar"><span class="uchip m5"><span class="dot"></span>jax</span><button class="tilebtn" title="Open expanded view"><svg class="ic sm"><use href="#i-expand"/></svg></button></div>
+              <div class="tbar"><button class="tilebtn" title="Maximize"><svg class="ic sm"><use href="#i-expand"/></svg></button></div>
               <div class="scene"><div class="ground"></div></div>
-              <span class="pdot" style="--pc:var(--m5);left:52%;top:46%"></span>
+            </div>
+            <!-- freeform comment pins float on the board, not on the tiles -->
+            <div class="cvpin br" style="--pc:var(--m4);left:30%;top:20%"><span class="pfp">MI</span>mira</div>
+            <div class="cvpin" style="--pc:var(--m3);left:63%;top:30%"><span class="pfp">LN</span>lin</div>
+            <div class="cvpin tr" style="--pc:var(--m2);left:16%;top:62%"><span class="pfp">SO</span>sol</div>
+            <div class="cvdlg" style="left:34%;top:32%">
+              <div class="dhd"><span class="uchip m4"><span class="dot"></span>mira</span><time style="font-size:11px;color:var(--muted);margin-left:auto">2:47 PM</time></div>
+              <div class="dtx">Building edge is ghosting against the sky — needs a garbage matte.</div>
+              <div class="actions" style="display:flex;gap:12px;font-size:11px;color:var(--muted);margin-bottom:7px"><button><svg class="ic sm"><use href="#i-check"/></svg> Resolve</button><span>2 replies</span></div>
+              <div class="field"><input placeholder="Reply…"></div>
             </div>
           </div>
           <aside class="cvside">
             <div class="cvsidehd">Annotations <span class="ct">4</span></div>
-            <button class="cvcom on"><span class="cvtop"><span class="uchip m4"><span class="dot"></span>mira</span><span class="cvtype">rectangle</span></span><span class="cvsnip">near building edge is ghosting against the sky&hellip;</span></button>
-            <button class="cvcom"><span class="cvtop"><span class="uchip m3"><span class="dot"></span>lin</span><span class="cvtype">point</span></span><span class="cvsnip">love this framing, keep the bloom</span></button>
-            <button class="cvcom"><span class="cvtop"><span class="uchip m2"><span class="dot"></span>sol</span><span class="cvtype">audio 0:42&ndash;0:48</span></span><span class="cvsnip">whoosh lands a beat late, pull ~6 frames</span></button>
-            <button class="cvcom resolved"><span class="cvtop"><span class="uchip m5"><span class="dot"></span>jax</span><span class="cvtype">point &middot; resolved</span></span><span class="cvsnip">grade ref for the sky, matched</span></button>
+            <button class="cvcom on"><span class="cvtop"><span class="uchip m4"><span class="dot"></span>mira</span></span><span class="cvsnip">building edge is ghosting against the sky&hellip;</span></button>
+            <button class="cvcom"><span class="cvtop"><span class="uchip m3"><span class="dot"></span>lin</span></span><span class="cvsnip">love this framing, keep the bloom</span></button>
+            <button class="cvcom"><span class="cvtop"><span class="uchip m2"><span class="dot"></span>sol</span></span><span class="cvsnip">whoosh lands a beat late here, pull ~6 frames</span></button>
+            <button class="cvcom resolved"><span class="cvtop"><span class="uchip m5"><span class="dot"></span>jax</span><span class="cvtype">resolved</span></span><span class="cvsnip">grade ref for the sky, matched</span></button>
           </aside>
         </div>
       </div>

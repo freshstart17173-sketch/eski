@@ -931,72 +931,71 @@ never opens inside the canvas.**
 Pan + zoom, plus **zoom presets**: **Fit** (frame all tiles), **Reset** (100%),
 zoom-to-selection. A small zoom control (−/●/＋ with a % readout and Fit/Reset).
 
-### E.2 The tool palette — exactly three groups, nothing else
-**No shapes, no arrows.** The palette is:
+### E.2 The tool palette — three tools (simplified 2026-08-18d)
+
+**Annotations are freeform canvas comments, like Figma / paper.design — not
+attached to a specific file/region.** You drop them anywhere on the board; a
+rounded name-tag pin **with a pointer on one corner** shows what it's aimed at.
+The palette is exactly:
 
 1. **Move** — pan the canvas / select & drag tiles.
-2. **Annotate** — drops a **comment anchor**. Three mark types only:
-   - **Point** — a single anchor. Renders as a **rectangular label with a
-     pointer/tail** (not a bare circle) carrying the **full username** in the
-     member colour; **scrolls** if the name is long. The tail shows exactly what
-     it's attached to.
-   - **Rectangle** — a rectangular region. Renders as a **dotted outline that
-     appears only on hover**, with the point-label pointing to it.
-   - **Freehand (lasso)** — a freeform region. Same treatment: **hover-only
-     dotted outline** + point-label.
-   Every annotation **carries a comment thread, hidden until the mark is
-   clicked**. (So on the canvas, annotation and comment are coupled: the mark is
-   the anchor, the comment is its thread.)
-3. **Pen + Eraser** — freehand **ink** markup, with **size + colour**.
-   - Strokes are stored as **SVG paths**.
-   - Eraser is **OneNote-style: whole-stroke erase** — touching a stroke removes
-     the entire path at once, never pixel-scrubbing.
-   Ink is pure visual markup — it is **not** a comment.
+2. **Annotate** — click anywhere to drop a **comment pin**: a **rounded name tag**
+   (the author, in member colour) with **a small pointer on one corner** you aim at
+   whatever you're referring to; a **dialogue box pops up** to write the note. That's
+   the only mark type — **no point/rectangle/lasso/region**. The pin lives on the
+   **canvas surface** (freeform x/y), not inside a file, so it doesn't matter which
+   tile is near it. Clicking a pin reopens its note/thread.
+3. **Pen + Eraser** — freehand **ink** markup, **size + colour**. SVG paths;
+   **whole-stroke erase** (OneNote-style). Ink is pure visual markup, not a comment.
 
-Removed for good: arrow, box/shape, and the old pen/arrow/box/freeform set.
+**Removed for good:** rectangle, freehand/lasso, point-region, arrow, box/shape,
+and any per-file / per-timecode annotation selection. There is **no annotate
+"mode" chooser** beyond picking the Annotate tool — writing a note is just a
+dialogue box, like a comment.
 
-### E.3 Per-media behaviour (this is the important part)
-- **Image** — annotations (point/rect/lasso) + pen ink drawn directly on the
-  tile. A **screencap** button copies the image at **full resolution to the
-  clipboard**.
-- **Video** — annotation pins sit on the frame; **as they pile up they collapse
-  into a number badge** (app-notification style). Click a pin/badge → a **list
-  of that video's annotations** (canvas-specific, *not* the details pane). A
-  **screencap** button grabs **the current frame at full resolution → clipboard**.
-- **Audio** — the point marker still applies, but clicking it opens an
-  **expanded audio view**: the waveform + a **player** + the list of that audio's
-  **annotations** (canvas-scoped, distinct from comments). **Trim**: select a
-  waveform section and **duplicate** it as a **new audio tile in the canvas**.
+### E.3 Per-media behaviour
+Tiles are still per-media (image shows the still, audio a waveform, video a frame),
+and each tile has a **Maximize** → a simple **fullscreen viewer/player** (big media +
+transport for a/v) for inspecting it. But **annotations are not attached to the media
+any more** — they're freeform pins on the board next to whatever they discuss. So:
+- **No per-file annotation composer, no waveform-region / video-range / image-marquee
+  selection.** Timecode-specific feedback is written as text in the pin ("0:42 —
+  whoosh late") next to the audio tile.
+- **Screencap** stays: a button copies the current frame/image at full resolution to
+  the clipboard (client-side), for use outside eski.
+- **Duplicate** stays for audio: from the fullscreen player you can still trim a
+  range and **duplicate** it as a new audio tile.
 
 ### E.4 Duplicate, not copy
 Wherever the old spec said "copy", the action is **duplicate** — it spawns a copy
 **straight into the canvas**, never onto the clipboard. The one clipboard action
-is **screencap** (a frame/image, for use outside eski). Audio-trim → **duplicate
-into canvas**.
+is **screencap** (a frame/image, for use outside eski).
 
-### E.5 Three distinct layers on a tile (name them right)
+### E.5 Two layers on the canvas
 | Layer | What it is | Visibility |
 |---|---|---|
-| **annotation** | a mark (point/rectangle/lasso) that anchors a **comment** | mark's label always visible; region outline **on hover**; thread **on click** |
+| **annotation** | a freeform **comment pin** — a rounded name tag with a corner pointer, carrying a note/thread | pin always visible; the note **on click** (dialogue box) |
 | **ink** | pen strokes (size/colour, SVG, whole-stroke erase) | always visible |
-| **media annotations** (audio/video) | timeline/region marks inside the **expanded** audio/video view | inside that view only |
+
+(The old third layer — per-file "media annotations" inside an expanded view — is
+gone; annotations are freeform board pins.)
 
 ### E.6 Data implications (for §7 backend)
-- **Annotations are scoped to the work *within the server*, not to a canvas
-  (2026-08-18c).** `annotations(server_id, work_id, author_id, kind in
-  (point,rect,lasso), color, path jsonb, t numrange null, resolved_at)` — **no
-  `canvas_id`.** The **same file can be placed on several canvases in one server and
-  shares one annotation set** across them; opening it anywhere shows the same marks.
-  (This also deletes the "annotation orphaned when removed from a canvas" hazard —
-  EDGECASES D3.)
+- **Annotations are freeform, canvas-scoped comment pins (2026-08-18d).**
+  `annotations(canvas_id, author_id, x real, y real, corner in (tl,tr,bl,br), body,
+  resolved_at, created_at)` — placed anywhere on the board; `corner` is which corner
+  of the name tag the pointer sticks out of; `x/y` are canvas coordinates. **No
+  `work_id`, no `kind`, no region/timecode.** They belong to the **canvas** (a
+  Figma-style board comment), not to a file — so "which tile / which canvas" and the
+  file-in-many-canvases problem simply don't apply. (Supersedes the 2026-08-18c
+  work+server scoping.)
+- **Ink** — `ink(canvas_id, author_id, path jsonb, color, size)`, one row per stroke
+  (whole-stroke erase = delete row).
 - **Ink** is the same shape, one row per stroke (whole-stroke erase = delete row),
-  likewise `server_id, work_id`-scoped.
-- Audio/video timeline marks are annotations with a `t` (timecode/region), same
-  table.
-- Annotations are **not** shown in the details/expanded pane — only on the canvas
-  (tile count badge + canvas annotations sidebar).
-- Duplicate = insert a new `works`/`canvas_items` row (for audio-trim, a derived
-  clip); no clipboard.
+- Annotations are **not** shown in the details/expanded pane — they're board pins,
+  viewed on the canvas and enumerated in the **canvas annotations sidebar**.
+- Duplicate (audio-trim) = insert a new `works`/`canvas_items` row (a derived clip);
+  no clipboard.
 - Screencap is **client-side** (canvas/`<video>` frame grab → Clipboard API); no
   backend.
 
