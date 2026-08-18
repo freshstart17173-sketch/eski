@@ -477,8 +477,9 @@ separates). Bigger than a modal on purpose: the media is the point.
 | Element | Behaviour & states | DB | Desktop | Mobile |
 |---|---|---|---|---|
 | Media area | Fills the left; **player controls pinned to its foot** (big play, scrubber, tabular time); waveform/video/image/type-card/folder-mosaic per kind. | R `works` (signed URL) | Left, grows | Top ~42vh |
-| **Prev / next arrows** | Step through the items in the **calling grid/context** without closing; square, on the media's outer edges. | client (the grid's order) | Media edges | Swipe / edge taps |
-| **Version dropdown (top of rail)** | Collapsed shows just **`v3 of 3`**; **opens to the full file names** per version. Adding a version requires a reason. | R `works.version_of` · `add_version()` | Rail top bar | Rail top bar |
+| **Prev / next arrows — folder only** | A single work has **no** media arrows. A **folder** is the one pane that shows prev/next **over the media** (page its items) plus a clickable **navigation list in the rail**. | `collection_items` order | Folder media edges + rail list | Same |
+| **Version dropdown (top of rail)** | A **functional** dropdown (native `<details>`, no JS): collapsed shows just **`v3 of 3`**; **opens to the full file names** per version + "Add a version" (requires a reason). A folder has no version dropdown. | R `works.version_of` · `add_version()` | Rail top bar | Rail top bar |
+| Metadata | Rich per kind: storage badge, uploaded-by, channel, **added** date, **length** (a/v), **dimensions/fps** (image/video), **format/codec/bit-depth**, **size**, plays. Folder: where, item count, made-by, created, visibility. | `works` cols | Rail | Rail |
 | Report + close | Flag (report) and × sit in the rail's top bar beside the version dropdown. | `file_report` | Rail top bar | Rail top bar |
 | Storage badge | "Server: NAME" vs "Personal · crossposted". | `works.storage_source` | Rail meta | Rail meta |
 | Title / credits / tags | Title (or file name); contributor chips (server colour); user tags + ＋. | `works.title/credits` · `content_tags` | Rail | Rail |

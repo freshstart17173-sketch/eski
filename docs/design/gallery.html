@@ -370,6 +370,33 @@ input{font:inherit;color:inherit}
 .verbtn{display:inline-flex;align-items:center;gap:7px;background:var(--surface);border-radius:var(--r);padding:6px 10px;font-size:var(--fs-xs);color:var(--soft);cursor:pointer}
 .verbtn:hover{background:var(--plate)}
 .verbtn .v{font-weight:700;color:var(--ink)}
+/* functional version / items dropdown — native <details>, no JS. Collapsed shows
+   just the count; open reveals the full file names. */
+.verdrop{position:relative}
+.verdrop>summary{list-style:none;display:inline-flex;align-items:center;gap:7px;background:var(--surface);border-radius:var(--r);padding:6px 10px;font-size:var(--fs-xs);color:var(--soft);cursor:pointer;user-select:none}
+.verdrop>summary::-webkit-details-marker{display:none}
+.verdrop>summary::marker{content:""}
+.verdrop>summary:hover{background:var(--plate)}
+.verdrop>summary .v{font-weight:700;color:var(--ink)}
+.verdrop[open]>summary .chev{transform:rotate(180deg)}
+.vermenu{position:absolute;top:calc(100% + 5px);left:0;z-index:30;min-width:236px;background:var(--paper);border:1px solid var(--line);border-radius:var(--r);padding:5px;box-shadow:0 12px 40px rgba(0,0,0,.28)}
+.vermenu .mlabel{font-size:11px;color:var(--muted);padding:5px 8px 6px}
+.vermenu button{display:flex;align-items:center;gap:9px;width:100%;text-align:left;padding:7px 8px;border-radius:var(--r);font-size:var(--fs-sm)}
+.vermenu button:hover{background:var(--surface)}
+.vermenu button.on{background:var(--surface)}
+.vermenu .vt{font-size:10px;font-weight:700;padding:1px 5px;border-radius:2px;background:var(--surface);flex:none}
+.vermenu button.on .vt,.vermenu .vt.cur{background:var(--ink);color:var(--on-ink)}
+.vermenu .vfn{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.vermenu .sep{height:1px;background:var(--line);margin:4px 0}
+/* folder navigation list in the rail */
+.flist{display:flex;flex-direction:column;gap:2px}
+.flist .fi{display:flex;align-items:center;gap:9px;padding:6px 8px;border-radius:var(--r);cursor:pointer;font-size:var(--fs-sm);text-align:left;width:100%}
+.flist .fi:hover{background:var(--surface)}
+.flist .fi.on{background:var(--plate)}
+.flist .fi .fth{width:28px;height:28px;border-radius:3px;background:var(--plate);flex:none;display:grid;place-items:center;color:var(--muted);overflow:hidden}
+.flist .fi .fth .wave{padding:0 3px}
+.flist .fi .fn{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.flist .fi .ft{color:var(--muted);font-size:11px;flex:none}
 .meta{display:flex;flex-direction:column;gap:9px;margin:0 0 var(--s4);font-size:var(--fs-sm)}
 .meta .row{display:flex;gap:var(--s3)}
 .meta .k{width:96px;flex:none;color:var(--muted);font-size:var(--fs-xs)}
@@ -1646,35 +1673,25 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   <h2>⑤ Key per-screen dialogs</h2>
   <p class="lede">The highest-traffic modals outside the global + canvas sets. The
     rest are enumerated in ⑥. The Details panes are shown <b>arena-scale</b> (the
-    real size): media fills the left, a fixed right rail, prev/next arrows, and the
-    version dropdown at the top (CANON §C.7).</p>
+    real size): media fills the left, a fixed right rail with rich metadata and a
+    <b>working version dropdown</b> (click it) at the top. A single work has no
+    media arrows; only a <b>folder</b> shows prev/next over the media plus a side
+    navigation list (CANON §C.7).</p>
   <div class="stagewrap">
 
-    <!-- details pane — AUDIO (arena, full size) -->
+    <!-- details pane — AUDIO (arena) -->
     <div class="arenapanel">
       <div class="stage scrim"><div class="arena">
         <div class="dmedia">
-          <button class="navarrow prev" title="Previous"><svg class="ic"><use href="#i-chev"/></svg></button>
-          <button class="navarrow next" title="Next"><svg class="ic"><use href="#i-chev"/></svg></button>
           <button class="dmbigplay" title="Play / pause"><svg class="ic"><use href="#i-play"/></svg></button>
-          <div class="dmtransport">
-            <button class="tbtn" title="Back 10s"><svg class="ic"><use href="#i-rewind"/></svg></button>
-            <span>0:47</span><span class="track"><i style="width:34%"></i><span class="knob" style="left:34%"></span></span><span>2:18</span>
-            <button class="tbtn" title="Forward 10s"><svg class="ic"><use href="#i-ff"/></svg></button>
-            <button class="tbtn" title="Mute"><svg class="ic"><use href="#i-volume"/></svg></button>
-          </div>
+          <div class="dmtransport"><button class="tbtn" title="Back 10s"><svg class="ic"><use href="#i-rewind"/></svg></button><span>0:47</span><span class="track"><i style="width:34%"></i><span class="knob" style="left:34%"></span></span><span>2:18</span><button class="tbtn" title="Forward 10s"><svg class="ic"><use href="#i-ff"/></svg></button><button class="tbtn" title="Mute"><svg class="ic"><use href="#i-volume"/></svg></button></div>
         </div>
         <div class="dinfo">
-          <div class="dtop"><button class="verbtn"><span class="v">v2</span> of 2<svg class="ic sm"><use href="#i-chev"/></svg></button><button class="iconbtn sp" title="Report"><svg class="ic sm"><use href="#i-flag"/></svg></button><button class="iconbtn" title="Close"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
+          <div class="dtop"><details class="verdrop"><summary><span class="v">v2</span> of 2<svg class="ic sm chev"><use href="#i-chev"/></svg></summary><div class="vermenu"><div class="mlabel">Versions — newest first</div><button class="on"><span class="vt cur">v2</span><span class="vfn">bloom_master_v2.wav</span></button><button><span class="vt">v1</span><span class="vfn">bloom_master.wav</span></button><div class="sep"></div><button><svg class="ic sm"><use href="#i-plus"/></svg>Add a version</button></div></details><button class="iconbtn sp" title="Report"><svg class="ic sm"><use href="#i-flag"/></svg></button><button class="iconbtn" title="Close"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
           <div class="scroll">
             <h2>bloom, single</h2>
             <div class="vernote">v2: final master, brought the vocal up 1dB. <span class="by">rae</span></div>
-            <div class="meta">
-              <div class="row"><span class="k">Visibility</span><span class="v"><span class="stbadge"><svg class="ic"><use href="#i-server"/></svg>Late Bloom LP</span></span></div>
-              <div class="row"><span class="k">Uploaded by</span><span class="v"><span class="uchip m1"><span class="dot"></span>rae</span></span></div>
-              <div class="row"><span class="k">Channel</span><span class="v">#mixing</span></div>
-              <div class="row"><span class="k">Type</span><span class="v">WAV · 32.1 MB</span></div>
-            </div>
+            <div class="meta"><div class="row"><span class="k">Visibility</span><span class="v"><span class="stbadge"><svg class="ic"><use href="#i-server"/></svg>Late Bloom LP</span></span></div><div class="row"><span class="k">Uploaded by</span><span class="v"><span class="uchip m1"><span class="dot"></span>rae</span></span></div><div class="row"><span class="k">Channel</span><span class="v">#mixing</span></div><div class="row"><span class="k">Added</span><span class="v">15 Aug 2026, 2:14 PM</span></div><div class="row"><span class="k">Length</span><span class="v">2:18</span></div><div class="row"><span class="k">Format</span><span class="v">WAV · 44.1 kHz · 24-bit</span></div><div class="row"><span class="k">Size</span><span class="v">32.1 MB</span></div><div class="row"><span class="k">Plays</span><span class="v">37</span></div></div>
             <div class="dsec"><div class="lb">Tags</div><div class="chips"><span class="tag">bloom</span><span class="tag">single</span><span class="tag">master</span><button class="addtag"><svg class="ic sm"><use href="#i-plus"/></svg></button></div></div>
             <div class="dsec"><div class="lb">Credits</div><div class="chips"><span class="uchip m1"><span class="dot"></span>rae, vocals</span><span class="uchip m3"><span class="dot"></span>dev, beat</span><span class="uchip m4"><span class="dot"></span>tomo, mix</span></div></div>
             <div class="dsec"><div class="lb">Comments</div>
@@ -1682,15 +1699,11 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
               <div class="field" style="margin-top:8px"><input placeholder="Comment in the server"></div>
             </div>
           </div>
-          <div class="foot">
-            <button class="btn primary"><svg class="ic sm"><use href="#i-download"/></svg>Download<svg class="ic sm"><use href="#i-chev"/></svg></button>
-            <button class="btn"><svg class="ic sm"><use href="#i-save"/></svg>Save</button>
-            <button class="btn"><svg class="ic sm"><use href="#i-canvas"/></svg>Canvas</button>
-          </div>
+          <div class="foot"><button class="btn primary"><svg class="ic sm"><use href="#i-download"/></svg>Download<svg class="ic sm"><use href="#i-chev"/></svg></button><button class="btn"><svg class="ic sm"><use href="#i-save"/></svg>Save</button><button class="btn"><svg class="ic sm"><use href="#i-canvas"/></svg>Canvas</button></div>
         </div>
       </div></div>
       <div class="pcap"><b>Details pane — audio (arena)</b>
-        <span class="m">The real pane, full size: media takes the room with the full transport at its foot (play/pause, skip ±10s, seek, volume), prev/next arrows to step the grid, and the fixed right rail — version dropdown + report + close on top, then storage badge, credits, tags, <b>post comments</b> (distinct from canvas annotations), actions.</span>
+        <span class="m">The real pane, full size: media takes the room with the full transport at its foot (play/pause, skip ±10s, seek, volume), and the fixed right rail — a <b>working version dropdown</b> (open it: full file names) + report + close on top, then rich metadata, credits, tags, <b>post comments</b> (distinct from canvas annotations), actions. Single works have no media arrows — only a folder does.</span>
         <span class="db">works + versions + content_tags + comments · works.storage_source</span></div>
     </div>
 
@@ -1698,28 +1711,15 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
     <div class="arenapanel">
       <div class="stage scrim"><div class="arena">
         <div class="dmedia" style="background:linear-gradient(135deg,#3a4a55,#12181c)">
-          <button class="navarrow prev" title="Previous"><svg class="ic"><use href="#i-chev"/></svg></button>
-          <button class="navarrow next" title="Next"><svg class="ic"><use href="#i-chev"/></svg></button>
           <button class="dmbigplay" title="Play / pause"><svg class="ic"><use href="#i-play"/></svg></button>
-          <div class="dmtransport" style="color:#e8e8e8">
-            <button class="tbtn" title="Back 10s" style="color:#e8e8e8"><svg class="ic"><use href="#i-rewind"/></svg></button>
-            <span>0:06</span><span class="track" style="background:rgba(255,255,255,.28)"><i style="width:18%;background:#fff"></i><span class="knob" style="left:18%;background:#fff"></span></span><span>0:34</span>
-            <button class="tbtn" title="Forward 10s" style="color:#e8e8e8"><svg class="ic"><use href="#i-ff"/></svg></button>
-            <button class="tbtn" title="Mute" style="color:#e8e8e8"><svg class="ic"><use href="#i-volume"/></svg></button>
-            <button class="tbtn" title="Fullscreen" style="color:#e8e8e8"><svg class="ic"><use href="#i-expand"/></svg></button>
-          </div>
+          <div class="dmtransport" style="color:#e8e8e8"><button class="tbtn" title="Back 10s" style="color:#e8e8e8"><svg class="ic"><use href="#i-rewind"/></svg></button><span>0:06</span><span class="track" style="background:rgba(255,255,255,.28)"><i style="width:18%;background:#fff"></i><span class="knob" style="left:18%;background:#fff"></span></span><span>0:34</span><button class="tbtn" title="Forward 10s" style="color:#e8e8e8"><svg class="ic"><use href="#i-ff"/></svg></button><button class="tbtn" title="Mute" style="color:#e8e8e8"><svg class="ic"><use href="#i-volume"/></svg></button><button class="tbtn" title="Fullscreen" style="color:#e8e8e8"><svg class="ic"><use href="#i-expand"/></svg></button></div>
         </div>
         <div class="dinfo">
-          <div class="dtop"><button class="verbtn"><span class="v">v3</span> of 3<svg class="ic sm"><use href="#i-chev"/></svg></button><button class="iconbtn sp" title="Report"><svg class="ic sm"><use href="#i-flag"/></svg></button><button class="iconbtn" title="Close"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
+          <div class="dtop"><details class="verdrop"><summary><span class="v">v3</span> of 3<svg class="ic sm chev"><use href="#i-chev"/></svg></summary><div class="vermenu"><div class="mlabel">Versions — newest first</div><button class="on"><span class="vt cur">v3</span><span class="vfn">sh040_comp_v3.mp4</span></button><button><span class="vt">v2</span><span class="vfn">sh040_comp_v2.mp4</span></button><button><span class="vt">v1</span><span class="vfn">sh040_comp_v1.mp4</span></button><div class="sep"></div><button><svg class="ic sm"><use href="#i-plus"/></svg>Add a version</button></div></details><button class="iconbtn sp" title="Report"><svg class="ic sm"><use href="#i-flag"/></svg></button><button class="iconbtn" title="Close"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
           <div class="scroll">
             <h2>q3 comp reel, first pass</h2>
             <div class="vernote">v3: reworked the matte on the building edge. <span class="by">mira</span></div>
-            <div class="meta">
-              <div class="row"><span class="k">Visibility</span><span class="v"><span class="stbadge"><svg class="ic"><use href="#i-server"/></svg>Specter, sh040</span></span></div>
-              <div class="row"><span class="k">Uploaded by</span><span class="v"><span class="uchip m4"><span class="dot"></span>mira</span></span></div>
-              <div class="row"><span class="k">Channel</span><span class="v">#sh040 review</span></div>
-              <div class="row"><span class="k">Type</span><span class="v">MP4 · 214 MB · 1920×1080</span></div>
-            </div>
+            <div class="meta"><div class="row"><span class="k">Visibility</span><span class="v"><span class="stbadge"><svg class="ic"><use href="#i-server"/></svg>Specter, sh040</span></span></div><div class="row"><span class="k">Uploaded by</span><span class="v"><span class="uchip m4"><span class="dot"></span>mira</span></span></div><div class="row"><span class="k">Channel</span><span class="v">#sh040 review</span></div><div class="row"><span class="k">Added</span><span class="v">16 Aug 2026, 9:40 AM</span></div><div class="row"><span class="k">Length</span><span class="v">0:34</span></div><div class="row"><span class="k">Dimensions</span><span class="v">1920×1080 · 24 fps</span></div><div class="row"><span class="k">Format</span><span class="v">MP4 · H.264</span></div><div class="row"><span class="k">Size</span><span class="v">214 MB</span></div></div>
             <div class="dsec"><div class="lb">Tags</div><div class="chips"><span class="tag">comp</span><span class="tag">sh040</span><button class="addtag"><svg class="ic sm"><use href="#i-plus"/></svg></button></div></div>
             <div class="dsec"><div class="lb">Credits</div><div class="chips"><span class="uchip m4"><span class="dot"></span>mira, comp</span><span class="uchip m2"><span class="dot"></span>sol, sound</span></div></div>
             <div class="dsec"><div class="lb">Comments</div>
@@ -1727,35 +1727,23 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
               <div class="field" style="margin-top:8px"><input placeholder="Comment in the server"></div>
             </div>
           </div>
-          <div class="foot">
-            <button class="btn primary"><svg class="ic sm"><use href="#i-download"/></svg>Download<svg class="ic sm"><use href="#i-chev"/></svg></button>
-            <button class="btn"><svg class="ic sm"><use href="#i-save"/></svg>Save</button>
-            <button class="btn"><svg class="ic sm"><use href="#i-canvas"/></svg>Canvas</button>
-          </div>
+          <div class="foot"><button class="btn primary"><svg class="ic sm"><use href="#i-download"/></svg>Download<svg class="ic sm"><use href="#i-chev"/></svg></button><button class="btn"><svg class="ic sm"><use href="#i-save"/></svg>Save</button><button class="btn"><svg class="ic sm"><use href="#i-canvas"/></svg>Canvas</button></div>
         </div>
       </div></div>
       <div class="pcap"><b>Details pane — video (arena)</b>
-        <span class="m">Same arena shell; the media is the video frame and the transport gains a fullscreen control. Resolution sits in the Type row.</span>
+        <span class="m">Same arena shell; the media is the video frame and the transport gains a fullscreen control. Dimensions/fps and codec sit in the metadata.</span>
         <span class="db">works (kind=video) · works.storage_source</span></div>
     </div>
 
     <!-- details pane — IMAGE (arena) -->
     <div class="arenapanel">
       <div class="stage scrim"><div class="arena">
-        <div class="dmedia" style="background:linear-gradient(135deg,#6b5a4a,#241c16);padding:0">
-          <button class="navarrow prev" title="Previous"><svg class="ic"><use href="#i-chev"/></svg></button>
-          <button class="navarrow next" title="Next"><svg class="ic"><use href="#i-chev"/></svg></button>
-        </div>
+        <div class="dmedia" style="background:linear-gradient(135deg,#6b5a4a,#241c16);padding:0"></div>
         <div class="dinfo">
-          <div class="dtop"><button class="verbtn"><span class="v">v1</span> of 1<svg class="ic sm"><use href="#i-chev"/></svg></button><button class="iconbtn sp" title="Report"><svg class="ic sm"><use href="#i-flag"/></svg></button><button class="iconbtn" title="Close"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
+          <div class="dtop"><details class="verdrop"><summary><span class="v">v1</span> of 1<svg class="ic sm chev"><use href="#i-chev"/></svg></summary><div class="vermenu"><div class="mlabel">Versions — newest first</div><button class="on"><span class="vt cur">v1</span><span class="vfn">cover_bloom.png</span></button><div class="sep"></div><button><svg class="ic sm"><use href="#i-plus"/></svg>Add a version</button></div></details><button class="iconbtn sp" title="Report"><svg class="ic sm"><use href="#i-flag"/></svg></button><button class="iconbtn" title="Close"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
           <div class="scroll">
             <h2>cover art, bloom</h2>
-            <div class="meta">
-              <div class="row"><span class="k">Visibility</span><span class="v"><span class="stbadge personal"><svg class="ic"><use href="#i-user"/></svg>Personal · crossposted</span></span></div>
-              <div class="row"><span class="k">Uploaded by</span><span class="v"><span class="uchip m6"><span class="dot"></span>nel</span></span></div>
-              <div class="row"><span class="k">Channel</span><span class="v">#references</span></div>
-              <div class="row"><span class="k">Type</span><span class="v">PNG · 4.8 MB · 3000×2400</span></div>
-            </div>
+            <div class="meta"><div class="row"><span class="k">Visibility</span><span class="v"><span class="stbadge personal"><svg class="ic"><use href="#i-user"/></svg>Personal · crossposted</span></span></div><div class="row"><span class="k">Uploaded by</span><span class="v"><span class="uchip m6"><span class="dot"></span>nel</span></span></div><div class="row"><span class="k">Channel</span><span class="v">#references</span></div><div class="row"><span class="k">Added</span><span class="v">14 Aug 2026, 6:02 PM</span></div><div class="row"><span class="k">Dimensions</span><span class="v">3000×2400</span></div><div class="row"><span class="k">Format</span><span class="v">PNG · sRGB</span></div><div class="row"><span class="k">Size</span><span class="v">4.8 MB</span></div></div>
             <div class="dsec"><div class="lb">Tags</div><div class="chips"><span class="tag">cover</span><span class="tag">bloom</span><span class="tag">wip</span><button class="addtag"><svg class="ic sm"><use href="#i-plus"/></svg></button></div></div>
             <div class="dsec"><div class="lb">Credits</div><div class="chips"><span class="uchip m6"><span class="dot"></span>nel, art</span><span class="uchip m1"><span class="dot"></span>rae, direction</span></div></div>
             <div class="dsec"><div class="lb">Comments</div>
@@ -1763,11 +1751,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
               <div class="field" style="margin-top:8px"><input placeholder="Comment in the server"></div>
             </div>
           </div>
-          <div class="foot">
-            <button class="btn primary"><svg class="ic sm"><use href="#i-download"/></svg>Download<svg class="ic sm"><use href="#i-chev"/></svg></button>
-            <button class="btn"><svg class="ic sm"><use href="#i-save"/></svg>Save</button>
-            <button class="btn"><svg class="ic sm"><use href="#i-canvas"/></svg>Canvas</button>
-          </div>
+          <div class="foot"><button class="btn primary"><svg class="ic sm"><use href="#i-download"/></svg>Download<svg class="ic sm"><use href="#i-chev"/></svg></button><button class="btn"><svg class="ic sm"><use href="#i-save"/></svg>Save</button><button class="btn"><svg class="ic sm"><use href="#i-canvas"/></svg>Canvas</button></div>
         </div>
       </div></div>
       <div class="pcap"><b>Details pane — image (arena)</b>
@@ -1779,21 +1763,14 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
     <div class="arenapanel">
       <div class="stage scrim"><div class="arena">
         <div class="dmedia">
-          <button class="navarrow prev" title="Previous"><svg class="ic"><use href="#i-chev"/></svg></button>
-          <button class="navarrow next" title="Next"><svg class="ic"><use href="#i-chev"/></svg></button>
           <div class="dtype" style="width:min(320px,80%);height:180px"><svg class="ic"><use href="#i-file"/></svg><span class="ext">.FLP</span><span style="font-size:11px">no preview — download to open</span></div>
         </div>
         <div class="dinfo">
-          <div class="dtop"><button class="verbtn"><span class="v">v3</span> of 3<svg class="ic sm"><use href="#i-chev"/></svg></button><button class="iconbtn sp" title="Report"><svg class="ic sm"><use href="#i-flag"/></svg></button><button class="iconbtn" title="Close"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
+          <div class="dtop"><details class="verdrop"><summary><span class="v">v3</span> of 3<svg class="ic sm chev"><use href="#i-chev"/></svg></summary><div class="vermenu"><div class="mlabel">Versions — newest first</div><button class="on"><span class="vt cur">v3</span><span class="vfn">late_bloom_beat.flp</span></button><button><span class="vt">v2</span><span class="vfn">late_bloom_beat_v2.flp</span></button><button><span class="vt">v1</span><span class="vfn">late_bloom_beat_draft.flp</span></button><div class="sep"></div><button><svg class="ic sm"><use href="#i-plus"/></svg>Add a version</button></div></details><button class="iconbtn sp" title="Report"><svg class="ic sm"><use href="#i-flag"/></svg></button><button class="iconbtn" title="Close"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
           <div class="scroll">
             <h2>Back half rework</h2>
             <div class="vernote">v3: swapped the bridge drums, brought the low end down. <span class="by">dev</span></div>
-            <div class="meta">
-              <div class="row"><span class="k">Visibility</span><span class="v"><span class="stbadge"><svg class="ic"><use href="#i-server"/></svg>Late Bloom LP</span></span></div>
-              <div class="row"><span class="k">Uploaded by</span><span class="v"><span class="uchip m3"><span class="dot"></span>dev</span></span></div>
-              <div class="row"><span class="k">Channel</span><span class="v">#beats</span></div>
-              <div class="row"><span class="k">Type</span><span class="v">FL Studio project (.flp) · 8.4 MB</span></div>
-            </div>
+            <div class="meta"><div class="row"><span class="k">Visibility</span><span class="v"><span class="stbadge"><svg class="ic"><use href="#i-server"/></svg>Late Bloom LP</span></span></div><div class="row"><span class="k">Uploaded by</span><span class="v"><span class="uchip m3"><span class="dot"></span>dev</span></span></div><div class="row"><span class="k">Channel</span><span class="v">#beats</span></div><div class="row"><span class="k">Added</span><span class="v">15 Aug 2026, 2:14 PM</span></div><div class="row"><span class="k">Format</span><span class="v">FL Studio project (.flp)</span></div><div class="row"><span class="k">Opens with</span><span class="v">FL Studio 21</span></div><div class="row"><span class="k">Size</span><span class="v">8.4 MB</span></div></div>
             <div class="dsec"><div class="lb">Tags</div><div class="chips"><span class="tag">drums</span><span class="tag">142bpm</span><span class="tag">bridge</span><button class="addtag"><svg class="ic sm"><use href="#i-plus"/></svg></button></div></div>
             <div class="dsec"><div class="lb">Credits</div><div class="chips"><span class="uchip m5"><span class="dot"></span>jax, prod</span><span class="uchip m3"><span class="dot"></span>dev, arrangement</span></div></div>
             <div class="dsec"><div class="lb">Comments</div>
@@ -1801,10 +1778,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
               <div class="field" style="margin-top:8px"><input placeholder="Comment in the server"></div>
             </div>
           </div>
-          <div class="foot">
-            <button class="btn primary"><svg class="ic sm"><use href="#i-download"/></svg>Download<svg class="ic sm"><use href="#i-chev"/></svg></button>
-            <button class="btn"><svg class="ic sm"><use href="#i-save"/></svg>Save</button>
-          </div>
+          <div class="foot"><button class="btn primary"><svg class="ic sm"><use href="#i-download"/></svg>Download<svg class="ic sm"><use href="#i-chev"/></svg></button><button class="btn"><svg class="ic sm"><use href="#i-save"/></svg>Save</button></div>
         </div>
       </div></div>
       <div class="pcap"><b>Details pane — other (non-previewable, arena)</b>
@@ -1812,40 +1786,31 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
         <span class="db">works (kind=other) · works.file_ext</span></div>
     </div>
 
-    <!-- details pane — FOLDER (arena) -->
+    <!-- details pane — FOLDER (arena — the only pane with media arrows) -->
     <div class="arenapanel">
       <div class="stage scrim"><div class="arena">
         <div class="dmedia">
-          <button class="navarrow prev" title="Previous"><svg class="ic"><use href="#i-chev"/></svg></button>
-          <button class="navarrow next" title="Next"><svg class="ic"><use href="#i-chev"/></svg></button>
-          <div class="dfolder" style="width:min(420px,86%);gap:8px">
-            <div class="cell" style="background:linear-gradient(135deg,#4a4a4a,#1c1c1c)"></div>
-            <div class="cell" style="padding:6px 0"><div class="wave" data-wf="60"></div></div>
-            <div class="cell" style="background:linear-gradient(135deg,#5a4a4a,#201818)"></div>
-            <div class="cell" style="padding:6px 0"><div class="wave" data-wf="60"></div></div>
-            <div class="cell" style="display:grid;place-items:center;color:var(--muted)"><svg class="ic"><use href="#i-file"/></svg></div>
-            <div class="cell more">+8</div>
+          <button class="navarrow prev" title="Previous item"><svg class="ic"><use href="#i-chev"/></svg></button>
+          <button class="navarrow next" title="Next item"><svg class="ic"><use href="#i-chev"/></svg></button>
+          <div style="width:70%;max-width:520px"><div class="wave" data-wf="150"></div></div>
+          <div style="position:absolute;left:0;right:0;bottom:0;display:flex;align-items:center;gap:10px;padding:14px 20px;font-size:12px;color:var(--soft);font-variant-numeric:tabular-nums">
+            <button class="dmbigplay" style="width:44px;height:44px" title="Play"><svg class="ic"><use href="#i-play"/></svg></button>
+            <b style="color:var(--ink)">kick_punchy.wav</b><span style="color:var(--muted)">1 of 12</span>
+            <span style="margin-left:auto;color:var(--muted)">0:00 / 0:02</span>
           </div>
         </div>
         <div class="dinfo">
           <div class="dtop"><span style="display:flex;align-items:center;gap:7px;font-size:var(--fs-sm);font-weight:600"><svg class="ic sm" style="color:var(--muted)"><use href="#i-folder"/></svg>Folder</span><button class="iconbtn sp" title="Close"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
           <div class="scroll">
             <h2>Drum picks</h2>
-            <div class="meta">
-              <div class="row"><span class="k">Where</span><span class="v"><span class="stbadge"><svg class="ic"><use href="#i-server"/></svg>Late Bloom LP</span></span></div>
-              <div class="row"><span class="k">Items</span><span class="v">12 items · 61 MB</span></div>
-              <div class="row"><span class="k">Made by</span><span class="v"><span class="uchip m3"><span class="dot"></span>dev</span></span></div>
-            </div>
-            <div style="font-size:12px;color:var(--muted);line-height:1.55;margin-top:4px">A named folder in this server's explorer. Grouping only — <b>no version, tags or canvas</b>; each item inside keeps its own storage and visibility.</div>
+            <div class="meta"><div class="row"><span class="k">Where</span><span class="v"><span class="stbadge"><svg class="ic"><use href="#i-server"/></svg>Late Bloom LP</span></span></div><div class="row"><span class="k">Items</span><span class="v">12 items · 61 MB</span></div><div class="row"><span class="k">Made by</span><span class="v"><span class="uchip m3"><span class="dot"></span>dev</span></span></div><div class="row"><span class="k">Created</span><span class="v">10 Aug 2026</span></div><div class="row"><span class="k">Visibility</span><span class="v">Server</span></div></div>
+            <div class="dsec"><div class="lb">Items <span style="color:var(--muted)">12</span></div><div class="flist"><button class="fi on"><span class="fth"><div class="wave" data-wf="30"></div></span><span class="fn">kick_punchy.wav</span><span class="ft">wav</span></button><button class="fi"><span class="fth"><div class="wave" data-wf="30"></div></span><span class="fn">snare_tight.wav</span><span class="ft">wav</span></button><button class="fi"><span class="fth"><div class="wave" data-wf="30"></div></span><span class="fn">hat_loop_142.wav</span><span class="ft">wav</span></button><button class="fi"><span class="fth"><div class="wave" data-wf="30"></div></span><span class="fn">break_chop.wav</span><span class="ft">wav</span></button><button class="fi"><span class="fth"><div class="wave" data-wf="30"></div></span><span class="fn">texture_vinyl.wav</span><span class="ft">wav</span></button><button class="fi"><span class="fth"><svg class="ic sm"><use href="#i-file"/></svg></span><span class="fn">drum_bus.flp</span><span class="ft">flp</span></button><button class="fi"><span class="fth"><svg class="ic sm"><use href="#i-image"/></svg></span><span class="fn">ref_board.png</span><span class="ft">png</span></button><button class="fi" style="justify-content:center;color:var(--muted)">+5 more</button></div></div>
           </div>
-          <div class="foot">
-            <button class="btn primary"><svg class="ic sm"><use href="#i-folder"/></svg>Open folder</button>
-            <button class="btn"><svg class="ic sm"><use href="#i-download"/></svg>Download all</button>
-          </div>
+          <div class="foot"><button class="btn primary"><svg class="ic sm"><use href="#i-folder"/></svg>Open folder</button><button class="btn"><svg class="ic sm"><use href="#i-download"/></svg>Download all</button></div>
         </div>
       </div></div>
       <div class="pcap"><b>Details pane — folder (arena)</b>
-        <span class="m">A server <b>Folder</b> (renamed from Collection): a cover mosaic fills the media area, count + total size in the rail, open / download-all. Not a work — the rail drops the version dropdown and tags; the items carry their own.</span>
+        <span class="m">A server <b>Folder</b> (renamed from Collection). <b>The only pane with arrows over the media</b> — you page through the items — plus a clickable <b>navigation list on the side</b>. Not a work: no version dropdown or tags; each item carries its own.</span>
         <span class="db">collections (folder) · collection_items → works</span></div>
     </div>
 
@@ -3008,8 +2973,6 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
 <div class="sheet" id="detailsSheet" hidden>
   <div class="card2">
     <div class="dmedia">
-      <button class="navarrow prev" title="Previous"><svg class="ic"><use href="#i-chev"/></svg></button>
-      <button class="navarrow next" title="Next"><svg class="ic"><use href="#i-chev"/></svg></button>
       <button class="dmbigplay" title="Play / pause"><svg class="ic"><use href="#i-play"/></svg></button>
       <div class="dmtransport">
         <button class="tbtn" title="Back 10s"><svg class="ic"><use href="#i-rewind"/></svg></button>
@@ -3022,7 +2985,13 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
     </div>
     <div class="dinfo">
       <div class="dtop">
-        <button class="verbtn" id="verBtn"><span class="v">v3</span> of 3<svg class="ic sm"><use href="#i-chev"/></svg></button>
+        <details class="verdrop"><summary><span class="v">v3</span> of 3<svg class="ic sm chev"><use href="#i-chev"/></svg></summary>
+          <div class="vermenu"><div class="mlabel">Versions — newest first</div>
+            <button class="on"><span class="vt cur">v3</span><span class="vfn">late_bloom_beat.flp</span></button>
+            <button><span class="vt">v2</span><span class="vfn">late_bloom_beat_v2.flp</span></button>
+            <button><span class="vt">v1</span><span class="vfn">late_bloom_beat_draft.flp</span></button>
+            <div class="sep"></div><button><svg class="ic sm"><use href="#i-plus"/></svg>Add a version</button></div>
+        </details>
         <button class="iconbtn sp" title="Report"><svg class="ic sm"><use href="#i-flag"/></svg></button>
         <button class="iconbtn" id="detailsClose" title="Close"><svg class="ic sm"><use href="#i-x"/></svg></button>
       </div>
@@ -3077,11 +3046,6 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   <button><svg class="ic sm"><use href="#i-pen"/></svg>Edit message</button>
   <div class="sep"></div>
   <button class="danger"><svg class="ic sm"><use href="#i-trash"/></svg>Delete</button></div>
-<div class="menu" id="verMenu"><div class="mlabel">Versions, newest first</div>
-  <button><span class="ver" style="font-size:10px;font-weight:700;background:var(--ink);color:var(--on-ink);padding:1px 5px;border-radius:2px">v3</span><span class="fn">late_bloom_beat.flp</span></button>
-  <button><span class="ver" style="font-size:10px;font-weight:700;background:var(--surface);padding:1px 5px;border-radius:2px">v2</span><span class="fn">late_bloom_beat_v2.flp</span></button>
-  <button><span class="ver" style="font-size:10px;font-weight:700;background:var(--surface);padding:1px 5px;border-radius:2px">v1</span><span class="fn">late_bloom_beat_draft.flp</span></button>
-  <div class="sep"></div><button id="addVerBtn"><svg class="ic sm"><use href="#i-plus"/></svg>Add a version</button></div>
 
 <!-- UPLOAD -->
 <div class="scrim" id="uScrim" hidden></div>
@@ -3215,7 +3179,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   document.addEventListener('keydown',function(e){if(lb.hidden)return;
     if(e.key==='Escape')lbClose();else if(e.key==='ArrowLeft')lbShow(lbIdx-1);else if(e.key==='ArrowRight')lbShow(lbIdx+1);});
 
-  var menus=['dlMenu','saveMenu','canvasMenu','verMenu','emojiMenu','msgMenu'].map(function(id){return document.getElementById(id);}).filter(Boolean);
+  var menus=['dlMenu','saveMenu','canvasMenu','emojiMenu','msgMenu'].map(function(id){return document.getElementById(id);}).filter(Boolean);
   function closeMenus(){menus.forEach(function(m){m.classList.remove('open');});}
   function toggleMenu(m,anchor,above){var open=m.classList.contains('open');closeMenus();if(open)return;
     m.classList.add('open');var r=anchor.getBoundingClientRect();
@@ -3226,7 +3190,6 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   wire('dlBtn',document.getElementById('dlMenu'),true);
   wire('saveBtn',document.getElementById('saveMenu'),true);
   wire('canvasBtn',document.getElementById('canvasMenu'),true);
-  wire('verBtn',document.getElementById('verMenu'),false);
   // emoji picker + message action menu
   var emojiMenu=document.getElementById('emojiMenu'),msgMenu=document.getElementById('msgMenu');
   var eb=document.getElementById('emojiBtn');if(eb)eb.addEventListener('click',function(e){e.stopPropagation();toggleMenu(emojiMenu,eb,true);});
@@ -3246,7 +3209,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   function closeU(){uScrim.hidden=true;uModal.hidden=true;}
   ['showUpload','showUpload2','showUpload3'].forEach(function(id){var e=document.getElementById(id);if(e)e.addEventListener('click',function(){openU(false);});});
   document.getElementById('showUploadV').addEventListener('click',function(){openU(true);});
-  document.getElementById('addVerBtn').addEventListener('click',function(){closeMenus();closeD();openU(true);});
+  var _av=document.getElementById('addVerBtn');if(_av)_av.addEventListener('click',function(){closeMenus();closeD();openU(true);});
   document.getElementById('uClose').addEventListener('click',closeU);
   document.getElementById('uCancel').addEventListener('click',closeU);
   uScrim.addEventListener('click',closeU);
