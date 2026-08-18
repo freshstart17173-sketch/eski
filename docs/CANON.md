@@ -469,17 +469,22 @@ The server's files.
 
 ### C.7 Screen 4 — Details pane
 
-Opens from any card (never inside the canvas).
+Opens from any card (never inside the canvas). **Arena layout (2026-08-18):** a
+near-full-screen split over a scrim — the **media takes the room** (left, grows to
+fill), a **fixed ~380px info rail** on the right. No drop shadow (scrim
+separates). Bigger than a modal on purpose: the media is the point.
 
 | Element | Behaviour & states | DB | Desktop | Mobile |
 |---|---|---|---|---|
-| Media + **player controls** | Play/pause, scrubber, tabular time; waveform/video/image. | R `works` (signed URL) | Left/top | Top |
-| Storage badge | "Server: NAME" vs "Personal (crossposted)". | `works.storage_source` | Header | Header |
-| Version control | Dropdown of versions **by file name**; current reason in the pane body. | R `works.version_of` · `add_version()` | Under title | Under title |
-| Title / credits / tags | Title (or file name); contributor chips (server colour); user tags + ＋. | `works.title/credits` · `content_tags` | Body | Body |
-| Actions | Download (get-as formats), Save (folder), Open in canvas (picker). | transcode · `saved_items` · `canvases` | Button row | Button row |
-| Comments | **Post-level** comments (distinct from canvas annotations). | `comments` (context) | List | List |
-| Mobile | Slides up as a **full-height bottom sheet**. | — | — | Bottom sheet |
+| Media area | Fills the left; **player controls pinned to its foot** (big play, scrubber, tabular time); waveform/video/image/type-card/folder-mosaic per kind. | R `works` (signed URL) | Left, grows | Top ~42vh |
+| **Prev / next arrows** | Step through the items in the **calling grid/context** without closing; square, on the media's outer edges. | client (the grid's order) | Media edges | Swipe / edge taps |
+| **Version dropdown (top of rail)** | Collapsed shows just **`v3 of 3`**; **opens to the full file names** per version. Adding a version requires a reason. | R `works.version_of` · `add_version()` | Rail top bar | Rail top bar |
+| Report + close | Flag (report) and × sit in the rail's top bar beside the version dropdown. | `file_report` | Rail top bar | Rail top bar |
+| Storage badge | "Server: NAME" vs "Personal · crossposted". | `works.storage_source` | Rail meta | Rail meta |
+| Title / credits / tags | Title (or file name); contributor chips (server colour); user tags + ＋. | `works.title/credits` · `content_tags` | Rail | Rail |
+| Actions | Download (get-as formats), Save (folder), Open in canvas (picker). | transcode · `saved_items` · `canvas` | Rail foot | Rail foot |
+| Comments | **Post-level** comments (distinct from canvas annotations). | `comments` (context) | Rail list | Rail list |
+| Mobile | Card goes full-screen, **column**: media on top (~42vh), the rail below. | — | — | Full-screen column |
 
 ### C.8 Screen 5 — Canvas
 

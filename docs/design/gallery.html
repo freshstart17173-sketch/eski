@@ -335,17 +335,35 @@ input{font:inherit;color:inherit}
 /* overlays */
 .scrim{position:fixed;inset:0;background:rgba(10,10,10,.5);z-index:80}
 :root[data-theme="dark"] .scrim,:root:not([data-theme="light"]) .scrim{background:rgba(0,0,0,.66)}
-.sheet{position:fixed;z-index:81;inset:0;display:grid;place-items:center;padding:var(--s5);pointer-events:none}
-.sheet .card2{pointer-events:auto;width:min(920px,96vw);max-height:90vh;background:var(--paper);border-radius:var(--r);box-shadow:0 30px 80px rgba(0,0,0,.5);display:flex;overflow:hidden}
-.sheet .dmedia{flex:none;width:52%;background:var(--paper1);display:flex;align-items:center;justify-content:center;position:relative;min-height:420px;padding:24px}
-.sheet .dmedia .wave{height:150px}
-.sheet .dmedia .close{position:absolute;top:12px;left:12px;background:rgba(0,0,0,.4);color:#fff;width:30px;height:30px;border-radius:50%;display:grid;place-items:center}
-.dinfo{flex:1;min-width:0;display:flex;flex-direction:column;overflow:hidden}
-.dinfo .scroll{flex:1;overflow-y:auto;padding:var(--s4)}
+/* Details pane — arena scale: the media takes the room, the info rail is fixed
+   width and can grow tall. Scrim separates it (no drop shadow). */
+.sheet{position:fixed;z-index:81;inset:0;display:grid;place-items:center;padding:var(--s4);background:rgba(0,0,0,.55)}
+:root:not([data-theme="light"]) .sheet{background:rgba(0,0,0,.66)}
+.sheet .card2{pointer-events:auto;width:min(1360px,96vw);height:min(880px,94vh);background:var(--paper);border-radius:var(--r);display:flex;overflow:hidden}
+.sheet .dmedia{flex:1;min-width:0;background:var(--paper1);display:flex;align-items:center;justify-content:center;position:relative;padding:40px}
+.sheet .dmedia .wave{height:190px}
+/* prev / next between items in the current grid — square, arena style */
+.navarrow{position:absolute;top:50%;transform:translateY(-50%);width:38px;height:38px;border-radius:var(--r);background:rgba(0,0,0,.34);color:#fff;display:grid;place-items:center;cursor:pointer;transition:background var(--t)}
+.navarrow:hover{background:rgba(0,0,0,.5)}
+.navarrow.prev{left:14px}.navarrow.next{right:14px}
+.navarrow .ic{width:20px;height:20px}
+.navarrow.prev .ic{transform:rotate(90deg)}.navarrow.next .ic{transform:rotate(-90deg)}
+/* big audio transport pinned to the foot of the media area (screenshot style) */
+.dmtransport{position:absolute;left:0;right:0;bottom:0;display:flex;align-items:center;gap:12px;padding:16px 22px;font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.dmtransport .track{flex:1;height:4px;background:var(--line);border-radius:2px;position:relative}
+.dmtransport .track i{position:absolute;left:0;top:0;bottom:0;width:0;background:var(--ink);border-radius:2px}
+.dmbigplay{width:64px;height:64px;border-radius:50%;background:var(--paper);color:var(--ink);display:grid;place-items:center;box-shadow:0 2px 10px rgba(0,0,0,.18);cursor:pointer}
+.dmbigplay .ic{width:26px;height:26px}
+.dinfo{flex:none;width:380px;min-width:0;display:flex;flex-direction:column;overflow:hidden;background:var(--paper)}
+/* info-rail top bar: version dropdown (collapsed → full name on click) + report + close */
+.dtop{flex:none;display:flex;align-items:center;gap:6px;padding:var(--s3) var(--s3) var(--s3) var(--s4)}
+.dtop .verbtn{margin:0}
+.dtop .sp{margin-left:auto}
+.dinfo .scroll{flex:1;overflow-y:auto;padding:0 var(--s4) var(--s4)}
 .dinfo h2{font-size:var(--fs-lg);font-weight:600}
-.dinfo .verbtn{margin:var(--s2) 0 var(--s3);display:inline-flex;align-items:center;gap:7px;background:var(--surface);border-radius:var(--r);padding:6px 10px;font-size:var(--fs-xs);color:var(--soft)}
-.dinfo .verbtn:hover{background:var(--plate)}
-.dinfo .verbtn .v{font-weight:700;color:var(--ink)}
+.verbtn{display:inline-flex;align-items:center;gap:7px;background:var(--surface);border-radius:var(--r);padding:6px 10px;font-size:var(--fs-xs);color:var(--soft);cursor:pointer}
+.verbtn:hover{background:var(--plate)}
+.verbtn .v{font-weight:700;color:var(--ink)}
 .meta{display:flex;flex-direction:column;gap:9px;margin:0 0 var(--s4);font-size:var(--fs-sm)}
 .meta .row{display:flex;gap:var(--s3)}
 .meta .k{width:96px;flex:none;color:var(--muted);font-size:var(--fs-xs)}
@@ -391,7 +409,11 @@ input{font:inherit;color:inherit}
 .visopt small{display:block;font-size:10px;color:var(--muted)}.visopt.on small{color:rgba(255,255,255,.7)}
 .ufoot{padding:var(--s3) var(--s4);background:var(--surface);display:flex;justify-content:flex-end;gap:var(--s2)}
 [hidden]{display:none!important}
-@media(max-width:900px){.mem{display:none}.sheet .dmedia{display:none}}
+@media(max-width:900px){.mem{display:none}
+  .sheet{padding:0}
+  .sheet .card2{flex-direction:column;width:100vw;height:100vh;border-radius:0}
+  .sheet .dmedia{flex:none;height:42vh;padding:20px}
+  .dinfo{width:100%}}
 
 /* details: the version's change reason lives here, not in the version selector */
 .vernote{font-size:var(--fs-sm);color:var(--soft);margin:0 0 var(--s3)}
@@ -1091,6 +1113,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
 <symbol id="i-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></symbol>
 <symbol id="i-board" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M15 3v18"/></symbol>
 <symbol id="i-server" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="8" rx="2"/><rect x="2" y="13" width="20" height="8" rx="2"/><path d="M6 7h.01M6 17h.01"/></symbol>
+<symbol id="i-flag" viewBox="0 0 24 24"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><path d="M4 22v-7"/></symbol>
 <symbol id="i-folder" viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></symbol>
 <symbol id="i-file" viewBox="0 0 24 24"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M13 2v7h7"/></symbol>
 <symbol id="i-pause" viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></symbol>
@@ -1605,7 +1628,11 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
 <section class="gsec" id="key">
   <h2>⑤ Key per-screen dialogs</h2>
   <p class="lede">The highest-traffic modals outside the global + canvas sets. The
-    rest are enumerated in ⑥.</p>
+    rest are enumerated in ⑥. <b>Note:</b> the Details panes below are drawn
+    compact to fit the grid — the live pane is <b>arena-scale</b> (open any card in
+    <a href="?app=1#feed">app mode</a>): the media fills the left, this content is
+    the fixed right rail, with prev/next arrows and the version dropdown at the top
+    (CANON §C.7).</p>
   <div class="stagewrap">
 
     <!-- details pane — AUDIO -->
@@ -2879,13 +2906,19 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
 <div class="sheet" id="detailsSheet" hidden>
   <div class="card2">
     <div class="dmedia">
-      <button class="close" id="detailsClose"><svg class="ic sm"><use href="#i-x"/></svg></button>
-      <div class="wave" data-wf="200"></div>
+      <button class="navarrow prev" title="Previous"><svg class="ic"><use href="#i-chev"/></svg></button>
+      <button class="navarrow next" title="Next"><svg class="ic"><use href="#i-chev"/></svg></button>
+      <button class="dmbigplay" title="Play"><svg class="ic"><use href="#i-play"/></svg></button>
+      <div class="dmtransport"><span>0:00</span><span class="track"><i></i></span><span>1:31</span></div>
     </div>
     <div class="dinfo">
+      <div class="dtop">
+        <button class="verbtn" id="verBtn"><span class="v">v3</span> of 3<svg class="ic sm"><use href="#i-chev"/></svg></button>
+        <button class="iconbtn sp" title="Report"><svg class="ic sm"><use href="#i-flag"/></svg></button>
+        <button class="iconbtn" id="detailsClose" title="Close"><svg class="ic sm"><use href="#i-x"/></svg></button>
+      </div>
       <div class="scroll">
         <h2>Back half rework</h2>
-        <button class="verbtn" id="verBtn"><span class="v">v3</span> of 3<svg class="ic sm"><use href="#i-chev"/></svg></button>
         <div class="vernote">Changed in v3: swapped the bridge drums, brought the low end down. <span class="by">tomo</span></div>
         <div class="meta">
           <div class="row"><span class="k">Visibility</span><span class="v"><span class="vis"><svg class="ic"><use href="#i-server"/></svg>Late Bloom LP, server</span></span></div>
