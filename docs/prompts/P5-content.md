@@ -48,8 +48,9 @@ The rail's **top bar** holds the version dropdown (collapsed `v3 of 3`, opens to
 **full file names**) + report + close; **prev/next arrows** on the media edges step
 through the calling grid. Rail body: title, version note, **storage badge** (server
 vs personal-crossposted), meta, credits (server-hue chips), tags, actions
-(Download/Save/Open in canvas), **post comments**. Audio/video: **player controls
-pinned to the foot of the media** (big play, scrubber, tabular time). Mobile:
+(Download/Save/Open in canvas), **post comments**. Audio/video: use the **`MediaPlayer`
+primitive (P3.15)** — real play/pause, skip ±10s, seek, time, volume, fullscreen —
+pinned to the foot of the media. Mobile:
 full-screen **column** — media ~42vh on top, rail below. **DONE:** the pane is
 arena-scale (media dominates); the version dropdown reveals file names on click;
 prev/next move between items without closing; audio and video render with transport;

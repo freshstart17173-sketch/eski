@@ -68,8 +68,8 @@ bar (billed to the owner), Manage plan / Add storage, Export. **DONE:** matches 
 gated `manage_billing`/owner.
 
 ### P8.12 [GL] — Perm-gated visibility wiring
-A shared `useHasPerm(serverId, flag)` hook; every admin control reads it so the UI
-matches `has_perm`. **DONE:** a member without a flag sees neither the control nor
+A shared `hasPerm(serverId, flag)` function (reads the caller's roles); every admin
+control calls it so the UI matches `has_perm`. **DONE:** a member without a flag sees neither the control nor
 its nav item; the owner sees all; toggling a role's flags updates what the member
 sees.
 

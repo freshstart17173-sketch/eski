@@ -38,7 +38,7 @@ component/state/dialog at a time, against the gallery. Each prompt is tagged:
 
 ```
 TITLE:      <phase>.<n> — <one thing>
-CONTEXT:    Stack = <Vite+React+TS | the chosen shell>. Tokens & primitives from
+CONTEXT:    Stack = vanilla HTML+CSS+JS (no framework; see prompts/README). Tokens & primitives from
             styleguide.html; this screen’s law is gallery.html panel "<name>".
 BUILD:      <the single unit — one component / one state / one dialog>
 PROPS/DATA: <exact inputs; which table/RPC/Realtime channel it reads or writes>
@@ -107,7 +107,7 @@ line into the §0 template when you run it. Counts per phase are at the head.
 
 ### P0 — Scaffold · 4 prompts, all GL
 
-- **P0.1** — Init the app shell (Vite + React + TS, or the chosen framework),
+- **P0.1** — Init the app shell (vanilla HTML+CSS+JS, no framework — optional esbuild),
   routing skeleton for the §C.3 manifest routes. *Done: every route mounts an
   empty labelled screen; `?app=1#route` parity with the gallery preserved.*
 - **P0.2** — Supabase client + typed env, auth session provider, a `useSession`
@@ -294,7 +294,7 @@ To calibrate the detail level a runnable prompt carries.
 
 ```
 TITLE:   P6.4 — Canvas point-annotation mark + its thread trigger
-CONTEXT: Stack React+TS. Tokens/primitives from styleguide.html. Law =
+CONTEXT: Stack vanilla HTML+CSS+JS (no framework). Tokens/primitives from styleguide.html. Law =
          gallery.html panel "Mark: point" and "Annotation thread"; behaviour =
          CANON §E.2–E.5, §E.7.
 BUILD:   The point mark only — a single positioned dot on a canvas tile that
@@ -358,14 +358,14 @@ via the Supabase MCP and costs no model tokens. Counts:
 | P0 | 4 | 4 | scaffold |
 | P1 | 24 | 0 | backend |
 | P2 | 16 | 0 | backend |
-| P3 | 14 | 14 | primitives |
+| P3 | 15 | 15 | primitives |
 | P4 | 11 | 11 | shell + workspace |
 | P5 | 13 | 13 | content screens |
 | P6 | 16 | 16 | canvas suite |
 | P7 | 11 | 11 | boards/DMs/notifs |
 | P8 | 14 | 14 | admin |
 | P9 | 9 | 9 | utility/focus |
-| **Total** | **~132** | **~92** | + iteration |
+| **Total** | **~133** | **~93** | + iteration |
 
 **Per-UI-prompt cost.** A rich prompt carries: the §0 template + the relevant
 CANON slice + the gallery panel’s HTML/CSS excerpt as reference ≈ **1.5–3k input

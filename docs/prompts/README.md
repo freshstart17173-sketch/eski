@@ -10,12 +10,40 @@ file mid-task (that's the tiny-failure-surface rule). Where a prompt says "match
 gallery panel X", the operator pastes that panel's HTML/CSS excerpt from
 [`../design/gallery.html`](../design/gallery.html) into the prompt.
 
+## The stack (applies to every UI/GL prompt)
+
+**Vanilla HTML + CSS + JavaScript. No framework, no JSX, no TypeScript.** This
+matches the repo's real approach (ARCHITECTURE.md, COLLAB §7.6): every screen is
+an HTML file that loads a few shared classic scripts and holds its own behaviour
+in one `<script>`; shared runtime (Supabase client, session, `mediaUrl()`, the
+card/detail renderers) lives in a small module the way `platform.js`/`pivot.js`
+do. Optionally a tiny **esbuild** bundle step (already a devDependency) — never a
+framework. State is plain DOM + a couple of module-level objects; there is no
+virtual DOM.
+
+**"Component" in these prompts means** a CSS class (or small set) plus a JS render
+helper — e.g. `function messageRow(msg){…returns an element}` — not a React
+component. **"Hook" means** a shared function/module (e.g. `session()`,
+`hasPerm(serverId, flag)`), not a React hook.
+
+**Buy a library only where DIY is a real time-sink** (COLLAB §7.6), loaded as a
+plain script/ESM — no build-time framework:
+- **SortableJS** — drag-reorder (kanban cards, channels, versions).
+- **emoji-mart** — the emoji picker data + search.
+- **marked** — render message markdown (the composer inserts markdown by hand).
+- **nanoid** — collision-safe short invite codes.
+- **JSZip** — client-side export zips.
+- **@supabase/supabase-js** — the client (auth, Postgres, Realtime).
+- **ffmpeg-static** — audio transcode (server-side only).
+- Waveform, canvas draw/pan/zoom, mentions autocomplete, quick-switcher, local
+  time — **build**, they're small (the pivot already has waveform + canvas code).
+
 **Legend.** `[BE]` backend (SQL/RLS/RPC — applied via Supabase, no model tokens).
-`[UI]` front-end component/state/dialog (the DeepSeek spend). `[GL]` glue (a data
-hook, a Realtime subscription, a signing call).
+`[UI]` front-end (a rendered piece of screen — the DeepSeek spend). `[GL]` glue (a
+shared data function, a Realtime subscription, a signing call).
 
 **Every prompt carries the same guardrails** (`DO NOT`), so they're stated once
-here instead of in all 132:
+here instead of in all 133:
 
 > Tokens only — no hex in a component. `--r` (3px) on chrome; media stays square;
 > round is avatars + presence dots only. Square icon/close buttons (`.iconbtn`,
@@ -30,7 +58,7 @@ here instead of in all 132:
 | P0 | [P0-scaffold.md](P0-scaffold.md) | 4 | GL |
 | P1 | [P1-schema.md](P1-schema.md) | 24 | BE |
 | P2 | [P2-rpcs.md](P2-rpcs.md) | 16 | BE |
-| P3 | [P3-primitives.md](P3-primitives.md) | 14 | UI |
+| P3 | [P3-primitives.md](P3-primitives.md) | 15 | UI |
 | P4 | [P4-shell-workspace.md](P4-shell-workspace.md) | 11 | UI+GL |
 | P5 | [P5-content.md](P5-content.md) | 13 | UI+GL |
 | P6 | [P6-canvas.md](P6-canvas.md) | 16 | UI+GL |
@@ -38,6 +66,6 @@ here instead of in all 132:
 | P8 | [P8-admin.md](P8-admin.md) | 14 | UI+GL |
 | P9 | [P9-utility.md](P9-utility.md) | 9 | UI |
 
-**All ten phases written (P0–P9, ~132 prompts).** Run them in order; flip the
+**All ten phases written (P0–P9, ~133 prompts).** Run them in order; flip the
 gallery inventory status (`t`→`a`→`m`) as each lands so the burn-down stays
 visible.
