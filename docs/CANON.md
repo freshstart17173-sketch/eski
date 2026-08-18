@@ -6,7 +6,10 @@ this file is the *contract*: one vocabulary, one permission model, and one
 registry of every functional UI element (behaviour → database → responsive
 layout). When a codegen prompt and this file disagree, this file wins. The
 build itself is sliced into individually-testable prompts in
-[`CODEGEN.md`](CODEGEN.md).
+[`CODEGEN.md`](CODEGEN.md). Open cross-context state hazards (data that
+carries/strands/orphans when a work moves between the social, work, and
+messaging contexts) are audited in [`EDGECASES.md`](EDGECASES.md); its
+⚑DECIDE rows graduate into this file once chosen.
 
 Three parts:
 - **§A Terminology** — the canonical word for every concept, its database
