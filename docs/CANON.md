@@ -758,18 +758,41 @@ pool). The revised model — chosen with the ⚑DECIDE answers — fixes the roo
    to **transfer** billing to another admin; if nobody takes it, a **grace window**,
    then the server goes **read-only** until someone pays — never deleted.
 
-**Tiers (proposed numbers — final prices are the owner's call):**
+**Tiers (decided 2026-08-18 — prices indicative, owner sets final):**
 
 | Plan | Who | Quota | Max upload | Extras |
 |---|---|---|---|---|
-| **Free** | every account | ~5 GB | 200 MB/file | standard transcode |
-| **eski Pro** | an individual | ~100 GB | 2 GB/file | priority transcode, profile extras, opt-in PAYG overage |
-| **Server plan** | a server | ~250 GB pooled | 5 GB/file | adopt files, longer audit retention, more invites |
+| **Free** | every account | **~25 GB** | 500 MB/file | standard transcode — generous on purpose (dedup + free R2 egress make it cheap) |
+| **eski Pro** (~$8/mo) | an individual | **~1 TB** | 5 GB/file | priority transcode, profile extras, add-on blocks, opt-in PAYG overage |
+| **Server plan** (~$12/mo) | a server | **~500 GB** owned | 5 GB/file | adopt files, longer audit retention, more invites, add-on blocks |
 
-**Economics that make this safe:** on R2 storage is ~$0.015/GB-month and **egress
-is free** (Cloudflare in front) — so stored GB is the only real cost, and dedup
-shrinks it. 100 GB ≈ $1.50/mo of cost against a ~$6–8 Pro price: comfortable
-margin, and the free tier is cheap to subsidise.
+**Two guarantees that remove the anxiety:**
+- **Never surprise-charged.** At the ceiling, new uploads are **blocked** (read-only
+  over cap), never auto-billed. PAYG overage is strictly opt-in for a Pro user.
+- **Never deleted for non-payment.** Over quota / lapsed = read-only; your files stay
+  and you can always download them. (Deletion is only ever the owner's own action or
+  GC of an unreferenced blob.)
+
+**Servers fund storage two ways (both — the flexible/generous choice):**
+1. **Pool free space** — members **donate** part of their free quota to a server; the
+   server's effective pool = `Σ donations` (+ any Server-plan quota). A 5-friend
+   server can run **entirely free** off everyone's spare GB. Donated GB **returns to
+   the member if they leave** or withdraw it (their own files fall back to their
+   personal quota — read-only if that overflows, never deleted).
+2. **Server plan** — a flat subscription gives the server its own big pool, adopt +
+   retention. For studios that outgrow pooling.
+
+Both stack; **add-on storage blocks** (e.g. +250 GB) scale either without a tier jump.
+
+**Economics that make the generosity safe:** on R2 storage is ~$0.015/GB-month and
+**egress is free** (Cloudflare in front), so stored GB is the only real cost and
+**dedup** shrinks it hard. 25 GB free ≈ **$0.38/mo** of raw cost per active user
+(pre-dedup, worst case) — cheap to subsidise; 1 TB Pro ≈ $15/mo cost is the one to
+watch, so Pro quota is a soft target with fair-use, not a promise of a packed
+terabyte per user.
+
+**Meter shows the dedup win:** the storage bar reads "X GB used *(from Y GB of
+files)*" so people see reposts/versions cost nothing.
 
 **Schema (replaces `storage_source`/`billing_server_id`):**
 ```
@@ -779,10 +802,58 @@ works.owner_type text in (user, server)                -- who owns + PAYS for th
 works.owner_id   uuid                                   -- the paying account
 storage_meters   (owner_type, owner_id, bytes_used)    -- sum of DISTINCT owned blobs
 billing_accounts (owner_type, owner_id, plan, status, stripe_customer, payg bool)
+storage_grants   (server_id, user_id, gb)              -- pooled/donated free space; returns on leave/withdraw
 adopt_work(work_id)   -- rpc: transfer owner_type/id → the server (Server plan; needs manage_billing)
 ```
-`bytes_used` counts distinct owned blobs; **a placement adds zero bytes.** The
-signer (`api/sign.mjs`) checks the owner's remaining quota before issuing a PUT.
+A server's **quota** = its Server-plan quota (if any) + `Σ storage_grants.gb`. A
+user's **available** = their plan quota − `bytes_used` − `Σ grants they donated`.
+`bytes_used` counts distinct owned blobs; **a placement adds zero bytes.** The signer
+(`api/sign.mjs`) checks the paying owner's remaining quota before issuing a PUT;
+over quota → read-only, never a charge, never a delete.
+
+#### D.2.1 Economics model (indicative — validate before pricing)
+
+**Cost inputs.** R2 storage **$0.015/GB-mo**, **egress $0** (the killer advantage);
+Stripe **2.9% + $0.30**/charge; fixed infra **~$45/mo** once you outgrow free tiers
+(Supabase Pro $25 + Vercel Pro $20) — effectively **~$0–5/mo** at tiny scale on free
+tiers. Dedup means real stored GB < uploaded GB.
+
+**Per-user unit economics (per month):**
+
+| User | Revenue | Storage assumed | Storage cost | Stripe | Net |
+|---|---:|---:|---:|---:|---:|
+| Free (avg) | $0 | ~4 GB of 25 | $0.06 | — | **−$0.06** |
+| Free (maxed) | $0 | 25 GB | $0.375 | — | −$0.375 |
+| eski Pro | $8 | ~200 GB of 1 TB | $3.00 | $0.53 | **+$4.47** |
+| Server plan | $12 | ~400 GB of 500 | $6.00 | $0.65 | **+$5.35** |
+
+**Three scenarios** (conversion = % of users on Pro; servers add margin, folded in
+lightly):
+
+| Scenario | Pro conv. | Free avg | Margin / user / mo | Break-even users | Profit / 1,000 users / mo |
+|---|---:|---:|---:|---:|---:|
+| **Base** | 3% | 4 GB | ~$0.08 | **~550** | **~+$30** |
+| **Optimistic** | 5% | 3 GB | ~$0.24 | **~190** | **~+$196** |
+| **Pessimistic** | 2% | 8 GB | −$0.06 | **never** | **−$100** |
+
+**Read-outs:**
+- **Break-even ≈ 400–600 total users** in the base case (covers the ~$45/mo infra);
+  ~190 if conversion is healthy.
+- **Out-of-pocket to get there:** you run below break-even only while small, and the
+  burn is tiny — **~$5–40/mo** during the first few hundred users, tapering to $0.
+  **Cumulative ≈ $200–500 total** to reach break-even over ~6–9 months. A solo
+  project can self-fund this out of pocket comfortably.
+- **The one real risk is the free tier** (pessimistic row): if conversion is low
+  **and** free users actually store a lot, free-storage cost outruns paid revenue.
+  Levers, in order: **dedup** (already in — cuts real GB most); the free *average*
+  matters more than the 25 GB cap (most users store little — monitor the average, not
+  the ceiling, and trim the cap only if it bites); push big uploads / retention /
+  servers toward paid; **Server plans cross-subsidise** free social users.
+- **Egress being free on R2 is what makes a media app viable here** — on S3, serving
+  video would dwarf storage cost and flip every scenario negative.
+
+*(These are modelling assumptions, not measured. Instrument the real free-user
+average and conversion in the first months and re-run.)*
 
 ### D.3 Placements — one work, many surfaces (supersedes storage-source/crosspost)
 
