@@ -39,9 +39,9 @@ Check against CANON before implementing each one.
   the **whole folder** or **just a selection**.
 
 ## Thumbnails & placeholder images
-- [ ] **28.** Add **placeholder images** (not just gradient fills) so previews read as
-  real content. Use self-contained **inline SVG data-URIs** — no external service,
-  so the file stays offline-safe (LAW file, no CSP/network dependency).
+- [ ] **28.** Produce a **list of every image, video, and audio placeholder** used in
+  the gallery, so a suitable placeholder can be provided for each. (Audio waveforms
+  would be generated from the provided placeholders.)
 - [ ] **29.** For **previewable file types**, the **square container the thumbnail sits
   in should be transparent** (the image itself fills it — no opaque tile behind it).
 
