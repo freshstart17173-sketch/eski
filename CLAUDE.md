@@ -7,33 +7,33 @@ Issues.
 
 eski is mid-**rebuild** into a collaboration app — "Discord for creatives":
 **servers** (studios you're invited into), user-created channels, persistent
-chat, kanban boards, a review **canvas** (annotate + comment on media), numbered
-versions, friends/DMs, and three visibility layers (public / server / private).
-The old single-page "pivot" product is **retired** and being removed. **Nothing
-is live yet — this is the planning-and-design phase**, producing the contract a
-code-generation model will build against.
+chat, a shared media library (File explorer), post comments, friends/DMs, and
+three visibility layers (public / server / private). Think **Discord + Google
+Drive**. The old single-page "pivot" product is **retired and its code removed
+from the repo.** **Nothing is live yet — this is the planning-and-design
+phase**, producing the contract a code-generation model will build against.
+(The review canvas, kanban boards, and numbered versions were cut from the beta
+on 2026-08-18 to keep the mental model simple; they may return post-beta.)
 
 ## Read this before doing anything
 
-Three files, in this order:
+Three things, in this order:
 
 1. **[`docs/CANON.md`](docs/CANON.md) — the build contract.** The single source
    of truth: §A the canonical vocabulary (one name per concept, aliases we
    kill), §B roles & permissions mapped to the RLS/RPC that enforces them, §C
    the per-screen UI element registry (behaviour → database → desktop/mobile),
-   §D the added scope (granular roles, PAYG storage, storage source, utility
-   screens). **When anything disagrees with CANON, CANON wins.**
+   §D the added scope (granular roles, dynamic-slider storage, the placement
+   model, utility screens). **When anything disagrees with CANON, CANON wins.**
 2. **[`docs/COLLAB.md`](docs/COLLAB.md) — the narrative spec.** The why behind
    every feature, the data model, and the two end-to-end workflows.
 3. **The design sources in [`docs/design/`](docs/design/):**
-   - **`collab-mockup.html` — the 14 screens are LAW.** The real, measured
-     target for what each screen looks like. Do not deviate from it without a
-     reason.
+   - **`gallery.html` — LAW.** Every screen embedded live (~21 surfaces) **plus**
+     every dialog, menu and modal as a standalone panel, and the member-colour
+     palette. The measured target for what each screen looks like *and* the
+     critique surface. Do not deviate from it without a reason.
    - `styleguide.html` — the token & component source of truth (the values the
-     built pages consume).
-   - `gallery.html` — every screen embedded live **plus** every dialog, menu and
-     modal as a standalone panel, and the member-colour palette. The critique
-     surface.
+     built pages consume); `_fonts.css` is the extracted Jost faces.
 
 ## Design rules (durable — enforce them, don't relitigate them)
 

@@ -16,10 +16,10 @@ gallery panel X", the operator pastes that panel's HTML/CSS excerpt from
 matches the repo's real approach (ARCHITECTURE.md, COLLAB §7.6): every screen is
 an HTML file that loads a few shared classic scripts and holds its own behaviour
 in one `<script>`; shared runtime (Supabase client, session, `mediaUrl()`, the
-card/detail renderers) lives in a small module the way `platform.js`/`pivot.js`
-do. Optionally a tiny **esbuild** bundle step (already a devDependency) — never a
-framework. State is plain DOM + a couple of module-level objects; there is no
-virtual DOM.
+card/detail renderers) lives in a small module — a singleton client plus shared
+render helpers, loaded as classic scripts, no framework. Optionally a tiny
+**esbuild** bundle step — never a framework. State is plain DOM + a couple of
+module-level objects; there is no virtual DOM.
 
 **"Component" in these prompts means** a CSS class (or small set) plus a JS render
 helper — e.g. `function messageRow(msg){…returns an element}` — not a React
@@ -36,7 +36,7 @@ plain script/ESM — no build-time framework:
 - **@supabase/supabase-js** — the client (auth, Postgres, Realtime).
 - **ffmpeg-static** — audio transcode (server-side only).
 - Waveform, mentions autocomplete, quick-switcher, local time — **build**, they're
-  small (the pivot already has waveform code).
+  small.
 
 **Legend.** `[BE]` backend (SQL/RLS/RPC — applied via Supabase, no model tokens).
 `[UI]` front-end (a rendered piece of screen — the DeepSeek spend). `[GL]` glue (a

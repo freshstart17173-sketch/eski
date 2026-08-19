@@ -13,9 +13,8 @@
    the fix is signing an x-amz-checksum-sha256 header so R2 rejects the
    mismatch itself; worth doing when uploads come from people you do not know.
 
-   every failure answer carries an ESK-#### code. the code names the exact line
-   that refused, so a pasted toast is enough to find it. the table of causes and
-   fixes is ERRORS.txt; keep the two in step. */
+   every failure answer carries an ESK-3### code. the code names the exact line
+   that refused, so a pasted response is enough to grep this file for the cause. */
 import { AwsClient } from 'aws4fetch';
 
 /* the extensions a key may end in. this is a security boundary, not a
@@ -105,7 +104,7 @@ async function sign(req, res){
   if(!who.ok)
     return fail(res, 401, 'ESK-3004', 'supabase rejected the session (auth/v1/user said ' +
       who.status + '). the token is expired, or SUPABASE_URL/SUPABASE_PUBLISHABLE_KEY ' +
-      'on vercel belong to a different project than platform.js');
+      'on vercel belong to a different project than the browser app uses');
 
   const files = (req.body && req.body.files) || [];
   if(!Array.isArray(files) || !files.length || files.length > 500)

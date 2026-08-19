@@ -36,15 +36,15 @@ styling is judged here.
 ### P0.2 [GL] — Supabase client + session module
 
 **CONTEXT.** Supabase project already exists (public URL + anon key, embedded in a
-config script the way `platform.js` carries them — public by design). Use
-`@supabase/supabase-js` v2 (vendored or ESM import; no bundler required).
+small config script — public by design). Use `@supabase/supabase-js` v2 (vendored
+as `vendor/supabase.js` or an ESM import; no bundler required).
 
-**BUILD.** A shared `platform.js`-style module exposing a singleton client and a
-session API: `session()` (current user or null), `ready` (a promise that resolves
-once the first session loads), `signInWithOtp(email)`, `signOut()`, and a
-`onChange(cb)` subscription. Hydrate from `supabase.auth.getSession()` and
-subscribe to `onAuthStateChange`; every page waits on `ready` before reading
-`session()` (the pivot's ESK-1005 pattern).
+**BUILD.** A shared runtime module exposing a singleton client and a session API:
+`session()` (current user or null), `ready` (a promise that resolves once the first
+session loads), `signInWithOtp(email)`, `signOut()`, and a `onChange(cb)`
+subscription. Hydrate from `supabase.auth.getSession()` and subscribe to
+`onAuthStateChange`; every page waits on `ready` before reading `session()`, so
+nothing reads the session before it has hydrated.
 
 **DATA.** Supabase Auth only. No table reads.
 
@@ -73,8 +73,8 @@ on bare `:root` (spacing `--s1..s6`, radius `--r:3px`, type scale, `--ink`,
 `--on-ink`, and the 30 member hues `--m1..m30`), (c) redefines only the changed
 tokens under `@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) }`
 and again under `:root[data-theme="dark"]`. `theme.js` is a tiny classic script
-that stamps `data-theme` **before the stylesheets load** (the pivot's `palette.js`
-pattern — avoids the flash) and toggles light → dark → system.
+that stamps `data-theme` **before the stylesheets load** (avoids the default-theme
+flash) and toggles light → dark → system.
 
 **DATA.** None.
 

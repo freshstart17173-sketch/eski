@@ -1,12 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "installCommand": "npm install --omit=dev",
-  "rewrites": [
-    {
-      "source": "/u/:handle",
-      "destination": "/profile.html"
-    }
-  ],
   "headers": [
     {
       "source": "/vendor/(.*)",
@@ -18,29 +12,11 @@
       ]
     },
     {
-      "source": "/(eski_logo.png|favicon.ico|manifest.json)",
+      "source": "/(eski_logo.png|favicon.ico)",
       "headers": [
         {
           "key": "Cache-Control",
           "value": "public, max-age=604800"
-        }
-      ]
-    },
-    {
-      "source": "/(tokens.css|palettes.css|pivot.css|palette.js|platform.js|pivot.js|loudness.js|hash-worker.js|sw.js)",
-      "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "public, max-age=0, must-revalidate"
-        }
-      ]
-    },
-    {
-      "source": "/docs/design/final/(.*).css",
-      "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "public, max-age=0, must-revalidate"
         }
       ]
     },

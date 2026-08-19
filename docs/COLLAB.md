@@ -24,7 +24,7 @@ workflow walkthroughs. Nothing here is live yet.
 > ships Owner + @everyone only — §D.1).
 
 A clickable black-and-white mockup of every screen lives at
-[`docs/design/collab-mockup.html`](design/collab-mockup.html): workspace (channels,
+[`docs/design/gallery.html`](design/gallery.html): workspace (channels,
 media, chat, members), following feed, media explorer, call, details pane, profile,
 DMs, upload, group settings, create/join, notifications, search, quick switcher,
 thread view, channel pins, and profile popouts. *(The mockup still contains the
@@ -33,8 +33,8 @@ tokens and components are documented 1:1 in
 [`docs/design/styleguide.html`](design/styleguide.html) (§8). Read this doc next
 to both.
 
-It's grounded in what eski already is (`ARCHITECTURE.md`, `schema-clean.sql`,
-`docs/design/STYLE.md`) and in how the reference apps actually work, Discord,
+It's grounded in the current contract (`CANON.md`, `ARCHITECTURE.md`, the design
+sources in `docs/design/`) and in how the reference apps actually work, Discord,
 Slack, Frame.io, Figma, SoundCloud/BandLab, and the one cautionary tale,
 Abstract. Sources at the end.
 
@@ -237,9 +237,9 @@ provider *(owner's call: which)*.
 **Why.** A drawn note is useless if the person who needs it never learns it's
 there. Mentions pull people back.
 **Plan.** Parse `@username` in messages/notes → a `notifications` row for the
-mentioned member; a bell in the header shows unread. In-app first; email/push is
-the same missing pipe as the CSAM-report alert in `ROADMAP.md`, build one
-notifier, use it for both.
+mentioned member; a bell in the header shows unread. In-app first (CANON: in-app
+notifications only for v1); email/push is a later single notifier pipe reused for
+every alert.
 **Touches.** `notifications` table; the header bell; mention parsing on insert.
 
 #### F16. Presence
@@ -277,7 +277,8 @@ online dots and the "working on" line.
 
 ## 2. Data model sketch (not final DDL)
 
-Grounded in `schema-clean.sql`; column adds are `add column if not exists`.
+The backend is a clean slate (CANON §D) — the schema is authored fresh for this
+product, so the tables below are new, not adds onto an inherited schema.
 
 ```
 groups          (id, slug, name, description, cover_key, owner_id, created_at)
@@ -290,7 +291,7 @@ reactions       (message_id, user_id, emoji, primary key(message_id,user_id,emoj
 dm_threads      (id, a_user, b_user, created_at)          -- add-by-username
 dm_messages     (id, thread_id, user_id, body, created_at)
 save_folders    (id, owner_id, name)                      -- private bookmarks (details "Save")
-save_folder_items(folder_id, work_id)                     -- both already exist in schema-clean.sql
+save_folder_items(folder_id, work_id)                     -- private bookmark folders (§A.8)
 notifications   (id, user_id, kind, target_type, target_id, read_at, created_at)
 placement       (id, work_id, surface in (feed,server,dm), surface_id,
                  channel_id null, folder_id null, placed_by, created_at)  -- §D.3
@@ -328,8 +329,8 @@ signpost** (`ARCHITECTURE.md`).
 
 ## 3. Screens
 
-The main screens are the mockup: [`docs/design/collab-mockup.html`](design/collab-mockup.html).
-Design language is `docs/design/STYLE.md`: black/white/grey, surfaces separated
+The main screens are the mockup: [`docs/design/gallery.html`](design/gallery.html).
+Design language is `docs/design/styleguide.html`: black/white/grey, surfaces separated
 by background step (no borders, no hairline dividers), "on" is an ink fill,
 sentence case throughout, monochrome SVG icons, no likes. The only colour is a
 member's per-group identity colour (F12a). Interactive fields carry a visible
@@ -487,20 +488,19 @@ on a profile**, **per-group member colours**, three consistent visibility layers
   request). Recommend audio first.
 - **Member-colour palette (F12a)**, how many colours, and what happens past that
   many members in one group (reuse, or extend the palette).
-- **Notifications channel**, in-app bell for v1; email/push shares the CSAM-alert
-  pipe from `ROADMAP.md`. When is yours.
-- **Still yours from `ROADMAP.md`, now load-bearing:** register the DMCA agent
-  (private layers lower volume but safe harbour still needs the filing), and the
-  Supabase region (`eu-north-1`) if the collaborator audience isn't in Europe;
-  persistent chat and live calls make latency more noticeable than a feed did.
+- **Notifications channel**, in-app bell for v1 (CANON: in-app only); email/push
+  is a later single notifier pipe. When is yours.
+- **Still open, now load-bearing:** register the DMCA agent (private layers lower
+  volume but safe harbour still needs the filing), and the Supabase region
+  (`eu-north-1`) if the collaborator audience isn't in Europe; persistent chat and
+  live calls make latency more noticeable than a feed did.
 
 ---
 
 ## 6. Build status and todo
 
-Nothing is live yet. This tracks the **mockup** (the design target) and the
-**parity** pass against Discord/Slack (from `BENCHMARK.md`). Backend for all of
-it is §7.
+Nothing is live yet. This tracks the **gallery** (the design target) and the
+**parity** pass against Discord/Slack. Backend for all of it is §7.
 
 ### Core screens (the design target)
 Workspace (channel column of Media / Channels / Voice, chat, members) · Feed ·
@@ -508,7 +508,7 @@ Media explorer (+ Folders) · Details pane · Call · Profile · Messages · Upl
 Group settings · Create group · Join by link · Notifications. *(Canvas, Board and
 version mode are **cut from the beta**, 2026-08-18e.)*
 
-### Parity pass vs Discord/Slack (13, from `BENCHMARK.md`) · all 13 mocked
+### Parity pass vs Discord/Slack (13) · all 13 mocked
 1. Search results · **done** (mockup)
 2. Quick switcher (Cmd/Ctrl+K) · **done**
 3. Thread view · **done**
@@ -534,9 +534,9 @@ palette size (F12a) · notifications email/push channel (F15) · DMCA agent + re
 Everything below is derived from the mockup. Stack is unchanged: **Supabase**
 (Postgres + Auth + Realtime), **R2** for media behind `api/sign.mjs`, **Vercel**
 for pages/functions. The project's rule holds: **the RLS policy is the fence, the
-UI is the signpost** (`ARCHITECTURE.md`), every table ships with RLS. Column adds
-are `add column if not exists`; new tables `create table if not exists`, mirroring
-`schema-clean.sql`. Build each unit at the smallest size that works, and prefer a
+UI is the signpost** (`ARCHITECTURE.md`), every table ships with RLS. The schema
+is authored fresh (clean slate, CANON §D); tables are `create table if not exists`
+in the migration order of §7.8. Build each unit at the smallest size that works, and prefer a
 proven package only where the DIY version is a real time-sink (§7.6).
 
 ### 7.1 New tables
@@ -667,7 +667,7 @@ Add the relevant tables to the `supabase_realtime` publication.
 - **Group settings**, `channels` (manage), `group_members` (roles), `group_invites`, `group_bans`, `audit_log`, `storage_balance`/`storage_meters` (two sliders), `export_manifest`.
 - **Create / Join**, `groups` insert + `group_invites` + `join_via_invite`.
 - **Notifications**, `notifications` + Realtime `user:{id}`; inline reply reuses `messages`/`comments`.
-- **Sign-in / onboarding**, Supabase Auth + `onboarding.html` (exists) + unique `profiles.handle` claim.
+- **Sign-in / onboarding**, Supabase Auth + the sign-in/claim screen (CANON §C.14) + unique `profiles.handle` claim.
 
 ---
 
@@ -677,8 +677,7 @@ The mockup's tokens, and the live source of truth, are in
 [`docs/design/styleguide.html`](design/styleguide.html), a self-contained page
 that renders every token and component **1:1 with the mockup** (same CSS, same
 embedded Jost, a light/dark toggle). When the live pages are built they consume
-these exact values; `docs/design/STYLE.md` is the older pre-collab pivot's guide
-and is superseded for the collab layer by the style guide.
+these exact values; the style guide is the only home for raw design values.
 
 **Grounds (light → dark).** `--paper` #FCFCFC→#0E0E0E · `--surface` #F1F1F1→#181818
 · `--plate` #E7E7E7→#232323 · `--paper1` #E4E4E4→#242424 · `--railbg` #E6E6E6→#080808

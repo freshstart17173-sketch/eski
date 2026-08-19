@@ -12,8 +12,8 @@ is the planning-and-design phase (see [`README.md`](README.md) and
 2. **The architecture the build will have** — the shape the code-generation model
    is being pointed at. Decided, written down, not yet code.
 
-The retired single-page "pivot" product still sits in the repo root and is being
-removed; its files are listed at the end so you know not to build on them.
+The retired single-page "pivot" product has been **removed from the repo**; only
+its one carried-forward serverless function survives (below).
 
 ---
 
@@ -53,11 +53,14 @@ wins.**
 
 | Artifact | Owns | Authority |
 |---|---|---|
-| [`docs/CANON.md`](docs/CANON.md) | The build contract. §A vocabulary · §B roles/permissions → the RLS/RPC that enforces them · §C the per-screen UI element registry (behaviour → database → desktop/mobile) · §D added scope (granular roles, dynamic-slider storage, storage source, utility screens). | **Top. CANON wins over everything, including this file.** |
+| [`docs/CANON.md`](docs/CANON.md) | The build contract. §A vocabulary · §B roles/permissions → the RLS/RPC that enforces them · §C the per-screen UI element registry (behaviour → database → desktop/mobile) · §D added scope (granular roles, dynamic-slider storage, the placement model, utility screens). | **Top. CANON wins over everything, including this file.** |
 | [`docs/design/gallery.html`](docs/design/gallery.html) | The pixels. ~21 screens embedded live, plus every dialog/menu/modal as a standalone panel, plus the member palette and a build-status inventory. The visual law. | Wins over prose on anything visual. |
 | [`docs/design/styleguide.html`](docs/design/styleguide.html) | The token & component source of truth — the values the built pages consume. `_fonts.css` holds the extracted Jost faces. | The only home for raw design values. |
 | [`docs/COLLAB.md`](docs/COLLAB.md) | The narrative spec: why each feature exists, the data-model sketch, the two end-to-end workflows, and **§7 the hand-off-ready backend plan** (tables, RPCs, triggers, Realtime channels, indexes, migration order). | Mechanical reference. **Predates the terminology streamline — where its names differ from CANON, CANON's win.** |
-| [`docs/CODEGEN.md`](docs/CODEGEN.md) | The build plan: the app sliced into ~132 individually-testable micro-prompts across 10 phases, each tagged `[BE]`/`[UI]`/`[GL]` with a definition-of-done, plus the token budget. | How the above becomes code. |
+| [`docs/CODEGEN.md`](docs/CODEGEN.md) | The build plan: the app sliced into ~106 individually-testable micro-prompts across nine phases, each tagged `[BE]`/`[UI]`/`[GL]` with a definition-of-done, plus the token budget. Runnable prompts in [`docs/prompts/`](docs/prompts/). | How the above becomes code. |
+
+[`docs/EDGECASES.md`](docs/EDGECASES.md) is the context-crossover audit that fed
+§D; its ⚑DECIDE rows are resolved and graduated into CANON.
 
 **Why the gallery is one file.** It was two (a mockup plus a gallery) and they
 drifted — the canvas got updated in one and not the other. They were merged so
@@ -92,8 +95,8 @@ guesses to make here.
 
 ### The backend is a true clean slate
 
-The schema is designed fresh for this product; **the pivot's `schema-clean.sql`
-is not inherited.** The plan of record is COLLAB §7 (the tables, RPCs, triggers,
+The schema is designed fresh for this product — **the pivot's schema is not
+inherited.** The plan of record is COLLAB §7 (the tables, RPCs, triggers,
 migration order) as amended by CANON §D:
 
 - **Granular roles replace the flat role enum** (CANON §D.1): `roles` carry a
@@ -103,19 +106,33 @@ migration order) as amended by CANON §D:
   `can_view_channel(channel_id)`, join `member_of`/`is_server_admin`, and
   channel-scoped reads gate on `can_view_channel`. The layout is written to the
   future full-overwrite grain so v2 is additive, no reshape (LOCKED D-i).
-- **Storage source on a work** (CANON §D.3): `storage_source` + `billing_server_id`
-  distinguish a native server post (server storage pays) from a crosspost of a
-  personal work into a server (personal storage pays; the file stays the owner's).
+- **The placement model** (CANON §D.3) replaces the earlier storage-source idea: a
+  `work` has one **home** (owner + storage) and its own tags/collaborators;
+  lightweight `placement` rows put it onto a surface (feed / server / dm), and
+  discussion + audience attach to the placement. A crosspost is just a placement —
+  the file's bytes stay on the owner's storage; members read it via the placement.
+  This closes the old dead-end where a personal work shared into a server was
+  owner-only.
 
-> **Beta cut (2026-08-18e).** The review **canvas** (`canvas`/`canvas_items`/
-> `annotations`), **kanban boards** (`boards`/`board_*`), and **numbered versions**
-> (`version_of`/`version_note`) are removed from the beta — a new take is just a new
+> **Beta cut (2026-08-18e).** The review **canvas**, **kanban boards**, and
+> **numbered versions** are removed from the beta — a new take is just a new
 > upload, feedback lives in chat + post comments. Ignore any canvas/board/version
 > references that survive in COLLAB §7's older text.
 
 Follow the CANON vocabulary when reading §7: `servers`/`server_members`/
-`is_server_admin` (not `groups`), and **`comments` for post-level threads** — CANON
-overrides COLLAB §7's older names.
+`is_server_admin` (not `groups`), **`comments` for post-level threads**, and
+`folders` (a nested tree, not `collections`) — CANON overrides COLLAB §7's older
+names.
+
+### The one function that survives the rebuild
+
+`api/sign.mjs` is carried forward unchanged: content-agnostic R2 presigning, the
+only thing standing between a signed-in user and the bucket. It verifies the
+caller's Supabase token, enforces the upload ceiling (`claim_upload_quota` from
+`schema-quota.sql`), and signs against the R2 S3 endpoint. CANON §D.2's storage
+schema (`storage_balance`/`storage_meters`) will replace the quota backing when
+the build reaches it; the signer's role — check remaining quota before issuing a
+PUT — is unchanged.
 
 ### The front end
 
@@ -145,25 +162,5 @@ overrides COLLAB §7's older names.
 | What a screen or dialog looks like | `docs/design/gallery.html` (and the token in `styleguide.html`) |
 | A design value — colour, spacing, type, radius | `styleguide.html`; never a literal in a component |
 | The shape of a feature or the data model | `docs/COLLAB.md` (narrative) and `docs/CANON.md` (contract) |
-| How the build is sliced or sequenced | `docs/CODEGEN.md` |
-| Anything at all | keep the four docs consistent — never let the code become a third source of truth |
-
----
-
-## Retired: the pivot, still in the tree
-
-These files backed the old single-page product (a portfolio feed with versioning
-and collections). That product is **retired**; the files remain only until the
-cleanup pass finishes. **Do not build new work on them, and do not treat them as
-the architecture.**
-
-- **Pages:** `index.html`, `profile.html`, `admin.html`, `onboarding.html`,
-  `legal.html`, `artboard.html`.
-- **Runtime:** `pivot.js`, `pivot.css`, `platform.js`, `palette.js`,
-  `palettes.css`, `tokens.css`, `hash-worker.js`.
-- **Schema:** `schema-quota.sql` (the pivot's `schema-clean.sql` has already been
-  removed; the collab schema will be authored fresh per COLLAB §7).
-
-`ERRORS.txt` (the `ESK-####` registry) and `tests/` likewise describe the pivot
-and will be rewritten or retired as the collab build lands. Treat both as
-historical until then.
+| How the build is sliced or sequenced | `docs/CODEGEN.md` and `docs/prompts/` |
+| Anything at all | keep the docs consistent — never let the code become a third source of truth |
