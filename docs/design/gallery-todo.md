@@ -114,6 +114,15 @@ Check against CANON before implementing each one.
   keyboard/wheel/touch scroll working; don't remove overflow. Consider a subtle
   scroll-shadow/fade at the edges so scrollability still reads.
 
+## Missing UI states
+- [ ] **49.** **Loading / skeleton states** for every async surface (stream, folder
+  grid, profile, member rail, details pane) — none exist anywhere today.
+- [ ] **50.** **Empty states** — empty folder, empty channel, no friends, no search
+  results, **empty trash** (#42), empty/newly-created server. Icon-plus-text unless a
+  brand illustration is chosen.
+- [ ] **51.** **Toast / notification + upload-progress** visuals — a transient feedback
+  surface (there's a bell, but no toast, no upload progress UI).
+
 ## Icons
 - [ ] **21.** The zip-file icon isn't centered and looks bad. Decide on the single icon
   for **unsupported / unpreviewable** files and use it consistently.
