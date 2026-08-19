@@ -38,6 +38,13 @@ Check against CANON before implementing each one.
 - [ ] **18.** **Download** button: relabel to just "Download", with options to download
   the **whole folder** or **just a selection**.
 
+## Thumbnails & placeholder images
+- [ ] **28.** Add **placeholder images** (not just gradient fills) so previews read as
+  real content. Use self-contained **inline SVG data-URIs** — no external service,
+  so the file stays offline-safe (LAW file, no CSP/network dependency).
+- [ ] **29.** For **previewable file types**, the **square container the thumbnail sits
+  in should be transparent** (the image itself fills it — no opaque tile behind it).
+
 ## Media players & cards
 - [ ] **11.** Any playable media (audio + video): move the **play button to the center**.
 - [ ] **12.** Audio **expanded views**: use a **high-res generated waveform** as the
