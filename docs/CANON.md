@@ -49,7 +49,7 @@ failure mode `CLAUDE.md` warns about, applied to words instead of CSS.
 | **Server** | The studio/team you create, join, and invite into. The container all Work-layer content lives in. Named "server" (Discord's word) because it's the mental model people already have. | `servers` | studio, group, guild, team, workspace *(as an entity)* |
 | **Workspace** | The three-pane **screen** you land in when you open a server. **Only ever a screen name — never a data entity.** | *(screen, not a table)* | "the workspace" meaning a server |
 | **Server rail** | Far-left 58px strip: Home, Messages, one badge per server, ＋, your avatar. | — (`--rail`) | group rail, sidebar |
-| **Channel column** | 232px column listing a server's Media, Channels, Voice. | — (`--chan`) | channel list, sidebar |
+| **Channel column** | 232px column listing a server's Files, Channels, Voice. | — (`--chan`) | channel list, sidebar |
 | **Members rail** | 210px right strip: Admins / Members, presence, "working on". | — (`--mem`) | members list, members panel |
 | **Details pane** | The slide-in that opens from any card. | — | details panel, info panel, inspector |
 
@@ -62,7 +62,7 @@ kind lives in the same channel column so the whole server is one navigable rail.
 |---|---|---|
 | **Text channel** | `text` | Persistent, searchable chat. `#beats`, `#renders`. |
 | **Voice channel** | `voice` | **Reserved in the enum; not built in v1** (calls deferred). Kill "voice room". |
-| **Media** | *(not a channel row)* | The server's file explorer — one fixed entry in the column, not a `channels` row. Kill "media channel". |
+| **Files** | *(not a channel row)* | The server's **File explorer** — one fixed entry in the column (renamed from "Media", 2026-08-19), not a `channels` row. Kill "media channel". |
 
 Kill: "room" as an entity noun (a voice channel is a voice channel), "feed" for
 a channel (the Feed is the friends-only portfolio, §A.7).
@@ -76,24 +76,25 @@ context-split:
 |---|---|---|
 | **work** | The data entity. Use in schema, RLS, RPCs, these docs. | `works` (+ `work_items` for a multi-item work) |
 | **post** | A `work` seen in a **public** context — the Feed, a public profile shelf. Has a title, appears to friends. | same row, `visibility='public'` |
-| **file** | A `work` seen in a **server/personal** context — a channel, the Media explorer. Leads with its **file name**. | same row, `visibility in (server,personal)` |
+| **file** | A `work` seen in a **server/personal** context — a channel, the File explorer. Leads with its **file name**. | same row, `visibility in (server,personal)` |
 
 > **LOCKED:** the post/file split is kept (F9). Kimi prompts say **post** on the
 > Feed and public Profile shelves, **file** in every server/personal context (a
-> channel, the Media explorer, the Upload sheet in server mode).
+> channel, the File explorer, the Upload sheet in server mode).
 
 Sub-terms (not renamed, pinned for clarity):
 
 | Canonical | Means | DB |
 |---|---|---|
-| **credits** | Free-text attribution on a work ("prod. jax · mix tomo"). | `works.credits` |
-| **contributor chip** | A name from `credits` rendered as a chip in that member's server colour. | derived |
+| **collaborators** | The people credited on a work — each a **chip** (a real `@handle` + an optional freeform role like "prod"/"mix"), in that member's server colour. Reads for artists *and* social ("with @rae"). **Consent-gated** (below). Renamed from **credits** (2026-08-19). | `work_collaborators(work_id, user_id, role, status)` |
+| **collaborator chip** | One collaborator rendered as a chip (server colour in a server context). A **pending** chip (unconfirmed stranger) reads muted. Renamed from **contributor chip**. | derived |
 | **tag** | A user-added label. First 5 show inline, "+N" for the rest. | `content_tags` |
 | **file type** | The extension/kind, for the icon and Type filter. **Never rendered as a tag** (F10). | `works.file_ext`, `works.kind` |
-| **collection** | A named, ordered set of works. Rendered as a **carousel** in the explorer. | `collections` / `collection_items` |
+| **folder** | A **nested** container in a server's file tree — has a parent (null = server root) and holds subfolders + files. The unit of the File-explorer tree (§C.6). A server file lives in exactly one folder *per server* (default = root). Renamed from **collection** (2026-08-18d) and given nesting (2026-08-19). | `folders(server_id, parent_id, name)` · a file's location = `placement.folder_id` |
 
-Kill: "asset", "media item", "attachment", "carousel" as an entity (it's how a
-collection *renders*).
+Kill: "asset", "media item", "attachment", "collection" (→ folder), "carousel",
+"credits"/"contributor" (→ collaborators). **Personal `save_folders` are a
+different thing** (private bookmark folders) and keep their name.
 
 > **Cut for beta (2026-08-18e):** **numbered versions are removed** — the
 > `version`/`version_of`/`version_note` concept was confusing and is gone. A new
@@ -160,7 +161,7 @@ sharpest drift in the doc:
 
 The chrome is black/white/grey; the **only** colour is a member's per-server
 identity hue (F12a), and it renders **only inside that server** — on chat
-bylines, the Members rail, and contributor chips. Never on a public profile or
+bylines, the Members rail, and collaborator chips. Never on a public profile or
 the Feed.
 
 **Scale (LOCKED approach — "add a lot"):** servers can hold many people, so the
@@ -236,19 +237,31 @@ else an owner does, they do *as* an admin.
 One policy, mirrored onto every server-scoped table:
 
 ```sql
--- works (and mirrored on comments, messages, collections)
+-- works (and mirrored on comments, messages, folders)
 create policy works_read on works for select using (
   visibility = 'public'                              -- portfolio / Feed
   or owner_id = (select auth.uid())                  -- your own + Private
-  or (visibility = 'server' and member_of(server_id))  -- the Work layer
+  or (visibility = 'server' and member_of(server_id))  -- native server file
+  or exists (                                        -- readable via ANY placement
+    select 1 from placement p                        -- (crosspost / DM / forward, §D.3)
+    where p.work_id = works.id and (
+      (p.surface = 'server' and member_of(p.surface_id))
+      or (p.surface = 'dm' and dm_member(p.surface_id))
+    ))
 );
 ```
+
+The **placement clause is the fix for the old dead-end** (§D.3): a *personal* work
+placed into a server (a crosspost) was previously owner-only — now any member who can
+see the placement can read it, without changing the work's own `visibility`. A `dm`
+placement grants read to the DM's members the same way.
 
 Consequences that drive the UI (§C references these):
 - **Feed** shows only `public` works by your **friends** (`friendships`
   accepted). Server and Private never leak in.
-- **Media explorer** shows only `where server_id = <this server>` — always
-  `server` visibility, gated by `member_of`.
+- **File explorer** shows a server's native files (`server_id`, `member_of`) **plus**
+  anything placed into it (crossposts), gated the same way; folder location comes
+  from `placement.folder_id`.
 - **Profile shelves**: Public = anyone; Server = a viewer sees only servers you
   share; Private = self only.
 - Non-public routes send `noindex`; only `public` works get OG tags.
@@ -333,7 +346,7 @@ gap) rather than renumbered. Screen 7 (Call) remains a v2 deferral.
 |---|---|---|---|---|
 | 1 | Workspace | `workspace` | chat / pins / files (`chtab`), thread view | §C.4 (template) |
 | 2 | Feed | `feed` | — | §C.5 |
-| 3 | Media explorer | `explorer` | files / folders | §C.6 |
+| 3 | File explorer | `explorer` | files / folders | §C.6 |
 | 4 | Details pane | *(overlay)* | per-context comments | §C.7 |
 | 7 | Call | `vc` | chat / notes (`vctab`) | **v2 — deferred, not built** |
 | 8 | Profile | `profile` | Public / Server / Private shelves, Settings | §C.10 |
@@ -370,7 +383,7 @@ The three-pane server view. Legend: **R**=reads, **W**=writes, **RT**=Realtime.
 | Element | Behaviour & states | DB | Desktop | Mobile |
 |---|---|---|---|---|
 | Server name header | Tap → server menu (settings if admin, leave, invite). | R `servers`; gate `is_server_admin` | Column top | Drawer top |
-| Media entry | Open the Media explorer. | R `works where server_id` | Fixed row | In left drawer |
+| Media entry | Open the File explorer. | R `works where server_id` | Fixed row | In left drawer |
 | Channel list (text) | Each: name, unread bold, mention badge. Click → load channel. Admin sees drag-handle to reorder. | R `channels kind='text'`, `channel_reads`; W `is_server_admin` reorder | Grouped list | Left drawer |
 | Voice channels | Listed by `kind`. Voice = **disabled/hidden in v1**. | R `channels` | Section | Left drawer |
 | ＋ add channel (admin) | Inline create; name + kind. Hidden for members. | W `channels` insert, admin | Per section | Drawer |
@@ -415,18 +428,28 @@ The friends-only portfolio grid.
 | Post card | Square invisible cell (even) or natural aspect (masonry); media renders by kind (image thumb, video play-overlay, audio waveform, text words, **non-previewable → type card** icon+ext); title + author below. Click → Details pane. | R `works` where `visibility='public'` and author ∈ friends | Grid, full width | 2-col grid |
 | Empty | "No posts yet — add friends to see their work." | — | Centered | Centered |
 
-### C.6 Screen 3 — Media explorer
+### C.6 Screen 3 — File explorer
 
-The server's files.
+The server's files as a **Discord-meets-Google-Drive file system**: a **nested
+folder tree** on the left, the current folder's contents in the main pane, and a
+**three-way view toggle** — **grid** (default) · **list** · **feed**. The **feed**
+view is special: it **flattens the whole subtree** to only the **previewable** works
+(image / video / audio) newest-first, each with its **comments** shown inline — an
+Instagram-style server media feed (unpreviewable files like `.flp/.zip` are hidden in
+feed view; they appear in grid/list). Grid and list show subfolders + files of the
+**current** folder only.
 
 | Element | Behaviour & states | DB | Desktop | Mobile |
 |---|---|---|---|---|
-| Search field | Search this server's files. | R `works where server_id` FTS | Toolbar | Full-width |
-| Filter dropdowns (Channel / Type / Uploader / Sort) | Narrow the grid. | R `works` filters | Toolbar | Filter sheet |
-| Layout toggle | Even grid ⇄ masonry. | — | Toolbar | Toolbar |
-| **Folders** strip | Named folders (renamed from Collections); each shows a stacked-icon cover + file count. Click → open folder. | R `collections where server_id` (`folder` UI label) | Row of cards | Horizontal scroll |
-| File card | Same card renderer as Feed; leads with **file name**; author chip (server colour) + channel tag. | R `works` | Grid | 2-col |
-| Grid select + bulk bar | Multi-select cards → action bar (download / move / delete). | — / RPCs | Hover checkbox | Long-press |
+| **Folder tree** | Collapsible nested tree of the server's folders (root → children); current folder highlighted; drag a file/folder onto a folder to move it; admin/perm can add/rename/delete a folder. | R `folders where server_id`; W `folders` · `move_to_folder` | Left rail | Drawer / breadcrumb sheet |
+| **Breadcrumb** | The path to the current folder (`LP / beats / drums`); each segment navigates. | derived from `folders.parent_id` | Toolbar | Toolbar |
+| **View toggle** | **Grid** (default) · **List** (name/type/size/uploader/date columns) · **Feed** (flattened, previewable-only, comments inline). | — | Toolbar segmented | Toolbar |
+| Search field | Search this server's files (whole tree, not just the current folder). | R `works where server_id` FTS | Toolbar | Full-width |
+| Filter dropdowns (Channel / Type / Uploader / Sort) | Narrow the current view. | R `works` filters | Toolbar | Filter sheet |
+| Folder row / card | A subfolder in the current folder — stacked-icon cover + item count; click → descend. | R `folders` (children) | In grid/list with files | 2-col / row |
+| File card / row | Grid: same card renderer as Feed; List: a dense row. Leads with **file name**; uploader chip (server colour) + channel tag. | R `works` (in this folder via `placement.folder_id`) | Grid/List | 2-col / row |
+| **Feed item** | *(feed view only)* a previewable work at natural aspect + its **comment thread** inline, newest-first across the subtree. | R `works` (previewable) + `comments(context=server)` | Column | Full-width |
+| Grid select + bulk bar | Multi-select → action bar (download / **move to folder** / delete). | — / RPCs | Hover checkbox | Long-press |
 | Lightbox | Full media viewer + "shared in" strip. | R `works` | Overlay | Full-screen |
 
 ### C.7 Screen 4 — Details pane
@@ -442,21 +465,21 @@ storage the bytes draw:
 
 - **Post** — a **public** work on a profile/Feed. Draws the owner's **personal
   storage** (`storage_source='personal'`). Its pane is the classic one: a **public
-  comment thread** (`comments`, context=public), tags, credits. **No channel** (it
+  comment thread** (`comments`, context=public), tags, collaborators. **No channel** (it
   isn't in a server).
 - **Server file** — a work shared **in a server**. Looks identical expanded but has
   **no comment thread** — replies happen in the **channel chat**; the rail shows a
-  "Replies happen in #channel →" link instead. It **keeps tags** (+ credits).
+  "Replies happen in #channel →" link instead. It **keeps tags** (+ collaborators).
   Server-stored, server-visible.
 
 | Element | Behaviour & states | DB | Desktop | Mobile |
 |---|---|---|---|---|
 | Media area | Fills the left; **player controls pinned to its foot** (big play, skip ±, seek, volume, tabular time); waveform/video/image/type-card/folder-preview per kind. | R `works` (signed URL) | Left, grows | Top ~42vh |
-| **Prev / next arrows — folder only** | A single work (post or file) has **no** media arrows. A **folder** is the one pane that shows prev/next **over the media** (page its items) plus a clickable **navigation list in the rail**. | `collection_items` order | Folder media edges + rail list | Same |
-| Metadata | Rich per kind: storage badge, posted/uploaded-by, **channel** (server file only), **added** date, **length** (a/v), **dimensions/fps** (image/video), **format/codec/bit-depth**, **size**. Folder: where, item count, made-by, created, visibility. | `works` cols | Rail | Rail |
+| **Prev / next arrows — folder only** | A single work (post or file) has **no** media arrows. A **folder** is the one pane that shows prev/next **over the media** (page its items) plus a clickable **navigation list in the rail**. | `folders` children order | Folder media edges + rail list | Same |
+| Metadata | Rich per kind: storage badge, posted/uploaded-by, **channel** (server file only), **added** date, **length** (a/v), **dimensions/fps** (image/video), **format/codec/bit-depth**, **size**. Folder: where (parent path), item count, made-by, created, visibility. | `works` cols | Rail | Rail |
 | Report + close | Flag (report) and × sit in the rail's top bar. | `file_report` | Rail top bar | Rail top bar |
 | Storage×visibility badge | One of three, verbatim: **Personal · Private**, **Personal · Public**, or **Server** (with the server name). Storage and visibility coincide except a crosspost (personal-stored, server-seen); provenance is **not** shown. | `works.owner_type` + `visibility` | Rail meta | Rail meta |
-| Title / credits / tags | Title (or file name); contributor chips (server colour); user tags + ＋. **Both** posts and server files have tags. | `works.title/credits` · `content_tags` | Rail | Rail |
+| Title / collaborators / tags | Title (or file name); collaborator chips (server colour); user tags + ＋. **Both** posts and server files have tags. | `works.title/collaborators` · `content_tags` | Rail | Rail |
 | Actions | Download (get-as formats), Save (folder). | transcode · `saved_items` | Rail foot | Rail foot |
 | **Discussion** | **Post** → a public **comment thread** (`comments`, context=public) with an add-comment field. **Server file** → **no thread**; a "Replies happen in #channel →" link to the chat. | `comments` (posts) / channel chat (server files) | Rail list / link | Rail |
 | Mobile | Card goes full-screen, **column**: media on top (~42vh), the rail below. | — | — | Full-screen column |
@@ -481,13 +504,19 @@ storage the bytes draw:
 
 ### C.12 Screen 10 — Upload
 
+**Fast by default (2026-08-19).** The default upload is **one step** — drop → pick
+visibility → **Post**. Title auto-fills the file name; **Tags and Collaborators are
+collapsed behind an "Add details" disclosure**, so a social user sharing a meme never
+sees an artist-shaped form, while a producer expands it and credits the room. Nothing
+below the visibility row is required.
+
 | Element | Behaviour & states | DB | Desktop | Mobile |
 |---|---|---|---|---|
 | Dropzone | Multi-file; type recognised (icon/filter), **not shown as a tag**. | `works.file_ext` | Modal | Sheet |
-| Title | Optional; **file name is the default**. | `works.title` | Field | Field |
-| Tags · Credits | **Separate** fields; Credits = **type-ahead chip input** (handle → Enter → member chip in colour). | `content_tags` · `works.credits` | Fields | Fields |
-| Visibility | **Per post**: Public / Server / Private. | `works.visibility` | Segmented | Segmented |
-| **Which server** | When Server: pick the target server. | `works.server_id` | Picker | Picker |
+| Visibility | **Per post**: Public / Server / Private. **The one required choice.** | `works.visibility` | Segmented | Segmented |
+| **Which server / folder** | When Server: pick the target server, and optionally the target **folder** in its tree (default = root). | `works.server_id` · `placement.folder_id` | Picker | Picker |
+| **Post** | Commits immediately with just the above (title = file name). | write path (§D.3) | Primary button | Primary |
+| **▸ Add details** (disclosure) | Reveals: Title (optional, file-name default) · **Tags** · **Collaborators** (type-ahead chip input → member chip in colour + optional role). Collapsed by default. | `works.title` · `content_tags` · `works.collaborators` | Disclosure | Disclosure |
 
 ### C.13 Screen 14 — Notifications
 
@@ -504,7 +533,7 @@ full-height column; the card never touches the top edge.
 
 | Element | Behaviour & states | DB | Desktop | Mobile |
 |---|---|---|---|---|
-| **Create server** — name + avatar + first channel | One card: server name, square avatar upload, seed a first text channel. Owner becomes `owner_id`, gets an implicit all-flags @everyone + Admin role. | W `servers` insert · `roles` seed · `member_roles` | Centred card, ~460px | Full-width card, gutters |
+| **Create server** — name + avatar + first channel | One card: server name, square avatar upload, seed a first text channel. Owner becomes `owner_id` (all flags); seed **only** the `@everyone` role with the non-admin flags on (§D.1 default). | W `servers` insert · `roles` seed (@everyone) · `member_roles` | Centred card, ~460px | Full-width card, gutters |
 | **Join by link** — preview card | `/join/<code>` valid: server name, member count, "You were invited by X", Join. States: valid (this) / dead (→ C.17). | R `invites where code` · `servers` · W `member_roles(@everyone)` | Centred card | Full-width |
 | **Sign-in / sign-up** | Email + magic-link / OAuth; toggle sign-in ⇄ create-account; error line under the field. | Supabase Auth | Centred card | Full-width |
 
@@ -615,6 +644,16 @@ channel_roles    (channel_id, role_id, pk(channel_id,role_id))
 `role`; a member's power is the **OR of their roles' permissions**, minus any
 channel-level `deny`. The **owner** (`servers.owner_id`) is implicitly all-flags
 and the only biller (§D.2).
+
+> **Default roles for a new server (LOCKED 2026-08-19 — keep small servers light).**
+> A brand-new server ships with **only two roles**: the **owner** (all flags) and
+> **`@everyone`** (`is_default`), whose permission bitmask has **every non-admin flag
+> ON by default** — `upload`, `add_tags`, `comment`, `pin_message`, `send_messages`,
+> `view_channel` — and every admin/manage flag OFF. So a 5-friend server needs
+> **zero role setup**: everyone can post, upload, comment, react out of the box, and
+> only the owner administers. Granular roles (adding a "Producer", gating a channel)
+> stay fully available but are **opt-in** — you reach for them only when the server
+> grows. This is Discord's actual new-server default, not a stripped mode.
 
 **Permission flags (proposed set — ⚑ratify).** Grouped so the editor reads well:
 
@@ -827,7 +866,7 @@ conversion in the first months and re-run.)*
 ### D.3 Placements — one work, many surfaces (supersedes storage-source/crosspost)
 
 **⚑DECIDE→LOCKED:** adopt the **placement model**. A `work` has one **home**
-(owner + storage) and its own tags/credits; **placements** are lightweight
+(owner + storage) and its own tags/collaborators; **placements** are lightweight
 references that put it onto a surface. Discussion and audience attach to the
 **placement**, not the work.
 
@@ -864,6 +903,24 @@ placement (id, work_id → works, surface text in (feed,server,dm),
 > (the blob is GC'd when refcount hits 0). Saves resolve through the live read
 > rule, so a lost placement shows "no longer available", never a dangling open.
 
+#### D.3.1 Collaborator consent & who-can-tag (⚑DECIDE→LOCKED, 2026-08-19)
+
+Two EDGECASES resolutions land here:
+
+- **Collaborator consent (Instagram-style).** Crediting `@handle` on a work writes a
+  `work_collaborators(work_id, user_id, role, status)` row. `status='accepted'`
+  **auto** when the credited person is a **friend or a co-member** of the work's
+  server; `status='pending'` for a **stranger** (their chip shows muted and the
+  credit doesn't surface on *their* profile until they accept). **A credited person
+  can always self-remove** (delete their own row), on any work, forever. This stops
+  credit-spam and impersonation while keeping the common case (crediting your
+  bandmates) frictionless.
+- **Who can tag / credit.** Adding **tags** or **collaborators** to a work is limited
+  to the **owner + already-accepted collaborators** — not any server member. (Global
+  metadata is shaped only by the makers; a server can still organise via **folders**,
+  which are server-scoped, not on the work.) Enforced in the tag/credit RPCs, not the
+  UI.
+
 ### D.4 New utility & admin screens (added to the registry + gallery inventory)
 
 Not in the mockup yet; all **TO BUILD**:
@@ -893,10 +950,11 @@ filled.
 
 Smaller corrections from the gallery review — all fold into §C when it's filled:
 
-- **Upload — split Tags and Credits into two fields.** Credits is a
-  **type-ahead chip input**: start typing a handle → it autocompletes members →
-  **space/Enter** commits them as a **chip in their member colour**. Not a
-  free-text line.
+- **Upload — Tags and Collaborators are two fields** (both opt-in behind "Add
+  details", 2026-08-19). Collaborators is a **type-ahead chip input**: start typing a
+  handle → it autocompletes members → **space/Enter** commits them as a **chip in
+  their member colour** (with an optional freeform role). Not a free-text line.
+  (Renamed from "Credits".)
 - **Channel rename lives in Server settings → Channels**, not a standalone
   prompt modal. (The generic single-field prompt still exists for new folder /
   new label / etc.)
@@ -920,7 +978,7 @@ Gallery-review batch. All fold into §C/§E when filled; mockup screens updated 
   thumbnail. The cell is a layout unit, not a visible card.
 - **Layout toggle.** A control switches between the default even grid and a
   **denser masonry** (variable-height, Pinterest-style) view. Applies to Feed,
-  Profile shelves, and Media explorer.
+  Profile shelves, and File explorer.
 - **Search in Profile.** Profile gets a **search button** (same pattern as Feed /
   explorer) to filter that person's shelves.
 
@@ -930,10 +988,13 @@ Feed **and** message attachments must render **files with no visual preview**
 file icon + extension + name, square cell, no fake thumbnail. Add examples to the
 mockup feed and a chat message.
 
-### D.6.3 Collections → **Folders** (rename)
-The server-level **Collections** (explorer strip) are renamed **Folders**
-everywhere (UI copy + these docs). Keep the entity; kill the word "collection".
-(Distinct from personal **save folders**, which stay.)
+### D.6.3 Collections → **Folders**, now a nested file tree (2026-08-19)
+The server-level **Collections** are renamed **Folders** everywhere and made a
+**nested tree** — the File explorer (§C.6) is a Discord-meets-Drive file system:
+a folder has a `parent_id` (null = server root), a server file lives in exactly one
+folder per server (`placement.folder_id`, default root), and the explorer's **feed**
+view flattens the subtree to previewable media + comments. Kill the word
+"collection". (Distinct from personal **save folders**, which stay.)
 
 ### D.6.4 Focused screens — create / join / sign-in / system
 **Superseded 2026-08-17f — all focus/system screens are scrim modals, no rail.**
