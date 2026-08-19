@@ -10,7 +10,7 @@ panel and the gate hides it for a member without the perm. Shared guardrails: se
 ---
 
 ### P8.1 [UI] — Settings shell + nav
-Left nav (General / Channels & boards / Members / Roles / Moderation / Audit log /
+Left nav (General / Channels / Members / Roles / Moderation / Audit log /
 Invite links / Storage & billing / Delete server) + the panel area. **DONE:** nav
 switches panels; a nav item is hidden when its perm is absent; matches the settings
 shell.
@@ -19,7 +19,7 @@ shell.
 Server name, cover, description; Delete server (owner, confirm modal). **DONE:**
 edits persist; Delete is owner-only behind a named-consequence confirm.
 
-### P8.3 [UI] — Channels & boards panel
+### P8.3 [UI] — Channels panel
 Channel list (drag to reorder) + per-channel settings: who-can-post, slow mode,
 **Private toggle → reveals the allow-list (P8.6)**. **DONE:** reordering persists
 (`position`); toggling Private reveals the allow-list; matches the panel.

@@ -1,14 +1,19 @@
 # P1 — Schema + RLS
 
-24 backend prompts, one migration-unit each, in COLLAB §7.8 order. Every prompt:
+Backend prompts, one migration-unit each, in COLLAB §7.8 order. Every prompt:
 `create table if not exists` + `alter table … enable row level security` +
 policies + **its own allow-and-deny test**. All helpers/RPCs are `security
 definer` with `search_path = public`. `uid()` means `(select auth.uid())`.
 
 Naming is CANON's: **`servers`** (not groups), **`server_members`**,
-**`is_server_admin`**, **`canvas`/`canvas_items`** (not scratchpads),
-**`annotations`** (canvas marks) vs **`comments`** (post-level). These override
-COLLAB §7's older names.
+**`is_server_admin`**, **`comments`** (post-level). These override COLLAB §7's
+older names.
+
+> **Beta cut (2026-08-18e).** The **canvas** (`canvas`/`canvas_items`/
+> `annotations`), **kanban boards** (`boards`/`board_columns`/`board_cards`), and
+> **numbered versions** (`works.version_of`/`version_note`, `add_version`) are
+> **removed**. Their prompts below (P1.10–P1.15, P2.2, P2.8) are kept as struck
+> **CUT** stubs so the surrounding prompt numbers don't shift — do not build them.
 
 A `[BE]` prompt is **done when** its stated pgTAP/SQL test passes: the allowed
 role sees/does what it should, and the denied role gets 0 rows or a rejection.
@@ -38,13 +43,13 @@ can. A member can delete only their own `server_members` row.
 ### P1.2 [BE] — `works` column adds + the `works_read` visibility rule
 
 **CONTEXT.** `works` is the uploaded thing (post in public, file in server/personal).
-Assume a base `works(id, owner_id, media_key, bytes, kind, created_at, version_of)`
-exists or create it minimally.
+Assume a base `works(id, owner_id, media_key, bytes, kind, created_at)` exists or
+create it minimally. *(No `version_of`/`version_note` — numbered versions are cut.)*
 
 **BUILD.** Add: `visibility text check (visibility in ('public','personal','server'))
 default 'public'`; `server_id uuid null → servers`; `title text null`; `file_ext
-text`; `credits text`; `version_note text`; `search_tsv tsvector` generated from
-title + file_ext + owner. Rewrite the read policy `works_read` to CANON §B.3:
+text`; `credits text`; `search_tsv tsvector` generated from title + file_ext +
+owner. Rewrite the read policy `works_read` to CANON §B.3:
 - `public` → readable by anyone the owner is **friends** with (P1.19), plus the owner;
 - `server` → readable by `member_of(server_id)` **and** `can_view_channel` once
   channels gate works (P1.24 widens this);
@@ -60,7 +65,7 @@ until P1.24.)
 ### P1.3 [BE] — `channels`
 
 **BUILD.** `channels(id, server_id → servers, name, kind text check (kind in
-('text','voice','board','canvas')), topic text, slowmode_sec int default 0,
+('text','voice')), topic text, slowmode_sec int default 0,
 position int, created_at)`.
 
 **RLS.** read `member_of(server_id)`; write `is_server_admin(server_id)`.
@@ -133,9 +138,8 @@ mentioned user only.
 ### P1.9 [BE] — `comments` adds (post-level, context-scoped)
 
 **BUILD.** On the existing `comments`, add `context text` ('public' or a
-`server_id` string — threads never mix), and (for parity with canvas) keep
-`comments` strictly **post-level** — canvas marks live in `annotations` (P1.10),
-not here. Add `resolved_at timestamptz null` for detail-pane threads if used.
+`server_id` string — threads never mix). Add `resolved_at timestamptz null` for
+detail-pane threads if used.
 
 **RLS.** A comment is readable wherever its target work is readable **in that
 context**: a `public`-context comment is visible on the public post; a
@@ -146,73 +150,12 @@ vice-versa; deleting a comment tombstones it.
 
 ---
 
-### P1.10 [BE] — `annotations` (canvas marks) — distinct from comments
+### P1.10–P1.15 — ~~CUT (beta): `annotations`, `canvas`, `canvas_items`, `boards`, `board_columns`, `board_cards`~~
 
-**BUILD.** `annotations(id, canvas_id → canvas, work_id → works, author_id uuid,
-kind text check (kind in ('point','rect','lasso','ink')), color smallint,
-path jsonb, t numrange null /* audio/video timecode */, resolved_at timestamptz,
-created_at)`. This is a **separate table from `comments`** (CANON §E.7): canvas
-annotations are not post comments.
-
-**RLS.** follows the canvas's visibility (read if the canvas is readable; write if
-the author is a member with the `annotate` perm — stubbed to member until P1.24).
-
-**DONE WHEN.** An annotation is readable exactly when its canvas is; a point and a
-rect round-trip with their `path`/`t`; resolving sets `resolved_at`.
-
----
-
-### P1.11 [BE] — `canvas`
-
-**BUILD.** `canvas(id, owner_id uuid, server_id uuid null → servers, title text,
-visibility text check (visibility in ('private','server','link')), share_code text
-unique null, created_at)`.
-
-**RLS.** read: owner OR (`server` & `member_of(server_id)`) OR (`link` & the
-request carries the `share_code`); write: owner or member.
-
-**DONE WHEN.** A private canvas is owner-only; a server canvas is member-visible; a
-link canvas is reachable with its code and not without.
-
----
-
-### P1.12 [BE] — `canvas_items`
-
-**BUILD.** `canvas_items(canvas_id → canvas, work_id → works, x real, y real,
-z int, pk(canvas_id,work_id))`. **RLS:** follows the parent canvas.
-
-**DONE WHEN.** Items are visible/writable exactly when the canvas is; a work
-appears at most once per canvas (pk).
-
----
-
-### P1.13 [BE] — `boards`
-
-**BUILD.** `boards(id, server_id → servers, name, created_at)`. **RLS:** member
-read; admin write.
-
-**DONE WHEN.** Members read; only admin creates/renames.
-
----
-
-### P1.14 [BE] — `board_columns`
-
-**BUILD.** `board_columns(id, board_id → boards, name, position int)`. **RLS:**
-member read; admin write.
-
-**DONE WHEN.** Columns read in `position` order; only admin edits the column set.
-
----
-
-### P1.15 [BE] — `board_cards`
-
-**BUILD.** `board_cards(id, column_id → board_columns, title, label text,
-assignee_id uuid null, work_id uuid null → works, canvas_id uuid null → canvas,
-due_date date, fields jsonb, position int, created_at)`. **RLS:** member
-read/write (move/create); admin delete.
-
-**DONE WHEN.** A member creates and moves a card; only admin deletes; a card can
-link a work **or** a canvas.
+**Do not build.** The review canvas + annotations and kanban boards are cut from
+the beta (2026-08-18e). These six table prompts are removed; their numbers are left
+as a gap so the later prompts (P1.16+) keep their numbering. If the canvas or boards
+return post-beta, re-add them here.
 
 ---
 
@@ -262,7 +205,7 @@ rule keys on.
 ### P1.20 [BE] — `notifications`
 
 **BUILD.** `notifications(id, user_id, kind text check (kind in ('mention',
-'comment','version','board_assign','join','reaction','invite','friend')),
+'comment','join','reaction','invite','friend')),
 actor_id uuid, server_id uuid null, target_type text, target_id uuid, excerpt
 text, read_at timestamptz, created_at)`. **RLS:** owner only. Add to the
 `supabase_realtime` publication (the bell rides `user:{id}`).

@@ -28,22 +28,22 @@ component. **"Hook" means** a shared function/module (e.g. `session()`,
 
 **Buy a library only where DIY is a real time-sink** (COLLAB §7.6), loaded as a
 plain script/ESM — no build-time framework:
-- **SortableJS** — drag-reorder (kanban cards, channels, versions).
+- **SortableJS** — drag-reorder (channels).
 - **emoji-mart** — the emoji picker data + search.
 - **marked** — render message markdown (the composer inserts markdown by hand).
 - **nanoid** — collision-safe short invite codes.
 - **JSZip** — client-side export zips.
 - **@supabase/supabase-js** — the client (auth, Postgres, Realtime).
 - **ffmpeg-static** — audio transcode (server-side only).
-- Waveform, canvas draw/pan/zoom, mentions autocomplete, quick-switcher, local
-  time — **build**, they're small (the pivot already has waveform + canvas code).
+- Waveform, mentions autocomplete, quick-switcher, local time — **build**, they're
+  small (the pivot already has waveform code).
 
 **Legend.** `[BE]` backend (SQL/RLS/RPC — applied via Supabase, no model tokens).
 `[UI]` front-end (a rendered piece of screen — the DeepSeek spend). `[GL]` glue (a
 shared data function, a Realtime subscription, a signing call).
 
 **Every prompt carries the same guardrails** (`DO NOT`), so they're stated once
-here instead of in all 133:
+here instead of in each:
 
 > Tokens only — no hex in a component. `--r` (3px) on chrome; media stays square;
 > round is avatars + presence dots only. Square icon/close buttons (`.iconbtn`,
@@ -56,16 +56,16 @@ here instead of in all 133:
 | Phase | File | Prompts | Tag |
 |---|---|---:|---|
 | P0 | [P0-scaffold.md](P0-scaffold.md) | 4 | GL |
-| P1 | [P1-schema.md](P1-schema.md) | 24 | BE |
-| P2 | [P2-rpcs.md](P2-rpcs.md) | 16 | BE |
+| P1 | [P1-schema.md](P1-schema.md) | 18 | BE |
+| P2 | [P2-rpcs.md](P2-rpcs.md) | 14 | BE |
 | P3 | [P3-primitives.md](P3-primitives.md) | 15 | UI |
 | P4 | [P4-shell-workspace.md](P4-shell-workspace.md) | 11 | UI+GL |
-| P5 | [P5-content.md](P5-content.md) | 13 | UI+GL |
-| P6 | [P6-canvas.md](P6-canvas.md) | 16 | UI+GL |
-| P7 | [P7-boards-dms-notifs.md](P7-boards-dms-notifs.md) | 11 | UI+GL |
+| P5 | [P5-content.md](P5-content.md) | 12 | UI+GL |
+| P7 | [P7-boards-dms-notifs.md](P7-boards-dms-notifs.md) | 6 | UI+GL |
 | P8 | [P8-admin.md](P8-admin.md) | 14 | UI+GL |
 | P9 | [P9-utility.md](P9-utility.md) | 9 | UI |
 
-**All ten phases written (P0–P9, ~133 prompts).** Run them in order; flip the
-gallery inventory status (`t`→`a`→`m`) as each lands so the burn-down stays
+**Nine phases, ~103 prompts** (P0–P9; **P6 canvas is cut**, and the board/version
+prompts are removed from P1/P2/P5/P7 — 2026-08-18e beta scope). Run them in order;
+flip the gallery inventory status (`t`→`a`→`m`) as each lands so the burn-down stays
 visible.

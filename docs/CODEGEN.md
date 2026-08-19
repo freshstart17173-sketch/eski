@@ -8,13 +8,17 @@ disagree, **CANON wins** — fix the prompt.
 
 > **Vocabulary note.** [`COLLAB.md §7`](COLLAB.md) is the mechanical backend
 > reference (RPCs, triggers, Realtime channels, indexes) but predates the
-> terminology streamline and still says `groups`/`scratchpads`/`is_group_admin`
-> and folds annotations into `comments`. **Use CANON names everywhere:**
-> `server(s)` · `server_members` · `is_server_admin`/`has_perm` · `canvas` +
-> `canvas_items` · `annotations` (canvas marks) vs `comments` (post-level) ·
-> `folders` (UI label for `collections`) · `roles`/`member_roles`/`channel_roles`
-> (CANON §D.1, replaces the flat role enum). When you copy a §7 RPC into a
-> prompt, rename it on the way in.
+> terminology streamline and still says `groups`/`is_group_admin`. **Use CANON
+> names everywhere:** `server(s)` · `server_members` · `is_server_admin`/`has_perm`
+> · `comments` (post-level) · `folders` (UI label for `collections`) ·
+> `roles`/`member_roles`/`channel_roles` (CANON §D.1, replaces the flat role enum).
+> When you copy a §7 RPC into a prompt, rename it on the way in.
+>
+> **Beta cut (2026-08-18e).** The **canvas** (P6 + `canvas`/`canvas_items`/
+> `annotations`), **kanban boards** (`boards`/`board_*`), and **numbered versions**
+> (`version_of`/`version_note`/`add_version`) are removed from this plan. Where the
+> phase map, per-phase lists, exemplars or budget below still mention them, they are
+> cut — see the runnable prompts in [`prompts/`](prompts/) for the current set.
 
 ---
 
@@ -88,13 +92,13 @@ precede their dialogs. Follow COLLAB §7.8 for the migration sub-order.
 | Phase | What | Tag mix | Gate before next phase |
 |---|---|---|---|
 | **P0** | Scaffold: app shell, Supabase client, token/CSS import, icon sprite | GL | App boots, tokens resolve, sprite renders |
-| **P1** | Schema + RLS (servers → messages → canvas → boards → DMs → notifs → profiles → moderation → roles/storage) | BE | Every table has an allow+deny test that passes |
+| **P1** | Schema + RLS (servers → messages → DMs → notifs → profiles → moderation → roles/storage) | BE | Every table has an allow+deny test that passes |
 | **P2** | RPCs + triggers (§7.3, renamed) + `has_perm`/`can_view_channel` (§D.1) | BE | Each RPC has a round-trip test |
 | **P3** | Design-system primitives (button, field, modal, menu, avatar, tag, chip, toggle, checkbox, bar, toast) | UI | Each matches its styleguide spec, both themes |
 | **P4** | The 3-pane shell + Workspace states | UI+GL | Workspace renders live messages |
 | **P5** | Content screens: Feed, Explorer, Details, Profile, Upload | UI+GL | Cards render every media kind incl. type-cards |
-| **P6** | Canvas suite (screen + tools + every mark + annotations sidebar + expanded view + dialogs) | UI+GL | Every §E behaviour + gallery ④ panel built |
-| **P7** | Boards, Messages/DMs, Notifications | UI+GL | Drag, DM round-trip, live bell |
+| ~~**P6**~~ | ~~Canvas suite~~ — **cut (beta)** | — | — |
+| **P7** | Messages/DMs, Notifications *(boards cut)* | UI+GL | DM round-trip, live bell |
 | **P8** | Admin: settings shell, roles editor, assign-roles, channel perms, storage & billing, moderation, audit, invites | UI+GL | Perm gates match the matrix |
 | **P9** | Utility + focus: Create, Join, Sign-in, 404, dead-invite, access-denied, quick-switcher | UI | Every state in §C.14/C.20 reachable |
 
@@ -116,9 +120,9 @@ line into the §0 template when you run it. Counts per phase are at the head.
   global stylesheet; wire the theme-swap (`data-theme` + `prefers-color-scheme`).
   *Done: `--r`, `--m1..30`, `--ink`, surfaces all resolve in both themes.*
 - **P0.4** — Mount the SVG icon sprite (`#i-*`) once; a `<Icon name>` wrapper.
-  *Done: `#i-x`, `#i-hash`, `#i-canvas`… all render at `.ic`/`.ic.sm` sizes.*
+  *Done: `#i-x`, `#i-hash`, `#i-server`… all render at `.ic`/`.ic.sm` sizes.*
 
-### P1 — Schema + RLS · ~24 prompts, all BE (one migration-unit each, COLLAB §7.8 order)
+### P1 — Schema + RLS · ~18 prompts, all BE (one migration-unit each, COLLAB §7.8 order)
 
 Each: `create table if not exists` + RLS enable + policies + the allow/deny test.
 
@@ -126,30 +130,23 @@ Each: `create table if not exists` + RLS enable + policies + the allow/deny test
   helpers `member_of(sid)`, `is_server_admin(sid)`. *Test: non-member sees no
   server row; member does; only admin writes.*
 - **P1.2** `works` column adds (`visibility in(public,personal,server)`,
-  `server_id`, `title`, `file_ext`, `credits`, `version_note`, `search_tsv`) +
-  the rewritten `works_read` (CANON §B.3). *Test: the visibility read rule —
-  public to friends, server to members, private to owner.*
-- **P1.3** `channels` (+`kind in(text,voice,board,canvas)`, `slowmode_sec`,
-  `position`). *Test: member reads, admin writes, position orders.*
+  `server_id`, `title`, `file_ext`, `credits`, `search_tsv`) + the rewritten
+  `works_read` (CANON §B.3). *Test: the visibility read rule — public to friends,
+  server to members, private to owner.* *(No `version_of`/`version_note` — versions
+  cut.)*
+- **P1.3** `channels` (+`kind in(text,voice)`, `slowmode_sec`, `position`). *Test:
+  member reads, admin writes, position orders.*
 - **P1.4** `messages` (+`body_tsv` generated, `parent_id`, `also_to_channel`,
   tombstones). *Test: member insert allowed unless timed-out; update/delete own
   only; deleted row tombstones not vanishes.*
 - **P1.5** `message_reactions`, **P1.6** `message_pins`, **P1.7** `channel_reads`,
   **P1.8** `mentions` — each its own prompt + test.
-- **P1.9** `comments` adds (`mark jsonb`, `context`, `resolved_at`) — **post-level
-  comments**, threads never mix context. *Test: a public-context comment is
-  invisible in a server context and vice-versa.*
-- **P1.10** `annotations` (canvas marks: `canvas_id`, `work_id`, `author_id`,
-  `kind in(point,rect,lasso,ink)`, `color smallint`, `path jsonb`,
-  `resolved_at`) — **distinct table from comments** (CANON §E.7). *Test: follows
-  the canvas’s visibility.*
-- **P1.11** `canvas` (was `scratchpads`: `owner_id`, `server_id null`, `title`,
-  `visibility in(private,server,link)`, `share_code`) + **P1.12** `canvas_items`
-  (`canvas_id`, `work_id`, `x,y,z`). *Test: private/owner, server/member,
-  link/code read paths.*
-- **P1.13** `boards`, **P1.14** `board_columns`, **P1.15** `board_cards`
-  (`label`, `assignee_id`, `work_id|canvas_id`, `due_date`, `fields jsonb`,
-  `position`).
+- **P1.9** `comments` adds (`context`, `resolved_at`) — **post-level comments**,
+  threads never mix context. *Test: a public-context comment is invisible in a
+  server context and vice-versa.*
+- **P1.10–P1.15** — **CUT (beta):** `annotations`, `canvas`, `canvas_items`,
+  `boards`, `board_columns`, `board_cards` are removed with the canvas + kanban
+  features. Numbers left as a gap so P1.16+ keep their numbering.
 - **P1.16** `dm_channels`, **P1.17** `dm_members`, **P1.18** `dm_messages`,
   **P1.19** `friendships` (ordered pair, `status`). *Test: DM visible only to its
   members; friendship gates a DM create.*
@@ -162,18 +159,18 @@ Each: `create table if not exists` + RLS enable + policies + the allow/deny test
   position, permissions bigint, is_default)`, `member_roles`, `channel_roles`
   (allow-list); drop `server_members.role`; helpers `has_perm(sid, flag)` and
   `can_view_channel(channel_id)`. Channel-scoped reads (messages/pins/files +
-  a work in a private channel) re-gate on `can_view_channel`. **PAYG storage
-  (§D.2):** `works.storage_source`, `works.billing_server_id`, `storage_meters`,
-  `billing_accounts`. *Test: union-of-roles permission; a private channel hides
-  from a non-granted member; a crosspost’s bytes hit the personal meter, never
-  the server meter.*
+  a work in a private channel) re-gate on `can_view_channel`. **Storage (§D.2 —
+  dynamic slider, no pooling):** `media_blobs` (dedup), `works.owner_type`/
+  `owner_id`, `storage_meters`, `storage_balance` (one slider per account; no
+  `billing_accounts`, no `storage_allocations`). *Test: union-of-roles permission;
+  a private channel hides from a non-granted member; a work's bytes hit its owner's
+  meter and dedup counts a shared blob once.*
 
-### P2 — RPCs, triggers, search · ~16 prompts, all BE
+### P2 — RPCs, triggers, search · ~14 prompts, all BE
 
-One function + its round-trip test each: `join_via_invite` · `add_version`
-(requires `version_note`, same kind) · `mark_channel_read` · `toggle_reaction` ·
-`pin_message`/`unpin_message` · `create_dm`/`create_group_dm` ·
-`add_friend`/`respond_friend`/`block_user` · `move_card` ·
+One function + its round-trip test each: `join_via_invite` · `mark_channel_read` ·
+`toggle_reaction` · `pin_message`/`unpin_message` · `create_dm`/`create_group_dm` ·
+`add_friend`/`respond_friend`/`block_user` ·
 `ban_member`/`timeout_member`/`kick_member` (each writes `audit_log`) ·
 `set_member_roles(user, role_ids[])` · `set_channel_access(channel, role_ids[],
 member_ids[])` · `export_manifest(server|'account')` · the **triggers**
@@ -216,56 +213,34 @@ tokens.*
 - **Edge states** (own prompts): no-channels-yet, zero-messages, no-presence,
   timed-out composer, Realtime-reconnecting banner.
 
-### P5 — Content screens · ~13 prompts, UI+GL
+### P5 — Content screens · ~12 prompts, UI+GL
 
 Feed (header nav, search, type/sort, **layout toggle even⇄masonry**, post card
 per kind incl. **type-card** for `.flp/.zip/.exe`, empty) · Media explorer
 (filters, **Folders** strip, file card, bulk select-bar, lightbox) · Details
-pane (player controls, **storage badge** server-vs-personal, version dropdown by
-file name, title/credits/tags, actions, **post-level comments**, mobile bottom
+pane (player controls, **storage badge** server-vs-personal, **file name** in the
+top bar, title/credits/tags, actions, **post-level comments**, mobile bottom
 sheet) · Profile (square avatar, Public/Server/Private shelves + counts +
 **search**, grid toggle, Settings) · Upload sheet (dropzone, title=filename
 default, **separate** tags & credits chip-input, **per-post visibility**,
-**which-server picker**, version mode with mandatory reason). *Each card/state is
-its own sub-prompt; the type-card renderer and the even-grid square cell are
-each isolated prompts.*
+**which-server picker**). *Each card/state is its own sub-prompt; the type-card
+renderer and the even-grid square cell are each isolated prompts.* *(No version
+dropdown or version mode — numbered versions are cut.)*
 
-### P6 — Canvas suite · ~16 prompts, UI+GL — *the moat; smallest slices here*
+### P6 — Canvas suite — **CUT (beta 2026-08-18e)**
 
-Reference CANON §E + gallery ④. One prompt each:
+The review canvas and its ~16 prompts are removed from the beta. If it returns
+post-beta, rebuild from CANON history + the deleted `P6-canvas.md`.
 
-- Canvas screen shell + header (picker, visibility chip, zoom −/%/+/Fit/Reset,
-  Add file, Share).
-- Tool palette — **exactly three groups** (Move · Annotate{point/rect/lasso} ·
-  Pen+eraser+size/colour); no shapes/arrows.
-- Tile renderer: author label **top-right outside edge**, **square count badge**
-  (= every annotation on the post), **maximize** button, per-media base (image/
-  video-frame/audio play+waveform), pen-ink overlay. **Screencap UI lives only
-  in the expanded view.**
-- Mark: **point** (dot). · Mark: **rect** (dotted box). · Mark: **lasso**. ·
-  **Ink** stroke + whole-stroke eraser.
-- Annotation thread (author chip, snippet, Resolve, replies, reply field) —
-  **no version number**.
-- Annotations **sidebar** (lists every annotation; click → jump to its mark).
-- **Expanded view** (all openable media): details-like pane + **all relevant
-  annotations** (separate from post comments) + **player controls**; audio
-  expanded view fixed; audio-trim → **duplicate** into canvas.
-- Dialogs (each its own prompt, gallery ④ panels): canvas picker · share/
-  visibility · tile ⋯ menu · empty state.
-- **[GL]** `canvas:{id}` Broadcast+Changes → live annotations; duplicate-not-copy
-  write path.
+### P7 — Messages · Notifications · ~6 prompts, UI+GL *(boards cut)*
 
-### P7 — Boards · Messages · Notifications · ~11 prompts, UI+GL
-
-Board (columns, card, **SortableJS** drag → `move_card`, card-detail modal,
-Board/Table/Calendar switch) · Messages (add-by-handle **inline** field,
-friends/requests, thread list mute/pin, conversation + composer) + **[GL]**
-`create_dm` round-trip · Notifications (tabs, row kinds + inline reply, mark-all)
-+ **[GL]** `user:{id}` live bell.
+Messages (add-by-handle **inline** field, friends/requests, thread list mute/pin,
+conversation + composer) + **[GL]** `create_dm` round-trip · Notifications (tabs,
+row kinds + inline reply, mark-all) + **[GL]** `user:{id}` live bell.
 
 ### P8 — Admin · ~14 prompts, UI+GL
 
-Settings shell + nav · General · Channels-&-boards (per-channel who-can-post/
+Settings shell + nav · General · Channels (per-channel who-can-post/
 slowmode/**Private toggle → reveals the allow-list**) · **Roles editor** (list,
 new-role, colour swatches, **permission matrix** grouped Server/Members/Content,
 `.cbx` toggles → `roles.permissions`) · **Assign-roles-to-member** modal
@@ -290,30 +265,28 @@ switcher (⌘K overlay, grouped results, keyboard nav, scoped to `can_view_chann
 
 To calibrate the detail level a runnable prompt carries.
 
-### Exemplar A — `P6.4 [UI]` Mark: point
+### Exemplar A — `P5.2 [UI]` Type-card (non-previewable file)
 
 ```
-TITLE:   P6.4 — Canvas point-annotation mark + its thread trigger
+TITLE:   P5.2 — Type-card renderer for non-previewable files
 CONTEXT: Stack vanilla HTML+CSS+JS (no framework). Tokens/primitives from styleguide.html. Law =
-         gallery.html panel "Mark: point" and "Annotation thread"; behaviour =
-         CANON §E.2–E.5, §E.7.
-BUILD:   The point mark only — a single positioned dot on a canvas tile that
-         represents one annotation of kind='point'. Not the rect, not the lasso,
-         not ink (those are P6.5–P6.7).
-PROPS:   { x, y (0..1 of tile), authorColorIdx (member hue, server-scoped),
-         resolved:boolean, count?:n } ; on click → emits openThread(annotationId).
-         Reads a row of `annotations` where kind='point'.
-STATES:  default · hover (lifts, shows author initial) · active/open (ring) ·
-         resolved (muted) · stacked (two marks near each other keep both
-         clickable). Mobile: same dot, thread opens as a bottom sheet.
-DO NOT:  no version number in the thread (§E.7). Dot is round (allowed:
-         it is a presence-like marker) but the count BADGE is square (--r).
-         Colour ONLY from the member hue token; nothing on a public surface.
-         No drop shadow on the thread panel — it is a scrim modal on mobile.
-DONE:    Rendering N point rows places N dots at the right coords; clicking one
-         opens exactly that annotation’s thread; a resolved mark reads muted;
-         Playwright diff vs the "Mark: point" gallery panel < threshold; zero
-         console errors; mobile sheet reachable.
+         gallery.html "type card" (feed + details `.dtype`); behaviour = CANON
+         §D.6.2. Reuse the P0 icon() helper and the square-cell grid unit.
+BUILD:   The type card only — a square cell that stands in for a file with no
+         visual preview (.flp, .zip, .exe, .als, .aep, project files): a centered
+         file icon + the extension + the file name. No fake thumbnail.
+PROPS:   { fileName, ext } ; picks the icon by ext (fallback #i-file); on click →
+         emits openDetails(workId). Reads `works` where kind='other'.
+STATES:  default · hover (cell lifts subtly) · in-grid (fills the square cell,
+         even mode) · in-details (fills the `.dmedia` area, `.dtype`). Mobile:
+         same, one-column grid.
+DO NOT:  no fake image thumbnail; the ext is shown as its own label, never as a
+         content tag (§A.4 / F10). Media stays square (--r on chrome only);
+         colour only from tokens; nothing renders a member hue on the Feed.
+DONE:    a .flp/.zip/.exe renders an icon+ext+name card (not a broken image);
+         clicking opens Details; the same renderer fills the details `.dtype`;
+         Playwright diff vs the gallery type-card panel < threshold; zero console
+         errors; one-column on mobile.
 ```
 
 ### Exemplar B — `P1.24 [BE]` granular roles + PAYG (the load-bearing migration)
@@ -329,21 +302,22 @@ BUILD:   (1) roles(id, server_id, name, color smallint, position int,
          open to all members (LOCKED D-i; design for v2 overwrites, don’t build).
          (4) drop server_members.role. (5) has_perm(sid,flag bigint) = OR of the
          member’s roles’ permissions, owner = all flags. (6) can_view_channel(cid)
-         = member_of AND (no channel_roles rows OR a granted role). (7) works
-         adds storage_source text in(personal,server), billing_server_id uuid null.
-         (8) storage_meters(owner_type,owner_id,bytes_used,updated_at) +
-         billing_accounts(owner_type,owner_id,plan,payg,stripe_customer,status),
-         maintained by the works-bytes trigger keyed by pool.
+         = member_of AND (no channel_roles rows OR a granted role). (7) media_blobs
+         (sha256 pk, bytes, refcount) + works adds blob_sha, owner_type in(user,
+         server), owner_id. (8) storage_meters(owner_type,owner_id,bytes_used,
+         updated_at) = distinct owned blobs + storage_balance(owner_type,owner_id,
+         purchased_gb,status,stripe_customer) — one slider per account; no plan, no
+         pooling. Maintained by the works-bytes trigger keyed by owner.
 STATES:  n/a (schema).
 DO NOT:  don’t reshape for v2 — channel_roles is the allow-only subset of the
          future channel_overwrites; keep can_view_channel written to that grain.
-         A crosspost (storage_source='personal') never counts against the server
-         pool.
+         No storage_allocations/billing_accounts (pooling + plans are cut).
 DONE:    pgTAP: (a) a member holding two roles has the UNION of their flags;
          (b) has_perm false → the gated RPC is rejected; (c) a private channel
          (has channel_roles rows) returns 0 messages to a non-granted member and
-         N to a granted one; (d) inserting a personal crosspost bumps the user
-         meter, not the server meter; a native server post bumps the server meter.
+         N to a granted one; (d) a user-owned work bumps that user meter and a
+         server-owned work the server meter; a blob shared by two works for one
+         owner counts once (dedup).
 ```
 
 ---
@@ -356,32 +330,30 @@ via the Supabase MCP and costs no model tokens. Counts:
 | Phase | Prompts | of which UI/GL | Notes |
 |---|---:|---:|---|
 | P0 | 4 | 4 | scaffold |
-| P1 | 24 | 0 | backend |
-| P2 | 16 | 0 | backend |
+| P1 | 18 | 0 | backend |
+| P2 | 14 | 0 | backend |
 | P3 | 15 | 15 | primitives |
 | P4 | 11 | 11 | shell + workspace |
-| P5 | 13 | 13 | content screens |
-| P6 | 16 | 16 | canvas suite |
-| P7 | 11 | 11 | boards/DMs/notifs |
+| P5 | 12 | 12 | content screens |
+| ~~P6~~ | 0 | 0 | canvas — **cut (beta)** |
+| P7 | 6 | 6 | DMs/notifs *(boards cut)* |
 | P8 | 14 | 14 | admin |
 | P9 | 9 | 9 | utility/focus |
-| **Total** | **~133** | **~93** | + iteration |
+| **Total** | **~103** | **~67** | + iteration |
 
 **Per-UI-prompt cost.** A rich prompt carries: the §0 template + the relevant
 CANON slice + the gallery panel’s HTML/CSS excerpt as reference ≈ **1.5–3k input
 tokens**. A component/state generation returns ≈ **1.5–4k output tokens**. Budget
-one **re-roll** per prompt (screenshot diff fails → one correction round) and
-occasional 2nd re-rolls on the canvas.
+one **re-roll** per prompt (screenshot diff fails → one correction round).
 
-- First-pass, 92 UI/GL prompts × ~5k (in+out) = **~0.46M tokens.**
-- With a correction round on ~all and 2nd rounds on the canvas 16:
-  ~92×5k + ~92×5k + 16×5k ≈ **~1.0M tokens.**
+- First-pass, ~67 UI/GL prompts × ~5k (in+out) = **~0.34M tokens.**
+- With a correction round on ~all: ~67×5k + ~67×5k ≈ **~0.67M tokens.**
 - Realistic ceiling with exploratory re-prompts, context re-sends, and a few
-  screens fought over: **budget 3–4M tokens.** (Earlier 4–6M/8M figures assumed
-  the model also generated the backend; it doesn’t — that trims it.)
+  screens fought over: **budget 2–3M tokens.** (Earlier figures assumed the model
+  also generated the backend and the now-cut canvas; it doesn’t — that trims it.)
 
-**Recommendation: buy ~4M tokens** for a comfortable first build with iteration
-headroom; the true floor if prompts land clean is under 1M.
+**Recommendation: buy ~3M tokens** for a comfortable first build with iteration
+headroom; the true floor if prompts land clean is well under 1M.
 
 ---
 

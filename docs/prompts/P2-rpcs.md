@@ -1,9 +1,13 @@
 # P2 — RPCs, triggers, search
 
-16 backend prompts. Each is one `security definer` function (or one trigger set)
+Backend prompts. Each is one `security definer` function (or one trigger set)
 with `search_path = public`, plus a round-trip test that asserts the exact
 rows/notification/meter delta on success **and** a rejection when the gate fails.
 CANON names throughout. Shared guardrails: see [README](README.md).
+
+> **Beta cut (2026-08-18e).** `add_version` (P2.2) and `move_card` (P2.8) are
+> removed with numbered versions and kanban boards; they're kept as struck **CUT**
+> stubs so the other RPC numbers don't shift.
 
 Because a `security definer` function bypasses RLS, **each function re-checks its
 own gate inside the body** (`member_of`/`is_server_admin`/`has_perm`) — the RLS
@@ -20,12 +24,10 @@ is not in `server_bans` for that server. On success: insert `server_members`
 an expired/at-cap/revoked code is refused; a **banned** user is refused even with a
 valid code.
 
-### P2.2 [BE] — `add_version(parent_id uuid, media_key text, ext text, version_note text)`
+### P2.2 — ~~CUT (beta): `add_version`~~
 
-Require a non-empty `version_note`; require the new work's `kind` equals the
-parent's; insert `works` with `version_of = parent_id`. A multi-file batch calls
-it N times in order. **DONE:** a version with a note and matching kind is created;
-a missing note is rejected; a kind mismatch (audio version of a video) is rejected.
+**Do not build.** Numbered versions are cut (2026-08-18e) — a new take is just a new
+upload. Number left as a gap.
 
 ### P2.3 [BE] — `mark_channel_read(channel_id uuid)`
 
@@ -58,11 +60,9 @@ deletes; block sets `blocked`. **DONE:** a request appears `pending` to both; ac
 makes it `accepted` (unlocking public-visibility reads, P1.2); block prevents
 further requests and hides content.
 
-### P2.8 [BE] — `move_card(card_id, column_id, position)`
+### P2.8 — ~~CUT (beta): `move_card`~~
 
-Reposition/relocate a `board_cards` row; gate on member of the board's server.
-**DONE:** the card lands in the target column at the target index and siblings
-renumber; a non-member is refused.
+**Do not build.** Kanban boards are cut (2026-08-18e). Number left as a gap.
 
 ### P2.9 [BE] — `ban_member` / `timeout_member` / `kick_member`
 

@@ -17,7 +17,6 @@ router only. Each route swaps a `.screen` container in the main `<div id="stage"
 (the gallery's own app-mode pattern) to a placeholder that renders just the
 screen's name centered. Routes: `/` (Feed), `/messages` (DMs),
 `/s/:serverId` (Workspace), `/s/:serverId/c/:channelId`,
-`/s/:serverId/canvas/:canvasId`, `/s/:serverId/board/:boardId`,
 `/s/:serverId/settings`, `/explore/:serverId` (Media explorer), `/u/:handle`
 (Profile), `/upload` (modal route), `/notifications`, `/create`, `/join/:code`,
 `/search`, `/signin`, and a catch-all (404). Vercel rewrites (`vercel.json`) send
@@ -93,12 +92,13 @@ paint). Copy the exact token values from the styleguide — do not invent any.
 
 **CONTEXT.** The gallery embeds an inline SVG sprite of `<symbol id="i-*">`
 definitions (Feather-style, 24×24 viewBox, stroke, round joins). The full set:
-`i-arrow i-at i-bell i-board i-camera i-canvas i-check i-chev i-clip i-clock
+`i-arrow i-at i-bell i-camera i-check i-chev i-clip i-clock
 i-comment i-copy i-download i-drag i-expand i-file i-folder i-globe i-grid i-hand
 i-hash i-home i-image i-leave i-link i-lock i-mail i-mic i-more i-move i-pause
 i-pen i-phone i-pin i-play i-plus i-refresh i-reply i-save i-screen i-scribble
 i-search i-send i-server i-settings i-smile i-square i-trash i-type i-undo i-user
-i-users i-version i-video i-voice i-x`.
+i-users i-video i-voice i-x` (the cut canvas/board/version screens' `i-board
+i-canvas i-version` glyphs may stay in the sprite unused or be dropped).
 
 **BUILD.** Mount the sprite once in the shell (copy the `<svg width="0" height="0">…</svg>`
 block from the gallery). A tiny helper `icon(name, size)` returning the markup
@@ -110,6 +110,6 @@ prevents the "icon that doesn't make sense" class of bug).
 
 **STATES.** `md` (default), `sm`.
 
-**DONE WHEN.** `icon('canvas')` and `icon('server','sm')` produce the right glyph
+**DONE WHEN.** `icon('server')` and `icon('server','sm')` produce the right glyph
 at the right size; an unknown name warns in dev; `currentColor` drives the stroke
 so an icon inherits its parent's colour.

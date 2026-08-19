@@ -97,8 +97,8 @@ current value + chevron; opening shows the menu; selection updates the label. No
 round — square `--r`.
 
 ### P3.15 [UI] — `MediaPlayer` (audio + video, real controls)
-The one player used by the details pane (P5.6), the canvas expanded views (P6.10–
-P6.12), and inline cards. **Build it once with a full, working transport** — the
+The one player used by the details pane (P5.6) and inline cards. **Build it once
+with a full, working transport** — the
 previous build only played and couldn't pause or skip; that's the bug this
 primitive exists to kill. Wraps a native `<audio>`/`<video>` element and drives it.
 - **Controls:** big **play/pause toggle** (icon swaps `#i-play`⇄`#i-pause` with
