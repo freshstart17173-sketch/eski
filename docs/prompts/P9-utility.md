@@ -18,7 +18,11 @@ matches the create/auth layout.
 ### P9.2 [UI] — Create server card
 Server name, square cover upload, seed starter channels, "an invite link is
 created with the server", Create/Cancel. **DONE:** matches the `create` panel;
-creating calls `servers` insert + seeds `roles`/`member_roles` (owner = all-flags).
+creating calls `servers` insert + seeds roles: the owner (all flags) and **only the
+`@everyone` default role with every non-admin flag ON** — `upload`, `add_tags`,
+`comment`, `pin_message`, `send_messages`, `view_channel` — and admin/manage flags
+OFF (CANON §D.1 default). No other role is created; a fresh server needs zero role
+setup.
 
 ### P9.3 [UI] — Join by link (preview)
 `/join/:code` valid: cover, name, member count, "X invited you", Join. **DONE:**

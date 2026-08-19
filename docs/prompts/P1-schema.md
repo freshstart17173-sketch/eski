@@ -9,11 +9,12 @@ Naming is CANON's: **`servers`** (not groups), **`server_members`**,
 **`is_server_admin`**, **`comments`** (post-level). These override COLLAB §7's
 older names.
 
-> **Beta cut (2026-08-18e).** The **canvas** (`canvas`/`canvas_items`/
-> `annotations`), **kanban boards** (`boards`/`board_columns`/`board_cards`), and
-> **numbered versions** (`works.version_of`/`version_note`, `add_version`) are
-> **removed**. Their prompts below (P1.10–P1.15, P2.2, P2.8) are kept as struck
-> **CUT** stubs so the surrounding prompt numbers don't shift — do not build them.
+> **Beta cut (2026-08-18e) + placement/folders (2026-08-19).** The **canvas**, the
+> **kanban boards** (`boards`/`board_*`, P1.13–P1.15, P2.8), and **numbered versions**
+> (`version_of`/`version_note`, P2.2) are **removed** — kept as struck **CUT** stubs so
+> numbers don't shift. The freed **P1.10–P1.12 are repurposed** for the placement
+> model: `placement` (§D.3), nested `folders` (§C.6), and consent-gated
+> `work_collaborators` (§D.3.1).
 
 A `[BE]` prompt is **done when** its stated pgTAP/SQL test passes: the allowed
 role sees/does what it should, and the denied role gets 0 rows or a rejection.
@@ -48,7 +49,7 @@ create it minimally. *(No `version_of`/`version_note` — numbered versions are 
 
 **BUILD.** Add: `visibility text check (visibility in ('public','personal','server'))
 default 'public'`; `server_id uuid null → servers`; `title text null`; `file_ext
-text`; `credits text`; `search_tsv tsvector` generated from title + file_ext +
+text`; `search_tsv tsvector` generated from title + file_ext +
 owner. Rewrite the read policy `works_read` to CANON §B.3:
 - `public` → readable by anyone the owner is **friends** with (P1.19), plus the owner;
 - `server` → readable by `member_of(server_id)` **and** `can_view_channel` once
@@ -150,12 +151,52 @@ vice-versa; deleting a comment tombstones it.
 
 ---
 
-### P1.10–P1.15 — ~~CUT (beta): `annotations`, `canvas`, `canvas_items`, `boards`, `board_columns`, `board_cards`~~
+> **P1.13–P1.15 — ~~CUT (beta)~~:** `boards`/`board_columns`/`board_cards` and the
+> canvas tables are removed with the kanban + canvas features (2026-08-18e). Numbers
+> left as a gap; P1.10–P1.12 below are **repurposed** for the placement/folders model.
 
-**Do not build.** The review canvas + annotations and kanban boards are cut from
-the beta (2026-08-18e). These six table prompts are removed; their numbers are left
-as a gap so the later prompts (P1.16+) keep their numbering. If the canvas or boards
-return post-beta, re-add them here.
+### P1.10 [BE] — `placement` (the placement model, CANON §D.3)
+
+**BUILD.** `placement(id, work_id → works, surface text check (surface in
+('feed','server','dm')), surface_id uuid, channel_id uuid null, folder_id uuid null
+→ folders, placed_by uuid, created_at)`. A `server` placement puts a work into a
+server (its `surface_id`) and, optionally, a **folder** in that server's tree.
+
+**RLS.** read a placement if you can see its surface (`member_of(surface_id)` for
+server, `dm_member` for dm); insert by the work owner or a member; a moderator can
+delete (detach) a server placement.
+
+**Widen `works_read`** to include "readable via any placement" (CANON §B.3): a
+personal work placed into a server is readable by that server's members through the
+placement, without changing the work's own `visibility`.
+
+**DONE WHEN.** a personal work with a `server` placement is readable by a member of
+that server and invisible to a non-member; detaching the placement removes that read;
+a `dm` placement grants read to the DM's members only.
+
+### P1.11 [BE] — `folders` (nested server file tree, CANON §C.6)
+
+**BUILD.** `folders(id, server_id → servers, parent_id uuid null → folders, name,
+created_at)` — `parent_id null` = server root; arbitrary nesting. A server file's
+location is `placement.folder_id` (P1.10). **RLS:** member read; write gated by a
+manage-files perm (stub to member until P1.24).
+
+**DONE WHEN.** a child folder resolves its ancestor path; a member reads the tree; a
+non-member sees nothing; deleting a folder re-parents or root-drops its children
+(pick one and test it).
+
+### P1.12 [BE] — `work_collaborators` (consent-gated credits, CANON §D.3.1)
+
+**BUILD.** `work_collaborators(work_id → works, author_id uuid, user_id uuid, role
+text null, status text check (status in ('pending','accepted')), pk(work_id,
+user_id))`. Adding a collaborator: `status='accepted'` **auto** when `user_id` is a
+friend of the author or a co-member of the work's server placement; else
+`'pending'`. **RLS:** the credited user can always **delete their own row**
+(self-remove); the work owner + accepted collaborators can add.
+
+**DONE WHEN.** crediting a friend writes `accepted`; crediting a stranger writes
+`pending`; the credited person can delete their own row on any work; a pending credit
+does not surface on that person's public profile.
 
 ---
 

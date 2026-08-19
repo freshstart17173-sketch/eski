@@ -5,9 +5,9 @@ with `search_path = public`, plus a round-trip test that asserts the exact
 rows/notification/meter delta on success **and** a rejection when the gate fails.
 CANON names throughout. Shared guardrails: see [README](README.md).
 
-> **Beta cut (2026-08-18e).** `add_version` (P2.2) and `move_card` (P2.8) are
-> removed with numbered versions and kanban boards; they're kept as struck **CUT**
-> stubs so the other RPC numbers don't shift.
+> **2026-08-19.** The cut `add_version` (P2.2) and `move_card` (P2.8) numbers are
+> **repurposed** for `add_collaborator`/`remove_collaborator` and
+> `move_to_folder`/`create_folder` (the placement + file-tree model).
 
 Because a `security definer` function bypasses RLS, **each function re-checks its
 own gate inside the body** (`member_of`/`is_server_admin`/`has_perm`) — the RLS
@@ -24,10 +24,17 @@ is not in `server_bans` for that server. On success: insert `server_members`
 an expired/at-cap/revoked code is refused; a **banned** user is refused even with a
 valid code.
 
-### P2.2 — ~~CUT (beta): `add_version`~~
+### P2.2 [BE] — `add_collaborator(work_id, handle, role)` + `remove_collaborator(work_id)`
 
-**Do not build.** Numbered versions are cut (2026-08-18e) — a new take is just a new
-upload. Number left as a gap.
+*(Repurposed from the cut `add_version`.)* Gate: caller is the work **owner or an
+accepted collaborator** (CANON §D.3.1). Resolve `handle`→user; insert
+`work_collaborators` with `status='accepted'` if that user is a **friend of the
+author or a co-member** of the work's server placement, else `'pending'`.
+`remove_collaborator` lets the **credited user delete their own row** (self-remove)
+on any work, and the owner remove anyone. **DONE:** crediting a friend → accepted;
+crediting a stranger → pending; a non-owner/non-collaborator is refused from adding;
+the credited user can always self-remove; the same tag/credit gate applies to the
+**add-tag** RPC (owner + accepted collaborators only).
 
 ### P2.3 [BE] — `mark_channel_read(channel_id uuid)`
 
@@ -60,9 +67,15 @@ deletes; block sets `blocked`. **DONE:** a request appears `pending` to both; ac
 makes it `accepted` (unlocking public-visibility reads, P1.2); block prevents
 further requests and hides content.
 
-### P2.8 — ~~CUT (beta): `move_card`~~
+### P2.8 [BE] — `move_to_folder(target, folder_id)` + `create_folder(server_id, parent_id, name)`
 
-**Do not build.** Kanban boards are cut (2026-08-18e). Number left as a gap.
+*(Repurposed from the cut `move_card`.)* `move_to_folder` sets a file's
+`placement.folder_id` (or a subfolder's `folders.parent_id`) to `folder_id` (null =
+server root); gate on member of the folder's server + a manage-files perm.
+`create_folder` inserts a `folders` row under `parent_id`. **DONE:** moving a file
+re-files it in the tree (the explorer requeries); moving a folder re-parents its whole
+subtree; a cycle (folder into its own descendant) is rejected; a non-member is
+refused.
 
 ### P2.9 [BE] — `ban_member` / `timeout_member` / `kick_member`
 

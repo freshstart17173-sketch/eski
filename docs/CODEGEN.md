@@ -10,7 +10,8 @@ disagree, **CANON wins** — fix the prompt.
 > reference (RPCs, triggers, Realtime channels, indexes) but predates the
 > terminology streamline and still says `groups`/`is_group_admin`. **Use CANON
 > names everywhere:** `server(s)` · `server_members` · `is_server_admin`/`has_perm`
-> · `comments` (post-level) · `folders` (UI label for `collections`) ·
+> · `comments` (post-level) · `folders` (nested tree, was `collections`) ·
+> `placement` + `work_collaborators` (§D.3) · `collaborators` (was credits) ·
 > `roles`/`member_roles`/`channel_roles` (CANON §D.1, replaces the flat role enum).
 > When you copy a §7 RPC into a prompt, rename it on the way in.
 >
@@ -122,7 +123,7 @@ line into the §0 template when you run it. Counts per phase are at the head.
 - **P0.4** — Mount the SVG icon sprite (`#i-*`) once; a `<Icon name>` wrapper.
   *Done: `#i-x`, `#i-hash`, `#i-server`… all render at `.ic`/`.ic.sm` sizes.*
 
-### P1 — Schema + RLS · ~18 prompts, all BE (one migration-unit each, COLLAB §7.8 order)
+### P1 — Schema + RLS · ~21 prompts, all BE (one migration-unit each, COLLAB §7.8 order)
 
 Each: `create table if not exists` + RLS enable + policies + the allow/deny test.
 
@@ -130,7 +131,7 @@ Each: `create table if not exists` + RLS enable + policies + the allow/deny test
   helpers `member_of(sid)`, `is_server_admin(sid)`. *Test: non-member sees no
   server row; member does; only admin writes.*
 - **P1.2** `works` column adds (`visibility in(public,personal,server)`,
-  `server_id`, `title`, `file_ext`, `credits`, `search_tsv`) + the rewritten
+  `server_id`, `title`, `file_ext`, `search_tsv`) + the rewritten
   `works_read` (CANON §B.3). *Test: the visibility read rule — public to friends,
   server to members, private to owner.* *(No `version_of`/`version_note` — versions
   cut.)*
@@ -144,9 +145,10 @@ Each: `create table if not exists` + RLS enable + policies + the allow/deny test
 - **P1.9** `comments` adds (`context`, `resolved_at`) — **post-level comments**,
   threads never mix context. *Test: a public-context comment is invisible in a
   server context and vice-versa.*
-- **P1.10–P1.15** — **CUT (beta):** `annotations`, `canvas`, `canvas_items`,
-  `boards`, `board_columns`, `board_cards` are removed with the canvas + kanban
-  features. Numbers left as a gap so P1.16+ keep their numbering.
+- **P1.10** `placement` (§D.3) + widen `works_read` to "readable via any placement";
+  **P1.11** nested `folders` (`parent_id`, §C.6); **P1.12** `work_collaborators`
+  (consent-gated, §D.3.1). **P1.13–P1.15** — **CUT (beta):** `boards`/`board_*` +
+  the canvas tables are removed; numbers left as a gap so P1.16+ keep their numbers.
 - **P1.16** `dm_channels`, **P1.17** `dm_members`, **P1.18** `dm_messages`,
   **P1.19** `friendships` (ordered pair, `status`). *Test: DM visible only to its
   members; friendship gates a DM create.*
@@ -216,16 +218,17 @@ tokens.*
 ### P5 — Content screens · ~12 prompts, UI+GL
 
 Feed (header nav, search, type/sort, **layout toggle even⇄masonry**, post card
-per kind incl. **type-card** for `.flp/.zip/.exe`, empty) · Media explorer
-(filters, **Folders** strip, file card, bulk select-bar, lightbox) · Details
-pane (player controls, **storage badge** server-vs-personal, **file name** in the
-top bar, title/credits/tags, actions, **post-level comments**, mobile bottom
-sheet) · Profile (square avatar, Public/Server/Private shelves + counts +
-**search**, grid toggle, Settings) · Upload sheet (dropzone, title=filename
-default, **separate** tags & credits chip-input, **per-post visibility**,
-**which-server picker**). *Each card/state is its own sub-prompt; the type-card
-renderer and the even-grid square cell are each isolated prompts.* *(No version
-dropdown or version mode — numbered versions are cut.)*
+per kind incl. **type-card** for `.flp/.zip/.exe`, empty) · **File explorer**
+(nested **folder tree** + breadcrumb, **grid/list/feed** view toggle — feed
+flattens the subtree to previewable media + inline comments, bulk select-bar with
+move-to-folder, lightbox) · Details pane (player controls, **storage badge**
+server-vs-personal, **file name** in the top bar, title/**collaborators**/tags,
+actions, **post-level comments**, mobile bottom sheet) · Profile (square avatar,
+Public/Server/Private shelves + counts + **search**, grid toggle, Settings) ·
+**Fast Upload sheet** (dropzone → visibility → Post; title=filename default; Tags +
+**Collaborators** chip-input behind an **"Add details"** disclosure; **which-server
+/ folder** picker). *Each card/state is its own sub-prompt.* *(No version dropdown —
+numbered versions are cut.)*
 
 ### P6 — Canvas suite — **CUT (beta 2026-08-18e)**
 
@@ -330,7 +333,7 @@ via the Supabase MCP and costs no model tokens. Counts:
 | Phase | Prompts | of which UI/GL | Notes |
 |---|---:|---:|---|
 | P0 | 4 | 4 | scaffold |
-| P1 | 18 | 0 | backend |
+| P1 | 21 | 0 | backend (+ placement/folders/collaborators) |
 | P2 | 14 | 0 | backend |
 | P3 | 15 | 15 | primitives |
 | P4 | 11 | 11 | shell + workspace |
@@ -339,7 +342,7 @@ via the Supabase MCP and costs no model tokens. Counts:
 | P7 | 6 | 6 | DMs/notifs *(boards cut)* |
 | P8 | 14 | 14 | admin |
 | P9 | 9 | 9 | utility/focus |
-| **Total** | **~103** | **~67** | + iteration |
+| **Total** | **~106** | **~67** | + iteration |
 
 **Per-UI-prompt cost.** A rich prompt carries: the §0 template + the relevant
 CANON slice + the gallery panel’s HTML/CSS excerpt as reference ≈ **1.5–3k input

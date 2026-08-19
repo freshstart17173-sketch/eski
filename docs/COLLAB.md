@@ -13,6 +13,15 @@ workflow walkthroughs. Nothing here is live yet.
 > the **two-slider, no-pooling** model priced **$0.050/$0.045/$0.040 per GB**
 > (10 GB free); see CANON §D.2. Where this narrative still describes a cut feature or
 > old pricing, **CANON wins.**
+>
+> **Later decisions (2026-08-19) — also CANON-authoritative, may post-date this text:**
+> the **placement model** (a work has one home; `placement` rows put it on
+> feed/server/dm — §D.3); the **File explorer** (Media→Files, a **nested folder tree**
+> + grid/list/**feed** views; `folders.parent_id`, a file's location =
+> `placement.folder_id` — §C.6); **Collaborators** (renamed from credits, a
+> consent-gated `work_collaborators` join table — §D.3.1); the **fast upload**
+> (drop → visibility → Post, details opt-in); and **default roles** (a new server
+> ships Owner + @everyone only — §D.1).
 
 A clickable black-and-white mockup of every screen lives at
 [`docs/design/collab-mockup.html`](design/collab-mockup.html): workspace (channels,
@@ -132,16 +141,17 @@ OG tags or appear anywhere a non-member can reach.
 > `works.version_of/version_note`) are not built. This is a deliberate simplification
 > toward "Discord + Google Drive" — see the CANON beta-cut note.
 
-#### F8. Attribution / credits (a plain field)
+#### F8. Attribution / **collaborators** (renamed from credits, 2026-08-19)
 **Why.** On a collaborative track or shot, everyone needs to know who did what,
-and that credit should travel with the file forever.
-**Plan.** A single free-text **`credits`** field on every work, filled by hand
-at upload and editable after ("prod. jax · vocals rae · mix tomo"). No
-role-graph, no tagging system, just a line of text that shows on the file
-everywhere it appears, including on the public portfolio. In a group context
-each contributor's name renders as a **chip in that member's group colour**
-(F13a), so who-did-what is scannable at a glance.
-**Touches.** `works.credits`; the upload form + details pane.
+and that credit should travel with the file forever — and the name should read in a
+social context too ("with @rae"), not only an artist one.
+**Plan.** Each collaborator is a **real `@handle` + an optional role** ("prod",
+"mix"), rendered as a **chip in that member's server colour** (F13a). It's
+**consent-gated** (CANON §D.3.1): crediting a friend/co-member auto-accepts, a
+stranger is pending, and anyone can self-remove. Not a free-text line — a
+`work_collaborators(work_id, user_id, role, status)` join table, so credits link to
+identities and can't be spammed onto someone. Renamed from **credits**.
+**Touches.** `work_collaborators`; the upload sheet's "Add details" + details pane.
 
 ### Tier 3, files that behave
 
@@ -282,13 +292,16 @@ dm_messages     (id, thread_id, user_id, body, created_at)
 save_folders    (id, owner_id, name)                      -- private bookmarks (details "Save")
 save_folder_items(folder_id, work_id)                     -- both already exist in schema-clean.sql
 notifications   (id, user_id, kind, target_type, target_id, read_at, created_at)
+placement       (id, work_id, surface in (feed,server,dm), surface_id,
+                 channel_id null, folder_id null, placed_by, created_at)  -- §D.3
+folders         (id, server_id, parent_id null → folders, name)          -- nested file tree, §C.6
+work_collaborators(work_id, author_id, user_id, role null,
+                 status in (pending,accepted), pk(work_id,user_id))       -- consent-gated, §D.3.1
 
-works.visibility   text in (public,personal,group)  -- the three layers (§0)
-works.group_id     uuid null → groups
+works.visibility   text in (public,personal,server) -- the three layers (§0)
 works.title        text null                         -- F9: optional, file name is the default
 works.file_ext     text                              -- F10: type for icon + filter, not shown as a tag
-works.credits      text                              -- F8 attribution
-comments.context   text                              -- scope: 'public' vs a group_id, so threads never mix
+comments.context   text                              -- scope: 'public' vs a server_id, so threads never mix
 ```
 *(Cut in the beta — not in the schema: `boards`/`board_columns`/`board_cards` (F3a),
 `scratchpads`/`scratchpad_items`/`annotations` (F5/F6 canvas), `works.version_of`/
@@ -556,15 +569,14 @@ Each row: purpose · columns · RLS summary. `uid()` = `(select auth.uid())`.
 
 ### 7.2 Columns added to existing tables
 ```
-works.visibility    text in(public,personal,group) default 'public'   -- §0
-works.group_id      uuid null → groups
+works.visibility    text in(public,personal,server) default 'public'  -- §0
 works.title         text null                    -- F9 (file name is the default)
 works.file_ext      text                         -- F10 (icon + Type filter, not a tag)
-works.credits       text                         -- F8
 works.search_tsv    tsvector generated           -- title+tags+owner for search
-comments.context    text                         -- 'public' or a group_id, threads never mix
+comments.context    text                         -- 'public' or a server_id, threads never mix
 comments.resolved_at timestamptz null            -- post comments resolve
-collections.group_id uuid null → groups          -- group Folders in the explorer
+-- new tables (2026-08-19, §D.3/§C.6): placement, folders(parent_id), work_collaborators
+-- (F8 credits is now the consent-gated work_collaborators join table, not a works column)
 profiles.status_emoji text / status_text text / status_expires_at timestamptz  -- custom status
 profiles.presence_state text in(online,idle,dnd,invisible) default 'online'
 profiles.tz         text                         -- local-time on the popout

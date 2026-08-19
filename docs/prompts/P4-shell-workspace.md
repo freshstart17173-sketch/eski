@@ -25,7 +25,7 @@ inked; the ＋ opens a menu (Create server · Join by link · Add friend); the
 avatar opens profile/status/settings/sign-out.
 
 ### P4.3 [UI] — Channel column
-Server-name header (→ settings if admin), Media entry, channel list grouped by
+Server-name header (→ settings if admin), **Files** entry (opens the File explorer), channel list grouped by
 kind (text/voice), unread bold, mention badge, admin drag-handle,
 ＋ add channel. **DONE:** channels render grouped and ordered; unread is bold;
 admin sees drag + ＋, a member doesn't; clicking a channel routes to it.

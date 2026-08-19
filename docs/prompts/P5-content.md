@@ -27,19 +27,31 @@ filters and `search_all(q,'feed')`. **DONE:** only public works by friends appea
 a stranger's public work does not; filters/search narrow correctly; empty state
 shows "add friends to see their work."
 
-### P5.4 [UI] — Media explorer
-This server's files: search, filter dropdowns (Channel/Type/Uploader/Sort), layout
-toggle, **Folders strip** (renamed from Collections — stacked-icon cover + count),
-file card (leads with file name, author chip in **server colour** + channel tag),
-grid multi-select + bulk bar, lightbox. **DONE:** matches the `explorer` screen;
-Folders strip renders; bulk select shows the action bar; lightbox opens with a
-"shared in" strip.
+### P5.4 [UI] — File explorer (nested tree + views)
+A **Discord-meets-Google-Drive** file system (CANON §C.6): a **collapsible nested
+folder tree** in the left rail, a **breadcrumb** of the current path, and a **grid /
+list / feed** view toggle (grid default). **Grid** = subfolder cards + file cards of
+the *current* folder; **List** = file-manager rows (name/type/size/uploader/date);
+**Feed** = the whole subtree **flattened to previewable media only** (image/video/
+audio), each at natural aspect with its **comment thread inline**, newest-first
+(project files like `.flp/.als` are hidden in feed, shown in grid/list). Search
+(whole tree) + filter dropdowns; grid multi-select + bulk bar (**move to folder** /
+download / delete); lightbox. File card leads with **file name**, uploader chip in
+**server colour** + channel tag. **DONE:** matches the `explorer` screen; the tree
+expands/collapses and drives the breadcrumb; the toggle switches grid⇄list⇄feed;
+feed shows only previewable works with comments; bulk select shows the action bar;
+lightbox opens with a "shared in" strip. Each sub-view is its own sub-prompt.
 
-### P5.5 [GL] — Explorer query
-`works where server_id` + `collections where server_id` (Folders), gated by
-`can_view_channel` for works in private channels. **DONE:** members see the
-server's files and folders; a work in a private channel is hidden from a
-non-granted member; bulk actions call the right RPCs.
+### P5.5 [GL] — Explorer query (folders + placements)
+Current folder's contents = `folders where parent_id = <cur>` (subfolders) +
+`works` whose **server placement** has `folder_id = <cur>` (files); the **feed**
+view unions the whole subtree (recursive on `folders.parent_id`) filtered to
+previewable `kind`s + their `comments(context=server)`. All gated by
+`can_view_channel` for works in private channels. Moving a file/folder writes
+`placement.folder_id` / `folders.parent_id` via `move_to_folder`. **DONE:** members
+see a folder's subfolders + files; descending/breadcrumb requeries; feed flattens the
+subtree and excludes non-previewable kinds; a work in a private channel is hidden
+from a non-granted member; move persists.
 
 ### P5.6 [UI] — Details pane — arena shell + audio & video
 **Arena layout (CANON §C.7):** a near-full-screen split over a scrim — media fills
@@ -49,7 +61,7 @@ dropdown — numbered versions are cut, beta 2026-08-18e). A single work (post o
 file) has **no media arrows** (only a folder does, P5.7). Rail body: title, **rich
 metadata** (storage badge, posted/uploaded-by, channel [server files only], added
 date, length for a/v, dimensions/fps for image/video, format/codec/bit-depth,
-size), credits (server-hue chips), tags.
+size), collaborators (server-hue chips, consent-gated), tags.
 
 **Post vs server file (CANON §C.7) — the same shell, two discussion surfaces:**
 - A **post** is a public work (Feed/profile) drawing the owner's **personal**
@@ -58,7 +70,7 @@ size), credits (server-hue chips), tags.
   add-comment field.
 - A **server file** is shared in a server; it looks identical but has **no comment
   thread** — the rail shows a "Replies happen in #channel →" link (discussion is
-  the chat). It **keeps tags** and credits. Badge "Server: NAME" (or "Personal ·
+  the chat). It **keeps tags** and collaborators. Badge "Server: NAME" (or "Personal ·
   crossposted" for a crosspost).
 
 Audio/video: use the **`MediaPlayer` primitive (P3.15)** — real play/pause, skip
@@ -102,21 +114,29 @@ screen. No member hue on this public surface.
 private), honouring who's viewing. **DONE:** a visitor sees only Public; the owner
 sees all three; counts match; search filters the active shelf.
 
-### P5.11 [UI] — Upload sheet
-Dropzone (multi-file, type recognised → icon/filter, **not a tag**), Title
-(file-name default), **separate Tags and Credits** fields (Credits = type-ahead
-chip input → member chip in **server hue**), **per-post Visibility** segmented,
-**Which-server** picker when Server. **DONE:** matches the `Upload` panel; Credits
-autocompletes handles to member chips; Which-server appears only for Server
-visibility; the Server segment uses `#i-server`.
+### P5.11 [UI] — Upload sheet (fast by default)
+**One step by default (CANON §C.12):** dropzone (multi-file, type recognised →
+icon/filter, **not a tag**) → **per-post Visibility** segmented (the one required
+choice) → **Which-server / folder** picker when Server → **Post**. Title auto-fills
+the file name. **Tags and Collaborators collapse behind an "Add details"
+disclosure** (`<details>`, no JS framework): Collaborators = type-ahead chip input →
+member chip in **server hue** with an optional freeform role. So a social user
+posting a meme never sees the artist fields. **DONE:** matches the `Upload` panel; a
+file can be posted with only visibility set; "Add details" reveals Title/Tags/
+Collaborators; Collaborators autocompletes handles to member chips; Which-server /
+folder appears only for Server visibility; the Server segment uses `#i-server`.
 
 ### P5.12 [GL] — Upload write path
-Presign via `api/sign.mjs` → PUT to R2 → insert `works` (visibility, server_id,
-title, credits, file_ext) with the correct `storage_source`/`billing_server_id`
-(native server post vs personal crosspost, CANON §D.3). **DONE:** a native server
-upload sets `storage_source='server'` + `billing_server_id`; a personal→server
-crosspost sets `storage_source='personal'`, `billing_server_id=null`; bytes hit the
-right meter (P2.15). *(Numbered versions are cut — a new take is just a new upload.)*
+Presign via `api/sign.mjs` → PUT to R2 → insert `works` (visibility, title,
+file_ext) with the correct `storage_source`/`billing_server_id` (native server post
+vs personal crosspost, CANON §D.3); a Server upload also creates the **server
+placement** with the chosen `folder_id` (default root); each collaborator writes a
+`work_collaborators` row via `add_collaborator` (consent-gated, P2). **DONE:** a
+native server upload sets `storage_source='server'` + `billing_server_id` and lands
+in the target folder; a personal→server crosspost sets `storage_source='personal'`,
+`billing_server_id=null`; bytes hit the right meter (P2.15); a credited friend is
+auto-accepted, a credited stranger is pending. *(Numbered versions are cut — a new
+take is just a new upload.)*
 
 ---
 
