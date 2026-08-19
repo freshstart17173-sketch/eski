@@ -361,33 +361,12 @@ input{font:inherit;color:inherit}
 .dmbigplay:hover{background:var(--surface)}
 .dmbigplay .ic{width:26px;height:26px}
 .dinfo{flex:none;width:380px;min-width:0;display:flex;flex-direction:column;overflow:hidden;background:var(--paper)}
-/* info-rail top bar: version dropdown (collapsed → full name on click) + report + close */
+/* info-rail top bar: file name + report + close */
 .dtop{flex:none;display:flex;align-items:center;gap:6px;padding:var(--s3) var(--s3) var(--s3) var(--s4)}
-.dtop .verbtn{margin:0}
 .dtop .sp{margin-left:auto}
+.dfilename{font-size:var(--fs-xs);color:var(--soft);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .dinfo .scroll{flex:1;overflow-y:auto;padding:0 var(--s4) var(--s4)}
 .dinfo h2{font-size:var(--fs-lg);font-weight:600}
-.verbtn{display:inline-flex;align-items:center;gap:7px;background:var(--surface);border-radius:var(--r);padding:6px 10px;font-size:var(--fs-xs);color:var(--soft);cursor:pointer}
-.verbtn:hover{background:var(--plate)}
-.verbtn .v{font-weight:700;color:var(--ink)}
-/* functional version / items dropdown — native <details>, no JS. Collapsed shows
-   just the count; open reveals the full file names. */
-.verdrop{position:relative}
-.verdrop>summary{list-style:none;display:inline-flex;align-items:center;gap:7px;background:var(--surface);border-radius:var(--r);padding:6px 10px;font-size:var(--fs-xs);color:var(--soft);cursor:pointer;user-select:none}
-.verdrop>summary::-webkit-details-marker{display:none}
-.verdrop>summary::marker{content:""}
-.verdrop>summary:hover{background:var(--plate)}
-.verdrop>summary .v{font-weight:700;color:var(--ink)}
-.verdrop[open]>summary .chev{transform:rotate(180deg)}
-.vermenu{position:absolute;top:calc(100% + 5px);left:0;z-index:30;min-width:236px;background:var(--paper);border:1px solid var(--line);border-radius:var(--r);padding:5px;box-shadow:0 12px 40px rgba(0,0,0,.28)}
-.vermenu .mlabel{font-size:11px;color:var(--muted);padding:5px 8px 6px}
-.vermenu button{display:flex;align-items:center;gap:9px;width:100%;text-align:left;padding:7px 8px;border-radius:var(--r);font-size:var(--fs-sm)}
-.vermenu button:hover{background:var(--surface)}
-.vermenu button.on{background:var(--surface)}
-.vermenu .vt{font-size:10px;font-weight:700;padding:1px 5px;border-radius:2px;background:var(--surface);flex:none}
-.vermenu button.on .vt,.vermenu .vt.cur{background:var(--ink);color:var(--on-ink)}
-.vermenu .vfn{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.vermenu .sep{height:1px;background:var(--line);margin:4px 0}
 /* folder navigation list in the rail */
 .flist{display:flex;flex-direction:column;gap:2px}
 .flist .fi{display:flex;align-items:center;gap:9px;padding:6px 8px;border-radius:var(--r);cursor:pointer;font-size:var(--fs-sm);text-align:left;width:100%}
@@ -448,19 +427,6 @@ input{font:inherit;color:inherit}
   .sheet .dmedia{flex:none;height:42vh;padding:20px}
   .dinfo{width:100%}}
 
-/* details: the version's change reason lives here, not in the version selector */
-.vernote{font-size:var(--fs-sm);color:var(--soft);margin:0 0 var(--s3)}
-.vernote .by{color:var(--muted);font-size:var(--fs-xs)}
-
-/* upload: ordered version files + type constraint */
-.uvnote{display:flex;align-items:center;gap:8px;font-size:var(--fs-xs);color:var(--muted);background:var(--surface);border-radius:var(--r);padding:8px 11px;margin:var(--s3) 0}
-.uvnote .ic{color:var(--soft)}
-.verfile{display:flex;align-items:center;gap:9px;background:var(--surface);border-radius:var(--r);padding:9px 10px;margin-bottom:7px;flex-wrap:wrap}
-.verfile .drag{color:var(--muted);cursor:grab}
-.verfile .vb{font-size:10px;font-weight:700;background:var(--ink);color:var(--on-ink);padding:1px 6px;border-radius:2px}
-.verfile .fn{display:inline-flex;align-items:center;gap:6px;font-size:var(--fs-sm);font-weight:600;flex:1;min-width:120px}
-.verfile .field{flex-basis:100%;padding:6px 9px}
-
 /* call (voice/video) screen */
 .vc{flex:1;min-width:0;display:flex;flex-direction:column;background:#101010;color:#ededed}
 .vchd{flex:none;height:48px;display:flex;align-items:center;gap:10px;padding:0 16px;background:#181818;font-size:var(--fs-sm)}
@@ -483,63 +449,6 @@ input{font:inherit;color:inherit}
 .vcbtn.on{background:#ededed;color:#111}
 .vcbtn.leave{background:#7d3128;color:#fff}
 .vcbtn.leave:hover{background:#93392e}
-
-/* kanban board */
-.kb{flex:1;min-width:0;display:flex;flex-direction:column;background:var(--paper)}
-.kbhd{flex:none;height:56px;display:flex;align-items:center;gap:12px;padding:0 24px;background:var(--surface)}
-.kbhd .ic{color:var(--muted)}.kbhd .t{font-weight:600;font-size:var(--fs-lg)}.kbhd .sub{color:var(--muted);font-size:var(--fs-sm)}
-.kbhd .acts{margin-left:auto}
-.kbcols{flex:1;display:flex;gap:16px;padding:20px 24px;overflow-x:auto;align-items:flex-start}
-.kbcol{flex:none;width:264px;background:var(--surface);border-radius:4px;padding:10px;display:flex;flex-direction:column;gap:8px}
-.kbcolhd{display:flex;align-items:center;justify-content:space-between;font-size:var(--fs-xs);font-weight:600;color:var(--soft);padding:2px 4px}
-.kbcolhd .n{color:var(--muted)}
-.kcard{background:var(--paper);border-radius:3px;padding:10px 11px;box-shadow:0 1px 3px rgba(0,0,0,.1);cursor:pointer}
-.kcard:hover{box-shadow:0 2px 8px rgba(0,0,0,.14)}
-.kcard .kt{font-size:var(--fs-sm)}
-.kcard .kfile{display:inline-flex;align-items:center;gap:5px;margin-top:7px;font-size:var(--fs-xs);color:var(--muted)}
-.kmeta{display:flex;align-items:center;gap:7px;margin-top:9px}
-.klabel{font-size:10px;font-weight:600;background:var(--tagbg);color:var(--ink);border-radius:2px;padding:2px 7px}
-.kav{width:20px;height:20px;border-radius:50%;color:#fff;display:grid;place-items:center;font-size:9px;font-weight:700;margin-left:auto}
-.kadd{font-size:var(--fs-xs);color:var(--muted);padding:6px 4px;text-align:left;display:flex;align-items:center;gap:6px}
-.kadd:hover{color:var(--ink)}
-/* board upgrades: views, custom fields, due dates (gap #12) */
-.kbviews{display:flex;gap:2px;background:var(--plate);border-radius:var(--r);padding:2px}
-.kbview{display:inline-flex;align-items:center;gap:6px;padding:6px 11px;border-radius:calc(var(--r) - 1px);font-size:var(--fs-xs);color:var(--soft)}
-.kbview .ic{width:14px;height:14px;color:var(--muted)}
-.kbview.on{background:var(--paper);color:var(--ink);font-weight:600}.kbview.on .ic{color:var(--ink)}
-.kview[hidden]{display:none}
-/* custom-field chips on a card (due date, priority, effort) */
-.kchips{display:flex;flex-wrap:wrap;gap:5px;margin-top:9px}
-.kchip{display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:600;border-radius:2px;padding:2px 7px;background:var(--tagbg);color:var(--soft)}
-.kchip .ic{width:11px;height:11px;color:var(--muted)}
-.kchip.due.soon{color:var(--ink)}.kchip.due.soon .ic{color:var(--ink)}
-.kchip.due.over{color:var(--m1)}.kchip.due.over .ic{color:var(--m1)}
-.kchip.prio .dotp{width:7px;height:7px;border-radius:50%;background:var(--muted)}
-.kchip.prio.hi .dotp{background:var(--ink)}
-/* table view: same list idiom as the rest of the app, aligned by a grid, no borders */
-.ktable{flex:1;overflow:auto;padding:14px 24px 24px}
-.kthead,.ktrow{display:grid;grid-template-columns:minmax(220px,1fr) 130px 120px 110px 96px;gap:14px;align-items:center;padding:9px 12px}
-.kthead{font-size:var(--fs-xs);color:var(--muted);font-weight:600;position:sticky;top:0;background:var(--paper);z-index:2}
-.ktrow{border-radius:var(--r);font-size:var(--fs-sm);cursor:pointer}
-.ktrow+.ktrow{box-shadow:inset 0 1px 0 var(--line)}
-.ktrow:hover{background:var(--surface)}
-.ktrow .task{font-weight:500;color:var(--ink)}
-.tstatus{display:inline-flex;align-items:center;gap:6px;font-size:var(--fs-xs);color:var(--soft)}
-.tstatus .dotp{width:7px;height:7px;border-radius:50%;background:var(--muted)}
-.tstatus.prog .dotp{background:var(--soft)}.tstatus.review .dotp{background:var(--ink)}.tstatus.done .dotp{background:var(--line2)}
-.tassign{display:inline-flex;align-items:center;gap:7px;font-size:var(--fs-xs);color:var(--soft)}
-.tdue{font-size:var(--fs-xs);color:var(--soft)}.tdue.over{color:var(--m1);font-weight:600}
-.tprio{display:inline-flex;align-items:center;gap:6px;font-size:var(--fs-xs);color:var(--soft)}
-.tprio .dotp{width:7px;height:7px;border-radius:50%;background:var(--muted)}.tprio.hi .dotp{background:var(--ink)}
-/* calendar view: an agenda grouped by due date */
-.kcal{flex:1;overflow:auto;padding:14px 24px 24px;max-width:780px}
-.kcalday{margin-top:20px}.kcalday:first-child{margin-top:2px}
-.kcaldate{font-size:var(--fs-sm);font-weight:600;color:var(--ink);padding-bottom:7px;box-shadow:inset 0 -1px 0 var(--line);margin-bottom:10px}
-.kcaldate small{color:var(--muted);font-weight:400;margin-left:8px}
-.kcaldate.over{color:var(--m1)}
-.kcalrow{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:var(--r);cursor:pointer}
-.kcalrow:hover{background:var(--surface)}
-.kcalrow .task{flex:1;min-width:0;font-size:var(--fs-sm)}
 
 /* group settings */
 .settings{flex:1;min-width:0;display:flex;overflow:hidden;background:var(--paper)}
@@ -1331,8 +1240,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
             <button class="mi"><svg class="ic"><use href="#i-hash"/></svg>announcements</button>
             <button class="mi on"><svg class="ic"><use href="#i-hash"/></svg>beats</button>
             <button class="mi"><svg class="ic"><use href="#i-hash"/></svg>verses</button>
-            <div class="mhd">Boards</div>
-            <button class="mi"><svg class="ic"><use href="#i-board"/></svg>shot tasks</button>
+            <button class="mi"><svg class="ic"><use href="#i-hash"/></svg>mixing</button>
           </div>
           <div class="veil"></div>
         </div>
@@ -1482,11 +1390,10 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
 
 <section class="gsec" id="key">
   <h2>⑤ Key per-screen dialogs</h2>
-  <p class="lede">The highest-traffic modals outside the global + canvas sets. The
-    rest are enumerated in ⑥. The Details panes are shown <b>arena-scale</b> (the
-    real size): media fills the left, a fixed right rail with rich metadata and a
-    <b>working version dropdown</b> (click it) at the top. A single work has no
-    media arrows; only a <b>folder</b> shows prev/next over the media plus a side
+  <p class="lede">The highest-traffic modals. The Details panes are shown
+    <b>arena-scale</b> (the real size): media fills the left, a fixed right rail with
+    the file name at the top and rich metadata below. A single work has no media
+    arrows; only a <b>folder</b> shows prev/next over the media plus a side
     navigation list (CANON §C.7).</p>
   <div class="stagewrap">
 
@@ -1510,7 +1417,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
         </div>
       </div></div>
       <div class="pcap"><b>Details pane — post (public)</b>
-        <span class="m">A <b>post</b> is a public work on your profile/feed — it draws <b>your personal storage</b>. Its detail pane is the classic one: a public <b>comment thread</b>, tags, credits, versions. Media takes the room; the rail is fixed. No channel (it isn't in a server).</span>
+        <span class="m">A <b>post</b> is a public work on your profile/feed — it draws <b>your personal storage</b>. Its detail pane is the classic one: a public <b>comment thread</b>, tags, credits. Media takes the room; the rail is fixed. No channel (it isn't in a server).</span>
         <span class="db">works visibility=public · storage_source=personal · comments (context=public)</span></div>
     </div>
 
@@ -1522,10 +1429,9 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
           <div class="dmtransport" style="color:#e8e8e8"><button class="tbtn" title="Back 10s" style="color:#e8e8e8"><svg class="ic"><use href="#i-rewind"/></svg></button><span>0:06</span><span class="track" style="background:rgba(255,255,255,.28)"><i style="width:18%;background:#fff"></i><span class="knob" style="left:18%;background:#fff"></span></span><span>0:34</span><button class="tbtn" title="Forward 10s" style="color:#e8e8e8"><svg class="ic"><use href="#i-ff"/></svg></button><button class="tbtn" title="Mute" style="color:#e8e8e8"><svg class="ic"><use href="#i-volume"/></svg></button><button class="tbtn" title="Fullscreen" style="color:#e8e8e8"><svg class="ic"><use href="#i-expand"/></svg></button></div>
         </div>
         <div class="dinfo">
-          <div class="dtop"><details class="verdrop"><summary><span class="v">v3</span> of 3<svg class="ic sm chev"><use href="#i-chev"/></svg></summary><div class="vermenu"><div class="mlabel">Versions — newest first</div><button class="on"><span class="vt cur">v3</span><span class="vfn">sh040_comp_v3.mp4</span></button><button><span class="vt">v2</span><span class="vfn">sh040_comp_v2.mp4</span></button><button><span class="vt">v1</span><span class="vfn">sh040_comp_v1.mp4</span></button><div class="sep"></div><button><svg class="ic sm"><use href="#i-plus"/></svg>Add a version</button></div></details><button class="iconbtn sp" title="Report"><svg class="ic sm"><use href="#i-flag"/></svg></button><button class="iconbtn" title="Close"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
+          <div class="dtop"><span class="dfilename">sh040_comp.mp4</span><button class="iconbtn sp" title="Report"><svg class="ic sm"><use href="#i-flag"/></svg></button><button class="iconbtn" title="Close"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
           <div class="scroll">
             <h2>q3 comp reel, first pass</h2>
-            <div class="vernote">v3: reworked the matte on the building edge. <span class="by">mira</span></div>
             <div class="meta"><div class="row"><span class="k">Visibility</span><span class="v"><span class="stbadge"><svg class="ic"><use href="#i-server"/></svg>Specter, sh040</span></span></div><div class="row"><span class="k">Uploaded by</span><span class="v"><span class="uchip m4"><span class="dot"></span>mira</span></span></div><div class="row"><span class="k">Channel</span><span class="v">#sh040 review</span></div><div class="row"><span class="k">Added</span><span class="v">16 Aug 2026, 9:40 AM</span></div><div class="row"><span class="k">Length</span><span class="v">0:34</span></div><div class="row"><span class="k">Dimensions</span><span class="v">1920×1080 · 24 fps</span></div><div class="row"><span class="k">Format</span><span class="v">MP4 · H.264</span></div><div class="row"><span class="k">Size</span><span class="v">214 MB</span></div></div>
             <div class="dsec"><div class="lb">Tags</div><div class="chips"><span class="tag">comp</span><span class="tag">sh040</span><button class="addtag"><svg class="ic sm"><use href="#i-plus"/></svg></button></div></div>
             <div class="dsec"><div class="lb">Credits</div><div class="chips"><span class="uchip m4"><span class="dot"></span>mira, comp</span><span class="uchip m2"><span class="dot"></span>sol, sound</span></div></div>
@@ -1535,8 +1441,8 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
         </div>
       </div></div>
       <div class="pcap"><b>Details pane — server file (video)</b>
-        <span class="m">A <b>file shared in a server</b> looks the same expanded but has <b>no comment thread</b> — replies live in the channel chat. It keeps <b>tags</b>, credits and versions; annotations are unchanged (they live on the canvas). Draws the <b>server's</b> storage.</span>
-        <span class="db">works visibility=server · no comments · content_tags · annotations on canvas</span></div>
+        <span class="m">A <b>file shared in a server</b> looks the same expanded but has <b>no comment thread</b> — replies live in the channel chat. It keeps <b>tags</b> and credits. Draws the <b>server's</b> storage.</span>
+        <span class="db">works visibility=server · no comments · content_tags</span></div>
     </div>
 
     <!-- details pane — SERVER FILE — image (crosspost) -->
@@ -1544,7 +1450,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
       <div class="stage scrim"><div class="arena">
         <div class="dmedia" style="background:linear-gradient(135deg,#6b5a4a,#241c16);padding:0"></div>
         <div class="dinfo">
-          <div class="dtop"><details class="verdrop"><summary><span class="v">v1</span> of 1<svg class="ic sm chev"><use href="#i-chev"/></svg></summary><div class="vermenu"><div class="mlabel">Versions — newest first</div><button class="on"><span class="vt cur">v1</span><span class="vfn">cover_bloom.png</span></button><div class="sep"></div><button><svg class="ic sm"><use href="#i-plus"/></svg>Add a version</button></div></details><button class="iconbtn sp" title="Report"><svg class="ic sm"><use href="#i-flag"/></svg></button><button class="iconbtn" title="Close"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
+          <div class="dtop"><span class="dfilename">cover_bloom.png</span><button class="iconbtn sp" title="Report"><svg class="ic sm"><use href="#i-flag"/></svg></button><button class="iconbtn" title="Close"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
           <div class="scroll">
             <h2>cover art, bloom</h2>
             <div class="meta"><div class="row"><span class="k">Visibility</span><span class="v"><span class="stbadge personal"><svg class="ic"><use href="#i-globe"/></svg>Personal · Public</span></span></div><div class="row"><span class="k">Uploaded by</span><span class="v"><span class="uchip m6"><span class="dot"></span>nel</span></span></div><div class="row"><span class="k">Channel</span><span class="v">#references</span></div><div class="row"><span class="k">Added</span><span class="v">14 Aug 2026, 6:02 PM</span></div><div class="row"><span class="k">Dimensions</span><span class="v">3000×2400</span></div><div class="row"><span class="k">Format</span><span class="v">PNG · sRGB</span></div><div class="row"><span class="k">Size</span><span class="v">4.8 MB</span></div></div>
@@ -1567,10 +1473,9 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
           <div class="dtype" style="width:min(320px,80%);height:180px"><svg class="ic"><use href="#i-file"/></svg><span class="ext">.FLP</span><span style="font-size:11px">no preview — download to open</span></div>
         </div>
         <div class="dinfo">
-          <div class="dtop"><details class="verdrop"><summary><span class="v">v3</span> of 3<svg class="ic sm chev"><use href="#i-chev"/></svg></summary><div class="vermenu"><div class="mlabel">Versions — newest first</div><button class="on"><span class="vt cur">v3</span><span class="vfn">late_bloom_beat.flp</span></button><button><span class="vt">v2</span><span class="vfn">late_bloom_beat_v2.flp</span></button><button><span class="vt">v1</span><span class="vfn">late_bloom_beat_draft.flp</span></button><div class="sep"></div><button><svg class="ic sm"><use href="#i-plus"/></svg>Add a version</button></div></details><button class="iconbtn sp" title="Report"><svg class="ic sm"><use href="#i-flag"/></svg></button><button class="iconbtn" title="Close"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
+          <div class="dtop"><span class="dfilename">late_bloom_beat.flp</span><button class="iconbtn sp" title="Report"><svg class="ic sm"><use href="#i-flag"/></svg></button><button class="iconbtn" title="Close"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
           <div class="scroll">
             <h2>Back half rework</h2>
-            <div class="vernote">v3: swapped the bridge drums, brought the low end down. <span class="by">dev</span></div>
             <div class="meta"><div class="row"><span class="k">Visibility</span><span class="v"><span class="stbadge"><svg class="ic"><use href="#i-server"/></svg>Late Bloom LP</span></span></div><div class="row"><span class="k">Uploaded by</span><span class="v"><span class="uchip m3"><span class="dot"></span>dev</span></span></div><div class="row"><span class="k">Channel</span><span class="v">#beats</span></div><div class="row"><span class="k">Added</span><span class="v">15 Aug 2026, 2:14 PM</span></div><div class="row"><span class="k">Format</span><span class="v">FL Studio project (.flp)</span></div><div class="row"><span class="k">Opens with</span><span class="v">FL Studio 21</span></div><div class="row"><span class="k">Size</span><span class="v">8.4 MB</span></div></div>
             <div class="dsec"><div class="lb">Tags</div><div class="chips"><span class="tag">drums</span><span class="tag">142bpm</span><span class="tag">bridge</span><button class="addtag"><svg class="ic sm"><use href="#i-plus"/></svg></button></div></div>
             <div class="dsec"><div class="lb">Credits</div><div class="chips"><span class="uchip m5"><span class="dot"></span>jax, prod</span><span class="uchip m3"><span class="dot"></span>dev, arrangement</span></div></div>
@@ -1580,7 +1485,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
         </div>
       </div></div>
       <div class="pcap"><b>Details pane — server file (other, non-previewable)</b>
-        <span class="m">Project files, archives, binaries (.flp, .zip, .exe, .als, .aep) — a <b>type card</b> fills the media area, no fake thumbnail. Versioned, tagged; <b>no comments</b> (chat) and <b>no Canvas</b> (nothing to annotate).</span>
+        <span class="m">Project files, archives, binaries (.flp, .zip, .exe, .als, .aep) — a <b>type card</b> fills the media area, no fake thumbnail. Tagged; <b>no comments</b> (chat handles replies).</span>
         <span class="db">works kind=other · works.file_ext · no comments</span></div>
     </div>
 
@@ -1637,24 +1542,9 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
         <div class="mfoot"><button class="btn">Cancel</button><button class="btn primary">Upload 3 files</button></div>
       </div></div>
       <div class="pcap"><b>Upload sheet</b>
-        <span class="m">Title optional, type recognised but not a tag, one visibility choice. Flips to “new version” mode.</span>
+        <span class="m">Title optional, type recognised but not a tag, one visibility choice, which-server picker.</span>
         <span class="db">works insert · file_ext · visibility</span>
         <span class="st live">in mockup</span></div>
-    </div>
-
-    <!-- version dropdown -->
-    <div>
-      <div class="stage"><div class="menu show">
-        <div class="mhd">Versions — by file name</div>
-        <button class="mi on"><svg class="ic"><use href="#i-version"/></svg>sh040_comp_v3.mov<span class="k">v3</span></button>
-        <button class="mi"><svg class="ic"><use href="#i-version"/></svg>sh040_comp_v2.mov<span class="k">v2</span></button>
-        <button class="mi"><svg class="ic"><use href="#i-version"/></svg>sh040_comp_v1.mov<span class="k">v1</span></button>
-        <div class="dsep"></div>
-        <button class="mi"><svg class="ic"><use href="#i-plus"/></svg>Add a version…</button>
-      </div></div>
-      <div class="pcap"><b>Version dropdown</b>
-        <span class="m">The one place file names show. Any member can add; the reason lives in the pane body.</span>
-        <span class="db">works.version_of · add_version()</span></div>
     </div>
 
     <!-- download -->
@@ -1701,24 +1591,6 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
       <div class="pcap"><b>Member / profile popout</b>
         <span class="m">Name in server colour, role chip, local time, mutual servers, add-friend/message. The cover uses the member hue — the one colour.</span>
         <span class="db">profiles · server_members.role · friendships</span></div>
-    </div>
-
-    <!-- board card -->
-    <div>
-      <div class="stage tall"><div class="modal">
-        <div class="uhd"><b>Low end on the bridge</b><button class="iconbtn"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
-        <div class="mbody">
-          <div style="display:flex;gap:7px;align-items:center;flex-wrap:wrap;margin-bottom:11px">
-            <span class="tag" style="background:var(--m1);color:#fff">mix</span>
-            <span class="uchip m3"><span class="dot"></span>tomo</span>
-            <span style="font-size:11px;color:var(--muted);margin-left:auto">due Fri</span></div>
-          <div style="font-size:12.5px;color:var(--soft);line-height:1.5;margin-bottom:11px">Bring the sub down ~2dB through the bridge.</div>
-          <button class="mi" style="background:var(--surface)"><svg class="ic"><use href="#i-canvas"/></svg>Linked: sh040 review</button>
-        </div>
-      </div></div>
-      <div class="pcap"><b>Board card detail</b>
-        <span class="m">Title, label, assignee (server colour), due date, linked file/canvas.</span>
-        <span class="db">board_cards (label, assignee_id, work_id/scratchpad_id, due_date)</span></div>
     </div>
 
     <!-- new DM -->
@@ -2050,9 +1922,9 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
         <div class="panebody">
           <div class="seclabel">Folders</div>
           <div class="colls">
-            <div class="coll"><div class="stack"><div class="s"></div><div class="s"></div><div class="s"><svg class="ic"><use href="#i-canvas"/></svg></div></div><div class="ct">bloom, single</div><div class="mt">6 files</div></div>
-            <div class="coll"><div class="stack"><div class="s"></div><div class="s"></div><div class="s"><svg class="ic"><use href="#i-canvas"/></svg></div></div><div class="ct">drum kit, shared</div><div class="mt">22 files</div></div>
-            <div class="coll"><div class="stack"><div class="s"></div><div class="s"></div><div class="s"><svg class="ic"><use href="#i-canvas"/></svg></div></div><div class="ct">references</div><div class="mt">9 files</div></div>
+            <div class="coll"><div class="stack"><div class="s"></div><div class="s"></div><div class="s"><svg class="ic"><use href="#i-file"/></svg></div></div><div class="ct">bloom, single</div><div class="mt">6 files</div></div>
+            <div class="coll"><div class="stack"><div class="s"></div><div class="s"></div><div class="s"><svg class="ic"><use href="#i-file"/></svg></div></div><div class="ct">drum kit, shared</div><div class="mt">22 files</div></div>
+            <div class="coll"><div class="stack"><div class="s"></div><div class="s"></div><div class="s"><svg class="ic"><use href="#i-file"/></svg></div></div><div class="ct">references</div><div class="mt">9 files</div></div>
           </div>
           <div class="seclabel">Files</div>
           <div class="masonry even">
@@ -2209,7 +2081,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
         <nav class="setnav">
           <div class="sgh">Late Bloom LP</div>
           <button data-setpanel="general" class="on"><svg class="ic sm"><use href="#i-settings"/></svg>General</button>
-          <button data-setpanel="channels"><svg class="ic sm"><use href="#i-hash"/></svg>Channels &amp; boards</button>
+          <button data-setpanel="channels"><svg class="ic sm"><use href="#i-hash"/></svg>Channels</button>
           <button data-setpanel="members"><svg class="ic sm"><use href="#i-users"/></svg>Members</button>
           <button data-setpanel="roles"><svg class="ic sm"><use href="#i-user"/></svg>Roles</button>
           <button data-setpanel="moderation"><svg class="ic sm"><use href="#i-hand"/></svg>Moderation</button>
@@ -2228,7 +2100,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
             <div class="dangerbox"><div class="t"><b>Delete this server</b><small>Removes every channel, board and canvas. Members keep their own copies of files they uploaded.</small></div><button class="btn danger"><svg class="ic sm"><use href="#i-trash"/></svg>Delete</button></div>
           </div>
           <div class="setpanel" data-panel="channels" hidden>
-            <h2>Channels &amp; boards</h2><div class="h2sub">Drag to reorder. Members see them in this order. Open a channel's settings for who can post, slow mode and privacy.</div>
+            <h2>Channels</h2><div class="h2sub">Drag to reorder. Members see them in this order. Open a channel's settings for who can post, slow mode and privacy.</div>
             <div class="setlist">
               <div class="chwrap">
                 <div class="mtrow"><svg class="ic sm drag" style="color:var(--muted)"><use href="#i-drag"/></svg><svg class="ic sm" style="color:var(--muted)"><use href="#i-hash"/></svg><div class="info"><b>beats</b></div><span class="rolesel">text</span><button class="chsetbtn" title="Channel settings"><svg class="ic sm"><use href="#i-settings"/></svg></button><button class="rm"><svg class="ic sm"><use href="#i-trash"/></svg></button></div>
@@ -2244,20 +2116,6 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
                   <div class="cr"><div class="cl"><b>Who can post</b><small>Everyone can read; posting can be limited to admins.</small></div><span class="selpill">Everyone<svg class="ic sm"><use href="#i-chev"/></svg></span></div>
                   <div class="cr"><div class="cl"><b>Slow mode</b><small>One message per member per interval.</small></div><span class="selpill">30s<svg class="ic sm"><use href="#i-chev"/></svg></span></div>
                   <div class="cr"><div class="cl"><b>Private channel</b><small>Only invited members see it in the rail.</small></div><span class="tgl"></span></div>
-                </div>
-              </div>
-              <div class="chwrap">
-                <div class="mtrow"><svg class="ic sm drag" style="color:var(--muted)"><use href="#i-drag"/></svg><svg class="ic sm" style="color:var(--muted)"><use href="#i-board"/></svg><div class="info"><b>shot tasks</b></div><span class="rolesel">board</span><button class="chsetbtn" title="Channel settings"><svg class="ic sm"><use href="#i-settings"/></svg></button><button class="rm"><svg class="ic sm"><use href="#i-trash"/></svg></button></div>
-                <div class="chset">
-                  <div class="cr"><div class="cl"><b>Who can edit</b><small>Admins always can; members can be read only.</small></div><span class="selpill">Members<svg class="ic sm"><use href="#i-chev"/></svg></span></div>
-                  <div class="cr"><div class="cl"><b>Private board</b><small>Only invited members see it in the rail.</small></div><span class="tgl on"></span></div>
-                </div>
-              </div>
-              <div class="chwrap">
-                <div class="mtrow"><svg class="ic sm drag" style="color:var(--muted)"><use href="#i-drag"/></svg><svg class="ic sm" style="color:var(--muted)"><use href="#i-canvas"/></svg><div class="info"><b>sh040 review</b></div><span class="rolesel">canvas</span><button class="chsetbtn" title="Channel settings"><svg class="ic sm"><use href="#i-settings"/></svg></button><button class="rm"><svg class="ic sm"><use href="#i-trash"/></svg></button></div>
-                <div class="chset">
-                  <div class="cr"><div class="cl"><b>Who can comment</b><small>Pins and threads on the canvas.</small></div><span class="selpill">Everyone<svg class="ic sm"><use href="#i-chev"/></svg></span></div>
-                  <div class="cr"><div class="cl"><b>Private canvas</b><small>Only invited members see it in the rail.</small></div><span class="tgl"></span></div>
                 </div>
               </div>
               <div class="chwrap">
@@ -2287,15 +2145,15 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
                 <div class="pgh">Server</div>
                 <div class="permrow"><span class="cl">Manage server<small>name, cover, delete</small></span><span class="cbx on"><svg class="ic sm"><use href="#i-check"/></svg></span></div>
                 <div class="permrow"><span class="cl">Manage roles &amp; permissions</span><span class="cbx on"><svg class="ic sm"><use href="#i-check"/></svg></span></div>
-                <div class="permrow"><span class="cl">Manage channels &amp; boards</span><span class="cbx on"><svg class="ic sm"><use href="#i-check"/></svg></span></div>
+                <div class="permrow"><span class="cl">Manage channels</span><span class="cbx on"><svg class="ic sm"><use href="#i-check"/></svg></span></div>
                 <div class="permrow"><span class="cl">Manage billing &amp; storage</span><span class="cbx"></span></div>
                 <div class="pgh">Members</div>
                 <div class="permrow"><span class="cl">Kick / ban / timeout</span><span class="cbx on"><svg class="ic sm"><use href="#i-check"/></svg></span></div>
                 <div class="permrow"><span class="cl">Create invite links</span><span class="cbx on"><svg class="ic sm"><use href="#i-check"/></svg></span></div>
                 <div class="pgh">Content</div>
-                <div class="permrow"><span class="cl">Upload &amp; add versions</span><span class="cbx on"><svg class="ic sm"><use href="#i-check"/></svg></span></div>
+                <div class="permrow"><span class="cl">Upload files</span><span class="cbx on"><svg class="ic sm"><use href="#i-check"/></svg></span></div>
                 <div class="permrow"><span class="cl">Add tags</span><span class="cbx on"><svg class="ic sm"><use href="#i-check"/></svg></span></div>
-                <div class="permrow"><span class="cl">Annotate &amp; comment</span><span class="cbx on"><svg class="ic sm"><use href="#i-check"/></svg></span></div>
+                <div class="permrow"><span class="cl">Comment</span><span class="cbx on"><svg class="ic sm"><use href="#i-check"/></svg></span></div>
                 <div class="permrow"><span class="cl">Delete anyone's message</span><span class="cbx on"><svg class="ic sm"><use href="#i-check"/></svg></span></div>
               </div>
             </div>
@@ -2515,7 +2373,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
             </div>
             <div class="sgroup">
               <div class="sglabel">Canvases</div>
-              <div class="srow" data-s="canvas"><div class="sthumb"><svg class="ic" style="color:var(--muted)"><use href="#i-canvas"/></svg></div><div class="stx"><div class="smeta"><b>sh040 review</b> · Specter, sh040</div><div class="sbody">a comment mentions the <mark>drum</mark> hit timing</div></div></div>
+              <div class="srow" data-s="explorer"><div class="sthumb"><svg class="ic" style="color:var(--muted)"><use href="#i-file"/></svg></div><div class="stx"><div class="smeta"><b>sh040_comp.mp4</b> · Specter, sh040</div><div class="sbody">a comment mentions the <mark>drum</mark> hit timing</div></div></div>
             </div>
           </div>
         </div>
@@ -2541,10 +2399,10 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
             <div class="nreply"><div class="field"><input placeholder="Reply to mira"><button class="snd"><svg class="ic sm"><use href="#i-send"/></svg></button></div></div></div>
             <time>1:04 PM</time>
             <div class="nacts"><button class="replybtn" title="Reply"><svg class="ic sm"><use href="#i-reply"/></svg></button><button class="savebtn" title="Save for later"><svg class="ic sm"><use href="#i-save"/></svg></button><button class="donebtn" title="Mark done"><svg class="ic sm"><use href="#i-check"/></svg></button></div></div>
-          <div class="nrow unread"><div class="nic"><svg class="ic sm"><use href="#i-version"/></svg></div><div class="nbd"><div class="ntx"><b>tomo</b> added <b>v3</b> to a friend's post</div><div class="nctx">Late Bloom LP · Back half rework</div><div class="quote">brought the low end down</div></div><time>12:20 PM</time>
+          <div class="nrow unread"><div class="nic"><svg class="ic sm"><use href="#i-comment"/></svg></div><div class="nbd"><div class="ntx"><b>tomo</b> commented on <b>Back half rework</b></div><div class="nctx">Late Bloom LP · Back half rework</div><div class="quote">brought the low end down, take another pass?</div></div><time>12:20 PM</time>
             <div class="nacts"><button class="savebtn" title="Save for later"><svg class="ic sm"><use href="#i-save"/></svg></button><button class="donebtn" title="Mark done"><svg class="ic sm"><use href="#i-check"/></svg></button></div></div>
           <div class="ndate">Earlier</div>
-          <div class="nrow"><div class="nic"><svg class="ic sm"><use href="#i-board"/></svg></div><div class="nbd"><div class="ntx"><b>mira</b> assigned you <b>Low end on the bridge</b></div><div class="nctx">Specter, sh040 · shot tasks</div></div><time>Yesterday</time>
+          <div class="nrow"><div class="nic"><svg class="ic sm"><use href="#i-at"/></svg></div><div class="nbd"><div class="ntx"><b>mira</b> mentioned you in <b>#sh040 review</b></div><div class="nctx">Specter, sh040</div></div><time>Yesterday</time>
             <div class="nacts"><button class="savebtn" title="Save for later"><svg class="ic sm"><use href="#i-save"/></svg></button><button class="donebtn" title="Mark done"><svg class="ic sm"><use href="#i-check"/></svg></button></div></div>
           <div class="nrow"><div class="nic"><svg class="ic sm"><use href="#i-user"/></svg></div><div class="nbd"><div class="ntx"><b>nel</b> joined <b>Late Bloom LP</b> from your invite link</div><div class="nctx">Late Bloom LP</div></div><time>Tue</time>
             <div class="nacts"><button class="donebtn" title="Mark done"><svg class="ic sm"><use href="#i-check"/></svg></button></div></div>
@@ -2568,8 +2426,8 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
         <div class="npanel" data-nview="threads" hidden>
           <div class="ndate">Threads you're in</div>
           <div class="nthread"><div class="nic"><svg class="ic sm"><use href="#i-comment"/></svg></div><div class="tbd"><div class="tt">Bridge drums re-cut <small>· #beats, Late Bloom LP</small></div><div class="tlast">rae: @jax can you re-cut the bridge drums before the session?</div></div><span class="tct">3 new</span></div>
-          <div class="nthread"><div class="nic"><svg class="ic sm"><use href="#i-canvas"/></svg></div><div class="tbd"><div class="tt">Ghosting on the building edge <small>· sh040 review, Specter</small></div><div class="tlast">mira: near building edge is ghosting, needs a garbage matte</div></div><span class="tct">1 new</span></div>
-          <div class="nthread"><div class="nic"><svg class="ic sm"><use href="#i-version"/></svg></div><div class="tbd"><div class="tt">Back half rework <small>· Late Bloom LP</small></div><div class="tlast">tomo: brought the low end down, take another pass?</div></div></div>
+          <div class="nthread"><div class="nic"><svg class="ic sm"><use href="#i-hash"/></svg></div><div class="tbd"><div class="tt">Ghosting on the building edge <small>· #sh040 review, Specter</small></div><div class="tlast">mira: near building edge is ghosting, needs a garbage matte</div></div><span class="tct">1 new</span></div>
+          <div class="nthread"><div class="nic"><svg class="ic sm"><use href="#i-comment"/></svg></div><div class="tbd"><div class="tt">Back half rework <small>· Late Bloom LP</small></div><div class="tlast">tomo: brought the low end down, take another pass?</div></div></div>
         </div>
 
         <div class="npanel" data-nview="saved" hidden>
@@ -2605,7 +2463,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
     <div class="playover" id="lbPlay" hidden><svg class="ic f"><use href="#i-play"/></svg></div>
     <span class="lbnav next" id="lbNext"><svg class="ic"><use href="#i-chev"/></svg></span></div>
   <div class="lbmeta"><div class="sh">Shared in</div>
-    <div class="lbshared"><span class="lbchip"><svg class="ic"><use href="#i-hash"/></svg>references</span><span class="lbchip"><svg class="ic"><use href="#i-canvas"/></svg>sh040 review</span><span class="lbchip"><svg class="ic"><use href="#i-users"/></svg>sh040 crew</span><span class="lbchip"><svg class="ic"><use href="#i-mail"/></svg>mira</span></div></div>
+    <div class="lbshared"><span class="lbchip"><svg class="ic"><use href="#i-hash"/></svg>references</span><span class="lbchip"><svg class="ic"><use href="#i-users"/></svg>sh040 crew</span><span class="lbchip"><svg class="ic"><use href="#i-mail"/></svg>mira</span></div></div>
 </div>
 
 <!-- QUICK SWITCHER (Cmd/Ctrl+K) -->
@@ -2615,8 +2473,8 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   <div class="qlist">
     <div class="qsec">Recent</div>
     <div class="qrow sel" data-s="workspace"><svg class="ic sm qic"><use href="#i-hash"/></svg><span class="qn">beats</span><span class="qctx">Late Bloom LP</span></div>
-    <div class="qrow" data-s="canvas"><svg class="ic sm qic"><use href="#i-canvas"/></svg><span class="qn">sh040 review</span><span class="qctx">Specter, sh040</span></div>
-    <div class="qrow" data-s="board"><svg class="ic sm qic"><use href="#i-board"/></svg><span class="qn">shot tasks</span><span class="qctx">Late Bloom LP</span></div>
+    <div class="qrow" data-s="explorer"><svg class="ic sm qic"><use href="#i-hash"/></svg><span class="qn">sh040 review</span><span class="qctx">Specter, sh040</span></div>
+    <div class="qrow" data-s="explorer"><svg class="ic sm qic"><use href="#i-grid"/></svg><span class="qn">Media</span><span class="qctx">Late Bloom LP</span></div>
     <div class="qsec">Channels</div>
     <div class="qrow" data-s="workspace"><svg class="ic sm qic"><use href="#i-hash"/></svg><span class="qn">mixing</span><span class="qctx">Late Bloom LP</span></div>
     <div class="qrow" data-s="workspace"><svg class="ic sm qic"><use href="#i-hash"/></svg><span class="qn">verses</span><span class="qctx">Late Bloom LP</span></div>
@@ -3047,12 +2905,11 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   function repaintPalette(){var dk=isDark();
     document.querySelectorAll('#pal .palsw').forEach(function(s){s.querySelector('.hx').textContent=dk?s.dataset.d:s.dataset.l;});}
 
-  // embed the 14 screens
+  // embed the screens
   var screens=[
     ['workspace','Workspace','server three-pane — rail · channels · chat · members',''],
     ['feed','Feed','friends-only public posts, card grid',''],
-    ['explorer','Media explorer','server files + collections, filters',''],
-    ['board','Board','kanban; board / table / calendar views',''],
+    ['explorer','Media explorer','server files + folders, filters',''],
     ['notifications','Notifications','all · mentions · threads · saved',''],
     ['settings','Server settings','general · channels · members · invites · moderation · audit · storage',''],
     ['profile','Profile','Public / Server / Private shelves + settings',''],
@@ -3076,7 +2933,6 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
     host.appendChild(fig);
   });
   function retheme(){document.querySelectorAll('iframe[data-screen]').forEach(function(f){f.src=frameSrc(f.dataset.screen);});}
-  document.querySelector('#canvas iframe[data-screen]').src=frameSrc('canvas');
 
   // inventory
   var inv=[
@@ -3104,23 +2960,10 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
     ['Explorer','Lightbox (image/video + “shared in”)','open media','works','m'],
     ['Explorer','Filter dropdowns (channel/type/uploader/sort)','explorer header','works where server_id','m'],
     ['Explorer','Collection carousel','Collections strip','collections','m'],
-    ['Details','Version dropdown (by file name)','version control','works.version_of','a'],
-    ['Details','Add version (reason required)','“Add a version”','add_version()','t'],
     ['Details','Download “get as…” (audio)','Download','transcode','a'],
     ['Details','Save-to-folder (+ new folder)','Save','saved_items','a'],
-    ['Details','Open-in-canvas picker','Open in canvas','canvases','t'],
     ['Details','Storage source badge (server vs personal)','open details','works.storage_source','t'],
     ['Details','Crosspost to server (personal storage)','Crosspost','works.storage_source=personal','t'],
-    ['Canvas','Canvas picker','header dropdown','canvases','a'],
-    ['Canvas','Share / visibility (mint link)','Share','canvases.visibility/share_code','a'],
-    ['Canvas','Comment thread (point/box/freeform/audio/frame)','click pin','comments.mark','a'],
-    ['Canvas','Tool palette + colour','toolbar','annotations','m'],
-    ['Canvas','Tile ⋯ menu','tile hover','canvas_items','a'],
-    ['Canvas','Add file to canvas','Add file','canvas_items','t'],
-    ['Board','Add / edit card','＋ / click','board_cards','a'],
-    ['Board','Label / assignee / due pickers','on a card','board_cards','t'],
-    ['Board','Add / rename column','column header','board_columns','t'],
-    ['Board','View switcher (board/table/calendar)','header tabs','—','m'],
     ['Profile','Edit profile','Edit','profiles','t'],
     ['Profile','Settings tabs','Settings tab','profiles','m'],
     ['Messages','New DM (add by handle)','＋','create_dm','a'],
