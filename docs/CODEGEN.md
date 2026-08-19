@@ -289,10 +289,10 @@ DONE:    a .flp/.zip/.exe renders an icon+ext+name card (not a broken image);
          errors; one-column on mobile.
 ```
 
-### Exemplar B — `P1.24 [BE]` granular roles + PAYG (the load-bearing migration)
+### Exemplar B — `P1.24 [BE]` granular roles + slider storage (the load-bearing migration)
 
 ```
-TITLE:   P1.24 — roles/member_roles/channel_roles + has_perm/can_view_channel + PAYG columns
+TITLE:   P1.24 — roles/member_roles/channel_roles + has_perm/can_view_channel + storage columns
 CONTEXT: Supabase Postgres. CANON §D.1–D.3 supersede COLLAB §7’s flat role enum.
          Re-runnable schema-*.sql; RLS on every new table.
 BUILD:   (1) roles(id, server_id, name, color smallint, position int,

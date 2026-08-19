@@ -251,7 +251,7 @@ insert (P1.4 test).
 
 ---
 
-### P1.24 [BE] — granular roles + channel gating + PAYG storage (CANON §D.1–D.3)
+### P1.24 [BE] — granular roles + channel gating + slider storage (CANON §D.1–D.3)
 
 **The load-bearing one.** See the fully-expanded exemplar in
 [`../CODEGEN.md`](../CODEGEN.md) §3 (Exemplar B) — reproduce it exactly.
