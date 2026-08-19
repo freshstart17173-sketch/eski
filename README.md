@@ -88,6 +88,8 @@ they reference live in [`docs/design/styleguide.html`](docs/design/styleguide.ht
   when the build lands.)
 - **Config** — `vercel.json`, `.env.example` (Supabase + R2 + mail), `r2-cors.json`,
   `package.json`/`package-lock.json` (just `aws4fetch`, which the signer needs).
+- **`index.html`** — a small static index at the site root linking to the docs and
+  the design gallery (the app itself isn't built yet).
 
 There is no issue tracker. Work is tracked in `docs/CANON.md`, `docs/COLLAB.md`,
 and in conversation.
@@ -97,12 +99,13 @@ and in conversation.
 ## Running it
 
 There is no dev server yet — the current deliverable is documents and the design
-gallery. To view the gallery locally, serve the repo with any static server and
-open `docs/design/gallery.html` (a `file://` open breaks the embedded screens):
+gallery. Serve the repo with any static server and open the root `index.html` for
+a link index, or go straight to `docs/design/gallery.html` (a `file://` open breaks
+the embedded screens):
 
 ```bash
 python3 -m http.server 8000
-# then open http://localhost:8000/docs/design/gallery.html
+# then open http://localhost:8000/  (or /docs/design/gallery.html)
 ```
 
 `?app=1#<screen>` on that URL switches the gallery from catalog mode into a
