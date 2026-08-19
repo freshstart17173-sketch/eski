@@ -1,9 +1,11 @@
 # eski
 
 **Discord for creatives.** Servers you're invited into (studios), user-created
-channels, persistent chat, kanban boards, a review **canvas** for annotating and
-commenting on media, numbered versions, friends and DMs, and three visibility
-layers — public / server / private.
+channels, persistent chat, a shared media library, post comments, friends and DMs,
+and three visibility layers — public / server / private. Think **Discord + Google
+Drive**. (The review **canvas**, **kanban boards**, and **numbered versions** were
+cut from the beta on 2026-08-18 to keep the mental model simple — they may return
+post-beta.)
 
 **This is a rebuild, and it's in the planning-and-design phase — nothing is live
 yet.** eski used to be a single-page "pivot" product (a portfolio feed with
@@ -25,10 +27,10 @@ Four documents, in order:
 
 | File | What it is |
 |---|---|
-| [`docs/CANON.md`](docs/CANON.md) | **The build contract — the single source of truth.** §A canonical vocabulary, §B roles & permissions mapped to the RLS/RPC that enforces them, §C the per-screen UI element registry (behaviour → database → desktop/mobile), §D added scope (granular roles, PAYG storage, storage source, utility screens), §E canvas mechanics. **When anything disagrees with CANON, CANON wins.** |
+| [`docs/CANON.md`](docs/CANON.md) | **The build contract — the single source of truth.** §A canonical vocabulary, §B roles & permissions mapped to the RLS/RPC that enforces them, §C the per-screen UI element registry (behaviour → database → desktop/mobile), §D added scope (granular roles, dynamic-slider storage, storage source, utility screens). **When anything disagrees with CANON, CANON wins.** |
 | [`docs/COLLAB.md`](docs/COLLAB.md) | The narrative spec: the why behind every feature, the data-model sketch, the two end-to-end workflows, and §7 the hand-off-ready backend plan (tables, RPCs, triggers, Realtime, migration order). *Predates the terminology streamline — where its names differ from CANON, use CANON's.* |
-| [`docs/design/`](docs/design/) | The design sources. **`gallery.html` is law** — every one of the ~21 screens embedded live, plus every dialog, menu and modal as a standalone panel, plus the member-colour palette; it's the critique surface. `styleguide.html` is the token & component source of truth. `_fonts.css` is the extracted Jost faces. |
-| [`docs/CODEGEN.md`](docs/CODEGEN.md) | The build plan: the whole app sliced into ~133 individually-testable micro-prompts across 10 phases (scaffold → schema/RLS → RPCs → primitives → shell → content → canvas → boards/DMs/notifs → admin → utility), each tagged `[BE]`/`[UI]`/`[GL]` with its own definition-of-done, plus the DeepSeek V4 Flash token budget. |
+| [`docs/design/`](docs/design/) | The design sources. **`gallery.html` is law** — every screen embedded live, plus every dialog, menu and modal as a standalone panel, plus the member-colour palette; it's the critique surface. `styleguide.html` is the token & component source of truth. `_fonts.css` is the extracted Jost faces. |
+| [`docs/CODEGEN.md`](docs/CODEGEN.md) | The build plan: the whole app sliced into ~103 individually-testable micro-prompts across the phases (scaffold → schema/RLS → RPCs → primitives → shell → content → DMs/notifs → admin → utility; the canvas phase is cut for the beta), each tagged `[BE]`/`[UI]`/`[GL]` with its own definition-of-done, plus the DeepSeek V4 Flash token budget. |
 
 ---
 
@@ -63,7 +65,7 @@ Unchanged from the pivot at the service level; the schema is new.
 
 - **Supabase** (Postgres + Auth + Realtime) — **RLS is the fence; the UI is only
   the signpost.** Every table ships with RLS. Presence, live message changes,
-  typing, the notification bell and live canvas all ride Realtime (COLLAB §7.4).
+  typing and the notification bell all ride Realtime (COLLAB §7.4).
 - **Cloudflare R2** — media behind `api/sign.mjs` (the one existing Vercel
   function, content-agnostic presigned uploads); the browser uploads straight to
   R2. Storage is a **dynamic per-GB slider** (10 GB free; price/GB drops as you buy

@@ -10,6 +10,13 @@ Discord / Instagram / Figma / Slack handled the same thing.
 It is a **findings + proposals** doc, not a lock. Rows that need a decision are
 tagged **⚑DECIDE**; once chosen they graduate into CANON.
 
+> **Beta scope cut (2026-08-18e).** The **review canvas + annotations**, **kanban
+> boards**, and **numbered versions** are removed from the beta. Every hazard below
+> that hinges on a canvas, an annotation, a board card, or an "add a version" (much
+> of §4, all of §9's version/canvas rows, M4–M6, C2–C3, D3, DM3's boards) is
+> **resolved by removal** — those surfaces no longer exist to cross. The
+> placement + storage findings still stand. CANON is authoritative.
+
 ---
 
 ## 0. The root cause (read this first)

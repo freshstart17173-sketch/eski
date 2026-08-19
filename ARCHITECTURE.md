@@ -53,7 +53,7 @@ wins.**
 
 | Artifact | Owns | Authority |
 |---|---|---|
-| [`docs/CANON.md`](docs/CANON.md) | The build contract. §A vocabulary · §B roles/permissions → the RLS/RPC that enforces them · §C the per-screen UI element registry (behaviour → database → desktop/mobile) · §D added scope (granular roles, PAYG storage, storage source, utility screens) · §E canvas mechanics. | **Top. CANON wins over everything, including this file.** |
+| [`docs/CANON.md`](docs/CANON.md) | The build contract. §A vocabulary · §B roles/permissions → the RLS/RPC that enforces them · §C the per-screen UI element registry (behaviour → database → desktop/mobile) · §D added scope (granular roles, dynamic-slider storage, storage source, utility screens). | **Top. CANON wins over everything, including this file.** |
 | [`docs/design/gallery.html`](docs/design/gallery.html) | The pixels. ~21 screens embedded live, plus every dialog/menu/modal as a standalone panel, plus the member palette and a build-status inventory. The visual law. | Wins over prose on anything visual. |
 | [`docs/design/styleguide.html`](docs/design/styleguide.html) | The token & component source of truth — the values the built pages consume. `_fonts.css` holds the extracted Jost faces. | The only home for raw design values. |
 | [`docs/COLLAB.md`](docs/COLLAB.md) | The narrative spec: why each feature exists, the data-model sketch, the two end-to-end workflows, and **§7 the hand-off-ready backend plan** (tables, RPCs, triggers, Realtime channels, indexes, migration order). | Mechanical reference. **Predates the terminology streamline — where its names differ from CANON, CANON's win.** |
@@ -78,14 +78,15 @@ guesses to make here.
 
 - **Supabase** (Postgres + Auth + Realtime). Postgres is where ownership,
   visibility and consent are decided — via RLS and `security definer` RPCs, not
-  application code. Realtime carries five channels (COLLAB §7.4): `server:{id}`
-  presence, `channel:{id}` live messages, `channel:{id}:typing`, `canvas:{id}`
-  live annotations, `user:{id}` the notification bell.
+  application code. Realtime carries four channels (COLLAB §7.4): `server:{id}`
+  presence, `channel:{id}` live messages, `channel:{id}:typing`, and `user:{id}`
+  the notification bell.
 - **Cloudflare R2** for media, behind `api/sign.mjs` — the one existing serverless
   function, content-agnostic presigned uploads; the browser uploads straight to
-  R2, nothing streams through Vercel. Storage is **pay-as-you-go, two pools**
-  (personal and per-server), metered by a trigger that sums `works.bytes` per pool
-  (CANON §D.2).
+  R2, nothing streams through Vercel. Storage is a **dynamic per-GB slider** (10 GB
+  free; price/GB drops as you buy more), two **independent single-payer** accounts
+  (your own, and a server's own — no pooling), content-addressed with **dedup**;
+  a trigger meters distinct owned blobs per account (CANON §D.2).
 - **Vercel** hosts the app plus serverless functions and deploys `main` directly.
   No staging.
 
@@ -103,13 +104,18 @@ migration order) as amended by CANON §D:
   channel-scoped reads gate on `can_view_channel`. The layout is written to the
   future full-overwrite grain so v2 is additive, no reshape (LOCKED D-i).
 - **Storage source on a work** (CANON §D.3): `storage_source` + `billing_server_id`
-  distinguish a native server post (server pool pays) from a crosspost of a
-  personal work into a server (personal pool pays; the file stays the owner's).
+  distinguish a native server post (server storage pays) from a crosspost of a
+  personal work into a server (personal storage pays; the file stays the owner's).
+
+> **Beta cut (2026-08-18e).** The review **canvas** (`canvas`/`canvas_items`/
+> `annotations`), **kanban boards** (`boards`/`board_*`), and **numbered versions**
+> (`version_of`/`version_note`) are removed from the beta — a new take is just a new
+> upload, feedback lives in chat + post comments. Ignore any canvas/board/version
+> references that survive in COLLAB §7's older text.
 
 Follow the CANON vocabulary when reading §7: `servers`/`server_members`/
-`is_server_admin` (not `groups`), `canvas`/`canvas_items` (not `scratchpads`),
-and **`annotations` for canvas marks vs `comments` for post-level threads** —
-CANON §E.7 splits these, COLLAB §7 still folds them together.
+`is_server_admin` (not `groups`), and **`comments` for post-level threads** — CANON
+overrides COLLAB §7's older names.
 
 ### The front end
 

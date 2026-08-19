@@ -184,9 +184,9 @@ around it. `post_status_guard()` in `schema-clean.sql` enforces this as a
 trigger, not the interface. "Make private" is the only walk-back there is.
 
 **Editing a published post's text is not a feature** (removed 2026-08-15,
-a deliberate product decision, not a gap) — adding a version is the
-supported way to change what's published, and only the original poster may
-add one (`works_version_owner_guard()`, also a trigger).
+a deliberate product decision, not a gap) — re-uploading is the supported way to
+change what's published. *(Numbered versions were cut from the collab beta on
+2026-08-18; this paragraph describes the retired pivot.)*
 
 ---
 
