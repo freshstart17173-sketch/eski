@@ -189,16 +189,44 @@ input{font:inherit;color:inherit}
 .panebody{flex:1;overflow-y:auto;padding:var(--s4) var(--s5) var(--s5)}
 .seclabel{color:var(--muted);font-size:var(--fs-xs);font-weight:600;margin:0 0 var(--s3)}
 
-/* collections strip */
-.colls{display:flex;gap:var(--s4);overflow-x:auto;padding-bottom:var(--s3);margin-bottom:var(--s5)}
-.coll{flex:none;width:180px;cursor:pointer}
-.coll .stack{position:relative;height:110px}
-.coll .stack .s{position:absolute;inset:0;background:var(--paper1)}
-.coll .stack .s:nth-child(1){transform:translate(6px,6px);background:var(--plate)}
-.coll .stack .s:nth-child(2){transform:translate(3px,3px);background:var(--paper1)}
-.coll .stack .s:nth-child(3){display:grid;place-items:center;color:var(--muted)}
-.coll .ct{font-size:var(--fs-sm);font-weight:600;margin-top:8px}
-.coll .mt{font-size:var(--fs-xs);color:var(--muted)}
+/* file explorer — nested folder tree + views (Discord + Drive) */
+.explayout{flex:1;min-width:0;display:flex;overflow:hidden}
+.filetree{flex:none;width:212px;background:var(--surface);overflow-y:auto;padding:8px 6px}
+.fthd{display:flex;align-items:center;justify-content:space-between;font-size:var(--fs-xs);color:var(--muted);font-weight:600;padding:4px 8px 8px}
+.ftrow{display:flex;align-items:center;gap:6px;width:100%;text-align:left;padding:6px 8px;border-radius:var(--r);font-size:var(--fs-sm);color:var(--soft);cursor:pointer}
+.ftrow:hover{background:var(--plate)}
+.ftrow.on{background:var(--plate);color:var(--ink);font-weight:600}
+.ftrow .tw{width:13px;height:13px;flex:none;color:var(--muted);transition:transform var(--t)}
+.ftrow.open .tw{transform:rotate(0deg)}.ftrow:not(.open) .tw{transform:rotate(-90deg)}
+.ftrow .fic{color:var(--muted);flex:none}.ftrow.on .fic{color:var(--ink)}
+.ftrow .fn{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ftrow.lvl0{padding-left:8px}.ftrow.lvl1{padding-left:22px}.ftrow.lvl2{padding-left:36px}
+.explayout .pane{flex:1;min-width:0}
+.explayout .panehd{justify-content:space-between}
+.crumbs{display:flex;align-items:center;gap:7px;font-size:var(--fs-sm);color:var(--muted);min-width:0}
+.crumbs button{color:var(--soft)}.crumbs button:hover{color:var(--ink)}
+.crumbs b{color:var(--ink)}.crumbs .sl{color:var(--line2)}
+.vseg{display:flex;gap:2px;background:var(--plate);border-radius:var(--r);padding:2px;flex:none}
+.vseg button{width:32px;height:26px;display:grid;place-items:center;border-radius:calc(var(--r) - 1px);color:var(--muted)}
+.vseg button.on{background:var(--paper);color:var(--ink)}
+.exview[hidden]{display:none}
+.foldercard .media.fold{display:grid;place-items:center;background:var(--surface);color:var(--muted)}
+.foldercard .media.fold .ic{width:34px;height:34px}
+/* list view */
+.flrow{display:grid;grid-template-columns:minmax(200px,1.4fr) 90px 90px 110px 90px;gap:14px;align-items:center;padding:9px 12px;font-size:var(--fs-sm);color:var(--soft);border-radius:var(--r);cursor:pointer}
+.flrow+.flrow{box-shadow:inset 0 1px 0 var(--line)}
+.flrow:hover:not(.flhd){background:var(--surface)}
+.flhd{font-size:var(--fs-xs);color:var(--muted);font-weight:600;cursor:default}
+.flnm{display:inline-flex;align-items:center;gap:8px;font-weight:500;color:var(--ink);min-width:0}
+.flnm .ic{color:var(--muted);flex:none}
+/* feed view — flattened previewable media + comments */
+.filefeed{max-width:620px;margin:0 auto}
+.ffnote{display:flex;gap:8px;font-size:var(--fs-xs);color:var(--muted);background:var(--surface);border-radius:var(--r);padding:9px 11px;margin-bottom:var(--s4)}
+.ffitem{margin-bottom:var(--s5)}
+.ffmedia{position:relative;background:var(--paper1);border-radius:var(--r);overflow:hidden;margin-bottom:8px}
+.ffmeta{display:flex;align-items:baseline;gap:10px;margin-bottom:8px}
+.ffmeta b{font-size:var(--fs-sm)}.ffmeta .who{font-size:var(--fs-xs);color:var(--muted)}
+.ffcmts{padding-left:2px}
 
 /* masonry feed: no card backgrounds */
 .masonry{column-width:230px;column-gap:var(--s5)}
@@ -913,9 +941,16 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
 .seg .o .ic{width:15px;height:15px}
 .seg .o.on{background:var(--ink);color:var(--on-ink)}
 .copyrow{display:flex;gap:var(--s2)}
-/* credits = colour-chip autocomplete input */
-.field.credits{flex-wrap:wrap;gap:5px}
-.field.credits input{width:70px}
+/* collaborators = colour-chip autocomplete input */
+.field.collabs{flex-wrap:wrap;gap:5px}
+.field.collabs input{width:70px}
+/* upload "Add details" disclosure (fast post keeps it collapsed) */
+.addmore{margin-top:var(--s4)}
+.addmore>summary{list-style:none;display:flex;align-items:center;gap:7px;cursor:pointer;font-size:var(--fs-sm);font-weight:600;color:var(--soft);padding:8px 0;user-select:none}
+.addmore>summary::-webkit-details-marker{display:none}
+.addmore>summary .ic{transition:transform var(--t);color:var(--muted)}
+.addmore[open]>summary .ic{transform:rotate(180deg)}
+.addmore>summary:hover{color:var(--ink)}
 /* point mark = rectangular labelled tail (holds a full username, scrolls) */
 .ptmark{position:absolute;display:block;max-width:120px;overflow-x:auto;white-space:nowrap;
   background:var(--pc,var(--m3));color:#fff;font-size:12px;font-weight:600;padding:4px 9px;border-radius:var(--r);scrollbar-width:none}
@@ -1410,7 +1445,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
             <h2>late bloom</h2>
             <div class="meta"><div class="row"><span class="k">Visibility</span><span class="v"><span class="stbadge personal"><svg class="ic"><use href="#i-globe"/></svg>Personal · Public</span></span></div><div class="row"><span class="k">Posted by</span><span class="v"><span class="uchip m1"><span class="dot"></span>rae</span></span></div><div class="row"><span class="k">Added</span><span class="v">15 Aug 2026, 2:14 PM</span></div><div class="row"><span class="k">Length</span><span class="v">2:18</span></div><div class="row"><span class="k">Format</span><span class="v">WAV · 44.1 kHz · 24-bit</span></div><div class="row"><span class="k">Size</span><span class="v">32.1 MB</span></div></div>
             <div class="dsec"><div class="lb">Tags</div><div class="chips"><span class="tag">bloom</span><span class="tag">single</span><span class="tag">master</span><button class="addtag"><svg class="ic sm"><use href="#i-plus"/></svg></button></div></div>
-            <div class="dsec"><div class="lb">Credits</div><div class="chips"><span class="uchip m1"><span class="dot"></span>rae, vocals</span><span class="uchip m3"><span class="dot"></span>dev, beat</span><span class="uchip m4"><span class="dot"></span>tomo, mix</span></div></div>
+            <div class="dsec"><div class="lb">Collaborators</div><div class="chips"><span class="uchip m1"><span class="dot"></span>rae, vocals</span><span class="uchip m3"><span class="dot"></span>dev, beat</span><span class="uchip m4"><span class="dot"></span>tomo, mix</span></div></div>
             <div class="dsec"><div class="lb">Comments</div><div class="cmt"><div class="av sm">MI</div><div class="bd"><div class="by"><span class="u m4">mira</span><time>3:02 PM</time></div><div class="tx">the falling section finally reads, love it</div></div></div><div class="cmt"><div class="av sm">KO</div><div class="bd"><div class="by"><span class="u m2">kofi</span><time>2:40 PM</time></div><div class="tx">what bpm is this?</div></div></div><div class="field" style="margin-top:8px"><input placeholder="Add a comment"></div></div>
           </div>
           <div class="foot"><button class="btn primary"><svg class="ic sm"><use href="#i-download"/></svg>Download<svg class="ic sm"><use href="#i-chev"/></svg></button><button class="btn"><svg class="ic sm"><use href="#i-save"/></svg>Save</button></div>
@@ -1434,7 +1469,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
             <h2>q3 comp reel, first pass</h2>
             <div class="meta"><div class="row"><span class="k">Visibility</span><span class="v"><span class="stbadge"><svg class="ic"><use href="#i-server"/></svg>Specter, sh040</span></span></div><div class="row"><span class="k">Uploaded by</span><span class="v"><span class="uchip m4"><span class="dot"></span>mira</span></span></div><div class="row"><span class="k">Channel</span><span class="v">#sh040 review</span></div><div class="row"><span class="k">Added</span><span class="v">16 Aug 2026, 9:40 AM</span></div><div class="row"><span class="k">Length</span><span class="v">0:34</span></div><div class="row"><span class="k">Dimensions</span><span class="v">1920×1080 · 24 fps</span></div><div class="row"><span class="k">Format</span><span class="v">MP4 · H.264</span></div><div class="row"><span class="k">Size</span><span class="v">214 MB</span></div></div>
             <div class="dsec"><div class="lb">Tags</div><div class="chips"><span class="tag">comp</span><span class="tag">sh040</span><button class="addtag"><svg class="ic sm"><use href="#i-plus"/></svg></button></div></div>
-            <div class="dsec"><div class="lb">Credits</div><div class="chips"><span class="uchip m4"><span class="dot"></span>mira, comp</span><span class="uchip m2"><span class="dot"></span>sol, sound</span></div></div>
+            <div class="dsec"><div class="lb">Collaborators</div><div class="chips"><span class="uchip m4"><span class="dot"></span>mira, comp</span><span class="uchip m2"><span class="dot"></span>sol, sound</span></div></div>
             <div class="dsec"><div class="lb">Discussion</div><button class="mi" style="background:var(--surface);justify-content:flex-start;gap:8px"><svg class="ic sm" style="color:var(--muted)"><use href="#i-hash"/></svg>Replies happen in <b style="margin-left:3px">#sh040 review</b><svg class="ic sm" style="margin-left:auto;color:var(--muted)"><use href="#i-chev"/></svg></button></div>
           </div>
           <div class="foot"><button class="btn primary"><svg class="ic sm"><use href="#i-download"/></svg>Download<svg class="ic sm"><use href="#i-chev"/></svg></button><button class="btn"><svg class="ic sm"><use href="#i-save"/></svg>Save</button></div>
@@ -1455,7 +1490,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
             <h2>cover art, bloom</h2>
             <div class="meta"><div class="row"><span class="k">Visibility</span><span class="v"><span class="stbadge personal"><svg class="ic"><use href="#i-globe"/></svg>Personal · Public</span></span></div><div class="row"><span class="k">Uploaded by</span><span class="v"><span class="uchip m6"><span class="dot"></span>nel</span></span></div><div class="row"><span class="k">Channel</span><span class="v">#references</span></div><div class="row"><span class="k">Added</span><span class="v">14 Aug 2026, 6:02 PM</span></div><div class="row"><span class="k">Dimensions</span><span class="v">3000×2400</span></div><div class="row"><span class="k">Format</span><span class="v">PNG · sRGB</span></div><div class="row"><span class="k">Size</span><span class="v">4.8 MB</span></div></div>
             <div class="dsec"><div class="lb">Tags</div><div class="chips"><span class="tag">cover</span><span class="tag">bloom</span><span class="tag">wip</span><button class="addtag"><svg class="ic sm"><use href="#i-plus"/></svg></button></div></div>
-            <div class="dsec"><div class="lb">Credits</div><div class="chips"><span class="uchip m6"><span class="dot"></span>nel, art</span><span class="uchip m1"><span class="dot"></span>rae, direction</span></div></div>
+            <div class="dsec"><div class="lb">Collaborators</div><div class="chips"><span class="uchip m6"><span class="dot"></span>nel, art</span><span class="uchip m1"><span class="dot"></span>rae, direction</span></div></div>
             <div class="dsec"><div class="lb">Discussion</div><button class="mi" style="background:var(--surface);justify-content:flex-start;gap:8px"><svg class="ic sm" style="color:var(--muted)"><use href="#i-hash"/></svg>Replies happen in <b style="margin-left:3px">#references</b><svg class="ic sm" style="margin-left:auto;color:var(--muted)"><use href="#i-chev"/></svg></button></div>
           </div>
           <div class="foot"><button class="btn primary"><svg class="ic sm"><use href="#i-download"/></svg>Download<svg class="ic sm"><use href="#i-chev"/></svg></button><button class="btn"><svg class="ic sm"><use href="#i-save"/></svg>Save</button></div>
@@ -1478,7 +1513,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
             <h2>Back half rework</h2>
             <div class="meta"><div class="row"><span class="k">Visibility</span><span class="v"><span class="stbadge"><svg class="ic"><use href="#i-server"/></svg>Late Bloom LP</span></span></div><div class="row"><span class="k">Uploaded by</span><span class="v"><span class="uchip m3"><span class="dot"></span>dev</span></span></div><div class="row"><span class="k">Channel</span><span class="v">#beats</span></div><div class="row"><span class="k">Added</span><span class="v">15 Aug 2026, 2:14 PM</span></div><div class="row"><span class="k">Format</span><span class="v">FL Studio project (.flp)</span></div><div class="row"><span class="k">Opens with</span><span class="v">FL Studio 21</span></div><div class="row"><span class="k">Size</span><span class="v">8.4 MB</span></div></div>
             <div class="dsec"><div class="lb">Tags</div><div class="chips"><span class="tag">drums</span><span class="tag">142bpm</span><span class="tag">bridge</span><button class="addtag"><svg class="ic sm"><use href="#i-plus"/></svg></button></div></div>
-            <div class="dsec"><div class="lb">Credits</div><div class="chips"><span class="uchip m5"><span class="dot"></span>jax, prod</span><span class="uchip m3"><span class="dot"></span>dev, arrangement</span></div></div>
+            <div class="dsec"><div class="lb">Collaborators</div><div class="chips"><span class="uchip m5"><span class="dot"></span>jax, prod</span><span class="uchip m3"><span class="dot"></span>dev, arrangement</span></div></div>
             <div class="dsec"><div class="lb">Discussion</div><button class="mi" style="background:var(--surface);justify-content:flex-start;gap:8px"><svg class="ic sm" style="color:var(--muted)"><use href="#i-hash"/></svg>Replies happen in <b style="margin-left:3px">#beats</b><svg class="ic sm" style="margin-left:auto;color:var(--muted)"><use href="#i-chev"/></svg></button></div>
           </div>
           <div class="foot"><button class="btn primary"><svg class="ic sm"><use href="#i-download"/></svg>Download<svg class="ic sm"><use href="#i-chev"/></svg></button><button class="btn"><svg class="ic sm"><use href="#i-save"/></svg>Save</button></div>
@@ -1524,26 +1559,29 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
         <div class="mbody">
           <div style="background:var(--surface);border-radius:var(--r);padding:14px;font-size:12px;color:var(--muted);text-align:center">
             late_bloom_beat.wav · 3 files</div>
-          <label class="fl">Title <span style="color:var(--muted)">— optional, file name is the default</span></label>
-          <div class="field"><input placeholder="late_bloom_beat.wav"></div>
-          <label class="fl">Tags</label>
-          <div class="field"><input placeholder="142bpm, bridge"></div>
-          <label class="fl">Credits <span style="color:var(--muted)">— type a name, it autocompletes, Enter to credit</span></label>
-          <div class="field credits"><span class="uchip m5"><span class="dot"></span>jax</span><span class="uchip m3"><span class="dot"></span>tomo</span><input placeholder="add…"></div>
-          <label class="fl">Visibility</label>
+          <label class="fl">Visibility <span style="color:var(--muted)">— the one choice you have to make</span></label>
           <div class="seg">
             <div class="o"><svg class="ic"><use href="#i-globe"/></svg>Public</div>
             <div class="o on"><svg class="ic"><use href="#i-server"/></svg>Server</div>
             <div class="o"><svg class="ic"><use href="#i-lock"/></svg>Private</div>
           </div>
-          <label class="fl">Which server</label>
-          <button class="selbtn" style="width:100%;justify-content:space-between"><span style="display:flex;align-items:center;gap:8px"><span class="pfp" style="width:20px;height:20px;border-radius:var(--r);font-size:9px;background:var(--m3)">LB</span>Late Bloom LP</span><svg class="ic sm"><use href="#i-chev"/></svg></button>
+          <label class="fl">Which server / folder</label>
+          <button class="selbtn" style="width:100%;justify-content:space-between"><span style="display:flex;align-items:center;gap:8px"><span class="pfp" style="width:20px;height:20px;border-radius:var(--r);font-size:9px;background:var(--m3)">LB</span>Late Bloom LP <span style="color:var(--muted)">/ beats</span></span><svg class="ic sm"><use href="#i-chev"/></svg></button>
+          <details class="addmore">
+            <summary><svg class="ic sm"><use href="#i-chev"/></svg>Add details <span style="color:var(--muted)">— title, tags, collaborators (optional)</span></summary>
+            <label class="fl">Title <span style="color:var(--muted)">— file name is the default</span></label>
+            <div class="field"><input placeholder="late_bloom_beat.wav"></div>
+            <label class="fl">Tags</label>
+            <div class="field"><input placeholder="142bpm, bridge"></div>
+            <label class="fl">Collaborators <span style="color:var(--muted)">— type a handle, Enter to add (+ optional role)</span></label>
+            <div class="field collabs"><span class="uchip m5"><span class="dot"></span>jax, prod</span><span class="uchip m3"><span class="dot"></span>tomo, mix</span><input placeholder="add…"></div>
+          </details>
         </div>
-        <div class="mfoot"><button class="btn">Cancel</button><button class="btn primary">Upload 3 files</button></div>
+        <div class="mfoot"><button class="btn">Cancel</button><button class="btn primary">Post 3 files</button></div>
       </div></div>
-      <div class="pcap"><b>Upload sheet</b>
-        <span class="m">Title optional, type recognised but not a tag, one visibility choice, which-server picker.</span>
-        <span class="db">works insert · file_ext · visibility</span>
+      <div class="pcap"><b>Upload sheet — fast by default</b>
+        <span class="m">Drop → pick visibility → <b>Post</b>. Title auto-fills the file name; Tags + Collaborators hide behind <b>Add details</b>, so a meme-sharer never sees an artist form. Collaborators renamed from Credits.</span>
+        <span class="db">works insert · file_ext · visibility · placement.folder_id</span>
         <span class="st live">in mockup</span></div>
     </div>
 
@@ -1663,7 +1701,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   <div class="ptabs" id="ptabs">
     <button class="ptab" data-s="workspace">Workspace</button>
     <button class="ptab" data-s="feed">Feed</button>
-    <button class="ptab" data-s="explorer">Media explorer</button>
+    <button class="ptab" data-s="explorer">File explorer</button>
     <button class="ptab" data-s="vc">Call</button>
     <button class="ptab" data-s="notifications">Notifications</button>
     <button class="ptab" data-s="settings">Server settings</button>
@@ -1704,7 +1742,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
         <div class="chanhd" data-s="settings" style="cursor:pointer" title="Server settings"><b>Late Bloom LP</b><svg class="ic sm" style="color:var(--muted)"><use href="#i-chev"/></svg></div>
         <div class="chanbody">
           <div class="cgroup">
-            <button class="crow" data-s="explorer"><svg class="ic"><use href="#i-grid"/></svg><span class="nm">Media</span></button>
+            <button class="crow" data-s="explorer"><svg class="ic"><use href="#i-folder"/></svg><span class="nm">Files</span></button>
           </div>
           <div class="cgroup">
             <div class="cglabel">Channels <svg class="ic sm"><use href="#i-plus"/></svg></div>
@@ -1903,43 +1941,81 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
 
     <!-- MEDIA EXPLORER -->
     <div class="screen" data-screen="explorer" hidden>
-      <div class="pane">
-        <div class="panehd"><div class="title">Late Bloom LP, media</div></div>
-        <div class="toolbar">
-          <div class="field"><svg class="ic sm"><use href="#i-search"/></svg><input placeholder="Search this server's files"></div>
-          <button class="selbtn"><svg class="ic sm"><use href="#i-hash"/></svg>Channel<svg class="ic sm"><use href="#i-chev"/></svg></button>
-          <button class="selbtn">Type<svg class="ic sm"><use href="#i-chev"/></svg></button>
-          <button class="selbtn">Uploader<svg class="ic sm"><use href="#i-chev"/></svg></button>
-          <button class="selbtn">Latest<svg class="ic sm"><use href="#i-chev"/></svg></button><button class="iconbtn" data-lt title="Grid / masonry"><svg class="ic sm"><use href="#i-grid"/></svg></button>
-        </div>
-        <div class="selbar" id="selbar"><span class="n"><span id="seln">0</span> selected</span>
-          <button><svg class="ic sm"><use href="#i-download"/></svg>Download</button>
-          <button><svg class="ic sm"><use href="#i-plus"/></svg>Add to folder</button>
-          <button><svg class="ic sm"><use href="#i-move"/></svg>Move</button>
-          <button><svg class="ic sm"><use href="#i-trash"/></svg>Delete</button>
-          <span class="sp"></span>
-          <button id="selClear"><svg class="ic sm"><use href="#i-x"/></svg>Clear</button></div>
-        <div class="panebody">
-          <div class="seclabel">Folders</div>
-          <div class="colls">
-            <div class="coll"><div class="stack"><div class="s"></div><div class="s"></div><div class="s"><svg class="ic"><use href="#i-file"/></svg></div></div><div class="ct">bloom, single</div><div class="mt">6 files</div></div>
-            <div class="coll"><div class="stack"><div class="s"></div><div class="s"></div><div class="s"><svg class="ic"><use href="#i-file"/></svg></div></div><div class="ct">drum kit, shared</div><div class="mt">22 files</div></div>
-            <div class="coll"><div class="stack"><div class="s"></div><div class="s"></div><div class="s"><svg class="ic"><use href="#i-file"/></svg></div></div><div class="ct">references</div><div class="mt">9 files</div></div>
+      <div class="explayout">
+        <!-- nested folder tree -->
+        <nav class="filetree">
+          <div class="fthd">Files<button class="iconbtn sm" title="New folder"><svg class="ic sm"><use href="#i-plus"/></svg></button></div>
+          <button class="ftrow lvl0 open"><svg class="ic sm tw"><use href="#i-chev"/></svg><svg class="ic sm fic"><use href="#i-folder"/></svg><span class="fn">Late Bloom LP</span></button>
+          <button class="ftrow lvl1 open on"><svg class="ic sm tw"><use href="#i-chev"/></svg><svg class="ic sm fic"><use href="#i-folder"/></svg><span class="fn">beats</span></button>
+          <button class="ftrow lvl2"><span class="tw"></span><svg class="ic sm fic"><use href="#i-folder"/></svg><span class="fn">drums</span></button>
+          <button class="ftrow lvl1"><svg class="ic sm tw"><use href="#i-chev"/></svg><svg class="ic sm fic"><use href="#i-folder"/></svg><span class="fn">verses</span></button>
+          <button class="ftrow lvl1"><svg class="ic sm tw"><use href="#i-chev"/></svg><svg class="ic sm fic"><use href="#i-folder"/></svg><span class="fn">mixing</span></button>
+          <button class="ftrow lvl1"><span class="tw"></span><svg class="ic sm fic"><use href="#i-folder"/></svg><span class="fn">references</span></button>
+          <button class="ftrow lvl1"><span class="tw"></span><svg class="ic sm fic"><use href="#i-folder"/></svg><span class="fn">stems and sessions</span></button>
+        </nav>
+        <div class="pane">
+          <div class="panehd">
+            <div class="crumbs"><button>Late Bloom LP</button><span class="sl">/</span><b>beats</b></div>
+            <div class="vseg" id="exView">
+              <button class="on" data-exv="grid" title="Grid"><svg class="ic sm"><use href="#i-grid"/></svg></button>
+              <button data-exv="list" title="List"><svg class="ic sm"><use href="#i-type"/></svg></button>
+              <button data-exv="feed" title="Feed — previewable media + comments"><svg class="ic sm"><use href="#i-home"/></svg></button>
+            </div>
           </div>
-          <div class="seclabel">Files</div>
-          <div class="masonry even">
-            <div class="card" data-open-details><div class="media audio"><span class="cardsel"><svg class="ic"><use href="#i-check"/></svg></span><div class="cardacts"><button data-act="dl" title="Download"><svg class="ic"><use href="#i-download"/></svg></button><button data-act="link" title="Copy link"><svg class="ic"><use href="#i-link"/></svg></button><button data-act="more" title="More"><svg class="ic"><use href="#i-more"/></svg></button></div><div class="wave" data-wf="150"></div></div>
-              <div class="title">late_bloom_beat.flp</div><div class="who"><span class="uchip m3"><span class="dot"></span>dev</span> · #beats</div></div>
-            <div class="card" data-open-details><div class="media audio"><span class="cardsel"><svg class="ic"><use href="#i-check"/></svg></span><div class="cardacts"><button data-act="dl" title="Download"><svg class="ic"><use href="#i-download"/></svg></button><button data-act="link" title="Copy link"><svg class="ic"><use href="#i-link"/></svg></button><button data-act="more" title="More"><svg class="ic"><use href="#i-more"/></svg></button></div><div class="wave" data-wf="150"></div></div>
-              <div class="title">bridge_scratch_rae.wav</div><div class="who"><span class="uchip m1"><span class="dot"></span>rae</span> · #beats</div></div>
-            <div class="card" data-lightbox data-lbkind="image"><div class="media"><span class="cardsel"><svg class="ic"><use href="#i-check"/></svg></span><div class="cardacts"><button data-act="dl" title="Download"><svg class="ic"><use href="#i-download"/></svg></button><button data-act="link" title="Copy link"><svg class="ic"><use href="#i-link"/></svg></button><button data-act="more" title="More"><svg class="ic"><use href="#i-more"/></svg></button></div><div class="shot c" style="aspect-ratio:3/2"></div></div>
-              <div class="title">ref_drums.png</div><div class="who"><span class="uchip m1"><span class="dot"></span>rae</span> · #references</div></div>
-            <div class="card" data-open-details><div class="media audio"><span class="cardsel"><svg class="ic"><use href="#i-check"/></svg></span><div class="cardacts"><button data-act="dl" title="Download"><svg class="ic"><use href="#i-download"/></svg></button><button data-act="link" title="Copy link"><svg class="ic"><use href="#i-link"/></svg></button><button data-act="more" title="More"><svg class="ic"><use href="#i-more"/></svg></button></div><div class="wave" data-wf="150"></div></div>
-              <div class="title">bloom_mix_rough.wav</div><div class="who"><span class="uchip m2"><span class="dot"></span>tomo</span> · #mixing</div></div>
-            <div class="card" data-lightbox data-lbkind="video"><div class="media"><span class="cardsel"><svg class="ic"><use href="#i-check"/></svg></span><div class="cardacts"><button data-act="dl" title="Download"><svg class="ic"><use href="#i-download"/></svg></button><button data-act="link" title="Copy link"><svg class="ic"><use href="#i-link"/></svg></button><button data-act="more" title="More"><svg class="ic"><use href="#i-more"/></svg></button></div><div class="shot b" style="aspect-ratio:16/9"></div><div class="playover"><svg class="ic f"><use href="#i-play"/></svg></div></div>
-              <div class="title">booth_2min.mp4</div><div class="who"><span class="uchip m5"><span class="dot"></span>jax</span> · #announcements</div></div>
-            <div class="card" data-open-details><div class="media audio"><span class="cardsel"><svg class="ic"><use href="#i-check"/></svg></span><div class="cardacts"><button data-act="dl" title="Download"><svg class="ic"><use href="#i-download"/></svg></button><button data-act="link" title="Copy link"><svg class="ic"><use href="#i-link"/></svg></button><button data-act="more" title="More"><svg class="ic"><use href="#i-more"/></svg></button></div><div class="wave" data-wf="150"></div></div>
-              <div class="title">bloom_master.als</div><div class="who"><span class="uchip m5"><span class="dot"></span>jax</span> · #stems and sessions</div></div>
+          <div class="toolbar">
+            <div class="field"><svg class="ic sm"><use href="#i-search"/></svg><input placeholder="Search this server's files"></div>
+            <button class="selbtn"><svg class="ic sm"><use href="#i-hash"/></svg>Channel<svg class="ic sm"><use href="#i-chev"/></svg></button>
+            <button class="selbtn">Type<svg class="ic sm"><use href="#i-chev"/></svg></button>
+            <button class="selbtn">Uploader<svg class="ic sm"><use href="#i-chev"/></svg></button>
+            <button class="selbtn">Latest<svg class="ic sm"><use href="#i-chev"/></svg></button>
+          </div>
+          <div class="selbar" id="selbar"><span class="n"><span id="seln">0</span> selected</span>
+            <button><svg class="ic sm"><use href="#i-download"/></svg>Download</button>
+            <button><svg class="ic sm"><use href="#i-move"/></svg>Move to folder</button>
+            <button><svg class="ic sm"><use href="#i-trash"/></svg>Delete</button>
+            <span class="sp"></span>
+            <button id="selClear"><svg class="ic sm"><use href="#i-x"/></svg>Clear</button></div>
+          <div class="panebody">
+            <!-- GRID view (default): subfolders + files of the current folder -->
+            <div class="exview" data-exview="grid">
+              <div class="masonry even">
+                <div class="card foldercard"><div class="media fold"><svg class="ic"><use href="#i-folder"/></svg></div><div class="title">drums</div><div class="who">7 files</div></div>
+                <div class="card" data-open-details><div class="media audio"><span class="cardsel"><svg class="ic"><use href="#i-check"/></svg></span><div class="cardacts"><button data-act="dl" title="Download"><svg class="ic"><use href="#i-download"/></svg></button><button data-act="link" title="Copy link"><svg class="ic"><use href="#i-link"/></svg></button><button data-act="more" title="More"><svg class="ic"><use href="#i-more"/></svg></button></div><div class="wave" data-wf="150"></div></div>
+                  <div class="title">late_bloom_beat.flp</div><div class="who"><span class="uchip m3"><span class="dot"></span>dev</span> · #beats</div></div>
+                <div class="card" data-open-details><div class="media audio"><span class="cardsel"><svg class="ic"><use href="#i-check"/></svg></span><div class="cardacts"><button data-act="dl" title="Download"><svg class="ic"><use href="#i-download"/></svg></button><button data-act="link" title="Copy link"><svg class="ic"><use href="#i-link"/></svg></button><button data-act="more" title="More"><svg class="ic"><use href="#i-more"/></svg></button></div><div class="wave" data-wf="150"></div></div>
+                  <div class="title">bridge_scratch_rae.wav</div><div class="who"><span class="uchip m1"><span class="dot"></span>rae</span> · #beats</div></div>
+                <div class="card" data-lightbox data-lbkind="image"><div class="media"><span class="cardsel"><svg class="ic"><use href="#i-check"/></svg></span><div class="cardacts"><button data-act="dl" title="Download"><svg class="ic"><use href="#i-download"/></svg></button><button data-act="link" title="Copy link"><svg class="ic"><use href="#i-link"/></svg></button><button data-act="more" title="More"><svg class="ic"><use href="#i-more"/></svg></button></div><div class="shot c" style="aspect-ratio:3/2"></div></div>
+                  <div class="title">ref_drums.png</div><div class="who"><span class="uchip m1"><span class="dot"></span>rae</span> · #beats</div></div>
+                <div class="card" data-lightbox data-lbkind="video"><div class="media"><span class="cardsel"><svg class="ic"><use href="#i-check"/></svg></span><div class="cardacts"><button data-act="dl" title="Download"><svg class="ic"><use href="#i-download"/></svg></button><button data-act="link" title="Copy link"><svg class="ic"><use href="#i-link"/></svg></button><button data-act="more" title="More"><svg class="ic"><use href="#i-more"/></svg></button></div><div class="shot b" style="aspect-ratio:16/9"></div><div class="playover"><svg class="ic f"><use href="#i-play"/></svg></div></div>
+                  <div class="title">booth_2min.mp4</div><div class="who"><span class="uchip m5"><span class="dot"></span>jax</span> · #beats</div></div>
+                <div class="card" data-open-details><div class="media"><span class="cardsel"><svg class="ic"><use href="#i-check"/></svg></span><div class="cardacts"><button data-act="dl" title="Download"><svg class="ic"><use href="#i-download"/></svg></button><button data-act="more" title="More"><svg class="ic"><use href="#i-more"/></svg></button></div><div class="dtype" style="height:100%"><svg class="ic"><use href="#i-file"/></svg><span class="ext">.ALS</span></div></div>
+                  <div class="title">bloom_master.als</div><div class="who"><span class="uchip m5"><span class="dot"></span>jax</span> · #beats</div></div>
+              </div>
+            </div>
+            <!-- LIST view: file-manager rows -->
+            <div class="exview" data-exview="list" hidden>
+              <div class="flrow flhd"><span>Name</span><span>Type</span><span>Size</span><span>Uploader</span><span>Added</span></div>
+              <div class="flrow"><span class="flnm"><svg class="ic sm"><use href="#i-folder"/></svg>drums</span><span>folder</span><span>—</span><span>dev</span><span>10 Aug</span></div>
+              <div class="flrow"><span class="flnm"><svg class="ic sm"><use href="#i-file"/></svg>late_bloom_beat.flp</span><span>flp</span><span>8.4 MB</span><span>dev</span><span>15 Aug</span></div>
+              <div class="flrow"><span class="flnm"><svg class="ic sm"><use href="#i-voice"/></svg>bridge_scratch_rae.wav</span><span>wav</span><span>18 MB</span><span>rae</span><span>15 Aug</span></div>
+              <div class="flrow"><span class="flnm"><svg class="ic sm"><use href="#i-image"/></svg>ref_drums.png</span><span>png</span><span>2.1 MB</span><span>rae</span><span>14 Aug</span></div>
+              <div class="flrow"><span class="flnm"><svg class="ic sm"><use href="#i-video"/></svg>booth_2min.mp4</span><span>mp4</span><span>142 MB</span><span>jax</span><span>13 Aug</span></div>
+              <div class="flrow"><span class="flnm"><svg class="ic sm"><use href="#i-file"/></svg>bloom_master.als</span><span>als</span><span>36 MB</span><span>jax</span><span>12 Aug</span></div>
+            </div>
+            <!-- FEED view: flattened subtree, previewable media only, comments inline -->
+            <div class="exview filefeed" data-exview="feed" hidden>
+              <div class="ffnote"><svg class="ic sm"><use href="#i-home"/></svg>Everything previewable in <b>beats</b> and its subfolders, newest first. Project files (.flp/.als) are hidden here — switch to grid or list for those.</div>
+              <div class="ffitem">
+                <div class="ffmedia"><div class="shot b" style="aspect-ratio:16/9"></div><div class="playover"><svg class="ic f"><use href="#i-play"/></svg></div></div>
+                <div class="ffmeta"><b>booth_2min.mp4</b><span class="who"><span class="uchip m5"><span class="dot"></span>jax</span> · drums · 13 Aug</span></div>
+                <div class="ffcmts"><div class="cmt"><div class="av sm">RA</div><div class="bd"><div class="by"><span class="u m1">rae</span><time>2:14 PM</time></div><div class="tx">the room tone at 0:40 is perfect</div></div></div><div class="field" style="margin-top:6px"><input placeholder="Comment"></div></div>
+              </div>
+              <div class="ffitem">
+                <div class="ffmedia"><div class="wave" data-wf="150"></div></div>
+                <div class="ffmeta"><b>bridge_scratch_rae.wav</b><span class="who"><span class="uchip m1"><span class="dot"></span>rae</span> · beats · 15 Aug</span></div>
+                <div class="ffcmts"><div class="cmt"><div class="av sm">DV</div><div class="bd"><div class="by"><span class="u m3">dev</span><time>11:02 AM</time></div><div class="tx">looping this under the second verse</div></div></div><div class="field" style="margin-top:6px"><input placeholder="Comment"></div></div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -2129,7 +2205,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
             <button class="btn sm" style="margin-top:14px"><svg class="ic sm"><use href="#i-plus"/></svg>Add channel</button>
           </div>
           <div class="setpanel" data-panel="roles" hidden>
-            <h2>Roles</h2><div class="h2sub">Roles carry permissions; a member can hold several. @everyone is the baseline.</div>
+            <h2>Roles</h2><div class="h2sub">A new server ships with just <b>Owner</b> + <b>@everyone</b> (every non-admin permission on) — no setup needed. Add roles like Producer only when you want to. A member can hold several; @everyone is the baseline.</div>
             <div style="display:flex;gap:24px">
               <div style="width:190px;flex:none">
                 <div class="setlist">
@@ -2474,7 +2550,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
     <div class="qsec">Recent</div>
     <div class="qrow sel" data-s="workspace"><svg class="ic sm qic"><use href="#i-hash"/></svg><span class="qn">beats</span><span class="qctx">Late Bloom LP</span></div>
     <div class="qrow" data-s="explorer"><svg class="ic sm qic"><use href="#i-hash"/></svg><span class="qn">sh040 review</span><span class="qctx">Specter, sh040</span></div>
-    <div class="qrow" data-s="explorer"><svg class="ic sm qic"><use href="#i-grid"/></svg><span class="qn">Media</span><span class="qctx">Late Bloom LP</span></div>
+    <div class="qrow" data-s="explorer"><svg class="ic sm qic"><use href="#i-folder"/></svg><span class="qn">Files</span><span class="qctx">Late Bloom LP</span></div>
     <div class="qsec">Channels</div>
     <div class="qrow" data-s="workspace"><svg class="ic sm qic"><use href="#i-hash"/></svg><span class="qn">mixing</span><span class="qctx">Late Bloom LP</span></div>
     <div class="qrow" data-s="workspace"><svg class="ic sm qic"><use href="#i-hash"/></svg><span class="qn">verses</span><span class="qctx">Late Bloom LP</span></div>
@@ -2525,7 +2601,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
         <div class="dsec"><div class="lb">Tags</div><div class="chips">
           <span class="tag">drums</span><span class="tag">142bpm</span><span class="tag">bridge</span><span class="tag">sampled</span><span class="tag">wip</span>
           <button class="addtag" title="Add tag"><svg class="ic sm"><use href="#i-plus"/></svg></button></div></div>
-        <div class="dsec"><div class="lb">Contributors</div><div class="chips">
+        <div class="dsec"><div class="lb">Collaborators</div><div class="chips">
           <span class="uchip m5"><span class="dot"></span>jax, prod</span><span class="uchip m3"><span class="dot"></span>dev, arrangement</span>
           <span class="uchip m1"><span class="dot"></span>rae, vocals</span><span class="uchip m2"><span class="dot"></span>tomo, mix</span></div></div>
         <div class="dsec"><div class="lb">Discussion</div>
@@ -2570,23 +2646,26 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
     </div>
 
     <div id="uNewFields">
-      <label class="ulab">Title <span style="font-weight:400;color:var(--muted)">optional, the file name is used if blank</span></label>
-      <div class="field"><input placeholder="Back half rework"></div>
-      <label class="ulab">Tags</label>
-      <div class="chips" style="margin-top:2px"><span class="tag">drums</span><span class="tag">142bpm</span><button class="addtag"><svg class="ic sm"><use href="#i-plus"/></svg></button></div>
-      <label class="ulab">Contributors</label>
-      <div class="field"><input value="prod jax, arrangement dev, vocals rae"></div>
-      <label class="ulab">Visibility <span style="font-weight:400;color:var(--muted)">— set per post</span></label>
+      <label class="ulab">Visibility <span style="font-weight:400;color:var(--muted)">— the one required choice</span></label>
       <div class="urow">
         <button class="visopt"><svg class="ic"><use href="#i-globe"/></svg><span>Public<small>on your public profile</small></span></button>
         <button class="visopt on"><svg class="ic"><use href="#i-server"/></svg><span>Server<small>members of the server</small></span></button>
         <button class="visopt"><svg class="ic"><use href="#i-lock"/></svg><span>Private<small>only you</small></span></button>
       </div>
-      <label class="ulab">Which server</label>
-      <button class="selbtn" style="width:100%;justify-content:space-between"><span style="display:flex;align-items:center;gap:8px"><span class="pfp" style="width:20px;height:20px;border-radius:var(--r);font-size:9px;background:var(--m3)">LB</span>Late Bloom LP</span><svg class="ic sm"><use href="#i-chev"/></svg></button>
+      <label class="ulab">Which server / folder</label>
+      <button class="selbtn" style="width:100%;justify-content:space-between"><span style="display:flex;align-items:center;gap:8px"><span class="pfp" style="width:20px;height:20px;border-radius:var(--r);font-size:9px;background:var(--m3)">LB</span>Late Bloom LP <span style="color:var(--muted)">/ beats</span></span><svg class="ic sm"><use href="#i-chev"/></svg></button>
+      <details class="addmore">
+        <summary><svg class="ic sm"><use href="#i-chev"/></svg>Add details <span style="font-weight:400;color:var(--muted)">— title, tags, collaborators (optional)</span></summary>
+        <label class="ulab">Title <span style="font-weight:400;color:var(--muted)">the file name is used if blank</span></label>
+        <div class="field"><input placeholder="Back half rework"></div>
+        <label class="ulab">Tags</label>
+        <div class="chips" style="margin-top:2px"><span class="tag">drums</span><span class="tag">142bpm</span><button class="addtag"><svg class="ic sm"><use href="#i-plus"/></svg></button></div>
+        <label class="ulab">Collaborators <span style="font-weight:400;color:var(--muted)">— @handle + an optional role</span></label>
+        <div class="field collabs"><span class="uchip m5"><span class="dot"></span>jax, prod</span><span class="uchip m3"><span class="dot"></span>dev, arrangement</span><input placeholder="add…"></div>
+      </details>
     </div>
   </div>
-  <div class="ufoot"><button class="btn" id="uCancel">Cancel</button><button class="btn primary" id="uSubmit">Upload</button></div>
+  <div class="ufoot"><button class="btn" id="uCancel">Cancel</button><button class="btn primary" id="uSubmit">Post</button></div>
 </div>
 
 <script>
@@ -2696,6 +2775,17 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   document.querySelectorAll('.hoveracts [title="React"]').forEach(function(b){b.addEventListener('click',function(e){e.stopPropagation();toggleMenu(emojiMenu,b,true);});});
   document.querySelectorAll('.hoveracts [title="More"]').forEach(function(b){b.addEventListener('click',function(e){e.stopPropagation();toggleMenu(msgMenu,b,true);});});
   document.addEventListener('click',function(e){if(!e.target.closest('.menu'))closeMenus();});
+
+  // file explorer — grid/list/feed view toggle
+  var exView=document.getElementById('exView');
+  if(exView){exView.querySelectorAll('button').forEach(function(b){b.addEventListener('click',function(){
+    exView.querySelectorAll('button').forEach(function(x){x.classList.remove('on');});b.classList.add('on');
+    var v=b.dataset.exv;
+    document.querySelectorAll('.exview').forEach(function(p){p.hidden=p.dataset.exview!==v;});});});}
+  // folder tree — twisty expands/collapses; row selects
+  document.querySelectorAll('.filetree .ftrow').forEach(function(r){r.addEventListener('click',function(){
+    if(r.querySelector('.tw').tagName!=='SPAN')r.classList.toggle('open');
+    document.querySelectorAll('.filetree .ftrow').forEach(function(x){x.classList.remove('on');});r.classList.add('on');});});
 
   var uScrim=document.getElementById('uScrim'),uModal=document.getElementById('uModal');
   function openU(){uScrim.hidden=false;uModal.hidden=false;}
@@ -2909,7 +2999,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   var screens=[
     ['workspace','Workspace','server three-pane — rail · channels · chat · members',''],
     ['feed','Feed','friends-only public posts, card grid',''],
-    ['explorer','Media explorer','server files + folders, filters',''],
+    ['explorer','File explorer','nested folder tree + grid/list/feed views',''],
     ['notifications','Notifications','all · mentions · threads · saved',''],
     ['settings','Server settings','general · channels · members · invites · moderation · audit · storage',''],
     ['profile','Profile','Public / Server / Private shelves + settings',''],
@@ -2956,10 +3046,12 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
     ['Global','Report','report action','file_report','m'],
     ['Feed','Card → details pane','click card','works','m'],
     ['Feed','Search + filter dropdowns','feed header','search_all()','m'],
-    ['Explorer','Grid select + bulk action bar','select cards','—','m'],
+    ['Explorer','Folder tree (nested) + breadcrumb','left rail','folders(parent_id)','a'],
+    ['Explorer','View toggle (grid / list / feed)','header segment','—','a'],
+    ['Explorer','Feed view (flattened previewable + comments)','Feed toggle','works + comments','m'],
+    ['Explorer','Grid select + bulk action bar (move to folder)','select cards','move_to_folder','m'],
     ['Explorer','Lightbox (image/video + “shared in”)','open media','works','m'],
     ['Explorer','Filter dropdowns (channel/type/uploader/sort)','explorer header','works where server_id','m'],
-    ['Explorer','Collection carousel','Collections strip','collections','m'],
     ['Details','Download “get as…” (audio)','Download','transcode','a'],
     ['Details','Save-to-folder (+ new folder)','Save','saved_items','a'],
     ['Details','Storage source badge (server vs personal)','open details','works.storage_source','t'],
