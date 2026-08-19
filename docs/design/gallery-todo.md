@@ -16,7 +16,11 @@ Check against CANON before implementing each one.
   metadata.
 - [ ] **3.** Remove the "Personal · Public" / "Server: Specter" **badges** — the file
   location already shows where the root is.
-- [ ] **4.** Remove "Channel #sh040 review" — files aren't tied to channels.
+- [ ] **4.** Fix the channel/location row: files **posted in a server** show it; files
+  **uploaded directly to the File explorer** don't. (The current "Channel #sh040
+  review" wording is wrong — files aren't tied to channels — but a server-posted
+  file does carry its posting context.)
+- [ ] **30.** **Details-pane buttons** need better visual balance / spacing.
 - [ ] **5.** Fix discussion/comments model: files posted to a **public profile** get a
   comment section; files posted **in a server** don't. (Kill "Replies happen in
   #sh040 review.")
@@ -52,6 +56,9 @@ Check against CANON before implementing each one.
 - [ ] **13.** Audio **cards**: square like every other card; **drop the waveform** and
   use a **music/audio icon** instead.
 - [ ] **24.** Players need a **speed** setting and, if possible, a **quality** setting.
+- [ ] **31.** Music **progress bar** → slightly **taller rectangular** design; **no
+  round playhead** knob.
+- [ ] **32.** **Play icon** should have **no border / border color**.
 
 ## Upload sheet
 - [ ] **14.** Better UI — too much text wraps and makes elements taller than needed.
@@ -63,6 +70,14 @@ Check against CANON before implementing each one.
   mode**, etc.
 - [ ] **25.** Show what **multiple files posted in a channel** look like — should
   **clump together** like Discord does.
+- [ ] **33.** Add **a lot more filters** for the File explorer.
+
+## Servers
+- [ ] **34.** Servers need their **icons and covers visible beyond just the rail** —
+  surface them somewhere with more presence than the rail alone.
+
+## Docs / reference
+- [ ] **35.** Produce a **list of slash commands**.
 
 ## Icons
 - [ ] **21.** The zip-file icon isn't centered and looks bad. Decide on the single icon
