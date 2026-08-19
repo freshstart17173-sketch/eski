@@ -725,9 +725,20 @@ The per-GB price *drops* as the slider goes up.**
 4. **Dynamic per-GB price (volume discount).** The slider is **bracketed** like tax
    bands — each additional band of GB costs less per GB — so the **marginal** and
    **blended** price per GB both fall as you buy more. The UI shows the live blended
-   "$/GB" dropping as you drag. Because you're billed on the **GB you hold**, not on
-   transfers, sliding up or down mid-month never creates a proration mess — the
-   balance is just a level.
+   "$/GB" dropping as you drag. You're billed on the **GB you hold** — the balance is
+   just a level, no per-transfer accounting.
+   **Mid-cycle changes are asymmetric (prorate up, not down):**
+   - **Slide up** → capacity unlocks immediately, and Stripe charges the **prorated
+     difference** for the days left in the cycle (new level's price − old level's
+     price, × days-remaining ÷ cycle-length). E.g. a server going 80 → 200 GB with 15
+     of 30 days left: 80 GB = $2.40/mo, 200 GB = $5.88/mo, so **~$1.74 now**, then
+     $5.88 at each renewal. Paying the difference is the consent action, so it's never
+     a surprise — and it closes the park-and-drop loophole (you pay for the window you
+     held the higher level).
+   - **Slide down** → **no refund, no credit**; the lower level takes effect at the
+     **next renewal**. Bytes over the new level go read-only, never deleted (free
+     floor rules below). This is the only "proration mess" we avoid: refund/credit math
+     on downgrades.
 5. **Storage and visibility coincide — that combo is the model's spine.** A work is
    in exactly one of three states; the details-pane badge shows it verbatim:
    - **Personal · Private** — your storage, only you.
