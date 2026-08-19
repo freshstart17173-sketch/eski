@@ -1,6 +1,6 @@
 # P5 — Content screens
 
-12 prompts: Feed, Media explorer, Details pane (per kind), Profile, Upload. Law =
+12 prompts: Feed, File explorer, Details pane (per kind), Profile, Upload. Law =
 the matching screens/panels in [`../design/gallery.html`](../design/gallery.html).
 Reuse P3 primitives + the P4 card renderers. Each `[UI]` is **done when** it
 matches the gallery desktop + mobile and covers its states. Shared guardrails: see

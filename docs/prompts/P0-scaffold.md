@@ -17,7 +17,7 @@ router only. Each route swaps a `.screen` container in the main `<div id="stage"
 (the gallery's own app-mode pattern) to a placeholder that renders just the
 screen's name centered. Routes: `/` (Feed), `/messages` (DMs),
 `/s/:serverId` (Workspace), `/s/:serverId/c/:channelId`,
-`/s/:serverId/settings`, `/explore/:serverId` (Media explorer), `/u/:handle`
+`/s/:serverId/settings`, `/s/:serverId/files` (File explorer), `/u/:handle`
 (Profile), `/upload` (modal route), `/notifications`, `/create`, `/join/:code`,
 `/search`, `/signin`, and a catch-all (404). Vercel rewrites (`vercel.json`) send
 `/u/:handle` and `/s/:id` deep links to the shell.
