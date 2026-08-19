@@ -37,10 +37,13 @@ audio), each at natural aspect with its **comment thread inline**, newest-first
 (project files like `.flp/.als` are hidden in feed, shown in grid/list). Search
 (whole tree) + filter dropdowns; grid multi-select + bulk bar (**move to folder** /
 download / delete); lightbox. File card leads with **file name**, uploader chip in
-**server colour** + channel tag. **DONE:** matches the `explorer` screen; the tree
-expands/collapses and drives the breadcrumb; the toggle switches grid⇄list⇄feed;
-feed shows only previewable works with comments; bulk select shows the action bar;
-lightbox opens with a "shared in" strip. Each sub-view is its own sub-prompt.
+**server colour** + channel tag. A **storage footer** pinned to the foot of the tree
+shows "This server's storage — X of Y GB used" + bar + **manage** link (the Drive
+touch; §C.6). **DONE:** matches the `explorer` screen; the tree expands/collapses and
+drives the breadcrumb; the toggle switches grid⇄list⇄feed; feed shows only
+previewable works with comments; bulk select shows the action bar; the storage footer
+reads the server meter; lightbox opens with a "shared in" strip. Each sub-view is its
+own sub-prompt.
 
 ### P5.5 [GL] — Explorer query (folders + placements)
 Current folder's contents = `folders where parent_id = <cur>` (subfolders) +
@@ -58,10 +61,15 @@ from a non-granted member; move persists.
 the left and grows, a fixed **~380px info rail** on the right, **no drop shadow**.
 The rail's **top bar** holds the **file name** + report + close (no version
 dropdown — numbered versions are cut, beta 2026-08-18e). A single work (post or
-file) has **no media arrows** (only a folder does, P5.7). Rail body: title, **rich
-metadata** (storage badge, posted/uploaded-by, channel [server files only], added
-date, length for a/v, dimensions/fps for image/video, format/codec/bit-depth,
-size), collaborators (server-hue chips, consent-gated), tags.
+file) has **no media arrows** (only a folder does, P5.7). Rail body **leads with two
+"Discord-with-real-storage" rows** (CANON §C.7): a **Storage row** = the
+storage×visibility badge + a plain whose-storage note with the size ("8.4 MB on **the
+server's** storage" / "on **your** storage"), and a **Location** row = a **clickable
+breadcrumb** `Server › folder › subfolder` (or `Your files › folder`), each segment a
+link that opens the File explorer at that folder. Then the rest of the **rich
+metadata** (posted/uploaded-by, channel [server files only], added date, length for
+a/v, dimensions/fps, format/codec/bit-depth), collaborators (server-hue chips,
+consent-gated), tags. Foot action **"Save to my files"** (P5.8).
 
 **Post vs server file (CANON §C.7) — the same shell, two discussion surfaces:**
 - A **post** is a public work (Feed/profile) drawing the owner's **personal**
@@ -96,11 +104,18 @@ paging/clicking the list changes the previewed item; the folder omits tags and
 comments.
 
 ### P5.8 [GL] — Details data + actions
-`works` + `content_tags` + `comments(context)` + `saved_items` + transcode (Get-as).
-Storage badge reads `works.storage_source`.
-**DONE:** adding a tag/comment persists; Save files to
-a folder; Get-as offers transcoded formats for audio; the crosspost badge shows
-"Personal · crossposted" when `storage_source='personal'`.
+`works` + `content_tags` + `comments(context)` + transcode (Get-as). The **Storage
+row** reads `works.owner_type`/`storage_source` + `bytes` ("N MB on the server's/your
+storage"); the **Location** breadcrumb resolves the folder path from
+`placement.folder_id` and each segment routes to the File explorer at that folder.
+**"Save to my files" copies the work into the caller's personal storage** — a new
+`works` row **owned by the caller** referencing the same **dedup blob** (near-zero
+bytes), filed in a `save_folders` folder (§A.8) — so it survives the original's
+deletion and draws the caller's meter. **DONE:** adding a tag/comment persists (owner
++ accepted collaborators only, P2); the storage note names the right payer + size;
+Location segments navigate; **Save** creates an owner-copy (refcount+1, ~0 new bytes
+if deduped), not a dangling bookmark; Get-as offers transcoded formats for audio; the
+crosspost badge shows "Personal · Public · crossposted here".
 
 ### P5.9 [UI] — Profile header + shelves
 **Square** avatar, name, @handle, bio; Add friend / Message (own → Edit). Shelf
@@ -121,10 +136,14 @@ choice) → **Which-server / folder** picker when Server → **Post**. Title aut
 the file name. **Tags and Collaborators collapse behind an "Add details"
 disclosure** (`<details>`, no JS framework): Collaborators = type-ahead chip input →
 member chip in **server hue** with an optional freeform role. So a social user
-posting a meme never sees the artist fields. **DONE:** matches the `Upload` panel; a
-file can be posted with only visibility set; "Add details" reveals Title/Tags/
-Collaborators; Collaborators autocompletes handles to member chips; Which-server /
-folder appears only for Server visibility; the Server segment uses `#i-server`.
+posting a meme never sees the artist fields. Under the picker, a **storage-impact
+line** names which storage the bytes draw ("Draws **{server}**'s storage · X of Y GB
+used" / "Draws **your** storage") — cohesive with the details Storage row + tree
+footer. **DONE:** matches the `Upload` panel; a file can be posted with only
+visibility set; the storage-impact line updates with the visibility choice; "Add
+details" reveals Title/Tags/Collaborators; Collaborators autocompletes handles to
+member chips; Which-server / folder appears only for Server visibility; the Server
+segment uses `#i-server`.
 
 ### P5.12 [GL] — Upload write path
 Presign via `api/sign.mjs` → PUT to R2 → insert `works` (visibility, title,

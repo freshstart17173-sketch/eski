@@ -129,7 +129,7 @@ Kill: "follow"/"following" (there is no follow), "connection", "contact",
 |---|---|---|
 | **invite link** | The URL you send to join a server: `/join/<code>`. | `server_invites.code` (the **invite code** is the token) |
 | **pin** | A message pinned in a channel. | `message_pins` |
-| **save** | Bookmarking a work into a personal folder. **Distinct from pin.** | `saved_items` / `save_folders` |
+| **save** | "Save to my files" — **keep a copy in your own personal storage**, filed in a personal folder. A new work **you** own referencing the same **dedup blob** (near-zero extra bytes if you already have it), so it's yours even if the server later deletes theirs — the Drive half of the app. Draws *your* quota. **Distinct from pin** (a message) and from a bookmark. | `saved_items` (owner copy) / `save_folders` |
 | **reaction** | An emoji on a message. | `message_reactions` |
 | **mention** | `@handle` in a message/comment → a notification. | `mentions` / parsed on insert |
 | **notification** | A row in the bell. | `notifications` |
@@ -442,6 +442,7 @@ feed view; they appear in grid/list). Grid and list show subfolders + files of t
 | Element | Behaviour & states | DB | Desktop | Mobile |
 |---|---|---|---|---|
 | **Folder tree** | Collapsible nested tree of the server's folders (root → children); current folder highlighted; drag a file/folder onto a folder to move it; admin/perm can add/rename/delete a folder. | R `folders where server_id`; W `folders` · `move_to_folder` | Left rail | Drawer / breadcrumb sheet |
+| **Storage footer** (Drive touch) | Pinned to the foot of the tree: "**This server's storage** — X of Y GB used" + a bar + a **manage** link to §C.19. Always visible so the server's file-storage state reads at a glance. | R `storage_meters`/`storage_balance('server',id)` | Tree foot | Drawer foot |
 | **Breadcrumb** | The path to the current folder (`LP / beats / drums`); each segment navigates. | derived from `folders.parent_id` | Toolbar | Toolbar |
 | **View toggle** | **Grid** (default) · **List** (name/type/size/uploader/date columns) · **Feed** (flattened, previewable-only, comments inline). | — | Toolbar segmented | Toolbar |
 | Search field | Search this server's files (whole tree, not just the current folder). | R `works where server_id` FTS | Toolbar | Full-width |
@@ -476,11 +477,13 @@ storage the bytes draw:
 |---|---|---|---|---|
 | Media area | Fills the left; **player controls pinned to its foot** (big play, skip ±, seek, volume, tabular time); waveform/video/image/type-card/folder-preview per kind. | R `works` (signed URL) | Left, grows | Top ~42vh |
 | **Prev / next arrows — folder only** | A single work (post or file) has **no** media arrows. A **folder** is the one pane that shows prev/next **over the media** (page its items) plus a clickable **navigation list in the rail**. | `folders` children order | Folder media edges + rail list | Same |
-| Metadata | Rich per kind: storage badge, posted/uploaded-by, **channel** (server file only), **added** date, **length** (a/v), **dimensions/fps** (image/video), **format/codec/bit-depth**, **size**. Folder: where (parent path), item count, made-by, created, visibility. | `works` cols | Rail | Rail |
+| **Storage row** (top of meta) | Leads the metadata: the **storage×visibility badge** + a plain-language **whose-storage note with the size** — "8.4 MB on **the server's** storage" (server file) or "32.1 MB on **your** storage" (post/personal); a crosspost reads "on **your** storage · crossposted here". This is the "Discord *with real file storage*" made legible — every file says who pays for its bytes. | `works.owner_type` + `visibility` + `bytes` | Rail meta | Rail meta |
+| **Location** (clickable breadcrumb) | Where the file lives in the tree: **`Server › folder › subfolder`** (server files, from `placement.folder_id`) or **`Your files › folder`** (posts). **Each segment is a link** that opens the File explorer at that folder — quick travel up the tree. | `folders` path via `placement.folder_id` | Rail meta | Rail meta |
+| Metadata (rest) | Per kind: uploaded/posted-by, **channel** (server file only), **added** date, **length** (a/v), **dimensions/fps** (image/video), **format/codec/bit-depth**. Folder: location breadcrumb, item count, made-by, created. | `works` cols | Rail | Rail |
 | Report + close | Flag (report) and × sit in the rail's top bar. | `file_report` | Rail top bar | Rail top bar |
 | Storage×visibility badge | One of three, verbatim: **Personal · Private**, **Personal · Public**, or **Server** (with the server name). Storage and visibility coincide except a crosspost (personal-stored, server-seen); provenance is **not** shown. | `works.owner_type` + `visibility` | Rail meta | Rail meta |
 | Title / collaborators / tags | Title (or file name); collaborator chips (server colour); user tags + ＋. **Both** posts and server files have tags. | `works.title/collaborators` · `content_tags` | Rail | Rail |
-| Actions | Download (get-as formats), Save (folder). | transcode · `saved_items` | Rail foot | Rail foot |
+| Actions | Download (get-as formats); **"Save to my files"** → menu into a personal folder, with a note that it **copies into your storage** (dedup-cheap, survives the server deleting theirs). | transcode · `saved_items` (owner copy) | Rail foot | Rail foot |
 | **Discussion** | **Post** → a public **comment thread** (`comments`, context=public) with an add-comment field. **Server file** → **no thread**; a "Replies happen in #channel →" link to the chat. | `comments` (posts) / channel chat (server files) | Rail list / link | Rail |
 | Mobile | Card goes full-screen, **column**: media on top (~42vh), the rail below. | — | — | Full-screen column |
 
@@ -515,6 +518,7 @@ below the visibility row is required.
 | Dropzone | Multi-file; type recognised (icon/filter), **not shown as a tag**. | `works.file_ext` | Modal | Sheet |
 | Visibility | **Per post**: Public / Server / Private. **The one required choice.** | `works.visibility` | Segmented | Segmented |
 | **Which server / folder** | When Server: pick the target server, and optionally the target **folder** in its tree (default = root). | `works.server_id` · `placement.folder_id` | Picker | Picker |
+| **Storage-impact line** | Under the picker, a plain note of **which storage the bytes draw**: "Draws **{server}**'s storage · X of Y GB used" (Server) or "Draws **your** storage · X of Y GB used" (Public/Private). Keeps "who pays" honest at the point of upload. | R `storage_meters` for the target account | Row | Row |
 | **Post** | Commits immediately with just the above (title = file name). | write path (§D.3) | Primary button | Primary |
 | **▸ Add details** (disclosure) | Reveals: Title (optional, file-name default) · **Tags** · **Collaborators** (type-ahead chip input → member chip in colour + optional role). Collapsed by default. | `works.title` · `content_tags` · `works.collaborators` | Disclosure | Disclosure |
 
