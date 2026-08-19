@@ -31,12 +31,16 @@ Check against CANON before implementing each one.
   files and posts; move back/forward between **adjacent items on the same level**.
   On a folder, arrow just moves to the next file (does **not** descend into the
   folder's contents).
+- [ ] **41.** Add a **Modified** date row to the metadata — and **by whom**, if
+  possible / necessary.
 
 ## Folder pane
 - [ ] **6.** Show the **item count once** — pick a single place, remove the duplicate.
 - [ ] **8.** The side file list should **scroll**, no click-to-expand.
 - [ ] **9.** Make the side file list **navigable**: click any item to open it into the
   details pane; click through folders from the list.
+- [ ] **36.** Fix **audio-file thumbnails** in the folder-details side file list —
+  they render messed up. (Tie to #13: audio uses the music/audio icon, not a waveform.)
 - [ ] **17.** Add **Save to Files** — option to save the **whole folder** or **just a
   selection**.
 - [ ] **18.** **Download** button: relabel to just "Download", with options to download
@@ -59,11 +63,17 @@ Check against CANON before implementing each one.
 - [ ] **31.** Music **progress bar** → slightly **taller rectangular** design; **no
   round playhead** knob.
 - [ ] **32.** **Play icon** should have **no border / border color**.
+- [ ] **37.** **Audio player** should look **just like the video player** — progress bar
+  at the bottom and everything (same control layout, not a separate audio style).
+- [ ] **38.** **No skip UI** for audio/video, but keep the **functionality**: a **5-second
+  skip** (e.g. keyboard / gesture) with no visible skip buttons.
 
 ## Upload sheet
 - [ ] **14.** Better UI — too much text wraps and makes elements taller than needed.
   Tighten copy.
 - [ ] **15.** Add a **folder version** of the upload sheet so we can see it.
+- [ ] **47.** Add a **real upload button** (an actual entry point that opens the upload
+  sheet, not just the sheet on its own).
 
 ## Cloud file-browser features (new screens/dialogs)
 - [ ] **19.** Add missing browser features: **right-click / burger menu**, **selection
@@ -76,8 +86,29 @@ Check against CANON before implementing each one.
 - [ ] **34.** Servers need their **icons and covers visible beyond just the rail** —
   surface them somewhere with more presence than the rail alone.
 
+## Sharing
+- [ ] **39.** Add a **Share dialog**, **Google-Drive style** — lets the user set
+  **visibility** on a file/folder.
+- [ ] **40.** Add a **shared-view screen** showing what a file/folder looks like **when
+  shared**: viewer can **only see what's shared**, **cannot navigate** through other
+  files, **read-only**.
+
+## Files: trash & starring
+- [ ] **42.** Add a **Trash** that **auto-empties after 30 days**.
+- [ ] **43.** Add a **starring** system.
+
+## Storage & billing states
+- [ ] **44.** Add the **storage-upgrade UI elements** and the relevant screens.
+- [ ] **46.** Add a screen showing the UI when files are **read-only because storage
+  isn't paid for** (over-cap / lapsed — matches CANON §D.2's "read-only, never
+  deleted").
+
 ## Docs / reference
 - [ ] **35.** Produce a **list of slash commands**.
+
+## Interaction & polish
+- [ ] **45.** **Every single button** should have a **hover animation** (no dead
+  buttons — consistent hover feedback across the whole UI).
 
 ## Icons
 - [ ] **21.** The zip-file icon isn't centered and looks bad. Decide on the single icon
