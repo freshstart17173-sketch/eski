@@ -1480,190 +1480,6 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   </div>
 </section>
 
-<section class="gsec" id="canvas">
-  <h2>④ Canvas suite <span class="n">— the moat; critique this hardest</span></h2>
-  <p class="lede">
-    Files as <b>tiles</b>. Three tool groups: <b>Move</b>, <b>Annotate</b>
-    (point / rectangle / lasso — each a <b>mark</b> carrying an <b>annotation</b> (its own thing, not a post comment), hidden
-    until clicked; author labels sit at the top-right, off the media, rect/lasso = a hover-only
-    dotted outline), and <b>Pen + eraser</b> ink (size + colour, whole-stroke
-    erase). An <b>annotations sidebar</b> lists every annotation; the details pane never
-    opens here. Per-media: image/video <b>screencap</b>, video pins collapse to a
-    <b>count badge</b>, audio point opens an <b>expanded player view</b>. The live
-    canvas, then every dialog and mark type.
-  </p>
-
-  <h3 class="subh">The canvas itself (live)</h3>
-  <div class="gfig">
-    <div class="cap"><b>Canvas</b><span class="m">pan · tiles · annotations · comment pins</span></div>
-    <div class="gframe"><iframe data-screen="canvas" loading="lazy"></iframe></div>
-  </div>
-
-  <h3 class="subh">Its dialogs, menus &amp; every mark type</h3>
-  <div class="stagewrap">
-
-    <!-- tools -->
-    <div>
-      <div class="stage"><div class="cvtools" style="position:static">
-        <button class="iconbtn on" title="Move / select"><svg class="ic"><use href="#i-move"/></svg></button>
-        <div class="sep"></div>
-        <button class="iconbtn" title="Annotate — drop a comment pin"><svg class="ic"><use href="#i-comment"/></svg></button>
-        <div class="sep"></div><span class="grp">Pen</span>
-        <button class="iconbtn" title="Pen"><svg class="ic"><use href="#i-pen"/></svg></button>
-        <button class="iconbtn" title="Eraser — whole stroke"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M4 15l7-7 6 6-4 4H8z"/><path d="M9 20h9"/></svg></button>
-        <span class="sw" style="background:var(--m1)"></span><span class="sw" style="background:var(--m3)"></span>
-        <span class="sw" style="background:var(--m5)"></span>
-        <span style="font-size:11px;color:var(--muted)">size</span>
-      </div></div>
-      <div class="pcap"><b>Tool palette</b>
-        <span class="m"><b>Simplified:</b> Move · <b>Annotate</b> (drop a freeform comment pin) · Pen + whole-stroke eraser (size + colour). <b>Rectangle and lasso are gone</b> — annotations are Figma-style board pins, not region marks.</span>
-        <span class="db">annotations(canvas_id,x,y,corner,body) · ink(path,color,size)</span>
-        <span class="st live">in mockup</span></div>
-    </div>
-
-    <!-- annotation: comment pin + dialogue -->
-    <div>
-      <div class="stage tall" style="background:var(--surface)">
-        <div style="position:relative;width:100%;height:100%">
-          <div class="cvpin" style="--pc:var(--m4);left:16%;top:24%"><span class="pfp">MI</span>mira</div>
-          <div class="cvpin br" style="--pc:var(--m2);left:60%;top:20%"><span class="pfp">SO</span>sol</div>
-          <div class="cvdlg" style="left:22%;top:42%">
-            <div class="dhd"><span class="uchip m4"><span class="dot"></span>mira</span><time style="font-size:11px;color:var(--muted);margin-left:auto">now</time></div>
-            <div class="dtx">Ghosting on the building edge here — needs a garbage matte.</div>
-            <div class="actions" style="display:flex;gap:12px;font-size:11px;color:var(--muted);margin-bottom:7px"><button><svg class="ic sm"><use href="#i-check"/></svg> Resolve</button><span>2 replies</span></div>
-            <div class="field"><input placeholder="Reply…"></div>
-          </div>
-        </div>
-      </div>
-      <div class="pcap"><b>Annotation — freeform comment pin</b>
-        <span class="m">The <b>only</b> mark: click anywhere to drop a <b>rounded name-tag pin</b> (author in member colour) with a <b>pointer on one corner</b> aimed at what you mean; a <b>dialogue box</b> pops up to write it. Click a pin to reopen its note + replies. Resolves, never deletes. Like Figma / paper.design comments.</span>
-        <span class="db">annotations(canvas_id, author_id, x, y, corner, body, resolved_at)</span>
-        <span class="st live">AUTHORED</span></div>
-    </div>
-
-    <!-- pen ink -->
-    <div>
-      <div class="stage" style="background:var(--surface)">
-        <svg viewBox="0 0 200 110" style="width:200px;height:110px"><path d="M18 78 C40 20 70 96 96 54 S150 12 184 46" fill="none" stroke="var(--m1)" stroke-width="3" stroke-linecap="round"/></svg>
-      </div>
-      <div class="pcap"><b>Pen ink</b>
-        <span class="m">Freehand markup — size + colour, SVG paths. <b>Whole-stroke eraser</b> (OneNote-style) removes a whole path at a touch. Pure visual markup, not a comment.</span>
-        <span class="db">ink(canvas_id, author_id, path, color, size)</span></div>
-    </div>
-
-    <!-- tile → maximize (fullscreen player) -->
-    <div>
-      <div class="stage">
-        <div class="tile audio" style="width:230px">
-          <div class="tname"><span>sounddesign.wav</span></div>
-          <div class="wavewrap"><div class="wave" data-wf="120"></div></div>
-          <div class="tbar"><button class="tilebtn" title="Play"><svg class="ic sm"><use href="#i-play"/></svg></button><button class="tilebtn" title="Maximize"><svg class="ic sm"><use href="#i-expand"/></svg></button><button class="tilebtn" title="Screencap"><svg class="ic sm"><use href="#i-image"/></svg></button></div>
-        </div>
-      </div>
-      <div class="pcap"><b>Tile → Maximize</b>
-        <span class="m">A tile <b>maximizes</b> to a simple fullscreen player (big media + transport) for a close look — <b>no annotations inside</b> (those are board pins; see them in the sidebar). Audio/video: <b>screencap</b> the frame, or from the player <b>duplicate</b> a trimmed range as a new tile.</span>
-        <span class="db">canvas_items · screencap = client-side · duplicate → canvas_items</span></div>
-    </div>
-
-    <!-- canvas picker -->
-    <div>
-      <div class="stage"><div class="menu show">
-        <div class="mhd">Canvases in this server</div>
-        <button class="mi on"><svg class="ic"><use href="#i-canvas"/></svg>sh040 review<span class="k">4</span></button>
-        <button class="mi"><svg class="ic"><use href="#i-canvas"/></svg>title sequence</button>
-        <button class="mi"><svg class="ic"><use href="#i-canvas"/></svg>colour tests</button>
-        <div class="dsep"></div>
-        <button class="mi"><svg class="ic"><use href="#i-plus"/></svg>New canvas</button>
-      </div></div>
-      <div class="pcap"><b>Canvas picker</b>
-        <span class="m">Many canvases per server, not one. Header dropdown.</span>
-        <span class="db">R canvases where server_id</span></div>
-    </div>
-
-    <!-- share / visibility -->
-    <div>
-      <div class="stage scrim"><div class="modal">
-        <div class="uhd"><b>Share “sh040 review”</b><button class="iconbtn"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
-        <div class="mbody">
-          <label class="fl">Who can open this canvas</label>
-          <div class="seg">
-            <div class="o"><svg class="ic"><use href="#i-lock"/></svg>Private</div>
-            <div class="o on"><svg class="ic"><use href="#i-server"/></svg>Server</div>
-            <div class="o"><svg class="ic"><use href="#i-link"/></svg>Link</div>
-          </div>
-          <label class="fl">Link — anyone with it can view &amp; comment</label>
-          <div class="copyrow"><div class="field"><input value="eski.lol/c/aH3k9" readonly></div>
-            <button class="iconbtn" title="Copy"><svg class="ic sm"><use href="#i-copy"/></svg></button></div>
-        </div>
-      </div></div>
-      <div class="pcap"><b>Share / visibility</b>
-        <span class="m">The three-layer idea on a canvas: Private / Server / Link. “Link” lets an outsider comment on just this board.</span>
-        <span class="db">canvases.visibility / share_code</span></div>
-    </div>
-
-    <!-- tile menu -->
-    <div>
-      <div class="stage"><div class="menu show">
-        <button class="mi"><svg class="ic"><use href="#i-expand"/></svg>Open expanded view</button>
-        <button class="mi"><svg class="ic"><use href="#i-version"/></svg>Compare versions</button>
-        <button class="mi"><svg class="ic"><use href="#i-download"/></svg>Download…</button>
-        <div class="dsep"></div>
-        <button class="mi danger"><svg class="ic"><use href="#i-x"/></svg>Remove from canvas</button>
-      </div></div>
-      <div class="pcap"><b>Tile ⋯ menu</b>
-        <span class="m">Per-tile actions. The details pane never opens in the canvas — audio/video open the expanded view instead. “Remove from canvas” drops the tile, not the file.</span>
-        <span class="db">canvas_items delete</span></div>
-    </div>
-
-    <!-- comments sidebar -->
-    <div>
-      <div class="stage"><div style="width:232px;background:var(--surface);border-radius:var(--r);padding:8px">
-        <div class="cvsidehd">Comments <span class="ct">4</span></div>
-        <button class="cvcom on"><span class="cvtop"><span class="uchip m4"><span class="dot"></span>mira</span><span class="cvtype">rect &middot; v3</span></span><span class="cvsnip">near building edge is ghosting&hellip;</span></button>
-        <button class="cvcom"><span class="cvtop"><span class="uchip m3"><span class="dot"></span>lin</span><span class="cvtype">point</span></span><span class="cvsnip">love this framing, keep the bloom</span></button>
-        <button class="cvcom resolved"><span class="cvtop"><span class="uchip m5"><span class="dot"></span>jax</span><span class="cvtype">point &middot; resolved</span></span><span class="cvsnip">grade ref for the sky, matched</span></button>
-      </div></div>
-      <div class="pcap"><b>Comments sidebar</b>
-        <span class="m">Lists every comment on the canvas; clicking one jumps to its mark and opens the thread. The canvas&rsquo;s own comment nav.</span>
-        <span class="db">comments where canvas_id &middot; §D.6.5</span></div>
-    </div>
-
-    <!-- expanded view — fullscreen player (no annotations; those are board pins) -->
-    <div>
-      <div class="stage scrim"><div class="modal wide">
-        <div class="uhd"><b>sh040_comp.mov</b><span class="ver" style="margin-left:8px">v3</span><button class="iconbtn" title="Screencap" style="margin-left:auto"><svg class="ic sm"><use href="#i-image"/></svg></button><button class="iconbtn" title="Close"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
-        <div class="mbody">
-          <div class="vreel"><button class="playover" style="position:static"><svg class="ic"><use href="#i-play"/></svg></button></div>
-          <div style="display:flex;align-items:center;gap:9px;margin-top:11px">
-            <button class="iconbtn" title="Back 10s"><svg class="ic"><use href="#i-rewind"/></svg></button><button class="iconbtn" title="Play / pause"><svg class="ic"><use href="#i-play"/></svg></button><button class="iconbtn" title="Forward 10s"><svg class="ic"><use href="#i-ff"/></svg></button>
-            <div style="flex:1;height:5px;background:var(--line);border-radius:3px;position:relative"><i style="position:absolute;left:0;top:0;bottom:0;width:36%;background:var(--ink);border-radius:3px"></i></div>
-            <span style="font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums">0:12 / 0:34</span>
-            <button class="tbtn" title="Fullscreen"><svg class="ic"><use href="#i-expand"/></svg></button>
-          </div>
-        </div>
-      </div></div>
-      <div class="pcap"><b>Expanded view — fullscreen player</b>
-        <span class="m">Maximizing a tile opens a simple <b>fullscreen viewer/player</b> (big media + transport) to inspect it — <b>no annotations inside</b> (they're freeform board pins; the sidebar lists them). <b>Screencap</b> grabs the frame; audio can <b>duplicate</b> a trimmed range into a new tile.</span>
-        <span class="db">canvas_items · screencap = client-side · duplicate → canvas_items</span></div>
-    </div>
-
-    <!-- empty canvas -->
-    <div>
-      <div class="stage tall">
-        <div style="text-align:center;color:var(--muted);max-width:220px">
-          <svg class="ic" style="width:30px;height:30px;margin-bottom:10px;color:var(--muted)"><use href="#i-canvas"/></svg>
-          <div style="font-size:14px;color:var(--soft);margin-bottom:5px">Nothing on this canvas yet</div>
-          <div style="font-size:12px;margin-bottom:14px">Drop files here, or add from the server’s Media.</div>
-          <button class="btn primary"><svg class="ic sm"><use href="#i-plus"/></svg>Add file</button></div>
-      </div>
-      <div class="pcap"><b>Empty state</b>
-        <span class="m">First thing a new canvas shows.</span>
-        <span class="db">—</span></div>
-    </div>
-
-  </div>
-</section>
-
 <section class="gsec" id="key">
   <h2>⑤ Key per-screen dialogs</h2>
   <p class="lede">The highest-traffic modals outside the global + canvas sets. The
@@ -1682,16 +1498,15 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
           <div class="dmtransport"><button class="tbtn" title="Back 10s"><svg class="ic"><use href="#i-rewind"/></svg></button><span>0:47</span><span class="track"><i style="width:34%"></i><span class="knob" style="left:34%"></span></span><span>2:18</span><button class="tbtn" title="Forward 10s"><svg class="ic"><use href="#i-ff"/></svg></button><button class="tbtn" title="Mute"><svg class="ic"><use href="#i-volume"/></svg></button></div>
         </div>
         <div class="dinfo">
-          <div class="dtop"><details class="verdrop"><summary><span class="v">v2</span> of 2<svg class="ic sm chev"><use href="#i-chev"/></svg></summary><div class="vermenu"><div class="mlabel">Versions — newest first</div><button class="on"><span class="vt cur">v2</span><span class="vfn">late_bloom_master.wav</span></button><button><span class="vt">v1</span><span class="vfn">late_bloom_rough.wav</span></button><div class="sep"></div><button><svg class="ic sm"><use href="#i-plus"/></svg>Add a version</button></div></details><button class="iconbtn sp" title="Report"><svg class="ic sm"><use href="#i-flag"/></svg></button><button class="iconbtn" title="Close"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
+          <div class="dtop"><span class="dfilename">late_bloom_master.wav</span><button class="iconbtn sp" title="Report"><svg class="ic sm"><use href="#i-flag"/></svg></button><button class="iconbtn" title="Close"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
           <div class="scroll">
             <h2>late bloom</h2>
-            <div class="vernote">v2: final master. <span class="by">rae</span></div>
             <div class="meta"><div class="row"><span class="k">Visibility</span><span class="v"><span class="stbadge personal"><svg class="ic"><use href="#i-globe"/></svg>Personal · Public</span></span></div><div class="row"><span class="k">Posted by</span><span class="v"><span class="uchip m1"><span class="dot"></span>rae</span></span></div><div class="row"><span class="k">Added</span><span class="v">15 Aug 2026, 2:14 PM</span></div><div class="row"><span class="k">Length</span><span class="v">2:18</span></div><div class="row"><span class="k">Format</span><span class="v">WAV · 44.1 kHz · 24-bit</span></div><div class="row"><span class="k">Size</span><span class="v">32.1 MB</span></div></div>
             <div class="dsec"><div class="lb">Tags</div><div class="chips"><span class="tag">bloom</span><span class="tag">single</span><span class="tag">master</span><button class="addtag"><svg class="ic sm"><use href="#i-plus"/></svg></button></div></div>
             <div class="dsec"><div class="lb">Credits</div><div class="chips"><span class="uchip m1"><span class="dot"></span>rae, vocals</span><span class="uchip m3"><span class="dot"></span>dev, beat</span><span class="uchip m4"><span class="dot"></span>tomo, mix</span></div></div>
             <div class="dsec"><div class="lb">Comments</div><div class="cmt"><div class="av sm">MI</div><div class="bd"><div class="by"><span class="u m4">mira</span><time>3:02 PM</time></div><div class="tx">the falling section finally reads, love it</div></div></div><div class="cmt"><div class="av sm">KO</div><div class="bd"><div class="by"><span class="u m2">kofi</span><time>2:40 PM</time></div><div class="tx">what bpm is this?</div></div></div><div class="field" style="margin-top:8px"><input placeholder="Add a comment"></div></div>
           </div>
-          <div class="foot"><button class="btn primary"><svg class="ic sm"><use href="#i-download"/></svg>Download<svg class="ic sm"><use href="#i-chev"/></svg></button><button class="btn"><svg class="ic sm"><use href="#i-save"/></svg>Save</button><button class="btn"><svg class="ic sm"><use href="#i-canvas"/></svg>Canvas</button></div>
+          <div class="foot"><button class="btn primary"><svg class="ic sm"><use href="#i-download"/></svg>Download<svg class="ic sm"><use href="#i-chev"/></svg></button><button class="btn"><svg class="ic sm"><use href="#i-save"/></svg>Save</button></div>
         </div>
       </div></div>
       <div class="pcap"><b>Details pane — post (public)</b>
@@ -1716,7 +1531,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
             <div class="dsec"><div class="lb">Credits</div><div class="chips"><span class="uchip m4"><span class="dot"></span>mira, comp</span><span class="uchip m2"><span class="dot"></span>sol, sound</span></div></div>
             <div class="dsec"><div class="lb">Discussion</div><button class="mi" style="background:var(--surface);justify-content:flex-start;gap:8px"><svg class="ic sm" style="color:var(--muted)"><use href="#i-hash"/></svg>Replies happen in <b style="margin-left:3px">#sh040 review</b><svg class="ic sm" style="margin-left:auto;color:var(--muted)"><use href="#i-chev"/></svg></button></div>
           </div>
-          <div class="foot"><button class="btn primary"><svg class="ic sm"><use href="#i-download"/></svg>Download<svg class="ic sm"><use href="#i-chev"/></svg></button><button class="btn"><svg class="ic sm"><use href="#i-save"/></svg>Save</button><button class="btn"><svg class="ic sm"><use href="#i-canvas"/></svg>Canvas</button></div>
+          <div class="foot"><button class="btn primary"><svg class="ic sm"><use href="#i-download"/></svg>Download<svg class="ic sm"><use href="#i-chev"/></svg></button><button class="btn"><svg class="ic sm"><use href="#i-save"/></svg>Save</button></div>
         </div>
       </div></div>
       <div class="pcap"><b>Details pane — server file (video)</b>
@@ -1737,7 +1552,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
             <div class="dsec"><div class="lb">Credits</div><div class="chips"><span class="uchip m6"><span class="dot"></span>nel, art</span><span class="uchip m1"><span class="dot"></span>rae, direction</span></div></div>
             <div class="dsec"><div class="lb">Discussion</div><button class="mi" style="background:var(--surface);justify-content:flex-start;gap:8px"><svg class="ic sm" style="color:var(--muted)"><use href="#i-hash"/></svg>Replies happen in <b style="margin-left:3px">#references</b><svg class="ic sm" style="margin-left:auto;color:var(--muted)"><use href="#i-chev"/></svg></button></div>
           </div>
-          <div class="foot"><button class="btn primary"><svg class="ic sm"><use href="#i-download"/></svg>Download<svg class="ic sm"><use href="#i-chev"/></svg></button><button class="btn"><svg class="ic sm"><use href="#i-save"/></svg>Save</button><button class="btn"><svg class="ic sm"><use href="#i-canvas"/></svg>Canvas</button></div>
+          <div class="foot"><button class="btn primary"><svg class="ic sm"><use href="#i-download"/></svg>Download<svg class="ic sm"><use href="#i-chev"/></svg></button><button class="btn"><svg class="ic sm"><use href="#i-save"/></svg>Save</button></div>
         </div>
       </div></div>
       <div class="pcap"><b>Details pane — server file (image, crosspost)</b>
@@ -1977,8 +1792,6 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
     <button class="ptab" data-s="workspace">Workspace</button>
     <button class="ptab" data-s="feed">Feed</button>
     <button class="ptab" data-s="explorer">Media explorer</button>
-    <button class="ptab" data-s="canvas">Canvas</button>
-    <button class="ptab" data-s="board">Board</button>
     <button class="ptab" data-s="vc">Call</button>
     <button class="ptab" data-s="notifications">Notifications</button>
     <button class="ptab" data-s="settings">Server settings</button>
@@ -1992,7 +1805,6 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   <div class="pright">
     <button class="pbtn" id="showDetails">Details pane</button>
     <button class="pbtn" id="showUpload">Upload</button>
-    <button class="pbtn" id="showUploadV">Upload (version)</button>
     <button class="pbtn" id="qsOpen">Quick switch</button>
     <button class="pbtn" id="threadOpen">Thread</button>
     <button class="pbtn" id="profileCardBtn">Profile card</button>
@@ -2006,7 +1818,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
     <button class="railbtn" data-s="dms" title="Messages"><svg class="ic"><use href="#i-mail"/></svg><span class="ct">3</span></button>
     <div class="railsep"></div>
     <button class="railbtn on" data-s="workspace" title="Late Bloom LP">LB</button>
-    <button class="railbtn" data-s="canvas" title="Specter, sh040">SP<span class="ct">7</span></button>
+    <button class="railbtn" data-s="explorer" title="Specter, sh040">SP<span class="ct">7</span></button>
     <button class="railbtn" title="Beat swap">BS</button>
     <div class="railsep"></div>
     <button class="railbtn" data-s="create" title="Create or join a server"><svg class="ic"><use href="#i-plus"/></svg></button>
@@ -2030,17 +1842,6 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
             <button class="crow"><svg class="ic"><use href="#i-hash"/></svg><span class="nm">mixing</span></button>
             <button class="crow"><svg class="ic"><use href="#i-hash"/></svg><span class="nm">references</span></button>
             <button class="crow"><svg class="ic"><use href="#i-hash"/></svg><span class="nm">stems and sessions</span></button>
-          </div>
-          <div class="cgroup">
-            <div class="cglabel">Boards <svg class="ic sm"><use href="#i-plus"/></svg></div>
-            <button class="crow" data-s="board"><svg class="ic"><use href="#i-board"/></svg><span class="nm">shot tasks</span></button>
-            <button class="crow" data-s="board"><svg class="ic"><use href="#i-board"/></svg><span class="nm">release checklist</span></button>
-          </div>
-          <div class="cgroup">
-            <div class="cglabel">Canvases <svg class="ic sm"><use href="#i-plus"/></svg></div>
-            <button class="crow" data-s="canvas"><svg class="ic"><use href="#i-canvas"/></svg><span class="nm">sh040 review</span></button>
-            <button class="crow" data-s="canvas"><svg class="ic"><use href="#i-canvas"/></svg><span class="nm">colour tests</span></button>
-            <button class="crow" data-s="canvas"><svg class="ic"><use href="#i-canvas"/></svg><span class="nm">mix references</span></button>
           </div>
           <div class="cgroup">
             <div class="cglabel">Voice <svg class="ic sm"><use href="#i-plus"/></svg></div>
@@ -2272,68 +2073,6 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
       </div>
     </div>
 
-    <!-- CANVAS -->
-    <div class="screen" data-screen="canvas" hidden>
-      <div class="cvwrap">
-        <div class="cvhd">
-          <button class="selbtn" id="canvasPick"><svg class="ic sm"><use href="#i-canvas"/></svg>sh040 review<svg class="ic sm"><use href="#i-chev"/></svg></button>
-          <span class="vis"><svg class="ic"><use href="#i-server"/></svg>Specter, server</span>
-          <div class="cvzoom"><button title="Zoom out">&minus;</button><b>100%</b><button title="Zoom in">+</button><span class="sep2"></span><button title="Fit to screen">Fit</button><button title="Reset">Reset</button></div>
-          <div class="acts">
-            <button class="btn sm"><svg class="ic sm"><use href="#i-plus"/></svg>Add file</button>
-            <button class="btn sm">Share</button>
-          </div>
-        </div>
-        <div class="cvtools">
-          <button class="iconbtn on" title="Move / select"><svg class="ic"><use href="#i-move"/></svg></button>
-          <div class="sep"></div>
-          <button class="iconbtn" title="Annotate — drop a comment pin"><svg class="ic"><use href="#i-comment"/></svg></button>
-          <div class="sep"></div><span class="grp">Pen</span>
-          <button class="iconbtn" title="Pen"><svg class="ic"><use href="#i-pen"/></svg></button>
-          <button class="iconbtn" title="Eraser (whole stroke)"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M4 15l7-7 6 6-4 4H8z"/><path d="M9 20h9"/></svg></button>
-          <span class="sw" style="background:var(--m1)"></span><span class="sw" style="background:var(--m3)"></span><span class="sw" style="background:var(--m5)"></span>
-          <span class="pensz" title="Stroke size"><i></i></span>
-        </div>
-        <div class="cvmain">
-          <div class="canvas">
-            <div class="tile img sel">
-              <div class="tname"><span>sh040_comp.mov</span><span class="ver">v3</span></div>
-              <div class="tbar"><span class="cbadge">5</span><button class="tilebtn" title="Open expanded view"><svg class="ic sm"><use href="#i-expand"/></svg></button></div>
-              <div class="scene"><div class="ground"></div><div class="o1"></div><div class="o2"></div></div>
-              <svg class="anno" viewBox="0 0 380 214" preserveAspectRatio="none"><path d="M250 60 C 224 82, 196 92, 170 112" fill="none" stroke="var(--m2)" stroke-width="3" stroke-linecap="round"/></svg>
-            </div>
-            <div class="tile audio">
-              <div class="tname"><span>sounddesign_pass.wav</span></div>
-              <div class="tbar"><button class="tilebtn" title="Play"><svg class="ic sm"><use href="#i-play"/></svg></button><button class="tilebtn" title="Maximize"><svg class="ic sm"><use href="#i-expand"/></svg></button></div>
-              <div class="wavewrap"><div class="wave" data-wf="150"></div></div>
-            </div>
-            <div class="tile img warm" style="width:300px;height:180px">
-              <div class="tname"><span>grade_ref.png</span></div>
-              <div class="tbar"><button class="tilebtn" title="Maximize"><svg class="ic sm"><use href="#i-expand"/></svg></button></div>
-              <div class="scene"><div class="ground"></div></div>
-            </div>
-            <!-- freeform comment pins float on the board, not on the tiles -->
-            <div class="cvpin br" style="--pc:var(--m4);left:30%;top:20%"><span class="pfp">MI</span>mira</div>
-            <div class="cvpin" style="--pc:var(--m3);left:63%;top:30%"><span class="pfp">LN</span>lin</div>
-            <div class="cvpin tr" style="--pc:var(--m2);left:16%;top:62%"><span class="pfp">SO</span>sol</div>
-            <div class="cvdlg" style="left:34%;top:32%">
-              <div class="dhd"><span class="uchip m4"><span class="dot"></span>mira</span><time style="font-size:11px;color:var(--muted);margin-left:auto">2:47 PM</time></div>
-              <div class="dtx">Building edge is ghosting against the sky — needs a garbage matte.</div>
-              <div class="actions" style="display:flex;gap:12px;font-size:11px;color:var(--muted);margin-bottom:7px"><button><svg class="ic sm"><use href="#i-check"/></svg> Resolve</button><span>2 replies</span></div>
-              <div class="field"><input placeholder="Reply…"></div>
-            </div>
-          </div>
-          <aside class="cvside">
-            <div class="cvsidehd">Annotations <span class="ct">4</span></div>
-            <button class="cvcom on"><span class="cvtop"><span class="uchip m4"><span class="dot"></span>mira</span></span><span class="cvsnip">building edge is ghosting against the sky&hellip;</span></button>
-            <button class="cvcom"><span class="cvtop"><span class="uchip m3"><span class="dot"></span>lin</span></span><span class="cvsnip">love this framing, keep the bloom</span></button>
-            <button class="cvcom"><span class="cvtop"><span class="uchip m2"><span class="dot"></span>sol</span></span><span class="cvsnip">whoosh lands a beat late here, pull ~6 frames</span></button>
-            <button class="cvcom resolved"><span class="cvtop"><span class="uchip m5"><span class="dot"></span>jax</span><span class="cvtype">resolved</span></span><span class="cvsnip">grade ref for the sky, matched</span></button>
-          </aside>
-        </div>
-      </div>
-    </div>
-
     <!-- CALL (voice / video) -->
     <div class="screen" data-screen="vc" hidden>
       <div class="vc">
@@ -2383,71 +2122,6 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
           <button class="vcbtn leave" title="Leave"><svg class="ic"><use href="#i-leave"/></svg></button>
         </div>
         <div class="vcreacts" id="vcReacts"><button>🔥</button><button>👏</button><button>❤️</button><button>😂</button><button>🎉</button><button>🙌</button></div>
-      </div>
-    </div>
-
-    <!-- BOARD (kanban) -->
-    <div class="screen" data-screen="board" hidden>
-      <div class="kb">
-        <div class="kbhd"><svg class="ic"><use href="#i-board"/></svg><span class="t">shot tasks</span><span class="sub">Late Bloom LP</span>
-          <div class="acts" style="display:flex;align-items:center;gap:12px">
-            <div class="kbviews">
-              <button class="kbview on" data-kview="board"><svg class="ic"><use href="#i-board"/></svg>Board</button>
-              <button class="kbview" data-kview="table"><svg class="ic"><use href="#i-grid"/></svg>Table</button>
-              <button class="kbview" data-kview="calendar"><svg class="ic"><use href="#i-version"/></svg>Calendar</button>
-            </div>
-            <button class="btn sm"><svg class="ic sm"><use href="#i-settings"/></svg>Fields</button>
-            <button class="btn sm"><svg class="ic sm"><use href="#i-plus"/></svg>Add card</button></div></div>
-
-        <div class="kview kbcols" data-kview="board">
-          <div class="kbcol">
-            <div class="kbcolhd">To do<span class="n">2</span></div>
-            <div class="kcard"><div class="kt">Re-cut the bridge drums</div><div class="kfile"><svg class="ic sm"><use href="#i-voice"/></svg>late_bloom_beat.flp</div><div class="kchips"><span class="kchip due soon"><svg class="ic"><use href="#i-version"/></svg>Aug 18</span><span class="kchip prio hi"><span class="dotp"></span>High</span></div><div class="kmeta"><span class="klabel">beats</span><span class="kav" style="background:var(--m3)">DV</span></div></div>
-            <div class="kcard"><div class="kt">Write second verse</div><div class="kchips"><span class="kchip due"><svg class="ic"><use href="#i-version"/></svg>Aug 22</span><span class="kchip prio"><span class="dotp"></span>Med</span></div><div class="kmeta"><span class="klabel">verses</span><span class="kav" style="background:var(--m1)">RA</span></div></div>
-            <button class="kadd"><svg class="ic sm"><use href="#i-plus"/></svg>Add card</button>
-          </div>
-          <div class="kbcol">
-            <div class="kbcolhd">In progress<span class="n">2</span></div>
-            <div class="kcard"><div class="kt">Rough mix pass</div><div class="kfile"><svg class="ic sm"><use href="#i-voice"/></svg>bloom_mix_rough.wav</div><div class="kchips"><span class="kchip due soon"><svg class="ic"><use href="#i-version"/></svg>Aug 17</span><span class="kchip prio hi"><span class="dotp"></span>High</span></div><div class="kmeta"><span class="klabel">mixing</span><span class="kav" style="background:var(--m2)">TM</span></div></div>
-            <div class="kcard"><div class="kt">Source the drum break sample</div><div class="kchips"><span class="kchip due"><svg class="ic"><use href="#i-version"/></svg>Aug 20</span><span class="kchip prio"><span class="dotp"></span>Low</span></div><div class="kmeta"><span class="klabel">references</span><span class="kav" style="background:var(--m5)">JX</span></div></div>
-            <button class="kadd"><svg class="ic sm"><use href="#i-plus"/></svg>Add card</button>
-          </div>
-          <div class="kbcol">
-            <div class="kbcolhd">Review<span class="n">1</span></div>
-            <div class="kcard"><div class="kt">Low end on the bridge</div><div class="kfile"><svg class="ic sm"><use href="#i-canvas"/></svg>in canvas, sh040 review</div><div class="kchips"><span class="kchip due over"><svg class="ic"><use href="#i-version"/></svg>Aug 15 · overdue</span><span class="kchip prio"><span class="dotp"></span>Med</span></div><div class="kmeta"><span class="klabel">mixing</span><span class="kav" style="background:var(--m2)">TM</span></div></div>
-            <button class="kadd"><svg class="ic sm"><use href="#i-plus"/></svg>Add card</button>
-          </div>
-          <div class="kbcol">
-            <div class="kbcolhd">Done<span class="n">2</span></div>
-            <div class="kcard"><div class="kt">Lock the tempo at 142</div><div class="kchips"><span class="kchip prio hi"><span class="dotp"></span>High</span></div><div class="kmeta"><span class="klabel">beats</span><span class="kav" style="background:var(--m3)">DV</span></div></div>
-            <div class="kcard"><div class="kt">Pick the cover direction</div><div class="kchips"><span class="kchip prio"><span class="dotp"></span>Low</span></div><div class="kmeta"><span class="klabel">art</span><span class="kav" style="background:var(--m6)">NL</span></div></div>
-            <button class="kadd"><svg class="ic sm"><use href="#i-plus"/></svg>Add card</button>
-          </div>
-        </div>
-
-        <div class="kview ktable" data-kview="table" hidden>
-          <div class="kthead"><span>Task</span><span>Status</span><span>Assignee</span><span>Due</span><span>Priority</span></div>
-          <div class="ktrow"><span class="task">Re-cut the bridge drums</span><span class="tstatus"><span class="dotp"></span>To do</span><span class="tassign"><span class="kav" style="background:var(--m3)">DV</span>dev</span><span class="tdue">Aug 18</span><span class="tprio hi"><span class="dotp"></span>High</span></div>
-          <div class="ktrow"><span class="task">Write second verse</span><span class="tstatus"><span class="dotp"></span>To do</span><span class="tassign"><span class="kav" style="background:var(--m1)">RA</span>rae</span><span class="tdue">Aug 22</span><span class="tprio"><span class="dotp"></span>Med</span></div>
-          <div class="ktrow"><span class="task">Rough mix pass</span><span class="tstatus prog"><span class="dotp"></span>In progress</span><span class="tassign"><span class="kav" style="background:var(--m2)">TM</span>tomo</span><span class="tdue">Aug 17</span><span class="tprio hi"><span class="dotp"></span>High</span></div>
-          <div class="ktrow"><span class="task">Source the drum break sample</span><span class="tstatus prog"><span class="dotp"></span>In progress</span><span class="tassign"><span class="kav" style="background:var(--m5)">JX</span>jax</span><span class="tdue">Aug 20</span><span class="tprio"><span class="dotp"></span>Low</span></div>
-          <div class="ktrow"><span class="task">Low end on the bridge</span><span class="tstatus review"><span class="dotp"></span>Review</span><span class="tassign"><span class="kav" style="background:var(--m2)">TM</span>tomo</span><span class="tdue over">Aug 15 · overdue</span><span class="tprio"><span class="dotp"></span>Med</span></div>
-          <div class="ktrow"><span class="task">Lock the tempo at 142</span><span class="tstatus done"><span class="dotp"></span>Done</span><span class="tassign"><span class="kav" style="background:var(--m3)">DV</span>dev</span><span class="tdue" style="color:var(--muted)">no date</span><span class="tprio hi"><span class="dotp"></span>High</span></div>
-          <div class="ktrow"><span class="task">Pick the cover direction</span><span class="tstatus done"><span class="dotp"></span>Done</span><span class="tassign"><span class="kav" style="background:var(--m6)">NL</span>nel</span><span class="tdue" style="color:var(--muted)">no date</span><span class="tprio"><span class="dotp"></span>Low</span></div>
-        </div>
-
-        <div class="kview kcal" data-kview="calendar" hidden>
-          <div class="kcalday"><div class="kcaldate over">Sat, Aug 15<small>overdue</small></div>
-            <div class="kcalrow"><span class="tstatus review"><span class="dotp"></span></span><span class="task">Low end on the bridge</span><span class="klabel">mixing</span><span class="kav" style="background:var(--m2)">TM</span></div></div>
-          <div class="kcalday"><div class="kcaldate">Mon, Aug 17<small>tomorrow</small></div>
-            <div class="kcalrow"><span class="tstatus prog"><span class="dotp"></span></span><span class="task">Rough mix pass</span><span class="klabel">mixing</span><span class="kav" style="background:var(--m2)">TM</span></div></div>
-          <div class="kcalday"><div class="kcaldate">Tue, Aug 18</div>
-            <div class="kcalrow"><span class="tstatus"><span class="dotp"></span></span><span class="task">Re-cut the bridge drums</span><span class="klabel">beats</span><span class="kav" style="background:var(--m3)">DV</span></div></div>
-          <div class="kcalday"><div class="kcaldate">Thu, Aug 20</div>
-            <div class="kcalrow"><span class="tstatus prog"><span class="dotp"></span></span><span class="task">Source the drum break sample</span><span class="klabel">references</span><span class="kav" style="background:var(--m5)">JX</span></div></div>
-          <div class="kcalday"><div class="kcaldate">Sat, Aug 22</div>
-            <div class="kcalrow"><span class="tstatus"><span class="dotp"></span></span><span class="task">Write second verse</span><span class="klabel">verses</span><span class="kav" style="background:var(--m1)">RA</span></div></div>
-        </div>
       </div>
     </div>
 
@@ -2976,19 +2650,12 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
     </div>
     <div class="dinfo">
       <div class="dtop">
-        <details class="verdrop"><summary><span class="v">v3</span> of 3<svg class="ic sm chev"><use href="#i-chev"/></svg></summary>
-          <div class="vermenu"><div class="mlabel">Versions — newest first</div>
-            <button class="on"><span class="vt cur">v3</span><span class="vfn">late_bloom_beat.flp</span></button>
-            <button><span class="vt">v2</span><span class="vfn">late_bloom_beat_v2.flp</span></button>
-            <button><span class="vt">v1</span><span class="vfn">late_bloom_beat_draft.flp</span></button>
-            <div class="sep"></div><button><svg class="ic sm"><use href="#i-plus"/></svg>Add a version</button></div>
-        </details>
+        <span class="dfilename">late_bloom_beat.flp</span>
         <button class="iconbtn sp" title="Report"><svg class="ic sm"><use href="#i-flag"/></svg></button>
         <button class="iconbtn" id="detailsClose" title="Close"><svg class="ic sm"><use href="#i-x"/></svg></button>
       </div>
       <div class="scroll">
         <h2>Back half rework</h2>
-        <div class="vernote">Changed in v3: swapped the bridge drums, brought the low end down. <span class="by">tomo</span></div>
         <div class="meta">
           <div class="row"><span class="k">Visibility</span><span class="v"><span class="vis"><svg class="ic"><use href="#i-server"/></svg>Late Bloom LP, server</span></span></div>
           <div class="row"><span class="k">Uploaded by</span><span class="v"><span class="uchip m3"><span class="dot"></span>dev</span></span></div>
@@ -3010,7 +2677,6 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
       <div class="foot">
         <button class="btn primary" id="dlBtn"><svg class="ic sm"><use href="#i-download"/></svg>Download<svg class="ic sm"><use href="#i-chev"/></svg></button>
         <button class="btn" id="saveBtn"><svg class="ic sm"><use href="#i-save"/></svg>Save</button>
-        <button class="btn" id="canvasBtn"><svg class="ic sm"><use href="#i-canvas"/></svg>Open in canvas<svg class="ic sm"><use href="#i-chev"/></svg></button>
       </div>
     </div>
   </div>
@@ -3021,9 +2687,6 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
 <div class="menu" id="saveMenu"><div class="mlabel">Save to</div>
   <button><svg class="ic sm"><use href="#i-save"/></svg>Liked</button><button><svg class="ic sm"><use href="#i-save"/></svg>Drum picks</button><button><svg class="ic sm"><use href="#i-save"/></svg>Mix references</button>
   <div class="sep"></div><button><svg class="ic sm"><use href="#i-plus"/></svg>New folder</button></div>
-<div class="menu" id="canvasMenu"><div class="mlabel">Open in canvas</div>
-  <button><svg class="ic sm"><use href="#i-canvas"/></svg>sh040 review</button><button><svg class="ic sm"><use href="#i-canvas"/></svg>drum picks</button><button><svg class="ic sm"><use href="#i-canvas"/></svg>mix references</button>
-  <div class="sep"></div><button><svg class="ic sm"><use href="#i-plus"/></svg>New canvas</button></div>
 <div class="menu emojimenu" id="emojiMenu"><div class="mlabel">Reactions</div>
   <div class="egrid"><button>🔥</button><button>👀</button><button>😂</button><button>❤️</button><button>🎧</button><button>🥁</button><button>🎹</button><button>🎤</button><button>✅</button><button>👍</button><button>🙌</button><button>💯</button><button>👏</button><button>😮</button><button>🫡</button><button>➕</button></div></div>
 <div class="menu" id="msgMenu"><div class="mlabel">Message</div>
@@ -3041,20 +2704,11 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
 <div class="umodal" id="uModal" hidden>
   <div class="uhd"><b id="uTitle">Upload</b><button class="iconbtn" id="uClose"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
   <div class="ubody">
-    <div class="uvbanner" id="uvBanner" hidden><svg class="ic"><use href="#i-canvas"/></svg><span>New version of <b>Back half rework</b>, currently v3 · audio post</span></div>
     <div class="drop"><div class="big">Drop files here</div><div class="sub" id="dropSub">or click to choose, several at once</div></div>
 
     <div class="ufiles" id="ufilesNew">
-      <div class="ufile"><svg class="ic sm" style="color:var(--muted)"><use href="#i-canvas"/></svg>late_bloom_beat.flp</div>
+      <div class="ufile"><svg class="ic sm" style="color:var(--muted)"><use href="#i-file"/></svg>late_bloom_beat.flp</div>
       <div class="ufile"><svg class="ic sm" style="color:var(--muted)"><use href="#i-voice"/></svg>bloom_mix_rough.wav</div>
-    </div>
-
-    <div id="ufilesVer" hidden>
-      <div class="uvnote"><svg class="ic sm"><use href="#i-check"/></svg>Same type as the post only (audio). Drag to reorder, top to bottom sets v4, v5, and so on.</div>
-      <div class="verfile"><svg class="ic sm drag"><use href="#i-drag"/></svg><span class="vb">v4</span><span class="fn"><svg class="ic sm" style="color:var(--muted)"><use href="#i-voice"/></svg>bridge_fix.wav</span>
-        <div class="field req"><input placeholder="What changed, required"></div></div>
-      <div class="verfile"><svg class="ic sm drag"><use href="#i-drag"/></svg><span class="vb">v5</span><span class="fn"><svg class="ic sm" style="color:var(--muted)"><use href="#i-voice"/></svg>bridge_fix_master.wav</span>
-        <div class="field req"><input placeholder="What changed, required"></div></div>
     </div>
 
     <div id="uNewFields">
@@ -3168,7 +2822,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   document.addEventListener('keydown',function(e){if(lb.hidden)return;
     if(e.key==='Escape')lbClose();else if(e.key==='ArrowLeft')lbShow(lbIdx-1);else if(e.key==='ArrowRight')lbShow(lbIdx+1);});
 
-  var menus=['dlMenu','saveMenu','canvasMenu','emojiMenu','msgMenu'].map(function(id){return document.getElementById(id);}).filter(Boolean);
+  var menus=['dlMenu','saveMenu','emojiMenu','msgMenu'].map(function(id){return document.getElementById(id);}).filter(Boolean);
   function closeMenus(){menus.forEach(function(m){m.classList.remove('open');});}
   function toggleMenu(m,anchor,above){var open=m.classList.contains('open');closeMenus();if(open)return;
     m.classList.add('open');var r=anchor.getBoundingClientRect();
@@ -3178,7 +2832,6 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   function wire(id,menu,above){var b=document.getElementById(id);if(b)b.addEventListener('click',function(e){e.stopPropagation();toggleMenu(menu,b,above);});}
   wire('dlBtn',document.getElementById('dlMenu'),true);
   wire('saveBtn',document.getElementById('saveMenu'),true);
-  wire('canvasBtn',document.getElementById('canvasMenu'),true);
   // emoji picker + message action menu
   var emojiMenu=document.getElementById('emojiMenu'),msgMenu=document.getElementById('msgMenu');
   var eb=document.getElementById('emojiBtn');if(eb)eb.addEventListener('click',function(e){e.stopPropagation();toggleMenu(emojiMenu,eb,true);});
@@ -3187,18 +2840,9 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   document.addEventListener('click',function(e){if(!e.target.closest('.menu'))closeMenus();});
 
   var uScrim=document.getElementById('uScrim'),uModal=document.getElementById('uModal');
-  function openU(version){uScrim.hidden=false;uModal.hidden=false;
-    document.getElementById('uTitle').textContent=version?'Add a version':'Upload';
-    document.getElementById('uvBanner').hidden=!version;
-    document.getElementById('ufilesNew').hidden=version;
-    document.getElementById('ufilesVer').hidden=!version;
-    document.getElementById('uNewFields').hidden=version;
-    document.getElementById('dropSub').textContent=version?'same type as the post, several become ordered versions':'or click to choose, several at once';
-    document.getElementById('uSubmit').textContent=version?'Upload version':'Upload';}
+  function openU(){uScrim.hidden=false;uModal.hidden=false;}
   function closeU(){uScrim.hidden=true;uModal.hidden=true;}
-  ['showUpload','showUpload2','showUpload3'].forEach(function(id){var e=document.getElementById(id);if(e)e.addEventListener('click',function(){openU(false);});});
-  document.getElementById('showUploadV').addEventListener('click',function(){openU(true);});
-  var _av=document.getElementById('addVerBtn');if(_av)_av.addEventListener('click',function(){closeMenus();closeD();openU(true);});
+  ['showUpload','showUpload2','showUpload3'].forEach(function(id){var e=document.getElementById(id);if(e)e.addEventListener('click',function(){openU();});});
   document.getElementById('uClose').addEventListener('click',closeU);
   document.getElementById('uCancel').addEventListener('click',closeU);
   uScrim.addEventListener('click',closeU);
@@ -3250,10 +2894,6 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
     var open=d.classList.toggle('open');b.classList.toggle('on',open);});});
   // on/off switches (private channel, etc.)
   document.querySelectorAll('.tgl').forEach(function(t){t.addEventListener('click',function(e){e.stopPropagation();t.classList.toggle('on');});});
-  // board views: Board / Table / Calendar
-  document.querySelectorAll('.kbviews .kbview').forEach(function(v){v.addEventListener('click',function(){
-    document.querySelectorAll('.kbviews .kbview').forEach(function(x){x.classList.remove('on');});v.classList.add('on');
-    var k=v.dataset.kview;document.querySelectorAll('.kview').forEach(function(p){p.hidden=p.dataset.kview!==k;});});});
 
   // sign-in / onboarding / username claim (gap #13)
   (function(){
