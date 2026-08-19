@@ -109,6 +109,10 @@ Check against CANON before implementing each one.
 ## Interaction & polish
 - [ ] **45.** **Every single button** should have a **hover animation** (no dead
   buttons — consistent hover feedback across the whole UI).
+- [ ] **48.** **Hide scrollbars while keeping scroll** on every scroll container
+  (`scrollbar-width:none` + `::-webkit-scrollbar{display:none}`) — cleaner look. Keep
+  keyboard/wheel/touch scroll working; don't remove overflow. Consider a subtle
+  scroll-shadow/fade at the edges so scrollability still reads.
 
 ## Icons
 - [ ] **21.** The zip-file icon isn't centered and looks bad. Decide on the single icon
