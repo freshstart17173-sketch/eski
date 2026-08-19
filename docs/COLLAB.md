@@ -10,7 +10,7 @@ workflow walkthroughs. Nothing here is live yet.
 > **kanban boards** (F3a), and **numbered versions** (F7). Their tables, RPCs,
 > screens and Realtime channels below are **historical** — do not build them. A new
 > take is just a new upload; feedback lives in chat and post comments. Storage is
-> the **two-slider, no-pooling** model priced **$0.050/$0.045/$0.040 per GB**
+> the **two-slider, no-pooling** model priced **$0.028/$0.025/$0.022 per GB**
 > (10 GB free); see CANON §D.2. Where this narrative still describes a cut feature or
 > old pricing, **CANON wins.**
 >
