@@ -819,7 +819,8 @@ Each row: purpose · columns · RLS summary. `uid()` = `(select auth.uid())`.
 | Table | Purpose | Columns (beyond `id uuid pk default gen_random_uuid()`, `created_at`) | RLS |
 |---|---|---|---|
 | `servers` | a studio | `slug uniq, name, description, cover_key, owner_id→auth.users` | read: `member_of(id)`; write: `is_server_admin(id)` |
-| `server_members` | membership + colour + timeout | `server_id, user_id, color smallint, timeout_until timestamptz, joined_at, pk(server_id,user_id)` | read: `member_of(server_id)`; self-leave; admin manages |
+| `server_members` | membership + colour + timeout | `server_id, user_id, color smallint, timeout_until timestamptz, joined_at, posts_require_approval bool default false (gallery #57), pk(server_id,user_id)` | read: `member_of(server_id)`; self-leave; admin manages |
+| *(post-approval)* | a flagged member's posts are **held** | `works.approved_at timestamptz null` — when the poster's `posts_require_approval`, `approved_at` starts null and the work is **hidden from readers** until an admin's `approve_work(id)` sets it (gallery #57). Admin bulk moderation RPCs `delete_user_works(server,user)` / `archive_user_works(...)` / `export_user_works(...)` are `is_server_admin`-gated + `audit_log`ged (gallery #59). | read gate adds `approved_at is not null OR is own OR is_admin` |
 | `roles` | permission roles (CANON §D.1) | `server_id, name, color smallint, position int, permissions bigint (flag bitmask), is_default bool (@everyone)` | read: `member_of(server_id)`; write: `has_perm(server_id,'manage_roles')` |
 | `member_roles` | members ↔ roles (union of power) | `server_id, user_id, role_id, pk(server_id,user_id,role_id)` | read: member; write: `manage_roles` |
 | `channel_roles` | v1 private-channel allow-list | `channel_id, role_id, pk(channel_id,role_id)` — zero rows = open to all members | read: member; write: `manage_channels` |

@@ -2556,6 +2556,19 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
             <div class="subh">Take action</div>
             <div class="frow" style="max-width:660px"><div class="field"><svg class="ic sm"><use href="#i-user"/></svg><input placeholder="Member to time out or ban"></div></div>
             <div style="display:flex;gap:8px"><button class="btn sm"><svg class="ic sm"><use href="#i-hand"/></svg>Time out</button><button class="btn sm danger"><svg class="ic sm"><use href="#i-leave"/></svg>Ban</button></div>
+
+            <!-- #57 per-member post approval: flagged members' posts are hidden until approved -->
+            <div class="subh" style="margin-top:22px">Posts held for approval<span class="mut">2</span></div>
+            <div class="h2sub" style="margin:-4px 0 10px">Members set to <b>require approval</b> (in Members) have their posts hidden by default until an admin approves them.</div>
+            <div class="setlist">
+              <div class="mtrow"><div class="av sm">KO</div><div class="info"><b>kofi</b><small>posted “first loop pack” to #beats · held</small></div><button class="btn sm primary">Approve</button><button class="btn sm">Hide</button></div>
+              <div class="mtrow"><div class="av sm">NL</div><div class="info"><b>nel</b><small>posted a reference image to #references · held</small></div><button class="btn sm primary">Approve</button><button class="btn sm">Hide</button></div>
+            </div>
+
+            <!-- #59 admin bulk file management -->
+            <div class="subh" style="margin-top:22px">Bulk file actions</div>
+            <div class="frow" style="max-width:660px"><div class="field"><svg class="ic sm"><use href="#i-user"/></svg><input placeholder="Member"></div></div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn sm danger"><svg class="ic sm"><use href="#i-trash"/></svg>Delete all their posts</button><button class="btn sm"><svg class="ic sm"><use href="#i-file"/></svg>Archive all their files</button><button class="btn sm"><svg class="ic sm"><use href="#i-download"/></svg>Export their files</button></div>
           </div>
           <div class="setpanel" data-panel="audit" hidden>
             <h2>Audit log</h2><div class="h2sub">Every admin action, newest first. Kept 90 days.</div>

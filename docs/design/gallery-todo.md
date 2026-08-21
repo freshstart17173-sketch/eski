@@ -179,7 +179,7 @@ bottom. `[x]` = done and pushed.
 - [x] **56.** **Voice-chat WIP screens** — the voice/VC surfaces need explicit
   "work in progress" states so it's clear calls aren't shipping in the beta (CANON
   already defers calls to v2; the UI should say so).
-- [ ] **57.** **Per-user posting permission / post approval** — an admin can set a
+- [x] **57.** **Per-user posting permission / post approval** — an admin can set a
   member so their posts are **hidden by default** and must be **approved** before
   they're unhidden/visible. (CANON: a per-member `posts_require_approval` flag +
   a moderation queue; enforced by RLS on read/visibility.)
@@ -187,7 +187,7 @@ bottom. `[x]` = done and pushed.
   **archived** (kept, read-only, out of the main view) and **locked** (no edits/
   moves/deletes without permission). (CANON: `folders.archived` / `folders.locked`
   + gated write RLS.)
-- [ ] **59.** **Admin panel — mass file management** — bulk delete / archive /
+- [x] **59.** **Admin panel — mass file management** — bulk delete / archive /
   manage, including **delete every post from a given user** in one action. (CANON:
   admin RPCs for bulk moderation + an audit-logged admin surface.)
 - [ ] **60.** **Unify every file explorer / viewer** — the server File explorer and
