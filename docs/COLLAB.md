@@ -824,7 +824,7 @@ Each row: purpose · columns · RLS summary. `uid()` = `(select auth.uid())`.
 | `member_roles` | members ↔ roles (union of power) | `server_id, user_id, role_id, pk(server_id,user_id,role_id)` | read: member; write: `manage_roles` |
 | `channel_roles` | v1 private-channel allow-list | `channel_id, role_id, pk(channel_id,role_id)` — zero rows = open to all members | read: member; write: `manage_channels` |
 | `server_invites` | invite links | `code text pk, server_id, created_by, expires_at, max_uses int, uses int default 0` | read: admin; use via RPC |
-| `channels` | rooms | `server_id, name, kind in(text,voice), topic, slowmode_sec int default 0, position int` | read: `can_view_channel(id)`; write: `manage_channels` |
+| `channels` | rooms | `server_id, name, kind in(text,voice), topic, slowmode_sec int default 0, position int, default_folder_id null→folders (gallery #53), allowed_kinds text[] null (null=any; e.g. {image,video} — gallery #54)` | read: `can_view_channel(id)`; write: `manage_channels`; **insert of a work is rejected when its `kind` isn't in `allowed_kinds`** |
 
 **Chat, DMs, and people**
 

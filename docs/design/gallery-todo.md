@@ -166,10 +166,10 @@ bottom. `[x]` = done and pushed.
   remaining waveform sites — folder player, chat filecards, file-feed — now render
   the music icon + WAV; `class="wave"` count is 0. The `.wave` CSS + `generateWaveform()`
   JS are now dead and can be removed in a cleanup pass.)*
-- [ ] **53.** **Channel default file-save location** — each channel has a default
+- [x] **53.** **Channel default file-save location** — each channel has a default
   folder in the File explorer where files posted to it land (CANON: needs a
   `channels.default_folder_id` and upload/placement wiring).
-- [ ] **54.** **File-type permissions per channel** — a channel can be restricted so
+- [x] **54.** **File-type permissions per channel** — a channel can be restricted so
   only certain kinds (e.g. images or videos) may be posted there (CANON: a channel
   allow-list of `kind`s; enforced by RLS/RPC on insert, signposted in the composer).
 - [ ] **55.** **Tracked vs untracked (hidden) files** — a file can be posted for
