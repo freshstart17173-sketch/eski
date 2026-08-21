@@ -50,7 +50,7 @@ bottom. `[x]` = done and pushed.
 - [x] **7.** Remove the "Opens with FL Studio 21" **Opens-with** row entirely.
 - [x] **16.** Remove the "Keeps a copy in your personal storage — dedup means it costs
   ~nothing…" explanatory blurb.
-- [ ] **10.** Add **navigation arrows** up top where the report flag is. Visible for
+- [x] **10.** Add **navigation arrows** up top where the report flag is. Visible for
   files and posts; move back/forward between **adjacent items on the same level**.
   On a folder, arrow just moves to the next file (does **not** descend into the
   folder's contents).
@@ -64,9 +64,9 @@ bottom. `[x]` = done and pushed.
   details pane; click through folders from the list.
 - [x] **36.** Fix **audio-file thumbnails** in the folder-details side file list —
   they render messed up. (Tie to #13: audio uses the music/audio icon, not a waveform.)
-- [ ] **17.** Add **Save to Files** — option to save the **whole folder** or **just a
+- [x] **17.** Add **Save to Files** — option to save the **whole folder** or **just a
   selection**.
-- [ ] **18.** **Download** button: relabel to just "Download", with options to download
+- [x] **18.** **Download** button: relabel to just "Download", with options to download
   the **whole folder** or **just a selection**.
 
 ## Thumbnails & placeholder images
@@ -82,7 +82,7 @@ bottom. `[x]` = done and pushed.
   thumbnail.
 - [x] **13.** Audio **cards**: square like every other card; **drop the waveform** and
   use a **music/audio icon** instead.
-- [ ] **24.** Players need a **speed** setting and, if possible, a **quality** setting.
+- [x] **24.** Players need a **speed** setting and, if possible, a **quality** setting.
 - [x] **31.** Music **progress bar** → slightly **taller rectangular** design; **no
   round playhead** knob.
 - [x] **32.** **Play icon** should have **no border / border color**.
