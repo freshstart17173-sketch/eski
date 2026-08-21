@@ -312,7 +312,7 @@ Each element row answers four questions:
   screen). Responsive web, not a separate native app.
 
 Component names (Button, Icon button, Select, Field, Tag, Filter chip, Member
-chip, Role chip, Reaction pill, Avatar, Visibility marker, Waveform, Card, Menu)
+chip, Role chip, Reaction pill, Avatar, Visibility marker, Card, Menu)
 are the ones in [`styleguide.html`](design/styleguide.html) §8 — the registry
 references them, it doesn't redraw them.
 
@@ -425,7 +425,7 @@ The friends-only portfolio grid.
 | Search field | Filter posts by title/tag/handle; server-side. | R `search_all(q,'feed')` | Toolbar | Full-width, filters in a sheet |
 | Type / sort dropdowns | Filter by media type; sort newest/…; Reddit-style, no tag modifiers. | R `works` filters | Toolbar | In filter sheet |
 | Layout toggle | Switch **even square grid ⇄ masonry**; default even. | — (client) | Toolbar icon | Toolbar icon |
-| Post card | Square invisible cell (even) or natural aspect (masonry); media renders by kind (image thumb, video play-overlay, **audio → music-icon type card** (`#i-music` + ext; the waveform is only the expanded/inline player, gallery #13), text words, **non-previewable → type card** icon+ext); title + author below. Click → Details pane. | R `works` where `visibility='public'` and author ∈ friends | Grid, full width | 2-col grid |
+| Post card | Square invisible cell (even) or natural aspect (masonry); media renders by kind (image thumb, video play-overlay, **audio → music-icon type card** (`#i-music` + ext; **no waveform anywhere**, gallery #52), text words, **non-previewable → type card** icon+ext); title + author below. Click → Details pane. | R `works` where `visibility='public'` and author ∈ friends | Grid, full width | 2-col grid |
 | Empty | "No posts yet — add friends to see their work." | — | Centered | Centered |
 
 ### C.6 Screen 3 — File explorer
@@ -476,7 +476,7 @@ storage the bytes draw:
 
 | Element | Behaviour & states | DB | Desktop | Mobile |
 |---|---|---|---|---|
-| Media area | Fills the left; **one transport (audio = video) pinned to its foot** (seek, volume, tabular time, a **playback-speed control**, a **video quality menu**, fullscreen — gallery #24); **big centred borderless play** over the media; **no visible skip buttons — 5-second skip on ←/→** (gallery #37/#38/#32/#11). Waveform/video/image/type-card/folder-preview per kind. | R `works` (signed URL) | Left, grows | Top ~42vh |
+| Media area | Fills the left; **one transport (audio = video) pinned to its foot** (seek, volume, tabular time, a **playback-speed control**, a **video quality menu**, fullscreen — gallery #24); **big centred borderless play** over the media; **no visible skip buttons — 5-second skip on ←/→** (gallery #37/#38/#32/#11). Audio → **music-icon type card** (no waveform, gallery #52); video/image/type-card/folder-preview per kind. | R `works` (signed URL) | Left, grows | Top ~42vh |
 | **Prev / next arrows** | A single work (post or file) has **no arrows *over the media***, but **does** get prev/next **in the rail top bar**, next to the report flag — move between adjacent items on the same level (gallery #10); on a folder the top-bar arrow just steps to the next item, it doesn't descend. A **folder** is additionally the one pane with prev/next **over the media** (page its items) plus a clickable **navigation list in the rail**. | `folders` / `placement` sibling order | Top-bar arrows (all) + folder media edges + rail list | Same |
 | **Size row** | A plain **file-size** row in the metadata (e.g. "8.4 MB"). The old "leads-the-metadata storage row" — the storage×visibility badge **and** the "N MB on *whose* storage" sentence — is **removed** (gallery #2/#3): the Location breadcrumb already shows where the root is, so the badge and the whose-storage prose were redundant. | `works.bytes` | Rail meta | Rail meta |
 | **Location** (clickable breadcrumb) | Where the file lives in the tree: **`Server › folder › subfolder`** (server files, from `placement.folder_id`) or **`Your files › folder`** (posts). **Each segment is a link** that opens the File explorer at that folder — quick travel up the tree. | `folders` path via `placement.folder_id` | Rail meta | Rail meta |
@@ -1011,8 +1011,7 @@ Gallery-review batch. All fold into §C/§E when filled; mockup screens updated 
 - **Full-width.** The card grid fills the pane width (no narrow max-width column).
 - **Square containers, invisible.** Each work sits in a **square cell** (aspect
   1:1) with **no background/border** — the media shows at its natural aspect
-  inside; audio → **music-icon type card** (waveform only in the expanded
-  player, gallery #13), video → play overlay, text → its words, image →
+  inside; audio → **music-icon type card** (no waveform anywhere, gallery #52), video → play overlay, text → its words, image →
   thumbnail. The cell is a layout unit, not a visible card.
 - **Layout toggle.** A control switches between the default even grid and a
   **denser masonry** (variable-height, Pinterest-style) view. Applies to Feed,

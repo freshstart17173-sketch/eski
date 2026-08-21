@@ -78,7 +78,7 @@ bottom. `[x]` = done and pushed.
 
 ## Media players & cards
 - [x] **11.** Any playable media (audio + video): move the **play button to the center**.
-- [x] **12.** Audio **expanded views**: use a **high-res generated waveform** as the
+- [x] ~~**12.**~~ *(SUPERSEDED 2026-08-21: no waveform rendering anywhere — audio is always the music icon + file type. See NEW #52.)* **12.** Audio **expanded views**: use a **high-res generated waveform** as the
   thumbnail.
 - [x] **13.** Audio **cards**: square like every other card; **drop the waveform** and
   use a **music/audio icon** instead.
@@ -117,8 +117,8 @@ bottom. `[x]` = done and pushed.
   files, **read-only**.
 
 ## Files: trash & starring
-- [ ] **42.** Add a **Trash** that **auto-empties after 30 days**.
-- [ ] **43.** Add a **starring** system.
+- [x] **42.** Add a **Trash** that **auto-empties after 30 days**.
+- [x] **43.** Add a **starring** system.
 
 ## Storage & billing states
 - [ ] **44.** Add the **storage-upgrade UI elements** and the relevant screens.
@@ -153,3 +153,24 @@ bottom. `[x]` = done and pushed.
 ## Missing screens
 - [ ] **22.** Add a **Settings** screen.
 - [ ] **23.** Add more state screens: **blocked**, **pending**, etc.
+
+## New (added 2026-08-21 by owner)
+- [x] **52.** **No waveform rendering anywhere** — audio is *always* the music icon
+  + file type (like a normal card), including the expanded/inline player. Supersedes
+  #12 and the earlier "waveform in the expanded player" carve-out. *(Done: all 5
+  remaining waveform sites — folder player, chat filecards, file-feed — now render
+  the music icon + WAV; `class="wave"` count is 0. The `.wave` CSS + `generateWaveform()`
+  JS are now dead and can be removed in a cleanup pass.)*
+- [ ] **53.** **Channel default file-save location** — each channel has a default
+  folder in the File explorer where files posted to it land (CANON: needs a
+  `channels.default_folder_id` and upload/placement wiring).
+- [ ] **54.** **File-type permissions per channel** — a channel can be restricted so
+  only certain kinds (e.g. images or videos) may be posted there (CANON: a channel
+  allow-list of `kind`s; enforced by RLS/RPC on insert, signposted in the composer).
+- [ ] **55.** **Tracked vs untracked (hidden) files** — a file can be posted for
+  utility in chat *without* showing in the File explorer's organised view. Hidden by
+  default in the file view; a "show hidden" toggle reveals them. Keeps chat-utility
+  files from cluttering the library. (CANON: a `works.hidden`/`tracked` flag + a file-view toggle.)
+- [ ] **56.** **Voice-chat WIP screens** — the voice/VC surfaces need explicit
+  "work in progress" states so it's clear calls aren't shipping in the beta (CANON
+  already defers calls to v2; the UI should say so).
