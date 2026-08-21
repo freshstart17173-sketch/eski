@@ -115,7 +115,7 @@ bottom. `[x]` = done and pushed.
   surface them somewhere with more presence than the rail alone.
 
 ## Sharing
-- [ ] **39.** Add a **Share dialog**, **Google-Drive style** — lets the user set
+- [x] **39.** Add a **Share dialog**, **Google-Drive style** — lets the user set
   **visibility** on a file/folder.
 - [ ] **40.** Add a **shared-view screen** showing what a file/folder looks like **when
   shared**: viewer can **only see what's shared**, **cannot navigate** through other
@@ -196,7 +196,7 @@ bottom. `[x]` = done and pushed.
   **friends' posts** (owner's word "people you follow" = friend, the one mutual
   relationship — CANON §A; one-way follows are dropped). Build one explorer
   component, parameterised by source.
-- [ ] **61.** **Update-visibility modal** — a modal to change a **post's visibility**
+- [x] **61.** **Update-visibility modal** — a modal to change a **post's visibility**
   (Public / Server / Private) after the fact. Pairs with the Share dialog (#39);
   #3 removed the visibility badge, so this modal (+ Share) is where visibility is
   set/seen now.
