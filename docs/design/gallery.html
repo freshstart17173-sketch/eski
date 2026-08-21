@@ -1008,6 +1008,19 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
 .svnote{display:flex;align-items:flex-start;gap:8px;font-size:var(--fs-xs);color:var(--muted);background:var(--surface);border-radius:var(--r);padding:10px 12px;margin-top:var(--s4)}
 .svnote .ic{color:var(--muted);flex:none;margin-top:1px}
 @media(max-width:760px){.svbody{grid-template-columns:1fr}}
+/* #51 toast + upload-progress — a transient bottom-right feedback stack */
+.toaststack{position:fixed;right:18px;bottom:18px;z-index:95;display:flex;flex-direction:column;gap:8px;width:320px;max-width:calc(100vw - 36px)}
+.toast{display:flex;align-items:flex-start;gap:10px;background:var(--ink);color:var(--on-ink);border-radius:var(--r);padding:11px 13px;font-size:var(--fs-sm);
+  animation:toastin .18s ease}
+.toast .ic{flex:none;margin-top:1px;color:var(--on-ink)}
+.toast .tclose{margin-left:auto;color:var(--on-ink);opacity:.7}
+@keyframes toastin{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.uprog{background:var(--paper);border-radius:var(--r);padding:11px 13px;box-shadow:0 8px 30px rgba(0,0,0,.22)}
+.uprog .top{display:flex;align-items:center;gap:8px;font-size:var(--fs-sm);margin-bottom:8px}
+.uprog .top .ic{color:var(--muted);flex:none}
+.uprog .top .pct{margin-left:auto;color:var(--muted);font-variant-numeric:tabular-nums}
+.uprog .bar{height:6px;border-radius:var(--r);background:var(--surface);overflow:hidden}
+.uprog .bar i{display:block;height:100%;background:var(--ink);border-radius:var(--r);transition:width .2s linear}
 /* folder contents grid inside a details pane */
 .dfolder{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}
 .dfolder .cell{aspect-ratio:1;background:var(--plate);border-radius:3px;overflow:hidden;position:relative}
@@ -2870,6 +2883,9 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   <div class="ufoot"><button class="btn" id="uCancel">Cancel</button><button class="btn primary" id="uSubmit">Post</button></div>
 </div>
 
+<!-- #51 transient feedback stack (toasts + upload progress) -->
+<div class="toaststack" id="toastStack"></div>
+
 <script>
 (function(){var APP=new URLSearchParams(location.search).has("app");if(APP){
 
@@ -2978,6 +2994,17 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   document.querySelectorAll('.hoveracts [title="More"]').forEach(function(b){b.addEventListener('click',function(e){e.stopPropagation();toggleMenu(msgMenu,b,true);});});
   document.addEventListener('click',function(e){if(!e.target.closest('.menu'))closeMenus();});
 
+  // #51 toast + upload-progress feedback
+  var toastStack=document.getElementById('toastStack');
+  function toast(msg){if(!toastStack)return;var t=document.createElement('div');t.className='toast';
+    t.innerHTML='<svg class="ic sm"><use href="#i-check"/></svg><span>'+msg+'</span><button class="tclose"><svg class="ic sm"><use href="#i-x"/></svg></button>';
+    toastStack.appendChild(t);var close=function(){t.remove();};t.querySelector('.tclose').addEventListener('click',close);setTimeout(close,3600);}
+  function uploadProgress(name,done){if(!toastStack)return;var p=document.createElement('div');p.className='uprog';
+    p.innerHTML='<div class="top"><svg class="ic sm"><use href="#i-file"/></svg><span>Uploading '+name+'…</span><span class="pct">0%</span></div><div class="bar"><i style="width:0"></i></div>';
+    toastStack.appendChild(p);var i=p.querySelector('i'),pct=p.querySelector('.pct'),v=0;
+    var iv=setInterval(function(){v+=Math.random()*22;if(v>=100){v=100;clearInterval(iv);setTimeout(function(){p.remove();done&&done();},350);}
+      i.style.width=v+'%';pct.textContent=Math.round(v)+'%';},220);}
+
   // #39/#61 share dialog open/close, wired from the ⋯ menu "Update visibility…"
   var shareScrim=document.getElementById('shareScrim'),shareModal=document.getElementById('shareModal');
   function openShare(){closeMenus();if(shareScrim)shareScrim.hidden=false;if(shareModal)shareModal.hidden=false;}
@@ -3017,6 +3044,8 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   ['showUpload','showUpload2','showUpload3','showUpload4'].forEach(function(id){var e=document.getElementById(id);if(e)e.addEventListener('click',function(){openU();});});
   document.getElementById('uClose').addEventListener('click',closeU);
   document.getElementById('uCancel').addEventListener('click',closeU);
+  var uSubmit=document.getElementById('uSubmit');
+  if(uSubmit)uSubmit.addEventListener('click',function(){closeU();uploadProgress('late_bloom_beat.flp',function(){toast('Posted to #beats');});});
   uScrim.addEventListener('click',closeU);
   document.addEventListener('keydown',function(e){if(e.key==='Escape'){closeD();closeU();}});
 

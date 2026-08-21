@@ -148,7 +148,7 @@ bottom. `[x]` = done and pushed.
 - [ ] **50.** **Empty states** — empty folder, empty channel, no friends, no search
   results, **empty trash** (#42), empty/newly-created server. Icon-plus-text unless a
   brand illustration is chosen.
-- [ ] **51.** **Toast / notification + upload-progress** visuals — a transient feedback
+- [x] **51.** **Toast / notification + upload-progress** visuals — a transient feedback
   surface (there's a bell, but no toast, no upload progress UI).
 
 ## Icons

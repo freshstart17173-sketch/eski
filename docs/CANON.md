@@ -540,7 +540,7 @@ below the visibility row is required.
 | Visibility | **Per post**: Public / Server / Private. **The one required choice.** | `works.visibility` | Segmented | Segmented |
 | **Which server / folder** | When Server: pick the target server, and optionally the target **folder** in its tree (default = root). | `works.server_id` · `placement.folder_id` | Picker | Picker |
 | **Storage-impact line** | Under the picker, a plain note of **which storage the bytes draw**, tightened copy (gallery #14): "**{server}** storage · X/Y GB" (Server) or "**Your** storage · X/Y GB" (Public/Private). Keeps "who pays" honest at the point of upload. | R `storage_meters` for the target account | Row | Row |
-| **Post** | Commits immediately with just the above (title = file name). | write path (§D.3) | Primary button | Primary |
+| **Post** | Commits immediately with just the above (title = file name). Closes the sheet and shows an **upload-progress** card, then a **success toast** in the bottom-right feedback stack (gallery #51). | write path (§D.3) | Primary button | Primary |
 | **▸ Add details** (disclosure) | Reveals: Title (optional, file-name default) · **Tags** · **Collaborators** (type-ahead chip input → member chip in colour + optional role). Collapsed by default. | `works.title` · `content_tags` · `works.collaborators` | Disclosure | Disclosure |
 
 ### C.13 Screen 14 — Notifications
