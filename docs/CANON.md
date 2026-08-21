@@ -636,6 +636,8 @@ Minimal, on-brand, no rail; centred card (§D.4).
 | **404 / not found** | Bad URL. One card: glyph, "This page doesn't exist", back-to-Feed. | — | Never leaks whether a private thing exists. |
 | **Dead invite** | `/join/<code>` invalid. States: **expired · revoked · full · already-a-member** (each its own copy + CTA). | R `invites` (null/expired/at-cap) | Distinct from the valid preview (C.14). |
 | **Access denied** | Private channel/server you can't see (`can_view_channel` false). Quiet "You don't have access" — **never a 404 that leaks existence**. | gate `can_view_channel` | Deliberately not a 404. |
+| **Blocked** (gallery #23) | Viewing someone you blocked: "You blocked @handle — you won't see their messages, posts, or profile; they can't message/add you; **invisible to them**". Unblock CTA. | `friendships.status='blocked'` | Symmetric hide, one-sided visibility of the state. |
+| **Pending** (gallery #23) | An outbound friend request not yet accepted: "Friend request pending — waiting for @handle". Cancel CTA. (Reused shape for other pending approvals, e.g. post-approval #57.) | `friendships.status='pending'` | — |
 
 Screen 7 (Call) stays **v2 — deferred**. Registry rule holds: every row names a
 real table/RPC/Realtime channel from §7 (or an explicit "—").

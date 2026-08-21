@@ -157,7 +157,7 @@ bottom. `[x]` = done and pushed.
 
 ## Missing screens
 - [ ] **22.** Add a **Settings** screen.
-- [ ] **23.** Add more state screens: **blocked**, **pending**, etc.
+- [x] **23.** Add more state screens: **blocked**, **pending**, etc.
 
 ## New (added 2026-08-21 by owner)
 - [x] **52.** **No waveform rendering anywhere** — audio is *always* the music icon

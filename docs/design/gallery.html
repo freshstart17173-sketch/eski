@@ -2583,6 +2583,30 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
       </div>
     </div>
 
+    <!-- #23 blocked state -->
+    <div class="screen" data-screen="blocked" hidden>
+      <div class="onboard">
+        <div class="ocard" style="text-align:center">
+          <div style="display:grid;place-items:center;margin-bottom:8px"><svg class="ic" style="width:30px;height:30px;color:var(--m1)"><use href="#i-hide"/></svg></div>
+          <h1>You blocked <span class="m1">@rae</span></h1>
+          <div class="lead">You won't see their messages, posts, or profile, and they can't message you or add you. This is invisible to them.</div>
+          <div class="authbtns"><button class="btn primary" style="justify-content:center">Unblock</button><button class="btn" style="justify-content:center">Back</button></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- #23 pending state -->
+    <div class="screen" data-screen="pending" hidden>
+      <div class="onboard">
+        <div class="ocard" style="text-align:center">
+          <div style="display:grid;place-items:center;margin-bottom:8px"><svg class="ic" style="width:30px;height:30px;color:var(--muted)"><use href="#i-clock"/></svg></div>
+          <h1>Friend request pending</h1>
+          <div class="lead">Waiting for <b class="m1">@rae</b> to accept. You'll be able to DM each other and see each other's public posts once they do.</div>
+          <div class="authbtns"><button class="btn" style="justify-content:center">Cancel request</button></div>
+        </div>
+      </div>
+    </div>
+
     <div class="screen" data-screen="auth" hidden>
       <div class="authwrap">
         <div class="authbrand">eski</div>
@@ -3371,6 +3395,8 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
     ['e404','404 / not found','bad URL','system'],
     ['deadinvite','Dead invite','expired / revoked / full','system'],
     ['denied','Access denied','private channel/server','system'],
+    ['blocked','Blocked','you blocked this person','system'],
+    ['pending','Pending','friend request waiting','system'],
     ['auth','Sign in','sign in · claim handle · magic link',''],
     ['vc','Call','voice/video room','v2 — deferred']
   ];
