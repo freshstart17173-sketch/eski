@@ -1102,3 +1102,70 @@ invite, and access-denied** alike:
   chosen per upload and editable per post. Backend: `works.visibility` +
   `works.server_id` (the chosen server) already carry this; the UI must expose
   the server picker, not assume the current one.
+
+---
+
+## §D.7 Gap-fill surfaces (2026-08-21) — new gallery screens & controls
+
+The [`gaps.md`](design/gaps.md) backlog worked into the gallery. All fold into
+§C when it's filled; mockups are live. Most are **pure UI on the existing
+model** — the one genuinely new model concept (forwarding) is called out.
+
+**Layout — the 1440px canvas.** Every full app screen renders on a **1440px-wide
+canvas**, centred with a hairline gutter (`--line`) either side on wider
+viewports; dialogs and modals are sized to fit within it, not the raw viewport.
+This is the desktop measure the built pages target (mobile still collapses per
+§C.2).
+
+**S1 — Admin POV (workspace).** The member rail carries a **Viewing as
+Member / Admin** switch that flips the whole workspace: it reveals the
+create-channel `+`, a per-channel **edit gear**, and the member popover's
+admin block. Same POV-switcher mechanism as the profile (§D.6 / gallery #20).
+It is a **signpost only** — the fence is `is_server_admin` / `manage_channels`
+(§B), enforced by RLS/RPC; the POV toggle does not grant anything.
+
+**B9 — member popover admin actions.** The member popover gains **Add friend**
+(public action) plus a gated **Admin** block: **Roles ▸ · Timeout · Kick · Ban**
+(the last two danger-styled). Rows map to the existing moderation RPCs; shown
+only in S1's admin POV.
+
+**B1/S2/S3 — server dropdown + channel/invite dialogs.** The server header is a
+**dropdown** (Invite people · Create channel · Create category · Server settings ·
+Notification settings · Edit server profile · Leave server), not a jump to
+settings. **Create-channel** dialog: name, Text/Voice kind, category, default
+folder (§D.3 / gallery #53), allowed file-types (#54), private toggle.
+**Invite-to-server** dialog: invite link + copy + expiry/max-uses + invite by
+handle (writes `server_invites`).
+
+**S4/B14 — friends manager + new DM.** A **Friends** screen (All / Pending /
+Blocked, add-by-handle, accept/decline/cancel/unblock over `friendships`) and a
+**New DM / group-DM** picker from the Messages header (→ `create_dm`).
+
+**S5/B10 — forwarding (fits the existing model).** A message/file can be
+**forwarded** to other channels/DMs. This is **not a new table** — it's a
+`placement` (§D.3) onto the target surface (a `server` placement + `channel_id`
+for a channel, a `dm` placement for a DM), already anticipated by the read rule
+(§B.3 "readable via ANY placement — crosspost / DM / forward"). The **new part
+is UI**: the forwarded message renders a **quote block** (source author +
+channel + snippet) above an optional note. Forwarding obeys §D.3's rules —
+notably **forwarding a server file to a non-member copies it to the sender's
+personal storage** (a new work on the same dedup blob), never a live
+cross-server grant. Deriving the quote from the source needs at most a nullable
+`placement.forwarded_from` back-reference; otherwise it reads from `work_id`.
+
+**B19 — trash actions.** The Trash smart-folder is populated: a retention notice
+(**30-day auto-purge**, §D / gallery #42), per-item **Restore** and **Delete
+forever**, a countdown that turns danger-red near expiry, and **Empty trash now**.
+Soft-delete only; nothing is hard-deleted before 30 days except via these.
+
+**B15 — notification-bell dropdown.** The header bell opens a **recent-activity
+dropdown** (Mark all read + a preview of the notifications screen) instead of
+only jumping to the full screen; **See all** falls through to it.
+
+**S8 — new server (first-run).** The just-created, empty server: the workspace
+shell with an empty channel column (Files + `general`) and a **3-step setup
+checklist** — create channels · invite crew · upload files. Reuses the empty
+-state pattern (gallery #50).
+
+These take the registry past the ~21-surface mark; each still earns the full
+element · behaviour · DB · desktop · mobile treatment when §C is filled.

@@ -262,6 +262,28 @@ Dead invite (**expired/revoked/full/already-member** — one prompt, four copy
 states) · Access-denied (quiet, **never a 404 that leaks existence**) · Quick
 switcher (⌘K overlay, grouped results, keyboard nav, scoped to `can_view_channel`).
 
+### Gap-fill addendum (2026-08-21 — CANON §D.7)
+
+Prompts added to existing phases from [`gaps.md`](design/gaps.md); all **UI/GL**,
+no new schema (forwarding reuses `placement`, §D.3):
+
+- **Layout (P3/P4):** the app shell renders on a **1440px canvas**, centred with
+  a hairline gutter; dialogs/modals size to fit it. One `.app{max-width}` rule +
+  the modal scale — fold into the shell prompt.
+- **P4/P8 — Admin POV (S1):** a **Member/Admin** view switch on the workspace that
+  reveals the create-channel `+`, per-channel edit gear, and the popover admin
+  block. `[GL]` gate: every revealed control still reads `has_perm`/
+  `is_server_admin` (the toggle is a signpost, never a grant).
+- **P8 — server dropdown (B1)**, **create-channel dialog (S2)**, **invite-to-
+  server dialog (S3)**, **member popover admin actions (B9: Roles/Timeout/Kick/
+  Ban)**, **Trash actions (B19: Restore / Delete forever / Empty now over the 30-day
+  soft-delete)**.
+- **P7 — forward dialog + forwarded-message quote (S5/B10)** — writes a
+  `placement`; **new-DM/group picker (B14)**; **friends manager (S4)**; **bell
+  dropdown preview (B15)** beside the full notifications screen.
+- **P9 — new-server first-run (S8):** empty workspace shell + 3-step setup
+  checklist (create channels / invite / upload).
+
 ---
 
 ## §3. Two fully-expanded exemplars
