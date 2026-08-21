@@ -27,7 +27,7 @@ bottom. `[x]` = done and pushed.
    sign-off, and any art-vs-icon call inside #50.
 
 ## Profile pictures & identity
-- [ ] **1.** Every profile picture → **circle**, not square. (Consistent with the
+- [x] **1.** Every profile picture → **circle**, not square. (Consistent with the
   avatars-and-presence-dots-only rule for `round`.)
 - [ ] **26.** Remove the circles in the **name cards** completely.
 - [ ] **27.** Remove the **collaborators / credits** field completely.
@@ -35,26 +35,26 @@ bottom. `[x]` = done and pushed.
   **mutual** (both follow each other — some files may be mutuals-only visible).
 
 ## File details pane
-- [ ] **2.** Drop "32.1 MB on your storage." Instead add a **file-size row** to the
+- [x] **2.** Drop "32.1 MB on your storage." Instead add a **file-size row** to the
   metadata.
-- [ ] **3.** Remove the "Personal · Public" / "Server: Specter" **badges** — the file
+- [x] **3.** Remove the "Personal · Public" / "Server: Specter" **badges** — the file
   location already shows where the root is.
-- [ ] **4.** Fix the channel/location row: files **posted in a server** show it; files
+- [x] **4.** Fix the channel/location row: files **posted in a server** show it; files
   **uploaded directly to the File explorer** don't. (The current "Channel #sh040
   review" wording is wrong — files aren't tied to channels — but a server-posted
   file does carry its posting context.)
-- [ ] **30.** **Details-pane buttons** need better visual balance / spacing.
-- [ ] **5.** Fix discussion/comments model: files posted to a **public profile** get a
+- [x] **30.** **Details-pane buttons** need better visual balance / spacing.
+- [x] **5.** Fix discussion/comments model: files posted to a **public profile** get a
   comment section; files posted **in a server** don't. (Kill "Replies happen in
   #sh040 review.")
-- [ ] **7.** Remove the "Opens with FL Studio 21" **Opens-with** row entirely.
-- [ ] **16.** Remove the "Keeps a copy in your personal storage — dedup means it costs
+- [x] **7.** Remove the "Opens with FL Studio 21" **Opens-with** row entirely.
+- [x] **16.** Remove the "Keeps a copy in your personal storage — dedup means it costs
   ~nothing…" explanatory blurb.
 - [ ] **10.** Add **navigation arrows** up top where the report flag is. Visible for
   files and posts; move back/forward between **adjacent items on the same level**.
   On a folder, arrow just moves to the next file (does **not** descend into the
   folder's contents).
-- [ ] **41.** Add a **Modified** date row to the metadata — and **by whom**, if
+- [x] **41.** Add a **Modified** date row to the metadata — and **by whom**, if
   possible / necessary.
 
 ## Folder pane
@@ -62,7 +62,7 @@ bottom. `[x]` = done and pushed.
 - [ ] **8.** The side file list should **scroll**, no click-to-expand.
 - [ ] **9.** Make the side file list **navigable**: click any item to open it into the
   details pane; click through folders from the list.
-- [ ] **36.** Fix **audio-file thumbnails** in the folder-details side file list —
+- [x] **36.** Fix **audio-file thumbnails** in the folder-details side file list —
   they render messed up. (Tie to #13: audio uses the music/audio icon, not a waveform.)
 - [ ] **17.** Add **Save to Files** — option to save the **whole folder** or **just a
   selection**.

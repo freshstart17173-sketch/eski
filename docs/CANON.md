@@ -469,29 +469,30 @@ storage the bytes draw:
   comment thread** (`comments`, context=public), tags, collaborators. **No channel** (it
   isn't in a server).
 - **Server file** — a work shared **in a server**. Looks identical expanded but has
-  **no comment thread** — replies happen in the **channel chat**; the rail shows a
-  "Replies happen in #channel →" link instead. It **keeps tags** (+ collaborators).
-  Server-stored, server-visible.
+  **no discussion section at all** — replies happen in the **channel chat**, and the
+  rail shows nothing in its place (the old "Replies happen in #channel →" link is
+  removed, gallery #5). It **keeps tags** (+ collaborators). Server-stored,
+  server-visible.
 
 | Element | Behaviour & states | DB | Desktop | Mobile |
 |---|---|---|---|---|
 | Media area | Fills the left; **one transport (audio = video) pinned to its foot** (seek, volume, tabular time, fullscreen); **big centred borderless play** over the media; **no visible skip buttons — 5-second skip on ←/→** (gallery #37/#38/#32/#11). Waveform/video/image/type-card/folder-preview per kind. | R `works` (signed URL) | Left, grows | Top ~42vh |
 | **Prev / next arrows — folder only** | A single work (post or file) has **no** media arrows. A **folder** is the one pane that shows prev/next **over the media** (page its items) plus a clickable **navigation list in the rail**. | `folders` children order | Folder media edges + rail list | Same |
-| **Storage row** (top of meta) | Leads the metadata: the **storage×visibility badge** + a plain-language **whose-storage note with the size** — "8.4 MB on **the server's** storage" (server file) or "32.1 MB on **your** storage" (post/personal); a crosspost reads "on **your** storage · crossposted here". This is the "Discord *with real file storage*" made legible — every file says who pays for its bytes. | `works.owner_type` + `visibility` + `bytes` | Rail meta | Rail meta |
+| **Size row** | A plain **file-size** row in the metadata (e.g. "8.4 MB"). The old "leads-the-metadata storage row" — the storage×visibility badge **and** the "N MB on *whose* storage" sentence — is **removed** (gallery #2/#3): the Location breadcrumb already shows where the root is, so the badge and the whose-storage prose were redundant. | `works.bytes` | Rail meta | Rail meta |
 | **Location** (clickable breadcrumb) | Where the file lives in the tree: **`Server › folder › subfolder`** (server files, from `placement.folder_id`) or **`Your files › folder`** (posts). **Each segment is a link** that opens the File explorer at that folder — quick travel up the tree. | `folders` path via `placement.folder_id` | Rail meta | Rail meta |
-| Metadata (rest) | Per kind: uploaded/posted-by, **channel** (server file only), **added** date, **length** (a/v), **dimensions/fps** (image/video), **format/codec/bit-depth**. Folder: location breadcrumb, item count, made-by, created. | `works` cols | Rail | Rail |
+| Metadata (rest) | Per kind: uploaded/posted-by, **posted-in #channel** (server file only — files aren't tied to channels, but a server-*posted* file carries its posting context; a file uploaded straight to the File explorer omits this row, gallery #4), **uploaded** date, **modified** date **+ by whom** (gallery #41), **size** (above), **length** (a/v), **dimensions/fps** (image/video), **format/codec/bit-depth**. Folder: location breadcrumb, item count, made-by, created. | `works` cols | Rail | Rail |
 | Report + close | Flag (report) and × sit in the rail's top bar. | `file_report` | Rail top bar | Rail top bar |
-| Storage×visibility badge | One of three, verbatim: **Personal · Private**, **Personal · Public**, or **Server** (with the server name). Storage and visibility coincide except a crosspost (personal-stored, server-seen); provenance is **not** shown. | `works.owner_type` + `visibility` | Rail meta | Rail meta |
+| ~~Storage×visibility badge~~ | **Removed (gallery #3).** The "Personal · Private / Personal · Public / Server" badge no longer renders in the details pane — visibility is set/seen via the Share dialog and the Location breadcrumb, not a metadata badge. Crosspost provenance stays **not shown**. | `works.owner_type` + `visibility` | — | — |
 | Title / collaborators / tags | Title (or file name); collaborator chips (server colour); user tags + ＋. **Both** posts and server files have tags. | `works.title/collaborators` · `content_tags` | Rail | Rail |
 | Actions | Download (get-as formats); **"Save to my files"** → menu into a personal folder, with a note that it **copies into your storage** (dedup-cheap, survives the server deleting theirs). | transcode · `saved_items` (owner copy) | Rail foot | Rail foot |
-| **Discussion** | **Post** → a public **comment thread** (`comments`, context=public) with an add-comment field. **Server file** → **no thread**; a "Replies happen in #channel →" link to the chat. | `comments` (posts) / channel chat (server files) | Rail list / link | Rail |
+| **Discussion** | **Post** → a public **comment thread** (`comments`, context=public) with an add-comment field. **Server file** → **no discussion section at all** (removed the "Replies happen in #channel →" link, gallery #5); chat lives in the channel. | `comments` (posts) / channel chat (server files) | Rail list (post only) | Rail |
 | Mobile | Card goes full-screen, **column**: media on top (~42vh), the rail below. | — | — | Full-screen column |
 
 ### C.10 Screen 8 — Profile
 
 | Element | Behaviour & states | DB | Desktop | Mobile |
 |---|---|---|---|---|
-| Header | **Square** avatar image, name, @handle, bio; Add friend / Message (own profile → Edit). | `profiles` · `friendships` | Top | Top |
+| Header | **Circular** avatar image (gallery #1 — every profile picture is round; round = avatars + presence dots only), name, @handle, bio; Add friend / Message (own profile → Edit). | `profiles` · `friendships` | Top | Top |
 | Shelf tabs | **Public / Server / Private** (counts) + Settings; **search** button. | R `works` by visibility | Tab bar | Tab bar |
 | Grid | Even square grid ⇄ masonry toggle; same card renderer. | `works` | Grid | 2-col |
 | Settings tab | Name, handle, bio, avatar, theme, status, storage (owner). | `profiles` | Form | Form |

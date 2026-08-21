@@ -125,7 +125,9 @@ input{font:inherit;color:inherit}
 .vp{display:flex;align-items:center;gap:7px;font-size:var(--fs-xs)}
 .vp .live{width:6px;height:6px;border-radius:50%;background:currentColor;flex:none}
 
-.av{flex:none;border-radius:var(--r);background:var(--paper1);color:var(--soft);display:grid;place-items:center;font-weight:700;width:28px;height:28px;font-size:var(--fs-xs)}
+/* #1 a person avatar is always a CIRCLE (round = avatars + presence dots only;
+   server icons stay square via .railbtn / the square server chips). */
+.av{flex:none;border-radius:50%;background:var(--paper1);color:var(--soft);display:grid;place-items:center;font-weight:700;width:28px;height:28px;font-size:var(--fs-xs)}
 .av.lg{width:76px;height:76px;font-size:26px}
 .av.sm{width:20px;height:20px;font-size:10px}
 
@@ -239,10 +241,12 @@ input{font:inherit;color:inherit}
 .masonry.even .card{margin-bottom:0}
 .masonry.even .media{aspect-ratio:1;overflow:hidden;display:grid}
 .masonry.even .media>.shot{width:100%!important;height:100%!important;aspect-ratio:auto!important}
-.masonry.even .media.audio{aspect-ratio:1;background:var(--surface);display:grid;place-items:center;overflow:hidden}
+.masonry.even .media.audio{aspect-ratio:1;background:var(--surface);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;overflow:hidden}
 .masonry.even .media.audio .wave{width:84%;height:46%}
-.media.file{background:var(--surface);display:grid;place-items:center;gap:7px}
-.masonry.even .media.file{aspect-ratio:1}
+/* flex column (not grid) so the icon+ext read as ONE centred group — a 2-row
+   grid would split the tile in half and push the icon up to the quarter line. */
+.media.file{background:var(--surface);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px}
+.masonry.even .media.file{aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px}
 .media.file .fic,.media.audio .fic{width:30px;height:30px;color:var(--muted)}
 .media.file .ext,.media.audio .ext{font-size:12px;font-weight:700;color:var(--soft);letter-spacing:.5px}
 .masonry.even .media .playover{align-self:center;justify-self:center}
@@ -257,7 +261,7 @@ input{font:inherit;color:inherit}
 .playover{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:46px;height:46px;border-radius:50%;background:rgba(0,0,0,.42);color:#fff;display:grid;place-items:center}
 /* #13 audio CARD: square like every other card, a music icon on a --surface
    tile — no waveform (the waveform is only the expanded/inline player, #12). */
-.card .media.audio{aspect-ratio:1;background:var(--surface);display:grid;place-items:center;gap:7px;color:var(--muted)}
+.card .media.audio{aspect-ratio:1;background:var(--surface);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;color:var(--muted)}
 .card .media.audio .wave{display:none}
 .card .media.text{padding:2px 0}
 .card .media.text .body{font-size:var(--fs-sm);color:var(--soft);display:-webkit-box;-webkit-line-clamp:5;-webkit-box-orient:vertical;overflow:hidden}
@@ -427,7 +431,10 @@ input{font:inherit;color:inherit}
 .dsec{margin-top:var(--s4)}
 .dsec .lb{color:var(--muted);font-size:var(--fs-xs);font-weight:600;margin-bottom:8px}
 .chips{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+/* #30 balance the footer: the two actions share the width equally and centre
+   their content, instead of two different-width left-hugging buttons. */
 .dinfo .foot{flex:none;padding:var(--s3) var(--s4);background:var(--surface);display:flex;gap:var(--s2)}
+.dinfo .foot .btn{flex:1;justify-content:center}
 .cmt{display:flex;gap:9px;margin-bottom:var(--s3)}
 .cmt .bd{min-width:0}
 .cmt .by{display:flex;align-items:baseline;gap:7px;font-size:var(--fs-xs)}
@@ -676,7 +683,6 @@ input{font:inherit;color:inherit}
 .srow .sbody{font-size:var(--fs-sm);color:var(--soft);margin-top:2px}
 .srow mark{background:var(--tagbg);color:var(--ink);font-weight:600;border-radius:2px;padding:0 2px}
 .srow .sthumb{width:46px;height:46px;flex:none;background:var(--paper1);border-radius:var(--r);overflow:hidden;display:grid;place-items:center;color:var(--muted)}
-.srow .sthumb .wave{padding:0 5px}
 .srow .sact{margin-left:auto;align-self:center;display:flex;gap:6px}
 .smod{font-size:var(--fs-xs);color:var(--muted);margin-left:var(--s2)}
 .smod b{color:var(--soft);font-weight:600;background:var(--surface);border-radius:2px;padding:1px 5px}
@@ -1475,7 +1481,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
           <div class="dtop"><span class="dfilename">late_bloom_master.wav</span><button class="iconbtn sp" title="Report"><svg class="ic sm"><use href="#i-flag"/></svg></button><button class="iconbtn" title="Close"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
           <div class="scroll">
             <h2>late bloom</h2>
-            <div class="meta"><div class="row"><span class="k">Storage</span><span class="v"><span class="stbadge personal"><svg class="ic"><use href="#i-globe"/></svg>Personal · Public</span> <small class="stnote">32.1 MB on your storage</small></span></div><div class="row"><span class="k">Location</span><span class="v"><span class="loccrumb"><button><svg class="ic sm"><use href="#i-user"/></svg>Your files</button><span class="sl">›</span><button>singles</button></span></span></div><div class="row"><span class="k">Posted by</span><span class="v"><span class="uchip m1"><span class="dot"></span>rae</span></span></div><div class="row"><span class="k">Added</span><span class="v">15 Aug 2026, 2:14 PM</span></div><div class="row"><span class="k">Length</span><span class="v">2:18</span></div><div class="row"><span class="k">Format</span><span class="v">WAV · 44.1 kHz · 24-bit</span></div></div>
+            <div class="meta"><div class="row"><span class="k">Size</span><span class="v">32.1 MB</span></div><div class="row"><span class="k">Location</span><span class="v"><span class="loccrumb"><button><svg class="ic sm"><use href="#i-user"/></svg>Your files</button><span class="sl">›</span><button>singles</button></span></span></div><div class="row"><span class="k">Posted by</span><span class="v"><span class="uchip m1"><span class="dot"></span>rae</span></span></div><div class="row"><span class="k">Added</span><span class="v">15 Aug 2026, 2:14 PM</span></div><div class="row"><span class="k">Length</span><span class="v">2:18</span></div><div class="row"><span class="k">Format</span><span class="v">WAV · 44.1 kHz · 24-bit</span></div></div>
             <div class="dsec"><div class="lb">Tags</div><div class="chips"><span class="tag">bloom</span><span class="tag">single</span><span class="tag">master</span><button class="addtag"><svg class="ic sm"><use href="#i-plus"/></svg></button></div></div>
             <div class="dsec"><div class="lb">Collaborators</div><div class="chips"><span class="uchip m1"><span class="dot"></span>rae, vocals</span><span class="uchip m3"><span class="dot"></span>dev, beat</span><span class="uchip m4"><span class="dot"></span>tomo, mix</span></div></div>
             <div class="dsec"><div class="lb">Comments</div><div class="cmt"><div class="av sm">MI</div><div class="bd"><div class="by"><span class="u m4">mira</span><time>3:02 PM</time></div><div class="tx">the falling section finally reads, love it</div></div></div><div class="cmt"><div class="av sm">KO</div><div class="bd"><div class="by"><span class="u m2">kofi</span><time>2:40 PM</time></div><div class="tx">what bpm is this?</div></div></div><div class="field" style="margin-top:8px"><input placeholder="Add a comment"></div></div>
@@ -1499,10 +1505,10 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
           <div class="dtop"><span class="dfilename">sh040_comp.mp4</span><button class="iconbtn sp" title="Report"><svg class="ic sm"><use href="#i-flag"/></svg></button><button class="iconbtn" title="Close"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
           <div class="scroll">
             <h2>q3 comp reel, first pass</h2>
-            <div class="meta"><div class="row"><span class="k">Storage</span><span class="v"><span class="stbadge"><svg class="ic"><use href="#i-server"/></svg>Server: Specter</span> <small class="stnote">214 MB on the server's storage</small></span></div><div class="row"><span class="k">Location</span><span class="v"><span class="loccrumb"><button><svg class="ic sm"><use href="#i-folder"/></svg>Specter</button><span class="sl">›</span><button>sh040</button><span class="sl">›</span><button>review</button></span></span></div><div class="row"><span class="k">Uploaded by</span><span class="v"><span class="uchip m4"><span class="dot"></span>mira</span></span></div><div class="row"><span class="k">Channel</span><span class="v">#sh040 review</span></div><div class="row"><span class="k">Added</span><span class="v">16 Aug 2026, 9:40 AM</span></div><div class="row"><span class="k">Length</span><span class="v">0:34</span></div><div class="row"><span class="k">Dimensions</span><span class="v">1920×1080 · 24 fps</span></div><div class="row"><span class="k">Format</span><span class="v">MP4 · H.264</span></div></div>
+            <div class="meta"><div class="row"><span class="k">Size</span><span class="v">214 MB</span></div><div class="row"><span class="k">Location</span><span class="v"><span class="loccrumb"><button><svg class="ic sm"><use href="#i-folder"/></svg>Specter</button><span class="sl">›</span><button>sh040</button><span class="sl">›</span><button>review</button></span></span></div><div class="row"><span class="k">Uploaded by</span><span class="v"><span class="uchip m4"><span class="dot"></span>mira</span></span></div><div class="row"><span class="k">Posted in</span><span class="v">#sh040 review</span></div><div class="row"><span class="k">Added</span><span class="v">16 Aug 2026, 9:40 AM</span></div><div class="row"><span class="k">Length</span><span class="v">0:34</span></div><div class="row"><span class="k">Dimensions</span><span class="v">1920×1080 · 24 fps</span></div><div class="row"><span class="k">Format</span><span class="v">MP4 · H.264</span></div></div>
             <div class="dsec"><div class="lb">Tags</div><div class="chips"><span class="tag">comp</span><span class="tag">sh040</span><button class="addtag"><svg class="ic sm"><use href="#i-plus"/></svg></button></div></div>
             <div class="dsec"><div class="lb">Collaborators</div><div class="chips"><span class="uchip m4"><span class="dot"></span>mira, comp</span><span class="uchip m2"><span class="dot"></span>sol, sound</span></div></div>
-            <div class="dsec"><div class="lb">Discussion</div><button class="mi" style="background:var(--surface);justify-content:flex-start;gap:8px"><svg class="ic sm" style="color:var(--muted)"><use href="#i-hash"/></svg>Replies happen in <b style="margin-left:3px">#sh040 review</b><svg class="ic sm" style="margin-left:auto;color:var(--muted)"><use href="#i-chev"/></svg></button></div>
+            
           </div>
           <div class="foot"><button class="btn primary"><svg class="ic sm"><use href="#i-download"/></svg>Download<svg class="ic sm"><use href="#i-chev"/></svg></button><button class="btn"><svg class="ic sm"><use href="#i-save"/></svg>Save to my files</button></div>
         </div>
@@ -1520,16 +1526,16 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
           <div class="dtop"><span class="dfilename">cover_bloom.png</span><button class="iconbtn sp" title="Report"><svg class="ic sm"><use href="#i-flag"/></svg></button><button class="iconbtn" title="Close"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
           <div class="scroll">
             <h2>cover art, bloom</h2>
-            <div class="meta"><div class="row"><span class="k">Storage</span><span class="v"><span class="stbadge personal"><svg class="ic"><use href="#i-globe"/></svg>Personal · Public</span> <small class="stnote">4.8 MB on your storage · crossposted here</small></span></div><div class="row"><span class="k">Location</span><span class="v"><span class="loccrumb"><button><svg class="ic sm"><use href="#i-folder"/></svg>Specter</button><span class="sl">›</span><button>references</button></span></span></div><div class="row"><span class="k">Uploaded by</span><span class="v"><span class="uchip m6"><span class="dot"></span>nel</span></span></div><div class="row"><span class="k">Channel</span><span class="v">#references</span></div><div class="row"><span class="k">Added</span><span class="v">14 Aug 2026, 6:02 PM</span></div><div class="row"><span class="k">Dimensions</span><span class="v">3000×2400</span></div><div class="row"><span class="k">Format</span><span class="v">PNG · sRGB</span></div></div>
+            <div class="meta"><div class="row"><span class="k">Size</span><span class="v">4.8 MB</span></div><div class="row"><span class="k">Location</span><span class="v"><span class="loccrumb"><button><svg class="ic sm"><use href="#i-folder"/></svg>Specter</button><span class="sl">›</span><button>references</button></span></span></div><div class="row"><span class="k">Uploaded by</span><span class="v"><span class="uchip m6"><span class="dot"></span>nel</span></span></div><div class="row"><span class="k">Posted in</span><span class="v">#references</span></div><div class="row"><span class="k">Added</span><span class="v">14 Aug 2026, 6:02 PM</span></div><div class="row"><span class="k">Dimensions</span><span class="v">3000×2400</span></div><div class="row"><span class="k">Format</span><span class="v">PNG · sRGB</span></div></div>
             <div class="dsec"><div class="lb">Tags</div><div class="chips"><span class="tag">cover</span><span class="tag">bloom</span><span class="tag">wip</span><button class="addtag"><svg class="ic sm"><use href="#i-plus"/></svg></button></div></div>
             <div class="dsec"><div class="lb">Collaborators</div><div class="chips"><span class="uchip m6"><span class="dot"></span>nel, art</span><span class="uchip m1"><span class="dot"></span>rae, direction</span></div></div>
-            <div class="dsec"><div class="lb">Discussion</div><button class="mi" style="background:var(--surface);justify-content:flex-start;gap:8px"><svg class="ic sm" style="color:var(--muted)"><use href="#i-hash"/></svg>Replies happen in <b style="margin-left:3px">#references</b><svg class="ic sm" style="margin-left:auto;color:var(--muted)"><use href="#i-chev"/></svg></button></div>
+            
           </div>
           <div class="foot"><button class="btn primary"><svg class="ic sm"><use href="#i-download"/></svg>Download<svg class="ic sm"><use href="#i-chev"/></svg></button><button class="btn"><svg class="ic sm"><use href="#i-save"/></svg>Save to my files</button></div>
         </div>
       </div></div>
       <div class="pcap"><b>Details pane — server file (image, crosspost)</b>
-        <span class="m">A personal work shown in a server. The badge is one of the three states — here <b>Personal · Public</b> (your storage, public); provenance isn't shown. As a server file it has <b>no comment thread</b> — chat handles replies — but keeps tags.</span>
+        <span class="m">A personal work shown in a server — it draws <b>your</b> storage and is public at home. As a server file it has <b>no comment thread</b> (chat handles replies) but keeps tags; its crosspost provenance isn't shown on the file.</span>
         <span class="db">works storage_source=personal, billing_server_id=null · no comments</span></div>
     </div>
 
@@ -1537,16 +1543,16 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
     <div class="arenapanel">
       <div class="stage scrim"><div class="arena">
         <div class="dmedia">
-          <div class="dtype" style="width:min(320px,80%);height:180px"><svg class="ic"><use href="#i-file"/></svg><span class="ext">.FLP</span><span style="font-size:11px">no preview — download to open</span></div>
+          <div class="dtype" style="width:min(320px,80%);height:180px"><svg class="ic"><use href="#i-file"/></svg><span class="ext">FLP</span><span style="font-size:11px">no preview — download to open</span></div>
         </div>
         <div class="dinfo">
           <div class="dtop"><span class="dfilename">late_bloom_beat.flp</span><button class="iconbtn sp" title="Report"><svg class="ic sm"><use href="#i-flag"/></svg></button><button class="iconbtn" title="Close"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
           <div class="scroll">
             <h2>Back half rework</h2>
-            <div class="meta"><div class="row"><span class="k">Storage</span><span class="v"><span class="stbadge"><svg class="ic"><use href="#i-server"/></svg>Server: Late Bloom LP</span> <small class="stnote">8.4 MB on the server's storage</small></span></div><div class="row"><span class="k">Location</span><span class="v"><span class="loccrumb"><button><svg class="ic sm"><use href="#i-folder"/></svg>Late Bloom LP</button><span class="sl">›</span><button>beats</button></span></span></div><div class="row"><span class="k">Uploaded by</span><span class="v"><span class="uchip m3"><span class="dot"></span>dev</span></span></div><div class="row"><span class="k">Channel</span><span class="v">#beats</span></div><div class="row"><span class="k">Added</span><span class="v">15 Aug 2026, 2:14 PM</span></div><div class="row"><span class="k">Format</span><span class="v">FL Studio project (.flp)</span></div><div class="row"><span class="k">Opens with</span><span class="v">FL Studio 21</span></div></div>
+            <div class="meta"><div class="row"><span class="k">Size</span><span class="v">8.4 MB</span></div><div class="row"><span class="k">Location</span><span class="v"><span class="loccrumb"><button><svg class="ic sm"><use href="#i-folder"/></svg>Late Bloom LP</button><span class="sl">›</span><button>beats</button></span></span></div><div class="row"><span class="k">Uploaded by</span><span class="v"><span class="uchip m3"><span class="dot"></span>dev</span></span></div><div class="row"><span class="k">Posted in</span><span class="v">#beats</span></div><div class="row"><span class="k">Added</span><span class="v">15 Aug 2026, 2:14 PM</span></div><div class="row"><span class="k">Format</span><span class="v">FL Studio project (.flp)</span></div></div>
             <div class="dsec"><div class="lb">Tags</div><div class="chips"><span class="tag">drums</span><span class="tag">142bpm</span><span class="tag">bridge</span><button class="addtag"><svg class="ic sm"><use href="#i-plus"/></svg></button></div></div>
             <div class="dsec"><div class="lb">Collaborators</div><div class="chips"><span class="uchip m5"><span class="dot"></span>jax, prod</span><span class="uchip m3"><span class="dot"></span>dev, arrangement</span></div></div>
-            <div class="dsec"><div class="lb">Discussion</div><button class="mi" style="background:var(--surface);justify-content:flex-start;gap:8px"><svg class="ic sm" style="color:var(--muted)"><use href="#i-hash"/></svg>Replies happen in <b style="margin-left:3px">#beats</b><svg class="ic sm" style="margin-left:auto;color:var(--muted)"><use href="#i-chev"/></svg></button></div>
+            
           </div>
           <div class="foot"><button class="btn primary"><svg class="ic sm"><use href="#i-download"/></svg>Download<svg class="ic sm"><use href="#i-chev"/></svg></button><button class="btn"><svg class="ic sm"><use href="#i-save"/></svg>Save to my files</button></div>
         </div>
@@ -1573,8 +1579,8 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
           <div class="dtop"><span style="display:flex;align-items:center;gap:7px;font-size:var(--fs-sm);font-weight:600"><svg class="ic sm" style="color:var(--muted)"><use href="#i-folder"/></svg>Folder</span><button class="iconbtn sp" title="Close"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
           <div class="scroll">
             <h2>Drum picks</h2>
-            <div class="meta"><div class="row"><span class="k">Storage</span><span class="v"><span class="stbadge"><svg class="ic"><use href="#i-server"/></svg>Server: Late Bloom LP</span> <small class="stnote">61 MB on the server's storage</small></span></div><div class="row"><span class="k">Location</span><span class="v"><span class="loccrumb"><button><svg class="ic sm"><use href="#i-folder"/></svg>Late Bloom LP</button><span class="sl">›</span><button>Drum picks</button></span></span></div><div class="row"><span class="k">Items</span><span class="v">12 items</span></div><div class="row"><span class="k">Made by</span><span class="v"><span class="uchip m3"><span class="dot"></span>dev</span></span></div><div class="row"><span class="k">Created</span><span class="v">10 Aug 2026</span></div></div>
-            <div class="dsec"><div class="lb">Items <span style="color:var(--muted)">12</span></div><div class="flist"><button class="fi on"><span class="fth"><div class="wave" data-wf="30"></div></span><span class="fn">kick_punchy.wav</span><span class="ft">wav</span></button><button class="fi"><span class="fth"><div class="wave" data-wf="30"></div></span><span class="fn">snare_tight.wav</span><span class="ft">wav</span></button><button class="fi"><span class="fth"><div class="wave" data-wf="30"></div></span><span class="fn">hat_loop_142.wav</span><span class="ft">wav</span></button><button class="fi"><span class="fth"><div class="wave" data-wf="30"></div></span><span class="fn">break_chop.wav</span><span class="ft">wav</span></button><button class="fi"><span class="fth"><div class="wave" data-wf="30"></div></span><span class="fn">texture_vinyl.wav</span><span class="ft">wav</span></button><button class="fi"><span class="fth"><svg class="ic sm"><use href="#i-file"/></svg></span><span class="fn">drum_bus.flp</span><span class="ft">flp</span></button><button class="fi"><span class="fth"><svg class="ic sm"><use href="#i-image"/></svg></span><span class="fn">ref_board.png</span><span class="ft">png</span></button><button class="fi" style="justify-content:center;color:var(--muted)">+5 more</button></div></div>
+            <div class="meta"><div class="row"><span class="k">Size</span><span class="v">61 MB</span></div><div class="row"><span class="k">Location</span><span class="v"><span class="loccrumb"><button><svg class="ic sm"><use href="#i-folder"/></svg>Late Bloom LP</button><span class="sl">›</span><button>Drum picks</button></span></span></div><div class="row"><span class="k">Items</span><span class="v">12 items</span></div><div class="row"><span class="k">Made by</span><span class="v"><span class="uchip m3"><span class="dot"></span>dev</span></span></div><div class="row"><span class="k">Created</span><span class="v">10 Aug 2026</span></div></div>
+            <div class="dsec"><div class="lb">Items <span style="color:var(--muted)">12</span></div><div class="flist"><button class="fi on"><span class="fth"><svg class="ic sm" style="color:var(--muted)"><use href="#i-music"/></svg></span><span class="fn">kick_punchy.wav</span><span class="ft">wav</span></button><button class="fi"><span class="fth"><svg class="ic sm" style="color:var(--muted)"><use href="#i-music"/></svg></span><span class="fn">snare_tight.wav</span><span class="ft">wav</span></button><button class="fi"><span class="fth"><svg class="ic sm" style="color:var(--muted)"><use href="#i-music"/></svg></span><span class="fn">hat_loop_142.wav</span><span class="ft">wav</span></button><button class="fi"><span class="fth"><svg class="ic sm" style="color:var(--muted)"><use href="#i-music"/></svg></span><span class="fn">break_chop.wav</span><span class="ft">wav</span></button><button class="fi"><span class="fth"><svg class="ic sm" style="color:var(--muted)"><use href="#i-music"/></svg></span><span class="fn">texture_vinyl.wav</span><span class="ft">wav</span></button><button class="fi"><span class="fth"><svg class="ic sm"><use href="#i-file"/></svg></span><span class="fn">drum_bus.flp</span><span class="ft">flp</span></button><button class="fi"><span class="fth"><svg class="ic sm"><use href="#i-image"/></svg></span><span class="fn">ref_board.png</span><span class="ft">png</span></button><button class="fi" style="justify-content:center;color:var(--muted)">+5 more</button></div></div>
           </div>
           <div class="foot"><button class="btn primary"><svg class="ic sm"><use href="#i-folder"/></svg>Open folder</button><button class="btn"><svg class="ic sm"><use href="#i-download"/></svg>Download all</button></div>
         </div>
@@ -1894,9 +1900,9 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
           <div class="lb">12 files in #beats</div>
           <div class="masonry even">
             <button class="card" data-open-details><div class="media file"><svg class="ic fic"><use href="#i-clip"/></svg><span class="ext">FLP</span></div><div class="title">late_bloom_beat.flp</div><div class="who">dev · v3</div></button>
-            <button class="card" data-open-details><div class="media audio"><svg class="fic"><use href="#i-music"/></svg><span class="ext">WAV</span></div><div class="title">bridge_scratch_rae.wav</div><div class="who">rae</div></button>
+            <button class="card" data-open-details><div class="media audio"><svg class="ic fic"><use href="#i-music"/></svg><span class="ext">WAV</span></div><div class="title">bridge_scratch_rae.wav</div><div class="who">rae</div></button>
             <button class="card" data-open-details><div class="media"><div class="shot c" style="aspect-ratio:3/2"></div></div><div class="title">ref_drums.png</div><div class="who">rae</div></button>
-            <button class="card" data-open-details><div class="media audio"><svg class="fic"><use href="#i-music"/></svg><span class="ext">WAV</span></div><div class="title">bounce_v2.wav</div><div class="who">dev</div></button>
+            <button class="card" data-open-details><div class="media audio"><svg class="ic fic"><use href="#i-music"/></svg><span class="ext">WAV</span></div><div class="title">bounce_v2.wav</div><div class="who">dev</div></button>
           </div>
         </div>
       </main>
@@ -1953,7 +1959,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
           <div class="masonry even">
             <button class="card" data-open-details><div class="media"><div class="shot" style="aspect-ratio:4/5"></div></div>
               <div class="title">keyframe study, the falling sequence</div><div class="who">lin</div></button>
-            <button class="card" data-open-details><div class="media audio"><svg class="fic"><use href="#i-music"/></svg><span class="ext">WAV</span></div>
+            <button class="card" data-open-details><div class="media audio"><svg class="ic fic"><use href="#i-music"/></svg><span class="ext">WAV</span></div>
               <div class="title">back half rework, drums finally sit right</div><div class="who">dev</div></button>
             <button class="card" data-open-details><div class="media"><div class="shot b" style="aspect-ratio:16/9"></div><div class="playover"><svg class="ic f"><use href="#i-play"/></svg></div></div>
               <div class="title">q3 comp reel, first pass</div><div class="who">mira</div></button>
@@ -1961,11 +1967,11 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
               <div class="title">On finishing things</div><div class="who">jax</div></button>
             <button class="card" data-open-details><div class="media"><div class="shot c" style="aspect-ratio:3/2"></div></div>
               <div class="title">cover art studies, warm set</div><div class="who">nel</div></button>
-            <button class="card" data-open-details><div class="media audio"><svg class="fic"><use href="#i-music"/></svg><span class="ext">WAV</span></div>
+            <button class="card" data-open-details><div class="media audio"><svg class="ic fic"><use href="#i-music"/></svg><span class="ext">WAV</span></div>
               <div class="title">low ceilings, verse idea</div><div class="who">rae</div></button>
             <button class="card" data-open-details><div class="media"><div class="shot" style="aspect-ratio:1/1"></div><div class="playover"><svg class="ic f"><use href="#i-play"/></svg></div></div>
               <div class="title">title sequence, draft</div><div class="who">sol</div></button>
-            <button class="card" data-open-details><div class="media audio"><svg class="fic"><use href="#i-music"/></svg><span class="ext">WAV</span></div>
+            <button class="card" data-open-details><div class="media audio"><svg class="ic fic"><use href="#i-music"/></svg><span class="ext">WAV</span></div>
               <div class="title">drum one-shots, vol 2</div><div class="who">jax</div></button>
             <button class="card" data-open-details><div class="media file"><svg class="ic fic"><use href="#i-clip"/></svg><span class="ext">ZIP</span></div><div class="title">session backup, aug</div><div class="who">dev</div></button>
           </div>
@@ -2015,15 +2021,15 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
             <div class="exview" data-exview="grid">
               <div class="masonry even">
                 <div class="card foldercard"><div class="media fold"><svg class="ic"><use href="#i-folder"/></svg></div><div class="title">drums</div><div class="who">7 files</div></div>
-                <div class="card" data-open-details><div class="media audio"><span class="cardsel"><svg class="ic"><use href="#i-check"/></svg></span><div class="cardacts"><button data-act="dl" title="Download"><svg class="ic"><use href="#i-download"/></svg></button><button data-act="link" title="Copy link"><svg class="ic"><use href="#i-link"/></svg></button><button data-act="more" title="More"><svg class="ic"><use href="#i-more"/></svg></button></div><svg class="fic"><use href="#i-music"/></svg><span class="ext">WAV</span></div>
+                <div class="card" data-open-details><div class="media file"><span class="cardsel"><svg class="ic"><use href="#i-check"/></svg></span><div class="cardacts"><button data-act="dl" title="Download"><svg class="ic"><use href="#i-download"/></svg></button><button data-act="link" title="Copy link"><svg class="ic"><use href="#i-link"/></svg></button><button data-act="more" title="More"><svg class="ic"><use href="#i-more"/></svg></button></div><svg class="ic fic"><use href="#i-file"/></svg><span class="ext">FLP</span></div>
                   <div class="title">late_bloom_beat.flp</div><div class="who"><span class="uchip m3"><span class="dot"></span>dev</span> · #beats</div></div>
-                <div class="card" data-open-details><div class="media audio"><span class="cardsel"><svg class="ic"><use href="#i-check"/></svg></span><div class="cardacts"><button data-act="dl" title="Download"><svg class="ic"><use href="#i-download"/></svg></button><button data-act="link" title="Copy link"><svg class="ic"><use href="#i-link"/></svg></button><button data-act="more" title="More"><svg class="ic"><use href="#i-more"/></svg></button></div><svg class="fic"><use href="#i-music"/></svg><span class="ext">WAV</span></div>
+                <div class="card" data-open-details><div class="media audio"><span class="cardsel"><svg class="ic"><use href="#i-check"/></svg></span><div class="cardacts"><button data-act="dl" title="Download"><svg class="ic"><use href="#i-download"/></svg></button><button data-act="link" title="Copy link"><svg class="ic"><use href="#i-link"/></svg></button><button data-act="more" title="More"><svg class="ic"><use href="#i-more"/></svg></button></div><svg class="ic fic"><use href="#i-music"/></svg><span class="ext">WAV</span></div>
                   <div class="title">bridge_scratch_rae.wav</div><div class="who"><span class="uchip m1"><span class="dot"></span>rae</span> · #beats</div></div>
                 <div class="card" data-lightbox data-lbkind="image"><div class="media"><span class="cardsel"><svg class="ic"><use href="#i-check"/></svg></span><div class="cardacts"><button data-act="dl" title="Download"><svg class="ic"><use href="#i-download"/></svg></button><button data-act="link" title="Copy link"><svg class="ic"><use href="#i-link"/></svg></button><button data-act="more" title="More"><svg class="ic"><use href="#i-more"/></svg></button></div><div class="shot c" style="aspect-ratio:3/2"></div></div>
                   <div class="title">ref_drums.png</div><div class="who"><span class="uchip m1"><span class="dot"></span>rae</span> · #beats</div></div>
                 <div class="card" data-lightbox data-lbkind="video"><div class="media"><span class="cardsel"><svg class="ic"><use href="#i-check"/></svg></span><div class="cardacts"><button data-act="dl" title="Download"><svg class="ic"><use href="#i-download"/></svg></button><button data-act="link" title="Copy link"><svg class="ic"><use href="#i-link"/></svg></button><button data-act="more" title="More"><svg class="ic"><use href="#i-more"/></svg></button></div><div class="shot b" style="aspect-ratio:16/9"></div><div class="playover"><svg class="ic f"><use href="#i-play"/></svg></div></div>
                   <div class="title">booth_2min.mp4</div><div class="who"><span class="uchip m5"><span class="dot"></span>jax</span> · #beats</div></div>
-                <div class="card" data-open-details><div class="media"><span class="cardsel"><svg class="ic"><use href="#i-check"/></svg></span><div class="cardacts"><button data-act="dl" title="Download"><svg class="ic"><use href="#i-download"/></svg></button><button data-act="more" title="More"><svg class="ic"><use href="#i-more"/></svg></button></div><div class="dtype" style="height:100%"><svg class="ic"><use href="#i-file"/></svg><span class="ext">.ALS</span></div></div>
+                <div class="card" data-open-details><div class="media"><span class="cardsel"><svg class="ic"><use href="#i-check"/></svg></span><div class="cardacts"><button data-act="dl" title="Download"><svg class="ic"><use href="#i-download"/></svg></button><button data-act="more" title="More"><svg class="ic"><use href="#i-more"/></svg></button></div><div class="dtype" style="height:100%"><svg class="ic"><use href="#i-file"/></svg><span class="ext">ALS</span></div></div>
                   <div class="title">bloom_master.als</div><div class="who"><span class="uchip m5"><span class="dot"></span>jax</span> · #beats</div></div>
               </div>
             </div>
@@ -2128,11 +2134,11 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
         </div>
         <div class="pbody">
           <div class="masonry even">
-            <button class="card" data-open-details><div class="media audio"><svg class="fic"><use href="#i-music"/></svg><span class="ext">WAV</span></div>
+            <button class="card" data-open-details><div class="media audio"><svg class="ic fic"><use href="#i-music"/></svg><span class="ext">WAV</span></div>
               <div class="title">low ceilings, the finished verse</div><div class="who">rae, jax, tomo</div></button>
             <button class="card" data-open-details><div class="media"><div class="shot c" style="aspect-ratio:1/1"></div></div>
               <div class="title">cover art, bloom</div><div class="who">nel, rae</div></button>
-            <button class="card" data-open-details><div class="media audio"><svg class="fic"><use href="#i-music"/></svg><span class="ext">WAV</span></div>
+            <button class="card" data-open-details><div class="media audio"><svg class="ic fic"><use href="#i-music"/></svg><span class="ext">WAV</span></div>
               <div class="title">bloom, single</div><div class="who">rae, dev, tomo</div></button>
             <button class="card" data-open-details><div class="media"><div class="shot b" style="aspect-ratio:16/9"></div><div class="playover"><svg class="ic f"><use href="#i-play"/></svg></div></div>
               <div class="title">lyric visual</div><div class="who">sol</div></button>
@@ -2475,7 +2481,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
             </div>
             <div class="sgroup">
               <div class="sglabel">Files<a href="#">See all 2</a></div>
-              <div class="srow" data-open-details><div class="sthumb"><div class="wave" data-wf="40"></div></div><div class="stx"><div class="smeta"><b>late_bloom_beat.flp</b></div><div class="sbody">dev · #beats · tags <mark>drums</mark>, 142bpm, <mark>bridge</mark></div></div><div class="sact"><button class="btn sm"><svg class="ic sm"><use href="#i-download"/></svg></button></div></div>
+              <div class="srow" data-open-details><div class="sthumb"><svg class="ic" style="color:var(--muted)"><use href="#i-file"/></svg></div><div class="stx"><div class="smeta"><b>late_bloom_beat.flp</b></div><div class="sbody">dev · #beats · tags <mark>drums</mark>, 142bpm, <mark>bridge</mark></div></div><div class="sact"><button class="btn sm"><svg class="ic sm"><use href="#i-download"/></svg></button></div></div>
               <div class="srow" data-open-details><div class="sthumb"><svg class="ic" style="color:var(--muted)"><use href="#i-image"/></svg></div><div class="stx"><div class="smeta"><b>ref_drums.png</b></div><div class="sbody">rae · #references · the <mark>drum</mark> sound we keep coming back to</div></div></div>
             </div>
             <div class="sgroup">
@@ -2624,11 +2630,20 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
       <div class="scroll">
         <h2>Back half rework</h2>
         <div class="meta">
-          <div class="row"><span class="k">Storage</span><span class="v"><span class="stbadge"><svg class="ic"><use href="#i-server"/></svg>Server: Late Bloom LP</span> <small class="stnote">8.4 MB on the server's storage</small></span></div>
+          <!-- #3 no storage×visibility badge and #2 no "MB on storage" sentence:
+               the Location row already shows where the root is, and Size is its
+               own metadata row below. -->
           <div class="row"><span class="k">Location</span><span class="v"><span class="loccrumb"><button><svg class="ic sm"><use href="#i-folder"/></svg>Late Bloom LP</button><span class="sl">›</span><button>beats</button></span></span></div>
+          <!-- #4 files aren't tied to channels; a server-POSTED file carries its
+               posting context. A file uploaded straight to the File explorer omits
+               this row. -->
+          <div class="row"><span class="k">Posted in</span><span class="v">#beats</span></div>
           <div class="row"><span class="k">Uploaded by</span><span class="v"><span class="uchip m3"><span class="dot"></span>dev</span></span></div>
-          <div class="row"><span class="k">Channel</span><span class="v">#beats</span></div>
-          <div class="row"><span class="k">Date</span><span class="v">15 Aug 2026, 2:14 PM</span></div>
+          <div class="row"><span class="k">Uploaded</span><span class="v">15 Aug 2026, 2:14 PM</span></div>
+          <!-- #41 modified date + by whom -->
+          <div class="row"><span class="k">Modified</span><span class="v">16 Aug 2026, 9:03 AM · <span class="uchip m3"><span class="dot"></span>dev</span></span></div>
+          <!-- #2 file-size row -->
+          <div class="row"><span class="k">Size</span><span class="v">8.4 MB</span></div>
           <div class="row"><span class="k">Type</span><span class="v">FL Studio project (.flp)</span></div>
         </div>
         <div class="dsec"><div class="lb">Tags</div><div class="chips">
@@ -2637,9 +2652,9 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
         <div class="dsec"><div class="lb">Collaborators</div><div class="chips">
           <span class="uchip m5"><span class="dot"></span>jax, prod</span><span class="uchip m3"><span class="dot"></span>dev, arrangement</span>
           <span class="uchip m1"><span class="dot"></span>rae, vocals</span><span class="uchip m2"><span class="dot"></span>tomo, mix</span></div></div>
-        <div class="dsec"><div class="lb">Discussion</div>
-          <button class="mi" style="background:var(--surface);justify-content:flex-start;gap:8px"><svg class="ic sm" style="color:var(--muted)"><use href="#i-hash"/></svg>Replies happen in <b style="margin-left:3px">#beats</b><svg class="ic sm" style="margin-left:auto;color:var(--muted)"><use href="#i-chev"/></svg></button>
-        </div>
+        <!-- #5 a SERVER file has no discussion section (chat lives in the
+             channel, not on the file). Only a file posted to a PUBLIC profile
+             gets a comment section — see the public-post details panel. -->
       </div>
       <div class="foot">
         <button class="btn primary" id="dlBtn"><svg class="ic sm"><use href="#i-download"/></svg>Download<svg class="ic sm"><use href="#i-chev"/></svg></button>
@@ -2652,7 +2667,8 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
 <div class="menu" id="dlMenu"><div class="mlabel">Download as</div>
   <button>Original (.flp)</button><div class="sep"></div><button>wav</button><button>mp3</button><button>opus</button><button>ogg</button><button>flac</button></div>
 <div class="menu" id="saveMenu"><div class="mlabel">Save to your files</div>
-  <div class="mnote">Keeps a copy in <b>your personal storage</b> — dedup means it costs ~nothing if you already have the file, and it stays yours even if the server deletes theirs.</div>
+  <!-- #16 the dedup/"costs ~nothing" explanatory blurb is removed; the folder
+       picker speaks for itself. -->
   <button><svg class="ic sm"><use href="#i-folder"/></svg>Liked</button><button><svg class="ic sm"><use href="#i-folder"/></svg>Drum picks</button><button><svg class="ic sm"><use href="#i-folder"/></svg>Mix references</button>
   <div class="sep"></div><button><svg class="ic sm"><use href="#i-plus"/></svg>New folder</button></div>
 <div class="menu emojimenu" id="emojiMenu"><div class="mlabel">Reactions</div>

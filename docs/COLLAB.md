@@ -497,8 +497,9 @@ has none. **Report** and **close** sit in the rail's top bar.
 
 ## Profile
 
-A person's public identity: square avatar, name, `@handle`, and bio, with **Add
-friend** / **Message** (or **Edit** on your own).
+A person's public identity: circular avatar (round = avatars + presence dots
+only), name, `@handle`, and bio, with **Add friend** / **Message** (or **Edit**
+on your own).
 
 - **Shelf tabs:** **Public / Server / Private** with counts, plus **Settings** and
   a search button. A viewer sees your Public shelf always, your Server shelf only
