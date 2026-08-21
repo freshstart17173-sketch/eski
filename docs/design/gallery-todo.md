@@ -3,6 +3,10 @@
 Captured 2026-08-19. These are edits to `gallery.html` (LAW). Check against
 CANON before implementing each one.
 
+> **All items below are done (2026-08-21).** The next-phase backlog — screens,
+> buttons and links that should exist but don't — is scored in
+> [`gaps.md`](gaps.md).
+
 ## Execution order (by token cost, cheapest first)
 
 Triage 2026-08-21. Working the list in this order; input-gated items sit at the
