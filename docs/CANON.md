@@ -446,7 +446,8 @@ feed view; they appear in grid/list). Grid and list show subfolders + files of t
 | **Breadcrumb** | The path to the current folder (`LP / beats / drums`); each segment navigates. | derived from `folders.parent_id` | Toolbar | Toolbar |
 | **View toggle** | **Grid** (default) · **List** (name/type/size/uploader/date columns) · **Feed** (flattened, previewable-only, comments inline). | — | Toolbar segmented | Toolbar |
 | Search field | Search this server's files (whole tree, not just the current folder). | R `works where server_id` FTS | Toolbar | Full-width |
-| Filter dropdowns (Channel / Type / Uploader / Sort) | Narrow the current view. | R `works` filters | Toolbar | Filter sheet |
+| Filter dropdowns (Channel / Type / Uploader / **Tag** / **Date** / Sort) | Narrow the current view (gallery #33). | R `works` filters | Toolbar | Filter sheet |
+| **Quick-filter chips** | A second row: **All / Images / Audio / Video / Projects / ★ Starred** kind-toggles, plus a **Show hidden** toggle that reveals untracked/hidden files (gallery #33; hidden-file model is #55). | R `works` filters · `works.kind` · `saved_items`/star · `works.hidden` | Toolbar row | Filter sheet |
 | Folder row / card | A subfolder in the current folder — stacked-icon cover + item count; click → descend. | R `folders` (children) | In grid/list with files | 2-col / row |
 | File card / row | Grid: same card renderer as Feed; List: a dense row. Leads with **file name**; uploader chip (server colour) + channel tag. | R `works` (in this folder via `placement.folder_id`) | Grid/List | 2-col / row |
 | **Feed item** | *(feed view only)* a previewable work at natural aspect + its **comment thread** inline, newest-first across the subtree. | R `works` (previewable) + `comments(context=server)` | Column | Full-width |

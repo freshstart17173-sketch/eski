@@ -2041,9 +2041,24 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
             <button class="selbtn"><svg class="ic sm"><use href="#i-hash"/></svg>Channel<svg class="ic sm"><use href="#i-chev"/></svg></button>
             <button class="selbtn">Type<svg class="ic sm"><use href="#i-chev"/></svg></button>
             <button class="selbtn">Uploader<svg class="ic sm"><use href="#i-chev"/></svg></button>
+            <!-- #33 more filters: tag + date, plus quick-filter chips below -->
+            <button class="selbtn">Tag<svg class="ic sm"><use href="#i-chev"/></svg></button>
+            <button class="selbtn">Date<svg class="ic sm"><use href="#i-chev"/></svg></button>
             <button class="selbtn">Latest<svg class="ic sm"><use href="#i-chev"/></svg></button>
             <!-- #47 the real upload entry point (was only in the hidden proto bar) -->
             <button class="btn primary" id="showUpload4" style="margin-left:auto"><svg class="ic sm"><use href="#i-plus"/></svg>Upload</button>
+          </div>
+          <!-- #33 quick-filter chips (type + starred); #55 show-hidden toggle -->
+          <div class="toolbar" style="padding-top:0">
+            <div class="fchips">
+              <button class="fchip on">All<span class="n">7</span></button>
+              <button class="fchip">Images<span class="n">1</span></button>
+              <button class="fchip">Audio<span class="n">2</span></button>
+              <button class="fchip">Video<span class="n">1</span></button>
+              <button class="fchip">Projects<span class="n">3</span></button>
+              <button class="fchip"><svg class="ic sm" style="width:12px;height:12px;vertical-align:-1px"><use href="#i-star"/></svg> Starred</button>
+            </div>
+            <button class="selbtn" style="margin-left:auto" title="Show files hidden from the library (#55)"><svg class="ic sm"><use href="#i-file"/></svg>Show hidden</button>
           </div>
           <div class="selbar" id="selbar"><span class="n"><span id="seln">0</span> selected</span>
             <button><svg class="ic sm"><use href="#i-download"/></svg>Download</button>

@@ -108,7 +108,7 @@ bottom. `[x]` = done and pushed.
   mode**, etc.
 - [ ] **25.** Show what **multiple files posted in a channel** look like — should
   **clump together** like Discord does.
-- [ ] **33.** Add **a lot more filters** for the File explorer.
+- [x] **33.** Add **a lot more filters** for the File explorer.
 
 ## Servers
 - [ ] **34.** Servers need their **icons and covers visible beyond just the rail** —
