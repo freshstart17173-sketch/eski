@@ -58,9 +58,9 @@ bottom. `[x]` = done and pushed.
   possible / necessary.
 
 ## Folder pane
-- [ ] **6.** Show the **item count once** — pick a single place, remove the duplicate.
-- [ ] **8.** The side file list should **scroll**, no click-to-expand.
-- [ ] **9.** Make the side file list **navigable**: click any item to open it into the
+- [x] **6.** Show the **item count once** — pick a single place, remove the duplicate.
+- [x] **8.** The side file list should **scroll**, no click-to-expand.
+- [x] **9.** Make the side file list **navigable**: click any item to open it into the
   details pane; click through folders from the list.
 - [x] **36.** Fix **audio-file thumbnails** in the folder-details side file list —
   they render messed up. (Tie to #13: audio uses the music/audio icon, not a waveform.)
