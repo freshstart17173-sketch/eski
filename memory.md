@@ -87,16 +87,20 @@ upgrade UI), #46 (read-only over-cap screen), #49 (skeleton/loading states),
 **New owner items (added 2026-08-21):** #53 channel default file-save location,
 #54 per-channel file-type permissions, #55 tracked vs untracked/hidden files
 (hidden in file view, "show hidden" toggle; for chat-utility files), #56 voice-
-chat WIP screens.
+chat WIP screens, #57 per-user posting permission / post-approval queue, #58
+archiving + locked folders, #59 admin panel mass file management (incl. delete
+all of a user's posts), #60 unify every explorer/viewer (server + home feed share
+structure; feed only differs by filtering to friends), #61 update-post-visibility
+modal.
 
-**Needs the OWNER's input (was pushed to the bottom, per his instruction):**
-- **#26** "remove the circles in the name cards" — could NOT confidently identify
-  what "name cards" refers to (message-author identity? the `.ppop` profile
-  popover?). Ask before editing.
-- **#27** "remove the collaborators/credits field" — **conflicts with CANON**:
-  `collaborators` is a canonical, consent-gated concept (§A.2 sub-terms, §D.3.1,
-  table `work_collaborators`). Removing the UI field needs a CANON decision
-  first, not a silent gallery edit.
+**Resolved this session (no longer needs input):**
+- **#26** DONE — "circles in name cards" = the round colour **dot** in tag/name
+  chips (`.uchip .dot`, now `display:none`); member colour still reads via the
+  coloured chip text.
+- **#27** RESOLVED — the collaborators field **stays** (consent-gated per §D.3.1);
+  do not remove it.
+
+**Still needs the OWNER's input (pushed to the bottom):**
 - **Owner decisions** in `docs/COLLAB.md` §"Owner decisions still open" (WebRTC
   provider, transcode scope, notifications, DMCA/region, ratify permission flags,
   member-colour palette sign-off).

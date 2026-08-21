@@ -29,8 +29,13 @@ bottom. `[x]` = done and pushed.
 ## Profile pictures & identity
 - [x] **1.** Every profile picture → **circle**, not square. (Consistent with the
   avatars-and-presence-dots-only rule for `round`.)
-- [ ] **26.** Remove the circles in the **name cards** completely.
-- [ ] **27.** Remove the **collaborators / credits** field completely.
+- [x] **26.** Remove the circles in the **name cards** completely. *(Clarified
+  2026-08-21: this means the round **colour dot** next to a name in a tag/name chip
+  — `.uchip .dot`. Member colour still reads via the coloured chip text. Presence
+  dots on avatars stay.)*
+- [ ] ~~**27.** Remove the collaborators / credits field completely.~~ *(RESOLVED
+  2026-08-21: the **collaborators field stays** — keep it, consent-gated per CANON
+  §D.3.1. No change needed. Do NOT remove it.)*
 - [ ] **20.** Add profile-screen views from three POVs: **owner**, **public**, and
   **mutual** (both follow each other — some files may be mutuals-only visible).
 
@@ -174,3 +179,24 @@ bottom. `[x]` = done and pushed.
 - [ ] **56.** **Voice-chat WIP screens** — the voice/VC surfaces need explicit
   "work in progress" states so it's clear calls aren't shipping in the beta (CANON
   already defers calls to v2; the UI should say so).
+- [ ] **57.** **Per-user posting permission / post approval** — an admin can set a
+  member so their posts are **hidden by default** and must be **approved** before
+  they're unhidden/visible. (CANON: a per-member `posts_require_approval` flag +
+  a moderation queue; enforced by RLS on read/visibility.)
+- [ ] **58.** **Archiving + locked folders** — folders (and files) can be
+  **archived** (kept, read-only, out of the main view) and **locked** (no edits/
+  moves/deletes without permission). (CANON: `folders.archived` / `folders.locked`
+  + gated write RLS.)
+- [ ] **59.** **Admin panel — mass file management** — bulk delete / archive /
+  manage, including **delete every post from a given user** in one action. (CANON:
+  admin RPCs for bulk moderation + an audit-logged admin surface.)
+- [ ] **60.** **Unify every file explorer / viewer** — the server File explorer and
+  the home Feed should share the **same structure and features** (search, filters,
+  viewing modes, details pane). The **only** difference: the home Feed filters to
+  **friends' posts** (owner's word "people you follow" = friend, the one mutual
+  relationship — CANON §A; one-way follows are dropped). Build one explorer
+  component, parameterised by source.
+- [ ] **61.** **Update-visibility modal** — a modal to change a **post's visibility**
+  (Public / Server / Private) after the fact. Pairs with the Share dialog (#39);
+  #3 removed the visibility badge, so this modal (+ Share) is where visibility is
+  set/seen now.
