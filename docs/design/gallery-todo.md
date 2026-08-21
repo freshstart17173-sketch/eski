@@ -172,7 +172,7 @@ bottom. `[x]` = done and pushed.
 - [x] **54.** **File-type permissions per channel** — a channel can be restricted so
   only certain kinds (e.g. images or videos) may be posted there (CANON: a channel
   allow-list of `kind`s; enforced by RLS/RPC on insert, signposted in the composer).
-- [ ] **55.** **Tracked vs untracked (hidden) files** — a file can be posted for
+- [x] **55.** **Tracked vs untracked (hidden) files** — a file can be posted for
   utility in chat *without* showing in the File explorer's organised view. Hidden by
   default in the file view; a "show hidden" toggle reveals them. Keeps chat-utility
   files from cluttering the library. (CANON: a `works.hidden`/`tracked` flag + a file-view toggle.)
@@ -183,14 +183,14 @@ bottom. `[x]` = done and pushed.
   member so their posts are **hidden by default** and must be **approved** before
   they're unhidden/visible. (CANON: a per-member `posts_require_approval` flag +
   a moderation queue; enforced by RLS on read/visibility.)
-- [ ] **58.** **Archiving + locked folders** — folders (and files) can be
+- [x] **58.** **Archiving + locked folders** — folders (and files) can be
   **archived** (kept, read-only, out of the main view) and **locked** (no edits/
   moves/deletes without permission). (CANON: `folders.archived` / `folders.locked`
   + gated write RLS.)
 - [x] **59.** **Admin panel — mass file management** — bulk delete / archive /
   manage, including **delete every post from a given user** in one action. (CANON:
   admin RPCs for bulk moderation + an audit-logged admin surface.)
-- [ ] **60.** **Unify every file explorer / viewer** — the server File explorer and
+- [x] **60.** **Unify every file explorer / viewer** — the server File explorer and
   the home Feed should share the **same structure and features** (search, filters,
   viewing modes, details pane). The **only** difference: the home Feed filters to
   **friends' posts** (owner's word "people you follow" = friend, the one mutual

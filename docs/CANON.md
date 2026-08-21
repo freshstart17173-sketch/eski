@@ -432,6 +432,16 @@ The friends-only portfolio grid.
 
 ### C.6 Screen 3 — File explorer
 
+**One explorer component, two mounts (gallery #60).** The server File explorer
+and the home **Feed** are the *same* component — same card renderer, same
+filters (search / type / tag / date / sort + the quick-filter chips), same view
+toggles (grid / list / feed), same details pane, same context menu, same
+loading/empty states. They differ in **one** parameter, the source: the server
+explorer reads that server's works (`server_id`, `member_of`); the home Feed
+reads **friends' public posts** (`visibility='public'` and author ∈ friends —
+the owner's "people you follow" = **friend**, the one mutual relationship; §A).
+Build it once, parameterised by source — don't fork two browsers.
+
 The server's files as a **Discord-meets-Google-Drive file system**: a **nested
 folder tree** on the left, the current folder's contents in the main pane, and a
 **three-way view toggle** — **grid** (default) · **list** · **feed**. The **feed**

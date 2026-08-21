@@ -235,6 +235,8 @@ input{font:inherit;color:inherit}
 /* #42/#43 smart-folder row extras: a right-aligned meta chip (Trash retention)
    and a hairline separating the smart rows from the folder tree */
 .ftrow .ftmeta{margin-left:auto;font-size:10px;color:var(--muted);flex:none}
+.ftrow .ftlock{margin-left:auto;width:12px;height:12px;color:var(--muted);flex:none}
+.ftrow.archived{opacity:.5}
 .ftsep{height:1px;background:var(--line);margin:6px 8px}
 .ftrow.lvl0{padding-left:8px}.ftrow.lvl1{padding-left:22px}.ftrow.lvl2{padding-left:36px}
 .explayout .pane{flex:1;min-width:0}
@@ -2143,7 +2145,8 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
           <button class="ftrow lvl1"><svg class="ic sm tw"><use href="#i-chev"/></svg><svg class="ic sm fic"><use href="#i-folder"/></svg><span class="fn">verses</span></button>
           <button class="ftrow lvl1"><svg class="ic sm tw"><use href="#i-chev"/></svg><svg class="ic sm fic"><use href="#i-folder"/></svg><span class="fn">mixing</span></button>
           <button class="ftrow lvl1"><span class="tw"></span><svg class="ic sm fic"><use href="#i-folder"/></svg><span class="fn">references</span></button>
-          <button class="ftrow lvl1"><span class="tw"></span><svg class="ic sm fic"><use href="#i-folder"/></svg><span class="fn">stems and sessions</span></button>
+          <!-- #58 a locked folder shows a lock; contents are read-only without permission -->
+          <button class="ftrow lvl1"><span class="tw"></span><svg class="ic sm fic"><use href="#i-folder"/></svg><span class="fn">stems and sessions</span><svg class="ic sm ftlock" title="Locked — read-only"><use href="#i-lock"/></svg></button>
           <div class="ftfoot"><svg class="ic sm" style="vertical-align:-2px;color:var(--muted)"><use href="#i-server"/></svg> This server's storage<div class="bar"><i style="width:62%"></i></div>74 of 120 GB used · <button id="manageStorage" style="color:var(--soft);text-decoration:underline">manage</button></div>
         </nav>
         <div class="pane">
@@ -3029,6 +3032,18 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   <div class="sep"></div>
   <button class="danger"><svg class="ic sm"><use href="#i-trash"/></svg>Delete</button></div>
 
+<!-- #58 folder context menu (right-click a folder in the tree) -->
+<div class="menu" id="folderMenu"><div class="mlabel">Folder</div>
+  <button><svg class="ic sm"><use href="#i-folder"/></svg>Open</button>
+  <button><svg class="ic sm"><use href="#i-plus"/></svg>New subfolder</button>
+  <button><svg class="ic sm"><use href="#i-pen"/></svg>Rename</button>
+  <button><svg class="ic sm"><use href="#i-check"/></svg>Set as channel default</button>
+  <div class="sep"></div>
+  <button><svg class="ic sm"><use href="#i-lock"/></svg>Lock (make read-only)</button>
+  <button><svg class="ic sm"><use href="#i-file"/></svg>Archive</button>
+  <div class="sep"></div>
+  <button class="danger"><svg class="ic sm"><use href="#i-trash"/></svg>Delete</button></div>
+
 <!-- #39 Share dialog (Google-Drive style) / #61 update a post's visibility -->
 <div class="scrim" id="shareScrim" hidden></div>
 <div class="umodal" id="shareModal" hidden>
@@ -3205,7 +3220,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   document.addEventListener('keydown',function(e){if(lb.hidden)return;
     if(e.key==='Escape')lbClose();else if(e.key==='ArrowLeft')lbShow(lbIdx-1);else if(e.key==='ArrowRight')lbShow(lbIdx+1);});
 
-  var menus=['dlMenu','saveMenu','emojiMenu','msgMenu','cardMenu'].map(function(id){return document.getElementById(id);}).filter(Boolean);
+  var menus=['dlMenu','saveMenu','emojiMenu','msgMenu','cardMenu','folderMenu'].map(function(id){return document.getElementById(id);}).filter(Boolean);
   function closeMenus(){menus.forEach(function(m){m.classList.remove('open');});}
   function toggleMenu(m,anchor,above){var open=m.classList.contains('open');closeMenus();if(open)return;
     m.classList.add('open');var r=anchor.getBoundingClientRect();
@@ -3276,6 +3291,10 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
     document.querySelectorAll('.card').forEach(function(c){c.addEventListener('contextmenu',function(e){
       e.preventDefault();openMenuAt(cardMenu,e.clientX,e.clientY);});});
   }
+  // #58 folder context menu on right-click of a folder tree row
+  var folderMenu=document.getElementById('folderMenu');
+  if(folderMenu){document.querySelectorAll('.filetree .ftrow').forEach(function(r){r.addEventListener('contextmenu',function(e){
+    e.preventDefault();openMenuAt(folderMenu,e.clientX,e.clientY);});});}
 
   // file explorer — grid/list/feed view toggle
   var exView=document.getElementById('exView');

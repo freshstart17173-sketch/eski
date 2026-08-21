@@ -847,13 +847,13 @@ Each row: purpose · columns · RLS summary. `uid()` = `(select auth.uid())`.
 
 | Table | Purpose | Columns | RLS |
 |---|---|---|---|
-| `works` | the uploaded thing | `owner_type in(user,server), owner_id, visibility in(public,personal,server), server_id null, title null, file_ext, kind, blob_sha→media_blobs, bytes, search_tsv tsvector generated` | `works_read` (CANON §B.3): public, or own, or `visibility='server' & member_of`, or readable via any `placement` |
+| `works` | the uploaded thing | `owner_type in(user,server), owner_id, visibility in(public,personal,server), server_id null, title null, file_ext, kind, blob_sha→media_blobs, bytes, hidden bool default false (untracked/utility file — gallery #55), approved_at timestamptz null (gallery #57), search_tsv tsvector generated` | `works_read` (CANON §B.3): public, or own, or `visibility='server' & member_of`, or readable via any `placement`. **Hidden works are omitted from the File-explorer library view** unless "Show hidden" is on (#55); they still work inline in chat. |
 | `work_items` | items of a multi-item work | `work_id, blob_sha, position` | inherits the work |
 | `work_collaborators` | consent-gated collaborators (CANON §D.3.1) | `work_id, user_id, role text null, status in(accepted,pending), pk(work_id,user_id)` | read: work-readers; write: owner + accepted collaborators; self-remove always |
 | `content_tags` | user labels | `work_id, tag text` | read: work-readers; write: owner + accepted collaborators |
 | `comments` | post-level threads | `work_id, user_id, context in(public), body, parent_id, resolved_at, deleted_at` | read: work-readers; write: friend-of-owner / `comment` |
 | `placement` | one work → many surfaces (CANON §D.3) | `work_id, surface in(feed,server,dm), surface_id, channel_id null, folder_id null→folders, placed_by` | read: those who can see the surface; write: `upload`; detach: owner or moderation |
-| `folders` | nested server file tree | `server_id, parent_id null→folders (null=root), name` | read: `member_of`; write: `manage_channels`/folder perm |
+| `folders` | nested server file tree | `server_id, parent_id null→folders (null=root), name, archived bool default false, locked bool default false (gallery #58)` | read: `member_of`; write: `manage_channels`/folder perm; **a `locked` folder is read-only** (no add/move/delete inside) without folder-manage perm; an `archived` folder is hidden from the main tree (shown dimmed / under an Archived view) |
 | `media_blobs` | content-addressed dedup store | `sha256 pk, bytes, refcount` | server-managed; GC at refcount 0 |
 | `storage_meters` | usage per account | `owner_type in(user,server), owner_id, bytes_used (sum of DISTINCT owned blobs), pk(owner_type,owner_id)` | read: the account's members/self |
 | `storage_balance` | one slider per account | `owner_type, owner_id, purchased_gb, status, stripe_customer, pk(owner_type,owner_id)` | read/write: self / `manage_billing` |
