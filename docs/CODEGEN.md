@@ -6,14 +6,13 @@ design: every prompt points back at [`CANON.md`](CANON.md) (the contract) and
 [`design/gallery.html`](design/gallery.html) (the pixels). If a prompt and CANON
 disagree, **CANON wins** — fix the prompt.
 
-> **Vocabulary note.** [`COLLAB.md §7`](COLLAB.md) is the mechanical backend
-> reference (RPCs, triggers, Realtime channels, indexes) but predates the
-> terminology streamline and still says `groups`/`is_group_admin`. **Use CANON
-> names everywhere:** `server(s)` · `server_members` · `is_server_admin`/`has_perm`
+> **Vocabulary note.** [`CANON §E`](CANON.md) is the mechanical backend
+> reference (tables, RPCs, triggers, Realtime channels, indexes) and already uses
+> the canonical names: `server(s)` · `server_members` · `is_server_admin`/`has_perm`
 > · `comments` (post-level) · `folders` (nested tree, was `collections`) ·
 > `placement` + `work_collaborators` (§D.3) · `collaborators` (was credits) ·
-> `roles`/`member_roles`/`channel_roles` (CANON §D.1, replaces the flat role enum).
-> When you copy a §7 RPC into a prompt, rename it on the way in.
+> `roles`/`member_roles`/`channel_roles` (§D.1, replaces the flat role enum).
+> Copy §E straight into a prompt — no renaming needed.
 >
 > **Beta cut (2026-08-18e).** The **canvas** (P6 + `canvas`/`canvas_items`/
 > `annotations`), **kanban boards** (`boards`/`board_*`), and **numbered versions**
@@ -88,18 +87,18 @@ DONE WHEN:  <a concrete, testable assertion — see below>
 ## §1. Phase map & dependency order
 
 Backend precedes the UI that reads it; primitives precede screens; screens
-precede their dialogs. Follow COLLAB §7.8 for the migration sub-order.
+precede their dialogs. Follow CANON §E.8 for the migration sub-order.
 
 | Phase | What | Tag mix | Gate before next phase |
 |---|---|---|---|
 | **P0** | Scaffold: app shell, Supabase client, token/CSS import, icon sprite | GL | App boots, tokens resolve, sprite renders |
 | **P1** | Schema + RLS (servers → messages → DMs → notifs → profiles → moderation → roles/storage) | BE | Every table has an allow+deny test that passes |
-| **P2** | RPCs + triggers (§7.3, renamed) + `has_perm`/`can_view_channel` (§D.1) | BE | Each RPC has a round-trip test |
+| **P2** | RPCs + triggers (§E.3) + `has_perm`/`can_view_channel` (§D.1) | BE | Each RPC has a round-trip test |
 | **P3** | Design-system primitives (button, field, modal, menu, avatar, tag, chip, toggle, checkbox, bar, toast) | UI | Each matches its styleguide spec, both themes |
 | **P4** | The 3-pane shell + Workspace states | UI+GL | Workspace renders live messages |
 | **P5** | Content screens: Feed, Explorer, Details, Profile, Upload | UI+GL | Cards render every media kind incl. type-cards |
 | ~~**P6**~~ | ~~Canvas suite~~ — **cut (beta)** | — | — |
-| **P7** | Messages/DMs, Notifications *(boards cut)* | UI+GL | DM round-trip, live bell |
+| **P7** | Messages/DMs, **Friends**, Notifications *(boards cut)* | UI+GL | DM round-trip, live bell, friendship RPCs |
 | **P8** | Admin: settings shell, roles editor, assign-roles, channel perms, storage & billing, moderation, audit, invites | UI+GL | Perm gates match the matrix |
 | **P9** | Utility + focus: Create, Join, Sign-in, 404, dead-invite, access-denied, quick-switcher | UI | Every state in §C.14/C.20 reachable |
 
@@ -123,7 +122,7 @@ line into the §0 template when you run it. Counts per phase are at the head.
 - **P0.4** — Mount the SVG icon sprite (`#i-*`) once; a `<Icon name>` wrapper.
   *Done: `#i-x`, `#i-hash`, `#i-server`… all render at `.ic`/`.ic.sm` sizes.*
 
-### P1 — Schema + RLS · ~21 prompts, all BE (one migration-unit each, COLLAB §7.8 order)
+### P1 — Schema + RLS · ~21 prompts, all BE (one migration-unit each, CANON §E.8 order)
 
 Each: `create table if not exists` + RLS enable + policies + the allow/deny test.
 
@@ -131,12 +130,16 @@ Each: `create table if not exists` + RLS enable + policies + the allow/deny test
   helpers `member_of(sid)`, `is_server_admin(sid)`. *Test: non-member sees no
   server row; member does; only admin writes.*
 - **P1.2** `works` column adds (`visibility in(public,personal,server)`,
-  `server_id`, `title`, `file_ext`, `search_tsv`) + the rewritten
-  `works_read` (CANON §B.3). *Test: the visibility read rule — public to friends,
-  server to members, private to owner.* *(No `version_of`/`version_note` — versions
-  cut.)*
-- **P1.3** `channels` (+`kind in(text,voice)`, `slowmode_sec`, `position`). *Test:
-  member reads, admin writes, position orders.*
+  `server_id`, `title`, `file_ext`, `search_tsv`, `hidden`, `approved_at`,
+  **`deleted_at`** — soft-delete/Trash, gallery #42/B19) + the rewritten
+  `works_read` (CANON §B.3), which also **omits `deleted_at not null`** from every
+  view but the Trash folder. *Test: the visibility read rule — public to friends,
+  server to members, private to owner; a trashed work drops out of the library.*
+  *(No `version_of`/`version_note` — versions cut.)*
+- **P1.3** `channels` (+`kind in(text,voice)`, `slowmode_sec`, `position`,
+  **`default_folder_id`** #53, **`allowed_kinds text[]`** #54 — reject a work whose
+  `kind` isn't allowed). *Test: member reads, admin writes, position orders, a
+  disallowed kind is refused.*
 - **P1.4** `messages` (+`body_tsv` generated, `parent_id`, `also_to_channel`,
   tombstones). *Test: member insert allowed unless timed-out; update/delete own
   only; deleted row tombstones not vanishes.*
@@ -168,17 +171,19 @@ Each: `create table if not exists` + RLS enable + policies + the allow/deny test
   a private channel hides from a non-granted member; a work's bytes hit its owner's
   meter and dedup counts a shared blob once.*
 
-### P2 — RPCs, triggers, search · ~14 prompts, all BE
+### P2 — RPCs, triggers, search · ~15 prompts, all BE
 
 One function + its round-trip test each: `join_via_invite` · `mark_channel_read` ·
 `toggle_reaction` · `pin_message`/`unpin_message` · `create_dm`/`create_group_dm` ·
 `add_friend`/`respond_friend`/`block_user` ·
 `ban_member`/`timeout_member`/`kick_member` (each writes `audit_log`) ·
 `set_member_roles(user, role_ids[])` · `set_channel_access(channel, role_ids[],
-member_ids[])` · `export_manifest(server|'account')` · the **triggers**
+member_ids[])` · `move_to_folder` · **`restore_work`/`purge_work`/`empty_trash`**
+(Trash — gallery #42/B19) · `export_manifest(server|'account')` · the **triggers**
 (message-fanout → `mentions`+`notifications`; `edited_at`; tombstone;
-`works.search_tsv`; comment-mention → notification; storage-meter maintenance) ·
-`search_all(q, scope)` + the GIN indexes (§7.7). *Each done when: the action
+`works.search_tsv`; comment-mention → notification; storage-meter maintenance;
+**the 30-day Trash purge job** that hard-deletes `deleted_at` past retention) ·
+`search_all(q, scope)` + the GIN indexes (§E.7). *Each done when: the action
 produces exactly the rows/notification/meter delta asserted, and is rejected
 when the gate fails.*
 
@@ -193,27 +198,42 @@ default/sm/danger/icon) · `IconButton` + `CloseButton` (square, `#i-x`) ·
 when: matches its styleguide row in both themes, all states, and uses only
 tokens.*
 
-### P4 — Shell + Workspace · ~11 prompts, UI+GL
+### P4 — Shell + Workspace · ~13 prompts, UI+GL
 
 - **P4.1 [UI]** the 3-pane shell (server rail 58 · channel column 232 · main ·
-  members rail 210) + the mobile one-pane + bottom-tabs collapse (§C.2).
+  members rail 210) **capped at a 1440px canvas, centred with a hairline gutter,
+  modals sized to it** (§C.2) + the mobile one-pane + bottom-tabs collapse.
 - **P4.2 [UI]** server rail items (badge states: default/hover-tooltip/active/
   unread-dot/mention-count) + the ＋ menu + own-avatar menu.
-- **P4.3 [UI]** channel column: server-name header, Media entry, channel list by
-  kind (unread bold, mention badge), admin drag-handle, ＋ add channel.
-- **P4.4 [UI]** channel header (Messages/Pins/Files tabs, members icon, search).
+- **P4.3 [UI]** channel column: **server-name header → server-menu dropdown**
+  (Invite · Create channel/category · Server/Notification settings · Edit profile
+  · Leave — admin rows gated), Media entry, channel list by kind (unread bold,
+  mention badge), **admin-POV drag-handle + per-channel edit gear**, ＋ add channel
+  → the Create-channel modal.
+- **P4.4 [UI]** channel header (Messages/Pins/Files tabs, voice/video, **bell →
+  dropdown preview**, search, members icon).
 - **P4.5 [UI]** message list + message row (grouped, member-colour byline;
-  hover/long-press actions; edited tag; reactions).
+  hover/long-press actions incl. **Forward**; **forwarded-message quote render**;
+  edited tag; reactions).
 - **P4.6 [UI]** composer (toolbar-inserts-markdown, emoji-mart, @/# autocomplete,
   attach) + its states (empty/typing/slowmode/timed-out-disabled).
 - **P4.7 [UI]** shared-file card inline (leads with file name) → opens Details.
 - **P4.8 [UI]** thread view (`parent_id`) + `also_to_channel`.
-- **P4.9 [UI]** members rail (Admins/Members groups, presence dot, "working on").
+- **P4.9 [UI]** members rail (**Member/Admin POV switch**, Admins/Members groups,
+  presence dot, "working on"; **member popover** with Message/Add-friend + a gated
+  **admin block** Roles/Timeout/Kick/Ban).
 - **P4.10 [GL]** wire `channel:{id}` Postgres-changes → live insert/edit/delete;
   `:typing` broadcast; `mark_channel_read` on view.
 - **P4.11 [GL]** `server:{id}` Presence → members rail online/doing.
-- **Edge states** (own prompts): no-channels-yet, zero-messages, no-presence,
-  timed-out composer, Realtime-reconnecting banner.
+- **P4.12 [UI]** the **workspace modals** — Create-channel (name/kind/category/
+  default-folder/allowed-types/private), Invite-to-server (link+copy+expiry+by-
+  handle), Forward (multi-target + note) — all scrim-backed, sized to the canvas.
+- **P4.13 [GL]** the **admin POV** is a signpost only: every revealed control
+  (＋ add channel, edit gear, kick/ban, drag-reorder) re-checks `has_perm`/
+  `is_server_admin` server-side; the toggle only renders to real admins.
+- **Edge states** (own prompts): **new-server first-run** (empty column + 3-step
+  setup checklist → create-channel / invite / upload), no-channels-yet,
+  zero-messages, no-presence, timed-out composer, Realtime-reconnecting banner.
 
 ### P5 — Content screens · ~12 prompts, UI+GL
 
@@ -221,7 +241,8 @@ Feed (header nav, search, type/sort, **layout toggle even⇄masonry**, post card
 per kind incl. **type-card** for `.flp/.zip/.exe`, empty) · **File explorer**
 (nested **folder tree** + breadcrumb, **grid/list/feed** view toggle — feed
 flattens the subtree to previewable media + inline comments, bulk select-bar with
-move-to-folder, lightbox) · Details pane (player controls, **storage badge**
+move-to-folder, lightbox, **Trash view** — retention notice + Empty-now over
+rows with countdown + Restore / Delete-forever, §C.6) · Details pane (player controls, **storage badge**
 server-vs-personal, **file name** in the top bar, title/**collaborators**/tags,
 actions, **post-level comments**, mobile bottom sheet) · Profile (square avatar,
 Public/Server/Private shelves + counts + **search**, grid toggle, Settings) ·
@@ -235,11 +256,16 @@ numbered versions are cut.)*
 The review canvas and its ~16 prompts are removed from the beta. If it returns
 post-beta, rebuild from CANON history + the deleted `P6-canvas.md`.
 
-### P7 — Messages · Notifications · ~6 prompts, UI+GL *(boards cut)*
+### P7 — Messages · Friends · Notifications · ~9 prompts, UI+GL *(boards cut)*
 
-Messages (add-by-handle **inline** field, friends/requests, thread list mute/pin,
-conversation + composer) + **[GL]** `create_dm` round-trip · Notifications (tabs,
-row kinds + inline reply, mark-all) + **[GL]** `user:{id}` live bell.
+Messages (add-by-handle **inline** field, **New-DM / group-DM picker** from
+friends, friends/requests, thread list mute/pin, conversation + composer) +
+**[GL]** `create_dm` round-trip · **Friends manager** (`friends`: All/Pending/
+Blocked tabs, add-by-handle, accept/decline/cancel/unblock, friend rows with
+Message + remove/block) + **[GL]** the `friendships` RPCs · Notifications (tabs,
+row kinds + inline reply, mark-all, **+ the bell-dropdown preview** — recent rows
++ Mark-all + See-all, sharing the `notifications` feed) + **[GL]** `user:{id}`
+live bell.
 
 ### P8 — Admin · ~14 prompts, UI+GL
 
@@ -249,40 +275,21 @@ new-role, colour swatches, **permission matrix** grouped Server/Members/Content,
 `.cbx` toggles → `roles.permissions`) · **Assign-roles-to-member** modal
 (multi-select checklist, @everyone locked → `set_member_roles`) · **Channel
 permissions** allow-list modal (roles + members `.cbx` → `set_channel_access`) ·
-Moderation (timeouts, bans, take-action) · Audit log · Invite links (create/
-revoke) · **Storage & billing** (personal + server usage bars, Manage plan / Add
+Moderation (timeouts, bans, take-action — the same RPCs the **members-rail
+popover admin block** and **admin-POV** affordances call from P4) · Audit log ·
+Invite links (create/revoke — the quick **Invite modal** is P4.12) · **Storage &
+billing** (personal + server usage bars, Manage plan / Add
 storage, gated `manage_billing`) · Export. Plus **[GL]** each perm-gated control
 reads `has_perm`/`can_view_channel` so the signpost matches the fence.
 
 ### P9 — Utility & focus · ~9 prompts, UI
 
-Create-server card · Join-preview card · Sign-in/up (magic-link/OAuth, toggle,
+Create-server card (→ on submit lands on the **new-server first-run** state,
+built as a workspace edge state in P4) · Join-preview card · Sign-in/up (magic-link/OAuth, toggle,
 error line) — all **centred, no rail, card never touches top** (§D.6.4) · 404 ·
 Dead invite (**expired/revoked/full/already-member** — one prompt, four copy
 states) · Access-denied (quiet, **never a 404 that leaks existence**) · Quick
 switcher (⌘K overlay, grouped results, keyboard nav, scoped to `can_view_channel`).
-
-### Gap-fill addendum (2026-08-21 — CANON §D.7)
-
-Prompts added to existing phases from [`gaps.md`](design/gaps.md); all **UI/GL**,
-no new schema (forwarding reuses `placement`, §D.3):
-
-- **Layout (P3/P4):** the app shell renders on a **1440px canvas**, centred with
-  a hairline gutter; dialogs/modals size to fit it. One `.app{max-width}` rule +
-  the modal scale — fold into the shell prompt.
-- **P4/P8 — Admin POV (S1):** a **Member/Admin** view switch on the workspace that
-  reveals the create-channel `+`, per-channel edit gear, and the popover admin
-  block. `[GL]` gate: every revealed control still reads `has_perm`/
-  `is_server_admin` (the toggle is a signpost, never a grant).
-- **P8 — server dropdown (B1)**, **create-channel dialog (S2)**, **invite-to-
-  server dialog (S3)**, **member popover admin actions (B9: Roles/Timeout/Kick/
-  Ban)**, **Trash actions (B19: Restore / Delete forever / Empty now over the 30-day
-  soft-delete)**.
-- **P7 — forward dialog + forwarded-message quote (S5/B10)** — writes a
-  `placement`; **new-DM/group picker (B14)**; **friends manager (S4)**; **bell
-  dropdown preview (B15)** beside the full notifications screen.
-- **P9 — new-server first-run (S8):** empty workspace shell + 3-step setup
-  checklist (create channels / invite / upload).
 
 ---
 
@@ -318,7 +325,7 @@ DONE:    a .flp/.zip/.exe renders an icon+ext+name card (not a broken image);
 
 ```
 TITLE:   P1.24 — roles/member_roles/channel_roles + has_perm/can_view_channel + storage columns
-CONTEXT: Supabase Postgres. CANON §D.1–D.3 supersede COLLAB §7’s flat role enum.
+CONTEXT: Supabase Postgres. CANON §D.1–D.3 supersede the flat role enum (see §E).
          Re-runnable schema-*.sql; RLS on every new table.
 BUILD:   (1) roles(id, server_id, name, color smallint, position int,
          permissions bigint, is_default bool) — one is_default @everyone/server.
@@ -358,21 +365,21 @@ via the Supabase MCP and costs no model tokens. Counts:
 | P1 | 21 | 0 | backend (+ placement/folders/collaborators) |
 | P2 | 14 | 0 | backend |
 | P3 | 15 | 15 | primitives |
-| P4 | 11 | 11 | shell + workspace |
-| P5 | 12 | 12 | content screens |
+| P4 | 13 | 13 | shell + workspace (+ admin POV, server menu, workspace modals) |
+| P5 | 12 | 12 | content screens (+ Trash view) |
 | ~~P6~~ | 0 | 0 | canvas — **cut (beta)** |
-| P7 | 6 | 6 | DMs/notifs *(boards cut)* |
+| P7 | 9 | 9 | DMs/**Friends**/notifs (+ new-DM picker, bell dropdown) *(boards cut)* |
 | P8 | 14 | 14 | admin |
 | P9 | 9 | 9 | utility/focus |
-| **Total** | **~106** | **~67** | + iteration |
+| **Total** | **~111** | **~72** | + iteration |
 
 **Per-UI-prompt cost.** A rich prompt carries: the §0 template + the relevant
 CANON slice + the gallery panel’s HTML/CSS excerpt as reference ≈ **1.5–3k input
 tokens**. A component/state generation returns ≈ **1.5–4k output tokens**. Budget
 one **re-roll** per prompt (screenshot diff fails → one correction round).
 
-- First-pass, ~67 UI/GL prompts × ~5k (in+out) = **~0.34M tokens.**
-- With a correction round on ~all: ~67×5k + ~67×5k ≈ **~0.67M tokens.**
+- First-pass, ~72 UI/GL prompts × ~5k (in+out) = **~0.36M tokens.**
+- With a correction round on ~all: ~72×5k + ~72×5k ≈ **~0.72M tokens.**
 - Realistic ceiling with exploratory re-prompts, context re-sends, and a few
   screens fought over: **budget 2–3M tokens.** (Earlier figures assumed the model
   also generated the backend and the now-cut canvas; it doesn’t — that trims it.)

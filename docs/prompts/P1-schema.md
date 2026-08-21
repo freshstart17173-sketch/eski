@@ -1,13 +1,13 @@
 # P1 — Schema + RLS
 
-Backend prompts, one migration-unit each, in COLLAB §7.8 order. Every prompt:
+Backend prompts, one migration-unit each, in CANON §E.8 order. Every prompt:
 `create table if not exists` + `alter table … enable row level security` +
 policies + **its own allow-and-deny test**. All helpers/RPCs are `security
 definer` with `search_path = public`. `uid()` means `(select auth.uid())`.
 
 Naming is CANON's: **`servers`** (not groups), **`server_members`**,
-**`is_server_admin`**, **`comments`** (post-level). These override COLLAB §7's
-older names.
+**`is_server_admin`**, **`comments`** (post-level) — the names CANON §E already
+uses.
 
 > **Beta cut (2026-08-18e) + placement/folders (2026-08-19).** The **canvas**, the
 > **kanban boards** (`boards`/`board_*`, P1.13–P1.15, P2.8), and **numbered versions**

@@ -78,7 +78,7 @@ thread pane, profile popover, the 20 screens listed in the catalog.
 ## C. Net-new features that need CANON first (⚑)
 
 These aren't just missing UI — they add data/permissions and must land in
-`CANON.md` / COLLAB §7 before a screen is built:
+`CANON.md` (§C UI registry + §E data model) before a screen is built:
 
 1. **Notification preferences** (S7, B4, B7, B15) — per-server & per-channel
    notification level + mute-until. New `server_prefs` / `channel_prefs`

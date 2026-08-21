@@ -57,5 +57,5 @@ macro).
 
 Whether to ship the two text commands at all in the beta, or keep the composer
 to action commands only, is a small owner call — logged in
-[`gallery-todo.md`](gallery-todo.md) #35 and the COLLAB TODO index. The action
+[`gallery-todo.md`](gallery-todo.md) #35 and CANON §G (open owner decisions). The action
 set above is safe to build now because every row already exists in CANON §B.

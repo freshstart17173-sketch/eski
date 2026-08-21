@@ -1,7 +1,6 @@
 Solo project, one user. There's no staging — changes go straight to `main` and
 straight to prod (Vercel deploys `main` directly). No issue tracker: work is
-tracked in `docs/COLLAB.md`, `docs/CANON.md`, and in conversation, not GitHub
-Issues.
+tracked in `docs/CANON.md`, and in conversation, not GitHub Issues.
 
 ## What this is right now
 
@@ -17,17 +16,17 @@ on 2026-08-18 to keep the mental model simple; they may return post-beta.)
 
 ## Read this before doing anything
 
-Three things, in this order:
+Two things, in this order:
 
-1. **[`docs/CANON.md`](docs/CANON.md) — the build contract.** The single source
-   of truth: §A the canonical vocabulary (one name per concept, aliases we
-   kill), §B roles & permissions mapped to the RLS/RPC that enforces them, §C
-   the per-screen UI element registry (behaviour → database → desktop/mobile),
-   §D the added scope (granular roles, dynamic-slider storage, the placement
-   model, utility screens). **When anything disagrees with CANON, CANON wins.**
-2. **[`docs/COLLAB.md`](docs/COLLAB.md) — the narrative spec.** The why behind
-   every feature, the data model, and the two end-to-end workflows.
-3. **The design sources in [`docs/design/`](docs/design/):**
+1. **[`docs/CANON.md`](docs/CANON.md) — the single source of truth.** The
+   contract *and* the plan: §A the canonical vocabulary (one name per concept,
+   aliases we kill), §B roles & permissions mapped to the RLS/RPC that enforces
+   them, §C the per-screen UI element registry (behaviour → database →
+   desktop/mobile), §D the added scope (granular roles, dynamic-slider storage,
+   the placement model, utility screens), §E the backend & data model (schema,
+   RPCs, Realtime, migration order), §F the two end-to-end workflows, §G open
+   owner decisions. **When anything disagrees with CANON, CANON wins.**
+2. **The design sources in [`docs/design/`](docs/design/):**
    - **`gallery.html` — LAW.** Every screen embedded live (~21 surfaces) **plus**
      every dialog, menu and modal as a standalone panel, and the member-colour
      palette. The measured target for what each screen looks like *and* the

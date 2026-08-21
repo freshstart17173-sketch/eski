@@ -59,10 +59,10 @@ early on — always screenshot before committing a visual change.**
 Worked `docs/design/gallery-todo.md` in token-cost order and **completed EVERY
 item — #1–#61 (incl. NEW #52–#61) are all `[x]`.** #27 resolved as "keep". Every
 change was **rendered in headless Chromium and eyeballed** before commit, and
-CANON/COLLAB were kept in sync with each behaviour change. Each item (or tight
+CANON was kept in sync with each behaviour change. Each item (or tight
 cluster) was its own commit + push.
 
-Highlights baked into CANON/COLLAB this session:
+Highlights baked into CANON this session:
 - Audio is a **music-icon type card everywhere, no waveform** (#52 supersedes #12).
 - Details pane: dropped storage×visibility badge + "N MB on X storage" (Size row),
   Channel→"Posted in", Modified+by-whom, server files have **no discussion**;
@@ -84,7 +84,7 @@ Highlights baked into CANON/COLLAB this session:
   **locked/archived folders** (#58), **hidden/untracked files** (#55), and the
   **one-explorer** rule (#60: server explorer == home Feed, parameterised by source).
 
-New schema baked into COLLAB §7.1: `channels.default_folder_id` + `allowed_kinds[]`;
+New schema baked into CANON §E.1: `channels.default_folder_id` + `allowed_kinds[]`;
 `server_members.posts_require_approval`; `works.hidden` + `works.approved_at`;
 `folders.archived` + `folders.locked`. All with RLS/gate notes.
 
@@ -95,7 +95,7 @@ New schema baked into COLLAB §7.1: `channels.default_folder_id` + `allowed_kind
 remains is **owner-only**:
 
 **Still needs the OWNER's input (pushed to the bottom):**
-- **Owner decisions** in `docs/COLLAB.md` §"Owner decisions still open" (WebRTC
+- **Owner decisions** in `docs/CANON.md` §G (open owner decisions) (WebRTC
   provider, transcode scope, notifications, DMCA/region, ratify permission flags,
   member-colour palette sign-off).
 - **Brand assets B1–B8** in `docs/design/brand-assets-todo.md` — hand-drawn

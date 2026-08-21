@@ -27,7 +27,7 @@ bottom. `[x]` = done and pushed.
    view), #42 #43 (trash + stars), #44 #46 (storage states), #22 #23 (settings +
    state screens), #49 #50 #51 (skeletons, empties, toasts), #20 (profile POVs).
 5. **Needs owner input (bottom):** brand assets B1–B8 (hand-drawn), the owner
-   decisions in COLLAB §"Owner decisions still open", member-colour palette
+   decisions in CANON §G (open owner decisions), member-colour palette
    sign-off, and any art-vs-icon call inside #50.
 
 ## Profile pictures & identity

@@ -13,7 +13,7 @@ gallery panel X", the operator pastes that panel's HTML/CSS excerpt from
 ## The stack (applies to every UI/GL prompt)
 
 **Vanilla HTML + CSS + JavaScript. No framework, no JSX, no TypeScript.** This
-matches the repo's real approach (ARCHITECTURE.md, COLLAB §7.6): every screen is
+matches the repo's real approach (ARCHITECTURE.md, CANON §E.6): every screen is
 an HTML file that loads a few shared classic scripts and holds its own behaviour
 in one `<script>`; shared runtime (Supabase client, session, `mediaUrl()`, the
 card/detail renderers) lives in a small module — a singleton client plus shared
@@ -26,7 +26,7 @@ helper — e.g. `function messageRow(msg){…returns an element}` — not a Reac
 component. **"Hook" means** a shared function/module (e.g. `session()`,
 `hasPerm(serverId, flag)`), not a React hook.
 
-**Buy a library only where DIY is a real time-sink** (COLLAB §7.6), loaded as a
+**Buy a library only where DIY is a real time-sink** (CANON §E.6), loaded as a
 plain script/ESM — no build-time framework:
 - **SortableJS** — drag-reorder (channels).
 - **emoji-mart** — the emoji picker data + search.

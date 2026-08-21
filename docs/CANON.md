@@ -1,23 +1,35 @@
 # eski collab — the canonical model
 
-**Status: planning. Source of truth for the code-generation hand-off.** Where
-[`COLLAB.md`](COLLAB.md) is the narrative spec and the mockup is the picture,
-this file is the *contract*: one vocabulary, one permission model, and one
-registry of every functional UI element (behaviour → database → responsive
-layout). When a codegen prompt and this file disagree, this file wins. The
-build itself is sliced into individually-testable prompts in
-[`CODEGEN.md`](CODEGEN.md). Open cross-context state hazards (data that
-carries/strands/orphans when a work moves between the social, work, and
-messaging contexts) are audited in [`EDGECASES.md`](EDGECASES.md); its
-⚑DECIDE rows graduate into this file once chosen.
+**Status: planning. The single source of truth for the code-generation hand-off.**
+Where the mockup ([`design/gallery.html`](design/gallery.html)) is the picture
+and the style guide is the tokens, this file is the *contract and the plan*: one
+vocabulary, one permission model, one registry of every functional UI element
+(behaviour → database → responsive layout), **and the backend it all runs
+against** (schema, RPCs, Realtime, migration order). When a codegen prompt and
+this file disagree, this file wins. The build itself is sliced into
+individually-testable prompts in [`CODEGEN.md`](CODEGEN.md). Open cross-context
+state hazards (data that carries/strands/orphans when a work moves between the
+social, work, and messaging contexts) are audited in
+[`EDGECASES.md`](EDGECASES.md); its ⚑DECIDE rows graduate into this file once
+chosen.
 
-Three parts:
+Seven parts:
 - **§A Terminology** — the canonical word for every concept, its database
   backing, and the aliases we kill so two prompts never name one thing twice.
 - **§B Roles & permissions** — who can do what, mapped to the RLS policy or RPC
   that actually enforces it (the fence, not the signpost).
 - **§C UI element registry** — every functional element per screen: what it
   does, where it sits in the database, its states, and desktop vs mobile.
+- **§D Added scope** — granular roles, dynamic-slider storage, the placement
+  model, and the utility/admin surfaces layered on after the first pass.
+- **§E Backend & data model** — the hand-off-ready plan: tables + RLS, key
+  columns, RPCs/triggers, Realtime, edge functions, build-vs-buy, indexes, the
+  migration order, and a per-screen backend checklist. (Absorbed the retired
+  COLLAB §7; CODEGEN and the prompts cite it as §E.x.)
+- **§F End-to-end workflows** — two real collaborations traced through the
+  product to confirm the pieces connect.
+- **§G Open owner decisions** — the genuine build-vs-buy / policy calls still
+  waiting on a human.
 
 Backend scope is a **true clean slate** (no `schema-clean.sql` inheritance);
 v1 decisions of record: **calls deferred to v2**, **audio-only transcode**,
@@ -115,10 +127,9 @@ different thing** (private bookmark folders) and keep their name.
 | **message** | A unit of chat, in a channel **or** a DM. | `messages` / `dm_messages` |
 
 > **LOCKED:** one relationship — **friend** (mutual). The one-way `follows`
-> table is **dropped** (backend implication: COLLAB.md §7 still lists `follows`
-> as reused — it's cut; the Feed query scopes to `friendships` where
-> `status='accepted'`, not `follows`). No asymmetric "follow a portfolio"
-> path in v1.
+> table is **dropped** — there is no `follows` in the §E schema; the Feed query
+> scopes to `friendships` where `status='accepted'`. No asymmetric "follow a
+> portfolio" path in v1.
 
 Kill: "follow"/"following" (there is no follow), "connection", "contact",
 "subscriber". Button copy is **"add friend"** everywhere.
@@ -330,6 +341,14 @@ rail (210)**. A phone shows **one pane at a time**:
 | Details pane | Slides up as a **full-height bottom sheet**, not a side panel. |
 | Any hover-only affordance (reaction button, card menu) | Bound to **long-press** or an always-visible "⋯" — never hover-only on touch. |
 
+The four-pane shell is capped at a **1440px canvas** (standard web width),
+**centred** in the viewport with a hairline gutter (`--line`) either side on
+wider windows — the app never spans an ultrawide monitor edge-to-edge. All
+dialogs, modals and menus are sized against that canvas, not the raw viewport,
+so a scrim-backed modal reads the same at 1440px as at 2560px. This is the
+desktop measure the built pages target; below it the panes flex down to the
+breakpoints, and mobile collapses to one pane per C.2.
+
 Breakpoints (to confirm against the style guide): **≥1100px** full four-pane ·
 **720–1099px** collapse members rail to an icon · **<720px** single-pane +
 bottom tabs. Every element row below only notes mobile behaviour where it
@@ -350,7 +369,8 @@ gap) rather than renumbered. Screen 7 (Call) remains a v2 deferral.
 | 4 | Details pane | *(overlay)* | per-context comments | §C.7 |
 | 7 | Call | `vc` | chat / notes (`vctab`) | **v2 — deferred, not built** |
 | 8 | Profile | `profile` | Public / Server / Private shelves, Settings | §C.10 |
-| 9 | Messages (DMs) | `dms` | thread list, conversation | §C.11 |
+| 9 | Messages (DMs) | `dms` | thread list, conversation, new-DM picker | §C.11 |
+| 9b | Friends | `friends` | all / pending / blocked, add-by-handle | §C.11 |
 | 10 | Upload | *(sheet)* | file upload | §C.12 |
 | 11 | Server settings | `settings` | general/channels/members/roles/invites/moderation/audit/storage | §C.4–C.13 + C.16, C.19 |
 | 12 | **User settings** | `usersettings` | profile · account · notifications · appearance · privacy & safety · storage (gallery #22) — distinct from *server* settings; opens from the profile Settings tab / avatar menu | §C.10 |
@@ -365,6 +385,9 @@ gap) rather than renumbered. Screen 7 (Call) remains a v2 deferral.
 | + | Storage & billing | `settings/storage` | two sliders (personal + server) | §C.19 |
 | + | 404 · Dead invite · Access denied | *(cards)* | expired/revoked/full/member; no-access | §C.20 |
 | + | Shared view | `shared` | read-only single item a share link opens to (gallery #40) | §C.7 (Share dialog) |
+| + | New server (first-run) | `newserver` | empty channel column + setup checklist | §C.4 (empty states) |
+| + | Create-channel · Invite-to-server · Forward | *(modals)* | from the server menu / message ⋯ | §C.4 |
+| + | Server menu · notification-bell dropdown | *(menus)* | server-header dropdown; bell preview | §C.4, §C.13 |
 
 ### C.4 TEMPLATE — Screen 1: Workspace
 
@@ -384,19 +407,20 @@ The three-pane server view. Legend: **R**=reads, **W**=writes, **RT**=Realtime.
 
 | Element | Behaviour & states | DB | Desktop | Mobile |
 |---|---|---|---|---|
-| Server header | The server's **cover banner + square server icon + name** at the top of the channel column — its art gets real presence, not just the 38px rail badge (gallery #34). Tap → server menu (settings if admin, leave, invite). | R `servers` (`cover_key`, icon); gate `is_server_admin` | Column top | Drawer top |
+| Server header | The server's **cover banner + square server icon + name** at the top of the channel column — its art gets real presence, not just the 38px rail badge (gallery #34). Tap → **server-menu dropdown** (gallery B1): Invite people · Create channel · Create category · Server settings · Notification settings · Edit server profile · **Leave server** (danger). Admin-only rows (Create channel/category, Server settings) gate on perms; every user sees Invite / Notification settings / Leave. | R `servers` (`cover_key`, icon); gate `is_server_admin` / `manage_channels`; opens the create-channel & invite modals | Column top dropdown (`.menu`) | Drawer top → sheet |
 | Media entry | Open the File explorer. | R `works where server_id` | Fixed row | In left drawer |
-| Channel list (text) | Each: name, unread bold, mention badge. Click → load channel. Admin sees drag-handle to reorder. | R `channels kind='text'`, `channel_reads`; W `is_server_admin` reorder | Grouped list | Left drawer |
+| Channel list (text) | Each: name, unread bold, mention badge. Click → load channel. **In the admin POV** (see members rail) each row reveals an **edit gear** on hover (rename/topic/permissions → channel settings) and a drag-handle to reorder. | R `channels kind='text'`, `channel_reads`; W `is_server_admin` reorder | Grouped list; gear on hover | Left drawer |
 | Voice channels | Listed by `kind`. Voice = **disabled/hidden in v1**. | R `channels` | Section | Left drawer |
-| ＋ add channel (admin) | Inline create; name + kind. Hidden for members. | W `channels` insert, admin | Per section | Drawer |
+| ＋ add channel (admin) | The section `+` (revealed in the admin POV) opens the **Create-channel modal** (gallery S2): name · **Text/Voice** kind · category · **default save folder** (§D.3) · **allowed file-types** (a `kind` allow-list) · private toggle. Hidden for members. | W `channels` insert (+ `default_folder_id`, allowed-kinds), admin | Per-section `+` → modal | Drawer |
 
 #### Main — chat pane
 
 | Element | Behaviour & states | DB | Desktop | Mobile |
 |---|---|---|---|---|
-| Channel header | Name, topic, tabs **Messages / Pins / Files** (`chtab`), members icon, search. | R `channels`, `message_pins`, `works` | Sticky top | Sticky; members icon → sheet |
+| Channel header | Name, topic, tabs **Messages / Pins / Files** (`chtab`), voice/video, **notification bell**, search, members icon. The bell opens a **dropdown preview** (gallery B15): recent notifications + **Mark all read**, with **See all** falling through to the full Notifications screen (§C.13) — the bell no longer jumps straight there. | R `channels`, `message_pins`, `works`, `notifications`; W mark-read | Sticky top | Sticky; members icon → sheet |
 | Message list | Reverse-chron, grouped by author; byline in member colour. States: loading / empty / new-message divider. Live insert/edit/delete. | R `messages` (+`member_of`); **RT** `channel:{id}` | Scroll region | Full-screen scroll |
-| Message row | Body (markdown via `marked`), edited tag, reactions. **Hover** → reaction / reply-in-thread / ⋯ menu (edit/delete own, pin, copy link). | R `messages`, `message_reactions`; W `toggle_reaction`, `pin_message` | Hover actions | **Long-press** actions |
+| Message row | Body (markdown via `marked`), edited tag, reactions. **Hover** → reaction / reply-in-thread / ⋯ menu (edit/delete own, pin, copy link, **Forward**). Forward opens the **Forward modal** (gallery S5): pick target channels/DMs (multi) + optional note → writes a `placement` onto each target (§D.3). | R `messages`, `message_reactions`; W `toggle_reaction`, `pin_message`, forward → `placement` insert | Hover actions | **Long-press** actions |
+| Forwarded message | A message re-placed by a forward renders a **quote block** above the (optional) note: source **author + channel + snippet**, click → jump to the source. Read/re-share bounded by the source's visibility (§D.3 — forwarding a server file to a non-member forks a personal copy, never a live cross-server grant). | R the source via `placement` (opt. `forwarded_from`) | Quote block + note | Same |
 | Shared file card | A work rendered inline, **leading with file name**. Click → Details pane. **Several files in one post clump** into a compact grid of file chips (Discord-style, with "+N more"), not N separate cards (gallery #25). | R `works` | Inline card / clump grid | Inline card |
 | Thread indicator | "N replies" → opens thread view (`parent_id`). | R `messages where parent_id` | Right-side thread panel | Full-screen push |
 | Composer | Textarea + formatting toolbar (insert markdown), emoji picker (emoji-mart), @mention & #channel autocomplete, file attach, send. States: empty / typing (RT broadcast) / slowmode / timed-out (disabled + notice). | W `messages` insert (rate-limited); RT `:typing`; R members for autocomplete | Docked bottom | Docked; toolbar in a "＋" sheet |
@@ -407,13 +431,26 @@ The three-pane server view. Legend: **R**=reads, **W**=writes, **RT**=Realtime.
 
 | Element | Behaviour & states | DB | Desktop | Mobile |
 |---|---|---|---|---|
+| **Viewing-as switch** (admin) | At the top of the members rail, a **Member / Admin POV toggle** (gallery S1, same mechanism as the profile POV switcher, §D.6) that flips the whole workspace between how a member and an admin see it — revealing the create-channel `+`, per-channel edit gears, and the member popover's admin block. **A signpost, never a grant:** every revealed control still checks `has_perm` / `is_server_admin` server-side; the toggle only shows to users who actually hold admin. | gate `is_server_admin` | Rail top | In members sheet |
 | Admins / Members sections | Grouped by role; name in member colour, presence dot, "working on" line. | R `server_members` (+`profiles`); **RT** presence `server:{id}` | Right strip | Off-screen → members sheet |
-| Member row | Click → profile popout (mutual servers, role, add-friend/message). Admin hover → manage (role toggle, timeout, kick). | R `profiles`, `friendships`; W admin RPCs | Hover manage | Long-press manage |
+| Member row | Click → **profile popover**: mutual servers, role, status, **Message** + **Add friend**. In the admin POV the popover grows a gated **Admin block** (gallery B9): **Roles ▸ · Timeout · Kick · Ban** (last two danger). | R `profiles`, `friendships`; W `add_friend`, `create_dm`, moderation RPCs (`set_member_roles`, `timeout_member`, `kick_member`, `ban_member`) | Hover/click popover | Long-press popover |
 | Presence dot | online / idle / dnd / offline; "working on {doing}". | RT presence | Inline | In sheet |
 
-**Workspace empty/edge states to build:** no channels yet (admin sees "create
-your first channel"), channel with zero messages, member with no presence,
-timed-out composer, network-lost (Realtime reconnecting banner).
+**Workspace empty/edge states to build:** **new server / first-run** (gallery
+S8) — the just-created, empty server renders the workspace shell with an empty
+channel column (Files + a starter `general`) and a **3-step setup checklist** in
+the main pane: *create your channels · invite your crew · upload your first
+files* (each an action row → the create-channel modal / invite modal / upload
+sheet); channel with zero messages, member with no presence, timed-out composer,
+network-lost (Realtime reconnecting banner).
+
+**Workspace modals (scrim-backed, sized to the 1440px canvas per C.2):**
+
+| Modal | Opened from | Fields / actions | DB |
+|---|---|---|---|
+| **Create channel** (gallery S2) | server menu · channel-section `+` (admin) | name · **Text/Voice** kind · category · **default save folder** · **allowed file-types** (kind allow-list) · private toggle · **Create** | W `channels` (+ `default_folder_id`, allowed-kinds); gate `manage_channels` |
+| **Invite to server** (gallery S3) | server menu · member rail | an **invite link** + copy · expiry / max-uses · **invite by @handle** | R/W `server_invites`; gate create-invite perm |
+| **Forward** (gallery S5) | message ⋯ · card ⋯ | multi-select **target channels/DMs** · optional note · **Forward** → a `placement` per target | W `placement` (§D.3) |
 
 ---
 
@@ -461,6 +498,7 @@ feed view; they appear in grid/list). Grid and list show subfolders + files of t
 | Filter dropdowns (Channel / Type / Uploader / **Tag** / **Date** / Sort) | Narrow the current view (gallery #33). | R `works` filters | Toolbar | Filter sheet |
 | **Quick-filter chips** | A second row: **All / Images / Audio / Video / Projects / ★ Starred** kind-toggles, plus a **Show hidden** toggle that reveals untracked/hidden files (gallery #33; hidden-file model is #55). | R `works` filters · `works.kind` · `saved_items`/star · `works.hidden` | Toolbar row | Filter sheet |
 | **Loading / empty states** | While a folder loads, a **skeleton grid** (`.skel` shimmer cards) stands in (gallery #49). An empty container shows a centred **empty state** — icon + title + subtext — e.g. **Trash is empty** ("kept 30 days, then removed"), empty folder, no starred, no results (gallery #50). Both are reusable patterns applied across every async/empty surface (feed, profile, member rail, DMs, search). | — (client) | Grid area | Grid area |
+| **Trash view** (Trash smart-folder open) | A **retention notice** ("items are permanently deleted **30 days** after they're trashed", §D.2) + **Empty trash now**, over a list of trashed rows: name · who/when trashed · a **days-left countdown** that turns danger-red near expiry · hover **Restore** / **Delete forever** (gallery B19). Soft-delete only — nothing hard-deletes before 30 days except via *Delete forever* / *Empty now*; **Empty now** clears to the empty state above. Backed by `works.deleted_at` + the 30-day purge job + the trash writers in §E.3. | R trashed `works` (`deleted_at not null`); W `restore_work` · `purge_work` · `empty_trash` | List with row actions | List; actions in ⋯/long-press |
 | Folder row / card | A subfolder in the current folder — stacked-icon cover + item count; click → descend. | R `folders` (children) | In grid/list with files | 2-col / row |
 | File card / row | Grid: same card renderer as Feed; List: a dense row. Leads with **file name**; uploader chip (server colour) + channel tag. **Hover actions** (star, download, copy-link, ⋯) + a **selection checkbox** (multi-select → the selection toolbar). **Right-click / ⋯ → context menu** (gallery #19): Open · Star · Update visibility… (#61) · Save to my files · Download · Copy link · Rename · Move to… · Hide from library (#55) · Delete. On touch the ⋯ / long-press stands in for right-click. | R `works` (in this folder via `placement.folder_id`); writes gated by role | Grid/List | 2-col / row |
 | **Feed item** | *(feed view only)* a previewable work at natural aspect + its **comment thread** inline, newest-first across the subtree. | R `works` (previewable) + `comments(context=server)` | Column | Full-width |
@@ -534,9 +572,22 @@ shows its items read-only with no way to navigate out.
 | Element | Behaviour & states | DB | Desktop | Mobile |
 |---|---|---|---|---|
 | **Add-by-handle field** | Inline at top of the thread list (**not a modal**); exact handle only. | `create_dm(handle)` · `friendships` | Left column | Full-screen list |
-| Friends / requests | Friends count + pending requests surface. | `friendships` | Left | List |
+| **New message** (gallery B14) | A **New DM / group-DM picker** from the thread-list header: multi-select friends → start a 1:1 or group DM. Complements the inline add-by-handle for the common "pick from friends" case. | `create_dm(handle)` (1:1) · `create_group_dm(handles[])` (group) · R `friendships` | Header button → picker | Header → sheet |
+| Friends / requests | Friends count + pending-request badge; opens the full **Friends** screen (below). | `friendships` | Left | List |
 | Thread list | Pinned + DMs; unread dot, mute/pin. | `dm_channels` · `dm_members` | Left | List |
 | Conversation | Messages, composer (attach, send); header with (v2) call buttons. | `dm_messages` · RT | Main | Full-screen |
+
+**Screen 9b — Friends** (`friends`, gallery S4). A dedicated relationship
+manager, distinct from the DM thread list.
+
+| Element | Behaviour & states | DB | Desktop | Mobile |
+|---|---|---|---|---|
+| Tabs | **All · Pending · Blocked** — the `friendships.status` values, counted. | R `friendships` by `status` | Tab bar | Tab bar |
+| Add-friend field | Add by exact handle → sends a request. | W `add_friend(handle)` | Top | Top |
+| Incoming / outgoing requests | *(Pending tab)* incoming rows **Accept / Decline** (`respond_friend(user, accept)`, true/false); outgoing rows **Cancel** (withdraw the pending `friendships` row). | W `respond_friend`; cancel = delete pending `friendships` | List | List |
+| Friend row | *(All tab)* avatar, name, presence, "working on"; **Message** + a ⋯ (remove / block). | R `profiles` · RT presence; W `create_dm`, `block_user`, remove = delete accepted `friendships` | List | List |
+| Blocked row | *(Blocked tab)* **Unblock** — clears the `blocked` status (the inverse of `block_user`). | W `friendships.status` (unblock) | List | List |
+| Empty states | per tab — no friends / nothing pending / no one blocked (gallery #50). | — | Centered | Centered |
 
 ### C.12 Screen 10 — Upload
 
@@ -558,11 +609,16 @@ below the visibility row is required.
 
 ### C.13 Screen 14 — Notifications
 
+Reached either as the full screen **or** as the **bell dropdown** (gallery B15)
+in the channel header (§C.4) — a compact recent-activity preview built from the
+same rows, with **Mark all read** and a **See all** that opens this screen.
+
 | Element | Behaviour & states | DB | Desktop | Mobile |
 |---|---|---|---|---|
 | Tabs | All / Mentions / Threads / Saved; grouped by day. | `notifications` | Tabs | Tabs |
 | Row | Mention / comment / join / reaction; links to target; inline reply. | `notifications` · RT `user:{id}` | List | List |
 | Mark all read | Clears unread. | `notifications.read_at` | Header | Header |
+| **Bell dropdown** (preview) | Header bell (§C.4) → a right-aligned `.menu`: header + **Mark all read**, ~4 recent rows (unread dots), **See all notifications** → this screen. Not a second data source — a preview of the same `notifications` feed. | R `notifications` (recent) · W `read_at` | Dropdown under bell | Sheet |
 
 ### C.14 Screen 11/12/13 — Create · Join · Sign-in (focus screens)
 
@@ -1105,67 +1161,234 @@ invite, and access-denied** alike:
 
 ---
 
-## §D.7 Gap-fill surfaces (2026-08-21) — new gallery screens & controls
+## §E. Backend & data model (the build target)
 
-The [`gaps.md`](design/gaps.md) backlog worked into the gallery. All fold into
-§C when it's filled; mockups are live. Most are **pure UI on the existing
-model** — the one genuinely new model concept (forwarding) is called out.
+The hand-off-ready backend plan — the tables, RPCs, Realtime channels, indexes,
+and migration order the build runs against. [`CODEGEN.md`](CODEGEN.md) and the
+[`prompts/`](prompts/) build queue cite it by section number (§E.2, §E.4, §E.6,
+§E.8, §E.9), so its numbering is kept stable. *(This absorbed the retired
+`COLLAB.md` §7; old "§7.x" citations map one-to-one onto "§E.x".)*
 
-**Layout — the 1440px canvas.** Every full app screen renders on a **1440px-wide
-canvas**, centred with a hairline gutter (`--line`) either side on wider
-viewports; dialogs and modals are sized to fit within it, not the raw viewport.
-This is the desktop measure the built pages target (mobile still collapses per
-§C.2).
+The backend is a **true clean slate** — the schema is authored fresh for this
+product (`create table if not exists`, in the migration order of §E.8). Every
+table ships with RLS: **the policy is the fence, the UI is the signpost**. This
+plan carries the §D architecture — granular roles, the placement model,
+dynamic-slider storage, and collaborator consent — as its baseline.
 
-**S1 — Admin POV (workspace).** The member rail carries a **Viewing as
-Member / Admin** switch that flips the whole workspace: it reveals the
-create-channel `+`, a per-channel **edit gear**, and the member popover's
-admin block. Same POV-switcher mechanism as the profile (§D.6 / gallery #20).
-It is a **signpost only** — the fence is `is_server_admin` / `manage_channels`
-(§B), enforced by RLS/RPC; the POV toggle does not grant anything.
+### E.1 Tables
+Each row: purpose · columns · RLS summary. `uid()` = `(select auth.uid())`.
 
-**B9 — member popover admin actions.** The member popover gains **Add friend**
-(public action) plus a gated **Admin** block: **Roles ▸ · Timeout · Kick · Ban**
-(the last two danger-styled). Rows map to the existing moderation RPCs; shown
-only in S1's admin POV.
+**Servers, roles, and channels**
 
-**B1/S2/S3 — server dropdown + channel/invite dialogs.** The server header is a
-**dropdown** (Invite people · Create channel · Create category · Server settings ·
-Notification settings · Edit server profile · Leave server), not a jump to
-settings. **Create-channel** dialog: name, Text/Voice kind, category, default
-folder (§D.3 / gallery #53), allowed file-types (#54), private toggle.
-**Invite-to-server** dialog: invite link + copy + expiry/max-uses + invite by
-handle (writes `server_invites`).
+| Table | Purpose | Columns (beyond `id uuid pk default gen_random_uuid()`, `created_at`) | RLS |
+|---|---|---|---|
+| `servers` | a studio | `slug uniq, name, description, cover_key, owner_id→auth.users` | read: `member_of(id)`; write: `is_server_admin(id)` |
+| `server_members` | membership + colour + timeout | `server_id, user_id, color smallint, timeout_until timestamptz, joined_at, posts_require_approval bool default false (gallery #57), pk(server_id,user_id)` | read: `member_of(server_id)`; self-leave; admin manages |
+| *(post-approval)* | a flagged member's posts are **held** | `works.approved_at timestamptz null` — when the poster's `posts_require_approval`, `approved_at` starts null and the work is **hidden from readers** until an admin's `approve_work(id)` sets it (gallery #57). Admin bulk moderation RPCs `delete_user_works(server,user)` / `archive_user_works(...)` / `export_user_works(...)` are `is_server_admin`-gated + `audit_log`ged (gallery #59). | read gate adds `approved_at is not null OR is own OR is_admin` |
+| `roles` | permission roles (§D.1) | `server_id, name, color smallint, position int, permissions bigint (flag bitmask), is_default bool (@everyone)` | read: `member_of(server_id)`; write: `has_perm(server_id,'manage_roles')` |
+| `member_roles` | members ↔ roles (union of power) | `server_id, user_id, role_id, pk(server_id,user_id,role_id)` | read: member; write: `manage_roles` |
+| `channel_roles` | v1 private-channel allow-list | `channel_id, role_id, pk(channel_id,role_id)` — zero rows = open to all members | read: member; write: `manage_channels` |
+| `server_invites` | invite links | `code text pk, server_id, created_by, expires_at, max_uses int, uses int default 0` | read: admin; use via RPC |
+| `channels` | rooms | `server_id, name, kind in(text,voice), topic, slowmode_sec int default 0, position int, default_folder_id null→folders (gallery #53), allowed_kinds text[] null (null=any; e.g. {image,video} — gallery #54)` | read: `can_view_channel(id)`; write: `manage_channels`; **insert of a work is rejected when its `kind` isn't in `allowed_kinds`** |
 
-**S4/B14 — friends manager + new DM.** A **Friends** screen (All / Pending /
-Blocked, add-by-handle, accept/decline/cancel/unblock over `friendships`) and a
-**New DM / group-DM** picker from the Messages header (→ `create_dm`).
+**Chat, DMs, and people**
 
-**S5/B10 — forwarding (fits the existing model).** A message/file can be
-**forwarded** to other channels/DMs. This is **not a new table** — it's a
-`placement` (§D.3) onto the target surface (a `server` placement + `channel_id`
-for a channel, a `dm` placement for a DM), already anticipated by the read rule
-(§B.3 "readable via ANY placement — crosspost / DM / forward"). The **new part
-is UI**: the forwarded message renders a **quote block** (source author +
-channel + snippet) above an optional note. Forwarding obeys §D.3's rules —
-notably **forwarding a server file to a non-member copies it to the sender's
-personal storage** (a new work on the same dedup blob), never a live
-cross-server grant. Deriving the quote from the source needs at most a nullable
-`placement.forwarded_from` back-reference; otherwise it reads from `work_id`.
+| Table | Purpose | Columns | RLS |
+|---|---|---|---|
+| `messages` | persistent chat | `channel_id, user_id, body, parent_id→messages, also_to_channel bool, edited_at, deleted_at, body_tsv tsvector generated` | read: `can_view_channel`; insert: member & not timed-out; update/delete own (tombstone); delete-any: `delete_any_message` |
+| `message_reactions` | emoji reactions | `message_id, user_id, emoji text, pk(message_id,user_id,emoji)` | read: member; add/remove own |
+| `message_pins` | per-channel pins | `channel_id, message_id, pinned_by, pk(channel_id,message_id)` | read: member; pin: `pin_message`; unpin-any: admin |
+| `channel_reads` | unread/mention state | `user_id, channel_id, last_read_at, pk(user_id,channel_id)` | owner only |
+| `mentions` | @-index for badges | `message_id, mentioned_user, server_id` | read: mentioned user |
+| `dm_channels` | 1:1 and group DMs | `is_group bool, name null` | member of it |
+| `dm_members` | who's in a DM | `dm_channel_id, user_id, muted bool, pinned bool, last_read_at, pk(...)` | self |
+| `dm_messages` | DM chat | mirrors `messages` (dm_channel_id, user_id, body, parent_id, edited_at, deleted_at) | member of the DM |
+| `friendships` | add-by-handle | `a_user, b_user, status in(pending,accepted,blocked), requested_by, pk(a_user,b_user)` ordered pair | either party |
+| `profiles` | account (name, handle, bio, status, presence) | `handle uniq, name, bio, avatar_key, status_emoji, status_text, status_expires_at, presence_state, tz, pronouns, links jsonb` | read: public; write: self |
+| `notifications` | the bell | `user_id, kind in(mention,comment,join,reaction,invite,friend), actor_id, server_id null, target_type, target_id, excerpt text, read_at` | owner only |
 
-**B19 — trash actions.** The Trash smart-folder is populated: a retention notice
-(**30-day auto-purge**, §D / gallery #42), per-item **Restore** and **Delete
-forever**, a countdown that turns danger-red near expiry, and **Empty trash now**.
-Soft-delete only; nothing is hard-deleted before 30 days except via these.
+**Works, files, and storage**
 
-**B15 — notification-bell dropdown.** The header bell opens a **recent-activity
-dropdown** (Mark all read + a preview of the notifications screen) instead of
-only jumping to the full screen; **See all** falls through to it.
+| Table | Purpose | Columns | RLS |
+|---|---|---|---|
+| `works` | the uploaded thing | `owner_type in(user,server), owner_id, visibility in(public,personal,server), server_id null, title null, file_ext, kind, blob_sha→media_blobs, bytes, hidden bool default false (untracked/utility file — gallery #55), approved_at timestamptz null (gallery #57), deleted_at timestamptz null (soft-delete / Trash — gallery #42/B19), search_tsv tsvector generated` | `works_read` (§B.3): public, or own, or `visibility='server' & member_of`, or readable via any `placement`. **Hidden works are omitted from the File-explorer library view** unless "Show hidden" is on (#55); they still work inline in chat. **Trashed works (`deleted_at not null`) are omitted from every view except the Trash smart-folder**, and are hard-deleted (blob refcount decremented) 30 days after `deleted_at`. |
+| `work_items` | items of a multi-item work | `work_id, blob_sha, position` | inherits the work |
+| `work_collaborators` | consent-gated collaborators (§D.3.1) | `work_id, user_id, role text null, status in(accepted,pending), pk(work_id,user_id)` | read: work-readers; write: owner + accepted collaborators; self-remove always |
+| `content_tags` | user labels | `work_id, tag text` | read: work-readers; write: owner + accepted collaborators |
+| `comments` | post-level threads | `work_id, user_id, context in(public), body, parent_id, resolved_at, deleted_at` | read: work-readers; write: friend-of-owner / `comment` |
+| `placement` | one work → many surfaces (§D.3) | `work_id, surface in(feed,server,dm), surface_id, channel_id null, folder_id null→folders, placed_by` | read: those who can see the surface; write: `upload`; detach: owner or moderation |
+| `folders` | nested server file tree | `server_id, parent_id null→folders (null=root), name, archived bool default false, locked bool default false (gallery #58)` | read: `member_of`; write: `manage_channels`/folder perm; **a `locked` folder is read-only** (no add/move/delete inside) without folder-manage perm; an `archived` folder is hidden from the main tree (shown dimmed / under an Archived view) |
+| `media_blobs` | content-addressed dedup store | `sha256 pk, bytes, refcount` | server-managed; GC at refcount 0 |
+| `storage_meters` | usage per account | `owner_type in(user,server), owner_id, bytes_used (sum of DISTINCT owned blobs), pk(owner_type,owner_id)` | read: the account's members/self |
+| `storage_balance` | one slider per account | `owner_type, owner_id, purchased_gb, status, stripe_customer, pk(owner_type,owner_id)` | read/write: self / `manage_billing` |
+| `saved_items` | Save to my files (owner copy) | `user_id, work_id, folder_id null→save_folders, pk(user_id,work_id)` | owner only |
+| `save_folders` | personal bookmark folders | `user_id, name, pk(id)` | owner only |
 
-**S8 — new server (first-run).** The just-created, empty server: the workspace
-shell with an empty channel column (Files + `general`) and a **3-step setup
-checklist** — create channels · invite crew · upload files. Reuses the empty
--state pattern (gallery #50).
+**Moderation**
 
-These take the registry past the ~21-surface mark; each still earns the full
-element · behaviour · DB · desktop · mobile treatment when §C is filled.
+| Table | Purpose | Columns | RLS |
+|---|---|---|---|
+| `server_bans` | bans | `server_id, user_id, banned_by, reason, until timestamptz null` | admin |
+| `reports` | flagged content | `reporter_id, target_type, target_id, reason, created_at` | reporter writes; admin reads |
+| `audit_log` | moderation trail | `server_id, actor_id, action, target_type, target_id, meta jsonb` | admin read; server-written |
+
+The signer (`api/sign.mjs`) keeps its rate-limit machinery; it now checks the
+paying account's remaining quota (`storage_meters` vs `storage_balance`) before
+issuing a PUT.
+
+### E.2 Key columns and enums (the load-bearing fields)
+```
+works.owner_type   text in(user,server)          -- which storage account owns + PAYS (§D.2)
+works.owner_id     uuid                          -- that account
+works.visibility   text in(public,personal,server) default 'public'  -- one enum, labels Public/Server/Private
+works.server_id    uuid null                     -- the chosen server when visibility='server'
+works.title        text null                     -- file name is the default title
+works.file_ext     text                          -- icon + Type filter, never rendered as a tag
+works.kind         text                          -- image/video/audio/text/other, drives the renderer
+works.blob_sha     text → media_blobs            -- content-addressed; dedup counts unique blobs
+works.bytes        bigint                         -- for the storage row / meter
+works.deleted_at   timestamptz null              -- soft-delete / Trash; purged 30 days later (gallery #42/B19)
+works.search_tsv   tsvector generated            -- title + tags + owner, for search
+comments.context   text in(public)               -- post comments only; a server file discusses in its channel
+comments.resolved_at timestamptz null            -- post comments resolve
+profiles.status_emoji / status_text / status_expires_at  -- global custom status
+profiles.presence_state text in(online,idle,dnd,invisible) default 'online'
+profiles.tz text · profiles.pronouns text · profiles.links jsonb  -- shown on the member popout
+```
+
+### E.3 RPCs, triggers, functions (all `security definer`, `search_path=public`)
+- **Gate helpers** every policy calls: `member_of(server_id)`,
+  `is_server_admin(server_id)`, `has_perm(server_id, flag)`,
+  `can_view_channel(channel_id)` (member_of AND no role-deny on `view_channel`),
+  and `dm_member(dm_channel_id)`.
+- `join_via_invite(code)`, validate code (exists, not expired, uses<max) → insert `server_members`, grant the `@everyone` role, assign the next free colour (cycles past the palette size), `uses+1`; returns the server. (Powers `/join/<code>`.)
+- `set_member_roles(user, role_ids[])` / `set_channel_access(channel, role_ids[], member_ids[])`, the granular-role writers (§C.17/§C.18).
+- `mark_channel_read(channel_id)`, upsert `channel_reads.last_read_at=now()`.
+- `toggle_reaction(message_id, emoji)`; `pin_message` / `unpin_message`.
+- `create_dm(handle)` / `create_group_dm(handles[])`, resolve handles→users (friendship required), find-or-create `dm_channels` + `dm_members`.
+- `add_friend(handle)` / `respond_friend(user, accept)` / `block_user(user)`.
+- `move_to_folder(work_id, folder_id)`, sets the file's `placement.folder_id`.
+- `restore_work(work_id)` / `purge_work(work_id)` / `empty_trash(scope)` (gallery #42/B19): trash restore sets `works.deleted_at=null`; purge + empty hard-delete now (decrement blob refcount); a scheduled job purges anything past 30 days. Writer gated like delete (owner / moderation).
+- `adopt_work(work_id)`, move a work's owner → the server (needs `manage_billing`).
+- `ban_member` / `timeout_member` / `kick_member` (admin), each writes `audit_log`; the owner can't be kicked or banned.
+- `export_manifest('server', id)`, returns JSON of works+metadata; the client fetches signed URLs and zips.
+- **Triggers:** `messages` fanout on insert → parse `@handle`, write `mentions` + `notifications`; set `edited_at` on body change; tombstone on `deleted_at`. `works` insert → maintain `search_tsv`. `comments` insert with a mention → `notifications`. A work insert/delete adjusts `media_blobs.refcount` (GC the blob at 0) and `storage_meters`. A **scheduled purge job** hard-deletes `works.deleted_at` past 30-day retention. Rate-limit `messages` (e.g. 60/min), comments, and reports.
+- **Utility:** `file_report`, `delete_my_account`, `profiles_tombstone` (departed members grey, not deleted).
+
+### E.4 Realtime (Supabase)
+| Channel | Mode | Carries |
+|---|---|---|
+| `server:{id}` | **Presence** | who's online + "working on" `{doing}` (Members rail) |
+| `channel:{id}` | **Postgres Changes** | live `messages` insert/update/delete |
+| `channel:{id}:typing` | **Broadcast** | typing indicators (ephemeral, no table) |
+| `user:{id}` | **Postgres Changes** | `notifications` insert (the bell) |
+Add the relevant tables to the `supabase_realtime` publication.
+
+### E.5 Server / edge functions
+- `api/sign.mjs`, **exists**, presigned R2 uploads. Unchanged.
+- `transcode`, audio on demand (F11). **Not** a Supabase Edge Function (no ffmpeg
+  there); a Vercel Node function with `ffmpeg-static`, or a tiny worker. Video is
+  a later, heavier call (Mux/Cloudflare Stream).
+- `notify`, email/push fanout off `notifications` (later; shares the CSAM-alert pipe).
+- Export can stay client-side (JSZip) reading `export_manifest`; move server-side only if zips get large.
+- WebRTC signaling is the provider's (LiveKit/Daily), not ours.
+
+### E.6 Client packages: build vs buy (smallest unit each)
+| Unit | Decide | Why |
+|---|---|---|
+| Voice/video calls (F14) | **Buy: LiveKit** (cloud or self-host) | media/SFU stack is months of work; rooms key by channel/DM id |
+| Full-text search (#1) | **Build: Postgres FTS** (`tsvector` + GIN) | built in, enough for one server's scale; revisit Meilisearch only if it strains |
+| Emoji picker (#5) | **Buy: emoji-mart** (data + search) | emoji dataset + skin tones is not worth hand-rolling |
+| Message formatting (#5) | **Build tiny** | plain textarea + toolbar that inserts markdown; render with `marked` (small). No ProseMirror/Slate for v1 |
+| Mentions / channel autocomplete | **Build** | a prefix query over members/channels; trivial |
+| Drag-reorder (channels) | **Buy: SortableJS** | DnD edge cases (touch, autoscroll) are the time-sink |
+| Zip export (F19) | **Buy: JSZip** | standard, client-side |
+| Local time / dates | **Build: `Intl`** | built in; store `profiles.tz` |
+| Quick switcher / shortcuts (#2) | **Build** | already mocked; a keydown map + fuzzy filter |
+| Invite codes | **Buy: `nanoid`** | 1-line, collision-safe short codes |
+| Transcode (F11) | **Buy the binary: `ffmpeg-static`**, glue is ours | don't reimplement codecs |
+| Rich profile / status / presence (#6) | **Build** | plain columns + Realtime presence |
+
+### E.7 Indexes and search
+- GIN on `messages.body_tsv`, `works.search_tsv`; one `search_all(q, scope)` RPC
+  unions the three (messages, works, comments) with `ts_rank`, feeding the Search
+  screen and the quick switcher. Modifiers (`from:`, `in:`, `has:`) parse
+  client-side into query args.
+- FK indexes on every `*_id` used in a policy or a join (`messages.channel_id`,
+  `notifications.user_id, read_at`, `channel_reads`, …), same discipline as the
+  existing `works_*_idx`.
+
+### E.8 Migration order (each a re-runnable file, `schema-*.sql` convention)
+1. `servers`, `server_members`, `server_invites` + `member_of`/`is_server_admin`.
+2. Granular roles: `roles` (seed owner + `@everyone`), `member_roles`, `channel_roles` + `has_perm`/`can_view_channel` (§D.1).
+3. `media_blobs`, `storage_meters`, `storage_balance`; `works` (+ `works_read`, §B.3), `work_items`, `folders`, `placement`, `work_collaborators`, `content_tags` (+ tag/credit consent RPCs).
+4. `channels`, `messages` (+tsv), `message_reactions`, `message_pins`, `channel_reads`, `mentions`, gated on `can_view_channel`.
+5. `comments` (context, resolved_at); `profiles`.
+6. `dm_channels`/`dm_members`/`dm_messages`; `friendships`.
+7. `notifications`; `saved_items`/`save_folders`; message/comment→notification triggers.
+8. Moderation: `server_bans`, `reports`, `audit_log`, `server_members.timeout_until`.
+9. RPCs (§E.3), FTS indexes (§E.7), grants, `notify pgrst 'reload schema'`, realtime publication.
+
+### E.9 Per-screen backend checklist (so nothing is missed)
+- **Workspace**, `server_members`→rail; `channels`→column; `messages`+Realtime→chat; `channel_reads`→unread badges; `message_reactions`; Presence→members.
+- **Thread view**, `messages.parent_id`; `also_to_channel`.
+- **Channel Pins/Files**, `message_pins`; works placed in the channel (`placement where channel_id`) for Files.
+- **Search / quick switcher**, `search_all()` + FTS indexes, every hit filtered through the live read policy (`can_view_channel`).
+- **Feed**, `works` where `visibility='public'` and author ∈ friends (`friendships` accepted).
+- **File explorer**, `works` + `placement.folder_id` + `folders where server_id`; `storage_meters`/`storage_balance` for the storage footer; the **Trash smart-folder** reads `works where deleted_at not null` (restore/purge/empty via §E.3).
+- **Details pane**, `works` + `content_tags` + `work_collaborators` + `comments(context=public)` (posts) or the channel link (server files) + `saved_items` + transcode.
+- **Profile / popout**, `profiles` (status/tz/pronouns/links) + `member_roles` + mutual servers (a join) + `friendships`.
+- **Messages / Friends**, `dm_channels`/`dm_members`/`dm_messages` + `friendships` (add/respond/block, the new-DM picker via `create_dm`/`create_group_dm`).
+- **Server settings**, `channels` (manage), `roles`/`member_roles`/`channel_roles`, `server_invites`, `server_bans`, `audit_log`, `storage_balance`/`storage_meters` (two sliders), `export_manifest`.
+- **Create / Join / new-server first-run**, `servers` insert (seed owner + `@everyone`) + `server_invites` + `join_via_invite`.
+- **Notifications**, `notifications` + Realtime `user:{id}`; inline reply reuses `messages`/`comments`; the bell dropdown reads the same feed.
+- **Sign-in / onboarding**, Supabase Auth + the sign-in/claim screen (§C.14) + unique `profiles.handle` claim.
+- **Call** *(v2 — deferred, not built)*, a LiveKit room per `channel`/`dm` id; Presence for who's in.
+
+---
+
+## §F. End-to-end workflows
+
+Two real collaborations traced through the product to confirm the pieces connect.
+
+### F.1 A remote album — producers and rappers across Ableton and FL
+1. A producer creates a server "LP," seeds `#beats` and `#refs`, and invites the
+   group by link. Everyone joins `@everyone` — no role setup.
+2. She uploads a loop as a **Server** file into a **beats** folder. The
+   storage-impact line confirms it draws the server's storage.
+3. A rapper opens it in the Details pane, hits **Save to my files** to keep a copy
+   in his own storage, and replies in `#beats` chat (a server file has no comment
+   thread; discussion is the channel).
+4. He records a take and uploads it as a new Server file, crediting the producer
+   as a **collaborator** (auto-accepted — they're co-members).
+5. When the track is done, the producer **publishes** her favorite render to her
+   public portfolio. That forks a personal copy crediting the original; the server
+   file stays put, and the two diverge by design.
+
+### F.2 A VFX shot on a deadline — compositor, animator, mograph
+1. A studio server "Shot 042" has folders per task and a private `#client`
+   channel gated to admins by an allow-list.
+2. The animator uploads a playblast as a Server file into the **anim** folder; the
+   File explorer's **feed** view lets the team scroll every previewable render
+   newest-first with comments inline.
+3. The compositor crossposts a personal reference frame into the server — it stays
+   on her storage but everyone can see it via the placement.
+4. An admin **detaches** an out-of-date plate placement from the server; the
+   owner's file and bytes are untouched.
+5. On delivery, an admin **exports** the server — a content-addressed zip of every
+   file and its metadata, no lock-in.
+
+---
+
+## §G. Open owner decisions
+
+Genuine build-vs-buy or policy calls still waiting on a human (design/history in
+§D and the gallery):
+
+- **WebRTC provider for calls (v2)** — LiveKit / Daily / 100ms / self-hosted.
+- **Transcode scope** — audio-only for v1 is the recommendation; video is heavier.
+- **Notifications channel beyond the bell** — email/push is a later single pipe.
+- **DMCA agent registration** and **Supabase region** — load-bearing before launch.
+- **Ratify the permission-flag set** (§D.1) — the proposed flags are marked ⚑ratify.
+- **Member-colour palette** — the 30 hex pairs are a design deliverable to sign off
+  in `gallery.html`, then write into `styleguide.html` tokens (§A.10).

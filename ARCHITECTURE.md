@@ -53,11 +53,10 @@ wins.**
 
 | Artifact | Owns | Authority |
 |---|---|---|
-| [`docs/CANON.md`](docs/CANON.md) | The build contract. §A vocabulary · §B roles/permissions → the RLS/RPC that enforces them · §C the per-screen UI element registry (behaviour → database → desktop/mobile) · §D added scope (granular roles, dynamic-slider storage, the placement model, utility screens). | **Top. CANON wins over everything, including this file.** |
+| [`docs/CANON.md`](docs/CANON.md) | The single source of truth — contract *and* plan. §A vocabulary · §B roles/permissions → the RLS/RPC that enforces them · §C the per-screen UI element registry (behaviour → database → desktop/mobile) · §D added scope (granular roles, dynamic-slider storage, the placement model, utility screens) · §E the backend & data model (tables + RLS, RPCs, triggers, Realtime, indexes, migration order) · §F end-to-end workflows · §G open owner decisions. | **Top. CANON wins over everything, including this file.** |
 | [`docs/design/gallery.html`](docs/design/gallery.html) | The pixels. ~21 screens embedded live, plus every dialog/menu/modal as a standalone panel, plus the member palette and a build-status inventory. The visual law. | Wins over prose on anything visual. |
 | [`docs/design/styleguide.html`](docs/design/styleguide.html) | The token & component source of truth — the values the built pages consume. `_fonts.css` holds the extracted Jost faces. | The only home for raw design values. |
-| [`docs/COLLAB.md`](docs/COLLAB.md) | The functional reference: every site function screen by screen and flow by flow, each area with a "Ready when" release checklist, the two end-to-end workflows, a gathered TODO list, and **§7 (appendix) the hand-off-ready backend plan** (tables, RPCs, triggers, Realtime channels, indexes, migration order). | Mechanical reference, written to CANON's vocabulary. |
-| [`docs/CODEGEN.md`](docs/CODEGEN.md) | The build plan: the app sliced into ~106 individually-testable micro-prompts across nine phases, each tagged `[BE]`/`[UI]`/`[GL]` with a definition-of-done, plus the token budget. Runnable prompts in [`docs/prompts/`](docs/prompts/). | How the above becomes code. |
+| [`docs/CODEGEN.md`](docs/CODEGEN.md) | The build plan: the app sliced into ~110 individually-testable micro-prompts across nine phases, each tagged `[BE]`/`[UI]`/`[GL]` with a definition-of-done, plus the token budget. Runnable prompts in [`docs/prompts/`](docs/prompts/). | How the above becomes code. |
 
 [`docs/EDGECASES.md`](docs/EDGECASES.md) is the context-crossover audit that fed
 §D; its ⚑DECIDE rows are resolved and graduated into CANON.
@@ -81,7 +80,7 @@ guesses to make here.
 
 - **Supabase** (Postgres + Auth + Realtime). Postgres is where ownership,
   visibility and consent are decided — via RLS and `security definer` RPCs, not
-  application code. Realtime carries four channels (COLLAB §7.4): `server:{id}`
+  application code. Realtime carries four channels (CANON §E.4): `server:{id}`
   presence, `channel:{id}` live messages, `channel:{id}:typing`, and `user:{id}`
   the notification bell.
 - **Cloudflare R2** for media, behind `api/sign.mjs` — the one existing serverless
@@ -96,7 +95,7 @@ guesses to make here.
 ### The backend is a true clean slate
 
 The schema is designed fresh for this product — **the pivot's schema is not
-inherited.** The plan of record is COLLAB §7 (the tables, RPCs, triggers,
+inherited.** The plan of record is CANON §E (the tables, RPCs, triggers,
 migration order), which carries the CANON §D architecture as its baseline:
 
 - **Granular roles replace the flat role enum** (CANON §D.1): `roles` carry a
@@ -119,7 +118,7 @@ migration order), which carries the CANON §D architecture as its baseline:
   (a user's own, a server's own — no pooling).
 
 Voice/video **calls stay a v2 deferral** — the enum reserves a `voice` channel
-kind and §7 keys a LiveKit room per channel/DM, but nothing there is built for
+kind and CANON §E keys a LiveKit room per channel/DM, but nothing there is built for
 the beta.
 
 ### The one function that survives the rebuild
@@ -159,6 +158,6 @@ PUT — is unchanged.
 | Who may do what | the RLS policy / RPC (CANON §B, §D.1) first; the UI signpost second |
 | What a screen or dialog looks like | `docs/design/gallery.html` (and the token in `styleguide.html`) |
 | A design value — colour, spacing, type, radius | `styleguide.html`; never a literal in a component |
-| The shape of a feature or the data model | `docs/COLLAB.md` (narrative) and `docs/CANON.md` (contract) |
+| The shape of a feature or the data model | `docs/CANON.md` (§C UI registry, §E data model) |
 | How the build is sliced or sequenced | `docs/CODEGEN.md` and `docs/prompts/` |
 | Anything at all | keep the docs consistent — never let the code become a third source of truth |

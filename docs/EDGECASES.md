@@ -93,9 +93,9 @@ annotations + versions; a **board** of tasks; then push a finished piece to thei
 |---|---|---|
 | Crosspost my personal WIP into the server so the team can see it | **No data path** — a `personal` work isn't readable by members under `works_read`; §D.3 describes it but no table backs it. | **Blocker for the core loop** |
 | Push a finished server file to my public portfolio | Undefined — is it a visibility flip (moves it out of the server, breaking everyone's links) or a copy (splits history/versions)? See §2. | High |
-| Add a version to a file | "Anyone can add a version" (COLLAB §7.2 dropped the owner guard) — fine in a server, **alarming on a public post** (a friend could add v2 to your portfolio piece). | High |
+| Add a version to a file | "Anyone can add a version" (§E.2; the owner guard was dropped) — fine in a server, **alarming on a public post** (a friend could add v2 to your portfolio piece). | High |
 | Credit a collaborator | `works.credits` is text; a credited person didn't consent and can't remove themselves; renders with no colour off-server. | Medium |
-| Save a peer's public work for inspiration | Works, until it goes private / they unfriend → dangling save. See §7. | Medium |
+| Save a peer's public work for inspiration | Works, until it goes private / they unfriend → dangling save. See CANON §E. | Medium |
 
 **Takeaway:** persona A is mostly **unbuilt** (calls/voice) and mildly **mis-fit**
 (artist upload flow, heavy roles). Persona B's **crosspost loop has no backing
@@ -185,7 +185,7 @@ When a member exits, everything keyed to them in that server needs a decided fat
 | M7 | **Roles / member_roles / channel_roles** | Dangling grants | Cascade-delete their `member_roles`; their private-channel grants removed. |
 | M8 | **Pending @mentions / notifications** to them | They get notified for a server they can't open (N2) | Suppress delivery once membership ends. |
 | M9 | **They were the last admin / owner** | Server leaderless | Block the last owner from leaving without transfer, or auto-promote (Discord blocks; offers transfer). ⚑DECIDE. |
-| M10 | **Ban, then they had public posts crossposted in** | Ban removes membership + should stop their content surfacing | Ban detaches their placements and blocks re-join on any invite (§7.1 `server_bans`); their personal files are untouched (owner's). |
+| M10 | **Ban, then they had public posts crossposted in** | Ban removes membership + should stop their content surfacing | Ban detaches their placements and blocks re-join on any invite (§E.1 `server_bans`); their personal files are untouched (owner's). |
 
 ---
 
@@ -224,9 +224,9 @@ still receives files and forwards.
 | # | Trigger | What breaks | Fix (precedent) |
 |---|---|---|---|
 | C1 | **Canvas set to `link` visibility embeds a server-only / personal work** | Anyone with the link reads the canvas → can they see the embedded work? Leak. | The canvas link grants read to **the canvas surface and its placed works** (that's the point of sharing it) — so **only place works you intend to expose**; warn on link-share if it contains non-public works. (Figma: sharing a file exposes its embedded content; components from private libs are the classic leak.) ⚑DECIDE: block non-public works on a link canvas, or warn. |
-| C2 | **Version added by a non-owner to a public post** | "Anyone can add a version" (COLLAB §7.2) is meant for server collaboration; on a **public** post a stranger/friend could add v2 to your portfolio | Gate "add version" by context: **server files** → any member with `add_version`; **public posts** → owner only (or credited collaborators). Reinstate an owner guard for `home=personal & public`. |
+| C2 | **Version added by a non-owner to a public post** | "Anyone can add a version" (§E.2) is meant for server collaboration; on a **public** post a stranger/friend could add v2 to your portfolio | Gate "add version" by context: **server files** → any member with `add_version`; **public posts** → owner only (or credited collaborators). Reinstate an owner guard for `home=personal & public`. |
 | C3 | **Each version is its own `works` row with its own visibility** | v1 public, v2 personal → a version chain that spans audiences; which one shows on the profile? | Versions **inherit the head's placement/visibility**; you don't set visibility per version. Publishing a work publishes its current head; older versions ride along read-gated the same way. |
-| C4 | **Search / quick-switcher indexes across contexts** | A `personal`/private work or a private-channel file surfaces in a server search; DM content in server search; server file in public search | `search_all(q, scope)` must filter every hit through the **same read policy** (`can_view_channel`, visibility, placement). Never rank by a raw FTS table without the gate. (This is already the §7.7 intent — call it out as a test.) |
+| C4 | **Search / quick-switcher indexes across contexts** | A `personal`/private work or a private-channel file surfaces in a server search; DM content in server search; server file in public search | `search_all(q, scope)` must filter every hit through the **same read policy** (`can_view_channel`, visibility, placement). Never rank by a raw FTS table without the gate. (This is already the §E.7 intent — call it out as a test.) |
 | C5 | **Notification to a user who left / was banned** | They receive a mention/comment notif for a server they can't open | Suppress once membership ends (M8); a tap lands on "you no longer have access." |
 | C6 | **Notification from a blocked user** | Blocked user's reaction/comment/friend-request still notifies | Block suppresses notifications both directions (§B.4). |
 | C7 | **Custom status / presence scope** | Is "streaming Elden Ring" global (your work server sees it) or per-server? Member colour is per-server; status is undefined | **Status is global** (one per account, like Discord custom status); **member colour and nickname are per-server**. Presence `{doing}` is broadcast per-server (`server:{id}`) so a private server's channel name never leaks to another. ⚑DECIDE: global vs per-server status; confirm `{doing}` doesn't leak private-channel names. |

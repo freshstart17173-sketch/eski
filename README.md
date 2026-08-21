@@ -21,14 +21,13 @@ directly. The design gallery is viewable at
 ## Read this before doing anything
 
 The work right now is a *contract* a code-generation model will build against.
-Four documents, in order:
+Three sources, in order:
 
 | File | What it is |
 |---|---|
-| [`docs/CANON.md`](docs/CANON.md) | **The build contract — the single source of truth.** §A canonical vocabulary, §B roles & permissions mapped to the RLS/RPC that enforces them, §C the per-screen UI element registry (behaviour → database → desktop/mobile), §D added scope (granular roles, dynamic-slider storage, the placement model, utility screens). **When anything disagrees with CANON, CANON wins.** |
+| [`docs/CANON.md`](docs/CANON.md) | **The single source of truth — the contract *and* the plan.** §A canonical vocabulary, §B roles & permissions mapped to the RLS/RPC that enforces them, §C the per-screen UI element registry (behaviour → database → desktop/mobile), §D added scope (granular roles, dynamic-slider storage, the placement model, utility screens), §E the backend & data model (tables + RLS, RPCs, Realtime, migration order), §F the two end-to-end workflows, §G open owner decisions. **When anything disagrees with CANON, CANON wins.** |
 | [`docs/design/`](docs/design/) | The design sources. **`gallery.html` is law** — every screen embedded live, plus every dialog, menu and modal as a standalone panel, plus the member-colour palette; it's the critique surface. `styleguide.html` is the token & component source of truth. `_fonts.css` is the extracted Jost faces. |
-| [`docs/COLLAB.md`](docs/COLLAB.md) | The functional reference: every site function explained screen by screen and flow by flow, each area closing with a "Ready when" release checklist, plus the two end-to-end workflows, a gathered TODO list, and §7 (appendix) the hand-off-ready backend plan — tables, RPCs, triggers, Realtime, migration order. Reads clean against CANON's vocabulary. |
-| [`docs/CODEGEN.md`](docs/CODEGEN.md) | The build plan: the whole app sliced into ~106 individually-testable micro-prompts across nine phases (scaffold → schema/RLS → RPCs → primitives → shell → content → DMs/notifs → admin → utility), each tagged `[BE]`/`[UI]`/`[GL]` with its own definition-of-done, plus the token budget. The runnable prompts live in [`docs/prompts/`](docs/prompts/). |
+| [`docs/CODEGEN.md`](docs/CODEGEN.md) | The build plan: the whole app sliced into ~110 individually-testable micro-prompts across nine phases (scaffold → schema/RLS → RPCs → primitives → shell → content → DMs/notifs → admin → utility), each tagged `[BE]`/`[UI]`/`[GL]` with its own definition-of-done, plus the token budget. The runnable prompts live in [`docs/prompts/`](docs/prompts/). |
 
 [`docs/EDGECASES.md`](docs/EDGECASES.md) is the context-crossover audit that fed
 §D — a findings doc whose ⚑DECIDE rows have graduated into CANON.
@@ -64,7 +63,7 @@ they reference live in [`docs/design/styleguide.html`](docs/design/styleguide.ht
 
 - **Supabase** (Postgres + Auth + Realtime) — **RLS is the fence; the UI is only
   the signpost.** Every table ships with RLS. Presence, live message changes,
-  typing and the notification bell all ride Realtime (COLLAB §7.4).
+  typing and the notification bell all ride Realtime (CANON §E.4).
 - **Cloudflare R2** — media behind [`api/sign.mjs`](api/sign.mjs) (the one existing
   Vercel function, content-agnostic presigned uploads); the browser uploads
   straight to R2. Storage is a **dynamic per-GB slider** (10 GB free; price/GB drops
@@ -79,7 +78,7 @@ they reference live in [`docs/design/styleguide.html`](docs/design/styleguide.ht
 
 ## What's in the repo
 
-- **`docs/`** — the live work: `CANON.md`, `COLLAB.md`, `CODEGEN.md`,
+- **`docs/`** — the live work: `CANON.md`, `CODEGEN.md`,
   `EDGECASES.md`, `prompts/`, and `design/` (the gallery, styleguide, fonts).
 - **The one existing serverless function** — [`api/sign.mjs`](api/sign.mjs), the R2
   presigning signer, carried into the collab build unchanged. Its upload-quota
@@ -91,7 +90,7 @@ they reference live in [`docs/design/styleguide.html`](docs/design/styleguide.ht
 - **`index.html`** — a small static index at the site root linking to the docs and
   the design gallery (the app itself isn't built yet).
 
-There is no issue tracker. Work is tracked in `docs/CANON.md`, `docs/COLLAB.md`,
+There is no issue tracker. Work is tracked in `docs/CANON.md`
 and in conversation.
 
 ---
