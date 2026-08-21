@@ -73,7 +73,7 @@ bottom. `[x]` = done and pushed.
 - [x] **28.** Produce a **list of every image, video, and audio placeholder** used in
   the gallery, so a suitable placeholder can be provided for each. (Audio waveforms
   would be generated from the provided placeholders.) → [`placeholders.md`](placeholders.md).
-- [ ] **29.** For **previewable file types**, the **square container the thumbnail sits
+- [x] **29.** For **previewable file types**, the **square container the thumbnail sits
   in should be transparent** (the image itself fills it — no opaque tile behind it).
 
 ## Media players & cards
@@ -132,7 +132,7 @@ bottom. `[x]` = done and pushed.
 ## Interaction & polish
 - [ ] **45.** **Every single button** should have a **hover animation** (no dead
   buttons — consistent hover feedback across the whole UI).
-- [ ] **48.** **Hide scrollbars while keeping scroll** on every scroll container
+- [x] **48.** **Hide scrollbars while keeping scroll** on every scroll container
   (`scrollbar-width:none` + `::-webkit-scrollbar{display:none}`) — cleaner look. Keep
   keyboard/wheel/touch scroll working; don't remove overflow. Consider a subtle
   scroll-shadow/fade at the edges so scrollability still reads.

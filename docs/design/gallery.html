@@ -28,6 +28,11 @@
 }
 
 *{box-sizing:border-box;margin:0;padding:0}
+/* #48 hide scrollbars but keep scroll — cleaner look; wheel/touch/keyboard
+   still scroll because overflow is untouched. Edge fades (below) keep
+   scrollability legible without a visible bar. */
+*{scrollbar-width:none}
+*::-webkit-scrollbar{width:0;height:0;display:none}
 html,body{height:100%}
 body{font-family:var(--font);font-size:var(--fs);color:var(--ink);background:var(--paper);line-height:1.45;
   -webkit-font-smoothing:antialiased;font-synthesis:none}
@@ -242,7 +247,10 @@ input{font:inherit;color:inherit}
 .media.file .ext{font-size:12px;font-weight:700;color:var(--soft);letter-spacing:.5px}
 .masonry.even .media .playover{align-self:center;justify-self:center}
 .card{display:inline-block;width:100%;margin-bottom:var(--s5);cursor:pointer;text-align:left;break-inside:avoid}
-.card .media{position:relative;width:100%;overflow:hidden}
+/* #29 a previewable thumbnail's square container is TRANSPARENT — the image /
+   video fills it, no opaque tile behind. Only non-previewable tiles
+   (.media.file icon, .media.audio music icon #13) keep a --surface tile. */
+.card .media{position:relative;width:100%;overflow:hidden;background:transparent}
 .shot{width:100%;display:block;background:linear-gradient(150deg,#9a9a9a,#4d4d4d)}
 .shot.b{background:linear-gradient(150deg,#8a8a8a,#3a3a3a)}
 .shot.c{background:linear-gradient(150deg,#a7a7a7,#606060)}
