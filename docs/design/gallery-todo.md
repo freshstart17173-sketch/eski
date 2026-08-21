@@ -143,9 +143,9 @@ bottom. `[x]` = done and pushed.
   scroll-shadow/fade at the edges so scrollability still reads.
 
 ## Missing UI states
-- [ ] **49.** **Loading / skeleton states** for every async surface (stream, folder
+- [x] **49.** **Loading / skeleton states** for every async surface (stream, folder
   grid, profile, member rail, details pane) — none exist anywhere today.
-- [ ] **50.** **Empty states** — empty folder, empty channel, no friends, no search
+- [x] **50.** **Empty states** — empty folder, empty channel, no friends, no search
   results, **empty trash** (#42), empty/newly-created server. Icon-plus-text unless a
   brand illustration is chosen.
 - [x] **51.** **Toast / notification + upload-progress** visuals — a transient feedback

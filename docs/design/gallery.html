@@ -1021,6 +1021,18 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
 .uprog .top .pct{margin-left:auto;color:var(--muted);font-variant-numeric:tabular-nums}
 .uprog .bar{height:6px;border-radius:var(--r);background:var(--surface);overflow:hidden}
 .uprog .bar i{display:block;height:100%;background:var(--ink);border-radius:var(--r);transition:width .2s linear}
+/* #50 reusable empty state — icon + title + subtext (+ optional CTA) */
+.emptystate{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:var(--s5);gap:10px;color:var(--muted);min-height:420px}
+.emptystate .eic{width:42px;height:42px;color:var(--line2)}
+.emptystate h3{font-size:var(--fs-lg);font-weight:600;color:var(--soft)}
+.emptystate p{font-size:var(--fs-sm);max-width:340px;line-height:1.5}
+/* #49 skeleton loading shimmer */
+.skel{background:var(--surface);border-radius:var(--r);position:relative;overflow:hidden}
+.skel::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.35),transparent);transform:translateX(-100%);animation:shimmer 1.3s infinite}
+:root:not([data-theme="light"]) .skel::after{background:linear-gradient(90deg,transparent,rgba(255,255,255,.06),transparent)}
+@keyframes shimmer{100%{transform:translateX(100%)}}
+.skelcard .sk-media{aspect-ratio:1;border-radius:var(--r)}
+.skelcard .sk-line{height:11px;border-radius:var(--r);margin-top:9px}
 /* folder contents grid inside a details pane */
 .dfolder{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}
 .dfolder .cell{aspect-ratio:1;background:var(--plate);border-radius:3px;overflow:hidden;position:relative}
@@ -2113,6 +2125,24 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
             <span class="sp"></span>
             <button id="selClear"><svg class="ic sm"><use href="#i-x"/></svg>Clear</button></div>
           <div class="panebody">
+            <!-- #50 empty state (shown when the empty Trash smart-folder is open) -->
+            <div class="exview" data-exview="trash" hidden>
+              <div class="emptystate">
+                <svg class="ic eic"><use href="#i-trash"/></svg>
+                <h3>Trash is empty</h3>
+                <p>Deleted files land here and are kept for <b>30 days</b>, then permanently removed. Nothing here right now.</p>
+              </div>
+            </div>
+            <!-- #49 skeleton loading (flashed briefly when a folder opens) -->
+            <div class="exview" data-exview="skel" hidden>
+              <div class="masonry even">
+                <div class="card skelcard"><div class="skel sk-media"></div><div class="skel sk-line" style="width:70%"></div><div class="skel sk-line" style="width:40%"></div></div>
+                <div class="card skelcard"><div class="skel sk-media"></div><div class="skel sk-line" style="width:60%"></div><div class="skel sk-line" style="width:45%"></div></div>
+                <div class="card skelcard"><div class="skel sk-media"></div><div class="skel sk-line" style="width:80%"></div><div class="skel sk-line" style="width:35%"></div></div>
+                <div class="card skelcard"><div class="skel sk-media"></div><div class="skel sk-line" style="width:55%"></div><div class="skel sk-line" style="width:50%"></div></div>
+                <div class="card skelcard"><div class="skel sk-media"></div><div class="skel sk-line" style="width:75%"></div><div class="skel sk-line" style="width:40%"></div></div>
+              </div>
+            </div>
             <!-- GRID view (default): subfolders + files of the current folder -->
             <div class="exview" data-exview="grid">
               <div class="masonry even">
@@ -3034,9 +3064,14 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
     var v=b.dataset.exv;
     document.querySelectorAll('.exview').forEach(function(p){p.hidden=p.dataset.exview!==v;});});});}
   // folder tree — twisty expands/collapses; row selects
+  function showExview(v){document.querySelectorAll('.exview').forEach(function(p){p.hidden=p.dataset.exview!==v;});}
   document.querySelectorAll('.filetree .ftrow').forEach(function(r){r.addEventListener('click',function(){
     if(r.querySelector('.tw').tagName!=='SPAN')r.classList.toggle('open');
-    document.querySelectorAll('.filetree .ftrow').forEach(function(x){x.classList.remove('on');});r.classList.add('on');});});
+    document.querySelectorAll('.filetree .ftrow').forEach(function(x){x.classList.remove('on');});r.classList.add('on');
+    var label=(r.querySelector('.fn')||{}).textContent||'';
+    if(label==='Trash'){showExview('trash');return;}          // #50 empty trash
+    // #49 flash a skeleton, then reveal the grid (fake load)
+    showExview('skel');setTimeout(function(){showExview('grid');},650);});});
 
   var uScrim=document.getElementById('uScrim'),uModal=document.getElementById('uModal');
   function openU(){uScrim.hidden=false;uModal.hidden=false;}
