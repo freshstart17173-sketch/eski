@@ -56,10 +56,6 @@ input{font:inherit;color:inherit}
    via the coloured chip text itself (presence dots on avatars are unaffected). */
 .uchip .dot{display:none}
 
-/* waveform: high-res, mirrored top+bottom, no background */
-.wave{display:block;width:100%;height:100%}
-.wave svg{display:block;width:100%;height:100%}
-.wave rect{fill:var(--ink);opacity:.8}
 
 .field{display:flex;align-items:center;gap:var(--s2);background:var(--paper);border:1px solid var(--line2);
   border-radius:var(--r);padding:8px 11px;transition:border-color var(--t)}
@@ -273,7 +269,6 @@ input{font:inherit;color:inherit}
 .masonry.even .media{aspect-ratio:1;overflow:hidden;display:grid}
 .masonry.even .media>.shot{width:100%!important;height:100%!important;aspect-ratio:auto!important}
 .masonry.even .media.audio{aspect-ratio:1;background:var(--surface);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;overflow:hidden}
-.masonry.even .media.audio .wave{width:84%;height:46%}
 /* flex column (not grid) so the icon+ext read as ONE centred group — a 2-row
    grid would split the tile in half and push the icon up to the quarter line. */
 .media.file{background:var(--surface);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px}
@@ -293,7 +288,6 @@ input{font:inherit;color:inherit}
 /* #13 audio CARD: square like every other card, a music icon on a --surface
    tile — no waveform (the waveform is only the expanded/inline player, #12). */
 .card .media.audio{aspect-ratio:1;background:var(--surface);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;color:var(--muted)}
-.card .media.audio .wave{display:none}
 .card .media.text{padding:2px 0}
 .card .media.text .body{font-size:var(--fs-sm);color:var(--soft);display:-webkit-box;-webkit-line-clamp:5;-webkit-box-orient:vertical;overflow:hidden}
 .card .title{font-size:var(--fs-sm);color:var(--ink);font-weight:600;margin-top:8px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
@@ -367,7 +361,6 @@ input{font:inherit;color:inherit}
 .tile.img.warm .scene{background:radial-gradient(120% 90% at 30% 20%,#463a3a,#141010)}
 .tile.img.warm .scene .ground{background:linear-gradient(#2e2a2a,#100d0d)}
 .tile.audio{width:380px;height:150px;display:flex;align-items:center;padding:0 16px}
-.tile.audio .wavewrap{position:relative;width:100%;height:78px}
 .anno{position:absolute;inset:0;pointer-events:none;z-index:2}
 
 /* comment pins (figma-style): minimized pfp, expand on click */
@@ -436,7 +429,6 @@ input{font:inherit;color:inherit}
 :root:not([data-theme="light"]) .sheet{background:rgba(0,0,0,.66)}
 .sheet .card2{pointer-events:auto;width:min(1360px,96vw);height:min(880px,94vh);background:var(--paper);border-radius:var(--r);display:flex;overflow:hidden}
 .sheet .dmedia{flex:1;min-width:0;background:var(--paper1);display:flex;align-items:center;justify-content:center;position:relative;padding:40px}
-.sheet .dmedia .wave{height:190px}
 /* prev / next between items in the current grid — square, arena style */
 .navarrow{position:absolute;top:50%;transform:translateY(-50%);width:38px;height:38px;border-radius:var(--r);background:rgba(0,0,0,.34);color:#fff;display:grid;place-items:center;cursor:pointer;transition:background var(--t)}
 .navarrow:hover{background:rgba(0,0,0,.5)}
@@ -616,9 +608,6 @@ input{font:inherit;color:inherit}
 .mtrow .mmeta{color:var(--muted);font-size:var(--fs-xs);flex:none;text-align:right}
 .mtrow .info small.warn{color:var(--m1)}
 /* a plain on/off switch; ink fill is "on", per the interaction rules */
-.tgl{width:34px;height:20px;border-radius:10px;background:var(--line2);position:relative;flex:none;cursor:pointer;transition:background var(--t)}
-.tgl::after{content:"";position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:var(--paper);transition:transform var(--t)}
-.tgl.on{background:var(--ink)}.tgl.on::after{transform:translateX(14px)}
 /* channel-settings gear: its own icon button, so it never picks up the
    ink-fill of .iconbtn.on when the drawer is expanded (that read as a black box) */
 .chsetbtn{width:32px;height:32px;display:grid;place-items:center;border-radius:var(--r);color:var(--muted);transition:background var(--t)}
@@ -1081,7 +1070,6 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
 /* folder contents grid inside a details pane */
 .dfolder{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}
 .dfolder .cell{aspect-ratio:1;background:var(--plate);border-radius:3px;overflow:hidden;position:relative}
-.dfolder .cell .wave{padding:0 6px}
 .dfolder .cell.more{display:grid;place-items:center;color:var(--muted);font-size:var(--fs-sm);font-weight:600;background:var(--surface)}
 .modal .mfoot{display:flex;justify-content:flex-end;gap:var(--s2);
   padding:var(--s3) var(--s4);background:var(--surface)}
@@ -1242,8 +1230,6 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
 .exsel{position:absolute;top:8px;bottom:8px;background:rgba(20,20,20,.12);border-left:2px solid var(--ink);border-right:2px solid var(--ink)}
 /* ---- canvas expanded view: selection + annotate composer ---- */
 /* AUDIO region select — shaded region + draggable handles + floating time (Frame.io/DAW) */
-.wfwrap{position:relative;height:130px;background:#141414;border-radius:var(--r);overflow:hidden;padding:14px 8px}
-.wfwrap .wave{height:100%}
 .wfregion{position:absolute;top:0;bottom:0;background:rgba(130,190,145,.18);border-left:2px solid var(--m3);border-right:2px solid var(--m3);cursor:move}
 .wfregion .gh{position:absolute;top:0;bottom:0;width:8px;background:var(--m3);cursor:ew-resize;display:flex;align-items:center;justify-content:center}
 .wfregion .gh::after{content:"";width:2px;height:16px;background:var(--paper)}
@@ -2492,7 +2478,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
                   <div class="cr"><div class="cl"><b>Default save folder</b><small>Files posted here land in this File-explorer folder.</small></div><span class="selpill"><svg class="ic sm"><use href="#i-folder"/></svg>beats<svg class="ic sm"><use href="#i-chev"/></svg></span></div>
                   <!-- #54 per-channel file-type permission -->
                   <div class="cr"><div class="cl"><b>Allowed file types</b><small>Restrict what can be posted here (e.g. images/video only).</small></div><span class="selpill">Any<svg class="ic sm"><use href="#i-chev"/></svg></span></div>
-                  <div class="cr"><div class="cl"><b>Private channel</b><small>Only invited members see it in the rail.</small></div><span class="tgl"></span></div>
+                  <div class="cr"><div class="cl"><b>Private channel</b><small>Only invited members see it in the rail.</small></div><span class="tog"><i></i></span></div>
                 </div>
               </div>
               <div class="chwrap">
@@ -2502,7 +2488,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
                   <div class="cr"><div class="cl"><b>Slow mode</b><small>One message per member per interval.</small></div><span class="selpill">30s<svg class="ic sm"><use href="#i-chev"/></svg></span></div>
                   <div class="cr"><div class="cl"><b>Default save folder</b><small>Files posted here land in this File-explorer folder.</small></div><span class="selpill"><svg class="ic sm"><use href="#i-folder"/></svg>references<svg class="ic sm"><use href="#i-chev"/></svg></span></div>
                   <div class="cr"><div class="cl"><b>Allowed file types</b><small>Restrict what can be posted here (e.g. images/video only).</small></div><span class="selpill">Images &amp; video<svg class="ic sm"><use href="#i-chev"/></svg></span></div>
-                  <div class="cr"><div class="cl"><b>Private channel</b><small>Only invited members see it in the rail.</small></div><span class="tgl"></span></div>
+                  <div class="cr"><div class="cl"><b>Private channel</b><small>Only invited members see it in the rail.</small></div><span class="tog"><i></i></span></div>
                 </div>
               </div>
               <div class="chwrap">
@@ -3133,18 +3119,6 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
 (function(){var APP=new URLSearchParams(location.search).has("app");if(APP){
 
 (function(){
-  // high-res mirrored waveform (top + bottom, no background)
-  function wave(el){
-    var n=+el.dataset.wf||150, parts='';
-    for(var i=0;i<n;i++){
-      var a=Math.abs(Math.sin(i*0.5)*Math.cos(i*0.17)+Math.sin(i*0.09)*0.6);
-      a=Math.min(1,a)*0.5+0.04; var h=a*48;
-      parts+='<rect x="'+(i+0.12)+'" y="'+(50-h)+'" width="0.76" height="'+(2*h)+'"/>';
-    }
-    el.innerHTML='<svg viewBox="0 0 '+n+' 100" preserveAspectRatio="none">'+parts+'</svg>';
-  }
-  document.querySelectorAll('.wave[data-wf]').forEach(wave);
-
   var screens=document.querySelectorAll('.screen'),ptabs=document.querySelectorAll('.ptab');
   // Focus/system screens are full-screen scrim modals — no rail, no in-app chrome.
   var FOCUS={auth:1,create:1,join:1,deadinvite:1,denied:1,e404:1};
@@ -3394,7 +3368,6 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
     var d=b.closest('.chwrap').querySelector('.chset');if(!d)return;
     var open=d.classList.toggle('open');b.classList.toggle('on',open);});});
   // on/off switches (private channel, etc.)
-  document.querySelectorAll('.tgl').forEach(function(t){t.addEventListener('click',function(e){e.stopPropagation();t.classList.toggle('on');});});
 
   // sign-in / onboarding / username claim (gap #13)
   (function(){
@@ -3647,12 +3620,6 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   tb.addEventListener('click',function(){root.setAttribute('data-theme',isDark()?'light':'dark');paint();repaintPalette();retheme();});
   paint();
 
-  // waveforms in authored tiles
-  document.querySelectorAll('.wave[data-wf]').forEach(function(el){
-    var n=+el.dataset.wf||120,p='';
-    for(var i=0;i<n;i++){var a=Math.abs(Math.sin(i*0.5)*Math.cos(i*0.17)+Math.sin(i*0.09)*0.6);
-      a=Math.min(1,a)*0.5+0.04;var hh=a*48;p+='<rect x="'+(i+0.12)+'" y="'+(50-hh)+'" width="0.76" height="'+(2*hh)+'"/>';}
-    el.innerHTML='<svg viewBox="0 0 '+n+' 100" preserveAspectRatio="none">'+p+'</svg>';});
 })();
 
 }})();

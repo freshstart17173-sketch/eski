@@ -104,11 +104,11 @@ remains is **owner-only**:
 
 ## Cleanup debt
 
-`.wave` CSS rules and the `generateWaveform()` JS in `gallery.html` are now dead
-(0 waveform elements) — remove in a cleanup pass. Unused symbols `#i-rewind`/
-`#i-ff` (skip buttons removed) are still defined; harmless. Two toggle styles now
-coexist: the pre-existing **`.tgl`** (round pill — technically violates the
-"round = avatars+dots only" rule) and the new square **`.tog`** (#22, correct per
-the rules) — unify to `.tog` when convenient. `.umodal` (gallery ~L463) still has
-a `box-shadow` despite the "modals = scrim, no drop shadow" rule — pre-existing,
-left as-is.
+Resolved 2026-08-21: the dead waveform code (`.wave`/`.wavewrap`/`.wfwrap` CSS +
+both `data-wf` generator JS blocks) is **removed**, and the two toggle styles are
+**unified** — the round-pill `.tgl` is gone; everything uses the square `.tog`
+(verified: 0 refs to any of them, no JS errors app+catalog). Still outstanding:
+unused symbols `#i-rewind`/`#i-ff` (harmless); the broader **retired review-canvas
+CSS** (`.tile.*`, `.dfolder`, `.pin`, `.canvas`, `.anno` — 0 markup usages) could
+be swept next; and `.umodal` (gallery ~L455) still carries a `box-shadow` despite
+the "modals = scrim, no drop shadow" rule (pre-existing, left as-is).
