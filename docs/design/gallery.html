@@ -715,6 +715,18 @@ input{font:inherit;color:inherit}
 .notifmenu .nrow.unread::before{left:8px}
 .notifmenu .nrow .ntx{white-space:normal;line-height:1.35}
 .notifmenu .nmfoot{justify-content:center;color:var(--ink);font-weight:500;box-shadow:inset 0 1px 0 var(--line)}
+/* S8 new-server first-run setup checklist */
+.firstrun{max-width:560px;margin:6vh auto 0;padding:0 var(--s4)}
+.firstrun .frhero{text-align:center;margin-bottom:var(--s5)}
+.firstrun .frmark{display:inline-grid;place-items:center;width:56px;height:56px;border-radius:var(--r);background:var(--ink);color:var(--on-ink);font-weight:700;font-size:20px;margin-bottom:14px}
+.firstrun .frhero h2{font-size:var(--fs-xl);font-weight:600}
+.firstrun .frhero p{color:var(--muted);font-size:var(--fs-sm);max-width:400px;margin:6px auto 0;line-height:1.5}
+.firstrun .frstep{display:flex;align-items:center;gap:14px;padding:14px;background:var(--surface);border-radius:var(--r);margin-bottom:10px}
+.firstrun .fri{flex:none;width:38px;height:38px;border-radius:var(--r);background:var(--paper);display:grid;place-items:center;color:var(--soft)}
+.firstrun .frt{flex:1;min-width:0}
+.firstrun .frt b{font-size:var(--fs-sm);display:block}
+.firstrun .frt span{font-size:var(--fs-xs);color:var(--muted)}
+.firstrun .frstep .btn{flex:none}
 .nrow .quote{margin-top:6px;font-size:var(--fs-xs);color:var(--soft);padding-left:10px;box-shadow:inset 2px 0 0 var(--line)}
 /* per-group filter row: chips scope the list to one group */
 .nfilter{flex:none;display:flex;align-items:center;gap:var(--s3);padding:0 var(--s5) var(--s3);background:var(--surface);flex-wrap:wrap}
@@ -2776,6 +2788,37 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
       </div>
     </div>
 
+    <!-- S8 NEW SERVER — first-run / empty server, straight after Create.
+         The workspace shell with an empty channel column + a setup checklist. -->
+    <div class="screen" data-screen="newserver" hidden>
+      <nav class="chan">
+        <div class="srvhd" title="Server menu">
+          <div class="srvcover"></div>
+          <div class="srvbar"><span class="srvicon">NB</span><b>Night Blooms</b><svg class="ic sm" style="margin-left:auto;color:var(--muted)"><use href="#i-chev"/></svg></div>
+        </div>
+        <div class="chanbody">
+          <div class="cgroup"><button class="crow"><svg class="ic"><use href="#i-folder"/></svg><span class="nm">Files</span></button></div>
+          <div class="cgroup">
+            <div class="cglabel">Channels <button class="cgadd" title="Create channel"><svg class="ic sm"><use href="#i-plus"/></svg></button></div>
+            <button class="crow on"><svg class="ic"><use href="#i-hash"/></svg><span class="nm">general</span></button>
+          </div>
+        </div>
+      </nav>
+      <main class="main">
+        <div class="mainhd"><svg class="ic"><use href="#i-hash"/></svg><span class="t">general</span><span class="sub">your first channel</span></div>
+        <div class="stream">
+          <div class="firstrun">
+            <div class="frhero"><span class="frmark">NB</span><h2>Night Blooms is ready</h2><p>A private studio for you and the people you invite. Three quick things to set it up.</p></div>
+            <div class="frsteps">
+              <div class="frstep"><div class="fri"><svg class="ic"><use href="#i-hash"/></svg></div><div class="frt"><b>Create your channels</b><span>Text and voice rooms for each part of the work.</span></div><button class="btn sm primary">Create channel</button></div>
+              <div class="frstep"><div class="fri"><svg class="ic"><use href="#i-user"/></svg></div><div class="frt"><b>Invite your crew</b><span>Share an invite link — no public listing, no approvals.</span></div><button class="btn sm">Invite people</button></div>
+              <div class="frstep"><div class="fri"><svg class="ic"><use href="#i-folder"/></svg></div><div class="frt"><b>Upload your first files</b><span>Drop stems, references, or sessions into the File explorer.</span></div><button class="btn sm">Upload</button></div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+
     <!-- JOIN VIA MAGIC LINK -->
     <div class="screen" data-screen="join" hidden>
       <div class="onboard">
@@ -3833,6 +3876,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
     ['search','Search','results + quick switcher (⌘K)',''],
     ['shared','Shared view','read-only — a shared link, only what was shared',''],
     ['create','Create server','name, cover, starter channels',''],
+    ['newserver','New server','first-run setup checklist, empty channel column',''],
     ['join','Join by link','preview card, one Join button',''],
     ['e404','404 / not found','bad URL','system'],
     ['deadinvite','Dead invite','expired / revoked / full','system'],
