@@ -96,7 +96,7 @@ on both axes, generous padding, no drop shadow (the scrim is the separation).
 
 **Friend** is the only relationship. It's mutual, and it does exactly two things:
 it lets you **DM** each other, and it surfaces each other's **public posts** in
-your Feed. There is no one-way follow.
+your Feed.
 
 **Add a friend**
 
@@ -792,13 +792,6 @@ glyph, favicon set, social/OG share-card template, unpreviewable-file icon,
 default server icon, and optional empty-state illustrations. The Tauri app-icon
 set is deferred with the desktop version.
 
-### Cut from the beta (not TODO — recorded so they don't creep back)
-
-Review canvas, kanban boards, numbered versions, one-way follows, and voice/calls
-(v2). See CANON §A and §C.
-
----
-
 ## Appendix: Backend plan (§7)
 
 This appendix is the hand-off-ready backend plan — the tables, RPCs, Realtime
@@ -806,80 +799,113 @@ channels, indexes, and migration order the build runs against.
 [`CODEGEN.md`](CODEGEN.md) and the [`prompts/`](prompts/) build queue cite it by
 section number (§7.2, §7.4, §7.6, §7.8, §7.9), so its numbering is kept stable.
 
-> **This section predates the terminology streamline** (it was written before
-> CANON §A–D locked the vocabulary). Where its names differ from CANON, **CANON's
-> win** — read `groups`→`servers`, `group_members`→`server_members`,
-> `member_of(gid)`/`is_group_admin`→`member_of(server_id)`/`is_server_admin`,
-> `collections`→`folders` (now a nested tree), `works.group_id`→`works.server_id`,
-> "media explorer"→"File explorer", and treat `follows` and numbered versions as
-> **dropped**. The mechanical shape (which tables, which RPCs, which Realtime
-> channels, the migration order) still holds; the added scope in CANON §D (granular
-> roles, the placement model, dynamic-slider storage, collaborator consent) layers
-> on top and supersedes the flat role enum and storage-source columns here.
+The backend is a **true clean slate** — the schema is authored fresh for this
+product (`create table if not exists`, in the migration order of §7.8). Every
+table ships with RLS: **the policy is the fence, the UI is the signpost**. This
+plan carries the CANON §D architecture — granular roles, the placement model,
+dynamic-slider storage, and collaborator consent — as its baseline.
 
-### 7.1 New tables
+### 7.1 Tables
 Each row: purpose · columns · RLS summary. `uid()` = `(select auth.uid())`.
+
+**Servers, roles, and channels**
 
 | Table | Purpose | Columns (beyond `id uuid pk default gen_random_uuid()`, `created_at`) | RLS |
 |---|---|---|---|
-| `groups` | a studio | `slug uniq, name, description, cover_key, owner_id→auth.users` | read: `member_of(id)`; write: `is_group_admin(id)` |
-| `group_members` | membership + role + colour | `group_id, user_id, role in(admin,member), color smallint, status in(active), timeout_until timestamptz, joined_at, pk(group_id,user_id)` | read: `member_of(group_id)`; self-leave; admin manages |
-| `group_invites` | magic links | `code text pk, group_id, created_by, expires_at, max_uses int, uses int default 0` | read: admin; use via RPC |
-| `channels` | rooms | `group_id, name, kind in(text,voice), topic, slowmode_sec int default 0, position int` | read: `member_of(group_id)`; write: admin |
-| `messages` | persistent chat | `channel_id, user_id, body, parent_id→messages, also_to_channel bool, edited_at, deleted_at, body_tsv tsvector generated` | read: member; insert: member & not timed-out; update/delete own (tombstone) |
+| `servers` | a studio | `slug uniq, name, description, cover_key, owner_id→auth.users` | read: `member_of(id)`; write: `is_server_admin(id)` |
+| `server_members` | membership + colour + timeout | `server_id, user_id, color smallint, timeout_until timestamptz, joined_at, pk(server_id,user_id)` | read: `member_of(server_id)`; self-leave; admin manages |
+| `roles` | permission roles (CANON §D.1) | `server_id, name, color smallint, position int, permissions bigint (flag bitmask), is_default bool (@everyone)` | read: `member_of(server_id)`; write: `has_perm(server_id,'manage_roles')` |
+| `member_roles` | members ↔ roles (union of power) | `server_id, user_id, role_id, pk(server_id,user_id,role_id)` | read: member; write: `manage_roles` |
+| `channel_roles` | v1 private-channel allow-list | `channel_id, role_id, pk(channel_id,role_id)` — zero rows = open to all members | read: member; write: `manage_channels` |
+| `server_invites` | invite links | `code text pk, server_id, created_by, expires_at, max_uses int, uses int default 0` | read: admin; use via RPC |
+| `channels` | rooms | `server_id, name, kind in(text,voice), topic, slowmode_sec int default 0, position int` | read: `can_view_channel(id)`; write: `manage_channels` |
+
+**Chat, DMs, and people**
+
+| Table | Purpose | Columns | RLS |
+|---|---|---|---|
+| `messages` | persistent chat | `channel_id, user_id, body, parent_id→messages, also_to_channel bool, edited_at, deleted_at, body_tsv tsvector generated` | read: `can_view_channel`; insert: member & not timed-out; update/delete own (tombstone); delete-any: `delete_any_message` |
 | `message_reactions` | emoji reactions | `message_id, user_id, emoji text, pk(message_id,user_id,emoji)` | read: member; add/remove own |
-| `message_pins` | per-channel pins | `channel_id, message_id, pinned_by, pk(channel_id,message_id)` | read: member; write: member (mod can unpin any) |
+| `message_pins` | per-channel pins | `channel_id, message_id, pinned_by, pk(channel_id,message_id)` | read: member; pin: `pin_message`; unpin-any: admin |
 | `channel_reads` | unread/mention state | `user_id, channel_id, last_read_at, pk(user_id,channel_id)` | owner only |
-| `mentions` | @-index for badges | `message_id, mentioned_user, group_id` | read: mentioned user |
+| `mentions` | @-index for badges | `message_id, mentioned_user, server_id` | read: mentioned user |
 | `dm_channels` | 1:1 and group DMs | `is_group bool, name null` | member of it |
 | `dm_members` | who's in a DM | `dm_channel_id, user_id, muted bool, pinned bool, last_read_at, pk(...)` | self |
 | `dm_messages` | DM chat | mirrors `messages` (dm_channel_id, user_id, body, parent_id, edited_at, deleted_at) | member of the DM |
-| `friendships` | add-by-username | `a_user, b_user, status in(pending,accepted,blocked), requested_by, pk(a_user,b_user)` ordered pair | either party |
-| `notifications` | the bell | `user_id, kind in(mention,comment,join,reaction,invite,friend), actor_id, group_id null, target_type, target_id, excerpt text, read_at` | owner only |
-| `saved_items` | Save / Later | `user_id, target_type, target_id, folder_id null→save_folders, pk(user_id,target_type,target_id)` | owner only |
-| `group_bans` | moderation | `group_id, user_id, banned_by, reason, until timestamptz null` | admin |
-| `audit_log` | moderation trail | `group_id, actor_id, action, target_type, target_id, meta jsonb` | admin read; server-written |
+| `friendships` | add-by-handle | `a_user, b_user, status in(pending,accepted,blocked), requested_by, pk(a_user,b_user)` ordered pair | either party |
+| `profiles` | account (name, handle, bio, status, presence) | `handle uniq, name, bio, avatar_key, status_emoji, status_text, status_expires_at, presence_state, tz, pronouns, links jsonb` | read: public; write: self |
+| `notifications` | the bell | `user_id, kind in(mention,comment,join,reaction,invite,friend), actor_id, server_id null, target_type, target_id, excerpt text, read_at` | owner only |
 
-**Already live, reused as-is:** `works`, `work_items`, `collections`,
-`collection_items`, `content_tags`, `comments`, `likes` (unused, keep dormant),
-`save_folders`/`save_folder_items`, `seen_marks`, `reports`, `follows`,
-`profiles`, `upload_quota`, `admins`/`is_admin()`, the rate-limit machinery.
+**Works, files, and storage**
 
-### 7.2 Columns added to existing tables
+| Table | Purpose | Columns | RLS |
+|---|---|---|---|
+| `works` | the uploaded thing | `owner_type in(user,server), owner_id, visibility in(public,personal,server), server_id null, title null, file_ext, kind, blob_sha→media_blobs, bytes, search_tsv tsvector generated` | `works_read` (CANON §B.3): public, or own, or `visibility='server' & member_of`, or readable via any `placement` |
+| `work_items` | items of a multi-item work | `work_id, blob_sha, position` | inherits the work |
+| `work_collaborators` | consent-gated collaborators (CANON §D.3.1) | `work_id, user_id, role text null, status in(accepted,pending), pk(work_id,user_id)` | read: work-readers; write: owner + accepted collaborators; self-remove always |
+| `content_tags` | user labels | `work_id, tag text` | read: work-readers; write: owner + accepted collaborators |
+| `comments` | post-level threads | `work_id, user_id, context in(public), body, parent_id, resolved_at, deleted_at` | read: work-readers; write: friend-of-owner / `comment` |
+| `placement` | one work → many surfaces (CANON §D.3) | `work_id, surface in(feed,server,dm), surface_id, channel_id null, folder_id null→folders, placed_by` | read: those who can see the surface; write: `upload`; detach: owner or moderation |
+| `folders` | nested server file tree | `server_id, parent_id null→folders (null=root), name` | read: `member_of`; write: `manage_channels`/folder perm |
+| `media_blobs` | content-addressed dedup store | `sha256 pk, bytes, refcount` | server-managed; GC at refcount 0 |
+| `storage_meters` | usage per account | `owner_type in(user,server), owner_id, bytes_used (sum of DISTINCT owned blobs), pk(owner_type,owner_id)` | read: the account's members/self |
+| `storage_balance` | one slider per account | `owner_type, owner_id, purchased_gb, status, stripe_customer, pk(owner_type,owner_id)` | read/write: self / `manage_billing` |
+| `saved_items` | Save to my files (owner copy) | `user_id, work_id, folder_id null→save_folders, pk(user_id,work_id)` | owner only |
+| `save_folders` | personal bookmark folders | `user_id, name, pk(id)` | owner only |
+
+**Moderation**
+
+| Table | Purpose | Columns | RLS |
+|---|---|---|---|
+| `server_bans` | bans | `server_id, user_id, banned_by, reason, until timestamptz null` | admin |
+| `reports` | flagged content | `reporter_id, target_type, target_id, reason, created_at` | reporter writes; admin reads |
+| `audit_log` | moderation trail | `server_id, actor_id, action, target_type, target_id, meta jsonb` | admin read; server-written |
+
+The signer (`api/sign.mjs`) keeps its rate-limit machinery; it now checks the
+paying account's remaining quota (`storage_meters` vs `storage_balance`) before
+issuing a PUT.
+
+### 7.2 Key columns and enums (the load-bearing fields)
 ```
-works.visibility    text in(public,personal,server) default 'public'  -- §0
-works.title         text null                    -- F9 (file name is the default)
-works.file_ext      text                         -- F10 (icon + Type filter, not a tag)
-works.search_tsv    tsvector generated           -- title+tags+owner for search
-comments.context    text                         -- 'public' or a server_id, threads never mix
+works.owner_type   text in(user,server)          -- which storage account owns + PAYS (CANON §D.2)
+works.owner_id     uuid                          -- that account
+works.visibility   text in(public,personal,server) default 'public'  -- one enum, labels Public/Server/Private
+works.server_id    uuid null                     -- the chosen server when visibility='server'
+works.title        text null                     -- file name is the default title
+works.file_ext     text                          -- icon + Type filter, never rendered as a tag
+works.kind         text                          -- image/video/audio/text/other, drives the renderer
+works.blob_sha     text → media_blobs            -- content-addressed; dedup counts unique blobs
+works.bytes        bigint                         -- for the storage row / meter
+works.search_tsv   tsvector generated            -- title + tags + owner, for search
+comments.context   text in(public)               -- post comments only; a server file discusses in its channel
 comments.resolved_at timestamptz null            -- post comments resolve
--- new tables (2026-08-19, §D.3/§C.6): placement, folders(parent_id), work_collaborators
--- (F8 credits is now the consent-gated work_collaborators join table, not a works column)
-profiles.status_emoji text / status_text text / status_expires_at timestamptz  -- custom status
+profiles.status_emoji / status_text / status_expires_at  -- global custom status
 profiles.presence_state text in(online,idle,dnd,invisible) default 'online'
-profiles.tz         text                         -- local-time on the popout
-profiles.pronouns   text
-profiles.links      jsonb                         -- external connections on the popout
+profiles.tz text · profiles.pronouns text · profiles.links jsonb  -- shown on the member popout
 ```
-**Dropped:** `works_version_owner_guard` (numbered versions are cut, F7).
 
 ### 7.3 RPCs, triggers, functions (all `security definer`, `search_path=public`)
-- `member_of(gid)` / `is_group_admin(gid)`, the two gate helpers every policy calls.
-- `join_via_invite(code)`, validate code (exists, not expired, uses<max) → insert `group_members` active, assign next free colour, `uses+1`; returns group. (Powers `/join/<code>`.)
+- **Gate helpers** every policy calls: `member_of(server_id)`,
+  `is_server_admin(server_id)`, `has_perm(server_id, flag)`,
+  `can_view_channel(channel_id)` (member_of AND no role-deny on `view_channel`),
+  and `dm_member(dm_channel_id)`.
+- `join_via_invite(code)`, validate code (exists, not expired, uses<max) → insert `server_members`, grant the `@everyone` role, assign the next free colour (cycles past the palette size), `uses+1`; returns the server. (Powers `/join/<code>`.)
+- `set_member_roles(user, role_ids[])` / `set_channel_access(channel, role_ids[], member_ids[])`, the granular-role writers (CANON §C.17/§C.18).
 - `mark_channel_read(channel_id)`, upsert `channel_reads.last_read_at=now()`.
-- `toggle_reaction(message_id, emoji)`, insert/delete `message_reactions`.
-- `pin_message(message_id)` / `unpin_message(message_id)`.
-- `create_dm(handle)` / `create_group_dm(handles[])`, resolve handles→users, find-or-create `dm_channels` + `dm_members`.
+- `toggle_reaction(message_id, emoji)`; `pin_message` / `unpin_message`.
+- `create_dm(handle)` / `create_group_dm(handles[])`, resolve handles→users (friendship required), find-or-create `dm_channels` + `dm_members`.
 - `add_friend(handle)` / `respond_friend(user, accept)` / `block_user(user)`.
-- `ban_member` / `timeout_member` / `kick_member` (admin), each writes `audit_log`.
-- `export_manifest(group_id|'account')`, returns JSON of works+metadata; client fetches signed URLs and zips.
-- **Triggers:** `messages` fanout on insert → parse `@handle`, write `mentions` + `notifications`; `set edited_at` on body change; tombstone on `deleted_at`. `works` insert → maintain `search_tsv`. `comments` insert with a mention → `notifications`. Reuse `post_status_guard`, `comments_*` guards, `claim_rate` (comments/reports already rate-limited; extend to `messages` at e.g. 60/min).
-- **Kept as-is:** `file_report`, `delete_my_account`, `profiles_tombstone`, `claim_upload_quota`.
+- `move_to_folder(work_id, folder_id)`, sets the file's `placement.folder_id`.
+- `adopt_work(work_id)`, move a work's owner → the server (needs `manage_billing`).
+- `ban_member` / `timeout_member` / `kick_member` (admin), each writes `audit_log`; the owner can't be kicked or banned.
+- `export_manifest('server', id)`, returns JSON of works+metadata; the client fetches signed URLs and zips.
+- **Triggers:** `messages` fanout on insert → parse `@handle`, write `mentions` + `notifications`; set `edited_at` on body change; tombstone on `deleted_at`. `works` insert → maintain `search_tsv`. `comments` insert with a mention → `notifications`. A work insert/delete adjusts `media_blobs.refcount` (GC the blob at 0) and `storage_meters`. Rate-limit `messages` (e.g. 60/min), comments, and reports.
+- **Utility:** `file_report`, `delete_my_account`, `profiles_tombstone` (departed members grey, not deleted).
 
 ### 7.4 Realtime (Supabase)
 | Channel | Mode | Carries |
 |---|---|---|
-| `group:{id}` | **Presence** | who's online + `{doing}` (Members rail, F16) |
+| `server:{id}` | **Presence** | who's online + "working on" `{doing}` (Members rail) |
 | `channel:{id}` | **Postgres Changes** | live `messages` insert/update/delete |
 | `channel:{id}:typing` | **Broadcast** | typing indicators (ephemeral, no table) |
 | `user:{id}` | **Postgres Changes** | `notifications` insert (the bell) |
@@ -898,7 +924,7 @@ Add the relevant tables to the `supabase_realtime` publication.
 | Unit | Decide | Why |
 |---|---|---|
 | Voice/video calls (F14) | **Buy: LiveKit** (cloud or self-host) | media/SFU stack is months of work; rooms key by channel/DM id |
-| Full-text search (#1) | **Build: Postgres FTS** (`tsvector` + GIN) | built in, enough for one group's scale; revisit Meilisearch only if it strains |
+| Full-text search (#1) | **Build: Postgres FTS** (`tsvector` + GIN) | built in, enough for one server's scale; revisit Meilisearch only if it strains |
 | Emoji picker (#5) | **Buy: emoji-mart** (data + search) | emoji dataset + skin tones is not worth hand-rolling |
 | Message formatting (#5) | **Build tiny** | plain textarea + toolbar that inserts markdown; render with `marked` (small). No ProseMirror/Slate for v1 |
 | Mentions / channel autocomplete | **Build** | a prefix query over members/channels; trivial |
@@ -921,28 +947,28 @@ Add the relevant tables to the `supabase_realtime` publication.
   existing `works_*_idx`.
 
 ### 7.8 Migration order (each a re-runnable file, `schema-*.sql` convention)
-1. `groups`, `group_members`, `group_invites` + `member_of`/`is_group_admin`.
-2. `works` column adds + the rewritten `works_read` (§2) and mirrors on comments/tags.
-3. `channels`, `messages` (+tsv), `message_reactions`, `message_pins`, `channel_reads`, `mentions`.
-4. `comments.context/resolved_at`.
-5. `dm_channels`/`dm_members`/`dm_messages`; `friendships`.
-7. `notifications`; `saved_items`; message/comment→notification triggers.
-8. `profiles` additions (status, presence, tz, pronouns, links).
-9. moderation: `group_bans`, `audit_log`, `group_members.timeout_until`.
-10. RPCs (§7.3), FTS indexes (§7.7), grants, `notify pgrst 'reload schema'`, realtime publication.
+1. `servers`, `server_members`, `server_invites` + `member_of`/`is_server_admin`.
+2. Granular roles: `roles` (seed owner + `@everyone`), `member_roles`, `channel_roles` + `has_perm`/`can_view_channel` (CANON §D.1).
+3. `media_blobs`, `storage_meters`, `storage_balance`; `works` (+ `works_read`, §B.3), `work_items`, `folders`, `placement`, `work_collaborators`, `content_tags` (+ tag/credit consent RPCs).
+4. `channels`, `messages` (+tsv), `message_reactions`, `message_pins`, `channel_reads`, `mentions`, gated on `can_view_channel`.
+5. `comments` (context, resolved_at); `profiles`.
+6. `dm_channels`/`dm_members`/`dm_messages`; `friendships`.
+7. `notifications`; `saved_items`/`save_folders`; message/comment→notification triggers.
+8. Moderation: `server_bans`, `reports`, `audit_log`, `server_members.timeout_until`.
+9. RPCs (§7.3), FTS indexes (§7.7), grants, `notify pgrst 'reload schema'`, realtime publication.
 
 ### 7.9 Per-screen backend checklist (so nothing is missed)
-- **Workspace**, `group_members`→rail; `channels`→column; `messages`+Realtime→chat; `channel_reads`→unread badges; `message_reactions`; Presence→members.
+- **Workspace**, `server_members`→rail; `channels`→column; `messages`+Realtime→chat; `channel_reads`→unread badges; `message_reactions`; Presence→members.
 - **Thread view**, `messages.parent_id`; `also_to_channel`.
-- **Channel Pins/Files**, `message_pins`; `works where group_id & channel` for Files.
-- **Search / quick switcher**, `search_all()` + FTS indexes.
-- **Feed**, `works` public by `follows`.
-- **Media explorer**, `works where group_id` + `collections where group_id`.
-- **Details pane**, `works` + `content_tags` + `comments(context)` + `saved_items` + transcode.
-- **Call**, LiveKit room per `channel/dm` id; Presence for who's in.
-- **Profile / popout**, `profiles` (status/tz/pronouns/links) + `group_members.role` + mutual groups (a join) + `friendships`.
+- **Channel Pins/Files**, `message_pins`; works placed in the channel (`placement where channel_id`) for Files.
+- **Search / quick switcher**, `search_all()` + FTS indexes, every hit filtered through the live read policy (`can_view_channel`).
+- **Feed**, `works` where `visibility='public'` and author ∈ friends (`friendships` accepted).
+- **File explorer**, `works` + `placement.folder_id` + `folders where server_id`; `storage_meters`/`storage_balance` for the storage footer.
+- **Details pane**, `works` + `content_tags` + `work_collaborators` + `comments(context=public)` (posts) or the channel link (server files) + `saved_items` + transcode.
+- **Profile / popout**, `profiles` (status/tz/pronouns/links) + `member_roles` + mutual servers (a join) + `friendships`.
 - **Messages**, `dm_channels`/`dm_members`/`dm_messages` + `friendships`.
-- **Group settings**, `channels` (manage), `group_members` (roles), `group_invites`, `group_bans`, `audit_log`, `storage_balance`/`storage_meters` (two sliders), `export_manifest`.
-- **Create / Join**, `groups` insert + `group_invites` + `join_via_invite`.
+- **Server settings**, `channels` (manage), `roles`/`member_roles`/`channel_roles`, `server_invites`, `server_bans`, `audit_log`, `storage_balance`/`storage_meters` (two sliders), `export_manifest`.
+- **Create / Join**, `servers` insert (seed owner + `@everyone`) + `server_invites` + `join_via_invite`.
 - **Notifications**, `notifications` + Realtime `user:{id}`; inline reply reuses `messages`/`comments`.
 - **Sign-in / onboarding**, Supabase Auth + the sign-in/claim screen (CANON §C.14) + unique `profiles.handle` claim.
+- **Call** *(v2 — deferred, not built)*, a LiveKit room per `channel`/`dm` id; Presence for who's in.

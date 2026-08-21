@@ -6,9 +6,9 @@ and three visibility layers — public / server / private. Think **Discord + Goo
 Drive**.
 
 **This is a rebuild, and it's in the planning-and-design phase — nothing is live
-yet.** eski used to be a single-page "pivot" product (a portfolio feed with
-versioning and collections); that product is **retired and its code has been
-removed from the repo.** What's being built now is the collaboration app above, on
+yet.** eski used to be a single-page "pivot" product; that product is **retired
+and its code has been removed from the repo.** What's being built now is the
+collaboration app above, on
 a backend that is a **true clean slate** — the schema is designed fresh for this
 product, not inherited from the pivot.
 
@@ -27,7 +27,7 @@ Four documents, in order:
 |---|---|
 | [`docs/CANON.md`](docs/CANON.md) | **The build contract — the single source of truth.** §A canonical vocabulary, §B roles & permissions mapped to the RLS/RPC that enforces them, §C the per-screen UI element registry (behaviour → database → desktop/mobile), §D added scope (granular roles, dynamic-slider storage, the placement model, utility screens). **When anything disagrees with CANON, CANON wins.** |
 | [`docs/design/`](docs/design/) | The design sources. **`gallery.html` is law** — every screen embedded live, plus every dialog, menu and modal as a standalone panel, plus the member-colour palette; it's the critique surface. `styleguide.html` is the token & component source of truth. `_fonts.css` is the extracted Jost faces. |
-| [`docs/COLLAB.md`](docs/COLLAB.md) | The narrative spec: the why behind every feature, the data-model sketch, the two end-to-end workflows, and §7 the hand-off-ready backend plan (tables, RPCs, triggers, Realtime, migration order). *Predates the terminology streamline — where its names differ from CANON, use CANON's.* |
+| [`docs/COLLAB.md`](docs/COLLAB.md) | The functional reference: every site function explained screen by screen and flow by flow, each area closing with a "Ready when" release checklist, plus the two end-to-end workflows, a gathered TODO list, and §7 (appendix) the hand-off-ready backend plan — tables, RPCs, triggers, Realtime, migration order. Reads clean against CANON's vocabulary. |
 | [`docs/CODEGEN.md`](docs/CODEGEN.md) | The build plan: the whole app sliced into ~106 individually-testable micro-prompts across nine phases (scaffold → schema/RLS → RPCs → primitives → shell → content → DMs/notifs → admin → utility), each tagged `[BE]`/`[UI]`/`[GL]` with its own definition-of-done, plus the token budget. The runnable prompts live in [`docs/prompts/`](docs/prompts/). |
 
 [`docs/EDGECASES.md`](docs/EDGECASES.md) is the context-crossover audit that fed

@@ -56,14 +56,14 @@ wins.**
 | [`docs/CANON.md`](docs/CANON.md) | The build contract. §A vocabulary · §B roles/permissions → the RLS/RPC that enforces them · §C the per-screen UI element registry (behaviour → database → desktop/mobile) · §D added scope (granular roles, dynamic-slider storage, the placement model, utility screens). | **Top. CANON wins over everything, including this file.** |
 | [`docs/design/gallery.html`](docs/design/gallery.html) | The pixels. ~21 screens embedded live, plus every dialog/menu/modal as a standalone panel, plus the member palette and a build-status inventory. The visual law. | Wins over prose on anything visual. |
 | [`docs/design/styleguide.html`](docs/design/styleguide.html) | The token & component source of truth — the values the built pages consume. `_fonts.css` holds the extracted Jost faces. | The only home for raw design values. |
-| [`docs/COLLAB.md`](docs/COLLAB.md) | The narrative spec: why each feature exists, the data-model sketch, the two end-to-end workflows, and **§7 the hand-off-ready backend plan** (tables, RPCs, triggers, Realtime channels, indexes, migration order). | Mechanical reference. **Predates the terminology streamline — where its names differ from CANON, CANON's win.** |
+| [`docs/COLLAB.md`](docs/COLLAB.md) | The functional reference: every site function screen by screen and flow by flow, each area with a "Ready when" release checklist, the two end-to-end workflows, a gathered TODO list, and **§7 (appendix) the hand-off-ready backend plan** (tables, RPCs, triggers, Realtime channels, indexes, migration order). | Mechanical reference, written to CANON's vocabulary. |
 | [`docs/CODEGEN.md`](docs/CODEGEN.md) | The build plan: the app sliced into ~106 individually-testable micro-prompts across nine phases, each tagged `[BE]`/`[UI]`/`[GL]` with a definition-of-done, plus the token budget. Runnable prompts in [`docs/prompts/`](docs/prompts/). | How the above becomes code. |
 
 [`docs/EDGECASES.md`](docs/EDGECASES.md) is the context-crossover audit that fed
 §D; its ⚑DECIDE rows are resolved and graduated into CANON.
 
 **Why the gallery is one file.** It was two (a mockup plus a gallery) and they
-drifted — the canvas got updated in one and not the other. They were merged so
+drifted — a screen got updated in one and not the other. They were merged so
 there is a single visual source. The file self-iframes its own screens in catalog
 mode and renders one screen in app mode (`?app=1#<screen>`); that mode-gating is
 why the app screens and the catalog can coexist without two files or a JS
@@ -97,7 +97,7 @@ guesses to make here.
 
 The schema is designed fresh for this product — **the pivot's schema is not
 inherited.** The plan of record is COLLAB §7 (the tables, RPCs, triggers,
-migration order) as amended by CANON §D:
+migration order), which carries the CANON §D architecture as its baseline:
 
 - **Granular roles replace the flat role enum** (CANON §D.1): `roles` carry a
   permission bitmask, `member_roles` join members to roles (a member holds
@@ -113,16 +113,14 @@ migration order) as amended by CANON §D:
   the file's bytes stay on the owner's storage; members read it via the placement.
   This closes the old dead-end where a personal work shared into a server was
   owner-only.
+- **Dynamic-slider storage** (CANON §D.2): `media_blobs` is the content-addressed
+  dedup store, `works` carries `owner_type`/`owner_id`/`blob_sha`, and
+  `storage_meters`/`storage_balance` back the two independent single-payer sliders
+  (a user's own, a server's own — no pooling).
 
-> **Beta cut (2026-08-18e).** The review **canvas**, **kanban boards**, and
-> **numbered versions** are removed from the beta — a new take is just a new
-> upload, feedback lives in chat + post comments. Ignore any canvas/board/version
-> references that survive in COLLAB §7's older text.
-
-Follow the CANON vocabulary when reading §7: `servers`/`server_members`/
-`is_server_admin` (not `groups`), **`comments` for post-level threads**, and
-`folders` (a nested tree, not `collections`) — CANON overrides COLLAB §7's older
-names.
+Voice/video **calls stay a v2 deferral** — the enum reserves a `voice` channel
+kind and §7 keys a LiveKit room per channel/DM, but nothing there is built for
+the beta.
 
 ### The one function that survives the rebuild
 
