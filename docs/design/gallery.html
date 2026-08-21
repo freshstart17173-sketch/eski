@@ -174,6 +174,12 @@ input{font:inherit;color:inherit}
 
 /* file share in a channel: filename leads, no caption */
 /* #25 several files posted at once clump into a compact grid (Discord-style) */
+/* S5 forwarded message + the forward-dialog quote: a left-ruled quoted block */
+.fwd,.fwdquote{border-left:2px solid var(--line2);padding:2px 0 2px 10px;margin-top:6px;max-width:460px}
+.fwd .src,.fwdquote .by{font-size:var(--fs-xs);color:var(--muted);margin-bottom:3px;display:flex;align-items:center;gap:6px}
+.fwd .src .ic{width:12px;height:12px}
+.fwd .tx,.fwdquote .tx{font-size:var(--fs-sm);color:var(--soft)}
+.fwdquote{background:var(--surface);border-radius:var(--r);padding:9px 11px 9px 12px;margin-top:0}
 .fileclump{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px;margin-top:8px;max-width:320px}
 .fileclump .fc{display:flex;align-items:center;gap:8px;background:var(--surface);border-radius:var(--r);padding:8px 10px;font-size:var(--fs-xs);cursor:pointer;min-width:0;transition:background var(--t)}
 .fileclump .fc:hover{background:var(--plate)}
@@ -1999,6 +2005,19 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
               </button>
             </div>
           </div>
+          <!-- S5 a forwarded message: a left-ruled quote naming its source -->
+          <div class="msg">
+            <div class="hoveracts"><button class="iconbtn" title="React"><svg class="ic sm"><use href="#i-smile"/></svg></button><button class="iconbtn" title="Reply"><svg class="ic sm"><use href="#i-reply"/></svg></button><button class="iconbtn" title="More"><svg class="ic sm"><use href="#i-more"/></svg></button></div>
+            <div class="av sm">MI</div>
+            <div class="bd">
+              <div class="by"><span class="u m4">mira</span><time>2:38 PM</time></div>
+              <div class="tx" style="color:var(--muted);font-size:var(--fs-xs)"><svg class="ic sm" style="width:12px;height:12px;vertical-align:-2px"><use href="#i-arrow"/></svg> forwarded from <b style="color:var(--soft)">#references</b></div>
+              <div class="fwd">
+                <div class="src"><svg class="ic"><use href="#i-hash"/></svg><span class="u m6">nel</span> in #references · yesterday</div>
+                <div class="tx">the drum sound we keep coming back to — this reference board</div>
+              </div>
+            </div>
+          </div>
           <div class="msg">
             <div class="hoveracts"><button class="iconbtn" title="React"><svg class="ic sm"><use href="#i-smile"/></svg></button><button class="iconbtn" title="Reply"><svg class="ic sm"><use href="#i-reply"/></svg></button><button class="iconbtn" title="More"><svg class="ic sm"><use href="#i-more"/></svg></button></div>
             <div class="av sm">TM</div>
@@ -3002,6 +3021,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
 <div class="menu" id="msgMenu"><div class="mlabel">Message</div>
   <button><svg class="ic sm"><use href="#i-smile"/></svg>Add reaction</button>
   <button><svg class="ic sm"><use href="#i-reply"/></svg>Reply in thread</button>
+  <button id="mmForward"><svg class="ic sm"><use href="#i-arrow"/></svg>Forward</button>
   <button><svg class="ic sm"><use href="#i-pin"/></svg>Pin to channel</button>
   <button><svg class="ic sm"><use href="#i-link"/></svg>Copy link</button>
   <button><svg class="ic sm"><use href="#i-mail"/></svg>Mark unread</button>
@@ -3081,6 +3101,25 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
     </div>
   </div>
   <div class="ufoot"><button class="btn primary" id="inviteDone">Done</button></div>
+</div>
+
+<!-- S5 forward dialog -->
+<div class="scrim" id="fwdScrim" hidden></div>
+<div class="umodal" id="fwdModal" hidden>
+  <div class="uhd"><b>Forward message</b><button class="iconbtn" id="fwdClose"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
+  <div class="ubody">
+    <div class="fwdquote"><div class="by"><span class="u m3">dev</span> <span style="color:var(--muted)">in #beats</span></div><div class="tx">reworked the back half. same bpm, swapped the drums to the ones @rae liked</div></div>
+    <label class="ulab">Send to</label>
+    <div class="field"><svg class="ic sm"><use href="#i-search"/></svg><input placeholder="Search channels &amp; people"></div>
+    <div class="shareppl" style="margin-top:8px">
+      <div class="sharerow"><svg class="ic sm" style="color:var(--muted)"><use href="#i-hash"/></svg><span class="nm">mixing <span style="color:var(--muted)">· Late Bloom LP</span></span><span class="tog on"><i></i></span></div>
+      <div class="sharerow"><svg class="ic sm" style="color:var(--muted)"><use href="#i-hash"/></svg><span class="nm">references <span style="color:var(--muted)">· Late Bloom LP</span></span><span class="tog"><i></i></span></div>
+      <div class="sharerow"><span class="av sm">MI</span><span class="nm"><b class="m4">mira</b> <span style="color:var(--muted)">· direct message</span></span><span class="tog"><i></i></span></div>
+    </div>
+    <label class="ulab">Add a note <span style="font-weight:400;color:var(--muted)">(optional)</span></label>
+    <div class="field"><input placeholder="say something…"></div>
+  </div>
+  <div class="ufoot"><button class="btn" id="fwdCancel">Cancel</button><button class="btn primary">Forward</button></div>
 </div>
 
 <!-- #58 folder context menu (right-click a folder in the tree) -->
@@ -3350,6 +3389,11 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   var smInvite=document.getElementById('smInvite');if(smInvite)smInvite.addEventListener('click',function(ev){ev.stopPropagation();inv.open();});
   ['inviteClose','inviteDone'].forEach(function(id){var e=document.getElementById(id);if(e)e.addEventListener('click',inv.close);});
   var inviteScrim=document.getElementById('inviteScrim');if(inviteScrim)inviteScrim.addEventListener('click',inv.close);
+  // S5 forward dialog
+  var fwd=opener('fwdScrim','fwdModal');
+  var mmForward=document.getElementById('mmForward');if(mmForward)mmForward.addEventListener('click',function(ev){ev.stopPropagation();fwd.open();});
+  ['fwdClose','fwdCancel'].forEach(function(id){var e=document.getElementById(id);if(e)e.addEventListener('click',fwd.close);});
+  var fwdScrim=document.getElementById('fwdScrim');if(fwdScrim)fwdScrim.addEventListener('click',fwd.close);
 
   // #58 folder context menu on right-click of a folder tree row
   var folderMenu=document.getElementById('folderMenu');
