@@ -77,18 +77,18 @@ bottom. `[x]` = done and pushed.
   in should be transparent** (the image itself fills it — no opaque tile behind it).
 
 ## Media players & cards
-- [ ] **11.** Any playable media (audio + video): move the **play button to the center**.
-- [ ] **12.** Audio **expanded views**: use a **high-res generated waveform** as the
+- [x] **11.** Any playable media (audio + video): move the **play button to the center**.
+- [x] **12.** Audio **expanded views**: use a **high-res generated waveform** as the
   thumbnail.
-- [ ] **13.** Audio **cards**: square like every other card; **drop the waveform** and
+- [x] **13.** Audio **cards**: square like every other card; **drop the waveform** and
   use a **music/audio icon** instead.
 - [ ] **24.** Players need a **speed** setting and, if possible, a **quality** setting.
-- [ ] **31.** Music **progress bar** → slightly **taller rectangular** design; **no
+- [x] **31.** Music **progress bar** → slightly **taller rectangular** design; **no
   round playhead** knob.
-- [ ] **32.** **Play icon** should have **no border / border color**.
-- [ ] **37.** **Audio player** should look **just like the video player** — progress bar
+- [x] **32.** **Play icon** should have **no border / border color**.
+- [x] **37.** **Audio player** should look **just like the video player** — progress bar
   at the bottom and everything (same control layout, not a separate audio style).
-- [ ] **38.** **No skip UI** for audio/video, but keep the **functionality**: a **5-second
+- [x] **38.** **No skip UI** for audio/video, but keep the **functionality**: a **5-second
   skip** (e.g. keyboard / gesture) with no visible skip buttons.
 
 ## Upload sheet

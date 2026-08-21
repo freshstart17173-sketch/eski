@@ -243,8 +243,8 @@ input{font:inherit;color:inherit}
 .masonry.even .media.audio .wave{width:84%;height:46%}
 .media.file{background:var(--surface);display:grid;place-items:center;gap:7px}
 .masonry.even .media.file{aspect-ratio:1}
-.media.file .fic{width:30px;height:30px;color:var(--muted)}
-.media.file .ext{font-size:12px;font-weight:700;color:var(--soft);letter-spacing:.5px}
+.media.file .fic,.media.audio .fic{width:30px;height:30px;color:var(--muted)}
+.media.file .ext,.media.audio .ext{font-size:12px;font-weight:700;color:var(--soft);letter-spacing:.5px}
 .masonry.even .media .playover{align-self:center;justify-self:center}
 .card{display:inline-block;width:100%;margin-bottom:var(--s5);cursor:pointer;text-align:left;break-inside:avoid}
 /* #29 a previewable thumbnail's square container is TRANSPARENT — the image /
@@ -255,7 +255,10 @@ input{font:inherit;color:inherit}
 .shot.b{background:linear-gradient(150deg,#8a8a8a,#3a3a3a)}
 .shot.c{background:linear-gradient(150deg,#a7a7a7,#606060)}
 .playover{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:46px;height:46px;border-radius:50%;background:rgba(0,0,0,.42);color:#fff;display:grid;place-items:center}
-.card .media.audio{height:84px;display:flex;align-items:center;justify-content:center;color:var(--ink)}
+/* #13 audio CARD: square like every other card, a music icon on a --surface
+   tile — no waveform (the waveform is only the expanded/inline player, #12). */
+.card .media.audio{aspect-ratio:1;background:var(--surface);display:grid;place-items:center;gap:7px;color:var(--muted)}
+.card .media.audio .wave{display:none}
 .card .media.text{padding:2px 0}
 .card .media.text .body{font-size:var(--fs-sm);color:var(--soft);display:-webkit-box;-webkit-line-clamp:5;-webkit-box-orient:vertical;overflow:hidden}
 .card .title{font-size:var(--fs-sm);color:var(--ink);font-weight:600;margin-top:8px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
@@ -384,16 +387,21 @@ input{font:inherit;color:inherit}
 .navarrow.prev{left:14px}.navarrow.next{right:14px}
 .navarrow .ic{width:20px;height:20px}
 .navarrow.prev .ic{transform:rotate(90deg)}.navarrow.next .ic{transform:rotate(-90deg)}
-/* full media transport pinned to the foot of the media area:
-   skip-back · play/pause · skip-fwd · time · seek · time · volume · (fullscreen) */
+/* #37 ONE media transport for audio AND video, pinned to the foot of the media
+   area: play/pause · time · seek · time · volume · (fullscreen).
+   #38 no visible skip buttons — a 5-second skip stays on ←/→ (keyboard/gesture),
+   deliberately with no on-screen rewind/forward controls. */
 .dmtransport{position:absolute;left:0;right:0;bottom:0;display:flex;align-items:center;gap:12px;padding:14px 20px;font-size:12px;color:var(--soft);font-variant-numeric:tabular-nums}
-.dmtransport .track{flex:1;height:5px;background:var(--line);border-radius:3px;position:relative;cursor:pointer}
-.dmtransport .track i{position:absolute;left:0;top:0;bottom:0;width:0;background:var(--ink);border-radius:3px}
-.dmtransport .track .knob{position:absolute;top:50%;width:12px;height:12px;border-radius:50%;background:var(--ink);transform:translate(-50%,-50%)}
+/* #31 taller RECTANGULAR seek bar (radius --r, not a pill); #31 no round
+   playhead knob — a slim rectangular playhead marks position instead. */
+.dmtransport .track{flex:1;height:7px;background:var(--line);border-radius:var(--r);position:relative;cursor:pointer}
+.dmtransport .track i{position:absolute;left:0;top:0;bottom:0;width:0;background:var(--ink);border-radius:var(--r)}
+.dmtransport .track .knob{position:absolute;top:50%;width:3px;height:15px;border-radius:1px;background:var(--ink);transform:translate(-50%,-50%)}
 .tbtn{width:32px;height:32px;border-radius:var(--r);display:grid;place-items:center;color:var(--soft);cursor:pointer}
 .tbtn:hover{background:var(--surface);color:var(--ink)}
 .tbtn .ic{width:18px;height:18px}
-.dmbigplay{width:64px;height:64px;border-radius:50%;background:var(--paper);color:var(--ink);display:grid;place-items:center;cursor:pointer;box-shadow:inset 0 0 0 1px var(--line2)}
+/* #32 play icon has no border / border-colour — just the fill, centred (#11). */
+.dmbigplay{width:64px;height:64px;border-radius:50%;background:var(--paper);color:var(--ink);display:grid;place-items:center;cursor:pointer}
 .dmbigplay:hover{background:var(--surface)}
 .dmbigplay .ic{width:26px;height:26px}
 .dinfo{flex:none;width:380px;min-width:0;display:flex;flex-direction:column;overflow:hidden;background:var(--paper)}
@@ -1185,6 +1193,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
 <symbol id="i-rewind" viewBox="0 0 24 24"><polygon points="11 19 2 12 11 5 11 19"/><polygon points="22 19 13 12 22 5 22 19"/></symbol>
 <symbol id="i-ff" viewBox="0 0 24 24"><polygon points="13 19 22 12 13 5 13 19"/><polygon points="2 19 11 12 2 5 2 19"/></symbol>
 <symbol id="i-volume" viewBox="0 0 24 24"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07M19.07 4.93a10 10 0 0 1 0 14.14"/></symbol>
+<symbol id="i-music" viewBox="0 0 24 24"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></symbol>
 <symbol id="i-mute" viewBox="0 0 24 24"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></symbol>
 <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></symbol>
 <symbol id="i-mic-off" viewBox="0 0 24 24"><path d="M1 1l22 22M9 9v3a3 3 0 0 0 5.1 2.1M15 9.3V5a3 3 0 0 0-5.9-.7M19 10v2a7 7 0 0 1-.5 2.6M12 19v3M8 23h8"/></symbol>
@@ -1460,7 +1469,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
       <div class="stage scrim"><div class="arena">
         <div class="dmedia">
           <button class="dmbigplay" title="Play / pause"><svg class="ic"><use href="#i-play"/></svg></button>
-          <div class="dmtransport"><button class="tbtn" title="Back 10s"><svg class="ic"><use href="#i-rewind"/></svg></button><span>0:47</span><span class="track"><i style="width:34%"></i><span class="knob" style="left:34%"></span></span><span>2:18</span><button class="tbtn" title="Forward 10s"><svg class="ic"><use href="#i-ff"/></svg></button><button class="tbtn" title="Mute"><svg class="ic"><use href="#i-volume"/></svg></button></div>
+          <div class="dmtransport"><span>0:47</span><span class="track"><i style="width:34%"></i><span class="knob" style="left:34%"></span></span><span>2:18</span><button class="tbtn" title="Mute"><svg class="ic"><use href="#i-volume"/></svg></button></div>
         </div>
         <div class="dinfo">
           <div class="dtop"><span class="dfilename">late_bloom_master.wav</span><button class="iconbtn sp" title="Report"><svg class="ic sm"><use href="#i-flag"/></svg></button><button class="iconbtn" title="Close"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
@@ -1484,7 +1493,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
       <div class="stage scrim"><div class="arena">
         <div class="dmedia" style="background:linear-gradient(135deg,#3a4a55,#12181c)">
           <button class="dmbigplay" title="Play / pause"><svg class="ic"><use href="#i-play"/></svg></button>
-          <div class="dmtransport" style="color:#e8e8e8"><button class="tbtn" title="Back 10s" style="color:#e8e8e8"><svg class="ic"><use href="#i-rewind"/></svg></button><span>0:06</span><span class="track" style="background:rgba(255,255,255,.28)"><i style="width:18%;background:#fff"></i><span class="knob" style="left:18%;background:#fff"></span></span><span>0:34</span><button class="tbtn" title="Forward 10s" style="color:#e8e8e8"><svg class="ic"><use href="#i-ff"/></svg></button><button class="tbtn" title="Mute" style="color:#e8e8e8"><svg class="ic"><use href="#i-volume"/></svg></button><button class="tbtn" title="Fullscreen" style="color:#e8e8e8"><svg class="ic"><use href="#i-expand"/></svg></button></div>
+          <div class="dmtransport" style="color:#e8e8e8"><span>0:06</span><span class="track" style="background:rgba(255,255,255,.28)"><i style="width:18%;background:#fff"></i><span class="knob" style="left:18%;background:#fff"></span></span><span>0:34</span><button class="tbtn" title="Mute" style="color:#e8e8e8"><svg class="ic"><use href="#i-volume"/></svg></button><button class="tbtn" title="Fullscreen" style="color:#e8e8e8"><svg class="ic"><use href="#i-expand"/></svg></button></div>
         </div>
         <div class="dinfo">
           <div class="dtop"><span class="dfilename">sh040_comp.mp4</span><button class="iconbtn sp" title="Report"><svg class="ic sm"><use href="#i-flag"/></svg></button><button class="iconbtn" title="Close"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
@@ -1885,9 +1894,9 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
           <div class="lb">12 files in #beats</div>
           <div class="masonry even">
             <button class="card" data-open-details><div class="media file"><svg class="ic fic"><use href="#i-clip"/></svg><span class="ext">FLP</span></div><div class="title">late_bloom_beat.flp</div><div class="who">dev · v3</div></button>
-            <button class="card" data-open-details><div class="media audio"><div class="wave" data-wf="150"></div></div><div class="title">bridge_scratch_rae.wav</div><div class="who">rae</div></button>
+            <button class="card" data-open-details><div class="media audio"><svg class="fic"><use href="#i-music"/></svg><span class="ext">WAV</span></div><div class="title">bridge_scratch_rae.wav</div><div class="who">rae</div></button>
             <button class="card" data-open-details><div class="media"><div class="shot c" style="aspect-ratio:3/2"></div></div><div class="title">ref_drums.png</div><div class="who">rae</div></button>
-            <button class="card" data-open-details><div class="media audio"><div class="wave" data-wf="150"></div></div><div class="title">bounce_v2.wav</div><div class="who">dev</div></button>
+            <button class="card" data-open-details><div class="media audio"><svg class="fic"><use href="#i-music"/></svg><span class="ext">WAV</span></div><div class="title">bounce_v2.wav</div><div class="who">dev</div></button>
           </div>
         </div>
       </main>
@@ -1944,7 +1953,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
           <div class="masonry even">
             <button class="card" data-open-details><div class="media"><div class="shot" style="aspect-ratio:4/5"></div></div>
               <div class="title">keyframe study, the falling sequence</div><div class="who">lin</div></button>
-            <button class="card" data-open-details><div class="media audio"><div class="wave" data-wf="150"></div></div>
+            <button class="card" data-open-details><div class="media audio"><svg class="fic"><use href="#i-music"/></svg><span class="ext">WAV</span></div>
               <div class="title">back half rework, drums finally sit right</div><div class="who">dev</div></button>
             <button class="card" data-open-details><div class="media"><div class="shot b" style="aspect-ratio:16/9"></div><div class="playover"><svg class="ic f"><use href="#i-play"/></svg></div></div>
               <div class="title">q3 comp reel, first pass</div><div class="who">mira</div></button>
@@ -1952,11 +1961,11 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
               <div class="title">On finishing things</div><div class="who">jax</div></button>
             <button class="card" data-open-details><div class="media"><div class="shot c" style="aspect-ratio:3/2"></div></div>
               <div class="title">cover art studies, warm set</div><div class="who">nel</div></button>
-            <button class="card" data-open-details><div class="media audio"><div class="wave" data-wf="150"></div></div>
+            <button class="card" data-open-details><div class="media audio"><svg class="fic"><use href="#i-music"/></svg><span class="ext">WAV</span></div>
               <div class="title">low ceilings, verse idea</div><div class="who">rae</div></button>
             <button class="card" data-open-details><div class="media"><div class="shot" style="aspect-ratio:1/1"></div><div class="playover"><svg class="ic f"><use href="#i-play"/></svg></div></div>
               <div class="title">title sequence, draft</div><div class="who">sol</div></button>
-            <button class="card" data-open-details><div class="media audio"><div class="wave" data-wf="150"></div></div>
+            <button class="card" data-open-details><div class="media audio"><svg class="fic"><use href="#i-music"/></svg><span class="ext">WAV</span></div>
               <div class="title">drum one-shots, vol 2</div><div class="who">jax</div></button>
             <button class="card" data-open-details><div class="media file"><svg class="ic fic"><use href="#i-clip"/></svg><span class="ext">ZIP</span></div><div class="title">session backup, aug</div><div class="who">dev</div></button>
           </div>
@@ -2006,9 +2015,9 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
             <div class="exview" data-exview="grid">
               <div class="masonry even">
                 <div class="card foldercard"><div class="media fold"><svg class="ic"><use href="#i-folder"/></svg></div><div class="title">drums</div><div class="who">7 files</div></div>
-                <div class="card" data-open-details><div class="media audio"><span class="cardsel"><svg class="ic"><use href="#i-check"/></svg></span><div class="cardacts"><button data-act="dl" title="Download"><svg class="ic"><use href="#i-download"/></svg></button><button data-act="link" title="Copy link"><svg class="ic"><use href="#i-link"/></svg></button><button data-act="more" title="More"><svg class="ic"><use href="#i-more"/></svg></button></div><div class="wave" data-wf="150"></div></div>
+                <div class="card" data-open-details><div class="media audio"><span class="cardsel"><svg class="ic"><use href="#i-check"/></svg></span><div class="cardacts"><button data-act="dl" title="Download"><svg class="ic"><use href="#i-download"/></svg></button><button data-act="link" title="Copy link"><svg class="ic"><use href="#i-link"/></svg></button><button data-act="more" title="More"><svg class="ic"><use href="#i-more"/></svg></button></div><svg class="fic"><use href="#i-music"/></svg><span class="ext">WAV</span></div>
                   <div class="title">late_bloom_beat.flp</div><div class="who"><span class="uchip m3"><span class="dot"></span>dev</span> · #beats</div></div>
-                <div class="card" data-open-details><div class="media audio"><span class="cardsel"><svg class="ic"><use href="#i-check"/></svg></span><div class="cardacts"><button data-act="dl" title="Download"><svg class="ic"><use href="#i-download"/></svg></button><button data-act="link" title="Copy link"><svg class="ic"><use href="#i-link"/></svg></button><button data-act="more" title="More"><svg class="ic"><use href="#i-more"/></svg></button></div><div class="wave" data-wf="150"></div></div>
+                <div class="card" data-open-details><div class="media audio"><span class="cardsel"><svg class="ic"><use href="#i-check"/></svg></span><div class="cardacts"><button data-act="dl" title="Download"><svg class="ic"><use href="#i-download"/></svg></button><button data-act="link" title="Copy link"><svg class="ic"><use href="#i-link"/></svg></button><button data-act="more" title="More"><svg class="ic"><use href="#i-more"/></svg></button></div><svg class="fic"><use href="#i-music"/></svg><span class="ext">WAV</span></div>
                   <div class="title">bridge_scratch_rae.wav</div><div class="who"><span class="uchip m1"><span class="dot"></span>rae</span> · #beats</div></div>
                 <div class="card" data-lightbox data-lbkind="image"><div class="media"><span class="cardsel"><svg class="ic"><use href="#i-check"/></svg></span><div class="cardacts"><button data-act="dl" title="Download"><svg class="ic"><use href="#i-download"/></svg></button><button data-act="link" title="Copy link"><svg class="ic"><use href="#i-link"/></svg></button><button data-act="more" title="More"><svg class="ic"><use href="#i-more"/></svg></button></div><div class="shot c" style="aspect-ratio:3/2"></div></div>
                   <div class="title">ref_drums.png</div><div class="who"><span class="uchip m1"><span class="dot"></span>rae</span> · #beats</div></div>
@@ -2119,11 +2128,11 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
         </div>
         <div class="pbody">
           <div class="masonry even">
-            <button class="card" data-open-details><div class="media audio"><div class="wave" data-wf="150"></div></div>
+            <button class="card" data-open-details><div class="media audio"><svg class="fic"><use href="#i-music"/></svg><span class="ext">WAV</span></div>
               <div class="title">low ceilings, the finished verse</div><div class="who">rae, jax, tomo</div></button>
             <button class="card" data-open-details><div class="media"><div class="shot c" style="aspect-ratio:1/1"></div></div>
               <div class="title">cover art, bloom</div><div class="who">nel, rae</div></button>
-            <button class="card" data-open-details><div class="media audio"><div class="wave" data-wf="150"></div></div>
+            <button class="card" data-open-details><div class="media audio"><svg class="fic"><use href="#i-music"/></svg><span class="ext">WAV</span></div>
               <div class="title">bloom, single</div><div class="who">rae, dev, tomo</div></button>
             <button class="card" data-open-details><div class="media"><div class="shot b" style="aspect-ratio:16/9"></div><div class="playover"><svg class="ic f"><use href="#i-play"/></svg></div></div>
               <div class="title">lyric visual</div><div class="who">sol</div></button>
@@ -2600,11 +2609,9 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
     <div class="dmedia">
       <button class="dmbigplay" title="Play / pause"><svg class="ic"><use href="#i-play"/></svg></button>
       <div class="dmtransport">
-        <button class="tbtn" title="Back 10s"><svg class="ic"><use href="#i-rewind"/></svg></button>
         <span>0:12</span>
         <span class="track"><i style="width:14%"></i><span class="knob" style="left:14%"></span></span>
         <span>1:31</span>
-        <button class="tbtn" title="Forward 10s"><svg class="ic"><use href="#i-ff"/></svg></button>
         <button class="tbtn" title="Mute"><svg class="ic"><use href="#i-volume"/></svg></button>
       </div>
     </div>

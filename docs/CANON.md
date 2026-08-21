@@ -425,7 +425,7 @@ The friends-only portfolio grid.
 | Search field | Filter posts by title/tag/handle; server-side. | R `search_all(q,'feed')` | Toolbar | Full-width, filters in a sheet |
 | Type / sort dropdowns | Filter by media type; sort newest/…; Reddit-style, no tag modifiers. | R `works` filters | Toolbar | In filter sheet |
 | Layout toggle | Switch **even square grid ⇄ masonry**; default even. | — (client) | Toolbar icon | Toolbar icon |
-| Post card | Square invisible cell (even) or natural aspect (masonry); media renders by kind (image thumb, video play-overlay, audio waveform, text words, **non-previewable → type card** icon+ext); title + author below. Click → Details pane. | R `works` where `visibility='public'` and author ∈ friends | Grid, full width | 2-col grid |
+| Post card | Square invisible cell (even) or natural aspect (masonry); media renders by kind (image thumb, video play-overlay, **audio → music-icon type card** (`#i-music` + ext; the waveform is only the expanded/inline player, gallery #13), text words, **non-previewable → type card** icon+ext); title + author below. Click → Details pane. | R `works` where `visibility='public'` and author ∈ friends | Grid, full width | 2-col grid |
 | Empty | "No posts yet — add friends to see their work." | — | Centered | Centered |
 
 ### C.6 Screen 3 — File explorer
@@ -475,7 +475,7 @@ storage the bytes draw:
 
 | Element | Behaviour & states | DB | Desktop | Mobile |
 |---|---|---|---|---|
-| Media area | Fills the left; **player controls pinned to its foot** (big play, skip ±, seek, volume, tabular time); waveform/video/image/type-card/folder-preview per kind. | R `works` (signed URL) | Left, grows | Top ~42vh |
+| Media area | Fills the left; **one transport (audio = video) pinned to its foot** (seek, volume, tabular time, fullscreen); **big centred borderless play** over the media; **no visible skip buttons — 5-second skip on ←/→** (gallery #37/#38/#32/#11). Waveform/video/image/type-card/folder-preview per kind. | R `works` (signed URL) | Left, grows | Top ~42vh |
 | **Prev / next arrows — folder only** | A single work (post or file) has **no** media arrows. A **folder** is the one pane that shows prev/next **over the media** (page its items) plus a clickable **navigation list in the rail**. | `folders` children order | Folder media edges + rail list | Same |
 | **Storage row** (top of meta) | Leads the metadata: the **storage×visibility badge** + a plain-language **whose-storage note with the size** — "8.4 MB on **the server's** storage" (server file) or "32.1 MB on **your** storage" (post/personal); a crosspost reads "on **your** storage · crossposted here". This is the "Discord *with real file storage*" made legible — every file says who pays for its bytes. | `works.owner_type` + `visibility` + `bytes` | Rail meta | Rail meta |
 | **Location** (clickable breadcrumb) | Where the file lives in the tree: **`Server › folder › subfolder`** (server files, from `placement.folder_id`) or **`Your files › folder`** (posts). **Each segment is a link** that opens the File explorer at that folder — quick travel up the tree. | `folders` path via `placement.folder_id` | Rail meta | Rail meta |
@@ -1009,7 +1009,8 @@ Gallery-review batch. All fold into §C/§E when filled; mockup screens updated 
 - **Full-width.** The card grid fills the pane width (no narrow max-width column).
 - **Square containers, invisible.** Each work sits in a **square cell** (aspect
   1:1) with **no background/border** — the media shows at its natural aspect
-  inside; audio → waveform, video → play overlay, text → its words, image →
+  inside; audio → **music-icon type card** (waveform only in the expanded
+  player, gallery #13), video → play overlay, text → its words, image →
   thumbnail. The cell is a layout unit, not a visible card.
 - **Layout toggle.** A control switches between the default even grid and a
   **denser masonry** (variable-height, Pinterest-style) view. Applies to Feed,
