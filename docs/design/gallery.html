@@ -905,6 +905,10 @@ input{font:inherit;color:inherit}
 .frrow .info{flex:1;min-width:0}.frrow .info b{font-size:var(--fs-sm);font-weight:600}.frrow .info small{display:block;color:var(--muted);font-size:var(--fs-xs)}
 .frrow .fracts{display:flex;gap:6px}
 .frrow .pendlbl{color:var(--muted);font-size:var(--fs-xs)}
+.frbd{flex:1;min-width:0;font-size:var(--fs-sm)}.frbd b{font-weight:600}
+.mut{color:var(--muted)}
+.screen[data-screen="friends"] .frrow{box-shadow:inset 0 -1px 0 var(--line);border-radius:0}
+.screen[data-screen="friends"] .frsec{text-transform:uppercase;letter-spacing:.07em}
 .rbtn{width:32px;height:32px;display:grid;place-items:center;border-radius:50%;background:var(--surface);color:var(--soft)}
 .rbtn:hover{background:var(--plate);color:var(--ink)}.rbtn.ok:hover{color:var(--m3)}.rbtn.no:hover{color:var(--m1)}
 
@@ -2369,8 +2373,8 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
     <!-- MESSAGES -->
     <div class="screen" data-screen="dms" hidden>
       <div class="dmlist">
-        <div class="hd">Messages</div>
-        <button class="dmfriends" id="dmFriendsBtn"><svg class="ic sm"><use href="#i-users"/></svg>Friends<span class="ct">2</span></button>
+        <div class="hd">Messages<button class="iconbtn sm" id="newDmBtn" title="New message" style="margin-left:auto"><svg class="ic sm"><use href="#i-pen"/></svg></button></div>
+        <button class="dmfriends" id="dmFriendsBtn" data-s="friends"><svg class="ic sm"><use href="#i-users"/></svg>Friends<span class="ct">2</span></button>
         <div class="dmadd"><div class="field"><svg class="ic sm"><use href="#i-user"/></svg><input placeholder="Add by username"><button style="color:var(--muted)"><svg class="ic sm"><use href="#i-plus"/></svg></button></div></div>
         <div class="dmrows">
           <div class="dmsec">Pinned</div>
@@ -2413,6 +2417,35 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
 
     <!-- GROUP SETTINGS (admin) -->
     <!-- #22 USER / account settings (distinct from the server settings below) -->
+    <!-- S4 friends manager: all / pending / blocked, add by handle -->
+    <div class="screen" data-screen="friends" hidden>
+      <div class="prof">
+        <div class="ptabs2" style="padding-top:6px">
+          <button class="ptab2 on"><svg class="ic"><use href="#i-users"/></svg>All<span class="ct">6</span></button>
+          <button class="ptab2"><svg class="ic"><use href="#i-clock"/></svg>Pending<span class="ct">3</span></button>
+          <button class="ptab2"><svg class="ic"><use href="#i-hide"/></svg>Blocked<span class="ct">2</span></button>
+          <span style="margin-left:auto"></span>
+          <button class="btn primary sm" id="addFriendBtn2" style="align-self:center"><svg class="ic sm"><use href="#i-plus"/></svg>Add friend</button>
+        </div>
+        <div class="pbody" style="max-width:760px">
+          <div class="frsec">Add a friend</div>
+          <div class="field" style="max-width:440px"><svg class="ic sm"><use href="#i-at"/></svg><input placeholder="Enter a handle, e.g. @devmakesbeats"><button class="btn sm">Send request</button></div>
+
+          <div class="frsec">Pending — incoming</div>
+          <div class="frrow"><div class="av sm">ZZ</div><div class="frbd"><b>zane</b> <span class="mut">@zanebeats · wants to be friends</span></div><button class="btn sm primary">Accept</button><button class="btn sm">Decline</button></div>
+          <div class="frsec">Pending — outgoing</div>
+          <div class="frrow"><div class="av sm">KO</div><div class="frbd"><b>kofi</b> <span class="mut">@kofinotes · request sent</span></div><button class="btn sm">Cancel</button></div>
+          <div class="frrow"><div class="av sm">LN</div><div class="frbd"><b>lin</b> <span class="mut">@linntone · request sent</span></div><button class="btn sm">Cancel</button></div>
+
+          <div class="frsec">All friends <span class="mut">6</span></div>
+          <div class="frrow"><div class="av sm">DV</div><div class="frbd"><b class="m3">dev</b> <span class="mut">@devmakesbeats · in FL Studio</span></div><button class="iconbtn" title="Message"><svg class="ic sm"><use href="#i-mail"/></svg></button><button class="iconbtn" title="More"><svg class="ic sm"><use href="#i-more"/></svg></button></div>
+          <div class="frrow"><div class="av sm">RA</div><div class="frbd"><b class="m1">rae</b> <span class="mut">@raeokonkwo · recording</span></div><button class="iconbtn" title="Message"><svg class="ic sm"><use href="#i-mail"/></svg></button><button class="iconbtn" title="More"><svg class="ic sm"><use href="#i-more"/></svg></button></div>
+          <div class="frrow"><div class="av sm">MI</div><div class="frbd"><b class="m4">mira</b> <span class="mut">@miracuts · offline</span></div><button class="iconbtn" title="Message"><svg class="ic sm"><use href="#i-mail"/></svg></button><button class="iconbtn" title="More"><svg class="ic sm"><use href="#i-more"/></svg></button></div>
+          <div class="frrow"><div class="av sm">TM</div><div class="frbd"><b class="m5">tomo</b> <span class="mut">@tomomix · reviewing beat v3</span></div><button class="iconbtn" title="Message"><svg class="ic sm"><use href="#i-mail"/></svg></button><button class="iconbtn" title="More"><svg class="ic sm"><use href="#i-more"/></svg></button></div>
+        </div>
+      </div>
+    </div>
+
     <div class="screen" data-screen="usersettings" hidden>
       <div class="settings">
         <nav class="setnav">
@@ -3122,6 +3155,22 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   <div class="ufoot"><button class="btn" id="fwdCancel">Cancel</button><button class="btn primary">Forward</button></div>
 </div>
 
+<!-- B14 new-DM dialog (1:1 or group) -->
+<div class="scrim" id="newDmScrim" hidden></div>
+<div class="umodal" id="newDmModal" hidden>
+  <div class="uhd"><b>New message</b><button class="iconbtn" id="newDmClose"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
+  <div class="ubody">
+    <label class="ulab">To <span style="font-weight:400;color:var(--muted)">— pick one for a DM, more for a group</span></label>
+    <div class="field collabs"><span class="uchip m4"><span class="dot"></span>mira</span><input placeholder="Search friends…"></div>
+    <div class="shareppl" style="margin-top:8px">
+      <div class="sharerow"><span class="av sm">DV</span><span class="nm"><b class="m3">dev</b> <span style="color:var(--muted)">@devmakesbeats</span></span><span class="tog"><i></i></span></div>
+      <div class="sharerow"><span class="av sm">SO</span><span class="nm"><b class="m2">sol</b> <span style="color:var(--muted)">@solsound</span></span><span class="tog"><i></i></span></div>
+      <div class="sharerow"><span class="av sm">TM</span><span class="nm"><b class="m5">tomo</b> <span style="color:var(--muted)">@tomomix</span></span><span class="tog"><i></i></span></div>
+    </div>
+  </div>
+  <div class="ufoot"><button class="btn" id="newDmCancel">Cancel</button><button class="btn primary">Start conversation</button></div>
+</div>
+
 <!-- #58 folder context menu (right-click a folder in the tree) -->
 <div class="menu" id="folderMenu"><div class="mlabel">Folder</div>
   <button><svg class="ic sm"><use href="#i-folder"/></svg>Open</button>
@@ -3394,6 +3443,11 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   var mmForward=document.getElementById('mmForward');if(mmForward)mmForward.addEventListener('click',function(ev){ev.stopPropagation();fwd.open();});
   ['fwdClose','fwdCancel'].forEach(function(id){var e=document.getElementById(id);if(e)e.addEventListener('click',fwd.close);});
   var fwdScrim=document.getElementById('fwdScrim');if(fwdScrim)fwdScrim.addEventListener('click',fwd.close);
+  // B14 new-DM dialog
+  var ndm=opener('newDmScrim','newDmModal');
+  var newDmBtn=document.getElementById('newDmBtn');if(newDmBtn)newDmBtn.addEventListener('click',function(ev){ev.stopPropagation();ndm.open();});
+  ['newDmClose','newDmCancel'].forEach(function(id){var e=document.getElementById(id);if(e)e.addEventListener('click',ndm.close);});
+  var newDmScrim=document.getElementById('newDmScrim');if(newDmScrim)newDmScrim.addEventListener('click',ndm.close);
 
   // #58 folder context menu on right-click of a folder tree row
   var folderMenu=document.getElementById('folderMenu');
@@ -3660,6 +3714,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
     ['settings','Server settings','general · channels · members · invites · moderation · audit · storage',''],
     ['profile','Profile','Public / Server / Private shelves + settings',''],
     ['dms','Messages','DMs, add by handle',''],
+    ['friends','Friends','all · pending · blocked, add by handle',''],
     ['usersettings','User settings','account · profile · notifications · appearance · privacy',''],
     ['search','Search','results + quick switcher (⌘K)',''],
     ['shared','Shared view','read-only — a shared link, only what was shared',''],
