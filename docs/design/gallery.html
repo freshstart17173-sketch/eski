@@ -131,6 +131,15 @@ input{font:inherit;color:inherit}
 .cglabel .ic{color:var(--muted);cursor:pointer}
 .cgadd{width:18px;height:18px;display:grid;place-items:center;border-radius:var(--r);color:var(--muted)}
 .cgadd:hover{background:var(--plate);color:var(--ink)}
+/* S1 — admin POV. Admin-only affordances (create-channel +, per-channel gear,
+   member kick/ban) are hidden in the member view and revealed when the member
+   rail's Viewing-as toggle flips the workspace screen to data-pov="admin".
+   Same mechanism as the profile POV switcher (#20); the RLS gate is is_server_admin. */
+.screen[data-screen="workspace"][data-pov="member"] [data-admin-only]{display:none}
+.cgear{flex:none;width:18px;height:18px;display:grid;place-items:center;border-radius:var(--r);color:var(--muted);opacity:0;transition:opacity var(--t)}
+.crow:hover .cgear{opacity:1}
+.cgear:hover{background:var(--plate);color:var(--ink)}
+.mempov{margin:calc(var(--s4)*-1) 0 var(--s3);position:sticky;top:0;z-index:1}
 .crow{display:flex;align-items:center;gap:8px;width:100%;text-align:left;padding:6px var(--s2);border-radius:var(--r);color:var(--soft);transition:background var(--t),color var(--t)}
 .crow:hover{background:var(--plate)}
 .crow.on{background:var(--plate);color:var(--ink);font-weight:600}
@@ -840,6 +849,14 @@ input{font:inherit;color:inherit}
 .ppop .prole{display:inline-flex;align-items:center;gap:6px;background:var(--surface);border-radius:var(--r);padding:3px 9px;font-size:var(--fs-xs);font-weight:600}
 .ppop .ppacts{display:flex;gap:8px;margin-top:14px}
 .ppop .ppacts .btn{flex:1;justify-content:center}
+/* Admin block: separated from the public actions by a background step + a hairline,
+   not a border box (surfaces separate by bg-step per the design rules). */
+.ppop .ppadmin{margin:12px -16px -16px;padding:10px 8px 8px;background:var(--surface);box-shadow:inset 0 1px 0 var(--line)}
+.ppop .ppadl{font-size:10px;color:var(--muted);font-weight:600;letter-spacing:.04em;padding:0 8px 4px}
+.ppop .arow{display:flex;align-items:center;gap:9px;width:100%;padding:7px 8px;border-radius:var(--r);font-size:var(--fs-sm);color:var(--soft);background:none;text-align:left;cursor:pointer}
+.ppop .arow:hover{background:var(--paper1)}
+.ppop .arow .chev{margin-left:auto;color:var(--muted)}
+.ppop .arow.danger{color:var(--danger)}
 
 /* call upgrades */
 .vc{position:relative}
@@ -1909,7 +1926,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
 
   <div class="stage">
     <!-- WORKSPACE -->
-    <div class="screen" data-screen="workspace">
+    <div class="screen" data-screen="workspace" data-pov="member">
       <nav class="chan">
         <div class="srvhd" id="srvHdr" title="Server menu">
           <div class="srvcover"></div>
@@ -1920,16 +1937,16 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
             <button class="crow" data-s="explorer"><svg class="ic"><use href="#i-folder"/></svg><span class="nm">Files</span></button>
           </div>
           <div class="cgroup">
-            <div class="cglabel">Channels <button class="cgadd" id="addChannel" title="Create channel"><svg class="ic sm"><use href="#i-plus"/></svg></button></div>
-            <button class="crow"><svg class="ic"><use href="#i-hash"/></svg><span class="nm">announcements</span></button>
-            <button class="crow on"><svg class="ic"><use href="#i-hash"/></svg><span class="nm">beats</span></button>
-            <button class="crow"><svg class="ic"><use href="#i-hash"/></svg><span class="nm">verses</span><span class="ct">4</span></button>
-            <button class="crow"><svg class="ic"><use href="#i-hash"/></svg><span class="nm">mixing</span></button>
-            <button class="crow"><svg class="ic"><use href="#i-hash"/></svg><span class="nm">references</span></button>
-            <button class="crow"><svg class="ic"><use href="#i-hash"/></svg><span class="nm">stems and sessions</span></button>
+            <div class="cglabel">Channels <button class="cgadd" id="addChannel" data-admin-only title="Create channel"><svg class="ic sm"><use href="#i-plus"/></svg></button></div>
+            <button class="crow"><svg class="ic"><use href="#i-hash"/></svg><span class="nm">announcements</span><span class="cgear" data-admin-only title="Edit channel"><svg class="ic sm"><use href="#i-settings"/></svg></span></button>
+            <button class="crow on"><svg class="ic"><use href="#i-hash"/></svg><span class="nm">beats</span><span class="cgear" data-admin-only title="Edit channel"><svg class="ic sm"><use href="#i-settings"/></svg></span></button>
+            <button class="crow"><svg class="ic"><use href="#i-hash"/></svg><span class="nm">verses</span><span class="ct">4</span><span class="cgear" data-admin-only title="Edit channel"><svg class="ic sm"><use href="#i-settings"/></svg></span></button>
+            <button class="crow"><svg class="ic"><use href="#i-hash"/></svg><span class="nm">mixing</span><span class="cgear" data-admin-only title="Edit channel"><svg class="ic sm"><use href="#i-settings"/></svg></span></button>
+            <button class="crow"><svg class="ic"><use href="#i-hash"/></svg><span class="nm">references</span><span class="cgear" data-admin-only title="Edit channel"><svg class="ic sm"><use href="#i-settings"/></svg></span></button>
+            <button class="crow"><svg class="ic"><use href="#i-hash"/></svg><span class="nm">stems and sessions</span><span class="cgear" data-admin-only title="Edit channel"><svg class="ic sm"><use href="#i-settings"/></svg></span></button>
           </div>
           <div class="cgroup">
-            <div class="cglabel">Voice <button class="cgadd" id="addVoice" title="Create voice channel"><svg class="ic sm"><use href="#i-plus"/></svg></button></div>
+            <div class="cglabel">Voice <button class="cgadd" id="addVoice" data-admin-only title="Create voice channel"><svg class="ic sm"><use href="#i-plus"/></svg></button></div>
             <button class="crow" data-s="vc"><svg class="ic"><use href="#i-voice"/></svg><span class="nm">the booth</span></button>
             <div class="vpeople">
               <div class="vp m3"><span class="live"></span><span class="u m3">dev</span><span style="color:var(--muted)">sharing FL</span></div>
@@ -2074,6 +2091,8 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
       </main>
 
       <aside class="mem">
+        <!-- S1 — flips the whole workspace between how a member and an admin see it. -->
+        <div class="povswitch mempov" id="wsPovSwitch"><span class="pl">Viewing as</span><button class="on" data-wspov="member">Member</button><button data-wspov="admin">Admin</button></div>
         <div class="memg">
           <div class="lb">Admins, 2</div>
           <div class="mrow"><div class="av sm">JX<span class="pr"></span></div><div class="info"><div class="nm"><span class="u m5">jax</span></div><div class="doing">arranging, Ableton</div></div></div>
@@ -2945,7 +2964,17 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
     <div class="ppsec"><span class="l">ROLE IN LATE BLOOM LP</span><span class="v"><span class="prole m3">Member</span></span></div>
     <div class="ppsec"><span class="l">WORKING ON</span><span class="v">a beat, in FL Studio</span></div>
     <div class="ppsec"><span class="l">MUTUAL SERVERS</span><span class="v">Late Bloom LP, beat swap</span></div>
-    <div class="ppacts"><button class="btn primary"><svg class="ic sm"><use href="#i-mail"/></svg>Message</button><button class="btn"><svg class="ic sm"><use href="#i-phone"/></svg>Call</button></div>
+    <div class="ppacts"><button class="btn primary"><svg class="ic sm"><use href="#i-mail"/></svg>Message</button><button class="btn"><svg class="ic sm"><use href="#i-user"/></svg>Add friend</button></div>
+    <!-- Admin actions: only rendered when the viewer can moderate this server
+         (is_server_admin). Hidden by default; the workspace admin POV reveals it,
+         mirroring the profile-POV switcher (#20). -->
+    <div class="ppadmin" data-admin-only hidden>
+      <div class="ppadl">Admin</div>
+      <button class="arow"><svg class="ic sm"><use href="#i-users"/></svg>Roles<svg class="ic sm chev"><use href="#i-chev"/></svg></button>
+      <button class="arow"><svg class="ic sm"><use href="#i-clock"/></svg>Timeout</button>
+      <button class="arow danger"><svg class="ic sm"><use href="#i-leave"/></svg>Kick from server</button>
+      <button class="arow danger"><svg class="ic sm"><use href="#i-hand"/></svg>Ban</button>
+    </div>
   </div>
 </div>
 
@@ -3662,6 +3691,20 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   document.getElementById('profileCardBtn').addEventListener('click',function(e){e.stopPropagation();openPop(null);});
   document.addEventListener('click',function(e){if(!e.target.closest('#profilePop')&&!e.target.closest('.mrow'))closePop();});
   document.addEventListener('keydown',function(e){if(e.key==='Escape')closePop();});
+
+  // S1 — workspace admin POV. Flips the whole workspace screen so every
+  // admin-only affordance (create-channel +, per-channel gear, and the member
+  // popover's Kick/Ban block) appears at once. CSS gates most of it off the
+  // screen's data-pov; the popover lives outside the screen, so toggle its
+  // admin block here too.
+  var wsPov=document.getElementById('wsPovSwitch');
+  if(wsPov){var wsScreen=document.querySelector('.screen[data-screen="workspace"]');
+    function applyWsPov(p){wsScreen.setAttribute('data-pov',p);
+      wsPov.querySelectorAll('button').forEach(function(b){b.classList.toggle('on',b.dataset.wspov===p);});
+      document.querySelectorAll('#profilePop [data-admin-only]').forEach(function(el){el.hidden=(p!=='admin');});
+    }
+    wsPov.querySelectorAll('button').forEach(function(b){b.addEventListener('click',function(e){e.stopPropagation();applyWsPov(b.dataset.wspov);});});
+  }
 
   // Default to Workspace only when there's no deep-link hash; otherwise the
   // hash (used by gallery.html's per-screen iframes) decides the screen.
