@@ -489,6 +489,15 @@ storage the bytes draw:
 | **Discussion** | **Post** → a public **comment thread** (`comments`, context=public) with an add-comment field. **Server file** → **no discussion section at all** (removed the "Replies happen in #channel →" link, gallery #5); chat lives in the channel. | `comments` (posts) / channel chat (server files) | Rail list (post only) | Rail |
 | Mobile | Card goes full-screen, **column**: media on top (~42vh), the rail below. | — | — | Full-screen column |
 
+**Share dialog (gallery #39 / #61).** A Google-Drive-style modal opened from a
+card's ⋯ menu ("Update visibility…") or a Share action. It carries: the
+**Visibility** three-way (Public / Server / Private — this *is* how a post's
+visibility is changed after the fact, #61, now that the details badge is gone,
+#3); a read-only **share link** + Copy; and a **People with access** list
+(owner + members with per-person Can edit / Can view — the granular-role surface,
+CANON §D.1). Writes gate on ownership / `manage_*`; the link resolves to the
+read-only shared view below.
+
 ### C.10 Screen 8 — Profile
 
 | Element | Behaviour & states | DB | Desktop | Mobile |

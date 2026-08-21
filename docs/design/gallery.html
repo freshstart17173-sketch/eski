@@ -505,6 +505,12 @@ input{font:inherit;color:inherit}
 .visopt.on{background:var(--ink);color:var(--on-ink)}
 .visopt .ic{color:var(--muted)}.visopt.on .ic{color:var(--on-ink)}
 .visopt small{display:block;font-size:10px;color:var(--muted)}.visopt.on small{color:rgba(255,255,255,.7)}
+/* #39/#61 share dialog — people-with-access rows */
+.shareppl{display:flex;flex-direction:column;gap:2px;margin-top:4px}
+.sharerow{display:flex;align-items:center;gap:10px;padding:6px 4px}
+.sharerow .nm{flex:1;min-width:0;font-size:var(--fs-sm)}
+.sharerow .acc{font-size:var(--fs-xs);color:var(--muted)}
+.selbtn.sm{padding:5px 9px;font-size:var(--fs-xs)}
 .ufoot{padding:var(--s3) var(--s4);background:var(--surface);display:flex;justify-content:flex-end;gap:var(--s2)}
 [hidden]{display:none!important}
 @media(max-width:900px){.mem{display:none}
@@ -2762,6 +2768,29 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   <div class="sep"></div>
   <button class="danger"><svg class="ic sm"><use href="#i-trash"/></svg>Delete</button></div>
 
+<!-- #39 Share dialog (Google-Drive style) / #61 update a post's visibility -->
+<div class="scrim" id="shareScrim" hidden></div>
+<div class="umodal" id="shareModal" hidden>
+  <div class="uhd"><b>Share “late_bloom_beat.flp”</b><button class="iconbtn" id="shareClose"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
+  <div class="ubody">
+    <label class="ulab">Visibility <span style="font-weight:400;color:var(--muted)">— who can see this</span></label>
+    <div class="urow">
+      <button class="visopt"><svg class="ic"><use href="#i-globe"/></svg><span>Public<small>anyone with the link</small></span></button>
+      <button class="visopt on"><svg class="ic"><use href="#i-server"/></svg><span>Server<small>server members</small></span></button>
+      <button class="visopt"><svg class="ic"><use href="#i-lock"/></svg><span>Private<small>only you</small></span></button>
+    </div>
+    <label class="ulab">Link</label>
+    <div class="field"><svg class="ic sm"><use href="#i-link"/></svg><input readonly value="https://eski.lol/f/8x4k2q"><button class="btn sm"><svg class="ic sm"><use href="#i-copy"/></svg>Copy</button></div>
+    <label class="ulab">People with access</label>
+    <div class="shareppl">
+      <div class="sharerow"><span class="av sm">DV</span><span class="nm"><b class="m3">dev</b> <span style="color:var(--muted)">owner</span></span><span class="acc">Owner</span></div>
+      <div class="sharerow"><span class="av sm">RA</span><span class="nm"><b class="m1">rae</b></span><button class="selbtn sm">Can edit<svg class="ic sm"><use href="#i-chev"/></svg></button></div>
+      <div class="sharerow"><span class="av sm">JX</span><span class="nm"><b class="m5">jax</b></span><button class="selbtn sm">Can view<svg class="ic sm"><use href="#i-chev"/></svg></button></div>
+    </div>
+  </div>
+  <div class="ufoot"><button class="btn" id="shareCancel">Cancel</button><button class="btn primary" id="shareDone">Done</button></div>
+</div>
+
 <!-- UPLOAD -->
 <div class="scrim" id="uScrim" hidden></div>
 <div class="umodal" id="uModal" hidden>
@@ -2908,6 +2937,16 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   document.querySelectorAll('.hoveracts [title="React"]').forEach(function(b){b.addEventListener('click',function(e){e.stopPropagation();toggleMenu(emojiMenu,b,true);});});
   document.querySelectorAll('.hoveracts [title="More"]').forEach(function(b){b.addEventListener('click',function(e){e.stopPropagation();toggleMenu(msgMenu,b,true);});});
   document.addEventListener('click',function(e){if(!e.target.closest('.menu'))closeMenus();});
+
+  // #39/#61 share dialog open/close, wired from the ⋯ menu "Update visibility…"
+  var shareScrim=document.getElementById('shareScrim'),shareModal=document.getElementById('shareModal');
+  function openShare(){closeMenus();if(shareScrim)shareScrim.hidden=false;if(shareModal)shareModal.hidden=false;}
+  function closeShare(){if(shareScrim)shareScrim.hidden=true;if(shareModal)shareModal.hidden=true;}
+  ['shareClose','shareCancel','shareDone'].forEach(function(id){var e=document.getElementById(id);if(e)e.addEventListener('click',closeShare);});
+  if(shareScrim)shareScrim.addEventListener('click',closeShare);
+  var cmVis=document.getElementById('cmVis');if(cmVis)cmVis.addEventListener('click',function(e){e.stopPropagation();openShare();});
+  if(shareModal)shareModal.querySelectorAll('.visopt').forEach(function(o){o.addEventListener('click',function(){
+    shareModal.querySelectorAll('.visopt').forEach(function(x){x.classList.remove('on');});o.classList.add('on');});});
 
   // #19 file context menu: the card ⋯ button and right-click both open cardMenu
   var cardMenu=document.getElementById('cardMenu');
