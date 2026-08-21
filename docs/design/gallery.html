@@ -119,6 +119,15 @@ input{font:inherit;color:inherit}
 
 .chan{flex:none;width:var(--chan);background:var(--surface);display:flex;flex-direction:column;overflow:hidden}
 .chanhd{flex:none;height:48px;display:flex;align-items:center;justify-content:space-between;padding:0 var(--s3);background:var(--plate)}
+/* #34 server header: the server's cover + square icon get real presence at the
+   top of the channel column, not just the 38px rail badge. Server icon is
+   SQUARE (round is people only). */
+.srvhd{flex:none;cursor:pointer}
+.srvhd:hover .srvbar{background:var(--plate)}
+.srvcover{height:72px;background:linear-gradient(135deg,#5a5a5a,#232323)}
+.srvbar{display:flex;align-items:center;gap:10px;padding:0 var(--s3) 8px;background:var(--plate)}
+.srvicon{width:40px;height:40px;flex:none;border-radius:var(--r);margin-top:-20px;background:var(--ink);color:var(--on-ink);display:grid;place-items:center;font-weight:700;font-size:var(--fs-sm);box-shadow:0 0 0 3px var(--surface)}
+.srvbar b{font-size:var(--fs-sm)}
 .chanhd b{font-size:var(--fs-sm);font-weight:600}
 .chanbody{flex:1;overflow-y:auto;padding:var(--s3) var(--s2)}
 .cgroup{margin-bottom:var(--s4)}
@@ -1808,7 +1817,10 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
     <!-- WORKSPACE -->
     <div class="screen" data-screen="workspace">
       <nav class="chan">
-        <div class="chanhd" data-s="settings" style="cursor:pointer" title="Server settings"><b>Late Bloom LP</b><svg class="ic sm" style="color:var(--muted)"><use href="#i-chev"/></svg></div>
+        <div class="srvhd" data-s="settings" title="Server settings">
+          <div class="srvcover"></div>
+          <div class="srvbar"><span class="srvicon">LB</span><b>Late Bloom LP</b><svg class="ic sm" style="margin-left:auto;color:var(--muted)"><use href="#i-chev"/></svg></div>
+        </div>
         <div class="chanbody">
           <div class="cgroup">
             <button class="crow" data-s="explorer"><svg class="ic"><use href="#i-folder"/></svg><span class="nm">Files</span></button>
@@ -1860,7 +1872,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
               <div class="by"><span class="u m3">dev</span><time>2:14 PM</time></div>
               <div class="tx">reworked the back half. same bpm, swapped the drums to the ones <span class="men m1">@rae</span> liked</div>
               <button class="filecard" data-open-details>
-                <div class="fcwave"><svg class="ic fic"><use href="#i-music"/></svg><span class="ext">WAV</span></div>
+                <div class="fcwave"><svg class="ic fic"><use href="#i-file"/></svg><span class="ext">FLP</span></div>
                 <div class="fbody">
                   <div class="fname">late_bloom_beat.flp <span class="ver">v3</span></div>
                   <div class="ftags"><span class="tag">drums</span><span class="tag">142bpm</span><span class="tag">bridge</span></div>
@@ -1959,7 +1971,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
             <div class="bd">
               <div class="by"><span class="u m3">dev</span><time>2:14 PM</time></div>
               <div class="tx">reworked the back half. same bpm, swapped the drums</div>
-              <div class="filecard" style="max-width:100%"><div class="fcwave"><svg class="ic fic"><use href="#i-music"/></svg><span class="ext">WAV</span></div>
+              <div class="filecard" style="max-width:100%"><div class="fcwave"><svg class="ic fic"><use href="#i-file"/></svg><span class="ext">FLP</span></div>
                 <div class="fbody"><div class="fname">late_bloom_beat.flp <span class="ver">v3</span></div></div></div>
             </div>
           </div>

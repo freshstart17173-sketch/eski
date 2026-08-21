@@ -111,7 +111,7 @@ bottom. `[x]` = done and pushed.
 - [x] **33.** Add **a lot more filters** for the File explorer.
 
 ## Servers
-- [ ] **34.** Servers need their **icons and covers visible beyond just the rail** —
+- [x] **34.** Servers need their **icons and covers visible beyond just the rail** —
   surface them somewhere with more presence than the rail alone.
 
 ## Sharing

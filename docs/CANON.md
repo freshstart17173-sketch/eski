@@ -382,7 +382,7 @@ The three-pane server view. Legend: **R**=reads, **W**=writes, **RT**=Realtime.
 
 | Element | Behaviour & states | DB | Desktop | Mobile |
 |---|---|---|---|---|
-| Server name header | Tap → server menu (settings if admin, leave, invite). | R `servers`; gate `is_server_admin` | Column top | Drawer top |
+| Server header | The server's **cover banner + square server icon + name** at the top of the channel column — its art gets real presence, not just the 38px rail badge (gallery #34). Tap → server menu (settings if admin, leave, invite). | R `servers` (`cover_key`, icon); gate `is_server_admin` | Column top | Drawer top |
 | Media entry | Open the File explorer. | R `works where server_id` | Fixed row | In left drawer |
 | Channel list (text) | Each: name, unread bold, mention badge. Click → load channel. Admin sees drag-handle to reorder. | R `channels kind='text'`, `channel_reads`; W `is_server_admin` reorder | Grouped list | Left drawer |
 | Voice channels | Listed by `kind`. Voice = **disabled/hidden in v1**. | R `channels` | Section | Left drawer |
