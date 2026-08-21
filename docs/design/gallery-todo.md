@@ -106,7 +106,7 @@ bottom. `[x]` = done and pushed.
 ## Cloud file-browser features (new screens/dialogs)
 - [x] **19.** Add missing browser features: **right-click / burger menu**, **selection
   mode**, etc.
-- [ ] **25.** Show what **multiple files posted in a channel** look like — should
+- [x] **25.** Show what **multiple files posted in a channel** look like — should
   **clump together** like Discord does.
 - [x] **33.** Add **a lot more filters** for the File explorer.
 

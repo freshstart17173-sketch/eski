@@ -175,6 +175,13 @@ input{font:inherit;color:inherit}
 .reply:hover{color:var(--ink)}
 
 /* file share in a channel: filename leads, no caption */
+/* #25 several files posted at once clump into a compact grid (Discord-style) */
+.fileclump{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px;margin-top:8px;max-width:320px}
+.fileclump .fc{display:flex;align-items:center;gap:8px;background:var(--surface);border-radius:var(--r);padding:8px 10px;font-size:var(--fs-xs);cursor:pointer;min-width:0;transition:background var(--t)}
+.fileclump .fc:hover{background:var(--plate)}
+.fileclump .fc .ic{color:var(--muted);flex:none;width:15px;height:15px}
+.fileclump .fc .n{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fileclump .fc.more{justify-content:center;color:var(--muted);font-weight:600}
 .filecard{margin-top:8px;max-width:420px;background:var(--surface);border-radius:var(--r);overflow:hidden;cursor:pointer;transition:background var(--t)}
 .filecard:hover{background:var(--plate)}
 .fcwave{height:74px;padding:10px 14px;background:var(--paper1);display:flex;align-items:center;gap:10px;color:var(--muted)}
@@ -1943,6 +1950,24 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
               </button>
               <div class="reactions"><span class="react">🔥<span class="n">3</span></span><span class="react">👀<span class="n">1</span></span></div>
               <div class="reply"><svg class="ic sm"><use href="#i-reply"/></svg>3 replies</div>
+            </div>
+          </div>
+          <!-- #25 several files in one post clump into a compact grid -->
+          <div class="msg">
+            <div class="hoveracts"><button class="iconbtn" title="React"><svg class="ic sm"><use href="#i-smile"/></svg></button><button class="iconbtn" title="Reply"><svg class="ic sm"><use href="#i-reply"/></svg></button><button class="iconbtn" title="More"><svg class="ic sm"><use href="#i-more"/></svg></button></div>
+            <div class="av sm">DV</div>
+            <div class="bd">
+              <div class="by"><span class="u m3">dev</span><time>2:16 PM</time></div>
+              <div class="tx">dropped the whole one-shot pack, grab what you want</div>
+              <div class="fileclump">
+                <button class="fc" data-open-details><svg class="ic"><use href="#i-music"/></svg><span class="n">kick_punchy.wav</span></button>
+                <button class="fc" data-open-details><svg class="ic"><use href="#i-music"/></svg><span class="n">snare_tight.wav</span></button>
+                <button class="fc" data-open-details><svg class="ic"><use href="#i-music"/></svg><span class="n">hat_loop_142.wav</span></button>
+                <button class="fc" data-open-details><svg class="ic"><use href="#i-music"/></svg><span class="n">break_chop.wav</span></button>
+                <button class="fc" data-open-details><svg class="ic"><use href="#i-file"/></svg><span class="n">drum_bus.flp</span></button>
+                <button class="fc more">+3 more</button>
+              </div>
+              <div class="reactions"><span class="react">🥁<span class="n">2</span></span></div>
             </div>
           </div>
           <div class="msg">
