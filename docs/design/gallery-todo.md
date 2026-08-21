@@ -130,7 +130,7 @@ bottom. `[x]` = done and pushed.
 - [x] **35.** Produce a **list of slash commands**. → [`slash-commands.md`](slash-commands.md).
 
 ## Interaction & polish
-- [ ] **45.** **Every single button** should have a **hover animation** (no dead
+- [x] **45.** **Every single button** should have a **hover animation** (no dead
   buttons — consistent hover feedback across the whole UI).
 - [x] **48.** **Hide scrollbars while keeping scroll** on every scroll container
   (`scrollbar-width:none` + `::-webkit-scrollbar{display:none}`) — cleaner look. Keep
@@ -147,7 +147,7 @@ bottom. `[x]` = done and pushed.
   surface (there's a bell, but no toast, no upload progress UI).
 
 ## Icons
-- [ ] **21.** The zip-file icon isn't centered and looks bad. Decide on the single icon
+- [x] **21.** The zip-file icon isn't centered and looks bad. Decide on the single icon
   for **unsupported / unpreviewable** files and use it consistently.
 
 ## Missing screens

@@ -36,7 +36,14 @@
 html,body{height:100%}
 body{font-family:var(--font);font-size:var(--fs);color:var(--ink);background:var(--paper);line-height:1.45;
   -webkit-font-smoothing:antialiased;font-synthesis:none}
-button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;
+  transition:background var(--t),color var(--t),opacity var(--t),transform var(--t)}
+/* #45 consistent hover feedback on EVERY button — no dead buttons. :where() is
+   zero-specificity so a styled button keeps its own background-step hover; this
+   only adds a slight fade (and a press nudge) on top, and gives otherwise-
+   unstyled buttons (breadcrumbs, menu rows) something to respond with. */
+button:where(:hover):not(:disabled){opacity:.86}
+button:where(:active):not(:disabled){transform:translateY(.5px)}
 input{font:inherit;color:inherit}
 :focus-visible{outline:2px solid var(--ink);outline-offset:1px}
 .ic{width:17px;height:17px;flex:none;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
@@ -1863,7 +1870,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
             <div class="av sm">TM</div>
             <div class="bd">
               <div class="by"><span class="u m2">tomo</span><time>2:47 PM</time></div>
-              <div class="tx">ableton user here, opened dev's stems fine. one note on the low end, left it on the waveform in canvas</div><div class="filecard" style="max-width:300px;display:flex;align-items:center;gap:11px;padding:10px 12px;margin-top:6px"><svg class="ic"><use href="#i-clip"/></svg><div><div class="fn">stems_sh040.zip</div><div style="font-size:11px;color:var(--muted)">48 MB &middot; ZIP</div></div></div>
+              <div class="tx">ableton user here, opened dev's stems fine. one note on the low end, left it on the waveform in canvas</div><div class="filecard" style="max-width:300px;display:flex;align-items:center;gap:11px;padding:10px 12px;margin-top:6px"><svg class="ic"><use href="#i-file"/></svg><div><div class="fn">stems_sh040.zip</div><div style="font-size:11px;color:var(--muted)">48 MB &middot; ZIP</div></div></div>
             </div>
           </div>
         </div>
@@ -1901,7 +1908,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
         <div class="chpanel" data-chview="files" hidden>
           <div class="lb">12 files in #beats</div>
           <div class="masonry even">
-            <button class="card" data-open-details><div class="media file"><svg class="ic fic"><use href="#i-clip"/></svg><span class="ext">FLP</span></div><div class="title">late_bloom_beat.flp</div><div class="who">dev · v3</div></button>
+            <button class="card" data-open-details><div class="media file"><svg class="ic fic"><use href="#i-file"/></svg><span class="ext">FLP</span></div><div class="title">late_bloom_beat.flp</div><div class="who">dev · v3</div></button>
             <button class="card" data-open-details><div class="media audio"><svg class="ic fic"><use href="#i-music"/></svg><span class="ext">WAV</span></div><div class="title">bridge_scratch_rae.wav</div><div class="who">rae</div></button>
             <button class="card" data-open-details><div class="media"><div class="shot c" style="aspect-ratio:3/2"></div></div><div class="title">ref_drums.png</div><div class="who">rae</div></button>
             <button class="card" data-open-details><div class="media audio"><svg class="ic fic"><use href="#i-music"/></svg><span class="ext">WAV</span></div><div class="title">bounce_v2.wav</div><div class="who">dev</div></button>
@@ -1975,7 +1982,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
               <div class="title">title sequence, draft</div><div class="who">sol</div></button>
             <button class="card" data-open-details><div class="media audio"><svg class="ic fic"><use href="#i-music"/></svg><span class="ext">WAV</span></div>
               <div class="title">drum one-shots, vol 2</div><div class="who">jax</div></button>
-            <button class="card" data-open-details><div class="media file"><svg class="ic fic"><use href="#i-clip"/></svg><span class="ext">ZIP</span></div><div class="title">session backup, aug</div><div class="who">dev</div></button>
+            <button class="card" data-open-details><div class="media file"><svg class="ic fic"><use href="#i-file"/></svg><span class="ext">ZIP</span></div><div class="title">session backup, aug</div><div class="who">dev</div></button>
           </div>
         </div>
       </div>
