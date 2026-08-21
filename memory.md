@@ -56,49 +56,43 @@ early on — always screenshot before committing a visual change.**
 
 ## What this session did (all on `main`, pushed)
 
-Worked `docs/design/gallery-todo.md` in token-cost order. **Done + verified:**
-#35, #28 (new docs `slash-commands.md`, `placeholders.md`), #48, #29, #11, #12,
-#13, #31, #32, #37, #38, #1, #2, #3, #4, #5, #7, #16, #30, #36, #41, #6, #8, #9,
-#45, #21, #14, #15, #47, #10, #17, #18, #24, #42, #43, and NEW #52 (no
-waveforms anywhere). CANON §C.7/§C.10/§C.12 and COLLAB were kept in sync with
-each change (every gallery edit that changes behaviour updates CANON/COLLAB).
+Worked `docs/design/gallery-todo.md` in token-cost order and **completed EVERY
+item — #1–#61 (incl. NEW #52–#61) are all `[x]`.** #27 resolved as "keep". Every
+change was **rendered in headless Chromium and eyeballed** before commit, and
+CANON/COLLAB were kept in sync with each behaviour change. Each item (or tight
+cluster) was its own commit + push.
 
-Key model changes baked into CANON this session: audio is a **music-icon type
-card everywhere, no waveform** (#52 supersedes #12); details pane dropped the
-storage×visibility badge and the "N MB on X storage" prose (Size row instead),
-Channel→"Posted in", added Modified+by-whom, server files have **no discussion
-section** at all; one unified audio/video transport, no visible skip (5s on
-←/→), speed control + video quality; single-work details get **top-bar** prev/
-next arrows (folder keeps over-media arrows); circular avatars; upload has a
-real entry button + Files/Folder toggle; Starred + Trash(30d) smart folders.
+Highlights baked into CANON/COLLAB this session:
+- Audio is a **music-icon type card everywhere, no waveform** (#52 supersedes #12).
+- Details pane: dropped storage×visibility badge + "N MB on X storage" (Size row),
+  Channel→"Posted in", Modified+by-whom, server files have **no discussion**;
+  top-bar prev/next arrows; one unified audio/video transport (no visible skip,
+  5s on ←/→, speed + quality).
+- Circular person avatars (`.av`→50%); server icons stay square; **#26 removed the
+  colour dot in name chips** (colour reads via chip text).
+- Explorer: real Upload button + Files/Folder toggle; more filters + quick-filter
+  chips + Show-hidden; **file context menu** (right-click/⋯); **Starred + Trash(30d)**
+  smart folders; **server cover+icon header**; skeleton loading + empty states.
+- New surfaces: **Share dialog** (#39/#61), **read-only shared view** (`shared`
+  screen, #40), **storage-upgrade modal + over-cap read-only banner** (#44/#46),
+  **user/account settings** screen (`usersettings`, #22, distinct from server
+  settings), **blocked/pending** state screens (#23), **toast + upload-progress**
+  (#51), **profile POV switcher** owner/public/mutual (#20), **clumped multi-file**
+  chat posts (#25), **voice WIP banner** (#56).
+- Owner model items: per-channel **default save folder** + **allowed file types**
+  (#53/#54), **post-approval** queue (#57), **admin bulk file actions** (#59),
+  **locked/archived folders** (#58), **hidden/untracked files** (#55), and the
+  **one-explorer** rule (#60: server explorer == home Feed, parameterised by source).
 
-## Still open (in `docs/design/gallery-todo.md`)
+New schema baked into COLLAB §7.1: `channels.default_folder_id` + `allowed_kinds[]`;
+`server_members.posts_require_approval`; `works.hidden` + `works.approved_at`;
+`folders.archived` + `folders.locked`. All with RLS/gate notes.
 
-**Not started (biggest / new surfaces):** #19 (right-click/burger menu — note
-selection mode + cardacts already exist), #25 (clumped multi-file in channel),
-#33 (more explorer filters), #20 (profile POVs owner/public/mutual), #22
-(Settings screen — a `settings` data-screen already exists, likely *server*
-settings; owner wants a user/account one — confirm scope), #23 (blocked/pending
-state screens), #34 (surface server icon+cover beyond the rail), #39 (Share
-dialog, Google-Drive style), #40 (read-only shared-view screen), #44 (storage-
-upgrade UI), #46 (read-only over-cap screen), #49 (skeleton/loading states),
-#50 (empty states), #51 (toast + upload-progress).
+## Still open
 
-**New owner items (added 2026-08-21):** #53 channel default file-save location,
-#54 per-channel file-type permissions, #55 tracked vs untracked/hidden files
-(hidden in file view, "show hidden" toggle; for chat-utility files), #56 voice-
-chat WIP screens, #57 per-user posting permission / post-approval queue, #58
-archiving + locked folders, #59 admin panel mass file management (incl. delete
-all of a user's posts), #60 unify every explorer/viewer (server + home feed share
-structure; feed only differs by filtering to friends), #61 update-post-visibility
-modal.
-
-**Resolved this session (no longer needs input):**
-- **#26** DONE — "circles in name cards" = the round colour **dot** in tag/name
-  chips (`.uchip .dot`, now `display:none`); member colour still reads via the
-  coloured chip text.
-- **#27** RESOLVED — the collaborators field **stays** (consent-gated per §D.3.1);
-  do not remove it.
+**Nothing left in `gallery-todo.md`** — all 61 items done (#27 resolved as
+"keep, consent-gated"; #26 done = removed the colour dot in name chips). What
+remains is **owner-only**:
 
 **Still needs the OWNER's input (pushed to the bottom):**
 - **Owner decisions** in `docs/COLLAB.md` §"Owner decisions still open" (WebRTC
@@ -112,4 +106,9 @@ modal.
 
 `.wave` CSS rules and the `generateWaveform()` JS in `gallery.html` are now dead
 (0 waveform elements) — remove in a cleanup pass. Unused symbols `#i-rewind`/
-`#i-ff` (skip buttons removed) are still defined; harmless.
+`#i-ff` (skip buttons removed) are still defined; harmless. Two toggle styles now
+coexist: the pre-existing **`.tgl`** (round pill — technically violates the
+"round = avatars+dots only" rule) and the new square **`.tog`** (#22, correct per
+the rules) — unify to `.tog` when convenient. `.umodal` (gallery ~L463) still has
+a `box-shadow` despite the "modals = scrim, no drop shadow" rule — pre-existing,
+left as-is.
