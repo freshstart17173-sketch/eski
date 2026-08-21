@@ -1,7 +1,30 @@
 # gallery.html — pending changes
 
-Captured 2026-08-19. Not started yet. These are edits to `gallery.html` (LAW).
-Check against CANON before implementing each one.
+Captured 2026-08-19. These are edits to `gallery.html` (LAW). Check against
+CANON before implementing each one.
+
+## Execution order (by token cost, cheapest first)
+
+Triage 2026-08-21. Working the list in this order; input-gated items sit at the
+bottom. `[x]` = done and pushed.
+
+1. **Docs / lists (no gallery surgery):** `[x]` #35 slash commands →
+   [`slash-commands.md`](slash-commands.md); `[x]` #28 placeholder inventory →
+   [`placeholders.md`](placeholders.md).
+2. **Global CSS (one style-block rule each):** #48 hidden scrollbars, #45 hover
+   on every button, #32 borderless play icon, #31 rectangular progress bar,
+   #29 transparent previewable containers, #1 circular avatars, #26 remove
+   name-card circles.
+3. **Localized markup on existing screens:** #2 #3 #4 #5 #7 #16 #30 #41 (details
+   pane), #6 #8 #9 #36 (folder pane), #27 (drop collaborators field), #10 (nav
+   arrows), #11 #12 #13 #37 (players), #21 (unpreviewable icon), #34 (server art).
+4. **New surfaces / dialogs (biggest):** #14 #15 #47 (upload), #17 #18 #19 #25
+   #33 (browser features), #24 #38 (player extras), #39 #40 (share + shared
+   view), #42 #43 (trash + stars), #44 #46 (storage states), #22 #23 (settings +
+   state screens), #49 #50 #51 (skeletons, empties, toasts), #20 (profile POVs).
+5. **Needs owner input (bottom):** brand assets B1–B8 (hand-drawn), the owner
+   decisions in COLLAB §"Owner decisions still open", member-colour palette
+   sign-off, and any art-vs-icon call inside #50.
 
 ## Profile pictures & identity
 - [ ] **1.** Every profile picture → **circle**, not square. (Consistent with the
@@ -47,9 +70,9 @@ Check against CANON before implementing each one.
   the **whole folder** or **just a selection**.
 
 ## Thumbnails & placeholder images
-- [ ] **28.** Produce a **list of every image, video, and audio placeholder** used in
+- [x] **28.** Produce a **list of every image, video, and audio placeholder** used in
   the gallery, so a suitable placeholder can be provided for each. (Audio waveforms
-  would be generated from the provided placeholders.)
+  would be generated from the provided placeholders.) → [`placeholders.md`](placeholders.md).
 - [ ] **29.** For **previewable file types**, the **square container the thumbnail sits
   in should be transparent** (the image itself fills it — no opaque tile behind it).
 
@@ -104,7 +127,7 @@ Check against CANON before implementing each one.
   deleted").
 
 ## Docs / reference
-- [ ] **35.** Produce a **list of slash commands**.
+- [x] **35.** Produce a **list of slash commands**. → [`slash-commands.md`](slash-commands.md).
 
 ## Interaction & polish
 - [ ] **45.** **Every single button** should have a **hover animation** (no dead

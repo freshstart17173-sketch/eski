@@ -785,6 +785,11 @@ These are genuine build-vs-buy or policy calls (COLLAB history, CANON §D):
   everywhere; toast and upload-progress visuals; a single consistent
   unpreviewable-file icon.
 
+Two reference lists are now written out of that queue: the slash-command set
+([`design/slash-commands.md`](design/slash-commands.md), todo #35) and the
+placeholder-art inventory ([`design/placeholders.md`](design/placeholders.md),
+todo #28).
+
 ### Brand assets to draw — [`design/brand-assets-todo.md`](design/brand-assets-todo.md)
 
 Hand-drawn assets (Inkscape), not gallery work: logo, wordmark lockup, brandmark
