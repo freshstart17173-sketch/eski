@@ -1195,6 +1195,11 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
 :root[data-mode="app"] .gallery-ui{display:none}
 :root[data-mode="catalog"] .app{display:none}
 .app{height:100vh}
+/* full screens are designed on a 1440px canvas (standard web width); the app
+   centres in wider viewports with the page ground showing in the gutters.
+   Fixed dialogs/modals already cap ≤1360px, so they sit inside this canvas. */
+:root[data-mode="app"] body{background:var(--plate)}
+:root[data-mode="app"] .app{max-width:1440px;margin-inline:auto;border-inline:1px solid var(--line)}
 .proto{display:none}   /* dev picker bar — killed everywhere; gallery drives nav */
 /* app-mode layout: fill the viewport, no stray padding, screens stretch */
 :root[data-mode="app"] body{padding-bottom:0}
