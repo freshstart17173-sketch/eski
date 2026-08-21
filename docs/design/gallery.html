@@ -129,6 +129,8 @@ input{font:inherit;color:inherit}
 .cgroup{margin-bottom:var(--s4)}
 .cglabel{display:flex;align-items:center;justify-content:space-between;padding:0 var(--s2) var(--s1);color:var(--muted);font-size:var(--fs-xs);font-weight:600}
 .cglabel .ic{color:var(--muted);cursor:pointer}
+.cgadd{width:18px;height:18px;display:grid;place-items:center;border-radius:var(--r);color:var(--muted)}
+.cgadd:hover{background:var(--plate);color:var(--ink)}
 .crow{display:flex;align-items:center;gap:8px;width:100%;text-align:left;padding:6px var(--s2);border-radius:var(--r);color:var(--soft);transition:background var(--t),color var(--t)}
 .crow:hover{background:var(--plate)}
 .crow.on{background:var(--plate);color:var(--ink);font-weight:600}
@@ -1899,7 +1901,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
     <!-- WORKSPACE -->
     <div class="screen" data-screen="workspace">
       <nav class="chan">
-        <div class="srvhd" data-s="settings" title="Server settings">
+        <div class="srvhd" id="srvHdr" title="Server menu">
           <div class="srvcover"></div>
           <div class="srvbar"><span class="srvicon">LB</span><b>Late Bloom LP</b><svg class="ic sm" style="margin-left:auto;color:var(--muted)"><use href="#i-chev"/></svg></div>
         </div>
@@ -1908,7 +1910,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
             <button class="crow" data-s="explorer"><svg class="ic"><use href="#i-folder"/></svg><span class="nm">Files</span></button>
           </div>
           <div class="cgroup">
-            <div class="cglabel">Channels <svg class="ic sm"><use href="#i-plus"/></svg></div>
+            <div class="cglabel">Channels <button class="cgadd" id="addChannel" title="Create channel"><svg class="ic sm"><use href="#i-plus"/></svg></button></div>
             <button class="crow"><svg class="ic"><use href="#i-hash"/></svg><span class="nm">announcements</span></button>
             <button class="crow on"><svg class="ic"><use href="#i-hash"/></svg><span class="nm">beats</span></button>
             <button class="crow"><svg class="ic"><use href="#i-hash"/></svg><span class="nm">verses</span><span class="ct">4</span></button>
@@ -1917,7 +1919,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
             <button class="crow"><svg class="ic"><use href="#i-hash"/></svg><span class="nm">stems and sessions</span></button>
           </div>
           <div class="cgroup">
-            <div class="cglabel">Voice <svg class="ic sm"><use href="#i-plus"/></svg></div>
+            <div class="cglabel">Voice <button class="cgadd" id="addVoice" title="Create voice channel"><svg class="ic sm"><use href="#i-plus"/></svg></button></div>
             <button class="crow" data-s="vc"><svg class="ic"><use href="#i-voice"/></svg><span class="nm">the booth</span></button>
             <div class="vpeople">
               <div class="vp m3"><span class="live"></span><span class="u m3">dev</span><span style="color:var(--muted)">sharing FL</span></div>
@@ -3023,6 +3025,64 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   <div class="sep"></div>
   <button class="danger"><svg class="ic sm"><use href="#i-trash"/></svg>Delete</button></div>
 
+<!-- B1 server-name dropdown (opens from the server header) -->
+<div class="menu" id="serverMenu"><div class="mlabel">Late Bloom LP</div>
+  <button id="smInvite"><svg class="ic sm"><use href="#i-user"/></svg>Invite people</button>
+  <button id="smNewChannel"><svg class="ic sm"><use href="#i-hash"/></svg>Create channel</button>
+  <button><svg class="ic sm"><use href="#i-folder"/></svg>Create category</button>
+  <button data-s="settings"><svg class="ic sm"><use href="#i-settings"/></svg>Server settings</button>
+  <button><svg class="ic sm"><use href="#i-bell"/></svg>Notification settings</button>
+  <button><svg class="ic sm"><use href="#i-pen"/></svg>Edit server profile</button>
+  <div class="sep"></div>
+  <button class="danger"><svg class="ic sm"><use href="#i-leave"/></svg>Leave server</button></div>
+
+<!-- S2 create-channel dialog -->
+<div class="scrim" id="channelScrim" hidden></div>
+<div class="umodal" id="channelModal" hidden>
+  <div class="uhd"><b id="channelTitle">Create channel</b><button class="iconbtn" id="channelClose"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
+  <div class="ubody">
+    <label class="ulab">Channel type</label>
+    <div class="urow">
+      <button class="visopt on" data-chkind="text"><svg class="ic"><use href="#i-hash"/></svg><span>Text<small>messages &amp; files</small></span></button>
+      <button class="visopt" data-chkind="voice"><svg class="ic"><use href="#i-voice"/></svg><span>Voice<small>talk &amp; screen-share</small></span></button>
+    </div>
+    <label class="ulab">Name</label>
+    <div class="field"><span style="color:var(--muted)">#</span><input id="channelName" placeholder="new-channel"></div>
+    <label class="ulab">Category</label>
+    <button class="selbtn" style="width:100%;justify-content:space-between">Channels<svg class="ic sm"><use href="#i-chev"/></svg></button>
+    <details class="addmore">
+      <summary><svg class="ic sm"><use href="#i-chev"/></svg>Advanced <span style="font-weight:400;color:var(--muted)">(optional)</span></summary>
+      <div class="setrow"><div class="cl"><b>Private channel</b><small>Only invited roles/members see it</small></div><span class="tog"><i></i></span></div>
+      <label class="ulab">Default save folder <span style="font-weight:400;color:var(--muted)">— where files posted here land</span></label>
+      <button class="selbtn" style="width:100%;justify-content:space-between"><span style="display:flex;align-items:center;gap:8px"><svg class="ic sm"><use href="#i-folder"/></svg>Root</span><svg class="ic sm"><use href="#i-chev"/></svg></button>
+      <label class="ulab">Allowed file types</label>
+      <button class="selbtn" style="width:100%;justify-content:space-between">Any<svg class="ic sm"><use href="#i-chev"/></svg></button>
+    </details>
+  </div>
+  <div class="ufoot"><button class="btn" id="channelCancel">Cancel</button><button class="btn primary">Create channel</button></div>
+</div>
+
+<!-- S3 invite-to-server dialog -->
+<div class="scrim" id="inviteScrim" hidden></div>
+<div class="umodal" id="inviteModal" hidden>
+  <div class="uhd"><b>Invite to Late Bloom LP</b><button class="iconbtn" id="inviteClose"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
+  <div class="ubody">
+    <label class="ulab">Invite link</label>
+    <div class="field"><svg class="ic sm"><use href="#i-link"/></svg><input readonly value="join.eski.lol/lb-open-9f2"><button class="btn sm"><svg class="ic sm"><use href="#i-copy"/></svg>Copy</button></div>
+    <div class="urow" style="margin-top:8px">
+      <button class="selbtn" style="flex:1;justify-content:space-between">Expires in 7 days<svg class="ic sm"><use href="#i-chev"/></svg></button>
+      <button class="selbtn" style="flex:1;justify-content:space-between">Max 25 uses<svg class="ic sm"><use href="#i-chev"/></svg></button>
+    </div>
+    <label class="ulab">Or invite by handle</label>
+    <div class="field"><svg class="ic sm"><use href="#i-at"/></svg><input placeholder="@handle"></div>
+    <div class="shareppl" style="margin-top:10px">
+      <div class="sharerow"><span class="av sm">MI</span><span class="nm"><b class="m4">mira</b> <span style="color:var(--muted)">@miracuts</span></span><button class="btn sm">Invite</button></div>
+      <div class="sharerow"><span class="av sm">SO</span><span class="nm"><b class="m2">sol</b> <span style="color:var(--muted)">@solsound</span></span><button class="btn sm">Invite</button></div>
+    </div>
+  </div>
+  <div class="ufoot"><button class="btn primary" id="inviteDone">Done</button></div>
+</div>
+
 <!-- #58 folder context menu (right-click a folder in the tree) -->
 <div class="menu" id="folderMenu"><div class="mlabel">Folder</div>
   <button><svg class="ic sm"><use href="#i-folder"/></svg>Open</button>
@@ -3270,6 +3330,27 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
     document.querySelectorAll('.card').forEach(function(c){c.addEventListener('contextmenu',function(e){
       e.preventDefault();openMenuAt(cardMenu,e.clientX,e.clientY);});});
   }
+  // B1 server-name dropdown
+  var serverMenu=document.getElementById('serverMenu'),srvHdr=document.getElementById('srvHdr');
+  if(serverMenu&&srvHdr){menus.push(serverMenu);
+    srvHdr.addEventListener('click',function(e){e.stopPropagation();var r=srvHdr.getBoundingClientRect();openMenuAt(serverMenu,r.left+8,r.bottom-6);});}
+
+  // S2 create-channel + S3 invite-to-server dialogs
+  function opener(scrimId,modalId){var s=document.getElementById(scrimId),m=document.getElementById(modalId);
+    return {open:function(){closeMenus();if(s)s.hidden=false;if(m)m.hidden=false;},close:function(){if(s)s.hidden=true;if(m)m.hidden=true;}};}
+  var chan=opener('channelScrim','channelModal'), inv=opener('inviteScrim','inviteModal');
+  ['addChannel','smNewChannel'].forEach(function(id){var e=document.getElementById(id);if(e)e.addEventListener('click',function(ev){ev.stopPropagation();setChanKind('text');chan.open();});});
+  var addVoice=document.getElementById('addVoice');if(addVoice)addVoice.addEventListener('click',function(ev){ev.stopPropagation();setChanKind('voice');chan.open();});
+  ['channelClose','channelCancel'].forEach(function(id){var e=document.getElementById(id);if(e)e.addEventListener('click',chan.close);});
+  var channelScrim=document.getElementById('channelScrim');if(channelScrim)channelScrim.addEventListener('click',chan.close);
+  function setChanKind(k){var mo=document.getElementById('channelModal');if(!mo)return;
+    mo.querySelectorAll('[data-chkind]').forEach(function(b){b.classList.toggle('on',b.dataset.chkind===k);});
+    var t=document.getElementById('channelTitle');if(t)t.textContent=k==='voice'?'Create voice channel':'Create channel';}
+  document.querySelectorAll('#channelModal [data-chkind]').forEach(function(b){b.addEventListener('click',function(){setChanKind(b.dataset.chkind);});});
+  var smInvite=document.getElementById('smInvite');if(smInvite)smInvite.addEventListener('click',function(ev){ev.stopPropagation();inv.open();});
+  ['inviteClose','inviteDone'].forEach(function(id){var e=document.getElementById(id);if(e)e.addEventListener('click',inv.close);});
+  var inviteScrim=document.getElementById('inviteScrim');if(inviteScrim)inviteScrim.addEventListener('click',inv.close);
+
   // #58 folder context menu on right-click of a folder tree row
   var folderMenu=document.getElementById('folderMenu');
   if(folderMenu){document.querySelectorAll('.filetree .ftrow').forEach(function(r){r.addEventListener('contextmenu',function(e){
