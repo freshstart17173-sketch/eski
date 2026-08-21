@@ -705,6 +705,16 @@ input{font:inherit;color:inherit}
 .nrow .ntx{font-size:var(--fs-sm);color:var(--soft)}.nrow .ntx b{color:var(--ink);font-weight:600}
 .nrow .nctx{font-size:var(--fs-xs);color:var(--muted);margin-top:2px}
 .nrow time{font-size:var(--fs-xs);color:var(--muted);flex:none}
+/* B15 bell dropdown — a compact preview built from the same .nrow rows */
+.notifmenu{width:344px;max-width:92vw;padding:0}
+.notifmenu .nmhd{display:flex;align-items:center;gap:8px;padding:11px 12px;box-shadow:inset 0 -1px 0 var(--line)}
+.notifmenu .nmhd b{font-size:var(--fs-sm);flex:1}
+.notifmenu .nmread{width:auto;padding:4px 8px;font-size:var(--fs-xs);color:var(--muted)}
+.notifmenu .nmlist{max-height:340px;overflow-y:auto;padding:5px}
+.notifmenu .nrow{padding:9px 10px 9px 20px}
+.notifmenu .nrow.unread::before{left:8px}
+.notifmenu .nrow .ntx{white-space:normal;line-height:1.35}
+.notifmenu .nmfoot{justify-content:center;color:var(--ink);font-weight:500;box-shadow:inset 0 1px 0 var(--line)}
 .nrow .quote{margin-top:6px;font-size:var(--fs-xs);color:var(--soft);padding-left:10px;box-shadow:inset 2px 0 0 var(--line)}
 /* per-group filter row: chips scope the list to one group */
 .nfilter{flex:none;display:flex;align-items:center;gap:var(--s3);padding:0 var(--s5) var(--s3);background:var(--surface);flex-wrap:wrap}
@@ -1980,7 +1990,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
           <div class="acts">
             <button class="iconbtn" data-s="vc" title="Voice"><svg class="ic"><use href="#i-phone"/></svg></button>
             <button class="iconbtn" data-s="vc" title="Video"><svg class="ic"><use href="#i-video"/></svg></button>
-            <button class="iconbtn" data-s="notifications" title="Notifications"><svg class="ic"><use href="#i-bell"/></svg></button>
+            <button class="iconbtn" id="notifBell" title="Notifications"><svg class="ic"><use href="#i-bell"/></svg></button>
             <button class="iconbtn" data-s="search" title="Search"><svg class="ic"><use href="#i-search"/></svg></button>
             <button class="iconbtn" title="Members"><svg class="ic"><use href="#i-users"/></svg></button>
           </div>
@@ -3149,6 +3159,18 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   <div class="sep"></div>
   <button class="danger"><svg class="ic sm"><use href="#i-leave"/></svg>Leave server</button></div>
 
+<!-- B15 notification-bell dropdown — a recent-activity preview of the full
+     notifications screen. Reuses the .nrow row structure from that screen. -->
+<div class="menu notifmenu" id="notifMenu">
+  <div class="nmhd"><b>Notifications</b><button class="nmread" id="notifReadAll">Mark all read</button></div>
+  <div class="nmlist">
+    <div class="nrow unread"><div class="nic"><svg class="ic sm"><use href="#i-at"/></svg></div><div class="nbd"><div class="ntx"><b>rae</b> mentioned you in <b>#beats</b></div><div class="nctx">Late Bloom LP · 2:31 PM</div></div></div>
+    <div class="nrow unread"><div class="nic"><svg class="ic sm"><use href="#i-comment"/></svg></div><div class="nbd"><div class="ntx"><b>mira</b> commented on <b>sh040_comp.mov</b></div><div class="nctx">Specter, sh040 · 1:04 PM</div></div></div>
+    <div class="nrow"><div class="nic"><svg class="ic sm"><use href="#i-comment"/></svg></div><div class="nbd"><div class="ntx"><b>tomo</b> commented on <b>Back half rework</b></div><div class="nctx">Late Bloom LP · 12:20 PM</div></div></div>
+    <div class="nrow"><div class="nic"><svg class="ic sm"><use href="#i-user"/></svg></div><div class="nbd"><div class="ntx"><b>nel</b> joined <b>Late Bloom LP</b> from your invite</div><div class="nctx">Late Bloom LP · Tue</div></div></div>
+  </div>
+  <button class="nmfoot" data-s="notifications" id="notifSeeAll"><svg class="ic sm"><use href="#i-bell"/></svg>See all notifications</button></div>
+
 <!-- S2 create-channel dialog -->
 <div class="scrim" id="channelScrim" hidden></div>
 <div class="umodal" id="channelModal" hidden>
@@ -3482,6 +3504,21 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   var serverMenu=document.getElementById('serverMenu'),srvHdr=document.getElementById('srvHdr');
   if(serverMenu&&srvHdr){menus.push(serverMenu);
     srvHdr.addEventListener('click',function(e){e.stopPropagation();var r=srvHdr.getBoundingClientRect();openMenuAt(serverMenu,r.left+8,r.bottom-6);});}
+
+  // B15 notification-bell dropdown — a preview that right-aligns under the bell.
+  // "See all" and "Mark all read" both close it; See-all falls through to data-s nav.
+  var notifMenu=document.getElementById('notifMenu'),notifBell=document.getElementById('notifBell');
+  if(notifMenu&&notifBell){menus.push(notifMenu);
+    notifBell.addEventListener('click',function(e){e.stopPropagation();
+      var open=notifMenu.classList.contains('open');closeMenus();if(open)return;
+      notifMenu.classList.add('open');var r=notifBell.getBoundingClientRect();
+      notifMenu.style.left=Math.max(8,r.right-notifMenu.offsetWidth)+'px';notifMenu.style.top=(r.bottom+6)+'px';});
+    var notifReadAll=document.getElementById('notifReadAll');
+    if(notifReadAll)notifReadAll.addEventListener('click',function(e){e.stopPropagation();
+      notifMenu.querySelectorAll('.nrow.unread').forEach(function(n){n.classList.remove('unread');});
+      if(typeof toast==='function')toast('All notifications marked read');});
+    var notifSeeAll=document.getElementById('notifSeeAll');
+    if(notifSeeAll)notifSeeAll.addEventListener('click',closeMenus);}
 
   // S2 create-channel + S3 invite-to-server dialogs
   function opener(scrimId,modalId){var s=document.getElementById(scrimId),m=document.getElementById(modalId);
