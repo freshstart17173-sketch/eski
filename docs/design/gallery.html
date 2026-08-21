@@ -1033,6 +1033,23 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
 @keyframes shimmer{100%{transform:translateX(100%)}}
 .skelcard .sk-media{aspect-ratio:1;border-radius:var(--r)}
 .skelcard .sk-line{height:11px;border-radius:var(--r);margin-top:9px}
+/* #44 storage-upgrade UI — usage meter + a dynamic GB slider (CANON §D storage) */
+.storeuse{display:flex;justify-content:space-between;font-size:var(--fs-sm);margin-bottom:8px}
+.storeuse .used{font-weight:600}.storeuse .cap{color:var(--muted)}
+.storebar{height:9px;background:var(--surface);border-radius:var(--r);overflow:hidden}
+.storebar i{display:block;height:100%;background:var(--ink);border-radius:var(--r)}
+.storebar.over i{background:var(--m1)}
+.gbslider{position:relative;height:9px;background:var(--surface);border-radius:var(--r);margin:26px 6px 30px}
+.gbslider .fill{position:absolute;left:0;top:0;bottom:0;background:var(--ink);border-radius:var(--r)}
+.gbslider .handle{position:absolute;top:50%;width:14px;height:22px;border-radius:var(--r);background:var(--ink);transform:translate(-50%,-50%);box-shadow:0 1px 4px rgba(0,0,0,.3);cursor:grab}
+.gbslider .tick{position:absolute;top:16px;transform:translateX(-50%);font-size:10px;color:var(--muted);white-space:nowrap}
+.storetier{display:flex;align-items:baseline;justify-content:space-between;margin-top:6px}
+.storetier .gb{font-size:var(--fs-lg);font-weight:600}.storetier .pr{color:var(--muted);font-size:var(--fs-sm)}
+/* #46 over-cap read-only banner */
+.capbanner{display:flex;align-items:center;gap:10px;padding:9px var(--s5);background:var(--m1);color:#fff;font-size:var(--fs-sm)}
+.capbanner .ic{flex:none;color:#fff}
+.capbanner .btn{margin-left:auto;background:rgba(255,255,255,.16);color:#fff}
+.capbanner .btn:hover{background:rgba(255,255,255,.28)}
 /* folder contents grid inside a details pane */
 .dfolder{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}
 .dfolder .cell{aspect-ratio:1;background:var(--plate);border-radius:3px;overflow:hidden;position:relative}
@@ -2083,9 +2100,11 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
           <button class="ftrow lvl1"><svg class="ic sm tw"><use href="#i-chev"/></svg><svg class="ic sm fic"><use href="#i-folder"/></svg><span class="fn">mixing</span></button>
           <button class="ftrow lvl1"><span class="tw"></span><svg class="ic sm fic"><use href="#i-folder"/></svg><span class="fn">references</span></button>
           <button class="ftrow lvl1"><span class="tw"></span><svg class="ic sm fic"><use href="#i-folder"/></svg><span class="fn">stems and sessions</span></button>
-          <div class="ftfoot"><svg class="ic sm" style="vertical-align:-2px;color:var(--muted)"><use href="#i-server"/></svg> This server's storage<div class="bar"><i style="width:62%"></i></div>74 of 120 GB used · <button style="color:var(--soft);text-decoration:underline">manage</button></div>
+          <div class="ftfoot"><svg class="ic sm" style="vertical-align:-2px;color:var(--muted)"><use href="#i-server"/></svg> This server's storage<div class="bar"><i style="width:62%"></i></div>74 of 120 GB used · <button id="manageStorage" style="color:var(--soft);text-decoration:underline">manage</button></div>
         </nav>
         <div class="pane">
+          <!-- #46 read-only over-cap banner (shown when storage is over cap / lapsed) -->
+          <div class="capbanner" id="capBanner" hidden><svg class="ic sm"><use href="#i-lock"/></svg><span><b>Storage is over its cap.</b> Files are <b>read-only</b> — nothing is deleted — until you free space or upgrade.</span><button class="btn sm" id="capUpgrade">Upgrade</button></div>
           <div class="panehd">
             <div class="crumbs"><button>Late Bloom LP</button><span class="sl">/</span><b>beats</b></div>
             <div class="vseg" id="exView">
@@ -2874,6 +2893,26 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   <div class="ufoot"><button class="btn" id="shareCancel">Cancel</button><button class="btn primary" id="shareDone">Done</button></div>
 </div>
 
+<!-- #44 storage-upgrade modal (opened from the storage meter's "manage") -->
+<div class="scrim" id="storageScrim" hidden></div>
+<div class="umodal" id="storageModal" hidden>
+  <div class="uhd"><b>Late Bloom LP · storage</b><button class="iconbtn" id="storageClose"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
+  <div class="ubody">
+    <div class="storeuse"><span class="used">74 GB used</span><span class="cap">of 120 GB</span></div>
+    <div class="storebar"><i style="width:62%"></i></div>
+    <label class="ulab">Plan <span style="font-weight:400;color:var(--muted)">— drag to buy more</span></label>
+    <div class="gbslider">
+      <div class="fill" style="width:42%"></div>
+      <div class="handle" style="left:42%"></div>
+      <span class="tick" style="left:0">25 GB</span>
+      <span class="tick" style="left:42%">120 GB</span>
+      <span class="tick" style="left:100%">1 TB</span>
+    </div>
+    <div class="storetier"><span class="gb">120 GB</span><span class="pr">$8 / month</span></div>
+  </div>
+  <div class="ufoot"><button class="btn" id="storageCancel">Cancel</button><button class="btn primary">Upgrade plan</button></div>
+</div>
+
 <!-- UPLOAD -->
 <div class="scrim" id="uScrim" hidden></div>
 <div class="umodal" id="uModal" hidden>
@@ -3023,6 +3062,14 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   document.querySelectorAll('.hoveracts [title="React"]').forEach(function(b){b.addEventListener('click',function(e){e.stopPropagation();toggleMenu(emojiMenu,b,true);});});
   document.querySelectorAll('.hoveracts [title="More"]').forEach(function(b){b.addEventListener('click',function(e){e.stopPropagation();toggleMenu(msgMenu,b,true);});});
   document.addEventListener('click',function(e){if(!e.target.closest('.menu'))closeMenus();});
+
+  // #44 storage-upgrade modal open/close (from the meter "manage" and the #46 banner)
+  var storageScrim=document.getElementById('storageScrim'),storageModal=document.getElementById('storageModal');
+  function openStorage(){if(storageScrim)storageScrim.hidden=false;if(storageModal)storageModal.hidden=false;}
+  function closeStorage(){if(storageScrim)storageScrim.hidden=true;if(storageModal)storageModal.hidden=true;}
+  ['manageStorage','capUpgrade'].forEach(function(id){var e=document.getElementById(id);if(e)e.addEventListener('click',openStorage);});
+  ['storageClose','storageCancel'].forEach(function(id){var e=document.getElementById(id);if(e)e.addEventListener('click',closeStorage);});
+  if(storageScrim)storageScrim.addEventListener('click',closeStorage);
 
   // #51 toast + upload-progress feedback
   var toastStack=document.getElementById('toastStack');

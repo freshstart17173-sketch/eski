@@ -126,8 +126,8 @@ bottom. `[x]` = done and pushed.
 - [x] **43.** Add a **starring** system.
 
 ## Storage & billing states
-- [ ] **44.** Add the **storage-upgrade UI elements** and the relevant screens.
-- [ ] **46.** Add a screen showing the UI when files are **read-only because storage
+- [x] **44.** Add the **storage-upgrade UI elements** and the relevant screens.
+- [x] **46.** Add a screen showing the UI when files are **read-only because storage
   isn't paid for** (over-cap / lapsed — matches CANON §D.2's "read-only, never
   deleted").
 

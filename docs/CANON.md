@@ -611,6 +611,14 @@ it rises (CANON §D.2). There are **two independent single-payer sliders** — y
 personal storage, and (gated `manage_billing`) this server's own storage — never
 combined, never allocated across.
 
+The **upgrade UI** (gallery #44) is also reachable inline from the File-explorer
+storage meter's **manage** link: a modal with the **usage bar** ("74 GB used of
+120 GB") and the **dynamic GB slider** (rectangular handle, ticks, live price).
+When an account is **over cap or lapsed**, the explorer shows a red **over-cap
+banner** (gallery #46): "Files are **read-only** — nothing is deleted — until you
+free space or upgrade" (matches §D.2 "read-only, never deleted"), with an Upgrade
+button that opens the same modal.
+
 | Element | Behaviour & states | DB | Desktop | Mobile |
 |---|---|---|---|---|
 | Personal usage bar | Usage / cap for the signed-in user's personal + public works; cap = 10 GB free + your `purchased_gb`. Reads "X GB used *(from Y GB of files)*" (dedup win). | R `storage_meters(user, you)` | Bar + label | Bar |
