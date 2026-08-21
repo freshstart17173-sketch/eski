@@ -104,7 +104,7 @@ bottom. `[x]` = done and pushed.
   sheet, not just the sheet on its own).
 
 ## Cloud file-browser features (new screens/dialogs)
-- [ ] **19.** Add missing browser features: **right-click / burger menu**, **selection
+- [x] **19.** Add missing browser features: **right-click / burger menu**, **selection
   mode**, etc.
 - [ ] **25.** Show what **multiple files posted in a channel** look like — should
   **clump together** like Discord does.
