@@ -176,7 +176,7 @@ bottom. `[x]` = done and pushed.
   utility in chat *without* showing in the File explorer's organised view. Hidden by
   default in the file view; a "show hidden" toggle reveals them. Keeps chat-utility
   files from cluttering the library. (CANON: a `works.hidden`/`tracked` flag + a file-view toggle.)
-- [ ] **56.** **Voice-chat WIP screens** — the voice/VC surfaces need explicit
+- [x] **56.** **Voice-chat WIP screens** — the voice/VC surfaces need explicit
   "work in progress" states so it's clear calls aren't shipping in the beta (CANON
   already defers calls to v2; the UI should say so).
 - [ ] **57.** **Per-user posting permission / post approval** — an admin can set a

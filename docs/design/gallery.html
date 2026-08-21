@@ -844,6 +844,11 @@ input{font:inherit;color:inherit}
 
 /* call upgrades */
 .vc{position:relative}
+/* #56 voice/video is a post-beta (v2) preview — make that explicit */
+.wipbanner{flex:none;display:flex;align-items:center;gap:9px;padding:9px var(--s4);background:#1c1c1c;color:#d8d8d8;font-size:var(--fs-sm)}
+.wipbanner .ic{color:var(--m2);flex:none}
+.wipbanner b{color:#fff}
+.wipbanner .tag{margin-left:auto;background:rgba(255,255,255,.12);color:#fff}
 .vchd .lt{margin-left:14px;display:flex;gap:2px;background:#242424;border-radius:6px;padding:3px}
 .vchd .lt button{width:30px;height:24px;display:grid;place-items:center;border-radius:4px;color:#9a9a9a}
 .vchd .lt button:hover{color:#ededed}.vchd .lt button.on{background:#3a3a3a;color:#ededed}
@@ -2252,6 +2257,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
         <div class="vchd"><svg class="ic"><use href="#i-voice"/></svg><span class="t">the booth</span><span class="sub">Late Bloom LP</span>
           <div class="lt"><button class="on" title="Grid"><svg class="ic sm"><use href="#i-grid"/></svg></button><button title="Focus the share"><svg class="ic sm"><use href="#i-screen"/></svg></button></div>
           <span class="cnt">4 in call · 08:12</span></div>
+        <div class="wipbanner"><svg class="ic sm"><use href="#i-clock"/></svg><span><b>Preview — not in the beta.</b> Voice &amp; video calls ship after the beta (v2). This screen is design-only; nothing here connects yet.</span><span class="tag">WIP · v2</span></div>
         <div class="vcstage">
           <div class="vcshare">
             <div class="vcsharebar"><button class="stop"><svg class="ic"><use href="#i-screen"/></svg>Stop sharing</button><button><svg class="ic"><use href="#i-pen"/></svg>Annotate</button><button>HD</button></div>

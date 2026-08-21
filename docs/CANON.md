@@ -641,8 +641,12 @@ Minimal, on-brand, no rail; centred card (§D.4).
 | **Blocked** (gallery #23) | Viewing someone you blocked: "You blocked @handle — you won't see their messages, posts, or profile; they can't message/add you; **invisible to them**". Unblock CTA. | `friendships.status='blocked'` | Symmetric hide, one-sided visibility of the state. |
 | **Pending** (gallery #23) | An outbound friend request not yet accepted: "Friend request pending — waiting for @handle". Cancel CTA. (Reused shape for other pending approvals, e.g. post-approval #57.) | `friendships.status='pending'` | — |
 
-Screen 7 (Call) stays **v2 — deferred**. Registry rule holds: every row names a
-real table/RPC/Realtime channel from §7 (or an explicit "—").
+Screen 7 (Call) stays **v2 — deferred**, and the UI now **says so**: the voice/
+video screen carries a **WIP banner** — "Preview — not in the beta. Voice & video
+calls ship after the beta (v2). This screen is design-only" + a "WIP · v2" tag
+(gallery #56) — so no one expects calls to connect in the beta. Registry rule
+holds: every row names a real table/RPC/Realtime channel from §7 (or an explicit
+"—").
 
 ---
 
