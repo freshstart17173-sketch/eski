@@ -156,7 +156,7 @@ bottom. `[x]` = done and pushed.
   for **unsupported / unpreviewable** files and use it consistently.
 
 ## Missing screens
-- [ ] **22.** Add a **Settings** screen.
+- [x] **22.** Add a **Settings** screen.
 - [x] **23.** Add more state screens: **blocked**, **pending**, etc.
 
 ## New (added 2026-08-21 by owner)

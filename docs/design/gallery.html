@@ -390,6 +390,14 @@ input{font:inherit;color:inherit}
 .povswitch button{padding:5px 12px;border-radius:var(--r);color:var(--soft);background:var(--paper)}
 .povswitch button.on{background:var(--ink);color:var(--on-ink)}
 .povnote{align-self:center;font-size:var(--fs-xs);color:var(--muted);margin-left:6px}
+/* #22 user-settings rows + a SQUARE toggle (round is avatars+dots only) */
+.setrow{display:flex;align-items:center;gap:var(--s3);padding:11px 0;box-shadow:inset 0 -1px 0 var(--line)}
+.setrow .cl{flex:1;min-width:0}
+.setrow .cl b{font-size:var(--fs-sm);font-weight:600;display:block}
+.setrow .cl small{color:var(--muted);font-size:var(--fs-xs)}
+.tog{width:38px;height:22px;border-radius:var(--r);background:var(--line2);position:relative;cursor:pointer;flex:none;transition:background var(--t)}
+.tog i{position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:calc(var(--r) - 1px);background:var(--paper);transition:left var(--t)}
+.tog.on{background:var(--ink)}.tog.on i{left:18px}
 .phero{padding:var(--s5) var(--s5) var(--s4)}
 .phero .top{display:flex;gap:var(--s5);align-items:flex-start}
 .phero .who h1{font-size:var(--fs-xl);font-weight:600}
@@ -2318,7 +2326,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
           <button class="ptab2 on"><svg class="ic"><use href="#i-globe"/></svg>Public<span class="ct">18</span></button>
           <button class="ptab2" data-pov-only="owner"><svg class="ic"><use href="#i-server"/></svg>Server<span class="ct">9</span></button>
           <button class="ptab2" data-pov-only="owner"><svg class="ic"><use href="#i-lock"/></svg>Private<span class="ct">24</span></button>
-          <button class="ptab2" data-pov-only="owner"><svg class="ic"><use href="#i-settings"/></svg>Settings</button>
+          <button class="ptab2" data-pov-only="owner" data-s="usersettings"><svg class="ic"><use href="#i-settings"/></svg>Settings</button>
           <span class="povnote" data-pov-only="mutual">Friends also see mutuals-only posts</span>
           <button class="iconbtn" style="margin-left:auto" title="Search this profile"><svg class="ic"><use href="#i-search"/></svg></button>
         </div>
@@ -2383,6 +2391,63 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
     </div>
 
     <!-- GROUP SETTINGS (admin) -->
+    <!-- #22 USER / account settings (distinct from the server settings below) -->
+    <div class="screen" data-screen="usersettings" hidden>
+      <div class="settings">
+        <nav class="setnav">
+          <div class="sgh">Your settings</div>
+          <button data-setpanel="uprofile" class="on"><svg class="ic sm"><use href="#i-user"/></svg>Profile</button>
+          <button data-setpanel="uaccount"><svg class="ic sm"><use href="#i-lock"/></svg>Account</button>
+          <button data-setpanel="unotif"><svg class="ic sm"><use href="#i-bell"/></svg>Notifications</button>
+          <button data-setpanel="uappear"><svg class="ic sm"><use href="#i-image"/></svg>Appearance</button>
+          <button data-setpanel="uprivacy"><svg class="ic sm"><use href="#i-hide"/></svg>Privacy &amp; safety</button>
+          <button data-setpanel="ustorage"><svg class="ic sm"><use href="#i-download"/></svg>Storage &amp; billing</button>
+          <div class="sep"></div>
+          <button class="danger"><svg class="ic sm"><use href="#i-leave"/></svg>Log out</button>
+        </nav>
+        <div class="setmain">
+          <div class="setpanel" data-panel="uprofile">
+            <h2>Profile</h2><div class="h2sub">How you appear across eski. Your handle is unique.</div>
+            <div class="frow"><label class="ulab">Avatar</label><div class="avatarpick"><span class="apv">DX</span><button class="btn sm"><svg class="ic sm"><use href="#i-image"/></svg>Upload</button></div></div>
+            <div class="frow"><label class="ulab">Display name</label><div class="field"><input value="dexter"></div></div>
+            <div class="frow"><label class="ulab">Handle</label><div class="field"><span style="color:var(--muted)">@</span><input value="dexter"></div></div>
+            <div class="frow"><label class="ulab">Bio</label><div class="field"><input value="making eski"></div></div>
+            <div class="frow"><label class="ulab">Links</label><div class="field"><input placeholder="add a link…"></div></div>
+          </div>
+          <div class="setpanel" data-panel="uaccount" hidden>
+            <h2>Account</h2><div class="h2sub">Sign-in and security.</div>
+            <div class="frow"><label class="ulab">Email</label><div class="field"><input value="dexter@eski.lol"></div></div>
+            <div class="frow"><label class="ulab">Password</label><button class="btn sm">Change password</button></div>
+            <div class="dangerbox"><div class="t"><b>Delete account</b><small>Permanently removes your account. Files you posted to servers stay with those servers.</small></div><button class="btn danger"><svg class="ic sm"><use href="#i-trash"/></svg>Delete</button></div>
+          </div>
+          <div class="setpanel" data-panel="unotif" hidden>
+            <h2>Notifications</h2><div class="h2sub">In-app only for the beta (no email/push yet).</div>
+            <div class="setrow"><div class="cl"><b>Mentions</b><small>When someone @-mentions you</small></div><span class="tog on"><i></i></span></div>
+            <div class="setrow"><div class="cl"><b>Direct messages</b><small>New DMs</small></div><span class="tog on"><i></i></span></div>
+            <div class="setrow"><div class="cl"><b>Comments</b><small>Comments on your public posts</small></div><span class="tog on"><i></i></span></div>
+            <div class="setrow"><div class="cl"><b>Friend requests</b><small>New requests + accepts</small></div><span class="tog"><i></i></span></div>
+          </div>
+          <div class="setpanel" data-panel="uappear" hidden>
+            <h2>Appearance</h2><div class="h2sub">Theme follows your choice; the app is theme-aware.</div>
+            <div class="frow"><label class="ulab">Theme</label><div class="seg"><div class="o">Light</div><div class="o">Dark</div><div class="o on">System</div></div></div>
+            <div class="frow"><label class="ulab">Density</label><div class="seg"><div class="o on">Comfortable</div><div class="o">Compact</div></div></div>
+          </div>
+          <div class="setpanel" data-panel="uprivacy" hidden>
+            <h2>Privacy &amp; safety</h2><div class="h2sub">Who can reach you, and who you've blocked.</div>
+            <div class="setrow"><div class="cl"><b>Who can DM you</b><small></small></div><button class="selbtn sm">Friends<svg class="ic sm"><use href="#i-chev"/></svg></button></div>
+            <div class="setrow"><div class="cl"><b>Who can add you</b><small></small></div><button class="selbtn sm">Anyone<svg class="ic sm"><use href="#i-chev"/></svg></button></div>
+            <div class="frow"><label class="ulab">Blocked</label><div class="chips"><span class="uchip m1">rae</span><span class="uchip m5">jax</span></div></div>
+          </div>
+          <div class="setpanel" data-panel="ustorage" hidden>
+            <h2>Storage &amp; billing</h2><div class="h2sub">Your personal storage — a single dynamic slider (CANON §D.2).</div>
+            <div class="storeuse"><span class="used">3.1 GB used</span><span class="cap">of 10 GB free</span></div>
+            <div class="storebar"><i style="width:31%"></i></div>
+            <button class="btn primary" style="margin-top:14px" id="ustorageManage"><svg class="ic sm"><use href="#i-download"/></svg>Manage storage</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div class="screen" data-screen="settings" hidden>
       <div class="settings">
         <nav class="setnav">
@@ -3148,7 +3213,9 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   var storageScrim=document.getElementById('storageScrim'),storageModal=document.getElementById('storageModal');
   function openStorage(){if(storageScrim)storageScrim.hidden=false;if(storageModal)storageModal.hidden=false;}
   function closeStorage(){if(storageScrim)storageScrim.hidden=true;if(storageModal)storageModal.hidden=true;}
-  ['manageStorage','capUpgrade'].forEach(function(id){var e=document.getElementById(id);if(e)e.addEventListener('click',openStorage);});
+  ['manageStorage','capUpgrade','ustorageManage'].forEach(function(id){var e=document.getElementById(id);if(e)e.addEventListener('click',openStorage);});
+  // #22 settings toggles
+  document.querySelectorAll('.tog').forEach(function(t){t.addEventListener('click',function(){t.classList.toggle('on');});});
   ['storageClose','storageCancel'].forEach(function(id){var e=document.getElementById(id);if(e)e.addEventListener('click',closeStorage);});
   if(storageScrim)storageScrim.addEventListener('click',closeStorage);
 
@@ -3259,9 +3326,10 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
 
   // group-settings sub-panel switching
   document.querySelectorAll('.setnav [data-setpanel]').forEach(function(b){b.addEventListener('click',function(){
-    document.querySelectorAll('.setnav [data-setpanel]').forEach(function(x){x.classList.remove('on');});b.classList.add('on');
+    var scope=b.closest('.settings')||document;  // scope so a second settings screen doesn't cross-hide
+    scope.querySelectorAll('.setnav [data-setpanel]').forEach(function(x){x.classList.remove('on');});b.classList.add('on');
     var name=b.dataset.setpanel;
-    document.querySelectorAll('.setpanel').forEach(function(p){p.hidden=p.dataset.panel!==name;});});});
+    scope.querySelectorAll('.setpanel').forEach(function(p){p.hidden=p.dataset.panel!==name;});});});
   // storage sliders — bracketed price/GB drops as you buy more (CANON §D.2).
   // marginal $/GB by band: 10→110 = .032, 110→510 = .028, 510→2000 = .024 (~45% gross margin over R2 cost:
   // $0.015/GB-mo storage + Class A $4.50/M + Class B $0.36/M writes/reads, egress free).
@@ -3445,6 +3513,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
     ['settings','Server settings','general · channels · members · invites · moderation · audit · storage',''],
     ['profile','Profile','Public / Server / Private shelves + settings',''],
     ['dms','Messages','DMs, add by handle',''],
+    ['usersettings','User settings','account · profile · notifications · appearance · privacy',''],
     ['search','Search','results + quick switcher (⌘K)',''],
     ['shared','Shared view','read-only — a shared link, only what was shared',''],
     ['create','Create server','name, cover, starter channels',''],

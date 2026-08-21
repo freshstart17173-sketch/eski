@@ -353,6 +353,7 @@ gap) rather than renumbered. Screen 7 (Call) remains a v2 deferral.
 | 9 | Messages (DMs) | `dms` | thread list, conversation | §C.11 |
 | 10 | Upload | *(sheet)* | file upload | §C.12 |
 | 11 | Server settings | `settings` | general/channels/members/roles/invites/moderation/audit/storage | §C.4–C.13 + C.16, C.19 |
+| 12 | **User settings** | `usersettings` | profile · account · notifications · appearance · privacy & safety · storage (gallery #22) — distinct from *server* settings; opens from the profile Settings tab / avatar menu | §C.10 |
 | 12 | Create server | `create` | — | §C.14 |
 | 13 | Join by link | `join` | — | §C.14 |
 | 14 | Notifications | `notifications` | all / mentions / threads / saved (`ntab`) | §C.13 |
