@@ -514,6 +514,7 @@ shows its items read-only with no way to navigate out.
 |---|---|---|---|---|
 | Header | **Circular** avatar image (gallery #1 — every profile picture is round; round = avatars + presence dots only), name, @handle, bio; Add friend / Message (own profile → Edit). | `profiles` · `friendships` | Top | Top |
 | Shelf tabs | **Public / Server / Private** (counts) + Settings; **search** button. | R `works` by visibility | Tab bar | Tab bar |
+| **POV** (gallery #20) | The profile renders three ways by viewer: **owner** (self — Edit profile; all three shelves + Settings), **public** (a stranger — Add friend; **only the Public shelf**, no Settings), **mutual** (a friend — Friends✓ + Message; the Public shelf **plus mutuals-only posts**). Enforced by `works_read` + `friendships.status`. | R `works` (visibility + mutual gate) · `friendships` | Same, chrome varies | Same |
 | Grid | Even square grid ⇄ masonry toggle; same card renderer. | `works` | Grid | 2-col |
 | Settings tab | Name, handle, bio, avatar, theme, status, storage (owner). | `profiles` | Form | Form |
 

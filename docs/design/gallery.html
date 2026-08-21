@@ -384,6 +384,12 @@ input{font:inherit;color:inherit}
 
 /* profile */
 .prof{flex:1;min-width:0;overflow-y:auto;background:var(--paper)}
+/* #20 profile POV switcher (a mockup control to preview owner/public/mutual) */
+.povswitch{display:flex;align-items:center;gap:6px;padding:8px var(--s5);background:var(--surface);font-size:var(--fs-xs)}
+.povswitch .pl{color:var(--muted);margin-right:2px}
+.povswitch button{padding:5px 12px;border-radius:var(--r);color:var(--soft);background:var(--paper)}
+.povswitch button.on{background:var(--ink);color:var(--on-ink)}
+.povnote{align-self:center;font-size:var(--fs-xs);color:var(--muted);margin-left:6px}
 .phero{padding:var(--s5) var(--s5) var(--s4)}
 .phero .top{display:flex;gap:var(--s5);align-items:flex-start}
 .phero .who h1{font-size:var(--fs-xl);font-weight:600}
@@ -2286,20 +2292,34 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
 
     <!-- PROFILE -->
     <div class="screen" data-screen="profile" hidden>
-      <div class="prof">
+      <div class="prof" data-pov="owner">
+        <!-- #20 profile from three POVs — owner (self), public (stranger),
+             mutual (a friend). The switch reconfigures actions + which shelves show. -->
+        <div class="povswitch" id="povSwitch">
+          <span class="pl">Viewing as</span>
+          <button class="on" data-pov="owner">Owner</button>
+          <button data-pov="public">Public</button>
+          <button data-pov="mutual">Mutual</button>
+        </div>
         <div class="phero">
           <div class="top">
             <div class="av lg">RA</div>
             <div class="who"><h1>rae okonkwo</h1><div class="handle">@rae</div>
               <div class="bio">writer and rapper. building the Late Bloom LP with a few people.</div></div>
-            <div class="actions"><button class="btn primary"><svg class="ic sm"><use href="#i-user"/></svg>Add friend</button><button class="btn"><svg class="ic sm"><use href="#i-mail"/></svg>Message</button></div>
+            <div class="actions">
+              <button class="btn primary" data-pov-only="owner"><svg class="ic sm"><use href="#i-pen"/></svg>Edit profile</button>
+              <button class="btn primary" data-pov-only="public"><svg class="ic sm"><use href="#i-user"/></svg>Add friend</button>
+              <button class="btn" data-pov-only="mutual"><svg class="ic sm"><use href="#i-check"/></svg>Friends</button>
+              <button class="btn" data-pov-only="mutual"><svg class="ic sm"><use href="#i-mail"/></svg>Message</button>
+            </div>
           </div>
         </div>
         <div class="ptabs2">
           <button class="ptab2 on"><svg class="ic"><use href="#i-globe"/></svg>Public<span class="ct">18</span></button>
-          <button class="ptab2"><svg class="ic"><use href="#i-server"/></svg>Server<span class="ct">9</span></button>
-          <button class="ptab2"><svg class="ic"><use href="#i-lock"/></svg>Private<span class="ct">24</span></button>
-          <button class="ptab2"><svg class="ic"><use href="#i-settings"/></svg>Settings</button>
+          <button class="ptab2" data-pov-only="owner"><svg class="ic"><use href="#i-server"/></svg>Server<span class="ct">9</span></button>
+          <button class="ptab2" data-pov-only="owner"><svg class="ic"><use href="#i-lock"/></svg>Private<span class="ct">24</span></button>
+          <button class="ptab2" data-pov-only="owner"><svg class="ic"><use href="#i-settings"/></svg>Settings</button>
+          <span class="povnote" data-pov-only="mutual">Friends also see mutuals-only posts</span>
           <button class="iconbtn" style="margin-left:auto" title="Search this profile"><svg class="ic"><use href="#i-search"/></svg></button>
         </div>
         <div class="pbody">
@@ -3111,6 +3131,18 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   document.querySelectorAll('.hoveracts [title="React"]').forEach(function(b){b.addEventListener('click',function(e){e.stopPropagation();toggleMenu(emojiMenu,b,true);});});
   document.querySelectorAll('.hoveracts [title="More"]').forEach(function(b){b.addEventListener('click',function(e){e.stopPropagation();toggleMenu(msgMenu,b,true);});});
   document.addEventListener('click',function(e){if(!e.target.closest('.menu'))closeMenus();});
+
+  // #20 profile POV switcher: reconfigure actions + which shelves show
+  var povSwitch=document.getElementById('povSwitch');
+  if(povSwitch){var prof=povSwitch.closest('.prof');
+    function applyPov(p){prof.setAttribute('data-pov',p);
+      prof.querySelectorAll('[data-pov-only]').forEach(function(el){el.hidden=el.getAttribute('data-pov-only')!==p;});
+      povSwitch.querySelectorAll('button').forEach(function(x){x.classList.toggle('on',x.dataset.pov===p);});
+      // a visitor lands on the Public shelf; owner-only tabs are gone anyway
+      var pub=prof.querySelector('.ptab2');if(pub){prof.querySelectorAll('.ptab2').forEach(function(t){t.classList.remove('on');});pub.classList.add('on');}}
+    povSwitch.querySelectorAll('button').forEach(function(b){b.addEventListener('click',function(){applyPov(b.dataset.pov);});});
+    applyPov('owner');
+  }
 
   // #44 storage-upgrade modal open/close (from the meter "manage" and the #46 banner)
   var storageScrim=document.getElementById('storageScrim'),storageModal=document.getElementById('storageModal');

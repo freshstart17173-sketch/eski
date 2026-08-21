@@ -36,7 +36,7 @@ bottom. `[x]` = done and pushed.
 - [ ] ~~**27.** Remove the collaborators / credits field completely.~~ *(RESOLVED
   2026-08-21: the **collaborators field stays** — keep it, consent-gated per CANON
   §D.3.1. No change needed. Do NOT remove it.)*
-- [ ] **20.** Add profile-screen views from three POVs: **owner**, **public**, and
+- [x] **20.** Add profile-screen views from three POVs: **owner**, **public**, and
   **mutual** (both follow each other — some files may be mutuals-only visible).
 
 ## File details pane
