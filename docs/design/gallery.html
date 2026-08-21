@@ -468,6 +468,10 @@ input{font:inherit;color:inherit}
 .uvbanner .ic{color:var(--muted)}
 .drop{border:1.5px dashed var(--line2);border-radius:var(--r);padding:var(--s4);text-align:center;background:var(--surface)}
 .drop .big{font-weight:600}.drop .sub{font-size:var(--fs-xs);color:var(--muted);margin-top:3px}
+/* #15 files/folder upload toggle — same segmented pattern as .vseg */
+.useg{display:inline-flex;gap:2px;background:var(--plate);border-radius:var(--r);padding:2px;margin-bottom:var(--s3)}
+.useg button{padding:5px 14px;border-radius:calc(var(--r) - 1px);font-size:var(--fs-xs);font-weight:500;color:var(--muted)}
+.useg button.on{background:var(--paper);color:var(--ink)}
 .ufiles{display:flex;flex-direction:column;gap:6px;margin-top:var(--s3)}
 .ufile{display:flex;align-items:center;gap:9px;background:var(--surface);border-radius:var(--r);padding:8px 11px;font-size:var(--fs-sm)}
 .ufile .auto{margin-left:auto}
@@ -1606,7 +1610,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
         <div class="mbody">
           <div style="background:var(--surface);border-radius:var(--r);padding:14px;font-size:12px;color:var(--muted);text-align:center">
             late_bloom_beat.wav · 3 files</div>
-          <label class="fl">Visibility <span style="color:var(--muted)">— the one choice you have to make</span></label>
+          <label class="fl">Visibility <span style="color:var(--muted)">— required</span></label>
           <div class="seg">
             <div class="o"><svg class="ic"><use href="#i-globe"/></svg>Public</div>
             <div class="o on"><svg class="ic"><use href="#i-server"/></svg>Server</div>
@@ -1614,14 +1618,14 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
           </div>
           <label class="fl">Which server / folder</label>
           <button class="selbtn" style="width:100%;justify-content:space-between"><span style="display:flex;align-items:center;gap:8px"><span class="pfp" style="width:20px;height:20px;border-radius:var(--r);font-size:9px;background:var(--m3)">LB</span>Late Bloom LP <span style="color:var(--muted)">/ beats</span></span><svg class="ic sm"><use href="#i-chev"/></svg></button>
-          <div class="ustore"><svg class="ic sm"><use href="#i-server"/></svg>Draws <b>Late Bloom LP</b>'s storage · 74 of 120 GB used</div>
+          <div class="ustore"><svg class="ic sm"><use href="#i-server"/></svg>Late Bloom LP storage · 74/120 GB</div>
           <details class="addmore">
-            <summary><svg class="ic sm"><use href="#i-chev"/></svg>Add details <span style="color:var(--muted)">— title, tags, collaborators (optional)</span></summary>
-            <label class="fl">Title <span style="color:var(--muted)">— file name is the default</span></label>
+            <summary><svg class="ic sm"><use href="#i-chev"/></svg>Add details <span style="color:var(--muted)">(optional)</span></summary>
+            <label class="fl">Title <span style="color:var(--muted)">file name if blank</span></label>
             <div class="field"><input placeholder="late_bloom_beat.wav"></div>
             <label class="fl">Tags</label>
             <div class="field"><input placeholder="142bpm, bridge"></div>
-            <label class="fl">Collaborators <span style="color:var(--muted)">— type a handle, Enter to add (+ optional role)</span></label>
+            <label class="fl">Collaborators <span style="color:var(--muted)">@handle + role</span></label>
             <div class="field collabs"><span class="uchip m5"><span class="dot"></span>jax, prod</span><span class="uchip m3"><span class="dot"></span>tomo, mix</span><input placeholder="add…"></div>
           </details>
         </div>
@@ -2018,6 +2022,8 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
             <button class="selbtn">Type<svg class="ic sm"><use href="#i-chev"/></svg></button>
             <button class="selbtn">Uploader<svg class="ic sm"><use href="#i-chev"/></svg></button>
             <button class="selbtn">Latest<svg class="ic sm"><use href="#i-chev"/></svg></button>
+            <!-- #47 the real upload entry point (was only in the hidden proto bar) -->
+            <button class="btn primary" id="showUpload4" style="margin-left:auto"><svg class="ic sm"><use href="#i-plus"/></svg>Upload</button>
           </div>
           <div class="selbar" id="selbar"><span class="n"><span id="seln">0</span> selected</span>
             <button><svg class="ic sm"><use href="#i-download"/></svg>Download</button>
@@ -2697,7 +2703,9 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
 <div class="umodal" id="uModal" hidden>
   <div class="uhd"><b id="uTitle">Upload</b><button class="iconbtn" id="uClose"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
   <div class="ubody">
-    <div class="drop"><div class="big">Drop files here</div><div class="sub" id="dropSub">or click to choose, several at once</div></div>
+    <!-- #15 files / folder upload variants: the toggle swaps the drop target -->
+    <div class="useg" id="uSeg"><button class="on" data-umode="files">Files</button><button data-umode="folder">Folder</button></div>
+    <div class="drop"><div class="big" id="dropBig">Drop files here</div><div class="sub" id="dropSub">or click to choose, several at once</div></div>
 
     <div class="ufiles" id="ufilesNew">
       <div class="ufile"><svg class="ic sm" style="color:var(--muted)"><use href="#i-file"/></svg>late_bloom_beat.flp</div>
@@ -2705,22 +2713,23 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
     </div>
 
     <div id="uNewFields">
-      <label class="ulab">Visibility <span style="font-weight:400;color:var(--muted)">— the one required choice</span></label>
+      <!-- #14 tighter helper copy — less wrapping, shorter elements -->
+      <label class="ulab">Visibility <span style="font-weight:400;color:var(--muted)">— required</span></label>
       <div class="urow">
-        <button class="visopt"><svg class="ic"><use href="#i-globe"/></svg><span>Public<small>on your public profile</small></span></button>
-        <button class="visopt on"><svg class="ic"><use href="#i-server"/></svg><span>Server<small>members of the server</small></span></button>
+        <button class="visopt"><svg class="ic"><use href="#i-globe"/></svg><span>Public<small>your profile</small></span></button>
+        <button class="visopt on"><svg class="ic"><use href="#i-server"/></svg><span>Server<small>server members</small></span></button>
         <button class="visopt"><svg class="ic"><use href="#i-lock"/></svg><span>Private<small>only you</small></span></button>
       </div>
       <label class="ulab">Which server / folder</label>
       <button class="selbtn" style="width:100%;justify-content:space-between"><span style="display:flex;align-items:center;gap:8px"><span class="pfp" style="width:20px;height:20px;border-radius:var(--r);font-size:9px;background:var(--m3)">LB</span>Late Bloom LP <span style="color:var(--muted)">/ beats</span></span><svg class="ic sm"><use href="#i-chev"/></svg></button>
-      <div class="ustore"><svg class="ic sm"><use href="#i-server"/></svg>Draws <b>Late Bloom LP</b>'s storage · 74 of 120 GB used</div>
+      <div class="ustore"><svg class="ic sm"><use href="#i-server"/></svg>Late Bloom LP storage · 74/120 GB</div>
       <details class="addmore">
-        <summary><svg class="ic sm"><use href="#i-chev"/></svg>Add details <span style="font-weight:400;color:var(--muted)">— title, tags, collaborators (optional)</span></summary>
-        <label class="ulab">Title <span style="font-weight:400;color:var(--muted)">the file name is used if blank</span></label>
+        <summary><svg class="ic sm"><use href="#i-chev"/></svg>Add details <span style="font-weight:400;color:var(--muted)">(optional)</span></summary>
+        <label class="ulab">Title <span style="font-weight:400;color:var(--muted)">file name if blank</span></label>
         <div class="field"><input placeholder="Back half rework"></div>
         <label class="ulab">Tags</label>
         <div class="chips" style="margin-top:2px"><span class="tag">drums</span><span class="tag">142bpm</span><button class="addtag"><svg class="ic sm"><use href="#i-plus"/></svg></button></div>
-        <label class="ulab">Collaborators <span style="font-weight:400;color:var(--muted)">— @handle + an optional role</span></label>
+        <label class="ulab">Collaborators <span style="font-weight:400;color:var(--muted)">@handle + role</span></label>
         <div class="field collabs"><span class="uchip m5"><span class="dot"></span>jax, prod</span><span class="uchip m3"><span class="dot"></span>dev, arrangement</span><input placeholder="add…"></div>
       </details>
     </div>
@@ -2850,7 +2859,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   var uScrim=document.getElementById('uScrim'),uModal=document.getElementById('uModal');
   function openU(){uScrim.hidden=false;uModal.hidden=false;}
   function closeU(){uScrim.hidden=true;uModal.hidden=true;}
-  ['showUpload','showUpload2','showUpload3'].forEach(function(id){var e=document.getElementById(id);if(e)e.addEventListener('click',function(){openU();});});
+  ['showUpload','showUpload2','showUpload3','showUpload4'].forEach(function(id){var e=document.getElementById(id);if(e)e.addEventListener('click',function(){openU();});});
   document.getElementById('uClose').addEventListener('click',closeU);
   document.getElementById('uCancel').addEventListener('click',closeU);
   uScrim.addEventListener('click',closeU);
@@ -2858,6 +2867,21 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
 
   document.querySelectorAll('.visopt').forEach(function(o){o.addEventListener('click',function(){
     document.querySelectorAll('.visopt').forEach(function(x){x.classList.remove('on');});o.classList.add('on');});});
+
+  // #15 files/folder upload toggle: swap the drop target + the picked list
+  var uSeg=document.getElementById('uSeg');
+  if(uSeg){
+    var dropBig=document.getElementById('dropBig'),dropSub=document.getElementById('dropSub'),ufiles=document.getElementById('ufilesNew');
+    var filesHTML=ufiles.innerHTML;
+    var folderHTML='<div class="ufile"><svg class="ic sm" style="color:var(--muted)"><use href="#i-folder"/></svg>Drum picks <span style="color:var(--muted)">· 12 files · 61 MB</span></div>';
+    uSeg.querySelectorAll('button').forEach(function(btn){btn.addEventListener('click',function(){
+      uSeg.querySelectorAll('button').forEach(function(x){x.classList.remove('on');});btn.classList.add('on');
+      var folder=btn.dataset.umode==='folder';
+      dropBig.textContent=folder?'Drop a folder here':'Drop files here';
+      dropSub.textContent=folder?'or click to choose a folder — structure is kept':'or click to choose, several at once';
+      ufiles.innerHTML=folder?folderHTML:filesHTML;
+    });});
+  }
 
   // thread panel (opens beside the chat, replacing the members rail)
   var threadPane=document.getElementById('threadPane');

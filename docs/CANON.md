@@ -516,10 +516,11 @@ below the visibility row is required.
 
 | Element | Behaviour & states | DB | Desktop | Mobile |
 |---|---|---|---|---|
-| Dropzone | Multi-file; type recognised (icon/filter), **not shown as a tag**. | `works.file_ext` | Modal | Sheet |
+| **Entry point** | Opens from a real **Upload** button in the File-explorer toolbar (gallery #47) and from the composer's attach affordance — not a sheet that appears on its own. | — | Toolbar button | Toolbar / composer |
+| Dropzone | Multi-file; type recognised (icon/filter), **not shown as a tag**. A **Files / Folder toggle** swaps the drop target — Folder keeps the folder structure (gallery #15). | `works.file_ext` | Modal | Sheet |
 | Visibility | **Per post**: Public / Server / Private. **The one required choice.** | `works.visibility` | Segmented | Segmented |
 | **Which server / folder** | When Server: pick the target server, and optionally the target **folder** in its tree (default = root). | `works.server_id` · `placement.folder_id` | Picker | Picker |
-| **Storage-impact line** | Under the picker, a plain note of **which storage the bytes draw**: "Draws **{server}**'s storage · X of Y GB used" (Server) or "Draws **your** storage · X of Y GB used" (Public/Private). Keeps "who pays" honest at the point of upload. | R `storage_meters` for the target account | Row | Row |
+| **Storage-impact line** | Under the picker, a plain note of **which storage the bytes draw**, tightened copy (gallery #14): "**{server}** storage · X/Y GB" (Server) or "**Your** storage · X/Y GB" (Public/Private). Keeps "who pays" honest at the point of upload. | R `storage_meters` for the target account | Row | Row |
 | **Post** | Commits immediately with just the above (title = file name). | write path (§D.3) | Primary button | Primary |
 | **▸ Add details** (disclosure) | Reveals: Title (optional, file-name default) · **Tags** · **Collaborators** (type-ahead chip input → member chip in colour + optional role). Collapsed by default. | `works.title` · `content_tags` · `works.collaborators` | Disclosure | Disclosure |
 

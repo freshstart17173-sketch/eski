@@ -92,10 +92,10 @@ bottom. `[x]` = done and pushed.
   skip** (e.g. keyboard / gesture) with no visible skip buttons.
 
 ## Upload sheet
-- [ ] **14.** Better UI — too much text wraps and makes elements taller than needed.
+- [x] **14.** Better UI — too much text wraps and makes elements taller than needed.
   Tighten copy.
-- [ ] **15.** Add a **folder version** of the upload sheet so we can see it.
-- [ ] **47.** Add a **real upload button** (an actual entry point that opens the upload
+- [x] **15.** Add a **folder version** of the upload sheet so we can see it.
+- [x] **47.** Add a **real upload button** (an actual entry point that opens the upload
   sheet, not just the sheet on its own).
 
 ## Cloud file-browser features (new screens/dialogs)
