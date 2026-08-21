@@ -994,6 +994,20 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   height:130px;background:var(--plate);border-radius:var(--r);color:var(--muted)}
 .dtype .ext{font-size:var(--fs);font-weight:700;letter-spacing:.04em;color:var(--soft)}
 .dtype .ic{width:30px;height:30px}
+/* #40 read-only shared view — a standalone page (a share link isn't inside the
+   app shell), so it covers the rail: no way to browse the rest of the server. */
+.sharedview{position:fixed;inset:0;z-index:70;display:flex;flex-direction:column;background:var(--paper);overflow-y:auto}
+.svhd{flex:none;display:flex;align-items:center;gap:var(--s3);padding:0 var(--s5);height:56px;background:var(--surface)}
+.svhd .brand{font-weight:700;font-size:var(--fs-lg);letter-spacing:.02em}
+.svhd .svctx{font-size:var(--fs-sm);color:var(--muted)}
+.svhd .svacts{margin-left:auto;display:flex;gap:var(--s2)}
+.svbody{flex:1;display:grid;grid-template-columns:1fr 340px;gap:var(--s5);padding:var(--s5);width:100%;max-width:1180px;margin:0 auto}
+.svmedia{background:var(--paper1);border-radius:var(--r);min-height:440px;display:flex;align-items:center;justify-content:center;padding:var(--s5)}
+.svmedia .dtype{height:auto;background:none}
+.svmeta h1{font-size:var(--fs-xl);font-weight:600;margin-bottom:var(--s4)}
+.svnote{display:flex;align-items:flex-start;gap:8px;font-size:var(--fs-xs);color:var(--muted);background:var(--surface);border-radius:var(--r);padding:10px 12px;margin-top:var(--s4)}
+.svnote .ic{color:var(--muted);flex:none;margin-top:1px}
+@media(max-width:760px){.svbody{grid-template-columns:1fr}}
 /* folder contents grid inside a details pane */
 .dfolder{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}
 .dfolder .cell{aspect-ratio:1;background:var(--plate);border-radius:3px;overflow:hidden;position:relative}
@@ -2415,6 +2429,32 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
     </div>
 
     <!-- CREATE GROUP -->
+    <!-- #40 read-only shared view: what a share link opens to — only the shared
+         item, no rail, no way to browse the rest of the server -->
+    <div class="screen" data-screen="shared" hidden>
+      <div class="sharedview">
+        <header class="svhd">
+          <div class="brand">eski</div>
+          <div class="svctx">Shared by <b class="m3">dev</b> · read-only</div>
+          <div class="svacts"><button class="btn"><svg class="ic sm"><use href="#i-save"/></svg>Save to my files</button><button class="btn primary"><svg class="ic sm"><use href="#i-download"/></svg>Download</button></div>
+        </header>
+        <main class="svbody">
+          <div class="svmedia"><div class="dtype"><svg class="ic"><use href="#i-file"/></svg><span class="ext">FLP</span><span style="font-size:11px;color:var(--muted)">no preview — download to open</span></div></div>
+          <div class="svmeta">
+            <h1>late_bloom_beat.flp</h1>
+            <div class="meta">
+              <div class="row"><span class="k">Shared by</span><span class="v"><span class="uchip m3">dev</span></span></div>
+              <div class="row"><span class="k">Size</span><span class="v">8.4 MB</span></div>
+              <div class="row"><span class="k">Type</span><span class="v">FL Studio project (.flp)</span></div>
+              <div class="row"><span class="k">Access</span><span class="v">Anyone with the link · view</span></div>
+            </div>
+            <div class="dsec"><div class="lb">Tags</div><div class="chips"><span class="tag">drums</span><span class="tag">142bpm</span><span class="tag">bridge</span></div></div>
+            <div class="svnote"><svg class="ic sm"><use href="#i-lock"/></svg>You can only see what was shared with you — you can't browse the rest of this server.</div>
+          </div>
+        </main>
+      </div>
+    </div>
+
     <div class="screen" data-screen="create" hidden>
       <div class="onboard">
         <div class="ocard">
@@ -3214,6 +3254,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
     ['profile','Profile','Public / Server / Private shelves + settings',''],
     ['dms','Messages','DMs, add by handle',''],
     ['search','Search','results + quick switcher (⌘K)',''],
+    ['shared','Shared view','read-only — a shared link, only what was shared',''],
     ['create','Create server','name, cover, starter channels',''],
     ['join','Join by link','preview card, one Join button',''],
     ['e404','404 / not found','bad URL','system'],

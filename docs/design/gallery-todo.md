@@ -117,7 +117,7 @@ bottom. `[x]` = done and pushed.
 ## Sharing
 - [x] **39.** Add a **Share dialog**, **Google-Drive style** — lets the user set
   **visibility** on a file/folder.
-- [ ] **40.** Add a **shared-view screen** showing what a file/folder looks like **when
+- [x] **40.** Add a **shared-view screen** showing what a file/folder looks like **when
   shared**: viewer can **only see what's shared**, **cannot navigate** through other
   files, **read-only**.
 

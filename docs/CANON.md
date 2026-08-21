@@ -363,6 +363,7 @@ gap) rather than renumbered. Screen 7 (Call) remains a v2 deferral.
 | + | Channel permissions | *(modal)* | allow-list (roles + members) | §C.18 |
 | + | Storage & billing | `settings/storage` | two sliders (personal + server) | §C.19 |
 | + | 404 · Dead invite · Access denied | *(cards)* | expired/revoked/full/member; no-access | §C.20 |
+| + | Shared view | `shared` | read-only single item a share link opens to (gallery #40) | §C.7 (Share dialog) |
 
 ### C.4 TEMPLATE — Screen 1: Workspace
 
@@ -496,7 +497,15 @@ visibility is changed after the fact, #61, now that the details badge is gone,
 #3); a read-only **share link** + Copy; and a **People with access** list
 (owner + members with per-person Can edit / Can view — the granular-role surface,
 CANON §D.1). Writes gate on ownership / `manage_*`; the link resolves to the
-read-only shared view below.
+read-only shared view.
+
+**Shared view (`shared`, gallery #40).** What a share link resolves to for a
+non-member: a **standalone read-only page** — the eski wordmark, "Shared by
+{owner} · read-only", the single shared item (its preview or type card), minimal
+metadata (shared-by, size, type, access level), tags, and **Save to my files /
+Download**. Crucially it has **no rail and no explorer** — the viewer sees *only*
+what was shared and cannot browse the rest of the server. A shared **folder**
+shows its items read-only with no way to navigate out.
 
 ### C.10 Screen 8 — Profile
 
