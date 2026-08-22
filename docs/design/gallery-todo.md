@@ -7,6 +7,19 @@ CANON before implementing each one.
 > buttons and links that should exist but don't — is scored in
 > [`gaps.md`](gaps.md).
 
+## Next tasks (not started)
+
+- [ ] **Exploded-view catalog panels** — every dialog / menu / modal / popover that's
+  now wired into a live screen also needs a **standalone labelled panel** in the
+  catalog (sections ③/④), so each can be diagnosed in isolation. Backfill for:
+  report, channel context menu, edit-channel, create-category, DM row/header menu,
+  group-members modal, help/shortcuts sheet, status composer, composer autocomplete
+  (/ @ # :), forward, create-channel, invite-to-server, bell dropdown, trash view,
+  member popover admin block, jump-to-unread, new-DM, friends manager, notification
+  levels, offline banner, billing, account-switch, onboarding. (~20 panels.) The
+  gallery is an exploded view — full functionality on screens **and** labelled
+  standalone panels are both the goal.
+
 ## Next galleries (not started)
 
 - [ ] **Mobile gallery** — a **separate** gallery file for the phone layouts
