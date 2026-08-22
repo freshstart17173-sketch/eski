@@ -299,8 +299,11 @@ contexts, all the same frame:
 - **video (server file)** — video well; transport: time · seek · time · speed ·
   mute · quality · fullscreen; **no comment thread** (chat handles replies).
 - **image (server file)** — the image fills the well (`padding:0`); no transport.
-- **other / non-previewable** (`.flp/.zip/.exe`) — a `.dtype` type card fills the
-  well, "no preview — download to open"; never a fake thumbnail.
+- **other / non-previewable** (`.flp/.zip/.exe`) — a `.dtype` type card **fills the
+  well** (`.dmedia .dtype{position:absolute;inset:0}`, content centred), "no preview —
+  download to open"; never a fake thumbnail, never a small box anchored top-left (no
+  inline `width/height` fighting `inset:0`), and **never a media player** (no
+  `.dmbigplay`/transport for a type that can't play — match the media to the file type).
 - **folder** — **the only pane with `.navarrow` prev/next over the media** + a
   clickable side **`.flist`** of items; not a work (no tags/comments); Save &
   Download each offer whole-folder or selection (chevron → menu).

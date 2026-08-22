@@ -507,9 +507,12 @@ input{font:inherit;color:inherit}
 .flist .fi .ft{color:var(--muted);font-size:11px;flex:none}
 /* dense, are.na metadata: key left (muted), value right-aligned to the edge (ink) */
 .meta{display:flex;flex-direction:column;gap:var(--s1);margin:0 0 var(--s3);font-size:var(--fs-sm)}
-.meta .row{display:flex;justify-content:space-between;align-items:baseline;gap:16px}
-.meta .k{flex:none;color:var(--muted);font-size:var(--fs-xs)}
-.meta .v{flex:1;min-width:0;color:var(--ink);text-align:right}
+/* uniform row height so a taller value (the Location crumb, with its folder icon)
+   never inflates its row and throws the vertical rhythm off (owner call). */
+.meta .row{display:flex;justify-content:space-between;align-items:center;gap:16px;min-height:22px}
+.meta .k{flex:none;color:var(--muted);font-size:var(--fs-xs);line-height:1.2}
+.meta .v{flex:1;min-width:0;color:var(--ink);text-align:right;line-height:1.2}
+.meta .loccrumb button{line-height:1.2}
 /* author field = neutral bold text link, NOT a member chip (eski-style §3) */
 .metalink{padding:0;font-weight:600;color:var(--ink);font-size:var(--fs-sm);cursor:pointer}
 .metalink:hover{text-decoration:underline}
@@ -796,7 +799,7 @@ input{font:inherit;color:inherit}
 .nfilter{flex:none;display:flex;align-items:center;gap:var(--s3);padding:0 var(--s5) var(--s3);background:var(--surface);flex-wrap:wrap}
 .nfilter .nfl{font-size:var(--fs-xs);color:var(--muted);font-weight:600}
 .ngroups{display:flex;gap:6px;flex-wrap:wrap}
-.ngrp{padding:5px 11px;border-radius:var(--r);font-size:var(--fs-xs);color:var(--soft);background:var(--plate)}
+.ngrp{padding:3px 10px;border-radius:var(--r);font-size:var(--fs-xs);color:var(--soft);background:var(--plate);transition:background var(--t),color var(--t)}
 .ngrp:hover{background:var(--paper1)}
 .ngrp.on{background:var(--ink);color:var(--on-ink);font-weight:600}
 /* tab panels, so Threads and Saved are their own surfaces not just filters */
@@ -1331,8 +1334,8 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
 /* segmented control — short, horizontal (not tall stacked boxes) */
 .seg{display:flex;gap:6px}
 .seg .o{flex:1;display:flex;align-items:center;justify-content:center;gap:7px;
-  padding:9px 8px;background:var(--surface);border-radius:var(--r);
-  font-size:var(--fs-sm);color:var(--soft)}
+  padding:6px 10px;background:var(--surface);border-radius:var(--r);
+  font-size:var(--fs-xs);color:var(--soft);transition:background var(--t),color var(--t)}
 .seg .o .ic{width:15px;height:15px}
 .seg .o.on{background:var(--ink);color:var(--on-ink)}
 .copyrow{display:flex;gap:var(--s2)}
@@ -1507,7 +1510,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
 <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M23 4v6h-6M1 20v-6h6M3.5 9a9 9 0 0 1 14.9-3.4L23 10M1 14l4.6 4.4A9 9 0 0 0 20.5 15"/></symbol>
 <symbol id="i-version" viewBox="0 0 24 24"><path d="M12 3v6M12 21a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM6 9a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm12 0a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM6 9v3a3 3 0 0 0 3 3h6a3 3 0 0 0 3-3V9"/></symbol>
 <symbol id="i-link" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></symbol>
-<symbol id="i-pin" viewBox="0 0 24 24"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/></symbol>
+<symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"/></symbol>
 <symbol id="i-hand" viewBox="0 0 24 24"><path d="M9 11V5.5a1.5 1.5 0 0 1 3 0V10M12 10V4a1.5 1.5 0 0 1 3 0v6M15 10V6a1.5 1.5 0 0 1 3 0v7a6 6 0 0 1-6 6h-1a6 6 0 0 1-5-2.7l-2.3-3.5a1.5 1.5 0 0 1 2.5-1.6L9 13V6a1.5 1.5 0 0 1 3 0"/></symbol>
 </defs></svg>
 <div class="gallery-ui">
@@ -1795,7 +1798,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
     <div class="arenapanel">
       <div class="stage scrim"><div class="arena">
         <div class="dmedia">
-          <div class="dtype" style="width:min(320px,80%);height:180px"><svg class="ic"><use href="#i-file"/></svg><span class="ext">FLP</span><span style="font-size:11px">no preview — download to open</span></div>
+          <div class="dtype"><svg class="ic"><use href="#i-file"/></svg><span class="ext">FLP</span><span style="font-size:11px">no preview — download to open</span></div>
         </div>
         <div class="dinfo">
           <div class="dtop"><span class="dfilename">late_bloom_beat.flp</span><button class="iconbtn" title="Report"><svg class="ic sm"><use href="#i-flag"/></svg></button><button class="iconbtn sp" title="Previous item"><svg class="ic sm" style="transform:rotate(90deg)"><use href="#i-chev"/></svg></button><button class="iconbtn" title="Next item"><svg class="ic sm" style="transform:rotate(-90deg)"><use href="#i-chev"/></svg></button><button class="iconbtn" title="Close"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
@@ -3303,13 +3306,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
 <div class="sheet" id="detailsSheet" hidden>
   <div class="card2">
     <div class="dmedia">
-      <button class="dmbigplay" title="Play / pause"><svg class="ic"><use href="#i-play"/></svg></button>
-      <div class="dmtransport">
-        <span>0:12</span>
-        <span class="track"><i style="width:14%"></i><span class="knob" style="left:14%"></span></span>
-        <span>1:31</span>
-        <button class="tbtn spd" title="Playback speed"><b>1&times;</b></button><button class="tbtn" title="Mute"><svg class="ic"><use href="#i-volume"/></svg></button>
-      </div>
+      <div class="dtype"><svg class="ic"><use href="#i-file"/></svg><span class="ext">FLP</span><span style="font-size:11px">no preview — download to open</span></div>
     </div>
     <div class="dinfo">
       <div class="dtop">

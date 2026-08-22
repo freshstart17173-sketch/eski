@@ -55,8 +55,11 @@ a surface that violates them, and do not relitigate them. Check each on every pa
    **26px** (`.iconbtn`); text buttons are `.btn`/`.btn.sm` (3px/2px vertical); dropdowns are
    `.selbtn` or a `.btn`+chevron (never a bespoke pill). **The rows *inside* a dropdown are
    dense too** (`.menu` rows at ~6px vertical, matching the trigger) — a dense trigger opening
-   a loose menu is the miss. No bespoke button class carries its own bigger padding; if you
-   find one (`.tbtn`, `.rbtn`, `.fbtn`, `.rolesel`, …) it inherits the dense metric.
+   a loose menu is the miss. **This includes segmented controls (`.seg`) and filter chips
+   (`.fchip`, `.ngrp`)** — a filter/segment is a dense control (≈3–6px vertical), not a fat
+   tab. No bespoke button class carries its own bigger padding; if you find one (`.tbtn`,
+   `.rbtn`, `.fbtn`, `.chsetbtn`, `.rolesel`, `.stq`, `.seg .o`, `.ngrp`, …) it inherits the
+   dense metric.
 2. **People are round; servers are square.** Every avatar/profile picture is round **wherever
    it appears** — the members rail, chat, popouts, the **left-rail profile button** (it is a
    person, not a server, and sits at the *bottom* of the rail). Square (`--r`) is for **server
@@ -82,6 +85,13 @@ a surface that violates them, and do not relitigate them. Check each on every pa
     channels), not one crammed dialog.
 11. **Contrast holds in both themes** — the token ladder only (`--ink`/`--soft`/`--muted`), no
     hardcoded near-black on dark, selected-tile subtext stays legible.
+12. **A non-previewable file fills its media well.** The `.dtype` card (`inset:0`, centred
+    "no preview — download to open") fills the whole `.dmedia`, never a small box anchored
+    top-left (don't pin it with an inline `width/height` that fights `inset:0`). And never
+    show a media player for a type that can't play — a `.flp`/`.zip`/`.exe` is a `.dtype`,
+    not a transport bar.
+13. **An icon must read as its meaning.** A pin is a **thumbtack**, not a map-marker teardrop;
+    a glyph that reads as the wrong object is a bug even at 13px.
 
 ## 1. The seven enforcement rules
 
