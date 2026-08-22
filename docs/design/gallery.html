@@ -1776,7 +1776,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
     <!-- details pane — SERVER FILE — video (no comments; chat handles replies) -->
     <div class="arenapanel">
       <div class="stage scrim"><div class="arena">
-        <div class="dmedia" style="background:linear-gradient(135deg,#3a4a55,#12181c)">
+        <div class="dmedia" style="background:linear-gradient(135deg,#3a4a55,#12181c)" data-asset="sh040_comp.mp4" data-poster="sh040_comp.png">
           <button class="dmbigplay" title="Play / pause"><svg class="ic"><use href="#i-play"/></svg></button>
           <div class="dmtransport" style="color:#e8e8e8"><span>0:06</span><span class="track" style="background:rgba(255,255,255,.28)"><i style="width:18%;background:#fff"></i><span class="knob" style="left:18%;background:#fff"></span></span><span>0:34</span><button class="tbtn spd" title="Playback speed" style="color:#e8e8e8"><b>1&times;</b></button><button class="tbtn" title="Mute" style="color:#e8e8e8"><svg class="ic"><use href="#i-volume"/></svg></button><button class="tbtn" title="Quality"><svg class="ic"><use href="#i-settings"/></svg></button><button class="tbtn" title="Fullscreen" style="color:#e8e8e8"><svg class="ic"><use href="#i-expand"/></svg></button></div>
         </div>
@@ -4830,3 +4830,39 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
 }})();
 </script>
 
+<script src="assets/manifest.js"></script>
+<script>
+/* ── asset resolver ───────────────────────────────────────────────────────
+   Populates the gradient fakes with real media from ./assets/. Loads ONLY the
+   files listed in assets/manifest.js — so an empty manifest means zero network
+   requests (deterministic, no console noise) and every gradient stays. Add a
+   file + list it in the manifest and it appears; runs in app, catalog, and
+   every screen iframe. Full instructions: assets/README.md. */
+(function(){
+  var BASE='assets/', HAVE=(window.__eskiAssets||[]).reduce(function(m,n){m[n]=1;return m;},{});
+  var IMG=/\.(png|jpe?g|webp|gif|avif)$/i, VID=/\.(mp4|webm|mov|m4v)$/i;
+  var POOL=['ref_drums.png','cover_bloom.png','ref_board.png','cover_studies_warm.png','keyframe_study.png']
+    .filter(function(n){return HAVE[n];});                    // only pooled images that are actually present
+  function setBg(el,name){el.style.backgroundImage='url("'+BASE+name+'")';el.style.backgroundSize='cover';
+    el.style.backgroundPosition='center';el.style.backgroundRepeat='no-repeat';el.classList.add('has-asset');}
+  function mountVideo(el,name,poster){
+    if(getComputedStyle(el).position==='static')el.style.position='relative';
+    var v=document.createElement('video');v.src=BASE+name;v.controls=true;v.muted=true;v.playsInline=true;v.preload='metadata';
+    if(poster&&HAVE[poster])v.poster=BASE+poster;
+    v.style.cssText='position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:inherit;background:#000;z-index:2';
+    el.appendChild(v);el.classList.add('has-asset');
+  }
+  // 1) explicit data-asset (images and video) — only if present in the manifest
+  document.querySelectorAll('[data-asset]').forEach(function(el){
+    var name=el.getAttribute('data-asset');if(!name||!HAVE[name])return;
+    if(IMG.test(name))setBg(el,name);
+    else if(VID.test(name))mountVideo(el,name,el.getAttribute('data-poster'));
+  });
+  // 2) generic image cards → rotate the present pool so a few files fill the grid
+  if(POOL.length){var i=0;document.querySelectorAll('.shot:not([data-asset])')
+    .forEach(function(el){setBg(el,POOL[i++%POOL.length]);});}
+  // 3) covers + banners → cover_bloom.png when present
+  if(HAVE['cover_bloom.png'])document.querySelectorAll('.jcover:not([data-asset]), .srvcover:not([data-asset]), .ppbanner:not([data-asset])')
+    .forEach(function(el){setBg(el,'cover_bloom.png');});
+})();
+</script>
