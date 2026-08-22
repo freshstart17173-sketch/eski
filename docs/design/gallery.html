@@ -28,7 +28,7 @@
 }
 
 *{box-sizing:border-box;margin:0;padding:0}
-/* #48 hide scrollbars but keep scroll — cleaner look; wheel/touch/keyboard
+/* #48 hide scrollbars but keep scroll, cleaner look; wheel/touch/keyboard
    still scroll because overflow is untouched. Edge fades (below) keep
    scrollability legible without a visible bar. */
 *{scrollbar-width:none}
@@ -41,18 +41,18 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;
 input{font:inherit;color:inherit}
 :focus-visible{outline:2px solid var(--ink);outline-offset:1px}
 /* Tab strips carry their selection in a 2px underline + weight, so a focused tab
-   shows that same underline — never a full bounding box (the box duplicates what
+   shows that same underline, never a full bounding box (the box duplicates what
    the underline already says and reads as clutter). Keyboard a11y is preserved. */
 .chtab:focus-visible,.ntab:focus-visible,.frtab:focus-visible,.ptab2:focus-visible{outline:none;box-shadow:inset 0 -2px 0 var(--ink)}
 .ic{width:17px;height:17px;flex:none;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
 .ic.sm{width:14px;height:14px}.ic.f{fill:currentColor;stroke:none}
 .u{font-weight:600}
 .m1{color:var(--m1)}.m2{color:var(--m2)}.m3{color:var(--m3)}.m4{color:var(--m4)}.m5{color:var(--m5)}.m6{color:var(--m6)}
-/* Member identity reads as coloured bold TEXT, not a pill — the hue carries it,
+/* Member identity reads as coloured bold TEXT, not a pill, the hue carries it,
    the grey/tinted chip was chrome (eski-polish §2). A selected recipient inside an
    input is the exception: it's a removable token, so it keeps a subtle chip. */
 .uchip{display:inline-flex;align-items:center;font-size:var(--fs-xs);font-weight:600}
-/* #26 the round colour dot in a name/tag chip is removed — member colour reads
+/* #26 the round colour dot in a name/tag chip is removed, member colour reads
    via the coloured chip text itself (presence dots on avatars are unaffected). */
 .uchip .dot{display:none}
 .collabs .uchip{gap:5px;background:var(--surface);border-radius:var(--r);padding:3px 8px}
@@ -66,7 +66,7 @@ input{font:inherit;color:inherit}
 .field .ic{color:var(--muted)}
 .field.req{border-color:var(--soft)}
 /* A dropdown is a .btn colour-change with a trailing chevron (eski-polish §1.2):
-   filled --surface at rest, --plate on hover, invert on click — NOT a bordered
+   filled --surface at rest, --plate on hover, invert on click, NOT a bordered
    field pill. Denser than a field so a select never reads as an input. */
 .selbtn{display:inline-flex;align-items:center;gap:7px;background:var(--surface);border:1px solid transparent;
   border-radius:var(--r);padding:6px 10px;font-size:var(--fs-sm);color:var(--ink);transition:background var(--t),color var(--t)}
@@ -75,10 +75,10 @@ input{font:inherit;color:inherit}
 .selbtn:active .ic{color:var(--on-ink)}
 .selbtn .ic{color:var(--muted)}
 /* the trailing chevron rotates while the dropdown is open (matches the server
-   header) so the control shows its own state — for .selbtn AND any .btn dropdown */
+   header) so the control shows its own state, for .selbtn AND any .btn dropdown */
 .selbtn>svg.ic,.btn[aria-haspopup]>svg.ic{transition:transform var(--t)}
 .selbtn[aria-expanded="true"]>svg.ic,.btn[aria-expanded="true"]>svg.ic{transform:rotate(180deg)}
-/* buttons — small; box shrinks, label holds. 3 archetypes (eski-style §2). */
+/* buttons, small; box shrinks, label holds. 3 archetypes (eski-style §2). */
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:5px;
   border:1px solid transparent;border-radius:var(--r);
   padding:3px 10px;font-size:var(--fs-xs);font-weight:500;line-height:1.3;
@@ -106,7 +106,7 @@ input{font:inherit;color:inherit}
 .iconbtn.on{background:var(--ink);color:var(--on-ink)}
 
 /* tags: distinct chip, more contrast */
-/* Tags are coloured bold text, not grey pills — the word carries it; the pill was
+/* Tags are coloured bold text, not grey pills, the word carries it; the pill was
    chrome (eski-polish §2). Status badges that need a chip re-add bg under their own
    scope (.wipbanner .tag, .vcwipcard .tag). */
 .tag{display:inline-flex;align-items:center;color:var(--soft);font-size:var(--fs-xs);font-weight:600}
@@ -136,7 +136,7 @@ input{font:inherit;color:inherit}
 .railbtn .ct{position:absolute;top:-2px;right:-2px;min-width:15px;height:15px;padding:0 4px;background:var(--ink);color:var(--on-ink);border-radius:999px;font-size:9px;font-weight:700;display:grid;place-items:center}
 .railbtn.on .ct{background:var(--paper);color:var(--ink)}
 .railsep{width:22px;height:1px;background:var(--line);flex:none;margin:1px 0}
-/* the profile button is a PERSON, not a server — round, and anchored to the
+/* the profile button is a PERSON, not a server, round, and anchored to the
    bottom of the rail (away from the square server badges) so it never reads as
    another server icon. */
 .railbtn.user{margin-top:auto;border-radius:50%;background:none;padding:0;overflow:hidden}
@@ -154,25 +154,33 @@ input{font:inherit;color:inherit}
 /* #34 server header: the server's cover + square icon get real presence at the
    top of the channel column, not just the 38px rail badge. Server icon is
    SQUARE (round is people only). */
-.srvhd{flex:none}
-/* Only the bar (icon + name + chevron) is the menu button — the cover banner is
+.srvhd{flex:none;position:relative}
+/* Only the bar (icon + name + chevron) is the menu button, the cover banner is
    decorative and does nothing. Hover/pointer live on the bar, not the banner. */
-.srvcover{height:72px;background:linear-gradient(135deg,#5a5a5a,#232323)}
-.srvbar{display:flex;align-items:center;gap:10px;width:100%;text-align:left;padding:0 var(--s3) 8px;background:var(--plate);cursor:pointer}
-.srvbar:hover{background:var(--paper1)}
-.srvchev{margin-left:auto;color:var(--muted);transition:transform var(--t)}
-.srvbar[aria-expanded="true"] .srvchev{transform:rotate(180deg);color:var(--ink)}
-.srvicon{width:40px;height:40px;flex:none;border-radius:var(--r);margin-top:-20px;background:var(--ink);color:var(--on-ink);display:grid;place-items:center;font-weight:700;font-size:var(--fs-sm);box-shadow:0 0 0 3px var(--surface)}
-.srvbar b{font-size:var(--fs-sm)}
+.srvcover{height:100px;background:linear-gradient(135deg,#5a5a5a,#232323)}
+/* the name bar is the ONLY click target; it overlays the bottom of the banner as
+   a transparent strip with a legibility scrim, so the cover reads full-height
+   underneath instead of being cut short by an opaque plate (owner 2026-08-22). */
+.srvbar{position:absolute;left:0;right:0;bottom:0;display:flex;align-items:center;gap:10px;width:100%;text-align:left;padding:8px var(--s3);
+  background:linear-gradient(to top,rgba(0,0,0,.64),rgba(0,0,0,.12) 62%,rgba(0,0,0,0));cursor:pointer;transition:background var(--t)}
+.srvbar:hover{background:linear-gradient(to top,rgba(0,0,0,.76),rgba(0,0,0,.26) 62%,rgba(0,0,0,.05))}
+.srvchev{margin-left:auto;color:rgba(255,255,255,.72);transition:transform var(--t)}
+.srvbar[aria-expanded="true"] .srvchev{transform:rotate(180deg);color:#fff}
+.srvicon{width:40px;height:40px;flex:none;border-radius:var(--r);background:var(--ink);color:var(--on-ink);display:grid;place-items:center;font-weight:700;font-size:var(--fs-sm);box-shadow:0 0 0 2px rgba(255,255,255,.16)}
+.srvbar b{font-size:var(--fs-sm);color:#fff}
 .chanhd b{font-size:var(--fs-sm);font-weight:600}
 .chanbody{flex:1;overflow-y:auto;padding:var(--s3) var(--s2)}
 .cgroup{margin-bottom:var(--s4)}
 .cglabel{display:flex;align-items:center;padding:0 var(--s2) var(--s1);color:var(--muted);font-size:var(--fs-xs);font-weight:600}
-.cglabel .ic{color:var(--muted);cursor:pointer}
+.cglabel .ic{color:var(--muted)}
+/* the group header is a button so its label can't be text-selected while you
+   click to collapse it (accidental highlight was the bug). */
+.cglabel .cgtoggle{flex:1;display:flex;align-items:center;min-width:0;background:none;color:inherit;font:inherit;font-weight:600;text-align:left;padding:0;cursor:pointer;user-select:none;transition:color var(--t)}
+.cglabel .cgtoggle:hover{color:var(--soft)}
 .cglabel .cgadd{margin-left:auto}
 .cgadd{width:18px;height:18px;display:grid;place-items:center;border-radius:var(--r);color:var(--muted)}
 .cgadd:hover{background:var(--plate);color:var(--ink)}
-/* B7 channel-group collapse — a caret on the category label toggles its rows */
+/* B7 channel-group collapse, a caret on the category label toggles its rows */
 .cglabel .cgcaret{width:11px;height:11px;color:var(--muted);margin-right:2px;transition:transform var(--t)}
 .cgroup.collapsed .cglabel .cgcaret{transform:rotate(-90deg)}
 .cgroup.collapsed .crow,.cgroup.collapsed .vpeople{display:none}
@@ -284,7 +292,7 @@ input{font:inherit;color:inherit}
 .panebody{flex:1;overflow-y:auto;padding:var(--s4) var(--s5) var(--s5)}
 .seclabel{color:var(--muted);font-size:var(--fs-xs);font-weight:600;margin:0 0 var(--s3)}
 
-/* file explorer — nested folder tree + views (Discord + Drive) */
+/* file explorer, nested folder tree + views (Discord + Drive) */
 .explayout{flex:1;min-width:0;display:flex;overflow:hidden}
 .filetree{flex:none;width:212px;background:var(--surface);overflow-y:auto;padding:8px 6px}
 .fthd{display:flex;align-items:center;justify-content:space-between;font-size:var(--fs-xs);color:var(--muted);font-weight:600;padding:4px 8px 8px}
@@ -319,7 +327,7 @@ input{font:inherit;color:inherit}
 .flhd{font-size:var(--fs-xs);color:var(--muted);font-weight:600;cursor:default}
 .flnm{display:inline-flex;align-items:center;gap:8px;font-weight:500;color:var(--ink);min-width:0}
 .flnm .ic{color:var(--muted);flex:none}
-/* feed view — flattened previewable media + comments */
+/* feed view, flattened previewable media + comments */
 .filefeed{max-width:620px;margin:0 auto}
 .ffnote{display:flex;gap:8px;font-size:var(--fs-xs);color:var(--muted);background:var(--surface);border-radius:var(--r);padding:9px 11px;margin-bottom:var(--s4)}
 .ffitem{margin-bottom:var(--s5)}
@@ -335,7 +343,7 @@ input{font:inherit;color:inherit}
 .masonry.even .media{aspect-ratio:1;overflow:hidden;display:grid}
 .masonry.even .media>.shot{width:100%!important;height:100%!important;aspect-ratio:auto!important}
 .masonry.even .media.audio{aspect-ratio:1;background:var(--surface);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;overflow:hidden}
-/* flex column (not grid) so the icon+ext read as ONE centred group — a 2-row
+/* flex column (not grid) so the icon+ext read as ONE centred group, a 2-row
    grid would split the tile in half and push the icon up to the quarter line. */
 .media.file{background:var(--surface);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px}
 .masonry.even .media.file{aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px}
@@ -343,7 +351,7 @@ input{font:inherit;color:inherit}
 .media.file .ext,.media.audio .ext{font-size:12px;font-weight:700;color:var(--soft);letter-spacing:.5px}
 .masonry.even .media .playover{align-self:center;justify-self:center}
 .card{display:inline-block;width:100%;margin-bottom:var(--s5);cursor:pointer;text-align:left;break-inside:avoid}
-/* #29 a previewable thumbnail's square container is TRANSPARENT — the image /
+/* #29 a previewable thumbnail's square container is TRANSPARENT, the image /
    video fills it, no opaque tile behind. Only non-previewable tiles
    (.media.file icon, .media.audio music icon #13) keep a --surface tile. */
 .card .media{position:relative;width:100%;overflow:hidden;background:transparent}
@@ -352,7 +360,7 @@ input{font:inherit;color:inherit}
 .shot.c{background:linear-gradient(150deg,#a7a7a7,#606060)}
 .playover{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:46px;height:46px;border-radius:50%;background:rgba(0,0,0,.42);color:#fff;display:grid;place-items:center}
 /* #13 audio CARD: square like every other card, a music icon on a --surface
-   tile — no waveform (the waveform is only the expanded/inline player, #12). */
+   tile, no waveform (the waveform is only the expanded/inline player, #12). */
 .card .media.audio{aspect-ratio:1;background:var(--surface);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;color:var(--muted)}
 .card .media.text{padding:2px 0}
 .card .media.text .body{font-size:var(--fs-sm);color:var(--soft);display:-webkit-box;-webkit-line-clamp:5;-webkit-box-orient:vertical;overflow:hidden}
@@ -368,7 +376,7 @@ input{font:inherit;color:inherit}
 .card:hover .cardacts{display:flex}
 .cardacts button{width:26px;height:26px;display:grid;place-items:center;border-radius:var(--r);background:rgba(20,20,20,.55);color:#fff}
 .cardacts button.starred .ic{fill:currentColor}
-/* B26 inline chat-attachment actions — solid chips (no transparency) */
+/* B26 inline chat-attachment actions, solid chips (no transparency) */
 .filecardwrap{position:relative;display:inline-block;max-width:100%}
 .fcacts{position:absolute;top:8px;right:8px;display:none;gap:3px}
 .filecardwrap:hover .fcacts{display:flex}
@@ -452,28 +460,28 @@ input{font:inherit;color:inherit}
 /* overlays */
 .scrim{position:fixed;inset:0;background:rgba(10,10,10,.5);z-index:80}
 :root[data-theme="dark"] .scrim,:root:not([data-theme="light"]) .scrim{background:rgba(0,0,0,.66)}
-/* Details pane — arena scale: the media takes the room, the info rail is fixed
+/* Details pane, arena scale: the media takes the room, the info rail is fixed
    width and can grow tall. Scrim separates it (no drop shadow). */
 .sheet{position:fixed;z-index:81;inset:0;display:grid;place-items:center;padding:var(--s4);background:rgba(0,0,0,.55)}
 :root:not([data-theme="light"]) .sheet{background:rgba(0,0,0,.66)}
 .sheet .card2{pointer-events:auto;width:min(1360px,96vw);height:min(880px,94vh);background:var(--paper);border-radius:var(--r);display:flex;overflow:hidden}
 .sheet .dmedia{flex:1;min-width:0;background:var(--paper1);display:flex;align-items:center;justify-content:center;position:relative;padding:40px}
-/* prev / next between items — a solid square chip like the details-pane chevrons
+/* prev / next between items, a solid square chip like the details-pane chevrons
    (no transparency; plain hover, matching every other .iconbtn) */
 .navarrow{position:absolute;top:50%;transform:translateY(-50%);z-index:3;width:32px;height:32px;border-radius:var(--r);background:var(--paper);color:var(--soft);box-shadow:0 0 0 1px var(--line);display:grid;place-items:center;cursor:pointer;transition:background var(--t),color var(--t)}
 .navarrow:hover{background:var(--surface);color:var(--ink)}
-/* click follows the colour-change rule (invert) — banned is only the press nudge */
+/* click follows the colour-change rule (invert), banned is only the press nudge */
 .navarrow:active{background:var(--ink);color:var(--on-ink);box-shadow:0 0 0 1px var(--ink)}
 .navarrow.prev{left:14px}.navarrow.next{right:14px}
 .navarrow .ic{width:18px;height:18px}
 .navarrow.prev .ic{transform:rotate(90deg)}.navarrow.next .ic{transform:rotate(-90deg)}
 /* #37 ONE media transport for audio AND video, pinned to the foot of the media
    area: play/pause · time · seek · time · volume · (fullscreen).
-   #38 no visible skip buttons — a 5-second skip stays on ←/→ (keyboard/gesture),
+   #38 no visible skip buttons, a 5-second skip stays on ←/→ (keyboard/gesture),
    deliberately with no on-screen rewind/forward controls. */
 .dmtransport{position:absolute;left:0;right:0;bottom:0;display:flex;align-items:center;gap:12px;padding:14px 20px;font-size:12px;color:var(--soft);font-variant-numeric:tabular-nums}
 /* #31 taller RECTANGULAR seek bar (radius --r, not a pill); #31 no round
-   playhead knob — a slim rectangular playhead marks position instead. */
+   playhead knob, a slim rectangular playhead marks position instead. */
 .dmtransport .track{flex:1;height:7px;background:var(--line);border-radius:var(--r);position:relative;cursor:pointer}
 .dmtransport .track i{position:absolute;left:0;top:0;bottom:0;width:0;background:var(--ink);border-radius:var(--r)}
 .dmtransport .track .knob{position:absolute;top:50%;width:3px;height:15px;border-radius:1px;background:var(--ink);transform:translate(-50%,-50%)}
@@ -481,7 +489,7 @@ input{font:inherit;color:inherit}
 .tbtn:hover{background:var(--surface);color:var(--ink)}
 .tbtn:active{background:var(--ink);color:var(--on-ink)}
 .tbtn .ic{width:15px;height:15px}
-/* #32 play icon has no border / border-colour — just the fill, centred (#11). */
+/* #32 play icon has no border / border-colour, just the fill, centred (#11). */
 .dmbigplay{width:64px;height:64px;border-radius:50%;background:var(--paper);color:var(--ink);display:grid;place-items:center;cursor:pointer}
 .dmbigplay:hover{background:var(--surface)}
 .dmbigplay .ic{width:26px;height:26px}
@@ -492,7 +500,7 @@ input{font:inherit;color:inherit}
 .dtop .sp{margin-left:auto}
 .dfilename{font-size:var(--fs-xs);color:var(--soft);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .dinfo .scroll{flex:1;overflow-y:auto;padding:0 var(--s4) var(--s4)}
-/* Breathing room under the .dtop hairline — the title never hugs the line. */
+/* Breathing room under the .dtop hairline, the title never hugs the line. */
 .dinfo h2{font-size:var(--fs-lg);font-weight:600;margin:var(--s4) 0 var(--s3)}
 /* folder navigation list in the rail */
 /* #8 the side file list scrolls in place (no click-to-expand); scrollbar is
@@ -556,7 +564,7 @@ input{font:inherit;color:inherit}
 .locmenu{min-width:240px}
 
 .umodal{position:fixed;z-index:81;top:50%;left:50%;transform:translate(-50%,-50%);width:min(540px,95vw);max-height:90vh;overflow:auto;background:var(--paper);border-radius:var(--r)}
-/* dialog/rail bars carry NO grey fill — an inset hairline separates them (eski-style §3) */
+/* dialog/rail bars carry NO grey fill, an inset hairline separates them (eski-style §3) */
 .hair{position:relative}
 .hair::after{content:"";position:absolute;left:var(--hair-inset);right:var(--hair-inset);bottom:0;height:1px;background:var(--line)}
 .hair.top::after{bottom:auto;top:0}
@@ -568,7 +576,7 @@ input{font:inherit;color:inherit}
 .uvbanner .ic{color:var(--muted)}
 .drop{border:1.5px dashed var(--line2);border-radius:var(--r);padding:var(--s4);text-align:center;background:var(--surface)}
 .drop .big{font-weight:600}.drop .sub{font-size:var(--fs-xs);color:var(--muted);margin-top:3px}
-/* #15 files/folder upload toggle — same segmented pattern as .vseg */
+/* #15 files/folder upload toggle, same segmented pattern as .vseg */
 .useg{display:inline-flex;gap:2px;background:var(--plate);border-radius:var(--r);padding:2px;margin-bottom:var(--s3)}
 .useg button{padding:5px 14px;border-radius:calc(var(--r) - 1px);font-size:var(--fs-xs);font-weight:500;color:var(--muted)}
 .useg button.on{background:var(--paper);color:var(--ink)}
@@ -584,20 +592,20 @@ input{font:inherit;color:inherit}
 .ulab{display:flex;align-items:center;gap:8px;font-size:var(--fs-xs);color:var(--muted);font-weight:600;margin:var(--s4) 0 7px}
 .ulab .rq{color:var(--m1);font-weight:600}
 .urow{display:flex;gap:var(--s1);flex-wrap:wrap}
-/* Compact 3-way — the label carries it (Public/Server/Private are self-evident);
+/* Compact 3-way, the label carries it (Public/Server/Private are self-evident);
    no sublabel, single line, active inverts. "less is more". */
 .visopt{display:flex;align-items:center;justify-content:center;gap:7px;flex:1;min-width:0;background:var(--surface);border-radius:var(--r);padding:6px 10px;font-size:var(--fs-xs);font-weight:500;transition:background var(--t),color var(--t)}
 .visopt:hover{background:var(--plate)}
 .visopt.on{background:var(--ink);color:var(--on-ink)}
 .visopt .ic{width:15px;height:15px;color:var(--muted)}.visopt.on .ic{color:var(--on-ink)}
-/* S6 report dialog — reason radio list */
+/* S6 report dialog, reason radio list */
 .repopts{display:flex;flex-direction:column;gap:6px}
 .repopt{display:flex;align-items:center;gap:10px;width:100%;text-align:left;padding:7px 12px;border-radius:var(--r);background:var(--surface);font-size:var(--fs-sm);color:var(--soft);transition:background var(--t)}
 .repopt:hover{background:var(--plate)}
 .repopt .rdot{flex:none;width:14px;height:14px;border-radius:50%;border:2px solid var(--line2);transition:border-color var(--t)}
 .repopt.on{color:var(--ink)}
 .repopt.on .rdot{border-color:var(--ink);background:radial-gradient(var(--ink) 0 4px,transparent 5px)}
-/* #39/#61 share dialog — people-with-access rows */
+/* #39/#61 share dialog, people-with-access rows */
 .shareppl{display:flex;flex-direction:column;gap:2px;margin-top:4px}
 .sharerow{display:flex;align-items:center;gap:10px;padding:6px 4px}
 .sharerow .nm{flex:1;min-width:0;font-size:var(--fs-sm)}
@@ -659,7 +667,7 @@ input{font:inherit;color:inherit}
 .frow{max-width:560px;margin-bottom:var(--s4)}
 .coverpick{display:flex;gap:var(--s3);align-items:center}
 .coverpick .cv{width:132px;height:78px;background:var(--paper1);border-radius:var(--r);display:grid;place-items:center;color:var(--muted);overflow:hidden;background-size:cover;background-position:center}
-/* the server icon is the square rail badge — smaller, ink-filled like the badge
+/* the server icon is the square rail badge, smaller, ink-filled like the badge
    itself, so the preview reads as what ships on the rail. Square (server icons
    are chrome, --r), distinct from the wide rectangular cover. */
 .coverpick .cv.icon{width:64px;height:64px;background:var(--ink);color:var(--on-ink);font-weight:700;font-size:var(--fs-lg)}
@@ -709,7 +717,7 @@ input{font:inherit;color:inherit}
 .auditrow time{font-size:var(--fs-xs);color:var(--muted);flex:none}
 
 /* onboarding & system screens: a centered card over a dimmed backdrop (scrim),
-   no server rail — these are full-screen focus states, not in-app panes. The
+   no server rail, these are full-screen focus states, not in-app panes. The
    scrim (not a drop shadow) is what separates the card from what's behind it. */
 .onboard,.authwrap{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.55);
   display:flex;flex-direction:column;align-items:center;justify-content:center;
@@ -731,9 +739,9 @@ input{font:inherit;color:inherit}
 .jmeta{display:flex;align-items:center;gap:var(--s3);color:var(--muted);font-size:var(--fs-sm);margin-top:var(--s3)}
 .stackav{display:flex}.stackav .av{margin-left:-8px;box-shadow:0 0 0 2px var(--paper)}.stackav .av:first-child{margin-left:0}
 .invited{display:flex;align-items:center;gap:9px;background:var(--surface);border-radius:var(--r);padding:10px var(--s3);margin-top:var(--s4);font-size:var(--fs-sm)}
-/* sign-in / onboarding / username claim (gap #13) — layout shared with .onboard above */
+/* sign-in / onboarding / username claim (gap #13), layout shared with .onboard above */
 /* the wordmark sits on the dark auth/onboard scrim in BOTH themes, so it's a
-   fixed light colour — --on-ink went near-black (invisible) in dark. */
+   fixed light colour, --on-ink went near-black (invisible) in dark. */
 .authbrand{font-size:var(--fs-xl);font-weight:700;letter-spacing:.01em;color:#F4F4F4}
 .astep[hidden]{display:none}
 .field .at{color:var(--muted);font-size:var(--fs-sm);font-weight:600;flex:none}
@@ -772,7 +780,7 @@ input{font:inherit;color:inherit}
 .nrow .ntx{font-size:var(--fs-sm);color:var(--soft)}.nrow .ntx b{color:var(--ink);font-weight:600}
 .nrow .nctx{font-size:var(--fs-xs);color:var(--muted);margin-top:2px}
 .nrow time{font-size:var(--fs-xs);color:var(--muted);flex:none}
-/* B15 bell dropdown — a compact preview built from the same .nrow rows */
+/* B15 bell dropdown, a compact preview built from the same .nrow rows */
 .notifmenu{width:344px;max-width:92vw;padding:0}
 .notifmenu .nmhd{display:flex;align-items:center;gap:8px;padding:11px 12px;box-shadow:inset 0 -1px 0 var(--line)}
 .notifmenu .nmhd b{font-size:var(--fs-sm);flex:1}
@@ -949,14 +957,14 @@ input{font:inherit;color:inherit}
 .menu button.danger{color:var(--m1)}
 
 /* profile popout */
-.ppop{position:fixed;z-index:97;width:300px;background:var(--paper);border-radius:8px;box-shadow:0 22px 64px rgba(0,0,0,.42);overflow:hidden}
+.ppop{position:fixed;z-index:97;width:300px;background:var(--paper);border-radius:var(--r);box-shadow:0 22px 64px rgba(0,0,0,.42);overflow:hidden}
 .ppop .ppbanner{height:54px;background:linear-gradient(120deg,#4a4a4a,#232323)}
 .ppop .ppav{width:64px;height:64px;border-radius:50%;background:var(--paper1);color:var(--soft);display:grid;place-items:center;font-weight:700;font-size:22px;margin:-32px 0 0 16px;box-shadow:0 0 0 5px var(--paper);position:relative}
 .ppop .ppav .pres{position:absolute;right:1px;bottom:1px;width:16px;height:16px;border-radius:50%;background:var(--ink);box-shadow:0 0 0 4px var(--paper)}
 .ppop .ppbody{padding:8px 16px 16px}
 .ppop .ppname{font-size:var(--fs-lg);font-weight:600}
 .ppop .pphandle{color:var(--muted);font-size:var(--fs-sm)}
-.ppop .ppstatus{margin-top:10px;font-size:var(--fs-sm);background:var(--surface);border-radius:6px;padding:8px 10px}
+.ppop .ppstatus{margin-top:10px;font-size:var(--fs-sm);background:var(--surface);border-radius:var(--r);padding:8px 10px}
 .ppop .ppsec{margin-top:12px}
 .ppop .ppsec .l{display:block;font-size:10px;color:var(--muted);font-weight:600;letter-spacing:.04em;margin-bottom:5px}
 .ppop .ppsec .v{font-size:var(--fs-sm);color:var(--soft);display:flex;align-items:center;gap:6px}
@@ -965,9 +973,15 @@ input{font:inherit;color:inherit}
 .ppop .ppacts .btn{flex:1;justify-content:center}
 /* Admin block: separated from the public actions by a background step + a hairline,
    not a border box (surfaces separate by bg-step per the design rules). */
+/* the extra actions (Block / Report) are tucked behind a chevron toggle so the
+   popout leads with the two everyday actions; revealed, all four buttons match. */
+.ppop .ppmoretog{display:flex;align-items:center;justify-content:center;gap:5px;width:100%;margin-top:8px;
+  padding:3px 10px;font-size:var(--fs-xs);font-weight:500;color:var(--muted);background:none;cursor:pointer;transition:color var(--t)}
+.ppop .ppmoretog:hover{color:var(--ink)}
+.ppop .ppmoretog .chev{transition:transform var(--t)}
+.ppop .ppmoretog[aria-expanded="true"] .chev{transform:rotate(180deg)}
 .ppop .ppmore{display:flex;gap:8px;margin-top:8px}
-.ppop .ppmore button{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:7px;border-radius:var(--r);font-size:var(--fs-xs);color:var(--muted);background:var(--surface)}
-.ppop .ppmore button:hover{background:var(--plate);color:var(--soft)}
+.ppop .ppmore .btn{flex:1;justify-content:center}
 .ppop .ppadmin{margin:12px -16px -16px;padding:10px 8px 8px;background:var(--surface);box-shadow:inset 0 1px 0 var(--line)}
 .ppop .ppadl{font-size:10px;color:var(--muted);font-weight:600;letter-spacing:.04em;padding:0 8px 4px}
 .ppop .arow{display:flex;align-items:center;gap:9px;width:100%;padding:7px 8px;border-radius:var(--r);font-size:var(--fs-sm);color:var(--soft);background:none;text-align:left;cursor:pointer}
@@ -977,12 +991,12 @@ input{font:inherit;color:inherit}
 
 /* call upgrades */
 .vc{position:relative}
-/* #56 voice/video is a post-beta (v2) preview — make that explicit */
+/* #56 voice/video is a post-beta (v2) preview, make that explicit */
 .wipbanner{flex:none;display:flex;align-items:center;gap:9px;padding:9px var(--s4);background:#1c1c1c;color:#d8d8d8;font-size:var(--fs-sm)}
 .wipbanner .ic{color:var(--m2);flex:none}
 .wipbanner b{color:#fff}
 .wipbanner .tag{margin-left:auto;background:rgba(255,255,255,.12);color:#fff}
-/* Voice chat WIP placeholder — the whole interface is a transparency-checkerboard
+/* Voice chat WIP placeholder, the whole interface is a transparency-checkerboard
    grey screen with the "being built" message + icon front and centre (v2). */
 .vcstage.vcwip{display:grid;place-items:center;padding:24px;
   background-color:#a6a6a6;
@@ -1059,13 +1073,13 @@ input{font:inherit;color:inherit}
 .rbtn:hover{background:var(--plate);color:var(--ink)}.rbtn.ok:hover{color:var(--m3)}.rbtn.no:hover{color:var(--m1)}
 
 /* ================================================================
-   gallery shell — loaded AFTER the mockup CSS so it wins.
+   gallery shell, loaded AFTER the mockup CSS so it wins.
    Rules it enforces (from CANON + the mockup, which is law):
    · radius is --r (3px) on everything; round is ONLY avatars + dots
-   · modals darken the background (a scrim) — never a drop shadow
+   · modals darken the background (a scrim), never a drop shadow
    · square icon/close buttons (.iconbtn + #i-x), one close style
    · sentence case; type hierarchy by size AND colour
-   · short controls — no tall buttons, no wide bars
+   · short controls, no tall buttons, no wide bars
    ================================================================ */
 :root{ --danger:#C63A28; }
 :root[data-theme="dark"]{ --danger:#F07C63; }
@@ -1111,13 +1125,13 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
 .gallery-ui .stage{background:var(--surface);border-radius:var(--r);min-height:210px;
   padding:26px;display:flex;align-items:center;justify-content:center;position:relative}
 .gallery-ui .stage.tall{min-height:330px}
-/* a modal is shown on a DARKENED backdrop — no drop shadow (the rule) */
+/* a modal is shown on a DARKENED backdrop, no drop shadow (the rule) */
 .gallery-ui .stage.scrim{background:var(--ink)}
 .gallery-ui .stage.scrim::before{content:"";position:absolute;inset:0;background:rgba(0,0,0,.32);border-radius:var(--r)}
 :root:not([data-theme="light"]) .gallery-ui .stage.scrim::before{background:rgba(0,0,0,.5)}
 .gallery-ui .stage.scrim>*{position:relative;z-index:1}
 /* §⑥ clones the REAL dialog nodes; neutralise their app-mode fixed/absolute
-   positioning so each lays out statically inside its stage cell (no shadow —
+   positioning so each lays out statically inside its stage cell (no shadow -
    the modal-on-scrim rule). Menus reuse the existing .menu.show static form. */
 .gallery-ui .stage .umodal{position:static;transform:none;inset:auto;width:min(480px,100%);max-height:none;box-shadow:none;overflow:visible;margin:0}
 .gallery-ui .stage .menu{box-shadow:none}
@@ -1128,7 +1142,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
 .gallery-ui .arena{width:min(1180px,100%);min-height:600px;background:var(--paper);border-radius:var(--r);display:flex;overflow:hidden;text-align:left}
 .gallery-ui .arena .dmedia{flex:1;min-width:0;min-height:600px;background:var(--paper1);position:relative;display:flex;align-items:center;justify-content:center;padding:26px}
 .gallery-ui .arena .dinfo{flex:none;height:auto}
-/* in the catalog the pane shows at full height — the rail doesn't scroll internally */
+/* in the catalog the pane shows at full height, the rail doesn't scroll internally */
 .gallery-ui .arena .dinfo .scroll{overflow:visible}
 @media(max-width:760px){.gallery-ui .arena{flex-direction:column;min-height:0}.gallery-ui .arena .dmedia{min-height:220px;height:220px}.gallery-ui .arena .dinfo{width:100%}}
 .pcap{margin-top:9px}
@@ -1140,7 +1154,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
 .pcap .st.live{background:rgba(63,122,78,.16);color:#3F7A4E}
 :root:not([data-theme="light"]) .pcap .st.live{color:#82BE91;background:rgba(130,190,145,.16)}
 
-/* MODAL — matches the mockup's .umodal/.uhd law: flat card, no shadow,
+/* MODAL, matches the mockup's .umodal/.uhd law: flat card, no shadow,
    surface header bar with title + a SQUARE close, surface footer bar. */
 .modal{width:340px;max-width:100%;background:var(--paper);border-radius:var(--r);overflow:hidden}
 .modal.wide{width:440px}
@@ -1155,7 +1169,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
 .strow{display:flex;justify-content:space-between;align-items:baseline;margin:9px 0 5px}
 .stnum{font-size:var(--fs-sm);color:var(--soft)}.stnum b{color:var(--ink);font-size:var(--fs);font-weight:600}
 .stprice{font-size:var(--fs-sm);color:var(--soft)}.stprice b{color:var(--ink);font-weight:600}
-/* storage-source badge (details pane) — metadata, never a member hue */
+/* storage-source badge (details pane), metadata, never a member hue */
 .stbadge{display:inline-flex;align-items:center;gap:6px;background:var(--surface);color:var(--soft);
   font-size:var(--fs-xs);font-weight:600;padding:4px 9px;border-radius:var(--r)}
 .stbadge .ic{width:13px;height:13px;color:var(--muted)}
@@ -1178,7 +1192,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
 .dmedia .dtype .ic{width:46px;height:46px}
 .dmedia .dtype .ext{font-size:var(--fs-xl);letter-spacing:.05em}
 .dtype .ic{width:30px;height:30px}
-/* #40 read-only shared view — a standalone page (a share link isn't inside the
+/* #40 read-only shared view, a standalone page (a share link isn't inside the
    app shell), so it covers the rail: no way to browse the rest of the server. */
 .sharedview{position:fixed;inset:0;z-index:70;display:flex;flex-direction:column;background:var(--paper);overflow-y:auto}
 .svhd{flex:none;display:flex;align-items:center;gap:var(--s3);padding:0 var(--s5);height:56px;background:var(--surface)}
@@ -1197,16 +1211,16 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
 .deadshare .lead{color:var(--muted);font-size:var(--fs-sm);margin-top:var(--s2)}
 .svnote{display:flex;align-items:flex-start;gap:8px;font-size:var(--fs-xs);color:var(--muted);background:var(--surface);border-radius:var(--r);padding:10px 12px;margin-top:var(--s4)}
 .svnote .ic{color:var(--muted);flex:none;margin-top:1px}
-/* Edit-profile media (banner well + avatar row) — media stays square (--r) */
+/* Edit-profile media (banner well + avatar row), media stays square (--r) */
 .epbanner{height:84px;background:var(--paper1);border-radius:var(--r);display:flex;align-items:flex-end;justify-content:flex-end;padding:8px}
 .epavrow{display:flex;align-items:center;gap:var(--s3);margin-top:var(--s3)}
 /* Move-to-folder picker: the destination tree in a scroll well (reuses .ftrow) */
 .movetree{max-height:240px;overflow:auto;background:var(--surface);border-radius:var(--r);padding:6px;margin-top:2px}
-/* Timeout duration segmented control uses .seg .o — make its cells clickable */
+/* Timeout duration segmented control uses .seg .o, make its cells clickable */
 #toSeg .o{cursor:pointer;transition:background var(--t),color var(--t)}
 /* Kick/ban confirm lede (also leave/delete-server confirms) */
 .banlede{font-size:var(--fs-sm);color:var(--soft);line-height:1.5;margin:2px 0 4px}
-/* Role colour swatch in the assign-roles checklist — SQUARE (--r): round is
+/* Role colour swatch in the assign-roles checklist, SQUARE (--r): round is
    reserved for avatars + presence dots only. */
 .rsw{width:9px;height:9px;flex:none;border-radius:var(--r)}
 /* Disabled action button (e.g. type-to-confirm Delete before the name matches) */
@@ -1218,7 +1232,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
 .crow.dropafter{box-shadow:inset 0 -2px 0 var(--ink)}
 .ftrow.dropinto,.fc.dropinto,.card.foldercard.dropinto,.flist .fi.dropinto{outline:2px solid var(--ink);outline-offset:-2px}
 .fc[draggable="true"],[data-open-details][draggable="true"]{cursor:grab}
-/* --- S15 voice minibar (WIP) — pinned to the foot of the channel column --- */
+/* --- S15 voice minibar (WIP), pinned to the foot of the channel column --- */
 .voicemini{flex:none;margin:0 var(--s2) var(--s2);padding:8px 9px;background:var(--plate);border-radius:var(--r);opacity:.62;cursor:pointer}
 .voicemini:hover{opacity:.78}
 .voicemini .vmtop{display:flex;align-items:center;gap:8px}
@@ -1228,10 +1242,10 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
 .voicemini .vminfo small{display:block;font-size:10px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .voicemini .vmwip{display:flex;align-items:center;gap:6px;margin-top:6px;font-size:10px;color:var(--muted)}
 .voicemini .vmwip .ic{width:11px;height:11px}
-/* WIP call/video entry buttons — grayed; they toast + preview the v2 screen */
+/* WIP call/video entry buttons, grayed; they toast + preview the v2 screen */
 .wipcall{opacity:.5}
 .vcbar.wip{opacity:.5}
-/* #51 toast + upload-progress — a transient bottom-right feedback stack */
+/* #51 toast + upload-progress, a transient bottom-right feedback stack */
 .toaststack{position:fixed;right:18px;bottom:18px;z-index:95;display:flex;flex-direction:column;gap:8px;width:320px;max-width:calc(100vw - 36px)}
 .toast{display:flex;align-items:flex-start;gap:10px;background:var(--ink);color:var(--on-ink);border-radius:var(--r);padding:11px 13px;font-size:var(--fs-sm);
   animation:toastin .18s ease}
@@ -1244,12 +1258,12 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
 .uprog .top .pct{margin-left:auto;color:var(--muted);font-variant-numeric:tabular-nums}
 .uprog .bar{height:6px;border-radius:var(--r);background:var(--surface);overflow:hidden}
 .uprog .bar i{display:block;height:100%;background:var(--ink);border-radius:var(--r);transition:width .2s linear}
-/* #50 reusable empty state — icon + title + subtext (+ optional CTA) */
+/* #50 reusable empty state, icon + title + subtext (+ optional CTA) */
 .emptystate{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:var(--s5);gap:10px;color:var(--muted);min-height:420px}
 .emptystate .eic{width:42px;height:42px;color:var(--line2)}
 .emptystate h3{font-size:var(--fs-lg);font-weight:600;color:var(--soft)}
 .emptystate p{font-size:var(--fs-sm);max-width:340px;line-height:1.5}
-/* B19 trash view — retention notice + restore/delete-forever per row */
+/* B19 trash view, retention notice + restore/delete-forever per row */
 .trashnote{display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--surface);border-radius:var(--r);margin:0 0 var(--s3);font-size:var(--fs-sm);color:var(--soft)}
 .trashnote .ic{color:var(--muted)}
 .trashnote .btn{margin-left:auto}
@@ -1284,7 +1298,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
 .skelrow .sk-line{height:10px;border-radius:var(--r)}
 .skelpane{padding:var(--s5)}
 .skelmedia{aspect-ratio:16/10;border-radius:var(--r);margin-bottom:14px}
-/* #44 storage-upgrade UI — usage meter + a dynamic GB slider (CANON §D storage) */
+/* #44 storage-upgrade UI, usage meter + a dynamic GB slider (CANON §D storage) */
 .storeuse{display:flex;justify-content:space-between;font-size:var(--fs-sm);margin-bottom:8px}
 .storeuse .used{font-weight:600}.storeuse .cap{color:var(--muted)}
 .storebar{height:9px;background:var(--surface);border-radius:var(--r);overflow:hidden}
@@ -1331,7 +1345,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
 .fl:first-child{margin-top:0}
 .modal .field{width:100%}
 
-/* segmented control — short, horizontal (not tall stacked boxes) */
+/* segmented control, short, horizontal (not tall stacked boxes) */
 .seg{display:flex;gap:6px}
 .seg .o{flex:1;display:flex;align-items:center;justify-content:center;gap:7px;
   padding:6px 10px;background:var(--surface);border-radius:var(--r);
@@ -1349,7 +1363,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
 .addmore>summary .ic{transition:transform var(--t);color:var(--muted)}
 .addmore[open]>summary .ic{transform:rotate(180deg)}
 .addmore>summary:hover{color:var(--ink)}
-/* upload storage-impact line — which storage the bytes draw */
+/* upload storage-impact line, which storage the bytes draw */
 .ustore{display:flex;align-items:center;gap:7px;font-size:var(--fs-xs);color:var(--muted);background:var(--surface);border-radius:var(--r);padding:8px 10px;margin-top:8px}
 .ustore .ic{color:var(--soft);flex:none}.ustore b{color:var(--soft);font-weight:600}
 /* file-tree storage footer (Drive-style: server storage used, always visible) */
@@ -1362,12 +1376,12 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
 .ptmark::-webkit-scrollbar{display:none}
 .ptmark::after{content:"";position:absolute;left:11px;bottom:-6px;border:6px solid transparent;
   border-top-color:var(--pc,var(--m3));border-bottom-width:0}
-/* freeform canvas comment pin — a rounded name tag with a pointer on one corner */
+/* freeform canvas comment pin, a rounded name tag with a pointer on one corner */
 .cvpin{position:absolute;display:inline-flex;align-items:center;gap:6px;background:var(--pc,var(--m3));
   color:#fff;font-size:12px;font-weight:600;padding:5px 11px;border-radius:14px;white-space:nowrap;
   box-shadow:0 2px 6px rgba(0,0,0,.35);cursor:pointer}
 .cvpin .pfp{width:18px;height:18px;font-size:9px;background:rgba(255,255,255,.28);color:#fff}
-/* corner pointer — a little tail out of the bottom-left corner by default */
+/* corner pointer, a little tail out of the bottom-left corner by default */
 .cvpin::after{content:"";position:absolute;left:-3px;bottom:-3px;width:11px;height:11px;
   background:var(--pc,var(--m3));border-radius:0 0 0 3px;transform:rotate(45deg)}
 .cvpin.tr::after{left:auto;right:-3px;bottom:auto;top:-3px;border-radius:3px 0 0 0}
@@ -1379,7 +1393,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
 .cvdlg .dhd{display:flex;align-items:center;gap:7px;margin-bottom:7px}
 .cvdlg .dtx{font-size:12.5px;color:var(--soft);line-height:1.5;margin-bottom:8px}
 
-/* menu (dropdown / context) — reuses the mockup .menu; shown inline here */
+/* menu (dropdown / context), reuses the mockup .menu; shown inline here */
 .menu.show{position:static;display:block;width:100%;max-width:260px;min-width:0}
 .mi{display:flex;align-items:center;gap:9px;padding:6px 10px;border-radius:var(--r);
   font-size:var(--fs-sm);width:100%;text-align:left;color:var(--ink)}
@@ -1391,7 +1405,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
 .mhd{font-size:12px;color:var(--muted);padding:7px 10px 4px}
 .dsep{height:1px;background:var(--line);margin:5px 8px}
 
-/* comment thread card (canvas) — flat, no shadow */
+/* comment thread card (canvas), flat, no shadow */
 .thread{width:250px;background:var(--paper);border-radius:var(--r);padding:12px}
 .thread .th{display:flex;align-items:center;gap:8px;margin-bottom:7px}
 .thread .meta{margin-left:auto;font-size:11px;color:var(--muted)}
@@ -1406,7 +1420,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   color:#fff;font-weight:700;font-size:var(--fs-sm);background:#7a7a7a}
 .btn{white-space:nowrap}
 
-/* palette — prefixed classes so they don't collide with the mockup's
+/* palette, prefixed classes so they don't collide with the mockup's
    .sw (colour swatch) / .lb (lightbox) which would leak position:fixed etc. */
 .pal{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:10px}
 .palsw{border-radius:var(--r);overflow:hidden;background:var(--surface)}
@@ -1436,12 +1450,14 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
 :root[data-mode="app"] .gallery-ui{display:none}
 :root[data-mode="catalog"] .app{display:none}
 .app{height:100vh}
-/* full screens are designed on a 1440px canvas (standard web width); the app
-   centres in wider viewports with the page ground showing in the gutters.
-   Fixed dialogs/modals already cap ≤1360px, so they sit inside this canvas. */
+/* The LIVE app fills the viewport at any monitor size (owner call 2026-08-22).
+   The 1440px canvas is a PROTOTYPING aid only, applied when a width is pinned
+   (&w=NN) so the gallery/verify can shoot the shell at a fixed measure; fixed
+   dialogs/modals already cap ≤1360px so they sit inside either. */
 :root[data-mode="app"] body{background:var(--plate)}
-:root[data-mode="app"] .app{max-width:1440px;margin-inline:auto;border-inline:1px solid var(--line)}
-.proto{display:none}   /* dev picker bar — killed everywhere; gallery drives nav */
+:root[data-mode="app"] .app{width:100%}
+:root[data-mode="app"][data-proto] .app{margin-inline:auto;border-inline:1px solid var(--line)}
+.proto{display:none}   /* dev picker bar, killed everywhere; gallery drives nav */
 /* app-mode layout: fill the viewport, no stray padding, screens stretch */
 :root[data-mode="app"] body{padding-bottom:0}
 </style>
@@ -1536,7 +1552,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   <p class="lede">
     The visual companion to <code>docs/CANON.md</code>. <b>Screens</b> are the
     live mockup, embedded (interact with them). <b>Dialogs, menus and modals</b>
-    are authored panels — modals sit on a <b>darkened backdrop, no drop shadow</b>
+    are authored panels, modals sit on a <b>darkened backdrop, no drop shadow</b>
     (the rule); menus float flat. Every panel names what it is, its trigger, and
     its database binding. Toggle <b>Dark</b> to check both themes. Radius is 3px
     everywhere; round is only avatars and presence dots; closes are square.
@@ -1546,7 +1562,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
 </section>
 
 <section class="gsec" id="palette">
-  <h2>① Member colours <span class="n">— the one hue in the UI, proposed at 30</span></h2>
+  <h2>① Member colours <span class="n">the one hue in the UI, proposed at 30</span></h2>
   <p class="lede">
     Chrome is black/white/grey; the only colour is a member’s <b>per-server
     identity hue</b>, shown only inside that server and never on a public profile
@@ -1565,7 +1581,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
 </section>
 
 <section class="gsec" id="screens">
-  <h2>② The screens <span class="n">— live, embedded (these are law)</span></h2>
+  <h2>② The screens <span class="n">live, embedded (these are law)</span></h2>
   <p class="lede">Each is the real mockup at <code>collab-mockup.html#screen</code>.
     Their own overlays (details pane, lightbox) are reachable by clicking in.</p>
   <div class="gscreens" id="gscreens"></div>
@@ -1575,7 +1591,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   <h2>③ Global dialogs &amp; menus</h2>
   <p class="lede">The shared layer, including the small things (confirm, prompt,
     toast) that still need a planned design. Modals on a scrim, square closes,
-    short buttons. <em>(Mobile is a separate gallery — see the build checklist.)</em></p>
+    short buttons. <em>(Mobile is a separate gallery, see the build checklist.)</em></p>
   <div class="stagewrap">
 
     <!-- plus menu -->
@@ -1641,7 +1657,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
           <button class="btn primary" style="background:var(--danger)">Delete channel</button></div>
       </div></div>
       <div class="pcap"><b>Confirm (destructive)</b>
-        <span class="m">Generic irreversible-action pattern — named consequence, danger primary.</span>
+        <span class="m">Generic irreversible-action pattern, named consequence, danger primary.</span>
         <span class="db">gated by has_perm(manage_channels)</span></div>
     </div>
 
@@ -1674,7 +1690,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
     <!-- mention -->
     <div>
       <div class="stage"><div class="menu show">
-        <div class="mhd">Members — @mi</div>
+        <div class="mhd">Members, @mi</div>
         <button class="mi"><span class="pfp" style="width:22px;height:22px;font-size:9px;background:var(--m4)">MI</span>mira<span class="k">@mira</span></button>
         <button class="mi"><span class="pfp" style="width:22px;height:22px;font-size:9px;background:var(--m2)">MK</span>mikah<span class="k">@mikah</span></button>
       </div></div>
@@ -1693,7 +1709,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
       </div>
       <div class="pcap"><b>Toast</b>
         <span class="m">Transient confirmation (copied, saved, sent). Auto-dismiss, optional Undo.</span>
-        <span class="db">— (client only)</span></div>
+        <span class="db">(client only)</span></div>
     </div>
 
     <!-- report -->
@@ -1701,7 +1717,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
       <div class="stage scrim"><div class="modal">
         <div class="uhd"><b>Report this file</b><button class="iconbtn"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
         <div class="mbody" style="padding:8px">
-          <button class="mi">Copyright — not their work</button>
+          <button class="mi">Copyright, not their work</button>
           <button class="mi">Sexual content involving minors</button>
           <button class="mi">Harassment or abuse</button>
           <button class="mi">Something else</button>
@@ -1725,7 +1741,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
     navigation list (CANON §C.7).</p>
   <div class="stagewrap">
 
-    <!-- details pane — POST (public work; has comments) -->
+    <!-- details pane, POST (public work; has comments) -->
     <div class="arenapanel">
       <div class="stage scrim"><div class="arena">
         <div class="dmedia">
@@ -1744,12 +1760,12 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
           <div class="foot"><button class="btn primary"><svg class="ic sm"><use href="#i-download"/></svg>Download<svg class="ic sm"><use href="#i-chev"/></svg></button><button class="btn"><svg class="ic sm"><use href="#i-save"/></svg>Save to my files</button></div>
         </div>
       </div></div>
-      <div class="pcap"><b>Details pane — post (public)</b>
-        <span class="m">A <b>post</b> is a public work on your profile/feed — it draws <b>your personal storage</b>. Its detail pane is the classic one: a public <b>comment thread</b>, tags, credits. Media takes the room; the rail is fixed. No channel (it isn't in a server).</span>
+      <div class="pcap"><b>Details pane, post (public)</b>
+        <span class="m">A <b>post</b> is a public work on your profile/feed, it draws <b>your personal storage</b>. Its detail pane is the classic one: a public <b>comment thread</b>, tags, credits. Media takes the room; the rail is fixed. No channel (it isn't in a server).</span>
         <span class="db">works visibility=public · storage_source=personal · comments (context=public)</span></div>
     </div>
 
-    <!-- details pane — SERVER FILE — video (no comments; chat handles replies) -->
+    <!-- details pane, SERVER FILE, video (no comments; chat handles replies) -->
     <div class="arenapanel">
       <div class="stage scrim"><div class="arena">
         <div class="dmedia" style="background:linear-gradient(135deg,#3a4a55,#12181c)" data-asset="sh040_comp.mp4" data-poster="sh040_comp.png">
@@ -1768,12 +1784,12 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
           <div class="foot"><button class="btn primary"><svg class="ic sm"><use href="#i-download"/></svg>Download<svg class="ic sm"><use href="#i-chev"/></svg></button><button class="btn"><svg class="ic sm"><use href="#i-save"/></svg>Save to my files</button></div>
         </div>
       </div></div>
-      <div class="pcap"><b>Details pane — server file (video)</b>
-        <span class="m">A <b>file shared in a server</b> looks the same expanded but has <b>no comment thread</b> — replies live in the channel chat. It keeps <b>tags</b> and collaborators. Draws the <b>server's</b> storage.</span>
+      <div class="pcap"><b>Details pane, server file (video)</b>
+        <span class="m">A <b>file shared in a server</b> looks the same expanded but has <b>no comment thread</b>, replies live in the channel chat. It keeps <b>tags</b> and collaborators. Draws the <b>server's</b> storage.</span>
         <span class="db">works visibility=server · no comments · content_tags</span></div>
     </div>
 
-    <!-- details pane — SERVER FILE — image (crosspost) -->
+    <!-- details pane, SERVER FILE, image (crosspost) -->
     <div class="arenapanel">
       <div class="stage scrim"><div class="arena">
         <div class="dmedia" style="background:linear-gradient(135deg,#6b5a4a,#241c16);padding:0"></div>
@@ -1789,16 +1805,16 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
           <div class="foot"><button class="btn primary"><svg class="ic sm"><use href="#i-download"/></svg>Download<svg class="ic sm"><use href="#i-chev"/></svg></button><button class="btn"><svg class="ic sm"><use href="#i-save"/></svg>Save to my files</button></div>
         </div>
       </div></div>
-      <div class="pcap"><b>Details pane — server file (image, crosspost)</b>
-        <span class="m">A personal work shown in a server — it draws <b>your</b> storage and is public at home. As a server file it has <b>no comment thread</b> (chat handles replies) but keeps tags; its crosspost provenance isn't shown on the file.</span>
+      <div class="pcap"><b>Details pane, server file (image, crosspost)</b>
+        <span class="m">A personal work shown in a server, it draws <b>your</b> storage and is public at home. As a server file it has <b>no comment thread</b> (chat handles replies) but keeps tags; its crosspost provenance isn't shown on the file.</span>
         <span class="db">works storage_source=personal, billing_server_id=null · no comments</span></div>
     </div>
 
-    <!-- details pane — SERVER FILE — other (non-previewable) -->
+    <!-- details pane, SERVER FILE, other (non-previewable) -->
     <div class="arenapanel">
       <div class="stage scrim"><div class="arena">
         <div class="dmedia">
-          <div class="dtype"><svg class="ic"><use href="#i-file"/></svg><span class="ext">FLP</span><span style="font-size:11px">no preview — download to open</span></div>
+          <div class="dtype"><svg class="ic"><use href="#i-file"/></svg><span class="ext">FLP</span><span style="font-size:11px">no preview, download to open</span></div>
         </div>
         <div class="dinfo">
           <div class="dtop"><span class="dfilename">late_bloom_beat.flp</span><button class="iconbtn" title="Report"><svg class="ic sm"><use href="#i-flag"/></svg></button><button class="iconbtn sp" title="Previous item"><svg class="ic sm" style="transform:rotate(90deg)"><use href="#i-chev"/></svg></button><button class="iconbtn" title="Next item"><svg class="ic sm" style="transform:rotate(-90deg)"><use href="#i-chev"/></svg></button><button class="iconbtn" title="Close"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
@@ -1812,12 +1828,12 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
           <div class="foot"><button class="btn primary"><svg class="ic sm"><use href="#i-download"/></svg>Download<svg class="ic sm"><use href="#i-chev"/></svg></button><button class="btn"><svg class="ic sm"><use href="#i-save"/></svg>Save to my files</button></div>
         </div>
       </div></div>
-      <div class="pcap"><b>Details pane — server file (other, non-previewable)</b>
-        <span class="m">Project files, archives, binaries (.flp, .zip, .exe, .als, .aep) — a <b>type card</b> fills the media area, no fake thumbnail. Tagged; <b>no comments</b> (chat handles replies).</span>
+      <div class="pcap"><b>Details pane, server file (other, non-previewable)</b>
+        <span class="m">Project files, archives, binaries (.flp, .zip, .exe, .als, .aep), a <b>type card</b> fills the media area, no fake thumbnail. Tagged; <b>no comments</b> (chat handles replies).</span>
         <span class="db">works kind=other · works.file_ext · no comments</span></div>
     </div>
 
-    <!-- details pane — FOLDER (arena — the only pane with media arrows) -->
+    <!-- details pane, FOLDER (arena, the only pane with media arrows) -->
     <div class="arenapanel">
       <div class="stage scrim"><div class="arena">
         <div class="dmedia">
@@ -1842,8 +1858,8 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
           <div class="foot"><button class="btn primary"><svg class="ic sm"><use href="#i-folder"/></svg>Open folder</button><button class="btn"><svg class="ic sm"><use href="#i-save"/></svg>Save<svg class="ic sm"><use href="#i-chev"/></svg></button><button class="btn"><svg class="ic sm"><use href="#i-download"/></svg>Download<svg class="ic sm"><use href="#i-chev"/></svg></button></div>
         </div>
       </div></div>
-      <div class="pcap"><b>Details pane — folder (arena)</b>
-        <span class="m">A server <b>Folder</b> (renamed from Collection). <b>The only pane with arrows over the media</b> — you page through the items — plus a clickable <b>navigation list on the side</b>. Not a work: no tags or comments; each item carries its own. <b>Save</b> and <b>Download</b> each offer the <b>whole folder or just a selection</b> (gallery #17/#18).</span>
+      <div class="pcap"><b>Details pane, folder (arena)</b>
+        <span class="m">A server <b>Folder</b> (renamed from Collection). <b>The only pane with arrows over the media</b>, you page through the items, plus a clickable <b>navigation list on the side</b>. Not a work: no tags or comments; each item carries its own. <b>Save</b> and <b>Download</b> each offer the <b>whole folder or just a selection</b> (gallery #17/#18).</span>
         <span class="db">folders (nested) · placement.folder_id → works</span></div>
     </div>
 
@@ -1854,7 +1870,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
         <div class="mbody">
           <div style="background:var(--surface);border-radius:var(--r);padding:14px;font-size:12px;color:var(--muted);text-align:center">
             late_bloom_beat.wav · 3 files</div>
-          <label class="fl">Visibility <span style="color:var(--muted)">— required</span></label>
+          <label class="fl">Visibility <span style="color:var(--muted)">required</span></label>
           <div class="seg">
             <div class="o"><svg class="ic"><use href="#i-globe"/></svg>Public</div>
             <div class="o on"><svg class="ic"><use href="#i-server"/></svg>Server</div>
@@ -1875,7 +1891,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
         </div>
         <div class="mfoot"><button class="btn ghost">Cancel</button><button class="btn primary">Post 3 files</button></div>
       </div></div>
-      <div class="pcap"><b>Upload sheet — fast by default</b>
+      <div class="pcap"><b>Upload sheet, fast by default</b>
         <span class="m">Drop → pick visibility → <b>Post</b>. Title auto-fills the file name; Tags + Collaborators hide behind <b>Add details</b>, so a meme-sharer never sees an artist form. Collaborators renamed from Credits.</span>
         <span class="db">works insert · file_ext · visibility · placement.folder_id</span>
         <span class="st live">in mockup</span></div>
@@ -1899,14 +1915,14 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
     <div>
       <div class="stage"><div class="menu show">
         <div class="mlabel">Save to your files</div>
-        <div class="mnote">Keeps a copy in <b>your personal storage</b> — dedup means it costs ~nothing if you already have the file, and it stays yours even if the server deletes theirs.</div>
+        <div class="mnote">Keeps a copy in <b>your personal storage</b>, dedup means it costs ~nothing if you already have the file, and it stays yours even if the server deletes theirs.</div>
         <button class="mi"><svg class="ic"><use href="#i-save"/></svg>References<span class="k">✓</span></button>
         <button class="mi"><svg class="ic"><use href="#i-save"/></svg>To flip</button>
         <div class="dsep"></div>
         <button class="mi"><svg class="ic"><use href="#i-plus"/></svg>New folder…</button>
       </div></div>
       <div class="pcap"><b>Save to my files</b>
-        <span class="m">Copies the work into <b>your own storage</b> — a new owner-row on the same dedup blob (near-zero bytes), filed in a personal folder. Survives the original's deletion; draws your meter. Not a bookmark, not a pin.</span>
+        <span class="m">Copies the work into <b>your own storage</b>, a new owner-row on the same dedup blob (near-zero bytes), filed in a personal folder. Survives the original's deletion; draws your meter. Not a bookmark, not a pin.</span>
         <span class="db">works (owner copy) · media_blobs.refcount · save_folders</span></div>
     </div>
 
@@ -1924,7 +1940,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
         </div>
       </div></div>
       <div class="pcap"><b>Member / profile popout</b>
-        <span class="m">Name in server colour, role chip, local time, mutual servers, add-friend/message. The cover uses the member hue — the one colour.</span>
+        <span class="m">Name in server colour, role chip, local time, mutual servers, add-friend/message. The cover uses the member hue, the one colour.</span>
         <span class="db">profiles · server_members.role · friendships</span></div>
     </div>
 
@@ -1936,7 +1952,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
           <div class="field"><svg class="ic sm" style="color:var(--muted)"><use href="#i-at"/></svg><input placeholder="handle"></div>
         </div>
       </div>
-      <div class="pcap"><b>New message — inline in Messages</b>
+      <div class="pcap"><b>New message, inline in Messages</b>
         <span class="m">Not a modal: an add-by-handle field at the top of the DM thread list. Friendship-gated; group DMs add several handles.</span>
         <span class="db">create_dm(handle) · friendships</span></div>
     </div>
@@ -1972,7 +1988,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
         </div>
       </div></div>
       <div class="pcap"><b>Private-channel allow-list</b>
-        <span class="m">Appears when a channel is toggled Private in its settings. v1 is allow-list only (grant, don't deny): pick the roles and members who see it in the rail. This is the signpost — the RLS policy on <code>channel_members</code> is the fence.</span>
+        <span class="m">Appears when a channel is toggled Private in its settings. v1 is allow-list only (grant, don't deny): pick the roles and members who see it in the rail. This is the signpost, the RLS policy on <code>channel_members</code> is the fence.</span>
         <span class="db">W channel_members ← set_channel_access(channel, role_ids[], member_ids[])</span>
         <span class="st live">AUTHORED</span></div>
     </div>
@@ -1981,7 +1997,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
 </section>
 
 <section class="gsec" id="inventory">
-  <h2>⑤ Full dialog inventory <span class="n">— so nothing is missed</span></h2>
+  <h2>⑤ Full dialog inventory <span class="n">so nothing is missed</span></h2>
   <p class="lede"><span class="s m">MOCKUP</span> already in the embedded screens ·
     <span class="s a">AUTHORED</span> rendered as a panel above ·
     <span class="s t">TO BUILD</span> specified, not yet drawn.</p>
@@ -1992,9 +2008,9 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
 </section>
 
 <section class="gsec" id="exploded">
-  <h2>⑥ Wired dialogs &amp; menus <span class="n">— exploded, each diagnosable on its own</span></h2>
+  <h2>⑥ Wired dialogs &amp; menus <span class="n">exploded, each diagnosable on its own</span></h2>
   <p class="lede">Every modal &amp; menu that ships in app mode, cloned here
-    <b>from the real node</b> and forced open — so each is diagnosable in
+    <b>from the real node</b> and forced open, so each is diagnosable in
     isolation and provably identical to what the app renders. Generated, never
     hand-copied: add a dialog and it appears here automatically.</p>
   <div class="stagewrap" id="explodedStage"></div>
@@ -2054,7 +2070,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
             <button class="crow" data-s="explorer"><svg class="ic"><use href="#i-folder"/></svg><span class="nm">Files</span></button>
           </div>
           <div class="cgroup">
-            <div class="cglabel"><svg class="ic sm cgcaret"><use href="#i-chev"/></svg>Channels <button class="cgadd" id="addChannel" data-admin-only title="Create channel"><svg class="ic sm"><use href="#i-plus"/></svg></button></div>
+            <div class="cglabel"><button class="cgtoggle" aria-expanded="true"><svg class="ic sm cgcaret"><use href="#i-chev"/></svg>Channels</button><button class="cgadd" id="addChannel" data-admin-only title="Create channel"><svg class="ic sm"><use href="#i-plus"/></svg></button></div>
             <button class="crow"><svg class="ic"><use href="#i-hash"/></svg><span class="nm">announcements</span><span class="cgear" data-admin-only title="Edit channel"><svg class="ic sm"><use href="#i-settings"/></svg></span></button>
             <button class="crow on"><svg class="ic"><use href="#i-hash"/></svg><span class="nm">beats</span><span class="cgear" data-admin-only title="Edit channel"><svg class="ic sm"><use href="#i-settings"/></svg></span></button>
             <button class="crow"><svg class="ic"><use href="#i-hash"/></svg><span class="nm">verses</span><span class="ct">4</span><span class="cgear" data-admin-only title="Edit channel"><svg class="ic sm"><use href="#i-settings"/></svg></span></button>
@@ -2063,7 +2079,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
             <button class="crow"><svg class="ic"><use href="#i-hash"/></svg><span class="nm">stems and sessions</span><span class="cgear" data-admin-only title="Edit channel"><svg class="ic sm"><use href="#i-settings"/></svg></span></button>
           </div>
           <div class="cgroup">
-            <div class="cglabel"><svg class="ic sm cgcaret"><use href="#i-chev"/></svg>Voice <button class="cgadd" id="addVoice" data-admin-only title="Create voice channel"><svg class="ic sm"><use href="#i-plus"/></svg></button></div>
+            <div class="cglabel"><button class="cgtoggle" aria-expanded="true"><svg class="ic sm cgcaret"><use href="#i-chev"/></svg>Voice</button><button class="cgadd" id="addVoice" data-admin-only title="Create voice channel"><svg class="ic sm"><use href="#i-plus"/></svg></button></div>
             <button class="crow" data-s="vc"><svg class="ic"><use href="#i-voice"/></svg><span class="nm">the booth</span></button>
             <div class="vpeople">
               <div class="vp m3"><span class="live"></span><span class="u m3">dev</span><span style="color:var(--muted)">sharing FL</span></div>
@@ -2072,7 +2088,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
             <button class="crow" data-s="vc"><svg class="ic"><use href="#i-voice"/></svg><span class="nm">co-writing</span></button>
           </div>
         </div>
-        <!-- S15 voice minibar — the persistent "you're in the booth" strip while
+        <!-- S15 voice minibar, the persistent "you're in the booth" strip while
              browsing elsewhere. WIP: voice ships in v2; grayed + a build note. -->
         <div class="voicemini" id="voiceMini" title="Voice (in progress)">
           <div class="vmtop"><span class="vmdot"></span>
@@ -2085,14 +2101,14 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
       </nav>
 
       <main class="main">
-        <!-- S10 connection-lost banner — shown while Realtime is reconnecting; composer disables -->
-        <div class="offlinebar" id="offlineBar" hidden><span class="odot"></span>Connection lost — reconnecting…</div>
+        <!-- S10 connection-lost banner, shown while Realtime is reconnecting; composer disables -->
+        <div class="offlinebar" id="offlineBar" hidden><span class="odot"></span>Connection lost, reconnecting…</div>
         <div class="mainhd">
           <svg class="ic"><use href="#i-hash"/></svg><span class="t">beats</span>
           <span class="sub">put the session name in the file name</span>
           <div class="acts">
-            <button class="iconbtn wipcall" data-s="vc" title="Voice — in progress"><svg class="ic"><use href="#i-phone"/></svg></button>
-            <button class="iconbtn wipcall" data-s="vc" title="Video — in progress"><svg class="ic"><use href="#i-video"/></svg></button>
+            <button class="iconbtn wipcall" data-s="vc" title="Voice, in progress"><svg class="ic"><use href="#i-phone"/></svg></button>
+            <button class="iconbtn wipcall" data-s="vc" title="Video, in progress"><svg class="ic"><use href="#i-video"/></svg></button>
             <button class="iconbtn" id="notifBell" title="Notifications"><svg class="ic"><use href="#i-bell"/></svg></button>
             <button class="iconbtn" data-s="search" title="Search"><svg class="ic"><use href="#i-search"/></svg></button>
             <button class="iconbtn" title="Members"><svg class="ic"><use href="#i-users"/></svg></button>
@@ -2170,7 +2186,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
               <div class="tx" style="color:var(--muted);font-size:var(--fs-xs)"><svg class="ic sm" style="width:12px;height:12px;vertical-align:-2px"><use href="#i-arrow"/></svg> forwarded from <b style="color:var(--soft)">#references</b></div>
               <div class="fwd">
                 <div class="src"><svg class="ic"><use href="#i-hash"/></svg><span class="u m6">nel</span> in #references · yesterday</div>
-                <div class="tx">the drum sound we keep coming back to — this reference board</div>
+                <div class="tx">the drum sound we keep coming back to, this reference board</div>
               </div>
             </div>
           </div>
@@ -2186,7 +2202,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
         <button class="jumpnew" id="jumpNew"><svg class="ic sm"><use href="#i-chev"/></svg>New messages · jump to present</button>
         <div class="typing"><span class="dots"><i></i><i></i><i></i></span>tomo is typing</div>
         <div class="composer" id="chComposer">
-          <!-- slow-mode / timed-out notice — forced by #workspace/slowmode|timedout -->
+          <!-- slow-mode / timed-out notice, forced by #workspace/slowmode|timedout -->
           <div class="composernote" id="composerNote" hidden><svg class="ic sm"><use href="#i-clock"/></svg><span id="composerNoteTx"></span></div>
           <div class="richcomposer">
             <div class="cbar">
@@ -2220,10 +2236,10 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
         <div class="chpanel" data-chview="files" hidden>
           <div class="lb">12 files in #beats</div>
           <div class="masonry even">
-            <button class="card" data-open-details><div class="media file"><svg class="ic fic"><use href="#i-file"/></svg><span class="ext">FLP</span></div><div class="title">late_bloom_beat.flp</div><div class="who">dev · v3</div></button>
+            <button class="card" data-open-details><div class="media file"><svg class="ic fic"><use href="#i-file"/></svg><span class="ext">FLP</span></div><div class="title">late_bloom_beat.flp</div><div class="who">dev</div></button>
             <button class="card" data-open-details><div class="media audio"><svg class="ic fic"><use href="#i-music"/></svg><span class="ext">WAV</span></div><div class="title">bridge_scratch_rae.wav</div><div class="who">rae</div></button>
             <button class="card" data-open-details><div class="media"><div class="shot c" style="aspect-ratio:3/2"></div></div><div class="title">ref_drums.png</div><div class="who">rae</div></button>
-            <button class="card" data-open-details><div class="media audio"><svg class="ic fic"><use href="#i-music"/></svg><span class="ext">WAV</span></div><div class="title">bounce_v2.wav</div><div class="who">dev</div></button>
+            <button class="card" data-open-details><div class="media audio"><svg class="ic fic"><use href="#i-music"/></svg><span class="ext">WAV</span></div><div class="title">bounce_warm.wav</div><div class="who">dev</div></button>
           </div>
         </div>
       </main>
@@ -2277,7 +2293,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
           <button class="btn">Latest<svg class="ic sm"><use href="#i-chev"/></svg></button><button class="iconbtn" data-lt title="Grid / masonry"><svg class="ic sm"><use href="#i-grid"/></svg></button>
         </div>
         <div class="panebody">
-          <!-- #49 feed loading skeleton — forced by #feed/loading -->
+          <!-- #49 feed loading skeleton, forced by #feed/loading -->
           <div class="masonry even" id="feedSkel" hidden>
             <div class="card skelcard"><div class="skel sk-media"></div><div class="skel sk-line" style="width:70%"></div><div class="skel sk-line" style="width:40%"></div></div>
             <div class="card skelcard"><div class="skel sk-media"></div><div class="skel sk-line" style="width:55%"></div><div class="skel sk-line" style="width:48%"></div></div>
@@ -2286,7 +2302,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
             <div class="card skelcard"><div class="skel sk-media"></div><div class="skel sk-line" style="width:75%"></div><div class="skel sk-line" style="width:40%"></div></div>
             <div class="card skelcard"><div class="skel sk-media"></div><div class="skel sk-line" style="width:52%"></div><div class="skel sk-line" style="width:50%"></div></div>
           </div>
-          <!-- #50 feed empty — no friends' posts yet — forced by #feed/empty -->
+          <!-- #50 feed empty, no friends' posts yet, forced by #feed/empty -->
           <div class="emptystate" id="feedEmpty" hidden>
             <svg class="ic eic"><use href="#i-home"/></svg>
             <h3>Your feed is quiet</h3>
@@ -2333,14 +2349,14 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
           <button class="ftrow lvl1"><svg class="ic sm tw"><use href="#i-chev"/></svg><svg class="ic sm fic"><use href="#i-folder"/></svg><span class="fn">mixing</span></button>
           <button class="ftrow lvl1"><span class="tw"></span><svg class="ic sm fic"><use href="#i-folder"/></svg><span class="fn">references</span></button>
           <!-- #58 a locked folder shows a lock; contents are read-only without permission -->
-          <button class="ftrow lvl1"><span class="tw"></span><svg class="ic sm fic"><use href="#i-folder"/></svg><span class="fn">stems and sessions</span><svg class="ic sm ftlock" title="Locked — read-only"><use href="#i-lock"/></svg></button>
+          <button class="ftrow lvl1"><span class="tw"></span><svg class="ic sm fic"><use href="#i-folder"/></svg><span class="fn">stems and sessions</span><svg class="ic sm ftlock" title="Locked, read-only"><use href="#i-lock"/></svg></button>
           <div class="ftfoot"><svg class="ic sm" style="vertical-align:-2px;color:var(--muted)"><use href="#i-server"/></svg> This server's storage<div class="bar"><i style="width:62%"></i></div>74 of 120 GB used · <button id="manageStorage" style="color:var(--soft);text-decoration:underline">manage</button></div>
         </nav>
         <div class="pane">
           <!-- #46 read-only over-cap banner (shown when storage is over cap / lapsed) -->
-          <div class="capbanner" id="capBanner" hidden><svg class="ic sm"><use href="#i-lock"/></svg><span><b>Storage is over its cap.</b> Files are <b>read-only</b> — nothing is deleted — until you free space or upgrade.</span><button class="btn sm" id="capUpgrade">Upgrade</button></div>
-          <!-- #58 locked-folder read-only notice — forced by #explorer/locked -->
-          <div class="capbanner" id="lockNote" hidden style="background:var(--surface);color:var(--soft)"><svg class="ic sm" style="color:var(--muted)"><use href="#i-lock"/></svg><span><b>stems and sessions</b> is locked. Its files are <b>read-only</b> — you can open and download, but not move, rename or delete without permission.</span></div>
+          <div class="capbanner" id="capBanner" hidden><svg class="ic sm"><use href="#i-lock"/></svg><span><b>Storage is over its cap.</b> Files are <b>read-only</b>, nothing is deleted, until you free space or upgrade.</span><button class="btn sm" id="capUpgrade">Upgrade</button></div>
+          <!-- #58 locked-folder read-only notice, forced by #explorer/locked -->
+          <div class="capbanner" id="lockNote" hidden style="background:var(--surface);color:var(--soft)"><svg class="ic sm" style="color:var(--muted)"><use href="#i-lock"/></svg><span><b>stems and sessions</b> is locked. Its files are <b>read-only</b>, you can open and download, but not move, rename or delete without permission.</span></div>
           <div class="panehd">
             <div class="crumbs"><button>Late Bloom LP</button><span class="sl">/</span><b>beats</b></div>
             <div class="hdctl">
@@ -2380,7 +2396,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
             <span class="sp"></span>
             <button id="selClear"><svg class="ic sm"><use href="#i-x"/></svg>Clear</button></div>
           <div class="panebody">
-            <!-- B19 Trash — populated: a retention notice + Empty-now, and per-row
+            <!-- B19 Trash, populated: a retention notice + Empty-now, and per-row
                  Restore / Delete-forever. Soft-delete; auto-purges at 30 days (#42). -->
             <div class="exview" data-exview="trash" hidden>
               <div class="trashnote">
@@ -2389,8 +2405,8 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
                 <button class="btn sm danger" id="emptyTrashBtn"><svg class="ic sm"><use href="#i-trash"/></svg>Empty trash now</button>
               </div>
               <div class="trlist">
-                <div class="trrow"><div class="tmed"><svg class="ic sm fic"><use href="#i-music"/></svg></div><div class="tinfo"><div class="trname">old_bounce_v1.wav</div><div class="tsub">dev · trashed 1 day ago</div></div><span class="tleft">29d left</span><div class="tacts"><button class="btn sm"><svg class="ic sm"><use href="#i-undo"/></svg>Restore</button><button class="btn sm danger">Delete forever</button></div></div>
-                <div class="trrow"><div class="tmed"><svg class="ic sm fic"><use href="#i-file"/></svg></div><div class="tinfo"><div class="trname">late_bloom_beat_v2.flp</div><div class="tsub">dev · trashed 9 days ago</div></div><span class="tleft">21d left</span><div class="tacts"><button class="btn sm"><svg class="ic sm"><use href="#i-undo"/></svg>Restore</button><button class="btn sm danger">Delete forever</button></div></div>
+                <div class="trrow"><div class="tmed"><svg class="ic sm fic"><use href="#i-music"/></svg></div><div class="tinfo"><div class="trname">old_bounce_rough.wav</div><div class="tsub">dev · trashed 1 day ago</div></div><span class="tleft">29d left</span><div class="tacts"><button class="btn sm"><svg class="ic sm"><use href="#i-undo"/></svg>Restore</button><button class="btn sm danger">Delete forever</button></div></div>
+                <div class="trrow"><div class="tmed"><svg class="ic sm fic"><use href="#i-file"/></svg></div><div class="tinfo"><div class="trname">late_bloom_beat_alt.flp</div><div class="tsub">dev · trashed 9 days ago</div></div><span class="tleft">21d left</span><div class="tacts"><button class="btn sm"><svg class="ic sm"><use href="#i-undo"/></svg>Restore</button><button class="btn sm danger">Delete forever</button></div></div>
                 <div class="trrow"><div class="tmed"><span class="shot c" style="width:34px;height:34px"></span></div><div class="tinfo"><div class="trname">ref_moodboard.png</div><div class="tsub">rae · trashed 24 days ago</div></div><span class="tleft warn">6d left</span><div class="tacts"><button class="btn sm"><svg class="ic sm"><use href="#i-undo"/></svg>Restore</button><button class="btn sm danger">Delete forever</button></div></div>
                 <div class="trrow"><div class="tmed"><svg class="ic sm fic"><use href="#i-folder"/></svg></div><div class="tinfo"><div class="trname">scratch takes</div><div class="tsub">Folder · 5 files · trashed 28 days ago</div></div><span class="tleft warn">2d left</span><div class="tacts"><button class="btn sm"><svg class="ic sm"><use href="#i-undo"/></svg>Restore</button><button class="btn sm danger">Delete forever</button></div></div>
               </div>
@@ -2403,7 +2419,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
                 <p>Deleted files land here and are kept for <b>30 days</b>, then permanently removed. Nothing here right now.</p>
               </div>
             </div>
-            <!-- B20 starred smart folder — a filtered grid of starred works; unstar from the card -->
+            <!-- B20 starred smart folder, a filtered grid of starred works; unstar from the card -->
             <div class="exview" data-exview="starred" hidden>
               <div class="masonry even">
                 <div class="card" data-open-details><div class="media file"><div class="cardacts"><button data-act="unstar" class="starred" title="Unstar"><svg class="ic"><use href="#i-star"/></svg></button><button data-act="dl" title="Download"><svg class="ic"><use href="#i-download"/></svg></button><button data-act="more" title="More"><svg class="ic"><use href="#i-more"/></svg></button></div><svg class="ic fic"><use href="#i-file"/></svg><span class="ext">FLP</span></div>
@@ -2411,7 +2427,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
                 <div class="card" data-lightbox data-lbkind="image"><div class="media"><div class="cardacts"><button data-act="unstar" class="starred" title="Unstar"><svg class="ic"><use href="#i-star"/></svg></button><button data-act="dl" title="Download"><svg class="ic"><use href="#i-download"/></svg></button><button data-act="more" title="More"><svg class="ic"><use href="#i-more"/></svg></button></div><div class="shot c" style="aspect-ratio:3/2"></div></div>
                   <div class="title">ref_drums.png</div><div class="who"><span class="uchip m1"><span class="dot"></span>rae</span> · #references</div></div>
                 <div class="card" data-open-details><div class="media audio"><div class="cardacts"><button data-act="unstar" class="starred" title="Unstar"><svg class="ic"><use href="#i-star"/></svg></button><button data-act="dl" title="Download"><svg class="ic"><use href="#i-download"/></svg></button><button data-act="more" title="More"><svg class="ic"><use href="#i-more"/></svg></button></div><svg class="ic fic"><use href="#i-music"/></svg><span class="ext">WAV</span></div>
-                  <div class="title">bounce_v2.wav</div><div class="who"><span class="uchip m3"><span class="dot"></span>dev</span> · #beats</div></div>
+                  <div class="title">bounce_warm.wav</div><div class="who"><span class="uchip m3"><span class="dot"></span>dev</span> · #beats</div></div>
               </div>
             </div>
             <!-- #49 skeleton loading (flashed briefly when a folder opens) -->
@@ -2443,7 +2459,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
             <!-- LIST view: file-manager rows -->
             <div class="exview" data-exview="list" hidden>
               <div class="flrow flhd"><span>Name</span><span>Type</span><span>Size</span><span>Uploader</span><span>Added</span></div>
-              <div class="flrow"><span class="flnm"><svg class="ic sm"><use href="#i-folder"/></svg>drums</span><span>folder</span><span>—</span><span>dev</span><span>10 Aug</span></div>
+              <div class="flrow"><span class="flnm"><svg class="ic sm"><use href="#i-folder"/></svg>drums</span><span>folder</span><span>-</span><span>dev</span><span>10 Aug</span></div>
               <div class="flrow"><span class="flnm"><svg class="ic sm"><use href="#i-file"/></svg>late_bloom_beat.flp</span><span>flp</span><span>8.4 MB</span><span>dev</span><span>15 Aug</span></div>
               <div class="flrow"><span class="flnm"><svg class="ic sm"><use href="#i-voice"/></svg>bridge_scratch_rae.wav</span><span>wav</span><span>18 MB</span><span>rae</span><span>15 Aug</span></div>
               <div class="flrow"><span class="flnm"><svg class="ic sm"><use href="#i-image"/></svg>ref_drums.png</span><span>png</span><span>2.1 MB</span><span>rae</span><span>14 Aug</span></div>
@@ -2452,7 +2468,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
             </div>
             <!-- FEED view: flattened subtree, previewable media only, comments inline -->
             <div class="exview filefeed" data-exview="feed" hidden>
-              <div class="ffnote"><svg class="ic sm"><use href="#i-home"/></svg>Everything previewable in <b>beats</b> and its subfolders, newest first. Project files (.flp/.als) are hidden here — switch to grid or list for those.</div>
+              <div class="ffnote"><svg class="ic sm"><use href="#i-home"/></svg>Everything previewable in <b>beats</b> and its subfolders, newest first. Project files (.flp/.als) are hidden here, switch to grid or list for those.</div>
               <div class="ffitem">
                 <div class="ffmedia"><div class="shot b" style="aspect-ratio:16/9"></div><div class="playover"><svg class="ic f"><use href="#i-play"/></svg></div></div>
                 <div class="ffmeta"><b>booth_2min.mp4</b><span class="who"><span class="uchip m5"><span class="dot"></span>jax</span> · drums · 13 Aug</span></div>
@@ -2472,14 +2488,14 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
     <!-- CALL (voice / video) -->
     <div class="screen" data-screen="vc" hidden>
       <div class="vc">
-        <!-- Voice chat is v2 — the whole interface is replaced by a WIP placeholder:
+        <!-- Voice chat is v2, the whole interface is replaced by a WIP placeholder:
              a transparency-checkerboard grey screen, a centred icon, and the "being
              built" message front and centre. The control bar stays (it toasts WIP). -->
         <div class="vcstage vcwip">
           <div class="vcwipcard">
             <div class="vcwipicon"><svg class="ic"><use href="#i-voice"/></svg></div>
             <div class="vcwiptitle">This feature is currently being built</div>
-            <div class="vcwipsub">Voice &amp; video calls ship after the beta — this screen is a placeholder; nothing here connects yet.</div>
+            <div class="vcwipsub">Voice &amp; video calls ship after the beta, this screen is a placeholder; nothing here connects yet.</div>
             <span class="tag">WIP · v2</span>
           </div>
         </div>
@@ -2502,7 +2518,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
       <div class="prof">
         <!-- The owner's self-view. How the same profile reads to a stranger (public
              shelf only, Add friend) or a friend (mutuals-only posts, Message) is the
-             POV rule in CANON §C.10 — not an in-product toggle. -->
+             POV rule in CANON §C.10, not an in-product toggle. -->
         <div class="phero">
           <div class="top">
             <div class="av lg">RA</div>
@@ -2510,7 +2526,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
               <div class="bio">writer and rapper. building the Late Bloom LP with a few people.</div></div>
             <div class="actions">
               <!-- owner sees Edit profile; a stranger/friend POV swaps these in
-                   (#profile/public|mutual) — the POV rule is CANON §C.10, shown
+                   (#profile/public|mutual), the POV rule is CANON §C.10, shown
                    here for review, not an in-product toggle. -->
               <button class="btn primary" id="editProfileBtn"><svg class="ic sm"><use href="#i-pen"/></svg>Edit profile</button>
               <button class="btn primary povact" id="povAddFriend" hidden><svg class="ic sm"><use href="#i-plus"/></svg>Add friend</button>
@@ -2526,7 +2542,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
           <button class="iconbtn" style="margin-left:auto" title="Search this profile"><svg class="ic"><use href="#i-search"/></svg></button>
         </div>
         <div class="pbody">
-          <!-- profile with no works on this shelf — forced by #profile/empty -->
+          <!-- profile with no works on this shelf, forced by #profile/empty -->
           <div class="emptystate" id="profileEmpty" hidden>
             <svg class="ic eic"><use href="#i-globe"/></svg>
             <h3>Nothing public yet</h3>
@@ -2564,7 +2580,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
       </div>
       <main class="main" id="dmConvo">
         <div class="mainhd"><div class="av sm">MI</div><span class="t">mira</span><span class="sub">compositor</span>
-          <div class="acts"><button class="iconbtn wipcall" title="Call — in progress"><svg class="ic"><use href="#i-phone"/></svg></button><button class="iconbtn wipcall" title="Video — in progress"><svg class="ic"><use href="#i-video"/></svg></button><button class="iconbtn" title="Pin"><svg class="ic"><use href="#i-pin"/></svg></button><button class="iconbtn" title="More"><svg class="ic"><use href="#i-more"/></svg></button></div></div>
+          <div class="acts"><button class="iconbtn wipcall" title="Call, in progress"><svg class="ic"><use href="#i-phone"/></svg></button><button class="iconbtn wipcall" title="Video, in progress"><svg class="ic"><use href="#i-video"/></svg></button><button class="iconbtn" title="Pin"><svg class="ic"><use href="#i-pin"/></svg></button><button class="iconbtn" title="More"><svg class="ic"><use href="#i-more"/></svg></button></div></div>
         <div class="stream">
           <div class="day"><span>Yesterday</span></div>
           <div class="msg"><div class="av sm">MI</div><div class="bd"><div class="by"><span class="u">mira</span><time>6:02 PM</time></div><div class="tx">saw your comps on tiktok, insane. username's mira if you want to add me</div></div></div>
@@ -2575,7 +2591,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
         <div class="composer"><div class="field"><button class="iconbtn" style="width:26px;height:26px"><svg class="ic sm"><use href="#i-clip"/></svg></button><input placeholder="Message mira"><button class="snd"><svg class="ic sm"><use href="#i-send"/></svg></button></div></div>
       </main>
 
-      <!-- empty inbox (first run) — forced by #dms/empty -->
+      <!-- empty inbox (first run), forced by #dms/empty -->
       <main class="main" id="dmsEmpty" hidden>
         <div class="emptystate">
           <svg class="ic eic"><use href="#i-mail"/></svg>
@@ -2594,9 +2610,9 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
           <div class="frrow"><div class="av sm">LN</div><div class="info"><b>lin</b><small>incoming friend request</small></div><div class="fracts"><button class="rbtn ok" title="Accept"><svg class="ic sm"><use href="#i-check"/></svg></button><button class="rbtn no" title="Decline"><svg class="ic sm"><use href="#i-x"/></svg></button></div></div>
           <div class="frrow"><div class="av sm">SO</div><div class="info"><b>sol</b><small>outgoing request</small></div><span class="pendlbl">pending</span></div>
           <div class="frsec">Online, 3</div>
-          <div class="frrow"><div class="av sm">DV<span class="pr"></span></div><div class="info"><b>dev</b><small>@devmakesbeats</small></div><div class="fracts"><button class="rbtn" title="Message"><svg class="ic sm"><use href="#i-mail"/></svg></button><button class="rbtn wipcall" title="Call — in progress"><svg class="ic sm"><use href="#i-phone"/></svg></button><button class="rbtn" title="More"><svg class="ic sm"><use href="#i-more"/></svg></button></div></div>
-          <div class="frrow"><div class="av sm">MI<span class="pr"></span></div><div class="info"><b>mira</b><small>@mira</small></div><div class="fracts"><button class="rbtn" title="Message"><svg class="ic sm"><use href="#i-mail"/></svg></button><button class="rbtn wipcall" title="Call — in progress"><svg class="ic sm"><use href="#i-phone"/></svg></button><button class="rbtn" title="More"><svg class="ic sm"><use href="#i-more"/></svg></button></div></div>
-          <div class="frrow"><div class="av sm">RA<span class="pr"></span></div><div class="info"><b>rae</b><small>@rae</small></div><div class="fracts"><button class="rbtn" title="Message"><svg class="ic sm"><use href="#i-mail"/></svg></button><button class="rbtn wipcall" title="Call — in progress"><svg class="ic sm"><use href="#i-phone"/></svg></button><button class="rbtn" title="More"><svg class="ic sm"><use href="#i-more"/></svg></button></div></div>
+          <div class="frrow"><div class="av sm">DV<span class="pr"></span></div><div class="info"><b>dev</b><small>@devmakesbeats</small></div><div class="fracts"><button class="rbtn" title="Message"><svg class="ic sm"><use href="#i-mail"/></svg></button><button class="rbtn wipcall" title="Call, in progress"><svg class="ic sm"><use href="#i-phone"/></svg></button><button class="rbtn" title="More"><svg class="ic sm"><use href="#i-more"/></svg></button></div></div>
+          <div class="frrow"><div class="av sm">MI<span class="pr"></span></div><div class="info"><b>mira</b><small>@mira</small></div><div class="fracts"><button class="rbtn" title="Message"><svg class="ic sm"><use href="#i-mail"/></svg></button><button class="rbtn wipcall" title="Call, in progress"><svg class="ic sm"><use href="#i-phone"/></svg></button><button class="rbtn" title="More"><svg class="ic sm"><use href="#i-more"/></svg></button></div></div>
+          <div class="frrow"><div class="av sm">RA<span class="pr"></span></div><div class="info"><b>rae</b><small>@rae</small></div><div class="fracts"><button class="rbtn" title="Message"><svg class="ic sm"><use href="#i-mail"/></svg></button><button class="rbtn wipcall" title="Call, in progress"><svg class="ic sm"><use href="#i-phone"/></svg></button><button class="rbtn" title="More"><svg class="ic sm"><use href="#i-more"/></svg></button></div></div>
         </div>
       </div>
     </div>
@@ -2617,7 +2633,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
           <div class="frsec">Add a friend</div>
           <div class="field" style="max-width:440px"><svg class="ic sm"><use href="#i-at"/></svg><input placeholder="Enter a handle, e.g. @devmakesbeats"><button class="btn sm">Send request</button></div>
 
-          <!-- tab views — the ptabs2 above switch these; #friends/pending|blocked force them -->
+          <!-- tab views, the ptabs2 above switch these; #friends/pending|blocked force them -->
           <div class="frview" data-frview="all">
             <div class="frsec">All friends <span class="mut">6</span></div>
             <div class="frrow"><div class="av sm">DV</div><div class="frbd"><b class="m3">dev</b> <span class="mut">@devmakesbeats · in FL Studio</span></div><button class="iconbtn" title="Message"><svg class="ic sm"><use href="#i-mail"/></svg></button><button class="iconbtn" title="More"><svg class="ic sm"><use href="#i-more"/></svg></button></div>
@@ -2704,7 +2720,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
             <div class="frow"><label class="ulab">Blocked</label><div class="chips"><span class="uchip m1">rae</span><span class="uchip m5">jax</span></div></div>
           </div>
           <div class="setpanel" data-panel="ustorage" hidden>
-            <h2>Storage &amp; billing</h2><div class="h2sub">Your personal storage — a single dynamic slider (CANON §D.2).</div>
+            <h2>Storage &amp; billing</h2><div class="h2sub">Your personal storage, a single dynamic slider (CANON §D.2).</div>
             <div class="storeuse"><span class="used">3.1 GB used</span><span class="cap">of 10 GB free</span></div>
             <div class="storebar"><i style="width:31%"></i></div>
             <button class="btn primary" style="margin-top:14px" id="ustorageManage"><svg class="ic sm"><use href="#i-download"/></svg>Manage storage</button>
@@ -2784,7 +2800,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
             <button class="btn sm" style="margin-top:14px"><svg class="ic sm"><use href="#i-plus"/></svg>Add channel</button>
           </div>
           <div class="setpanel" data-panel="roles" hidden>
-            <h2>Roles</h2><div class="h2sub">A new server ships with just <b>Owner</b> + <b>@everyone</b> (every non-admin permission on) — no setup needed. Add roles like Producer only when you want to. A member can hold several; @everyone is the baseline.</div>
+            <h2>Roles</h2><div class="h2sub">A new server ships with just <b>Owner</b> + <b>@everyone</b> (every non-admin permission on), no setup needed. Add roles like Producer only when you want to. A member can hold several; @everyone is the baseline.</div>
             <div style="display:flex;gap:24px">
               <div style="width:190px;flex:none">
                 <div class="setlist">
@@ -2884,22 +2900,22 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
             <button class="btn sm" style="margin-top:14px"><svg class="ic sm"><use href="#i-plus"/></svg>New invite link</button>
           </div>
           <div class="setpanel" data-panel="storage" hidden>
-            <h2>Storage &amp; billing</h2><div class="h2sub">Storage is a slider — buy GB, no plans, no features to unlock; per-GB price drops as you buy more. Two independent sliders: your own storage, and this server's. Nothing is pooled or shared between accounts.</div>
+            <h2>Storage &amp; billing</h2><div class="h2sub">Storage is a slider, buy GB, no plans, no features to unlock; per-GB price drops as you buy more. Two independent sliders: your own storage, and this server's. Nothing is pooled or shared between accounts.</div>
 
-            <label class="ulab">Your storage <span style="color:var(--muted);font-weight:400">— your public + private works</span></label>
+            <label class="ulab">Your storage <span style="color:var(--muted);font-weight:400">your public + private works</span></label>
             <div class="bar" style="margin:6px 0 4px"><i style="width:38%"></i></div><small style="color:var(--muted)">3.8 GB used <span style="opacity:.7">(from 5.1 GB of files)</span> of 90 GB</small>
             <div class="stbuy" data-st="user" data-free="10">
               <input class="strange stSlider" type="range" min="10" max="2000" step="10" value="90" aria-label="Your storage in gigabytes">
               <div class="strow"><span class="stnum"><b class="stGb">90 GB</b> total</span><span class="stprice"><b class="stMo">$2.56</b>/mo &middot; <span class="stPer">$0.032</span>/GB</span></div>
-              <small style="color:var(--muted)">First 10&nbsp;GB free. Slide up or down anytime — you're billed on the level you hold, so mid-month changes never prorate.</small>
+              <small style="color:var(--muted)">First 10&nbsp;GB free. Slide up or down anytime, you're billed on the level you hold, so mid-month changes never prorate.</small>
             </div>
 
-            <label class="ulab" style="margin-top:22px">This server's storage <span style="color:var(--muted);font-weight:400">— <span class="mdot" style="background:var(--m4);display:inline-block;width:9px;height:9px;border-radius:50%;vertical-align:middle"></span> lunar studio</span></label>
+            <label class="ulab" style="margin-top:22px">This server's storage <span style="color:var(--muted);font-weight:400"><span class="mdot" style="background:var(--m4);display:inline-block;width:9px;height:9px;border-radius:50%;vertical-align:middle"></span> lunar studio</span></label>
             <div class="bar" style="margin:6px 0 4px"><i style="width:62%"></i></div><small style="color:var(--muted)">74 GB used of 120 GB &middot; server's own slider (not member contributions)</small>
             <div class="stbuy" data-st="server" data-free="5">
               <input class="strange stSlider" type="range" min="5" max="2000" step="5" value="120" aria-label="Server storage in gigabytes">
               <div class="strow"><span class="stnum"><b class="stGb">120 GB</b> total</span><span class="stprice"><b class="stMo">$3.64</b>/mo &middot; <span class="stPer">$0.032</span>/GB</span></div>
-              <small style="color:var(--muted)">One billing admin funds the server, bounded by this slider — members filling it just hit read-only, never a bigger bill. Nothing is ever deleted for non-payment.</small>
+              <small style="color:var(--muted)">One billing admin funds the server, bounded by this slider, members filling it just hit read-only, never a bigger bill. Nothing is ever deleted for non-payment.</small>
             </div>
 
             <div class="dangerbox" style="margin-top:24px"><div class="t"><b>Export this server</b><small>Every file and its metadata, as a zip. Content-addressed, yours to keep, no lock-in.</small></div><button class="btn"><svg class="ic sm"><use href="#i-download"/></svg>Export</button></div>
@@ -2909,7 +2925,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
     </div>
 
     <!-- CREATE GROUP -->
-    <!-- #40 read-only shared view: what a share link opens to — only the shared
+    <!-- #40 read-only shared view: what a share link opens to, only the shared
          item, no rail, no way to browse the rest of the server -->
     <div class="screen" data-screen="shared" hidden>
       <div class="sharedview">
@@ -2919,7 +2935,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
           <div class="svacts"><button class="btn"><svg class="ic sm"><use href="#i-save"/></svg>Save to my files</button><button class="btn primary"><svg class="ic sm"><use href="#i-download"/></svg>Download</button></div>
         </header>
         <main class="svbody" id="sharedView">
-          <div class="svmedia"><div class="dtype"><svg class="ic"><use href="#i-file"/></svg><span class="ext">FLP</span><span style="font-size:11px;color:var(--muted)">no preview — download to open</span></div></div>
+          <div class="svmedia"><div class="dtype"><svg class="ic"><use href="#i-file"/></svg><span class="ext">FLP</span><span style="font-size:11px;color:var(--muted)">no preview, download to open</span></div></div>
           <div class="svmeta">
             <h1>late_bloom_beat.flp</h1>
             <div class="meta">
@@ -2929,7 +2945,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
               <div class="row"><span class="k">Access</span><span class="v">Anyone with the link · view</span></div>
             </div>
             <div class="dsec"><div class="lb">Tags</div><div class="chips"><span class="tag">drums</span><span class="tag">142bpm</span><span class="tag">bridge</span></div></div>
-            <div class="svnote"><svg class="ic sm"><use href="#i-lock"/></svg>You can only see what was shared with you — you can't browse the rest of this server.</div>
+            <div class="svnote"><svg class="ic sm"><use href="#i-lock"/></svg>You can only see what was shared with you, you can't browse the rest of this server.</div>
           </div>
         </main>
         <main class="svbody svexpired" id="sharedExpired" hidden>
@@ -2945,12 +2961,12 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
     <div class="screen" data-screen="create" hidden>
       <div class="onboard">
         <div class="ocard">
-          <!-- Step 1 — identity. Kept to one idea per screen (less is more): a
+          <!-- Step 1, identity. Kept to one idea per screen (less is more): a
                name and its art, nothing else to decide yet. -->
           <div class="ostep" id="createStep1">
             <div class="okicker">New server · step 1 of 2</div>
             <h1>Name your studio</h1>
-            <div class="lead">A private studio. You invite people with a link — there's no public listing.</div>
+            <div class="lead">A private studio. You invite people with a link, there's no public listing.</div>
             <label class="ulab">Server name</label><div class="field" id="createNameField"><input placeholder="e.g. Late Bloom LP"></div>
             <div class="fielderr" id="createErr" hidden><svg class="ic sm"><use href="#i-x"/></svg>You're already in a server with that name.</div>
             <label class="ulab">Server icon <span style="font-weight:400;color:var(--muted)">optional</span></label>
@@ -2959,11 +2975,11 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
             <div class="coverpick"><div class="cv"><svg class="ic"><use href="#i-image"/></svg></div><button class="btn sm upbtn" data-up="the server cover"><svg class="ic sm"><use href="#i-image"/></svg>Upload</button></div>
             <div class="go"><button class="btn ghost" id="createCancel">Cancel</button><button class="btn primary" id="createNext">Next</button></div>
           </div>
-          <!-- Step 2 — channels + the one thing worth flagging (the invite link). -->
+          <!-- Step 2, channels + the one thing worth flagging (the invite link). -->
           <div class="ostep" id="createStep2" hidden>
             <div class="okicker">New server · step 2 of 2</div>
             <h1>Set up channels</h1>
-            <div class="lead">Start with a few — add, rename or reorder them any time.</div>
+            <div class="lead">Start with a few, add, rename or reorder them any time.</div>
             <label class="ulab">Starter channels</label>
             <div class="starter"><span class="tag">general</span><span class="tag">wips</span><span class="tag">references</span><button class="addtag"><svg class="ic sm"><use href="#i-plus"/></svg></button></div>
             <div class="magic"><svg class="ic sm" style="color:var(--muted)"><use href="#i-link"/></svg><span class="lk">An invite link is created with the server</span></div>
@@ -2973,7 +2989,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
       </div>
     </div>
 
-    <!-- S8 NEW SERVER — first-run / empty server, straight after Create.
+    <!-- S8 NEW SERVER, first-run / empty server, straight after Create.
          The workspace shell with an empty channel column + a setup checklist. -->
     <div class="screen" data-screen="newserver" hidden>
       <nav class="chan">
@@ -2996,7 +3012,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
             <div class="frhero"><span class="frmark">NB</span><h2>Night Blooms is ready</h2><p>A private studio for you and the people you invite. Three quick things to set it up.</p></div>
             <div class="frsteps">
               <div class="frstep"><div class="fri"><svg class="ic"><use href="#i-hash"/></svg></div><div class="frt"><b>Create your channels</b><span>Text and voice rooms for each part of the work.</span></div><button class="btn sm primary">Create channel</button></div>
-              <div class="frstep"><div class="fri"><svg class="ic"><use href="#i-user"/></svg></div><div class="frt"><b>Invite your crew</b><span>Share an invite link — no public listing, no approvals.</span></div><button class="btn sm">Invite people</button></div>
+              <div class="frstep"><div class="fri"><svg class="ic"><use href="#i-user"/></svg></div><div class="frt"><b>Invite your crew</b><span>Share an invite link, no public listing, no approvals.</span></div><button class="btn sm">Invite people</button></div>
               <div class="frstep"><div class="fri"><svg class="ic"><use href="#i-folder"/></svg></div><div class="frt"><b>Upload your first files</b><span>Drop stems, references, or sessions into the File explorer.</span></div><button class="btn sm">Upload</button></div>
             </div>
           </div>
@@ -3042,7 +3058,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
           <div data-dead="full" hidden><h1>This server is full</h1>
             <div class="lead">It's reached its member cap. Ask an admin to make room or raise it.</div></div>
           <div data-dead="already" hidden><h1>You're already a member</h1>
-            <div class="lead">No need for this invite — this server is already in your rail.</div></div>
+            <div class="lead">No need for this invite, this server is already in your rail.</div></div>
           <div class="authbtns"><button class="btn" style="justify-content:center"><svg class="ic sm"><use href="#i-home"/></svg>Back to your servers</button></div>
           <div class="authalt">Already a member? <a>Open the server</a></div>
         </div>
@@ -3145,7 +3161,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
           </div>
         </div>
         <div class="panebody">
-          <!-- no-results — forced by #search/empty -->
+          <!-- no-results, forced by #search/empty -->
           <div class="emptystate" id="searchEmpty" hidden>
             <svg class="ic eic"><use href="#i-search"/></svg>
             <h3>No results for “bridge drums”</h3>
@@ -3246,11 +3262,13 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
     <div class="ppsec"><span class="l">ROLE IN LATE BLOOM LP</span><span class="v"><span class="prole m3">Member</span></span></div>
     <div class="ppsec"><span class="l">WORKING ON</span><span class="v">a beat, in FL Studio</span></div>
     <div class="ppsec"><span class="l">MUTUAL SERVERS</span><span class="v">Late Bloom LP, beat swap</span></div>
-    <div class="ppacts"><button class="btn primary"><svg class="ic sm"><use href="#i-mail"/></svg>Message</button><button class="btn"><svg class="ic sm"><use href="#i-user"/></svg>Add friend</button></div>
-    <!-- B13 block / report — available to any viewer, not just admins -->
-    <div class="ppmore"><button id="ppBlock"><svg class="ic sm"><use href="#i-hand"/></svg>Block</button><button id="ppReport"><svg class="ic sm"><use href="#i-flag"/></svg>Report</button></div>
+    <div class="ppacts"><button class="btn primary" id="ppMessage"><svg class="ic sm"><use href="#i-mail"/></svg>Message</button><button class="btn" id="ppAddFriend"><svg class="ic sm"><use href="#i-user"/></svg>Add friend</button></div>
+    <!-- B13 block / report, any viewer can reach them, tucked behind a chevron so
+         the two everyday actions lead; revealed, the four buttons are one size. -->
+    <button class="ppmoretog" id="ppMoreToggle" aria-expanded="false" aria-controls="ppMore">More<svg class="ic sm chev"><use href="#i-chev"/></svg></button>
+    <div class="ppmore" id="ppMore" hidden><button class="btn" id="ppBlock"><svg class="ic sm"><use href="#i-hand"/></svg>Block</button><button class="btn" id="ppReport"><svg class="ic sm"><use href="#i-flag"/></svg>Report</button></div>
     <!-- Admin actions: shown in the reference; live, they render only when the
-         viewer can moderate this server (is_server_admin) — the RLS gate, not a POV toggle. -->
+         viewer can moderate this server (is_server_admin), the RLS gate, not a POV toggle. -->
     <div class="ppadmin" data-admin-only>
       <div class="ppadl">Admin</div>
       <button class="arow" id="ppRoles" data-name="dev"><svg class="ic sm"><use href="#i-users"/></svg>Roles<svg class="ic sm chev"><use href="#i-chev"/></svg></button>
@@ -3273,7 +3291,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
     <div class="lbshared"><span class="lbchip"><svg class="ic"><use href="#i-hash"/></svg>references</span><span class="lbchip"><svg class="ic"><use href="#i-users"/></svg>sh040 crew</span><span class="lbchip"><svg class="ic"><use href="#i-mail"/></svg>mira</span></div></div>
 </div>
 
-<!-- S13/B18 composer autocomplete — /, @, #, : triggers, anchored above the composer -->
+<!-- S13/B18 composer autocomplete, /, @, #, : triggers, anchored above the composer -->
 <div class="acpop" id="acPop" hidden><div class="achead" id="acHead"></div><div class="aclist" id="acList"></div></div>
 
 <!-- QUICK SWITCHER (Cmd/Ctrl+K) -->
@@ -3306,7 +3324,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
 <div class="sheet" id="detailsSheet" hidden>
   <div class="card2">
     <div class="dmedia">
-      <div class="dtype"><svg class="ic"><use href="#i-file"/></svg><span class="ext">FLP</span><span style="font-size:11px">no preview — download to open</span></div>
+      <div class="dtype"><svg class="ic"><use href="#i-file"/></svg><span class="ext">FLP</span><span style="font-size:11px">no preview, download to open</span></div>
     </div>
     <div class="dinfo">
       <div class="dtop">
@@ -3339,7 +3357,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
         
         <!-- #5 a SERVER file has no discussion section (chat lives in the
              channel, not on the file). Only a file posted to a PUBLIC profile
-             gets a comment section — see the public-post details panel. -->
+             gets a comment section, see the public-post details panel. -->
       </div>
       <div class="foot">
         <button class="btn primary" id="dlBtn"><svg class="ic sm"><use href="#i-download"/></svg>Download<svg class="ic sm"><use href="#i-chev"/></svg></button>
@@ -3370,7 +3388,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   <div class="sep"></div>
   <button class="danger"><svg class="ic sm"><use href="#i-trash"/></svg>Delete</button></div>
 
-<!-- #19 file context menu — opened by the card ⋯ button and by right-click -->
+<!-- #19 file context menu, opened by the card ⋯ button and by right-click -->
 <div class="menu" id="cardMenu"><div class="mlabel">File</div>
   <button><svg class="ic sm"><use href="#i-expand"/></svg>Open</button>
   <button><svg class="ic sm"><use href="#i-star"/></svg>Star</button>
@@ -3398,7 +3416,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   <div class="sep"></div>
   <button class="danger" id="smLeave"><svg class="ic sm"><use href="#i-leave"/></svg>Leave server</button></div>
 
-<!-- B15 notification-bell dropdown — a recent-activity preview of the full
+<!-- B15 notification-bell dropdown, a recent-activity preview of the full
      notifications screen. Reuses the .nrow row structure from that screen. -->
 <div class="menu notifmenu" id="notifMenu">
   <div class="nmhd"><b>Notifications</b><button class="nmread" id="notifReadAll">Mark all read</button></div>
@@ -3481,7 +3499,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
 <div class="umodal" id="newDmModal" hidden>
   <div class="uhd"><b>New message</b><button class="iconbtn" id="newDmClose"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
   <div class="ubody">
-    <label class="ulab">To <span style="font-weight:400;color:var(--muted)">— pick one for a DM, more for a group</span></label>
+    <label class="ulab">To <span style="font-weight:400;color:var(--muted)">pick one for a DM, more for a group</span></label>
     <div class="field collabs"><span class="uchip m4"><span class="dot"></span>mira</span><input placeholder="Search friends…"></div>
     <div class="shareppl" style="margin-top:8px">
       <div class="sharerow"><span class="av sm">DV</span><span class="nm"><b class="m3">dev</b> <span style="color:var(--muted)">@devmakesbeats</span></span><span class="tog"><i></i></span></div>
@@ -3492,7 +3510,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   <div class="ufoot"><button class="btn" id="newDmCancel">Cancel</button><button class="btn primary">Start conversation</button></div>
 </div>
 
-<!-- S6/B13 report dialog — from the details-pane flag, message ⋯, and a profile/DM.
+<!-- S6/B13 report dialog, from the details-pane flag, message ⋯, and a profile/DM.
      Writes `reports` (file_report RPC, §E.3); CSAM sorts first in the mod queue. -->
 <div class="scrim" id="reportScrim" hidden></div>
 <div class="umodal" id="reportModal" hidden>
@@ -3500,7 +3518,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   <div class="ubody">
     <label class="ulab">Reason</label>
     <div class="repopts">
-      <button class="repopt on"><span class="rdot"></span>Copyright — not their work</button>
+      <button class="repopt on"><span class="rdot"></span>Copyright, not their work</button>
       <button class="repopt"><span class="rdot"></span>Sexual content involving a minor</button>
       <button class="repopt"><span class="rdot"></span>Harassment or abuse</button>
       <button class="repopt"><span class="rdot"></span>Spam or a scam</button>
@@ -3512,7 +3530,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   <div class="ufoot"><button class="btn" id="reportCancel">Cancel</button><button class="btn danger" id="reportSubmit">Submit report</button></div>
 </div>
 
-<!-- B4 channel context menu (right-click a channel row) — mark-read (B8), copy
+<!-- B4 channel context menu (right-click a channel row), mark-read (B8), copy
      link, invite, per-channel notification level (S7), edit/delete (admins only). -->
 <div class="menu" id="channelMenu"><div class="mlabel" id="chanMenuName"># beats</div>
   <button id="cmMarkRead"><svg class="ic sm"><use href="#i-check"/></svg>Mark as read</button>
@@ -3554,7 +3572,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   <div class="ufoot"><button class="btn" id="catCancel">Cancel</button><button class="btn primary" id="catSave">Create category</button></div>
 </div>
 
-<!-- B12 DM row / header menu — mute, pin, close; group DMs add rename + people.
+<!-- B12 DM row / header menu, mute, pin, close; group DMs add rename + people.
      B13 block/report also reachable here and from the profile popover. -->
 <div class="menu" id="dmMenu"><div class="mlabel" id="dmMenuName">mira</div>
   <button id="dmMarkRead"><svg class="ic sm"><use href="#i-check"/></svg>Mark as read</button>
@@ -3586,7 +3604,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   <div class="ufoot"><button class="btn danger" style="margin-right:auto" id="gdmLeave">Leave group</button><button class="btn" id="gdmCancel">Cancel</button><button class="btn primary" id="gdmSave">Save</button></div>
 </div>
 
-<!-- B25 status composer — set a custom status (from /status or the avatar) -->
+<!-- B25 status composer, set a custom status (from /status or the avatar) -->
 <div class="scrim" id="statusScrim" hidden></div>
 <div class="umodal" id="statusModal" hidden style="width:min(420px,95vw)">
   <div class="uhd"><b>Set a status</b><button class="iconbtn" id="statusClose"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
@@ -3602,7 +3620,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   <div class="ufoot"><button class="btn" style="margin-right:auto" id="statusClear">Clear status</button><button class="btn" id="statusCancel">Cancel</button><button class="btn primary" id="statusSave">Save</button></div>
 </div>
 
-<!-- S12/B17 help + keyboard-shortcuts sheet — ⌘/ or ? opens it -->
+<!-- S12/B17 help + keyboard-shortcuts sheet, ⌘/ or ? opens it -->
 <div class="scrim" id="helpScrim" hidden></div>
 <div class="umodal" id="helpModal" hidden>
   <div class="uhd"><b>Keyboard shortcuts &amp; help</b><button class="iconbtn" id="helpClose"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
@@ -3648,7 +3666,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   <div class="sep"></div>
   <button class="danger"><svg class="ic sm"><use href="#i-trash"/></svg>Delete</button></div>
 
-<!-- File-explorer view-mode dropdown (grid / list / feed) — opened from the compact
+<!-- File-explorer view-mode dropdown (grid / list / feed), opened from the compact
      "Grid ▾" button in the pane header; replaces the old icon segmented switcher. -->
 <div class="menu" id="exViewMenu">
   <button class="notlv on" data-exv="grid"><svg class="ic sm nchk"><use href="#i-check"/></svg>Grid</button>
@@ -3656,7 +3674,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   <button class="notlv" data-exv="feed"><svg class="ic sm nchk"><use href="#i-check"/></svg>Feed</button>
 </div>
 
-<!-- File-location chooser — one folder picker, opened as a dropdown from every
+<!-- File-location chooser, one folder picker, opened as a dropdown from every
      "which folder" selector (upload sheet, channel default folder). A long
      dropdown, not a modal: indentation is the tree; the check marks the current
      destination. -->
@@ -3673,9 +3691,9 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   <button class="mi" id="locNewFolder"><svg class="ic sm"><use href="#i-plus"/></svg>New folder…</button>
 </div>
 
-<!-- Edit-profile modal — from the Profile "Edit profile" button (own profile).
+<!-- Edit-profile modal, from the Profile "Edit profile" button (own profile).
      Writes `profiles` (display_name, handle, bio, avatar, banner). The handle is
-     globally unique — same claim/validation as the auth claim-handle step (§C.10/§C.14). -->
+     globally unique, same claim/validation as the auth claim-handle step (§C.10/§C.14). -->
 <div class="scrim" id="epScrim" hidden></div>
 <div class="umodal" id="epModal" hidden>
   <div class="uhd"><b>Edit profile</b><button class="iconbtn" id="epClose"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
@@ -3693,7 +3711,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   <div class="ufoot"><button class="btn" id="epCancel">Cancel</button><button class="btn primary" id="epSave">Save profile</button></div>
 </div>
 
-<!-- Move-to-folder picker — from the card menu "Move to…", the bulk selection
+<!-- Move-to-folder picker, from the card menu "Move to…", the bulk selection
      bar "Move to folder", and the details-pane location row. Writes
      `placement.folder_id`; a move changes where a file lives, not its visibility. -->
 <div class="scrim" id="moveScrim" hidden></div>
@@ -3714,7 +3732,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   <div class="ufoot"><button class="btn ghost" id="moveNewFolder" style="margin-right:auto">New folder</button><button class="btn" id="moveCancel">Cancel</button><button class="btn primary" id="moveGo">Move here</button></div>
 </div>
 
-<!-- Timeout modal — from the member popover "Timeout" and Server settings →
+<!-- Timeout modal, from the member popover "Timeout" and Server settings →
      Moderation "Time out". Silences a member for a set time; they stay in the
      server. RPC + audit_log; gated by the kick/ban/timeout permission (§B). -->
 <div class="scrim" id="timeoutScrim" hidden></div>
@@ -3724,13 +3742,13 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
     <div class="svnote" style="margin-top:0"><svg class="ic sm"><use href="#i-clock"/></svg><span>They stay in the server but can't post, react, or join voice until the timeout lifts.</span></div>
     <label class="ulab">Duration</label>
     <div class="seg" id="toSeg"><div class="o">5m</div><div class="o on">1h</div><div class="o">1d</div><div class="o">1w</div></div>
-    <label class="ulab">Reason <span style="font-weight:400;color:var(--muted)">— saved to the audit log, shown to them</span></label>
+    <label class="ulab">Reason <span style="font-weight:400;color:var(--muted)">saved to the audit log, shown to them</span></label>
     <div class="field"><input placeholder="e.g. spamming #beats"></div>
   </div>
   <div class="ufoot"><button class="btn" id="toCancel">Cancel</button><button class="btn primary" id="toConfirm">Time out</button></div>
 </div>
 
-<!-- Kick / Ban confirm — from the member popover and Moderation. Kick removes
+<!-- Kick / Ban confirm, from the member popover and Moderation. Kick removes
      the member (they can rejoin on a fresh invite); Ban also blocks the account
      from rejoining on any link. Danger confirm; RPC + audit_log, gated by §B. -->
 <div class="scrim" id="banScrim" hidden></div>
@@ -3738,14 +3756,14 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   <div class="uhd"><b id="banTitle">Ban this member?</b><button class="iconbtn" id="banClose"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
   <div class="ubody">
     <p class="banlede" id="banLede">This removes them from Late Bloom LP and blocks their account from rejoining on any invite link.</p>
-    <label class="ulab">Reason <span style="font-weight:400;color:var(--muted)">— saved to the audit log</span></label>
+    <label class="ulab">Reason <span style="font-weight:400;color:var(--muted)">saved to the audit log</span></label>
     <div class="field"><input placeholder="e.g. leaked the sh040 cut"></div>
     <label class="setrow" id="banPurge" style="cursor:pointer"><div class="cl"><b>Also delete their posts</b><small>Removes every message and file they posted here</small></div><span class="tog"><i></i></span></label>
   </div>
   <div class="ufoot"><button class="btn" id="banCancel">Cancel</button><button class="btn danger" id="banConfirm">Ban</button></div>
 </div>
 
-<!-- Assign-roles-to-member modal — from the member popover "Roles ▸" and the
+<!-- Assign-roles-to-member modal, from the member popover "Roles ▸" and the
      role chip on a Server settings → Members row. Granular: a member holds several
      roles at once (a checklist, not one picker); @everyone is always on and locked.
      Effective permissions = the union. Writes `member_roles`; gated `manage_roles`. -->
@@ -3761,7 +3779,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   <div class="ufoot"><button class="btn ghost" id="arManage" style="margin-right:auto">Manage roles…</button><button class="btn primary" id="arDone">Done</button></div>
 </div>
 
-<!-- Leave-server confirm — from the server menu "Leave server". A member removes
+<!-- Leave-server confirm, from the server menu "Leave server". A member removes
      themselves (self-leave); the owner can't leave without transferring ownership. -->
 <div class="scrim" id="leaveScrim" hidden></div>
 <div class="umodal" id="leaveModal" hidden style="width:min(440px,95vw)">
@@ -3772,7 +3790,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   <div class="ufoot"><button class="btn" id="leaveCancel">Cancel</button><button class="btn danger" id="leaveConfirm">Leave server</button></div>
 </div>
 
-<!-- Delete-server confirm — from Server settings → General (danger box) and the
+<!-- Delete-server confirm, from Server settings → General (danger box) and the
      setnav "Delete server". Owner-only; type-to-confirm on the server name. -->
 <div class="scrim" id="delSrvScrim" hidden></div>
 <div class="umodal" id="delSrvModal" hidden style="width:min(440px,95vw)">
@@ -3785,7 +3803,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   <div class="ufoot"><button class="btn" id="delSrvCancel">Cancel</button><button class="btn danger" id="delSrvConfirm" disabled>Delete forever</button></div>
 </div>
 
-<!-- Server notification settings — from the server menu "Notification settings".
+<!-- Server notification settings, from the server menu "Notification settings".
      The per-server default level + mute-until (S7); per-channel levels live in the
      channel menu and override this. Writes `server_prefs(user, level, muted_until,
      suppress_everyone)`. -->
@@ -3793,7 +3811,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
 <div class="umodal" id="srvNotifModal" hidden style="width:min(440px,95vw)">
   <div class="uhd"><b>Notifications · Late Bloom LP</b><button class="iconbtn" id="srvNotifClose"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
   <div class="ubody">
-    <label class="ulab">Default for this server <span style="font-weight:400;color:var(--muted)">— channels can override</span></label>
+    <label class="ulab">Default for this server <span style="font-weight:400;color:var(--muted)">channels can override</span></label>
     <div class="repopts" id="srvNotifLevels">
       <button class="repopt on"><span class="rdot"></span>All messages</button>
       <button class="repopt"><span class="rdot"></span>Only @mentions</button>
@@ -3811,7 +3829,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
 <div class="umodal" id="shareModal" hidden>
   <div class="uhd"><b>Share “late_bloom_beat.flp”</b><button class="iconbtn" id="shareClose"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
   <div class="ubody">
-    <label class="ulab">Visibility <span style="font-weight:400;color:var(--muted)">— who can see this</span></label>
+    <label class="ulab">Visibility <span style="font-weight:400;color:var(--muted)">who can see this</span></label>
     <div class="urow">
       <button class="visopt"><svg class="ic"><use href="#i-globe"/></svg>Public</button>
       <button class="visopt on"><svg class="ic"><use href="#i-server"/></svg>Server</button>
@@ -3862,7 +3880,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   <div class="ubody">
     <div class="storeuse"><span class="used">74 GB used</span><span class="cap">of 120 GB</span></div>
     <div class="storebar"><i style="width:62%"></i></div>
-    <label class="ulab">Plan <span style="font-weight:400;color:var(--muted)">— drag to buy more</span></label>
+    <label class="ulab">Plan <span style="font-weight:400;color:var(--muted)">drag to buy more</span></label>
     <div class="gbslider">
       <div class="fill" style="width:42%"></div>
       <div class="handle" style="left:42%"></div>
@@ -3890,8 +3908,8 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
     </div>
 
     <div id="uNewFields">
-      <!-- #14 tighter helper copy — less wrapping, shorter elements -->
-      <label class="ulab">Visibility <span style="font-weight:400;color:var(--muted)">— required</span></label>
+      <!-- #14 tighter helper copy, less wrapping, shorter elements -->
+      <label class="ulab">Visibility <span style="font-weight:400;color:var(--muted)">required</span></label>
       <div class="urow">
         <button class="visopt"><svg class="ic"><use href="#i-globe"/></svg>Public</button>
         <button class="visopt on"><svg class="ic"><use href="#i-server"/></svg>Server</button>
@@ -3922,7 +3940,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
 
 (function(){
   var screens=document.querySelectorAll('.screen'),ptabs=document.querySelectorAll('.ptab');
-  // Focus/system screens are full-screen scrim modals — no rail, no in-app chrome.
+  // Focus/system screens are full-screen scrim modals, no rail, no in-app chrome.
   var FOCUS={auth:1,create:1,join:1,deadinvite:1,denied:1,e404:1};
   function show(n){screens.forEach(function(s){s.hidden=s.dataset.screen!==n;});
     ptabs.forEach(function(t){t.setAttribute('aria-current',t.dataset.s===n?'true':'false');});
@@ -3930,7 +3948,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
     document.querySelectorAll('.rail .railbtn').forEach(function(b){b.classList.toggle('on',b.dataset.s===n);});}
   document.querySelectorAll('[data-s]').forEach(function(el){el.addEventListener('click',function(){show(el.dataset.s);location.hash=el.dataset.s;});});
 
-  // ── State-driver — the determinism keystone ──────────────────────────
+  // ── State-driver, the determinism keystone ──────────────────────────
   // Every state the codegen model builds against is addressable by URL and
   // forced SYNCHRONOUSLY (no timers) so it holds still for a screenshot.
   // Grammar (all after ?app=1):
@@ -3939,7 +3957,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   //   #dialog/<id>       a modal/menu forced open over its backdrop screen
   //   &theme=dark|light  pin the theme      ·      &w=NN  pin the canvas width
   // The catalog (§⑥), the self-test (verify.mjs) and the codegen acceptance
-  // gate all address states through exactly these URLs — one grammar, one
+  // gate all address states through exactly these URLs, one grammar, one
   // answer to "what states exist". A miss console.warns (deliberately: the
   // self-test treats a warn as a coverage gap, never a silent pass).
   var appEl=document.querySelector('.app');
@@ -3960,11 +3978,17 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   function forceChTab(name){document.querySelectorAll('.chtab').forEach(function(t){t.classList.toggle('on',t.dataset.chtab===name);});
     var msg=document.getElementById('chMessages'),comp=document.getElementById('chComposer');
     if(msg)msg.hidden=name!=='messages';if(comp)comp.hidden=name!=='messages';
+    setChatOnly(name==='messages');   // typing indicator + jump-to-present belong to chat only
     document.querySelectorAll('.chpanel').forEach(function(p){p.hidden=p.dataset.chview!==name;});}
+  // The typing indicator and "new messages" jump are chat-only affordances — they
+  // must not linger over the channel's Pins/Files views (owner 2026-08-22).
+  function setChatOnly(on){var ws=document.querySelector('.screen[data-screen="workspace"]');if(!ws)return;
+    var ty=ws.querySelector('.typing'),jn=document.getElementById('jumpNew');
+    if(ty)ty.hidden=!on;if(jn)jn.style.display=on?'':'none';}
   function setDm(which){var f=document.getElementById('dmFriends'),c=document.getElementById('dmConvo');
     if(f)f.hidden=which!=='friends';if(c)c.hidden=which==='friends';}
   function only1(ids,showId){ids.forEach(function(id){var n=document.getElementById(id);if(n)n.hidden=id!==showId;});}
-  // Skeleton generator — every async surface's loading state. Builds real
+  // Skeleton generator, every async surface's loading state. Builds real
   // skeleton nodes synchronously (screenshot-safe) and hides the live content;
   // each state URL reloads fresh so the swap needs no teardown.
   function skelBlock(kind,n){var el=document.createElement('div');
@@ -3995,7 +4019,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
     s.querySelectorAll('.ptabs2 .ptab2').forEach(function(t,i){t.hidden=i>=keep;});}
 
   // The registry. screen → { stateName: force() }. Keep each force() a thin
-  // call into a switch that already exists — never a second copy of the state.
+  // call into a switch that already exists, never a second copy of the state.
   var STATES={
     workspace:{
       offline:function(){var b=document.getElementById('offlineBar');if(b)b.hidden=false;},
@@ -4003,7 +4027,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
       pins:function(){forceChTab('pins');},
       files:function(){forceChTab('files');},
       voicebar:function(){var v=document.getElementById('voiceMini');if(v)v.hidden=false;},
-      slowmode:function(){composerNotice('Slow mode is on — one message every 10s. You can still read and react.');},
+      slowmode:function(){composerNotice('Slow mode is on, one message every 10s. You can still read and react.');},
       timedout:function(){composerNotice("You're timed out until 3:45 PM. You can read, but can't post, react, or join voice.");},
       loading:function(){loadingInto(document.getElementById('chMessages'),'msg',6);
         loadingInto(q1('.screen[data-screen="workspace"] .mem'),'row',5);}
@@ -4089,9 +4113,12 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
     show(el.getAttribute('data-screen')||'workspace');forceDialog(id);}
 
   // &w=NN pins the canvas width for a scaling screenshot (web-only contract,
-  // §6 of the determinism plan — the shell flexes, it never collapses to tabs).
+  // §6 of the determinism plan, the shell flexes, it never collapses to tabs).
   function applyWidth(){var w=+(new URLSearchParams(location.search).get('w')||0);
-    if(w&&appEl){appEl.style.width=w+'px';appEl.style.margin='0 auto';}}
+    if(w&&appEl){appEl.style.width=w+'px';appEl.style.margin='0 auto';
+      document.documentElement.setAttribute('data-proto','');}   // pinned width = prototyping canvas
+    else{document.documentElement.removeAttribute('data-proto');} // live app fills the viewport
+  }
 
   function routeHash(){var raw=(location.hash||'').replace(/^#/,'');
     if(!raw){show('workspace');return;}
@@ -4101,8 +4128,8 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   var applyHash=routeHash;                                    // keep the old name working
   window.addEventListener('hashchange',routeHash);
   applyWidth();
-  // Expose a tiny handle for the self-test (verify.mjs) — enumerate states,
-  // drive them, reset overlays — without reaching into private closures.
+  // Expose a tiny handle for the self-test (verify.mjs), enumerate states,
+  // drive them, reset overlays, without reaching into private closures.
   window.__gallery={show:show,applyState:applyState,forceDialog:forceDialog,
     openTarget:openTarget,closeAllOverlays:closeAllOverlays,route:routeHash,STATES:STATES};
 
@@ -4175,7 +4202,10 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   var storageScrim=document.getElementById('storageScrim'),storageModal=document.getElementById('storageModal');
   function openStorage(){if(storageScrim)storageScrim.hidden=false;if(storageModal)storageModal.hidden=false;}
   function closeStorage(){if(storageScrim)storageScrim.hidden=true;if(storageModal)storageModal.hidden=true;}
-  ['manageStorage','capUpgrade','ustorageManage'].forEach(function(id){var e=document.getElementById(id);if(e)e.addEventListener('click',openStorage);});
+  // "Manage storage" opens your profile's Storage & billing screen (not a modal) —
+  // the full personal + server storage surface lives under user settings.
+  function gotoUserStorage(){show('usersettings');location.hash='usersettings';forceUsPanel('ustorage');}
+  ['manageStorage','capUpgrade','ustorageManage'].forEach(function(id){var e=document.getElementById(id);if(e)e.addEventListener('click',gotoUserStorage);});
   // S11 billing portal · B21 sign-out-everywhere / add-account
   var billingPortal=document.getElementById('billingPortal');if(billingPortal)billingPortal.addEventListener('click',function(){if(typeof toast==='function')toast('Opening the Stripe billing portal…');});
   var signOutAll=document.getElementById('signOutAll');if(signOutAll)signOutAll.addEventListener('click',function(){if(typeof toast==='function')toast('Signed out of all other sessions');});
@@ -4223,7 +4253,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
     document.querySelectorAll('.card').forEach(function(c){c.addEventListener('contextmenu',function(e){
       e.preventDefault();openMenuAt(cardMenu,e.clientX,e.clientY);});});
   }
-  // B1 server-name dropdown. The trigger is the bar (icon+name+chevron) ONLY —
+  // B1 server-name dropdown. The trigger is the bar (icon+name+chevron) ONLY -
   // the cover banner above it is decorative and inert. It's a real toggle (a
   // second click on the bar closes it), and it opens flush under the bar, with
   // the chevron rotating to point up while open.
@@ -4234,7 +4264,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
       var r=srvBar.getBoundingClientRect();openMenuAt(serverMenu,r.left,r.bottom+4);
       srvBar.setAttribute('aria-expanded','true');});}
 
-  // B15 notification-bell dropdown — a preview that right-aligns under the bell.
+  // B15 notification-bell dropdown, a preview that right-aligns under the bell.
   // "See all" and "Mark all read" both close it; See-all falls through to data-s nav.
   var notifMenu=document.getElementById('notifMenu'),notifBell=document.getElementById('notifBell');
   if(notifMenu&&notifBell){menus.push(notifMenu);
@@ -4274,7 +4304,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   var newDmBtn=document.getElementById('newDmBtn');if(newDmBtn)newDmBtn.addEventListener('click',function(ev){ev.stopPropagation();ndm.open();});
   ['newDmClose','newDmCancel'].forEach(function(id){var e=document.getElementById(id);if(e)e.addEventListener('click',ndm.close);});
   var newDmScrim=document.getElementById('newDmScrim');if(newDmScrim)newDmScrim.addEventListener('click',ndm.close);
-  // S6/B13 report dialog — from the details-pane flag, message ⋯ Report, and profile/DM
+  // S6/B13 report dialog, from the details-pane flag, message ⋯ Report, and profile/DM
   var report=opener('reportScrim','reportModal');
   var reportTitle=document.getElementById('reportTitle');
   function openReport(what){if(reportTitle)reportTitle.textContent='Report'+(what?' '+what:'');report.open();}
@@ -4286,7 +4316,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   document.querySelectorAll('#reportModal .repopt').forEach(function(o){o.addEventListener('click',function(){
     document.querySelectorAll('#reportModal .repopt').forEach(function(x){x.classList.remove('on');});o.classList.add('on');});});
 
-  // Edit-profile modal — from the Profile "Edit profile" button
+  // Edit-profile modal, from the Profile "Edit profile" button
   var ep=opener('epScrim','epModal');
   var editProfileBtn=document.getElementById('editProfileBtn');
   if(editProfileBtn)editProfileBtn.addEventListener('click',function(ev){ev.stopPropagation();ep.open();});
@@ -4294,7 +4324,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   var epScrim=document.getElementById('epScrim');if(epScrim)epScrim.addEventListener('click',ep.close);
   var epSave=document.getElementById('epSave');if(epSave)epSave.addEventListener('click',function(){ep.close();if(typeof toast==='function')toast('Profile saved');});
 
-  // Move-to-folder picker — card menu "Move to…" + bulk bar "Move to folder"
+  // Move-to-folder picker, card menu "Move to…" + bulk bar "Move to folder"
   var move=opener('moveScrim','moveModal');
   ['cmMove','selMove'].forEach(function(id){var e=document.getElementById(id);if(e)e.addEventListener('click',function(ev){ev.stopPropagation();move.open();});});
   ['moveClose','moveCancel'].forEach(function(id){var e=document.getElementById(id);if(e)e.addEventListener('click',move.close);});
@@ -4304,7 +4334,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
     document.querySelectorAll('#moveModal .movetree .ftrow').forEach(function(x){x.classList.remove('on');});r.classList.add('on');});});
   var moveGo=document.getElementById('moveGo');if(moveGo)moveGo.addEventListener('click',function(){move.close();if(typeof toast==='function')toast('Moved');});
 
-  // Timeout modal — member popover + Moderation "Time out"
+  // Timeout modal, member popover + Moderation "Time out"
   var timeout=opener('timeoutScrim','timeoutModal'),toName=document.getElementById('toName'),profilePop=document.getElementById('profilePop');
   function openTimeout(name){if(profilePop)profilePop.hidden=true;if(toName)toName.textContent=name||'this member';timeout.open();}
   ['ppTimeout','modTimeout'].forEach(function(id){var e=document.getElementById(id);if(e)e.addEventListener('click',function(ev){ev.stopPropagation();openTimeout(e.dataset.name);});});
@@ -4314,7 +4344,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
     document.querySelectorAll('#toSeg .o').forEach(function(x){x.classList.remove('on');});o.classList.add('on');});});
   var toConfirm=document.getElementById('toConfirm');if(toConfirm)toConfirm.addEventListener('click',function(){timeout.close();if(typeof toast==='function')toast('Member timed out');});
 
-  // Kick / Ban confirm — member popover + Moderation "Ban"
+  // Kick / Ban confirm, member popover + Moderation "Ban"
   var ban=opener('banScrim','banModal');
   var banTitle=document.getElementById('banTitle'),banLede=document.getElementById('banLede'),banConfirm=document.getElementById('banConfirm'),banPurge=document.getElementById('banPurge');
   function openBan(mode,name){if(profilePop)profilePop.hidden=true;name=name||'this member';var isBan=mode!=='kick';
@@ -4336,7 +4366,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   function gotoSettings(panel){show('settings');location.hash='settings';
     var b=document.querySelector('.screen[data-screen="settings"] .setnav [data-setpanel="'+panel+'"]');if(b)b.click();}
 
-  // Assign-roles-to-member modal — member popover "Roles ▸" + Members-row role chip
+  // Assign-roles-to-member modal, member popover "Roles ▸" + Members-row role chip
   var ar=opener('arScrim','arModal'),arName=document.getElementById('arName');
   function openRoles(name){if(profilePop)profilePop.hidden=true;if(arName)arName.textContent=name||'this member';ar.open();}
   var ppRoles=document.getElementById('ppRoles');if(ppRoles)ppRoles.addEventListener('click',function(ev){ev.stopPropagation();openRoles(ppRoles.dataset.name);});
@@ -4349,14 +4379,14 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
     var c=r.querySelector('.cbx');if(c)c.classList.toggle('on');});});
   var arManage=document.getElementById('arManage');if(arManage)arManage.addEventListener('click',function(){ar.close();gotoSettings('roles');});
 
-  // Leave-server confirm — server menu "Leave server"
+  // Leave-server confirm, server menu "Leave server"
   var leave=opener('leaveScrim','leaveModal');
   var smLeave=document.getElementById('smLeave');if(smLeave)smLeave.addEventListener('click',function(ev){ev.stopPropagation();leave.open();});
   ['leaveClose','leaveCancel'].forEach(function(id){var e=document.getElementById(id);if(e)e.addEventListener('click',leave.close);});
   var leaveScrim=document.getElementById('leaveScrim');if(leaveScrim)leaveScrim.addEventListener('click',leave.close);
   var leaveConfirm=document.getElementById('leaveConfirm');if(leaveConfirm)leaveConfirm.addEventListener('click',function(){leave.close();if(typeof toast==='function')toast('You left the server');});
 
-  // Delete-server confirm — Settings → General danger box + setnav "Delete server"
+  // Delete-server confirm, Settings → General danger box + setnav "Delete server"
   var delSrv=opener('delSrvScrim','delSrvModal');
   ['smDeleteServer','genDeleteServer'].forEach(function(id){var e=document.getElementById(id);if(e)e.addEventListener('click',function(ev){ev.stopPropagation();delSrv.open();});});
   ['delSrvClose','delSrvCancel'].forEach(function(id){var e=document.getElementById(id);if(e)e.addEventListener('click',delSrv.close);});
@@ -4368,7 +4398,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   // Server-menu shortcut: "Edit server profile" → Settings → General
   var smEditProfile=document.getElementById('smEditProfile');if(smEditProfile)smEditProfile.addEventListener('click',function(ev){ev.stopPropagation();closeMenus();gotoSettings('general');});
 
-  // Server notification settings — server menu "Notification settings" (S7, per-server)
+  // Server notification settings, server menu "Notification settings" (S7, per-server)
   var srvNotif=opener('srvNotifScrim','srvNotifModal');
   var smNotif=document.getElementById('smNotif');if(smNotif)smNotif.addEventListener('click',function(ev){ev.stopPropagation();srvNotif.open();});
   ['srvNotifClose','srvNotifCancel'].forEach(function(id){var e=document.getElementById(id);if(e)e.addEventListener('click',srvNotif.close);});
@@ -4380,17 +4410,17 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   var srvSuppress=document.getElementById('srvSuppress');if(srvSuppress)srvSuppress.addEventListener('click',function(e){e.preventDefault();var t=srvSuppress.querySelector('.tog');if(t)t.classList.toggle('on');});
   var srvNotifSave=document.getElementById('srvNotifSave');if(srvNotifSave)srvNotifSave.addEventListener('click',function(){srvNotif.close();if(typeof toast==='function')toast('Notification settings saved');});
 
-  // Move-picker "New folder" — no dead buttons (#45): give feedback
+  // Move-picker "New folder", no dead buttons (#45): give feedback
   var moveNewFolder=document.getElementById('moveNewFolder');if(moveNewFolder)moveNewFolder.addEventListener('click',function(){if(typeof toast==='function')toast('Name your new folder');});
 
-  // Voice / video WIP (#56 / S15) — grayed call/video buttons, the voice minibar,
+  // Voice / video WIP (#56 / S15), grayed call/video buttons, the voice minibar,
   // and the vc control bar all toast that voice is still being built.
-  var VOICE_WIP='This feature is currently being built — voice & video ship in v2';
+  var VOICE_WIP='This feature is currently being built, voice & video ship in v2';
   document.querySelectorAll('.wipcall').forEach(function(b){b.addEventListener('click',function(){if(typeof toast==='function')toast(VOICE_WIP);});});
   var voiceMini=document.getElementById('voiceMini');if(voiceMini)voiceMini.addEventListener('click',function(){if(typeof toast==='function')toast(VOICE_WIP);});
   var vcBar=document.getElementById('vcBar');if(vcBar)vcBar.querySelectorAll('.vcbtn').forEach(function(b){b.addEventListener('click',function(){if(typeof toast==='function')toast(VOICE_WIP);});});
 
-  // B23 — drag-reorder channels within their column group (live, not just settings)
+  // B23, drag-reorder channels within their column group (live, not just settings)
   (function(){
     var col=document.querySelector('.screen[data-screen="workspace"] .chanbody');if(!col)return;
     var dragEl=null;
@@ -4413,10 +4443,10 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
     });
   })();
 
-  // Regular dragging — drag a file card onto a folder (tree row or folder card)
+  // Regular dragging, drag a file card onto a folder (tree row or folder card)
   // to move it (CANON §C.6 · move_to_folder). Delegated at the document level so
   // it works in EVERY window: the explorer's grid/list/feed views, the home
-  // Feed, the workspace Files tab — any card, any folder target, live even for
+  // Feed, the workspace Files tab, any card, any folder target, live even for
   // views that were hidden at load.
   (function(){
     var held=null;
@@ -4477,17 +4507,17 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   ['editChanClose','editChanCancel'].forEach(function(id){var e=document.getElementById(id);if(e)e.addEventListener('click',editChan.close);});
   var editChanSave=document.getElementById('editChanSave');if(editChanSave)editChanSave.addEventListener('click',function(){editChan.close();if(typeof toast==='function')toast('Channel updated');});
   var editChanScrim=document.getElementById('editChanScrim');if(editChanScrim)editChanScrim.addEventListener('click',editChan.close);
-  // create category — from the server menu and the channel-group + could open it too
+  // create category, from the server menu and the channel-group + could open it too
   var smNewCategory=document.getElementById('smNewCategory');if(smNewCategory)smNewCategory.addEventListener('click',function(e){e.stopPropagation();closeMenus();cat.open();});
   ['catClose','catCancel'].forEach(function(id){var e=document.getElementById(id);if(e)e.addEventListener('click',cat.close);});
   var catSave=document.getElementById('catSave');if(catSave)catSave.addEventListener('click',function(){cat.close();if(typeof toast==='function')toast('Category created');});
   var catScrim=document.getElementById('catScrim');if(catScrim)catScrim.addEventListener('click',cat.close);
-  // B7 channel-group collapse — click a category label toggles its channels
-  document.querySelectorAll('.screen[data-screen="workspace"] .cglabel').forEach(function(lb){
-    lb.style.cursor='pointer';
-    lb.addEventListener('click',function(e){
-      if(e.target.closest('.cgadd'))return;               // the + is its own action
-      var grp=lb.closest('.cgroup');if(!grp)return;grp.classList.toggle('collapsed');});
+  // B7 channel-group collapse, click a category label toggles its channels
+  document.querySelectorAll('.screen[data-screen="workspace"] .cglabel .cgtoggle').forEach(function(tg){
+    tg.addEventListener('click',function(e){
+      var grp=tg.closest('.cgroup');if(!grp)return;
+      var collapsed=grp.classList.toggle('collapsed');
+      tg.setAttribute('aria-expanded',collapsed?'false':'true');});
   });
 
   // B12 DM row/header menu + group management; B13 block/report entry points
@@ -4502,14 +4532,14 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   if(dmMenu){
     document.querySelectorAll('.screen[data-screen="dms"] .dmrow .more2').forEach(function(b){b.addEventListener('click',function(e){
       e.stopPropagation();var row=b.closest('.dmrow');openDmMenu(b,(row.querySelector('.nm')||{}).textContent||'conversation',row.classList.contains('group'));});});
-    // group rows have no .more2 in the markup — right-click opens it too
+    // group rows have no .more2 in the markup, right-click opens it too
     document.querySelectorAll('.screen[data-screen="dms"] .dmrow.dmconvo').forEach(function(row){row.addEventListener('contextmenu',function(e){
       e.preventDefault();openDmMenu(row,(row.querySelector('.nm')||{}).textContent||'conversation',row.classList.contains('group'));});});
     // DM conversation header ⋯
     var dmHeadMore=document.querySelector('#dmConvo .mainhd .acts [title="More"]');
     if(dmHeadMore)dmHeadMore.addEventListener('click',function(e){e.stopPropagation();openDmMenu(dmHeadMore,'mira',false);});
     var dmAddPeople=document.getElementById('dmAddPeople');if(dmAddPeople)dmAddPeople.addEventListener('click',function(){closeMenus();gdm.open();});
-    var dmBlock=document.getElementById('dmBlock');if(dmBlock)dmBlock.addEventListener('click',function(){closeMenus();if(typeof toast==='function')toast('Blocked — they can no longer message or see you');});
+    var dmBlock=document.getElementById('dmBlock');if(dmBlock)dmBlock.addEventListener('click',function(){closeMenus();if(typeof toast==='function')toast('Blocked, they can no longer message or see you');});
     var dmReportPerson=document.getElementById('dmReportPerson');if(dmReportPerson)dmReportPerson.addEventListener('click',function(){closeMenus();openReport('this person');});
     ['dmMarkRead','dmPin','dmMute','dmClose'].forEach(function(id){var e=document.getElementById(id);if(e)e.addEventListener('click',function(){closeMenus();});});
   }
@@ -4518,10 +4548,17 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   var gdmLeave=document.getElementById('gdmLeave');if(gdmLeave)gdmLeave.addEventListener('click',function(){gdm.close();if(typeof toast==='function')toast('You left the group');});
   var gdmScrim=document.getElementById('gdmScrim');if(gdmScrim)gdmScrim.addEventListener('click',gdm.close);
   // B13 block/report from the profile popover
-  var ppBlock=document.getElementById('ppBlock');if(ppBlock)ppBlock.addEventListener('click',function(e){e.stopPropagation();closePop();if(typeof toast==='function')toast('Blocked — they can no longer message or see you');});
+  // Block stays inside the popout (a toast confirms), clicking an in-popout
+  // action must not dismiss the whole panel; only actions that open their own
+  // surface (Report modal, Message → DMs, the admin modals) replace it.
+  var ppBlock=document.getElementById('ppBlock');if(ppBlock)ppBlock.addEventListener('click',function(e){e.stopPropagation();if(typeof toast==='function')toast('Blocked. They can no longer message or see you');});
   var ppReport=document.getElementById('ppReport');if(ppReport)ppReport.addEventListener('click',function(e){e.stopPropagation();closePop();openReport('this person');});
+  var ppMessage=document.getElementById('ppMessage');if(ppMessage)ppMessage.addEventListener('click',function(e){e.stopPropagation();closePop();show('dms');location.hash='dms';});
+  var ppAddFriend=document.getElementById('ppAddFriend');if(ppAddFriend)ppAddFriend.addEventListener('click',function(e){e.stopPropagation();ppAddFriend.textContent='Requested';ppAddFriend.disabled=true;if(typeof toast==='function')toast('Friend request sent');});
+  var ppMoreToggle=document.getElementById('ppMoreToggle'),ppMore=document.getElementById('ppMore');
+  if(ppMoreToggle)ppMoreToggle.addEventListener('click',function(e){e.stopPropagation();var open=ppMoreToggle.getAttribute('aria-expanded')==='true';ppMoreToggle.setAttribute('aria-expanded',open?'false':'true');if(ppMore)ppMore.hidden=open;});
 
-  // File-location chooser — one dropdown shared by every folder selector
+  // File-location chooser, one dropdown shared by every folder selector
   // (upload sheet, channel default folder). Toggles like the server header,
   // rotates its chevron (aria-expanded), and writes the chosen folder back into
   // the selector that opened it. No dead selector.
@@ -4565,7 +4602,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
       var t=crossPicker.querySelector('.crosschan');if(t)t.textContent=o.dataset.chan||'beats';
       closeMenus();});});}
 
-  // Create-server — a two-step flow (identity → channels); one idea per screen.
+  // Create-server, a two-step flow (identity → channels); one idea per screen.
   (function(){
     var s1=document.getElementById('createStep1'),s2=document.getElementById('createStep2');
     if(!s1||!s2)return;
@@ -4573,7 +4610,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
     var next=document.getElementById('createNext');if(next)next.addEventListener('click',function(){step(2);});
     var back=document.getElementById('createBack');if(back)back.addEventListener('click',function(){step(1);});
     var cancel=document.getElementById('createCancel');if(cancel)cancel.addEventListener('click',function(){step(1);show('workspace');});
-    var done=document.getElementById('createDone');if(done)done.addEventListener('click',function(){step(1);show('newserver');if(typeof toast==='function')toast('Server created — invite link copied');});
+    var done=document.getElementById('createDone');if(done)done.addEventListener('click',function(){step(1);show('newserver');if(typeof toast==='function')toast('Server created, invite link copied');});
   }());
 
   // #58 folder context menu on right-click of a folder tree row
@@ -4581,7 +4618,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   if(folderMenu){document.querySelectorAll('.filetree .ftrow').forEach(function(r){r.addEventListener('contextmenu',function(e){
     e.preventDefault();openMenuAt(folderMenu,e.clientX,e.clientY);});});}
 
-  // file explorer — grid/list/feed view via a compact text dropdown
+  // file explorer, grid/list/feed view via a compact text dropdown
   var exViewBtn=document.getElementById('exViewBtn'),exViewMenu=document.getElementById('exViewMenu'),exViewLbl=document.getElementById('exViewLbl');
   if(exViewBtn&&exViewMenu){menus.push(exViewMenu);
     exViewBtn.addEventListener('click',function(e){e.stopPropagation();
@@ -4593,11 +4630,11 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
       exViewMenu.querySelectorAll('[data-exv]').forEach(function(x){x.classList.remove('on');});o.classList.add('on');
       if(exViewLbl)exViewLbl.textContent=o.textContent.trim();
       showExview(o.dataset.exv);closeMenus();});});}
-  // #55 show-hidden — a small tucked toggle
+  // #55 show-hidden, a small tucked toggle
   var exHidden=document.getElementById('exHidden');
   if(exHidden)exHidden.addEventListener('click',function(){var on=exHidden.classList.toggle('on');
     if(typeof toast==='function')toast(on?'Showing hidden files':'Hiding hidden files');});
-  // folder tree — twisty expands/collapses; row selects
+  // folder tree, twisty expands/collapses; row selects
   function showExview(v){document.querySelectorAll('.exview').forEach(function(p){p.hidden=p.dataset.exview!==v;});}
   document.querySelectorAll('.filetree .ftrow').forEach(function(r){r.addEventListener('click',function(){
     if(r.querySelector('.tw').tagName!=='SPAN')r.classList.toggle('open');
@@ -4607,10 +4644,10 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
     if(label==='Starred'){showExview('starred');return;}      // B20 starred smart folder
     // #49 flash a skeleton, then reveal the grid (fake load)
     showExview('skel');setTimeout(function(){showExview('grid');},650);});});
-  // B19 — Empty trash now → clears to the empty state
+  // B19, Empty trash now → clears to the empty state
   var emptyTrashBtn=document.getElementById('emptyTrashBtn');
   if(emptyTrashBtn)emptyTrashBtn.addEventListener('click',function(){showExview('trashempty');if(typeof toast==='function')toast('Trash emptied');});
-  // B20 unstar — remove the card from the Starred view
+  // B20 unstar, remove the card from the Starred view
   document.querySelectorAll('.exview[data-exview="starred"] [data-act="unstar"]').forEach(function(u){u.addEventListener('click',function(e){e.stopPropagation();e.preventDefault();var c=u.closest('.card');if(c)c.remove();if(typeof toast==='function')toast('Removed from Starred');});});
 
   var uScrim=document.getElementById('uScrim'),uModal=document.getElementById('uModal');
@@ -4646,7 +4683,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
       uSeg.querySelectorAll('button').forEach(function(x){x.classList.remove('on');});btn.classList.add('on');
       var folder=btn.dataset.umode==='folder';
       dropBig.textContent=folder?'Drop a folder here':'Drop files here';
-      dropSub.textContent=folder?'or click to choose a folder — structure is kept':'or click to choose, several at once';
+      dropSub.textContent=folder?'or click to choose a folder, structure is kept':'or click to choose, several at once';
       ufiles.innerHTML=folder?folderHTML:filesHTML;
     });});
   }
@@ -4660,17 +4697,17 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   document.getElementById('threadOpen').addEventListener('click',openThread);
   document.getElementById('threadClose').addEventListener('click',closeThread);
   var also=document.getElementById('alsoSend');also.addEventListener('click',function(){also.classList.toggle('on');});
-  // B16 jump-to-present — scroll the chat down, clear the new-messages divider
+  // B16 jump-to-present, scroll the chat down, clear the new-messages divider
   var jumpNew=document.getElementById('jumpNew'),chMessages=document.getElementById('chMessages');
   if(jumpNew)jumpNew.addEventListener('click',function(){if(chMessages)chMessages.scrollTop=chMessages.scrollHeight;jumpNew.classList.add('gone');var nd=document.querySelector('.newdiv');if(nd)nd.remove();});
   // B26 inline chat-attachment actions (download / save-to-files / open-in-explorer)
   document.querySelectorAll('.fcacts button').forEach(function(a){a.addEventListener('click',function(e){e.stopPropagation();e.preventDefault();
     var act=a.dataset.act;if(act==='open'){show('explorer');return;}if(typeof toast==='function')toast(act==='save'?'Saved to your files':'Downloading…');});});
-  // S10 connection-lost banner — follows the browser's online/offline state
+  // S10 connection-lost banner, follows the browser's online/offline state
   var offlineBar=document.getElementById('offlineBar');
   if(offlineBar){var setOnline=function(){offlineBar.hidden=navigator.onLine;};
     window.addEventListener('offline',setOnline);window.addEventListener('online',setOnline);setOnline();}
-  // B11 unpin — remove the pinned row
+  // B11 unpin, remove the pinned row
   document.querySelectorAll('.screen[data-screen="workspace"] .pinrow .unpin').forEach(function(u){u.addEventListener('click',function(e){e.stopPropagation();var r=u.closest('.pinrow');if(r)r.remove();if(typeof toast==='function')toast('Unpinned');});});
 
   // per-channel tabs (Messages / Pins / Files)
@@ -4679,6 +4716,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
     var v=t.dataset.chtab;
     document.getElementById('chMessages').hidden=v!=='messages';
     document.getElementById('chComposer').hidden=v!=='messages';
+    setChatOnly(v==='messages');
     document.querySelectorAll('.chpanel').forEach(function(p){p.hidden=p.dataset.chview!==v;});});});
 
   // group-settings sub-panel switching
@@ -4687,7 +4725,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
     scope.querySelectorAll('.setnav [data-setpanel]').forEach(function(x){x.classList.remove('on');});b.classList.add('on');
     var name=b.dataset.setpanel;
     scope.querySelectorAll('.setpanel').forEach(function(p){p.hidden=p.dataset.panel!==name;});});});
-  // storage sliders — bracketed price/GB drops as you buy more (CANON §D.2).
+  // storage sliders, bracketed price/GB drops as you buy more (CANON §D.2).
   // marginal $/GB by band: 10→110 = .032, 110→510 = .028, 510→2000 = .024 (~45% gross margin over R2 cost:
   // $0.015/GB-mo storage + Class A $4.50/M + Class B $0.36/M writes/reads, egress free).
   // First 10 GB free for a user, 5 for a server (data-free); paid GB only are charged.
@@ -4699,7 +4737,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
     var render=function(){var gb=+s.value;var mo=stPrice(gb,free);var paid=Math.max(0,gb-free);
       box.querySelector('.stGb').textContent=gb+' GB';
       box.querySelector('.stMo').textContent='$'+mo.toFixed(2);
-      box.querySelector('.stPer').textContent=paid>0?('$'+(mo/paid).toFixed(3)):'—';};
+      box.querySelector('.stPer').textContent=paid>0?('$'+(mo/paid).toFixed(3)):'-';};
     s.addEventListener('input',render);render();
   });
   // per-channel settings: gear expands the channel's own drawer
@@ -4770,11 +4808,11 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
     var done=acts.querySelector('.donebtn');
     if(done)done.addEventListener('click',function(e){e.stopPropagation();row.classList.remove('unread');row.style.opacity='.4';});
   });
-  // search / audit filter chips (visual) — scoped to their own group
+  // search / audit filter chips (visual), scoped to their own group
   document.querySelectorAll('.fchips .fchip').forEach(function(c){c.addEventListener('click',function(){
     c.closest('.fchips').querySelectorAll('.fchip').forEach(function(x){x.classList.remove('on');});c.classList.add('on');});});
   var auditExport=document.getElementById('auditExport');if(auditExport)auditExport.addEventListener('click',function(){if(typeof toast==='function')toast('Audit log exported (CSV)');});
-  // segmented controls (search scope, appearance) — click to select within the group
+  // segmented controls (search scope, appearance), click to select within the group
   document.querySelectorAll('.seg .o').forEach(function(o){o.addEventListener('click',function(){
     o.closest('.seg').querySelectorAll('.o').forEach(function(x){x.classList.remove('on');});o.classList.add('on');});});
   // S14 message search results jump to the message in the workspace
@@ -4819,7 +4857,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   var statusScrim=document.getElementById('statusScrim');if(statusScrim)statusScrim.addEventListener('click',statusOpener.close);
   document.querySelectorAll('#statusModal .stq').forEach(function(q){q.addEventListener('click',function(){var t=document.getElementById('stText');if(t)t.value=q.textContent.replace(/^\S+\s/,'');});});
 
-  // S13/B18 composer autocomplete — /, @, #, : popovers over the workspace composer
+  // S13/B18 composer autocomplete, /, @, #, : popovers over the workspace composer
   var acPop=document.getElementById('acPop'),acHead=document.getElementById('acHead'),acList=document.getElementById('acList');
   var acInput=document.querySelector('.screen[data-screen="workspace"] .composer input');
   if(acPop&&acInput){
@@ -4894,7 +4932,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
     if(left<8)left=r?(r.right+10):8; if(left+ppop.offsetWidth>window.innerWidth-8)left=window.innerWidth-ppop.offsetWidth-8;
     var top=r?Math.min(r.top-20,window.innerHeight-ppop.offsetHeight-10):100; if(top<52)top=52;
     ppop.style.left=left+'px';ppop.style.top=top+'px';}
-  function closePop(){ppop.hidden=true;}
+  function closePop(){ppop.hidden=true;var t=document.getElementById('ppMoreToggle'),m=document.getElementById('ppMore');if(t)t.setAttribute('aria-expanded','false');if(m)m.hidden=true;}
   document.querySelectorAll('.mem .mrow').forEach(function(m){m.addEventListener('click',function(e){e.stopPropagation();openPop(m);});});
   document.getElementById('profileCardBtn').addEventListener('click',function(e){e.stopPropagation();openPop(null);});
   document.addEventListener('click',function(e){if(!e.target.closest('#profilePop')&&!e.target.closest('.mrow'))closePop();});
@@ -4911,7 +4949,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   var root=document.documentElement, tb=document.getElementById('themebtn');
   function isDark(){var t=root.getAttribute('data-theme');return t?t==='dark':matchMedia('(prefers-color-scheme:dark)').matches;}
 
-  // member palette — 30 hues in OKLCH so the steps are PERCEPTUALLY even
+  // member palette, 30 hues in OKLCH so the steps are PERCEPTUALLY even
   // (HSL clusters greens/blues; OKLCH keeps constant lightness+chroma so
   // every neighbour is equally distinguishable). Light + dark pair per hue.
   function oklch2hex(L,C,h){
@@ -4944,7 +4982,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
 
   // embed the screens
   var screens=[
-    ['workspace','Workspace','server three-pane — rail · channels · chat · members',''],
+    ['workspace','Workspace','server three-pane, rail · channels · chat · members',''],
     ['feed','Feed','friends-only public posts, card grid',''],
     ['explorer','File explorer','nested folder tree + grid/list/feed views',''],
     ['notifications','Notifications','all · mentions · threads · saved',''],
@@ -4954,7 +4992,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
     ['friends','Friends','all · pending · blocked, add by handle',''],
     ['usersettings','User settings','account · profile · notifications · appearance · privacy',''],
     ['search','Search','results + quick switcher (⌘K)',''],
-    ['shared','Shared view','read-only — a shared link, only what was shared',''],
+    ['shared','Shared view','read-only, a shared link, only what was shared',''],
     ['create','Create server','name, cover, starter channels',''],
     ['newserver','New server','first-run setup checklist, empty channel column',''],
     ['join','Join by link','preview card, one Join button',''],
@@ -4964,7 +5002,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
     ['blocked','Blocked','you blocked this person','system'],
     ['pending','Pending','friend request waiting','system'],
     ['auth','Sign in','sign in · claim handle · magic link',''],
-    ['vc','Call','voice/video room','v2 — deferred']
+    ['vc','Call','voice/video room','v2, deferred']
   ];
   var host=document.getElementById('gscreens');
   function frameSrc(id){return 'gallery.html?app=1&theme='+(isDark()?'dark':'light')+'#'+id;}
@@ -4992,13 +5030,13 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
     ['Workspace','Admin manage member (roles ▸ / timeout / kick / ban)','member popover · Moderation','ban/timeout/kick RPC + audit_log','m'],
     ['Global','Confirm (destructive)','any delete','varies','a'],
     ['Global','Prompt (single field)','rename / new','varies','a'],
-    ['Global','Toast','after an action','—','a'],
+    ['Global','Toast','after an action','-','a'],
     ['Global','Status picker','avatar → status','profiles.presence/status','a'],
     ['Global','Report','report action','file_report','m'],
     ['Feed','Card → details pane','click card','works','m'],
     ['Feed','Search + filter dropdowns','feed header','search_all()','m'],
     ['Explorer','Folder tree (nested) + breadcrumb','left rail','folders(parent_id)','a'],
-    ['Explorer','View toggle (grid / list / feed)','header segment','—','a'],
+    ['Explorer','View toggle (grid / list / feed)','header segment','-','a'],
     ['Explorer','Feed view (flattened previewable + comments)','Feed toggle','works + comments','m'],
     ['Explorer','Grid select + bulk action bar (move to folder)','select cards','move_to_folder','m'],
     ['Explorer','Move-to-folder picker (destination tree)','card ⋯ · bulk bar · details','placement.folder_id','m'],
@@ -5030,7 +5068,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
     ['Create','Create server card','rail ＋','servers insert + invite','m'],
     ['Join','Join preview card','/join/&lt;code&gt;','join_via_invite','m'],
     ['System','Dead invite (expired/revoked/full)','bad /join','join_via_invite error','a'],
-    ['System','404 / not found','bad URL','—','a'],
+    ['System','404 / not found','bad URL','-','a'],
     ['System','Access denied (private channel)','no permission','can_view_channel','a'],
     ['Search','Quick switcher (⌘K)','shortcut','search_all()','m']
   ];
@@ -5039,9 +5077,9 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
     tr.innerHTML='<td>'+r[0]+'</td><td>'+r[1]+'</td><td>'+r[2]+'</td><td><code>'+r[3]+'</code></td>'+
       '<td><span class="s '+r[4]+'">'+sc[r[4]]+'</span></td>';ib.appendChild(tr);});
 
-  // §⑥ — generate the exploded dialog catalog FROM THE REAL NODES. In catalog
+  // §⑥, generate the exploded dialog catalog FROM THE REAL NODES. In catalog
   // mode the whole app is in the DOM (display:none), so every modal/menu can be
-  // cloned, forced open and dropped into a labelled stage — provably identical
+  // cloned, forced open and dropped into a labelled stage, provably identical
   // to what ships, and complete the moment a dialog is added. No hand copies.
   (function(){
     var host=document.getElementById('explodedStage'); if(!host) return;
@@ -5080,7 +5118,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
 <script>
 /* ── asset resolver ───────────────────────────────────────────────────────
    Populates the gradient fakes with real media from ./assets/. Loads ONLY the
-   files listed in assets/manifest.js — so an empty manifest means zero network
+   files listed in assets/manifest.js, so an empty manifest means zero network
    requests (deterministic, no console noise) and every gradient stays. Add a
    file + list it in the manifest and it appears; runs in app, catalog, and
    every screen iframe. Full instructions: assets/README.md. */
@@ -5098,7 +5136,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
     v.style.cssText='position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:inherit;background:#000;z-index:2';
     el.appendChild(v);el.classList.add('has-asset');
   }
-  // 1) explicit data-asset (images and video) — only if present in the manifest
+  // 1) explicit data-asset (images and video), only if present in the manifest
   document.querySelectorAll('[data-asset]').forEach(function(el){
     var name=el.getAttribute('data-asset');if(!name||!HAVE[name])return;
     if(IMG.test(name))setBg(el,name);
