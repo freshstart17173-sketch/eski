@@ -331,12 +331,15 @@ references them, it doesn't redraw them.
 
 > **Beta is web-only (2026-08-22).** The beta ships the desktop web app with a
 > sensible **scaling** range only — mobile is **deferred post-beta**. The scaling
-> contract: 1440px canvas cap, centred with the hairline gutter, fluid down to a
-> **~1024px** minimum where the three-pane shell still holds (it flexes, it does
-> **not** collapse to tabs); modals sized to the canvas. The gallery's `&w=`
-> knob + [`verify.mjs`](design/verify.mjs) check both ends. The mobile spec below
-> is **retained but dormant** — it's the contract the eventual mobile gallery will
-> follow, not a beta deliverable.
+> contract: **the live app fills the viewport at any monitor width** (owner call
+> 2026-08-22 — 1440 is a *prototyping* measure, not a live cap); the three-pane
+> shell flexes and holds down to a **~1024px** minimum (it flexes, it does **not**
+> collapse to tabs); modals sized to the canvas. **The 1440px canvas is a
+> prototyping aid only**, applied in the gallery when a width is pinned (`&w=NN`) so
+> [`verify.mjs`](design/verify.mjs) can shoot the shell at a fixed measure; with no
+> pinned width the app spans the whole window. The mobile spec below is **retained
+> but dormant** — it's the contract the eventual mobile gallery will follow, not a
+> beta deliverable.
 
 **Mobile (post-beta) ships as a separate gallery.** [`gallery.html`](design/gallery.html)
 is the **desktop** artboard set (the 1440px canvas) and carries no mobile chrome;
@@ -355,13 +358,14 @@ rail (210)**. A phone shows **one pane at a time**:
 | Details pane | Slides up as a **full-height bottom sheet**, not a side panel. |
 | Any hover-only affordance (reaction button, card menu) | Bound to **long-press** or an always-visible "⋯" — never hover-only on touch. |
 
-The four-pane shell is capped at a **1440px canvas** (standard web width),
-**centred** in the viewport with a hairline gutter (`--line`) either side on
-wider windows — the app never spans an ultrawide monitor edge-to-edge. All
-dialogs, modals and menus are sized against that canvas, not the raw viewport,
-so a scrim-backed modal reads the same at 1440px as at 2560px. This is the
-desktop measure the built pages target; below it the panes flex down to the
-breakpoints, and mobile collapses to one pane per C.2.
+The four-pane shell **fills the live viewport** at any width (owner call
+2026-08-22): the main pane takes the reclaimed space while the rail/columns keep
+their fixed widths. **1440px is only the prototyping canvas** — the measure the
+gallery pins (`&w=1440`) and the built pages are *designed* against, not a cap the
+live app imposes. Dialogs, modals and menus stay sized against that design canvas
+(so a scrim-backed modal reads consistently), while the shell itself spans the
+window. Below ~1024px the panes flex down to the breakpoints, and mobile collapses
+to one pane per C.2.
 
 Breakpoints (to confirm against the `eski-style` skill): **≥1100px** full four-pane ·
 **720–1099px** collapse members rail to an icon · **<720px** single-pane +

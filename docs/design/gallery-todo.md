@@ -30,6 +30,48 @@ folded in below.) Brand art lives separately in
 > dropdown, and an optional message. The personal-work→server placement stays a
 > reference (no copy), per the CANON placement model.
 
+> **UI review pass (2026-08-22, owner walkthrough).** Applied in `gallery.html`,
+> verified by screenshot in both themes, `verify.mjs` hard checks green:
+> - **Member popout**: rounding cut to `--r`; Block/Report tucked behind a "More"
+>   chevron so only Message + Add friend lead (all four one size); in-popout actions
+>   (Add friend, Block) no longer dismiss the panel.
+> - **Server header**: the banner gets full presence; the name+chevron bar overlays
+>   it transparently as the sole click target (no opaque plate occluding the cover).
+> - **Typing indicator + jump-to-present** are chat-only (gone on Pins/Files tabs).
+> - **Channel group headers** are buttons (no accidental text-select on collapse).
+> - **File explorer**: Type/Channel/Uploader/Tag are multi-select dropdowns
+>   (Projects→**Other**, **Documents** added); Date/Sort single; Starred stays a
+>   horizontal chip toggle (star spacing fixed). Browsing-vs-searching indicator
+>   (breadcrumb ⇄ "Search results for …"). **Selection**: Select mode, ctrl/cmd +
+>   shift-range click, drag rubber-band, **New folder**; the stray empty hover
+>   checkbox is gone. Card action buttons invert on click. **Trash** moved to the
+>   foot of the navigator. **Copy** added to the file context menu.
+> - **Two browsers**: the server explorer is Late Bloom's **Files channel** (rail
+>   keeps LB active, no standalone-server masquerade — the old SP→explorer mapping
+>   is removed) and a personal **My files** Drive (own tree/storage/filters, reached
+>   from a rail button).
+> - **Location picker** creates nested folders inside the selected one; removed the
+>   confusing "Set as channel default" folder-menu row.
+> - **Manage storage** routes to the profile Storage screen (not a modal).
+> - **Members rail** is toggleable from the channel-header people icon.
+> - **Per-channel Files tab** gets its own search + Type/Sort filters.
+> - **Live layout fills the viewport**; the 1440 canvas is prototyping-only (`&w=`).
+> - **Search scope** collapses from 3 always-on boxes to one multi-select dropdown;
+>   From/In/date search filters are now real dropdowns, not dead buttons.
+> - Copy hygiene: **every em dash removed**; leftover **per-file version numbers**
+>   removed (numbered versions were cut from the beta).
+> - **Extra bugs found + fixed**: DM header fake "compositor" title → real @handle;
+>   four **round count badges** squared to `--r` (no-round-badges rule); the
+>   explorer/search **filter buttons were dead no-ops** → wired to real dropdowns.
+>
+> **Deferred (owner said add to TODO, do NOT start yet):**
+> - [ ] **DM message actions.** DM message rows have no reply / react / ⋯ hover
+>   actions like channel messages do. Add the same hover action cluster (reply,
+>   react, more) to `dm_messages` rows.
+> - [ ] **Multi-select when replying / forwarding.** Confirm and add a multi-select
+>   option in the reply/forward flow (pick several messages and/or several targets),
+>   in both channels and DMs.
+
 ## Style redesign — are.na monochrome (in progress, 2026-08-22)
 
 Worked out in [`sandbox.html`](sandbox.html) and captured as the

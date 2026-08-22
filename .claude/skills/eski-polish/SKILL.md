@@ -92,6 +92,13 @@ a surface that violates them, and do not relitigate them. Check each on every pa
     not a transport bar.
 13. **An icon must read as its meaning.** A pin is a **thumbtack**, not a map-marker teardrop;
     a glyph that reads as the wrong object is a bug even at 13px.
+14. **Count/unread badges are square `--r`, never round pills.** Round is only avatars +
+    presence dots; a rail unread count, a DM/friends count, a thread count all take `--r`
+    (most counts are already just coloured text — prefer that). No `border-radius:999px` on a
+    badge. And a name/DM subtitle shows real data (a `@handle`), never an invented job title
+    (no fake "compositor" under a name).
+15. **Every control does something.** A toolbar filter / dropdown that opens nothing is a dead
+    control — wire it to its menu or remove it. This bit the file-explorer + search filters.
 
 ## 1. The seven enforcement rules
 
