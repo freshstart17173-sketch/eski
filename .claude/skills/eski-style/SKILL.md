@@ -48,6 +48,16 @@ holds the components; both consume the same names.
   deliberately inverted light chip (primary button, selected tile).
 - **Screens are designed on a 1440px canvas.** Judge/screenshot at 1440 — Jost
   renders thin and wrong when squeezed narrower.
+- **A port is a RESTYLE, never a content edit — do not delete UI elements.**
+  Every screen, control, row, action, icon-button, metadata field, tab, menu item
+  and empty/loading/error state that exists must still exist after the port. You
+  change *look* (tokens, spacing, colour, hover/click, hairlines vs bars), not
+  *inventory*. The **only** removals allowed are ones the owner has explicitly
+  decided (currently: the contributors/collaborators field, and the old round
+  `.uchip .dot`). If a restyle seems to require dropping an element, stop and ask —
+  a silently-deleted button is exactly the regression this project fears. After
+  porting a screen, diff the element list against the pre-port version and confirm
+  nothing vanished.
 
 ---
 
@@ -150,9 +160,12 @@ with a resting box. danger = destructive confirm. iconbtn = every icon-only
 control. **Never** give a control a resting box it doesn't need — boxless is the
 default.
 
-**Folder/detail nav arrows and any "quiet" control: colour-change only, no
-transform/opacity press animation.** (Owner note: the press-nudge was "too much"
-on folder nav; keep only the colour change.)
+**Folder/detail nav arrows follow the colour-change archetype like every other
+button: colour-change on hover, INVERT on click.** What's banned is a transform/
+opacity *press animation* (the owner called the nudge "too much") — not the
+click state. A nav arrow keeps a resting `--paper` fill + `--line` ring so it
+reads over media: rest → paper/soft, hover → `--surface`/ink, active → `--ink`/
+on-ink (inverted).
 
 ---
 
@@ -198,12 +211,23 @@ be wrapped: prefix every selector in that block with its root (`.appshell …`,
 `.arena …`). Utility classes that are genuinely global (`.u`, `.m1…m6`, `.av`,
 `.tag`, `.btn`, `.iconbtn`, `.field`) are defined **once**, unscoped, and reused.
 
-**Colouring.** Member hue only on member text/chips, server-scoped, never on
-public profile/Feed. Online presence dot = `--ink` (monochrome), offline =
-`--muted`. `.uchip` shows member colour via its **text** (the old round `.dot`
-is killed — CANON #26). Selected/active nav = `--plate` bg + `--ink` text +
-weight 600; a tab's active marker is a 2px `--ink` underline (`::after`), tab
-strip separated by background step, not a baseline hairline.
+**Colouring.** Member hue only on member text/chips in **social** contexts —
+chat bylines, member rail, comments, @mentions — server-scoped, never on public
+profile/Feed. **A file-metadata author field ("Posted by / Uploaded by / Made
+by") is NOT member-coloured: it's a plain bold `--ink` text link** (are.na's
+"By …"), no chip, hover-underline. Online presence dot = `--ink` (monochrome),
+offline = `--muted`. `.uchip` (where used, e.g. a chat name chip) shows member
+colour via its **text** (the old round `.dot` is killed — CANON #26).
+Selected/active nav = `--plate` bg + `--ink` text + weight 600; a tab's active
+marker is a 2px `--ink` underline (`::after`), tab strip separated by background
+step, not a baseline hairline.
+
+**No visible scrollbars** (keep the scroll). Ship globally:
+```css
+*{scrollbar-width:none}
+*::-webkit-scrollbar{width:0;height:0;display:none}
+```
+Never remove `overflow` — wheel/touch/keyboard scroll must still work.
 
 ---
 
@@ -240,11 +264,13 @@ Arena layout: a near-full-screen split on a `.scrim`. **Media takes the room**
 (left, grows); a fixed **info rail** (`--paper`, ~380px) on the right. Five media
 contexts, all the same frame:
 
-- **audio / post (public)** — music-icon type card in the well; foot transport
-  (play/pause · tabular time · seek · time · **speed** · mute); rail has a public
-  **comment thread** + composer. A *post* draws personal storage.
-- **video (server file)** — video well; transport adds **quality** + **fullscreen**;
-  **no comment thread** (chat handles replies).
+- **audio / post (public)** — **transport near-identical to video** (same button
+  placement, big centred borderless play, no title): tabular time · seek · time ·
+  mute · quality · fullscreen — **audio drops the speed control**, that's the only
+  difference. Rail has a public **comment thread** + composer. A *post* draws
+  personal storage.
+- **video (server file)** — video well; transport: time · seek · time · speed ·
+  mute · quality · fullscreen; **no comment thread** (chat handles replies).
 - **image (server file)** — the image fills the well (`padding:0`); no transport.
 - **other / non-previewable** (`.flp/.zip/.exe`) — a `.dtype` type card fills the
   well, "no preview — download to open"; never a fake thumbnail.
@@ -253,11 +279,15 @@ contexts, all the same frame:
   Download each offer whole-folder or selection (chevron → menu).
 
 Rail structure top→bottom: `.dtop` (filename + Report flag + prev/next chevrons +
-close — an **inset hairline** under it) · `.scroll` (h2 title, `.meta` k/v rows,
-Tags, and comments for the post) · `.foot` (**inset hairline on top**, then the
-action buttons — primary Download, Save; folder adds Open). Transport pinned to
-the media foot; big centred borderless play; **no visible skip buttons** (5s skip
-on ←/→). Audio and video share **one** transport style.
+close — an **inset hairline** under it) · `.scroll` (h2 title, `.meta` rows, Tags,
+and comments for the post) · `.foot` (**inset hairline on top**, then the action
+buttons — primary Download, Save; folder adds Open). Transport pinned to the media
+foot; big centred borderless play; **no visible skip buttons** (5s skip on ←/→).
+
+**Metadata rows are are.na-style: key left (`--muted`), value RIGHT-aligned to the
+panel edge (`--ink`), packed dense** (small vertical gap). The author value is a
+**neutral bold text link, not a member chip** (see Colouring). Keep it tight — this
+rail is reference data, not a form.
 
 **Apply the current decisions when building it:** buttons are the new small
 archetypes; the grey `.foot` bar becomes an inset hairline; **the Collaborators

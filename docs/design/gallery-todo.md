@@ -9,6 +9,36 @@ built or folded in below). Brand art lives separately in
 > **The #1–#61 edit list and the gaps.md A/B backlog are done (2026-08-21/22).**
 > What's left is below.
 
+## Style redesign — are.na monochrome (in progress, 2026-08-22)
+
+Worked out in [`sandbox.html`](sandbox.html) and captured as the
+[`eski-style`](../../.claude/skills/eski-style/SKILL.md) skill (tokens, buttons,
+hairlines, per-screen registry, porting order). **Sandbox-first: settle it there,
+then port to `styleguide.html` (tokens) + `gallery.html` (components).** Nothing
+ported yet.
+
+Detail-pane refinements the owner called out (sandbox, then carry into the port):
+
+- [ ] **"Posted by" is a plain text link, not a member chip** — neutral (not
+  member-coloured); file-metadata author names read like are.na's "By …" link.
+  Member colour stays on names in chat / members / comments / mentions.
+- [ ] **No visible scrollbars anywhere** — hide the bar, keep scroll
+  (`scrollbar-width:none` + `::-webkit-scrollbar{display:none}`), globally.
+- [ ] **Metadata right-aligned (are.na)** — key left / value right-aligned to the
+  panel edge; **denser** (reduce vertical spacing).
+- [ ] **Detail pane rendered at full scale** — it was showing shrunk (icons + well
+  small); render at the real overlay size so proportions read.
+- [ ] **Folder nav arrows follow the button rules** — colour-change on hover **and
+  invert on click**, like the other colour-change buttons (still no transform/
+  press animation).
+- [ ] **Audio player ≈ video player** — near-identical transport (same button
+  placement, no title), audio just **drops the speed control**.
+
+Standing decisions applied in this redesign (don't undo): **contributors/
+collaborators removed**; monochrome + one accent (member hue, server-scoped);
+round = avatars/dots only; surfaces separate by background step; modals on a
+scrim, no shadow; hairlines inset, never full-width.
+
 ## Next tasks (not started)
 
 - [ ] **Exploded-view catalog panels** — every dialog / menu / modal / popover that's
