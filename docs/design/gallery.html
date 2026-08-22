@@ -535,6 +535,13 @@ input{font:inherit;color:inherit}
 .visopt.on{background:var(--ink);color:var(--on-ink)}
 .visopt .ic{color:var(--muted)}.visopt.on .ic{color:var(--on-ink)}
 .visopt small{display:block;font-size:10px;color:var(--muted)}.visopt.on small{color:rgba(255,255,255,.7)}
+/* S6 report dialog — reason radio list */
+.repopts{display:flex;flex-direction:column;gap:6px}
+.repopt{display:flex;align-items:center;gap:10px;width:100%;text-align:left;padding:10px 12px;border-radius:var(--r);background:var(--surface);font-size:var(--fs-sm);color:var(--soft);transition:background var(--t)}
+.repopt:hover{background:var(--plate)}
+.repopt .rdot{flex:none;width:14px;height:14px;border-radius:50%;border:2px solid var(--line2);transition:border-color var(--t)}
+.repopt.on{color:var(--ink)}
+.repopt.on .rdot{border-color:var(--ink);background:radial-gradient(var(--ink) 0 4px,transparent 5px)}
 /* #39/#61 share dialog — people-with-access rows */
 .shareppl{display:flex;flex-direction:column;gap:2px;margin-top:4px}
 .sharerow{display:flex;align-items:center;gap:10px;padding:6px 4px}
@@ -3110,6 +3117,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   <button><svg class="ic sm"><use href="#i-link"/></svg>Copy link</button>
   <button><svg class="ic sm"><use href="#i-mail"/></svg>Mark unread</button>
   <button><svg class="ic sm"><use href="#i-pen"/></svg>Edit message</button>
+  <button id="mmReport"><svg class="ic sm"><use href="#i-flag"/></svg>Report</button>
   <div class="sep"></div>
   <button class="danger"><svg class="ic sm"><use href="#i-trash"/></svg>Delete</button></div>
 
@@ -3232,6 +3240,26 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
     </div>
   </div>
   <div class="ufoot"><button class="btn" id="newDmCancel">Cancel</button><button class="btn primary">Start conversation</button></div>
+</div>
+
+<!-- S6/B13 report dialog — from the details-pane flag, message ⋯, and a profile/DM.
+     Writes `reports` (file_report RPC, §E.3); CSAM sorts first in the mod queue. -->
+<div class="scrim" id="reportScrim" hidden></div>
+<div class="umodal" id="reportModal" hidden>
+  <div class="uhd"><b id="reportTitle">Report</b><button class="iconbtn" id="reportClose"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
+  <div class="ubody">
+    <label class="ulab">Reason</label>
+    <div class="repopts">
+      <button class="repopt on"><span class="rdot"></span>Copyright — not their work</button>
+      <button class="repopt"><span class="rdot"></span>Sexual content involving a minor</button>
+      <button class="repopt"><span class="rdot"></span>Harassment or abuse</button>
+      <button class="repopt"><span class="rdot"></span>Spam or a scam</button>
+      <button class="repopt"><span class="rdot"></span>Something else</button>
+    </div>
+    <label class="ulab">Details <span style="font-weight:400;color:var(--muted)">(optional)</span></label>
+    <div class="field"><input placeholder="Add context for the moderators…"></div>
+  </div>
+  <div class="ufoot"><button class="btn" id="reportCancel">Cancel</button><button class="btn danger" id="reportSubmit">Submit report</button></div>
 </div>
 
 <!-- #58 folder context menu (right-click a folder in the tree) -->
@@ -3526,6 +3554,17 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   var newDmBtn=document.getElementById('newDmBtn');if(newDmBtn)newDmBtn.addEventListener('click',function(ev){ev.stopPropagation();ndm.open();});
   ['newDmClose','newDmCancel'].forEach(function(id){var e=document.getElementById(id);if(e)e.addEventListener('click',ndm.close);});
   var newDmScrim=document.getElementById('newDmScrim');if(newDmScrim)newDmScrim.addEventListener('click',ndm.close);
+  // S6/B13 report dialog — from the details-pane flag, message ⋯ Report, and profile/DM
+  var report=opener('reportScrim','reportModal');
+  var reportTitle=document.getElementById('reportTitle');
+  function openReport(what){if(reportTitle)reportTitle.textContent='Report'+(what?' '+what:'');report.open();}
+  document.querySelectorAll('[title="Report"]').forEach(function(b){b.addEventListener('click',function(ev){ev.stopPropagation();openReport('this file');});});
+  var mmReport=document.getElementById('mmReport');if(mmReport)mmReport.addEventListener('click',function(ev){ev.stopPropagation();openReport('this message');});
+  ['reportClose','reportCancel'].forEach(function(id){var e=document.getElementById(id);if(e)e.addEventListener('click',report.close);});
+  var reportSubmit=document.getElementById('reportSubmit');if(reportSubmit)reportSubmit.addEventListener('click',function(){report.close();if(typeof toast==='function')toast('Report sent to the moderators');});
+  var reportScrim=document.getElementById('reportScrim');if(reportScrim)reportScrim.addEventListener('click',report.close);
+  document.querySelectorAll('#reportModal .repopt').forEach(function(o){o.addEventListener('click',function(){
+    document.querySelectorAll('#reportModal .repopt').forEach(function(x){x.classList.remove('on');});o.classList.add('on');});});
 
   // #58 folder context menu on right-click of a folder tree row
   var folderMenu=document.getElementById('folderMenu');
