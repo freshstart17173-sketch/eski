@@ -429,11 +429,13 @@ kbd{font:inherit;font-size:11px;background:var(--surface);border-radius:3px;padd
 .arena .foot{flex:none;display:flex;gap:6px;padding:12px 16px}
 .arena .foot .btn{flex:1;justify-content:center}
 /* non-previewable / audio type card in the well */
-.arena .dtype{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;
-  width:min(380px,78%);height:220px;background:var(--plate);border-radius:var(--r);color:var(--muted)}
-.arena .dtype .ic{width:36px;height:36px}
-.arena .dtype .ext{font-size:var(--fs-lg);font-weight:700;letter-spacing:.04em;color:var(--soft)}
-.arena .dtype .hint{font-size:var(--fs-xs);color:var(--muted)}
+/* the type surface FILLS the media area (owner: small floating cards → fill it).
+   inset:0 ignores the .dmedia padding so it goes edge-to-edge. */
+.arena .dtype{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;
+  background:var(--plate);color:var(--muted)}
+.arena .dtype .ic{width:46px;height:46px}
+.arena .dtype .ext{font-size:var(--fs-xl);font-weight:700;letter-spacing:.05em;color:var(--soft)}
+.arena .dtype .hint{font-size:var(--fs-sm);color:var(--muted)}
 /* one media transport for audio = video (skill §5) */
 .arena .dmbigplay{width:64px;height:64px;border-radius:50%;background:var(--paper);color:var(--ink);display:grid;place-items:center;cursor:pointer;transition:background var(--t)}
 .arena .dmbigplay:hover{background:var(--surface)}
@@ -447,7 +449,7 @@ kbd{font:inherit;font-size:11px;background:var(--surface);border-radius:3px;padd
 .arena .tbtn .ic{width:17px;height:17px}
 /* folder nav arrows over the media — COLOUR-CHANGE ONLY, no press animation
    (owner: the click animation on folder nav was "too much"). */
-.arena .navarrow{position:absolute;top:50%;transform:translateY(-50%);width:32px;height:32px;border-radius:var(--r);
+.arena .navarrow{position:absolute;top:50%;transform:translateY(-50%);z-index:3;width:32px;height:32px;border-radius:var(--r);
   background:var(--paper);color:var(--soft);box-shadow:0 0 0 1px var(--line);display:grid;place-items:center;cursor:pointer;transition:background var(--t),color var(--t)}
 .arena .navarrow:hover{background:var(--surface);color:var(--ink)}
 /* click follows the colour-change rule (invert), like every other button — the
@@ -783,7 +785,7 @@ kbd{font:inherit;font-size:11px;background:var(--surface);border-radius:3px;padd
       <div class="arenastage stage scrim">
         <div class="arena">
           <div class="dmedia">
-            <button class="dmbigplay" title="Play / pause"><svg class="ic"><use href="#i-play"/></svg></button>
+            <div class="dtype"><button class="dmbigplay" title="Play / pause"><svg class="ic"><use href="#i-play"/></svg></button><span class="ext">WAV</span></div>
             <div class="dmtransport"><span>0:47</span><span class="track"><i style="width:34%"></i><span class="knob" style="left:34%"></span></span><span>2:18</span><button class="tbtn" title="Mute"><svg class="ic"><use href="#i-volume"/></svg></button><button class="tbtn" title="Quality"><svg class="ic"><use href="#i-settings"/></svg></button><button class="tbtn" title="Fullscreen"><svg class="ic"><use href="#i-expand"/></svg></button></div>
           </div>
           <div class="dinfo">
