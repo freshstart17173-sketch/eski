@@ -531,8 +531,10 @@ input{font:inherit;color:inherit}
 .menu{position:fixed;z-index:90;background:var(--paper);border-radius:var(--r);box-shadow:0 12px 40px rgba(0,0,0,.28);padding:5px;min-width:200px;display:none}
 .menu.open{display:block}
 .menu .mlabel{font-size:10px;color:var(--muted);padding:6px 10px 3px}
-.menu button{display:flex;align-items:center;gap:9px;width:100%;text-align:left;padding:8px 10px;border-radius:var(--r);font-size:var(--fs-sm);color:var(--ink)}
+.menu button{display:flex;align-items:center;gap:9px;width:100%;text-align:left;padding:6px 10px;border-radius:var(--r);font-size:var(--fs-sm);color:var(--ink)}
 .menu button:hover{background:var(--surface)}
+.menu button:active{background:var(--ink);color:var(--on-ink)}
+.menu button:active .ic{color:var(--on-ink)}
 .menu .verline{display:flex;flex-direction:column;gap:1px}
 .menu .verline .fn{font-size:var(--fs-xs);color:var(--soft)}
 .menu .verline .rs{font-size:10px;color:var(--muted)}
@@ -587,7 +589,7 @@ input{font:inherit;color:inherit}
 .visopt .ic{width:15px;height:15px;color:var(--muted)}.visopt.on .ic{color:var(--on-ink)}
 /* S6 report dialog — reason radio list */
 .repopts{display:flex;flex-direction:column;gap:6px}
-.repopt{display:flex;align-items:center;gap:10px;width:100%;text-align:left;padding:10px 12px;border-radius:var(--r);background:var(--surface);font-size:var(--fs-sm);color:var(--soft);transition:background var(--t)}
+.repopt{display:flex;align-items:center;gap:10px;width:100%;text-align:left;padding:7px 12px;border-radius:var(--r);background:var(--surface);font-size:var(--fs-sm);color:var(--soft);transition:background var(--t)}
 .repopt:hover{background:var(--plate)}
 .repopt .rdot{flex:none;width:14px;height:14px;border-radius:50%;border:2px solid var(--line2);transition:border-color var(--t)}
 .repopt.on{color:var(--ink)}
@@ -1376,7 +1378,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
 
 /* menu (dropdown / context) — reuses the mockup .menu; shown inline here */
 .menu.show{position:static;display:block;width:100%;max-width:260px;min-width:0}
-.mi{display:flex;align-items:center;gap:11px;padding:8px 10px;border-radius:var(--r);
+.mi{display:flex;align-items:center;gap:9px;padding:6px 10px;border-radius:var(--r);
   font-size:var(--fs-sm);width:100%;text-align:left;color:var(--ink)}
 .mi:hover{background:var(--surface)}
 .mi .ic{color:var(--muted);width:16px;height:16px;flex:none}
@@ -1731,7 +1733,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
           <div class="dtop"><span class="dfilename">late_bloom_master.wav</span><button class="iconbtn" title="Report"><svg class="ic sm"><use href="#i-flag"/></svg></button><button class="iconbtn sp" title="Previous item"><svg class="ic sm" style="transform:rotate(90deg)"><use href="#i-chev"/></svg></button><button class="iconbtn" title="Next item"><svg class="ic sm" style="transform:rotate(-90deg)"><use href="#i-chev"/></svg></button><button class="iconbtn" title="Close"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
           <div class="scroll">
             <h2>late bloom</h2>
-            <div class="meta"><div class="row"><span class="k">Size</span><span class="v">32.1 MB</span></div><div class="row"><span class="k">Location</span><span class="v"><span class="loccrumb"><button><svg class="ic sm"><use href="#i-user"/></svg>Your files</button><span class="sl">›</span><button>singles</button></span></span></div><div class="row"><span class="k">Posted by</span><span class="v"><button class="metalink">rae</button></span></div><div class="row"><span class="k">Added</span><span class="v">15 Aug 2026, 2:14 PM</span></div><div class="row"><span class="k">Length</span><span class="v">2:18</span></div><div class="row"><span class="k">Format</span><span class="v">WAV · 44.1 kHz · 24-bit</span></div></div>
+            <div class="meta"><div class="row"><span class="k">Location</span><span class="v"><span class="loccrumb"><button><svg class="ic sm"><use href="#i-user"/></svg>Your files</button><span class="sl">›</span><button>singles</button></span></span></div><div class="row"><span class="k">Posted by</span><span class="v"><button class="metalink">rae</button></span></div><div class="row"><span class="k">Added</span><span class="v">15 Aug 2026, 2:14 PM</span></div><div class="row"><span class="k">Length</span><span class="v">2:18</span></div><div class="row"><span class="k">Format</span><span class="v">WAV · 44.1 kHz · 24-bit</span></div><div class="row"><span class="k">Size</span><span class="v">32.1 MB</span></div></div>
             <div class="dsec"><div class="lb">Tags</div><div class="chips"><span class="tag">bloom</span><span class="tag">single</span><span class="tag">master</span><button class="addtag"><svg class="ic sm"><use href="#i-plus"/></svg></button></div></div>
             
             <div class="dsec"><div class="lb">Comments</div><div class="cmt"><div class="av sm">MI</div><div class="bd"><div class="by"><span class="u m4">mira</span><time>3:02 PM</time></div><div class="tx">the falling section finally reads, love it</div></div></div><div class="cmt"><div class="av sm">KO</div><div class="bd"><div class="by"><span class="u m2">kofi</span><time>2:40 PM</time></div><div class="tx">what bpm is this?</div></div></div><div class="field" style="margin-top:8px"><input placeholder="Add a comment"></div></div>
@@ -1755,7 +1757,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
           <div class="dtop"><span class="dfilename">sh040_comp.mp4</span><button class="iconbtn" title="Report"><svg class="ic sm"><use href="#i-flag"/></svg></button><button class="iconbtn sp" title="Previous item"><svg class="ic sm" style="transform:rotate(90deg)"><use href="#i-chev"/></svg></button><button class="iconbtn" title="Next item"><svg class="ic sm" style="transform:rotate(-90deg)"><use href="#i-chev"/></svg></button><button class="iconbtn" title="Close"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
           <div class="scroll">
             <h2>q3 comp reel, first pass</h2>
-            <div class="meta"><div class="row"><span class="k">Size</span><span class="v">214 MB</span></div><div class="row"><span class="k">Location</span><span class="v"><span class="loccrumb"><button><svg class="ic sm"><use href="#i-folder"/></svg>Specter</button><span class="sl">›</span><button>sh040</button><span class="sl">›</span><button>review</button></span></span></div><div class="row"><span class="k">Uploaded by</span><span class="v"><button class="metalink">mira</button></span></div><div class="row"><span class="k">Posted in</span><span class="v">#sh040 review</span></div><div class="row"><span class="k">Added</span><span class="v">16 Aug 2026, 9:40 AM</span></div><div class="row"><span class="k">Length</span><span class="v">0:34</span></div><div class="row"><span class="k">Dimensions</span><span class="v">1920×1080 · 24 fps</span></div><div class="row"><span class="k">Format</span><span class="v">MP4 · H.264</span></div></div>
+            <div class="meta"><div class="row"><span class="k">Location</span><span class="v"><span class="loccrumb"><button><svg class="ic sm"><use href="#i-folder"/></svg>Specter</button><span class="sl">›</span><button>sh040</button><span class="sl">›</span><button>review</button></span></span></div><div class="row"><span class="k">Uploaded by</span><span class="v"><button class="metalink">mira</button></span></div><div class="row"><span class="k">Posted in</span><span class="v">#sh040 review</span></div><div class="row"><span class="k">Added</span><span class="v">16 Aug 2026, 9:40 AM</span></div><div class="row"><span class="k">Length</span><span class="v">0:34</span></div><div class="row"><span class="k">Dimensions</span><span class="v">1920×1080 · 24 fps</span></div><div class="row"><span class="k">Format</span><span class="v">MP4 · H.264</span></div><div class="row"><span class="k">Size</span><span class="v">214 MB</span></div></div>
             <div class="dsec"><div class="lb">Tags</div><div class="chips"><span class="tag">comp</span><span class="tag">sh040</span><button class="addtag"><svg class="ic sm"><use href="#i-plus"/></svg></button></div></div>
             
             
@@ -1776,7 +1778,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
           <div class="dtop"><span class="dfilename">cover_bloom.png</span><button class="iconbtn" title="Report"><svg class="ic sm"><use href="#i-flag"/></svg></button><button class="iconbtn sp" title="Previous item"><svg class="ic sm" style="transform:rotate(90deg)"><use href="#i-chev"/></svg></button><button class="iconbtn" title="Next item"><svg class="ic sm" style="transform:rotate(-90deg)"><use href="#i-chev"/></svg></button><button class="iconbtn" title="Close"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
           <div class="scroll">
             <h2>cover art, bloom</h2>
-            <div class="meta"><div class="row"><span class="k">Size</span><span class="v">4.8 MB</span></div><div class="row"><span class="k">Location</span><span class="v"><span class="loccrumb"><button><svg class="ic sm"><use href="#i-folder"/></svg>Specter</button><span class="sl">›</span><button>references</button></span></span></div><div class="row"><span class="k">Uploaded by</span><span class="v"><button class="metalink">nel</button></span></div><div class="row"><span class="k">Posted in</span><span class="v">#references</span></div><div class="row"><span class="k">Added</span><span class="v">14 Aug 2026, 6:02 PM</span></div><div class="row"><span class="k">Dimensions</span><span class="v">3000×2400</span></div><div class="row"><span class="k">Format</span><span class="v">PNG · sRGB</span></div></div>
+            <div class="meta"><div class="row"><span class="k">Location</span><span class="v"><span class="loccrumb"><button><svg class="ic sm"><use href="#i-folder"/></svg>Specter</button><span class="sl">›</span><button>references</button></span></span></div><div class="row"><span class="k">Uploaded by</span><span class="v"><button class="metalink">nel</button></span></div><div class="row"><span class="k">Posted in</span><span class="v">#references</span></div><div class="row"><span class="k">Added</span><span class="v">14 Aug 2026, 6:02 PM</span></div><div class="row"><span class="k">Dimensions</span><span class="v">3000×2400</span></div><div class="row"><span class="k">Format</span><span class="v">PNG · sRGB</span></div><div class="row"><span class="k">Size</span><span class="v">4.8 MB</span></div></div>
             <div class="dsec"><div class="lb">Tags</div><div class="chips"><span class="tag">cover</span><span class="tag">bloom</span><span class="tag">wip</span><button class="addtag"><svg class="ic sm"><use href="#i-plus"/></svg></button></div></div>
             
             
@@ -1799,7 +1801,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
           <div class="dtop"><span class="dfilename">late_bloom_beat.flp</span><button class="iconbtn" title="Report"><svg class="ic sm"><use href="#i-flag"/></svg></button><button class="iconbtn sp" title="Previous item"><svg class="ic sm" style="transform:rotate(90deg)"><use href="#i-chev"/></svg></button><button class="iconbtn" title="Next item"><svg class="ic sm" style="transform:rotate(-90deg)"><use href="#i-chev"/></svg></button><button class="iconbtn" title="Close"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
           <div class="scroll">
             <h2>Back half rework</h2>
-            <div class="meta"><div class="row"><span class="k">Size</span><span class="v">8.4 MB</span></div><div class="row"><span class="k">Location</span><span class="v"><span class="loccrumb"><button><svg class="ic sm"><use href="#i-folder"/></svg>Late Bloom LP</button><span class="sl">›</span><button>beats</button></span></span></div><div class="row"><span class="k">Uploaded by</span><span class="v"><button class="metalink">dev</button></span></div><div class="row"><span class="k">Posted in</span><span class="v">#beats</span></div><div class="row"><span class="k">Added</span><span class="v">15 Aug 2026, 2:14 PM</span></div><div class="row"><span class="k">Format</span><span class="v">FL Studio project (.flp)</span></div></div>
+            <div class="meta"><div class="row"><span class="k">Location</span><span class="v"><span class="loccrumb"><button><svg class="ic sm"><use href="#i-folder"/></svg>Late Bloom LP</button><span class="sl">›</span><button>beats</button></span></span></div><div class="row"><span class="k">Uploaded by</span><span class="v"><button class="metalink">dev</button></span></div><div class="row"><span class="k">Posted in</span><span class="v">#beats</span></div><div class="row"><span class="k">Added</span><span class="v">15 Aug 2026, 2:14 PM</span></div><div class="row"><span class="k">Format</span><span class="v">FL Studio project (.flp)</span></div><div class="row"><span class="k">Size</span><span class="v">8.4 MB</span></div></div>
             <div class="dsec"><div class="lb">Tags</div><div class="chips"><span class="tag">drums</span><span class="tag">142bpm</span><span class="tag">bridge</span><button class="addtag"><svg class="ic sm"><use href="#i-plus"/></svg></button></div></div>
             
             
@@ -1829,7 +1831,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
           <div class="dtop"><span style="display:flex;align-items:center;gap:7px;font-size:var(--fs-sm);font-weight:600"><svg class="ic sm" style="color:var(--muted)"><use href="#i-folder"/></svg>Folder</span><button class="iconbtn sp" title="Close"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
           <div class="scroll">
             <h2>Drum picks</h2>
-            <div class="meta"><div class="row"><span class="k">Size</span><span class="v">61 MB</span></div><div class="row"><span class="k">Location</span><span class="v"><span class="loccrumb"><button><svg class="ic sm"><use href="#i-folder"/></svg>Late Bloom LP</button><span class="sl">›</span><button>Drum picks</button></span></span></div><!-- #6 item count lives once, on the Items list header below --><div class="row"><span class="k">Made by</span><span class="v"><button class="metalink">dev</button></span></div><div class="row"><span class="k">Created</span><span class="v">10 Aug 2026</span></div></div>
+            <div class="meta"><div class="row"><span class="k">Location</span><span class="v"><span class="loccrumb"><button><svg class="ic sm"><use href="#i-folder"/></svg>Late Bloom LP</button><span class="sl">›</span><button>Drum picks</button></span></span></div><!-- #6 item count lives once, on the Items list header below --><div class="row"><span class="k">Made by</span><span class="v"><button class="metalink">dev</button></span></div><div class="row"><span class="k">Created</span><span class="v">10 Aug 2026</span></div><div class="row"><span class="k">Size</span><span class="v">61 MB</span></div></div>
             <div class="dsec"><div class="lb">Items <span style="color:var(--muted)">12</span></div><div class="flist"><button class="fi on" data-open-details><span class="fth"><svg class="ic sm" style="color:var(--muted)"><use href="#i-music"/></svg></span><span class="fn">kick_punchy.wav</span><span class="ft">wav</span></button><button class="fi" data-open-details><span class="fth"><svg class="ic sm" style="color:var(--muted)"><use href="#i-music"/></svg></span><span class="fn">snare_tight.wav</span><span class="ft">wav</span></button><button class="fi" data-open-details><span class="fth"><svg class="ic sm" style="color:var(--muted)"><use href="#i-music"/></svg></span><span class="fn">hat_loop_142.wav</span><span class="ft">wav</span></button><button class="fi" data-open-details><span class="fth"><svg class="ic sm" style="color:var(--muted)"><use href="#i-music"/></svg></span><span class="fn">break_chop.wav</span><span class="ft">wav</span></button><button class="fi" data-open-details><span class="fth"><svg class="ic sm" style="color:var(--muted)"><use href="#i-music"/></svg></span><span class="fn">texture_vinyl.wav</span><span class="ft">wav</span></button><button class="fi" data-open-details><span class="fth"><svg class="ic sm"><use href="#i-file"/></svg></span><span class="fn">drum_bus.flp</span><span class="ft">flp</span></button><button class="fi" data-open-details><span class="fth"><svg class="ic sm"><use href="#i-image"/></svg></span><span class="fn">ref_board.png</span><span class="ft">png</span></button><button class="fi" style="justify-content:center;color:var(--muted)">+5 more</button></div></div>
           </div>
           <!-- #17 Save to Files + #18 Download both offer whole-folder or
@@ -2919,8 +2921,8 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
             <h1>late_bloom_beat.flp</h1>
             <div class="meta">
               <div class="row"><span class="k">Shared by</span><span class="v"><span class="uchip m3">dev</span></span></div>
-              <div class="row"><span class="k">Size</span><span class="v">8.4 MB</span></div>
               <div class="row"><span class="k">Type</span><span class="v">FL Studio project (.flp)</span></div>
+              <div class="row"><span class="k">Size</span><span class="v">8.4 MB</span></div>
               <div class="row"><span class="k">Access</span><span class="v">Anyone with the link · view</span></div>
             </div>
             <div class="dsec"><div class="lb">Tags</div><div class="chips"><span class="tag">drums</span><span class="tag">142bpm</span><span class="tag">bridge</span></div></div>
@@ -3331,8 +3333,8 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
           <!-- #41 modified date + by whom -->
           <div class="row"><span class="k">Modified</span><span class="v">16 Aug 2026, 9:03 AM · <button class="metalink">dev</button></span></div>
           <!-- #2 file-size row -->
-          <div class="row"><span class="k">Size</span><span class="v">8.4 MB</span></div>
           <div class="row"><span class="k">Type</span><span class="v">FL Studio project (.flp)</span></div>
+          <div class="row"><span class="k">Size</span><span class="v">8.4 MB</span></div>
         </div>
         <div class="dsec"><div class="lb">Tags</div><div class="chips">
           <span class="tag">drums</span><span class="tag">142bpm</span><span class="tag">bridge</span><span class="tag">sampled</span><span class="tag">wip</span>
