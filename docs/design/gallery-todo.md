@@ -91,6 +91,17 @@ scrim, no shadow; hairlines inset, never full-width.
   and aspect ratio (per CLAUDE.md "be exacting…"). Not a restyle — a fit-and-finish audit:
   hunt for off-by-a-few-px misalignments, uneven paddings, wonky button proportions, and
   ragged edges across the whole gallery, at 1440 in both themes.
+  - **Tooling built (2026-08-22):** the [`eski-polish`](../../.claude/skills/eski-polish/SKILL.md)
+    skill (seven enforcement rules + keep/cut tables + procedure) and its numeric
+    **measurement overlay** (`references/measure-overlay.js` — renders alignment/gap/padding
+    values on top of every element so the screenshot catches sub-pixel fumbles).
+  - **Density portion done (batch 1):** tags → coloured bold text (no pills); member chips
+    → coloured bold text (one scoped input-token exception); tutorial copy cut; redundant
+    leading icons cut on labelled buttons; `.epavrow` spacing snapped to a token;
+    `Modified by` neutralised to `.metalink`. Verified both themes; `eski-style` updated.
+  - **Remaining:** per-surface micro-alignment sweep with the overlay across all 21 screens
+    + dialogs (button-cluster consistency, grid/list distribution, edge insets). Run the
+    skill surface-by-surface.
 
 ## Next galleries (not started)
 
