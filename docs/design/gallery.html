@@ -716,6 +716,8 @@ input{font:inherit;color:inherit}
 .ocard .ulab{margin-top:var(--s4)}
 .starter{display:flex;flex-wrap:wrap;gap:10px}
 .ocard .go{margin-top:var(--s5);display:flex;gap:var(--s2);justify-content:flex-end}
+.okicker{font-size:var(--fs-xs);color:var(--muted);font-weight:600;letter-spacing:.04em;margin-bottom:var(--s2)}
+.ostep[hidden]{display:none}
 .magic{display:flex;align-items:center;gap:var(--s2);background:var(--surface);border-radius:var(--r);padding:10px var(--s3);margin-top:var(--s4)}
 .magic .lk{flex:1;min-width:0;font-size:var(--fs-sm);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .jcover{height:132px;border-radius:6px 6px 0 0;margin:calc(-1*var(--s5)) calc(-1*var(--s5)) var(--s4);background:linear-gradient(135deg,#5a5a5a,#232323);position:relative}
@@ -1180,6 +1182,12 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
 .svmedia{background:var(--paper1);border-radius:var(--r);min-height:440px;display:flex;align-items:center;justify-content:center;padding:var(--s5)}
 .svmedia .dtype{height:auto;background:none}
 .svmeta h1{font-size:var(--fs-xl);font-weight:600;margin-bottom:var(--s4)}
+.svbody.svexpired{display:block;place-items:center;text-align:center;max-width:420px}
+.deadshare{padding:calc(var(--s5)*2) 0;text-align:center}
+.deadshare .deadicon{width:64px;height:64px;border-radius:var(--r);background:var(--plate);display:grid;place-items:center;margin:0 auto var(--s3)}
+.deadshare .deadicon .ic{width:26px;height:26px;color:var(--muted)}
+.deadshare h1{font-size:var(--fs-xl);font-weight:600}
+.deadshare .lead{color:var(--muted);font-size:var(--fs-sm);margin-top:var(--s2)}
 .svnote{display:flex;align-items:flex-start;gap:8px;font-size:var(--fs-xs);color:var(--muted);background:var(--surface);border-radius:var(--r);padding:10px 12px;margin-top:var(--s4)}
 .svnote .ic{color:var(--muted);flex:none;margin-top:1px}
 /* Edit-profile media (banner well + avatar row) — media stays square (--r) */
@@ -2903,7 +2911,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
           <div class="svctx">Shared by <b class="m3">dev</b> · read-only</div>
           <div class="svacts"><button class="btn"><svg class="ic sm"><use href="#i-save"/></svg>Save to my files</button><button class="btn primary"><svg class="ic sm"><use href="#i-download"/></svg>Download</button></div>
         </header>
-        <main class="svbody">
+        <main class="svbody" id="sharedView">
           <div class="svmedia"><div class="dtype"><svg class="ic"><use href="#i-file"/></svg><span class="ext">FLP</span><span style="font-size:11px;color:var(--muted)">no preview — download to open</span></div></div>
           <div class="svmeta">
             <h1>late_bloom_beat.flp</h1>
@@ -2917,24 +2925,43 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
             <div class="svnote"><svg class="ic sm"><use href="#i-lock"/></svg>You can only see what was shared with you — you can't browse the rest of this server.</div>
           </div>
         </main>
+        <main class="svbody svexpired" id="sharedExpired" hidden>
+          <div class="deadshare">
+            <div class="deadicon"><svg class="ic"><use href="#i-lock"/></svg></div>
+            <h1>This link has expired</h1>
+            <div class="lead">The person who shared this turned the link off or set it to expire. Ask them for a new one.</div>
+          </div>
+        </main>
       </div>
     </div>
 
     <div class="screen" data-screen="create" hidden>
       <div class="onboard">
         <div class="ocard">
-          <h1>Create a server</h1>
-          <div class="lead">A private studio. You invite people with a link; there is no public listing.</div>
-          <label class="ulab">Server name</label><div class="field" id="createNameField"><input placeholder="e.g. Late Bloom LP"></div>
-          <div class="fielderr" id="createErr" hidden><svg class="ic sm"><use href="#i-x"/></svg>You're already in a server with that name.</div>
-          <label class="ulab">Server icon <span style="font-weight:400;color:var(--muted)">optional</span></label>
-          <div class="coverpick"><div class="cv icon"><svg class="ic"><use href="#i-image"/></svg></div><button class="btn sm upbtn" data-up="the server icon"><svg class="ic sm"><use href="#i-image"/></svg>Upload</button></div>
-          <label class="ulab">Cover <span style="font-weight:400;color:var(--muted)">optional</span></label>
-          <div class="coverpick"><div class="cv"><svg class="ic"><use href="#i-image"/></svg></div><button class="btn sm upbtn" data-up="the server cover"><svg class="ic sm"><use href="#i-image"/></svg>Upload</button></div>
-          <label class="ulab">Starter channels</label>
-          <div class="starter"><span class="tag">general</span><span class="tag">wips</span><span class="tag">references</span><button class="addtag"><svg class="ic sm"><use href="#i-plus"/></svg></button></div>
-          <div class="magic"><svg class="ic sm" style="color:var(--muted)"><use href="#i-link"/></svg><span class="lk">An invite link is created with the server</span></div>
-          <div class="go"><button class="btn ghost">Cancel</button><button class="btn primary">Create server</button></div>
+          <!-- Step 1 — identity. Kept to one idea per screen (less is more): a
+               name and its art, nothing else to decide yet. -->
+          <div class="ostep" id="createStep1">
+            <div class="okicker">New server · step 1 of 2</div>
+            <h1>Name your studio</h1>
+            <div class="lead">A private studio. You invite people with a link — there's no public listing.</div>
+            <label class="ulab">Server name</label><div class="field" id="createNameField"><input placeholder="e.g. Late Bloom LP"></div>
+            <div class="fielderr" id="createErr" hidden><svg class="ic sm"><use href="#i-x"/></svg>You're already in a server with that name.</div>
+            <label class="ulab">Server icon <span style="font-weight:400;color:var(--muted)">optional</span></label>
+            <div class="coverpick"><div class="cv icon"><svg class="ic"><use href="#i-image"/></svg></div><button class="btn sm upbtn" data-up="the server icon"><svg class="ic sm"><use href="#i-image"/></svg>Upload</button></div>
+            <label class="ulab">Cover <span style="font-weight:400;color:var(--muted)">optional</span></label>
+            <div class="coverpick"><div class="cv"><svg class="ic"><use href="#i-image"/></svg></div><button class="btn sm upbtn" data-up="the server cover"><svg class="ic sm"><use href="#i-image"/></svg>Upload</button></div>
+            <div class="go"><button class="btn ghost" id="createCancel">Cancel</button><button class="btn primary" id="createNext">Next</button></div>
+          </div>
+          <!-- Step 2 — channels + the one thing worth flagging (the invite link). -->
+          <div class="ostep" id="createStep2" hidden>
+            <div class="okicker">New server · step 2 of 2</div>
+            <h1>Set up channels</h1>
+            <div class="lead">Start with a few — add, rename or reorder them any time.</div>
+            <label class="ulab">Starter channels</label>
+            <div class="starter"><span class="tag">general</span><span class="tag">wips</span><span class="tag">references</span><button class="addtag"><svg class="ic sm"><use href="#i-plus"/></svg></button></div>
+            <div class="magic"><svg class="ic sm" style="color:var(--muted)"><use href="#i-link"/></svg><span class="lk">An invite link is created with the server</span></div>
+            <div class="go"><button class="btn ghost" id="createBack">Back</button><button class="btn primary" id="createDone">Create server</button></div>
+          </div>
         </div>
       </div>
     </div>
@@ -3001,8 +3028,14 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
       <div class="onboard">
         <div class="ocard" style="text-align:center">
           <div style="height:64px;border-radius:var(--r);background:var(--plate);display:grid;place-items:center;margin-bottom:12px"><svg class="ic" style="width:26px;height:26px;color:var(--muted)"><use href="#i-link"/></svg></div>
-          <h1>This invite is no longer valid</h1>
-          <div class="lead">It may have <b>expired</b>, been <b>revoked</b>, or hit its <b>member cap</b>. Ask whoever sent it for a fresh link.</div>
+          <div data-dead="expired"><h1>This invite has expired</h1>
+            <div class="lead">The link was time-limited and its window has closed. Ask whoever sent it for a fresh one.</div></div>
+          <div data-dead="revoked" hidden><h1>This invite was turned off</h1>
+            <div class="lead">An admin revoked this link. Ask them for a new invite.</div></div>
+          <div data-dead="full" hidden><h1>This server is full</h1>
+            <div class="lead">It's reached its member cap. Ask an admin to make room or raise it.</div></div>
+          <div data-dead="already" hidden><h1>You're already a member</h1>
+            <div class="lead">No need for this invite — this server is already in your rail.</div></div>
           <div class="authbtns"><button class="btn" style="justify-content:center"><svg class="ic sm"><use href="#i-home"/></svg>Back to your servers</button></div>
           <div class="authalt">Already a member? <a>Open the server</a></div>
         </div>
@@ -3504,7 +3537,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
     <label class="ulab">Topic <span style="font-weight:400;color:var(--muted)">(optional)</span></label>
     <div class="field"><input value="put the session name in the file name"></div>
     <label class="ulab">Slowmode</label>
-    <div class="field"><input value="Off" readonly></div>
+    <button class="selbtn" style="width:100%;justify-content:space-between">Off<svg class="ic sm"><use href="#i-chev"/></svg></button>
   </div>
   <div class="ufoot"><button class="btn" id="editChanCancel">Cancel</button><button class="btn primary" id="editChanSave">Save changes</button></div>
 </div>
@@ -3916,6 +3949,11 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   function forceSetPanel(name){var s=q1('.screen[data-screen="settings"]');if(!s)return;
     s.querySelectorAll('.setnav [data-setpanel]').forEach(function(b){b.classList.toggle('on',b.dataset.setpanel===name);});
     s.querySelectorAll('.setpanel').forEach(function(p){p.hidden=p.dataset.panel!==name;});}
+  function forceUsPanel(name){var s=q1('.screen[data-screen="usersettings"]');if(!s)return;
+    s.querySelectorAll('.setnav [data-setpanel]').forEach(function(b){b.classList.toggle('on',b.dataset.setpanel===name);});
+    s.querySelectorAll('.setpanel').forEach(function(p){p.hidden=p.dataset.panel!==name;});}
+  function forceDeadInvite(kind){var s=q1('.screen[data-screen="deadinvite"]');if(!s)return;
+    s.querySelectorAll('[data-dead]').forEach(function(n){n.hidden=n.dataset.dead!==kind;});}
   function forceNPanel(name){document.querySelectorAll('.ntabs .ntab').forEach(function(t){t.classList.toggle('on',t.dataset.ntab===name);});
     document.querySelectorAll('.npanel').forEach(function(p){p.hidden=p.dataset.nview!==name;});}
   function forceChTab(name){document.querySelectorAll('.chtab').forEach(function(t){t.classList.toggle('on',t.dataset.chtab===name);});
@@ -3990,6 +4028,8 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
           '<div class="skel sk-line" style="width:88%;height:10px"></div>';}
     },
     create:{error:function(){var e=document.getElementById('createErr'),f=document.getElementById('createNameField');
+      var s1=document.getElementById('createStep1'),s2=document.getElementById('createStep2');
+      if(s1)s1.hidden=false;if(s2)s2.hidden=true;                 // the name error lives on step 1
       if(f){f.classList.add('err');var i=f.querySelector('input');if(i)i.value='Late Bloom LP';}if(e)e.hidden=false;}},
     friends:{all:function(){forceFrView('all');},pending:function(){forceFrView('pending');},blocked:function(){forceFrView('blocked');},
       loading:function(){loadingInto(q1('.screen[data-screen="friends"] .frview[data-frview="all"]'),'row',6);}},
@@ -4011,8 +4051,18 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
       loading:function(){loadingInto(q1('.screen[data-screen="search"] .panebody'),'row',6);}},
     notifications:{all:function(){forceNPanel('all');},mentions:function(){forceNPanel('mentions');},
       threads:function(){forceNPanel('threads');},saved:function(){forceNPanel('saved');},
+      empty:function(){forceNPanel('all');var p=q1('.screen[data-screen="notifications"] .npanel[data-nview="all"]');
+        if(p)p.innerHTML='<div class="nempty">You’re all caught up. Mentions, replies and requests will show up here.</div>';},
       loading:function(){loadingInto(q1('.screen[data-screen="notifications"] .npanel[data-nview="all"]'),'row',6);}},
-    auth:{signin:function(){forceAstep('signin');},sent:function(){forceAstep('sent');},claim:function(){forceAstep('claim');}}
+    auth:{signin:function(){forceAstep('signin');},sent:function(){forceAstep('sent');},claim:function(){forceAstep('claim');}},
+    usersettings:{profile:function(){forceUsPanel('uprofile');},account:function(){forceUsPanel('uaccount');},
+      notifs:function(){forceUsPanel('unotif');},appearance:function(){forceUsPanel('uappear');},
+      privacy:function(){forceUsPanel('uprivacy');},storage:function(){forceUsPanel('ustorage');}},
+    shared:{expired:function(){var s=document.getElementById('sharedExpired');if(s)s.hidden=false;
+        var v=document.getElementById('sharedView');if(v)v.hidden=true;
+        var a=q1('.screen[data-screen="shared"] .svacts');if(a)a.hidden=true;}},   // no actions on a dead link
+    deadinvite:{expired:function(){forceDeadInvite('expired');},revoked:function(){forceDeadInvite('revoked');},
+      full:function(){forceDeadInvite('full');},already:function(){forceDeadInvite('already');}}
   };
   function applyState(screen,state){var m=STATES[screen];
     if(m&&m[state]){m[state]();return true;}
@@ -4513,6 +4563,17 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
       crossMenu.querySelectorAll('.croc').forEach(function(x){x.classList.remove('on');});o.classList.add('on');
       var t=crossPicker.querySelector('.crosschan');if(t)t.textContent=o.dataset.chan||'beats';
       closeMenus();});});}
+
+  // Create-server — a two-step flow (identity → channels); one idea per screen.
+  (function(){
+    var s1=document.getElementById('createStep1'),s2=document.getElementById('createStep2');
+    if(!s1||!s2)return;
+    function step(n){s1.hidden=n!==1;s2.hidden=n!==2;}
+    var next=document.getElementById('createNext');if(next)next.addEventListener('click',function(){step(2);});
+    var back=document.getElementById('createBack');if(back)back.addEventListener('click',function(){step(1);});
+    var cancel=document.getElementById('createCancel');if(cancel)cancel.addEventListener('click',function(){step(1);show('workspace');});
+    var done=document.getElementById('createDone');if(done)done.addEventListener('click',function(){step(1);show('newserver');if(typeof toast==='function')toast('Server created — invite link copied');});
+  }());
 
   // #58 folder context menu on right-click of a folder tree row
   var folderMenu=document.getElementById('folderMenu');
