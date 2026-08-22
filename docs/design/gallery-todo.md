@@ -13,26 +13,27 @@ built or folded in below). Brand art lives separately in
 
 Worked out in [`sandbox.html`](sandbox.html) and captured as the
 [`eski-style`](../../.claude/skills/eski-style/SKILL.md) skill (tokens, buttons,
-hairlines, per-screen registry, porting order). **Sandbox-first: settle it there,
-then port to `styleguide.html` (tokens) + `gallery.html` (components).** Nothing
-ported yet.
+hairlines, per-screen registry, porting order). **PORTED to `gallery.html` +
+`styleguide.html` tokens (2026-08-22)** — tokens, button archetypes, hairline
+dialogs, and the details pane are live in the gallery; verified by screenshot
+(workspace, explorer, feed, settings, detail pane, dialog) in both themes.
 
-Detail-pane refinements the owner called out (sandbox, then carry into the port):
+Detail-pane refinements the owner called out — done in sandbox **and** carried
+into the gallery port:
 
-- [ ] **"Posted by" is a plain text link, not a member chip** — neutral (not
-  member-coloured); file-metadata author names read like are.na's "By …" link.
-  Member colour stays on names in chat / members / comments / mentions.
-- [ ] **No visible scrollbars anywhere** — hide the bar, keep scroll
-  (`scrollbar-width:none` + `::-webkit-scrollbar{display:none}`), globally.
-- [ ] **Metadata right-aligned (are.na)** — key left / value right-aligned to the
-  panel edge; **denser** (reduce vertical spacing).
-- [ ] **Detail pane rendered at full scale** — it was showing shrunk (icons + well
-  small); render at the real overlay size so proportions read.
-- [ ] **Folder nav arrows follow the button rules** — colour-change on hover **and
-  invert on click**, like the other colour-change buttons (still no transform/
-  press animation).
-- [ ] **Audio player ≈ video player** — near-identical transport (same button
-  placement, no title), audio just **drops the speed control**.
+- [x] **"Posted by" is a plain text link, not a member chip** — neutral `.metalink`;
+  member colour stays on names in chat / members / comments / mentions.
+- [x] **No visible scrollbars anywhere** — already global in gallery; added to sandbox.
+- [x] **Metadata right-aligned (are.na)** — key left / value right to the edge; denser.
+- [x] **Detail pane rendered at full scale** — filling type cards; real overlay size.
+- [x] **Folder nav arrows follow the button rules** — colour-change hover + invert click.
+- [x] **Audio player ≈ video player** — same transport placement; audio drops speed.
+- [x] **Type cards fill the media area** — unpreviewable / audio / folder edge-to-edge.
+- [x] **Contributors/collaborators removed** — dropped from details pane; CANON §A marked CUT.
+
+Remaining port polish (optional, next pass): sweep the styleguide.html component
+demos to the new button/dialog CSS (tokens already ported); audit round count
+badges vs the square rule; convert more secondary buttons to `.ghost` text.
 
 Standing decisions applied in this redesign (don't undo): **contributors/
 collaborators removed**; monochrome + one accent (member hue, server-scoped);

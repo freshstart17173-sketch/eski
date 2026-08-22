@@ -98,7 +98,7 @@ Sub-terms (not renamed, pinned for clarity):
 
 | Canonical | Means | DB |
 |---|---|---|
-| **collaborators** | The people credited on a work — each a **chip** (a real `@handle` + an optional freeform role like "prod"/"mix"), in that member's server colour. Reads for artists *and* social ("with @rae"). **Consent-gated** (below). Renamed from **credits** (2026-08-19). | `work_collaborators(work_id, user_id, role, status)` |
+| **collaborators** | **CUT from the beta (2026-08-22)** — the collaborators/contributors field is removed from the UI for now (the are.na-monochrome restyle drops it; it may return post-beta). The vocab + schema below stay for when it does; **no collaborator chip renders in the beta** (details pane, upload sheet, cards). The people credited on a work — each a **chip** (a real `@handle` + an optional freeform role like "prod"/"mix"), in that member's server colour. Reads for artists *and* social ("with @rae"). **Consent-gated** (below). Renamed from **credits** (2026-08-19). | `work_collaborators(work_id, user_id, role, status)` |
 | **collaborator chip** | One collaborator rendered as a chip (server colour in a server context). A **pending** chip (unconfirmed stranger) reads muted. Renamed from **contributor chip**. | derived |
 | **tag** | A user-added label. First 5 show inline, "+N" for the rest. | `content_tags` |
 | **file type** | The extension/kind, for the icon and Type filter. **Never rendered as a tag** (F10). | `works.file_ext`, `works.kind` |
