@@ -25,8 +25,9 @@
 :root{
   --paper:#FCFCFC; --surface:#F1F1F1; --plate:#E5E5E5; --paper1:#E4E4E4;
   --ink:#141414; --soft:#3A3A3A; --muted:#6B6B6B; --line:#DADADA; --line2:#BEBEBE;
-  --on-ink:#FCFCFC; --tagbg:#DFDFDF; --danger:#B0503F;
-  --m1:#B0503F; --m2:#A9791F; --m3:#3F7A4E; --m4:#2F7480; --m5:#3F65A6; --m6:#77558F;
+  --on-ink:#FCFCFC; --tagbg:#DFDFDF; --danger:#C63A28; --railbg:#E6E6E6;
+  /* red punched up (owner: punchier, the red especially); other hues nudged a touch */
+  --m1:#C63A28; --m2:#B27812; --m3:#2F8450; --m4:#1F7C8A; --m5:#345FB0; --m6:#7A4C9C;
   --fs-mi:11px; --fs-xs:12px; --fs-sm:13px; --fs:14.5px; --fs-lg:16px; --fs-xl:20px;
   --font:'Jost','Avenir Next','Segoe UI',Arial,sans-serif;
   --s1:4px; --s2:8px; --s3:12px; --s4:16px; --s5:24px; --r:3px; --t:120ms ease;
@@ -36,14 +37,14 @@
 :root[data-theme="dark"]{
   --paper:#0A0A0A; --surface:#161616; --plate:#212121; --paper1:#1E1E1E;
   --ink:#F4F4F4; --soft:#C6C6C6; --muted:#8C8C8C; --line:#282828; --line2:#3C3C3C;
-  --on-ink:#0A0A0A; --tagbg:#262626; --danger:#D98A7A;
-  --m1:#D98A7A; --m2:#D6B26B; --m3:#82BE91; --m4:#6FB9C4; --m5:#89A6D6; --m6:#B294C7;
+  --on-ink:#0A0A0A; --tagbg:#262626; --danger:#F07C63; --railbg:#050505;
+  --m1:#F07C63; --m2:#E4BC62; --m3:#79CE8C; --m4:#63C8D6; --m5:#88A8EE; --m6:#BE90DC;
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
   --paper:#0A0A0A; --surface:#161616; --plate:#212121; --paper1:#1E1E1E;
   --ink:#F4F4F4; --soft:#C6C6C6; --muted:#8C8C8C; --line:#282828; --line2:#3C3C3C;
-  --on-ink:#0A0A0A; --tagbg:#262626; --danger:#D98A7A;
-  --m1:#D98A7A; --m2:#D6B26B; --m3:#82BE91; --m4:#6FB9C4; --m5:#89A6D6; --m6:#B294C7;
+  --on-ink:#0A0A0A; --tagbg:#262626; --danger:#F07C63; --railbg:#050505;
+  --m1:#F07C63; --m2:#E4BC62; --m3:#79CE8C; --m4:#63C8D6; --m5:#88A8EE; --m6:#BE90DC;
 }}
 
 *{box-sizing:border-box;margin:0;padding:0}
@@ -195,14 +196,16 @@ kbd{font:inherit;font-size:11px;background:var(--surface);border-radius:3px;padd
 .visrow{display:flex;gap:6px}
 .visopt{display:flex;flex-direction:column;gap:1px;flex:1;background:var(--surface);border:1px solid transparent;border-radius:var(--r);
   padding:9px 11px;cursor:pointer;transition:background var(--t),color var(--t);text-align:left}
-.visopt .vt{display:flex;align-items:center;gap:7px;font-size:var(--fs-sm);font-weight:500}
+.visopt .vt{display:flex;align-items:center;gap:7px;font-size:var(--fs-sm);font-weight:600}
 .visopt:hover{background:var(--plate)}
 .visopt.on{background:var(--ink);color:var(--on-ink)}
-.visopt .ic{color:var(--muted)}.visopt.on .ic{color:var(--on-ink)}
-.visopt small{font-size:10px;color:var(--muted)}
-/* selected tile inverts to ink bg → subtext must be a translucent ON-INK, not a
-   hardcoded white (which vanished on the near-white ink of the dark theme). */
-.visopt.on small{color:color-mix(in srgb,var(--on-ink),transparent 32%)}
+.visopt .ic{color:var(--soft)}.visopt.on .ic{color:var(--on-ink)}
+/* sublabel — was 10px/muted and read as low-contrast; step to 11px + soft ink */
+.visopt small{font-size:11px;color:var(--soft)}
+/* selected tile inverts to ink bg → subtext is a lightly-dimmed ON-INK (not a
+   hardcoded white, which vanished on the near-white ink of the dark theme). Kept
+   near-opaque so it stays legible on the inverted tile. */
+.visopt.on small{color:color-mix(in srgb,var(--on-ink),transparent 20%)}
 .sharerow{display:flex;align-items:center;gap:9px;padding:7px 2px;font-size:var(--fs-sm)}
 .av{flex:none;width:26px;height:26px;border-radius:50%;background:var(--paper1);color:var(--soft);display:grid;place-items:center;font-weight:700;font-size:var(--fs-xs)}
 
@@ -211,6 +214,147 @@ kbd{font:inherit;font-size:11px;background:var(--surface);border-radius:3px;padd
   padding:9px 12px;font-size:var(--fs-sm);box-shadow:0 10px 30px rgba(0,0,0,.3)}
 .toast .tclose{margin-left:6px;color:var(--on-ink);opacity:.7;background:none;border:0;cursor:pointer;display:grid;place-items:center}
 .toast .tclose:hover{opacity:1}
+
+/* ============================================================================
+   MAIN SCREEN PREVIEW — server chat (workspace) in the new style, so the
+   direction can be judged on a real screen. Ported from gallery.html's shell;
+   reuses the sandbox's .field / .av / .iconbtn / .tag (no duplicate selectors).
+   Panes separate by BACKGROUND STEP, not borders (the design rule); small
+   buttons; punchy red accent. Kept in the sandbox — gallery.html is untouched.
+   ========================================================================== */
+.screenwrap{padding:18px;background:var(--plate)}
+.appshell{--rail:52px;--chan:216px;--mem:196px;display:flex;height:600px;border-radius:var(--r);
+  overflow:hidden;background:var(--paper);box-shadow:inset 0 0 0 1px var(--line);text-align:left}
+.appshell *{min-height:0}
+.u{font-weight:600}
+.m1{color:var(--m1)}.m2{color:var(--m2)}.m3{color:var(--m3)}.m4{color:var(--m4)}.m5{color:var(--m5)}.m6{color:var(--m6)}
+.av.sm{width:24px;height:24px;font-size:10px}
+
+/* server rail */
+.rail{flex:none;width:var(--rail);background:var(--railbg);display:flex;flex-direction:column;align-items:center;gap:8px;padding:8px 0;overflow-y:auto}
+.railbtn{position:relative;width:36px;height:36px;flex:none;display:grid;place-items:center;border:0;border-radius:var(--r);background:var(--surface);color:var(--soft);font-weight:700;font-size:var(--fs-sm);cursor:pointer;transition:background var(--t),color var(--t)}
+.railbtn:hover{background:var(--plate)}
+.railbtn.on{background:var(--ink);color:var(--on-ink)}
+.railsep{width:22px;height:1px;background:var(--line2);flex:none}
+.railpfp{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#8f8f8f,#565656);color:#fff;display:grid;place-items:center;font-weight:700;font-size:var(--fs-sm);margin-top:auto}
+
+/* channel column */
+.chan{flex:none;width:var(--chan);background:var(--surface);display:flex;flex-direction:column;overflow:hidden}
+.srvhd{flex:none;cursor:pointer}
+.srvcover{height:60px;background:linear-gradient(135deg,#5a5a5a,#232323)}
+.srvbar{display:flex;align-items:center;gap:10px;padding:0 12px 8px;background:var(--plate)}
+.srvicon{width:36px;height:36px;flex:none;border-radius:var(--r);margin-top:-18px;background:var(--ink);color:var(--on-ink);display:grid;place-items:center;font-weight:700;font-size:var(--fs-sm);box-shadow:0 0 0 3px var(--surface)}
+.srvbar b{font-size:var(--fs-sm)}
+.chanbody{flex:1;overflow-y:auto;padding:12px 8px}
+.cgroup{margin-bottom:14px}
+.cglabel{display:flex;align-items:center;gap:2px;padding:0 8px 4px;color:var(--muted);font-size:var(--fs-xs);font-weight:600}
+.cgcaret{width:11px;height:11px;color:var(--muted)}
+.cgadd{width:18px;height:18px;display:grid;place-items:center;border:0;background:none;border-radius:var(--r);color:var(--muted);margin-left:auto;cursor:pointer}
+.cgadd:hover{background:var(--plate);color:var(--ink)}
+.crow{display:flex;align-items:center;gap:8px;width:100%;text-align:left;padding:5px 8px;border:0;background:none;border-radius:var(--r);color:var(--soft);cursor:pointer;transition:background var(--t),color var(--t)}
+.crow:hover{background:var(--plate)}
+.crow.on{background:var(--plate);color:var(--ink);font-weight:600}
+.crow .ic{color:var(--muted);width:15px;height:15px}
+.crow .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:var(--fs-sm)}
+.crow .ct{color:var(--muted);font-size:var(--fs-xs)}
+.cgear{width:18px;height:18px;display:grid;place-items:center;border-radius:var(--r);color:var(--muted);opacity:0}
+.crow:hover .cgear{opacity:1}
+.vpeople{padding:2px 0 4px 28px;display:flex;flex-direction:column;gap:4px}
+.vp{display:flex;align-items:center;gap:7px;font-size:var(--fs-xs)}
+.vp .live{width:6px;height:6px;border-radius:50%;background:currentColor;flex:none}
+
+/* main chat pane */
+.main{flex:1;min-width:0;display:flex;flex-direction:column;background:var(--paper);overflow:hidden;position:relative}
+.mainhd{flex:none;height:46px;display:flex;align-items:center;gap:10px;padding:0 14px;background:var(--surface)}
+.mainhd>.ic{color:var(--muted)}
+.mainhd .t{font-weight:600;font-size:var(--fs)}
+.mainhd .sub{color:var(--muted);font-size:var(--fs-sm);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0}
+.mainhd .acts{margin-left:auto;display:flex;gap:2px}
+.chtabs{flex:none;display:flex;gap:2px;padding:0 14px;background:var(--surface)}
+.chtab{display:flex;align-items:center;gap:7px;padding:8px 10px;color:var(--soft);font-size:var(--fs-sm);position:relative;border:0;background:none;cursor:pointer}
+.chtab .ic{color:var(--muted)}
+.chtab .n{color:var(--muted);font-size:var(--fs-xs)}
+.chtab:hover{color:var(--ink)}
+.chtab.on{color:var(--ink);font-weight:600}
+.chtab.on .ic{color:var(--ink)}
+.chtab.on::after{content:"";position:absolute;left:0;right:0;bottom:0;height:2px;background:var(--ink)}
+.stream{flex:1;overflow-y:auto;padding:12px 14px}
+.day{display:flex;align-items:center;gap:12px;margin:8px 0;color:var(--muted);font-size:var(--fs-xs)}
+.day::before,.day::after{content:"";flex:1;height:1px;background:var(--line)}
+.msg{position:relative;display:flex;gap:11px;padding:5px 8px;border-radius:var(--r)}
+.msg:hover{background:var(--surface)}
+.msg .bd{flex:1;min-width:0}
+.msg .by{display:flex;align-items:baseline;gap:8px}
+.msg .by time{font-size:11px;color:var(--muted)}
+.msg .tx{font-size:var(--fs-sm);color:var(--soft);margin-top:1px}
+.msg .tx .men{font-weight:600}
+.edited{color:var(--muted);font-size:var(--fs-xs)}
+.hoveracts{position:absolute;top:-10px;right:10px;display:none;gap:2px;background:var(--paper);border-radius:var(--r);box-shadow:0 2px 10px rgba(0,0,0,.16);padding:2px}
+.msg:hover .hoveracts{display:flex}
+.hoveracts .iconbtn{width:24px;height:24px;color:var(--muted)}
+.reactions{display:flex;gap:6px;margin-top:6px}
+/* reaction chip: square (--r), not a pill — round is avatars/dots only (CANON) */
+.react{display:inline-flex;align-items:center;gap:5px;background:var(--surface);border-radius:var(--r);padding:2px 8px;font-size:var(--fs-xs);color:var(--soft)}
+.reply{margin-top:5px;font-size:var(--fs-xs);color:var(--muted);display:inline-flex;align-items:center;gap:5px;cursor:pointer}
+.reply:hover{color:var(--ink)}
+.newdiv{display:flex;align-items:center;gap:10px;margin:10px 0;color:var(--m1);font-size:var(--fs-xs);font-weight:600}
+.newdiv::before,.newdiv::after{content:"";flex:1;height:1px;background:var(--m1);opacity:.5}
+.fwd{border-left:2px solid var(--line2);padding:2px 0 2px 10px;margin-top:6px;max-width:460px}
+.fwd .src{font-size:var(--fs-xs);color:var(--muted);margin-bottom:3px;display:flex;align-items:center;gap:6px}
+.fwd .src .ic{width:12px;height:12px}
+.fwd .tx{font-size:var(--fs-sm);color:var(--soft)}
+/* file cards in chat */
+.filecardwrap{position:relative;display:inline-block;max-width:100%}
+.filecard{margin-top:8px;max-width:420px;width:100%;background:var(--surface);border:0;border-radius:var(--r);overflow:hidden;cursor:pointer;text-align:left;transition:background var(--t)}
+.filecard:hover{background:var(--plate)}
+.fcwave{height:60px;padding:10px 14px;background:var(--paper1);display:flex;align-items:center;gap:10px;color:var(--muted)}
+.fcwave .fic{width:24px;height:24px}
+.fcwave .ext{font-size:12px;font-weight:700;color:var(--soft);letter-spacing:.5px}
+.fbody{padding:9px 12px}
+.fname{display:flex;align-items:center;gap:8px;font-size:var(--fs-sm);font-weight:600}
+.ftags{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px;align-items:center}
+.fcacts{position:absolute;top:8px;right:8px;display:none;gap:3px}
+.filecardwrap:hover .fcacts{display:flex}
+.fcacts button{width:24px;height:24px;display:grid;place-items:center;border:0;border-radius:var(--r);background:var(--paper);color:var(--soft);box-shadow:0 0 0 1px var(--line);cursor:pointer}
+.fcacts button:hover{background:var(--surface);color:var(--ink)}
+.fileclump{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px;margin-top:8px;max-width:320px}
+.fileclump .fc{display:flex;align-items:center;gap:8px;background:var(--surface);border:0;border-radius:var(--r);padding:8px 10px;font-size:var(--fs-xs);cursor:pointer;min-width:0;text-align:left;color:var(--ink);transition:background var(--t)}
+.fileclump .fc:hover{background:var(--plate)}
+.fileclump .fc .ic{color:var(--muted);flex:none;width:15px;height:15px}
+.fileclump .fc .n{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fileclump .fc.more{justify-content:center;color:var(--muted);font-weight:600}
+/* typing + composer */
+.typing{flex:none;height:20px;padding:0 14px 2px;font-size:var(--fs-xs);color:var(--muted);display:flex;align-items:center;gap:7px}
+.typing .dots{display:inline-flex;gap:3px}
+.typing .dots i{width:4px;height:4px;border-radius:50%;background:var(--muted);animation:tblink 1.2s infinite}
+.typing .dots i:nth-child(2){animation-delay:.2s}.typing .dots i:nth-child(3){animation-delay:.4s}
+@keyframes tblink{0%,60%,100%{opacity:.3}30%{opacity:1}}
+.composer{flex:none;padding:0 14px 14px}
+.richcomposer{border:1px solid var(--line2);border-radius:var(--r);overflow:hidden;transition:border-color var(--t)}
+.richcomposer:focus-within{border-color:var(--ink)}
+.cbar{display:flex;align-items:center;gap:2px;padding:5px 8px;background:var(--surface)}
+.cbar .fbtn{min-width:26px;height:24px;padding:0 6px;display:grid;place-items:center;border:0;background:none;border-radius:var(--r);color:var(--soft);font-size:var(--fs-sm);cursor:pointer}
+.cbar .fbtn:hover{background:var(--plate);color:var(--ink)}
+.cbar .sep{width:1px;height:16px;background:var(--line2);margin:0 5px}
+.cbar .slash{margin-left:auto;font-size:var(--fs-xs);color:var(--muted)}
+.cbar .slash b{color:var(--soft);background:var(--paper);border-radius:2px;padding:1px 5px;font-weight:600}
+.richcomposer .field{border:0;border-radius:0;background:var(--paper);padding:7px 10px}
+.composer .snd{color:var(--muted);background:none;border:0;cursor:pointer;display:grid;place-items:center;padding:2px}
+.composer .snd:hover{color:var(--ink)}
+/* member rail */
+.mem{flex:none;width:var(--mem);background:var(--surface);overflow-y:auto;padding:14px 0}
+.memg{padding:0 12px 14px}
+.memg .lb{padding:0 8px 7px;color:var(--muted);font-size:var(--fs-xs);font-weight:600}
+.mrow{display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:var(--r);transition:background var(--t)}
+.mrow:hover{background:var(--plate)}
+.mrow .av{position:relative}
+.mrow .info{min-width:0}
+.mrow .nm{font-size:var(--fs-sm);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mrow .doing{font-size:11px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mrow.off{opacity:.55}
+.pr{position:absolute;right:-2px;bottom:-2px;width:9px;height:9px;border-radius:50%;background:var(--ink);border:2px solid var(--surface)}
+.pr.off{background:var(--muted)}
+[hidden]{display:none!important}
 </style>
 </head>
 <body>
@@ -352,6 +496,172 @@ kbd{font:inherit;font-size:11px;background:var(--surface);border-radius:3px;padd
       <div class="stage"><div class="toast"><svg class="ic sm"><use href="#i-check"/></svg><span>Posted to #beats</span><button class="tclose"><svg class="ic sm"><use href="#i-x"/></svg></button></div></div>
     </div>
 
+    <!-- MAIN SCREEN — server chat in the new style -->
+    <div class="cell wide">
+      <div class="cap"><b>Main screen — server chat</b><span>the new style on a real screen · gallery.html untouched · hover a message / file card</span></div>
+      <div class="screenwrap">
+        <div class="appshell">
+          <!-- server rail -->
+          <nav class="rail">
+            <button class="railbtn on">LB</button>
+            <button class="railbtn">SP</button>
+            <button class="railbtn">NW</button>
+            <div class="railsep"></div>
+            <button class="railbtn"><svg class="ic sm"><use href="#i-plus"/></svg></button>
+            <div class="railpfp">DX</div>
+          </nav>
+
+          <!-- channel column -->
+          <nav class="chan">
+            <div class="srvhd">
+              <div class="srvcover"></div>
+              <div class="srvbar"><span class="srvicon">LB</span><b>Late Bloom LP</b><svg class="ic sm" style="margin-left:auto;color:var(--muted)"><use href="#i-chev"/></svg></div>
+            </div>
+            <div class="chanbody">
+              <div class="cgroup">
+                <button class="crow"><svg class="ic"><use href="#i-folder"/></svg><span class="nm">Files</span></button>
+              </div>
+              <div class="cgroup">
+                <div class="cglabel"><svg class="ic sm cgcaret"><use href="#i-chev"/></svg>Channels <button class="cgadd" title="Create channel"><svg class="ic sm"><use href="#i-plus"/></svg></button></div>
+                <button class="crow"><svg class="ic"><use href="#i-hash"/></svg><span class="nm">announcements</span><span class="cgear"><svg class="ic sm"><use href="#i-settings"/></svg></span></button>
+                <button class="crow on"><svg class="ic"><use href="#i-hash"/></svg><span class="nm">beats</span><span class="cgear"><svg class="ic sm"><use href="#i-settings"/></svg></span></button>
+                <button class="crow"><svg class="ic"><use href="#i-hash"/></svg><span class="nm">verses</span><span class="ct">4</span></button>
+                <button class="crow"><svg class="ic"><use href="#i-hash"/></svg><span class="nm">mixing</span></button>
+                <button class="crow"><svg class="ic"><use href="#i-hash"/></svg><span class="nm">references</span></button>
+              </div>
+              <div class="cgroup">
+                <div class="cglabel"><svg class="ic sm cgcaret"><use href="#i-chev"/></svg>Voice <button class="cgadd" title="Create voice channel"><svg class="ic sm"><use href="#i-plus"/></svg></button></div>
+                <button class="crow"><svg class="ic"><use href="#i-voice"/></svg><span class="nm">the booth</span></button>
+                <div class="vpeople">
+                  <div class="vp m3"><span class="live"></span><span class="u m3">dev</span><span style="color:var(--muted)">sharing FL</span></div>
+                  <div class="vp m1"><span class="live"></span><span class="u m1">rae</span></div>
+                </div>
+              </div>
+            </div>
+          </nav>
+
+          <!-- main chat -->
+          <main class="main">
+            <div class="mainhd">
+              <svg class="ic"><use href="#i-hash"/></svg><span class="t">beats</span>
+              <span class="sub">put the session name in the file name</span>
+              <div class="acts">
+                <button class="iconbtn" title="Voice"><svg class="ic"><use href="#i-phone"/></svg></button>
+                <button class="iconbtn" title="Video"><svg class="ic"><use href="#i-video"/></svg></button>
+                <button class="iconbtn" title="Notifications"><svg class="ic"><use href="#i-bell"/></svg></button>
+                <button class="iconbtn" title="Search"><svg class="ic"><use href="#i-search"/></svg></button>
+                <button class="iconbtn" title="Members"><svg class="ic"><use href="#i-users"/></svg></button>
+              </div>
+            </div>
+            <div class="chtabs">
+              <button class="chtab on"><svg class="ic sm"><use href="#i-hash"/></svg>Messages</button>
+              <button class="chtab"><svg class="ic sm"><use href="#i-pin"/></svg>Pins <span class="n">3</span></button>
+              <button class="chtab"><svg class="ic sm"><use href="#i-grid"/></svg>Files <span class="n">12</span></button>
+            </div>
+            <div class="stream">
+              <div class="day"><span>Today</span></div>
+              <div class="msg">
+                <div class="hoveracts"><button class="iconbtn" title="React"><svg class="ic sm"><use href="#i-smile"/></svg></button><button class="iconbtn" title="Reply"><svg class="ic sm"><use href="#i-reply"/></svg></button><button class="iconbtn" title="More"><svg class="ic sm"><use href="#i-more"/></svg></button></div>
+                <div class="av sm">DV</div>
+                <div class="bd">
+                  <div class="by"><span class="u m3">dev</span><time>2:14 PM</time></div>
+                  <div class="tx">reworked the back half. same bpm, swapped the drums to the ones <span class="men m1">@rae</span> liked</div>
+                  <div class="filecardwrap">
+                    <button class="filecard">
+                      <div class="fcwave"><svg class="ic fic"><use href="#i-file"/></svg><span class="ext">FLP</span></div>
+                      <div class="fbody">
+                        <div class="fname">late_bloom_beat.flp</div>
+                        <div class="ftags"><span class="tag">drums</span><span class="tag">142bpm</span><span class="tag">bridge</span></div>
+                      </div>
+                    </button>
+                    <div class="fcacts"><button title="Download"><svg class="ic sm"><use href="#i-download"/></svg></button><button title="Save to my files"><svg class="ic sm"><use href="#i-save"/></svg></button><button title="More"><svg class="ic sm"><use href="#i-more"/></svg></button></div>
+                  </div>
+                  <div class="reactions"><span class="react">🔥<span class="n">3</span></span><span class="react">👀<span class="n">1</span></span></div>
+                  <div class="reply"><svg class="ic sm"><use href="#i-reply"/></svg>3 replies</div>
+                </div>
+              </div>
+              <div class="msg">
+                <div class="hoveracts"><button class="iconbtn" title="React"><svg class="ic sm"><use href="#i-smile"/></svg></button><button class="iconbtn" title="Reply"><svg class="ic sm"><use href="#i-reply"/></svg></button><button class="iconbtn" title="More"><svg class="ic sm"><use href="#i-more"/></svg></button></div>
+                <div class="av sm">DV</div>
+                <div class="bd">
+                  <div class="by"><span class="u m3">dev</span><time>2:16 PM</time></div>
+                  <div class="tx">dropped the whole one-shot pack, grab what you want</div>
+                  <div class="fileclump">
+                    <button class="fc"><svg class="ic"><use href="#i-music"/></svg><span class="n">kick_punchy.wav</span></button>
+                    <button class="fc"><svg class="ic"><use href="#i-music"/></svg><span class="n">snare_tight.wav</span></button>
+                    <button class="fc"><svg class="ic"><use href="#i-music"/></svg><span class="n">hat_loop_142.wav</span></button>
+                    <button class="fc"><svg class="ic"><use href="#i-file"/></svg><span class="n">drum_bus.flp</span></button>
+                    <button class="fc more">+3 more</button>
+                  </div>
+                </div>
+              </div>
+              <div class="newdiv"><span>New messages</span></div>
+              <div class="msg">
+                <div class="hoveracts"><button class="iconbtn" title="React"><svg class="ic sm"><use href="#i-smile"/></svg></button><button class="iconbtn" title="Reply"><svg class="ic sm"><use href="#i-reply"/></svg></button><button class="iconbtn" title="More"><svg class="ic sm"><use href="#i-more"/></svg></button></div>
+                <div class="av sm">RA</div>
+                <div class="bd">
+                  <div class="by"><span class="u m1">rae</span><time>2:31 PM</time></div>
+                  <div class="tx">this is the one. pulling it into <span class="men">#mixing</span>, dropping a scratch verse now <span class="edited">(edited)</span></div>
+                  <button class="filecard">
+                    <div class="fcwave"><svg class="ic fic"><use href="#i-music"/></svg><span class="ext">WAV</span></div>
+                    <div class="fbody">
+                      <div class="fname">bridge_scratch_rae.wav</div>
+                      <div class="ftags"><span class="tag">acapella</span></div>
+                    </div>
+                  </button>
+                </div>
+              </div>
+              <div class="msg">
+                <div class="hoveracts"><button class="iconbtn" title="React"><svg class="ic sm"><use href="#i-smile"/></svg></button><button class="iconbtn" title="Reply"><svg class="ic sm"><use href="#i-reply"/></svg></button><button class="iconbtn" title="More"><svg class="ic sm"><use href="#i-more"/></svg></button></div>
+                <div class="av sm">TM</div>
+                <div class="bd">
+                  <div class="by"><span class="u m2">tomo</span><time>2:47 PM</time></div>
+                  <div class="tx">ableton user here, opened dev's stems fine. one note on the low end — dropped a comment on the bounce</div>
+                </div>
+              </div>
+            </div>
+            <div class="typing"><span class="dots"><i></i><i></i><i></i></span>tomo is typing</div>
+            <div class="composer">
+              <div class="richcomposer">
+                <div class="cbar">
+                  <button class="fbtn" style="font-weight:700" title="Bold">B</button>
+                  <button class="fbtn" style="font-style:italic" title="Italic">I</button>
+                  <button class="fbtn" style="text-decoration:line-through" title="Strikethrough">S</button>
+                  <button class="fbtn" title="Code" style="font-family:monospace;font-size:12px">&lt;/&gt;</button>
+                  <button class="fbtn" title="Link"><svg class="ic sm"><use href="#i-link"/></svg></button>
+                  <span class="sep"></span>
+                  <button class="fbtn" title="Emoji"><svg class="ic sm"><use href="#i-smile"/></svg></button>
+                  <span class="slash">type <b>/</b> for commands</span>
+                </div>
+                <div class="field">
+                  <button class="iconbtn" style="width:26px;height:26px" title="Attach files"><svg class="ic sm"><use href="#i-clip"/></svg></button>
+                  <input placeholder="Message #beats">
+                  <svg class="ic sm" style="color:var(--muted)"><use href="#i-at"/></svg>
+                  <button class="snd"><svg class="ic sm"><use href="#i-send"/></svg></button>
+                </div>
+              </div>
+            </div>
+          </main>
+
+          <!-- member rail -->
+          <aside class="mem">
+            <div class="memg">
+              <div class="lb">Admins, 2</div>
+              <div class="mrow"><div class="av sm">JX<span class="pr"></span></div><div class="info"><div class="nm"><span class="u m5">jax</span></div><div class="doing">arranging, Ableton</div></div></div>
+              <div class="mrow"><div class="av sm">RA<span class="pr"></span></div><div class="info"><div class="nm"><span class="u m1">rae</span></div><div class="doing">recording</div></div></div>
+            </div>
+            <div class="memg">
+              <div class="lb">Members, 4</div>
+              <div class="mrow"><div class="av sm">DV<span class="pr"></span></div><div class="info"><div class="nm"><span class="u m3">dev</span></div><div class="doing">in FL Studio</div></div></div>
+              <div class="mrow"><div class="av sm">TM<span class="pr"></span></div><div class="info"><div class="nm"><span class="u m2">tomo</span></div><div class="doing">reviewing the beat</div></div></div>
+              <div class="mrow off"><div class="av sm">KO<span class="pr off"></span></div><div class="info"><div class="nm"><span class="u m4">kofi</span></div><div class="doing">offline</div></div></div>
+              <div class="mrow off"><div class="av sm">NL<span class="pr off"></span></div><div class="info"><div class="nm"><span class="u m6">nel</span></div><div class="doing">offline</div></div></div>
+            </div>
+          </aside>
+        </div>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -367,6 +677,26 @@ kbd{font:inherit;font-size:11px;background:var(--surface);border-radius:3px;padd
 <symbol id="i-link" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></symbol>
 <symbol id="i-chev" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></symbol>
 <symbol id="i-smile" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2M9 9h.01M15 9h.01"/></symbol>
+<symbol id="i-folder" viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></symbol>
+<symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+<symbol id="i-settings" viewBox="0 0 24 24"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></symbol>
+<symbol id="i-voice" viewBox="0 0 24 24"><path d="M11 5L6 9H2v6h4l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M19 5a10 10 0 0 1 0 14"/></symbol>
+<symbol id="i-phone" viewBox="0 0 24 24"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2z"/></symbol>
+<symbol id="i-video" viewBox="0 0 24 24"><path d="M23 7l-7 5 7 5z"/><rect x="1" y="5" width="15" height="14" rx="2"/></symbol>
+<symbol id="i-bell" viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0"/></symbol>
+<symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.3-4.3"/></symbol>
+<symbol id="i-users" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.7"/></symbol>
+<symbol id="i-reply" viewBox="0 0 24 24"><path d="M9 14L4 9l5-5M20 20v-7a4 4 0 0 0-4-4H4"/></symbol>
+<symbol id="i-more" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></symbol>
+<symbol id="i-file" viewBox="0 0 24 24"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M13 2v7h7"/></symbol>
+<symbol id="i-music" viewBox="0 0 24 24"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></symbol>
+<symbol id="i-download" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></symbol>
+<symbol id="i-save" viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></symbol>
+<symbol id="i-clip" viewBox="0 0 24 24"><path d="M21.4 11L12.2 20.2a6 6 0 0 1-8.5-8.5l9.2-9.2a4 4 0 0 1 5.7 5.7l-9.2 9.2a2 2 0 0 1-2.8-2.8l8.5-8.5"/></symbol>
+<symbol id="i-at" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M16 8v5a3 3 0 0 0 6 0v-1a10 10 0 1 0-3.9 7.9"/></symbol>
+<symbol id="i-send" viewBox="0 0 24 24"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4z"/></symbol>
+<symbol id="i-pin" viewBox="0 0 24 24"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/></symbol>
+<symbol id="i-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></symbol>
 </defs></svg>
 
 <script>
