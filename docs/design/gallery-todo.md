@@ -103,6 +103,19 @@ scrim, no shadow; hairlines inset, never full-width.
     + dialogs (button-cluster consistency, grid/list distribution, edge insets). Run the
     skill surface-by-surface.
 
+- [ ] **Minimise the remaining always-visible filters into dropdowns (multi-select).** The
+  file-browser filters + view are now compact `.btn` dropdowns; carry that further:
+  - **Search scope** (`This server / This channel / Everywhere`) → a single **dropdown**,
+    and — like every filter — **multi-select** (check the scopes you want), not three big
+    boxes always on screen.
+  - Any **other filter still shown as an always-visible row/segment** that could collapse
+    into a dropdown → collapse it. Default posture: a filter is a `.btn` dropdown with
+    multi-select checkboxes in its `.menu`; only the *result* of the filter stays on screen,
+    not the full set of options. Applies to the search result-type tabs, the feed/explorer
+    quick-filter chips (evaluate: chips are fine when few + frequently toggled; fold into a
+    dropdown when they're a long always-on row), and any segmented control that isn't a
+    2-option primary mode. Multi-select is the default for filters (obviously).
+
 ## Next galleries (not started)
 
 - [ ] **Mobile gallery** — a **separate** gallery file for the phone layouts
