@@ -9,166 +9,298 @@
 /* ============================================================================
    SANDBOX TOKENS — a private copy, edit freely.
    This page is deliberately standalone: nothing here feeds gallery.html or
-   styleguide.html. Rework the dialog styling here, then port what you like
-   back into styleguide.html (tokens) + gallery.html (components).
+   styleguide.html. Rework the button + dialog styling here, then port what you
+   like back into styleguide.html (tokens) + gallery.html (components).
+
+   DIRECTION (2026-08-22): are.na-flavoured monochrome.
+   · buttons are small — the BOX shrinks, the text size holds
+   · most buttons carry NO resting box; a box/border/colour only appears on
+     interaction. Three hover archetypes, each with its own click response:
+       colour-change  →  fill shifts on hover, INVERTS on click   (.btn)
+       text-highlight →  grey text → full ink/white on hover      (.btn.ghost)
+       border-on-hover→  contrasty border appears, BRIGHTENS click (.btn.outline)
+   · dialogs drop the grey header/footer bars — a single INSET hairline
+     (never full width: a gap on both ends) separates title / body / actions
    ========================================================================== */
 :root{
-  --paper:#FCFCFC; --surface:#F1F1F1; --plate:#E7E7E7; --paper1:#E4E4E4;
-  --ink:#141414; --soft:#3A3A3A; --muted:#6B6B6B; --line:#DADADA; --line2:#C4C4C4;
+  --paper:#FCFCFC; --surface:#F1F1F1; --plate:#E5E5E5; --paper1:#E4E4E4;
+  --ink:#141414; --soft:#3A3A3A; --muted:#6B6B6B; --line:#DADADA; --line2:#BEBEBE;
   --on-ink:#FCFCFC; --tagbg:#DFDFDF; --danger:#B0503F;
   --m1:#B0503F; --m2:#A9791F; --m3:#3F7A4E; --m4:#2F7480; --m5:#3F65A6; --m6:#77558F;
   --fs-mi:11px; --fs-xs:12px; --fs-sm:13px; --fs:14.5px; --fs-lg:16px; --fs-xl:20px;
   --font:'Jost','Avenir Next','Segoe UI',Arial,sans-serif;
-  --s1:4px; --s2:8px; --s3:12px; --s4:16px; --s5:24px; --r:3px; --t:150ms ease;
+  --s1:4px; --s2:8px; --s3:12px; --s4:16px; --s5:24px; --r:3px; --t:120ms ease;
+  /* inset for dialog hairlines — the L/R (or T/B) gap that keeps a line off the edge */
+  --hair-inset:14px;
 }
 :root[data-theme="dark"]{
-  --paper:#0E0E0E; --surface:#181818; --plate:#232323; --paper1:#242424;
-  --ink:#F0F0F0; --soft:#C6C6C6; --muted:#8C8C8C; --line:#2A2A2A; --line2:#3A3A3A;
-  --on-ink:#0E0E0E; --tagbg:#2A2A2A; --danger:#D98A7A;
+  --paper:#0A0A0A; --surface:#161616; --plate:#212121; --paper1:#1E1E1E;
+  --ink:#F4F4F4; --soft:#C6C6C6; --muted:#8C8C8C; --line:#282828; --line2:#3C3C3C;
+  --on-ink:#0A0A0A; --tagbg:#262626; --danger:#D98A7A;
   --m1:#D98A7A; --m2:#D6B26B; --m3:#82BE91; --m4:#6FB9C4; --m5:#89A6D6; --m6:#B294C7;
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
-  --paper:#0E0E0E; --surface:#181818; --plate:#232323; --paper1:#242424;
-  --ink:#F0F0F0; --soft:#C6C6C6; --muted:#8C8C8C; --line:#2A2A2A; --line2:#3A3A3A;
-  --on-ink:#0E0E0E; --tagbg:#2A2A2A; --danger:#D98A7A;
+  --paper:#0A0A0A; --surface:#161616; --plate:#212121; --paper1:#1E1E1E;
+  --ink:#F4F4F4; --soft:#C6C6C6; --muted:#8C8C8C; --line:#282828; --line2:#3C3C3C;
+  --on-ink:#0A0A0A; --tagbg:#262626; --danger:#D98A7A;
   --m1:#D98A7A; --m2:#D6B26B; --m3:#82BE91; --m4:#6FB9C4; --m5:#89A6D6; --m6:#B294C7;
 }}
 
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:var(--plate);color:var(--ink);font:var(--fs)/1.5 var(--font);-webkit-font-smoothing:antialiased}
-svg.ic{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
-svg.ic.sm{width:15px;height:15px}
+svg.ic{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;flex:none}
+svg.ic.sm{width:14px;height:14px}
 kbd{font:inherit;font-size:11px;background:var(--surface);border-radius:3px;padding:1px 6px;box-shadow:inset 0 0 0 1px var(--line)}
 
 /* ---- page chrome ---- */
-.topbar{position:sticky;top:0;z-index:10;display:flex;align-items:center;gap:12px;padding:14px 24px;background:var(--paper);box-shadow:inset 0 -1px 0 var(--line)}
+.topbar{position:sticky;top:0;z-index:10;display:flex;align-items:center;gap:12px;padding:13px 24px;background:var(--paper);box-shadow:inset 0 -1px 0 var(--line)}
 .topbar h1{font-size:var(--fs-lg);font-weight:700;letter-spacing:.01em}
 .topbar .sub{color:var(--muted);font-size:var(--fs-xs)}
 .topbar .sp{flex:1}
-.themebtn{display:inline-flex;align-items:center;gap:7px;padding:7px 12px;border-radius:var(--r);background:var(--surface);color:var(--soft);font-size:var(--fs-sm);cursor:pointer}
-.themebtn:hover{background:var(--plate)}
-.wrap{max-width:1200px;margin:0 auto;padding:28px 24px 80px}
-.note{color:var(--muted);font-size:var(--fs-sm);max-width:64ch;margin-bottom:26px;line-height:1.55}
+.wrap{max-width:1200px;margin:0 auto;padding:28px 24px 90px}
+.note{color:var(--muted);font-size:var(--fs-sm);max-width:66ch;margin-bottom:26px;line-height:1.6}
 .note code{background:var(--surface);border-radius:3px;padding:1px 5px;font-size:.9em}
+.note b{color:var(--soft)}
 
-/* ---- panel grid: each dialog sits in its own labelled cell ---- */
+/* ---- panel grid: each specimen sits in its own labelled cell ---- */
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:22px;align-items:start}
 .cell{background:var(--paper);border-radius:8px;overflow:hidden;box-shadow:inset 0 0 0 1px var(--line)}
+.cell.wide{grid-column:1/-1}
 .cell .cap{display:flex;align-items:baseline;gap:8px;padding:11px 14px;box-shadow:inset 0 -1px 0 var(--line)}
 .cell .cap b{font-size:var(--fs-sm)}
 .cell .cap span{color:var(--muted);font-size:var(--fs-xs)}
 .stage{padding:24px;display:flex;align-items:center;justify-content:center;background:var(--plate);min-height:220px}
 .stage.tall{min-height:320px}
+.stage.pad{align-items:flex-start}
+/* a modal sits on a DARKENED backdrop (scrim) — never a drop shadow (the rule).
+   Mirrors gallery.html's .stage.scrim: an ink base plus a dark overlay so the
+   backdrop reads as *darkened* in both themes (ink alone goes near-white in dark). */
+.stage.scrim{background:var(--ink);position:relative}
+.stage.scrim::before{content:"";position:absolute;inset:0;background:rgba(0,0,0,.34)}
+:root[data-theme="dark"] .stage.scrim::before,
+:root:not([data-theme="light"]) .stage.scrim::before{background:rgba(0,0,0,.55)}
+.stage.scrim>*{position:relative;z-index:1}
 
 /* ============================================================================
-   COMPONENTS under test — copied from gallery.html so they render standalone.
-   These are what you're here to restyle.
+   BUTTONS — small; the box shrinks, the label holds. Three hover archetypes,
+   each with a matching click response. Rest state carries no box unless the
+   archetype is a filled colour-change (.btn / .primary / .danger).
+
+   The demo mirror classes .s-hover / .s-active let a STATIC panel show every
+   state at once (they replicate the :hover / :active rules verbatim).
    ========================================================================== */
-.btn{display:inline-flex;align-items:center;gap:7px;background:var(--surface);border:none;border-radius:var(--r);padding:8px 14px;font:inherit;font-size:var(--fs-sm);font-weight:500;color:var(--ink);cursor:pointer;transition:background var(--t)}
-.btn:hover{background:var(--plate)}
-.btn.primary{background:var(--ink);color:var(--on-ink)}
-.btn.primary:hover{opacity:.9}
-.btn.danger{background:var(--danger);color:var(--on-ink)}
-.btn.sm{padding:6px 10px;font-size:var(--fs-xs)}
-.iconbtn{width:32px;height:32px;display:grid;place-items:center;border:none;background:none;border-radius:var(--r);color:var(--soft);cursor:pointer;transition:background var(--t)}
-.iconbtn:hover{background:var(--plate)}
-.field{display:flex;align-items:center;gap:8px;background:var(--paper);border:1px solid var(--line2);border-radius:var(--r);padding:9px 11px}
-.field input{flex:1;border:none;background:none;font:inherit;color:var(--ink);outline:none;min-width:0}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;
+  border:1px solid transparent;border-radius:var(--r);
+  padding:5px 11px;font:inherit;font-size:var(--fs-sm);font-weight:500;line-height:1.35;
+  color:var(--ink);background:none;cursor:pointer;white-space:nowrap;
+  transition:background var(--t),color var(--t),border-color var(--t)}
+.btn.sm{padding:4px 9px;font-size:var(--fs-xs)}
+.btn .ic{width:14px;height:14px}
+
+/* (1) COLOUR-CHANGE — the default. The only archetype with a resting box.
+      Hover shifts the fill; click INVERTS (fill <-> label). */
+.btn{background:var(--surface);color:var(--ink)}
+.btn:hover,.btn.s-hover{background:var(--plate)}
+.btn:active,.btn.s-active{background:var(--ink);color:var(--on-ink)}
+
+/* primary = filled ink anchor (a pre-inverted colour-change button) */
+.btn.primary{background:var(--ink);color:var(--on-ink);border-color:var(--ink)}
+.btn.primary:hover,.btn.primary.s-hover{background:var(--soft);border-color:var(--soft)}
+.btn.primary:active,.btn.primary.s-active{background:var(--paper);color:var(--ink)}
+
+/* danger = the same colour-change model in member-red */
+.btn.danger{background:var(--danger);color:#fff;border-color:var(--danger)}
+.btn.danger:hover,.btn.danger.s-hover{background:color-mix(in srgb,var(--danger),#000 12%)}
+:root[data-theme="dark"] .btn.danger:hover,:root[data-theme="dark"] .btn.danger.s-hover{background:color-mix(in srgb,var(--danger),#fff 14%)}
+.btn.danger:active,.btn.danger.s-active{background:var(--paper);color:var(--danger)}
+
+/* (2) TEXT-HIGHLIGHT — NO box, ever. Grey label → full ink/white on hover.
+      For quiet secondary/tertiary actions (Cancel, inline links). */
+.btn.ghost{background:none;color:var(--muted);padding-left:8px;padding-right:8px}
+.btn.ghost:hover,.btn.ghost.s-hover{background:none;color:var(--ink)}
+.btn.ghost:active,.btn.ghost.s-active{background:none;color:var(--ink)}
+
+/* (3) BORDER-ON-HOVER — no resting box; a contrasty border appears on hover and
+      BRIGHTENS (steps to full contrast) on click. are.na's log-in / sign-up. */
+.btn.outline{background:none;color:var(--soft);border-color:transparent}
+.btn.outline:hover,.btn.outline.s-hover{border-color:var(--soft);color:var(--ink)}
+.btn.outline:active,.btn.outline.s-active{border-color:var(--ink);color:var(--ink)}
+
+/* icon button — square, boxless at rest; colour-change on hover, invert on click */
+.iconbtn{display:grid;place-items:center;width:28px;height:28px;border:0;border-radius:var(--r);
+  background:none;color:var(--soft);cursor:pointer;transition:background var(--t),color var(--t)}
+.iconbtn:hover,.iconbtn.s-hover{background:var(--surface);color:var(--ink)}
+.iconbtn:active,.iconbtn.s-active{background:var(--ink);color:var(--on-ink)}
+
+/* field — the one element allowed a resting border (affordance, per the rules) */
+.field{display:flex;align-items:center;gap:8px;background:var(--paper);border:1px solid var(--line2);
+  border-radius:var(--r);padding:7px 10px;transition:border-color var(--t)}
+.field:focus-within{border-color:var(--ink)}
+.field input{flex:1;border:0;background:none;font:inherit;font-size:var(--fs-sm);color:var(--ink);outline:none;min-width:0}
 .field input::placeholder{color:var(--muted)}
 .field .ic{color:var(--muted)}
 .ulab{display:block;font-size:var(--fs-xs);font-weight:600;color:var(--soft);margin:14px 0 5px}
 .ulab:first-child{margin-top:0}
 
-/* modal (scrim shown per-cell, not full screen, so several are visible at once) */
-.modal{width:100%;max-width:360px;background:var(--paper);border-radius:var(--r);box-shadow:0 20px 60px rgba(0,0,0,.28);overflow:hidden}
-.uhd{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--surface)}
-.uhd b{font-size:var(--fs-sm)}
-.ubody{padding:16px}
-.ufoot{display:flex;align-items:center;gap:8px;justify-content:flex-end;padding:12px 16px;box-shadow:inset 0 1px 0 var(--line)}
+/* ---- states showcase table ---- */
+.states{display:grid;grid-template-columns:auto repeat(3,1fr);gap:14px 20px;align-items:center;width:100%;padding:6px 8px}
+.states .rh{font-size:var(--fs-xs);color:var(--muted);font-weight:600}
+.states .colh{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600;text-align:center}
+.states .cellbox{display:flex;justify-content:center}
 
-/* dropdown menu */
-.menu{width:230px;background:var(--paper);border-radius:var(--r);box-shadow:0 12px 40px rgba(0,0,0,.28);padding:5px}
-.menu .mlabel{font-size:10px;color:var(--muted);padding:6px 10px 3px}
-.menu button{display:flex;align-items:center;gap:9px;width:100%;text-align:left;padding:8px 10px;border:none;background:none;border-radius:var(--r);font:inherit;font-size:var(--fs-sm);color:var(--ink);cursor:pointer}
+/* ============================================================================
+   DIALOG — flat card, no grey header/footer bars. A single INSET hairline
+   (a gap on both ends) separates title / body / actions. Scrim, not shadow,
+   is what lifts a modal in the real app — shown lightly here so several read
+   at once on the page ground.
+   ========================================================================== */
+.modal{width:100%;max-width:360px;background:var(--paper);border-radius:var(--r);overflow:hidden}
+/* .hair — the reusable inset hairline. Horizontal by default; add .v for vertical. */
+.hair{position:relative}
+.hair::after{content:"";position:absolute;left:var(--hair-inset);right:var(--hair-inset);bottom:0;height:1px;background:var(--line)}
+.hair.top::after{bottom:auto;top:0}
+.uhd{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px}
+.uhd b{font-size:var(--fs-sm);font-weight:600}
+.ubody{padding:15px 16px}
+.ufoot{display:flex;align-items:center;gap:6px;justify-content:flex-end;padding:11px 14px}
+.confirm{max-width:340px}
+.confirm .msg{font-size:var(--fs-sm);color:var(--soft);line-height:1.55}
+.tag{background:var(--tagbg);color:var(--soft);border-radius:var(--r);padding:2px 8px;font-size:var(--fs-xs)}
+
+/* dropdown menu — boxless rows, colour-change hover, inset hairline separators */
+.menu{width:230px;background:var(--paper);border-radius:var(--r);box-shadow:0 12px 40px rgba(0,0,0,.26);padding:5px}
+:root[data-theme="dark"] .menu{box-shadow:0 12px 40px rgba(0,0,0,.5)}
+.menu .mlabel{font-size:10px;letter-spacing:.04em;color:var(--muted);font-weight:600;padding:7px 10px 4px}
+.menu button{display:flex;align-items:center;gap:10px;width:100%;text-align:left;padding:7px 10px;border:0;
+  background:none;border-radius:var(--r);font:inherit;font-size:var(--fs-sm);color:var(--ink);cursor:pointer;transition:background var(--t)}
 .menu button:hover{background:var(--surface)}
+.menu button:active{background:var(--ink);color:var(--on-ink)}
+.menu button:active .ic{color:var(--on-ink)}
 .menu button.danger{color:var(--danger)}
-.menu .sep{height:1px;background:var(--line);margin:4px 0}
+.menu button .ic{color:var(--muted)}
+/* menu separator — inset hairline, not full width */
+.menu .sep{height:1px;background:var(--line);margin:5px var(--hair-inset)}
 
-/* report radio list */
-.repopts{display:flex;flex-direction:column;gap:6px}
-.repopt{display:flex;align-items:center;gap:10px;width:100%;text-align:left;padding:10px 12px;border:none;border-radius:var(--r);background:var(--surface);font:inherit;font-size:var(--fs-sm);color:var(--soft);cursor:pointer;transition:background var(--t)}
-.repopt:hover{background:var(--plate)}
-.repopt .rdot{flex:none;width:14px;height:14px;border-radius:50%;border:2px solid var(--line2)}
-.repopt.on{color:var(--ink)}
+/* report radio list — boxless rows, colour-change hover */
+.repopts{display:flex;flex-direction:column;gap:4px}
+.repopt{display:flex;align-items:center;gap:10px;width:100%;text-align:left;padding:9px 10px;border:0;border-radius:var(--r);
+  background:none;font:inherit;font-size:var(--fs-sm);color:var(--soft);cursor:pointer;transition:background var(--t),color var(--t)}
+.repopt:hover{background:var(--surface);color:var(--ink)}
+.repopt .rdot{flex:none;width:14px;height:14px;border-radius:50%;border:2px solid var(--line2);transition:border-color var(--t)}
+.repopt.on{color:var(--ink);background:var(--surface)}
 .repopt.on .rdot{border-color:var(--ink);background:radial-gradient(var(--ink) 0 4px,transparent 5px)}
 
-/* visibility segmented (share) */
-.visrow{display:flex;gap:8px}
-.visopt{display:flex;align-items:center;gap:8px;flex:1;background:var(--surface);border-radius:var(--r);padding:10px 12px;cursor:pointer;transition:background var(--t)}
+/* visibility segmented (share) — colour-change; the chosen one inverts */
+.visrow{display:flex;gap:6px}
+.visopt{display:flex;flex-direction:column;gap:1px;flex:1;background:var(--surface);border:1px solid transparent;border-radius:var(--r);
+  padding:9px 11px;cursor:pointer;transition:background var(--t),color var(--t);text-align:left}
+.visopt .vt{display:flex;align-items:center;gap:7px;font-size:var(--fs-sm);font-weight:500}
 .visopt:hover{background:var(--plate)}
 .visopt.on{background:var(--ink);color:var(--on-ink)}
 .visopt .ic{color:var(--muted)}.visopt.on .ic{color:var(--on-ink)}
-.visopt small{display:block;font-size:10px;color:var(--muted)}.visopt.on small{color:rgba(255,255,255,.7)}
-.sharerow{display:flex;align-items:center;gap:9px;padding:8px 2px;font-size:var(--fs-sm)}
-.av{flex:none;width:28px;height:28px;border-radius:50%;background:var(--paper1);color:var(--soft);display:grid;place-items:center;font-weight:700;font-size:var(--fs-xs)}
+.visopt small{font-size:10px;color:var(--muted)}
+/* selected tile inverts to ink bg → subtext must be a translucent ON-INK, not a
+   hardcoded white (which vanished on the near-white ink of the dark theme). */
+.visopt.on small{color:color-mix(in srgb,var(--on-ink),transparent 32%)}
+.sharerow{display:flex;align-items:center;gap:9px;padding:7px 2px;font-size:var(--fs-sm)}
+.av{flex:none;width:26px;height:26px;border-radius:50%;background:var(--paper1);color:var(--soft);display:grid;place-items:center;font-weight:700;font-size:var(--fs-xs)}
 
 /* toast */
-.toast{display:inline-flex;align-items:center;gap:9px;background:var(--ink);color:var(--on-ink);border-radius:var(--r);padding:10px 12px;font-size:var(--fs-sm);box-shadow:0 10px 30px rgba(0,0,0,.3)}
-.toast .tclose{margin-left:6px;color:var(--on-ink);opacity:.7;background:none;border:none;cursor:pointer;display:grid;place-items:center}
-
-/* confirm */
-.confirm{width:100%;max-width:340px}
-.confirm .msg{font-size:var(--fs-sm);color:var(--soft);line-height:1.5}
-.tag{background:var(--tagbg);color:var(--soft);border-radius:var(--r);padding:2px 8px;font-size:var(--fs-xs)}
+.toast{display:inline-flex;align-items:center;gap:9px;background:var(--ink);color:var(--on-ink);border-radius:var(--r);
+  padding:9px 12px;font-size:var(--fs-sm);box-shadow:0 10px 30px rgba(0,0,0,.3)}
+.toast .tclose{margin-left:6px;color:var(--on-ink);opacity:.7;background:none;border:0;cursor:pointer;display:grid;place-items:center}
+.toast .tclose:hover{opacity:1}
 </style>
 </head>
 <body>
 <div class="topbar">
   <h1>eski — styling sandbox</h1>
-  <span class="sub">standalone tokens · rework dialogs here, port back later</span>
+  <span class="sub">standalone tokens · rework buttons + dialogs here, port back later</span>
   <span class="sp"></span>
-  <button class="themebtn" id="themebtn"><svg class="ic sm"><use href="#i-smile"/></svg><span id="themelbl">Dark</span></button>
+  <button class="themebtn iconbtn" id="themebtn" title="Toggle theme"><svg class="ic sm"><use href="#i-smile"/></svg></button>
 </div>
 
 <div class="wrap">
-  <p class="note">A private playground. The tokens in this file's <code>:root</code> are a
-  copy — change a value and only this page reacts. Each dialog below is a real,
-  static render of a gallery component so you can iterate on spacing, radius,
-  colour and type without loading the whole app. When you're happy, copy the
-  changes into <code>styleguide.html</code> (tokens) and <code>gallery.html</code> (markup).</p>
+  <p class="note">A private playground — the tokens in this file's <code>:root</code> are a copy, so a change
+  reacts only here. The direction under test is <b>are.na-flavoured monochrome</b>: small buttons whose
+  <b>box shrinks but label holds</b>, mostly <b>boxless at rest</b>, with three hover archetypes
+  (<b>colour-change</b> → inverts on click · <b>text-highlight</b> grey→white · <b>border-on-hover</b> →
+  brightens on click); and dialogs that drop the grey header/footer bars for a single <b>inset hairline</b>
+  (never full width). Hover and click the specimens — the first panel also shows every state statically.
+  When it's right, port tokens → <code>styleguide.html</code> and markup → <code>gallery.html</code>.</p>
 
   <div class="grid">
 
+    <!-- BUTTON STATES SHOWCASE -->
+    <div class="cell wide">
+      <div class="cap"><b>Button archetypes</b><span>rest · hover · click — shown statically, and live below</span></div>
+      <div class="stage pad">
+        <div class="states">
+          <span class="colh"></span><span class="colh">rest</span><span class="colh">hover</span><span class="colh">click</span>
+
+          <span class="rh">Colour-change<br><span style="color:var(--muted);font-weight:400">.btn — inverts</span></span>
+          <span class="cellbox"><button class="btn">Save changes</button></span>
+          <span class="cellbox"><button class="btn s-hover">Save changes</button></span>
+          <span class="cellbox"><button class="btn s-active">Save changes</button></span>
+
+          <span class="rh">Primary<br><span style="color:var(--muted);font-weight:400">filled anchor</span></span>
+          <span class="cellbox"><button class="btn primary">Create</button></span>
+          <span class="cellbox"><button class="btn primary s-hover">Create</button></span>
+          <span class="cellbox"><button class="btn primary s-active">Create</button></span>
+
+          <span class="rh">Text-highlight<br><span style="color:var(--muted);font-weight:400">.ghost — no box</span></span>
+          <span class="cellbox"><button class="btn ghost">Cancel</button></span>
+          <span class="cellbox"><button class="btn ghost s-hover">Cancel</button></span>
+          <span class="cellbox"><button class="btn ghost s-active">Cancel</button></span>
+
+          <span class="rh">Border-on-hover<br><span style="color:var(--muted);font-weight:400">.outline — brightens</span></span>
+          <span class="cellbox"><button class="btn outline">Log in</button></span>
+          <span class="cellbox"><button class="btn outline s-hover">Log in</button></span>
+          <span class="cellbox"><button class="btn outline s-active">Log in</button></span>
+
+          <span class="rh">Danger<br><span style="color:var(--muted);font-weight:400">colour-change</span></span>
+          <span class="cellbox"><button class="btn danger">Delete</button></span>
+          <span class="cellbox"><button class="btn danger s-hover">Delete</button></span>
+          <span class="cellbox"><button class="btn danger s-active">Delete</button></span>
+
+          <span class="rh">Icon<br><span style="color:var(--muted);font-weight:400">.iconbtn — inverts</span></span>
+          <span class="cellbox"><button class="iconbtn"><svg class="ic"><use href="#i-trash"/></svg></button></span>
+          <span class="cellbox"><button class="iconbtn s-hover"><svg class="ic"><use href="#i-trash"/></svg></button></span>
+          <span class="cellbox"><button class="iconbtn s-active"><svg class="ic"><use href="#i-trash"/></svg></button></span>
+        </div>
+      </div>
+    </div>
+
     <!-- CONFIRM -->
     <div class="cell">
-      <div class="cap"><b>Confirm — destructive</b><span>scrim + short buttons</span></div>
-      <div class="stage"><div class="modal confirm">
-        <div class="uhd"><b>Delete channel?</b><button class="iconbtn"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
+      <div class="cap"><b>Confirm — destructive</b><span>hairline split, short buttons</span></div>
+      <div class="stage scrim"><div class="modal confirm">
+        <div class="uhd hair"><b>Delete channel?</b><button class="iconbtn"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
         <div class="ubody"><div class="msg">This removes <b>#references</b> and its message history. Files posted there stay in the File explorer.</div></div>
-        <div class="ufoot"><button class="btn">Cancel</button><button class="btn danger"><svg class="ic sm"><use href="#i-trash"/></svg>Delete</button></div>
+        <div class="ufoot hair top"><button class="btn ghost">Cancel</button><button class="btn danger"><svg class="ic sm"><use href="#i-trash"/></svg>Delete</button></div>
       </div></div>
     </div>
 
     <!-- FORM MODAL -->
     <div class="cell">
       <div class="cap"><b>Create channel</b><span>form modal</span></div>
-      <div class="stage tall"><div class="modal">
-        <div class="uhd"><b>Create channel</b><button class="iconbtn"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
+      <div class="stage tall scrim"><div class="modal">
+        <div class="uhd hair"><b>Create channel</b><button class="iconbtn"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
         <div class="ubody">
           <label class="ulab">Channel name</label>
           <div class="field"><svg class="ic sm"><use href="#i-hash"/></svg><input placeholder="e.g. mastering"></div>
           <label class="ulab">Category</label>
           <div class="field"><input value="Production" readonly><svg class="ic sm"><use href="#i-chev"/></svg></div>
         </div>
-        <div class="ufoot"><button class="btn">Cancel</button><button class="btn primary">Create</button></div>
+        <div class="ufoot hair top"><button class="btn ghost">Cancel</button><button class="btn primary">Create</button></div>
       </div></div>
     </div>
 
     <!-- REPORT -->
     <div class="cell">
       <div class="cap"><b>Report</b><span>reason radio list</span></div>
-      <div class="stage tall"><div class="modal">
-        <div class="uhd"><b>Report this file</b><button class="iconbtn"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
+      <div class="stage tall scrim"><div class="modal">
+        <div class="uhd hair"><b>Report this file</b><button class="iconbtn"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
         <div class="ubody">
           <label class="ulab">Reason</label>
           <div class="repopts">
@@ -177,26 +309,26 @@ kbd{font:inherit;font-size:11px;background:var(--surface);border-radius:3px;padd
             <button class="repopt"><span class="rdot"></span>Spam or a scam</button>
           </div>
         </div>
-        <div class="ufoot"><button class="btn">Cancel</button><button class="btn danger">Submit report</button></div>
+        <div class="ufoot hair top"><button class="btn ghost">Cancel</button><button class="btn danger">Submit report</button></div>
       </div></div>
     </div>
 
     <!-- SHARE / VISIBILITY -->
     <div class="cell">
       <div class="cap"><b>Share / visibility</b><span>segmented + people</span></div>
-      <div class="stage tall"><div class="modal">
-        <div class="uhd"><b>Share “cover_bloom.png”</b><button class="iconbtn"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
+      <div class="stage tall scrim"><div class="modal">
+        <div class="uhd hair"><b>Share “cover_bloom.png”</b><button class="iconbtn"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
         <div class="ubody">
           <label class="ulab">Visibility</label>
           <div class="visrow">
-            <button class="visopt on"><svg class="ic sm"><use href="#i-user"/></svg>Public<small>anyone with the link</small></button>
-            <button class="visopt"><svg class="ic sm"><use href="#i-lock"/></svg>Private<small>only you</small></button>
+            <button class="visopt on"><span class="vt"><svg class="ic sm"><use href="#i-user"/></svg>Public</span><small>anyone with the link</small></button>
+            <button class="visopt"><span class="vt"><svg class="ic sm"><use href="#i-lock"/></svg>Private</span><small>only you</small></button>
           </div>
           <label class="ulab">People with access</label>
           <div class="sharerow"><span class="av">MI</span><span>mira</span></div>
           <div class="sharerow"><span class="av">RA</span><span>rae</span></div>
         </div>
-        <div class="ufoot"><button class="btn"><svg class="ic sm"><use href="#i-link"/></svg>Copy link</button><button class="btn primary">Done</button></div>
+        <div class="ufoot hair top"><button class="btn ghost"><svg class="ic sm"><use href="#i-link"/></svg>Copy link</button><button class="btn primary">Done</button></div>
       </div></div>
     </div>
 
@@ -222,7 +354,7 @@ kbd{font:inherit;font-size:11px;background:var(--surface);border-radius:3px;padd
   </div>
 </div>
 
-<!-- icon sprite (only what these dialogs use) -->
+<!-- icon sprite (only what these specimens use) -->
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
 <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></symbol>
 <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></symbol>
@@ -239,10 +371,10 @@ kbd{font:inherit;font-size:11px;background:var(--surface);border-radius:3px;padd
 <script>
 // theme toggle — light / dark / system(default). Sandbox convenience only.
 (function(){
-  var root=document.documentElement, btn=document.getElementById('themebtn'), lbl=document.getElementById('themelbl');
+  var root=document.documentElement, btn=document.getElementById('themebtn');
   function cur(){return root.getAttribute('data-theme')||'system';}
   function apply(t){ if(t==='system')root.removeAttribute('data-theme'); else root.setAttribute('data-theme',t);
-    lbl.textContent = t==='dark'?'Dark':t==='light'?'Light':'System'; }
+    btn.title = (t==='dark'?'Dark':t==='light'?'Light':'System')+' — click to cycle'; }
   btn.addEventListener('click',function(){var t=cur();apply(t==='system'?'light':t==='light'?'dark':'system');});
   // report radio demo
   document.querySelectorAll('.repopt').forEach(function(o){o.addEventListener('click',function(){
