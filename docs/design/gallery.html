@@ -329,6 +329,12 @@ input{font:inherit;color:inherit}
 .card:hover .cardacts{display:flex}
 .cardacts button{width:28px;height:28px;display:grid;place-items:center;border-radius:var(--r);background:rgba(20,20,20,.55);color:#fff}
 .cardacts button.starred .ic{fill:currentColor}
+/* B26 inline chat-attachment actions — solid chips (no transparency) */
+.filecardwrap{position:relative;display:inline-block;max-width:100%}
+.fcacts{position:absolute;top:8px;right:8px;display:none;gap:3px}
+.filecardwrap:hover .fcacts{display:flex}
+.fcacts button{width:26px;height:26px;display:grid;place-items:center;border-radius:var(--r);background:var(--paper);color:var(--soft);box-shadow:0 0 0 1px var(--line)}
+.fcacts button:hover{background:var(--surface);color:var(--ink)}
 .cardacts button:hover{background:rgba(20,20,20,.82)}
 .cardacts .ic{width:15px;height:15px}
 /* #43 starred state: a persistent gold star badge on the media; the hover star
@@ -2003,13 +2009,17 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
             <div class="bd">
               <div class="by"><span class="u m3">dev</span><time>2:14 PM</time></div>
               <div class="tx">reworked the back half. same bpm, swapped the drums to the ones <span class="men m1">@rae</span> liked</div>
-              <button class="filecard" data-open-details>
-                <div class="fcwave"><svg class="ic fic"><use href="#i-file"/></svg><span class="ext">FLP</span></div>
-                <div class="fbody">
-                  <div class="fname">late_bloom_beat.flp</div>
-                  <div class="ftags"><span class="tag">drums</span><span class="tag">142bpm</span><span class="tag">bridge</span></div>
-                </div>
-              </button>
+              <div class="filecardwrap">
+                <button class="filecard" data-open-details>
+                  <div class="fcwave"><svg class="ic fic"><use href="#i-file"/></svg><span class="ext">FLP</span></div>
+                  <div class="fbody">
+                    <div class="fname">late_bloom_beat.flp</div>
+                    <div class="ftags"><span class="tag">drums</span><span class="tag">142bpm</span><span class="tag">bridge</span></div>
+                  </div>
+                </button>
+                <!-- B26 inline attachment actions -->
+                <div class="fcacts"><button data-act="dl" title="Download"><svg class="ic sm"><use href="#i-download"/></svg></button><button data-act="save" title="Save to my files"><svg class="ic sm"><use href="#i-save"/></svg></button><button data-act="open" title="Open in explorer"><svg class="ic sm"><use href="#i-folder"/></svg></button></div>
+              </div>
               <div class="reactions"><span class="react">🔥<span class="n">3</span></span><span class="react">👀<span class="n">1</span></span></div>
               <div class="reply"><svg class="ic sm"><use href="#i-reply"/></svg>3 replies</div>
             </div>
@@ -3869,6 +3879,9 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   // B16 jump-to-present — scroll the chat down, clear the new-messages divider
   var jumpNew=document.getElementById('jumpNew'),chMessages=document.getElementById('chMessages');
   if(jumpNew)jumpNew.addEventListener('click',function(){if(chMessages)chMessages.scrollTop=chMessages.scrollHeight;jumpNew.classList.add('gone');var nd=document.querySelector('.newdiv');if(nd)nd.remove();});
+  // B26 inline chat-attachment actions (download / save-to-files / open-in-explorer)
+  document.querySelectorAll('.fcacts button').forEach(function(a){a.addEventListener('click',function(e){e.stopPropagation();e.preventDefault();
+    var act=a.dataset.act;if(act==='open'){show('explorer');return;}if(typeof toast==='function')toast(act==='save'?'Saved to your files':'Downloading…');});});
   // S10 connection-lost banner — follows the browser's online/offline state
   var offlineBar=document.getElementById('offlineBar');
   if(offlineBar){var setOnline=function(){offlineBar.hidden=navigator.onLine;};
