@@ -1163,6 +1163,20 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
 .storeuse .used{font-weight:600}.storeuse .cap{color:var(--muted)}
 .storebar{height:9px;background:var(--surface);border-radius:var(--r);overflow:hidden}
 .storebar i{display:block;height:100%;background:var(--ink);border-radius:var(--r)}
+/* B21 account switcher + sessions · S11 payment method + receipts */
+.acctlist,.sesslist,.reclist{display:flex;flex-direction:column;gap:2px;max-width:520px}
+.acctrow,.sessrow{display:flex;align-items:center;gap:10px;padding:9px 8px;border-radius:var(--r)}
+.acctrow:hover,.sessrow:hover{background:var(--surface)}
+.acctrow .info,.sessrow .info{flex:1;min-width:0}
+.acctrow .info b,.sessrow .info b{font-size:var(--fs-sm);display:block}
+.acctrow .info small,.sessrow .info small{font-size:var(--fs-xs);color:var(--muted)}
+.acctrow .btn,.sessrow .btn{margin-left:auto}
+.acctadd{display:flex;align-items:center;gap:8px;padding:9px 8px;border-radius:var(--r);color:var(--soft);font-size:var(--fs-sm)}
+.acctadd:hover{background:var(--surface)}
+.paymethod{display:flex;align-items:center;gap:9px;padding:10px 12px;background:var(--surface);border-radius:var(--r);font-size:var(--fs-sm);color:var(--soft);max-width:520px}
+.recrow{display:flex;align-items:center;gap:12px;padding:9px 8px;font-size:var(--fs-sm);color:var(--soft);box-shadow:inset 0 -1px 0 var(--line)}
+.recrow .rdate{flex:1}.recrow .ramt{font-weight:600}
+.recrow .rlink{color:var(--ink);font-size:var(--fs-xs)}
 .storebar.over i{background:var(--m1)}
 .gbslider{position:relative;height:9px;background:var(--surface);border-radius:var(--r);margin:26px 6px 30px}
 .gbslider .fill{position:absolute;left:0;top:0;bottom:0;background:var(--ink);border-radius:var(--r)}
@@ -2540,6 +2554,22 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
             <h2>Account</h2><div class="h2sub">Sign-in and security.</div>
             <div class="frow"><label class="ulab">Email</label><div class="field"><input value="dexter@eski.lol"></div></div>
             <div class="frow"><label class="ulab">Password</label><button class="btn sm">Change password</button></div>
+            <!-- B21 account switcher -->
+            <div class="frow"><label class="ulab">Accounts</label>
+              <div class="acctlist">
+                <div class="acctrow current"><span class="av sm">DX</span><div class="info"><b>dexter</b><small>@dexter · this account</small></div><span class="pendlbl">active</span></div>
+                <div class="acctrow"><span class="av sm">NB</span><div class="info"><b>night blooms</b><small>@nightblooms</small></div><button class="btn sm">Switch</button></div>
+                <button class="acctadd"><svg class="ic sm"><use href="#i-plus"/></svg>Add another account</button>
+              </div>
+            </div>
+            <!-- B21 active sessions -->
+            <div class="frow"><label class="ulab">Where you're signed in</label>
+              <div class="sesslist">
+                <div class="sessrow"><svg class="ic sm" style="color:var(--muted)"><use href="#i-home"/></svg><div class="info"><b>This device</b><small>Chrome · macOS · active now</small></div><span class="pendlbl">current</span></div>
+                <div class="sessrow"><svg class="ic sm" style="color:var(--muted)"><use href="#i-phone"/></svg><div class="info"><b>iPhone</b><small>eski app · 2 days ago</small></div><button class="iconbtn sm" title="Sign out"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
+              </div>
+              <button class="btn sm" id="signOutAll" style="margin-top:8px"><svg class="ic sm"><use href="#i-leave"/></svg>Sign out everywhere else</button>
+            </div>
             <div class="dangerbox"><div class="t"><b>Delete account</b><small>Permanently removes your account. Files you posted to servers stay with those servers.</small></div><button class="btn danger"><svg class="ic sm"><use href="#i-trash"/></svg>Delete</button></div>
           </div>
           <div class="setpanel" data-panel="unotif" hidden>
@@ -2565,6 +2595,17 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
             <div class="storeuse"><span class="used">3.1 GB used</span><span class="cap">of 10 GB free</span></div>
             <div class="storebar"><i style="width:31%"></i></div>
             <button class="btn primary" style="margin-top:14px" id="ustorageManage"><svg class="ic sm"><use href="#i-download"/></svg>Manage storage</button>
+            <!-- S11 payment method + receipts -->
+            <div class="frow" style="margin-top:18px"><label class="ulab">Payment method</label>
+              <div class="paymethod"><svg class="ic sm" style="color:var(--muted)"><use href="#i-lock"/></svg><span>Visa ending <b>4242</b> · expires 06/28</span><button class="btn sm" id="billingPortal" style="margin-left:auto">Manage in Stripe</button></div>
+            </div>
+            <div class="frow"><label class="ulab">Receipts</label>
+              <div class="reclist">
+                <div class="recrow"><span class="rdate">Aug 1, 2026</span><span class="ramt">$6.00</span><span class="pendlbl">paid</span><a class="rlink" href="#" onclick="return false">Receipt</a></div>
+                <div class="recrow"><span class="rdate">Jul 1, 2026</span><span class="ramt">$6.00</span><span class="pendlbl">paid</span><a class="rlink" href="#" onclick="return false">Receipt</a></div>
+                <div class="recrow"><span class="rdate">Jun 1, 2026</span><span class="ramt">$6.00</span><span class="pendlbl">paid</span><a class="rlink" href="#" onclick="return false">Receipt</a></div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -3653,6 +3694,10 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   function openStorage(){if(storageScrim)storageScrim.hidden=false;if(storageModal)storageModal.hidden=false;}
   function closeStorage(){if(storageScrim)storageScrim.hidden=true;if(storageModal)storageModal.hidden=true;}
   ['manageStorage','capUpgrade','ustorageManage'].forEach(function(id){var e=document.getElementById(id);if(e)e.addEventListener('click',openStorage);});
+  // S11 billing portal · B21 sign-out-everywhere / add-account
+  var billingPortal=document.getElementById('billingPortal');if(billingPortal)billingPortal.addEventListener('click',function(){if(typeof toast==='function')toast('Opening the Stripe billing portal…');});
+  var signOutAll=document.getElementById('signOutAll');if(signOutAll)signOutAll.addEventListener('click',function(){if(typeof toast==='function')toast('Signed out of all other sessions');});
+  document.querySelectorAll('.acctadd, .acctrow .btn').forEach(function(b){b.addEventListener('click',function(){if(typeof toast==='function')toast('Switch / add account (Stripe-free demo)');});});
   // #22 settings toggles
   document.querySelectorAll('.tog').forEach(function(t){t.addEventListener('click',function(){t.classList.toggle('on');});});
   ['storageClose','storageCancel'].forEach(function(id){var e=document.getElementById(id);if(e)e.addEventListener('click',closeStorage);});

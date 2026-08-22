@@ -1233,6 +1233,8 @@ Each row: purpose · columns · RLS summary. `uid()` = `(select auth.uid())`.
 | `media_blobs` | content-addressed dedup store | `sha256 pk, bytes, refcount` | server-managed; GC at refcount 0 |
 | `storage_meters` | usage per account | `owner_type in(user,server), owner_id, bytes_used (sum of DISTINCT owned blobs), pk(owner_type,owner_id)` | read: the account's members/self |
 | `storage_balance` | one slider per account | `owner_type, owner_id, purchased_gb, status, stripe_customer, pk(owner_type,owner_id)` | read/write: self / `manage_billing` |
+| `invoices` | billing receipts (gallery S11) | `owner_type, owner_id, stripe_invoice_id, amount_cents, currency, status in(paid,open,void), hosted_url, created_at` | read: self / `manage_billing`; written by the Stripe webhook |
+| `sessions` | signed-in devices / accounts (gallery B21) | `user_id, device text, ip_hint, last_seen_at, current bool` | owner only; the account switcher + "sign out everywhere" read/revoke these |
 | `saved_items` | Save to my files (owner copy) | `user_id, work_id, folder_id null→save_folders, pk(user_id,work_id)` | owner only |
 | `save_folders` | personal bookmark folders | `user_id, name, pk(id)` | owner only |
 
@@ -1284,6 +1286,8 @@ profiles.tz text · profiles.pronouns text · profiles.links jsonb  -- shown on 
 - `move_to_folder(work_id, folder_id)`, sets the file's `placement.folder_id`.
 - `restore_work(work_id)` / `purge_work(work_id)` / `empty_trash(scope)` (gallery #42/B19): trash restore sets `works.deleted_at=null`; purge + empty hard-delete now (decrement blob refcount); a scheduled job purges anything past 30 days. Writer gated like delete (owner / moderation).
 - `adopt_work(work_id)`, move a work's owner → the server (needs `manage_billing`).
+- `billing_portal(owner_type, owner_id)` → a Stripe customer-portal URL (gallery S11); the Stripe webhook writes `invoices` + flips `storage_balance.status`.
+- `revoke_session(id)` / `revoke_all_sessions()` (gallery B21 — "sign out everywhere"); the account switcher swaps the active `sessions` row.
 - `ban_member` / `timeout_member` / `kick_member` (admin), each writes `audit_log`; the owner can't be kicked or banned.
 - `export_manifest('server', id)`, returns JSON of works+metadata; the client fetches signed URLs and zips.
 - **Triggers:** `messages` fanout on insert → parse `@handle`, write `mentions` + `notifications`; set `edited_at` on body change; tombstone on `deleted_at`. `works` insert → maintain `search_tsv`. `comments` insert with a mention → `notifications`. A work insert/delete adjusts `media_blobs.refcount` (GC the blob at 0) and `storage_meters`. A **scheduled purge job** hard-deletes `works.deleted_at` past 30-day retention. Rate-limit `messages` (e.g. 60/min), comments, and reports.
@@ -1340,7 +1344,7 @@ Add the relevant tables to the `supabase_realtime` publication.
 5. `comments` (context, resolved_at); `profiles`.
 6. `dm_channels`/`dm_members`/`dm_messages`; `friendships`.
 7. `notifications`; `server_prefs`/`channel_prefs` (notification level + mute); `saved_items`/`save_folders`; message/comment→notification triggers (respecting the prefs).
-8. Moderation: `server_bans`, `reports`, `audit_log`, `server_members.timeout_until`.
+8. Moderation: `server_bans`, `reports`, `audit_log`, `server_members.timeout_until`. Billing/account: `invoices`, `sessions` (+ the Stripe webhook + `billing_portal`/`revoke_session` RPCs).
 9. RPCs (§E.3), FTS indexes (§E.7), grants, `notify pgrst 'reload schema'`, realtime publication.
 
 ### E.9 Per-screen backend checklist (so nothing is missed)
