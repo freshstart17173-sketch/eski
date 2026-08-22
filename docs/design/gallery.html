@@ -712,7 +712,9 @@ input{font:inherit;color:inherit}
 .stackav{display:flex}.stackav .av{margin-left:-8px;box-shadow:0 0 0 2px var(--paper)}.stackav .av:first-child{margin-left:0}
 .invited{display:flex;align-items:center;gap:9px;background:var(--surface);border-radius:var(--r);padding:10px var(--s3);margin-top:var(--s4);font-size:var(--fs-sm)}
 /* sign-in / onboarding / username claim (gap #13) — layout shared with .onboard above */
-.authbrand{font-size:var(--fs-xl);font-weight:700;letter-spacing:.01em;color:var(--on-ink)}
+/* the wordmark sits on the dark auth/onboard scrim in BOTH themes, so it's a
+   fixed light colour — --on-ink went near-black (invisible) in dark. */
+.authbrand{font-size:var(--fs-xl);font-weight:700;letter-spacing:.01em;color:#F4F4F4}
 .astep[hidden]{display:none}
 .field .at{color:var(--muted);font-size:var(--fs-sm);font-weight:600;flex:none}
 .unamestate{display:flex;align-items:center;gap:6px;font-size:var(--fs-xs);margin-top:7px;min-height:16px;color:var(--muted)}
