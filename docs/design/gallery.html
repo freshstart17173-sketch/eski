@@ -3927,13 +3927,103 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
     document.querySelectorAll('.rail .railbtn').forEach(function(b){b.classList.toggle('on',b.dataset.s===n);});}
   document.querySelectorAll('[data-s]').forEach(function(el){el.addEventListener('click',function(){show(el.dataset.s);location.hash=el.dataset.s;});});
 
-  // Hash routing: lets gallery.html embed a specific screen via
-  // collab-mockup.html#explorer. Additive — the click handlers above still work;
-  // this only adds deep-linking so each screen has a stable URL. An optional
-  // ?theme=dark|light query pins the theme for a screenshot/iframe.
-  function applyHash(){var n=(location.hash||'').replace('#','');
-    if(n && document.querySelector('.screen[data-screen="'+n+'"]'))show(n);}
-  window.addEventListener('hashchange',applyHash);
+  // ── State-driver — the determinism keystone ──────────────────────────
+  // Every state the codegen model builds against is addressable by URL and
+  // forced SYNCHRONOUSLY (no timers) so it holds still for a screenshot.
+  // Grammar (all after ?app=1):
+  //   #screen            a screen, default state
+  //   #screen/state      a screen forced into a named state (see STATES)
+  //   #dialog/<id>       a modal/menu forced open over its backdrop screen
+  //   &theme=dark|light  pin the theme      ·      &w=NN  pin the canvas width
+  // The catalog (§⑥), the self-test (verify.mjs) and the codegen acceptance
+  // gate all address states through exactly these URLs — one grammar, one
+  // answer to "what states exist". A miss console.warns (deliberately: the
+  // self-test treats a warn as a coverage gap, never a silent pass).
+  var appEl=document.querySelector('.app');
+  function q1(sel){return document.querySelector(sel);}
+  function only(nodes,keep){nodes.forEach(function(n){n.hidden=n!==keep;});}
+  function forceExview(v){if(typeof showExview==='function')showExview(v);}      // reuse explorer switch (defined below, hoisted)
+  function forceAstep(name){document.querySelectorAll('.screen[data-screen="auth"] .astep').forEach(function(s){s.hidden=s.dataset.astep!==name;});}
+  function forceSetPanel(name){var s=q1('.screen[data-screen="settings"]');if(!s)return;
+    s.querySelectorAll('.setnav [data-setpanel]').forEach(function(b){b.classList.toggle('on',b.dataset.setpanel===name);});
+    s.querySelectorAll('.setpanel').forEach(function(p){p.hidden=p.dataset.panel!==name;});}
+  function forceNPanel(name){document.querySelectorAll('.ntabs .ntab').forEach(function(t){t.classList.toggle('on',t.dataset.ntab===name);});
+    document.querySelectorAll('.npanel').forEach(function(p){p.hidden=p.dataset.nview!==name;});}
+  function forceChTab(name){document.querySelectorAll('.chtab').forEach(function(t){t.classList.toggle('on',t.dataset.chtab===name);});
+    var msg=document.getElementById('chMessages'),comp=document.getElementById('chComposer');
+    if(msg)msg.hidden=name!=='messages';if(comp)comp.hidden=name!=='messages';
+    document.querySelectorAll('.chpanel').forEach(function(p){p.hidden=p.dataset.chview!==name;});}
+  function setDm(which){var f=document.getElementById('dmFriends'),c=document.getElementById('dmConvo');
+    if(f)f.hidden=which!=='friends';if(c)c.hidden=which==='friends';}
+
+  // The registry. screen → { stateName: force() }. Keep each force() a thin
+  // call into a switch that already exists — never a second copy of the state.
+  var STATES={
+    workspace:{
+      offline:function(){var b=document.getElementById('offlineBar');if(b)b.hidden=false;},
+      thread:function(){var tp=document.getElementById('threadPane'),m=q1('.screen[data-screen="workspace"] .mem');if(m)m.hidden=true;if(tp)tp.hidden=false;},
+      pins:function(){forceChTab('pins');},
+      files:function(){forceChTab('files');},
+      voicebar:function(){var v=document.getElementById('voiceMini');if(v)v.hidden=false;}
+    },
+    explorer:{
+      loading:function(){forceExview('skel');},
+      grid:function(){forceExview('grid');},
+      list:function(){forceExview('list');},
+      feedview:function(){forceExview('feed');},
+      trash:function(){forceExview('trash');},
+      empty:function(){forceExview('trashempty');},        // empties reuse the empty-state panel
+      starred:function(){forceExview('starred');}
+    },
+    settings:{general:function(){forceSetPanel('general');},channels:function(){forceSetPanel('channels');},
+      members:function(){forceSetPanel('members');},roles:function(){forceSetPanel('roles');},
+      invites:function(){forceSetPanel('invites');},moderation:function(){forceSetPanel('moderation');},
+      audit:function(){forceSetPanel('audit');},storage:function(){forceSetPanel('storage');}},
+    notifications:{all:function(){forceNPanel('all');},mentions:function(){forceNPanel('mentions');},
+      threads:function(){forceNPanel('threads');},saved:function(){forceNPanel('saved');}},
+    dms:{convo:function(){setDm('convo');},friends:function(){setDm('friends');}},
+    auth:{signin:function(){forceAstep('signin');},sent:function(){forceAstep('sent');},claim:function(){forceAstep('claim');}}
+  };
+  function applyState(screen,state){var m=STATES[screen];
+    if(m&&m[state]){m[state]();return true;}
+    console.warn('[gallery] no such state: '+screen+'/'+state);return false;}
+
+  // Force any modal/menu open by id, over a sensible backdrop screen. Generic
+  // so the catalog and the self-test never need a per-dialog opener list.
+  function closeAllOverlays(){
+    document.querySelectorAll('.umodal, .sheet').forEach(function(m){if('hidden' in m)m.hidden=true;});
+    document.querySelectorAll('.scrim').forEach(function(s){s.hidden=true;});
+    document.querySelectorAll('.menu.open').forEach(function(m){m.classList.remove('open');});
+    var lb=document.getElementById('lightbox');if(lb)lb.hidden=true;}
+  function forceDialog(id){var m=document.getElementById(id);if(!m)return false;closeAllOverlays();
+    if(m.classList.contains('menu')){m.classList.add('open');m.style.position='fixed';
+      m.style.left=Math.max(8,(window.innerWidth-m.offsetWidth)/2)+'px';
+      m.style.top=Math.max(56,(window.innerHeight-m.offsetHeight)/2)+'px';}
+    else{var scrimId=m.getAttribute('data-scrim')||id.replace(/Modal$/,'Scrim');
+      var scrim=document.getElementById(scrimId)||document.getElementById('scrim');
+      if(scrim)scrim.hidden=false;m.hidden=false;}
+    return true;}
+  function openTarget(id){var el=document.getElementById(id);
+    if(!el){console.warn('[gallery] no such dialog: '+id);return;}
+    show(el.getAttribute('data-screen')||'workspace');forceDialog(id);}
+
+  // &w=NN pins the canvas width for a scaling screenshot (web-only contract,
+  // §6 of the determinism plan — the shell flexes, it never collapses to tabs).
+  function applyWidth(){var w=+(new URLSearchParams(location.search).get('w')||0);
+    if(w&&appEl){appEl.style.width=w+'px';appEl.style.margin='0 auto';}}
+
+  function routeHash(){var raw=(location.hash||'').replace(/^#/,'');
+    if(!raw){show('workspace');return;}
+    var parts=raw.split('/'),head=parts[0],arg=parts.slice(1).join('/');
+    if(head==='dialog'||head==='menu'){openTarget(arg);return;}
+    if(document.querySelector('.screen[data-screen="'+head+'"]')){show(head);if(arg)applyState(head,arg);}}
+  var applyHash=routeHash;                                    // keep the old name working
+  window.addEventListener('hashchange',routeHash);
+  applyWidth();
+  // Expose a tiny handle for the self-test (verify.mjs) — enumerate states,
+  // drive them, reset overlays — without reaching into private closures.
+  window.__gallery={show:show,applyState:applyState,forceDialog:forceDialog,
+    openTarget:openTarget,closeAllOverlays:closeAllOverlays,route:routeHash,STATES:STATES};
 
   var root=document.documentElement,tb=document.getElementById('appthemebtn');
   var qp=new URLSearchParams(location.search),qt=qp.get('theme');
@@ -4662,7 +4752,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
 
   // Default to Workspace only when there's no deep-link hash; otherwise the
   // hash (used by gallery.html's per-screen iframes) decides the screen.
-  if(location.hash)applyHash();else show('workspace');
+  routeHash();
 })();
 
 }else{
