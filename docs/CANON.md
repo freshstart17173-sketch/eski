@@ -461,6 +461,13 @@ network-lost (Realtime reconnecting banner).
 | **Edit channel** (gallery B5) | channel menu · per-channel gear (admin) | name · topic · slowmode · **Save** | W `channels` (rename/topic/slowmode); gate `manage_channels` |
 | **Create category** (gallery B3) | server menu · channel column (admin) | category name · **Create** | W `channel_categories` insert; gate `manage_channels` |
 | **Report** (gallery S6/B13) | details-pane flag · message ⋯ · profile/DM | reason (incl. CSAM) · optional details · **Submit** | W `reports` (`file_report`) |
+| **Assign roles** (§C.17) | member popover **Roles ▸** · Members-row role chip | checklist of roles (a member holds several); **@everyone** locked-on baseline · **Manage roles…** → §C.16 | W `member_roles` ← `set_member_roles`; gate `manage_roles` |
+| **Leave server** (confirm) | server menu **Leave server** | named consequence — loses channel/file access unless re-invited; personal-storage copies stay. Danger **Leave**. Owner must transfer ownership first (§B). | self-leave `member_of` |
+| **Delete server** (type-to-confirm) | Settings → General danger box · setnav **Delete server** | **owner only**; type the server name to enable **Delete forever**; removes every channel + its files (members keep personal-storage copies). | owner `delete_server` + `audit_log` |
+
+The **Edit server profile** menu item is a shortcut into Settings → General (name /
+description / cover), not a separate modal. Timeout / Kick / Ban confirms are
+registered on the members rail (§C.4 above).
 
 ---
 

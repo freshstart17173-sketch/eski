@@ -9,13 +9,18 @@ built or folded in below). Brand art lives separately in
 > **The #1–#61 edit list and the gaps.md A/B backlog are done (2026-08-21/22).**
 > What's left is below.
 
-> **Missing-surface pass (2026-08-22).** Four dialogs that had a live entry point
-> but no target surface are now built + wired in `gallery.html` and registered in
-> CANON: **Edit-profile modal** (Profile → Edit; §C.10), **Move-to-folder picker**
+> **Missing-surface pass (2026-08-22).** Dialogs that had a live entry point but no
+> target surface, now built + wired in `gallery.html` and registered in CANON.
+> Batch 1: **Edit-profile modal** (Profile → Edit; §C.10), **Move-to-folder picker**
 > (card ⋯ / bulk bar / details; §C.6), **Timeout modal** and **Kick/Ban confirm**
-> (member popover + Moderation; §C.4 members rail). Verified by screenshot in both
-> themes; inventory (⑤) statuses updated. Exploded-view standalone panels for these
-> are intentionally **not** part of this pass.
+> (member popover + Moderation; §C.4 members rail). Batch 2: **Assign-roles modal**
+> (popover **Roles ▸** + Members role chip — was a static panel only; §C.17/§C.4),
+> **Leave-server confirm** and **Delete-server type-to-confirm** (server menu /
+> Settings → General; §C.4). Also: **Edit server profile** now routes to Settings →
+> General; the assign-roles role swatches were **squared** (round is avatars/dots
+> only). Verified by screenshot in both themes, wire-tested, no console errors;
+> inventory (⑤) statuses updated. Exploded-view standalone panels are **not** part
+> of this pass.
 
 ## Style redesign — are.na monochrome (in progress, 2026-08-22)
 

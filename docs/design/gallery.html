@@ -1159,8 +1159,13 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
 .movetree{max-height:240px;overflow:auto;background:var(--surface);border-radius:var(--r);padding:6px;margin-top:2px}
 /* Timeout duration segmented control uses .seg .o — make its cells clickable */
 #toSeg .o{cursor:pointer;transition:background var(--t),color var(--t)}
-/* Kick/ban confirm lede */
+/* Kick/ban confirm lede (also leave/delete-server confirms) */
 .banlede{font-size:var(--fs-sm);color:var(--soft);line-height:1.5;margin:2px 0 4px}
+/* Role colour swatch in the assign-roles checklist — SQUARE (--r): round is
+   reserved for avatars + presence dots only. */
+.rsw{width:9px;height:9px;flex:none;border-radius:var(--r)}
+/* Disabled action button (e.g. type-to-confirm Delete before the name matches) */
+.btn:disabled{opacity:.45;cursor:not-allowed}
 /* #51 toast + upload-progress — a transient bottom-right feedback stack */
 .toaststack{position:fixed;right:18px;bottom:18px;z-index:95;display:flex;flex-direction:column;gap:8px;width:320px;max-width:calc(100vw - 36px)}
 .toast{display:flex;align-items:flex-start;gap:10px;background:var(--ink);color:var(--on-ink);border-radius:var(--r);padding:11px 13px;font-size:var(--fs-sm);
@@ -1922,9 +1927,9 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
       <div class="stage scrim tall"><div class="modal" style="width:280px">
         <div class="uhd"><div style="display:flex;align-items:center;gap:9px"><span class="pfp" style="width:26px;height:26px;font-size:10px;background:var(--m3)">DV</span><b>dev's roles</b></div><button class="iconbtn"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
         <div class="mbody" style="padding:6px 8px">
-          <button class="mi" style="justify-content:flex-start;gap:9px"><span class="cbx"><svg class="ic sm"><use href="#i-check"/></svg></span><span class="dot" style="width:9px;height:9px;background:var(--m5)"></span>Admin</button>
-          <button class="mi" style="justify-content:flex-start;gap:9px"><span class="cbx on"><svg class="ic sm"><use href="#i-check"/></svg></span><span class="dot" style="width:9px;height:9px;background:var(--m3)"></span>Producer</button>
-          <button class="mi" style="justify-content:flex-start;gap:9px;opacity:.6"><span class="cbx on"><svg class="ic sm"><use href="#i-check"/></svg></span><span class="dot" style="width:9px;height:9px;background:var(--muted)"></span>@everyone<span class="k" style="margin-left:auto">baseline</span></button>
+          <button class="mi" style="justify-content:flex-start;gap:9px"><span class="cbx"><svg class="ic sm"><use href="#i-check"/></svg></span><span class="rsw" style="background:var(--m5)"></span>Admin</button>
+          <button class="mi" style="justify-content:flex-start;gap:9px"><span class="cbx on"><svg class="ic sm"><use href="#i-check"/></svg></span><span class="rsw" style="background:var(--m3)"></span>Producer</button>
+          <button class="mi" style="justify-content:flex-start;gap:9px;opacity:.6"><span class="cbx on"><svg class="ic sm"><use href="#i-check"/></svg></span><span class="rsw" style="background:var(--muted)"></span>@everyone<span class="k" style="margin-left:auto">baseline</span></button>
         </div>
       </div></div>
       <div class="pcap"><b>Assign roles to a member</b>
@@ -2779,7 +2784,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
           <button data-setpanel="invites"><svg class="ic sm"><use href="#i-link"/></svg>Invite links</button>
           <button data-setpanel="storage"><svg class="ic sm"><use href="#i-download"/></svg>Storage &amp; billing</button>
           <div class="sep"></div>
-          <button class="danger"><svg class="ic sm"><use href="#i-trash"/></svg>Delete server</button>
+          <button class="danger" id="smDeleteServer"><svg class="ic sm"><use href="#i-trash"/></svg>Delete server</button>
         </nav>
         <div class="setmain">
           <div class="setpanel" data-panel="general">
@@ -2787,7 +2792,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
             <div class="frow"><label class="ulab">Server name</label><div class="field"><input value="Late Bloom LP"></div></div>
             <div class="frow"><label class="ulab">Description</label><div class="field"><input value="a remote LP, producers and rappers"></div></div>
             <div class="frow"><label class="ulab">Cover</label><div class="coverpick"><div class="cv"><svg class="ic"><use href="#i-image"/></svg></div><button class="btn sm"><svg class="ic sm"><use href="#i-image"/></svg>Upload</button></div></div>
-            <div class="dangerbox"><div class="t"><b>Delete this server</b><small>Removes every channel and its files. Members keep their own copies of files they saved to personal storage.</small></div><button class="btn danger"><svg class="ic sm"><use href="#i-trash"/></svg>Delete</button></div>
+            <div class="dangerbox"><div class="t"><b>Delete this server</b><small>Removes every channel and its files. Members keep their own copies of files they saved to personal storage.</small></div><button class="btn danger" id="genDeleteServer"><svg class="ic sm"><use href="#i-trash"/></svg>Delete</button></div>
           </div>
           <div class="setpanel" data-panel="channels" hidden>
             <h2>Channels</h2><div class="h2sub">Drag to reorder. Members see them in this order. Open a channel's settings for who can post, slow mode and privacy.</div>
@@ -3260,7 +3265,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
          viewer can moderate this server (is_server_admin) — the RLS gate, not a POV toggle. -->
     <div class="ppadmin" data-admin-only>
       <div class="ppadl">Admin</div>
-      <button class="arow"><svg class="ic sm"><use href="#i-users"/></svg>Roles<svg class="ic sm chev"><use href="#i-chev"/></svg></button>
+      <button class="arow" id="ppRoles" data-name="dev"><svg class="ic sm"><use href="#i-users"/></svg>Roles<svg class="ic sm chev"><use href="#i-chev"/></svg></button>
       <button class="arow" id="ppTimeout" data-name="dev"><svg class="ic sm"><use href="#i-clock"/></svg>Timeout</button>
       <button class="arow danger" id="ppKick" data-name="dev"><svg class="ic sm"><use href="#i-leave"/></svg>Kick from server</button>
       <button class="arow danger" id="ppBan" data-name="dev"><svg class="ic sm"><use href="#i-hand"/></svg>Ban</button>
@@ -3406,9 +3411,9 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   <button id="smNewCategory"><svg class="ic sm"><use href="#i-folder"/></svg>Create category</button>
   <button data-s="settings"><svg class="ic sm"><use href="#i-settings"/></svg>Server settings</button>
   <button><svg class="ic sm"><use href="#i-bell"/></svg>Notification settings</button>
-  <button><svg class="ic sm"><use href="#i-pen"/></svg>Edit server profile</button>
+  <button id="smEditProfile"><svg class="ic sm"><use href="#i-pen"/></svg>Edit server profile</button>
   <div class="sep"></div>
-  <button class="danger"><svg class="ic sm"><use href="#i-leave"/></svg>Leave server</button></div>
+  <button class="danger" id="smLeave"><svg class="ic sm"><use href="#i-leave"/></svg>Leave server</button></div>
 
 <!-- B15 notification-bell dropdown — a recent-activity preview of the full
      notifications screen. Reuses the .nrow row structure from that screen. -->
@@ -3731,6 +3736,46 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
     <label class="setrow" id="banPurge" style="cursor:pointer"><div class="cl"><b>Also delete their posts</b><small>Removes every message and file they posted here</small></div><span class="tog"><i></i></span></label>
   </div>
   <div class="ufoot"><button class="btn" id="banCancel">Cancel</button><button class="btn danger" id="banConfirm">Ban</button></div>
+</div>
+
+<!-- Assign-roles-to-member modal — from the member popover "Roles ▸" and the
+     role chip on a Server settings → Members row. Granular: a member holds several
+     roles at once (a checklist, not one picker); @everyone is always on and locked.
+     Effective permissions = the union. Writes `member_roles`; gated `manage_roles`. -->
+<div class="scrim" id="arScrim" hidden></div>
+<div class="umodal" id="arModal" hidden style="width:min(320px,95vw)">
+  <div class="uhd"><b><span id="arName">dev</span>'s roles</b><button class="iconbtn" id="arClose"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
+  <div class="ubody" style="padding:8px">
+    <button class="mi arrole" style="justify-content:flex-start;gap:9px"><span class="cbx"><svg class="ic sm"><use href="#i-check"/></svg></span><span class="rsw" style="background:var(--m5)"></span>Admin<span class="k" style="margin-left:auto">manages the server</span></button>
+    <button class="mi arrole" style="justify-content:flex-start;gap:9px"><span class="cbx on"><svg class="ic sm"><use href="#i-check"/></svg></span><span class="rsw" style="background:var(--m3)"></span>Producer</button>
+    <button class="mi arrole" style="justify-content:flex-start;gap:9px"><span class="cbx on"><svg class="ic sm"><use href="#i-check"/></svg></span><span class="rsw" style="background:var(--m2)"></span>Rapper</button>
+    <button class="mi" style="justify-content:flex-start;gap:9px;opacity:.55" disabled><span class="cbx on"><svg class="ic sm"><use href="#i-check"/></svg></span><span class="rsw" style="background:var(--muted)"></span>@everyone<span class="k" style="margin-left:auto">baseline · always on</span></button>
+  </div>
+  <div class="ufoot"><button class="btn ghost" id="arManage" style="margin-right:auto"><svg class="ic sm"><use href="#i-settings"/></svg>Manage roles…</button><button class="btn primary" id="arDone">Done</button></div>
+</div>
+
+<!-- Leave-server confirm — from the server menu "Leave server". A member removes
+     themselves (self-leave); the owner can't leave without transferring ownership. -->
+<div class="scrim" id="leaveScrim" hidden></div>
+<div class="umodal" id="leaveModal" hidden style="width:min(440px,95vw)">
+  <div class="uhd"><b>Leave Late Bloom LP?</b><button class="iconbtn" id="leaveClose"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
+  <div class="ubody">
+    <p class="banlede">You'll lose access to its channels and files unless someone invites you back. Files you saved to your <b>personal storage</b> stay yours.</p>
+  </div>
+  <div class="ufoot"><button class="btn" id="leaveCancel">Cancel</button><button class="btn danger" id="leaveConfirm"><svg class="ic sm"><use href="#i-leave"/></svg>Leave server</button></div>
+</div>
+
+<!-- Delete-server confirm — from Server settings → General (danger box) and the
+     setnav "Delete server". Owner-only; type-to-confirm on the server name. -->
+<div class="scrim" id="delSrvScrim" hidden></div>
+<div class="umodal" id="delSrvModal" hidden style="width:min(440px,95vw)">
+  <div class="uhd"><b>Delete Late Bloom LP?</b><button class="iconbtn" id="delSrvClose"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
+  <div class="ubody">
+    <p class="banlede">This permanently removes every channel and its files for all members. Members keep their own copies of files saved to personal storage. This can't be undone.</p>
+    <label class="ulab">Type <b>Late Bloom LP</b> to confirm</label>
+    <div class="field"><input id="delSrvInput" placeholder="Late Bloom LP"></div>
+  </div>
+  <div class="ufoot"><button class="btn" id="delSrvCancel">Cancel</button><button class="btn danger" id="delSrvConfirm" disabled>Delete forever</button></div>
 </div>
 
 <!-- #39 Share dialog (Google-Drive style) / #61 update a post's visibility -->
@@ -4063,6 +4108,42 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   var banScrim=document.getElementById('banScrim');if(banScrim)banScrim.addEventListener('click',ban.close);
   if(banPurge)banPurge.addEventListener('click',function(e){e.preventDefault();var t=banPurge.querySelector('.tog');if(t)t.classList.toggle('on');});
   if(banConfirm)banConfirm.addEventListener('click',function(){ban.close();if(typeof toast==='function')toast('Done');});
+
+  // Route into Server settings on a given panel (used by menu shortcuts)
+  function gotoSettings(panel){show('settings');location.hash='settings';
+    var b=document.querySelector('.screen[data-screen="settings"] .setnav [data-setpanel="'+panel+'"]');if(b)b.click();}
+
+  // Assign-roles-to-member modal — member popover "Roles ▸" + Members-row role chip
+  var ar=opener('arScrim','arModal'),arName=document.getElementById('arName');
+  function openRoles(name){if(profilePop)profilePop.hidden=true;if(arName)arName.textContent=name||'this member';ar.open();}
+  var ppRoles=document.getElementById('ppRoles');if(ppRoles)ppRoles.addEventListener('click',function(ev){ev.stopPropagation();openRoles(ppRoles.dataset.name);});
+  document.querySelectorAll('.screen[data-screen="settings"] .setpanel[data-panel="members"] .rolesel').forEach(function(chip){
+    chip.style.cursor='pointer';chip.addEventListener('click',function(ev){ev.stopPropagation();
+      var row=chip.closest('.mtrow'),nm=row?(row.querySelector('.info b')||{}).textContent:'';openRoles(nm);});});
+  ['arClose','arDone'].forEach(function(id){var e=document.getElementById(id);if(e)e.addEventListener('click',ar.close);});
+  var arScrim=document.getElementById('arScrim');if(arScrim)arScrim.addEventListener('click',ar.close);
+  document.querySelectorAll('#arModal .arrole').forEach(function(r){r.addEventListener('click',function(){
+    var c=r.querySelector('.cbx');if(c)c.classList.toggle('on');});});
+  var arManage=document.getElementById('arManage');if(arManage)arManage.addEventListener('click',function(){ar.close();gotoSettings('roles');});
+
+  // Leave-server confirm — server menu "Leave server"
+  var leave=opener('leaveScrim','leaveModal');
+  var smLeave=document.getElementById('smLeave');if(smLeave)smLeave.addEventListener('click',function(ev){ev.stopPropagation();leave.open();});
+  ['leaveClose','leaveCancel'].forEach(function(id){var e=document.getElementById(id);if(e)e.addEventListener('click',leave.close);});
+  var leaveScrim=document.getElementById('leaveScrim');if(leaveScrim)leaveScrim.addEventListener('click',leave.close);
+  var leaveConfirm=document.getElementById('leaveConfirm');if(leaveConfirm)leaveConfirm.addEventListener('click',function(){leave.close();if(typeof toast==='function')toast('You left the server');});
+
+  // Delete-server confirm — Settings → General danger box + setnav "Delete server"
+  var delSrv=opener('delSrvScrim','delSrvModal');
+  ['smDeleteServer','genDeleteServer'].forEach(function(id){var e=document.getElementById(id);if(e)e.addEventListener('click',function(ev){ev.stopPropagation();delSrv.open();});});
+  ['delSrvClose','delSrvCancel'].forEach(function(id){var e=document.getElementById(id);if(e)e.addEventListener('click',delSrv.close);});
+  var delSrvScrim=document.getElementById('delSrvScrim');if(delSrvScrim)delSrvScrim.addEventListener('click',delSrv.close);
+  var delSrvInput=document.getElementById('delSrvInput'),delSrvConfirm=document.getElementById('delSrvConfirm');
+  if(delSrvInput&&delSrvConfirm)delSrvInput.addEventListener('input',function(){delSrvConfirm.disabled=delSrvInput.value.trim()!=='Late Bloom LP';});
+  if(delSrvConfirm)delSrvConfirm.addEventListener('click',function(){if(delSrvConfirm.disabled)return;delSrv.close();if(typeof toast==='function')toast('Server deleted');});
+
+  // Server-menu shortcut: "Edit server profile" → Settings → General
+  var smEditProfile=document.getElementById('smEditProfile');if(smEditProfile)smEditProfile.addEventListener('click',function(ev){ev.stopPropagation();closeMenus();gotoSettings('general');});
 
   // B4 channel context menu + B5 edit-channel + B3 create-category
   var channelMenu=document.getElementById('channelMenu'),chanMenuName=document.getElementById('chanMenuName');
@@ -4558,11 +4639,12 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
     ['Notifications','Filter tabs + mark all read','header','notifications','m'],
     ['Settings','Invite link create / revoke','Invites panel','server_invites','m'],
     ['Settings','Roles editor (perms matrix)','Roles panel','roles','a'],
-    ['Settings','Assign roles to member','member → roles','member_roles','a'],
+    ['Settings','Assign roles to member (wired modal)','member popover Roles ▸ · Members role chip','member_roles','m'],
     ['Settings','Channel permissions (private channels)','channel → perms','channel_roles','a'],
     ['Settings','Ban / timeout / kick','Moderation panel','RPC + audit_log','m'],
     ['Settings','Storage sliders (personal + server)','Storage panel','storage_balance · storage_meters','a'],
-    ['Settings','Delete server (confirm)','General panel','owner only','a'],
+    ['Settings','Delete server (type-to-confirm)','General danger box · setnav','owner only + audit_log','m'],
+    ['Workspace','Leave server (confirm)','server menu','self-leave `member_of`','m'],
     ['Settings','Export (manifest → zip)','Storage panel','export_manifest','a'],
     ['Create','Create server card','rail ＋','servers insert + invite','m'],
     ['Join','Join preview card','/join/&lt;code&gt;','join_via_invite','m'],
