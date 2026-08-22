@@ -2196,7 +2196,23 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
           <button class="btn">Latest<svg class="ic sm"><use href="#i-chev"/></svg></button><button class="iconbtn" data-lt title="Grid / masonry"><svg class="ic sm"><use href="#i-grid"/></svg></button>
         </div>
         <div class="panebody">
-          <div class="masonry even">
+          <!-- #49 feed loading skeleton — forced by #feed/loading -->
+          <div class="masonry even" id="feedSkel" hidden>
+            <div class="card skelcard"><div class="skel sk-media"></div><div class="skel sk-line" style="width:70%"></div><div class="skel sk-line" style="width:40%"></div></div>
+            <div class="card skelcard"><div class="skel sk-media"></div><div class="skel sk-line" style="width:55%"></div><div class="skel sk-line" style="width:48%"></div></div>
+            <div class="card skelcard"><div class="skel sk-media"></div><div class="skel sk-line" style="width:80%"></div><div class="skel sk-line" style="width:35%"></div></div>
+            <div class="card skelcard"><div class="skel sk-media"></div><div class="skel sk-line" style="width:60%"></div><div class="skel sk-line" style="width:44%"></div></div>
+            <div class="card skelcard"><div class="skel sk-media"></div><div class="skel sk-line" style="width:75%"></div><div class="skel sk-line" style="width:40%"></div></div>
+            <div class="card skelcard"><div class="skel sk-media"></div><div class="skel sk-line" style="width:52%"></div><div class="skel sk-line" style="width:50%"></div></div>
+          </div>
+          <!-- #50 feed empty — no friends' posts yet — forced by #feed/empty -->
+          <div class="emptystate" id="feedEmpty" hidden>
+            <svg class="ic eic"><use href="#i-home"/></svg>
+            <h3>Your feed is quiet</h3>
+            <p>Public work from your friends lands here. Add a few people and their posts show up in this feed.</p>
+            <button class="btn primary" data-s="friends"><svg class="ic sm"><use href="#i-plus"/></svg>Find friends</button>
+          </div>
+          <div class="masonry even" id="feedGrid">
             <button class="card" data-open-details><div class="media"><div class="shot" style="aspect-ratio:4/5"></div></div>
               <div class="title">keyframe study, the falling sequence</div><div class="who">lin</div></button>
             <button class="card" data-open-details><div class="media audio"><svg class="ic fic"><use href="#i-music"/></svg><span class="ext">WAV</span></div>
@@ -2463,6 +2479,16 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
           <div class="msg"><div class="av sm">MI</div><div class="bd"><div class="by"><span class="u">mira</span><time>6:10 PM</time></div><div class="tx">in. this is so much cleaner than a drive folder</div></div></div>
         </div>
         <div class="composer"><div class="field"><button class="iconbtn" style="width:26px;height:26px"><svg class="ic sm"><use href="#i-clip"/></svg></button><input placeholder="Message mira"><button class="snd"><svg class="ic sm"><use href="#i-send"/></svg></button></div></div>
+      </main>
+
+      <!-- empty inbox (first run) — forced by #dms/empty -->
+      <main class="main" id="dmsEmpty" hidden>
+        <div class="emptystate">
+          <svg class="ic eic"><use href="#i-mail"/></svg>
+          <h3>No messages yet</h3>
+          <p>Start a direct message with a friend, or make a group. Conversations you pin stay at the top.</p>
+          <button class="btn primary" id="dmsEmptyNew"><svg class="ic sm"><use href="#i-pen"/></svg>New message</button>
+        </div>
       </main>
 
       <div class="friends" id="dmFriends" hidden>
@@ -2987,7 +3013,13 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
           </div>
         </div>
         <div class="panebody">
-          <div class="sres">
+          <!-- no-results — forced by #search/empty -->
+          <div class="emptystate" id="searchEmpty" hidden>
+            <svg class="ic eic"><use href="#i-search"/></svg>
+            <h3>No results for “bridge drums”</h3>
+            <p>Nothing matched in this scope. Try a different term, widen the scope to Everywhere, or drop a filter like <b>has:file</b>.</p>
+          </div>
+          <div class="sres" id="searchRes">
             <div class="sgroup">
               <div class="sglabel">Messages<a href="#">See all 3</a></div>
               <div class="srow"><div class="av sm">TM</div><div class="stx"><div class="smeta"><b class="m2">tomo</b> in <b>#mixing</b> · Late Bloom LP · 2:47 PM</div><div class="sbody">one note on the low end, the <mark>bridge</mark> <mark>drums</mark> sit a touch loud against the bass</div></div></div>
@@ -3756,6 +3788,9 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
     document.querySelectorAll('.chpanel').forEach(function(p){p.hidden=p.dataset.chview!==name;});}
   function setDm(which){var f=document.getElementById('dmFriends'),c=document.getElementById('dmConvo');
     if(f)f.hidden=which!=='friends';if(c)c.hidden=which==='friends';}
+  function only1(ids,showId){ids.forEach(function(id){var n=document.getElementById(id);if(n)n.hidden=id!==showId;});}
+  function forcePtab2(screen,idx){var s=q1('.screen[data-screen="'+screen+'"]');if(!s)return;
+    s.querySelectorAll('.ptabs2 .ptab2').forEach(function(t,i){t.classList.toggle('on',i===idx);});}
 
   // The registry. screen → { stateName: force() }. Keep each force() a thin
   // call into a switch that already exists — never a second copy of the state.
@@ -3782,7 +3817,13 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
       audit:function(){forceSetPanel('audit');},storage:function(){forceSetPanel('storage');}},
     notifications:{all:function(){forceNPanel('all');},mentions:function(){forceNPanel('mentions');},
       threads:function(){forceNPanel('threads');},saved:function(){forceNPanel('saved');}},
-    dms:{convo:function(){setDm('convo');},friends:function(){setDm('friends');}},
+    dms:{convo:function(){setDm('convo');},friends:function(){setDm('friends');},
+      empty:function(){only1(['dmConvo','dmsEmpty','dmFriends'],'dmsEmpty');
+        var rows=q1('.screen[data-screen="dms"] .dmrows');if(rows)rows.innerHTML='<div class="nempty">No conversations yet.</div>';}},
+    feed:{loading:function(){only1(['feedGrid','feedSkel','feedEmpty'],'feedSkel');},
+      empty:function(){only1(['feedGrid','feedSkel','feedEmpty'],'feedEmpty');}},
+    search:{empty:function(){only1(['searchRes','searchEmpty'],'searchEmpty');
+        var t=q1('.screen[data-screen="search"] .field input');if(t)t.value='xylophone solos';}},
     auth:{signin:function(){forceAstep('signin');},sent:function(){forceAstep('sent');},claim:function(){forceAstep('claim');}}
   };
   function applyState(screen,state){var m=STATES[screen];
