@@ -1100,6 +1100,11 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
 .gallery-ui .stage.scrim::before{content:"";position:absolute;inset:0;background:rgba(0,0,0,.32);border-radius:var(--r)}
 :root:not([data-theme="light"]) .gallery-ui .stage.scrim::before{background:rgba(0,0,0,.5)}
 .gallery-ui .stage.scrim>*{position:relative;z-index:1}
+/* §⑥ clones the REAL dialog nodes; neutralise their app-mode fixed/absolute
+   positioning so each lays out statically inside its stage cell (no shadow —
+   the modal-on-scrim rule). Menus reuse the existing .menu.show static form. */
+.gallery-ui .stage .umodal{position:static;transform:none;inset:auto;width:min(480px,100%);max-height:none;box-shadow:none;overflow:visible;margin:0}
+.gallery-ui .stage .menu{box-shadow:none}
 
 /* full-width arena detail-pane panels shown inline in the catalog (not compact) */
 .gallery-ui .arenapanel{grid-column:1/-1}
@@ -2012,112 +2017,11 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
 
 <section class="gsec" id="exploded">
   <h2>⑥ Wired dialogs &amp; menus <span class="n">— exploded, each diagnosable on its own</span></h2>
-  <p class="lede">Every dialog/menu that's wired into a live screen, also rendered
-    standalone so its spacing, type and alignment can be judged in isolation.
-    (Pass in progress — more panels land here as the backfill continues.)</p>
-  <div class="stagewrap">
-
-    <div><div class="stage scrim"><div class="modal">
-      <div class="uhd"><b>Create channel</b><button class="iconbtn"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
-      <div class="ubody">
-        <label class="ulab">Channel name</label><div class="field"><svg class="ic sm"><use href="#i-hash"/></svg><input placeholder="e.g. mastering"></div>
-        <label class="ulab">Type</label><div class="visrow"><button class="visopt on"><svg class="ic"><use href="#i-hash"/></svg><span>Text<small>messages &amp; files</small></span></button><button class="visopt"><svg class="ic"><use href="#i-voice"/></svg><span>Voice<small>talk &amp; screen-share</small></span></button></div>
-        <label class="ulab">Default save folder</label><div class="field"><svg class="ic sm"><use href="#i-folder"/></svg><input value="Files / beats" readonly></div>
-      </div>
-      <div class="ufoot"><button class="btn ghost">Cancel</button><button class="btn primary">Create</button></div>
-    </div></div><div class="pcap"><b>Create channel</b><span class="m">S2 · server menu / channel-column +</span></div></div>
-
-    <div><div class="stage scrim"><div class="modal">
-      <div class="uhd"><b>Invite to Late Bloom LP</b><button class="iconbtn"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
-      <div class="ubody">
-        <label class="ulab">Invite link</label>
-        <div class="invrow"><svg class="ic sm" style="color:var(--muted)"><use href="#i-link"/></svg><span class="lk">join.eski.lol/late-bloom-a1b2</span><button class="iconbtn" title="Copy"><svg class="ic sm"><use href="#i-copy"/></svg></button></div>
-        <label class="ulab">Or invite by handle</label>
-        <div class="field"><svg class="ic sm"><use href="#i-at"/></svg><input placeholder="@handle"></div>
-      </div>
-      <div class="ufoot"><button class="btn">Done</button><button class="btn primary"><svg class="ic sm"><use href="#i-copy"/></svg>Copy link</button></div>
-    </div></div><div class="pcap"><b>Invite to server</b><span class="m">S3 · link + copy + by-handle</span></div></div>
-
-    <div><div class="stage scrim"><div class="modal">
-      <div class="uhd"><b>Forward message</b><button class="iconbtn"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
-      <div class="ubody">
-        <div class="fwdquote"><div class="by"><span class="u m3">dev</span> <span style="color:var(--muted)">in #beats</span></div><div class="tx">reworked the back half, swapped the drums</div></div>
-        <label class="ulab">Send to</label>
-        <div class="sharerow"><svg class="ic sm" style="color:var(--muted)"><use href="#i-hash"/></svg><span class="nm">mixing</span><span class="tog on"><i></i></span></div>
-        <div class="sharerow"><span class="av sm">MI</span><span class="nm">mira</span><span class="tog"><i></i></span></div>
-      </div>
-      <div class="ufoot"><button class="btn ghost">Cancel</button><button class="btn primary">Forward</button></div>
-    </div></div><div class="pcap"><b>Forward</b><span class="m">S5 · quote + multi-target</span></div></div>
-
-    <div><div class="stage scrim"><div class="modal">
-      <div class="uhd"><b>Edit channel</b><button class="iconbtn"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
-      <div class="ubody">
-        <label class="ulab">Channel name</label><div class="field"><svg class="ic sm"><use href="#i-hash"/></svg><input value="beats"></div>
-        <label class="ulab">Topic</label><div class="field"><input value="put the session name in the file name"></div>
-      </div>
-      <div class="ufoot"><button class="btn ghost">Cancel</button><button class="btn primary">Save changes</button></div>
-    </div></div><div class="pcap"><b>Edit channel</b><span class="m">B5 · rename / topic / slowmode</span></div></div>
-
-    <div><div class="stage scrim"><div class="modal">
-      <div class="uhd"><b>Set a status</b><button class="iconbtn"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
-      <div class="ubody">
-        <label class="ulab">Status</label><div class="field"><span style="font-size:16px">🎧</span><input value="in the zone, back later"></div>
-        <label class="ulab">Clear after</label><div class="field"><input value="Don't clear" readonly><svg class="ic sm"><use href="#i-chev"/></svg></div>
-      </div>
-      <div class="ufoot"><button class="btn" style="margin-right:auto">Clear status</button><button class="btn ghost">Cancel</button><button class="btn primary">Save</button></div>
-    </div></div><div class="pcap"><b>Status composer</b><span class="m">B25 · /status</span></div></div>
-
-    <div><div class="stage scrim"><div class="modal">
-      <div class="uhd"><b>Group members</b><button class="iconbtn"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
-      <div class="ubody">
-        <label class="ulab">Group name</label><div class="field"><input value="sh040 crew"></div>
-        <div class="sharerow"><span class="av sm">MI</span><span class="nm">mira · you</span></div>
-        <div class="sharerow"><span class="av sm">LN</span><span class="nm">lin</span><button class="iconbtn" title="Remove"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
-      </div>
-      <div class="ufoot"><button class="btn danger" style="margin-right:auto">Leave group</button><button class="btn primary">Save</button></div>
-    </div></div><div class="pcap"><b>Group DM members</b><span class="m">B12 · rename / add / leave</span></div></div>
-
-    <div><div class="stage"><div class="menu show">
-      <div class="mlabel"># beats</div>
-      <button><svg class="ic sm"><use href="#i-check"/></svg>Mark as read</button>
-      <button><svg class="ic sm"><use href="#i-link"/></svg>Copy link</button>
-      <div class="sep"></div>
-      <div class="mlabel">Notifications</div>
-      <button class="notlv on"><svg class="ic sm nchk"><use href="#i-check"/></svg>All messages</button>
-      <button class="notlv"><svg class="ic sm nchk"><use href="#i-check"/></svg>Only @mentions</button>
-      <button class="notlv"><svg class="ic sm nchk"><use href="#i-check"/></svg>Nothing</button>
-      <div class="sep"></div>
-      <button><svg class="ic sm"><use href="#i-settings"/></svg>Edit channel</button>
-      <button class="danger"><svg class="ic sm"><use href="#i-trash"/></svg>Delete channel</button>
-    </div></div><div class="pcap"><b>Channel menu</b><span class="m">B4 · right-click a channel · notif levels S7</span></div></div>
-
-    <div><div class="stage"><div class="menu show">
-      <div class="mlabel">mira</div>
-      <button><svg class="ic sm"><use href="#i-check"/></svg>Mark as read</button>
-      <button><svg class="ic sm"><use href="#i-pin"/></svg>Pin conversation</button>
-      <button><svg class="ic sm"><use href="#i-mute"/></svg>Mute</button>
-      <div class="sep"></div>
-      <button><svg class="ic sm"><use href="#i-hand"/></svg>Block</button>
-      <button><svg class="ic sm"><use href="#i-flag"/></svg>Report</button>
-      <button class="danger"><svg class="ic sm"><use href="#i-leave"/></svg>Close DM</button>
-    </div></div><div class="pcap"><b>DM menu</b><span class="m">B12 · row / header ⋯</span></div></div>
-
-    <div><div class="stage"><div class="menu show" style="max-width:300px">
-      <div class="acpophead" style="font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600;padding:6px 10px 3px">Commands</div>
-      <button><span class="cmd" style="font-weight:600">/slowmode</span> <span style="color:var(--muted);font-size:var(--fs-xs)">set channel slowmode</span></button>
-      <button><span class="cmd" style="font-weight:600">/timeout</span> <span style="color:var(--muted);font-size:var(--fs-xs)">mute a member</span></button>
-      <button><span class="cmd" style="font-weight:600">/status</span> <span style="color:var(--muted);font-size:var(--fs-xs)">set your status</span></button>
-    </div></div><div class="pcap"><b>Composer autocomplete</b><span class="m">S13 · / @ # :</span></div></div>
-
-    <div><div class="stage"><div class="menu show" style="max-width:300px;padding:0">
-      <div style="display:flex;align-items:center;padding:10px 12px;box-shadow:inset 0 -1px 0 var(--line)"><b style="flex:1;font-size:var(--fs-sm)">Notifications</b><button class="btn sm">Mark all read</button></div>
-      <div style="padding:5px">
-        <div class="nrow unread"><div class="nic"><svg class="ic sm"><use href="#i-at"/></svg></div><div class="nbd"><div class="ntx"><b>rae</b> mentioned you in <b>#beats</b></div><div class="nctx">Late Bloom LP · 2:31 PM</div></div></div>
-        <div class="nrow"><div class="nic"><svg class="ic sm"><use href="#i-comment"/></svg></div><div class="nbd"><div class="ntx"><b>tomo</b> commented</div><div class="nctx">Back half rework · 12:20 PM</div></div></div>
-      </div>
-    </div></div><div class="pcap"><b>Bell dropdown</b><span class="m">B15 · header bell preview</span></div></div>
-
-  </div>
+  <p class="lede">Every modal &amp; menu that ships in app mode, cloned here
+    <b>from the real node</b> and forced open — so each is diagnosable in
+    isolation and provably identical to what the app renders. Generated, never
+    hand-copied: add a dialog and it appears here automatically.</p>
+  <div class="stagewrap" id="explodedStage"></div>
 </section>
 
 </div>
@@ -4888,6 +4792,33 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   inv.forEach(function(r){var tr=document.createElement('tr');
     tr.innerHTML='<td>'+r[0]+'</td><td>'+r[1]+'</td><td>'+r[2]+'</td><td><code>'+r[3]+'</code></td>'+
       '<td><span class="s '+r[4]+'">'+sc[r[4]]+'</span></td>';ib.appendChild(tr);});
+
+  // §⑥ — generate the exploded dialog catalog FROM THE REAL NODES. In catalog
+  // mode the whole app is in the DOM (display:none), so every modal/menu can be
+  // cloned, forced open and dropped into a labelled stage — provably identical
+  // to what ships, and complete the moment a dialog is added. No hand copies.
+  (function(){
+    var host=document.getElementById('explodedStage'); if(!host) return;
+    var nodes=[].slice.call(document.querySelectorAll('.umodal[id], .menu[id]'));
+    nodes.forEach(function(src){
+      var isMenu=src.classList.contains('menu');
+      var label=(src.querySelector('.uhd b')||src.querySelector('.mlabel')||{}).textContent||src.id;
+      var clone=src.cloneNode(true);
+      clone.removeAttribute('id'); clone.removeAttribute('style'); clone.hidden=false;
+      clone.querySelectorAll('[id]').forEach(function(n){n.removeAttribute('id');}); // no duplicate ids
+      if(isMenu) clone.classList.add('show');
+      var box=document.createElement('div'); box.className='stage'+(isMenu?'':' scrim'); box.appendChild(clone);
+      var cap=document.createElement('div'); cap.className='pcap';
+      var b=document.createElement('b'); b.textContent=(label||'').trim();
+      var m=document.createElement('span'); m.className='m'; m.textContent='#'+src.id;
+      cap.appendChild(b); cap.appendChild(m);
+      var cell=document.createElement('div'); cell.appendChild(box); cell.appendChild(cap);
+      host.appendChild(cell);
+    });
+    var lede=document.querySelector('#exploded .lede');
+    if(lede){var c=document.createElement('b'); c.style.color='var(--soft)';
+      c.textContent=' '+nodes.length+' dialogs generated.'; lede.appendChild(document.createTextNode(' ')); lede.appendChild(c);}
+  })();
 
   // theme toggle
   function paint(){tb.textContent=isDark()?'Light':'Dark';}
