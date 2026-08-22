@@ -104,6 +104,7 @@ input{font:inherit;color:inherit}
 .iconbtn:hover{background:var(--surface);color:var(--ink)}
 .iconbtn:active{background:var(--ink);color:var(--on-ink)}
 .iconbtn.on{background:var(--ink);color:var(--on-ink)}
+.iconbtn.memoff{color:var(--muted)}   /* members rail collapsed: dim the toggle */
 
 /* tags: distinct chip, more contrast */
 /* Tags are coloured bold text, not grey pills, the word carries it; the pill was
@@ -294,7 +295,8 @@ input{font:inherit;color:inherit}
 
 /* file explorer, nested folder tree + views (Discord + Drive) */
 .explayout{flex:1;min-width:0;display:flex;overflow:hidden}
-.filetree{flex:none;width:212px;background:var(--surface);overflow-y:auto;padding:8px 6px}
+.filetree{flex:none;width:212px;background:var(--surface);overflow-y:auto;padding:8px 6px;display:flex;flex-direction:column}
+.ftbottom{margin-top:auto}   /* Trash + storage footer pinned to the foot of the navigator */
 .fthd{display:flex;align-items:center;justify-content:space-between;font-size:var(--fs-xs);color:var(--muted);font-weight:600;padding:4px 8px 8px}
 .ftrow{display:flex;align-items:center;gap:6px;width:100%;text-align:left;padding:6px 8px;border-radius:var(--r);font-size:var(--fs-sm);color:var(--soft);cursor:pointer}
 .ftrow:hover{background:var(--plate)}
@@ -367,14 +369,19 @@ input{font:inherit;color:inherit}
 .card .title{font-size:var(--fs-sm);color:var(--ink);font-weight:600;margin-top:8px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .card .who{display:flex;align-items:center;gap:6px;color:var(--muted);font-size:var(--fs-xs);margin-top:5px}
 /* explorer grid actions + selection + lightbox (gap #11) */
-.cardsel{position:absolute;top:8px;left:8px;z-index:3;width:20px;height:20px;border-radius:5px;background:rgba(20,20,20,.5);display:none;place-items:center;cursor:pointer}
-.card:hover .cardsel,.card.sel .cardsel{display:grid}
+.cardsel{position:absolute;top:8px;left:8px;z-index:3;width:20px;height:20px;border-radius:var(--r);background:rgba(20,20,20,.5);box-shadow:inset 0 0 0 1px rgba(255,255,255,.7);display:none;place-items:center;cursor:pointer}
+/* the selection checkbox only appears in selection mode or when the card is
+   already picked — no stray empty box on plain hover (owner 2026-08-22). */
+.explayout.selecting .card:hover .cardsel,.explayout.selecting .card .cardsel,.card.sel .cardsel{display:grid}
 .cardsel .ic{width:13px;height:13px;color:#fff;opacity:0}
-.card.sel .cardsel{background:var(--ink)}.card.sel .cardsel .ic{opacity:1}
+.card.sel .cardsel{background:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}.card.sel .cardsel .ic{opacity:1}
 .card.sel .media{outline:2px solid var(--ink);outline-offset:-2px}
-.cardacts{position:absolute;top:6px;right:6px;z-index:3;display:none;gap:2px}
+.cardacts{position:absolute;top:6px;right:6px;z-index:3;display:none;gap:3px}
 .card:hover .cardacts{display:flex}
-.cardacts button{width:26px;height:26px;display:grid;place-items:center;border-radius:var(--r);background:rgba(20,20,20,.55);color:#fff}
+/* card action buttons are real buttons: colour-change on hover, INVERT on click */
+.cardacts button{width:26px;height:26px;display:grid;place-items:center;border-radius:var(--r);background:rgba(20,20,20,.55);color:#fff;cursor:pointer;transition:background var(--t),color var(--t)}
+.cardacts button:hover{background:rgba(20,20,20,.85)}
+.cardacts button:active{background:#fff;color:#131313}
 .cardacts button.starred .ic{fill:currentColor}
 /* B26 inline chat-attachment actions, solid chips (no transparency) */
 .filecardwrap{position:relative;display:inline-block;max-width:100%}
@@ -382,7 +389,7 @@ input{font:inherit;color:inherit}
 .filecardwrap:hover .fcacts{display:flex}
 .fcacts button{width:26px;height:26px;display:grid;place-items:center;border-radius:var(--r);background:var(--paper);color:var(--soft);box-shadow:0 0 0 1px var(--line)}
 .fcacts button:hover{background:var(--surface);color:var(--ink)}
-.cardacts button:hover{background:rgba(20,20,20,.82)}
+.fcacts button:active{background:var(--ink);color:var(--on-ink)}
 .cardacts .ic{width:15px;height:15px}
 /* #43 starred state: a persistent gold star badge on the media; the hover star
    action tints gold too. */
@@ -561,6 +568,8 @@ input{font:inherit;color:inherit}
 .menu .loco .lfi{color:var(--muted)}
 .menu .loco.on{background:var(--plate);color:var(--ink);font-weight:600}
 .menu .loco.on .lfi{color:var(--ink)}
+.menu .loco.locnewrow{gap:6px}
+.menu .locnewinput{flex:1;min-width:0;background:none;border:0;border-bottom:1px solid var(--line2);color:var(--ink);font:inherit;font-size:var(--fs-sm);padding:1px 0;outline:none}
 .locmenu{min-width:240px}
 
 .umodal{position:fixed;z-index:81;top:50%;left:50%;transform:translate(-50%,-50%);width:min(540px,95vw);max-height:90vh;overflow:auto;background:var(--paper);border-radius:var(--r)}
@@ -835,10 +844,17 @@ input{font:inherit;color:inherit}
 /* search results */
 .fchips{display:flex;gap:var(--s2);flex-wrap:wrap}
 /* quick-filter chips share the button system's metrics (colour-change; on = inverted) */
-.fchip{display:inline-flex;align-items:center;padding:3px 10px;border-radius:var(--r);font-size:var(--fs-xs);font-weight:500;color:var(--soft);background:var(--surface)}
+.fchip{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:var(--r);font-size:var(--fs-xs);font-weight:500;color:var(--soft);background:var(--surface);cursor:pointer;transition:background var(--t),color var(--t)}
 .fchip:hover{background:var(--plate)}
 .fchip.on{background:var(--ink);color:var(--on-ink)}
 .fchip .n{opacity:.55;margin-left:5px;font-variant-numeric:tabular-nums}
+.fchip.fchipstar .ic{color:#e0a92a}
+.fchip.fchipstar.on .ic{color:var(--on-ink)}
+/* drag-select marquee over the explorer grid */
+.rubberband{position:absolute;z-index:5;border:1px solid var(--ink);background:color-mix(in srgb,var(--ink),transparent 88%);pointer-events:none;border-radius:2px}
+/* browsing vs searching: the search-results strip that replaces the breadcrumb */
+.exsearchstate{display:flex;align-items:center;gap:8px;font-size:var(--fs-sm);color:var(--soft)}
+.exsearchstate b{color:var(--ink)}
 .sres{max-width:840px}
 .sgroup{margin-bottom:var(--s5)}
 .sglabel{font-size:var(--fs-xs);color:var(--muted);font-weight:600;margin-bottom:var(--s2);display:flex;align-items:center;justify-content:space-between}
@@ -925,6 +941,8 @@ input{font:inherit;color:inherit}
 .chtab.on::after{content:"";position:absolute;left:0;right:0;bottom:0;height:2px;background:var(--ink)}
 .chpanel{flex:1;overflow-y:auto;padding:var(--s4) var(--s5)}
 .chpanel[hidden]{display:none}
+.chfilesbar{display:flex;align-items:center;gap:var(--s2);padding:var(--s3) var(--s4) 0}
+.chfilesbar .field{max-width:360px;flex:1}
 .chpanel .lb{color:var(--muted);font-size:var(--fs-xs);font-weight:600;margin-bottom:var(--s3)}
 .pinrow{display:flex;gap:var(--s3);padding:12px;border-radius:var(--r);max-width:720px}
 .pinrow:hover{background:var(--surface)}
@@ -1367,7 +1385,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
 .ustore{display:flex;align-items:center;gap:7px;font-size:var(--fs-xs);color:var(--muted);background:var(--surface);border-radius:var(--r);padding:8px 10px;margin-top:8px}
 .ustore .ic{color:var(--soft);flex:none}.ustore b{color:var(--soft);font-weight:600}
 /* file-tree storage footer (Drive-style: server storage used, always visible) */
-.ftfoot{margin-top:auto;padding:10px 8px 6px;font-size:var(--fs-xs);color:var(--muted)}
+.ftfoot{margin-top:6px;padding:10px 8px 6px;font-size:var(--fs-xs);color:var(--muted)}
 .ftfoot .bar{margin:6px 0 4px}
 .filetree{display:flex;flex-direction:column}
 /* point mark = rectangular labelled tail (holds a full username, scrolls) */
@@ -2048,9 +2066,10 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   <aside class="rail">
     <button class="railbtn" data-s="feed" title="Feed"><svg class="ic"><use href="#i-home"/></svg></button>
     <button class="railbtn" data-s="dms" title="Messages"><svg class="ic"><use href="#i-mail"/></svg><span class="ct">3</span></button>
+    <button class="railbtn" id="myFilesBtn" title="My files (your personal Drive)"><svg class="ic"><use href="#i-folder"/></svg></button>
     <div class="railsep"></div>
     <button class="railbtn on" data-s="workspace" title="Late Bloom LP">LB</button>
-    <button class="railbtn" data-s="explorer" title="Specter, sh040">SP<span class="ct">7</span></button>
+    <button class="railbtn" title="Specter">SP<span class="ct">7</span></button>
     <button class="railbtn" title="Beat swap">BS</button>
     <div class="railsep"></div>
     <button class="railbtn" data-s="create" title="Create or join a server"><svg class="ic"><use href="#i-plus"/></svg></button>
@@ -2067,7 +2086,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
         </div>
         <div class="chanbody">
           <div class="cgroup">
-            <button class="crow" data-s="explorer"><svg class="ic"><use href="#i-folder"/></svg><span class="nm">Files</span></button>
+            <button class="crow" id="filesChannel" data-s="explorer"><svg class="ic"><use href="#i-folder"/></svg><span class="nm">Files</span></button>
           </div>
           <div class="cgroup">
             <div class="cglabel"><button class="cgtoggle" aria-expanded="true"><svg class="ic sm cgcaret"><use href="#i-chev"/></svg>Channels</button><button class="cgadd" id="addChannel" data-admin-only title="Create channel"><svg class="ic sm"><use href="#i-plus"/></svg></button></div>
@@ -2111,7 +2130,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
             <button class="iconbtn wipcall" data-s="vc" title="Video, in progress"><svg class="ic"><use href="#i-video"/></svg></button>
             <button class="iconbtn" id="notifBell" title="Notifications"><svg class="ic"><use href="#i-bell"/></svg></button>
             <button class="iconbtn" data-s="search" title="Search"><svg class="ic"><use href="#i-search"/></svg></button>
-            <button class="iconbtn" title="Members"><svg class="ic"><use href="#i-users"/></svg></button>
+            <button class="iconbtn" id="memToggle" title="Toggle members" aria-pressed="true"><svg class="ic"><use href="#i-users"/></svg></button>
           </div>
         </div>
         <div class="chtabs">
@@ -2234,6 +2253,12 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
         </div>
 
         <div class="chpanel" data-chview="files" hidden>
+          <!-- per-channel file browser: search + filter even without folder navigation -->
+          <div class="chfilesbar">
+            <div class="field"><svg class="ic sm"><use href="#i-search"/></svg><input placeholder="Search files in #beats"></div>
+            <button class="btn exfilter" data-fmenu="typeMenu" data-fmulti="1" aria-haspopup="menu" aria-expanded="false">Type<svg class="ic sm"><use href="#i-chev"/></svg></button>
+            <button class="btn exfilter" data-fmenu="sortMenu" aria-haspopup="menu" aria-expanded="false">Latest<svg class="ic sm"><use href="#i-chev"/></svg></button>
+          </div>
           <div class="lb">12 files in #beats</div>
           <div class="masonry even">
             <button class="card" data-open-details><div class="media file"><svg class="ic fic"><use href="#i-file"/></svg><span class="ext">FLP</span></div><div class="title">late_bloom_beat.flp</div><div class="who">dev</div></button>
@@ -2334,14 +2359,12 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
 
     <!-- FILE EXPLORER -->
     <div class="screen" data-screen="explorer" hidden>
-      <div class="explayout">
-        <!-- nested folder tree -->
-        <nav class="filetree">
-          <div class="fthd">Files<button class="iconbtn sm" title="New folder"><svg class="ic sm"><use href="#i-plus"/></svg></button></div>
-          <!-- #43 starred smart folder + #42 trash (auto-empties after 30 days) -->
-          <button class="ftrow lvl0"><span class="tw"></span><svg class="ic sm fic"><use href="#i-star"/></svg><span class="fn">Starred</span></button>
-          <button class="ftrow lvl0"><span class="tw"></span><svg class="ic sm fic"><use href="#i-trash"/></svg><span class="fn">Trash</span><span class="ftmeta" title="Items auto-delete 30 days after they're trashed">30d</span></button>
-          <div class="ftsep"></div>
+      <div class="explayout" data-source="server">
+        <!-- SERVER file tree (this is Late Bloom's Files channel, not a standalone
+             server). Trash sits at the FOOT of the navigator; Starred moved out to
+             the quick-filter chips (owner 2026-08-22). -->
+        <nav class="filetree" data-tree="server">
+          <div class="fthd">Files<button class="iconbtn sm newFolderBtn" title="New folder"><svg class="ic sm"><use href="#i-plus"/></svg></button></div>
           <button class="ftrow lvl0 open"><svg class="ic sm tw"><use href="#i-chev"/></svg><svg class="ic sm fic"><use href="#i-folder"/></svg><span class="fn">Late Bloom LP</span></button>
           <button class="ftrow lvl1 open on"><svg class="ic sm tw"><use href="#i-chev"/></svg><svg class="ic sm fic"><use href="#i-folder"/></svg><span class="fn">beats</span></button>
           <button class="ftrow lvl2"><span class="tw"></span><svg class="ic sm fic"><use href="#i-folder"/></svg><span class="fn">drums</span></button>
@@ -2350,7 +2373,26 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
           <button class="ftrow lvl1"><span class="tw"></span><svg class="ic sm fic"><use href="#i-folder"/></svg><span class="fn">references</span></button>
           <!-- #58 a locked folder shows a lock; contents are read-only without permission -->
           <button class="ftrow lvl1"><span class="tw"></span><svg class="ic sm fic"><use href="#i-folder"/></svg><span class="fn">stems and sessions</span><svg class="ic sm ftlock" title="Locked, read-only"><use href="#i-lock"/></svg></button>
-          <div class="ftfoot"><svg class="ic sm" style="vertical-align:-2px;color:var(--muted)"><use href="#i-server"/></svg> This server's storage<div class="bar"><i style="width:62%"></i></div>74 of 120 GB used · <button id="manageStorage" style="color:var(--soft);text-decoration:underline">manage</button></div>
+          <div class="ftbottom">
+            <div class="ftsep"></div>
+            <button class="ftrow lvl0"><span class="tw"></span><svg class="ic sm fic"><use href="#i-trash"/></svg><span class="fn">Trash</span><span class="ftmeta" title="Items auto-delete 30 days after they're trashed">30d</span></button>
+            <div class="ftfoot"><svg class="ic sm" style="vertical-align:-2px;color:var(--muted)"><use href="#i-server"/></svg> This server's storage<div class="bar"><i style="width:62%"></i></div>74 of 120 GB used · <button class="manageStorageLink" id="manageStorage" style="color:var(--soft);text-decoration:underline">manage</button></div>
+          </div>
+        </nav>
+        <!-- PERSONAL file tree (your own Drive: distinct from any server). The
+             second of the two browsers the owner asked to see. -->
+        <nav class="filetree" data-tree="personal" hidden>
+          <div class="fthd">My files<button class="iconbtn sm newFolderBtn" title="New folder"><svg class="ic sm"><use href="#i-plus"/></svg></button></div>
+          <button class="ftrow lvl0 open on"><svg class="ic sm tw"><use href="#i-chev"/></svg><svg class="ic sm fic"><use href="#i-folder"/></svg><span class="fn">My files</span></button>
+          <button class="ftrow lvl1"><span class="tw"></span><svg class="ic sm fic"><use href="#i-folder"/></svg><span class="fn">Saved from servers</span></button>
+          <button class="ftrow lvl1"><span class="tw"></span><svg class="ic sm fic"><use href="#i-folder"/></svg><span class="fn">Uploads</span></button>
+          <button class="ftrow lvl1"><span class="tw"></span><svg class="ic sm fic"><use href="#i-folder"/></svg><span class="fn">Bounces</span></button>
+          <button class="ftrow lvl1"><span class="tw"></span><svg class="ic sm fic"><use href="#i-folder"/></svg><span class="fn">Screenshots</span></button>
+          <div class="ftbottom">
+            <div class="ftsep"></div>
+            <button class="ftrow lvl0"><span class="tw"></span><svg class="ic sm fic"><use href="#i-trash"/></svg><span class="fn">Trash</span><span class="ftmeta" title="Items auto-delete 30 days after they're trashed">30d</span></button>
+            <div class="ftfoot"><svg class="ic sm" style="vertical-align:-2px;color:var(--muted)"><use href="#i-user"/></svg> Your storage<div class="bar"><i style="width:44%"></i></div>22 of 50 GB used · <button class="manageStorageLink" id="manageStorage2" style="color:var(--soft);text-decoration:underline">manage</button></div>
+          </div>
         </nav>
         <div class="pane">
           <!-- #46 read-only over-cap banner (shown when storage is over cap / lapsed) -->
@@ -2358,7 +2400,10 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
           <!-- #58 locked-folder read-only notice, forced by #explorer/locked -->
           <div class="capbanner" id="lockNote" hidden style="background:var(--surface);color:var(--soft)"><svg class="ic sm" style="color:var(--muted)"><use href="#i-lock"/></svg><span><b>stems and sessions</b> is locked. Its files are <b>read-only</b>, you can open and download, but not move, rename or delete without permission.</span></div>
           <div class="panehd">
-            <div class="crumbs"><button>Late Bloom LP</button><span class="sl">/</span><b>beats</b></div>
+            <!-- Browsing vs searching: the breadcrumb shows where you ARE (browsing);
+                 typing in search swaps it for a results indicator (owner 2026-08-22). -->
+            <div class="crumbs" id="exCrumbs"><button class="crumbroot">Late Bloom LP</button><span class="sl">/</span><b>beats</b></div>
+            <div class="crumbs exsearchstate" id="exSearchState" hidden><svg class="ic sm" style="color:var(--muted)"><use href="#i-search"/></svg><span>Search results for <b id="exSearchTerm"></b></span><button class="btn ghost sm" id="exSearchClear">Clear search</button></div>
             <div class="hdctl">
               <!-- #55 show-hidden tucked away small (rare toggle, not a labelled slot) -->
               <button class="iconbtn" id="exHidden" title="Show hidden files"><svg class="ic sm"><use href="#i-hide"/></svg></button>
@@ -2367,26 +2412,25 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
             </div>
           </div>
           <div class="toolbar">
-            <div class="field"><svg class="ic sm"><use href="#i-search"/></svg><input placeholder="Search this server's files"></div>
-            <!-- filter dropdowns follow the one button system: .btn + chevron, no leading icon -->
-            <button class="btn">Channel<svg class="ic sm"><use href="#i-chev"/></svg></button>
-            <button class="btn">Type<svg class="ic sm"><use href="#i-chev"/></svg></button>
-            <button class="btn">Uploader<svg class="ic sm"><use href="#i-chev"/></svg></button>
-            <button class="btn">Tag<svg class="ic sm"><use href="#i-chev"/></svg></button>
-            <button class="btn">Date<svg class="ic sm"><use href="#i-chev"/></svg></button>
-            <button class="btn">Latest<svg class="ic sm"><use href="#i-chev"/></svg></button>
-            <!-- #47 the real upload entry point (was only in the hidden proto bar) -->
-            <button class="btn primary" id="showUpload4" style="margin-left:auto"><svg class="ic sm"><use href="#i-plus"/></svg>Upload</button>
+            <div class="field"><svg class="ic sm"><use href="#i-search"/></svg><input id="exSearch" placeholder="Search this server's files"></div>
+            <!-- filter dropdowns follow the one button system: .btn + chevron, no leading
+                 icon. Type/Channel/Uploader/Tag are multi-select; Date/Sort single. -->
+            <button class="btn exfilter" data-fmenu="typeMenu" data-fmulti="1" aria-haspopup="menu" aria-expanded="false" id="exchType">Type<svg class="ic sm"><use href="#i-chev"/></svg></button>
+            <button class="btn exfilter exserveronly" data-fmenu="chanMenu" data-fmulti="1" aria-haspopup="menu" aria-expanded="false">Channel<svg class="ic sm"><use href="#i-chev"/></svg></button>
+            <button class="btn exfilter exserveronly" data-fmenu="uploaderMenu" data-fmulti="1" aria-haspopup="menu" aria-expanded="false">Uploader<svg class="ic sm"><use href="#i-chev"/></svg></button>
+            <button class="btn exfilter" data-fmenu="tagMenu" data-fmulti="1" aria-haspopup="menu" aria-expanded="false">Tag<svg class="ic sm"><use href="#i-chev"/></svg></button>
+            <button class="btn exfilter" data-fmenu="dateMenu" aria-haspopup="menu" aria-expanded="false" id="exchDate">Anytime<svg class="ic sm"><use href="#i-chev"/></svg></button>
+            <button class="btn exfilter" data-fmenu="sortMenu" aria-haspopup="menu" aria-expanded="false" id="exchSort">Latest<svg class="ic sm"><use href="#i-chev"/></svg></button>
+            <span style="flex:1"></span>
+            <button class="btn newFolderBtn"><svg class="ic sm"><use href="#i-plus"/></svg>New folder</button>
+            <button class="btn" id="exSelectBtn"><svg class="ic sm"><use href="#i-check"/></svg>Select</button>
+            <!-- #47 the real upload entry point -->
+            <button class="btn primary" id="showUpload4"><svg class="ic sm"><use href="#i-plus"/></svg>Upload</button>
           </div>
-          <!-- #33 quick-filter chips (type + starred) -->
+          <!-- the horizontal modifier row: Starred stays here as a simple toggle -->
           <div class="toolbar" style="padding-top:0">
             <div class="fchips">
-              <button class="fchip on">All<span class="n">7</span></button>
-              <button class="fchip">Images<span class="n">1</span></button>
-              <button class="fchip">Audio<span class="n">2</span></button>
-              <button class="fchip">Video<span class="n">1</span></button>
-              <button class="fchip">Projects<span class="n">3</span></button>
-              <button class="fchip"><svg class="ic sm" style="width:12px;height:12px;vertical-align:-1px"><use href="#i-star"/></svg> Starred</button>
+              <button class="fchip fchipstar" id="fchipStarred"><svg class="ic sm" style="width:12px;height:12px"><use href="#i-star"/></svg>Starred</button>
             </div>
           </div>
           <div class="selbar" id="selbar"><span class="n"><span id="seln">0</span> selected</span>
@@ -3145,10 +3189,11 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
         <div class="panehd"><div class="title">Search</div></div>
         <div class="toolbar">
           <div class="field" style="max-width:420px"><svg class="ic sm"><use href="#i-search"/></svg><input value="bridge drums"><svg class="ic sm" style="color:var(--muted);cursor:pointer"><use href="#i-x"/></svg></div>
-          <div class="seg" id="searchScope"><div class="o on">This server</div><div class="o">This channel</div><div class="o">Everywhere</div></div>
-          <button class="btn">From<svg class="ic sm"><use href="#i-chev"/></svg></button>
-          <button class="btn">In<svg class="ic sm"><use href="#i-chev"/></svg></button>
-          <button class="btn">Anytime<svg class="ic sm"><use href="#i-chev"/></svg></button>
+          <!-- scope is a single multi-select dropdown, not three always-on boxes -->
+          <button class="btn exfilter" data-fmenu="scopeMenu" data-fmulti="1" aria-haspopup="menu" aria-expanded="false" id="scopeBtn">This server<svg class="ic sm"><use href="#i-chev"/></svg></button>
+          <button class="btn exfilter" data-fmenu="fromMenu" data-fmulti="1" aria-haspopup="menu" aria-expanded="false">From<svg class="ic sm"><use href="#i-chev"/></svg></button>
+          <button class="btn exfilter" data-fmenu="inMenu" data-fmulti="1" aria-haspopup="menu" aria-expanded="false">In<svg class="ic sm"><use href="#i-chev"/></svg></button>
+          <button class="btn exfilter" data-fmenu="sdateMenu" aria-haspopup="menu" aria-expanded="false">Anytime<svg class="ic sm"><use href="#i-chev"/></svg></button>
           <span class="smod">try <b>from:tomo</b> <b>in:#mixing</b> <b>has:file</b></span>
         </div>
         <div class="toolbar" style="padding-top:0">
@@ -3396,6 +3441,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   <div class="sep"></div>
   <button><svg class="ic sm"><use href="#i-save"/></svg>Save to my files</button>
   <button><svg class="ic sm"><use href="#i-download"/></svg>Download</button>
+  <button id="cmCopy"><svg class="ic sm"><use href="#i-copy"/></svg>Copy</button>
   <button><svg class="ic sm"><use href="#i-link"/></svg>Copy link</button>
   <button id="cmCrosspost"><svg class="ic sm"><use href="#i-server"/></svg>Crosspost to server…</button>
   <div class="sep"></div>
@@ -3659,7 +3705,6 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   <button><svg class="ic sm"><use href="#i-folder"/></svg>Open</button>
   <button><svg class="ic sm"><use href="#i-plus"/></svg>New subfolder</button>
   <button><svg class="ic sm"><use href="#i-pen"/></svg>Rename</button>
-  <button><svg class="ic sm"><use href="#i-check"/></svg>Set as channel default</button>
   <div class="sep"></div>
   <button><svg class="ic sm"><use href="#i-lock"/></svg>Lock (make read-only)</button>
   <button><svg class="ic sm"><use href="#i-file"/></svg>Archive</button>
@@ -3672,6 +3717,81 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   <button class="notlv on" data-exv="grid"><svg class="ic sm nchk"><use href="#i-check"/></svg>Grid</button>
   <button class="notlv" data-exv="list"><svg class="ic sm nchk"><use href="#i-check"/></svg>List</button>
   <button class="notlv" data-exv="feed"><svg class="ic sm nchk"><use href="#i-check"/></svg>Feed</button>
+</div>
+
+<!-- File-explorer filter dropdowns. Type/Channel/Uploader/Tag are MULTI-select
+     (check several; the menu stays open); Date/Sort are single-select. All follow
+     the one .btn+chevron control system (owner 2026-08-22). -->
+<div class="menu" id="typeMenu">
+  <div class="mlabel">File type</div>
+  <button class="notlv" data-v="Images"><svg class="ic sm nchk"><use href="#i-check"/></svg>Images</button>
+  <button class="notlv" data-v="Audio"><svg class="ic sm nchk"><use href="#i-check"/></svg>Audio</button>
+  <button class="notlv" data-v="Video"><svg class="ic sm nchk"><use href="#i-check"/></svg>Video</button>
+  <button class="notlv" data-v="Documents"><svg class="ic sm nchk"><use href="#i-check"/></svg>Documents</button>
+  <button class="notlv" data-v="Other"><svg class="ic sm nchk"><use href="#i-check"/></svg>Other</button>
+</div>
+<div class="menu" id="chanMenu">
+  <div class="mlabel">Channel</div>
+  <button class="notlv" data-v="announcements"><svg class="ic sm nchk"><use href="#i-check"/></svg>announcements</button>
+  <button class="notlv" data-v="beats"><svg class="ic sm nchk"><use href="#i-check"/></svg>beats</button>
+  <button class="notlv" data-v="verses"><svg class="ic sm nchk"><use href="#i-check"/></svg>verses</button>
+  <button class="notlv" data-v="mixing"><svg class="ic sm nchk"><use href="#i-check"/></svg>mixing</button>
+  <button class="notlv" data-v="references"><svg class="ic sm nchk"><use href="#i-check"/></svg>references</button>
+</div>
+<div class="menu" id="uploaderMenu">
+  <div class="mlabel">Uploaded by</div>
+  <button class="notlv" data-v="dev"><svg class="ic sm nchk"><use href="#i-check"/></svg>dev</button>
+  <button class="notlv" data-v="rae"><svg class="ic sm nchk"><use href="#i-check"/></svg>rae</button>
+  <button class="notlv" data-v="jax"><svg class="ic sm nchk"><use href="#i-check"/></svg>jax</button>
+  <button class="notlv" data-v="tomo"><svg class="ic sm nchk"><use href="#i-check"/></svg>tomo</button>
+</div>
+<div class="menu" id="tagMenu">
+  <div class="mlabel">Tag</div>
+  <button class="notlv" data-v="drums"><svg class="ic sm nchk"><use href="#i-check"/></svg>drums</button>
+  <button class="notlv" data-v="142bpm"><svg class="ic sm nchk"><use href="#i-check"/></svg>142bpm</button>
+  <button class="notlv" data-v="bridge"><svg class="ic sm nchk"><use href="#i-check"/></svg>bridge</button>
+  <button class="notlv" data-v="reference"><svg class="ic sm nchk"><use href="#i-check"/></svg>reference</button>
+</div>
+<div class="menu" id="dateMenu">
+  <button class="notlv on" data-v="Anytime"><svg class="ic sm nchk"><use href="#i-check"/></svg>Anytime</button>
+  <button class="notlv" data-v="Today"><svg class="ic sm nchk"><use href="#i-check"/></svg>Today</button>
+  <button class="notlv" data-v="This week"><svg class="ic sm nchk"><use href="#i-check"/></svg>This week</button>
+  <button class="notlv" data-v="This month"><svg class="ic sm nchk"><use href="#i-check"/></svg>This month</button>
+</div>
+<div class="menu" id="sortMenu">
+  <button class="notlv on" data-v="Latest"><svg class="ic sm nchk"><use href="#i-check"/></svg>Latest</button>
+  <button class="notlv" data-v="Oldest"><svg class="ic sm nchk"><use href="#i-check"/></svg>Oldest</button>
+  <button class="notlv" data-v="Name"><svg class="ic sm nchk"><use href="#i-check"/></svg>Name</button>
+  <button class="notlv" data-v="Size"><svg class="ic sm nchk"><use href="#i-check"/></svg>Size</button>
+</div>
+
+<!-- Search-screen filter dropdowns (scope is multi-select, replacing the old
+     always-on segmented boxes). -->
+<div class="menu" id="scopeMenu">
+  <div class="mlabel">Search in</div>
+  <button class="notlv on" data-v="This server"><svg class="ic sm nchk"><use href="#i-check"/></svg>This server</button>
+  <button class="notlv" data-v="This channel"><svg class="ic sm nchk"><use href="#i-check"/></svg>This channel</button>
+  <button class="notlv" data-v="Everywhere"><svg class="ic sm nchk"><use href="#i-check"/></svg>Everywhere</button>
+</div>
+<div class="menu" id="fromMenu">
+  <div class="mlabel">From</div>
+  <button class="notlv" data-v="dev"><svg class="ic sm nchk"><use href="#i-check"/></svg>dev</button>
+  <button class="notlv" data-v="rae"><svg class="ic sm nchk"><use href="#i-check"/></svg>rae</button>
+  <button class="notlv" data-v="jax"><svg class="ic sm nchk"><use href="#i-check"/></svg>jax</button>
+  <button class="notlv" data-v="tomo"><svg class="ic sm nchk"><use href="#i-check"/></svg>tomo</button>
+</div>
+<div class="menu" id="inMenu">
+  <div class="mlabel">In channel</div>
+  <button class="notlv" data-v="beats"><svg class="ic sm nchk"><use href="#i-check"/></svg>beats</button>
+  <button class="notlv" data-v="verses"><svg class="ic sm nchk"><use href="#i-check"/></svg>verses</button>
+  <button class="notlv" data-v="mixing"><svg class="ic sm nchk"><use href="#i-check"/></svg>mixing</button>
+  <button class="notlv" data-v="references"><svg class="ic sm nchk"><use href="#i-check"/></svg>references</button>
+</div>
+<div class="menu" id="sdateMenu">
+  <button class="notlv on" data-v="Anytime"><svg class="ic sm nchk"><use href="#i-check"/></svg>Anytime</button>
+  <button class="notlv" data-v="Today"><svg class="ic sm nchk"><use href="#i-check"/></svg>Today</button>
+  <button class="notlv" data-v="This week"><svg class="ic sm nchk"><use href="#i-check"/></svg>This week</button>
+  <button class="notlv" data-v="This month"><svg class="ic sm nchk"><use href="#i-check"/></svg>This month</button>
 </div>
 
 <!-- File-location chooser, one folder picker, opened as a dropdown from every
@@ -4033,6 +4153,8 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
         loadingInto(q1('.screen[data-screen="workspace"] .mem'),'row',5);}
     },
     explorer:{
+      personal:function(){if(window.__setExplorerSource)window.__setExplorerSource('personal');},
+      server:function(){if(window.__setExplorerSource)window.__setExplorerSource('server');},
       loading:function(){forceExview('skel');},
       grid:function(){forceExview('grid');},
       list:function(){forceExview('list');},
@@ -4124,7 +4246,9 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
     if(!raw){show('workspace');return;}
     var parts=raw.split('/'),head=parts[0],arg=parts.slice(1).join('/');
     if(head==='dialog'||head==='menu'){openTarget(arg);return;}
-    if(document.querySelector('.screen[data-screen="'+head+'"]')){show(head);if(arg)applyState(head,arg);}}
+    if(document.querySelector('.screen[data-screen="'+head+'"]')){show(head);
+      if(head==='explorer'&&arg!=='personal'&&window.__setExplorerSource)window.__setExplorerSource('server');
+      if(arg)applyState(head,arg);}}
   var applyHash=routeHash;                                    // keep the old name working
   window.addEventListener('hashchange',routeHash);
   applyWidth();
@@ -4571,17 +4695,38 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
       locMenu.classList.add('open');var r=p.getBoundingClientRect();
       locMenu.style.left=Math.min(r.left,window.innerWidth-locMenu.offsetWidth-8)+'px';
       locMenu.style.top=(r.bottom+4)+'px';locMenu.style.minWidth=Math.max(240,r.width)+'px';});});
-    locMenu.querySelectorAll('.loco').forEach(function(o){o.addEventListener('click',function(e){e.stopPropagation();
+    function locLevel(o){var m=(o.className||'').match(/lvl(\d)/);return m?+m[1]:0;}
+    function wireLoco(o){o.addEventListener('click',function(e){e.stopPropagation();
       locMenu.querySelectorAll('.loco').forEach(function(x){x.classList.remove('on');});o.classList.add('on');
       if(activeLocPicker){var f=o.dataset.loc||'Root';
         var t=activeLocPicker.querySelector('.locfolder');if(t)t.textContent=f;}
-      closeMenus();});});
+      closeMenus();});}
+    locMenu.querySelectorAll('.loco').forEach(wireLoco);
+    // New folder creates a folder INSIDE the currently-selected one (nesting) —
+    // pick a parent, click New folder, name it inline; it lands one level deeper.
     var locNew=document.getElementById('locNewFolder');
-    if(locNew)locNew.addEventListener('click',function(e){e.stopPropagation();closeMenus();if(typeof toast==='function')toast('New folder created');});}
+    if(locNew)locNew.addEventListener('click',function(e){e.stopPropagation();
+      var sel=locMenu.querySelector('.loco.on');
+      var lvl=Math.min((sel?locLevel(sel):-1)+1,2);
+      var row=document.createElement('div');row.className='loco lvl'+lvl+' locnewrow';
+      row.innerHTML='<svg class="ic sm lfi"><use href="#i-folder"/></svg><input class="locnewinput" placeholder="Folder name">';
+      var anchor=document.querySelector('#locMenu .sep');
+      if(sel&&sel.nextSibling){locMenu.insertBefore(row,sel.nextSibling);}else{locMenu.insertBefore(row,anchor);}
+      var inp=row.querySelector('input');inp.focus();
+      var done=false;
+      function commit(){if(done)return;done=true;var name=(inp.value||'').trim()||'New folder';
+        var btn=document.createElement('button');btn.className='loco lvl'+lvl;btn.dataset.loc=name;
+        btn.innerHTML='<svg class="ic sm lfi"><use href="#i-folder"/></svg>'+name;
+        row.replaceWith(btn);wireLoco(btn);btn.click();
+        if(typeof toast==='function')toast('Folder "'+name+'"'+(sel?' created in '+sel.dataset.loc:' created'));}
+      inp.addEventListener('keydown',function(ev){if(ev.key==='Enter'){ev.preventDefault();commit();}else if(ev.key==='Escape'){done=true;row.remove();}});
+      inp.addEventListener('blur',commit);});}
 
   // Crosspost: place a personal work into a server channel. Opened from the file
   // ⋯ menu; its channel picker toggles + rotates its chevron like every dropdown.
   var cross=opener('crossScrim','crossModal');
+  var cmCopy=document.getElementById('cmCopy');
+  if(cmCopy)cmCopy.addEventListener('click',function(e){e.stopPropagation();closeMenus();if(typeof toast==='function')toast('Copied. A duplicate was made in this folder');});
   var cmCrosspost=document.getElementById('cmCrosspost');
   if(cmCrosspost)cmCrosspost.addEventListener('click',function(e){e.stopPropagation();closeMenus();cross.open();});
   ['crossClose','crossCancel'].forEach(function(id){var e=document.getElementById(id);if(e)e.addEventListener('click',cross.close);});
@@ -4650,6 +4795,127 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   // B20 unstar, remove the card from the Starred view
   document.querySelectorAll('.exview[data-exview="starred"] [data-act="unstar"]').forEach(function(u){u.addEventListener('click',function(e){e.stopPropagation();e.preventDefault();var c=u.closest('.card');if(c)c.remove();if(typeof toast==='function')toast('Removed from Starred');});});
 
+  // ===== File-explorer: filters, search state, selection, source (owner 2026-08-22)
+  (function(){
+    var explayout=document.querySelector('.explayout');if(!explayout)return;
+
+    // Filter dropdowns — multi-select (data-fmulti) keeps the menu open and counts
+    // the picks on the trigger; single-select closes and writes the chosen label.
+    document.querySelectorAll('.exfilter').forEach(function(btn){
+      var menu=document.getElementById(btn.dataset.fmenu);if(!menu)return;if(menus.indexOf(menu)<0)menus.push(menu);
+      var baseLabel=btn.childNodes[0].nodeValue.trim();
+      var multi=btn.dataset.fmulti==='1';
+      btn.addEventListener('click',function(e){e.stopPropagation();
+        var open=menu.classList.contains('open');closeMenus();if(open)return;
+        btn.setAttribute('aria-expanded','true');menu.classList.add('open');
+        var r=btn.getBoundingClientRect();
+        menu.style.left=Math.min(r.left,window.innerWidth-menu.offsetWidth-8)+'px';
+        menu.style.top=(r.bottom+4)+'px';menu.style.minWidth=Math.max(180,r.width)+'px';});
+      menu.querySelectorAll('.notlv').forEach(function(o){o.addEventListener('click',function(ev){ev.stopPropagation();
+        if(multi){o.classList.toggle('on');
+          var n=menu.querySelectorAll('.notlv.on').length;
+          btn.childNodes[0].nodeValue=n?(baseLabel+' ('+n+') '):(baseLabel);
+        }else{menu.querySelectorAll('.notlv').forEach(function(x){x.classList.remove('on');});o.classList.add('on');
+          btn.childNodes[0].nodeValue=(o.dataset.v||baseLabel);closeMenus();}});});
+    });
+
+    // Browsing vs searching indicator: the breadcrumb (browsing) swaps for a
+    // "Search results for …" strip while the search field has a query.
+    var exSearch=document.getElementById('exSearch'),exCrumbs=document.getElementById('exCrumbs'),
+        exSearchState=document.getElementById('exSearchState'),exSearchTerm=document.getElementById('exSearchTerm'),
+        exSearchClear=document.getElementById('exSearchClear');
+    function setSearching(q){var on=!!q;
+      if(exCrumbs)exCrumbs.hidden=on;if(exSearchState)exSearchState.hidden=!on;
+      if(exSearchTerm)exSearchTerm.textContent='"'+q+'"';
+      explayout.classList.toggle('searching',on);}
+    if(exSearch)exSearch.addEventListener('input',function(){setSearching(exSearch.value.trim());});
+    if(exSearchClear)exSearchClear.addEventListener('click',function(){if(exSearch)exSearch.value='';setSearching('');if(exSearch)exSearch.focus();});
+
+    // Starred quick toggle (the one modifier left in the horizontal row)
+    var fchipStarred=document.getElementById('fchipStarred');
+    if(fchipStarred)fchipStarred.addEventListener('click',function(){
+      var on=fchipStarred.classList.toggle('on');showExview(on?'starred':'grid');});
+
+    // Selection: a Select mode toggle, plus ctrl/⌘-click, shift-range, and a
+    // drag rubber-band over the grid. Integrates with the existing selbar.
+    var exSelectBtn=document.getElementById('exSelectBtn');
+    function inSelectMode(){return explayout.classList.contains('selecting');}
+    function setSelectMode(on){explayout.classList.toggle('selecting',on);
+      if(exSelectBtn)exSelectBtn.classList.toggle('on',on);
+      if(!on){document.querySelectorAll('.exview .card.sel').forEach(function(c){c.classList.remove('sel');});refreshSel();}}
+    if(exSelectBtn)exSelectBtn.addEventListener('click',function(){setSelectMode(!inSelectMode());});
+    if(selClear)selClear.addEventListener('click',function(){setSelectMode(false);});
+
+    var gridView=document.querySelector('.exview[data-exview="grid"]');
+    if(gridView){
+      var lastIdx=-1;
+      function cards(){return Array.prototype.slice.call(gridView.querySelectorAll('.card:not(.foldercard)'));}
+      // capture-phase so modifier / select-mode clicks pre-empt opening details
+      gridView.addEventListener('click',function(e){
+        var card=e.target.closest('.card:not(.foldercard)');if(!card||!gridView.contains(card))return;
+        if(e.target.closest('.cardacts'))return;                 // per-card actions handle themselves
+        var pick=inSelectMode()||e.metaKey||e.ctrlKey||e.shiftKey||e.target.closest('.cardsel');
+        if(!pick)return;
+        e.preventDefault();e.stopPropagation();
+        var list=cards(),idx=list.indexOf(card);
+        if(e.shiftKey&&lastIdx>-1){var a=Math.min(lastIdx,idx),b=Math.max(lastIdx,idx);
+          for(var i=a;i<=b;i++)list[i].classList.add('sel');}
+        else{card.classList.toggle('sel');lastIdx=idx;}
+        refreshSel();
+      },true);
+
+      // Drag rubber-band: mousedown on empty grid space marquee-selects. (Dragging
+      // a card itself is the move-to-folder gesture, handled elsewhere.)
+      var band=null,ox=0,oy=0;
+      gridView.addEventListener('mousedown',function(e){
+        if(e.button!==0)return;if(e.target.closest('.card'))return;
+        var r=gridView.getBoundingClientRect();ox=e.clientX;oy=e.clientY;
+        band=document.createElement('div');band.className='rubberband';
+        gridView.appendChild(band);gridView.style.position='relative';
+        band.__r=r;e.preventDefault();
+      });
+      document.addEventListener('mousemove',function(e){
+        if(!band)return;var x=Math.min(e.clientX,ox),y=Math.min(e.clientY,oy),
+          w=Math.abs(e.clientX-ox),h=Math.abs(e.clientY-oy),r=band.__r;
+        band.style.left=(x-r.left)+'px';band.style.top=(y-r.top)+'px';band.style.width=w+'px';band.style.height=h+'px';
+        var bx1=x,by1=y,bx2=x+w,by2=y+h;
+        cards().forEach(function(c){var cr=c.getBoundingClientRect();
+          var hit=!(cr.right<bx1||cr.left>bx2||cr.bottom<by1||cr.top>by2);
+          c.classList.toggle('sel',hit);});
+        if(w>4||h>4){explayout.classList.add('selecting');if(exSelectBtn)exSelectBtn.classList.add('on');}
+        refreshSel();
+      });
+      document.addEventListener('mouseup',function(){if(band){band.remove();band=null;refreshSel();}});
+    }
+
+    // New folder (toolbar + both tree headers) — a named row appears in the mock.
+    document.querySelectorAll('.newFolderBtn').forEach(function(b){b.addEventListener('click',function(e){e.stopPropagation();
+      if(typeof toast==='function')toast('New folder created');});});
+
+    // Two browsers, one component: swap between the server File explorer (a channel
+    // inside Late Bloom) and your personal Drive. Server-only filters hide in personal.
+    function setExplorerSource(src){
+      explayout.setAttribute('data-source',src);
+      var isPersonal=src==='personal';
+      document.querySelectorAll('.filetree').forEach(function(t){t.hidden=(t.dataset.tree!==src);});
+      document.querySelectorAll('.exserveronly').forEach(function(el){el.style.display=isPersonal?'none':'';});
+      if(exSearch)exSearch.placeholder=isPersonal?'Search your files':"Search this server's files";
+      var root=document.querySelector('#exCrumbs .crumbroot'),leaf=document.querySelector('#exCrumbs b');
+      if(root)root.textContent=isPersonal?'My files':'Late Bloom LP';
+      if(leaf)leaf.textContent=isPersonal?'Uploads':'beats';
+      // rail: the server explorer belongs to Late Bloom; personal to the My-files button
+      document.querySelectorAll('.rail .railbtn').forEach(function(b){b.classList.remove('on');});
+      var railId=isPersonal?'myFilesBtn':null;
+      if(railId){var rb=document.getElementById(railId);if(rb)rb.classList.add('on');}
+      else{var lb=document.querySelector('.rail .railbtn[data-s="workspace"]');if(lb)lb.classList.add('on');}
+    }
+    window.__setExplorerSource=setExplorerSource;
+    var myFilesBtn=document.getElementById('myFilesBtn');
+    if(myFilesBtn)myFilesBtn.addEventListener('click',function(){show('explorer');location.hash='explorer/personal';setExplorerSource('personal');});
+    var filesChannel=document.getElementById('filesChannel');
+    if(filesChannel)filesChannel.addEventListener('click',function(){setExplorerSource('server');});
+  })();
+
   var uScrim=document.getElementById('uScrim'),uModal=document.getElementById('uModal');
   function openU(){uScrim.hidden=false;uModal.hidden=false;}
   function closeU(){uScrim.hidden=true;uModal.hidden=true;}
@@ -4691,6 +4957,11 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   // thread panel (opens beside the chat, replacing the members rail)
   var threadPane=document.getElementById('threadPane');
   var wsMem=document.querySelector('.screen[data-screen="workspace"] .mem');
+  // Members rail is toggleable from the channel-header people icon.
+  var memToggle=document.getElementById('memToggle');
+  if(memToggle&&wsMem)memToggle.addEventListener('click',function(){
+    var show=wsMem.hidden;wsMem.hidden=!show;
+    memToggle.classList.toggle('memoff',!show);memToggle.setAttribute('aria-pressed',show?'true':'false');});
   function openThread(){show('workspace');if(wsMem)wsMem.hidden=true;threadPane.hidden=false;}
   function closeThread(){threadPane.hidden=true;if(wsMem)wsMem.hidden=false;}
   document.querySelectorAll('.screen[data-screen="workspace"] .reply, .screen[data-screen="workspace"] .hoveracts [title="Reply"]').forEach(function(el){el.addEventListener('click',openThread);});
