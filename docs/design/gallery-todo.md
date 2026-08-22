@@ -76,11 +76,14 @@ Web-only scaling (mobile deferred, CANON §C.2).
   §⑥ now clones every `.umodal[id]/.menu[id]` into a labelled panel at load, so all
   32 dialogs are cataloged automatically and can't drift from what ships. The old
   ~35 hand-panels (which had already drifted) were deleted. No manual backfill left.
-- [ ] **Phase D — close the state-coverage gaps** — build the few empty / loading /
-  error / POV states that don't yet have a node, and add each to the `STATES`
-  registry. The checklist is the last table in [`STATES.md`](STATES.md); each closed
-  row is a state the codegen build can no longer invent. `verify.mjs` picks up each
-  new `force()` automatically.
+- [x] **Phase D — state-coverage gaps** (2026-08-22, batches A–C). Built the missing
+  empty / loading / error / POV states as real nodes + `STATES` entries: feed
+  loading/empty, search no-results, dms empty, workspace slowmode/timedout, explorer
+  readonly/locked, create name-taken error, friends pending/blocked (tabs now switch
+  views), profile public/mutual POV + empty. **29 → 44 states**, all reachable and
+  verified in both themes. Remaining items are optional nice-to-haves (notifications
+  empty, usersettings panel states, dead-invite copy variants, shared-link expired) —
+  the short table at the foot of [`STATES.md`](STATES.md).
 - [x] **B23 — drag-reorder channels in the column** (2026-08-22). Live HTML5 drag on the
   workspace channel column (reorders within a group, drop cue + "Channel order saved"
   toast) **and** the Settings → Channels rows (the "Drag to reorder" copy is now honest).

@@ -2455,7 +2455,13 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
           <button class="iconbtn" style="margin-left:auto" title="Search this profile"><svg class="ic"><use href="#i-search"/></svg></button>
         </div>
         <div class="pbody">
-          <div class="masonry even">
+          <!-- profile with no works on this shelf — forced by #profile/empty -->
+          <div class="emptystate" id="profileEmpty" hidden>
+            <svg class="ic eic"><use href="#i-globe"/></svg>
+            <h3>Nothing public yet</h3>
+            <p>Work published to this shelf shows up here. Post something public, or share a file to your profile.</p>
+          </div>
+          <div class="masonry even" id="profileGrid">
             <button class="card" data-open-details><div class="media audio"><svg class="ic fic"><use href="#i-music"/></svg><span class="ext">WAV</span></div>
               <div class="title">low ceilings, the finished verse</div><div class="who">rae, jax, tomo</div></button>
             <button class="card" data-open-details><div class="media"><div class="shot c" style="aspect-ratio:1/1"></div></div>
@@ -3857,7 +3863,8 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
     create:{error:function(){var e=document.getElementById('createErr'),f=document.getElementById('createNameField');
       if(f){f.classList.add('err');var i=f.querySelector('input');if(i)i.value='Late Bloom LP';}if(e)e.hidden=false;}},
     friends:{all:function(){forceFrView('all');},pending:function(){forceFrView('pending');},blocked:function(){forceFrView('blocked');}},
-    profile:{public:function(){profilePov('public');},mutual:function(){profilePov('mutual');}},
+    profile:{public:function(){profilePov('public');},mutual:function(){profilePov('mutual');},
+      empty:function(){only1(['profileGrid','profileEmpty'],'profileEmpty');}},
     settings:{general:function(){forceSetPanel('general');},channels:function(){forceSetPanel('channels');},
       members:function(){forceSetPanel('members');},roles:function(){forceSetPanel('roles');},
       invites:function(){forceSetPanel('invites');},moderation:function(){forceSetPanel('moderation');},

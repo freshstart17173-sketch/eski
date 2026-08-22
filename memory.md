@@ -77,9 +77,9 @@ verify.mjs) before committing a visual change.**
 ## What's open
 
 - **Gallery todo** ([`docs/design/gallery-todo.md`](docs/design/gallery-todo.md)) —
-  all #1–#61 done; remaining: the **Phase-D state-coverage gaps** (build the few
-  empty/loading/error states that don't yet have a node — the checklist is the
-  last table in `STATES.md`), and the deep alignment & spacing pass.
+  all #1–#61 done; **Phase-D state coverage done** (44 states, both themes). What's
+  left: optional state nice-to-haves (foot of `STATES.md`) and the deep alignment &
+  spacing pass.
 - **Owner input** — CANON §G open decisions; brand assets B1–B8
   (`docs/design/brand-assets-todo.md`).
 - **Cleanup still available (optional):** the v2 **voice-call** visuals

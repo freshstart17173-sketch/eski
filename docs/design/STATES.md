@@ -10,31 +10,37 @@ gallery.
   `&theme=dark|light` and `&w=1024|1440`. A dialog: `…#dialog/<id>`.
 - **Check everything:** `node verify.mjs` (hard-fails on JS errors, dead nav,
   unreachable states, dialogs that won't open/close). `--shots` writes a PNG per
-  state to `shots/`; `--update` re-baselines the DOM-diff signal.
+  state to `shots/`; `--update` re-baselines the DOM-diff signal; `--theme dark`
+  sweeps dark.
 - **Add a state:** add a `force()` to the `STATES` registry in `gallery.html`
   (search `STATES={`), pointing at the existing switch — never a second copy —
   then re-run `verify.mjs --update`.
 
-Counts today: **21 screens · 29 named states · 32 dialogs · 82 URLs.**
+Counts today: **21 screens · 44 named states · 32 dialogs · 97 URLs.**
 
 ## Screens with named alternate states
 
 | Screen | Default | Named states (`#screen/state`) |
 |---|---|---|
-| **workspace** | `#workspace` | `offline` · `thread` · `pins` · `files` · `voicebar` |
-| **explorer** | `#explorer` | `loading` · `grid` · `list` · `feedview` · `trash` · `empty` · `starred` |
+| **workspace** | `#workspace` | `offline` · `thread` · `pins` · `files` · `voicebar` · `slowmode` · `timedout` |
+| **explorer** | `#explorer` | `loading` · `grid` · `list` · `feedview` · `trash` · `empty` · `starred` · `readonly` · `locked` |
 | **settings** | `#settings` | `general` · `channels` · `members` · `roles` · `invites` · `moderation` · `audit` · `storage` |
 | **notifications** | `#notifications` | `all` · `mentions` · `threads` · `saved` |
-| **dms** | `#dms` | `convo` · `friends` |
+| **feed** | `#feed` | `loading` · `empty` |
+| **search** | `#search` | `empty` (no-results) |
+| **dms** | `#dms` | `convo` · `friends` · `empty` |
+| **friends** | `#friends` | `all` · `pending` · `blocked` |
+| **profile** | `#profile` | `public` (stranger POV) · `mutual` (friend POV) · `empty` |
+| **create** | `#create` | `error` (name taken) |
 | **auth** | `#auth` | `signin` · `sent` · `claim` *(the sign-in → magic-link → claim-handle order)* |
 
 ## Screens at default only (one composed state)
 
-`feed` · `profile` · `friends` · `usersettings` · `search` · `shared` · `create` ·
-`newserver` · `join` · `vc` · `e404` · `deadinvite` · `denied` · `blocked` ·
-`pending`. Each is reachable at `#<screen>`; the system ones (`e404`,
-`deadinvite`, `denied`, `blocked`, `pending`) are themselves the alternate/error
-states of the flows that reach them.
+`usersettings` · `shared` · `newserver` · `join` · `vc` · `e404` · `deadinvite` ·
+`denied` · `blocked` · `pending`. Each is reachable at `#<screen>`; the system
+ones (`e404`, `deadinvite`, `denied`, `blocked`, `pending`) are themselves the
+alternate/error states of the flows that reach them, and `vc` is the voice-call
+WIP placeholder.
 
 ## Dialogs (all reachable at `#dialog/<id>`, all in §⑥ of the catalog)
 
@@ -45,24 +51,17 @@ Modals: `channelModal` `inviteModal` `fwdModal` `newDmModal` `reportModal`
 `moveModal` `timeoutModal` `banModal` `arModal` `leaveModal` `delSrvModal`
 `srvNotifModal` `shareModal` `storageModal` `uModal`.
 
-## Coverage gaps — states to add (the Phase-D backlog)
+## Coverage — remaining nice-to-haves
 
-These states exist in the product but not yet as a forced, screenshottable URL.
-Each is a small `STATES` entry once the node exists; some need a node built first.
-Until then the codegen build has no pixel to diff for them.
+The Phase-D backlog is essentially closed (batches A–C, 2026-08-22). What's left
+is optional polish, not build-blocking:
 
-| Screen | Missing state | Node exists? | Note |
-|---|---|---|---|
-| feed | `empty` (no friends' posts) | needs node | pair with the existing `.emptystate` pattern |
-| feed | `loading` (skeleton grid) | reuse `.skel` | wire like `explorer/loading` |
-| profile | `empty` (no works), `public`, `mutual` POV | POV switcher removed | re-expose as states, not a control |
-| search | `empty` / `no-results` | needs node | the query-with-zero-hits frame |
-| dms | `empty` (no conversations) | needs node | first-run inbox |
-| friends | `pending` / `blocked` tabs as states | tabs exist | lift the tab into `#friends/pending` |
-| workspace | `slowmode` / `timed-out` composer | class exists | force the disabled composer |
-| explorer | `readonly` (over-cap) / `locked-folder` | banners exist | force the `#46` / `#58` states |
-| create | `error` (name taken) | needs node | inline validation frame |
+| Screen | State | Note |
+|---|---|---|
+| notifications | `empty` | no-activity inbox (the Saved tab already has its own empty) |
+| usersettings | panel states | lift the account/profile/notifications/appearance/privacy panels into `#usersettings/<panel>` like `settings` |
+| join / deadinvite | the four dead-invite copy variants | already one screen; could split expired/revoked/full/already-member into states |
+| shared | `expired` | a shared link that has lapsed |
 
-Work this list in the Phase-D pass; each closed row is a state the build can no
-longer invent. `verify.mjs` will pick each one up automatically once its `force()`
-lands in the registry.
+Add any of these the same way — a `force()` in the registry pointing at a real
+node — and `verify.mjs` picks it up automatically.
