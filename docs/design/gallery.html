@@ -324,6 +324,7 @@ input{font:inherit;color:inherit}
 .cardacts{position:absolute;top:6px;right:6px;z-index:3;display:none;gap:2px}
 .card:hover .cardacts{display:flex}
 .cardacts button{width:28px;height:28px;display:grid;place-items:center;border-radius:var(--r);background:rgba(20,20,20,.55);color:#fff}
+.cardacts button.starred .ic{fill:currentColor}
 .cardacts button:hover{background:rgba(20,20,20,.82)}
 .cardacts .ic{width:15px;height:15px}
 /* #43 starred state: a persistent gold star badge on the media; the hover star
@@ -2264,6 +2265,17 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
                 <p>Deleted files land here and are kept for <b>30 days</b>, then permanently removed. Nothing here right now.</p>
               </div>
             </div>
+            <!-- B20 starred smart folder — a filtered grid of starred works; unstar from the card -->
+            <div class="exview" data-exview="starred" hidden>
+              <div class="masonry even">
+                <div class="card" data-open-details><div class="media file"><div class="cardacts"><button data-act="unstar" class="starred" title="Unstar"><svg class="ic"><use href="#i-star"/></svg></button><button data-act="dl" title="Download"><svg class="ic"><use href="#i-download"/></svg></button><button data-act="more" title="More"><svg class="ic"><use href="#i-more"/></svg></button></div><svg class="ic fic"><use href="#i-file"/></svg><span class="ext">FLP</span></div>
+                  <div class="title">late_bloom_beat.flp</div><div class="who"><span class="uchip m3"><span class="dot"></span>dev</span> · #beats</div></div>
+                <div class="card" data-lightbox data-lbkind="image"><div class="media"><div class="cardacts"><button data-act="unstar" class="starred" title="Unstar"><svg class="ic"><use href="#i-star"/></svg></button><button data-act="dl" title="Download"><svg class="ic"><use href="#i-download"/></svg></button><button data-act="more" title="More"><svg class="ic"><use href="#i-more"/></svg></button></div><div class="shot c" style="aspect-ratio:3/2"></div></div>
+                  <div class="title">ref_drums.png</div><div class="who"><span class="uchip m1"><span class="dot"></span>rae</span> · #references</div></div>
+                <div class="card" data-open-details><div class="media audio"><div class="cardacts"><button data-act="unstar" class="starred" title="Unstar"><svg class="ic"><use href="#i-star"/></svg></button><button data-act="dl" title="Download"><svg class="ic"><use href="#i-download"/></svg></button><button data-act="more" title="More"><svg class="ic"><use href="#i-more"/></svg></button></div><svg class="ic fic"><use href="#i-music"/></svg><span class="ext">WAV</span></div>
+                  <div class="title">bounce_v2.wav</div><div class="who"><span class="uchip m3"><span class="dot"></span>dev</span> · #beats</div></div>
+              </div>
+            </div>
             <!-- #49 skeleton loading (flashed briefly when a folder opens) -->
             <div class="exview" data-exview="skel" hidden>
               <div class="masonry even">
@@ -3792,11 +3804,14 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
     document.querySelectorAll('.filetree .ftrow').forEach(function(x){x.classList.remove('on');});r.classList.add('on');
     var label=(r.querySelector('.fn')||{}).textContent||'';
     if(label==='Trash'){showExview('trash');return;}          // B19 trash view
+    if(label==='Starred'){showExview('starred');return;}      // B20 starred smart folder
     // #49 flash a skeleton, then reveal the grid (fake load)
     showExview('skel');setTimeout(function(){showExview('grid');},650);});});
   // B19 — Empty trash now → clears to the empty state
   var emptyTrashBtn=document.getElementById('emptyTrashBtn');
   if(emptyTrashBtn)emptyTrashBtn.addEventListener('click',function(){showExview('trashempty');if(typeof toast==='function')toast('Trash emptied');});
+  // B20 unstar — remove the card from the Starred view
+  document.querySelectorAll('.exview[data-exview="starred"] [data-act="unstar"]').forEach(function(u){u.addEventListener('click',function(e){e.stopPropagation();e.preventDefault();var c=u.closest('.card');if(c)c.remove();if(typeof toast==='function')toast('Removed from Starred');});});
 
   var uScrim=document.getElementById('uScrim'),uModal=document.getElementById('uModal');
   function openU(){uScrim.hidden=false;uModal.hidden=false;}
