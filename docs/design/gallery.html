@@ -1213,6 +1213,18 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
 @keyframes shimmer{100%{transform:translateX(100%)}}
 .skelcard .sk-media{aspect-ratio:1;border-radius:var(--r)}
 .skelcard .sk-line{height:11px;border-radius:var(--r);margin-top:9px}
+/* skeleton sub-shapes reused by every loading state: a chat message row, a
+   list row (notif/friend/search/member), and a details-pane block. */
+.sk-av{width:34px;height:34px;border-radius:50%;flex:none}
+.skelmsg{display:flex;gap:10px;padding:9px 0}
+.skelmsg .sk-bd{flex:1;display:flex;flex-direction:column;gap:7px;max-width:60%}
+.skelmsg .sk-line{height:10px;border-radius:var(--r)}
+.skelrow{display:flex;align-items:center;gap:10px;padding:11px 2px}
+.skelrow .sk-av{width:32px;height:32px}
+.skelrow .sk-bd{flex:1;display:flex;flex-direction:column;gap:6px;max-width:70%}
+.skelrow .sk-line{height:10px;border-radius:var(--r)}
+.skelpane{padding:var(--s5)}
+.skelmedia{aspect-ratio:16/10;border-radius:var(--r);margin-bottom:14px}
 /* #44 storage-upgrade UI — usage meter + a dynamic GB slider (CANON §D storage) */
 .storeuse{display:flex;justify-content:space-between;font-size:var(--fs-sm);margin-bottom:8px}
 .storeuse .used{font-weight:600}.storeuse .cap{color:var(--muted)}
@@ -3822,6 +3834,21 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   function setDm(which){var f=document.getElementById('dmFriends'),c=document.getElementById('dmConvo');
     if(f)f.hidden=which!=='friends';if(c)c.hidden=which==='friends';}
   function only1(ids,showId){ids.forEach(function(id){var n=document.getElementById(id);if(n)n.hidden=id!==showId;});}
+  // Skeleton generator — every async surface's loading state. Builds real
+  // skeleton nodes synchronously (screenshot-safe) and hides the live content;
+  // each state URL reloads fresh so the swap needs no teardown.
+  function skelBlock(kind,n){var el=document.createElement('div');
+    if(kind==='card'){el.className='masonry even';for(var i=0;i<n;i++){
+      el.innerHTML+='<div class="card skelcard"><div class="skel sk-media"></div><div class="skel sk-line" style="width:'+(55+(i*11)%34)+'%"></div><div class="skel sk-line" style="width:'+(34+(i*7)%20)+'%"></div></div>';}
+    }else{el.className='skelblock';for(var j=0;j<n;j++){
+      var a=(30+(j*13)%45),b=(52+(j*7)%34);
+      el.innerHTML+= kind==='msg'
+        ? '<div class="skelmsg"><div class="skel sk-av"></div><div class="sk-bd"><div class="skel sk-line" style="width:'+a+'%"></div><div class="skel sk-line" style="width:'+b+'%"></div></div></div>'
+        : '<div class="skelrow"><div class="skel sk-av"></div><div class="sk-bd"><div class="skel sk-line" style="width:'+a+'%"></div><div class="skel sk-line" style="width:'+(b-18)+'%"></div></div></div>';}}
+    return el;}
+  function loadingInto(container,kind,n){if(!container)return;
+    [].slice.call(container.children).forEach(function(c){if(c.style)c.style.display='none';});
+    container.appendChild(skelBlock(kind,n));}
   function forcePtab2(screen,idx){var s=q1('.screen[data-screen="'+screen+'"]');if(!s)return;
     s.querySelectorAll('.ptabs2 .ptab2').forEach(function(t,i){t.classList.toggle('on',i===idx);});}
   function composerNotice(tx){var c=document.getElementById('chComposer'),n=document.getElementById('composerNote'),t=document.getElementById('composerNoteTx');
@@ -3847,7 +3874,9 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
       files:function(){forceChTab('files');},
       voicebar:function(){var v=document.getElementById('voiceMini');if(v)v.hidden=false;},
       slowmode:function(){composerNotice('Slow mode is on — one message every 10s. You can still read and react.');},
-      timedout:function(){composerNotice("You're timed out until 3:45 PM. You can read, but can't post, react, or join voice.");}
+      timedout:function(){composerNotice("You're timed out until 3:45 PM. You can read, but can't post, react, or join voice.");},
+      loading:function(){loadingInto(document.getElementById('chMessages'),'msg',6);
+        loadingInto(q1('.screen[data-screen="workspace"] .mem'),'row',5);}
     },
     explorer:{
       loading:function(){forceExview('skel');},
@@ -3858,26 +3887,40 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
       empty:function(){forceExview('trashempty');},        // empties reuse the empty-state panel
       starred:function(){forceExview('starred');},
       readonly:function(){var b=document.getElementById('capBanner');if(b)b.hidden=false;},
-      locked:function(){var b=document.getElementById('lockNote');if(b)b.hidden=false;}
+      locked:function(){var b=document.getElementById('lockNote');if(b)b.hidden=false;},
+      detailsloading:function(){var sc=document.getElementById('scrim'),sh=document.getElementById('detailsSheet');
+        if(sc)sc.hidden=false;if(!sh)return;sh.hidden=false;
+        var media=sh.querySelector('.dmedia');if(media){media.innerHTML='';media.classList.add('skel');}
+        var scroll=sh.querySelector('.dinfo .scroll');
+        if(scroll)scroll.innerHTML='<div class="skel sk-line" style="width:62%;height:16px;margin:2px 0 14px"></div>'+
+          '<div class="skel sk-line" style="width:92%;height:10px;margin-bottom:8px"></div>'+
+          '<div class="skel sk-line" style="width:84%;height:10px;margin-bottom:8px"></div>'+
+          '<div class="skel sk-line" style="width:74%;height:10px;margin-bottom:8px"></div>'+
+          '<div class="skel sk-line" style="width:88%;height:10px"></div>';}
     },
     create:{error:function(){var e=document.getElementById('createErr'),f=document.getElementById('createNameField');
       if(f){f.classList.add('err');var i=f.querySelector('input');if(i)i.value='Late Bloom LP';}if(e)e.hidden=false;}},
-    friends:{all:function(){forceFrView('all');},pending:function(){forceFrView('pending');},blocked:function(){forceFrView('blocked');}},
+    friends:{all:function(){forceFrView('all');},pending:function(){forceFrView('pending');},blocked:function(){forceFrView('blocked');},
+      loading:function(){loadingInto(q1('.screen[data-screen="friends"] .frview[data-frview="all"]'),'row',6);}},
     profile:{public:function(){profilePov('public');},mutual:function(){profilePov('mutual');},
-      empty:function(){only1(['profileGrid','profileEmpty'],'profileEmpty');}},
+      empty:function(){only1(['profileGrid','profileEmpty'],'profileEmpty');},
+      loading:function(){loadingInto(q1('.screen[data-screen="profile"] .pbody'),'card',6);}},
     settings:{general:function(){forceSetPanel('general');},channels:function(){forceSetPanel('channels');},
       members:function(){forceSetPanel('members');},roles:function(){forceSetPanel('roles');},
       invites:function(){forceSetPanel('invites');},moderation:function(){forceSetPanel('moderation');},
       audit:function(){forceSetPanel('audit');},storage:function(){forceSetPanel('storage');}},
-    notifications:{all:function(){forceNPanel('all');},mentions:function(){forceNPanel('mentions');},
-      threads:function(){forceNPanel('threads');},saved:function(){forceNPanel('saved');}},
     dms:{convo:function(){setDm('convo');},friends:function(){setDm('friends');},
       empty:function(){only1(['dmConvo','dmsEmpty','dmFriends'],'dmsEmpty');
-        var rows=q1('.screen[data-screen="dms"] .dmrows');if(rows)rows.innerHTML='<div class="nempty">No conversations yet.</div>';}},
+        var rows=q1('.screen[data-screen="dms"] .dmrows');if(rows)rows.innerHTML='<div class="nempty">No conversations yet.</div>';},
+      loading:function(){setDm('convo');loadingInto(q1('#dmConvo .stream'),'msg',6);}},
     feed:{loading:function(){only1(['feedGrid','feedSkel','feedEmpty'],'feedSkel');},
       empty:function(){only1(['feedGrid','feedSkel','feedEmpty'],'feedEmpty');}},
     search:{empty:function(){only1(['searchRes','searchEmpty'],'searchEmpty');
-        var t=q1('.screen[data-screen="search"] .field input');if(t)t.value='xylophone solos';}},
+        var t=q1('.screen[data-screen="search"] .field input');if(t)t.value='xylophone solos';},
+      loading:function(){loadingInto(q1('.screen[data-screen="search"] .panebody'),'row',6);}},
+    notifications:{all:function(){forceNPanel('all');},mentions:function(){forceNPanel('mentions');},
+      threads:function(){forceNPanel('threads');},saved:function(){forceNPanel('saved');},
+      loading:function(){loadingInto(q1('.screen[data-screen="notifications"] .npanel[data-nview="all"]'),'row',6);}},
     auth:{signin:function(){forceAstep('signin');},sent:function(){forceAstep('sent');},claim:function(){forceAstep('claim');}}
   };
   function applyState(screen,state){var m=STATES[screen];

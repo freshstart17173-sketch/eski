@@ -16,23 +16,41 @@ gallery.
   (search `STATES={`), pointing at the existing switch — never a second copy —
   then re-run `verify.mjs --update`.
 
-Counts today: **21 screens · 44 named states · 32 dialogs · 97 URLs.**
+Counts today: **21 screens · 51 named states · 32 dialogs · 104 URLs.**
 
 ## Screens with named alternate states
 
 | Screen | Default | Named states (`#screen/state`) |
 |---|---|---|
-| **workspace** | `#workspace` | `offline` · `thread` · `pins` · `files` · `voicebar` · `slowmode` · `timedout` |
-| **explorer** | `#explorer` | `loading` · `grid` · `list` · `feedview` · `trash` · `empty` · `starred` · `readonly` · `locked` |
+| **workspace** | `#workspace` | `loading` · `offline` · `thread` · `pins` · `files` · `voicebar` · `slowmode` · `timedout` |
+| **explorer** | `#explorer` | `loading` · `grid` · `list` · `feedview` · `trash` · `empty` · `starred` · `readonly` · `locked` · `detailsloading` |
 | **settings** | `#settings` | `general` · `channels` · `members` · `roles` · `invites` · `moderation` · `audit` · `storage` |
-| **notifications** | `#notifications` | `all` · `mentions` · `threads` · `saved` |
+| **notifications** | `#notifications` | `loading` · `all` · `mentions` · `threads` · `saved` |
 | **feed** | `#feed` | `loading` · `empty` |
-| **search** | `#search` | `empty` (no-results) |
-| **dms** | `#dms` | `convo` · `friends` · `empty` |
-| **friends** | `#friends` | `all` · `pending` · `blocked` |
-| **profile** | `#profile` | `public` (stranger POV) · `mutual` (friend POV) · `empty` |
+| **search** | `#search` | `loading` · `empty` (no-results) |
+| **dms** | `#dms` | `loading` · `convo` · `friends` · `empty` |
+| **friends** | `#friends` | `loading` · `all` · `pending` · `blocked` |
+| **profile** | `#profile` | `loading` · `public` (stranger POV) · `mutual` (friend POV) · `empty` |
 | **create** | `#create` | `error` (name taken) |
 | **auth** | `#auth` | `signin` · `sent` · `claim` *(the sign-in → magic-link → claim-handle order)* |
+
+## Loading coverage — every async surface has a skeleton
+
+Per CODEGEN #49, each surface that fetches data has a forced, screenshottable
+loading state. Skeletons are built from the shared `.skelcard` / `.skelmsg` /
+`.skelrow` shapes (shimmer over `--surface`), never a spinner.
+
+| Async surface | Loading URL |
+|---|---|
+| Feed grid | `#feed/loading` |
+| File-explorer folder grid | `#explorer/loading` |
+| Chat message **stream** + **members rail** | `#workspace/loading` |
+| **Details pane** (media + metadata) | `#explorer/detailsloading` |
+| DM conversation stream | `#dms/loading` |
+| Notifications list | `#notifications/loading` |
+| Search results | `#search/loading` |
+| Profile works grid | `#profile/loading` |
+| Friends list | `#friends/loading` |
 
 ## Screens at default only (one composed state)
 
