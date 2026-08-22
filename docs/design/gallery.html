@@ -75,9 +75,9 @@ input{font:inherit;color:inherit}
 .selbtn:active .ic{color:var(--on-ink)}
 .selbtn .ic{color:var(--muted)}
 /* the trailing chevron rotates while the dropdown is open (matches the server
-   header) so the control shows its own state */
-.selbtn>svg.ic{transition:transform var(--t)}
-.selbtn[aria-expanded="true"]>svg.ic{transform:rotate(180deg);color:var(--ink)}
+   header) so the control shows its own state — for .selbtn AND any .btn dropdown */
+.selbtn>svg.ic,.btn[aria-haspopup]>svg.ic{transition:transform var(--t)}
+.selbtn[aria-expanded="true"]>svg.ic,.btn[aria-expanded="true"]>svg.ic{transform:rotate(180deg)}
 /* buttons — small; box shrinks, label holds. 3 archetypes (eski-style §2). */
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:5px;
   border:1px solid transparent;border-radius:var(--r);
@@ -202,7 +202,7 @@ input{font:inherit;color:inherit}
 /* B16 new-messages divider + jump-to-present button */
 .newdiv{display:flex;align-items:center;gap:10px;margin:8px 0;color:var(--m1);font-size:var(--fs-xs);font-weight:600}
 .newdiv::before,.newdiv::after{content:"";flex:1;height:1px;background:var(--m1);opacity:.5}
-.jumpnew{position:absolute;left:50%;transform:translateX(-50%);bottom:96px;z-index:5;display:flex;align-items:center;gap:6px;padding:6px 14px;border-radius:var(--r);background:var(--ink);color:var(--on-ink);font-size:var(--fs-xs);font-weight:500;box-shadow:0 6px 20px rgba(0,0,0,.25)}
+.jumpnew{position:absolute;left:50%;transform:translateX(-50%);bottom:96px;z-index:5;display:flex;align-items:center;gap:6px;padding:4px 12px;border-radius:var(--r);background:var(--ink);color:var(--on-ink);font-size:var(--fs-xs);font-weight:500;box-shadow:0 6px 20px rgba(0,0,0,.25)}
 .jumpnew.gone{display:none}
 /* S10 connection-lost / reconnecting banner */
 .offlinebar{flex:none;display:flex;align-items:center;justify-content:center;gap:8px;padding:7px;background:var(--danger);color:var(--on-ink);font-size:var(--fs-xs);font-weight:500}
@@ -366,7 +366,7 @@ input{font:inherit;color:inherit}
 .card.sel .media{outline:2px solid var(--ink);outline-offset:-2px}
 .cardacts{position:absolute;top:6px;right:6px;z-index:3;display:none;gap:2px}
 .card:hover .cardacts{display:flex}
-.cardacts button{width:28px;height:28px;display:grid;place-items:center;border-radius:var(--r);background:rgba(20,20,20,.55);color:#fff}
+.cardacts button{width:26px;height:26px;display:grid;place-items:center;border-radius:var(--r);background:rgba(20,20,20,.55);color:#fff}
 .cardacts button.starred .ic{fill:currentColor}
 /* B26 inline chat-attachment actions — solid chips (no transparency) */
 .filecardwrap{position:relative;display:inline-block;max-width:100%}
@@ -477,9 +477,10 @@ input{font:inherit;color:inherit}
 .dmtransport .track{flex:1;height:7px;background:var(--line);border-radius:var(--r);position:relative;cursor:pointer}
 .dmtransport .track i{position:absolute;left:0;top:0;bottom:0;width:0;background:var(--ink);border-radius:var(--r)}
 .dmtransport .track .knob{position:absolute;top:50%;width:3px;height:15px;border-radius:1px;background:var(--ink);transform:translate(-50%,-50%)}
-.tbtn{width:32px;height:32px;border-radius:var(--r);display:grid;place-items:center;color:var(--soft);cursor:pointer}
+.tbtn{width:26px;height:26px;border-radius:var(--r);display:grid;place-items:center;color:var(--soft);cursor:pointer;transition:background var(--t),color var(--t)}
 .tbtn:hover{background:var(--surface);color:var(--ink)}
-.tbtn .ic{width:18px;height:18px}
+.tbtn:active{background:var(--ink);color:var(--on-ink)}
+.tbtn .ic{width:15px;height:15px}
 /* #32 play icon has no border / border-colour — just the fill, centred (#11). */
 .dmbigplay{width:64px;height:64px;border-radius:50%;background:var(--paper);color:var(--ink);display:grid;place-items:center;cursor:pointer}
 .dmbigplay:hover{background:var(--surface)}
@@ -684,7 +685,7 @@ input{font:inherit;color:inherit}
 /* a plain on/off switch; ink fill is "on", per the interaction rules */
 /* channel-settings gear: its own icon button, so it never picks up the
    ink-fill of .iconbtn.on when the drawer is expanded (that read as a black box) */
-.chsetbtn{width:32px;height:32px;display:grid;place-items:center;border-radius:var(--r);color:var(--muted);transition:background var(--t)}
+.chsetbtn{width:26px;height:26px;display:grid;place-items:center;border-radius:var(--r);color:var(--muted);transition:background var(--t)}
 .chsetbtn:hover{background:var(--plate);color:var(--ink)}.chsetbtn.on{color:var(--ink)}
 /* the per-channel settings drawer that a channel row expands into */
 .chset{display:none;max-width:660px;margin:2px 0 var(--s3) 34px;padding:var(--s3) var(--s4);background:var(--surface);border-radius:var(--r)}
@@ -802,7 +803,7 @@ input{font:inherit;color:inherit}
 /* hover actions on a notification: reply inline, save for later, mark done */
 .nrow .nacts{position:absolute;top:7px;right:7px;display:none;gap:2px;background:var(--paper);border-radius:var(--r);box-shadow:0 2px 12px rgba(0,0,0,.16)}
 .nrow:hover .nacts,.nrow.replying .nacts{display:flex}
-.nrow .nacts button{width:28px;height:28px;display:grid;place-items:center;color:var(--muted);border-radius:var(--r)}
+.nrow .nacts button{width:26px;height:26px;display:grid;place-items:center;color:var(--muted);border-radius:var(--r);transition:background var(--t),color var(--t)}
 .nrow .nacts button:hover{background:var(--surface);color:var(--ink)}
 .nrow .nacts button.on{color:var(--ink)}
 .nrow.saved .nacts button.savebtn{color:var(--ink)}
@@ -875,8 +876,9 @@ input{font:inherit;color:inherit}
 .stemoji{flex:none;width:26px;height:26px;display:grid;place-items:center;font-size:16px;border-radius:var(--r)}
 .stemoji:hover{background:var(--surface)}
 .stquick{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
-.stq{padding:6px 10px;border-radius:var(--r);background:var(--surface);font-size:var(--fs-xs);color:var(--soft)}
+.stq{padding:3px 10px;border-radius:var(--r);background:var(--surface);font-size:var(--fs-xs);color:var(--soft);transition:background var(--t),color var(--t)}
 .stq:hover{background:var(--plate)}
+.stq:active{background:var(--ink);color:var(--on-ink)}
 /* S12 help / keyboard-shortcuts sheet */
 .kbcols{display:grid;grid-template-columns:1fr 1fr;gap:var(--s4)}
 .kbsec{font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600;margin:12px 0 4px}
@@ -924,7 +926,7 @@ input{font:inherit;color:inherit}
 .richcomposer{border:1px solid var(--line2);border-radius:var(--r);overflow:hidden;transition:border-color var(--t)}
 .richcomposer:focus-within{border-color:var(--ink)}
 .cbar{display:flex;align-items:center;gap:2px;padding:5px 8px;background:var(--surface)}
-.cbar .fbtn{min-width:28px;height:26px;padding:0 6px;display:grid;place-items:center;border-radius:3px;color:var(--soft);font-size:var(--fs-sm)}
+.cbar .fbtn{min-width:26px;height:26px;padding:0 6px;display:grid;place-items:center;border-radius:var(--r);color:var(--soft);font-size:var(--fs-sm);transition:background var(--t),color var(--t)}
 .cbar .fbtn:hover{background:var(--plate);color:var(--ink)}
 .cbar .sep{width:1px;height:16px;background:var(--line2);margin:0 5px}
 .cbar .slash{margin-left:auto;font-size:var(--fs-xs);color:var(--muted)}
@@ -1048,7 +1050,7 @@ input{font:inherit;color:inherit}
 .mut{color:var(--muted)}
 .screen[data-screen="friends"] .frrow{box-shadow:inset 0 -1px 0 var(--line);border-radius:0}
 .screen[data-screen="friends"] .frsec{text-transform:uppercase;letter-spacing:.07em}
-.rbtn{width:32px;height:32px;display:grid;place-items:center;border-radius:50%;background:var(--surface);color:var(--soft)}
+.rbtn{width:26px;height:26px;display:grid;place-items:center;border-radius:var(--r);background:var(--surface);color:var(--soft);transition:background var(--t),color var(--t)}
 .rbtn:hover{background:var(--plate);color:var(--ink)}.rbtn.ok:hover{color:var(--m3)}.rbtn.no:hover{color:var(--m1)}
 
 /* ================================================================
@@ -2340,7 +2342,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
               <!-- #55 show-hidden tucked away small (rare toggle, not a labelled slot) -->
               <button class="iconbtn" id="exHidden" title="Show hidden files"><svg class="ic sm"><use href="#i-hide"/></svg></button>
               <!-- view mode = a compact text dropdown (grid / list / feed), not a switcher -->
-              <button class="btn" id="exViewBtn"><span id="exViewLbl">Grid</span><svg class="ic sm"><use href="#i-chev"/></svg></button>
+              <button class="btn" id="exViewBtn" aria-haspopup="menu" aria-expanded="false"><span id="exViewLbl">Grid</span><svg class="ic sm"><use href="#i-chev"/></svg></button>
             </div>
           </div>
           <div class="toolbar">
@@ -4585,6 +4587,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   if(exViewBtn&&exViewMenu){menus.push(exViewMenu);
     exViewBtn.addEventListener('click',function(e){e.stopPropagation();
       var open=exViewMenu.classList.contains('open');closeMenus();if(open)return;
+      exViewBtn.setAttribute('aria-expanded','true');
       exViewMenu.classList.add('open');var r=exViewBtn.getBoundingClientRect();
       exViewMenu.style.left=Math.max(8,r.right-exViewMenu.offsetWidth)+'px';exViewMenu.style.top=(r.bottom+6)+'px';});
     exViewMenu.querySelectorAll('[data-exv]').forEach(function(o){o.addEventListener('click',function(){
