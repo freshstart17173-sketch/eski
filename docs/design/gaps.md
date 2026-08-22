@@ -10,12 +10,13 @@ sequence the work.
 > S2, S3, S4, S5, S6, S7, S8, S10, S11, S12, S13, S14, and B1–B22, B24, B25, B26
 > (B6 = the private-channel allow-list §C.18; B18 = the composer autocomplete;
 > B22 = copy in the invite dialog). **S16** is covered by the auth *claim-handle
-> + avatar* step. **Still open:** **B23** drag-reorder channels *in the column*
-> (settings already has it; ★2/●3 DnD) · **S15** voice mini-bar (v2) · **S9** the
-> full **mobile gallery** (a separate file, see gallery-todo). Cross-cutting
-> **exploded-view catalog panels** for every wired dialog are tracked in
-> gallery-todo (the gallery should carry both live-on-screen behaviour *and*
-> standalone labelled panels).
+> + avatar* step. **B23** (drag-reorder channels in the column) and **S15** (voice
+> mini-bar) are **built 2026-08-22** — B23 also wires the Settings → Channels rows and
+> adds file→folder drag in the explorer; S15 ships as a WIP signpost (voice is still
+> v2). **Still open:** **S9** the full **mobile gallery** (a separate file, see
+> gallery-todo) · a **deep alignment & spacing pass** across every surface. The
+> cross-cutting **exploded-view catalog panels** are tracked in gallery-todo
+> (deprioritised by the owner).
 
 **Scoring**
 - **Need** ★1–5 — 5 = beta-blocking, 1 = nice-to-have / post-beta.

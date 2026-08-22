@@ -451,6 +451,17 @@ files* (each an action row → the create-channel modal / invite modal / upload
 sheet); channel with zero messages, member with no presence, timed-out composer,
 network-lost (Realtime reconnecting banner).
 
+**Voice is a WIP signpost, not a feature (v2).** Until calls ship, every voice
+surface reads as under-construction: the **call / video buttons** (workspace
+header, DM header, friends rows) are **grayed** and, when pressed, raise a
+"currently being built" toast; a persistent **voice minibar** (gallery S15) sits
+at the foot of the channel column ("Voice connected · {channel}" + mic/leave,
+grayed, with the build note); and the **voice-chat screen** (`vc`) is **not a mock
+call** — its whole interface is replaced by a **placeholder**: a
+transparency-checkerboard grey field with a centred icon and the *"This feature is
+currently being built"* message front and centre. The control bar stays (it toasts
+WIP on press). Nothing here connects — WebRTC and the real call UI land in v2.
+
 **Workspace modals (scrim-backed, sized to the 1440px canvas per C.2):**
 
 | Modal | Opened from | Fields / actions | DB |

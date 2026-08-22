@@ -72,10 +72,25 @@ scrim, no shadow; hairlines inset, never full-width.
   levels, offline banner, billing, account-switch, onboarding. (~20 panels.) The
   gallery is an exploded view — full functionality on screens **and** labelled
   standalone panels are both the goal. *(In progress 2026-08-22.)*
-- [ ] **B23 — drag-reorder channels in the column** (admin). Server settings → Channels
-  already reorders; this is the live drag-in-the-column version. ★2 / ●3 (DnD).
-- [ ] **S15 — voice "you're in the booth" mini-bar** (persistent mute/leave strip while
-  browsing elsewhere). **v2** — ships with calls.
+- [x] **B23 — drag-reorder channels in the column** (2026-08-22). Live HTML5 drag on the
+  workspace channel column (reorders within a group, drop cue + "Channel order saved"
+  toast) **and** the Settings → Channels rows (the "Drag to reorder" copy is now honest).
+  Also added **regular dragging** in the File explorer — drag a file card onto a folder
+  (tree row or folder card) to move it (§C.6 · `move_to_folder`).
+- [x] **S15 — voice "you're in the booth" mini-bar** (2026-08-22). Persistent strip at the
+  foot of the channel column (mic/leave), plus the whole voice surface is marked **WIP**:
+  grayed call/video buttons everywhere (workspace header, DM header, friends rows), a WIP
+  **toast** when any call/video/minibar/vc control is pressed, and — per the owner —
+  **the voice-chat (`vc`) interface is fully replaced** by a placeholder: a
+  transparency-checkerboard grey screen with a centred icon and "This feature is currently
+  being built" front and centre; the control bar stays. Voice still ships in **v2** — this
+  is the signpost, not the feature.
+
+- [ ] **Deep alignment & spacing pass** — a dedicated sweep of every screen and dialog for
+  precise alignment, balance, consistent gaps/padding, type hierarchy (size *and* colour),
+  and aspect ratio (per CLAUDE.md "be exacting…"). Not a restyle — a fit-and-finish audit:
+  hunt for off-by-a-few-px misalignments, uneven paddings, wonky button proportions, and
+  ragged edges across the whole gallery, at 1440 in both themes.
 
 ## Next galleries (not started)
 

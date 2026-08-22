@@ -960,6 +960,18 @@ input{font:inherit;color:inherit}
 .wipbanner .ic{color:var(--m2);flex:none}
 .wipbanner b{color:#fff}
 .wipbanner .tag{margin-left:auto;background:rgba(255,255,255,.12);color:#fff}
+/* Voice chat WIP placeholder — the whole interface is a transparency-checkerboard
+   grey screen with the "being built" message + icon front and centre (v2). */
+.vcstage.vcwip{display:grid;place-items:center;padding:24px;
+  background-color:#a6a6a6;
+  background-image:linear-gradient(45deg,#8f8f8f 25%,transparent 25%),linear-gradient(-45deg,#8f8f8f 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#8f8f8f 75%),linear-gradient(-45deg,transparent 75%,#8f8f8f 75%);
+  background-size:28px 28px;background-position:0 0,0 14px,14px -14px,-14px 0}
+.vcwipcard{display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center;max-width:400px;
+  padding:26px 30px;border-radius:var(--r);background:rgba(16,16,16,.76);color:#f4f4f4}
+.vcwipicon .ic{width:36px;height:36px;color:#f4f4f4}
+.vcwiptitle{font-size:var(--fs-lg);font-weight:600}
+.vcwipsub{font-size:var(--fs-sm);color:#c6c6c6;line-height:1.5}
+.vcwipcard .tag{margin-top:3px;background:rgba(255,255,255,.14);color:#fff}
 .vchd .lt{margin-left:14px;display:flex;gap:2px;background:#242424;border-radius:6px;padding:3px}
 .vchd .lt button{width:30px;height:24px;display:grid;place-items:center;border-radius:4px;color:#9a9a9a}
 .vchd .lt button:hover{color:#ededed}.vchd .lt button.on{background:#3a3a3a;color:#ededed}
@@ -1166,6 +1178,26 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
 .rsw{width:9px;height:9px;flex:none;border-radius:var(--r)}
 /* Disabled action button (e.g. type-to-confirm Delete before the name matches) */
 .btn:disabled{opacity:.45;cursor:not-allowed}
+/* --- Drag-and-drop (B23 channel reorder + regular file→folder move) --- */
+.crow[draggable="true"]{cursor:grab}
+.crow.dragging{opacity:.4}
+.crow.dropbefore{box-shadow:inset 0 2px 0 var(--ink)}
+.crow.dropafter{box-shadow:inset 0 -2px 0 var(--ink)}
+.ftrow.dropinto,.fc.dropinto{outline:2px solid var(--ink);outline-offset:-2px}
+.fc[draggable="true"],[data-open-details][draggable="true"]{cursor:grab}
+/* --- S15 voice minibar (WIP) — pinned to the foot of the channel column --- */
+.voicemini{flex:none;margin:0 var(--s2) var(--s2);padding:8px 9px;background:var(--plate);border-radius:var(--r);opacity:.62;cursor:pointer}
+.voicemini:hover{opacity:.78}
+.voicemini .vmtop{display:flex;align-items:center;gap:8px}
+.voicemini .vmdot{width:8px;height:8px;border-radius:50%;background:var(--muted);flex:none}
+.voicemini .vminfo{min-width:0;flex:1}
+.voicemini .vminfo b{display:block;font-size:var(--fs-xs);color:var(--ink);line-height:1.2}
+.voicemini .vminfo small{display:block;font-size:10px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.voicemini .vmwip{display:flex;align-items:center;gap:6px;margin-top:6px;font-size:10px;color:var(--muted)}
+.voicemini .vmwip .ic{width:11px;height:11px}
+/* WIP call/video entry buttons — grayed; they toast + preview the v2 screen */
+.wipcall{opacity:.5}
+.vcbar.wip{opacity:.5}
 /* #51 toast + upload-progress — a transient bottom-right feedback stack */
 .toaststack{position:fixed;right:18px;bottom:18px;z-index:95;display:flex;flex-direction:column;gap:8px;width:320px;max-width:calc(100vw - 36px)}
 .toast{display:flex;align-items:flex-start;gap:10px;background:var(--ink);color:var(--on-ink);border-radius:var(--r);padding:11px 13px;font-size:var(--fs-sm);
@@ -2154,6 +2186,16 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
             <button class="crow" data-s="vc"><svg class="ic"><use href="#i-voice"/></svg><span class="nm">co-writing</span></button>
           </div>
         </div>
+        <!-- S15 voice minibar — the persistent "you're in the booth" strip while
+             browsing elsewhere. WIP: voice ships in v2; grayed + a build note. -->
+        <div class="voicemini" id="voiceMini" title="Voice (in progress)">
+          <div class="vmtop"><span class="vmdot"></span>
+            <div class="vminfo"><b>Voice connected</b><small>the booth · Late Bloom LP</small></div>
+            <button class="iconbtn" title="Mic"><svg class="ic sm"><use href="#i-mic"/></svg></button>
+            <button class="iconbtn" title="Leave"><svg class="ic sm"><use href="#i-leave"/></svg></button>
+          </div>
+          <div class="vmwip"><svg class="ic"><use href="#i-clock"/></svg>This feature is currently being built</div>
+        </div>
       </nav>
 
       <main class="main">
@@ -2163,8 +2205,8 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
           <svg class="ic"><use href="#i-hash"/></svg><span class="t">beats</span>
           <span class="sub">put the session name in the file name</span>
           <div class="acts">
-            <button class="iconbtn" data-s="vc" title="Voice"><svg class="ic"><use href="#i-phone"/></svg></button>
-            <button class="iconbtn" data-s="vc" title="Video"><svg class="ic"><use href="#i-video"/></svg></button>
+            <button class="iconbtn wipcall" data-s="vc" title="Voice — in progress"><svg class="ic"><use href="#i-phone"/></svg></button>
+            <button class="iconbtn wipcall" data-s="vc" title="Video — in progress"><svg class="ic"><use href="#i-video"/></svg></button>
             <button class="iconbtn" id="notifBell" title="Notifications"><svg class="ic"><use href="#i-bell"/></svg></button>
             <button class="iconbtn" data-s="search" title="Search"><svg class="ic"><use href="#i-search"/></svg></button>
             <button class="iconbtn" title="Members"><svg class="ic"><use href="#i-users"/></svg></button>
@@ -2524,42 +2566,18 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
     <!-- CALL (voice / video) -->
     <div class="screen" data-screen="vc" hidden>
       <div class="vc">
-        <div class="vchd"><svg class="ic"><use href="#i-voice"/></svg><span class="t">the booth</span><span class="sub">Late Bloom LP</span>
-          <div class="lt"><button class="on" title="Grid"><svg class="ic sm"><use href="#i-grid"/></svg></button><button title="Focus the share"><svg class="ic sm"><use href="#i-screen"/></svg></button></div>
-          <span class="cnt">4 in call · 08:12</span></div>
-        <div class="wipbanner"><svg class="ic sm"><use href="#i-clock"/></svg><span><b>Preview — not in the beta.</b> Voice &amp; video calls ship after the beta (v2). This screen is design-only; nothing here connects yet.</span><span class="tag">WIP · v2</span></div>
-        <div class="vcstage">
-          <div class="vcshare">
-            <div class="vcsharebar"><button class="stop"><svg class="ic"><use href="#i-screen"/></svg>Stop sharing</button><button><svg class="ic"><use href="#i-pen"/></svg>Annotate</button><button>HD</button></div>
-            <div class="daw">
-              <div class="lane"><i style="left:4%;width:22%"></i><i style="left:30%;width:14%"></i><i style="left:50%;width:30%"></i></div>
-              <div class="lane"><i style="left:8%;width:40%"></i><i style="left:56%;width:18%"></i></div>
-              <div class="lane"><i style="left:2%;width:12%"></i><i style="left:20%;width:12%"></i><i style="left:38%;width:12%"></i><i style="left:56%;width:12%"></i><i style="left:74%;width:12%"></i></div>
-              <div class="lane"><i style="left:12%;width:60%"></i></div>
-              <div class="lane"><i style="left:4%;width:20%"></i><i style="left:44%;width:36%"></i></div>
-            </div>
-            <div class="lbl"><svg class="ic sm"><use href="#i-screen"/></svg>dev is sharing FL Studio</div>
+        <!-- Voice chat is v2 — the whole interface is replaced by a WIP placeholder:
+             a transparency-checkerboard grey screen, a centred icon, and the "being
+             built" message front and centre. The control bar stays (it toasts WIP). -->
+        <div class="vcstage vcwip">
+          <div class="vcwipcard">
+            <div class="vcwipicon"><svg class="ic"><use href="#i-voice"/></svg></div>
+            <div class="vcwiptitle">This feature is currently being built</div>
+            <div class="vcwipsub">Voice &amp; video calls ship after the beta — this screen is a placeholder; nothing here connects yet.</div>
+            <span class="tag">WIP · v2</span>
           </div>
-          <div class="vcstrip">
-            <div class="vtile cam speaking"><div class="vnm" style="color:var(--m5)">jax</div><button class="vmore"><svg class="ic sm"><use href="#i-more"/></svg></button></div>
-            <div class="vtile"><div class="vav">RA</div><div class="vnm" style="color:var(--m1)">rae</div><button class="vmore"><svg class="ic sm"><use href="#i-more"/></svg></button></div>
-            <div class="vtile"><div class="vav">DV</div><div class="vnm" style="color:var(--m3)">dev</div><button class="vmore"><svg class="ic sm"><use href="#i-more"/></svg></button></div>
-            <div class="vtile"><span class="vhand"><svg class="ic sm"><use href="#i-hand"/></svg></span><div class="vav">TM</div><div class="vnm" style="color:var(--m2)">tomo</div><span class="vmute"><svg class="ic sm"><use href="#i-mic-off"/></svg></span></div>
-          </div>
-          <aside class="vcpanel" id="vcPanel" hidden>
-            <div class="vcptabs"><button class="on" data-vctab="chat">Chat</button><button data-vctab="notes">Notes</button></div>
-            <div class="vcpbody" data-vcview="chat">
-              <div class="vcpmsg"><div class="by">rae</div><div class="tx">can you loop the bridge?</div></div>
-              <div class="vcpmsg"><div class="by">dev</div><div class="tx">yep, looping now</div></div>
-              <div class="vcpmsg"><div class="by">jax</div><div class="tx">low end sounds way better already</div></div>
-            </div>
-            <div class="vcpbody" data-vcview="notes" hidden>
-              <div class="vcpnote"><b style="color:#ededed">Booth notes</b><br>· re-cut bridge drums (dev)<br>· pull low end 2db (tomo)<br>· rae retracks the hook<br>· rough bounce by Fri</div>
-            </div>
-            <div class="vcpcompose"><input placeholder="Message the call"></div>
-          </aside>
         </div>
-        <div class="vcbar">
+        <div class="vcbar wip" id="vcBar">
           <button class="vcbtn on" title="Mic"><svg class="ic"><use href="#i-mic"/></svg></button>
           <button class="vcbtn" title="Deafen"><svg class="ic"><use href="#i-voice"/></svg></button>
           <button class="vcbtn" title="Camera"><svg class="ic"><use href="#i-camera"/></svg></button>
@@ -2570,7 +2588,6 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
           <button class="vcbtn" title="Participants"><svg class="ic"><use href="#i-users"/></svg></button>
           <button class="vcbtn leave" title="Leave"><svg class="ic"><use href="#i-leave"/></svg></button>
         </div>
-        <div class="vcreacts" id="vcReacts"><button>🔥</button><button>👏</button><button>❤️</button><button>😂</button><button>🎉</button><button>🙌</button></div>
       </div>
     </div>
 
@@ -2630,7 +2647,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
       </div>
       <main class="main" id="dmConvo">
         <div class="mainhd"><div class="av sm">MI</div><span class="t">mira</span><span class="sub">compositor</span>
-          <div class="acts"><button class="iconbtn"><svg class="ic"><use href="#i-phone"/></svg></button><button class="iconbtn"><svg class="ic"><use href="#i-video"/></svg></button><button class="iconbtn" title="Pin"><svg class="ic"><use href="#i-pin"/></svg></button><button class="iconbtn" title="More"><svg class="ic"><use href="#i-more"/></svg></button></div></div>
+          <div class="acts"><button class="iconbtn wipcall" title="Call — in progress"><svg class="ic"><use href="#i-phone"/></svg></button><button class="iconbtn wipcall" title="Video — in progress"><svg class="ic"><use href="#i-video"/></svg></button><button class="iconbtn" title="Pin"><svg class="ic"><use href="#i-pin"/></svg></button><button class="iconbtn" title="More"><svg class="ic"><use href="#i-more"/></svg></button></div></div>
         <div class="stream">
           <div class="day"><span>Yesterday</span></div>
           <div class="msg"><div class="av sm">MI</div><div class="bd"><div class="by"><span class="u">mira</span><time>6:02 PM</time></div><div class="tx">saw your comps on tiktok, insane. username's mira if you want to add me</div></div></div>
@@ -2650,9 +2667,9 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
           <div class="frrow"><div class="av sm">LN</div><div class="info"><b>lin</b><small>incoming friend request</small></div><div class="fracts"><button class="rbtn ok" title="Accept"><svg class="ic sm"><use href="#i-check"/></svg></button><button class="rbtn no" title="Decline"><svg class="ic sm"><use href="#i-x"/></svg></button></div></div>
           <div class="frrow"><div class="av sm">SO</div><div class="info"><b>sol</b><small>outgoing request</small></div><span class="pendlbl">pending</span></div>
           <div class="frsec">Online, 3</div>
-          <div class="frrow"><div class="av sm">DV<span class="pr"></span></div><div class="info"><b>dev</b><small>@devmakesbeats</small></div><div class="fracts"><button class="rbtn" title="Message"><svg class="ic sm"><use href="#i-mail"/></svg></button><button class="rbtn" title="Call"><svg class="ic sm"><use href="#i-phone"/></svg></button><button class="rbtn" title="More"><svg class="ic sm"><use href="#i-more"/></svg></button></div></div>
-          <div class="frrow"><div class="av sm">MI<span class="pr"></span></div><div class="info"><b>mira</b><small>@mira</small></div><div class="fracts"><button class="rbtn" title="Message"><svg class="ic sm"><use href="#i-mail"/></svg></button><button class="rbtn" title="Call"><svg class="ic sm"><use href="#i-phone"/></svg></button><button class="rbtn" title="More"><svg class="ic sm"><use href="#i-more"/></svg></button></div></div>
-          <div class="frrow"><div class="av sm">RA<span class="pr"></span></div><div class="info"><b>rae</b><small>@rae</small></div><div class="fracts"><button class="rbtn" title="Message"><svg class="ic sm"><use href="#i-mail"/></svg></button><button class="rbtn" title="Call"><svg class="ic sm"><use href="#i-phone"/></svg></button><button class="rbtn" title="More"><svg class="ic sm"><use href="#i-more"/></svg></button></div></div>
+          <div class="frrow"><div class="av sm">DV<span class="pr"></span></div><div class="info"><b>dev</b><small>@devmakesbeats</small></div><div class="fracts"><button class="rbtn" title="Message"><svg class="ic sm"><use href="#i-mail"/></svg></button><button class="rbtn wipcall" title="Call — in progress"><svg class="ic sm"><use href="#i-phone"/></svg></button><button class="rbtn" title="More"><svg class="ic sm"><use href="#i-more"/></svg></button></div></div>
+          <div class="frrow"><div class="av sm">MI<span class="pr"></span></div><div class="info"><b>mira</b><small>@mira</small></div><div class="fracts"><button class="rbtn" title="Message"><svg class="ic sm"><use href="#i-mail"/></svg></button><button class="rbtn wipcall" title="Call — in progress"><svg class="ic sm"><use href="#i-phone"/></svg></button><button class="rbtn" title="More"><svg class="ic sm"><use href="#i-more"/></svg></button></div></div>
+          <div class="frrow"><div class="av sm">RA<span class="pr"></span></div><div class="info"><b>rae</b><small>@rae</small></div><div class="fracts"><button class="rbtn" title="Message"><svg class="ic sm"><use href="#i-mail"/></svg></button><button class="rbtn wipcall" title="Call — in progress"><svg class="ic sm"><use href="#i-phone"/></svg></button><button class="rbtn" title="More"><svg class="ic sm"><use href="#i-more"/></svg></button></div></div>
         </div>
       </div>
     </div>
@@ -4181,6 +4198,71 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   // Move-picker "New folder" — no dead buttons (#45): give feedback
   var moveNewFolder=document.getElementById('moveNewFolder');if(moveNewFolder)moveNewFolder.addEventListener('click',function(){if(typeof toast==='function')toast('Name your new folder');});
 
+  // Voice / video WIP (#56 / S15) — grayed call/video buttons, the voice minibar,
+  // and the vc control bar all toast that voice is still being built.
+  var VOICE_WIP='This feature is currently being built — voice & video ship in v2';
+  document.querySelectorAll('.wipcall').forEach(function(b){b.addEventListener('click',function(){if(typeof toast==='function')toast(VOICE_WIP);});});
+  var voiceMini=document.getElementById('voiceMini');if(voiceMini)voiceMini.addEventListener('click',function(){if(typeof toast==='function')toast(VOICE_WIP);});
+  var vcBar=document.getElementById('vcBar');if(vcBar)vcBar.querySelectorAll('.vcbtn').forEach(function(b){b.addEventListener('click',function(){if(typeof toast==='function')toast(VOICE_WIP);});});
+
+  // B23 — drag-reorder channels within their column group (live, not just settings)
+  (function(){
+    var col=document.querySelector('.screen[data-screen="workspace"] .chanbody');if(!col)return;
+    var dragEl=null;
+    function clearCues(){col.querySelectorAll('.crow').forEach(function(r){r.classList.remove('dropbefore','dropafter');});}
+    col.querySelectorAll('.crow').forEach(function(row){
+      row.setAttribute('draggable','true');
+      row.addEventListener('dragstart',function(e){dragEl=row;row.classList.add('dragging');e.dataTransfer.effectAllowed='move';});
+      row.addEventListener('dragend',function(){row.classList.remove('dragging');clearCues();dragEl=null;});
+      row.addEventListener('dragover',function(e){
+        if(!dragEl||dragEl===row||row.parentNode!==dragEl.parentNode)return; // reorder only within the same group
+        e.preventDefault();clearCues();
+        var rect=row.getBoundingClientRect(),after=e.clientY>rect.top+rect.height/2;
+        row.classList.add(after?'dropafter':'dropbefore');});
+      row.addEventListener('drop',function(e){
+        if(!dragEl||dragEl===row||row.parentNode!==dragEl.parentNode)return;
+        e.preventDefault();
+        var after=row.classList.contains('dropafter');clearCues();
+        row.parentNode.insertBefore(dragEl,after?row.nextSibling:row);
+        if(typeof toast==='function')toast('Channel order saved');});
+    });
+  })();
+
+  // Regular dragging — drag an explorer file card onto a folder (tree row or
+  // folder card) to move it (CANON §C.6 · move_to_folder).
+  (function(){
+    var ex=document.querySelector('.screen[data-screen="explorer"]');if(!ex)return;
+    var held=null;
+    ex.querySelectorAll('.panebody .card:not(.skelcard):not(.foldercard)').forEach(function(card){
+      card.setAttribute('draggable','true');
+      card.addEventListener('dragstart',function(e){held=card;e.dataTransfer.effectAllowed='move';});
+      card.addEventListener('dragend',function(){held=null;ex.querySelectorAll('.dropinto').forEach(function(t){t.classList.remove('dropinto');});});
+    });
+    ex.querySelectorAll('.ftrow, .card.foldercard').forEach(function(t){
+      t.addEventListener('dragover',function(e){if(!held)return;e.preventDefault();t.classList.add('dropinto');});
+      t.addEventListener('dragleave',function(){t.classList.remove('dropinto');});
+      t.addEventListener('drop',function(e){if(!held)return;e.preventDefault();t.classList.remove('dropinto');
+        var nm=(t.querySelector('.fn')||t.querySelector('.title')||{}).textContent||'folder';
+        if(typeof toast==='function')toast('Moved to '+nm);held=null;});
+    });
+  })();
+
+  // Settings → Channels: make the "Drag to reorder" copy honest (drag whole rows)
+  (function(){
+    var list=document.querySelector('.screen[data-screen="settings"] .setpanel[data-panel="channels"] .setlist');if(!list)return;
+    var held=null;
+    list.querySelectorAll('.chwrap').forEach(function(w){
+      w.setAttribute('draggable','true');
+      w.addEventListener('dragstart',function(e){held=w;w.style.opacity='.4';e.dataTransfer.effectAllowed='move';});
+      w.addEventListener('dragend',function(){w.style.opacity='';held=null;});
+      w.addEventListener('dragover',function(e){if(!held||held===w)return;e.preventDefault();});
+      w.addEventListener('drop',function(e){if(!held||held===w)return;e.preventDefault();
+        var rect=w.getBoundingClientRect(),after=e.clientY>rect.top+rect.height/2;
+        w.parentNode.insertBefore(held,after?w.nextSibling:w);
+        if(typeof toast==='function')toast('Channel order saved');});
+    });
+  })();
+
   // B4 channel context menu + B5 edit-channel + B3 create-category
   var channelMenu=document.getElementById('channelMenu'),chanMenuName=document.getElementById('chanMenuName');
   var editChan=opener('editChanScrim','editChanModal'), cat=opener('catScrim','catModal');
@@ -4536,8 +4618,8 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   // call: chat/notes panel, reactions, tabs
   var vcPanel=document.getElementById('vcPanel'),vcReacts=document.getElementById('vcReacts');
   var vcChatBtn=document.getElementById('vcChatBtn'),vcReactBtn=document.getElementById('vcReactBtn');
-  if(vcChatBtn)vcChatBtn.addEventListener('click',function(){var open=vcPanel.hidden;vcPanel.hidden=!open;vcChatBtn.classList.toggle('on',open);});
-  if(vcReactBtn)vcReactBtn.addEventListener('click',function(e){e.stopPropagation();vcReacts.classList.toggle('open');});
+  if(vcChatBtn&&vcPanel)vcChatBtn.addEventListener('click',function(){var open=vcPanel.hidden;vcPanel.hidden=!open;vcChatBtn.classList.toggle('on',open);});
+  if(vcReactBtn&&vcReacts)vcReactBtn.addEventListener('click',function(e){e.stopPropagation();vcReacts.classList.toggle('open');});
   document.addEventListener('click',function(e){if(vcReacts&&!e.target.closest('#vcReacts')&&!e.target.closest('#vcReactBtn'))vcReacts.classList.remove('open');});
   document.querySelectorAll('.vcptabs button').forEach(function(b){b.addEventListener('click',function(){
     document.querySelectorAll('.vcptabs button').forEach(function(x){x.classList.remove('on');});b.classList.add('on');
