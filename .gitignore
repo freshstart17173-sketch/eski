@@ -3,3 +3,6 @@ node_modules/
 # package.json and its lockfile are a DEPLOY requirement: vercel installs
 # aws4fetch from them to run api/sign.mjs. leaving them untracked means the
 # function fails to build.
+
+# gallery verify: regenerable review screenshots (baseline JSON is tracked)
+docs/design/shots/
