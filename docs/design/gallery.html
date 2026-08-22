@@ -40,6 +40,10 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;
   transition:background var(--t),color var(--t),border-color var(--t)}
 input{font:inherit;color:inherit}
 :focus-visible{outline:2px solid var(--ink);outline-offset:1px}
+/* Tab strips carry their selection in a 2px underline + weight, so a focused tab
+   shows that same underline — never a full bounding box (the box duplicates what
+   the underline already says and reads as clutter). Keyboard a11y is preserved. */
+.chtab:focus-visible,.ntab:focus-visible,.frtab:focus-visible,.ptab2:focus-visible{outline:none;box-shadow:inset 0 -2px 0 var(--ink)}
 .ic{width:17px;height:17px;flex:none;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
 .ic.sm{width:14px;height:14px}.ic.f{fill:currentColor;stroke:none}
 .u{font-weight:600}
@@ -61,10 +65,19 @@ input{font:inherit;color:inherit}
 .field input::placeholder{color:var(--muted)}
 .field .ic{color:var(--muted)}
 .field.req{border-color:var(--soft)}
-.selbtn{display:inline-flex;align-items:center;gap:7px;background:var(--paper);border:1px solid var(--line2);
-  border-radius:var(--r);padding:8px 11px;font-size:var(--fs-sm);color:var(--soft);transition:border-color var(--t),background var(--t)}
-.selbtn:hover{border-color:var(--ink)}
+/* A dropdown is a .btn colour-change with a trailing chevron (eski-polish §1.2):
+   filled --surface at rest, --plate on hover, invert on click — NOT a bordered
+   field pill. Denser than a field so a select never reads as an input. */
+.selbtn{display:inline-flex;align-items:center;gap:7px;background:var(--surface);border:1px solid transparent;
+  border-radius:var(--r);padding:6px 10px;font-size:var(--fs-sm);color:var(--ink);transition:background var(--t),color var(--t)}
+.selbtn:hover{background:var(--plate)}
+.selbtn:active{background:var(--ink);color:var(--on-ink)}
+.selbtn:active .ic{color:var(--on-ink)}
 .selbtn .ic{color:var(--muted)}
+/* the trailing chevron rotates while the dropdown is open (matches the server
+   header) so the control shows its own state */
+.selbtn>svg.ic{transition:transform var(--t)}
+.selbtn[aria-expanded="true"]>svg.ic{transform:rotate(180deg);color:var(--ink)}
 /* buttons — small; box shrinks, label holds. 3 archetypes (eski-style §2). */
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:5px;
   border:1px solid transparent;border-radius:var(--r);
@@ -135,10 +148,14 @@ input{font:inherit;color:inherit}
 /* #34 server header: the server's cover + square icon get real presence at the
    top of the channel column, not just the 38px rail badge. Server icon is
    SQUARE (round is people only). */
-.srvhd{flex:none;cursor:pointer}
-.srvhd:hover .srvbar{background:var(--plate)}
+.srvhd{flex:none}
+/* Only the bar (icon + name + chevron) is the menu button — the cover banner is
+   decorative and does nothing. Hover/pointer live on the bar, not the banner. */
 .srvcover{height:72px;background:linear-gradient(135deg,#5a5a5a,#232323)}
-.srvbar{display:flex;align-items:center;gap:10px;padding:0 var(--s3) 8px;background:var(--plate)}
+.srvbar{display:flex;align-items:center;gap:10px;width:100%;text-align:left;padding:0 var(--s3) 8px;background:var(--plate);cursor:pointer}
+.srvbar:hover{background:var(--paper1)}
+.srvchev{margin-left:auto;color:var(--muted);transition:transform var(--t)}
+.srvbar[aria-expanded="true"] .srvchev{transform:rotate(180deg);color:var(--ink)}
 .srvicon{width:40px;height:40px;flex:none;border-radius:var(--r);margin-top:-20px;background:var(--ink);color:var(--on-ink);display:grid;place-items:center;font-weight:700;font-size:var(--fs-sm);box-shadow:0 0 0 3px var(--surface)}
 .srvbar b{font-size:var(--fs-sm)}
 .chanhd b{font-size:var(--fs-sm);font-weight:600}
@@ -463,12 +480,13 @@ input{font:inherit;color:inherit}
 .dmbigplay .ic{width:26px;height:26px}
 .dinfo{flex:none;width:380px;min-width:0;display:flex;flex-direction:column;overflow:hidden;background:var(--paper)}
 /* info-rail top bar: file name + report + close */
-.dtop{position:relative;flex:none;display:flex;align-items:center;gap:6px;padding:var(--s3) var(--s3) var(--s3) var(--s4)}
+.dtop{position:relative;flex:none;display:flex;align-items:center;gap:6px;padding:var(--s3) var(--s4)}
 .dtop::after{content:"";position:absolute;left:var(--hair-inset);right:var(--hair-inset);bottom:0;height:1px;background:var(--line)}
 .dtop .sp{margin-left:auto}
 .dfilename{font-size:var(--fs-xs);color:var(--soft);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .dinfo .scroll{flex:1;overflow-y:auto;padding:0 var(--s4) var(--s4)}
-.dinfo h2{font-size:var(--fs-lg);font-weight:600}
+/* Breathing room under the .dtop hairline — the title never hugs the line. */
+.dinfo h2{font-size:var(--fs-lg);font-weight:600;margin:var(--s4) 0 var(--s3)}
 /* folder navigation list in the rail */
 /* #8 the side file list scrolls in place (no click-to-expand); scrollbar is
    hidden (#48) but wheel/touch still scroll. #9 each .fi is a button that opens
@@ -481,7 +499,7 @@ input{font:inherit;color:inherit}
 .flist .fi .fn{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .flist .fi .ft{color:var(--muted);font-size:11px;flex:none}
 /* dense, are.na metadata: key left (muted), value right-aligned to the edge (ink) */
-.meta{display:flex;flex-direction:column;gap:5px;margin:0 0 13px;font-size:var(--fs-sm)}
+.meta{display:flex;flex-direction:column;gap:var(--s1);margin:0 0 var(--s3);font-size:var(--fs-sm)}
 .meta .row{display:flex;justify-content:space-between;align-items:baseline;gap:16px}
 .meta .k{flex:none;color:var(--muted);font-size:var(--fs-xs)}
 .meta .v{flex:1;min-width:0;color:var(--ink);text-align:right}
@@ -511,10 +529,12 @@ input{font:inherit;color:inherit}
 .menu .verline{display:flex;flex-direction:column;gap:1px}
 .menu .verline .fn{font-size:var(--fs-xs);color:var(--soft)}
 .menu .verline .rs{font-size:10px;color:var(--muted)}
-.menu .sep{height:1px;background:var(--line);margin:4px 0}
-.menu .notlv .nchk{visibility:hidden}
-.menu .notlv.on{color:var(--ink);font-weight:600}
-.menu .notlv.on .nchk{visibility:visible;color:var(--ink)}
+.menu .sep{height:1px;background:var(--line);margin:5px var(--hair-inset)}
+.menu .notlv .nchk,.menu .loco .nchk{visibility:hidden}
+.menu .notlv.on,.menu .loco.on{color:var(--ink);font-weight:600}
+.menu .notlv.on .nchk,.menu .loco.on .nchk{visibility:visible;color:var(--ink)}
+.menu .loco .lfi{color:var(--muted)}
+.locmenu{min-width:240px}
 
 .umodal{position:fixed;z-index:81;top:50%;left:50%;transform:translate(-50%,-50%);width:min(540px,95vw);max-height:90vh;overflow:auto;background:var(--paper);border-radius:var(--r)}
 /* dialog/rail bars carry NO grey fill — an inset hairline separates them (eski-style §3) */
@@ -538,12 +558,13 @@ input{font:inherit;color:inherit}
 .ufile .auto{margin-left:auto}
 .ulab{display:flex;align-items:center;gap:8px;font-size:var(--fs-xs);color:var(--muted);font-weight:600;margin:var(--s4) 0 7px}
 .ulab .rq{color:var(--m1);font-weight:600}
-.urow{display:flex;gap:6px;flex-wrap:wrap}
-.visopt{display:flex;align-items:center;gap:8px;flex:1;min-width:140px;background:var(--surface);border-radius:var(--r);padding:10px 12px;transition:background var(--t)}
+.urow{display:flex;gap:var(--s1);flex-wrap:wrap}
+/* Compact 3-way — the label carries it (Public/Server/Private are self-evident);
+   no sublabel, single line, active inverts. "less is more". */
+.visopt{display:flex;align-items:center;justify-content:center;gap:7px;flex:1;min-width:0;background:var(--surface);border-radius:var(--r);padding:6px 10px;font-size:var(--fs-xs);font-weight:500;transition:background var(--t),color var(--t)}
 .visopt:hover{background:var(--plate)}
 .visopt.on{background:var(--ink);color:var(--on-ink)}
-.visopt .ic{color:var(--muted)}.visopt.on .ic{color:var(--on-ink)}
-.visopt small{display:block;font-size:10px;color:var(--muted)}.visopt.on small{color:rgba(255,255,255,.7)}
+.visopt .ic{width:15px;height:15px;color:var(--muted)}.visopt.on .ic{color:var(--on-ink)}
 /* S6 report dialog — reason radio list */
 .repopts{display:flex;flex-direction:column;gap:6px}
 .repopt{display:flex;align-items:center;gap:10px;width:100%;text-align:left;padding:10px 12px;border-radius:var(--r);background:var(--surface);font-size:var(--fs-sm);color:var(--soft);transition:background var(--t)}
@@ -612,7 +633,11 @@ input{font:inherit;color:inherit}
 .setpanel[hidden]{display:none}
 .frow{max-width:560px;margin-bottom:var(--s4)}
 .coverpick{display:flex;gap:var(--s3);align-items:center}
-.coverpick .cv{width:132px;height:78px;background:var(--paper1);border-radius:var(--r);display:grid;place-items:center;color:var(--muted)}
+.coverpick .cv{width:132px;height:78px;background:var(--paper1);border-radius:var(--r);display:grid;place-items:center;color:var(--muted);overflow:hidden;background-size:cover;background-position:center}
+/* the server icon is the square rail badge — smaller, ink-filled like the badge
+   itself, so the preview reads as what ships on the rail. Square (server icons
+   are chrome, --r), distinct from the wide rectangular cover. */
+.coverpick .cv.icon{width:64px;height:64px;background:var(--ink);color:var(--on-ink);font-weight:700;font-size:var(--fs-lg)}
 .dangerbox{max-width:560px;margin-top:var(--s5);padding:var(--s4);background:var(--surface);border-radius:var(--r);display:flex;align-items:center;gap:var(--s4)}
 .dangerbox .t{flex:1}.dangerbox .t b{display:block;font-size:var(--fs-sm)}.dangerbox .t small{color:var(--muted);font-size:var(--fs-xs)}
 .btn.danger{background:var(--danger);color:#fff;border-color:var(--danger)}
@@ -1205,7 +1230,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
 .trrow:hover .tacts{opacity:1}
 .selbtn.danger{color:var(--danger)}
 .selbtn.danger .ic{color:var(--danger)}
-.selbtn.danger:hover{border-color:var(--danger)}
+.selbtn.danger:hover{background:var(--plate);color:var(--danger)}
 /* #49 skeleton loading shimmer */
 .skel{background:var(--surface);border-radius:var(--r);position:relative;overflow:hidden}
 .skel::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.35),transparent);transform:translateX(-100%);animation:shimmer 1.3s infinite}
@@ -1802,7 +1827,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
             <div class="o"><svg class="ic"><use href="#i-lock"/></svg>Private</div>
           </div>
           <label class="fl">Which server / folder</label>
-          <button class="selbtn" style="width:100%;justify-content:space-between"><span style="display:flex;align-items:center;gap:8px"><span class="pfp" style="width:20px;height:20px;border-radius:var(--r);font-size:9px;background:var(--m3)">LB</span>Late Bloom LP <span style="color:var(--muted)">/ beats</span></span><svg class="ic sm"><use href="#i-chev"/></svg></button>
+          <button class="selbtn" style="width:100%;justify-content:space-between"><span style="display:flex;align-items:center;gap:8px"><span class="pfp" style="width:16px;height:16px;border-radius:var(--r);font-size:8px;background:var(--ink);color:var(--on-ink)">LB</span>Late Bloom LP <span style="color:var(--muted)">/ beats</span></span><svg class="ic sm"><use href="#i-chev"/></svg></button>
           <div class="ustore"><svg class="ic sm"><use href="#i-server"/></svg>Late Bloom LP storage · 74/120 GB</div>
           <details class="addmore">
             <summary><svg class="ic sm"><use href="#i-chev"/></svg>Add details <span style="color:var(--muted)">(optional)</span></summary>
@@ -1856,9 +1881,9 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
       <div class="stage tall"><div class="modal" style="width:250px">
         <div style="height:52px;background:var(--m4)"></div>
         <div style="padding:0 15px 15px;margin-top:-18px">
-          <span class="pfp" style="width:46px;height:46px;background:var(--m4);border-radius:var(--r);box-shadow:0 0 0 3px var(--paper)">MI</span>
-          <div style="font-weight:600;margin-top:7px">mira <span class="uchip m4" style="font-size:10px"><span class="dot"></span>admin</span></div>
-          <div style="font-size:11px;color:var(--muted);margin-top:2px">@mira · compositor · 3pm local</div>
+          <span class="pfp" style="width:46px;height:46px;background:var(--m4);border-radius:50%;box-shadow:0 0 0 3px var(--paper)">MI</span>
+          <div style="font-weight:600;margin-top:7px">mira <span class="uchip m4" style="font-size:10px">admin</span></div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px">@mira · 3pm local</div>
           <div style="font-size:12px;color:var(--soft);margin:10px 0">Shared servers: Specter, LATE BLOOM</div>
           <div style="display:flex;gap:8px"><button class="btn primary" style="flex:1"><svg class="ic sm"><use href="#i-at"/></svg>Add friend</button>
             <button class="btn" style="flex:1"><svg class="ic sm"><use href="#i-mail"/></svg>Message</button></div>
@@ -1986,9 +2011,9 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
     <!-- WORKSPACE -->
     <div class="screen" data-screen="workspace">
       <nav class="chan">
-        <div class="srvhd" id="srvHdr" title="Server menu">
+        <div class="srvhd" id="srvHdr">
           <div class="srvcover"></div>
-          <div class="srvbar"><span class="srvicon">LB</span><b>Late Bloom LP</b><svg class="ic sm" style="margin-left:auto;color:var(--muted)"><use href="#i-chev"/></svg></div>
+          <button class="srvbar" id="srvBar" aria-haspopup="menu" aria-expanded="false" title="Server menu"><span class="srvicon">LB</span><b>Late Bloom LP</b><svg class="ic sm srvchev"><use href="#i-chev"/></svg></button>
         </div>
         <div class="chanbody">
           <div class="cgroup">
@@ -2598,7 +2623,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
         <div class="setmain">
           <div class="setpanel" data-panel="uprofile">
             <h2>Profile</h2><div class="h2sub">How you appear across eski. Your handle is unique.</div>
-            <div class="frow"><label class="ulab">Avatar</label><div class="avatarpick"><span class="apv">DX</span><button class="btn sm"><svg class="ic sm"><use href="#i-image"/></svg>Upload</button></div></div>
+            <div class="frow"><label class="ulab">Avatar</label><div class="avatarpick"><span class="apv">DX</span><button class="btn sm upbtn" data-up="your avatar"><svg class="ic sm"><use href="#i-image"/></svg>Upload</button></div></div>
             <div class="frow"><label class="ulab">Display name</label><div class="field"><input value="dexter"></div></div>
             <div class="frow"><label class="ulab">Handle</label><div class="field"><span style="color:var(--muted)">@</span><input value="dexter"></div></div>
             <div class="frow"><label class="ulab">Bio</label><div class="field"><input value="making eski"></div></div>
@@ -2685,7 +2710,8 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
             <h2>General</h2><div class="h2sub">Admins only.</div>
             <div class="frow"><label class="ulab">Server name</label><div class="field"><input value="Late Bloom LP"></div></div>
             <div class="frow"><label class="ulab">Description</label><div class="field"><input value="a remote LP, producers and rappers"></div></div>
-            <div class="frow"><label class="ulab">Cover</label><div class="coverpick"><div class="cv"><svg class="ic"><use href="#i-image"/></svg></div><button class="btn sm"><svg class="ic sm"><use href="#i-image"/></svg>Upload</button></div></div>
+            <div class="frow"><label class="ulab">Server icon</label><div class="coverpick"><div class="cv icon">LB</div><button class="btn sm upbtn" data-up="the server icon"><svg class="ic sm"><use href="#i-image"/></svg>Upload</button></div></div>
+            <div class="frow"><label class="ulab">Cover</label><div class="coverpick"><div class="cv"><svg class="ic"><use href="#i-image"/></svg></div><button class="btn sm upbtn" data-up="the server cover"><svg class="ic sm"><use href="#i-image"/></svg>Upload</button></div></div>
             <div class="dangerbox"><div class="t"><b>Delete this server</b><small>Removes every channel and its files. Members keep their own copies of files they saved to personal storage.</small></div><button class="btn danger" id="genDeleteServer"><svg class="ic sm"><use href="#i-trash"/></svg>Delete</button></div>
           </div>
           <div class="setpanel" data-panel="channels" hidden>
@@ -2882,8 +2908,10 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
           <div class="lead">A private studio. You invite people with a link; there is no public listing.</div>
           <label class="ulab">Server name</label><div class="field" id="createNameField"><input placeholder="e.g. Late Bloom LP"></div>
           <div class="fielderr" id="createErr" hidden><svg class="ic sm"><use href="#i-x"/></svg>You're already in a server with that name.</div>
+          <label class="ulab">Server icon <span style="font-weight:400;color:var(--muted)">optional</span></label>
+          <div class="coverpick"><div class="cv icon"><svg class="ic"><use href="#i-image"/></svg></div><button class="btn sm upbtn" data-up="the server icon"><svg class="ic sm"><use href="#i-image"/></svg>Upload</button></div>
           <label class="ulab">Cover <span style="font-weight:400;color:var(--muted)">optional</span></label>
-          <div class="coverpick"><div class="cv"><svg class="ic"><use href="#i-image"/></svg></div><button class="btn sm"><svg class="ic sm"><use href="#i-image"/></svg>Upload</button></div>
+          <div class="coverpick"><div class="cv"><svg class="ic"><use href="#i-image"/></svg></div><button class="btn sm upbtn" data-up="the server cover"><svg class="ic sm"><use href="#i-image"/></svg>Upload</button></div>
           <label class="ulab">Starter channels</label>
           <div class="starter"><span class="tag">general</span><span class="tag">wips</span><span class="tag">references</span><button class="addtag"><svg class="ic sm"><use href="#i-plus"/></svg></button></div>
           <div class="magic"><svg class="ic sm" style="color:var(--muted)"><use href="#i-link"/></svg><span class="lk">An invite link is created with the server</span></div>
@@ -3029,7 +3057,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
           <label class="ulab">Display name</label>
           <div class="field"><svg class="ic sm"><use href="#i-user"/></svg><input placeholder="What people see" value="jax"></div>
           <label class="ulab">Avatar</label>
-          <div class="avatarpick"><span class="apv" id="authAv">JX</span><button class="btn sm"><svg class="ic sm"><use href="#i-image"/></svg>Upload</button></div>
+          <div class="avatarpick"><span class="apv" id="authAv">JX</span><button class="btn sm upbtn" data-up="your avatar"><svg class="ic sm"><use href="#i-image"/></svg>Upload</button></div>
           <div class="authbtns"><button class="btn primary" id="authEnter">Enter eski</button></div>
           <div class="authalt">By continuing you agree to the terms and privacy notice.</div>
         </div>
@@ -3306,7 +3334,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   <button class="danger"><svg class="ic sm"><use href="#i-trash"/></svg>Delete</button></div>
 
 <!-- B1 server-name dropdown (opens from the server header) -->
-<div class="menu" id="serverMenu"><div class="mlabel">Late Bloom LP</div>
+<div class="menu" id="serverMenu">
   <button id="smInvite"><svg class="ic sm"><use href="#i-user"/></svg>Invite people</button>
   <button id="smNewChannel"><svg class="ic sm"><use href="#i-hash"/></svg>Create channel</button>
   <button id="smNewCategory"><svg class="ic sm"><use href="#i-folder"/></svg>Create category</button>
@@ -3335,8 +3363,8 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   <div class="ubody">
     <label class="ulab">Channel type</label>
     <div class="urow">
-      <button class="visopt on" data-chkind="text"><svg class="ic"><use href="#i-hash"/></svg><span>Text<small>messages &amp; files</small></span></button>
-      <button class="visopt" data-chkind="voice"><svg class="ic"><use href="#i-voice"/></svg><span>Voice<small>talk &amp; screen-share</small></span></button>
+      <button class="visopt on" data-chkind="text"><svg class="ic"><use href="#i-hash"/></svg>Text</button>
+      <button class="visopt" data-chkind="voice"><svg class="ic"><use href="#i-voice"/></svg>Voice</button>
     </div>
     <label class="ulab">Name</label>
     <div class="field"><span style="color:var(--muted)">#</span><input id="channelName" placeholder="new-channel"></div>
@@ -3346,7 +3374,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
       <summary><svg class="ic sm"><use href="#i-chev"/></svg>Advanced <span style="font-weight:400;color:var(--muted)">(optional)</span></summary>
       <div class="setrow"><div class="cl"><b>Private channel</b><small>Only invited roles/members see it</small></div><span class="tog"><i></i></span></div>
       <label class="ulab">Default save folder</label>
-      <button class="selbtn" style="width:100%;justify-content:space-between"><span style="display:flex;align-items:center;gap:8px"><svg class="ic sm"><use href="#i-folder"/></svg>Root</span><svg class="ic sm"><use href="#i-chev"/></svg></button>
+      <button class="selbtn locpick" aria-haspopup="menu" aria-expanded="false" style="width:100%;justify-content:space-between"><span style="display:flex;align-items:center;gap:8px"><svg class="ic sm"><use href="#i-folder"/></svg><span class="locfolder">Root</span></span><svg class="ic sm"><use href="#i-chev"/></svg></button>
       <label class="ulab">Allowed file types</label>
       <button class="selbtn" style="width:100%;justify-content:space-between">Any<svg class="ic sm"><use href="#i-chev"/></svg></button>
     </details>
@@ -3574,6 +3602,21 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   <button class="notlv" data-exv="feed"><svg class="ic sm nchk"><use href="#i-check"/></svg>Feed</button>
 </div>
 
+<!-- File-location chooser — one folder picker, opened as a dropdown from every
+     "which folder" selector (upload sheet, channel default folder). A long
+     dropdown, not a modal: indentation is the tree; the check marks the current
+     destination. -->
+<div class="menu locmenu" id="locMenu">
+  <div class="mlabel">Choose a location</div>
+  <button class="loco" data-loc="Late Bloom LP / Root"><svg class="ic sm nchk"><use href="#i-check"/></svg><svg class="ic sm lfi"><use href="#i-folder"/></svg>Root</button>
+  <button class="loco on" data-loc="Late Bloom LP / beats"><svg class="ic sm nchk"><use href="#i-check"/></svg><svg class="ic sm lfi"><use href="#i-folder"/></svg>beats</button>
+  <button class="loco" data-loc="Late Bloom LP / verses"><svg class="ic sm nchk"><use href="#i-check"/></svg><svg class="ic sm lfi"><use href="#i-folder"/></svg>verses</button>
+  <button class="loco" data-loc="Late Bloom LP / stems and sessions"><svg class="ic sm nchk"><use href="#i-check"/></svg><svg class="ic sm lfi"><use href="#i-folder"/></svg>stems and sessions</button>
+  <button class="loco" data-loc="Late Bloom LP / references"><svg class="ic sm nchk"><use href="#i-check"/></svg><svg class="ic sm lfi"><use href="#i-folder"/></svg>references</button>
+  <div class="sep"></div>
+  <button class="mi" id="locNewFolder"><svg class="ic sm"><use href="#i-plus"/></svg>New folder…</button>
+</div>
+
 <!-- Edit-profile modal — from the Profile "Edit profile" button (own profile).
      Writes `profiles` (display_name, handle, bio, avatar, banner). The handle is
      globally unique — same claim/validation as the auth claim-handle step (§C.10/§C.14). -->
@@ -3582,7 +3625,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   <div class="uhd"><b>Edit profile</b><button class="iconbtn" id="epClose"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
   <div class="ubody">
     <div class="epbanner"><button class="btn sm"><svg class="ic sm"><use href="#i-pen"/></svg>Change banner</button></div>
-    <div class="epavrow"><span class="av lg">RA</span><button class="btn sm"><svg class="ic sm"><use href="#i-pen"/></svg>Change photo</button></div>
+    <div class="epavrow"><span class="av lg">RA</span><button class="btn sm upbtn" data-up="your photo"><svg class="ic sm"><use href="#i-pen"/></svg>Change photo</button></div>
     <label class="ulab">Display name</label>
     <div class="field"><input value="rae okonkwo"></div>
     <label class="ulab">Handle</label>
@@ -3714,9 +3757,9 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   <div class="ubody">
     <label class="ulab">Visibility <span style="font-weight:400;color:var(--muted)">— who can see this</span></label>
     <div class="urow">
-      <button class="visopt"><svg class="ic"><use href="#i-globe"/></svg><span>Public<small>anyone with the link</small></span></button>
-      <button class="visopt on"><svg class="ic"><use href="#i-server"/></svg><span>Server<small>server members</small></span></button>
-      <button class="visopt"><svg class="ic"><use href="#i-lock"/></svg><span>Private<small>only you</small></span></button>
+      <button class="visopt"><svg class="ic"><use href="#i-globe"/></svg>Public</button>
+      <button class="visopt on"><svg class="ic"><use href="#i-server"/></svg>Server</button>
+      <button class="visopt"><svg class="ic"><use href="#i-lock"/></svg>Private</button>
     </div>
     <label class="ulab">Link</label>
     <div class="field"><svg class="ic sm"><use href="#i-link"/></svg><input readonly value="https://eski.lol/f/8x4k2q"><button class="btn sm"><svg class="ic sm"><use href="#i-copy"/></svg>Copy</button></div>
@@ -3768,12 +3811,12 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
       <!-- #14 tighter helper copy — less wrapping, shorter elements -->
       <label class="ulab">Visibility <span style="font-weight:400;color:var(--muted)">— required</span></label>
       <div class="urow">
-        <button class="visopt"><svg class="ic"><use href="#i-globe"/></svg><span>Public<small>your profile</small></span></button>
-        <button class="visopt on"><svg class="ic"><use href="#i-server"/></svg><span>Server<small>server members</small></span></button>
-        <button class="visopt"><svg class="ic"><use href="#i-lock"/></svg><span>Private<small>only you</small></span></button>
+        <button class="visopt"><svg class="ic"><use href="#i-globe"/></svg>Public</button>
+        <button class="visopt on"><svg class="ic"><use href="#i-server"/></svg>Server</button>
+        <button class="visopt"><svg class="ic"><use href="#i-lock"/></svg>Private</button>
       </div>
       <label class="ulab">Which server / folder</label>
-      <button class="selbtn" style="width:100%;justify-content:space-between"><span style="display:flex;align-items:center;gap:8px"><span class="pfp" style="width:20px;height:20px;border-radius:var(--r);font-size:9px;background:var(--m3)">LB</span>Late Bloom LP <span style="color:var(--muted)">/ beats</span></span><svg class="ic sm"><use href="#i-chev"/></svg></button>
+      <button class="selbtn locpick" aria-haspopup="menu" aria-expanded="false" style="width:100%;justify-content:space-between"><span style="display:flex;align-items:center;gap:8px"><span class="pfp" style="width:16px;height:16px;border-radius:var(--r);font-size:8px;background:var(--ink);color:var(--on-ink)">LB</span>Late Bloom LP <span style="color:var(--muted)">/ <span class="locfolder" style="color:var(--ink)">beats</span></span></span><svg class="ic sm"><use href="#i-chev"/></svg></button>
       <div class="ustore"><svg class="ic sm"><use href="#i-server"/></svg>Late Bloom LP storage · 74/120 GB</div>
       <details class="addmore">
         <summary><svg class="ic sm"><use href="#i-chev"/></svg>Add details <span style="font-weight:400;color:var(--muted)">(optional)</span></summary>
@@ -4010,7 +4053,9 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
     if(e.key==='Escape')lbClose();else if(e.key==='ArrowLeft')lbShow(lbIdx-1);else if(e.key==='ArrowRight')lbShow(lbIdx+1);});
 
   var menus=['dlMenu','saveMenu','emojiMenu','msgMenu','cardMenu','folderMenu','channelMenu','dmMenu'].map(function(id){return document.getElementById(id);}).filter(Boolean);
-  function closeMenus(){menus.forEach(function(m){m.classList.remove('open');});}
+  function closeMenus(){menus.forEach(function(m){m.classList.remove('open');});
+    // Reset any dropdown trigger's open-state (chevron rotation, a11y) on close.
+    document.querySelectorAll('[aria-expanded="true"]').forEach(function(t){t.setAttribute('aria-expanded','false');});}
   function toggleMenu(m,anchor,above){var open=m.classList.contains('open');closeMenus();if(open)return;
     m.classList.add('open');var r=anchor.getBoundingClientRect();
     var top=above?(r.top-8-m.offsetHeight):(r.bottom+6);
@@ -4052,6 +4097,12 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
     var iv=setInterval(function(){v+=Math.random()*22;if(v>=100){v=100;clearInterval(iv);setTimeout(function(){p.remove();done&&done();},350);}
       i.style.width=v+'%';pct.textContent=Math.round(v)+'%';},220);}
 
+  // Every "Upload" affordance (server icon/cover, profile avatar, create-server
+  // art) is a real entry point: it opens the picker and shows upload feedback,
+  // so no upload button is a dead end.
+  document.querySelectorAll('.upbtn').forEach(function(b){b.addEventListener('click',function(e){
+    e.stopPropagation();uploadProgress(b.dataset.up||'your file');});});
+
   // #39/#61 share dialog open/close, wired from the ⋯ menu "Update visibility…"
   var shareScrim=document.getElementById('shareScrim'),shareModal=document.getElementById('shareModal');
   function openShare(){closeMenus();if(shareScrim)shareScrim.hidden=false;if(shareModal)shareModal.hidden=false;}
@@ -4073,10 +4124,16 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
     document.querySelectorAll('.card').forEach(function(c){c.addEventListener('contextmenu',function(e){
       e.preventDefault();openMenuAt(cardMenu,e.clientX,e.clientY);});});
   }
-  // B1 server-name dropdown
-  var serverMenu=document.getElementById('serverMenu'),srvHdr=document.getElementById('srvHdr');
-  if(serverMenu&&srvHdr){menus.push(serverMenu);
-    srvHdr.addEventListener('click',function(e){e.stopPropagation();var r=srvHdr.getBoundingClientRect();openMenuAt(serverMenu,r.left+8,r.bottom-6);});}
+  // B1 server-name dropdown. The trigger is the bar (icon+name+chevron) ONLY —
+  // the cover banner above it is decorative and inert. It's a real toggle (a
+  // second click on the bar closes it), and it opens flush under the bar, with
+  // the chevron rotating to point up while open.
+  var serverMenu=document.getElementById('serverMenu'),srvBar=document.getElementById('srvBar');
+  if(serverMenu&&srvBar){menus.push(serverMenu);
+    srvBar.addEventListener('click',function(e){e.stopPropagation();
+      var open=serverMenu.classList.contains('open');closeMenus();if(open)return;
+      var r=srvBar.getBoundingClientRect();openMenuAt(serverMenu,r.left,r.bottom+4);
+      srvBar.setAttribute('aria-expanded','true');});}
 
   // B15 notification-bell dropdown — a preview that right-aligns under the bell.
   // "See all" and "Mark all read" both close it; See-all falls through to data-s nav.
@@ -4358,6 +4415,27 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   // B13 block/report from the profile popover
   var ppBlock=document.getElementById('ppBlock');if(ppBlock)ppBlock.addEventListener('click',function(e){e.stopPropagation();closePop();if(typeof toast==='function')toast('Blocked — they can no longer message or see you');});
   var ppReport=document.getElementById('ppReport');if(ppReport)ppReport.addEventListener('click',function(e){e.stopPropagation();closePop();openReport('this person');});
+
+  // File-location chooser — one dropdown shared by every folder selector
+  // (upload sheet, channel default folder). Toggles like the server header,
+  // rotates its chevron (aria-expanded), and writes the chosen folder back into
+  // the selector that opened it. No dead selector.
+  var locMenu=document.getElementById('locMenu'),activeLocPicker=null;
+  if(locMenu){menus.push(locMenu);
+    document.querySelectorAll('.selbtn.locpick').forEach(function(p){p.addEventListener('click',function(e){
+      e.stopPropagation();var wasOpen=locMenu.classList.contains('open')&&activeLocPicker===p;
+      closeMenus();if(wasOpen){activeLocPicker=null;return;}
+      activeLocPicker=p;p.setAttribute('aria-expanded','true');
+      locMenu.classList.add('open');var r=p.getBoundingClientRect();
+      locMenu.style.left=Math.min(r.left,window.innerWidth-locMenu.offsetWidth-8)+'px';
+      locMenu.style.top=(r.bottom+4)+'px';locMenu.style.minWidth=Math.max(240,r.width)+'px';});});
+    locMenu.querySelectorAll('.loco').forEach(function(o){o.addEventListener('click',function(e){e.stopPropagation();
+      locMenu.querySelectorAll('.loco').forEach(function(x){x.classList.remove('on');});o.classList.add('on');
+      if(activeLocPicker){var f=(o.dataset.loc||'').split(' / ')[1]||'Root';
+        var t=activeLocPicker.querySelector('.locfolder');if(t)t.textContent=f;}
+      closeMenus();});});
+    var locNew=document.getElementById('locNewFolder');
+    if(locNew)locNew.addEventListener('click',function(e){e.stopPropagation();closeMenus();if(typeof toast==='function')toast('New folder created');});}
 
   // #58 folder context menu on right-click of a folder tree row
   var folderMenu=document.getElementById('folderMenu');
