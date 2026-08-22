@@ -5,6 +5,18 @@ dialogs/menus). Answers "what's missing" for a codegen-ready contract. Two
 tables: **screens/surfaces** and **buttons/links/menus**. Scored so we can
 sequence the work.
 
+> **Status 2026-08-22 — the backlog is essentially built.** Functional gaps
+> shipped into the gallery: S1 (admin affordances — POV switcher later removed),
+> S2, S3, S4, S5, S6, S7, S8, S10, S11, S12, S13, S14, and B1–B22, B24, B25, B26
+> (B6 = the private-channel allow-list §C.18; B18 = the composer autocomplete;
+> B22 = copy in the invite dialog). **S16** is covered by the auth *claim-handle
+> + avatar* step. **Still open:** **B23** drag-reorder channels *in the column*
+> (settings already has it; ★2/●3 DnD) · **S15** voice mini-bar (v2) · **S9** the
+> full **mobile gallery** (a separate file, see gallery-todo). Cross-cutting
+> **exploded-view catalog panels** for every wired dialog are tracked in
+> gallery-todo (the gallery should carry both live-on-screen behaviour *and*
+> standalone labelled panels).
+
 **Scoring**
 - **Need** ★1–5 — 5 = beta-blocking, 1 = nice-to-have / post-beta.
 - **Effort** ●1–5 — 1 = trivial (reuse existing components), 5 = a whole new
