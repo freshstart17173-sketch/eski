@@ -388,43 +388,6 @@ input{font:inherit;color:inherit}
 .lbchip{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.1);border-radius:var(--r);padding:6px 10px;font-size:var(--fs-xs);color:#eaeaea}
 .lbchip .ic{width:14px;height:14px;color:#bcbcbc}
 
-/* canvas */
-.cvwrap{flex:1;min-width:0;display:flex;flex-direction:column;background:var(--paper)}
-.cvhd{flex:none;height:48px;display:flex;align-items:center;gap:var(--s3);padding:0 var(--s4);background:var(--surface)}
-.cvhd .acts{margin-left:auto;display:flex;gap:var(--s1);align-items:center}
-.cvhd .cmtcount{font-size:var(--fs-xs);color:var(--muted);display:inline-flex;align-items:center;gap:5px}
-.cvtools{flex:none;display:flex;align-items:center;gap:var(--s1);padding:8px var(--s4);background:var(--plate)}
-.cvtools .sep{width:1px;height:20px;background:var(--line2);margin:0 6px}
-.cvtools .grp{font-size:10px;color:var(--muted);margin-right:2px}
-.sw{width:18px;height:18px;border-radius:50%;cursor:pointer;box-shadow:0 0 0 1px rgba(0,0,0,.15)}
-.canvas{flex:1;overflow:auto;padding:var(--s5);display:flex;flex-wrap:wrap;gap:var(--s5);align-content:flex-start;
-  background:repeating-conic-gradient(var(--surface) 0 25%,transparent 0 50%) 0 0/16px 16px}
-.tile{position:relative;background:var(--paper);box-shadow:0 1px 5px rgba(0,0,0,.18)}
-.tile.sel{outline:2px solid var(--ink);outline-offset:2px}
-.tname{position:absolute;top:6px;left:6px;z-index:4;background:rgba(20,20,20,.62);color:#fff;font-size:10px;padding:2px 6px;border-radius:2px;display:inline-flex;gap:6px;align-items:center}
-.tile.img{width:380px;height:214px}
-.tile.img .scene{position:absolute;inset:0;background:radial-gradient(120% 90% at 70% 15%,#3a4046,#111417)}
-.tile.img .scene .ground{position:absolute;inset:58% 0 0 0;background:linear-gradient(#2a2e31,#0d0f11)}
-.tile.img .scene .o1{position:absolute;left:34%;top:40%;width:52px;height:104px;background:#0c1216;box-shadow:0 0 0 1px #26303a}
-.tile.img .scene .o2{position:absolute;left:52%;top:52%;width:40px;height:78px;background:#0d151b;box-shadow:0 0 0 1px #26303a}
-.tile.img.warm .scene{background:radial-gradient(120% 90% at 30% 20%,#463a3a,#141010)}
-.tile.img.warm .scene .ground{background:linear-gradient(#2e2a2a,#100d0d)}
-.tile.audio{width:380px;height:150px;display:flex;align-items:center;padding:0 16px}
-.anno{position:absolute;inset:0;pointer-events:none;z-index:2}
-
-/* comment pins (figma-style): minimized pfp, expand on click */
-.pin{position:absolute;z-index:6;transform:translate(-50%,-50%)}
-.pin .pfp{width:26px;height:26px;border-radius:50% 50% 50% 3px;display:grid;place-items:center;font-size:10px;font-weight:700;color:#fff;
-  box-shadow:0 2px 6px rgba(0,0,0,.4);cursor:pointer;border:2px solid var(--paper)}
-.pin .pop{display:none;position:absolute;top:14px;left:18px;width:230px;background:var(--paper);border-radius:var(--r);box-shadow:0 14px 44px rgba(0,0,0,.34);padding:11px;z-index:8}
-.pin.open .pop{display:block}
-.pin.open .pfp{outline:2px solid var(--ink);outline-offset:2px}
-.pin .pop .ph{display:flex;align-items:center;gap:7px;margin-bottom:6px}
-.pin .pop .tx{font-size:var(--fs-xs);color:var(--soft)}
-.pin .pop .rl{margin-top:9px}
-.pin .pop .rl input{width:100%;background:var(--surface);border:0;border-radius:var(--r);padding:7px 9px;font-size:var(--fs-xs);outline:none;color:var(--ink)}
-.selbox{position:absolute;border:1.5px dashed var(--ink);z-index:3}
-.selrange{position:absolute;top:0;bottom:0;background:rgba(120,120,120,.22);box-shadow:inset 2px 0 0 var(--ink),inset -2px 0 0 var(--ink);z-index:1}
 
 /* profile */
 .prof{flex:1;min-width:0;overflow-y:auto;background:var(--paper)}
@@ -553,7 +516,7 @@ input{font:inherit;color:inherit}
 .menu .notlv.on{color:var(--ink);font-weight:600}
 .menu .notlv.on .nchk{visibility:visible;color:var(--ink)}
 
-.umodal{position:fixed;z-index:81;top:50%;left:50%;transform:translate(-50%,-50%);width:min(540px,95vw);max-height:90vh;overflow:auto;background:var(--paper);border-radius:var(--r);box-shadow:0 30px 80px rgba(0,0,0,.5)}
+.umodal{position:fixed;z-index:81;top:50%;left:50%;transform:translate(-50%,-50%);width:min(540px,95vw);max-height:90vh;overflow:auto;background:var(--paper);border-radius:var(--r)}
 /* dialog/rail bars carry NO grey fill — an inset hairline separates them (eski-style §3) */
 .hair{position:relative}
 .hair::after{content:"";position:absolute;left:var(--hair-inset);right:var(--hair-inset);bottom:0;height:1px;background:var(--line)}
@@ -1282,9 +1245,6 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
 .capbanner .btn{margin-left:auto;background:rgba(255,255,255,.16);color:#fff}
 .capbanner .btn:hover{background:rgba(255,255,255,.28)}
 /* folder contents grid inside a details pane */
-.dfolder{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}
-.dfolder .cell{aspect-ratio:1;background:var(--plate);border-radius:3px;overflow:hidden;position:relative}
-.dfolder .cell.more{display:grid;place-items:center;color:var(--muted);font-size:var(--fs-sm);font-weight:600;background:var(--surface)}
 .modal .mfoot{position:relative;display:flex;justify-content:flex-end;gap:var(--s2);
   padding:var(--s3) var(--s4)}
 .modal .mfoot::after{content:"";position:absolute;left:var(--hair-inset);right:var(--hair-inset);top:0;height:1px;background:var(--line)}
@@ -1405,67 +1365,6 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
 .proto{display:none}   /* dev picker bar — killed everywhere; gallery drives nav */
 /* app-mode layout: fill the viewport, no stray padding, screens stretch */
 :root[data-mode="app"] body{padding-bottom:0}
-/* --- rebuilt canvas (screen §E + comments sidebar §D.6.5) --- */
-.cvmain{flex:1;min-height:0;display:flex}
-.cvmain .canvas{flex:1;min-width:0}
-.cvside{width:250px;flex:none;background:var(--surface);overflow-y:auto;padding:10px 8px}
-.cvsidehd{display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--muted);padding:4px 8px 10px}
-.cvcom{display:block;width:100%;text-align:left;padding:9px 8px;border-radius:var(--r)}
-.cvcom+.cvcom{margin-top:2px}
-.cvcom:hover,.cvcom.on{background:var(--plate)}
-.cvcom .cvtop{display:flex;align-items:center;gap:7px}
-.cvcom .cvtype{font-size:10.5px;color:var(--muted)}
-.cvcom .cvsnip{display:block;font-size:12px;color:var(--soft);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.cvcom.resolved{opacity:.5}
-.capbtn{position:absolute;top:7px;right:7px;z-index:5;width:26px;height:26px;border-radius:var(--r);background:rgba(20,20,20,.55);color:#fff;display:grid;place-items:center}
-.capbtn:hover{background:rgba(20,20,20,.82)}
-.pinbadge{position:absolute;transform:translate(-50%,-50%);z-index:6;min-width:20px;height:20px;padding:0 6px;border-radius:10px;color:#fff;font-size:11px;font-weight:700;display:grid;place-items:center;box-shadow:0 0 0 2px var(--paper)}
-.cvzoom{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--soft);margin-left:auto}
-.cvzoom button{padding:2px 8px;border-radius:var(--r);background:var(--plate)}
-.cvzoom button:hover{background:var(--paper1)}
-.cvzoom b{min-width:40px;text-align:center;color:var(--ink)}
-.cvzoom .sep2{width:1px;height:16px;background:var(--line);margin:0 2px}
-.pensz{width:22px;height:22px;display:grid;place-items:center}
-.pensz i{width:9px;height:9px;border-radius:50%;background:var(--ink);display:block}
-.audiohint{font-size:10.5px;color:var(--muted);padding:5px 8px;display:flex;align-items:center;gap:5px}
-.cvhd .acts{display:flex;align-items:center;gap:8px}
-.tbar{position:absolute;top:7px;right:7px;z-index:5;display:flex;align-items:center;gap:5px}
-.tilebtn{width:26px;height:26px;border-radius:var(--r);background:rgba(20,20,20,.55);color:#fff;display:grid;place-items:center}
-.tilebtn:hover{background:rgba(20,20,20,.82)}
-.cbadge{min-width:22px;height:22px;padding:0 6px;border-radius:var(--r);background:var(--ink);color:var(--on-ink);font-size:11px;font-weight:700;display:grid;place-items:center}
-.pdot{position:absolute;transform:translate(-50%,-50%);width:12px;height:12px;border-radius:50%;background:var(--pc,var(--m3));box-shadow:0 0 0 2px var(--paper);z-index:4}
-.exsel{position:absolute;top:8px;bottom:8px;background:rgba(20,20,20,.12);border-left:2px solid var(--ink);border-right:2px solid var(--ink)}
-/* ---- canvas expanded view: selection + annotate composer ---- */
-/* AUDIO region select — shaded region + draggable handles + floating time (Frame.io/DAW) */
-.wfregion{position:absolute;top:0;bottom:0;background:rgba(130,190,145,.18);border-left:2px solid var(--m3);border-right:2px solid var(--m3);cursor:move}
-.wfregion .gh{position:absolute;top:0;bottom:0;width:8px;background:var(--m3);cursor:ew-resize;display:flex;align-items:center;justify-content:center}
-.wfregion .gh::after{content:"";width:2px;height:16px;background:var(--paper)}
-.wfregion .gh.l{left:-5px}.wfregion .gh.r{right:-5px}
-.wfregion .rlab{position:absolute;top:-2px;left:50%;transform:translate(-50%,-100%);background:var(--ink);color:var(--on-ink);font-size:10px;font-weight:600;padding:2px 7px;border-radius:2px;white-space:nowrap;font-variant-numeric:tabular-nums}
-.wfhead{position:absolute;top:0;bottom:0;width:2px;background:#fff;box-shadow:0 0 0 1px rgba(0,0,0,.4);z-index:3}
-/* VIDEO review timeline — range trim handles + annotation pins + playhead (Frame.io/Vimeo) */
-.vreel{aspect-ratio:16/9;background:linear-gradient(135deg,#3a4a55,#12181c);border-radius:var(--r);position:relative;display:grid;place-items:center}
-.vtl{position:relative;height:34px;margin-top:10px;background:#161616;border-radius:var(--r);display:flex;align-items:center;padding:0 4px}
-.vtl .trk{position:relative;flex:1;height:6px;background:#3a3a3a;border-radius:3px}
-.vtl .fill{position:absolute;left:0;top:0;bottom:0;background:#fff;border-radius:3px}
-.vtl .vrange{position:absolute;top:-4px;bottom:-4px;background:rgba(130,190,145,.22);border-left:2px solid var(--m3);border-right:2px solid var(--m3);border-radius:2px}
-.vtl .vrange .gh{position:absolute;top:0;bottom:0;width:8px;background:var(--m3);cursor:ew-resize;border-radius:2px}
-.vtl .vrange .gh.l{left:-5px}.vtl .vrange .gh.r{right:-5px}
-.vtl .vpin{position:absolute;top:-9px;width:12px;height:12px;border-radius:50%;background:var(--pc,var(--m4));box-shadow:0 0 0 2px #161616;transform:translateX(-50%);cursor:pointer}
-.vtl .vhead{position:absolute;top:-6px;bottom:-6px;width:2px;background:#fff;transform:translateX(-50%);z-index:3}
-/* IMAGE marquee — solid frame + corner handles + numbered pin (Figma/Markup) */
-.imstage{position:relative;aspect-ratio:16/10;background:linear-gradient(135deg,#33414a,#12181c);border-radius:var(--r);overflow:hidden}
-.immarq{position:absolute;background:rgba(130,190,145,.14);border:1.5px solid var(--m3)}
-.immarq .ch{position:absolute;width:9px;height:9px;background:var(--paper);border:1.5px solid var(--m3);border-radius:2px}
-.immarq .ch.tl{left:-5px;top:-5px}.immarq .ch.tr{right:-5px;top:-5px}.immarq .ch.bl{left:-5px;bottom:-5px}.immarq .ch.br{right:-5px;bottom:-5px}
-.immarq .imnum{position:absolute;top:-11px;left:-11px;width:22px;height:22px;border-radius:50% 50% 50% 2px;background:var(--m3);color:#fff;display:grid;place-items:center;font-size:11px;font-weight:700}
-.imptn{position:absolute;width:22px;height:22px;border-radius:50% 50% 50% 2px;background:var(--m5);color:#fff;display:grid;place-items:center;font-size:11px;font-weight:700;transform:translate(-50%,-100%)}
-/* the annotate composer that appears once a selection/point exists */
-.anncompose{display:flex;align-items:center;gap:8px;margin-top:12px;padding:8px;background:var(--surface);border-radius:var(--r)}
-.anncompose .selchip{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;color:var(--soft);background:var(--plate);padding:3px 8px;border-radius:2px;white-space:nowrap;flex:none}
-.anncompose .field{flex:1;min-width:0}
-.annbar{display:flex;align-items:center;gap:8px;margin:11px 0}
-.annbar .btn{flex:none}
 </style>
 <script>document.documentElement.setAttribute("data-mode",new URLSearchParams(location.search).has("app")?"app":"catalog")</script>
 <script>document.addEventListener("click",function(e){var t=e.target.closest("[data-lt]");if(!t)return;var s=t.closest(".screen")||document;var gr=s.querySelector(".masonry");if(gr){gr.classList.toggle("even");t.classList.toggle("on");}});</script>
@@ -1514,8 +1413,6 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
 <symbol id="i-folder" viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></symbol>
 <symbol id="i-file" viewBox="0 0 24 24"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M13 2v7h7"/></symbol>
 <symbol id="i-pause" viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></symbol>
-<symbol id="i-rewind" viewBox="0 0 24 24"><polygon points="11 19 2 12 11 5 11 19"/><polygon points="22 19 13 12 22 5 22 19"/></symbol>
-<symbol id="i-ff" viewBox="0 0 24 24"><polygon points="13 19 22 12 13 5 13 19"/><polygon points="2 19 11 12 2 5 2 19"/></symbol>
 <symbol id="i-volume" viewBox="0 0 24 24"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07M19.07 4.93a10 10 0 0 1 0 14.14"/></symbol>
 <symbol id="i-music" viewBox="0 0 24 24"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></symbol>
 <symbol id="i-star" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/></symbol>
@@ -3936,19 +3833,6 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   function paint(){tb.textContent=dark()?'Light':'Dark';}
   tb.addEventListener('click',function(){root.setAttribute('data-theme',dark()?'light':'dark');paint();});paint();
   applyHash();
-
-  // comment pins expand/collapse
-  document.querySelectorAll('.pin').forEach(function(p){
-    var pfp=p.querySelector('.pfp');
-    // .pin is the canvas comment pin; guard so an unrelated element that
-    // happens to carry the class (e.g. a stray icon) cannot throw here and
-    // abort the rest of this init block, silently killing later handlers.
-    if(!pfp)return;
-    pfp.addEventListener('click',function(e){e.stopPropagation();
-      var wasOpen=p.classList.contains('open');
-      document.querySelectorAll('.pin.open').forEach(function(o){o.classList.remove('open');});
-      if(!wasOpen)p.classList.add('open');});
-  });
 
   var scrim=document.getElementById('scrim'),sheet=document.getElementById('detailsSheet');
   function openD(){scrim.hidden=false;sheet.hidden=false;}
