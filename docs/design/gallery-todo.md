@@ -24,10 +24,11 @@ folded in below.) Brand art lives separately in
 > wire-tested, no console errors; inventory (⑤) statuses updated. Exploded-view
 > standalone panels are **not** part of this pass.
 >
-> **Still an unbuilt feature (noted, not a dead-entry-point dialog):**
-> **Crosspost to server** (details pane, inventory ⑤ 't') has no entry point at all
-> — it needs a defined trigger + the personal-work→server placement flow before a
-> surface can be drawn. Left for an owner call, not invented here.
+> **Crosspost to server** (inventory ⑤ 't') — **BUILT 2026-08-22.** Entry point is
+> the file **⋯ menu → Crosspost to server…**; the dialog shows the file + its one
+> consequence (stays in your storage, still public on your profile), a channel-picker
+> dropdown, and an optional message. The personal-work→server placement stays a
+> reference (no copy), per the CANON placement model.
 
 ## Style redesign — are.na monochrome (in progress, 2026-08-22)
 
@@ -111,9 +112,25 @@ Web-only scaling (mobile deferred, CANON §C.2).
     → coloured bold text (one scoped input-token exception); tutorial copy cut; redundant
     leading icons cut on labelled buttons; `.epavrow` spacing snapped to a token;
     `Modified by` neutralised to `.metalink`. Verified both themes; `eski-style` updated.
+  - **Batch 2 (2026-08-22) — interaction-logic + density passes 1–3:** added an
+    **interaction-logic audit** to `eski-polish` (new §1B: dead controls, trigger scope,
+    real toggles, anchored menus, purposeful animation, delegation across windows). Applied:
+    server-header dropdown fixed (bar-only trigger, toggle, flush under, chevron rotates);
+    tab focus = underline not a bounding box; details-rail title/metadata tokens + one right
+    ruler; `.selbtn` → guide dropdown archetype (colour-change + rotating chevron) and
+    `.visopt` tiles compacted (no sublabels); menu separators inset; upload buttons wired;
+    drag-to-move delegated so it works in **every** window; rail profile button round +
+    bottom-anchored; create-server split into a 2-step wizard; slowmode field → dropdown.
   - **Remaining:** per-surface micro-alignment sweep with the overlay across all 21 screens
     + dialogs (button-cluster consistency, grid/list distribution, edge insets). Run the
     skill surface-by-surface.
+
+- [x] **New surfaces built (2026-08-22):** **server icon upload** (Settings → General +
+  Create-server, distinct from the cover); **file-location chooser** (one nested folder-tree
+  dropdown shared by the upload sheet + channel default-folder, mirrors `.ftrow.lvlN`);
+  **crosspost-to-server** dialog + entry point (file ⋯ menu) — closes the last unbuilt-feature
+  gap; **missing states** (notifications empty, usersettings panels, shared/expired,
+  deadinvite expired/revoked/full/already-member).
 
 - [ ] **Minimise the remaining always-visible filters into dropdowns (multi-select).** The
   file-browser filters + view are now compact `.btn` dropdowns; carry that further:

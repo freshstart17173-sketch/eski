@@ -16,7 +16,8 @@ gallery.
   (search `STATES={`), pointing at the existing switch — never a second copy —
   then re-run `verify.mjs --update`.
 
-Counts today: **21 screens · 51 named states · 32 dialogs · 104 URLs.**
+Counts today: **21 screens · 66 named states · 34 dialogs.** Run `verify.mjs` for
+the live total (it enumerates the registry from the DOM).
 
 ## Screens with named alternate states
 
@@ -25,14 +26,17 @@ Counts today: **21 screens · 51 named states · 32 dialogs · 104 URLs.**
 | **workspace** | `#workspace` | `loading` · `offline` · `thread` · `pins` · `files` · `voicebar` · `slowmode` · `timedout` |
 | **explorer** | `#explorer` | `loading` · `grid` · `list` · `feedview` · `trash` · `empty` · `starred` · `readonly` · `locked` · `detailsloading` |
 | **settings** | `#settings` | `general` · `channels` · `members` · `roles` · `invites` · `moderation` · `audit` · `storage` |
-| **notifications** | `#notifications` | `loading` · `all` · `mentions` · `threads` · `saved` |
+| **notifications** | `#notifications` | `loading` · `all` · `mentions` · `threads` · `saved` · `empty` |
 | **feed** | `#feed` | `loading` · `empty` |
 | **search** | `#search` | `loading` · `empty` (no-results) |
 | **dms** | `#dms` | `loading` · `convo` · `friends` · `empty` |
 | **friends** | `#friends` | `loading` · `all` · `pending` · `blocked` |
 | **profile** | `#profile` | `loading` · `public` (stranger POV) · `mutual` (friend POV) · `empty` |
-| **create** | `#create` | `error` (name taken) |
+| **create** | `#create` | `error` (name taken) *(2-step wizard: identity → channels)* |
 | **auth** | `#auth` | `signin` · `sent` · `claim` *(the sign-in → magic-link → claim-handle order)* |
+| **usersettings** | `#usersettings` | `profile` · `account` · `notifs` · `appearance` · `privacy` · `storage` |
+| **shared** | `#shared` | `expired` (dead link) |
+| **deadinvite** | `#deadinvite` | `expired` · `revoked` · `full` · `already` (member) |
 
 ## Loading coverage — every async surface has a skeleton
 
@@ -71,15 +75,11 @@ Modals: `channelModal` `inviteModal` `fwdModal` `newDmModal` `reportModal`
 
 ## Coverage — remaining nice-to-haves
 
-The Phase-D backlog is essentially closed (batches A–C, 2026-08-22). What's left
-is optional polish, not build-blocking:
+The Phase-D backlog is closed (batches A–C, 2026-08-22), and the optional
+nice-to-haves that remained are now **built too** (2026-08-22): notifications
+`empty`, `usersettings` panel states, `shared/expired`, and the four
+`deadinvite` copy variants (expired/revoked/full/already-member) — all in the
+registry and picked up by `verify.mjs`.
 
-| Screen | State | Note |
-|---|---|---|
-| notifications | `empty` | no-activity inbox (the Saved tab already has its own empty) |
-| usersettings | panel states | lift the account/profile/notifications/appearance/privacy panels into `#usersettings/<panel>` like `settings` |
-| join / deadinvite | the four dead-invite copy variants | already one screen; could split expired/revoked/full/already-member into states |
-| shared | `expired` | a shared link that has lapsed |
-
-Add any of these the same way — a `force()` in the registry pointing at a real
-node — and `verify.mjs` picks it up automatically.
+Add any future state the same way — a `force()` in the registry pointing at a
+real node — and `verify.mjs` picks it up automatically.

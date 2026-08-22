@@ -262,7 +262,21 @@ Never remove `overflow` — wheel/touch/keyboard scroll must still work.
 - **Composer** = `.richcomposer` bordered (`--line2`, → `--ink` focus); toolbar on
   `--surface`; the field borderless inside; send is a muted→ink icon.
 - **Toolbar tabs** (chtabs/ntabs/etc.) = background-step strip, active tab `--ink`
-  bold + 2px ink underline.
+  bold + 2px ink underline. **Focus (keyboard) shows the same underline, never a
+  full bounding box** — the box duplicates the selection the underline already
+  carries (`.chtab:focus-visible{outline:none;box-shadow:inset 0 -2px 0 var(--ink)}`).
+- **Dropdown / select** (`.selbtn`) = a **`.btn` colour-change with a trailing
+  `#i-chev`** — filled `--surface` at rest, `--plate` hover, invert on click; the
+  chevron **rotates 180° while open** (drive it off `aria-expanded` on the trigger,
+  reset by `closeMenus`). It is **not** a bordered field pill; a select is denser
+  than a `.field` so it never reads as a text input. Its options are a `.menu`
+  (checkable `.notlv`/`.loco` rows). A folder/location picker is a `.menu` whose
+  rows use the explorer's `.ftrow.lvlN` **indentation** to show nesting, the
+  chosen row highlighted (`--plate` + ink) — never a flat list.
+- **Option tiles** (`.visopt` — visibility Public/Server/Private, channel Text/
+  Voice) = **compact single-line icon+label, no sublabel** (the label carries it),
+  equal flex, active inverts to `--ink`. A rare tile grid is not a place for
+  explanatory subtext.
 
 ---
 
