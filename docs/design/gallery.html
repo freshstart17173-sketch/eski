@@ -2688,6 +2688,18 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
           </div>
           <div class="setpanel" data-panel="audit" hidden>
             <h2>Audit log</h2><div class="h2sub">Every admin action, newest first. Kept 90 days.</div>
+            <!-- B24 audit filters + export -->
+            <div class="toolbar" style="padding-left:0;padding-right:0">
+              <div class="fchips">
+                <button class="fchip on">All</button>
+                <button class="fchip">Moderation</button>
+                <button class="fchip">Channels</button>
+                <button class="fchip">Roles</button>
+                <button class="fchip">Invites</button>
+              </div>
+              <div class="field" style="max-width:200px;margin-left:auto"><svg class="ic sm"><use href="#i-search"/></svg><input placeholder="Filter by member…"></div>
+              <button class="selbtn" id="auditExport"><svg class="ic sm"><use href="#i-download"/></svg>Export</button>
+            </div>
             <div class="setlist">
               <div class="auditrow"><div class="aic"><svg class="ic sm"><use href="#i-hand"/></svg></div><div class="abd"><div class="atx"><b>rae</b> timed out <b>kofi</b> for 4h</div><div class="actx">reason: spamming #beats</div></div><time>2:44 PM</time></div>
               <div class="auditrow"><div class="aic"><svg class="ic sm"><use href="#i-hash"/></svg></div><div class="abd"><div class="atx"><b>jax</b> set <b>#mixing</b> slow mode to 30s</div><div class="actx">channel settings</div></div><time>1:10 PM</time></div>
@@ -3980,9 +3992,10 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
     var done=acts.querySelector('.donebtn');
     if(done)done.addEventListener('click',function(e){e.stopPropagation();row.classList.remove('unread');row.style.opacity='.4';});
   });
-  // search filter chips (visual)
+  // search / audit filter chips (visual) — scoped to their own group
   document.querySelectorAll('.fchips .fchip').forEach(function(c){c.addEventListener('click',function(){
-    document.querySelectorAll('.fchips .fchip').forEach(function(x){x.classList.remove('on');});c.classList.add('on');});});
+    c.closest('.fchips').querySelectorAll('.fchip').forEach(function(x){x.classList.remove('on');});c.classList.add('on');});});
+  var auditExport=document.getElementById('auditExport');if(auditExport)auditExport.addEventListener('click',function(){if(typeof toast==='function')toast('Audit log exported (CSV)');});
 
   // quick switcher (Cmd/Ctrl+K)
   var qs=document.getElementById('qs'),qsScrim=document.getElementById('qsScrim');
