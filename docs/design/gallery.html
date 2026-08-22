@@ -134,7 +134,7 @@ input{font:inherit;color:inherit}
 .railbtn{position:relative;width:38px;height:38px;flex:none;display:grid;place-items:center;border-radius:var(--r);background:var(--surface);color:var(--soft);font-weight:700;font-size:var(--fs-sm);transition:background var(--t),color var(--t)}
 .railbtn:hover{background:var(--plate)}
 .railbtn.on{background:var(--ink);color:var(--on-ink)}
-.railbtn .ct{position:absolute;top:-2px;right:-2px;min-width:15px;height:15px;padding:0 4px;background:var(--ink);color:var(--on-ink);border-radius:999px;font-size:9px;font-weight:700;display:grid;place-items:center}
+.railbtn .ct{position:absolute;top:-2px;right:-2px;min-width:15px;height:15px;padding:0 4px;background:var(--ink);color:var(--on-ink);border-radius:var(--r);font-size:9px;font-weight:700;display:grid;place-items:center}
 .railbtn.on .ct{background:var(--paper);color:var(--ink)}
 .railsep{width:22px;height:1px;background:var(--line);flex:none;margin:1px 0}
 /* the profile button is a PERSON, not a server, round, and anchored to the
@@ -839,7 +839,7 @@ input{font:inherit;color:inherit}
 .nthread .tt{font-size:var(--fs-sm);color:var(--ink);font-weight:600}
 .nthread .tt small{color:var(--muted);font-weight:400}
 .nthread .tlast{font-size:var(--fs-xs);color:var(--muted);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.nthread .tct{flex:none;font-size:var(--fs-xs);color:var(--on-ink);background:var(--ink);border-radius:10px;padding:1px 8px;align-self:center}
+.nthread .tct{flex:none;font-size:var(--fs-xs);color:var(--on-ink);background:var(--ink);border-radius:var(--r);padding:1px 8px;align-self:center}
 
 /* search results */
 .fchips{display:flex;gap:var(--s2);flex-wrap:wrap}
@@ -869,7 +869,7 @@ input{font:inherit;color:inherit}
 .srow .sthumb{width:46px;height:46px;flex:none;background:var(--paper1);border-radius:var(--r);overflow:hidden;display:grid;place-items:center;color:var(--muted)}
 .srow .sact{margin-left:auto;align-self:center;display:flex;gap:6px}
 .smod{font-size:var(--fs-xs);color:var(--muted);margin-left:var(--s2)}
-.smod b{color:var(--soft);font-weight:600;background:var(--surface);border-radius:2px;padding:1px 5px}
+.smod b{color:var(--soft);font-weight:600;background:var(--surface);border-radius:var(--r);padding:1px 5px}
 
 /* quick switcher (Cmd/Ctrl+K) */
 .qs-scrim{position:fixed;inset:0;background:rgba(10,10,10,.4);z-index:95}
@@ -1057,7 +1057,7 @@ input{font:inherit;color:inherit}
 .dmfriends{display:flex;align-items:center;gap:9px;width:calc(100% - 16px);margin:8px;padding:8px 10px;border-radius:var(--r);color:var(--soft);font-size:var(--fs-sm);font-weight:600}
 .dmfriends:hover,.dmfriends.on{background:var(--plate)}
 .dmfriends .ic{color:var(--muted)}
-.dmfriends .ct{margin-left:auto;background:var(--m1);color:#fff;border-radius:999px;font-size:10px;font-weight:700;min-width:16px;height:16px;display:grid;place-items:center;padding:0 4px}
+.dmfriends .ct{margin-left:auto;background:var(--m1);color:#fff;border-radius:var(--r);font-size:10px;font-weight:700;min-width:16px;height:16px;display:grid;place-items:center;padding:0 4px}
 .dmsec{padding:8px 14px 4px;color:var(--muted);font-size:var(--fs-xs);font-weight:600}
 .dmrow .pini,.dmrow .mutei{margin-left:auto;color:var(--muted);flex:none}
 .dmrow.group .gav{display:flex;flex:none}
@@ -1072,7 +1072,7 @@ input{font:inherit;color:inherit}
 .frtabs{display:flex;gap:var(--s4);margin-left:8px}
 .frtab{color:var(--soft);font-size:var(--fs-sm);padding-bottom:2px}
 .frtab.on{color:var(--ink);font-weight:600;box-shadow:inset 0 -2px 0 var(--ink)}
-.frtab .ct{margin-left:5px;background:var(--m1);color:#fff;border-radius:999px;font-size:10px;padding:1px 5px}
+.frtab .ct{margin-left:5px;background:var(--m1);color:#fff;border-radius:var(--r);font-size:10px;padding:1px 5px}
 .frbody{flex:1;overflow-y:auto;padding:var(--s5)}
 .fradd{display:flex;gap:8px;max-width:560px;margin-bottom:var(--s5)}
 .fradd .field{flex:1}
@@ -2623,7 +2623,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
         </div>
       </div>
       <main class="main" id="dmConvo">
-        <div class="mainhd"><div class="av sm">MI</div><span class="t">mira</span><span class="sub">compositor</span>
+        <div class="mainhd"><div class="av sm">MI</div><span class="t">mira</span><span class="sub">@mira</span>
           <div class="acts"><button class="iconbtn wipcall" title="Call, in progress"><svg class="ic"><use href="#i-phone"/></svg></button><button class="iconbtn wipcall" title="Video, in progress"><svg class="ic"><use href="#i-video"/></svg></button><button class="iconbtn" title="Pin"><svg class="ic"><use href="#i-pin"/></svg></button><button class="iconbtn" title="More"><svg class="ic"><use href="#i-more"/></svg></button></div></div>
         <div class="stream">
           <div class="day"><span>Yesterday</span></div>
@@ -4649,7 +4649,12 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   var gdm=opener('gdmScrim','gdmModal');
   function openDmMenu(anchorEl,name,isGroup){
     if(dmMenuName)dmMenuName.textContent=name;
-    if(dmCloseLbl)dmCloseLbl.textContent=isGroup?'Leave group':'Close DM';
+    // 1:1: "Hide conversation" (reversible, non-destructive — clearer than the old
+    // ambiguous "Close DM"). Group: "Leave group" (stays a danger action).
+    if(dmCloseLbl)dmCloseLbl.textContent=isGroup?'Leave group':'Hide conversation';
+    var dmCloseBtn=document.getElementById('dmClose');
+    if(dmCloseBtn){dmCloseBtn.classList.toggle('danger',isGroup);
+      var ic=dmCloseBtn.querySelector('use');if(ic)ic.setAttribute('href',isGroup?'#i-leave':'#i-hide');}
     dmMenu.querySelectorAll('.dmgroup').forEach(function(el){el.hidden=!isGroup;});
     var r=anchorEl.getBoundingClientRect();openMenuAt(dmMenu,r.left,r.bottom+4);
   }
@@ -4665,7 +4670,10 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
     var dmAddPeople=document.getElementById('dmAddPeople');if(dmAddPeople)dmAddPeople.addEventListener('click',function(){closeMenus();gdm.open();});
     var dmBlock=document.getElementById('dmBlock');if(dmBlock)dmBlock.addEventListener('click',function(){closeMenus();if(typeof toast==='function')toast('Blocked, they can no longer message or see you');});
     var dmReportPerson=document.getElementById('dmReportPerson');if(dmReportPerson)dmReportPerson.addEventListener('click',function(){closeMenus();openReport('this person');});
-    ['dmMarkRead','dmPin','dmMute','dmClose'].forEach(function(id){var e=document.getElementById(id);if(e)e.addEventListener('click',function(){closeMenus();});});
+    ['dmMarkRead','dmPin','dmMute'].forEach(function(id){var e=document.getElementById(id);if(e)e.addEventListener('click',function(){closeMenus();});});
+    var dmCloseEl=document.getElementById('dmClose');
+    if(dmCloseEl)dmCloseEl.addEventListener('click',function(){closeMenus();
+      if(typeof toast==='function')toast(dmCloseEl.classList.contains('danger')?'You left the group':'Conversation hidden. It comes back when they message you');});
   }
   ['gdmClose','gdmCancel'].forEach(function(id){var e=document.getElementById(id);if(e)e.addEventListener('click',gdm.close);});
   var gdmSave=document.getElementById('gdmSave');if(gdmSave)gdmSave.addEventListener('click',function(){gdm.close();if(typeof toast==='function')toast('Group updated');});
