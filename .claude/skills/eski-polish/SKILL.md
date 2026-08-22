@@ -122,6 +122,74 @@ Audit every surface against these. Each has a **test** (how to spot the violatio
 
 ---
 
+## 1B. The logical pass — interaction correctness (run alongside the visual audit)
+
+Polish is not only how a surface *looks* — it is whether every control *behaves* the
+way a person expects. Alignment can be perfect and the screen still feel broken because a
+button does nothing, a dropdown opens in the wrong place, or the whole banner is clickable
+when only its button should be. So on every surface, audit **behaviour** as rigorously as
+appearance. For each interactive element ask, in order:
+
+### L1. What does it hook up to? (no dead controls)
+- **Test:** click every button, row, chip, icon-button, toggle, and dropdown. Any that does
+  nothing — no navigation, no dialog, no state change, no toast — is a dead control.
+- **Fix:** wire it to its real action, or, in a mockup, to honest feedback (a `toast`, an
+  `uploadProgress`, opening the right dialog). An "Upload" button opens the picker and shows
+  progress; a "Copy link" copies and confirms; a destructive row asks first. **A control the
+  user can press must visibly respond.** If it genuinely has no home yet, that's an owner
+  question, not a silent no-op.
+
+### L2. Does the trigger match the action? (scope & affordance)
+- **Test:** is the clickable area larger than the thing that looks clickable? The classic
+  bug: a header/banner opens a menu when it contains a dedicated button for exactly that —
+  so clicking the decorative cover fires the menu. Or: two different things share one target.
+- **Fix:** **the trigger is the smallest element that reads as the control** — the bar with
+  the chevron, not the banner above it; the ⋯ button, not the whole card. Decorative regions
+  (covers, art, spacers) are inert. One target, one action.
+
+### L3. Is it a real toggle? (open ⇄ close, and dismissal)
+- **Test:** does a second click on a dropdown's own trigger close it, or only open-again?
+  Does the menu close on outside-click and on `Esc`? Does a modal close on scrim-click and
+  its ✕? Does an expanded disclosure collapse?
+- **Fix:** anything that opens from a persistent trigger **toggles** from that trigger
+  (`wasOpen → closeMenus(); return`). Menus/popovers close on outside-click; modals close on
+  scrim + ✕ + Cancel. Never leave a surface with no way back out.
+
+### L4. Does it open in the right place, at the right size?
+- **Test:** a dropdown that opens far from its trigger, overlapping it, or off-screen; a menu
+  narrower than the control that summoned it; a picker that hides what it's about to change.
+- **Fix:** anchor a menu **directly under (or over) its trigger** (`r.bottom + 4`), clamp it
+  on-screen, and match/`Math.max` its width to the trigger. The user's eye should not travel
+  to find what they just clicked.
+
+### L5. Should it animate? (state legibility, not decoration)
+- **Test:** does a control show its own state change? A dropdown chevron that never rotates,
+  a caret that jumps, a panel that pops instead of easing, a selected state that snaps with
+  no transition.
+- **Fix:** add a **short, purposeful** transition (`var(--t)`, 120ms) to state that changes:
+  a dropdown/disclosure chevron **rotates** while open (drive it off `aria-expanded` so the
+  markup carries the state and CSS animates it), hovers ease, drop-targets highlight. Never a
+  press-nudge/scale on click (the owner cut that) and never motion for its own sake — animate
+  the state, not the pixels.
+
+### L6. Does the same interaction work in every window it appears in?
+- **Test:** a mechanic wired to one screen only — drag-to-move that works in the explorer but
+  is dead in the home Feed; a context menu on grid cards but not list rows; a picker wired to
+  the first instance and dead on the second.
+- **Fix:** wire shared mechanics **once, by delegation** (document-level `dragstart`/`drop`,
+  a shared picker menu keyed to whichever trigger opened it) so they're live on every
+  instance and every view — including views that were `hidden` at load. One selector opened
+  the picker; write the choice back into *that* selector.
+
+**Procedure:** do this pass with the surface actually running (`?app=1#screen`), clicking
+through — not from the screenshot. The screenshot catches visual fumbles; only driving the UI
+catches a dead button or a mis-scoped trigger. Log each finding the same way as the visual
+rules, fix in place, and re-drive to confirm. Common-sense interaction bugs recur across the
+whole app, so when you find one (a full-container trigger, a non-toggling dropdown, a dead
+Upload), **grep for the pattern and fix every instance**, don't just patch the one you saw.
+
+---
+
 ## 2. Cut unnecessary UI elements (chrome)
 
 Beyond copy and icons, remove chrome that isn't doing separating work. **Surfaces separate

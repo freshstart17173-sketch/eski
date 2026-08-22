@@ -136,9 +136,15 @@ input{font:inherit;color:inherit}
 .railbtn .ct{position:absolute;top:-2px;right:-2px;min-width:15px;height:15px;padding:0 4px;background:var(--ink);color:var(--on-ink);border-radius:999px;font-size:9px;font-weight:700;display:grid;place-items:center}
 .railbtn.on .ct{background:var(--paper);color:var(--ink)}
 .railsep{width:22px;height:1px;background:var(--line);flex:none;margin:1px 0}
-.railuser{margin-top:auto}
-.railuser .pfp{width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#8f8f8f,#565656);color:#fff;display:grid;place-items:center;font-weight:700;font-size:var(--fs-sm)}
-.railuser.on .pfp{box-shadow:0 0 0 2px var(--paper),0 0 0 4px var(--ink)}
+/* the profile button is a PERSON, not a server — round, and anchored to the
+   bottom of the rail (away from the square server badges) so it never reads as
+   another server icon. */
+.railbtn.user{margin-top:auto;border-radius:50%;background:none;padding:0;overflow:hidden}
+.railbtn.user:hover{background:none}
+.railbtn.user .pfp{width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#8f8f8f,#565656);color:#fff;display:grid;place-items:center;font-weight:700;font-size:var(--fs-sm);transition:box-shadow var(--t)}
+.railbtn.user:hover .pfp{box-shadow:0 0 0 2px var(--line2)}
+.railbtn.user.on{background:none}
+.railbtn.user.on .pfp{box-shadow:0 0 0 2px var(--railbg),0 0 0 4px var(--ink)}
 .stage{flex:1;min-width:0;display:flex;overflow:hidden}
 .screen{flex:1;min-width:0;display:flex;overflow:hidden}
 .screen[hidden]{display:none}
@@ -530,10 +536,17 @@ input{font:inherit;color:inherit}
 .menu .verline .fn{font-size:var(--fs-xs);color:var(--soft)}
 .menu .verline .rs{font-size:10px;color:var(--muted)}
 .menu .sep{height:1px;background:var(--line);margin:5px var(--hair-inset)}
-.menu .notlv .nchk,.menu .loco .nchk{visibility:hidden}
-.menu .notlv.on,.menu .loco.on{color:var(--ink);font-weight:600}
-.menu .notlv.on .nchk,.menu .loco.on .nchk{visibility:visible;color:var(--ink)}
+.menu .notlv .nchk,.menu .croc .nchk{visibility:hidden}
+.menu .notlv.on,.menu .croc.on{color:var(--ink);font-weight:600}
+.menu .notlv.on .nchk,.menu .croc.on .nchk{visibility:visible;color:var(--ink)}
+.menu .croc .lfi{color:var(--muted)}
+/* location tree: indentation carries the nesting (mirrors the explorer's
+   .ftrow.lvlN), selected row = plate bg + ink like the tree's active row. */
+.menu .loco{gap:6px}
+.menu .loco.lvl0{padding-left:10px}.menu .loco.lvl1{padding-left:26px}.menu .loco.lvl2{padding-left:42px}
 .menu .loco .lfi{color:var(--muted)}
+.menu .loco.on{background:var(--plate);color:var(--ink);font-weight:600}
+.menu .loco.on .lfi{color:var(--ink)}
 .locmenu{min-width:240px}
 
 .umodal{position:fixed;z-index:81;top:50%;left:50%;transform:translate(-50%,-50%);width:min(540px,95vw);max-height:90vh;overflow:auto;background:var(--paper);border-radius:var(--r)}
@@ -555,6 +568,12 @@ input{font:inherit;color:inherit}
 .useg button.on{background:var(--paper);color:var(--ink)}
 .ufiles{display:flex;flex-direction:column;gap:6px;margin-top:var(--s3)}
 .ufile{display:flex;align-items:center;gap:9px;background:var(--surface);border-radius:var(--r);padding:8px 11px;font-size:var(--fs-sm)}
+/* crosspost: the file being placed, with its one non-obvious consequence */
+.crossfile{display:flex;align-items:center;gap:var(--s3);background:var(--surface);border-radius:var(--r);padding:var(--s3);margin-bottom:var(--s4)}
+.crossfile .ic{color:var(--muted);flex:none}
+.crossfile .cft{min-width:0;display:flex;flex-direction:column;gap:1px}
+.crossfile .cft b{font-size:var(--fs-sm)}
+.crossfile .cft span{font-size:var(--fs-xs);color:var(--muted)}
 .ufile .auto{margin-left:auto}
 .ulab{display:flex;align-items:center;gap:8px;font-size:var(--fs-xs);color:var(--muted);font-weight:600;margin:var(--s4) 0 7px}
 .ulab .rq{color:var(--m1);font-weight:600}
@@ -1182,7 +1201,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
 .crow.dragging{opacity:.4}
 .crow.dropbefore{box-shadow:inset 0 2px 0 var(--ink)}
 .crow.dropafter{box-shadow:inset 0 -2px 0 var(--ink)}
-.ftrow.dropinto,.fc.dropinto{outline:2px solid var(--ink);outline-offset:-2px}
+.ftrow.dropinto,.fc.dropinto,.card.foldercard.dropinto,.flist .fi.dropinto{outline:2px solid var(--ink);outline-offset:-2px}
 .fc[draggable="true"],[data-open-details][draggable="true"]{cursor:grab}
 /* --- S15 voice minibar (WIP) — pinned to the foot of the channel column --- */
 .voicemini{flex:none;margin:0 var(--s2) var(--s2);padding:8px 9px;background:var(--plate);border-radius:var(--r);opacity:.62;cursor:pointer}
@@ -3326,6 +3345,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   <button><svg class="ic sm"><use href="#i-save"/></svg>Save to my files</button>
   <button><svg class="ic sm"><use href="#i-download"/></svg>Download</button>
   <button><svg class="ic sm"><use href="#i-link"/></svg>Copy link</button>
+  <button id="cmCrosspost"><svg class="ic sm"><use href="#i-server"/></svg>Crosspost to server…</button>
   <div class="sep"></div>
   <button><svg class="ic sm"><use href="#i-pen"/></svg>Rename</button>
   <button id="cmMove"><svg class="ic sm"><use href="#i-folder"/></svg>Move to…</button>
@@ -3608,11 +3628,13 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
      destination. -->
 <div class="menu locmenu" id="locMenu">
   <div class="mlabel">Choose a location</div>
-  <button class="loco" data-loc="Late Bloom LP / Root"><svg class="ic sm nchk"><use href="#i-check"/></svg><svg class="ic sm lfi"><use href="#i-folder"/></svg>Root</button>
-  <button class="loco on" data-loc="Late Bloom LP / beats"><svg class="ic sm nchk"><use href="#i-check"/></svg><svg class="ic sm lfi"><use href="#i-folder"/></svg>beats</button>
-  <button class="loco" data-loc="Late Bloom LP / verses"><svg class="ic sm nchk"><use href="#i-check"/></svg><svg class="ic sm lfi"><use href="#i-folder"/></svg>verses</button>
-  <button class="loco" data-loc="Late Bloom LP / stems and sessions"><svg class="ic sm nchk"><use href="#i-check"/></svg><svg class="ic sm lfi"><use href="#i-folder"/></svg>stems and sessions</button>
-  <button class="loco" data-loc="Late Bloom LP / references"><svg class="ic sm nchk"><use href="#i-check"/></svg><svg class="ic sm lfi"><use href="#i-folder"/></svg>references</button>
+  <button class="loco lvl0" data-loc="Late Bloom LP"><svg class="ic sm lfi"><use href="#i-folder"/></svg>Late Bloom LP</button>
+  <button class="loco lvl1 on" data-loc="beats"><svg class="ic sm lfi"><use href="#i-folder"/></svg>beats</button>
+  <button class="loco lvl2" data-loc="drums"><svg class="ic sm lfi"><use href="#i-folder"/></svg>drums</button>
+  <button class="loco lvl1" data-loc="verses"><svg class="ic sm lfi"><use href="#i-folder"/></svg>verses</button>
+  <button class="loco lvl1" data-loc="mixing"><svg class="ic sm lfi"><use href="#i-folder"/></svg>mixing</button>
+  <button class="loco lvl1" data-loc="references"><svg class="ic sm lfi"><use href="#i-folder"/></svg>references</button>
+  <button class="loco lvl1" data-loc="stems and sessions"><svg class="ic sm lfi"><use href="#i-folder"/></svg>stems and sessions</button>
   <div class="sep"></div>
   <button class="mi" id="locNewFolder"><svg class="ic sm"><use href="#i-plus"/></svg>New folder…</button>
 </div>
@@ -3771,6 +3793,32 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
     </div>
   </div>
   <div class="ufoot"><button class="btn" id="shareCancel">Cancel</button><button class="btn primary" id="shareDone">Done</button></div>
+</div>
+
+<!-- Crosspost: place a personal work into a server channel. The work stays in
+     the owner's storage and public on their profile; the server just references
+     it (CANON placement model). Opened from the file ⋯ menu. -->
+<div class="scrim" id="crossScrim" hidden></div>
+<div class="umodal" id="crossModal" hidden>
+  <div class="uhd"><b>Crosspost to server</b><button class="iconbtn" id="crossClose"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
+  <div class="ubody">
+    <div class="crossfile"><svg class="ic"><use href="#i-file"/></svg><div class="cft"><b>late_bloom_beat.flp</b><span>Stays in your storage · still public on your profile</span></div></div>
+    <label class="ulab">Post to</label>
+    <button class="selbtn crosspick" aria-haspopup="menu" aria-expanded="false" style="width:100%;justify-content:space-between"><span style="display:flex;align-items:center;gap:8px"><span class="pfp" style="width:16px;height:16px;border-radius:var(--r);font-size:8px;background:var(--ink);color:var(--on-ink)">LB</span>Late Bloom LP <span style="color:var(--muted)">/ #<span class="crosschan" style="color:var(--ink)">beats</span></span></span><svg class="ic sm"><use href="#i-chev"/></svg></button>
+    <label class="ulab">Message <span style="font-weight:400;color:var(--muted)">optional</span></label>
+    <div class="field"><input placeholder="Say something about it…"></div>
+  </div>
+  <div class="ufoot"><button class="btn" id="crossCancel">Cancel</button><button class="btn primary" id="crossPost">Crosspost</button></div>
+</div>
+
+<!-- channel picker for the crosspost dialog -->
+<div class="menu locmenu" id="crossMenu">
+  <div class="mlabel">Late Bloom LP</div>
+  <button class="croc on" data-chan="beats"><svg class="ic sm nchk"><use href="#i-check"/></svg><svg class="ic sm lfi"><use href="#i-hash"/></svg>beats</button>
+  <button class="croc" data-chan="announcements"><svg class="ic sm nchk"><use href="#i-check"/></svg><svg class="ic sm lfi"><use href="#i-hash"/></svg>announcements</button>
+  <button class="croc" data-chan="verses"><svg class="ic sm nchk"><use href="#i-check"/></svg><svg class="ic sm lfi"><use href="#i-hash"/></svg>verses</button>
+  <button class="croc" data-chan="mixing"><svg class="ic sm nchk"><use href="#i-check"/></svg><svg class="ic sm lfi"><use href="#i-hash"/></svg>mixing</button>
+  <button class="croc" data-chan="references"><svg class="ic sm nchk"><use href="#i-check"/></svg><svg class="ic sm lfi"><use href="#i-hash"/></svg>references</button>
 </div>
 
 <!-- #44 storage-upgrade modal (opened from the storage meter's "manage") -->
@@ -4314,23 +4362,29 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
     });
   })();
 
-  // Regular dragging — drag an explorer file card onto a folder (tree row or
-  // folder card) to move it (CANON §C.6 · move_to_folder).
+  // Regular dragging — drag a file card onto a folder (tree row or folder card)
+  // to move it (CANON §C.6 · move_to_folder). Delegated at the document level so
+  // it works in EVERY window: the explorer's grid/list/feed views, the home
+  // Feed, the workspace Files tab — any card, any folder target, live even for
+  // views that were hidden at load.
   (function(){
-    var ex=document.querySelector('.screen[data-screen="explorer"]');if(!ex)return;
     var held=null;
-    ex.querySelectorAll('.panebody .card:not(.skelcard):not(.foldercard)').forEach(function(card){
-      card.setAttribute('draggable','true');
-      card.addEventListener('dragstart',function(e){held=card;e.dataTransfer.effectAllowed='move';});
-      card.addEventListener('dragend',function(){held=null;ex.querySelectorAll('.dropinto').forEach(function(t){t.classList.remove('dropinto');});});
-    });
-    ex.querySelectorAll('.ftrow, .card.foldercard').forEach(function(t){
-      t.addEventListener('dragover',function(e){if(!held)return;e.preventDefault();t.classList.add('dropinto');});
-      t.addEventListener('dragleave',function(){t.classList.remove('dropinto');});
-      t.addEventListener('drop',function(e){if(!held)return;e.preventDefault();t.classList.remove('dropinto');
-        var nm=(t.querySelector('.fn')||t.querySelector('.title')||{}).textContent||'folder';
-        if(typeof toast==='function')toast('Moved to '+nm);held=null;});
-    });
+    function isFileCard(el){return el&&el.classList&&el.classList.contains('card')&&
+      !el.classList.contains('foldercard')&&!el.classList.contains('skelcard');}
+    function dropTarget(e){return e.target.closest?e.target.closest('.ftrow, .card.foldercard, .flist .fi'):null;}
+    // mark every file card app-wide draggable (hidden views included)
+    document.querySelectorAll('.card:not(.foldercard):not(.skelcard)').forEach(function(c){c.setAttribute('draggable','true');});
+    document.addEventListener('dragstart',function(e){var c=e.target.closest&&e.target.closest('.card');
+      if(!isFileCard(c))return;held=c;if(e.dataTransfer)e.dataTransfer.effectAllowed='move';});
+    document.addEventListener('dragend',function(){held=null;
+      document.querySelectorAll('.dropinto').forEach(function(t){t.classList.remove('dropinto');});});
+    document.addEventListener('dragover',function(e){if(!held)return;var t=dropTarget(e);if(!t||t===held)return;
+      e.preventDefault();t.classList.add('dropinto');});
+    document.addEventListener('dragleave',function(e){var t=dropTarget(e);if(t)t.classList.remove('dropinto');});
+    document.addEventListener('drop',function(e){if(!held)return;var t=dropTarget(e);if(!t)return;
+      e.preventDefault();t.classList.remove('dropinto');
+      var nm=(t.querySelector('.fn')||t.querySelector('.title')||t.querySelector('.fn')||{}).textContent||'folder';
+      if(typeof toast==='function')toast('Moved to '+nm);held=null;});
   })();
 
   // Settings → Channels: make the "Drag to reorder" copy honest (drag whole rows)
@@ -4431,11 +4485,34 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
       locMenu.style.top=(r.bottom+4)+'px';locMenu.style.minWidth=Math.max(240,r.width)+'px';});});
     locMenu.querySelectorAll('.loco').forEach(function(o){o.addEventListener('click',function(e){e.stopPropagation();
       locMenu.querySelectorAll('.loco').forEach(function(x){x.classList.remove('on');});o.classList.add('on');
-      if(activeLocPicker){var f=(o.dataset.loc||'').split(' / ')[1]||'Root';
+      if(activeLocPicker){var f=o.dataset.loc||'Root';
         var t=activeLocPicker.querySelector('.locfolder');if(t)t.textContent=f;}
       closeMenus();});});
     var locNew=document.getElementById('locNewFolder');
     if(locNew)locNew.addEventListener('click',function(e){e.stopPropagation();closeMenus();if(typeof toast==='function')toast('New folder created');});}
+
+  // Crosspost: place a personal work into a server channel. Opened from the file
+  // ⋯ menu; its channel picker toggles + rotates its chevron like every dropdown.
+  var cross=opener('crossScrim','crossModal');
+  var cmCrosspost=document.getElementById('cmCrosspost');
+  if(cmCrosspost)cmCrosspost.addEventListener('click',function(e){e.stopPropagation();closeMenus();cross.open();});
+  ['crossClose','crossCancel'].forEach(function(id){var e=document.getElementById(id);if(e)e.addEventListener('click',cross.close);});
+  var crossScrim=document.getElementById('crossScrim');if(crossScrim)crossScrim.addEventListener('click',cross.close);
+  var crossPost=document.getElementById('crossPost');
+  if(crossPost)crossPost.addEventListener('click',function(){var c=document.querySelector('#crossModal .crosschan');
+    cross.close();if(typeof toast==='function')toast('Crossposted to #'+((c&&c.textContent)||'the channel'));});
+  var crossMenu=document.getElementById('crossMenu'),crossPicker=document.querySelector('.selbtn.crosspick');
+  if(crossMenu&&crossPicker){menus.push(crossMenu);
+    crossPicker.addEventListener('click',function(e){e.stopPropagation();
+      var wasOpen=crossMenu.classList.contains('open');closeMenus();if(wasOpen)return;
+      crossPicker.setAttribute('aria-expanded','true');crossMenu.classList.add('open');
+      var r=crossPicker.getBoundingClientRect();
+      crossMenu.style.left=Math.min(r.left,window.innerWidth-crossMenu.offsetWidth-8)+'px';
+      crossMenu.style.top=(r.bottom+4)+'px';crossMenu.style.minWidth=Math.max(240,r.width)+'px';});
+    crossMenu.querySelectorAll('.croc').forEach(function(o){o.addEventListener('click',function(e){e.stopPropagation();
+      crossMenu.querySelectorAll('.croc').forEach(function(x){x.classList.remove('on');});o.classList.add('on');
+      var t=crossPicker.querySelector('.crosschan');if(t)t.textContent=o.dataset.chan||'beats';
+      closeMenus();});});}
 
   // #58 folder context menu on right-click of a folder tree row
   var folderMenu=document.getElementById('folderMenu');
