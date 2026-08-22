@@ -30,9 +30,19 @@ a pro tool a user lives in for hours, not a first-run brochure.
   a section label) uses the **same** token everywhere. Divergence is the bug.
 - **Verify by screenshot at 1440, both themes.** Jost renders wrong when squeezed; judge
   at the design canvas width. Every fix is eyeballed light **and** dark before commit.
-- **Density is a feature.** When in doubt between "explain it" and "trust the user," trust
-  the user. eski is a tool people use daily — copy and chrome that help on day one become
-  noise by week two. Cut to the signal.
+- **Density is a feature — and it means the words and icons.** When in doubt between
+  "explain it" and "trust the user," trust the user. The mental model: a control a daily
+  user has **memorized** no longer needs to be a big touch target or maximally scannable —
+  so it **shrinks, and the content gets the reclaimed space.** Oversized filter pills, icon
+  segmented switchers, and always-visible secondary toggles are the anti-pattern; the files,
+  messages, and data are what deserve the room. Copy and chrome that help on day one become
+  noise by week two — cut to the signal.
+- **One control system.** Every button **and every dropdown** uses the `.btn` archetypes
+  (or `.iconbtn`). There is no second control style — no bespoke bordered "select" pills, no
+  custom segmented switchers, no one-off chips. A dropdown is a `.btn` (colour-change) with a
+  trailing chevron; its options are a `.menu`. Find a control that isn't a `.btn`/`.iconbtn`/
+  `.field`? Convert it. (A full-width **form input** inside a dialog is the one exception —
+  that's a `.field`.)
 
 ---
 
@@ -50,14 +60,18 @@ Audit every surface against these. Each has a **test** (how to spot the violatio
   tertiary/labels) — never by a bespoke px value. A label is `--fs-xs`/`--muted`; body is
   `--fs-sm`/`--soft`; a title is `--fs`/`--fs-lg` `--ink`.
 
-### 2. Consistent button sizes
-- **Test:** a button with one-off `padding`/`height`; an icon button that isn't 26px
-  (`.iconbtn`) or the `.sm` variant; a super-tall or super-wide button; two sibling
-  buttons at different heights.
-- **Fix:** use the archetypes as-is (`.btn`, `.btn.sm`, `.iconbtn`, `.btn.primary/ghost/
-  outline/danger`). Buttons in one cluster share a height. Remove inline padding overrides.
-  A button's box shrinks to its label — never stretch it to fill unless it's a deliberate
-  full-width primary.
+### 2. One button system, consistent sizes
+- **Test:** a control that isn't one of the archetypes — a bordered "select" pill
+  (`.selbtn`), an icon **segmented switcher** (`.vseg`-style), a one-off filter chip at a
+  bespoke size; a button with one-off `padding`/`height`; an icon button that isn't 26px
+  (`.iconbtn`); a super-tall or super-wide button; two sibling controls at different heights.
+- **Fix:** **every button and dropdown is a `.btn` archetype** (`.btn`, `.btn.sm`,
+  `.iconbtn`, `.btn.primary/ghost/outline/danger`). A **dropdown = `.btn` + a trailing
+  chevron**, options in a `.menu` — not a bordered pill. A **segmented switcher of memorized
+  options → a compact text dropdown** (`Grid ▾`), which is denser and scales (add options
+  without widening). Toggle chips shrink to `.btn` metrics. Controls in one cluster share a
+  height and gap. A control's box shrinks to its label — never stretch to fill unless it's a
+  deliberate full-width primary. (A full-width dialog form input stays a `.field`.)
 
 ### 3. Consistent distance to corners & edges
 - **Test:** the padding from a pane / card / dialog / row edge differs between two
@@ -128,8 +142,18 @@ by background step, not by boxes/borders/dividers** (eski-style §0). So:
 - **Collapse nested boxes.** A box inside a box inside a pane usually wants to be one
   background step, not three borders.
 
+- **Tuck away rarely-used secondary toggles.** A control a user touches once in a while
+  (e.g. *Show hidden*) does not earn a full labelled slot in the main control row — make it a
+  small `.iconbtn` tucked at an edge, title-tooltip'd. The frequent controls stay legible;
+  the rare one gets out of the way.
+- **Balance the toolbar/row.** Search grows to fill; the compact controls sit at equal height
+  and even gap; the primary action anchors one end. No lone oversized control throwing the
+  row off; no ragged right edge. A control row is a composed line, not a pile.
+
 **The test for any element:** *if I delete it, does the user lose information or an action?*
-If no — it's chrome; cut it. If yes — it stays.
+If no — it's chrome; cut it. If yes — it stays. **The test for its size:** *once the user has
+this memorized, does it still need to be this big?* If no — shrink it, give the space to the
+content.
 
 ---
 
@@ -167,6 +191,9 @@ then the per-surface markup trims.
 | Resting border | it's a field (`--line2`) | anything else — use a background step |
 | Divider / hairline | separates two things on the **same** background step | the rows already differ by step |
 | Count badge / dot | adds info not already shown | duplicates a number/state already visible |
+| A control's style | it's a `.btn`/`.iconbtn`/`.field` | it's a bespoke pill/segmented switcher/chip → convert to `.btn` |
+| Segmented switcher | 2 options, both always worth showing | ≥3 or memorized options → compact text dropdown (`Grid ▾`) |
+| A labelled toolbar toggle | frequent, needs its label | rare (Show hidden) → small tucked `.iconbtn` |
 
 ---
 
