@@ -46,6 +46,43 @@ a pro tool a user lives in for hours, not a first-run brochure.
 
 ---
 
+## 0.1 Recurring corrections — settled calls, never reintroduce
+
+These are owner calls made repeatedly. Every one has been "fixed" once already; do not ship
+a surface that violates them, and do not relitigate them. Check each on every pass:
+
+1. **Every button and every dropdown is the dense variant — no exceptions.** Icon buttons are
+   **26px** (`.iconbtn`); text buttons are `.btn`/`.btn.sm` (3px/2px vertical); dropdowns are
+   `.selbtn` or a `.btn`+chevron (never a bespoke pill). **The rows *inside* a dropdown are
+   dense too** (`.menu` rows at ~6px vertical, matching the trigger) — a dense trigger opening
+   a loose menu is the miss. No bespoke button class carries its own bigger padding; if you
+   find one (`.tbtn`, `.rbtn`, `.fbtn`, `.rolesel`, …) it inherits the dense metric.
+2. **People are round; servers are square.** Every avatar/profile picture is round **wherever
+   it appears** — the members rail, chat, popouts, the **left-rail profile button** (it is a
+   person, not a server, and sits at the *bottom* of the rail). Square (`--r`) is for **server
+   icons** and chrome only. A square profile button is a bug.
+3. **A trigger is the smallest thing that reads as the control.** A header/banner never opens
+   a menu when it contains a button for that — only the bar/button does; decorative covers are
+   inert. Dropdowns **toggle** (second click closes), open **flush under** their trigger, and
+   **rotate their chevron** while open (via `aria-expanded`). (See §1B.)
+4. **A tab shows selection with a 2px underline, never a bounding box** — focus included.
+5. **File metadata order ends with `Size`.** Key left (`--muted`), value right-aligned to one
+   ruler shared with the header controls; rows dense and even; the title never hugs the top
+   hairline; the Location crumb must not be taller than the other rows (no nudging).
+6. **Less is more.** Cut sublabels and helper copy that restate the control (visibility tiles
+   are `Public/Server/Private`, no "your profile" subtext). Compact single-line option tiles.
+7. **Choices are dropdowns, not readonly fields; never invent data.** A fixed choice (slowmode,
+   category, role) is a `.selbtn` dropdown, not a readonly text `.field` that looks editable.
+   Don't render a data field that has no source (no fake "compositor" title under a handle).
+8. **Folder/location pickers show real nesting** (indentation mirroring `.ftrow.lvlN`), never a
+   flat list; the current destination is highlighted.
+9. **Shared mechanics work in every window** — drag-to-move, context menus, pickers are wired
+   by delegation so no view (home Feed, hidden-at-load views) is dead. (See §1B.6.)
+10. **Multi-step setup is a stepped flow**, one idea per screen (create-server = identity →
+    channels), not one crammed dialog.
+11. **Contrast holds in both themes** — the token ladder only (`--ink`/`--soft`/`--muted`), no
+    hardcoded near-black on dark, selected-tile subtext stays legible.
+
 ## 1. The seven enforcement rules
 
 Audit every surface against these. Each has a **test** (how to spot the violation) and a

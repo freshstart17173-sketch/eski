@@ -30,7 +30,10 @@ from `gallery.html`, which now consumes them); don't reinvent them.
   in a component rule, stop — add/adjust a token instead.
 - **Round is avatars + presence dots only.** Radius on all chrome is `--r` (3px).
   Media stays square. No pills, no round badges, no round close buttons. Reaction
-  chips, tabs, tags → `--r`.
+  chips, tabs, tags → `--r`. **A person is always round, a server is always square:**
+  every avatar/profile picture is round *wherever it appears* — chat, members rail,
+  popouts/hovercards, **and the left-rail profile button** (round, bottom-anchored,
+  never a square badge like the server icons above it). Square is server icons only.
 - **Surfaces separate by background step, not borders.** `paper → surface →
   plate → paper1` are four planes; lay panes/cards/rows on different steps. The
   **only** element that gets a resting border is an interactive **field**
@@ -242,9 +245,11 @@ Never remove `overflow` — wheel/touch/keyboard scroll must still work.
   (`.uhd`) and footer (`.ufoot/.mfoot`) carry **no bg** — an inset `.hair`
   separates them from the body. Title left, square close right. Actions right,
   primary last; Cancel is `.btn.ghost`.
-- **Menu/context** = `--paper`, shadow (it floats), boxless rows that colour-change
-  on hover (`--surface`), invert on `:active`; inset separators; danger rows in
-  `--danger`.
+- **Menu/context** = `--paper`, shadow (it floats), **dense** boxless rows
+  (`padding:6px 10px` — matching the dense triggers, never a loose 8–10px row),
+  colour-change on hover (`--surface`), invert on `:active`; inset separators
+  (`margin:5px var(--hair-inset)`, never full-bleed); danger rows in `--danger`. A
+  dense trigger that opens a loose menu is a miss — the rows inside are dense too.
 - **Field** = the one bordered element: `--line2` at rest → `--ink` on
   `:focus-within`.
 - **Card in chat (file card)** = body on `--plate`, icon band a further step, hover
@@ -307,9 +312,14 @@ buttons — primary Download, Save; folder adds Open). Transport pinned to the m
 foot; big centred borderless play; **no visible skip buttons** (5s skip on ←/→).
 
 **Metadata rows are are.na-style: key left (`--muted`), value RIGHT-aligned to the
-panel edge (`--ink`), packed dense** (small vertical gap). The author value is a
+panel edge (`--ink`), packed dense** (`gap:var(--s1)`). The author value is a
 **neutral bold text link, not a member chip** (see Colouring). Keep it tight — this
-rail is reference data, not a form.
+rail is reference data, not a form. **`Size` is always the LAST row** (settled owner
+call — it never sits above `Location`/`Type`). The value column right-aligns to the
+**same ruler as the header controls** (rail horizontal inset `--s4` on `.dtop`,
+`.scroll`, `.foot`). The **Location crumb row must not be taller than the others** —
+it's the same `.ic.sm`-sized inline crumb, no extra height that nudges rows above it.
+The h2 title gets `margin:var(--s4) 0 var(--s3)` so it never hugs the `.dtop` hairline.
 
 **Apply the current decisions when building it:** buttons are the new small
 archetypes; the grey `.foot` bar becomes an inset hairline; **the Collaborators
