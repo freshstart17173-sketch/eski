@@ -582,8 +582,9 @@ shows its items read-only with no way to navigate out.
 | **Add-by-handle field** | Inline at top of the thread list (**not a modal**); exact handle only. | `create_dm(handle)` · `friendships` | Left column | Full-screen list |
 | **New message** (gallery B14) | A **New DM / group-DM picker** from the thread-list header: multi-select friends → start a 1:1 or group DM. Complements the inline add-by-handle for the common "pick from friends" case. | `create_dm(handle)` (1:1) · `create_group_dm(handles[])` (group) · R `friendships` | Header button → picker | Header → sheet |
 | Friends / requests | Friends count + pending-request badge; opens the full **Friends** screen (below). | `friendships` | Left | List |
-| Thread list | Pinned + DMs; unread dot, mute/pin. | `dm_channels` · `dm_members` | Left | List |
-| Conversation | Messages, composer (attach, send); header with (v2) call buttons. | `dm_messages` · RT | Main | Full-screen |
+| Thread list | Pinned + DMs; unread dot, mute/pin. **Row menu** (gallery B12, ⋯ or right-click): Mark as read · Pin · Mute · **Block** / **Report** (B13) · **Close DM** — and for a **group DM**, Add people · Rename group · **Leave group**. | `dm_channels` · `dm_members` (`muted`/`pinned`); W `block_user`, `file_report`, group RPCs | Left | List; long-press menu |
+| Conversation | Messages, composer (attach, send); header with (v2) call buttons + a ⋯ opening the same DM menu (mute/block/report; group → members modal). | `dm_messages` · RT | Main | Full-screen |
+| **Group members modal** (gallery B12) | From a group DM's Add-people / Rename: group name, add-a-friend picker, member list with remove, and **Leave group**. | W `dm_members` (add/remove), group rename | Modal | Sheet |
 
 **Screen 9b — Friends** (`friends`, gallery S4). A dedicated relationship
 manager, distinct from the DM thread list.

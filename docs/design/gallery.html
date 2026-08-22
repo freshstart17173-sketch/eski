@@ -872,6 +872,9 @@ input{font:inherit;color:inherit}
 .ppop .ppacts .btn{flex:1;justify-content:center}
 /* Admin block: separated from the public actions by a background step + a hairline,
    not a border box (surfaces separate by bg-step per the design rules). */
+.ppop .ppmore{display:flex;gap:8px;margin-top:8px}
+.ppop .ppmore button{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:7px;border-radius:var(--r);font-size:var(--fs-xs);color:var(--muted);background:var(--surface)}
+.ppop .ppmore button:hover{background:var(--plate);color:var(--soft)}
 .ppop .ppadmin{margin:12px -16px -16px;padding:10px 8px 8px;background:var(--surface);box-shadow:inset 0 1px 0 var(--line)}
 .ppop .ppadl{font-size:10px;color:var(--muted);font-weight:600;letter-spacing:.04em;padding:0 8px 4px}
 .ppop .arow{display:flex;align-items:center;gap:9px;width:100%;padding:7px 8px;border-radius:var(--r);font-size:var(--fs-sm);color:var(--soft);background:none;text-align:left;cursor:pointer}
@@ -2982,6 +2985,8 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
     <div class="ppsec"><span class="l">WORKING ON</span><span class="v">a beat, in FL Studio</span></div>
     <div class="ppsec"><span class="l">MUTUAL SERVERS</span><span class="v">Late Bloom LP, beat swap</span></div>
     <div class="ppacts"><button class="btn primary"><svg class="ic sm"><use href="#i-mail"/></svg>Message</button><button class="btn"><svg class="ic sm"><use href="#i-user"/></svg>Add friend</button></div>
+    <!-- B13 block / report — available to any viewer, not just admins -->
+    <div class="ppmore"><button id="ppBlock"><svg class="ic sm"><use href="#i-hand"/></svg>Block</button><button id="ppReport"><svg class="ic sm"><use href="#i-flag"/></svg>Report</button></div>
     <!-- Admin actions: shown in the reference; live, they render only when the
          viewer can moderate this server (is_server_admin) — the RLS gate, not a POV toggle. -->
     <div class="ppadmin" data-admin-only>
@@ -3292,6 +3297,38 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   <div class="ufoot"><button class="btn" id="catCancel">Cancel</button><button class="btn primary" id="catSave">Create category</button></div>
 </div>
 
+<!-- B12 DM row / header menu — mute, pin, close; group DMs add rename + people.
+     B13 block/report also reachable here and from the profile popover. -->
+<div class="menu" id="dmMenu"><div class="mlabel" id="dmMenuName">mira</div>
+  <button id="dmMarkRead"><svg class="ic sm"><use href="#i-check"/></svg>Mark as read</button>
+  <button id="dmPin"><svg class="ic sm"><use href="#i-pin"/></svg>Pin conversation</button>
+  <button id="dmMute"><svg class="ic sm"><use href="#i-mute"/></svg>Mute</button>
+  <div class="sep dmgroup" hidden></div>
+  <button class="dmgroup" hidden id="dmAddPeople"><svg class="ic sm"><use href="#i-user"/></svg>Add people</button>
+  <button class="dmgroup" hidden><svg class="ic sm"><use href="#i-pen"/></svg>Rename group</button>
+  <div class="sep"></div>
+  <button id="dmBlock"><svg class="ic sm"><use href="#i-hand"/></svg>Block</button>
+  <button id="dmReportPerson"><svg class="ic sm"><use href="#i-flag"/></svg>Report</button>
+  <button class="danger" id="dmClose"><svg class="ic sm"><use href="#i-leave"/></svg><span id="dmCloseLbl">Close DM</span></button></div>
+
+<!-- B12 group-DM management modal -->
+<div class="scrim" id="gdmScrim" hidden></div>
+<div class="umodal" id="gdmModal" hidden>
+  <div class="uhd"><b>Group members</b><button class="iconbtn" id="gdmClose"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
+  <div class="ubody">
+    <label class="ulab">Group name</label>
+    <div class="field"><input value="sh040 crew"></div>
+    <label class="ulab">Add a friend</label>
+    <div class="field"><svg class="ic sm"><use href="#i-search"/></svg><input placeholder="Search friends…"></div>
+    <div class="shareppl" style="margin-top:8px">
+      <div class="sharerow"><span class="av sm">MI</span><span class="nm"><b class="m4">mira</b> <span style="color:var(--muted)">· you</span></span></div>
+      <div class="sharerow"><span class="av sm">LN</span><span class="nm"><b class="m2">lin</b></span><button class="rm" title="Remove"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
+      <div class="sharerow"><span class="av sm">SO</span><span class="nm"><b class="m5">sol</b></span><button class="rm" title="Remove"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
+    </div>
+  </div>
+  <div class="ufoot"><button class="btn danger" style="margin-right:auto" id="gdmLeave"><svg class="ic sm"><use href="#i-leave"/></svg>Leave group</button><button class="btn" id="gdmCancel">Cancel</button><button class="btn primary" id="gdmSave">Save</button></div>
+</div>
+
 <!-- #58 folder context menu (right-click a folder in the tree) -->
 <div class="menu" id="folderMenu"><div class="mlabel">Folder</div>
   <button><svg class="ic sm"><use href="#i-folder"/></svg>Open</button>
@@ -3468,7 +3505,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   document.addEventListener('keydown',function(e){if(lb.hidden)return;
     if(e.key==='Escape')lbClose();else if(e.key==='ArrowLeft')lbShow(lbIdx-1);else if(e.key==='ArrowRight')lbShow(lbIdx+1);});
 
-  var menus=['dlMenu','saveMenu','emojiMenu','msgMenu','cardMenu','folderMenu','channelMenu'].map(function(id){return document.getElementById(id);}).filter(Boolean);
+  var menus=['dlMenu','saveMenu','emojiMenu','msgMenu','cardMenu','folderMenu','channelMenu','dmMenu'].map(function(id){return document.getElementById(id);}).filter(Boolean);
   function closeMenus(){menus.forEach(function(m){m.classList.remove('open');});}
   function toggleMenu(m,anchor,above){var open=m.classList.contains('open');closeMenus();if(open)return;
     m.classList.add('open');var r=anchor.getBoundingClientRect();
@@ -3620,6 +3657,37 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
       if(e.target.closest('.cgadd'))return;               // the + is its own action
       var grp=lb.closest('.cgroup');if(!grp)return;grp.classList.toggle('collapsed');});
   });
+
+  // B12 DM row/header menu + group management; B13 block/report entry points
+  var dmMenu=document.getElementById('dmMenu'),dmMenuName=document.getElementById('dmMenuName'),dmCloseLbl=document.getElementById('dmCloseLbl');
+  var gdm=opener('gdmScrim','gdmModal');
+  function openDmMenu(anchorEl,name,isGroup){
+    if(dmMenuName)dmMenuName.textContent=name;
+    if(dmCloseLbl)dmCloseLbl.textContent=isGroup?'Leave group':'Close DM';
+    dmMenu.querySelectorAll('.dmgroup').forEach(function(el){el.hidden=!isGroup;});
+    var r=anchorEl.getBoundingClientRect();openMenuAt(dmMenu,r.left,r.bottom+4);
+  }
+  if(dmMenu){
+    document.querySelectorAll('.screen[data-screen="dms"] .dmrow .more2').forEach(function(b){b.addEventListener('click',function(e){
+      e.stopPropagation();var row=b.closest('.dmrow');openDmMenu(b,(row.querySelector('.nm')||{}).textContent||'conversation',row.classList.contains('group'));});});
+    // group rows have no .more2 in the markup — right-click opens it too
+    document.querySelectorAll('.screen[data-screen="dms"] .dmrow.dmconvo').forEach(function(row){row.addEventListener('contextmenu',function(e){
+      e.preventDefault();openDmMenu(row,(row.querySelector('.nm')||{}).textContent||'conversation',row.classList.contains('group'));});});
+    // DM conversation header ⋯
+    var dmHeadMore=document.querySelector('#dmConvo .mainhd .acts [title="More"]');
+    if(dmHeadMore)dmHeadMore.addEventListener('click',function(e){e.stopPropagation();openDmMenu(dmHeadMore,'mira',false);});
+    var dmAddPeople=document.getElementById('dmAddPeople');if(dmAddPeople)dmAddPeople.addEventListener('click',function(){closeMenus();gdm.open();});
+    var dmBlock=document.getElementById('dmBlock');if(dmBlock)dmBlock.addEventListener('click',function(){closeMenus();if(typeof toast==='function')toast('Blocked — they can no longer message or see you');});
+    var dmReportPerson=document.getElementById('dmReportPerson');if(dmReportPerson)dmReportPerson.addEventListener('click',function(){closeMenus();openReport('this person');});
+    ['dmMarkRead','dmPin','dmMute','dmClose'].forEach(function(id){var e=document.getElementById(id);if(e)e.addEventListener('click',function(){closeMenus();});});
+  }
+  ['gdmClose','gdmCancel'].forEach(function(id){var e=document.getElementById(id);if(e)e.addEventListener('click',gdm.close);});
+  var gdmSave=document.getElementById('gdmSave');if(gdmSave)gdmSave.addEventListener('click',function(){gdm.close();if(typeof toast==='function')toast('Group updated');});
+  var gdmLeave=document.getElementById('gdmLeave');if(gdmLeave)gdmLeave.addEventListener('click',function(){gdm.close();if(typeof toast==='function')toast('You left the group');});
+  var gdmScrim=document.getElementById('gdmScrim');if(gdmScrim)gdmScrim.addEventListener('click',gdm.close);
+  // B13 block/report from the profile popover
+  var ppBlock=document.getElementById('ppBlock');if(ppBlock)ppBlock.addEventListener('click',function(e){e.stopPropagation();closePop();if(typeof toast==='function')toast('Blocked — they can no longer message or see you');});
+  var ppReport=document.getElementById('ppReport');if(ppReport)ppReport.addEventListener('click',function(e){e.stopPropagation();closePop();openReport('this person');});
 
   // #58 folder context menu on right-click of a folder tree row
   var folderMenu=document.getElementById('folderMenu');
