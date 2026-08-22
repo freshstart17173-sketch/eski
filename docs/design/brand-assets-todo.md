@@ -15,9 +15,9 @@ monochrome, flat blocks, pops of pure white/black). Captured 2026-08-19.
 - [ ] **B5. Social / OG share-card template** — the link-preview image for shared files
   and profiles. Load-bearing now that the Share dialog + shared-view exist
   (gallery todo #39/#40); without it a shared link previews as nothing.
-- [ ] **B6. Unpreviewable-file icon** — the single icon for unsupported / non-preview
-  file types (pairs with gallery todo #21; that item is "decide + place", this is
-  "draw it").
+- [x] ~~**B6. Unpreviewable-file icon**~~ — **not needed (2026-08-22).** Unpreviewable
+  files just use the existing `#i-file` icon; no custom-drawn glyph. (gallery #21
+  already uses `#i-file` as the single unpreviewable icon.)
 - [ ] **B7. Default server icon** — fallback art when a server has no cover uploaded.
   (Avatars already fall back to initials; servers have no fallback.)
 - [ ] **B8. (Optional) Empty-state illustrations** — only if we want spot art instead

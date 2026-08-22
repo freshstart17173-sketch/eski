@@ -7,6 +7,16 @@ CANON before implementing each one.
 > buttons and links that should exist but don't — is scored in
 > [`gaps.md`](gaps.md).
 
+## Next galleries (not started)
+
+- [ ] **Mobile gallery** — a **separate** gallery file for the phone layouts
+  (`gallery-mobile.html`), built against the CANON §C.2 responsive contract: the
+  three-pane shell collapsed to **one pane + bottom tabs**, the channel drawer,
+  the members sheet, the details bottom-sheet, and every screen's narrow-viewport
+  form. The desktop `gallery.html` is now mobile-free (mobile chrome removed
+  2026-08-22); mobile is its own deliverable, not a responsive pass on the
+  desktop file.
+
 ## Execution order (by token cost, cheapest first)
 
 Triage 2026-08-21. Working the list in this order; input-gated items sit at the

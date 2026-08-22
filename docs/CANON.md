@@ -329,6 +329,11 @@ references them, it doesn't redraw them.
 
 ### C.2 Global responsive contract (applies to every screen)
 
+**Mobile ships as a separate gallery.** [`gallery.html`](design/gallery.html) is
+the **desktop** artboard set (the 1440px canvas) and carries no mobile chrome;
+the mobile layouts are a distinct deliverable — their own gallery — built against
+the contract below. This table is the spec that separate mobile gallery follows.
+
 The desktop shell is **server rail (58) · channel column (232) · main · members
 rail (210)**. A phone shows **one pane at a time**:
 

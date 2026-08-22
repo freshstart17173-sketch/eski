@@ -543,11 +543,6 @@ input{font:inherit;color:inherit}
 .selbtn.sm{padding:5px 9px;font-size:var(--fs-xs)}
 .ufoot{padding:var(--s3) var(--s4);background:var(--surface);display:flex;justify-content:flex-end;gap:var(--s2)}
 [hidden]{display:none!important}
-@media(max-width:900px){.mem{display:none}
-  .sheet{padding:0}
-  .sheet .card2{flex-direction:column;width:100vw;height:100vh;border-radius:0}
-  .sheet .dmedia{flex:none;height:42vh;padding:20px}
-  .dinfo{width:100%}}
 
 /* call (voice/video) screen */
 .vc{flex:1;min-width:0;display:flex;flex-direction:column;background:#101010;color:#ededed}
@@ -1073,7 +1068,6 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
 .svmeta h1{font-size:var(--fs-xl);font-weight:600;margin-bottom:var(--s4)}
 .svnote{display:flex;align-items:flex-start;gap:8px;font-size:var(--fs-xs);color:var(--muted);background:var(--surface);border-radius:var(--r);padding:10px 12px;margin-top:var(--s4)}
 .svnote .ic{color:var(--muted);flex:none;margin-top:1px}
-@media(max-width:760px){.svbody{grid-template-columns:1fr}}
 /* #51 toast + upload-progress — a transient bottom-right feedback stack */
 .toaststack{position:fixed;right:18px;bottom:18px;z-index:95;display:flex;flex-direction:column;gap:8px;width:320px;max-width:calc(100vw - 36px)}
 .toast{display:flex;align-items:flex-start;gap:10px;background:var(--ink);color:var(--on-ink);border-radius:var(--r);padding:11px 13px;font-size:var(--fs-sm);
@@ -1210,19 +1204,6 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
 .thread .actions{display:flex;align-items:center;gap:12px;margin:9px 0;font-size:12px;color:var(--muted)}
 .thread .actions button{display:flex;align-items:center;gap:5px;color:var(--soft)}
 
-/* phone frame — a device, so its rounded shell is allowed */
-.phone{width:288px;height:560px;border:9px solid var(--ink);border-radius:28px;overflow:hidden;
-  background:var(--paper);position:relative}
-.phone .ptop{height:48px;display:flex;align-items:center;gap:11px;padding:0 14px;background:var(--surface)}
-.phone .ptop b{font-size:var(--fs)}
-.phone .ptop .sp{flex:1}
-.phone .pbar{position:absolute;left:0;right:0;bottom:0;height:56px;background:var(--railbg);
-  display:flex;align-items:stretch}
-.phone .pbar button{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;
-  font-size:9.5px;color:var(--muted)}
-.phone .pbar button.on{color:var(--ink)}
-.phone .drawer{position:absolute;top:48px;left:0;bottom:0;width:212px;background:var(--railbg);padding:10px 8px}
-.phone .veil{position:absolute;inset:48px 0 0 212px;background:rgba(0,0,0,.4)}
 
 /* bare avatar: the mockup only styles .pfp in context (.railuser/.pin/…),
    so a standalone one needs its own round rule or it renders as a square. */
@@ -1459,52 +1440,11 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
 </section>
 
 <section class="gsec" id="global">
-  <h2>③ Global dialogs, menus &amp; mobile chrome</h2>
-  <p class="lede">The shared layer, including the small things (burger nav,
-    confirm, prompt, toast) that still need a planned design. Modals on a scrim,
-    square closes, short buttons.</p>
+  <h2>③ Global dialogs &amp; menus</h2>
+  <p class="lede">The shared layer, including the small things (confirm, prompt,
+    toast) that still need a planned design. Modals on a scrim, square closes,
+    short buttons. <em>(Mobile is a separate gallery — see the build checklist.)</em></p>
   <div class="stagewrap">
-
-    <!-- mobile bottom tabs -->
-    <div>
-      <div class="stage tall">
-        <div class="phone">
-          <div class="ptop"><svg class="ic"><use href="#i-hash"/></svg><b>beats</b>
-            <span class="sp"></span><svg class="ic" style="color:var(--muted)"><use href="#i-users"/></svg></div>
-          <div style="padding:14px;font-size:12px;color:var(--muted)">Chat fills the screen; the channel column and members are one tap away.</div>
-          <div class="pbar">
-            <button class="on"><svg class="ic sm"><use href="#i-home"/></svg>Home</button>
-            <button><svg class="ic sm"><use href="#i-mail"/></svg>Messages</button>
-            <button><svg class="ic sm"><use href="#i-grid"/></svg>Servers</button>
-            <button><svg class="ic sm"><use href="#i-bell"/></svg>Alerts</button>
-            <button><svg class="ic sm"><use href="#i-user"/></svg>You</button>
-          </div>
-        </div>
-      </div>
-      <div class="pcap"><b>Mobile bottom tabs</b>
-        <span class="m">Replaces the server rail under 720px: Home · Messages · Servers · Alerts · You.</span>
-        <span class="db">badges ← channel_reads / notifications</span></div>
-    </div>
-
-    <!-- mobile drawer -->
-    <div>
-      <div class="stage tall">
-        <div class="phone">
-          <div class="ptop"><svg class="ic"><use href="#i-more"/></svg><b>Late Bloom LP</b></div>
-          <div class="drawer">
-            <div class="mhd">Channels</div>
-            <button class="mi"><svg class="ic"><use href="#i-hash"/></svg>announcements</button>
-            <button class="mi on"><svg class="ic"><use href="#i-hash"/></svg>beats</button>
-            <button class="mi"><svg class="ic"><use href="#i-hash"/></svg>verses</button>
-            <button class="mi"><svg class="ic"><use href="#i-hash"/></svg>mixing</button>
-          </div>
-          <div class="veil"></div>
-        </div>
-      </div>
-      <div class="pcap"><b>Burger → channel drawer</b>
-        <span class="m">Tapping the server name slides the channel column in; picking one closes it.</span>
-        <span class="db">R channels where server_id · channel_reads</span></div>
-    </div>
 
     <!-- plus menu -->
     <div>
@@ -3908,8 +3848,6 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
     ['Workspace','Pins / Files tab','channel header','message_pins · works','m'],
     ['Workspace','Member popout','click member','profiles · friendships','a'],
     ['Workspace','Admin manage member (role/timeout/kick/ban)','admin on member','ban/timeout/kick RPC','t'],
-    ['Global','Burger → channel drawer (mobile)','☰ / server name','channels','a'],
-    ['Global','Bottom tab bar (mobile)','always (mobile)','reads/notifications','a'],
     ['Global','Confirm (destructive)','any delete','varies','a'],
     ['Global','Prompt (single field)','rename / new','varies','a'],
     ['Global','Toast','after an action','—','a'],
