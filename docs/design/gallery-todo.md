@@ -1,11 +1,13 @@
-# gallery.html — pending changes
+# gallery.html — the single gallery TODO
 
-Captured 2026-08-19. These are edits to `gallery.html` (LAW). Check against
-CANON before implementing each one.
+Captured 2026-08-19; this is the **one** live gallery backlog (the old
+[`gaps.md`](gaps.md) gap-analysis is now historical reference — its items are
+built or folded in below). Brand art lives separately in
+[`brand-assets-todo.md`](brand-assets-todo.md); project state in
+[`../../memory.md`](../../memory.md). Check against CANON before implementing.
 
-> **All items below are done (2026-08-21).** The next-phase backlog — screens,
-> buttons and links that should exist but don't — is scored in
-> [`gaps.md`](gaps.md).
+> **The #1–#61 edit list and the gaps.md A/B backlog are done (2026-08-21/22).**
+> What's left is below.
 
 ## Next tasks (not started)
 
@@ -18,7 +20,11 @@ CANON before implementing each one.
   member popover admin block, jump-to-unread, new-DM, friends manager, notification
   levels, offline banner, billing, account-switch, onboarding. (~20 panels.) The
   gallery is an exploded view — full functionality on screens **and** labelled
-  standalone panels are both the goal.
+  standalone panels are both the goal. *(In progress 2026-08-22.)*
+- [ ] **B23 — drag-reorder channels in the column** (admin). Server settings → Channels
+  already reorders; this is the live drag-in-the-column version. ★2 / ●3 (DnD).
+- [ ] **S15 — voice "you're in the booth" mini-bar** (persistent mute/leave strip while
+  browsing elsewhere). **v2** — ships with calls.
 
 ## Next galleries (not started)
 
@@ -29,6 +35,11 @@ CANON before implementing each one.
   form. The desktop `gallery.html` is now mobile-free (mobile chrome removed
   2026-08-22); mobile is its own deliverable, not a responsive pass on the
   desktop file.
+- [ ] **Styling sandbox** ([`sandbox.html`](sandbox.html), added 2026-08-22) — a
+  standalone page with **its own copy of the tokens** holding a few dialogs/modals,
+  for reworking styling without touching the whole gallery. Once a direction is
+  settled here, port the token/component changes back into `styleguide.html` +
+  `gallery.html`.
 
 ## Execution order (by token cost, cheapest first)
 
