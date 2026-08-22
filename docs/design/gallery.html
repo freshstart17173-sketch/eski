@@ -1152,6 +1152,15 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
 .svmeta h1{font-size:var(--fs-xl);font-weight:600;margin-bottom:var(--s4)}
 .svnote{display:flex;align-items:flex-start;gap:8px;font-size:var(--fs-xs);color:var(--muted);background:var(--surface);border-radius:var(--r);padding:10px 12px;margin-top:var(--s4)}
 .svnote .ic{color:var(--muted);flex:none;margin-top:1px}
+/* Edit-profile media (banner well + avatar row) — media stays square (--r) */
+.epbanner{height:84px;background:var(--paper1);border-radius:var(--r);display:flex;align-items:flex-end;justify-content:flex-end;padding:8px}
+.epavrow{display:flex;align-items:center;gap:12px;margin-top:10px}
+/* Move-to-folder picker: the destination tree in a scroll well (reuses .ftrow) */
+.movetree{max-height:240px;overflow:auto;background:var(--surface);border-radius:var(--r);padding:6px;margin-top:2px}
+/* Timeout duration segmented control uses .seg .o — make its cells clickable */
+#toSeg .o{cursor:pointer;transition:background var(--t),color var(--t)}
+/* Kick/ban confirm lede */
+.banlede{font-size:var(--fs-sm);color:var(--soft);line-height:1.5;margin:2px 0 4px}
 /* #51 toast + upload-progress — a transient bottom-right feedback stack */
 .toaststack{position:fixed;right:18px;bottom:18px;z-index:95;display:flex;flex-direction:column;gap:8px;width:320px;max-width:calc(100vw - 36px)}
 .toast{display:flex;align-items:flex-start;gap:10px;background:var(--ink);color:var(--on-ink);border-radius:var(--r);padding:11px 13px;font-size:var(--fs-sm);
@@ -2413,7 +2422,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
           </div>
           <div class="selbar" id="selbar"><span class="n"><span id="seln">0</span> selected</span>
             <button><svg class="ic sm"><use href="#i-download"/></svg>Download</button>
-            <button><svg class="ic sm"><use href="#i-move"/></svg>Move to folder</button>
+            <button id="selMove"><svg class="ic sm"><use href="#i-move"/></svg>Move to folder</button>
             <button><svg class="ic sm"><use href="#i-trash"/></svg>Delete</button>
             <span class="sp"></span>
             <button id="selClear"><svg class="ic sm"><use href="#i-x"/></svg>Clear</button></div>
@@ -2572,7 +2581,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
             <div class="who"><h1>rae okonkwo</h1><div class="handle">@rae</div>
               <div class="bio">writer and rapper. building the Late Bloom LP with a few people.</div></div>
             <div class="actions">
-              <button class="btn primary"><svg class="ic sm"><use href="#i-pen"/></svg>Edit profile</button>
+              <button class="btn primary" id="editProfileBtn"><svg class="ic sm"><use href="#i-pen"/></svg>Edit profile</button>
             </div>
           </div>
         </div>
@@ -2858,7 +2867,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
             </div>
             <div class="subh">Take action</div>
             <div class="frow" style="max-width:660px"><div class="field"><svg class="ic sm"><use href="#i-user"/></svg><input placeholder="Member to time out or ban"></div></div>
-            <div style="display:flex;gap:8px"><button class="btn sm"><svg class="ic sm"><use href="#i-hand"/></svg>Time out</button><button class="btn sm danger"><svg class="ic sm"><use href="#i-leave"/></svg>Ban</button></div>
+            <div style="display:flex;gap:8px"><button class="btn sm" id="modTimeout"><svg class="ic sm"><use href="#i-hand"/></svg>Time out</button><button class="btn sm danger" id="modBan"><svg class="ic sm"><use href="#i-leave"/></svg>Ban</button></div>
 
             <!-- #57 per-member post approval: flagged members' posts are hidden until approved -->
             <div class="subh" style="margin-top:22px">Posts held for approval<span class="mut">2</span></div>
@@ -3252,9 +3261,9 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
     <div class="ppadmin" data-admin-only>
       <div class="ppadl">Admin</div>
       <button class="arow"><svg class="ic sm"><use href="#i-users"/></svg>Roles<svg class="ic sm chev"><use href="#i-chev"/></svg></button>
-      <button class="arow"><svg class="ic sm"><use href="#i-clock"/></svg>Timeout</button>
-      <button class="arow danger"><svg class="ic sm"><use href="#i-leave"/></svg>Kick from server</button>
-      <button class="arow danger"><svg class="ic sm"><use href="#i-hand"/></svg>Ban</button>
+      <button class="arow" id="ppTimeout" data-name="dev"><svg class="ic sm"><use href="#i-clock"/></svg>Timeout</button>
+      <button class="arow danger" id="ppKick" data-name="dev"><svg class="ic sm"><use href="#i-leave"/></svg>Kick from server</button>
+      <button class="arow danger" id="ppBan" data-name="dev"><svg class="ic sm"><use href="#i-hand"/></svg>Ban</button>
     </div>
   </div>
 </div>
@@ -3385,7 +3394,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   <button><svg class="ic sm"><use href="#i-link"/></svg>Copy link</button>
   <div class="sep"></div>
   <button><svg class="ic sm"><use href="#i-pen"/></svg>Rename</button>
-  <button><svg class="ic sm"><use href="#i-folder"/></svg>Move to…</button>
+  <button id="cmMove"><svg class="ic sm"><use href="#i-folder"/></svg>Move to…</button>
   <button><svg class="ic sm"><use href="#i-hide"/></svg>Hide from library</button>
   <div class="sep"></div>
   <button class="danger"><svg class="ic sm"><use href="#i-trash"/></svg>Delete</button></div>
@@ -3651,6 +3660,78 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   <button><svg class="ic sm"><use href="#i-file"/></svg>Archive</button>
   <div class="sep"></div>
   <button class="danger"><svg class="ic sm"><use href="#i-trash"/></svg>Delete</button></div>
+
+<!-- Edit-profile modal — from the Profile "Edit profile" button (own profile).
+     Writes `profiles` (display_name, handle, bio, avatar, banner). The handle is
+     globally unique — same claim/validation as the auth claim-handle step (§C.10/§C.14). -->
+<div class="scrim" id="epScrim" hidden></div>
+<div class="umodal" id="epModal" hidden>
+  <div class="uhd"><b>Edit profile</b><button class="iconbtn" id="epClose"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
+  <div class="ubody">
+    <div class="epbanner"><button class="btn sm"><svg class="ic sm"><use href="#i-pen"/></svg>Change banner</button></div>
+    <div class="epavrow"><span class="av lg">RA</span><button class="btn sm"><svg class="ic sm"><use href="#i-pen"/></svg>Change photo</button></div>
+    <label class="ulab">Display name</label>
+    <div class="field"><input value="rae okonkwo"></div>
+    <label class="ulab">Handle</label>
+    <div class="field"><span style="color:var(--muted)">@</span><input value="rae"></div>
+    <div class="svnote"><svg class="ic sm"><use href="#i-check"/></svg><span>Your handle is unique across eski — it's how people reach you. Changing it breaks old links to your profile.</span></div>
+    <label class="ulab">Bio</label>
+    <div class="field"><input value="writer and rapper. building the Late Bloom LP with a few people."></div>
+  </div>
+  <div class="ufoot"><button class="btn" id="epCancel">Cancel</button><button class="btn primary" id="epSave">Save profile</button></div>
+</div>
+
+<!-- Move-to-folder picker — from the card menu "Move to…", the bulk selection
+     bar "Move to folder", and the details-pane location row. Writes
+     `placement.folder_id`; a move changes where a file lives, not its visibility. -->
+<div class="scrim" id="moveScrim" hidden></div>
+<div class="umodal" id="moveModal" hidden style="width:min(440px,95vw)">
+  <div class="uhd"><b id="moveTitle">Move to folder</b><button class="iconbtn" id="moveClose"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
+  <div class="ubody">
+    <label class="ulab">Destination in <b>Specter</b></label>
+    <div class="movetree">
+      <button class="ftrow lvl0 on"><svg class="ic sm fic"><use href="#i-folder"/></svg><span class="fn">Root</span></button>
+      <button class="ftrow lvl1"><svg class="ic sm fic"><use href="#i-folder"/></svg><span class="fn">Beats</span></button>
+      <button class="ftrow lvl2"><svg class="ic sm fic"><use href="#i-folder"/></svg><span class="fn">Drum picks</span></button>
+      <button class="ftrow lvl1"><svg class="ic sm fic"><use href="#i-folder"/></svg><span class="fn">Mixes</span></button>
+      <button class="ftrow lvl1 archived"><svg class="ic sm fic"><use href="#i-lock"/></svg><span class="fn">Masters</span><svg class="ic sm ftlock"><use href="#i-lock"/></svg></button>
+      <button class="ftrow lvl1"><svg class="ic sm fic"><use href="#i-folder"/></svg><span class="fn">References</span></button>
+    </div>
+    <div class="svnote"><svg class="ic sm"><use href="#i-move"/></svg><span>Moving changes where a file lives in the tree, not who can see it. Locked folders can't receive files.</span></div>
+  </div>
+  <div class="ufoot"><button class="btn ghost" id="moveNewFolder" style="margin-right:auto"><svg class="ic sm"><use href="#i-plus"/></svg>New folder</button><button class="btn" id="moveCancel">Cancel</button><button class="btn primary" id="moveGo">Move here</button></div>
+</div>
+
+<!-- Timeout modal — from the member popover "Timeout" and Server settings →
+     Moderation "Time out". Silences a member for a set time; they stay in the
+     server. RPC + audit_log; gated by the kick/ban/timeout permission (§B). -->
+<div class="scrim" id="timeoutScrim" hidden></div>
+<div class="umodal" id="timeoutModal" hidden style="width:min(440px,95vw)">
+  <div class="uhd"><b>Time out <span id="toName">this member</span></b><button class="iconbtn" id="toClose"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
+  <div class="ubody">
+    <div class="svnote" style="margin-top:0"><svg class="ic sm"><use href="#i-clock"/></svg><span>They stay in the server but can't post, react, or join voice until the timeout lifts.</span></div>
+    <label class="ulab">Duration</label>
+    <div class="seg" id="toSeg"><div class="o">5m</div><div class="o on">1h</div><div class="o">1d</div><div class="o">1w</div></div>
+    <label class="ulab">Reason <span style="font-weight:400;color:var(--muted)">— saved to the audit log, shown to them</span></label>
+    <div class="field"><input placeholder="e.g. spamming #beats"></div>
+  </div>
+  <div class="ufoot"><button class="btn" id="toCancel">Cancel</button><button class="btn primary" id="toConfirm">Time out</button></div>
+</div>
+
+<!-- Kick / Ban confirm — from the member popover and Moderation. Kick removes
+     the member (they can rejoin on a fresh invite); Ban also blocks the account
+     from rejoining on any link. Danger confirm; RPC + audit_log, gated by §B. -->
+<div class="scrim" id="banScrim" hidden></div>
+<div class="umodal" id="banModal" hidden style="width:min(440px,95vw)">
+  <div class="uhd"><b id="banTitle">Ban this member?</b><button class="iconbtn" id="banClose"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
+  <div class="ubody">
+    <p class="banlede" id="banLede">This removes them from Late Bloom LP and blocks their account from rejoining on any invite link.</p>
+    <label class="ulab">Reason <span style="font-weight:400;color:var(--muted)">— saved to the audit log</span></label>
+    <div class="field"><input placeholder="e.g. leaked the sh040 cut"></div>
+    <label class="setrow" id="banPurge" style="cursor:pointer"><div class="cl"><b>Also delete their posts</b><small>Removes every message and file they posted here</small></div><span class="tog"><i></i></span></label>
+  </div>
+  <div class="ufoot"><button class="btn" id="banCancel">Cancel</button><button class="btn danger" id="banConfirm">Ban</button></div>
+</div>
 
 <!-- #39 Share dialog (Google-Drive style) / #61 update a post's visibility -->
 <div class="scrim" id="shareScrim" hidden></div>
@@ -3936,6 +4017,52 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   var reportScrim=document.getElementById('reportScrim');if(reportScrim)reportScrim.addEventListener('click',report.close);
   document.querySelectorAll('#reportModal .repopt').forEach(function(o){o.addEventListener('click',function(){
     document.querySelectorAll('#reportModal .repopt').forEach(function(x){x.classList.remove('on');});o.classList.add('on');});});
+
+  // Edit-profile modal — from the Profile "Edit profile" button
+  var ep=opener('epScrim','epModal');
+  var editProfileBtn=document.getElementById('editProfileBtn');
+  if(editProfileBtn)editProfileBtn.addEventListener('click',function(ev){ev.stopPropagation();ep.open();});
+  ['epClose','epCancel'].forEach(function(id){var e=document.getElementById(id);if(e)e.addEventListener('click',ep.close);});
+  var epScrim=document.getElementById('epScrim');if(epScrim)epScrim.addEventListener('click',ep.close);
+  var epSave=document.getElementById('epSave');if(epSave)epSave.addEventListener('click',function(){ep.close();if(typeof toast==='function')toast('Profile saved');});
+
+  // Move-to-folder picker — card menu "Move to…" + bulk bar "Move to folder"
+  var move=opener('moveScrim','moveModal');
+  ['cmMove','selMove'].forEach(function(id){var e=document.getElementById(id);if(e)e.addEventListener('click',function(ev){ev.stopPropagation();move.open();});});
+  ['moveClose','moveCancel'].forEach(function(id){var e=document.getElementById(id);if(e)e.addEventListener('click',move.close);});
+  var moveScrim=document.getElementById('moveScrim');if(moveScrim)moveScrim.addEventListener('click',move.close);
+  document.querySelectorAll('#moveModal .movetree .ftrow').forEach(function(r){r.addEventListener('click',function(){
+    if(r.classList.contains('archived'))return; // locked folders can't receive files
+    document.querySelectorAll('#moveModal .movetree .ftrow').forEach(function(x){x.classList.remove('on');});r.classList.add('on');});});
+  var moveGo=document.getElementById('moveGo');if(moveGo)moveGo.addEventListener('click',function(){move.close();if(typeof toast==='function')toast('Moved');});
+
+  // Timeout modal — member popover + Moderation "Time out"
+  var timeout=opener('timeoutScrim','timeoutModal'),toName=document.getElementById('toName'),profilePop=document.getElementById('profilePop');
+  function openTimeout(name){if(profilePop)profilePop.hidden=true;if(toName)toName.textContent=name||'this member';timeout.open();}
+  ['ppTimeout','modTimeout'].forEach(function(id){var e=document.getElementById(id);if(e)e.addEventListener('click',function(ev){ev.stopPropagation();openTimeout(e.dataset.name);});});
+  ['toClose','toCancel'].forEach(function(id){var e=document.getElementById(id);if(e)e.addEventListener('click',timeout.close);});
+  var timeoutScrim=document.getElementById('timeoutScrim');if(timeoutScrim)timeoutScrim.addEventListener('click',timeout.close);
+  document.querySelectorAll('#toSeg .o').forEach(function(o){o.addEventListener('click',function(){
+    document.querySelectorAll('#toSeg .o').forEach(function(x){x.classList.remove('on');});o.classList.add('on');});});
+  var toConfirm=document.getElementById('toConfirm');if(toConfirm)toConfirm.addEventListener('click',function(){timeout.close();if(typeof toast==='function')toast('Member timed out');});
+
+  // Kick / Ban confirm — member popover + Moderation "Ban"
+  var ban=opener('banScrim','banModal');
+  var banTitle=document.getElementById('banTitle'),banLede=document.getElementById('banLede'),banConfirm=document.getElementById('banConfirm'),banPurge=document.getElementById('banPurge');
+  function openBan(mode,name){if(profilePop)profilePop.hidden=true;name=name||'this member';var isBan=mode!=='kick';
+    if(banTitle)banTitle.textContent=(isBan?'Ban ':'Kick ')+name+'?';
+    if(banLede)banLede.innerHTML=isBan
+      ? 'This removes <b>'+name+'</b> from Late Bloom LP and blocks their account from rejoining on any invite link.'
+      : 'This removes <b>'+name+'</b> from Late Bloom LP. They can rejoin later with a new invite link.';
+    if(banConfirm)banConfirm.textContent=(isBan?'Ban ':'Kick ')+name;
+    if(banPurge)banPurge.style.display=isBan?'':'none';
+    ban.open();}
+  ['ppBan','modBan'].forEach(function(id){var e=document.getElementById(id);if(e)e.addEventListener('click',function(ev){ev.stopPropagation();openBan('ban',e.dataset.name);});});
+  var ppKick=document.getElementById('ppKick');if(ppKick)ppKick.addEventListener('click',function(ev){ev.stopPropagation();openBan('kick',ppKick.dataset.name);});
+  ['banClose','banCancel'].forEach(function(id){var e=document.getElementById(id);if(e)e.addEventListener('click',ban.close);});
+  var banScrim=document.getElementById('banScrim');if(banScrim)banScrim.addEventListener('click',ban.close);
+  if(banPurge)banPurge.addEventListener('click',function(e){e.preventDefault();var t=banPurge.querySelector('.tog');if(t)t.classList.toggle('on');});
+  if(banConfirm)banConfirm.addEventListener('click',function(){ban.close();if(typeof toast==='function')toast('Done');});
 
   // B4 channel context menu + B5 edit-channel + B3 create-category
   var channelMenu=document.getElementById('channelMenu'),chanMenuName=document.getElementById('chanMenuName');
@@ -4401,7 +4528,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
     ['Workspace','Thread panel','“N replies”','messages.parent_id','m'],
     ['Workspace','Pins / Files tab','channel header','message_pins · works','m'],
     ['Workspace','Member popout','click member','profiles · friendships','a'],
-    ['Workspace','Admin manage member (role/timeout/kick/ban)','admin on member','ban/timeout/kick RPC','t'],
+    ['Workspace','Admin manage member (roles ▸ / timeout / kick / ban)','member popover · Moderation','ban/timeout/kick RPC + audit_log','m'],
     ['Global','Confirm (destructive)','any delete','varies','a'],
     ['Global','Prompt (single field)','rename / new','varies','a'],
     ['Global','Toast','after an action','—','a'],
@@ -4413,6 +4540,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
     ['Explorer','View toggle (grid / list / feed)','header segment','—','a'],
     ['Explorer','Feed view (flattened previewable + comments)','Feed toggle','works + comments','m'],
     ['Explorer','Grid select + bulk action bar (move to folder)','select cards','move_to_folder','m'],
+    ['Explorer','Move-to-folder picker (destination tree)','card ⋯ · bulk bar · details','placement.folder_id','m'],
     ['Explorer','Lightbox (image/video + “shared in”)','open media','works','m'],
     ['Explorer','Filter dropdowns (channel/type/uploader/sort)','explorer header','works where server_id','m'],
     ['Details','Download “get as…” (audio)','Download','transcode','a'],
@@ -4420,7 +4548,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
     ['Details','Storage row (badge + whose-storage + size)','open details','works.owner_type · bytes','t'],
     ['Details','Location breadcrumb (clickable, travel up tree)','open details','placement.folder_id → folders','a'],
     ['Details','Crosspost to server (personal storage)','Crosspost','works.storage_source=personal','t'],
-    ['Profile','Edit profile','Edit','profiles','t'],
+    ['Profile','Edit profile (name / handle / bio / avatar / banner)','Edit profile','profiles','m'],
     ['Profile','Settings tabs','Settings tab','profiles','m'],
     ['Messages','New DM (add by handle)','＋','create_dm','a'],
     ['Messages','Group DM create','＋ multiple','create_group_dm','t'],
