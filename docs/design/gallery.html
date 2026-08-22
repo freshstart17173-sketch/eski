@@ -158,7 +158,12 @@ input{font:inherit;color:inherit}
 .av.lg{width:76px;height:76px;font-size:26px}
 .av.sm{width:20px;height:20px;font-size:10px}
 
-.main{flex:1;min-width:0;display:flex;flex-direction:column;background:var(--paper);overflow:hidden}
+.main{flex:1;min-width:0;display:flex;flex-direction:column;background:var(--paper);overflow:hidden;position:relative}
+/* B16 new-messages divider + jump-to-present button */
+.newdiv{display:flex;align-items:center;gap:10px;margin:8px 0;color:var(--m1);font-size:var(--fs-xs);font-weight:600}
+.newdiv::before,.newdiv::after{content:"";flex:1;height:1px;background:var(--m1);opacity:.5}
+.jumpnew{position:absolute;left:50%;transform:translateX(-50%);bottom:96px;z-index:5;display:flex;align-items:center;gap:6px;padding:6px 14px;border-radius:var(--r);background:var(--ink);color:var(--on-ink);font-size:var(--fs-xs);font-weight:500;box-shadow:0 6px 20px rgba(0,0,0,.25)}
+.jumpnew.gone{display:none}
 .mainhd{flex:none;height:48px;display:flex;align-items:center;gap:var(--s3);padding:0 var(--s4);background:var(--surface)}
 .mainhd .ic{color:var(--muted)}
 .mainhd .t{font-weight:600;font-size:var(--fs)}
@@ -808,6 +813,12 @@ input{font:inherit;color:inherit}
 .acpop .acrow .cmd{font-weight:600;color:var(--ink)}
 .acpop .acrow .d{color:var(--muted);font-size:var(--fs-xs)}
 .acpop .acrow.sel,.acpop .acrow:hover{background:var(--surface)}
+/* B25 status composer */
+.stemoji{flex:none;width:26px;height:26px;display:grid;place-items:center;font-size:16px;border-radius:var(--r)}
+.stemoji:hover{background:var(--surface)}
+.stquick{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.stq{padding:6px 10px;border-radius:var(--r);background:var(--surface);font-size:var(--fs-xs);color:var(--soft)}
+.stq:hover{background:var(--plate)}
 /* S12 help / keyboard-shortcuts sheet */
 .kbcols{display:grid;grid-template-columns:1fr 1fr;gap:var(--s4)}
 .kbsec{font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600;margin:12px 0 4px}
@@ -2028,6 +2039,8 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
               </button>
             </div>
           </div>
+          <!-- B16 new-messages divider -->
+          <div class="newdiv"><span>New messages</span></div>
           <!-- S5 a forwarded message: a left-ruled quote naming its source -->
           <div class="msg">
             <div class="hoveracts"><button class="iconbtn" title="React"><svg class="ic sm"><use href="#i-smile"/></svg></button><button class="iconbtn" title="Reply"><svg class="ic sm"><use href="#i-reply"/></svg></button><button class="iconbtn" title="More"><svg class="ic sm"><use href="#i-more"/></svg></button></div>
@@ -2046,10 +2059,11 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
             <div class="av sm">TM</div>
             <div class="bd">
               <div class="by"><span class="u m2">tomo</span><time>2:47 PM</time></div>
-              <div class="tx">ableton user here, opened dev's stems fine. one note on the low end, left it on the waveform in canvas</div><div class="filecard" style="max-width:300px;display:flex;align-items:center;gap:11px;padding:10px 12px;margin-top:6px"><svg class="ic"><use href="#i-file"/></svg><div><div class="fn">stems_sh040.zip</div><div style="font-size:11px;color:var(--muted)">48 MB &middot; ZIP</div></div></div>
+              <div class="tx">ableton user here, opened dev's stems fine. one note on the low end, dropped a comment on the bounce</div><div class="filecard" style="max-width:300px;display:flex;align-items:center;gap:11px;padding:10px 12px;margin-top:6px"><svg class="ic"><use href="#i-file"/></svg><div><div class="fn">stems_sh040.zip</div><div style="font-size:11px;color:var(--muted)">48 MB &middot; ZIP</div></div></div>
             </div>
           </div>
         </div>
+        <button class="jumpnew" id="jumpNew"><svg class="ic sm"><use href="#i-chev"/></svg>New messages · jump to present</button>
         <div class="typing"><span class="dots"><i></i><i></i><i></i></span>tomo is typing</div>
         <div class="composer" id="chComposer">
           <div class="richcomposer">
@@ -3349,6 +3363,22 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   <div class="ufoot"><button class="btn danger" style="margin-right:auto" id="gdmLeave"><svg class="ic sm"><use href="#i-leave"/></svg>Leave group</button><button class="btn" id="gdmCancel">Cancel</button><button class="btn primary" id="gdmSave">Save</button></div>
 </div>
 
+<!-- B25 status composer — set a custom status (from /status or the avatar) -->
+<div class="scrim" id="statusScrim" hidden></div>
+<div class="umodal" id="statusModal" hidden style="width:min(420px,95vw)">
+  <div class="uhd"><b>Set a status</b><button class="iconbtn" id="statusClose"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
+  <div class="ubody">
+    <label class="ulab">Status</label>
+    <div class="field"><button class="stemoji" id="stEmoji">🎧</button><input id="stText" placeholder="What are you working on?" value="in the zone, back later"></div>
+    <div class="stquick">
+      <button class="stq">🎹 making a beat</button><button class="stq">🎚 mixing</button><button class="stq">🎤 recording</button><button class="stq">🌙 away</button>
+    </div>
+    <label class="ulab">Clear after</label>
+    <div class="field"><select style="border:none;background:none;width:100%;color:var(--ink);font:inherit"><option>Don't clear</option><option>30 minutes</option><option>1 hour</option><option>Today</option></select></div>
+  </div>
+  <div class="ufoot"><button class="btn" style="margin-right:auto" id="statusClear">Clear status</button><button class="btn" id="statusCancel">Cancel</button><button class="btn primary" id="statusSave">Save</button></div>
+</div>
+
 <!-- S12/B17 help + keyboard-shortcuts sheet — ⌘/ or ? opens it -->
 <div class="scrim" id="helpScrim" hidden></div>
 <div class="umodal" id="helpModal" hidden>
@@ -3814,6 +3844,11 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   document.getElementById('threadOpen').addEventListener('click',openThread);
   document.getElementById('threadClose').addEventListener('click',closeThread);
   var also=document.getElementById('alsoSend');also.addEventListener('click',function(){also.classList.toggle('on');});
+  // B16 jump-to-present — scroll the chat down, clear the new-messages divider
+  var jumpNew=document.getElementById('jumpNew'),chMessages=document.getElementById('chMessages');
+  if(jumpNew)jumpNew.addEventListener('click',function(){if(chMessages)chMessages.scrollTop=chMessages.scrollHeight;jumpNew.classList.add('gone');var nd=document.querySelector('.newdiv');if(nd)nd.remove();});
+  // B11 unpin — remove the pinned row
+  document.querySelectorAll('.screen[data-screen="workspace"] .pinrow .unpin').forEach(function(u){u.addEventListener('click',function(e){e.stopPropagation();var r=u.closest('.pinrow');if(r)r.remove();if(typeof toast==='function')toast('Unpinned');});});
 
   // per-channel tabs (Messages / Pins / Files)
   document.querySelectorAll('.chtab').forEach(function(t){t.addEventListener('click',function(){
@@ -3937,6 +3972,15 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
     if((e.metaKey||e.ctrlKey)&&e.key==='/'){e.preventDefault();document.getElementById('helpModal').hidden?help.open():help.close();}
     else if(e.key==='?'&&!typing){e.preventDefault();help.open();}
   });
+  // B25 status composer
+  var statusOpener=opener('statusScrim','statusModal');
+  window.__openStatus=statusOpener.open;
+  ['statusClose','statusCancel'].forEach(function(id){var e=document.getElementById(id);if(e)e.addEventListener('click',statusOpener.close);});
+  var statusSave=document.getElementById('statusSave');if(statusSave)statusSave.addEventListener('click',function(){statusOpener.close();if(typeof toast==='function')toast('Status updated');});
+  var statusClear=document.getElementById('statusClear');if(statusClear)statusClear.addEventListener('click',function(){statusOpener.close();if(typeof toast==='function')toast('Status cleared');});
+  var statusScrim=document.getElementById('statusScrim');if(statusScrim)statusScrim.addEventListener('click',statusOpener.close);
+  document.querySelectorAll('#statusModal .stq').forEach(function(q){q.addEventListener('click',function(){var t=document.getElementById('stText');if(t)t.value=q.textContent.replace(/^\S+\s/,'');});});
+
   // S13/B18 composer autocomplete — /, @, #, : popovers over the workspace composer
   var acPop=document.getElementById('acPop'),acHead=document.getElementById('acHead'),acList=document.getElementById('acList');
   var acInput=document.querySelector('.screen[data-screen="workspace"] .composer input');
@@ -3971,6 +4015,8 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
     function acClose(){acPop.classList.remove('open');acPop.hidden=true;acState=null;}
     function acPick(i){if(!acState)return;var it=acState.items[i];var v=acInput.value;
       var token=it.em?it.em:it.key;
+      // /status opens the status composer instead of just inserting the command
+      if(it.key==='/status'){acInput.value='';acClose();if(window.__openStatus)window.__openStatus();return;}
       acInput.value=v.slice(0,acState.det.start)+token+' ';acInput.focus();acClose();}
     acInput.addEventListener('input',acRender);
     acInput.addEventListener('keydown',function(e){
