@@ -136,15 +136,12 @@ input{font:inherit;color:inherit}
 .cglabel .cgcaret{width:11px;height:11px;color:var(--muted);margin-right:2px;transition:transform var(--t)}
 .cgroup.collapsed .cglabel .cgcaret{transform:rotate(-90deg)}
 .cgroup.collapsed .crow,.cgroup.collapsed .vpeople{display:none}
-/* S1 — admin POV. Admin-only affordances (create-channel +, per-channel gear,
-   member kick/ban) are hidden in the member view and revealed when the member
-   rail's Viewing-as toggle flips the workspace screen to data-pov="admin".
-   Same mechanism as the profile POV switcher (#20); the RLS gate is is_server_admin. */
-.screen[data-screen="workspace"][data-pov="member"] [data-admin-only]{display:none}
+/* Admin affordances (create-channel +, per-channel gear, member kick/ban, channel
+   Edit/Delete) are shown in the gallery reference; the fence is the RLS/perm gate
+   (is_server_admin / manage_channels), so a member never actually sees them live. */
 .cgear{flex:none;width:18px;height:18px;display:grid;place-items:center;border-radius:var(--r);color:var(--muted);opacity:0;transition:opacity var(--t)}
 .crow:hover .cgear{opacity:1}
 .cgear:hover{background:var(--plate);color:var(--ink)}
-.mempov{margin:calc(var(--s4)*-1) 0 var(--s3);position:sticky;top:0;z-index:1}
 .crow{display:flex;align-items:center;gap:8px;width:100%;text-align:left;padding:6px var(--s2);border-radius:var(--r);color:var(--soft);transition:background var(--t),color var(--t)}
 .crow:hover{background:var(--plate)}
 .crow.on{background:var(--plate);color:var(--ink);font-weight:600}
@@ -399,12 +396,6 @@ input{font:inherit;color:inherit}
 
 /* profile */
 .prof{flex:1;min-width:0;overflow-y:auto;background:var(--paper)}
-/* #20 profile POV switcher (a mockup control to preview owner/public/mutual) */
-.povswitch{display:flex;align-items:center;gap:6px;padding:8px var(--s5);background:var(--surface);font-size:var(--fs-xs)}
-.povswitch .pl{color:var(--muted);margin-right:2px}
-.povswitch button{padding:5px 12px;border-radius:var(--r);color:var(--soft);background:var(--paper)}
-.povswitch button.on{background:var(--ink);color:var(--on-ink)}
-.povnote{align-self:center;font-size:var(--fs-xs);color:var(--muted);margin-left:6px}
 /* #22 user-settings rows + a SQUARE toggle (round is avatars+dots only) */
 .setrow{display:flex;align-items:center;gap:var(--s3);padding:11px 0;box-shadow:inset 0 -1px 0 var(--line)}
 .setrow .cl{flex:1;min-width:0}
@@ -1917,7 +1908,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
 
   <div class="stage">
     <!-- WORKSPACE -->
-    <div class="screen" data-screen="workspace" data-pov="member">
+    <div class="screen" data-screen="workspace">
       <nav class="chan">
         <div class="srvhd" id="srvHdr" title="Server menu">
           <div class="srvcover"></div>
@@ -2082,8 +2073,6 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
       </main>
 
       <aside class="mem">
-        <!-- S1 — flips the whole workspace between how a member and an admin see it. -->
-        <div class="povswitch mempov" id="wsPovSwitch"><span class="pl">Viewing as</span><button class="on" data-wspov="member">Member</button><button data-wspov="admin">Admin</button></div>
         <div class="memg">
           <div class="lb">Admins, 2</div>
           <div class="mrow"><div class="av sm">JX<span class="pr"></span></div><div class="info"><div class="nm"><span class="u m5">jax</span></div><div class="doing">arranging, Ableton</div></div></div>
@@ -2350,34 +2339,25 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
 
     <!-- PROFILE -->
     <div class="screen" data-screen="profile" hidden>
-      <div class="prof" data-pov="owner">
-        <!-- #20 profile from three POVs — owner (self), public (stranger),
-             mutual (a friend). The switch reconfigures actions + which shelves show. -->
-        <div class="povswitch" id="povSwitch">
-          <span class="pl">Viewing as</span>
-          <button class="on" data-pov="owner">Owner</button>
-          <button data-pov="public">Public</button>
-          <button data-pov="mutual">Mutual</button>
-        </div>
+      <div class="prof">
+        <!-- The owner's self-view. How the same profile reads to a stranger (public
+             shelf only, Add friend) or a friend (mutuals-only posts, Message) is the
+             POV rule in CANON §C.10 — not an in-product toggle. -->
         <div class="phero">
           <div class="top">
             <div class="av lg">RA</div>
             <div class="who"><h1>rae okonkwo</h1><div class="handle">@rae</div>
               <div class="bio">writer and rapper. building the Late Bloom LP with a few people.</div></div>
             <div class="actions">
-              <button class="btn primary" data-pov-only="owner"><svg class="ic sm"><use href="#i-pen"/></svg>Edit profile</button>
-              <button class="btn primary" data-pov-only="public"><svg class="ic sm"><use href="#i-user"/></svg>Add friend</button>
-              <button class="btn" data-pov-only="mutual"><svg class="ic sm"><use href="#i-check"/></svg>Friends</button>
-              <button class="btn" data-pov-only="mutual"><svg class="ic sm"><use href="#i-mail"/></svg>Message</button>
+              <button class="btn primary"><svg class="ic sm"><use href="#i-pen"/></svg>Edit profile</button>
             </div>
           </div>
         </div>
         <div class="ptabs2">
           <button class="ptab2 on"><svg class="ic"><use href="#i-globe"/></svg>Public<span class="ct">18</span></button>
-          <button class="ptab2" data-pov-only="owner"><svg class="ic"><use href="#i-server"/></svg>Server<span class="ct">9</span></button>
-          <button class="ptab2" data-pov-only="owner"><svg class="ic"><use href="#i-lock"/></svg>Private<span class="ct">24</span></button>
-          <button class="ptab2" data-pov-only="owner" data-s="usersettings"><svg class="ic"><use href="#i-settings"/></svg>Settings</button>
-          <span class="povnote" data-pov-only="mutual">Friends also see mutuals-only posts</span>
+          <button class="ptab2"><svg class="ic"><use href="#i-server"/></svg>Server<span class="ct">9</span></button>
+          <button class="ptab2"><svg class="ic"><use href="#i-lock"/></svg>Private<span class="ct">24</span></button>
+          <button class="ptab2" data-s="usersettings"><svg class="ic"><use href="#i-settings"/></svg>Settings</button>
           <button class="iconbtn" style="margin-left:auto" title="Search this profile"><svg class="ic"><use href="#i-search"/></svg></button>
         </div>
         <div class="pbody">
@@ -2466,7 +2446,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
           <div class="frrow"><div class="av sm">DV</div><div class="frbd"><b class="m3">dev</b> <span class="mut">@devmakesbeats · in FL Studio</span></div><button class="iconbtn" title="Message"><svg class="ic sm"><use href="#i-mail"/></svg></button><button class="iconbtn" title="More"><svg class="ic sm"><use href="#i-more"/></svg></button></div>
           <div class="frrow"><div class="av sm">RA</div><div class="frbd"><b class="m1">rae</b> <span class="mut">@raeokonkwo · recording</span></div><button class="iconbtn" title="Message"><svg class="ic sm"><use href="#i-mail"/></svg></button><button class="iconbtn" title="More"><svg class="ic sm"><use href="#i-more"/></svg></button></div>
           <div class="frrow"><div class="av sm">MI</div><div class="frbd"><b class="m4">mira</b> <span class="mut">@miracuts · offline</span></div><button class="iconbtn" title="Message"><svg class="ic sm"><use href="#i-mail"/></svg></button><button class="iconbtn" title="More"><svg class="ic sm"><use href="#i-more"/></svg></button></div>
-          <div class="frrow"><div class="av sm">TM</div><div class="frbd"><b class="m5">tomo</b> <span class="mut">@tomomix · reviewing beat v3</span></div><button class="iconbtn" title="Message"><svg class="ic sm"><use href="#i-mail"/></svg></button><button class="iconbtn" title="More"><svg class="ic sm"><use href="#i-more"/></svg></button></div>
+          <div class="frrow"><div class="av sm">TM</div><div class="frbd"><b class="m5">tomo</b> <span class="mut">@tomomix · reviewing the beat</span></div><button class="iconbtn" title="Message"><svg class="ic sm"><use href="#i-mail"/></svg></button><button class="iconbtn" title="More"><svg class="ic sm"><use href="#i-more"/></svg></button></div>
         </div>
       </div>
     </div>
@@ -3002,10 +2982,9 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
     <div class="ppsec"><span class="l">WORKING ON</span><span class="v">a beat, in FL Studio</span></div>
     <div class="ppsec"><span class="l">MUTUAL SERVERS</span><span class="v">Late Bloom LP, beat swap</span></div>
     <div class="ppacts"><button class="btn primary"><svg class="ic sm"><use href="#i-mail"/></svg>Message</button><button class="btn"><svg class="ic sm"><use href="#i-user"/></svg>Add friend</button></div>
-    <!-- Admin actions: only rendered when the viewer can moderate this server
-         (is_server_admin). Hidden by default; the workspace admin POV reveals it,
-         mirroring the profile-POV switcher (#20). -->
-    <div class="ppadmin" data-admin-only hidden>
+    <!-- Admin actions: shown in the reference; live, they render only when the
+         viewer can moderate this server (is_server_admin) — the RLS gate, not a POV toggle. -->
+    <div class="ppadmin" data-admin-only>
       <div class="ppadl">Admin</div>
       <button class="arow"><svg class="ic sm"><use href="#i-users"/></svg>Roles<svg class="ic sm chev"><use href="#i-chev"/></svg></button>
       <button class="arow"><svg class="ic sm"><use href="#i-clock"/></svg>Timeout</button>
@@ -3271,7 +3250,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
 </div>
 
 <!-- B4 channel context menu (right-click a channel row) — mark-read (B8), copy
-     link, invite, per-channel notification level (S7), edit/delete (admin POV). -->
+     link, invite, per-channel notification level (S7), edit/delete (admins only). -->
 <div class="menu" id="channelMenu"><div class="mlabel" id="chanMenuName"># beats</div>
   <button id="cmMarkRead"><svg class="ic sm"><use href="#i-check"/></svg>Mark as read</button>
   <button id="cmCopyLink"><svg class="ic sm"><use href="#i-link"/></svg>Copy link</button>
@@ -3282,9 +3261,9 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   <button class="notlv" data-lv="mentions"><svg class="ic sm nchk"><use href="#i-check"/></svg>Only @mentions</button>
   <button class="notlv" data-lv="none"><svg class="ic sm nchk"><use href="#i-check"/></svg>Nothing</button>
   <button id="cmMute"><svg class="ic sm"><use href="#i-mute"/></svg>Mute for a while…</button>
-  <div class="sep" data-admin-only hidden></div>
-  <button id="cmEditChannel" data-admin-only hidden><svg class="ic sm"><use href="#i-settings"/></svg>Edit channel</button>
-  <button class="danger" data-admin-only hidden><svg class="ic sm"><use href="#i-trash"/></svg>Delete channel</button></div>
+  <div class="sep" data-admin-only></div>
+  <button id="cmEditChannel" data-admin-only><svg class="ic sm"><use href="#i-settings"/></svg>Edit channel</button>
+  <button class="danger" data-admin-only><svg class="ic sm"><use href="#i-trash"/></svg>Delete channel</button></div>
 
 <!-- B5 edit-channel modal (rename + topic) -->
 <div class="scrim" id="editChanScrim" hidden></div>
@@ -3506,17 +3485,6 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   document.querySelectorAll('.hoveracts [title="More"]').forEach(function(b){b.addEventListener('click',function(e){e.stopPropagation();toggleMenu(msgMenu,b,true);});});
   document.addEventListener('click',function(e){if(!e.target.closest('.menu'))closeMenus();});
 
-  // #20 profile POV switcher: reconfigure actions + which shelves show
-  var povSwitch=document.getElementById('povSwitch');
-  if(povSwitch){var prof=povSwitch.closest('.prof');
-    function applyPov(p){prof.setAttribute('data-pov',p);
-      prof.querySelectorAll('[data-pov-only]').forEach(function(el){el.hidden=el.getAttribute('data-pov-only')!==p;});
-      povSwitch.querySelectorAll('button').forEach(function(x){x.classList.toggle('on',x.dataset.pov===p);});
-      // a visitor lands on the Public shelf; owner-only tabs are gone anyway
-      var pub=prof.querySelector('.ptab2');if(pub){prof.querySelectorAll('.ptab2').forEach(function(t){t.classList.remove('on');});pub.classList.add('on');}}
-    povSwitch.querySelectorAll('button').forEach(function(b){b.addEventListener('click',function(){applyPov(b.dataset.pov);});});
-    applyPov('owner');
-  }
 
   // #44 storage-upgrade modal open/close (from the meter "manage" and the #46 banner)
   var storageScrim=document.getElementById('storageScrim'),storageModal=document.getElementById('storageModal');
@@ -3627,7 +3595,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
       var nm=(r.querySelector('.nm')||{}).textContent||'channel';
       r.addEventListener('contextmenu',function(e){e.preventDefault();if(chanMenuName)chanMenuName.textContent='# '+nm;openMenuAt(channelMenu,e.clientX,e.clientY);});
     });
-    // the per-channel edit gear (admin POV) opens the edit-channel modal directly
+    // the per-channel edit gear (admins) opens the edit-channel modal directly
     document.querySelectorAll('.crow .cgear').forEach(function(g){g.addEventListener('click',function(e){e.stopPropagation();e.preventDefault();editChan.open();});});
     // notification-level select
     channelMenu.querySelectorAll('.notlv').forEach(function(o){o.addEventListener('click',function(e){e.stopPropagation();
@@ -3869,20 +3837,6 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   document.getElementById('profileCardBtn').addEventListener('click',function(e){e.stopPropagation();openPop(null);});
   document.addEventListener('click',function(e){if(!e.target.closest('#profilePop')&&!e.target.closest('.mrow'))closePop();});
   document.addEventListener('keydown',function(e){if(e.key==='Escape')closePop();});
-
-  // S1 — workspace admin POV. Flips the whole workspace screen so every
-  // admin-only affordance (create-channel +, per-channel gear, and the member
-  // popover's Kick/Ban block) appears at once. CSS gates most of it off the
-  // screen's data-pov; the popover lives outside the screen, so toggle its
-  // admin block here too.
-  var wsPov=document.getElementById('wsPovSwitch');
-  if(wsPov){var wsScreen=document.querySelector('.screen[data-screen="workspace"]');
-    function applyWsPov(p){wsScreen.setAttribute('data-pov',p);
-      wsPov.querySelectorAll('button').forEach(function(b){b.classList.toggle('on',b.dataset.wspov===p);});
-      document.querySelectorAll('#profilePop [data-admin-only], #channelMenu [data-admin-only]').forEach(function(el){el.hidden=(p!=='admin');});
-    }
-    wsPov.querySelectorAll('button').forEach(function(b){b.addEventListener('click',function(e){e.stopPropagation();applyWsPov(b.dataset.wspov);});});
-  }
 
   // Default to Workspace only when there's no deep-link hash; otherwise the
   // hash (used by gallery.html's per-screen iframes) decides the screen.
