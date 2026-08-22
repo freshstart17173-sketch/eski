@@ -29,7 +29,7 @@ to make that failure mode hard.
 
 Concretely, for the rebuild:
 
-- **Every colour comes from a token.** [`docs/design/styleguide.html`](docs/design/styleguide.html)
+- **Every colour comes from a token.** the [`eski-style`](.claude/skills/eski-style/SKILL.md) skill
   holds the values; a component references them and never carries a hex literal.
   The member-identity hue is the only colour, it is **server-scoped**, and it
   appears nowhere on a public profile or the Feed.
@@ -55,7 +55,7 @@ wins.**
 |---|---|---|
 | [`docs/CANON.md`](docs/CANON.md) | The single source of truth — contract *and* plan. §A vocabulary · §B roles/permissions → the RLS/RPC that enforces them · §C the per-screen UI element registry (behaviour → database → desktop/mobile) · §D added scope (granular roles, dynamic-slider storage, the placement model, utility screens) · §E the backend & data model (tables + RLS, RPCs, triggers, Realtime, indexes, migration order) · §F end-to-end workflows · §G open owner decisions. | **Top. CANON wins over everything, including this file.** |
 | [`docs/design/gallery.html`](docs/design/gallery.html) | The pixels. ~21 screens embedded live, plus every dialog/menu/modal as a standalone panel, plus the member palette and a build-status inventory. The visual law. | Wins over prose on anything visual. |
-| [`docs/design/styleguide.html`](docs/design/styleguide.html) | The token & component source of truth — the values the built pages consume. `_fonts.css` holds the extracted Jost faces. | The only home for raw design values. |
+| the [`eski-style`](.claude/skills/eski-style/SKILL.md) skill | The token & component source of truth — the values the built pages consume. `_fonts.css` holds the extracted Jost faces. | The only home for raw design values. |
 | [`docs/CODEGEN.md`](docs/CODEGEN.md) | The build plan: the app sliced into ~110 individually-testable micro-prompts across nine phases, each tagged `[BE]`/`[UI]`/`[GL]` with a definition-of-done, plus the token budget. Runnable prompts in [`docs/prompts/`](docs/prompts/). | How the above becomes code. |
 
 [`docs/EDGECASES.md`](docs/EDGECASES.md) is the context-crossover audit that fed
@@ -133,15 +133,15 @@ PUT — is unchanged.
 
 ### The front end
 
-- **The design system is authored, the app is not.** `styleguide.html` is the
+- **The design system is authored, the app is not.** the `eski-style` skill is the
   token/primitive source; `gallery.html` is every screen and dialog. The build
-  (P3 in `CODEGEN.md`) turns the styleguide primitives into components **once**,
+  (P3 in `CODEGEN.md`) turns the eski-style primitives into components **once**,
   then assembles screens from them — a screen that reinvents a button is a
   rejected prompt.
 - **Mobile is its own layout**, not a squeezed desktop: the three-pane shell
   (server rail · channel column · main · members rail) collapses to one pane +
   bottom tabs (CANON §C.2).
-- **Durable visual invariants** (CANON / styleguide, non-negotiable): radius
+- **Durable visual invariants** (CANON / eski-style skill, non-negotiable): radius
   `--r` (3px) on chrome and media stays square; round is avatars and presence
   dots only; square icon and close buttons (`.iconbtn`, `#i-x`); modals darken
   the background with a scrim and carry no drop shadow; surfaces separate by
@@ -156,8 +156,8 @@ PUT — is unchanged.
 |---|---|
 | A concept's name | `docs/CANON.md` §A first — then everywhere, identically |
 | Who may do what | the RLS policy / RPC (CANON §B, §D.1) first; the UI signpost second |
-| What a screen or dialog looks like | `docs/design/gallery.html` (and the token in `styleguide.html`) |
-| A design value — colour, spacing, type, radius | `styleguide.html`; never a literal in a component |
+| What a screen or dialog looks like | `docs/design/gallery.html` (and the token in the `eski-style` skill) |
+| A design value — colour, spacing, type, radius | the `eski-style` skill; never a literal in a component |
 | The shape of a feature or the data model | `docs/CANON.md` (§C UI registry, §E data model) |
 | How the build is sliced or sequenced | `docs/CODEGEN.md` and `docs/prompts/` |
 | Anything at all | keep the docs consistent — never let the code become a third source of truth |

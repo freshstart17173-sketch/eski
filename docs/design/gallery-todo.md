@@ -13,10 +13,11 @@ built or folded in below). Brand art lives separately in
 
 Worked out in [`sandbox.html`](sandbox.html) and captured as the
 [`eski-style`](../../.claude/skills/eski-style/SKILL.md) skill (tokens, buttons,
-hairlines, per-screen registry, porting order). **PORTED to `gallery.html` +
-`styleguide.html` tokens (2026-08-22)** — tokens, button archetypes, hairline
-dialogs, and the details pane are live in the gallery; verified by screenshot
-(workspace, explorer, feed, settings, detail pane, dialog) in both themes.
+hairlines, per-screen registry, porting order). **PORTED into `gallery.html`
+(2026-08-22)** — tokens, button archetypes, hairline dialogs, and the details
+pane are live in the gallery; verified by screenshot (workspace, explorer, feed,
+settings, detail pane, dialog) in both themes. The old `styleguide.html` is
+retired — the `eski-style` skill is now the token/component source of truth.
 
 Detail-pane refinements the owner called out — done in sandbox **and** carried
 into the gallery port:
@@ -31,9 +32,8 @@ into the gallery port:
 - [x] **Type cards fill the media area** — unpreviewable / audio / folder edge-to-edge.
 - [x] **Contributors/collaborators removed** — dropped from details pane; CANON §A marked CUT.
 
-Remaining port polish (optional, next pass): sweep the styleguide.html component
-demos to the new button/dialog CSS (tokens already ported); audit round count
-badges vs the square rule; convert more secondary buttons to `.ghost` text.
+Remaining port polish (optional, next pass): audit round count badges vs the
+square rule; convert more secondary buttons to `.ghost` text.
 
 Standing decisions applied in this redesign (don't undo): **contributors/
 collaborators removed**; monochrome + one accent (member hue, server-scoped);
@@ -66,11 +66,11 @@ scrim, no shadow; hairlines inset, never full-width.
   form. The desktop `gallery.html` is now mobile-free (mobile chrome removed
   2026-08-22); mobile is its own deliverable, not a responsive pass on the
   desktop file.
-- [ ] **Styling sandbox** ([`sandbox.html`](sandbox.html), added 2026-08-22) — a
+- [x] **Styling sandbox** ([`sandbox.html`](sandbox.html), added 2026-08-22) — a
   standalone page with **its own copy of the tokens** holding a few dialogs/modals,
   for reworking styling without touching the whole gallery. Once a direction is
-  settled here, port the token/component changes back into `styleguide.html` +
-  `gallery.html`.
+  settled here, port the token/component changes into `gallery.html` and record
+  them in the [`eski-style`](../../.claude/skills/eski-style/SKILL.md) skill.
 
 ## Execution order (by token cost, cheapest first)
 

@@ -26,7 +26,7 @@ Three sources, in order:
 | File | What it is |
 |---|---|
 | [`docs/CANON.md`](docs/CANON.md) | **The single source of truth — the contract *and* the plan.** §A canonical vocabulary, §B roles & permissions mapped to the RLS/RPC that enforces them, §C the per-screen UI element registry (behaviour → database → desktop/mobile), §D added scope (granular roles, dynamic-slider storage, the placement model, utility screens), §E the backend & data model (tables + RLS, RPCs, Realtime, migration order), §F the two end-to-end workflows, §G open owner decisions. **When anything disagrees with CANON, CANON wins.** |
-| [`docs/design/`](docs/design/) | The design sources. **`gallery.html` is law** — every screen embedded live, plus every dialog, menu and modal as a standalone panel, plus the member-colour palette; it's the critique surface. `styleguide.html` is the token & component source of truth. `_fonts.css` is the extracted Jost faces. |
+| [`docs/design/`](docs/design/) | The design sources. **`gallery.html` is law** — every screen embedded live, plus every dialog, menu and modal as a standalone panel, plus the member-colour palette; it's the critique surface. the `eski-style` skill is the token & component source of truth. `_fonts.css` is the extracted Jost faces. |
 | [`docs/CODEGEN.md`](docs/CODEGEN.md) | The build plan: the whole app sliced into ~110 individually-testable micro-prompts across nine phases (scaffold → schema/RLS → RPCs → primitives → shell → content → DMs/notifs → admin → utility), each tagged `[BE]`/`[UI]`/`[GL]` with its own definition-of-done, plus the token budget. The runnable prompts live in [`docs/prompts/`](docs/prompts/). |
 
 [`docs/EDGECASES.md`](docs/EDGECASES.md) is the context-crossover audit that fed
@@ -55,7 +55,7 @@ element quietly breaking an established pattern. So:
   collapses to one pane + bottom tabs (CANON §C.2).
 
 Full text of these lives in [`CLAUDE.md`](CLAUDE.md); the token & component values
-they reference live in [`docs/design/styleguide.html`](docs/design/styleguide.html).
+they reference live in the [`eski-style`](.claude/skills/eski-style/SKILL.md) skill.
 
 ---
 
@@ -79,7 +79,7 @@ they reference live in [`docs/design/styleguide.html`](docs/design/styleguide.ht
 ## What's in the repo
 
 - **`docs/`** — the live work: `CANON.md`, `CODEGEN.md`,
-  `EDGECASES.md`, `prompts/`, and `design/` (the gallery, styleguide, fonts).
+  `EDGECASES.md`, `prompts/`, and `design/` (the gallery, sandbox, fonts).
 - **The one existing serverless function** — [`api/sign.mjs`](api/sign.mjs), the R2
   presigning signer, carried into the collab build unchanged. Its upload-quota
   migration is `schema-quota.sql`; the vendored Supabase client it boots is

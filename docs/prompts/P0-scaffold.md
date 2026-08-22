@@ -61,7 +61,7 @@ the anon key is referenced client-side — never the secret.
 ### P0.3 [GL] — Design tokens + theme system
 
 **CONTEXT.** The token and primitive source of truth is
-[`../design/styleguide.html`](../design/styleguide.html); the values also live at
+the [`eski-style`](../../.claude/skills/eski-style/SKILL.md) skill; the values also live at
 the top of [`../design/gallery.html`](../design/gallery.html) as `:root` custom
 properties. Theme is three-state (explicit `data-theme="light"`/`"dark"` on the
 root, or system via `prefers-color-scheme`).
@@ -84,7 +84,7 @@ flash) and toggles light → dark → system.
 **DONE WHEN.** `getComputedStyle(document.documentElement).getPropertyValue('--r')`
 is `3px`; `--m1`..`--m30` all resolve; the toggle flips `--ink`/`--paper` and back;
 nothing paints a default theme then repaints (theme is stamped before first
-paint). Copy the exact token values from the styleguide — do not invent any.
+paint). Copy the exact token values from the `eski-style` skill — do not invent any.
 
 ---
 

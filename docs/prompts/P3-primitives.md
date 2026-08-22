@@ -2,11 +2,11 @@
 
 15 UI prompts. Build each primitive **once** (a CSS class or set + a small JS
 render helper — **not** a React component; see the [README](README.md) stack
-note), from [`../design/styleguide.html`](../design/styleguide.html), reused by
+note), from the [`eski-style`](../../.claude/skills/eski-style/SKILL.md) skill, reused by
 every screen. A screen prompt that reinvents one of these is a rejected prompt.
-Each is **done when** it matches its styleguide row in **both themes**, covers all
+Each is **done when** it matches its eski-style spec in **both themes**, covers all
 listed states, and uses only tokens (no hex). The operator pastes the matching
-styleguide/gallery CSS excerpt into the prompt. Shared guardrails: see
+eski-style/gallery CSS excerpt into the prompt. Shared guardrails: see
 [README](README.md).
 
 Each prompt fills: what it is · variants/options · states · the class it owns.
@@ -17,8 +17,8 @@ Each prompt fills: what it is · variants/options · states · the class it owns
 ### P3.1 [UI] — `Button`
 Variants: `primary` (ink fill, on-ink text), `default` (surface), `sm`, `danger`.
 Options: `icon?`, `onClick`, `disabled`. States: default/hover/active/disabled/loading.
-Owns `.btn` (+ `.primary`/`.sm`/`.danger`). **DONE:** all four variants match the
-styleguide; disabled is non-interactive; an icon+label lays out with the icon
+Owns `.btn` (+ `.primary`/`.sm`/`.danger`/`.ghost`/`.outline`). **DONE:** all variants match
+the eski-style skill; disabled is non-interactive; an icon+label lays out with the icon
 leading.
 
 ### P3.2 [UI] — `IconButton` + `CloseButton`
@@ -61,9 +61,9 @@ default, removable (× on hover). Owns `.tag`, `.uchip`. **DONE:** tag is neutra
 uchip shows the member dot+hue; removable variant exposes a square remove control.
 
 ### P3.8 [UI] — `Toggle`
-The switch (round knob is allowed — it's a control affordance, per styleguide).
+The switch (round knob is allowed — it's a control affordance, per the eski-style skill).
 Options: `on`, `onChange`, `disabled`. Owns `.tgl` (+ `.on`). **DONE:** on/off states
-animate; matches the styleguide; disabled is inert.
+animate; matches the eski-style skill; disabled is inert.
 
 ### P3.9 [UI] — `Checkbox`
 Square (`--r`) check box, `.cbx` (+ `.on` = ink fill with `#i-check`). Options:
@@ -88,7 +88,7 @@ count renders inline; keyboard-navigable.
 The visibility segmented control: Public (`#i-globe`) / Server (`#i-server`) /
 Private (`#i-lock`). Options: `value`, `onChange`, `options`. Owns `.seg`. **DONE:**
 one option active at a time; the **Server** option uses `#i-server` (not the
-members icon); matches the styleguide.
+members icon); matches the eski-style skill.
 
 ### P3.14 [UI] — `SelectPill` / `Dropdown`
 The pill-style selector (`.selpill`/`.selbtn`) that opens a `Menu`. Options: `label`,

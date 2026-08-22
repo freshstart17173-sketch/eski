@@ -31,8 +31,10 @@ Two things, in this order:
      every dialog, menu and modal as a standalone panel, and the member-colour
      palette. The measured target for what each screen looks like *and* the
      critique surface. Do not deviate from it without a reason.
-   - `styleguide.html` — the token & component source of truth (the values the
-     built pages consume); `_fonts.css` is the extracted Jost faces.
+   - **The [`eski-style`](.claude/skills/eski-style/SKILL.md) skill — the token &
+     component source of truth** (the are.na-monochrome design language; replaces
+     the retired `styleguide.html`). Load it before any styling work. `_fonts.css`
+     is the extracted Jost faces.
 
 ## Design rules (durable — enforce them, don't relitigate them)
 
@@ -76,4 +78,4 @@ fresh for this product, don't inherit the retired one.
 
 Comments explain **why**, especially why an obvious alternative is wrong — that
 is what stops the next pass from "simplifying" a deliberate choice back into a
-bug. Sentence case in prose; the UI's own case rules live in the style guide.
+bug. Sentence case in prose; the UI's own case rules live in the `eski-style` skill.

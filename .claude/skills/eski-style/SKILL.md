@@ -1,6 +1,6 @@
 ---
 name: eski-style
-description: The eski visual system and the procedure for porting it — the are.na-monochrome restyle worked out in docs/design/sandbox.html — into gallery.html, styleguide.html, or any new screen/panel built in them. Use whenever applying or changing eski styling: tokens, buttons, dialogs, cards, the details pane, colouring, hover/click states, or a whole screen. Carries the exact token values, the button archetypes, the hairline/scrim/background-step rules, the colouring rules, a per-screen registry, and the collision-safe porting order. Load it before touching any of those so the work matches the settled direction instead of freestyling.
+description: The eski visual system AND the token/component source of truth — the are.na-monochrome design language (worked out in docs/design/sandbox.html, ported into gallery.html). This skill replaces the retired styleguide.html: it is the only home for the raw design values. Use whenever applying or changing eski styling: tokens, buttons, dialogs, cards, the details pane, colouring, hover/click states, or a whole screen — or building a new screen/panel. Carries the exact token values, the button archetypes, the hairline/scrim/background-step rules, the colouring rules, a per-screen registry, and the collision-safe porting order. Load it before touching any of those so the work matches the settled direction instead of freestyling.
 ---
 
 # eski style — the system and how to port it
@@ -12,9 +12,11 @@ instead of grey bars. This skill is the contract — do not re-derive values or
 invent components; use what's here. When anything here disagrees with
 `docs/CANON.md`, CANON wins (it owns behaviour/data; this owns look).
 
-The canonical implementation is `sandbox.html`. **When porting, copy values from
-the sandbox, don't reinvent them.** styleguide.html holds the tokens; gallery.html
-holds the components; both consume the same names.
+**This skill is the source of truth** — the only home for the raw design values
+(the old `styleguide.html` is retired). `sandbox.html` is the live playground where
+a direction is prototyped; `gallery.html` is the LAW — every screen/dialog live,
+the critique surface. When applying or porting, **copy values from §1 below** (or
+from `gallery.html`, which now consumes them); don't reinvent them.
 
 ---
 
@@ -329,9 +331,8 @@ same primitives above; the notes flag what's easy to miss.
 
 ## 7. Porting procedure (order matters)
 
-1. **Tokens first.** Swap the `:root` + both dark blocks in `styleguide.html`, then
-   `gallery.html`, to §1. This shifts *every* screen at once (intended). Verify
-   the palette section renders.
+1. **Tokens first.** Swap the `:root` + both dark blocks in `gallery.html` (and any
+   new page) to §1. This shifts *every* screen at once (intended).
 2. **Global primitives.** Ensure the button reset (§3) exists; update `.btn`
    family, `.iconbtn`, `.field`, `.tag`, `.uchip` to §2/§4. Remove any old
    `button:active{transform}`/opacity press animation.
@@ -345,7 +346,7 @@ same primitives above; the notes flag what's easy to miss.
 6. **Verify at 1440, both themes, by screenshot.** Light and dark. Look for:
    blended surfaces, invisible dark-mode text, pills, full-width lines, tall
    buttons. Fix before moving on.
-7. **Reconcile docs.** Update CANON/styleguide/TODO for any decision applied
+7. **Reconcile docs.** Update CANON / this skill / TODO for any decision applied
    (e.g. contributors removed) so the next pass doesn't undo it.
 
 ---

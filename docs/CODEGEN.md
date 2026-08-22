@@ -43,7 +43,7 @@ component/state/dialog at a time, against the gallery. Each prompt is tagged:
 ```
 TITLE:      <phase>.<n> — <one thing>
 CONTEXT:    Stack = vanilla HTML+CSS+JS (no framework; see prompts/README). Tokens & primitives from
-            styleguide.html; this screen’s law is gallery.html panel "<name>".
+            the eski-style skill; this screen’s law is gallery.html panel "<name>".
 BUILD:      <the single unit — one component / one state / one dialog>
 PROPS/DATA: <exact inputs; which table/RPC/Realtime channel it reads or writes>
 STATES:     <every visual state to cover: default/hover/active/empty/loading/error/
@@ -94,7 +94,7 @@ precede their dialogs. Follow CANON §E.8 for the migration sub-order.
 | **P0** | Scaffold: app shell, Supabase client, token/CSS import, icon sprite | GL | App boots, tokens resolve, sprite renders |
 | **P1** | Schema + RLS (servers → messages → DMs → notifs → profiles → moderation → roles/storage) | BE | Every table has an allow+deny test that passes |
 | **P2** | RPCs + triggers (§E.3) + `has_perm`/`can_view_channel` (§D.1) | BE | Each RPC has a round-trip test |
-| **P3** | Design-system primitives (button, field, modal, menu, avatar, tag, chip, toggle, checkbox, bar, toast) | UI | Each matches its styleguide spec, both themes |
+| **P3** | Design-system primitives (button, field, modal, menu, avatar, tag, chip, toggle, checkbox, bar, toast) | UI | Each matches its eski-style spec, both themes |
 | **P4** | The 3-pane shell + Workspace states | UI+GL | Workspace renders live messages |
 | **P5** | Content screens: Feed, Explorer, Details, Profile, Upload | UI+GL | Cards render every media kind incl. type-cards |
 | ~~**P6**~~ | ~~Canvas suite~~ — **cut (beta)** | — | — |
@@ -116,7 +116,7 @@ line into the §0 template when you run it. Counts per phase are at the head.
   empty labelled screen; `?app=1#route` parity with the gallery preserved.*
 - **P0.2** — Supabase client + typed env, auth session provider, a `useSession`
   hook. *Done: anon boot works; a signed-in session exposes `uid`.*
-- **P0.3** — Import the design tokens & base CSS from `styleguide.html` as the
+- **P0.3** — Import the design tokens & base CSS from the `eski-style` skill (§1) + `gallery.html` as the
   global stylesheet; wire the theme-swap (`data-theme` + `prefers-color-scheme`).
   *Done: `--r`, `--m1..30`, `--ink`, surfaces all resolve in both themes.*
 - **P0.4** — Mount the SVG icon sprite (`#i-*`) once; a `<Icon name>` wrapper.
@@ -189,13 +189,13 @@ when the gate fails.*
 
 ### P3 — Design-system primitives · ~14 prompts, all UI
 
-Build each **once**, from the styleguide, reused everywhere. `Button` (primary/
+Build each **once**, from the `eski-style` skill, reused everywhere. `Button` (primary/
 default/sm/danger/icon) · `IconButton` + `CloseButton` (square, `#i-x`) ·
 `Field` (the one `--line2` border) · `Modal` (scrim, no shadow) · `Menu` +
 `MenuItem` + `.mlabel`/`.sep` · `Avatar` (round) + `PresenceDot` · `Tag`/`Chip`
 (server-hue `uchip`) · `Toggle` · `Checkbox` (`.cbx`) · `Bar` (usage) · `Toast` ·
 `Tabs` · `SegmentedControl` (visibility) · `Dropdown`/`SelectPill`. *Each done
-when: matches its styleguide row in both themes, all states, and uses only
+when: matches its `eski-style` spec in both themes, all states, and uses only
 tokens.*
 
 ### P4 — Shell + Workspace · ~13 prompts, UI+GL
@@ -301,7 +301,7 @@ To calibrate the detail level a runnable prompt carries.
 
 ```
 TITLE:   P5.2 — Type-card renderer for non-previewable files
-CONTEXT: Stack vanilla HTML+CSS+JS (no framework). Tokens/primitives from styleguide.html. Law =
+CONTEXT: Stack vanilla HTML+CSS+JS (no framework). Tokens/primitives from the eski-style skill. Law =
          gallery.html "type card" (feed + details `.dtype`); behaviour = CANON
          §D.6.2. Reuse the P0 icon() helper and the square-cell grid unit.
 BUILD:   The type card only — a square cell that stands in for a file with no

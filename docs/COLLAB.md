@@ -30,7 +30,7 @@ DMs, upload, group settings, create/join, notifications, search, quick switcher,
 thread view, channel pins, and profile popouts. *(The mockup still contains the
 now-cut review canvas and kanban board — beta cut 2026-08-18e; ignore them.)* Its
 tokens and components are documented 1:1 in
-[`docs/design/styleguide.html`](design/styleguide.html) (§8). Read this doc next
+the [`eski-style`](../.claude/skills/eski-style/SKILL.md) skill. Read this doc next
 to both.
 
 It's grounded in the current contract (`CANON.md`, `ARCHITECTURE.md`, the design
@@ -330,7 +330,7 @@ signpost** (`ARCHITECTURE.md`).
 ## 3. Screens
 
 The main screens are the mockup: [`docs/design/gallery.html`](design/gallery.html).
-Design language is `docs/design/styleguide.html`: black/white/grey, surfaces separated
+Design language is the [`eski-style`](../.claude/skills/eski-style/SKILL.md) skill: black/white/grey, surfaces separated
 by background step (no borders, no hairline dividers), "on" is an ink fill,
 sentence case throughout, monochrome SVG icons, no likes. The only colour is a
 member's per-group identity colour (F12a). Interactive fields carry a visible
@@ -674,10 +674,10 @@ Add the relevant tables to the `supabase_realtime` publication.
 ## 8. Design tokens
 
 The mockup's tokens, and the live source of truth, are in
-[`docs/design/styleguide.html`](design/styleguide.html), a self-contained page
+the [`eski-style`](../.claude/skills/eski-style/SKILL.md) skill
 that renders every token and component **1:1 with the mockup** (same CSS, same
 embedded Jost, a light/dark toggle). When the live pages are built they consume
-these exact values; the style guide is the only home for raw design values.
+these exact values; the `eski-style` skill is the only home for raw design values.
 
 **Grounds (light → dark).** `--paper` #FCFCFC→#0E0E0E · `--surface` #F1F1F1→#181818
 · `--plate` #E7E7E7→#232323 · `--paper1` #E4E4E4→#242424 · `--railbg` #E6E6E6→#080808

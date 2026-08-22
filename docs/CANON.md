@@ -2,7 +2,7 @@
 
 **Status: planning. The single source of truth for the code-generation hand-off.**
 Where the mockup ([`design/gallery.html`](design/gallery.html)) is the picture
-and the style guide is the tokens, this file is the *contract and the plan*: one
+and the `eski-style` skill is the tokens, this file is the *contract and the plan*: one
 vocabulary, one permission model, one registry of every functional UI element
 (behaviour → database → responsive layout), **and the backend it all runs
 against** (schema, RPCs, Realtime, migration order). When a codegen prompt and
@@ -185,7 +185,7 @@ colour is a legibility aid, **not a uniqueness guarantee** at large scale — a
 30-plus-person server will see a repeat, and that's acceptable (Discord itself
 colours by *role*, not identity; we colour by identity and simply widen the
 pool). The exact 30 hex pairs are a design deliverable — proposed in
-`gallery.html` for sign-off, then written into `styleguide.html` tokens.
+`gallery.html` for sign-off, then recorded in the `eski-style` skill (tokens).
 
 Kill: "role colour" (colour is identity, not role), fixed six-colour
 assumptions anywhere in copy or schema.
@@ -324,7 +324,7 @@ Each element row answers four questions:
 
 Component names (Button, Icon button, Select, Field, Tag, Filter chip, Member
 chip, Role chip, Reaction pill, Avatar, Visibility marker, Card, Menu)
-are the ones in [`styleguide.html`](design/styleguide.html) §8 — the registry
+are the ones in the [`eski-style`](../.claude/skills/eski-style/SKILL.md) skill — the registry
 references them, it doesn't redraw them.
 
 ### C.2 Global responsive contract (applies to every screen)
@@ -354,7 +354,7 @@ so a scrim-backed modal reads the same at 1440px as at 2560px. This is the
 desktop measure the built pages target; below it the panes flex down to the
 breakpoints, and mobile collapses to one pane per C.2.
 
-Breakpoints (to confirm against the style guide): **≥1100px** full four-pane ·
+Breakpoints (to confirm against the `eski-style` skill): **≥1100px** full four-pane ·
 **720–1099px** collapse members rail to an icon · **<720px** single-pane +
 bottom tabs. Every element row below only notes mobile behaviour where it
 differs from this contract.
@@ -1409,4 +1409,4 @@ Genuine build-vs-buy or policy calls still waiting on a human (design/history in
 - **DMCA agent registration** and **Supabase region** — load-bearing before launch.
 - **Ratify the permission-flag set** (§D.1) — the proposed flags are marked ⚑ratify.
 - **Member-colour palette** — the 30 hex pairs are a design deliverable to sign off
-  in `gallery.html`, then write into `styleguide.html` tokens (§A.10).
+  in `gallery.html`, then record in the `eski-style` skill (tokens, §A.10).
