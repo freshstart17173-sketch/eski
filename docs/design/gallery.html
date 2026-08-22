@@ -3410,7 +3410,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   <button id="smNewChannel"><svg class="ic sm"><use href="#i-hash"/></svg>Create channel</button>
   <button id="smNewCategory"><svg class="ic sm"><use href="#i-folder"/></svg>Create category</button>
   <button data-s="settings"><svg class="ic sm"><use href="#i-settings"/></svg>Server settings</button>
-  <button><svg class="ic sm"><use href="#i-bell"/></svg>Notification settings</button>
+  <button id="smNotif"><svg class="ic sm"><use href="#i-bell"/></svg>Notification settings</button>
   <button id="smEditProfile"><svg class="ic sm"><use href="#i-pen"/></svg>Edit server profile</button>
   <div class="sep"></div>
   <button class="danger" id="smLeave"><svg class="ic sm"><use href="#i-leave"/></svg>Leave server</button></div>
@@ -3776,6 +3776,27 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
     <div class="field"><input id="delSrvInput" placeholder="Late Bloom LP"></div>
   </div>
   <div class="ufoot"><button class="btn" id="delSrvCancel">Cancel</button><button class="btn danger" id="delSrvConfirm" disabled>Delete forever</button></div>
+</div>
+
+<!-- Server notification settings — from the server menu "Notification settings".
+     The per-server default level + mute-until (S7); per-channel levels live in the
+     channel menu and override this. Writes `server_prefs(user, level, muted_until,
+     suppress_everyone)`. -->
+<div class="scrim" id="srvNotifScrim" hidden></div>
+<div class="umodal" id="srvNotifModal" hidden style="width:min(440px,95vw)">
+  <div class="uhd"><b>Notifications · Late Bloom LP</b><button class="iconbtn" id="srvNotifClose"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
+  <div class="ubody">
+    <label class="ulab">Default for this server <span style="font-weight:400;color:var(--muted)">— channels can override</span></label>
+    <div class="repopts" id="srvNotifLevels">
+      <button class="repopt on"><span class="rdot"></span>All messages</button>
+      <button class="repopt"><span class="rdot"></span>Only @mentions</button>
+      <button class="repopt"><span class="rdot"></span>Nothing</button>
+    </div>
+    <label class="setrow" id="srvSuppress" style="cursor:pointer"><div class="cl"><b>Suppress @everyone &amp; @here</b><small>Don't notify me for server-wide pings</small></div><span class="tog"><i></i></span></label>
+    <label class="ulab">Mute this server</label>
+    <div class="seg" id="srvMuteSeg"><div class="o on">Off</div><div class="o">15m</div><div class="o">1h</div><div class="o">8h</div><div class="o">24h</div></div>
+  </div>
+  <div class="ufoot"><button class="btn" id="srvNotifCancel">Cancel</button><button class="btn primary" id="srvNotifSave">Save</button></div>
 </div>
 
 <!-- #39 Share dialog (Google-Drive style) / #61 update a post's visibility -->
@@ -4144,6 +4165,21 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
 
   // Server-menu shortcut: "Edit server profile" → Settings → General
   var smEditProfile=document.getElementById('smEditProfile');if(smEditProfile)smEditProfile.addEventListener('click',function(ev){ev.stopPropagation();closeMenus();gotoSettings('general');});
+
+  // Server notification settings — server menu "Notification settings" (S7, per-server)
+  var srvNotif=opener('srvNotifScrim','srvNotifModal');
+  var smNotif=document.getElementById('smNotif');if(smNotif)smNotif.addEventListener('click',function(ev){ev.stopPropagation();srvNotif.open();});
+  ['srvNotifClose','srvNotifCancel'].forEach(function(id){var e=document.getElementById(id);if(e)e.addEventListener('click',srvNotif.close);});
+  var srvNotifScrim=document.getElementById('srvNotifScrim');if(srvNotifScrim)srvNotifScrim.addEventListener('click',srvNotif.close);
+  document.querySelectorAll('#srvNotifLevels .repopt').forEach(function(o){o.addEventListener('click',function(){
+    document.querySelectorAll('#srvNotifLevels .repopt').forEach(function(x){x.classList.remove('on');});o.classList.add('on');});});
+  document.querySelectorAll('#srvMuteSeg .o').forEach(function(o){o.addEventListener('click',function(){
+    document.querySelectorAll('#srvMuteSeg .o').forEach(function(x){x.classList.remove('on');});o.classList.add('on');});});
+  var srvSuppress=document.getElementById('srvSuppress');if(srvSuppress)srvSuppress.addEventListener('click',function(e){e.preventDefault();var t=srvSuppress.querySelector('.tog');if(t)t.classList.toggle('on');});
+  var srvNotifSave=document.getElementById('srvNotifSave');if(srvNotifSave)srvNotifSave.addEventListener('click',function(){srvNotif.close();if(typeof toast==='function')toast('Notification settings saved');});
+
+  // Move-picker "New folder" — no dead buttons (#45): give feedback
+  var moveNewFolder=document.getElementById('moveNewFolder');if(moveNewFolder)moveNewFolder.addEventListener('click',function(){if(typeof toast==='function')toast('Name your new folder');});
 
   // B4 channel context menu + B5 edit-channel + B3 create-category
   var channelMenu=document.getElementById('channelMenu'),chanMenuName=document.getElementById('chanMenuName');
@@ -4637,6 +4673,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
     ['Messages','Friend requests surface','requests','friendships','t'],
     ['Notifications','Row actions + inline reply','on a row','messages/comments','m'],
     ['Notifications','Filter tabs + mark all read','header','notifications','m'],
+    ['Notifications','Server notification settings (level / suppress / mute)','server menu','server_prefs','m'],
     ['Settings','Invite link create / revoke','Invites panel','server_invites','m'],
     ['Settings','Roles editor (perms matrix)','Roles panel','roles','a'],
     ['Settings','Assign roles to member (wired modal)','member popover Roles ▸ · Members role chip','member_roles','m'],

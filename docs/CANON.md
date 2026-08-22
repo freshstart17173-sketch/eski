@@ -464,6 +464,7 @@ network-lost (Realtime reconnecting banner).
 | **Assign roles** (§C.17) | member popover **Roles ▸** · Members-row role chip | checklist of roles (a member holds several); **@everyone** locked-on baseline · **Manage roles…** → §C.16 | W `member_roles` ← `set_member_roles`; gate `manage_roles` |
 | **Leave server** (confirm) | server menu **Leave server** | named consequence — loses channel/file access unless re-invited; personal-storage copies stay. Danger **Leave**. Owner must transfer ownership first (§B). | self-leave `member_of` |
 | **Delete server** (type-to-confirm) | Settings → General danger box · setnav **Delete server** | **owner only**; type the server name to enable **Delete forever**; removes every channel + its files (members keep personal-storage copies). | owner `delete_server` + `audit_log` |
+| **Server notification settings** (gallery S7) | server menu **Notification settings** | per-server default **level** (All / @mentions / Nothing) · **Suppress @everyone/@here** · **Mute** (Off / 15m / 1h / 8h / 24h). Per-channel levels (channel menu) override this. | W `server_prefs` (level, muted_until, suppress_everyone) ← `set_notif_level('server',…)` |
 
 The **Edit server profile** menu item is a shortcut into Settings → General (name /
 description / cover), not a separate modal. Timeout / Kick / Ban confirms are
@@ -1227,7 +1228,7 @@ Each row: purpose · columns · RLS summary. `uid()` = `(select auth.uid())`.
 | `friendships` | add-by-handle | `a_user, b_user, status in(pending,accepted,blocked), requested_by, pk(a_user,b_user)` ordered pair | either party |
 | `profiles` | account (name, handle, bio, status, presence) | `handle uniq, name, bio, avatar_key, status_emoji, status_text, status_expires_at, presence_state, tz, pronouns, links jsonb` | read: public; write: self |
 | `notifications` | the bell | `user_id, kind in(mention,comment,join,reaction,invite,friend), actor_id, server_id null, target_type, target_id, excerpt text, read_at` | owner only |
-| `server_prefs` | per-server notification pref (gallery S7/B15) | `user_id, server_id, level in(all,mentions,none) default all, muted_until timestamptz null, pk(user_id,server_id)` | self |
+| `server_prefs` | per-server notification pref (gallery S7/B15) | `user_id, server_id, level in(all,mentions,none) default all, muted_until timestamptz null, suppress_everyone bool default false, pk(user_id,server_id)` — `suppress_everyone` drops @everyone/@here pings without silencing the whole server | self |
 | `channel_prefs` | per-channel notification pref (gallery S7/B4/B7) | `user_id, channel_id, level in(all,mentions,none,default) default default, muted_until timestamptz null, pk(user_id,channel_id)` — `default` inherits the server pref; drives the channel-column "hide muted" toggle | self |
 
 **Works, files, and storage**

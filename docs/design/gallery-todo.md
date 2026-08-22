@@ -18,9 +18,16 @@ built or folded in below). Brand art lives separately in
 > **Leave-server confirm** and **Delete-server type-to-confirm** (server menu /
 > Settings → General; §C.4). Also: **Edit server profile** now routes to Settings →
 > General; the assign-roles role swatches were **squared** (round is avatars/dots
-> only). Verified by screenshot in both themes, wire-tested, no console errors;
-> inventory (⑤) statuses updated. Exploded-view standalone panels are **not** part
-> of this pass.
+> only). Batch 3: **Server notification settings** (server menu → Notification
+> settings — was dead; level / suppress-@everyone / mute; §C.4, adds
+> `server_prefs.suppress_everyone`). Verified by screenshot in both themes,
+> wire-tested, no console errors; inventory (⑤) statuses updated. Exploded-view
+> standalone panels are **not** part of this pass.
+>
+> **Still an unbuilt feature (noted, not a dead-entry-point dialog):**
+> **Crosspost to server** (details pane, inventory ⑤ 't') has no entry point at all
+> — it needs a defined trigger + the personal-work→server placement flow before a
+> surface can be drawn. Left for an owner call, not invented here.
 
 ## Style redesign — are.na monochrome (in progress, 2026-08-22)
 
