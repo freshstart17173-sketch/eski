@@ -12,14 +12,18 @@ gallery panel X", the operator pastes that panel's HTML/CSS excerpt from
 
 ## The stack (applies to every UI/GL prompt)
 
-**Vanilla HTML + CSS + JavaScript. No framework, no JSX, no TypeScript.** This
-matches the repo's real approach (ARCHITECTURE.md, CANON §E.6): every screen is
-an HTML file that loads a few shared classic scripts and holds its own behaviour
-in one `<script>`; shared runtime (Supabase client, session, `mediaUrl()`, the
-card/detail renderers) lives in a small module — a singleton client plus shared
-render helpers, loaded as classic scripts, no framework. Optionally a tiny
-**esbuild** bundle step — never a framework. State is plain DOM + a couple of
-module-level objects; there is no virtual DOM.
+**Vanilla HTML + CSS + JavaScript plus a thin reactive layer. No meta-framework,
+no bundler, no build step, no JSX, no TypeScript.** This matches the repo's real
+approach (ARCHITECTURE.md, CANON §E.6, §G): every screen is an HTML file that
+loads a few shared classic scripts and holds its own behaviour in one `<script>`;
+shared runtime (Supabase client, session, `mediaUrl()`, the card/detail
+renderers) lives in a small module. The one addition (CANON §G) is a **thin
+signals reactive layer** — a small primitive (reference `@preact/signals-core`,
+~2 KB, vendored / from CDN) that live surfaces bind to, so Realtime changes patch
+the DOM through reactive bindings instead of hand-rolled diffing. State is plain
+DOM + signals + a couple of module-level objects; there is no virtual DOM (a real
+component model — `preact`+`htm`, still no build step — is used only where it
+earns its keep, chiefly the shared explorer/feed component, §C.6).
 
 **"Component" in these prompts means** a CSS class (or small set) plus a JS render
 helper — e.g. `function messageRow(msg){…returns an element}` — not a React

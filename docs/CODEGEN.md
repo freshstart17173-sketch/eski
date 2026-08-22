@@ -42,8 +42,8 @@ component/state/dialog at a time, against the gallery. Each prompt is tagged:
 
 ```
 TITLE:      <phase>.<n> — <one thing>
-CONTEXT:    Stack = vanilla HTML+CSS+JS (no framework; see prompts/README). Tokens & primitives from
-            the eski-style skill; this screen’s law is gallery.html panel "<name>".
+CONTEXT:    Stack = vanilla HTML+CSS+JS + a thin signals reactive layer (no framework/bundler; CANON §G,
+            prompts/README). Tokens & primitives from the eski-style skill; this screen’s law is gallery.html panel "<name>".
 BUILD:      <the single unit — one component / one state / one dialog>
 PROPS/DATA: <exact inputs; which table/RPC/Realtime channel it reads or writes>
 STATES:     <every visual state to cover: default/hover/active/empty/loading/error/
@@ -120,9 +120,10 @@ line into the §0 template when you run it. Counts per phase are at the head.
 
 ### P0 — Scaffold · 4 prompts, all GL
 
-- **P0.1** — Init the app shell (vanilla HTML+CSS+JS, no framework — optional esbuild),
-  routing skeleton for the §C.3 manifest routes. *Done: every route mounts an
-  empty labelled screen; `?app=1#route` parity with the gallery preserved.*
+- **P0.1** — Init the app shell (vanilla HTML+CSS+JS + a thin reactive layer per
+  CANON §G — signals primitive, no bundler/build step), routing skeleton for the
+  §C.3 manifest routes. *Done: every route mounts an empty labelled screen;
+  `?app=1#route` parity with the gallery preserved; a signal-bound value re-renders.*
 - **P0.2** — Supabase client + typed env, auth session provider, a `useSession`
   hook. *Done: anon boot works; a signed-in session exposes `uid`.*
 - **P0.3** — Import the design tokens & base CSS from the `eski-style` skill (§1) + `gallery.html` as the
@@ -310,7 +311,7 @@ To calibrate the detail level a runnable prompt carries.
 
 ```
 TITLE:   P5.2 — Type-card renderer for non-previewable files
-CONTEXT: Stack vanilla HTML+CSS+JS (no framework). Tokens/primitives from the eski-style skill. Law =
+CONTEXT: Stack vanilla HTML+CSS+JS + thin signals reactive layer (no framework/bundler, CANON §G). Tokens/primitives from the eski-style skill. Law =
          gallery.html "type card" (feed + details `.dtype`); behaviour = CANON
          §D.6.2. Reuse the P0 icon() helper and the square-cell grid unit.
 BUILD:   The type card only — a square cell that stands in for a file with no

@@ -8,9 +8,10 @@ yet. Shared guardrails: see [README](README.md).
 
 ### P0.1 [GL] — App shell, routing, screen manifest
 
-**CONTEXT.** New repo. Stack: **vanilla HTML + CSS + JS, no framework** (see the
-[README](README.md) stack section). Optionally a tiny esbuild bundle. The route
-set is the CANON §C.3 manifest.
+**CONTEXT.** New repo. Stack: **vanilla HTML + CSS + JS plus a thin reactive
+layer** — a small signals primitive (reference `@preact/signals-core`, ~2 KB),
+no meta-framework, no bundler, no build step (CANON §G; see the
+[README](README.md) stack section). The route set is the CANON §C.3 manifest.
 
 **BUILD.** The app shell (`index.html` + a `router.js` module) and a hash/History
 router only. Each route swaps a `.screen` container in the main `<div id="stage">`
@@ -28,8 +29,9 @@ screen's name centered. Routes: `/` (Feed), `/messages` (DMs),
 
 **DONE WHEN.** Every route swaps in its placeholder with no console error and no
 full-page reload; the catch-all renders for an unknown path; a deep link (e.g.
-`/u/rae`) resolves via the rewrite. No framework is used; no JSX/TS. No visual
-styling is judged here.
+`/u/rae`) resolves via the rewrite; the signals layer is wired (a signal-bound
+placeholder value updates the DOM without a reload). No meta-framework, no
+bundler, no build step; no JSX/TS. No visual styling is judged here.
 
 ---
 

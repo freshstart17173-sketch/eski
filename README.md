@@ -29,9 +29,6 @@ Three sources, in order:
 | [`docs/design/`](docs/design/) | The design sources. **`gallery.html` is law** — every screen embedded live, plus every dialog, menu and modal as a standalone panel, plus the member-colour palette; it's the critique surface. the `eski-style` skill is the token & component source of truth. `_fonts.css` is the extracted Jost faces. |
 | [`docs/CODEGEN.md`](docs/CODEGEN.md) | The build plan: the whole app sliced into ~110 individually-testable micro-prompts across nine phases (scaffold → schema/RLS → RPCs → primitives → shell → content → DMs/notifs → admin → utility), each tagged `[BE]`/`[UI]`/`[GL]` with its own definition-of-done, plus the token budget. The runnable prompts live in [`docs/prompts/`](docs/prompts/). |
 
-[`docs/EDGECASES.md`](docs/EDGECASES.md) is the context-crossover audit that fed
-§D — a findings doc whose ⚑DECIDE rows have graduated into CANON.
-
 ---
 
 ## The design rules that must not be relitigated
@@ -71,15 +68,19 @@ they reference live in the [`eski-style`](.claude/skills/eski-style/SKILL.md) sk
   a server funds its own, two independent single-payer accounts (CANON §D.2).
 - **Vercel** — the app plus serverless functions; deploys `main` directly, no
   staging.
-- **No build step, no framework** is the starting stance; the collab build's exact
-  framework is a P0 decision in `CODEGEN.md`.
+- **Frontend: vanilla HTML + CSS + JS plus a thin reactive layer** (locked, CANON
+  §G) — no meta-framework, no bundler, no build step. A small signals primitive
+  (reference: `@preact/signals-core`, ~2 KB) drives the live surfaces so Realtime
+  updates patch the DOM through reactive bindings, not hand-rolled diffing; a real
+  component model (`preact`+`htm`, no build) is used only where it earns its keep
+  (the shared explorer/feed component, §C.6). Total runtime deps stay a few KB.
 
 ---
 
 ## What's in the repo
 
-- **`docs/`** — the live work: `CANON.md`, `CODEGEN.md`,
-  `EDGECASES.md`, `prompts/`, and `design/` (the gallery, sandbox, fonts).
+- **`docs/`** — the live work: `CANON.md`, `CODEGEN.md`, `prompts/`, and
+  `design/` (the gallery, sandbox, fonts, and the gallery TODO).
 - **The one existing serverless function** — [`api/sign.mjs`](api/sign.mjs), the R2
   presigning signer, carried into the collab build unchanged. Its upload-quota
   migration is `schema-quota.sql`; the vendored Supabase client it boots is

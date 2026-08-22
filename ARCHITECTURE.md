@@ -58,8 +58,9 @@ wins.**
 | the [`eski-style`](.claude/skills/eski-style/SKILL.md) skill | The token & component source of truth — the values the built pages consume. `_fonts.css` holds the extracted Jost faces. | The only home for raw design values. |
 | [`docs/CODEGEN.md`](docs/CODEGEN.md) | The build plan: the app sliced into ~110 individually-testable micro-prompts across nine phases, each tagged `[BE]`/`[UI]`/`[GL]` with a definition-of-done, plus the token budget. Runnable prompts in [`docs/prompts/`](docs/prompts/). | How the above becomes code. |
 
-[`docs/EDGECASES.md`](docs/EDGECASES.md) is the context-crossover audit that fed
-§D; its ⚑DECIDE rows are resolved and graduated into CANON.
+The context-crossover audit that fed §D is resolved and folded into CANON (its
+⚑DECIDE rows are now locked decisions there); the standalone audit doc has been
+removed.
 
 **Why the gallery is one file.** It was two (a mockup plus a gallery) and they
 drifted — a screen got updated in one and not the other. They were merged so
@@ -72,9 +73,10 @@ collision.
 
 ## Part 2 — the architecture the build will have
 
-Decided at the level the prompts need; the unfilled specifics (the exact
-front-end framework) are the first prompts in `CODEGEN.md` (phase P0), not
-guesses to make here.
+Decided at the level the prompts need. The front-end stack is now locked (CANON
+§G): **vanilla HTML + CSS + JS plus a thin signals reactive layer** — no
+meta-framework, no bundler, no build step. P0 implements that scaffold; it no
+longer chooses it.
 
 ### The stack
 
@@ -91,6 +93,13 @@ guesses to make here.
   a trigger meters distinct owned blobs per account (CANON §D.2).
 - **Vercel** hosts the app plus serverless functions and deploys `main` directly.
   No staging.
+- **Front end: vanilla HTML + CSS + JS plus a thin reactive layer** (CANON §G) —
+  no meta-framework, no bundler, no build step. A small signals primitive
+  (reference `@preact/signals-core`, ~2 KB) drives the live surfaces so the four
+  Realtime channels patch the DOM through reactive bindings, not hand-rolled
+  diffing; a real component model (`preact`+`htm`, still no build) is reserved for
+  the one shared explorer/feed component (§C.6). The live app fills the viewport;
+  1440 is only the prototyping canvas (CANON §C.2).
 
 ### The backend is a true clean slate
 

@@ -7,11 +7,10 @@ vocabulary, one permission model, one registry of every functional UI element
 (behaviour → database → responsive layout), **and the backend it all runs
 against** (schema, RPCs, Realtime, migration order). When a codegen prompt and
 this file disagree, this file wins. The build itself is sliced into
-individually-testable prompts in [`CODEGEN.md`](CODEGEN.md). Open cross-context
-state hazards (data that carries/strands/orphans when a work moves between the
-social, work, and messaging contexts) are audited in
-[`EDGECASES.md`](EDGECASES.md); its ⚑DECIDE rows graduate into this file once
-chosen.
+individually-testable prompts in [`CODEGEN.md`](CODEGEN.md). Cross-context state
+hazards (data that carries/strands/orphans when a work moves between the social,
+work, and messaging contexts) were audited separately; that audit is resolved and
+its decisions are folded into this file (chiefly §D).
 
 Seven parts:
 - **§A Terminology** — the canonical word for every concept, its database
@@ -24,8 +23,8 @@ Seven parts:
   model, and the utility/admin surfaces layered on after the first pass.
 - **§E Backend & data model** — the hand-off-ready plan: tables + RLS, key
   columns, RPCs/triggers, Realtime, edge functions, build-vs-buy, indexes, the
-  migration order, and a per-screen backend checklist. (Absorbed the retired
-  COLLAB §7; CODEGEN and the prompts cite it as §E.x.)
+  migration order, and a per-screen backend checklist. (This is where the retired
+  COLLAB backend doc was folded in; CODEGEN and the prompts cite it as §E.x.)
 - **§F End-to-end workflows** — two real collaborations traced through the
   product to confirm the pieces connect.
 - **§G Open owner decisions** — the genuine build-vs-buy / policy calls still
@@ -839,7 +838,8 @@ the §B.3 read rule for channel content.
 ### D.2 Storage & billing — **revised 2026-08-18b** (dynamic per-GB slider; no pooling at all)
 
 The old model (a shared **server pool billed to one person** + raw per-GB PAYG)
-created exactly the failures the [`EDGECASES.md`](EDGECASES.md) audit surfaced: a
+created exactly the failures the cross-context audit surfaced (that audit is now
+folded into this §D): a
 biller can be bankrupted by others' uploads, a rage-quitting owner holds storage
 hostage, and "the server has room but I can't upload." The interim fix (25 GB free
 + **flat feature tiers** + free-space **pooling**) fixed those but was wrong on two
@@ -1092,7 +1092,7 @@ placement (id, work_id → works, surface text in (feed,server,dm),
 
 #### D.3.1 Collaborator consent & who-can-tag (⚑DECIDE→LOCKED, 2026-08-19)
 
-Two EDGECASES resolutions land here:
+Two cross-context audit resolutions land here:
 
 - **Collaborator consent (Instagram-style).** Crediting `@handle` on a work writes a
   `work_collaborators(work_id, user_id, role, status)` row. `status='accepted'`
@@ -1214,8 +1214,8 @@ invite, and access-denied** alike:
 The hand-off-ready backend plan — the tables, RPCs, Realtime channels, indexes,
 and migration order the build runs against. [`CODEGEN.md`](CODEGEN.md) and the
 [`prompts/`](prompts/) build queue cite it by section number (§E.2, §E.4, §E.6,
-§E.8, §E.9), so its numbering is kept stable. *(This absorbed the retired
-`COLLAB.md` §7; old "§7.x" citations map one-to-one onto "§E.x".)*
+§E.8, §E.9), so its numbering is kept stable. *(This absorbed the now-removed
+COLLAB backend doc's §7; old "§7.x" citations map one-to-one onto "§E.x".)*
 
 The backend is a **true clean slate** — the schema is authored fresh for this
 product (`create table if not exists`, in the migration order of §E.8). Every
@@ -1438,6 +1438,22 @@ Two real collaborations traced through the product to confirm the pieces connect
 ---
 
 ## §G. Open owner decisions
+
+> **LOCKED — frontend stack (2026-08-22):** **vanilla HTML + CSS + JS plus a thin
+> reactive layer.** No meta-framework (no React/Next), no bundler required, no build
+> step. The reactive layer is a **small signals-based reactivity primitive** (reference:
+> `@preact/signals-core`, ~2 KB, vendored / from CDN) that live surfaces bind to, so
+> Realtime changes (new messages, reactions, presence, unread counts, notifications)
+> patch the DOM through reactive bindings instead of hand-rolled diffing. Optionally
+> pair it with `preact`+`htm` (no-JSX, no-build, ~5 KB total) **only** where a real
+> component model earns its keep — chiefly the one shared explorer/feed component
+> (§C.6 #60). The gallery's design layer (tokens, icon sprite, hand-written markup)
+> carries over unchanged; keep the whole runtime dependency budget to a few KB. This
+> resolves the old "framework is a P0 decision" note — P0 now *implements* this, it
+> doesn't choose it. Rationale in the owner thread: the app is chat/Realtime-heavy, so
+> the pain vanilla would create is reactive DOM updates; a signals layer removes exactly
+> that without the weight of a framework, and public link-preview SSR was judged not a
+> beta goal.
 
 Genuine build-vs-buy or policy calls still waiting on a human (design/history in
 §D and the gallery):
