@@ -329,8 +329,17 @@ references them, it doesn't redraw them.
 
 ### C.2 Global responsive contract (applies to every screen)
 
-**Mobile ships as a separate gallery.** [`gallery.html`](design/gallery.html) is
-the **desktop** artboard set (the 1440px canvas) and carries no mobile chrome;
+> **Beta is web-only (2026-08-22).** The beta ships the desktop web app with a
+> sensible **scaling** range only — mobile is **deferred post-beta**. The scaling
+> contract: 1440px canvas cap, centred with the hairline gutter, fluid down to a
+> **~1024px** minimum where the three-pane shell still holds (it flexes, it does
+> **not** collapse to tabs); modals sized to the canvas. The gallery's `&w=`
+> knob + [`verify.mjs`](design/verify.mjs) check both ends. The mobile spec below
+> is **retained but dormant** — it's the contract the eventual mobile gallery will
+> follow, not a beta deliverable.
+
+**Mobile (post-beta) ships as a separate gallery.** [`gallery.html`](design/gallery.html)
+is the **desktop** artboard set (the 1440px canvas) and carries no mobile chrome;
 the mobile layouts are a distinct deliverable — their own gallery — built against
 the contract below. This table is the spec that separate mobile gallery follows.
 

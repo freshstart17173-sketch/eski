@@ -1,5 +1,13 @@
 # Placeholder / asset manifest — the exact shopping list
 
+> **Now wired (2026-08-22).** The gallery loads real media from
+> [`assets/`](assets/) — drop the files below into that folder and list them in
+> `assets/manifest.js` and the gradients are replaced automatically (5 images
+> rotate to fill the whole card grid). How-to + a regenerate one-liner:
+> [`assets/README.md`](assets/README.md). This page stays the subject-by-subject
+> shopping list; `assets/README.md` is the mechanics.
+
+
 Captured 2026-08-21. Answers gallery todo **#28** and the owner's follow-up: *how
 many unique assets to make the gallery fully functional (audio + video actually
 play) with **no duplicated images***. Audited from `gallery.html`; each distinct

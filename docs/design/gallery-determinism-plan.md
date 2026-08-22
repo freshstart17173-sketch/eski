@@ -1,11 +1,16 @@
 # Deterministic gallery — the plan
 
-**Status: PLAN ONLY (2026-08-22). Nothing below is built yet.** This is the
-design for making `gallery.html` a *deterministic* source of truth — one where
-every state the codegen model will build against is actually rendered, reviewable
-at a stable URL, and machine-verified to be wired correctly. Web-only (desktop
-with sensible scaling); the mobile gallery track is dropped, replaced by an
-explicit min/max-width scaling contract (see §6).
+**Status: BUILT (2026-08-22).** The system below is implemented in `gallery.html`
++ `verify.mjs` + `STATES.md` + `assets/`. This doc is kept as the rationale; the
+running checklist is [`STATES.md`](STATES.md) and the gate is
+[`verify.mjs`](verify.mjs). What remains is the **Phase-D** state-coverage
+backlog (the last table in `STATES.md`).
+
+This was the design for making `gallery.html` a *deterministic* source of truth —
+one where every state the codegen model builds against is actually rendered,
+reviewable at a stable URL, and machine-verified to be wired correctly. Web-only
+(desktop with sensible scaling); the mobile gallery track is dropped, replaced by
+an explicit min/max-width scaling contract (see §6).
 
 Read [`gallery-todo.md`](gallery-todo.md) for the feature backlog and
 [`CODEGEN.md`](../CODEGEN.md) for the build hand-off this plan feeds.
@@ -229,14 +234,15 @@ promise a layout the gallery no longer demonstrates.
 
 ---
 
-## 8. Open calls for the owner (decide before Phase A)
+## 8. Decisions taken (were open calls)
 
-1. **URL grammar** — confirm `#screen/state` + `#dialog/name` + `&w=` (vs. query
-   params like `?screen=&state=`). Hash keeps the existing iframe-embed scheme
-   working; recommendation is hash.
-2. **Self-test runner** — a standalone Node+Playwright script in `docs/design/`
-   (recommended, self-contained) vs. folding it into a repo-level test setup that
-   doesn't exist yet. Recommendation: standalone script now, promote later.
-3. **Registry location** — inline in `gallery.html` (one file stays one file) vs. a
-   sibling `gallery.states.js`. Recommendation: inline for now; the gallery is
-   meant to be openable as a single file with no build step.
+1. **URL grammar** — **hash**: `#screen/state`, `#dialog/id`, `&theme=`, `&w=`.
+   Keeps the existing iframe-embed scheme working.
+2. **Self-test runner** — **standalone** `docs/design/verify.mjs` (Node +
+   Playwright), self-contained; can be promoted into a repo-level test setup later.
+3. **Registry location** — **inline** in `gallery.html` (`STATES={…}`); the gallery
+   stays one file, no build step.
+4. **DOM diff weight** — **one signal, not the verdict** (owner's call). Hard fails
+   are JS errors / dead nav / unreachable states / dialogs that won't open-close;
+   the DOM diff and orphan checks are surfaced for a human/vision pass to rule on.
+5. **Mobile** — **out of the beta**; web-only scaling contract (§6).

@@ -47,7 +47,8 @@ CONTEXT:    Stack = vanilla HTML+CSS+JS (no framework; see prompts/README). Toke
 BUILD:      <the single unit — one component / one state / one dialog>
 PROPS/DATA: <exact inputs; which table/RPC/Realtime channel it reads or writes>
 STATES:     <every visual state to cover: default/hover/active/empty/loading/error/
-            disabled + the mobile layout per CANON §C.2>
+            disabled — each named by its gallery state-URL (#screen/state,
+            #dialog/id); web-only scaling 1024↔1440 via &w=, both themes>
 DO NOT:     <the guardrails: no new colours (tokens only), no hex, --r on chrome,
             square media, square close/icon buttons, no drop shadows on modals,
             member hue is server-scoped & never on public/Feed>
@@ -59,10 +60,18 @@ DONE WHEN:  <a concrete, testable assertion — see below>
 - **`[BE]`** — a `pgTAP`/SQL snippet proves the policy: e.g. *"a non-member
   `select` on `messages` in a server they’re not in returns 0 rows; a member
   gets N."* Every RLS prompt ships its own allow-and-deny test.
-- **`[UI]`** — renders with no console error, matches the named gallery panel at
-  desktop **and** the CANON §C.2 mobile layout, and every state in `STATES:` is
-  reachable via a prop/story. A Playwright screenshot diff vs the gallery panel
-  is the acceptance gate (the harness already has Chromium wired).
+- **`[UI]`** — renders with no console error and matches its **gallery state-URL**
+  (web-only: desktop 1440 + the ~1024 min via `&w=`, both themes; mobile is
+  deferred post-beta, CANON §C.2). Every state in `STATES:` is a real URL
+  (`gallery.html?app=1#<screen>/<state>` or `#dialog/<id>` — see
+  `design/STATES.md`), so the acceptance gate has a stable frame to compare
+  against. The gate is **two signals, not one**: a **DOM/structure diff** vs the
+  state-URL (deterministic, text-comparable, names the exact element/class/token
+  that diverged — the primary signal for a weak/open model) **and** a Playwright
+  screenshot diff. Per owner: the DOM diff is an input to the pass/fail judgement,
+  **not** the sole gate — a human/vision pass rules on flagged drift. The same
+  runner is `design/verify.mjs` (Chromium already wired); run it to enumerate and
+  drive every state.
 - **`[GL]`** — a scripted round-trip: perform the action, assert the row/Realtime
   event, assert the optimistic UI and the reconciled UI match.
 
@@ -77,8 +86,8 @@ DONE WHEN:  <a concrete, testable assertion — see below>
    only.
 5. **Square icon/close buttons** (`.iconbtn`, `#i-x`) — don’t invent a second
    style. **Modals darken the background (scrim), no drop shadows.**
-6. **Mobile is its own layout** (three-pane → one pane + bottom tabs), not a
-   squeezed desktop.
+6. **Web-only for the beta.** Desktop three-pane, scaling 1024↔1440 (it flexes,
+   never collapses to tabs); mobile is deferred post-beta (CANON §C.2).
 7. **The RLS policy is the fence; the UI is the signpost.** A `[UI]` gate is
    never the only thing standing between a user and data.
 
@@ -397,8 +406,10 @@ headroom; the true floor if prompts land clean is well under 1M.
    own button is a rejected prompt.
 3. **One panel, one prompt.** If a "screen" has a dialog, the dialog is its own
    prompt (gallery already enumerates them — §④/§⑤/§⑥).
-4. **Every prompt ends by updating the gallery inventory status** (`t`→`a`→`m`)
-   so the burn-down is visible.
+4. **The gallery inventory status is derived, not hand-typed** — `design/verify.mjs`
+   computes reachable/wired from the live DOM, so the burn-down can't lie. A prompt
+   "updates the inventory" by making its state-URL pass the harness, not by editing
+   a status flag.
 5. **When a prompt and CANON drift, stop and fix CANON or the prompt — never let
    the code become a third source of truth.** This repo’s one failure mode is a
    correct decision silently undone.
