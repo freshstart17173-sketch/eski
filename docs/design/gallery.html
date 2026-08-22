@@ -2986,7 +2986,8 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
       <div class="pane">
         <div class="panehd"><div class="title">Search</div></div>
         <div class="toolbar">
-          <div class="field" style="max-width:560px"><svg class="ic sm"><use href="#i-search"/></svg><input value="bridge drums"><svg class="ic sm" style="color:var(--muted);cursor:pointer"><use href="#i-x"/></svg></div>
+          <div class="field" style="max-width:420px"><svg class="ic sm"><use href="#i-search"/></svg><input value="bridge drums"><svg class="ic sm" style="color:var(--muted);cursor:pointer"><use href="#i-x"/></svg></div>
+          <div class="seg" id="searchScope"><div class="o on">This server</div><div class="o">This channel</div><div class="o">Everywhere</div></div>
           <button class="selbtn"><svg class="ic sm"><use href="#i-user"/></svg>From<svg class="ic sm"><use href="#i-chev"/></svg></button>
           <button class="selbtn"><svg class="ic sm"><use href="#i-hash"/></svg>In<svg class="ic sm"><use href="#i-chev"/></svg></button>
           <button class="selbtn">Anytime<svg class="ic sm"><use href="#i-chev"/></svg></button>
@@ -4041,6 +4042,14 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   document.querySelectorAll('.fchips .fchip').forEach(function(c){c.addEventListener('click',function(){
     c.closest('.fchips').querySelectorAll('.fchip').forEach(function(x){x.classList.remove('on');});c.classList.add('on');});});
   var auditExport=document.getElementById('auditExport');if(auditExport)auditExport.addEventListener('click',function(){if(typeof toast==='function')toast('Audit log exported (CSV)');});
+  // segmented controls (search scope, appearance) — click to select within the group
+  document.querySelectorAll('.seg .o').forEach(function(o){o.addEventListener('click',function(){
+    o.closest('.seg').querySelectorAll('.o').forEach(function(x){x.classList.remove('on');});o.classList.add('on');});});
+  // S14 message search results jump to the message in the workspace
+  document.querySelectorAll('.screen[data-screen="search"] .srow').forEach(function(r){
+    var meta=(r.querySelector('.smeta')||{}).textContent||'';
+    if(/ in #| in <b>#/.test(meta) || / in \#/.test(r.textContent)){r.style.cursor='pointer';r.addEventListener('click',function(){show('workspace');});}
+  });
 
   // quick switcher (Cmd/Ctrl+K)
   var qs=document.getElementById('qs'),qsScrim=document.getElementById('qsScrim');
