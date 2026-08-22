@@ -218,8 +218,11 @@ chat bylines, member rail, comments, @mentions — server-scoped, never on publi
 profile/Feed. **A file-metadata author field ("Posted by / Uploaded by / Made
 by") is NOT member-coloured: it's a plain bold `--ink` text link** (are.na's
 "By …"), no chip, hover-underline. Online presence dot = `--ink` (monochrome),
-offline = `--muted`. `.uchip` (where used, e.g. a chat name chip) shows member
-colour via its **text** (the old round `.dot` is killed — CANON #26).
+offline = `--muted`. `.uchip` (where used, e.g. a chat name chip or a card's
+uploader) is **coloured bold text, not a pill** — member colour reads via the
+text; the resting chip background is removed (the old round `.dot` is killed too —
+CANON #26). The **one** exception is a selected recipient inside an input
+(`.collabs .uchip`), a removable token that keeps a subtle `--surface` chip.
 Selected/active nav = `--plate` bg + `--ink` text + weight 600; a tab's active
 marker is a 2px `--ink` underline (`::after`), tab strip separated by background
 step, not a baseline hairline.
@@ -249,8 +252,11 @@ Never remove `overflow` — wheel/touch/keyboard scroll must still work.
   small floating `.fcacts` cluster (a ⋯ + at most one or two shortcuts) — **do not
   pile icons on the card**; the full action set lives in the ⋯ menu and in the
   details pane.
-- **Reaction chip / tag** = square `--r`; reaction on `--plate` (clears a hovered
-  row); tag on `--tagbg`.
+- **Reaction chip** = square `--r`, on `--plate` (clears a hovered row).
+- **Tag** = **coloured bold text, not a pill** — no `--tagbg` background, no radius,
+  no padding; `--soft` weight 600, separated by the container `gap`. (The pill was
+  chrome; the word carries it. Status badges that need a chip re-add a background
+  under their own scope, e.g. the WIP `· v2` badge.) `--tagbg` remains only for that.
 - **Avatar** = round, `--paper1` bg; `.sm` 24px. **Presence dot** = 9px round,
   `--ink` online / `--muted` off, 2px border in the surrounding surface colour.
 - **Composer** = `.richcomposer` bordered (`--line2`, → `--ink` focus); toolbar on

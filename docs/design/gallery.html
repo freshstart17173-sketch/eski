@@ -44,11 +44,14 @@ input{font:inherit;color:inherit}
 .ic.sm{width:14px;height:14px}.ic.f{fill:currentColor;stroke:none}
 .u{font-weight:600}
 .m1{color:var(--m1)}.m2{color:var(--m2)}.m3{color:var(--m3)}.m4{color:var(--m4)}.m5{color:var(--m5)}.m6{color:var(--m6)}
-.uchip{display:inline-flex;align-items:center;gap:5px;background:var(--surface);border-radius:var(--r);
-  padding:3px 8px;font-size:var(--fs-xs);font-weight:600}
+/* Member identity reads as coloured bold TEXT, not a pill — the hue carries it,
+   the grey/tinted chip was chrome (eski-polish §2). A selected recipient inside an
+   input is the exception: it's a removable token, so it keeps a subtle chip. */
+.uchip{display:inline-flex;align-items:center;font-size:var(--fs-xs);font-weight:600}
 /* #26 the round colour dot in a name/tag chip is removed — member colour reads
    via the coloured chip text itself (presence dots on avatars are unaffected). */
 .uchip .dot{display:none}
+.collabs .uchip{gap:5px;background:var(--surface);border-radius:var(--r);padding:3px 8px}
 
 
 .field{display:flex;align-items:center;gap:var(--s2);background:var(--paper);border:1px solid var(--line2);
@@ -1169,7 +1172,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
 .svnote .ic{color:var(--muted);flex:none;margin-top:1px}
 /* Edit-profile media (banner well + avatar row) — media stays square (--r) */
 .epbanner{height:84px;background:var(--paper1);border-radius:var(--r);display:flex;align-items:flex-end;justify-content:flex-end;padding:8px}
-.epavrow{display:flex;align-items:center;gap:12px;margin-top:10px}
+.epavrow{display:flex;align-items:center;gap:var(--s3);margin-top:var(--s3)}
 /* Move-to-folder picker: the destination tree in a scroll well (reuses .ftrow) */
 .movetree{max-height:240px;overflow:auto;background:var(--surface);border-radius:var(--r);padding:6px;margin-top:2px}
 /* Timeout duration segmented control uses .seg .o — make its cells clickable */
@@ -2071,7 +2074,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
         <div class="sharerow"><span class="av sm">MI</span><span class="nm">mira · you</span></div>
         <div class="sharerow"><span class="av sm">LN</span><span class="nm">lin</span><button class="iconbtn" title="Remove"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
       </div>
-      <div class="ufoot"><button class="btn danger" style="margin-right:auto"><svg class="ic sm"><use href="#i-leave"/></svg>Leave group</button><button class="btn primary">Save</button></div>
+      <div class="ufoot"><button class="btn danger" style="margin-right:auto">Leave group</button><button class="btn primary">Save</button></div>
     </div></div><div class="pcap"><b>Group DM members</b><span class="m">B12 · rename / add / leave</span></div></div>
 
     <div><div class="stage"><div class="menu show">
@@ -2823,7 +2826,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
                   <div class="cr"><div class="cl"><b>Who can post</b><small>Everyone can read; posting can be limited to admins.</small></div><span class="selpill">Everyone<svg class="ic sm"><use href="#i-chev"/></svg></span></div>
                   <div class="cr"><div class="cl"><b>Slow mode</b><small>One message per member per interval.</small></div><span class="selpill">Off<svg class="ic sm"><use href="#i-chev"/></svg></span></div>
                   <!-- #53 default save location -->
-                  <div class="cr"><div class="cl"><b>Default save folder</b><small>Files posted here land in this File-explorer folder.</small></div><span class="selpill"><svg class="ic sm"><use href="#i-folder"/></svg>beats<svg class="ic sm"><use href="#i-chev"/></svg></span></div>
+                  <div class="cr"><div class="cl"><b>Default save folder</b></div><span class="selpill"><svg class="ic sm"><use href="#i-folder"/></svg>beats<svg class="ic sm"><use href="#i-chev"/></svg></span></div>
                   <!-- #54 per-channel file-type permission -->
                   <div class="cr"><div class="cl"><b>Allowed file types</b><small>Restrict what can be posted here (e.g. images/video only).</small></div><span class="selpill">Any<svg class="ic sm"><use href="#i-chev"/></svg></span></div>
                   <div class="cr"><div class="cl"><b>Private channel</b><small>Only invited members see it in the rail.</small></div><span class="tog"><i></i></span></div>
@@ -2834,7 +2837,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
                 <div class="chset">
                   <div class="cr"><div class="cl"><b>Who can post</b><small>Everyone can read; posting can be limited to admins.</small></div><span class="selpill">Everyone<svg class="ic sm"><use href="#i-chev"/></svg></span></div>
                   <div class="cr"><div class="cl"><b>Slow mode</b><small>One message per member per interval.</small></div><span class="selpill">30s<svg class="ic sm"><use href="#i-chev"/></svg></span></div>
-                  <div class="cr"><div class="cl"><b>Default save folder</b><small>Files posted here land in this File-explorer folder.</small></div><span class="selpill"><svg class="ic sm"><use href="#i-folder"/></svg>references<svg class="ic sm"><use href="#i-chev"/></svg></span></div>
+                  <div class="cr"><div class="cl"><b>Default save folder</b></div><span class="selpill"><svg class="ic sm"><use href="#i-folder"/></svg>references<svg class="ic sm"><use href="#i-chev"/></svg></span></div>
                   <div class="cr"><div class="cl"><b>Allowed file types</b><small>Restrict what can be posted here (e.g. images/video only).</small></div><span class="selpill">Images &amp; video<svg class="ic sm"><use href="#i-chev"/></svg></span></div>
                   <div class="cr"><div class="cl"><b>Private channel</b><small>Only invited members see it in the rail.</small></div><span class="tog"><i></i></span></div>
                 </div>
@@ -3366,7 +3369,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
           <div class="row"><span class="k">Uploaded by</span><span class="v"><button class="metalink">dev</button></span></div>
           <div class="row"><span class="k">Uploaded</span><span class="v">15 Aug 2026, 2:14 PM</span></div>
           <!-- #41 modified date + by whom -->
-          <div class="row"><span class="k">Modified</span><span class="v">16 Aug 2026, 9:03 AM · <span class="uchip m3"><span class="dot"></span>dev</span></span></div>
+          <div class="row"><span class="k">Modified</span><span class="v">16 Aug 2026, 9:03 AM · <button class="metalink">dev</button></span></div>
           <!-- #2 file-size row -->
           <div class="row"><span class="k">Size</span><span class="v">8.4 MB</span></div>
           <div class="row"><span class="k">Type</span><span class="v">FL Studio project (.flp)</span></div>
@@ -3464,7 +3467,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
     <details class="addmore">
       <summary><svg class="ic sm"><use href="#i-chev"/></svg>Advanced <span style="font-weight:400;color:var(--muted)">(optional)</span></summary>
       <div class="setrow"><div class="cl"><b>Private channel</b><small>Only invited roles/members see it</small></div><span class="tog"><i></i></span></div>
-      <label class="ulab">Default save folder <span style="font-weight:400;color:var(--muted)">— where files posted here land</span></label>
+      <label class="ulab">Default save folder</label>
       <button class="selbtn" style="width:100%;justify-content:space-between"><span style="display:flex;align-items:center;gap:8px"><svg class="ic sm"><use href="#i-folder"/></svg>Root</span><svg class="ic sm"><use href="#i-chev"/></svg></button>
       <label class="ulab">Allowed file types</label>
       <button class="selbtn" style="width:100%;justify-content:space-between">Any<svg class="ic sm"><use href="#i-chev"/></svg></button>
@@ -3587,7 +3590,6 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   <div class="ubody">
     <label class="ulab">Category name</label>
     <div class="field"><input placeholder="e.g. Production"></div>
-    <div class="svnote"><svg class="ic sm"><use href="#i-hide"/></svg><span>A category is a collapsible group of channels in the column. You can drag channels into it after.</span></div>
   </div>
   <div class="ufoot"><button class="btn" id="catCancel">Cancel</button><button class="btn primary" id="catSave">Create category</button></div>
 </div>
@@ -3621,7 +3623,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
       <div class="sharerow"><span class="av sm">SO</span><span class="nm"><b class="m5">sol</b></span><button class="rm" title="Remove"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
     </div>
   </div>
-  <div class="ufoot"><button class="btn danger" style="margin-right:auto" id="gdmLeave"><svg class="ic sm"><use href="#i-leave"/></svg>Leave group</button><button class="btn" id="gdmCancel">Cancel</button><button class="btn primary" id="gdmSave">Save</button></div>
+  <div class="ufoot"><button class="btn danger" style="margin-right:auto" id="gdmLeave">Leave group</button><button class="btn" id="gdmCancel">Cancel</button><button class="btn primary" id="gdmSave">Save</button></div>
 </div>
 
 <!-- B25 status composer — set a custom status (from /status or the avatar) -->
@@ -3699,7 +3701,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
     <div class="field"><input value="rae okonkwo"></div>
     <label class="ulab">Handle</label>
     <div class="field"><span style="color:var(--muted)">@</span><input value="rae"></div>
-    <div class="svnote"><svg class="ic sm"><use href="#i-check"/></svg><span>Your handle is unique across eski — it's how people reach you. Changing it breaks old links to your profile.</span></div>
+    <div class="svnote"><svg class="ic sm"><use href="#i-check"/></svg><span>Changing your handle breaks old links to your profile.</span></div>
     <label class="ulab">Bio</label>
     <div class="field"><input value="writer and rapper. building the Late Bloom LP with a few people."></div>
   </div>
@@ -3722,9 +3724,9 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
       <button class="ftrow lvl1 archived"><svg class="ic sm fic"><use href="#i-lock"/></svg><span class="fn">Masters</span><svg class="ic sm ftlock"><use href="#i-lock"/></svg></button>
       <button class="ftrow lvl1"><svg class="ic sm fic"><use href="#i-folder"/></svg><span class="fn">References</span></button>
     </div>
-    <div class="svnote"><svg class="ic sm"><use href="#i-move"/></svg><span>Moving changes where a file lives in the tree, not who can see it. Locked folders can't receive files.</span></div>
+    <div class="svnote"><svg class="ic sm"><use href="#i-move"/></svg><span>Locked folders can't receive files.</span></div>
   </div>
-  <div class="ufoot"><button class="btn ghost" id="moveNewFolder" style="margin-right:auto"><svg class="ic sm"><use href="#i-plus"/></svg>New folder</button><button class="btn" id="moveCancel">Cancel</button><button class="btn primary" id="moveGo">Move here</button></div>
+  <div class="ufoot"><button class="btn ghost" id="moveNewFolder" style="margin-right:auto">New folder</button><button class="btn" id="moveCancel">Cancel</button><button class="btn primary" id="moveGo">Move here</button></div>
 </div>
 
 <!-- Timeout modal — from the member popover "Timeout" and Server settings →
@@ -3771,7 +3773,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
     <button class="mi arrole" style="justify-content:flex-start;gap:9px"><span class="cbx on"><svg class="ic sm"><use href="#i-check"/></svg></span><span class="rsw" style="background:var(--m2)"></span>Rapper</button>
     <button class="mi" style="justify-content:flex-start;gap:9px;opacity:.55" disabled><span class="cbx on"><svg class="ic sm"><use href="#i-check"/></svg></span><span class="rsw" style="background:var(--muted)"></span>@everyone<span class="k" style="margin-left:auto">baseline · always on</span></button>
   </div>
-  <div class="ufoot"><button class="btn ghost" id="arManage" style="margin-right:auto"><svg class="ic sm"><use href="#i-settings"/></svg>Manage roles…</button><button class="btn primary" id="arDone">Done</button></div>
+  <div class="ufoot"><button class="btn ghost" id="arManage" style="margin-right:auto">Manage roles…</button><button class="btn primary" id="arDone">Done</button></div>
 </div>
 
 <!-- Leave-server confirm — from the server menu "Leave server". A member removes
@@ -3782,7 +3784,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   <div class="ubody">
     <p class="banlede">You'll lose access to its channels and files unless someone invites you back. Files you saved to your <b>personal storage</b> stay yours.</p>
   </div>
-  <div class="ufoot"><button class="btn" id="leaveCancel">Cancel</button><button class="btn danger" id="leaveConfirm"><svg class="ic sm"><use href="#i-leave"/></svg>Leave server</button></div>
+  <div class="ufoot"><button class="btn" id="leaveCancel">Cancel</button><button class="btn danger" id="leaveConfirm">Leave server</button></div>
 </div>
 
 <!-- Delete-server confirm — from Server settings → General (danger box) and the
