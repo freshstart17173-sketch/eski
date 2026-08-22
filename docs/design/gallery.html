@@ -200,7 +200,6 @@ input{font:inherit;color:inherit}
 .fcwave{height:74px;padding:10px 14px;background:var(--paper1);display:flex;align-items:center;gap:10px;color:var(--muted)}
 .fbody{padding:9px var(--s3)}
 .fname{display:flex;align-items:center;gap:8px;font-size:var(--fs-sm);font-weight:600}
-.fname .ver{font-size:10px;font-weight:700;background:var(--ink);color:var(--on-ink);padding:1px 5px;border-radius:2px}
 .ftags{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px;align-items:center}
 
 .composer{flex:none;padding:0 var(--s4) var(--s4)}
@@ -369,7 +368,6 @@ input{font:inherit;color:inherit}
 .tile{position:relative;background:var(--paper);box-shadow:0 1px 5px rgba(0,0,0,.18)}
 .tile.sel{outline:2px solid var(--ink);outline-offset:2px}
 .tname{position:absolute;top:6px;left:6px;z-index:4;background:rgba(20,20,20,.62);color:#fff;font-size:10px;padding:2px 6px;border-radius:2px;display:inline-flex;gap:6px;align-items:center}
-.tname .ver{opacity:.85}
 .tile.img{width:380px;height:214px}
 .tile.img .scene{position:absolute;inset:0;background:radial-gradient(120% 90% at 70% 15%,#3a4046,#111417)}
 .tile.img .scene .ground{position:absolute;inset:58% 0 0 0;background:linear-gradient(#2a2e31,#0d0f11)}
@@ -2023,7 +2021,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
               <button class="filecard" data-open-details>
                 <div class="fcwave"><svg class="ic fic"><use href="#i-file"/></svg><span class="ext">FLP</span></div>
                 <div class="fbody">
-                  <div class="fname">late_bloom_beat.flp <span class="ver">v3</span></div>
+                  <div class="fname">late_bloom_beat.flp</div>
                   <div class="ftags"><span class="tag">drums</span><span class="tag">142bpm</span><span class="tag">bridge</span></div>
                 </div>
               </button>
@@ -2113,7 +2111,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
         <div class="chpanel" data-chview="pins" hidden>
           <div class="lb">3 pinned messages in #beats</div>
           <div class="pinrow"><div class="av sm">JX</div><div class="bd2"><div class="pinby"><svg class="ic" style="width:11px;height:11px"><use href="#i-pin"/></svg>pinned by jax</div><div class="by"><span class="u m5">jax</span><time>Mon</time></div><div class="tx">session is Fri 3pm. bring stems bounced at 24/48, not the project files.</div></div><button class="unpin"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
-          <div class="pinrow"><div class="av sm">DV</div><div class="bd2"><div class="pinby"><svg class="ic" style="width:11px;height:11px"><use href="#i-pin"/></svg>pinned by rae</div><div class="by"><span class="u m3">dev</span><time>2:14 PM</time></div><div class="tx">latest beat</div><div class="filecard" style="max-width:360px" data-open-details><div class="fbody"><div class="fname">late_bloom_beat.flp <span class="ver">v3</span></div></div></div></div><button class="unpin"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
+          <div class="pinrow"><div class="av sm">DV</div><div class="bd2"><div class="pinby"><svg class="ic" style="width:11px;height:11px"><use href="#i-pin"/></svg>pinned by rae</div><div class="by"><span class="u m3">dev</span><time>2:14 PM</time></div><div class="tx">latest beat</div><div class="filecard" style="max-width:360px" data-open-details><div class="fbody"><div class="fname">late_bloom_beat.flp</div></div></div></div><button class="unpin"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
           <div class="pinrow"><div class="av sm">TM</div><div class="bd2"><div class="pinby"><svg class="ic" style="width:11px;height:11px"><use href="#i-pin"/></svg>pinned by jax</div><div class="by"><span class="u m2">tomo</span><time>Tue</time></div><div class="tx">reference for the drum sound, the break at 0:48 is what we're chasing</div></div><button class="unpin"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
         </div>
 
@@ -2139,7 +2137,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
         <div class="memg">
           <div class="lb">Members, 4</div>
           <div class="mrow"><div class="av sm">DV<span class="pr"></span></div><div class="info"><div class="nm"><span class="u m3">dev</span></div><div class="doing">in FL Studio</div></div></div>
-          <div class="mrow"><div class="av sm">TM<span class="pr"></span></div><div class="info"><div class="nm"><span class="u m2">tomo</span></div><div class="doing">reviewing beat v3</div></div></div>
+          <div class="mrow"><div class="av sm">TM<span class="pr"></span></div><div class="info"><div class="nm"><span class="u m2">tomo</span></div><div class="doing">reviewing the beat</div></div></div>
           <div class="mrow off"><div class="av sm">KO<span class="pr off"></span></div><div class="info"><div class="nm"><span class="u m4">kofi</span></div><div class="doing">offline</div></div></div>
           <div class="mrow off"><div class="av sm">NL<span class="pr off"></span></div><div class="info"><div class="nm"><span class="u m6">nel</span></div><div class="doing">offline</div></div></div>
         </div>
@@ -2154,13 +2152,13 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
               <div class="by"><span class="u m3">dev</span><time>2:14 PM</time></div>
               <div class="tx">reworked the back half. same bpm, swapped the drums</div>
               <div class="filecard" style="max-width:100%"><div class="fcwave"><svg class="ic fic"><use href="#i-file"/></svg><span class="ext">FLP</span></div>
-                <div class="fbody"><div class="fname">late_bloom_beat.flp <span class="ver">v3</span></div></div></div>
+                <div class="fbody"><div class="fname">late_bloom_beat.flp</div></div></div>
             </div>
           </div>
           <div class="tpdiv">3 replies</div>
           <div class="msg"><div class="av sm">RA</div><div class="bd"><div class="by"><span class="u m1">rae</span><time>2:18 PM</time></div><div class="tx">low end's a bit much on the bridge, otherwise this is the one</div></div></div>
           <div class="msg"><div class="av sm">JX</div><div class="bd"><div class="by"><span class="u m5">jax</span><time>2:22 PM</time></div><div class="tx">agreed. <span class="men m2">@tomo</span> can you pull it down a couple db and bounce a rough?</div></div></div>
-          <div class="msg"><div class="av sm">TM</div><div class="bd"><div class="by"><span class="u m2">tomo</span><time>2:26 PM</time></div><div class="tx">on it, pushing a v3 in a sec</div></div></div>
+          <div class="msg"><div class="av sm">TM</div><div class="bd"><div class="by"><span class="u m2">tomo</span><time>2:26 PM</time></div><div class="tx">on it, pushing a new bounce in a sec</div></div></div>
         </div>
         <div class="composer">
           <div class="field"><button class="iconbtn" style="width:26px;height:26px"><svg class="ic sm"><use href="#i-clip"/></svg></button><input placeholder="Reply in thread"><button class="snd"><svg class="ic sm"><use href="#i-send"/></svg></button></div>
