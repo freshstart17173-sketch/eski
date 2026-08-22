@@ -2438,7 +2438,12 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
             <div class="who"><h1>rae okonkwo</h1><div class="handle">@rae</div>
               <div class="bio">writer and rapper. building the Late Bloom LP with a few people.</div></div>
             <div class="actions">
+              <!-- owner sees Edit profile; a stranger/friend POV swaps these in
+                   (#profile/public|mutual) — the POV rule is CANON §C.10, shown
+                   here for review, not an in-product toggle. -->
               <button class="btn primary" id="editProfileBtn"><svg class="ic sm"><use href="#i-pen"/></svg>Edit profile</button>
+              <button class="btn primary povact" id="povAddFriend" hidden><svg class="ic sm"><use href="#i-plus"/></svg>Add friend</button>
+              <button class="btn primary povact" id="povMessage" hidden><svg class="ic sm"><use href="#i-mail"/></svg>Message</button>
             </div>
           </div>
         </div>
@@ -2535,17 +2540,26 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
           <div class="frsec">Add a friend</div>
           <div class="field" style="max-width:440px"><svg class="ic sm"><use href="#i-at"/></svg><input placeholder="Enter a handle, e.g. @devmakesbeats"><button class="btn sm">Send request</button></div>
 
-          <div class="frsec">Pending — incoming</div>
-          <div class="frrow"><div class="av sm">ZZ</div><div class="frbd"><b>zane</b> <span class="mut">@zanebeats · wants to be friends</span></div><button class="btn sm primary">Accept</button><button class="btn sm">Decline</button></div>
-          <div class="frsec">Pending — outgoing</div>
-          <div class="frrow"><div class="av sm">KO</div><div class="frbd"><b>kofi</b> <span class="mut">@kofinotes · request sent</span></div><button class="btn sm">Cancel</button></div>
-          <div class="frrow"><div class="av sm">LN</div><div class="frbd"><b>lin</b> <span class="mut">@linntone · request sent</span></div><button class="btn sm">Cancel</button></div>
-
-          <div class="frsec">All friends <span class="mut">6</span></div>
-          <div class="frrow"><div class="av sm">DV</div><div class="frbd"><b class="m3">dev</b> <span class="mut">@devmakesbeats · in FL Studio</span></div><button class="iconbtn" title="Message"><svg class="ic sm"><use href="#i-mail"/></svg></button><button class="iconbtn" title="More"><svg class="ic sm"><use href="#i-more"/></svg></button></div>
-          <div class="frrow"><div class="av sm">RA</div><div class="frbd"><b class="m1">rae</b> <span class="mut">@raeokonkwo · recording</span></div><button class="iconbtn" title="Message"><svg class="ic sm"><use href="#i-mail"/></svg></button><button class="iconbtn" title="More"><svg class="ic sm"><use href="#i-more"/></svg></button></div>
-          <div class="frrow"><div class="av sm">MI</div><div class="frbd"><b class="m4">mira</b> <span class="mut">@miracuts · offline</span></div><button class="iconbtn" title="Message"><svg class="ic sm"><use href="#i-mail"/></svg></button><button class="iconbtn" title="More"><svg class="ic sm"><use href="#i-more"/></svg></button></div>
-          <div class="frrow"><div class="av sm">TM</div><div class="frbd"><b class="m5">tomo</b> <span class="mut">@tomomix · reviewing the beat</span></div><button class="iconbtn" title="Message"><svg class="ic sm"><use href="#i-mail"/></svg></button><button class="iconbtn" title="More"><svg class="ic sm"><use href="#i-more"/></svg></button></div>
+          <!-- tab views — the ptabs2 above switch these; #friends/pending|blocked force them -->
+          <div class="frview" data-frview="all">
+            <div class="frsec">All friends <span class="mut">6</span></div>
+            <div class="frrow"><div class="av sm">DV</div><div class="frbd"><b class="m3">dev</b> <span class="mut">@devmakesbeats · in FL Studio</span></div><button class="iconbtn" title="Message"><svg class="ic sm"><use href="#i-mail"/></svg></button><button class="iconbtn" title="More"><svg class="ic sm"><use href="#i-more"/></svg></button></div>
+            <div class="frrow"><div class="av sm">RA</div><div class="frbd"><b class="m1">rae</b> <span class="mut">@raeokonkwo · recording</span></div><button class="iconbtn" title="Message"><svg class="ic sm"><use href="#i-mail"/></svg></button><button class="iconbtn" title="More"><svg class="ic sm"><use href="#i-more"/></svg></button></div>
+            <div class="frrow"><div class="av sm">MI</div><div class="frbd"><b class="m4">mira</b> <span class="mut">@miracuts · offline</span></div><button class="iconbtn" title="Message"><svg class="ic sm"><use href="#i-mail"/></svg></button><button class="iconbtn" title="More"><svg class="ic sm"><use href="#i-more"/></svg></button></div>
+            <div class="frrow"><div class="av sm">TM</div><div class="frbd"><b class="m5">tomo</b> <span class="mut">@tomomix · reviewing the beat</span></div><button class="iconbtn" title="Message"><svg class="ic sm"><use href="#i-mail"/></svg></button><button class="iconbtn" title="More"><svg class="ic sm"><use href="#i-more"/></svg></button></div>
+          </div>
+          <div class="frview" data-frview="pending" hidden>
+            <div class="frsec">Incoming</div>
+            <div class="frrow"><div class="av sm">ZZ</div><div class="frbd"><b>zane</b> <span class="mut">@zanebeats · wants to be friends</span></div><button class="btn sm primary">Accept</button><button class="btn sm">Decline</button></div>
+            <div class="frsec">Outgoing</div>
+            <div class="frrow"><div class="av sm">KO</div><div class="frbd"><b>kofi</b> <span class="mut">@kofinotes · request sent</span></div><button class="btn sm">Cancel</button></div>
+            <div class="frrow"><div class="av sm">LN</div><div class="frbd"><b>lin</b> <span class="mut">@linntone · request sent</span></div><button class="btn sm">Cancel</button></div>
+          </div>
+          <div class="frview" data-frview="blocked" hidden>
+            <div class="frsec">Blocked <span class="mut">2</span></div>
+            <div class="frrow"><div class="av sm">QN</div><div class="frbd"><b>quinn</b> <span class="mut">@quinnx · they can't message you or see your work</span></div><button class="btn sm">Unblock</button></div>
+            <div class="frrow"><div class="av sm">ZO</div><div class="frbd"><b>zero</b> <span class="mut">@zerobeats · blocked</span></div><button class="btn sm">Unblock</button></div>
+          </div>
         </div>
       </div>
     </div>
@@ -3806,6 +3820,16 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
     s.querySelectorAll('.ptabs2 .ptab2').forEach(function(t,i){t.classList.toggle('on',i===idx);});}
   function composerNotice(tx){var c=document.getElementById('chComposer'),n=document.getElementById('composerNote'),t=document.getElementById('composerNoteTx');
     if(c)c.classList.add('disabled');if(t)t.textContent=tx;if(n)n.hidden=false;}
+  function forceFrView(v){var s=q1('.screen[data-screen="friends"]');if(!s)return;var idx={all:0,pending:1,blocked:2}[v];
+    s.querySelectorAll('.ptabs2 .ptab2').forEach(function(t,i){t.classList.toggle('on',i===idx);});
+    s.querySelectorAll('.frview').forEach(function(p){p.hidden=p.dataset.frview!==v;});}
+  function profilePov(mode){var s=q1('.screen[data-screen="profile"]');if(!s)return;
+    var edit=document.getElementById('editProfileBtn');if(edit)edit.hidden=true;
+    var add=document.getElementById('povAddFriend'),msg=document.getElementById('povMessage');
+    if(add)add.hidden=mode!=='public';if(msg)msg.hidden=mode!=='mutual';
+    // a stranger sees Public only; a mutual sees Public + Server (never Private/Settings)
+    var keep=mode==='public'?1:2;
+    s.querySelectorAll('.ptabs2 .ptab2').forEach(function(t,i){t.hidden=i>=keep;});}
 
   // The registry. screen → { stateName: force() }. Keep each force() a thin
   // call into a switch that already exists — never a second copy of the state.
@@ -3832,6 +3856,8 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
     },
     create:{error:function(){var e=document.getElementById('createErr'),f=document.getElementById('createNameField');
       if(f){f.classList.add('err');var i=f.querySelector('input');if(i)i.value='Late Bloom LP';}if(e)e.hidden=false;}},
+    friends:{all:function(){forceFrView('all');},pending:function(){forceFrView('pending');},blocked:function(){forceFrView('blocked');}},
+    profile:{public:function(){profilePov('public');},mutual:function(){profilePov('mutual');}},
     settings:{general:function(){forceSetPanel('general');},channels:function(){forceSetPanel('channels');},
       members:function(){forceSetPanel('members');},roles:function(){forceSetPanel('roles');},
       invites:function(){forceSetPanel('invites');},moderation:function(){forceSetPanel('moderation');},
@@ -4441,6 +4467,12 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   document.querySelectorAll('.ntabs .ntab').forEach(function(t){t.addEventListener('click',function(){
     document.querySelectorAll('.ntabs .ntab').forEach(function(x){x.classList.remove('on');});t.classList.add('on');
     var v=t.dataset.ntab;document.querySelectorAll('.npanel').forEach(function(p){p.hidden=p.dataset.nview!==v;});});});
+  // friends manager tabs: All / Pending / Blocked switch the .frview panels
+  (function(){var fs=document.querySelector('.screen[data-screen="friends"]');if(!fs)return;
+    var views=['all','pending','blocked'];
+    fs.querySelectorAll('.ptabs2 .ptab2').forEach(function(t,i){t.addEventListener('click',function(){
+      fs.querySelectorAll('.ptabs2 .ptab2').forEach(function(x){x.classList.remove('on');});t.classList.add('on');
+      fs.querySelectorAll('.frview').forEach(function(p){p.hidden=p.dataset.frview!==views[i];});});});})();
   // per-group filter chips (visual scope)
   document.querySelectorAll('.ngroups .ngrp').forEach(function(c){c.addEventListener('click',function(){
     document.querySelectorAll('.ngroups .ngrp').forEach(function(x){x.classList.remove('on');});c.classList.add('on');});});
