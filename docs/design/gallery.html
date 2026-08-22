@@ -127,10 +127,15 @@ input{font:inherit;color:inherit}
 .chanhd b{font-size:var(--fs-sm);font-weight:600}
 .chanbody{flex:1;overflow-y:auto;padding:var(--s3) var(--s2)}
 .cgroup{margin-bottom:var(--s4)}
-.cglabel{display:flex;align-items:center;justify-content:space-between;padding:0 var(--s2) var(--s1);color:var(--muted);font-size:var(--fs-xs);font-weight:600}
+.cglabel{display:flex;align-items:center;padding:0 var(--s2) var(--s1);color:var(--muted);font-size:var(--fs-xs);font-weight:600}
 .cglabel .ic{color:var(--muted);cursor:pointer}
+.cglabel .cgadd{margin-left:auto}
 .cgadd{width:18px;height:18px;display:grid;place-items:center;border-radius:var(--r);color:var(--muted)}
 .cgadd:hover{background:var(--plate);color:var(--ink)}
+/* B7 channel-group collapse — a caret on the category label toggles its rows */
+.cglabel .cgcaret{width:11px;height:11px;color:var(--muted);margin-right:2px;transition:transform var(--t)}
+.cgroup.collapsed .cglabel .cgcaret{transform:rotate(-90deg)}
+.cgroup.collapsed .crow,.cgroup.collapsed .vpeople{display:none}
 /* S1 — admin POV. Admin-only affordances (create-channel +, per-channel gear,
    member kick/ban) are hidden in the member view and revealed when the member
    rail's Viewing-as toggle flips the workspace screen to data-pov="admin".
@@ -511,6 +516,9 @@ input{font:inherit;color:inherit}
 .menu .verline .fn{font-size:var(--fs-xs);color:var(--soft)}
 .menu .verline .rs{font-size:10px;color:var(--muted)}
 .menu .sep{height:1px;background:var(--line);margin:4px 0}
+.menu .notlv .nchk{visibility:hidden}
+.menu .notlv.on{color:var(--ink);font-weight:600}
+.menu .notlv.on .nchk{visibility:visible;color:var(--ink)}
 
 .umodal{position:fixed;z-index:81;top:50%;left:50%;transform:translate(-50%,-50%);width:min(540px,95vw);max-height:90vh;overflow:auto;background:var(--paper);border-radius:var(--r);box-shadow:0 30px 80px rgba(0,0,0,.5)}
 .uhd{display:flex;align-items:center;justify-content:space-between;padding:var(--s3) var(--s4);background:var(--surface)}
@@ -1920,7 +1928,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
             <button class="crow" data-s="explorer"><svg class="ic"><use href="#i-folder"/></svg><span class="nm">Files</span></button>
           </div>
           <div class="cgroup">
-            <div class="cglabel">Channels <button class="cgadd" id="addChannel" data-admin-only title="Create channel"><svg class="ic sm"><use href="#i-plus"/></svg></button></div>
+            <div class="cglabel"><svg class="ic sm cgcaret"><use href="#i-chev"/></svg>Channels <button class="cgadd" id="addChannel" data-admin-only title="Create channel"><svg class="ic sm"><use href="#i-plus"/></svg></button></div>
             <button class="crow"><svg class="ic"><use href="#i-hash"/></svg><span class="nm">announcements</span><span class="cgear" data-admin-only title="Edit channel"><svg class="ic sm"><use href="#i-settings"/></svg></span></button>
             <button class="crow on"><svg class="ic"><use href="#i-hash"/></svg><span class="nm">beats</span><span class="cgear" data-admin-only title="Edit channel"><svg class="ic sm"><use href="#i-settings"/></svg></span></button>
             <button class="crow"><svg class="ic"><use href="#i-hash"/></svg><span class="nm">verses</span><span class="ct">4</span><span class="cgear" data-admin-only title="Edit channel"><svg class="ic sm"><use href="#i-settings"/></svg></span></button>
@@ -1929,7 +1937,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
             <button class="crow"><svg class="ic"><use href="#i-hash"/></svg><span class="nm">stems and sessions</span><span class="cgear" data-admin-only title="Edit channel"><svg class="ic sm"><use href="#i-settings"/></svg></span></button>
           </div>
           <div class="cgroup">
-            <div class="cglabel">Voice <button class="cgadd" id="addVoice" data-admin-only title="Create voice channel"><svg class="ic sm"><use href="#i-plus"/></svg></button></div>
+            <div class="cglabel"><svg class="ic sm cgcaret"><use href="#i-chev"/></svg>Voice <button class="cgadd" id="addVoice" data-admin-only title="Create voice channel"><svg class="ic sm"><use href="#i-plus"/></svg></button></div>
             <button class="crow" data-s="vc"><svg class="ic"><use href="#i-voice"/></svg><span class="nm">the booth</span></button>
             <div class="vpeople">
               <div class="vp m3"><span class="live"></span><span class="u m3">dev</span><span style="color:var(--muted)">sharing FL</span></div>
@@ -3141,7 +3149,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
 <div class="menu" id="serverMenu"><div class="mlabel">Late Bloom LP</div>
   <button id="smInvite"><svg class="ic sm"><use href="#i-user"/></svg>Invite people</button>
   <button id="smNewChannel"><svg class="ic sm"><use href="#i-hash"/></svg>Create channel</button>
-  <button><svg class="ic sm"><use href="#i-folder"/></svg>Create category</button>
+  <button id="smNewCategory"><svg class="ic sm"><use href="#i-folder"/></svg>Create category</button>
   <button data-s="settings"><svg class="ic sm"><use href="#i-settings"/></svg>Server settings</button>
   <button><svg class="ic sm"><use href="#i-bell"/></svg>Notification settings</button>
   <button><svg class="ic sm"><use href="#i-pen"/></svg>Edit server profile</button>
@@ -3260,6 +3268,49 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
     <div class="field"><input placeholder="Add context for the moderators…"></div>
   </div>
   <div class="ufoot"><button class="btn" id="reportCancel">Cancel</button><button class="btn danger" id="reportSubmit">Submit report</button></div>
+</div>
+
+<!-- B4 channel context menu (right-click a channel row) — mark-read (B8), copy
+     link, invite, per-channel notification level (S7), edit/delete (admin POV). -->
+<div class="menu" id="channelMenu"><div class="mlabel" id="chanMenuName"># beats</div>
+  <button id="cmMarkRead"><svg class="ic sm"><use href="#i-check"/></svg>Mark as read</button>
+  <button id="cmCopyLink"><svg class="ic sm"><use href="#i-link"/></svg>Copy link</button>
+  <button id="cmInvite"><svg class="ic sm"><use href="#i-user"/></svg>Invite people</button>
+  <div class="sep"></div>
+  <div class="mlabel">Notifications</div>
+  <button class="notlv on" data-lv="all"><svg class="ic sm nchk"><use href="#i-check"/></svg>All messages</button>
+  <button class="notlv" data-lv="mentions"><svg class="ic sm nchk"><use href="#i-check"/></svg>Only @mentions</button>
+  <button class="notlv" data-lv="none"><svg class="ic sm nchk"><use href="#i-check"/></svg>Nothing</button>
+  <button id="cmMute"><svg class="ic sm"><use href="#i-mute"/></svg>Mute for a while…</button>
+  <div class="sep" data-admin-only hidden></div>
+  <button id="cmEditChannel" data-admin-only hidden><svg class="ic sm"><use href="#i-settings"/></svg>Edit channel</button>
+  <button class="danger" data-admin-only hidden><svg class="ic sm"><use href="#i-trash"/></svg>Delete channel</button></div>
+
+<!-- B5 edit-channel modal (rename + topic) -->
+<div class="scrim" id="editChanScrim" hidden></div>
+<div class="umodal" id="editChanModal" hidden>
+  <div class="uhd"><b>Edit channel</b><button class="iconbtn" id="editChanClose"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
+  <div class="ubody">
+    <label class="ulab">Channel name</label>
+    <div class="field"><svg class="ic sm"><use href="#i-hash"/></svg><input value="beats"></div>
+    <label class="ulab">Topic <span style="font-weight:400;color:var(--muted)">(optional)</span></label>
+    <div class="field"><input value="put the session name in the file name"></div>
+    <label class="ulab">Slowmode</label>
+    <div class="field"><input value="Off" readonly></div>
+  </div>
+  <div class="ufoot"><button class="btn" id="editChanCancel">Cancel</button><button class="btn primary" id="editChanSave">Save changes</button></div>
+</div>
+
+<!-- B3 create-category modal -->
+<div class="scrim" id="catScrim" hidden></div>
+<div class="umodal" id="catModal" hidden>
+  <div class="uhd"><b>Create category</b><button class="iconbtn" id="catClose"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
+  <div class="ubody">
+    <label class="ulab">Category name</label>
+    <div class="field"><input placeholder="e.g. Production"></div>
+    <div class="svnote"><svg class="ic sm"><use href="#i-hide"/></svg><span>A category is a collapsible group of channels in the column. You can drag channels into it after.</span></div>
+  </div>
+  <div class="ufoot"><button class="btn" id="catCancel">Cancel</button><button class="btn primary" id="catSave">Create category</button></div>
 </div>
 
 <!-- #58 folder context menu (right-click a folder in the tree) -->
@@ -3438,7 +3489,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   document.addEventListener('keydown',function(e){if(lb.hidden)return;
     if(e.key==='Escape')lbClose();else if(e.key==='ArrowLeft')lbShow(lbIdx-1);else if(e.key==='ArrowRight')lbShow(lbIdx+1);});
 
-  var menus=['dlMenu','saveMenu','emojiMenu','msgMenu','cardMenu','folderMenu'].map(function(id){return document.getElementById(id);}).filter(Boolean);
+  var menus=['dlMenu','saveMenu','emojiMenu','msgMenu','cardMenu','folderMenu','channelMenu'].map(function(id){return document.getElementById(id);}).filter(Boolean);
   function closeMenus(){menus.forEach(function(m){m.classList.remove('open');});}
   function toggleMenu(m,anchor,above){var open=m.classList.contains('open');closeMenus();if(open)return;
     m.classList.add('open');var r=anchor.getBoundingClientRect();
@@ -3565,6 +3616,42 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   var reportScrim=document.getElementById('reportScrim');if(reportScrim)reportScrim.addEventListener('click',report.close);
   document.querySelectorAll('#reportModal .repopt').forEach(function(o){o.addEventListener('click',function(){
     document.querySelectorAll('#reportModal .repopt').forEach(function(x){x.classList.remove('on');});o.classList.add('on');});});
+
+  // B4 channel context menu + B5 edit-channel + B3 create-category
+  var channelMenu=document.getElementById('channelMenu'),chanMenuName=document.getElementById('chanMenuName');
+  var editChan=opener('editChanScrim','editChanModal'), cat=opener('catScrim','catModal');
+  if(channelMenu){
+    document.querySelectorAll('.screen[data-screen="workspace"] .crow').forEach(function(r){
+      var use=r.querySelector('.ic use'), href=use?(use.getAttribute('href')||''):'';
+      if(href.indexOf('hash')<0) return;                 // only text channels get the channel menu (not Files/voice)
+      var nm=(r.querySelector('.nm')||{}).textContent||'channel';
+      r.addEventListener('contextmenu',function(e){e.preventDefault();if(chanMenuName)chanMenuName.textContent='# '+nm;openMenuAt(channelMenu,e.clientX,e.clientY);});
+    });
+    // the per-channel edit gear (admin POV) opens the edit-channel modal directly
+    document.querySelectorAll('.crow .cgear').forEach(function(g){g.addEventListener('click',function(e){e.stopPropagation();e.preventDefault();editChan.open();});});
+    // notification-level select
+    channelMenu.querySelectorAll('.notlv').forEach(function(o){o.addEventListener('click',function(e){e.stopPropagation();
+      channelMenu.querySelectorAll('.notlv').forEach(function(x){x.classList.remove('on');});o.classList.add('on');});});
+    var cmMarkRead=document.getElementById('cmMarkRead');if(cmMarkRead)cmMarkRead.addEventListener('click',function(){closeMenus();if(typeof toast==='function')toast('Marked as read');});
+    var cmMute=document.getElementById('cmMute');if(cmMute)cmMute.addEventListener('click',function(){closeMenus();if(typeof toast==='function')toast('Channel muted');});
+    var cmEditChannel=document.getElementById('cmEditChannel');if(cmEditChannel)cmEditChannel.addEventListener('click',function(){closeMenus();editChan.open();});
+    var cmInvite=document.getElementById('cmInvite');if(cmInvite)cmInvite.addEventListener('click',function(){closeMenus();var iv2=document.getElementById('inviteModal'),is2=document.getElementById('inviteScrim');if(iv2&&is2){is2.hidden=false;iv2.hidden=false;}});
+  }
+  ['editChanClose','editChanCancel'].forEach(function(id){var e=document.getElementById(id);if(e)e.addEventListener('click',editChan.close);});
+  var editChanSave=document.getElementById('editChanSave');if(editChanSave)editChanSave.addEventListener('click',function(){editChan.close();if(typeof toast==='function')toast('Channel updated');});
+  var editChanScrim=document.getElementById('editChanScrim');if(editChanScrim)editChanScrim.addEventListener('click',editChan.close);
+  // create category — from the server menu and the channel-group + could open it too
+  var smNewCategory=document.getElementById('smNewCategory');if(smNewCategory)smNewCategory.addEventListener('click',function(e){e.stopPropagation();closeMenus();cat.open();});
+  ['catClose','catCancel'].forEach(function(id){var e=document.getElementById(id);if(e)e.addEventListener('click',cat.close);});
+  var catSave=document.getElementById('catSave');if(catSave)catSave.addEventListener('click',function(){cat.close();if(typeof toast==='function')toast('Category created');});
+  var catScrim=document.getElementById('catScrim');if(catScrim)catScrim.addEventListener('click',cat.close);
+  // B7 channel-group collapse — click a category label toggles its channels
+  document.querySelectorAll('.screen[data-screen="workspace"] .cglabel').forEach(function(lb){
+    lb.style.cursor='pointer';
+    lb.addEventListener('click',function(e){
+      if(e.target.closest('.cgadd'))return;               // the + is its own action
+      var grp=lb.closest('.cgroup');if(!grp)return;grp.classList.toggle('collapsed');});
+  });
 
   // #58 folder context menu on right-click of a folder tree row
   var folderMenu=document.getElementById('folderMenu');
@@ -3792,7 +3879,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   if(wsPov){var wsScreen=document.querySelector('.screen[data-screen="workspace"]');
     function applyWsPov(p){wsScreen.setAttribute('data-pov',p);
       wsPov.querySelectorAll('button').forEach(function(b){b.classList.toggle('on',b.dataset.wspov===p);});
-      document.querySelectorAll('#profilePop [data-admin-only]').forEach(function(el){el.hidden=(p!=='admin');});
+      document.querySelectorAll('#profilePop [data-admin-only], #channelMenu [data-admin-only]').forEach(function(el){el.hidden=(p!=='admin');});
     }
     wsPov.querySelectorAll('button').forEach(function(b){b.addEventListener('click',function(e){e.stopPropagation();applyWsPov(b.dataset.wspov);});});
   }

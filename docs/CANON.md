@@ -414,7 +414,8 @@ The three-pane server view. Legend: **R**=reads, **W**=writes, **RT**=Realtime.
 |---|---|---|---|---|
 | Server header | The server's **cover banner + square server icon + name** at the top of the channel column — its art gets real presence, not just the 38px rail badge (gallery #34). Tap → **server-menu dropdown** (gallery B1): Invite people · Create channel · Create category · Server settings · Notification settings · Edit server profile · **Leave server** (danger). Admin-only rows (Create channel/category, Server settings) gate on perms; every user sees Invite / Notification settings / Leave. | R `servers` (`cover_key`, icon); gate `is_server_admin` / `manage_channels`; opens the create-channel & invite modals | Column top dropdown (`.menu`) | Drawer top → sheet |
 | Media entry | Open the File explorer. | R `works where server_id` | Fixed row | In left drawer |
-| Channel list (text) | Each: name, unread bold, mention badge. Click → load channel. **In the admin POV** (see members rail) each row reveals an **edit gear** on hover (rename/topic/permissions → channel settings) and a drag-handle to reorder. | R `channels kind='text'`, `channel_reads`; W `is_server_admin` reorder | Grouped list; gear on hover | Left drawer |
+| Channel list (text) | Each: name, unread bold, mention badge. Click → load channel. **Right-click → channel menu** (gallery B4): Mark as read (B8) · Copy link · Invite people · **Notification level** (All / Only @mentions / Nothing, `channel_prefs`) · Mute for a while · and, in the admin POV, **Edit channel** (B5) + **Delete**. **In the admin POV** each row also reveals an **edit gear** on hover and a drag-handle to reorder. | R `channels kind='text'`, `channel_reads`, `channel_prefs`; W `set_notif_level`, `mark_channel_read`, `is_server_admin` reorder | Grouped list; menu on right-click, gear on hover | Left drawer; long-press menu |
+| **Category label** (channel group) | A collapsible group header (gallery B3/B7): a **caret** toggles the group's channels open/closed; admin sees the section `+`. Categories come from **Create category** (server menu / gallery B3). | R/W `channel_categories`; collapse is client state | Caret + label | Drawer |
 | Voice channels | Listed by `kind`. Voice = **disabled/hidden in v1**. | R `channels` | Section | Left drawer |
 | ＋ add channel (admin) | The section `+` (revealed in the admin POV) opens the **Create-channel modal** (gallery S2): name · **Text/Voice** kind · category · **default save folder** (§D.3) · **allowed file-types** (a `kind` allow-list) · private toggle. Hidden for members. | W `channels` insert (+ `default_folder_id`, allowed-kinds), admin | Per-section `+` → modal | Drawer |
 
@@ -456,6 +457,9 @@ network-lost (Realtime reconnecting banner).
 | **Create channel** (gallery S2) | server menu · channel-section `+` (admin) | name · **Text/Voice** kind · category · **default save folder** · **allowed file-types** (kind allow-list) · private toggle · **Create** | W `channels` (+ `default_folder_id`, allowed-kinds); gate `manage_channels` |
 | **Invite to server** (gallery S3) | server menu · member rail | an **invite link** + copy · expiry / max-uses · **invite by @handle** | R/W `server_invites`; gate create-invite perm |
 | **Forward** (gallery S5) | message ⋯ · card ⋯ | multi-select **target channels/DMs** · optional note · **Forward** → a `placement` per target | W `placement` (§D.3) |
+| **Edit channel** (gallery B5) | channel menu · per-channel gear (admin) | name · topic · slowmode · **Save** | W `channels` (rename/topic/slowmode); gate `manage_channels` |
+| **Create category** (gallery B3) | server menu · channel column (admin) | category name · **Create** | W `channel_categories` insert; gate `manage_channels` |
+| **Report** (gallery S6/B13) | details-pane flag · message ⋯ · profile/DM | reason (incl. CSAM) · optional details · **Submit** | W `reports` (`file_report`) |
 
 ---
 
@@ -1194,7 +1198,8 @@ Each row: purpose · columns · RLS summary. `uid()` = `(select auth.uid())`.
 | `member_roles` | members ↔ roles (union of power) | `server_id, user_id, role_id, pk(server_id,user_id,role_id)` | read: member; write: `manage_roles` |
 | `channel_roles` | v1 private-channel allow-list | `channel_id, role_id, pk(channel_id,role_id)` — zero rows = open to all members | read: member; write: `manage_channels` |
 | `server_invites` | invite links | `code text pk, server_id, created_by, expires_at, max_uses int, uses int default 0` | read: admin; use via RPC |
-| `channels` | rooms | `server_id, name, kind in(text,voice), topic, slowmode_sec int default 0, position int, default_folder_id null→folders (gallery #53), allowed_kinds text[] null (null=any; e.g. {image,video} — gallery #54)` | read: `can_view_channel(id)`; write: `manage_channels`; **insert of a work is rejected when its `kind` isn't in `allowed_kinds`** |
+| `channel_categories` | collapsible channel groups (gallery B3/B7) | `server_id, name, position int` — a channel's group; `channels.category_id` null = ungrouped | read: `member_of`; write: `manage_channels` |
+| `channels` | rooms | `server_id, category_id null→channel_categories (gallery B3), name, kind in(text,voice), topic, slowmode_sec int default 0, position int, default_folder_id null→folders (gallery #53), allowed_kinds text[] null (null=any; e.g. {image,video} — gallery #54)` | read: `can_view_channel(id)`; write: `manage_channels`; **insert of a work is rejected when its `kind` isn't in `allowed_kinds`** |
 
 **Chat, DMs, and people**
 
@@ -1211,6 +1216,8 @@ Each row: purpose · columns · RLS summary. `uid()` = `(select auth.uid())`.
 | `friendships` | add-by-handle | `a_user, b_user, status in(pending,accepted,blocked), requested_by, pk(a_user,b_user)` ordered pair | either party |
 | `profiles` | account (name, handle, bio, status, presence) | `handle uniq, name, bio, avatar_key, status_emoji, status_text, status_expires_at, presence_state, tz, pronouns, links jsonb` | read: public; write: self |
 | `notifications` | the bell | `user_id, kind in(mention,comment,join,reaction,invite,friend), actor_id, server_id null, target_type, target_id, excerpt text, read_at` | owner only |
+| `server_prefs` | per-server notification pref (gallery S7/B15) | `user_id, server_id, level in(all,mentions,none) default all, muted_until timestamptz null, pk(user_id,server_id)` | self |
+| `channel_prefs` | per-channel notification pref (gallery S7/B4/B7) | `user_id, channel_id, level in(all,mentions,none,default) default default, muted_until timestamptz null, pk(user_id,channel_id)` — `default` inherits the server pref; drives the channel-column "hide muted" toggle | self |
 
 **Works, files, and storage**
 
@@ -1268,7 +1275,9 @@ profiles.tz text · profiles.pronouns text · profiles.links jsonb  -- shown on 
   and `dm_member(dm_channel_id)`.
 - `join_via_invite(code)`, validate code (exists, not expired, uses<max) → insert `server_members`, grant the `@everyone` role, assign the next free colour (cycles past the palette size), `uses+1`; returns the server. (Powers `/join/<code>`.)
 - `set_member_roles(user, role_ids[])` / `set_channel_access(channel, role_ids[], member_ids[])`, the granular-role writers (§C.17/§C.18).
-- `mark_channel_read(channel_id)`, upsert `channel_reads.last_read_at=now()`.
+- `mark_channel_read(channel_id)`, upsert `channel_reads.last_read_at=now()`; `mark_server_read(server_id)` for "mark all as read" (gallery B8).
+- `set_notif_level(scope in(server,channel), id, level, muted_until)`, upsert `server_prefs`/`channel_prefs` (gallery S7/B4/B7/B15).
+- `set_channel_category(channel_id, category_id)` / category CRUD, the channel-group writers (gallery B3), gated `manage_channels`.
 - `toggle_reaction(message_id, emoji)`; `pin_message` / `unpin_message`.
 - `create_dm(handle)` / `create_group_dm(handles[])`, resolve handles→users (friendship required), find-or-create `dm_channels` + `dm_members`.
 - `add_friend(handle)` / `respond_friend(user, accept)` / `block_user(user)`.
@@ -1327,10 +1336,10 @@ Add the relevant tables to the `supabase_realtime` publication.
 1. `servers`, `server_members`, `server_invites` + `member_of`/`is_server_admin`.
 2. Granular roles: `roles` (seed owner + `@everyone`), `member_roles`, `channel_roles` + `has_perm`/`can_view_channel` (§D.1).
 3. `media_blobs`, `storage_meters`, `storage_balance`; `works` (+ `works_read`, §B.3), `work_items`, `folders`, `placement`, `work_collaborators`, `content_tags` (+ tag/credit consent RPCs).
-4. `channels`, `messages` (+tsv), `message_reactions`, `message_pins`, `channel_reads`, `mentions`, gated on `can_view_channel`.
+4. `channel_categories`, `channels` (+`category_id`), `messages` (+tsv), `message_reactions`, `message_pins`, `channel_reads`, `mentions`, gated on `can_view_channel`.
 5. `comments` (context, resolved_at); `profiles`.
 6. `dm_channels`/`dm_members`/`dm_messages`; `friendships`.
-7. `notifications`; `saved_items`/`save_folders`; message/comment→notification triggers.
+7. `notifications`; `server_prefs`/`channel_prefs` (notification level + mute); `saved_items`/`save_folders`; message/comment→notification triggers (respecting the prefs).
 8. Moderation: `server_bans`, `reports`, `audit_log`, `server_members.timeout_until`.
 9. RPCs (§E.3), FTS indexes (§E.7), grants, `notify pgrst 'reload schema'`, realtime publication.
 
