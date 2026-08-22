@@ -90,7 +90,10 @@ input{font:inherit;color:inherit}
 .iconbtn.on{background:var(--ink);color:var(--on-ink)}
 
 /* tags: distinct chip, more contrast */
-.tag{display:inline-flex;align-items:center;background:var(--tagbg);color:var(--ink);border-radius:var(--r);padding:3px 9px;font-size:var(--fs-xs);font-weight:500}
+/* Tags are coloured bold text, not grey pills — the word carries it; the pill was
+   chrome (eski-polish §2). Status badges that need a chip re-add bg under their own
+   scope (.wipbanner .tag, .vcwipcard .tag). */
+.tag{display:inline-flex;align-items:center;color:var(--soft);font-size:var(--fs-xs);font-weight:600}
 .tag.auto{background:var(--ink);color:var(--on-ink)}
 .tagmore{font-size:var(--fs-xs);color:var(--muted);align-self:center}
 .addtag{width:24px;height:24px;display:grid;place-items:center;border-radius:var(--r);background:var(--surface);color:var(--muted)}
@@ -222,7 +225,7 @@ input{font:inherit;color:inherit}
 .fcwave{height:74px;padding:10px 14px;background:var(--paper1);display:flex;align-items:center;gap:10px;color:var(--muted)}
 .fbody{padding:9px var(--s3)}
 .fname{display:flex;align-items:center;gap:8px;font-size:var(--fs-sm);font-weight:600}
-.ftags{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px;align-items:center}
+.ftags{display:flex;flex-wrap:wrap;gap:10px;margin-top:8px;align-items:center}
 
 .composer{flex:none;padding:0 var(--s4) var(--s4)}
 .composer .field{padding:9px var(--s3)}
@@ -523,7 +526,7 @@ input{font:inherit;color:inherit}
 .meta .loccrumb{justify-content:flex-end}
 .dsec{margin-top:var(--s4)}
 .dsec .lb{color:var(--muted);font-size:var(--fs-xs);font-weight:600;margin-bottom:8px}
-.chips{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.chips{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
 /* #30 balance the footer: the two actions share the width equally and centre
    their content, instead of two different-width left-hugging buttons. */
 .dinfo .foot{position:relative;flex:none;padding:var(--s3) var(--s4);display:flex;gap:var(--s2)}
@@ -702,7 +705,7 @@ input{font:inherit;color:inherit}
 .ocard h1{font-size:var(--fs-xl);font-weight:600}
 .ocard .lead{color:var(--muted);font-size:var(--fs-sm);margin:4px 0 var(--s5)}
 .ocard .ulab{margin-top:var(--s4)}
-.starter{display:flex;flex-wrap:wrap;gap:6px}
+.starter{display:flex;flex-wrap:wrap;gap:10px}
 .ocard .go{margin-top:var(--s5);display:flex;gap:var(--s2);justify-content:flex-end}
 .magic{display:flex;align-items:center;gap:var(--s2);background:var(--surface);border-radius:var(--r);padding:10px var(--s3);margin-top:var(--s4)}
 .magic .lk{flex:1;min-width:0;font-size:var(--fs-sm);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}

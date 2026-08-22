@@ -186,6 +186,38 @@ For a dialog/menu that only shows on interaction, reveal it in `page.evaluate` (
 themes**; check for blended surfaces, invisible dark-mode text, ragged edges, and any
 element that vanished. Watch the console for JS errors on load.
 
+### 5.1 Measurement overlay — render the numbers, don't eyeball the pixels
+
+The eye misses a 14-vs-16px gap or a 2px x-drift. So **don't trust the naked screenshot for
+spacing** — overlay the real values and screenshot *that*. `references/measure-overlay.js`
+injects numeric alignment / spacing / distribution labels **on top of every element** in a
+container:
+
+- **`x<n>`** — each child's left offset from the container's content box. Equal numbers down
+  a column = aligned; one stray value = the misalignment, named in pixels.
+- **gap number** (green if it matches the group's most-common gap, **red if it doesn't**) —
+  so uneven distribution in a row/grid/list lights up red instantly.
+- **`pl/pr/pt/pb`** — the container's own paddings (the distance to its edges).
+- **`W×H`** on each child (catches inconsistent button/card sizes); **`e<n>`** edge insets
+  with `{edges:1}`.
+
+Workflow per surface:
+
+```
+// 1. render the surface (or reveal the dialog), then:
+await page.addScriptTag({ path: '.claude/skills/eski-polish/references/measure-overlay.js' });
+await page.evaluate(() => { __pm('.umodal .ubody'); __pm('.arena .meta', {edges:1}); /* each grid/list/row/dialog body */ });
+await page.screenshot({ path: 'measured.png' });
+```
+
+Then **read the numbers against the token scale** — every gap and padding must be a `--s`
+value (**4 / 8 / 12 / 16 / 24**). A `13`, `15`, `18`, `22` is a fumble: snap it to a token.
+Every red gap is uneven distribution: even it out. Any `x` that breaks a column is a
+misalignment: share the inset. Run the overlay on **every** grid, list, row, dialog body,
+toolbar, metadata block, and button cluster on the surface — this is how the pass catches the
+smallest fumbles instead of only the obvious ones. `__pmClear()` removes the overlay before a
+clean "after" shot.
+
 ---
 
 ## 6. Guardrails (do not)
