@@ -284,9 +284,8 @@ input{font:inherit;color:inherit}
 .crumbs{display:flex;align-items:center;gap:7px;font-size:var(--fs-sm);color:var(--muted);min-width:0}
 .crumbs button{color:var(--soft)}.crumbs button:hover{color:var(--ink)}
 .crumbs b{color:var(--ink)}.crumbs .sl{color:var(--line2)}
-.vseg{display:flex;gap:2px;background:var(--plate);border-radius:var(--r);padding:2px;flex:none}
-.vseg button{width:32px;height:26px;display:grid;place-items:center;border-radius:calc(var(--r) - 1px);color:var(--muted)}
-.vseg button.on{background:var(--paper);color:var(--ink)}
+/* pane-header right cluster: tucked hidden-toggle + view dropdown */
+.hdctl{margin-left:auto;display:flex;align-items:center;gap:var(--s2)}
 .exview[hidden]{display:none}
 .foldercard .media.fold{display:grid;place-items:center;background:var(--surface);color:var(--muted)}
 .foldercard .media.fold .ic{width:34px;height:34px}
@@ -811,8 +810,9 @@ input{font:inherit;color:inherit}
 .nthread .tct{flex:none;font-size:var(--fs-xs);color:var(--on-ink);background:var(--ink);border-radius:10px;padding:1px 8px;align-self:center}
 
 /* search results */
-.fchips{display:flex;gap:6px;flex-wrap:wrap}
-.fchip{padding:6px 12px;border-radius:var(--r);font-size:var(--fs-xs);color:var(--soft);background:var(--surface)}
+.fchips{display:flex;gap:var(--s2);flex-wrap:wrap}
+/* quick-filter chips share the button system's metrics (colour-change; on = inverted) */
+.fchip{display:inline-flex;align-items:center;padding:3px 10px;border-radius:var(--r);font-size:var(--fs-xs);font-weight:500;color:var(--soft);background:var(--surface)}
 .fchip:hover{background:var(--plate)}
 .fchip.on{background:var(--ink);color:var(--on-ink)}
 .fchip .n{opacity:.55;margin-left:5px;font-variant-numeric:tabular-nums}
@@ -2391,8 +2391,8 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
         <div class="panehd"><div class="wm">eski</div><nav><a class="nav on">Feed</a><a class="nav">Notifications</a><a class="nav">You</a></nav></div>
         <div class="toolbar">
           <div class="field"><svg class="ic sm"><use href="#i-search"/></svg><input placeholder="Search your friends"></div>
-          <button class="selbtn">Type<svg class="ic sm"><use href="#i-chev"/></svg></button>
-          <button class="selbtn">Latest<svg class="ic sm"><use href="#i-chev"/></svg></button><button class="iconbtn" data-lt title="Grid / masonry"><svg class="ic sm"><use href="#i-grid"/></svg></button>
+          <button class="btn">Type<svg class="ic sm"><use href="#i-chev"/></svg></button>
+          <button class="btn">Latest<svg class="ic sm"><use href="#i-chev"/></svg></button><button class="iconbtn" data-lt title="Grid / masonry"><svg class="ic sm"><use href="#i-grid"/></svg></button>
         </div>
         <div class="panebody">
           <div class="masonry even">
@@ -2443,25 +2443,26 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
           <div class="capbanner" id="capBanner" hidden><svg class="ic sm"><use href="#i-lock"/></svg><span><b>Storage is over its cap.</b> Files are <b>read-only</b> — nothing is deleted — until you free space or upgrade.</span><button class="btn sm" id="capUpgrade">Upgrade</button></div>
           <div class="panehd">
             <div class="crumbs"><button>Late Bloom LP</button><span class="sl">/</span><b>beats</b></div>
-            <div class="vseg" id="exView">
-              <button class="on" data-exv="grid" title="Grid"><svg class="ic sm"><use href="#i-grid"/></svg></button>
-              <button data-exv="list" title="List"><svg class="ic sm"><use href="#i-type"/></svg></button>
-              <button data-exv="feed" title="Feed — previewable media + comments"><svg class="ic sm"><use href="#i-home"/></svg></button>
+            <div class="hdctl">
+              <!-- #55 show-hidden tucked away small (rare toggle, not a labelled slot) -->
+              <button class="iconbtn" id="exHidden" title="Show hidden files"><svg class="ic sm"><use href="#i-hide"/></svg></button>
+              <!-- view mode = a compact text dropdown (grid / list / feed), not a switcher -->
+              <button class="btn" id="exViewBtn"><span id="exViewLbl">Grid</span><svg class="ic sm"><use href="#i-chev"/></svg></button>
             </div>
           </div>
           <div class="toolbar">
             <div class="field"><svg class="ic sm"><use href="#i-search"/></svg><input placeholder="Search this server's files"></div>
-            <button class="selbtn"><svg class="ic sm"><use href="#i-hash"/></svg>Channel<svg class="ic sm"><use href="#i-chev"/></svg></button>
-            <button class="selbtn">Type<svg class="ic sm"><use href="#i-chev"/></svg></button>
-            <button class="selbtn">Uploader<svg class="ic sm"><use href="#i-chev"/></svg></button>
-            <!-- #33 more filters: tag + date, plus quick-filter chips below -->
-            <button class="selbtn">Tag<svg class="ic sm"><use href="#i-chev"/></svg></button>
-            <button class="selbtn">Date<svg class="ic sm"><use href="#i-chev"/></svg></button>
-            <button class="selbtn">Latest<svg class="ic sm"><use href="#i-chev"/></svg></button>
+            <!-- filter dropdowns follow the one button system: .btn + chevron, no leading icon -->
+            <button class="btn">Channel<svg class="ic sm"><use href="#i-chev"/></svg></button>
+            <button class="btn">Type<svg class="ic sm"><use href="#i-chev"/></svg></button>
+            <button class="btn">Uploader<svg class="ic sm"><use href="#i-chev"/></svg></button>
+            <button class="btn">Tag<svg class="ic sm"><use href="#i-chev"/></svg></button>
+            <button class="btn">Date<svg class="ic sm"><use href="#i-chev"/></svg></button>
+            <button class="btn">Latest<svg class="ic sm"><use href="#i-chev"/></svg></button>
             <!-- #47 the real upload entry point (was only in the hidden proto bar) -->
             <button class="btn primary" id="showUpload4" style="margin-left:auto"><svg class="ic sm"><use href="#i-plus"/></svg>Upload</button>
           </div>
-          <!-- #33 quick-filter chips (type + starred); #55 show-hidden toggle -->
+          <!-- #33 quick-filter chips (type + starred) -->
           <div class="toolbar" style="padding-top:0">
             <div class="fchips">
               <button class="fchip on">All<span class="n">7</span></button>
@@ -2471,7 +2472,6 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
               <button class="fchip">Projects<span class="n">3</span></button>
               <button class="fchip"><svg class="ic sm" style="width:12px;height:12px;vertical-align:-1px"><use href="#i-star"/></svg> Starred</button>
             </div>
-            <button class="selbtn" style="margin-left:auto" title="Show files hidden from the library (#55)"><svg class="ic sm"><use href="#i-file"/></svg>Show hidden</button>
           </div>
           <div class="selbar" id="selbar"><span class="n"><span id="seln">0</span> selected</span>
             <button><svg class="ic sm"><use href="#i-download"/></svg>Download</button>
@@ -2489,10 +2489,10 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
                 <button class="btn sm danger" id="emptyTrashBtn"><svg class="ic sm"><use href="#i-trash"/></svg>Empty trash now</button>
               </div>
               <div class="trlist">
-                <div class="trrow"><div class="tmed"><svg class="ic sm fic"><use href="#i-music"/></svg></div><div class="tinfo"><div class="trname">old_bounce_v1.wav</div><div class="tsub">dev · trashed 1 day ago</div></div><span class="tleft">29d left</span><div class="tacts"><button class="selbtn"><svg class="ic sm"><use href="#i-undo"/></svg>Restore</button><button class="selbtn danger"><svg class="ic sm"><use href="#i-trash"/></svg>Delete forever</button></div></div>
-                <div class="trrow"><div class="tmed"><svg class="ic sm fic"><use href="#i-file"/></svg></div><div class="tinfo"><div class="trname">late_bloom_beat_v2.flp</div><div class="tsub">dev · trashed 9 days ago</div></div><span class="tleft">21d left</span><div class="tacts"><button class="selbtn"><svg class="ic sm"><use href="#i-undo"/></svg>Restore</button><button class="selbtn danger"><svg class="ic sm"><use href="#i-trash"/></svg>Delete forever</button></div></div>
-                <div class="trrow"><div class="tmed"><span class="shot c" style="width:34px;height:34px"></span></div><div class="tinfo"><div class="trname">ref_moodboard.png</div><div class="tsub">rae · trashed 24 days ago</div></div><span class="tleft warn">6d left</span><div class="tacts"><button class="selbtn"><svg class="ic sm"><use href="#i-undo"/></svg>Restore</button><button class="selbtn danger"><svg class="ic sm"><use href="#i-trash"/></svg>Delete forever</button></div></div>
-                <div class="trrow"><div class="tmed"><svg class="ic sm fic"><use href="#i-folder"/></svg></div><div class="tinfo"><div class="trname">scratch takes</div><div class="tsub">Folder · 5 files · trashed 28 days ago</div></div><span class="tleft warn">2d left</span><div class="tacts"><button class="selbtn"><svg class="ic sm"><use href="#i-undo"/></svg>Restore</button><button class="selbtn danger"><svg class="ic sm"><use href="#i-trash"/></svg>Delete forever</button></div></div>
+                <div class="trrow"><div class="tmed"><svg class="ic sm fic"><use href="#i-music"/></svg></div><div class="tinfo"><div class="trname">old_bounce_v1.wav</div><div class="tsub">dev · trashed 1 day ago</div></div><span class="tleft">29d left</span><div class="tacts"><button class="btn sm"><svg class="ic sm"><use href="#i-undo"/></svg>Restore</button><button class="btn sm danger">Delete forever</button></div></div>
+                <div class="trrow"><div class="tmed"><svg class="ic sm fic"><use href="#i-file"/></svg></div><div class="tinfo"><div class="trname">late_bloom_beat_v2.flp</div><div class="tsub">dev · trashed 9 days ago</div></div><span class="tleft">21d left</span><div class="tacts"><button class="btn sm"><svg class="ic sm"><use href="#i-undo"/></svg>Restore</button><button class="btn sm danger">Delete forever</button></div></div>
+                <div class="trrow"><div class="tmed"><span class="shot c" style="width:34px;height:34px"></span></div><div class="tinfo"><div class="trname">ref_moodboard.png</div><div class="tsub">rae · trashed 24 days ago</div></div><span class="tleft warn">6d left</span><div class="tacts"><button class="btn sm"><svg class="ic sm"><use href="#i-undo"/></svg>Restore</button><button class="btn sm danger">Delete forever</button></div></div>
+                <div class="trrow"><div class="tmed"><svg class="ic sm fic"><use href="#i-folder"/></svg></div><div class="tinfo"><div class="trname">scratch takes</div><div class="tsub">Folder · 5 files · trashed 28 days ago</div></div><span class="tleft warn">2d left</span><div class="tacts"><button class="btn sm"><svg class="ic sm"><use href="#i-undo"/></svg>Restore</button><button class="btn sm danger">Delete forever</button></div></div>
               </div>
             </div>
             <!-- #50 empty state (shown after Empty-trash, or when nothing's trashed) -->
@@ -2769,8 +2769,8 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
           </div>
           <div class="setpanel" data-panel="uprivacy" hidden>
             <h2>Privacy &amp; safety</h2><div class="h2sub">Who can reach you, and who you've blocked.</div>
-            <div class="setrow"><div class="cl"><b>Who can DM you</b><small></small></div><button class="selbtn sm">Friends<svg class="ic sm"><use href="#i-chev"/></svg></button></div>
-            <div class="setrow"><div class="cl"><b>Who can add you</b><small></small></div><button class="selbtn sm">Anyone<svg class="ic sm"><use href="#i-chev"/></svg></button></div>
+            <div class="setrow"><div class="cl"><b>Who can DM you</b><small></small></div><button class="btn sm">Friends<svg class="ic sm"><use href="#i-chev"/></svg></button></div>
+            <div class="setrow"><div class="cl"><b>Who can add you</b><small></small></div><button class="btn sm">Anyone<svg class="ic sm"><use href="#i-chev"/></svg></button></div>
             <div class="frow"><label class="ulab">Blocked</label><div class="chips"><span class="uchip m1">rae</span><span class="uchip m5">jax</span></div></div>
           </div>
           <div class="setpanel" data-panel="ustorage" hidden>
@@ -2922,7 +2922,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
                 <button class="fchip">Invites</button>
               </div>
               <div class="field" style="max-width:200px;margin-left:auto"><svg class="ic sm"><use href="#i-search"/></svg><input placeholder="Filter by member…"></div>
-              <button class="selbtn" id="auditExport"><svg class="ic sm"><use href="#i-download"/></svg>Export</button>
+              <button class="btn" id="auditExport"><svg class="ic sm"><use href="#i-download"/></svg>Export</button>
             </div>
             <div class="setlist">
               <div class="auditrow"><div class="aic"><svg class="ic sm"><use href="#i-hand"/></svg></div><div class="abd"><div class="atx"><b>rae</b> timed out <b>kofi</b> for 4h</div><div class="actx">reason: spamming #beats</div></div><time>2:44 PM</time></div>
@@ -3171,9 +3171,9 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
         <div class="toolbar">
           <div class="field" style="max-width:420px"><svg class="ic sm"><use href="#i-search"/></svg><input value="bridge drums"><svg class="ic sm" style="color:var(--muted);cursor:pointer"><use href="#i-x"/></svg></div>
           <div class="seg" id="searchScope"><div class="o on">This server</div><div class="o">This channel</div><div class="o">Everywhere</div></div>
-          <button class="selbtn"><svg class="ic sm"><use href="#i-user"/></svg>From<svg class="ic sm"><use href="#i-chev"/></svg></button>
-          <button class="selbtn"><svg class="ic sm"><use href="#i-hash"/></svg>In<svg class="ic sm"><use href="#i-chev"/></svg></button>
-          <button class="selbtn">Anytime<svg class="ic sm"><use href="#i-chev"/></svg></button>
+          <button class="btn">From<svg class="ic sm"><use href="#i-chev"/></svg></button>
+          <button class="btn">In<svg class="ic sm"><use href="#i-chev"/></svg></button>
+          <button class="btn">Anytime<svg class="ic sm"><use href="#i-chev"/></svg></button>
           <span class="smod">try <b>from:tomo</b> <b>in:#mixing</b> <b>has:file</b></span>
         </div>
         <div class="toolbar" style="padding-top:0">
@@ -3688,6 +3688,14 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   <div class="sep"></div>
   <button class="danger"><svg class="ic sm"><use href="#i-trash"/></svg>Delete</button></div>
 
+<!-- File-explorer view-mode dropdown (grid / list / feed) — opened from the compact
+     "Grid ▾" button in the pane header; replaces the old icon segmented switcher. -->
+<div class="menu" id="exViewMenu">
+  <button class="notlv on" data-exv="grid"><svg class="ic sm nchk"><use href="#i-check"/></svg>Grid</button>
+  <button class="notlv" data-exv="list"><svg class="ic sm nchk"><use href="#i-check"/></svg>List</button>
+  <button class="notlv" data-exv="feed"><svg class="ic sm nchk"><use href="#i-check"/></svg>Feed</button>
+</div>
+
 <!-- Edit-profile modal — from the Profile "Edit profile" button (own profile).
      Writes `profiles` (display_name, handle, bio, avatar, banner). The handle is
      globally unique — same claim/validation as the auth claim-handle step (§C.10/§C.14). -->
@@ -3837,8 +3845,8 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
     <label class="ulab">People with access</label>
     <div class="shareppl">
       <div class="sharerow"><span class="av sm">DV</span><span class="nm"><b class="m3">dev</b> <span style="color:var(--muted)">owner</span></span><span class="acc">Owner</span></div>
-      <div class="sharerow"><span class="av sm">RA</span><span class="nm"><b class="m1">rae</b></span><button class="selbtn sm">Can edit<svg class="ic sm"><use href="#i-chev"/></svg></button></div>
-      <div class="sharerow"><span class="av sm">JX</span><span class="nm"><b class="m5">jax</b></span><button class="selbtn sm">Can view<svg class="ic sm"><use href="#i-chev"/></svg></button></div>
+      <div class="sharerow"><span class="av sm">RA</span><span class="nm"><b class="m1">rae</b></span><button class="btn sm">Can edit<svg class="ic sm"><use href="#i-chev"/></svg></button></div>
+      <div class="sharerow"><span class="av sm">JX</span><span class="nm"><b class="m5">jax</b></span><button class="btn sm">Can view<svg class="ic sm"><use href="#i-chev"/></svg></button></div>
     </div>
   </div>
   <div class="ufoot"><button class="btn" id="shareCancel">Cancel</button><button class="btn primary" id="shareDone">Done</button></div>
@@ -4340,12 +4348,21 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   if(folderMenu){document.querySelectorAll('.filetree .ftrow').forEach(function(r){r.addEventListener('contextmenu',function(e){
     e.preventDefault();openMenuAt(folderMenu,e.clientX,e.clientY);});});}
 
-  // file explorer — grid/list/feed view toggle
-  var exView=document.getElementById('exView');
-  if(exView){exView.querySelectorAll('button').forEach(function(b){b.addEventListener('click',function(){
-    exView.querySelectorAll('button').forEach(function(x){x.classList.remove('on');});b.classList.add('on');
-    var v=b.dataset.exv;
-    document.querySelectorAll('.exview').forEach(function(p){p.hidden=p.dataset.exview!==v;});});});}
+  // file explorer — grid/list/feed view via a compact text dropdown
+  var exViewBtn=document.getElementById('exViewBtn'),exViewMenu=document.getElementById('exViewMenu'),exViewLbl=document.getElementById('exViewLbl');
+  if(exViewBtn&&exViewMenu){menus.push(exViewMenu);
+    exViewBtn.addEventListener('click',function(e){e.stopPropagation();
+      var open=exViewMenu.classList.contains('open');closeMenus();if(open)return;
+      exViewMenu.classList.add('open');var r=exViewBtn.getBoundingClientRect();
+      exViewMenu.style.left=Math.max(8,r.right-exViewMenu.offsetWidth)+'px';exViewMenu.style.top=(r.bottom+6)+'px';});
+    exViewMenu.querySelectorAll('[data-exv]').forEach(function(o){o.addEventListener('click',function(){
+      exViewMenu.querySelectorAll('[data-exv]').forEach(function(x){x.classList.remove('on');});o.classList.add('on');
+      if(exViewLbl)exViewLbl.textContent=o.textContent.trim();
+      showExview(o.dataset.exv);closeMenus();});});}
+  // #55 show-hidden — a small tucked toggle
+  var exHidden=document.getElementById('exHidden');
+  if(exHidden)exHidden.addEventListener('click',function(){var on=exHidden.classList.toggle('on');
+    if(typeof toast==='function')toast(on?'Showing hidden files':'Hiding hidden files');});
   // folder tree — twisty expands/collapses; row selects
   function showExview(v){document.querySelectorAll('.exview').forEach(function(p){p.hidden=p.dataset.exview!==v;});}
   document.querySelectorAll('.filetree .ftrow').forEach(function(r){r.addEventListener('click',function(){
