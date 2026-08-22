@@ -87,8 +87,10 @@ verify.mjs) before committing a visual change.**
 - **Cleanup still available (optional):** the v2 **voice-call** visuals
   (`.vtile/.vcshare/.vreel`) are dead now (voice is a WIP placeholder) but were
   *kept* as the v2 reference — sweep them only if you're sure v2 will rebuild from
-  spec. `schema-quota.sql` may be retired-product backend (verify before touching;
-  `api/sign.mjs` is a live deploy requirement — keep).
+  spec. `schema-quota.sql` is **live, not retired** (traced 2026-08-22): it
+  installs `upload_quota` + the `claim_upload_quota()` / `upload_cap()` RPCs that
+  `api/sign.mjs` calls at runtime (its error path literally says "apply
+  schema-quota.sql"). Keep it; `api/sign.mjs` is a live deploy requirement too.
 
 ## What the last session did (all on the branch above, pushed)
 
