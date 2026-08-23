@@ -1,0 +1,41 @@
+/* Base reset + the mandatory globals from the eski-style skill (§3).
+   Component styles live with their components; this is only the ground layer. */
+
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+
+body{
+  background:var(--paper);
+  color:var(--ink);
+  font-family:var(--font);
+  font-size:var(--fs);
+  line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+}
+
+/* The app fills the viewport (1440 is a prototyping canvas only, CANON §G). */
+#stage{height:100%}
+
+/* Mandatory button reset: without it an unstyled button falls back to browser
+   black and vanishes on dark surfaces (eski-style §3). */
+button{background:none;border:0;color:inherit;font:inherit;cursor:pointer}
+
+a{color:inherit;text-decoration:none}
+
+/* No visible scrollbars, but keep the scroll (eski-style §3). */
+*{scrollbar-width:none}
+*::-webkit-scrollbar{width:0;height:0;display:none}
+
+/* Icon helper output: stroke inherits currentColor so an icon takes its
+   parent's colour. */
+.ic{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;
+    stroke-linecap:round;stroke-linejoin:round;flex:none}
+.ic.sm{width:14px;height:14px}
+
+/* P0 placeholder only — every route renders its name centred until its real
+   screen is ported. Deliberately plain; no visual styling is judged at P0. */
+.screen{height:100%;display:grid;place-items:center;text-align:center}
+.screen .ph{color:var(--muted);font-size:var(--fs-xl);font-weight:600}
+.screen .ph small{display:block;color:var(--muted);font-size:var(--fs-sm);
+    font-weight:400;margin-top:var(--s2)}
