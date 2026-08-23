@@ -28,7 +28,7 @@ GOTCHA: channels.post_policy='admins' must reject non-admin inserts — test cov
 
 ## Current state
 
-**Phase: build. P0 DONE. P1 IN PROGRESS — groups 1–6 of 8 green. NEXT: P1 group 7 (notifications+prefs+saves).**
+**Phase: build. P0 DONE. P1 (Schema + RLS) DONE — all 8 groups green + wrap. NEXT: P2 (RPCs + triggers + search + realtime).**
 
 The spec is hand-off-ready: [`CANON.md`](CANON.md) is the contract (incl. §E.10, the
 per-control → backend coverage matrix), the [`design/gallery.html`](design/gallery.html)
@@ -45,12 +45,15 @@ Supabase MCP.
 dropped every retired `public` table + function; `list_tables` is empty. Now building the
 fresh CANON §E schema in §E.8 order.
 
-**NEXT: P1 group 4** — `channels`/`messages`/reactions/pins/reads/mentions, gated on
-`can_view_channel` (built here with channels). Then group 5 (comments+profiles), 6
-(DMs+friendships), 7 (notifications+prefs+saves), 8 (moderation+billing), then the P1
-wrap (advisors clean, types, commit, BUILDLOG). RPCs/triggers/indexes/realtime are P2.
+**NEXT: P2 — RPCs + triggers + search + realtime.** Read CODEGEN §5 (P2) + CANON §E.3/
+§E.4/§E.7 + `prompts/P2-rpcs.md`. The tables + RLS fence all exist; P2 adds the
+`security definer` RPCs (`join_via_invite`, `create_dm`, `add_friend`, `toggle_reaction`,
+moderation writers, share-link/trash/star RPCs, `search_all`, …), the triggers
+(message-fanout → mentions/notifications; works-insert → search_tsv + auto-hide; blob
+refcount/meter maintenance; 30-day trash purge), and the realtime publication
+(`server:{id}` presence, `channel:{id}` changes, `user:{id}` bell).
 
-IN PROGRESS: P1 groups (schema) — this session.
+IN PROGRESS: (none)
 
 ---
 
@@ -88,3 +91,42 @@ GOTCHA 4: Vercel rewrite is `/((?!api/|.*\.).*) -> /index.html` — anything wit
   (static assets, docs/*.html) or under `/api/` is served directly; everything else
   hits the SPA shell. Adding a real top-level path with a dot in it would bypass the
   shell.
+
+## 2026-08-23 — P1 Schema + RLS (all 8 groups + wrap)
+IN PROGRESS: (cleared)
+DONE: fresh CANON §E schema authored in §E.8 order. Migrations
+  clean_slate_retired_pivot, p1_01_servers … p1_08_moderation_billing,
+  p1_09_indexes_policies (all applied to project zidqagrmxeawpasurpwi). Committed as
+  schema-01..09*.sql. Every group has a role-switching allow/deny test that PASSES
+  (server visibility, granular-role union + gates, §B.3 works_read incl. placement
+  crosspost + private-channel gating, message post/timeout gates, friend-of-author
+  comments, DM isolation, moderation/billing scoping). ~35 tables, all RLS-enabled.
+  Advisors: security has ZERO "RLS disabled"/"policy permits all" (the acceptance gate);
+  performance shows only unused_index INFO (empty DB, expected). unindexed-FK (60) and
+  multiple-permissive-policy (65) findings RESOLVED by the wrap.
+NEXT: P2 (see Current state).
+GOTCHA A: a FOR ALL policy's USING **also grants SELECT** and ORs into the read rule.
+  This briefly leaked a private channel (group 4). Fix pattern, now standard here: never
+  use FOR ALL alongside a separate read policy — split into for insert/update/delete
+  (schema-09 did this for all 13 affected tables). can_view_channel also states the
+  owner/admin override explicitly.
+GOTCHA B: gate helpers are SECURITY DEFINER (owned by postgres → BYPASSRLS inside), the
+  ONLY thing stopping a server_members/dm_members policy from recursing when it calls
+  member_of/dm_member. Keep them definer.
+GOTCHA C: works has an added `author_id` (uploader) distinct from owner_type/owner_id
+  (the PAYING account) — CANON §E.1 lists only the payer. can_read_work/can_write_work
+  wrap the §B.3 logic so child tables (work_items/content_tags/collaborators/comments)
+  reuse it. approved_at defaults now(); the P2 hold-trigger nulls it to gate a post.
+GOTCHA D: forward-refs resolved by stubs then redefinition — dm_member + is_friend start
+  as `select false` (groups 3/5) and become real in group 6, retroactively activating
+  DM-placement reads and the friend comment gate. channel_roles + can_view_channel live
+  in group 4 (hard FK dep on channels), not group 2.
+GOTCHA E: TYPES NOT COMMITTED YET. The app is vanilla JS (no build step, no TS consumer
+  yet). Regenerate via Supabase MCP generate_typescript_types at the start of P3/P4 and
+  commit then — the schema is the source, the DB is queryable, so nothing drifts.
+GOTCHA F: accepted security advisor WARNs — the SECURITY DEFINER gate helpers are
+  REST-callable by authenticated (0029); they return only self-relative booleans ("can
+  *I* see X"), and RLS policy evaluation REQUIRES the invoker to hold EXECUTE, so they
+  can't be revoked. anon EXECUTE was tightened to just can_read_work. Optional future
+  hardening: move all gate helpers into a non-exposed `private` schema. media_blobs is
+  RLS-on/no-policy = deny-all by design (server-managed).
