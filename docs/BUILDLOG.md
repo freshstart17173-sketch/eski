@@ -28,7 +28,22 @@ GOTCHA: channels.post_policy='admins' must reject non-admin inserts — test cov
 
 ## Current state
 
-**Phase: build. P0 DONE. P1 (Schema + RLS) DONE. P2 (RPCs + triggers + search + residuals) DONE. P3 (UI primitives) DONE. P4 UI (three-pane shell + Workspace, P4.1–P4.9) DONE — shell + workspace assembled from the P3 primitives, every state verified green in both themes. NEXT: P4.10/P4.11 [GL] — live messages/typing/mark-read + presence (needs seed data).**
+**Phase: build. P0–P3 DONE. P4 UI (P4.1–P4.9) DONE. P4.10/P4.11 [GL] live wiring CODE COMPLETE, e2e not yet run in-sandbox (see below). Demo server seeded. NEXT: run `docs/design/verify-live.mjs` in a network-capable env (or sign in on preview) to confirm the live spine, then P5.**
+
+> **P4.10/P4.11 verification status (read before resuming).** The live code is
+> written and committed: live reads (`app/data.js`), the four Realtime channels +
+> send/mark-read (`app/realtime.js`), the live patching + typing + presence
+> (`app/screens/workspace.js`), and a minimal magic-link sign-in (`app/screens/signin.js`).
+> Verified: RLS reads for both real accounts (SQL), the Realtime publication carries
+> `messages`, the demo/UI harness is green (`verify-workspace.mjs`, 10 states), and the
+> sign-in screen renders (both themes). **NOT yet verified end-to-end:** the two-session
+> live test `docs/design/verify-live.mjs` could not run in THIS sandbox — headless
+> Chromium can't egress HTTPS through the agent proxy (both `supabase.co` *and*
+> `google.com` return "Failed to fetch" from the browser, while curl/node reach the
+> proxy fine; the localhost app loads once `--proxy-bypass-list=127.0.0.1;localhost`
+> is set, but cross-origin HTTPS still fails). Resume by running `verify-live.mjs`
+> where the browser can reach Supabase, or by signing in on `preview.eski.lol` and
+> opening two windows (dev@/rae@seed.eski.lol, pw `eski-demo-preview-2026`).
 
 The spec is hand-off-ready: [`CANON.md`](CANON.md) is the contract (incl. §E.10, the
 per-control → backend coverage matrix), the [`design/gallery.html`](design/gallery.html)
@@ -259,3 +274,42 @@ GOTCHA P: PRE-EXISTING, not P4 — `verify-primitives.mjs` reports 1 FAIL (Media
 GOTCHA Q: gallery inventory statuses (t→a→m burn-down) were NOT flipped this session
   to avoid a gallery edit + re-verify; the workspace surface is now assembled+matched
   in code. Flip them in a later gallery-touching pass.
+
+## 2026-08-23 — P4.10/P4.11 live wiring (code complete; e2e blocked in-sandbox)
+IN PROGRESS: (cleared)
+DONE: the live spine for the Workspace, wired to the seeded "Late Bloom LP" server.
+  - `app/data.js`: live `loadWorkspace` reads (rail servers, server, channels-by-kind,
+    members + admin grouping from roles/owner, messages+reply-counts+reactions, pins)
+    and `loadThread`; demo path kept; signed-out returns `{needsAuth}`. `server_members.color`
+    is the member hue; `shapeMessage`/`fmtTime`/`initials` shared with realtime.
+  - `app/realtime.js`: the four CANON §E.4 channels — `channel:{id}` postgres_changes
+    (insert/update/tombstone), `channel:{id}:typing` broadcast (+`sendTyping`),
+    `server:{id}` presence (+track); `markRead` (mark_channel_read RPC) and `sendMessage`
+    (direct RLS-gated insert — there is NO send_message RPC; user_id set explicitly).
+    `teardownRealtime()` removes all channels; main.js calls it before each render.
+  - `app/screens/workspace.js`: `attachLive()` patches the stream on live insert/edit/
+    delete, dedupes the sender's own echo, bumps reply counts, appends into an open
+    thread; typing indicator; presence updates the members rail dots + doing; composer
+    sends via insert + broadcasts typing; thread replies via parent_id insert.
+  - `app/screens/signin.js` + shell.css `.authcard`: a minimal magic-link sign-in (full
+    auth polish is P9). main.js: teardown on nav, `/signin` route, signed-out → sign-in,
+    re-render on auth hydrate/change. `app/supabase.js` exposes `window.__sb` on localhost
+    ONLY (for the e2e harness).
+  - Seed: `docs/seed-late-bloom.sql` (committed earlier) applied; passwords set on the
+    3 demo authors only (never the real accounts). RLS-verified both real accounts read
+    the server + can post; Realtime publication carries `messages`.
+VERIFY: `verify-workspace.mjs` GREEN (10 states, demo + signed-out sign-in, both themes);
+  sign-in screen screenshotted L+D. `verify-live.mjs` (two-session live test) written but
+  NOT run here — see the verification-status callout at the top of this file (sandbox
+  browser can't egress HTTPS through the agent proxy).
+NEXT: run `verify-live.mjs` in a network-capable env or test on preview; then P5.
+GOTCHA R: to run a browser against Supabase behind the agent proxy, launch Chromium with
+  args `--proxy-server=<HTTPS_PROXY minus scheme>` + `--proxy-bypass-list=127.0.0.1;localhost`
+  and context `ignoreHTTPSErrors:true`. In THIS sandbox that still fails cross-origin
+  HTTPS ("Failed to fetch" for supabase AND google) though the localhost app loads — so
+  verify-live needs an env whose browser has real outbound HTTPS.
+GOTCHA S: `messages` insert needs `user_id` explicitly (NOT NULL, no default); RLS
+  with-check still gates it to auth.uid(). No `send_message` RPC exists — insert direct.
+GOTCHA T: live route params are real UUIDs (`/s/<uuid>/c/<uuid>`), NOT the demo's `lb`/
+  `beats` slugs — `loadWorkspace` matches the server by id, so a slug route finds nothing
+  live. In-app rail/channel links already emit UUIDs; only hand-typed URLs need care.

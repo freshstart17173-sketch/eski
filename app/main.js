@@ -9,8 +9,10 @@ import { start, match } from "./router.js";
 import { ready, session, onChange } from "./supabase.js";
 import { icon } from "./icons.js";
 import { loadWorkspace } from "./data.js";
+import { teardownRealtime } from "./realtime.js";
 import { renderRail, appFrame } from "./shell.js";
 import { renderWorkspace } from "./screens/workspace.js";
+import { renderSignin } from "./screens/signin.js";
 
 const stage = document.getElementById("stage");
 
@@ -57,10 +59,16 @@ let token = 0;   // guards against a stale async render landing after a newer na
 
 async function renderRoute(r) {
   const mine = ++token;
+  teardownRealtime();                                  // kill the previous view's subscriptions
+
+  if (r.screen === "auth") { swap(renderSignin()); return; }   // /signin — full screen, no shell
   if (!IN_SHELL.has(r.screen)) { swap(placeholder(r)); return; }
 
   const data = await loadWorkspace({ serverId: r.params.serverId, channelId: r.params.channelId });
   if (mine !== token) return;   // a newer navigation already rendered
+
+  // signed out (and not the demo) → the magic-link sign-in
+  if (data.needsAuth) { swap(renderSignin()); return; }
 
   let screen;
   if (r.screen === "workspace") {
@@ -79,5 +87,7 @@ function swap(node) { stage.replaceChildren(node); }
 start((m) => { route.value = m; });
 effect(() => { renderRoute(route.value); });
 
-ready.then(() => { authed.value = !!session(); });
-onChange(() => { authed.value = !!session(); });
+// Auth hydration / sign-in / sign-out all re-render the current route, since what
+// a route shows depends on the session (workspace vs the sign-in prompt).
+ready.then(() => { authed.value = !!session(); renderRoute(route.peek()); });
+onChange(() => { authed.value = !!session(); renderRoute(route.peek()); });

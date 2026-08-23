@@ -36,6 +36,19 @@
 .stage{flex:1;min-width:0;display:flex;overflow:hidden}
 .screen{flex:1;min-width:0;display:flex;overflow:hidden}
 .screen[hidden]{display:none}
+/* a full-screen screen (auth / placeholder) sits straight in #stage, which is a
+   plain block — give it the height so its centred content (margin:auto) lands. */
+#stage>.screen{height:100%}
+
+/* sign-in (P4.10 minimal magic-link; the full auth screen is P9) */
+.authcard{margin:auto;width:320px;max-width:90%;display:flex;flex-direction:column;gap:var(--s3);text-align:center}
+.authcard .wm{font-weight:700;font-size:var(--fs-xl)}
+.authcard .sub{color:var(--muted);font-size:var(--fs-sm);margin:0}
+.authcard .field{text-align:left}
+.authcard .btn{justify-content:center}
+.authnote{font-size:var(--fs-sm);color:var(--soft);margin:0}
+.authnote.err{color:var(--danger)}
+.authnote[hidden]{display:none}
 
 /* ── channel column ──────────────────────────────────────────────────────── */
 .chan{flex:none;width:var(--chan);background:var(--surface);display:flex;flex-direction:column;overflow:hidden}

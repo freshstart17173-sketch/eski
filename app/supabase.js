@@ -13,6 +13,13 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   },
 });
 
+// Expose the public (anon) client on localhost ONLY — the e2e harness
+// (docs/design/verify-live.mjs) signs in the demo users through it. Never exposed
+// on preview/prod; and it's the publishable key anyway, gated entirely by RLS.
+if (location.hostname === "localhost" || location.hostname === "127.0.0.1") {
+  window.__sb = supabase;
+}
+
 let _session = null;
 const listeners = new Set();
 

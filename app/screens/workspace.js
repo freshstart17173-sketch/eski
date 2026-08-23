@@ -14,7 +14,8 @@
 import { el, Avatar, IconButton, openMenu, closeMenus, toast } from "../ui.js";
 import { iconEl } from "../icons.js";
 import { navigate } from "../router.js";
-import { isDemo } from "../data.js";
+import { isDemo, shapeMessage, loadThread } from "../data.js";
+import { subscribeChannelMessages, subscribeTyping, sendTyping, subscribeServerPresence, markRead, sendMessage } from "../realtime.js";
 
 // ── text rendering ──────────────────────────────────────────────────────────
 // A message body is escaped, then @mentions and #channel refs become .men spans
@@ -111,7 +112,7 @@ function messageRow(msg, data, { onOpenThread } = {}) {
   if (msg.reactions?.length) bd.append(el(".reactions", {}, msg.reactions.map((r) => el("span.react", { onClick: () => toast({ message: "Reaction toggled" }) }, [`${r.emoji}`, el("span.n", {}, [String(r.n)])]))));
   if (msg.replies) bd.append(el(".reply", { onClick: () => onOpenThread?.(msg) }, [iconEl("reply", "sm"), `${msg.replies} replies`]));
 
-  return el(".msg", {}, [acts, Avatar({ name: msg.author.name, size: "sm" }), bd]);
+  return el(".msg", { "data-mid": msg.id }, [acts, Avatar({ name: msg.author.name, size: "sm" }), bd]);
 }
 
 // the ⋯ menu: own message adds Edit/Delete; everyone gets Pin + Copy link
@@ -212,7 +213,7 @@ function openChannel(data, ch, row) {
 function withDemo(path) { return isDemo() ? path + "?demo=1" : path; }
 
 // ── composer (P4.6) ─────────────────────────────────────────────────────────
-function composer(data, view) {
+function composer(data, view, ctx = {}) {
   const disabled = view.composer === "timedout" || view.composer === "slowmode";
   const note = el(".composernote", { hidden: !disabled }, disabled ? [
     iconEl("clock", "sm"),
@@ -221,9 +222,9 @@ function composer(data, view) {
 
   const input = el("input", { placeholder: `Message #${data.channel?.name || ""}` });
   const send = el("button.snd", { title: "Send", disabled: true }, [iconEl("send", "sm")]);
-  input.addEventListener("input", () => { send.disabled = !input.value.trim(); maybeAutocomplete(input, data); });
-  input.addEventListener("keydown", (e) => { if (e.key === "Enter" && input.value.trim()) { e.preventDefault(); doSend(input, send); } });
-  send.addEventListener("click", () => input.value.trim() && doSend(input, send));
+  input.addEventListener("input", () => { send.disabled = !input.value.trim(); maybeAutocomplete(input, data); if (ctx.live && input.value.trim()) sendTyping(ctx.me); });
+  input.addEventListener("keydown", (e) => { if (e.key === "Enter" && input.value.trim()) { e.preventDefault(); doSend(input, send, ctx); } });
+  send.addEventListener("click", () => input.value.trim() && doSend(input, send, ctx));
 
   const field = el(".field", {}, [
     IconButton({ icon: "clip", title: "Attach files", onClick: () => toast({ message: "Attach (P5 upload)" }) }),
@@ -270,9 +271,15 @@ function openEmoji(anchor, input) {
   // emoji-mart is the real picker (P4.6 stack); a small set stands in for now.
   openMenu(anchor, ["🔥", "👀", "🥁", "🎧", "✅", "🙌"].map((e) => ({ label: e, onClick: () => { input.value += e; input.focus(); input.dispatchEvent(new Event("input")); } })));
 }
-function doSend(input, send) {
-  toast({ message: "Message sent (persisted live in P4.10)", icon: "send" });
+async function doSend(input, send, ctx = {}) {
+  const body = input.value.trim();
   input.value = ""; send.disabled = true;
+  if (ctx.live && ctx.channelId) {
+    const { error } = await sendMessage(ctx.channelId, body);   // realtime echo appends it
+    if (error) { toast({ message: "Couldn't send — " + error.message, icon: "clock" }); input.value = body; send.disabled = false; }
+  } else {
+    toast({ message: "Message sent (demo)", icon: "send" });
+  }
 }
 // @mention / #channel autocomplete — filters members/channels for the open token
 function maybeAutocomplete(input, data) {
@@ -336,7 +343,7 @@ function membersRail(data) {
       const av = Avatar({ name: p.name, size: "sm" });
       av.append(el("span.pr" + (off ? ".off" : p.presence === "idle" ? ".idle" : p.presence === "dnd" ? ".dnd" : "")));
       const nm = el("span.u", {}, [p.name]); nm.style.color = `var(--m${p.colorIdx})`;
-      const row = el(".mrow" + (off ? ".off" : ""), {}, [av, el(".info", {}, [el(".nm", {}, [nm]), el(".doing", {}, [p.doing])])]);
+      const row = el(".mrow" + (off ? ".off" : ""), { "data-uid": p.id || null }, [av, el(".info", {}, [el(".nm", {}, [nm]), el(".doing", {}, [p.doing])])]);
       // admin hover → manage (role toggle P8.5, timeout, kick)
       if (data.isAdmin && p.name !== data.me.name) {
         row.style.cursor = "pointer";
@@ -356,19 +363,26 @@ function membersRail(data) {
 }
 
 // ── thread pane (P4.8) ──────────────────────────────────────────────────────
-function threadPane(data, onClose) {
-  const t = data.thread;
+// t = { parent, replies[], channel?/channelId }. onReply(body, alsoToChannel) is
+// set live (the Realtime echo appends the reply); demo appends locally.
+function threadPane(t, me, { onClose, onReply, channelName } = {}) {
+  const chName = channelName || t.channel || "";
   const body = el(".tpbody", {}, [
     el(".msg", {}, [Avatar({ name: t.parent.author.name, size: "sm" }), el(".bd", {}, [byline(t.parent.author, t.parent.time), renderBody(t.parent), t.parent.attach ? fileCard(t.parent.attach) : null])]),
     el(".tpdiv", {}, [`${t.replies.length} replies`]),
-    ...t.replies.map((r) => el(".msg", {}, [Avatar({ name: r.author.name, size: "sm" }), el(".bd", {}, [byline(r.author, r.time), renderBody(r)])])),
+    ...t.replies.map((r) => el(".msg", { "data-mid": r.id || null }, [Avatar({ name: r.author.name, size: "sm" }), el(".bd", {}, [byline(r.author, r.time), renderBody(r)])])),
   ]);
 
-  const also = el("label.alsosend", {}, [el("span.cbx", {}, [iconEl("check")]), "Also send to #" + t.channel]);
+  const also = el("label.alsosend", {}, [el("span.cbx", {}, [iconEl("check")]), "Also send to #" + chName]);
   also.addEventListener("click", (e) => { e.preventDefault(); also.classList.toggle("on"); });
   const input = el("input", { placeholder: "Reply in thread" });
   const send = el("button.snd", { title: "Send" }, [iconEl("send", "sm")]);
-  const post = () => { if (!input.value.trim()) return; body.append(el(".msg", {}, [Avatar({ name: data.me.name, size: "sm" }), el(".bd", {}, [byline(data.me, "now"), el(".tx", {}, [input.value])])])); input.value = ""; body.scrollTop = body.scrollHeight; };
+  const post = async () => {
+    const text = input.value.trim(); if (!text) return;
+    input.value = "";
+    if (onReply) { const { error } = await onReply(text, also.classList.contains("on")) || {}; if (error) { input.value = text; toast({ message: "Couldn't reply — " + error.message }); } }
+    else { body.append(el(".msg", {}, [Avatar({ name: me.name, size: "sm" }), el(".bd", {}, [byline(me, "now"), el(".tx", {}, [text])])])); body.scrollTop = body.scrollHeight; }
+  };
   send.addEventListener("click", post);
   input.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); post(); } });
 
@@ -379,8 +393,8 @@ function threadPane(data, onClose) {
   composer.querySelector(".iconbtn").style.cssText = "width:26px;height:26px";
 
   const close = el("button.iconbtn", { id: "threadClose", title: "Close thread", onClick: onClose }, [iconEl("x", "sm")]);
-  const hd = el(".tphd", {}, [el("span.lbl", {}, [iconEl("reply", "sm"), "Thread", el("span.sub", {}, ["#" + t.channel])]), close]);
-  return el("aside.threadpane", { id: "threadPane" }, [hd, body, composer]);
+  const hd = el(".tphd", {}, [el("span.lbl", {}, [iconEl("reply", "sm"), "Thread", el("span.sub", {}, ["#" + chName])]), close]);
+  return el("aside.threadpane", { id: "threadPane", "data-parent": t.parent.id || "demo" }, [hd, body, composer]);
 }
 
 // ── main pane (P4.4 + P4.5) ─────────────────────────────────────────────────
@@ -431,7 +445,7 @@ function mainPane(data, view, ctx) {
 
   const typing = el(".typing", { hidden: !data.typing?.length }, data.typing?.length ? [el("span.dots", {}, [el("i"), el("i"), el("i")]), `${data.typing.join(", ")} is typing`] : []);
 
-  main.append(hd, tabs, stream, typing, composer(data, view), pinsPanel(data), filesPanel(data));
+  main.append(hd, tabs, stream, typing, composer(data, view, ctx), pinsPanel(data), filesPanel(data));
 
   // tab switching
   tabs.querySelectorAll(".chtab").forEach((tb) => tb.addEventListener("click", () => switchTab(main, tb.dataset.chtab)));
@@ -470,20 +484,98 @@ export function renderWorkspace(data, view = {}) {
     return screen;
   }
 
-  const ctx = {};
+  const ctx = { live: !!data.live, channelId: data.activeChannelId, serverId: data.activeServerId, me: data.me, membersById: data.membersById || {} };
   const chan = channelColumn(data, view);
   const main = mainPane(data, view, ctx);
   const mem = membersRail(data);
   screen.append(chan, main, mem);
 
-  // thread open/close: opening hides the members rail, shows the thread pane
-  ctx.openThread = () => {
+  // thread open/close: opening hides the members rail, shows the thread pane. Live
+  // loads the real thread (parent + replies) for the clicked message; demo uses
+  // the fixture. A live reply is a parent_id insert — the Realtime echo appends it.
+  ctx.openThread = async (msg) => {
     if (screen.querySelector(".threadpane")) return;
+    let t = data.thread;
+    if (ctx.live) { if (!msg?.id) return; t = await loadThread(msg.id, ctx.membersById); if (!t) return; }
+    if (!t) return;
     mem.setAttribute("hidden", "");
-    screen.append(threadPane(data, () => { screen.querySelector(".threadpane")?.remove(); mem.removeAttribute("hidden"); }));
+    const onReply = ctx.live ? (body, also) => sendMessage(t.channelId, body, { parentId: t.parent.id, alsoToChannel: also }) : null;
+    screen.append(threadPane(t, data.me, { onClose: () => { screen.querySelector(".threadpane")?.remove(); mem.removeAttribute("hidden"); }, onReply, channelName: data.channel?.name }));
   };
-  if (view.thread && data.thread) ctx.openThread();
+  if (view.thread && data.thread) ctx.openThread({ id: data.thread.parent?.id || null });
+
+  if (ctx.live && data.channel) attachLive(screen, data, ctx);
   return screen;
+}
+
+// ── live wiring (P4.10 messages/typing/read · P4.11 presence) ────────────────
+function attachLive(screen, data, ctx) {
+  markRead(ctx.channelId);
+
+  subscribeChannelMessages(ctx.channelId, {
+    onInsert: (row) => liveInsert(screen, data, ctx, row),
+    onUpdate: (row) => liveUpdate(screen, ctx, row),
+    onDelete: (old) => screen.querySelector(`.msg[data-mid="${old.id}"]`)?.remove(),
+  });
+
+  let typingTimer;
+  subscribeTyping(ctx.channelId, (payload) => {
+    if (!payload?.user || payload.user.id === ctx.me.id) return;
+    const typing = screen.querySelector(".typing");
+    if (!typing) return;
+    typing.replaceChildren(el("span.dots", {}, [el("i"), el("i"), el("i")]), document.createTextNode(`${payload.user.name} is typing`));
+    typing.hidden = false;
+    clearTimeout(typingTimer); typingTimer = setTimeout(() => { typing.hidden = true; }, 3500);
+  });
+
+  const doing = ctx.membersById[ctx.me.id]?.doing || "";
+  subscribeServerPresence(ctx.serverId, { id: ctx.me.id, name: ctx.me.name, presence: "online", doing }, (state) => livePresence(screen, state));
+}
+
+function liveInsert(screen, data, ctx, row) {
+  if (row.parent_id) {                              // a thread reply
+    const parent = screen.querySelector(`.msg[data-mid="${row.parent_id}"]`);
+    if (parent) bumpReplies(parent, ctx);
+    const tp = screen.querySelector(".threadpane");
+    if (tp && tp.dataset.parent === row.parent_id) {
+      const tpbody = tp.querySelector(".tpbody"), shaped = shapeMessage(row, ctx.membersById);
+      tpbody.append(el(".msg", { "data-mid": row.id }, [Avatar({ name: shaped.author.name, size: "sm" }), el(".bd", {}, [byline(shaped.author, shaped.time), renderBody(shaped)])]));
+      tpbody.scrollTop = tpbody.scrollHeight;
+    }
+    return;
+  }
+  const stream = screen.querySelector(".stream");
+  if (!stream || stream.querySelector(`.msg[data-mid="${row.id}"]`)) return;   // dedupe our own echo
+  stream.querySelector(".emptystate")?.remove();
+  if (!stream.querySelector(".day")) stream.append(el(".day", {}, [el("span", {}, ["Today"])]));
+  stream.append(messageRow(shapeMessage(row, ctx.membersById), data, { onOpenThread: ctx.openThread }));
+  stream.scrollTop = stream.scrollHeight;
+  if (row.user_id !== ctx.me.id) markRead(ctx.channelId);   // seen while viewing → stay read
+}
+
+function bumpReplies(parent, ctx) {
+  let reply = parent.querySelector(".reply");
+  if (reply) { const n = (parseInt(reply.textContent, 10) || 0) + 1; reply.replaceChildren(iconEl("reply", "sm"), document.createTextNode(`${n} replies`)); }
+  else { const mid = parent.dataset.mid; reply = el(".reply", { onClick: () => ctx.openThread({ id: mid }) }, [iconEl("reply", "sm"), "1 reply"]); parent.querySelector(".bd").append(reply); }
+}
+
+function liveUpdate(screen, ctx, row) {
+  const node = screen.querySelector(`.msg[data-mid="${row.id}"]`);
+  if (!node) return;
+  if (row.deleted_at) { node.remove(); return; }
+  const bd = node.querySelector(".bd"), oldTx = bd.querySelector(".tx"), newTx = renderBody(shapeMessage(row, ctx.membersById));
+  if (oldTx) oldTx.replaceWith(newTx); else bd.append(newTx);
+}
+
+function livePresence(screen, state) {
+  const present = new Set(Object.keys(state || {}));
+  screen.querySelectorAll(".mrow[data-uid]").forEach((row) => {
+    const on = present.has(row.dataset.uid);
+    row.classList.toggle("off", !on);
+    const dot = row.querySelector(".pr"); if (dot) dot.classList.toggle("off", !on);
+    const meta = state[row.dataset.uid]?.[0];
+    if (on && meta?.doing) { const d = row.querySelector(".doing"); if (d) d.textContent = meta.doing; }
+  });
 }
 
 // a bare channel column for the empty-server state (no channel rows)

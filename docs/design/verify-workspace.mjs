@@ -64,7 +64,7 @@ const CASES = [
   ["reconnecting", "/s/lb/c/beats?demo=1&ws=reconnecting", "dark", async (p) =>
     (await p.$eval("#offlineBar", (e) => e.hidden)) ? "reconnecting banner should be visible" : null],
   ["empty-server", "/s/lb?demo=1&ws=empty", "light", async (p) => has(p, ".emptystate h3", "no-channels empty state")],
-  ["empty-live", "/s/lb/c/beats", "light", async (p) => has(p, ".emptystate", "empty state against the live (empty) DB")],
+  ["signed-out", "/s/lb/c/beats", "light", async (p) => has(p, ".authcard .field input", "sign-in prompt when signed out")],
 ];
 
 const browser = await chromium.launch({ executablePath: "/opt/pw-browsers/chromium-1194/chrome-linux/chrome" });
