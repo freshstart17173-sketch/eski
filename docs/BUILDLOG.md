@@ -71,9 +71,13 @@ DONE: app shell + router + signals + Supabase client + tokens/theme + icon sprit
   errors**. (Deep-link-on-hard-refresh is covered by the Vercel rewrite, not testable
   under the plain static server.)
 NEXT: P1.1 schema (servers) — but first resolve the clean-slate BLOCKER above.
-GOTCHA 1: the P0.3 prompt says "the 30 member hues --m1..m30" — STALE. The gallery
-  (LAW) and the `eski-style` skill both define exactly **6** member hues (`--m1..--m6`).
-  Ported 6, per the sources of truth. Do not add m7..m30.
+GOTCHA 1: member hues are **30**, not 6 (owner confirmed 2026-08-23). The 6 static
+  `--m1..--m6` in the gallery/skill `:root` were a stale base; the REAL palette is 30
+  perceptually-even OKLCH hues **generated in JS** in `gallery.html` (`oklch2hex`,
+  `#palette`): `H=(i*12+25)°`, light `L=.585 C=.125`, dark `L=.79 C=.112`. Baked that
+  exact output into `styles/tokens.css` as `--m1..--m30` (light + both dark blocks);
+  reconciled the `eski-style` skill to describe the generator. `--danger` is its own
+  token, NOT a member hue. Regenerate from the formula — never hand-edit a member hex.
 GOTCHA 2: `styles/tokens.css` `@import`s `../docs/design/_fonts.css` (single source for
   the base64 Jost faces) — the app depends on `docs/` being deployed. Fine on Vercel
   (whole repo ships); revisit if docs/ is ever split out.

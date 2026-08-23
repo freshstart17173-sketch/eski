@@ -23,7 +23,7 @@ from `gallery.html`, which now consumes them); don't reinvent them.
 ## 0. Prime directives (never violate)
 
 - **Monochrome + one accent.** The greys are the design. The only colour is the
-  **member hue** (`--m1…--m6`), and it is **server-scoped** — it renders on member
+  **member hue** (`--m1…--m30`), and it is **server-scoped** — it renders on member
   names/chips inside a server, and **nowhere on a public profile or the Feed**.
   `--danger` is the member-red reused for destructive UI. No other colour.
 - **No hex in components.** Every colour comes from a token. If you're typing `#`
@@ -74,7 +74,6 @@ Light `:root`:
 --paper:#FCFCFC; --surface:#EFEFEF; --plate:#E1E1E1; --paper1:#D7D7D7;
 --ink:#131313; --soft:#363636; --muted:#5C5C5C; --line:#CFCFCF; --line2:#B0B0B0;
 --on-ink:#FCFCFC; --tagbg:#DCDCDC; --danger:#C63A28; --railbg:#E4E4E4;
---m1:#C63A28; --m2:#B27812; --m3:#2F8450; --m4:#1F7C8A; --m5:#345FB0; --m6:#7A4C9C;
 --fs-mi:11px; --fs-xs:12px; --fs-sm:13px; --fs:14.5px; --fs-lg:16px; --fs-xl:20px;
 --font:'Jost','Avenir Next','Segoe UI',Arial,sans-serif;
 --s1:4px; --s2:8px; --s3:12px; --s4:16px; --s5:24px; --r:3px; --t:120ms ease;
@@ -89,8 +88,18 @@ Dark (`:root[data-theme="dark"]` **and** the `@media (prefers-color-scheme:dark)
 --paper:#0A0A0A; --surface:#171717; --plate:#242424; --paper1:#2B2B2B;
 --ink:#F4F4F4; --soft:#C8C8C8; --muted:#9A9A9A; --line:#303030; --line2:#484848;
 --on-ink:#0A0A0A; --tagbg:#2C2C2C; --danger:#F07C63; --railbg:#040404;
---m1:#F07C63; --m2:#E4BC62; --m3:#79CE8C; --m4:#63C8D6; --m5:#88A8EE; --m6:#BE90DC;
 ```
+
+**Member hues — `--m1…--m30`, generated, not hand-listed.** The palette is **30
+perceptually-even hues in OKLCH** (HSL clusters greens/blues; OKLCH holds constant
+lightness+chroma so every neighbour is equally distinguishable). The authoritative
+generator is in `gallery.html` (`oklch2hex`, the `#palette` section): for `i` in
+`0..29`, `H=(i*12+25)°`, **light** `L=0.585 C=0.125`, **dark** `L=0.79 C=0.112`.
+The app bakes that same output into `styles/tokens.css` as static `--m1…--m30` (light
+`:root` + both dark blocks) so tokens and gallery agree. `--danger` stays its own token
+(the destructive red) — it is **not** one of the generated member hues, even though the
+old static 6-hue set happened to alias `--m1` to it. Don't hand-edit individual member
+hexes — regenerate from the formula so the two never drift.
 
 Notes: the ramp was **deepened** from the old values so adjacent planes read as
 distinct (the old ramp blended). `--muted` is intentionally legible (not faint).

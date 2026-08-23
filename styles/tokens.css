@@ -13,8 +13,16 @@
   --line:#CFCFCF; --line2:#B0B0B0;
   --on-ink:#FCFCFC; --tagbg:#DCDCDC; --danger:#C63A28; --railbg:#E4E4E4;
 
-  /* member identity hues (server-scoped; never on public profile/Feed) */
-  --m1:#C63A28; --m2:#B27812; --m3:#2F8450; --m4:#1F7C8A; --m5:#345FB0; --m6:#7A4C9C;
+  /* Member identity hues (server-scoped; never on public profile/Feed).
+     30 perceptually-even hues — baked from the gallery's authoritative OKLCH
+     generator: H=(i*12+25)°, light L=0.585 C=0.125. The gallery computes these
+     live in JS; the app bakes the same output into tokens so the two agree. Do
+     NOT hand-edit individual hexes — regenerate from the gallery formula. */
+  --m1:#BA5B55; --m2:#B95E43; --m3:#B66231; --m4:#B0681C; --m5:#A86E00; --m6:#9D7400;
+  --m7:#917B00; --m8:#828107; --m9:#718623; --m10:#5D8B37; --m11:#468F4A; --m12:#26915D;
+  --m13:#00936F; --m14:#009380; --m15:#009290; --m16:#00909F; --m17:#008CAC; --m18:#0088B6;
+  --m19:#2083BE; --m20:#407EC4; --m21:#5779C6; --m22:#6A73C5; --m23:#7A6DC1; --m24:#8968BA;
+  --m25:#9564B0; --m26:#A060A4; --m27:#AA5C97; --m28:#B15A87; --m29:#B65977; --m30:#B95966;
 
   /* type scale */
   --fs-mi:11px; --fs-xs:12px; --fs-sm:13px; --fs:14.5px; --fs-lg:16px; --fs-xl:20px;
@@ -36,7 +44,12 @@
     --ink:#F4F4F4; --soft:#C8C8C8; --muted:#9A9A9A;
     --line:#303030; --line2:#484848;
     --on-ink:#0A0A0A; --tagbg:#2C2C2C; --danger:#F07C63; --railbg:#040404;
-    --m1:#F07C63; --m2:#E4BC62; --m3:#79CE8C; --m4:#63C8D6; --m5:#88A8EE; --m6:#BE90DC;
+    /* dark member hues: same generator, dark L=0.79 C=0.112 */
+    --m1:#FA9E96; --m2:#F9A187; --m3:#F5A579; --m4:#EFA96D; --m5:#E6AF65; --m6:#DCB561;
+    --m7:#CFBB62; --m8:#C0C168; --m9:#B0C672; --m10:#9ECA7F; --m11:#8CCE8E; --m12:#79D09E;
+    --m13:#68D2AE; --m14:#59D2BF; --m15:#50D1CE; --m16:#4FCFDD; --m17:#57CCE9; --m18:#64C8F4;
+    --m19:#74C4FC; --m20:#86BFFF; --m21:#97B9FF; --m22:#A8B4FF; --m23:#B8AFFE; --m24:#C7AAF7;
+    --m25:#D4A5EE; --m26:#DFA1E2; --m27:#E99ED5; --m28:#F19DC6; --m29:#F69CB6; --m30:#F99CA6;
   }
 }
 :root[data-theme="dark"]{
@@ -44,5 +57,10 @@
   --ink:#F4F4F4; --soft:#C8C8C8; --muted:#9A9A9A;
   --line:#303030; --line2:#484848;
   --on-ink:#0A0A0A; --tagbg:#2C2C2C; --danger:#F07C63; --railbg:#040404;
-  --m1:#F07C63; --m2:#E4BC62; --m3:#79CE8C; --m4:#63C8D6; --m5:#88A8EE; --m6:#BE90DC;
+  /* dark member hues: same generator, dark L=0.79 C=0.112 */
+  --m1:#FA9E96; --m2:#F9A187; --m3:#F5A579; --m4:#EFA96D; --m5:#E6AF65; --m6:#DCB561;
+  --m7:#CFBB62; --m8:#C0C168; --m9:#B0C672; --m10:#9ECA7F; --m11:#8CCE8E; --m12:#79D09E;
+  --m13:#68D2AE; --m14:#59D2BF; --m15:#50D1CE; --m16:#4FCFDD; --m17:#57CCE9; --m18:#64C8F4;
+  --m19:#74C4FC; --m20:#86BFFF; --m21:#97B9FF; --m22:#A8B4FF; --m23:#B8AFFE; --m24:#C7AAF7;
+  --m25:#D4A5EE; --m26:#DFA1E2; --m27:#E99ED5; --m28:#F19DC6; --m29:#F69CB6; --m30:#F99CA6;
 }
