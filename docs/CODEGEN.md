@@ -1,416 +1,428 @@
-# CODEGEN — the micro-prompt build plan
+# CODEGEN — the Claude Code build playbook
 
-The hand-off from **spec** to **working app**, sliced so small that any one
-prompt either passes its own test or fails in isolation. Nothing here is new
-design: every prompt points back at [`CANON.md`](CANON.md) (the contract) and
-[`design/gallery.html`](design/gallery.html) (the pixels). If a prompt and CANON
-disagree, **CANON wins** — fix the prompt.
+How eski gets built: not a queue of prompts for a weak model, but a **playbook for
+Claude Code** (Opus 4.8, or Sonnet 5 where the work is mechanical) to build the app
+itself — authoring the backend through the **Supabase MCP**, porting the UI from the
+gallery, verifying its own work, and checkpointing so the build survives being
+interrupted by a context or usage limit.
 
-> **Vocabulary note.** [`CANON §E`](CANON.md) is the mechanical backend
-> reference (tables, RPCs, triggers, Realtime channels, indexes) and already uses
-> the canonical names: `server(s)` · `server_members` · `is_server_admin`/`has_perm`
-> · `comments` (post-level) · `folders` (nested tree, was `collections`) ·
-> `placement` + `work_collaborators` (§D.3) · `collaborators` (was credits) ·
-> `roles`/`member_roles`/`channel_roles` (§D.1, replaces the flat role enum).
-> Copy §E straight into a prompt — no renaming needed.
->
-> **Beta cut (2026-08-18e).** The **canvas** (P6 + `canvas`/`canvas_items`/
-> `annotations`), **kanban boards** (`boards`/`board_*`), and **numbered versions**
-> (`version_of`/`version_note`/`add_version`) are removed from this plan. Where the
-> phase map, per-phase lists, exemplars or budget below still mention them, they are
-> cut — see the runnable prompts in [`prompts/`](prompts/) for the current set.
+Two sources sit above this file and win every disagreement:
 
----
+- **[`CANON.md`](CANON.md)** — the contract (vocabulary, roles→RLS/RPC, the per-screen
+  registry, §E the schema/RPCs/Realtime, §E.10 the per-control backend coverage matrix).
+- **[`design/gallery.html`](design/gallery.html)** — the pixels. Every screen, state and
+  dialog is a URL (`?app=1#screen/state`, `#dialog/id`); [`design/STATES.md`](design/STATES.md)
+  lists them and [`design/verify.mjs`](design/verify.mjs) drives them.
 
-## §0. How to use this
+If code, this guide, and CANON drift, **CANON wins** — fix the guide or the code, never
+let the codebase become a third source of truth. That silent-undo is this repo's one
+failure mode.
 
-### Two runners, one queue
-
-Per the division of labour: **the backend + logic is authored here (SQL, RLS,
-RPCs, policy tests) and applied via the Supabase MCP / migrations — treat those
-prompts as already-correct spec to apply and verify, not creative work.** The
-**UI prompts are what the code-generation model (DeepSeek V4 Flash) runs**, one
-component/state/dialog at a time, against the gallery. Each prompt is tagged:
-
-- **`[BE]`** backend — a migration, an RPC, a policy, or a policy test. Small,
-  deterministic, has a SQL-level pass/fail.
-- **`[UI]`** front-end — one component, one screen-state, or one dialog, built to
-  match a named gallery panel. This is the DeepSeek spend.
-- **`[GL]`** glue — a client data hook, a Realtime subscription, a signing call.
-
-### The prompt template (every `[UI]`/`[GL]` prompt fills this in)
-
-```
-TITLE:      <phase>.<n> — <one thing>
-CONTEXT:    Stack = vanilla HTML+CSS+JS + a thin signals reactive layer (no framework/bundler; CANON §G,
-            prompts/README). Tokens & primitives from the eski-style skill; this screen’s law is gallery.html panel "<name>".
-BUILD:      <the single unit — one component / one state / one dialog>
-PROPS/DATA: <exact inputs; which table/RPC/Realtime channel it reads or writes>
-STATES:     <every visual state to cover: default/hover/active/empty/loading/error/
-            disabled — each named by its gallery state-URL (#screen/state,
-            #dialog/id); web-only scaling 1024↔1440 via &w=, both themes>
-DO NOT:     <the guardrails: no new colours (tokens only), no hex, --r on chrome,
-            square media, square close/icon buttons, no drop shadows on modals,
-            member hue is server-scoped & never on public/Feed>
-DONE WHEN:  <a concrete, testable assertion — see below>
-```
-
-### Definition of done (what "testable" means per tag)
-
-- **`[BE]`** — a `pgTAP`/SQL snippet proves the policy: e.g. *"a non-member
-  `select` on `messages` in a server they’re not in returns 0 rows; a member
-  gets N."* Every RLS prompt ships its own allow-and-deny test.
-- **`[UI]`** — renders with no console error and matches its **gallery state-URL**
-  (web-only: desktop 1440 + the ~1024 min via `&w=`, both themes; mobile is
-  deferred post-beta, CANON §C.2). Every state in `STATES:` is a real URL
-  (`gallery.html?app=1#<screen>/<state>` or `#dialog/<id>` — see
-  `design/STATES.md`), so the acceptance gate has a stable frame to compare
-  against. The gate is **two signals, not one**: a **DOM/structure diff** vs the
-  state-URL (deterministic, text-comparable, names the exact element/class/token
-  that diverged — the primary signal for a weak/open model) **and** a Playwright
-  screenshot diff. Per owner: the DOM diff is an input to the pass/fail judgement,
-  **not** the sole gate — a human/vision pass rules on flagged drift. The same
-  runner is `design/verify.mjs` (Chromium already wired); run it to enumerate and
-  drive every state.
-- **`[GL]`** — a scripted round-trip: perform the action, assert the row/Realtime
-  event, assert the optimistic UI and the reconciled UI match.
-
-### The golden rules (repeat in every prompt’s `DO NOT`)
-
-1. **Search before you define** — reuse the token/selector/component that exists;
-   never add a second one nearby.
-2. **One canonical name** — UI copy = code = docs (CANON §A).
-3. **Every colour from a token**, no hex in a component; member hue is the only
-   colour, **server-scoped**, absent from public profile and Feed.
-4. **`--r` (3px) on chrome; media stays square.** Round = avatars + presence dots
-   only.
-5. **Square icon/close buttons** (`.iconbtn`, `#i-x`) — don’t invent a second
-   style. **Modals darken the background (scrim), no drop shadows.**
-6. **Web-only for the beta.** Desktop three-pane, scaling 1024↔1440 (it flexes,
-   never collapses to tabs); mobile is deferred post-beta (CANON §C.2).
-7. **The RLS policy is the fence; the UI is the signpost.** A `[UI]` gate is
-   never the only thing standing between a user and data.
+> **Beta cut.** The canvas, kanban boards, and numbered versions are out of the beta
+> (their tables/RPCs/screens are removed from CANON and from the phases below). Voice/
+> video (`vc`) is a v2 deferral — ship the WIP placeholder, no backend.
 
 ---
 
-## §1. Phase map & dependency order
+## §0. The operating model — read this first
 
-Backend precedes the UI that reads it; primitives precede screens; screens
-precede their dialogs. Follow CANON §E.8 for the migration sub-order.
+**You are the whole build team.** One agent does the schema, the RLS, the RPCs, the
+screen ports, the verification, and the git — there is no separate code-gen model to
+hand UI prompts to. That changes everything about how this is sequenced.
 
-| Phase | What | Tag mix | Gate before next phase |
+### The stack (locked, CANON §G)
+Vanilla HTML + CSS + JS **plus a thin signals reactive layer** (`@preact/signals-core`,
+~2 KB) — no meta-framework, no bundler, no build step. Supabase (Postgres + Auth +
+Realtime) behind RLS; Cloudflare R2 for media behind `api/sign.mjs`; Vercel deploys
+`main` directly. **The live app fills the viewport; 1440 is a prototyping canvas only.**
+
+### Build in resumable sessions
+A full build does **not** fit in one context window, and an Opus session **will** get
+cut off by the context limit or a usage cap and have to wait. So the unit of work is a
+**session**, sized to finish-and-checkpoint inside one window, and every session is
+**cold-startable** — a fresh Claude with no memory of the last one can resume from the
+repo alone. Three things make that true:
+
+1. **`docs/BUILDLOG.md` — the append-only build log.** Every session ends by appending:
+   the phase/session id, what's **DONE** (with the commit sha and the migration name),
+   what's **NEXT** (the exact next session to run), and any gotcha the next session needs.
+   This is the single place the build's live state is written in prose — and the reason
+   **any** Claude in **any** chat can take over (§6.1). When you start a session, add an
+   `IN PROGRESS: <branch> — <what> — <started-at>` line and clear it when you check in;
+   that's the lightweight claim that stops two agents grabbing the same item.
+2. **Git is the real checkpoint.** Commit at every green sub-step; the working tree is
+   never left half-broken. `main` is production, so **build on a branch** and only merge
+   when green. The repo and the database must agree at every checkpoint — if you
+   `apply_migration`, you commit the same SQL as a `schema-*.sql` file in the *same*
+   session (never an applied migration with no committed source).
+3. **The DB is queryable truth.** `list_migrations` + `list_tables` (Supabase MCP) show
+   exactly what's really deployed, independent of any doc — so a resuming session trusts
+   the database, not its own notes.
+
+**Cold-start ritual — run at the top of every session:**
+```
+1. read docs/BUILDLOG.md (tail)           — where we are, what's next
+2. git log --oneline -8 ; git status      — last green checkpoint, clean tree?
+3. Supabase MCP: list_migrations ; list_tables   — real DB state
+4. node docs/design/verify.mjs            — UI gate still green?
+5. pick up the NEXT item from BUILDLOG; enter plan mode; execute
+```
+
+### Model & effort selection
+- **Opus 4.8 (or Fast mode)** for anything load-bearing or novel: the schema + RLS
+  design, every `security definer` RPC, the storage/dedup math, and the **first** port
+  of each screen *archetype* (the first list, the first modal, the first media viewer).
+- **Sonnet 5** for the mechanical repeats once an archetype is proven — porting the Nth
+  similar dialog, the Nth settings panel — under the exact same guardrails. Cheaper and
+  faster; downshift deliberately.
+- **Subagents** (Explore / general-purpose) for read-only fan-out (mapping a CANON slice
+  to the gallery panels it governs) and for parallel verification of independent
+  surfaces. Reconcile their output at a checkpoint; never let two subagents edit the
+  same file.
+- **Plan mode** at the top of each session: propose the session's steps and its
+  definition-of-done, then execute in small commits.
+
+### The two-half rhythm of every phase
+Backend precedes the UI that reads it. Within a phase: **author + apply + verify the
+backend (SQL via the Supabase MCP), then port the UI that consumes it.** The RLS policy
+is the fence; the UI is only the signpost — a screen never ships before the policy that
+protects its data.
+
+---
+
+## §1. The Supabase MCP workflow (the backend half)
+
+All schema and policy work goes through the Supabase MCP, not raw `psql`. The repo holds
+the SQL (`schema-*.sql`, CANON §E.8 order); the MCP applies it. Keep both in sync.
+
+### Tool cheat-sheet (which tool for what)
+| Need | Tool | Notes |
+|---|---|---|
+| See what exists before changing it | `list_tables`, `list_migrations`, `list_extensions` | **always** run before a schema change |
+| Apply DDL (tables, policies, functions, triggers) | `apply_migration` | named + versioned; **idempotent** SQL only |
+| Seed data · RLS policy tests · ad-hoc reads | `execute_sql` | **not** for schema; this is your test harness |
+| Security + performance audit | `get_advisors` | run after **every** migration; fix before moving on |
+| Keep the client typed to the schema | `generate_typescript_types` | regenerate + commit after every schema change |
+| Client config for the app | `get_project_url`, `get_publishable_keys` | into the env module (P0.2) |
+| Debug a failing call | `query_logs` | postgres / auth / realtime logs |
+| Look something up | `search_docs` | Supabase docs, when unsure of a pattern |
+| A safe place to test migrations | `create_branch` → … → `merge_branch` | see below |
+| Cost gate on a branch/project | `get_cost`, `confirm_cost` | branches cost; confirm first |
+
+### Branch-first safety (there is no staging)
+`main` → prod and `apply_migration` writes to the **remote project directly**. So:
+
+- **Greenfield (no real data yet):** apply straight to the project. Fast, fine.
+- **Once there is data you care about:** `create_branch` (a Supabase dev branch is a copy
+  of the DB) → `apply_migration` + `execute_sql` tests + `get_advisors` **on the branch**
+  → when green, `merge_branch` to prod. `confirm_cost` first. This is the safety net that
+  substitutes for the missing staging environment.
+
+### Migration discipline
+Every migration is **re-runnable**: `create table if not exists`, `create or replace
+function`, `drop policy if exists` before `create policy`, `alter table … add column if
+not exists`. Follow the CANON §E.8 numbered order (servers → roles/storage → works/
+folders/placement → channels/messages → comments/profiles → DMs/friends → notifications/
+prefs → moderation/billing → RPCs/indexes/grants → `notify pgrst 'reload schema'` +
+realtime publication). One migration = one coherent unit that has its own allow+deny
+test.
+
+### Edge / server functions
+The beta's only server function is **`api/sign.mjs` on Vercel** (R2 presigning) — not a
+Supabase Edge Function (no ffmpeg there). `transcode` (audio, F11) is a later Vercel
+Node function with `ffmpeg-static`. `deploy_edge_function` exists if a genuine Supabase
+edge function is ever needed (e.g. a `notify` fanout later), but P0–P9 don't require one.
+
+---
+
+## §2. RLS-first verification (prove the fence before the signpost)
+
+A table is not "done" when it exists — it's done when a test proves its policy both
+**allows** the right access and **denies** the wrong access.
+
+For each policy, after `apply_migration`, immediately `execute_sql` a test that walks the
+relevant rows of the CANON §B capability matrix — **at least one allow case and one deny
+case** per role that matters (owner / admin / member / timed-out / non-member / blocked).
+Impersonate with the documented pattern (seed a couple of `auth.users`, set
+`request.jwt.claims` / `role` per statement) so `auth.uid()` resolves inside the policy.
+Examples of what each test must show:
+
+- `messages`: a non-member `select` in a server they're not in → **0 rows**; a member → **N**.
+- `works` (`works_read`): public visible to a friend, server visible to a member, private
+  only to the owner, and a **trashed** (`deleted_at`) work drops out of every view but Trash.
+- private channel (`channel_roles` rows): non-granted member → **0**; granted → **N**.
+- storage: a user-owned work bumps the **user** meter, a server-owned work the **server**
+  meter, and a blob shared by two of one owner's works counts **once** (dedup).
+
+Then, before moving on:
+- `get_advisors` (**security**) → zero "RLS disabled" / "policy permits all" findings.
+- `get_advisors` (**performance**) → add the FK/policy indexes it flags (this *is* §E.7).
+- `generate_typescript_types` → commit the regenerated types so the UI can't drift.
+
+An RPC is done when a scripted `execute_sql` round-trip shows it produces exactly the
+rows / notification / meter delta CANON specifies **and** is rejected when the permission
+gate fails.
+
+---
+
+## §3. The UI-port recipe (the gallery is law)
+
+Port one surface at a time — a screen, a single state, or one dialog — each identified by
+its gallery state-URL. Never invent a control the gallery doesn't have; reuse the
+`eski-style` tokens and the P3 primitives.
+
+**Data binding:** a small **signals store** per domain (`session`, the active server,
+channel, message list, notifications) wraps `supabase-js` queries + Realtime
+subscriptions; components read the signals and re-render on change. Optimistic write →
+reconcile against the returned row / Realtime event.
+
+**Acceptance = two signals, both required, both themes, 1024↔1440 via `&w=`:**
+1. `verify.mjs` **DOM/structure diff** vs the state-URL — deterministic, names the exact
+   element/class/token that diverged.
+2. A **Playwright screenshot** compared to the gallery panel — the vision pass rules on
+   flagged drift.
+Plus **zero console errors**. The RLS fence (P1/P2) already exists, so the port wires to
+real data, real RPCs, and real Realtime — its "done" asserts live behaviour, not a mock.
+
+**The guardrails (every port re-checks them):** search before you define; one canonical
+name (UI = code = docs); every colour from a token, no hex, member hue server-scoped and
+absent from public profile + Feed; `--r` on chrome, media square, round only for avatars/
+presence dots; one square icon/close button style; modals on a scrim, no drop shadow;
+the app fills the viewport (1440 is prototyping only).
+
+---
+
+## §4. Phase map (dependency order)
+
+Backend precedes the UI that reads it; primitives precede screens; screens precede their
+dialogs. Each phase is one or more **sessions** (§0); the "checkpoint" column is what must
+be green — committed + logged — before the next phase starts.
+
+| Phase | What | Sessions | Checkpoint |
 |---|---|---|---|
-| **P0** | Scaffold: app shell, Supabase client, token/CSS import, icon sprite | GL | App boots, tokens resolve, sprite renders |
-| **P1** | Schema + RLS (servers → messages → DMs → notifs → profiles → moderation → roles/storage) | BE | Every table has an allow+deny test that passes |
-| **P2** | RPCs + triggers (§E.3) + `has_perm`/`can_view_channel` (§D.1) | BE | Each RPC has a round-trip test |
-| **P3** | Design-system primitives (button, field, modal, menu, avatar, tag, chip, toggle, checkbox, bar, toast) | UI | Each matches its eski-style spec, both themes |
-| **P4** | The 3-pane shell + Workspace states | UI+GL | Workspace renders live messages |
-| **P5** | Content screens: Feed, Explorer, Details, Profile, Upload | UI+GL | Cards render every media kind incl. type-cards |
-| ~~**P6**~~ | ~~Canvas suite~~ — **cut (beta)** | — | — |
-| **P7** | Messages/DMs, **Friends**, Notifications *(boards cut)* | UI+GL | DM round-trip, live bell, friendship RPCs |
-| **P8** | Admin: settings shell, roles editor, assign-roles, channel perms, storage & billing, moderation, audit, invites | UI+GL | Perm gates match the matrix |
-| **P9** | Utility + focus: Create, Join, Sign-in, 404, dead-invite, access-denied, quick-switcher | UI | Every state in §C.14/C.20 reachable |
+| **P0** | Scaffold: app shell + signals + router, Supabase client/env, tokens+CSS, icon sprite | 1 | app boots, a signal re-renders, tokens resolve both themes, sprite shows |
+| **P1** | Schema + RLS, in CANON §E.8 order | 3–4 | every table has a passing allow+deny test; `get_advisors` security clean; types committed |
+| **P2** | RPCs + triggers + `has_perm`/`can_view_channel` + `search_all` | 2 | each RPC has a green round-trip test |
+| **P3** | Design-system primitives from `eski-style` | 1–2 | each matches its spec, both themes, tokens only |
+| **P4** | 3-pane shell + Workspace (chat, members, composer, thread) + Realtime | 3–4 | workspace renders **live** messages + presence |
+| **P5** | Feed · File explorer (+ Trash) · Details pane · Profile · Upload | 3–4 | every media kind renders incl. type-cards; details pane is the one viewer |
+| **P7** | Messages/DMs · Friends · Notifications | 2 | DM round-trip, live bell, friendship RPCs |
+| **P8** | Admin: settings shell, roles editor, assign-roles, channel perms, moderation, audit, invites, storage & billing | 3 | every perm-gated control matches the fence |
+| **P9** | Create · Join · Sign-in · 404 · dead-invite · denied · quick-switcher | 1–2 | every §C.14/§C.20 state reachable |
+
+*(P6 — canvas — is cut. The number is left as a gap so later numbers don't shift.)*
+
+The exhaustive per-surface checklist (which dialog belongs to which screen, every state
+URL) lives in [`prompts/`](prompts/) — treat those as the granular to-do inside each
+phase, not as prompts to feed a model.
 
 ---
 
-## §2. The prompt queue
+## §5. The phase playbooks
 
-Each line is one prompt. Format: **`ID` — build · *DONE WHEN* · refs.** Expand a
-line into the §0 template when you run it. Counts per phase are at the head.
+Each playbook: **Goal · Read · Do · Verify · Checkpoint.** Work top to bottom; commit and
+log at each Verify-green.
 
-### P0 — Scaffold · 4 prompts, all GL
+### P0 — Scaffold (1 session, Opus)
+- **Read:** CANON §C.3 (route manifest), §G (stack); `prompts/P0-scaffold.md`.
+- **Do:** app shell `index.html` + a hash/History router mounting an empty labelled
+  `.screen` per §C.3 route (mirror the gallery's `?app=1#route`); wire the **signals**
+  primitive (a signal-bound placeholder that re-renders proves it); the Supabase client +
+  typed env module (`get_project_url` / `get_publishable_keys`) + a `session()` accessor;
+  import the tokens/base CSS from `eski-style` + the theme swap; mount the `#i-*` sprite +
+  an `icon()` helper.
+- **Verify:** every route mounts its placeholder, no console error, no full reload; a deep
+  link resolves via the Vercel rewrite; a signal updates the DOM; tokens resolve in both
+  themes.
+- **Checkpoint:** commit; BUILDLOG "P0 done, next P1.1 servers".
 
-- **P0.1** — Init the app shell (vanilla HTML+CSS+JS + a thin reactive layer per
-  CANON §G — signals primitive, no bundler/build step), routing skeleton for the
-  §C.3 manifest routes. *Done: every route mounts an empty labelled screen;
-  `?app=1#route` parity with the gallery preserved; a signal-bound value re-renders.*
-- **P0.2** — Supabase client + typed env, auth session provider, a `useSession`
-  hook. *Done: anon boot works; a signed-in session exposes `uid`.*
-- **P0.3** — Import the design tokens & base CSS from the `eski-style` skill (§1) + `gallery.html` as the
-  global stylesheet; wire the theme-swap (`data-theme` + `prefers-color-scheme`).
-  *Done: `--r`, `--m1..30`, `--ink`, surfaces all resolve in both themes.*
-- **P0.4** — Mount the SVG icon sprite (`#i-*`) once; a `<Icon name>` wrapper.
-  *Done: `#i-x`, `#i-hash`, `#i-server`… all render at `.ic`/`.ic.sm` sizes.*
+### P1 — Schema + RLS (3–4 sessions, Opus; branch-first once data exists)
+- **Read:** CANON §E.1 (tables), §E.2 (enums), §B (the permission matrix each policy
+  enforces), §E.8 (order); `prompts/P1-schema.md`.
+- **Do:** one migration-unit at a time in §E.8 order — `servers`/`server_members`/
+  `server_invites` (+ `member_of`, `is_server_admin`) → `roles`/`member_roles`/
+  `channel_roles` (+ `has_perm`, `can_view_channel`) + storage (`media_blobs`,
+  `storage_meters`, `storage_balance`, `works.owner_type/owner_id`) → `works`(+`works_read`,
+  `deleted_at`, `hidden`, `approved_at`)/`work_items`/`folders`/`placement`/
+  `content_tags`/`starred_items`/`share_links` → `channel_categories`/`channels`(+
+  `post_policy`, `allowed_kinds`, `default_folder_id`)/`messages`/`message_reactions`/
+  `message_pins`/`channel_reads`/`mentions` → `comments`/`profiles`(+`banner_key`) → `dm_*`/
+  `dm_message_reactions`/`friendships` → `notifications`/`server_prefs`/`channel_prefs`/
+  `saved_items`/`save_folders` → moderation (`server_bans`, `reports`, `audit_log`,
+  `timeout_until`) + billing (`invoices`, `sessions`). Apply each with `apply_migration`
+  **and** commit the matching `schema-*.sql`.
+- **Verify (per unit):** `execute_sql` allow+deny tests (§2); `get_advisors` security clean;
+  `generate_typescript_types`.
+- **Checkpoint:** commit per unit; BUILDLOG names the last applied migration + the next.
+- **Gotchas the log must carry:** the admin auto-hide rule (`servers`/`roles.
+  hide_posts_by_default` → the `works`-insert trigger sets `hidden`); `works_read` honours
+  a valid `share_links` token; `channel_roles` zero-rows = open to all (LOCKED, don't build
+  the deny-overwrite v2 grain).
 
-### P1 — Schema + RLS · ~21 prompts, all BE (one migration-unit each, CANON §E.8 order)
+### P2 — RPCs, triggers, search (2 sessions, Opus)
+- **Read:** CANON §E.3 (RPCs/triggers), §E.7 (search), §E.10 (which control calls which RPC).
+- **Do:** each `security definer, search_path=public` RPC from §E.3 + its round-trip test:
+  `join_via_invite`, `mark_channel_read`/`mark_server_read`, `toggle_reaction`,
+  `pin_message`/`unpin_message`, `create_dm`/`create_group_dm`, `add_friend`/
+  `respond_friend`/`block_user`, `move_to_folder`, `toggle_star`, `duplicate_work`,
+  `save_to_files`, `create/revoke/resolve_share_link`, `hide_dm`, `approve_work`,
+  `reorder_channels`/`set_channel_post_policy`, `set_member_roles`/`set_channel_access`,
+  `restore_work`/`purge_work`/`empty_trash`, `ban/timeout/kick_member` (each writes
+  `audit_log`), `billing_portal`, `revoke_session(s)`, `export_manifest`. Then the
+  **triggers** (message-fanout → `mentions`+`notifications`; `works`-insert →
+  `search_tsv` + auto-hide; refcount/meter maintenance; the 30-day Trash purge job) and
+  `search_all(q,scope)` + the GIN indexes.
+- **Verify:** each RPC produces exactly the asserted rows/notification/meter delta and is
+  rejected when its gate fails; `get_advisors`; regen types.
+- **Checkpoint:** commit; BUILDLOG.
 
-Each: `create table if not exists` + RLS enable + policies + the allow/deny test.
+### P3 — Primitives (1–2 sessions, Opus for the first of each, then Sonnet)
+- **Read:** the `eski-style` skill (§1 tokens, §2 buttons, §4 components); `prompts/P3-primitives.md`.
+- **Do, once each, reused everywhere:** `Button` (primary/default/sm/ghost/outline/danger) ·
+  `IconButton`/`CloseButton` (square, `#i-x`) · `Field` · `Modal` (scrim) · `Menu`(+items/
+  label/sep) · `Avatar`+`PresenceDot` · `Tag`/`uchip` · `Toggle` · `Checkbox` · `Bar` ·
+  `Toast` · `Tabs` · `Dropdown`(`.btn`+chevron, multi-select `.menu`).
+- **Verify:** each matches its `eski-style` spec in both themes, all states, tokens only.
+- **Checkpoint:** commit; BUILDLOG.
 
-- **P1.1** `servers` (was `groups`) + `server_members` + `server_invites`;
-  helpers `member_of(sid)`, `is_server_admin(sid)`. *Test: non-member sees no
-  server row; member does; only admin writes.*
-- **P1.2** `works` column adds (`visibility in(public,personal,server)`,
-  `server_id`, `title`, `file_ext`, `search_tsv`, `hidden`, `approved_at`,
-  **`deleted_at`** — soft-delete/Trash, gallery #42/B19) + the rewritten
-  `works_read` (CANON §B.3), which also **omits `deleted_at not null`** from every
-  view but the Trash folder. *Test: the visibility read rule — public to friends,
-  server to members, private to owner; a trashed work drops out of the library.*
-  *(No `version_of`/`version_note` — versions cut.)*
-- **P1.3** `channels` (+`kind in(text,voice)`, `slowmode_sec`, `position`,
-  **`default_folder_id`** #53, **`allowed_kinds text[]`** #54 — reject a work whose
-  `kind` isn't allowed). *Test: member reads, admin writes, position orders, a
-  disallowed kind is refused.*
-- **P1.4** `messages` (+`body_tsv` generated, `parent_id`, `also_to_channel`,
-  tombstones). *Test: member insert allowed unless timed-out; update/delete own
-  only; deleted row tombstones not vanishes.*
-- **P1.5** `message_reactions`, **P1.6** `message_pins`, **P1.7** `channel_reads`,
-  **P1.8** `mentions` — each its own prompt + test.
-- **P1.9** `comments` adds (`context`, `resolved_at`) — **post-level comments**,
-  threads never mix context. *Test: a public-context comment is invisible in a
-  server context and vice-versa.*
-- **P1.10** `placement` (§D.3) + widen `works_read` to "readable via any placement";
-  **P1.11** nested `folders` (`parent_id`, §C.6); **P1.12** `work_collaborators`
-  (consent-gated, §D.3.1). **P1.13–P1.15** — **CUT (beta):** `boards`/`board_*` +
-  the canvas tables are removed; numbers left as a gap so P1.16+ keep their numbers.
-- **P1.16** `dm_channels`, **P1.17** `dm_members`, **P1.18** `dm_messages`,
-  **P1.19** `friendships` (ordered pair, `status`). *Test: DM visible only to its
-  members; friendship gates a DM create.*
-- **P1.20** `notifications` (+Realtime-ready). **P1.21** `saved_items`
-  (`folder_id → save_folders`).
-- **P1.22** `profiles` adds (status emoji/text/expires, `presence_state`, `tz`,
-  `pronouns`, `links`).
-- **P1.23** moderation: `server_bans`, `audit_log`, `server_members.timeout_until`.
-- **P1.24** **granular roles (CANON §D.1):** `roles(server_id, name, color,
-  position, permissions bigint, is_default)`, `member_roles`, `channel_roles`
-  (allow-list); drop `server_members.role`; helpers `has_perm(sid, flag)` and
-  `can_view_channel(channel_id)`. Channel-scoped reads (messages/pins/files +
-  a work in a private channel) re-gate on `can_view_channel`. **Storage (§D.2 —
-  dynamic slider, no pooling):** `media_blobs` (dedup), `works.owner_type`/
-  `owner_id`, `storage_meters`, `storage_balance` (one slider per account; no
-  `billing_accounts`, no `storage_allocations`). *Test: union-of-roles permission;
-  a private channel hides from a non-granted member; a work's bytes hit its owner's
-  meter and dedup counts a shared blob once.*
+### P4 — Shell + Workspace (3–4 sessions; Opus for chat+Realtime, Sonnet for repeats)
+- **Read:** CANON §C.4 (workspace template) + §C.3; `prompts/P4-shell-workspace.md`.
+- **Do:** the shell (rail 58 · channel column 232 · main · members 210; fills the
+  viewport) → server rail + menus → channel column (server-name→server menu, **Files is a
+  channel entry**, channel list by kind, group headers as buttons) → channel header
+  (Messages/Pins/Files tabs, bell dropdown, search, members toggle) → message list + row
+  (grouped, member-colour byline, hover actions incl. Forward, reactions, edited) →
+  composer (markdown toolbar, emoji-mart, @/# autocomplete, attach; slowmode/timed-out
+  states) → thread view → members rail (+ member popover with the gated admin block) →
+  **[GL]** `channel:{id}` live insert/edit/delete + `:typing` + `mark_channel_read`;
+  `server:{id}` presence → members. Workspace edge states (new-server first-run, empty,
+  reconnecting).
+- **Verify:** workspace renders **live** messages (open two sessions, send, see it arrive);
+  presence updates; every §C.4 state URL passes the two-signal gate.
+- **Checkpoint:** commit per surface; BUILDLOG.
 
-### P2 — RPCs, triggers, search · ~15 prompts, all BE
+### P5 — Content screens (3–4 sessions; Opus for the details-pane viewer + explorer, Sonnet for the rest)
+- **Read:** CANON §C.5 (Feed), §C.6 (File explorer — one component, two mounts; the
+  Google-Drive selection model; Files-as-channel), §C.7 (Details pane — the one media
+  viewer, backdrop close), §C.12 (Upload); `prompts/P5-content.md`.
+- **Do:** Feed → **File explorer** (folder tree beside the channel column, grid/list/feed,
+  multi-select: single-click select / ⌘/shift / marquee / ⌘A / Esc, double-click opens
+  Details; Trash view; the two mounts — server + personal `My files`) → **Details pane**
+  (the single viewer for image/video/audio/type-card, transport, info rail, comments for
+  posts, closes on ✕/Esc/backdrop) → Profile (shelves + POVs) → **Upload sheet** (visibility
+  tiles, add-details disclosure, location picker with nested new-folder). Wire each to
+  `works`/`placement`/`folders`/`saved_items`/`starred_items`/`share_links` + `sign.mjs`.
+- **Verify:** every media kind renders (incl. `.flp/.zip` type-cards); the details pane is
+  the only viewer (no lightbox); selection + marquee behave; both mounts differ only by
+  source; state URLs pass.
+- **Checkpoint:** commit; BUILDLOG.
 
-One function + its round-trip test each: `join_via_invite` · `mark_channel_read` ·
-`toggle_reaction` · `pin_message`/`unpin_message` · `create_dm`/`create_group_dm` ·
-`add_friend`/`respond_friend`/`block_user` ·
-`ban_member`/`timeout_member`/`kick_member` (each writes `audit_log`) ·
-`set_member_roles(user, role_ids[])` · `set_channel_access(channel, role_ids[],
-member_ids[])` · `move_to_folder` · **`restore_work`/`purge_work`/`empty_trash`**
-(Trash — gallery #42/B19) · `export_manifest(server|'account')` · the **triggers**
-(message-fanout → `mentions`+`notifications`; `edited_at`; tombstone;
-`works.search_tsv`; comment-mention → notification; storage-meter maintenance;
-**the 30-day Trash purge job** that hard-deletes `deleted_at` past retention) ·
-`search_all(q, scope)` + the GIN indexes (§E.7). *Each done when: the action
-produces exactly the rows/notification/meter delta asserted, and is rejected
-when the gate fails.*
+### P7 — Messages · Friends · Notifications (2 sessions; Opus for Realtime, Sonnet for lists)
+- **Read:** CANON §C.11 (DMs/Friends), §C.13 (Notifications); `prompts/P7-boards-dms-notifs.md`.
+- **Do:** DM list + new-DM/group picker (friendship-gated) + conversation + composer;
+  pin/mute/**hide**; Friends (All/Pending/Blocked, add-by-handle, accept/decline/block);
+  Notifications (tabs, inline reply, mark-all, bell dropdown) → **[GL]** `create_dm`
+  round-trip; `user:{id}` live bell.
+- **Verify:** DM round-trip live; friendship RPCs gate correctly; bell updates in real time.
+- **Checkpoint:** commit; BUILDLOG.
 
-### P3 — Design-system primitives · ~14 prompts, all UI
+### P8 — Admin (3 sessions; Opus for roles/permissions, Sonnet for panels)
+- **Read:** CANON §B (matrix), §C.16–C.19, §C.4 (moderation); `prompts/P8-admin.md`.
+- **Do:** settings shell + nav (with the Back-to-server item) → General (name/desc/icon/
+  cover) → Channels (who-can-post/slowmode/default-folder/allowed-types/private→allow-list)
+  → Roles editor (permission matrix → `roles.permissions`) → Assign-roles modal → Channel
+  permissions modal → Moderation (timeouts/bans/take-action/post-approval queue/**auto-hide
+  defaults**/bulk-user actions) → Audit log → Invite links → Storage & billing (two
+  sliders, portal, receipts). Every perm-gated control **[GL]** re-checks `has_perm`/
+  `is_server_admin` — the render is a signpost, the RLS is the fence.
+- **Verify:** each gated control appears only for a real admin **and** the underlying write
+  is refused server-side for a non-admin (test both).
+- **Checkpoint:** commit; BUILDLOG.
 
-Build each **once**, from the `eski-style` skill, reused everywhere. `Button` (primary/
-default/sm/danger/icon) · `IconButton` + `CloseButton` (square, `#i-x`) ·
-`Field` (the one `--line2` border) · `Modal` (scrim, no shadow) · `Menu` +
-`MenuItem` + `.mlabel`/`.sep` · `Avatar` (round) + `PresenceDot` · `Tag`/`Chip`
-(server-hue `uchip`) · `Toggle` · `Checkbox` (`.cbx`) · `Bar` (usage) · `Toast` ·
-`Tabs` · `SegmentedControl` (visibility) · `Dropdown`/`SelectPill`. *Each done
-when: matches its `eski-style` spec in both themes, all states, and uses only
-tokens.*
-
-### P4 — Shell + Workspace · ~13 prompts, UI+GL
-
-- **P4.1 [UI]** the 3-pane shell (server rail 58 · channel column 232 · main ·
-  members rail 210) **capped at a 1440px canvas, centred with a hairline gutter,
-  modals sized to it** (§C.2) + the mobile one-pane + bottom-tabs collapse.
-- **P4.2 [UI]** server rail items (badge states: default/hover-tooltip/active/
-  unread-dot/mention-count) + the ＋ menu + own-avatar menu.
-- **P4.3 [UI]** channel column: **server-name header → server-menu dropdown**
-  (Invite · Create channel/category · Server/Notification settings · Edit profile
-  · Leave — admin rows gated), Media entry, channel list by kind (unread bold,
-  mention badge), **admin-POV drag-handle + per-channel edit gear**, ＋ add channel
-  → the Create-channel modal.
-- **P4.4 [UI]** channel header (Messages/Pins/Files tabs, voice/video, **bell →
-  dropdown preview**, search, members icon).
-- **P4.5 [UI]** message list + message row (grouped, member-colour byline;
-  hover/long-press actions incl. **Forward**; **forwarded-message quote render**;
-  edited tag; reactions).
-- **P4.6 [UI]** composer (toolbar-inserts-markdown, emoji-mart, @/# autocomplete,
-  attach) + its states (empty/typing/slowmode/timed-out-disabled).
-- **P4.7 [UI]** shared-file card inline (leads with file name) → opens Details.
-- **P4.8 [UI]** thread view (`parent_id`) + `also_to_channel`.
-- **P4.9 [UI]** members rail (**Member/Admin POV switch**, Admins/Members groups,
-  presence dot, "working on"; **member popover** with Message/Add-friend + a gated
-  **admin block** Roles/Timeout/Kick/Ban).
-- **P4.10 [GL]** wire `channel:{id}` Postgres-changes → live insert/edit/delete;
-  `:typing` broadcast; `mark_channel_read` on view.
-- **P4.11 [GL]** `server:{id}` Presence → members rail online/doing.
-- **P4.12 [UI]** the **workspace modals** — Create-channel (name/kind/category/
-  default-folder/allowed-types/private), Invite-to-server (link+copy+expiry+by-
-  handle), Forward (multi-target + note) — all scrim-backed, sized to the canvas.
-- **P4.13 [GL]** the **admin POV** is a signpost only: every revealed control
-  (＋ add channel, edit gear, kick/ban, drag-reorder) re-checks `has_perm`/
-  `is_server_admin` server-side; the toggle only renders to real admins.
-- **Edge states** (own prompts): **new-server first-run** (empty column + 3-step
-  setup checklist → create-channel / invite / upload), no-channels-yet,
-  zero-messages, no-presence, timed-out composer, Realtime-reconnecting banner.
-
-### P5 — Content screens · ~12 prompts, UI+GL
-
-Feed (header nav, search, type/sort, **layout toggle even⇄masonry**, post card
-per kind incl. **type-card** for `.flp/.zip/.exe`, empty) · **File explorer**
-(nested **folder tree** + breadcrumb, **grid/list/feed** view toggle — feed
-flattens the subtree to previewable media + inline comments, bulk select-bar with
-move-to-folder, lightbox, **Trash view** — retention notice + Empty-now over
-rows with countdown + Restore / Delete-forever, §C.6) · Details pane (player controls, **storage badge**
-server-vs-personal, **file name** in the top bar, title/**collaborators**/tags,
-actions, **post-level comments**, mobile bottom sheet) · Profile (square avatar,
-Public/Server/Private shelves + counts + **search**, grid toggle, Settings) ·
-**Fast Upload sheet** (dropzone → visibility → Post; title=filename default; Tags +
-**Collaborators** chip-input behind an **"Add details"** disclosure; **which-server
-/ folder** picker). *Each card/state is its own sub-prompt.* *(No version dropdown —
-numbered versions are cut.)*
-
-### P6 — Canvas suite — **CUT (beta 2026-08-18e)**
-
-The review canvas and its ~16 prompts are removed from the beta. If it returns
-post-beta, rebuild from CANON history + the deleted `P6-canvas.md`.
-
-### P7 — Messages · Friends · Notifications · ~9 prompts, UI+GL *(boards cut)*
-
-Messages (add-by-handle **inline** field, **New-DM / group-DM picker** from
-friends, friends/requests, thread list mute/pin, conversation + composer) +
-**[GL]** `create_dm` round-trip · **Friends manager** (`friends`: All/Pending/
-Blocked tabs, add-by-handle, accept/decline/cancel/unblock, friend rows with
-Message + remove/block) + **[GL]** the `friendships` RPCs · Notifications (tabs,
-row kinds + inline reply, mark-all, **+ the bell-dropdown preview** — recent rows
-+ Mark-all + See-all, sharing the `notifications` feed) + **[GL]** `user:{id}`
-live bell.
-
-### P8 — Admin · ~14 prompts, UI+GL
-
-Settings shell + nav · General · Channels (per-channel who-can-post/
-slowmode/**Private toggle → reveals the allow-list**) · **Roles editor** (list,
-new-role, colour swatches, **permission matrix** grouped Server/Members/Content,
-`.cbx` toggles → `roles.permissions`) · **Assign-roles-to-member** modal
-(multi-select checklist, @everyone locked → `set_member_roles`) · **Channel
-permissions** allow-list modal (roles + members `.cbx` → `set_channel_access`) ·
-Moderation (timeouts, bans, take-action — the same RPCs the **members-rail
-popover admin block** and **admin-POV** affordances call from P4) · Audit log ·
-Invite links (create/revoke — the quick **Invite modal** is P4.12) · **Storage &
-billing** (personal + server usage bars, Manage plan / Add
-storage, gated `manage_billing`) · Export. Plus **[GL]** each perm-gated control
-reads `has_perm`/`can_view_channel` so the signpost matches the fence.
-
-### P9 — Utility & focus · ~9 prompts, UI
-
-Create-server card (→ on submit lands on the **new-server first-run** state,
-built as a workspace edge state in P4) · Join-preview card · Sign-in/up (magic-link/OAuth, toggle,
-error line) — all **centred, no rail, card never touches top** (§D.6.4) · 404 ·
-Dead invite (**expired/revoked/full/already-member** — one prompt, four copy
-states) · Access-denied (quiet, **never a 404 that leaks existence**) · Quick
-switcher (⌘K overlay, grouped results, keyboard nav, scoped to `can_view_channel`).
+### P9 — Utility & focus (1–2 sessions; Sonnet)
+- **Read:** CANON §C.14 (Create/Join/Sign-in), §C.20 (utility), §C.15 (quick switcher).
+- **Do:** Create-server (2-step → new-server first-run) · Join preview · Sign-in/claim
+  handle (magic-link/OAuth) — centred, no rail · 404 · dead-invite (4 copy states) ·
+  access-denied (never leaks existence) · quick switcher (⌘K, scoped to `can_view_channel`).
+  Wire the exits (every focus screen has a way back, CANON §C.3 nav contract).
+- **Verify:** every §C.14/§C.20 state reachable and exitable; `join_via_invite` works.
+- **Checkpoint:** commit; BUILDLOG; the app is feature-complete for the beta.
 
 ---
 
-## §3. Two fully-expanded exemplars
+## §6. Working inside usage & token limits (the resumability contract)
 
-To calibrate the detail level a runnable prompt carries.
+This build **will** be interrupted — a context window fills, or a usage cap hits and you
+wait for the reset. Plan for it so an interruption costs nothing:
 
-### Exemplar A — `P5.2 [UI]` Type-card (non-previewable file)
+- **Never start work you can't checkpoint in the current window.** Scope a session to one
+  migration-group or one screen-plus-its-dialogs. If you're near the limit, *stop at a
+  green sub-step and log* rather than pushing into a half-finished surface.
+- **The repo and the DB must agree at every checkpoint.** If you `apply_migration`, commit
+  the `schema-*.sql` in the same session. A migration applied to the project with no
+  committed source is the one state a resuming session can't trust.
+- **End every session the same way:** verify green → `git commit` → append `docs/BUILDLOG.md`
+  (done sha + next session) → `git push`. That's the durable handoff.
+- **Start every session the same way:** the cold-start ritual in §0 (BUILDLOG, git log,
+  `list_migrations`/`list_tables`, verify, then plan mode).
+- **Buy wall-clock back with parallelism** only where surfaces are independent: farm
+  independent tables (P1) or independent screens (P5/P8) to subagents, reconcile at a
+  checkpoint, never two agents in one file.
+- **Downshift the model** once an archetype is proven — Sonnet 5 for the repeats — to
+  stretch the usage budget across more surfaces per window.
+- **On resume after a wait,** trust `list_migrations`/`list_tables` over any note: if the
+  DB is ahead of the committed SQL, reconcile (commit the missing source) before building
+  on top.
 
-```
-TITLE:   P5.2 — Type-card renderer for non-previewable files
-CONTEXT: Stack vanilla HTML+CSS+JS + thin signals reactive layer (no framework/bundler, CANON §G). Tokens/primitives from the eski-style skill. Law =
-         gallery.html "type card" (feed + details `.dtype`); behaviour = CANON
-         §D.6.2. Reuse the P0 icon() helper and the square-cell grid unit.
-BUILD:   The type card only — a square cell that stands in for a file with no
-         visual preview (.flp, .zip, .exe, .als, .aep, project files): a centered
-         file icon + the extension + the file name. No fake thumbnail.
-PROPS:   { fileName, ext } ; picks the icon by ext (fallback #i-file); on click →
-         emits openDetails(workId). Reads `works` where kind='other'.
-STATES:  default · hover (cell lifts subtly) · in-grid (fills the square cell,
-         even mode) · in-details (fills the `.dmedia` area, `.dtype`). Mobile:
-         same, one-column grid.
-DO NOT:  no fake image thumbnail; the ext is shown as its own label, never as a
-         content tag (§A.4 / F10). Media stays square (--r on chrome only);
-         colour only from tokens; nothing renders a member hue on the Feed.
-DONE:    a .flp/.zip/.exe renders an icon+ext+name card (not a broken image);
-         clicking opens Details; the same renderer fills the details `.dtype`;
-         Playwright diff vs the gallery type-card panel < threshold; zero console
-         errors; one-column on mobile.
-```
+There is no fixed token budget to "buy" the way a per-prompt code-gen model needed — the
+cost is Claude Code usage, and the lever is **sessions sized to checkpoint cleanly**. A
+clean session that ends green is never wasted; a heroic session that dies mid-surface with
+an uncommitted tree is.
 
-### Exemplar B — `P1.24 [BE]` granular roles + slider storage (the load-bearing migration)
+### §6.1 Handing off between agents / chats
 
-```
-TITLE:   P1.24 — roles/member_roles/channel_roles + has_perm/can_view_channel + storage columns
-CONTEXT: Supabase Postgres. CANON §D.1–D.3 supersede the flat role enum (see §E).
-         Re-runnable schema-*.sql; RLS on every new table.
-BUILD:   (1) roles(id, server_id, name, color smallint, position int,
-         permissions bigint, is_default bool) — one is_default @everyone/server.
-         (2) member_roles(server_id,user_id,role_id) pk all three.
-         (3) channel_roles(channel_id, role_id) pk both — allow-list; zero rows =
-         open to all members (LOCKED D-i; design for v2 overwrites, don’t build).
-         (4) drop server_members.role. (5) has_perm(sid,flag bigint) = OR of the
-         member’s roles’ permissions, owner = all flags. (6) can_view_channel(cid)
-         = member_of AND (no channel_roles rows OR a granted role). (7) media_blobs
-         (sha256 pk, bytes, refcount) + works adds blob_sha, owner_type in(user,
-         server), owner_id. (8) storage_meters(owner_type,owner_id,bytes_used,
-         updated_at) = distinct owned blobs + storage_balance(owner_type,owner_id,
-         purchased_gb,status,stripe_customer) — one slider per account; no plan, no
-         pooling. Maintained by the works-bytes trigger keyed by owner.
-STATES:  n/a (schema).
-DO NOT:  don’t reshape for v2 — channel_roles is the allow-only subset of the
-         future channel_overwrites; keep can_view_channel written to that grain.
-         No storage_allocations/billing_accounts (pooling + plans are cut).
-DONE:    pgTAP: (a) a member holding two roles has the UNION of their flags;
-         (b) has_perm false → the gated RPC is rejected; (c) a private channel
-         (has channel_roles rows) returns 0 messages to a non-granted member and
-         N to a granted one; (d) a user-owned work bumps that user meter and a
-         server-owned work the server meter; a blob shared by two works for one
-         owner counts once (dedup).
-```
+Because **all build state lives outside any chat** — in the repo (`git` + `BUILDLOG.md`)
+and in the database (queryable via `list_migrations`/`list_tables`) — the builder is not
+tied to one conversation. You can stop in one chat and continue in another, run a second
+agent after the first, or (carefully) two at once. Nothing is stored in a session's head
+that the next session can't reconstruct from the repo and the DB.
 
----
-
-## §4. Token budget — DeepSeek V4 Flash
-
-Only **`[UI]`** (and light `[GL]`) prompts are DeepSeek spend; `[BE]` is applied
-via the Supabase MCP and costs no model tokens. Counts:
-
-| Phase | Prompts | of which UI/GL | Notes |
-|---|---:|---:|---|
-| P0 | 4 | 4 | scaffold |
-| P1 | 21 | 0 | backend (+ placement/folders/collaborators) |
-| P2 | 14 | 0 | backend |
-| P3 | 15 | 15 | primitives |
-| P4 | 13 | 13 | shell + workspace (+ admin POV, server menu, workspace modals) |
-| P5 | 12 | 12 | content screens (+ Trash view) |
-| ~~P6~~ | 0 | 0 | canvas — **cut (beta)** |
-| P7 | 9 | 9 | DMs/**Friends**/notifs (+ new-DM picker, bell dropdown) *(boards cut)* |
-| P8 | 14 | 14 | admin |
-| P9 | 9 | 9 | utility/focus |
-| **Total** | **~111** | **~72** | + iteration |
-
-**Per-UI-prompt cost.** A rich prompt carries: the §0 template + the relevant
-CANON slice + the gallery panel’s HTML/CSS excerpt as reference ≈ **1.5–3k input
-tokens**. A component/state generation returns ≈ **1.5–4k output tokens**. Budget
-one **re-roll** per prompt (screenshot diff fails → one correction round).
-
-- First-pass, ~72 UI/GL prompts × ~5k (in+out) = **~0.36M tokens.**
-- With a correction round on ~all: ~72×5k + ~72×5k ≈ **~0.72M tokens.**
-- Realistic ceiling with exploratory re-prompts, context re-sends, and a few
-  screens fought over: **budget 2–3M tokens.** (Earlier figures assumed the model
-  also generated the backend and the now-cut canvas; it doesn’t — that trims it.)
-
-**Recommendation: buy ~3M tokens** for a comfortable first build with iteration
-headroom; the true floor if prompts land clean is well under 1M.
+- **Sequential hand-off (one agent after another — the common case).** Agent A ends its
+  session at a green checkpoint: verify green → commit → BUILDLOG (`DONE` sha + `NEXT` +
+  clear its `IN PROGRESS`) → push. Agent B, in a fresh chat, runs the **cold-start ritual**
+  (§0), reads `NEXT`, and continues. No overlap, no coordination beyond the log. This is
+  the intended way to build across many short sessions and across usage-cap waits.
+- **The claim line prevents collisions.** Before working, an agent adds `IN PROGRESS:
+  <branch> — <item> — <time>` to BUILDLOG and pushes it; a second agent that sees a live
+  claim on the item it wanted picks a different independent item (or waits). The claim is
+  cleared at the next checkpoint.
+- **Concurrent agents (two at once) — only on independent surfaces + separate git
+  branches.** Give each agent its own feature branch and a **non-overlapping** scope
+  (different files, different tables/screens). Merge at checkpoints. Never let two agents
+  edit the same file, and never let two apply conflicting migrations to the **same**
+  Supabase project — if they must both touch schema concurrently, give each its own
+  `create_branch` DB branch and merge in order. When in doubt, serialize: sequential
+  hand-off is simpler and almost always fast enough.
+- **A resuming/second agent trusts the database over prose.** If `list_migrations` shows a
+  migration the committed SQL doesn't, the previous agent applied without committing —
+  reconcile (commit the missing `schema-*.sql`) before building on top. The DB is the
+  ground truth; BUILDLOG is the human-readable index to it.
 
 ---
 
-## §5. Sequencing rules the operator must not break
+## §7. Sequencing rules the build must not break
 
-1. **A `[UI]` prompt never runs before the `[BE]`/`[GL]` it reads exists** —
-   otherwise its "DONE WHEN" can’t assert real data. P1/P2 first.
-2. **Primitives (P3) before any screen (P4+).** A screen prompt that invents its
-   own button is a rejected prompt.
-3. **One panel, one prompt.** If a "screen" has a dialog, the dialog is its own
-   prompt (gallery already enumerates them — §④/§⑤/§⑥).
-4. **The gallery inventory status is derived, not hand-typed** — `design/verify.mjs`
-   computes reachable/wired from the live DOM, so the burn-down can't lie. A prompt
-   "updates the inventory" by making its state-URL pass the harness, not by editing
-   a status flag.
-5. **When a prompt and CANON drift, stop and fix CANON or the prompt — never let
-   the code become a third source of truth.** This repo’s one failure mode is a
-   correct decision silently undone.
+1. **No UI before the backend it reads.** A screen whose data/RPC/policy doesn't exist
+   can't assert live behaviour — P1/P2 first, always.
+2. **Primitives (P3) before any screen.** A screen that hand-rolls a button instead of
+   reusing the primitive is a regression; fix it before it spreads.
+3. **One surface, one commit.** A screen's dialog is its own unit (the gallery already
+   enumerates them). Keep diffs small enough to bisect.
+4. **The gate is derived, not asserted.** "Done" means the state-URL passes `verify.mjs` +
+   the screenshot + zero console errors + (for backend) the allow/deny test — not a
+   checked box. `verify.mjs` reads the live DOM, so the burn-down can't lie.
+5. **Backend and repo agree; CANON is truth.** Never leave the DB ahead of committed SQL,
+   and when code and CANON drift, fix one of them in the same session — never ship a third
+   source of truth.
+6. **RLS is the fence; the UI is the signpost.** A revealed admin control must be refused
+   server-side for a non-admin too — test both halves.

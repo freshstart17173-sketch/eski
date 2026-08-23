@@ -42,9 +42,11 @@ plain script/ESM — no build-time framework:
 - Waveform, mentions autocomplete, quick-switcher, local time — **build**, they're
   small.
 
-**Legend.** `[BE]` backend (SQL/RLS/RPC — applied via Supabase, no model tokens).
-`[UI]` front-end (a rendered piece of screen — the DeepSeek spend). `[GL]` glue (a
-shared data function, a Realtime subscription, a signing call).
+**Legend.** These are the per-surface checklist inside each phase of the Claude Code
+playbook ([`../CODEGEN.md`](../CODEGEN.md)) — Claude Code builds all three, not a
+separate model. `[BE]` backend (SQL/RLS/RPC — authored here, applied + tested via the
+Supabase MCP). `[UI]` front-end (one rendered screen/state/dialog, ported against the
+gallery). `[GL]` glue (a shared data function, a Realtime subscription, a signing call).
 
 **Every prompt carries the same guardrails** (`DO NOT`), so they're stated once
 here instead of in each:
