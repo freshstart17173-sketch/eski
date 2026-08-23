@@ -49,16 +49,17 @@ fresh CANON §E schema in §E.8 order.
 the `eski-style` skill. Start by regenerating + committing the TS types (Supabase MCP
 `generate_typescript_types`) now that the RPC surface is final (P1 GOTCHA E).
 
-**P2 residuals NOT in the `prompts/P2-rpcs.md` 16-prompt contract** (the narrative
-above mentioned them; the prompt file stops at P2.16 "backend complete"). These are
-owner decisions, not silently skipped — surface them before P3 relies on any:
-- `resolve_share_link(token)` — anon read of a work via a live share token. `can_read_work`
-  already grants the *read* through a live `share_links` row, but an anon viewer can't
-  SELECT `share_links` to resolve a token → wants a small SECURITY DEFINER lookup RPC.
-- 30-day trash purge — a scheduled job (pg_cron / edge function), not a request/response RPC.
-- Realtime publication (`server:{id}`/`channel:{id}`/`user:{id}`) — schema-07 notes this is
-  a P1-wrap concern; confirm the `supabase_realtime` publication actually lists the live
-  tables before P4 subscribes to them.
+**P2 residuals (owner-approved 2026-08-23) — DONE**, migration
+`p2_08_share_trash_realtime`, committed as `schema-16-residuals.sql`, round-trip tested:
+- `resolve_share_link(token)` — anon read path for `/shared/:token`; refuses revoked/
+  expired/unknown. Anon-executable by design (adds one accepted anon-definer advisor WARN,
+  like `can_read_work`).
+- 30-day trash purge — `purge_trashed_works()` (hard-deletes >30d-trashed works; the delete
+  fires the meter/refcount trigger so quota is reclaimed) scheduled daily 04:00 UTC via
+  **pg_cron** (`cron.job` name `purge_trashed_works`).
+- Realtime publication — 24 live tables added to `supabase_realtime` (it was empty);
+  REPLICA IDENTITY FULL on the join/state/reaction tables so DELETE/UPDATE ship the old row.
+  Realtime enforces the same RLS as a read, so no unseen channel/DM leaks.
 - star / share-link management need no RPC: `starred_items` (star_all) and `share_links`
   (share_write) are already direct RLS-gated table ops.
 
