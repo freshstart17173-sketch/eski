@@ -2,27 +2,30 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="robots" content="noindex"><!-- preview build; not for indexing -->
-<meta name="color-scheme" content="light dark">
-<title>eski</title>
-
-<!-- theme.js is a CLASSIC, BLOCKING script and MUST stay before the stylesheets:
-     it stamps data-theme before first paint so there's no flash of the wrong theme. -->
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>eski — P3 primitives</title>
 <script src="/app/theme.js"></script>
-
 <link rel="stylesheet" href="/styles/tokens.css">
 <link rel="stylesheet" href="/styles/base.css">
 <link rel="stylesheet" href="/styles/primitives.css">
 <link rel="icon" href="/eski_logo.png">
-
-<!-- the app: a module, deferred by default -->
-<script type="module" src="/app/main.js"></script>
+<style>
+  /* demo scaffold only — NOT part of the design system */
+  body{padding:0}
+  .pbar{position:sticky;top:0;z-index:60;display:flex;align-items:center;justify-content:space-between;
+    padding:var(--s3) var(--s5);background:var(--surface)}
+  .pbar b{font-size:var(--fs-lg);font-weight:600}
+  #demo{max-width:1120px;margin:0 auto;padding:var(--s5)}
+  .pdemo{padding:var(--s4) 0}
+  .pdemo+.pdemo{border-top:1px solid var(--line)}
+  .pdemo h2{font-size:var(--fs-sm);color:var(--muted);font-weight:600;margin:0 0 var(--s3);
+    text-transform:uppercase;letter-spacing:.06em}
+  .prow{display:flex;flex-wrap:wrap;gap:var(--s5);align-items:flex-end}
+  .pcell{display:flex;flex-direction:column;gap:var(--s2)}
+  .plabel{font-size:var(--fs-mi);color:var(--muted)}
+</style>
 </head>
 <body>
-
-<!-- Icon sprite, mounted once (ported verbatim from docs/design/gallery.html).
-     icon() in app/icons.js references these by #i-<name>. -->
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
 <symbol id="i-home" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></symbol>
 <symbol id="i-mail" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M22 6l-10 7L2 6"/></symbol>
@@ -90,8 +93,10 @@
 <symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"/></symbol>
 <symbol id="i-hand" viewBox="0 0 24 24"><path d="M9 11V5.5a1.5 1.5 0 0 1 3 0V10M12 10V4a1.5 1.5 0 0 1 3 0v6M15 10V6a1.5 1.5 0 0 1 3 0v7a6 6 0 0 1-6 6h-1a6 6 0 0 1-5-2.7l-2.3-3.5a1.5 1.5 0 0 1 2.5-1.6L9 13V6a1.5 1.5 0 0 1 3 0"/></symbol>
 </defs></svg>
-
-<div id="stage"></div>
-
+<div class="pbar"><b>P3 primitives</b>
+  <button class="btn" id="themebtn" onclick="(function(){var r=document.documentElement;var d=r.getAttribute('data-theme')==='dark';r.setAttribute('data-theme',d?'light':'dark');})()">Toggle theme</button>
+</div>
+<main id="demo"></main>
+<script type="module" src="/docs/design/primitives.demo.js"></script>
 </body>
 </html>

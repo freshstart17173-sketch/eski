@@ -28,7 +28,7 @@ GOTCHA: channels.post_policy='admins' must reject non-admin inserts — test cov
 
 ## Current state
 
-**Phase: build. P0 DONE. P1 (Schema + RLS) DONE. P2 (RPCs + triggers + search) DONE — all 16 `prompts/P2-rpcs.md` prompts applied + round-trip tested green. NEXT: P3 (UI primitives).**
+**Phase: build. P0 DONE. P1 (Schema + RLS) DONE. P2 (RPCs + triggers + search + residuals) DONE. P3 (UI primitives) DONE — all 15 primitives built + verified green in both themes. NEXT: P4 (three-pane shell + Workspace).**
 
 The spec is hand-off-ready: [`CANON.md`](CANON.md) is the contract (incl. §E.10, the
 per-control → backend coverage matrix), the [`design/gallery.html`](design/gallery.html)
@@ -45,9 +45,12 @@ Supabase MCP.
 dropped every retired `public` table + function; `list_tables` is empty. Now building the
 fresh CANON §E schema in §E.8 order.
 
-**NEXT: P3 — UI primitives.** Read CODEGEN §5 (P3) + `prompts/P3-primitives.md` +
-the `eski-style` skill. Start by regenerating + committing the TS types (Supabase MCP
-`generate_typescript_types`) now that the RPC surface is final (P1 GOTCHA E).
+**NEXT: P4 — three-pane shell + Workspace.** Read CODEGEN §5 (P4) +
+`prompts/P4-shell-workspace.md`. Assemble screens from the P3 primitives in
+`app/ui.js` (import, never re-mint) + the shared data layer. TS types were regenerated
+to `app/db-types.ts` (GOTCHA E done). The gallery is close but **not fully complete —
+some features are missing** (owner, 2026-08-23); treat `eski-style` as the value
+authority and flag gaps rather than inventing.
 
 **P2 residuals (owner-approved 2026-08-23) — DONE**, migration
 `p2_08_share_trash_realtime`, committed as `schema-16-residuals.sql`, round-trip tested:
@@ -173,3 +176,34 @@ GOTCHA H: search_all is SECURITY INVOKER on purpose — RLS itself is the leak f
 GOTCHA I: moderation targets never include the owner; ON CONFLICT keeps a member's
   @everyone row on set_member_roles; the storage meter counts DISTINCT owned blobs, so the
   2nd work on the same owner+blob adds 0 bytes (dedup) and only the last unref frees them.
+
+## 2026-08-23 — P3 UI primitives
+IN PROGRESS: (cleared)
+DONE: all 15 `prompts/P3-primitives.md` primitives, one canonical definition each.
+  Files: `styles/primitives.css` (component classes, ported verbatim from gallery
+  values + eski-style §2/§4, tokens-only), `app/ui.js` (render helpers returning DOM
+  elements — Button/IconButton/CloseButton/Field/Modal/Menu/Avatar/PresenceDot/Tag/
+  Chip/Toggle/Checkbox/UsageBar/Toast/Tabs/SegmentedControl/SelectPill/MediaPlayer),
+  wired `styles/primitives.css` into `index.html`. Added sprite symbols `i-rewind`/
+  `i-ff` (the only P3 icons the sprite lacked) to BOTH `index.html` and `gallery.html`.
+  Regenerated TS types → `app/db-types.ts` (41 tables). Verify: new headless harness
+  `docs/design/verify-primitives.mjs` (HTTP-served, Playwright) drives the critique
+  page `docs/design/primitives.html` + `primitives.demo.js` and PASSES in BOTH themes:
+  every primitive renders with zero console errors / unknown icons; Modal (scrim, no
+  shadow, Esc), Menu (open/Esc), Toggle/Checkbox flip, Toast, Tabs move, Segmented
+  (Server uses #i-server, one active), SelectPill (menu → label), and the MediaPlayer
+  transport all behave — play/pause reflects `media.paused`, ±10s skip is clamped and
+  time+scrubber follow, track-click seeks ~ratio, mute swaps the icon. Screenshotted
+  light+dark at 1200w: no blended surfaces, no invisible text, no stray pills.
+NEXT: P4 (three-pane shell + Workspace) — see Current state.
+GOTCHA J: the app sprite lives inline in `index.html` AND `gallery.html` (and now a
+  third copy inline in `docs/design/primitives.html`, needed so `<use href="#i-*">`
+  resolves under the module demo). icons.js derives its known set from the live DOM, so
+  a new icon must be added to every mounted sprite. Keep the three in sync.
+GOTCHA K: verify-primitives.mjs serves over HTTP (not file://) because ES-module
+  imports + absolute `/app` `/styles` paths need a real origin; it launches Chromium
+  with `--autoplay-policy=no-user-gesture-required` and drives play via a real click so
+  the transport wiring is exercised under the actual autoplay gate.
+GOTCHA L: `.btn.danger` keeps `color:#fff` and a `#000/#fff` color-mix hover — this is
+  the ONE hex in a component, ported verbatim from the eski-style skill's own canonical
+  CSS (the authoritative source), not a freelanced literal. Don't "fix" it to a token.
