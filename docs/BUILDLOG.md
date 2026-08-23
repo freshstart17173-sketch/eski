@@ -28,7 +28,7 @@ GOTCHA: channels.post_policy='admins' must reject non-admin inserts — test cov
 
 ## Current state
 
-**Phase: build STARTED. P0 (Scaffold) — DONE. NEXT: P1.1 (schema — servers).**
+**Phase: build. P0 DONE. P1 IN PROGRESS — groups 1–3 of 8 green. NEXT: P1 group 4 (channels+messages).**
 
 The spec is hand-off-ready: [`CANON.md`](CANON.md) is the contract (incl. §E.10, the
 per-control → backend coverage matrix), the [`design/gallery.html`](design/gallery.html)
@@ -41,15 +41,16 @@ is retired — those deliverables still live at their own paths, e.g.
 (Vercel). Supabase project is **`zidqagrmxeawpasurpwi` ("Eski")** — reachable via the
 Supabase MCP.
 
-**NEXT: P1.1 — Schema + RLS, servers unit.** Read CODEGEN §5 (P1) + CANON §E.1/§E.2/§B/
-§E.8 + `prompts/P1-schema.md`. **BLOCKER TO RESOLVE FIRST:** the Supabase project is
-**not** an empty slate — it still holds the retired "pivot" product's schema
-(`works`, `artboard_items`, `collections`, `comics`-era tables) + a little leftover data
-(3 profiles, 2 works, 11 artboard_items, …). CANON §Backend says design a fresh schema.
-Owner must confirm dropping the retired tables before P1 applies the clean-slate
-migration (destructive). Do NOT `apply_migration` for P1 until that's confirmed.
+**Clean slate DONE** (owner authorised 2026-08-23): migration `clean_slate_retired_pivot`
+dropped every retired `public` table + function; `list_tables` is empty. Now building the
+fresh CANON §E schema in §E.8 order.
 
-IN PROGRESS: (none)
+**NEXT: P1 group 4** — `channels`/`messages`/reactions/pins/reads/mentions, gated on
+`can_view_channel` (built here with channels). Then group 5 (comments+profiles), 6
+(DMs+friendships), 7 (notifications+prefs+saves), 8 (moderation+billing), then the P1
+wrap (advisors clean, types, commit, BUILDLOG). RPCs/triggers/indexes/realtime are P2.
+
+IN PROGRESS: P1 groups (schema) — this session.
 
 ---
 
