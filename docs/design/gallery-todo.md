@@ -30,6 +30,17 @@ folded in below.) Brand art lives separately in
 > dropdown, and an optional message. The personal-work→server placement stays a
 > reference (no copy), per the CANON placement model.
 
+> **Files-as-channel + navigation pass (2026-08-22).** The **server File explorer now
+> keeps the channel column** (Files is a highlighted entry beside the channels/voice
+> rows), so you can jump from the file browser to any channel in one click — it is no
+> longer a full-screen takeover. The personal My-files mount hides that column. Plus a
+> **connection/back-nav audit**: every screen is reachable and has a way back — server
+> settings gets a *Back to server* item, user settings a *Back to profile*, the call's
+> *Leave* returns to the workspace, and the focus/state cards (create/join/dead-invite/
+> denied/404/blocked/pending) all have wired exits. CANON §C.3 gained a navigation &
+> back-path contract; §C.6 documents the Files-as-channel mount. Verified both themes,
+> `verify.mjs` green.
+>
 > **UI review pass (2026-08-22, owner walkthrough).** Applied in `gallery.html`,
 > verified by screenshot in both themes, `verify.mjs` hard checks green:
 > - **Member popout**: rounding cut to `--r`; Block/Report tucked behind a "More"

@@ -651,6 +651,8 @@ input{font:inherit;color:inherit}
 .settings{flex:1;min-width:0;display:flex;overflow:hidden;background:var(--paper)}
 .setnav{flex:none;width:220px;background:var(--surface);padding:var(--s4) var(--s2);overflow-y:auto}
 .setnav .sgh{font-size:var(--fs-xs);color:var(--muted);font-weight:600;padding:6px var(--s3) 6px}
+.setnav .setback{color:var(--muted);margin-bottom:2px}
+.setnav .setback:hover{color:var(--ink)}
 .setnav button{display:flex;align-items:center;gap:9px;width:100%;text-align:left;padding:8px var(--s3);border-radius:var(--r);color:var(--soft);font-size:var(--fs-sm)}
 .setnav button:hover{background:var(--plate)}
 .setnav button.on{background:var(--plate);color:var(--ink);font-weight:600}
@@ -2359,6 +2361,34 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
 
     <!-- FILE EXPLORER -->
     <div class="screen" data-screen="explorer" hidden>
+      <!-- Files is a channel: the server's channel column stays alongside the
+           browser so you can jump to any other channel/context in one click
+           (owner 2026-08-22). Server-only — hidden in the personal My-files view. -->
+      <nav class="chan exserveronly" id="exChan">
+        <div class="srvhd">
+          <div class="srvcover"></div>
+          <button class="srvbar" data-s="workspace" title="Back to Late Bloom LP"><span class="srvicon">LB</span><b>Late Bloom LP</b></button>
+        </div>
+        <div class="chanbody">
+          <div class="cgroup">
+            <button class="crow on" id="exFilesCrow"><svg class="ic"><use href="#i-folder"/></svg><span class="nm">Files</span></button>
+          </div>
+          <div class="cgroup">
+            <div class="cglabel"><button class="cgtoggle" aria-expanded="true"><svg class="ic sm cgcaret"><use href="#i-chev"/></svg>Channels</button></div>
+            <button class="crow" data-s="workspace"><svg class="ic"><use href="#i-hash"/></svg><span class="nm">announcements</span></button>
+            <button class="crow" data-s="workspace"><svg class="ic"><use href="#i-hash"/></svg><span class="nm">beats</span></button>
+            <button class="crow" data-s="workspace"><svg class="ic"><use href="#i-hash"/></svg><span class="nm">verses</span><span class="ct">4</span></button>
+            <button class="crow" data-s="workspace"><svg class="ic"><use href="#i-hash"/></svg><span class="nm">mixing</span></button>
+            <button class="crow" data-s="workspace"><svg class="ic"><use href="#i-hash"/></svg><span class="nm">references</span></button>
+            <button class="crow" data-s="workspace"><svg class="ic"><use href="#i-hash"/></svg><span class="nm">stems and sessions</span></button>
+          </div>
+          <div class="cgroup">
+            <div class="cglabel"><button class="cgtoggle" aria-expanded="true"><svg class="ic sm cgcaret"><use href="#i-chev"/></svg>Voice</button></div>
+            <button class="crow" data-s="vc"><svg class="ic"><use href="#i-voice"/></svg><span class="nm">the booth</span></button>
+            <button class="crow" data-s="vc"><svg class="ic"><use href="#i-voice"/></svg><span class="nm">co-writing</span></button>
+          </div>
+        </div>
+      </nav>
       <div class="explayout" data-source="server">
         <!-- SERVER file tree (this is Late Bloom's Files channel, not a standalone
              server). Trash sits at the FOOT of the navigator; Starred moved out to
@@ -2704,6 +2734,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
     <div class="screen" data-screen="usersettings" hidden>
       <div class="settings">
         <nav class="setnav">
+          <button class="setback" data-s="profile"><svg class="ic sm" style="transform:rotate(90deg)"><use href="#i-chev"/></svg>Back to profile</button>
           <div class="sgh">Your settings</div>
           <button data-setpanel="uprofile" class="on"><svg class="ic sm"><use href="#i-user"/></svg>Profile</button>
           <button data-setpanel="uaccount"><svg class="ic sm"><use href="#i-lock"/></svg>Account</button>
@@ -2787,6 +2818,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
     <div class="screen" data-screen="settings" hidden>
       <div class="settings">
         <nav class="setnav">
+          <button class="setback" data-s="workspace"><svg class="ic sm" style="transform:rotate(90deg)"><use href="#i-chev"/></svg>Back to server</button>
           <div class="sgh">Late Bloom LP</div>
           <button data-setpanel="general" class="on"><svg class="ic sm"><use href="#i-settings"/></svg>General</button>
           <button data-setpanel="channels"><svg class="ic sm"><use href="#i-hash"/></svg>Channels</button>
@@ -3073,7 +3105,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
           <div class="lead">a vfx shot, on a deadline</div>
           <div class="jmeta"><span class="stackav"><span class="av sm">MI</span><span class="av sm">LN</span><span class="av sm">SO</span><span class="av sm">JX</span></span>4 members</div>
           <div class="invited"><svg class="ic sm" style="color:var(--muted)"><use href="#i-user"/></svg><span><b>mira</b> invited you to join</span></div>
-          <div class="go" style="margin-top:24px"><button class="btn primary" style="flex:1;justify-content:center">Join server</button></div>
+          <div class="go" style="margin-top:24px"><button class="btn ghost" data-s="feed" style="justify-content:center">Cancel</button><button class="btn primary" style="flex:1;justify-content:center">Join server</button></div>
           <div class="lead" style="margin:14px 0 0;text-align:center">One click and you are in. No application, no approval.</div>
         </div>
       </div>
@@ -3085,8 +3117,8 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
         <div class="ocard" style="text-align:center">
           <div style="font-size:46px;font-weight:700;letter-spacing:.02em;color:var(--soft)">404</div>
           <h1 style="margin-top:4px">Page not found</h1>
-          <div class="lead">That link doesn't lead anywhere &mdash; it may have moved, or never existed.</div>
-          <div class="authbtns"><button class="btn primary" style="justify-content:center"><svg class="ic sm"><use href="#i-home"/></svg>Go to your feed</button></div>
+          <div class="lead">That link doesn't lead anywhere. It may have moved, or never existed.</div>
+          <div class="authbtns"><button class="btn primary" data-s="feed" style="justify-content:center"><svg class="ic sm"><use href="#i-home"/></svg>Go to your feed</button></div>
         </div>
       </div>
     </div>
@@ -3103,8 +3135,8 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
             <div class="lead">It's reached its member cap. Ask an admin to make room or raise it.</div></div>
           <div data-dead="already" hidden><h1>You're already a member</h1>
             <div class="lead">No need for this invite, this server is already in your rail.</div></div>
-          <div class="authbtns"><button class="btn" style="justify-content:center"><svg class="ic sm"><use href="#i-home"/></svg>Back to your servers</button></div>
-          <div class="authalt">Already a member? <a>Open the server</a></div>
+          <div class="authbtns"><button class="btn" data-s="workspace" style="justify-content:center"><svg class="ic sm"><use href="#i-home"/></svg>Back to your servers</button></div>
+          <div class="authalt">Already a member? <a data-s="workspace">Open the server</a></div>
         </div>
       </div>
     </div>
@@ -3115,7 +3147,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
           <div style="display:grid;place-items:center;margin-bottom:8px"><svg class="ic" style="width:30px;height:30px;color:var(--muted)"><use href="#i-lock"/></svg></div>
           <h1>You don't have access</h1>
           <div class="lead">This channel is private to certain roles. Ask a server admin if you think you should be in it.</div>
-          <div class="authbtns"><button class="btn" style="justify-content:center"><svg class="ic sm"><use href="#i-home"/></svg>Back to the server</button></div>
+          <div class="authbtns"><button class="btn" data-s="workspace" style="justify-content:center"><svg class="ic sm"><use href="#i-home"/></svg>Back to the server</button></div>
         </div>
       </div>
     </div>
@@ -3127,7 +3159,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
           <div style="display:grid;place-items:center;margin-bottom:8px"><svg class="ic" style="width:30px;height:30px;color:var(--m1)"><use href="#i-hide"/></svg></div>
           <h1>You blocked <span class="m1">@rae</span></h1>
           <div class="lead">You won't see their messages, posts, or profile, and they can't message you or add you. This is invisible to them.</div>
-          <div class="authbtns"><button class="btn primary" style="justify-content:center">Unblock</button><button class="btn" style="justify-content:center">Back</button></div>
+          <div class="authbtns"><button class="btn primary" style="justify-content:center">Unblock</button><button class="btn" data-s="feed" style="justify-content:center">Back</button></div>
         </div>
       </div>
     </div>
@@ -3139,7 +3171,7 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
           <div style="display:grid;place-items:center;margin-bottom:8px"><svg class="ic" style="width:30px;height:30px;color:var(--muted)"><use href="#i-clock"/></svg></div>
           <h1>Friend request pending</h1>
           <div class="lead">Waiting for <b class="m1">@rae</b> to accept. You'll be able to DM each other and see each other's public posts once they do.</div>
-          <div class="authbtns"><button class="btn" style="justify-content:center">Cancel request</button></div>
+          <div class="authbtns"><button class="btn" data-s="friends" style="justify-content:center">Cancel request</button></div>
         </div>
       </div>
     </div>
@@ -4542,7 +4574,9 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   var VOICE_WIP='This feature is currently being built, voice & video ship in v2';
   document.querySelectorAll('.wipcall').forEach(function(b){b.addEventListener('click',function(){if(typeof toast==='function')toast(VOICE_WIP);});});
   var voiceMini=document.getElementById('voiceMini');if(voiceMini)voiceMini.addEventListener('click',function(){if(typeof toast==='function')toast(VOICE_WIP);});
-  var vcBar=document.getElementById('vcBar');if(vcBar)vcBar.querySelectorAll('.vcbtn').forEach(function(b){b.addEventListener('click',function(){if(typeof toast==='function')toast(VOICE_WIP);});});
+  var vcBar=document.getElementById('vcBar');if(vcBar)vcBar.querySelectorAll('.vcbtn').forEach(function(b){b.addEventListener('click',function(){
+    if(b.classList.contains('leave')){show('workspace');location.hash='workspace';return;}   // leaving the call returns to the server
+    if(typeof toast==='function')toast(VOICE_WIP);});});
 
   // B23, drag-reorder channels within their column group (live, not just settings)
   (function(){
@@ -4637,7 +4671,8 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   var catSave=document.getElementById('catSave');if(catSave)catSave.addEventListener('click',function(){cat.close();if(typeof toast==='function')toast('Category created');});
   var catScrim=document.getElementById('catScrim');if(catScrim)catScrim.addEventListener('click',cat.close);
   // B7 channel-group collapse, click a category label toggles its channels
-  document.querySelectorAll('.screen[data-screen="workspace"] .cglabel .cgtoggle').forEach(function(tg){
+  // channel-group collapse — in the workspace column AND the explorer's copy
+  document.querySelectorAll('.cglabel .cgtoggle').forEach(function(tg){
     tg.addEventListener('click',function(e){
       var grp=tg.closest('.cgroup');if(!grp)return;
       var collapsed=grp.classList.toggle('collapsed');
@@ -4922,6 +4957,10 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
     if(myFilesBtn)myFilesBtn.addEventListener('click',function(){show('explorer');location.hash='explorer/personal';setExplorerSource('personal');});
     var filesChannel=document.getElementById('filesChannel');
     if(filesChannel)filesChannel.addEventListener('click',function(){setExplorerSource('server');});
+    // Files crow inside the explorer's own channel column: already here, so just
+    // re-assert the server browsing view (it is the active "channel").
+    var exFilesCrow=document.getElementById('exFilesCrow');
+    if(exFilesCrow)exFilesCrow.addEventListener('click',function(){setExplorerSource('server');showExview('grid');});
   })();
 
   var uScrim=document.getElementById('uScrim'),uModal=document.getElementById('uModal');

@@ -406,6 +406,29 @@ gap) rather than renumbered. Screen 7 (Call) remains a v2 deferral.
 | + | Create-channel · Invite-to-server · Forward | *(modals)* | from the server menu / message ⋯ | §C.4 |
 | + | Server menu · notification-bell dropdown | *(menus)* | server-header dropdown; bell preview | §C.4, §C.13 |
 
+**Navigation & back-path contract (every surface has a way in AND a way back).**
+The **rail** is the always-present lateral switch for the top-level contexts — Feed,
+Messages, **My files** (personal Drive), each server, Create, and Profile — so those
+never dead-end. Sub-surfaces reached *from* a screen carry an explicit path back to
+their parent:
+
+- **File explorer (server)** mounts **inside the workspace shell**: the server
+  channel column stays beside the browser and **Files is an entry in it, highlighted
+  like any channel** (owner 2026-08-22). Any channel/voice row in that column
+  switches straight to the workspace — so the file browser is never a place you get
+  stranded. (The **personal** My-files mount hides that column; its rail button and
+  its own tree are the navigation.)
+- **Server settings** → a **Back to server** item at the top of the setnav (→
+  workspace); reached from the server menu.
+- **User settings** → a **Back to profile** item at the top of the setnav (→
+  profile); reached from the profile Settings tab / avatar menu.
+- **Call (`vc`)** → the **Leave** control returns to the workspace.
+- **Focus surfaces with no rail** (auth, create, join, dead-invite, access-denied,
+  404) each carry their own exit: create/join a **Cancel**, the state cards a
+  **home / back-to-server / go-to-feed** button. Blocked/pending carry a **Back**.
+- **Shared view** is the one deliberately standalone page (a share link opened by an
+  outsider): its exit is sign-in / the wordmark, not in-app nav.
+
 ### C.4 TEMPLATE — Screen 1: Workspace
 
 The three-pane server view. Legend: **R**=reads, **W**=writes, **RT**=Realtime.
@@ -523,8 +546,18 @@ reads **friends' public posts** (`visibility='public'` and author ∈ friends �
 the owner's "people you follow" = **friend**, the one mutual relationship; §A).
 Build it once, parameterised by source — don't fork two browsers.
 
+**Files is a channel, not a standalone server (owner 2026-08-22).** The server
+explorer mounts **inside the workspace shell**: the server's **channel column stays**
+to the left of the browser, with **Files as a highlighted entry in it** alongside the
+text/voice channels — so switching from the file browser to any other channel is one
+click, and the browser is never a dead-end. Layout, left→right: rail · channel column
+(Files active) · folder tree · contents pane. The **personal** mount (My files, a
+rail button) hides the channel column — its own folder tree is the navigation, and it
+carries no server chrome (its footer reads *Your storage*, and the channel/uploader
+filters drop away since personal files have neither).
+
 The server's files as a **Discord-meets-Google-Drive file system**: a **nested
-folder tree** on the left, the current folder's contents in the main pane, and a
+folder tree** beside the channel column, the current folder's contents in the main pane, and a
 **three-way view toggle** — **grid** (default) · **list** · **feed**. The **feed**
 view is special: it **flattens the whole subtree** to only the **previewable** works
 (image / video / audio) newest-first, each with its **comments** shown inline — an
