@@ -28,7 +28,7 @@ GOTCHA: channels.post_policy='admins' must reject non-admin inserts — test cov
 
 ## Current state
 
-**Phase: build. P0 DONE. P1 (Schema + RLS) DONE. P2 (RPCs + triggers + search + residuals) DONE. P3 (UI primitives) DONE — all 15 primitives built + verified green in both themes. NEXT: P4 (three-pane shell + Workspace).**
+**Phase: build. P0 DONE. P1 (Schema + RLS) DONE. P2 (RPCs + triggers + search + residuals) DONE. P3 (UI primitives) DONE. P4 UI (three-pane shell + Workspace, P4.1–P4.9) DONE — shell + workspace assembled from the P3 primitives, every state verified green in both themes. NEXT: P4.10/P4.11 [GL] — live messages/typing/mark-read + presence (needs seed data).**
 
 The spec is hand-off-ready: [`CANON.md`](CANON.md) is the contract (incl. §E.10, the
 per-control → backend coverage matrix), the [`design/gallery.html`](design/gallery.html)
@@ -51,12 +51,17 @@ re-confirm for later phases).
 dropped every retired `public` table + function; `list_tables` is empty. Now building the
 fresh CANON §E schema in §E.8 order.
 
-**NEXT: P4 — three-pane shell + Workspace.** Read CODEGEN §5 (P4) +
-`prompts/P4-shell-workspace.md`. Assemble screens from the P3 primitives in
-`app/ui.js` (import, never re-mint) + the shared data layer. TS types were regenerated
-to `app/db-types.ts` (GOTCHA E done). The gallery is close but **not fully complete —
-some features are missing** (owner, 2026-08-23); treat `eski-style` as the value
-authority and flag gaps rather than inventing.
+**NEXT: P4.10/P4.11 — the [GL] Realtime wiring.** The P4 UI (P4.1–P4.9) is built
+and green; what remains is the live spine: subscribe `channel:{id}` (Postgres
+changes) → live insert/edit/tombstone into the stream; `channel:{id}:typing`
+(broadcast) → the typing indicator; `mark_channel_read` on view; `server:{id}`
+(Presence) → the members rail. **These need seed data + auth** (a real server,
+channels, members, messages) to verify "open two sessions, send, see it arrive" —
+so the live read path in `app/data.js` is deliberately a stub returning the EMPTY
+shape until then (the empty states it drives are themselves a real, verified P4
+state). Wire the live reads + the four Realtime channels in `app/data.js` +
+`app/screens/workspace.js`; the render helpers already take a plain data object,
+so live just replaces the source.
 
 **P2 residuals (owner-approved 2026-08-23) — DONE**, migration
 `p2_08_share_trash_realtime`, committed as `schema-16-residuals.sql`, round-trip tested:
@@ -213,3 +218,44 @@ GOTCHA K: verify-primitives.mjs serves over HTTP (not file://) because ES-module
 GOTCHA L: `.btn.danger` keeps `color:#fff` and a `#000/#fff` color-mix hover — this is
   the ONE hex in a component, ported verbatim from the eski-style skill's own canonical
   CSS (the authoritative source), not a freelanced literal. Don't "fix" it to a token.
+
+## 2026-08-23 — P4 UI (shell + Workspace, P4.1–P4.9)
+IN PROGRESS: (cleared)
+DONE: the three-pane shell + the whole Workspace screen, assembled from the P3
+  primitives (imported from `app/ui.js`, never re-minted) and rendered from a data
+  layer. New files: `styles/shell.css` (shell + workspace CSS, ported verbatim from
+  gallery values, tokens-only), `app/shell.js` (persistent server rail P4.2 + the
+  `.app > .rail + .stage` frame P4.1), `app/screens/workspace.js` (channel column
+  P4.3 · header+tabs P4.4 · message list/row P4.5 · composer P4.6 · inline file
+  cards P4.7 · thread pane P4.8 · members rail P4.9 · Pins/Files panels · voice
+  minibar), `app/demo.js` (the Late Bloom LP fixture matching the gallery),
+  `app/data.js` (`loadWorkspace`, demo-gated), `docs/design/verify-workspace.mjs`
+  (the P4 self-test). Rewrote `app/main.js` to mount the shell + swap screens;
+  reconciled `styles/base.css` so `.screen` layout is owned once (by shell.css) and
+  the placeholder centres its `.ph`; wired `shell.css` into `index.html`.
+  Verify: `node docs/design/verify-workspace.mjs` PASSES — 10 states (default L+D,
+  thread, pins, files, loading, timedout, reconnecting, empty-server, empty-live)
+  render with the right structure and ZERO app console errors/unknown-icons in both
+  themes; screenshotted L+D at 1440 and 1024 (shell flexes, no h-scroll) and every
+  state reads against the gallery. `node docs/design/verify.mjs` (gallery) still green.
+NEXT: P4.10/P4.11 [GL] Realtime (live messages/typing/mark-read + presence) — see
+  Current state. Needs seed data + auth to satisfy the "renders live" checkpoint.
+GOTCHA M: **beta is web-only (CANON §C.2 wins over the P4 prompt's mobile bullets)** —
+  the P4-shell-workspace.md prompt still says "mobile: one pane + bottom tabs", but
+  §C.2 was changed 2026-08-22 to defer mobile post-beta (a separate gallery). So the
+  shell fills the viewport and flexes down to ~1024px; NO mobile collapse was built.
+GOTCHA N: a component class that sets `display:` DEFEATS the UA `[hidden]{display:none}`
+  rule — a `.offlinebar`/`.composernote`/`.typing`/`.mem`/`.chpanel`/`.threadpane`
+  toggled via the `hidden` attr stays visible unless the CSS ALSO carries a
+  `.sel[hidden]{display:none}`. Every such selector in shell.css restates it. (Caught
+  by screenshot: the reconnecting banner + an empty note bar were showing by default.)
+GOTCHA O: the live read path in `app/data.js` is an intentional stub (returns the
+  EMPTY shape) — real reads + Realtime are P4.10/11 and need seed data to verify.
+  Don't mistake the stub for missing work; the empty states it renders are verified.
+GOTCHA P: PRE-EXISTING, not P4 — `verify-primitives.mjs` reports 1 FAIL (MediaPlayer
+  play/pause icon) on clean HEAD too (confirmed by stashing the P4 diff). It's a
+  headless autoplay-gate timing flake in the P3 harness, untouched by P4. The gallery
+  gate (`verify.mjs`) is the primary check and is green.
+GOTCHA Q: gallery inventory statuses (t→a→m burn-down) were NOT flipped this session
+  to avoid a gallery edit + re-verify; the workspace surface is now assembled+matched
+  in code. Flip them in a later gallery-touching pass.

@@ -33,9 +33,10 @@ a{color:inherit;text-decoration:none}
     stroke-linecap:round;stroke-linejoin:round;flex:none}
 .ic.sm{width:14px;height:14px}
 
-/* P0 placeholder only — every route renders its name centred until its real
-   screen is ported. Deliberately plain; no visual styling is judged at P0. */
-.screen{height:100%;display:grid;place-items:center;text-align:center}
-.screen .ph{color:var(--muted);font-size:var(--fs-xl);font-weight:600}
+/* Placeholder for a route whose real screen isn't ported yet. `.screen` layout
+   is owned by styles/shell.css (the flex shell pane) — defining it here too would
+   be the duplicate-selector bug this repo guards against — so the placeholder
+   centres its own `.ph` with margin:auto inside that flex pane instead. */
+.screen .ph{margin:auto;text-align:center;color:var(--muted);font-size:var(--fs-xl);font-weight:600}
 .screen .ph small{display:block;color:var(--muted);font-size:var(--fs-sm);
     font-weight:400;margin-top:var(--s2)}

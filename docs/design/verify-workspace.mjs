@@ -1,0 +1,99 @@
+// verify-workspace.mjs — the P4 self-test. Serves the real app over HTTP, drives
+// the Workspace screen through its states (populated via ?demo=1, plus each edge
+// state via ?ws=), and asserts each renders with the right structure and ZERO app
+// console errors / unknown-icon warnings, in both themes. Mirrors verify.mjs
+// (gallery) and verify-primitives.mjs (P3): HARD FAILS exit 1.
+//
+// Run: node docs/design/verify-workspace.mjs   (add --shots to also write PNGs)
+//
+// Network noise is expected and ignored: the sandboxed browser can't reach the
+// Supabase project, so getSession()/fetch errors are filtered out — they don't
+// touch the rendered UI (boot is resilient; the empty path is a real state).
+
+import pw from "/opt/node22/lib/node_modules/playwright/index.js";
+const { chromium } = pw;
+import { createServer } from "node:http";
+import { readFile } from "node:fs/promises";
+import { extname, join, normalize } from "node:path";
+import { fileURLToPath } from "node:url";
+
+const ROOT = normalize(join(fileURLToPath(import.meta.url), "../../.."));   // repo root
+const PORT = 8231;
+const SHOTS = process.argv.includes("--shots");
+const MIME = { ".html": "text/html", ".js": "text/javascript", ".mjs": "text/javascript", ".css": "text/css", ".png": "image/png", ".json": "application/json", ".svg": "image/svg+xml" };
+
+const server = createServer(async (req, res) => {
+  try {
+    let p = decodeURIComponent(req.url.split("?")[0]);
+    let file = normalize(join(ROOT, p));
+    if (!file.startsWith(ROOT)) return void res.writeHead(403).end();
+    let ext = extname(file);
+    if (!ext) { file = join(ROOT, "index.html"); ext = ".html"; }
+    res.writeHead(200, { "content-type": MIME[ext] || "application/octet-stream" }).end(await readFile(file));
+  } catch { res.writeHead(404).end("not found"); }
+});
+await new Promise((r) => server.listen(PORT, r));
+
+// [name, url, theme, assert(page)->Promise<string|null error>]
+const $ = (page, sel) => page.$(sel);
+const has = async (page, sel, label) => (await $(page, sel)) ? null : `missing ${label} (${sel})`;
+const CASES = [
+  ["default-light", "/s/lb/c/beats?demo=1", "light", async (p) =>
+    (await has(p, '.screen[data-screen="workspace"]', "workspace screen")) ||
+    (await has(p, ".rail .railbtn.user", "server rail")) ||
+    (await has(p, "nav.chan .srvbar", "channel column")) ||
+    (await has(p, ".chtabs .chtab.on", "channel header tab")) ||
+    (await has(p, ".stream .msg", "message rows")) ||
+    (await has(p, ".mem .mrow", "members rail")) ||
+    (await has(p, ".composer .richcomposer .field input", "composer"))],
+  ["default-dark", "/s/lb/c/beats?demo=1", "dark", async (p) => has(p, ".stream .msg .u", "member-hue byline")],
+  ["thread", "/s/lb/c/beats?demo=1&ws=thread", "light", async (p) =>
+    (await has(p, ".threadpane .tpbody .msg", "thread pane")) ||
+    (await has(p, ".threadpane .alsosend", "also-to-channel toggle")) ||
+    ((await $(p, ".mem")) && !(await p.$eval(".mem", (e) => e.hasAttribute("hidden"))) ? "members rail should hide when thread is open" : null)],
+  ["pins", "/s/lb/c/beats?demo=1&ws=pins", "light", async (p) =>
+    ((await p.$eval('.chpanel[data-chview="pins"]', (e) => e.hidden)) ? "pins panel should be visible" : null) ||
+    (await has(p, '.chpanel[data-chview="pins"] .pinrow', "pin rows"))],
+  ["files", "/s/lb/c/beats?demo=1&ws=files", "light", async (p) =>
+    ((await p.$eval('.chpanel[data-chview="files"]', (e) => e.hidden)) ? "files panel should be visible" : null) ||
+    (await has(p, '.chpanel[data-chview="files"] .card .media', "file cards"))],
+  ["loading", "/s/lb/c/beats?demo=1&ws=loading", "light", async (p) => has(p, ".stream .skelmsg .skel", "loading skeleton")],
+  ["timedout", "/s/lb/c/beats?demo=1&ws=timedout", "light", async (p) =>
+    ((await p.$eval(".composernote", (e) => e.hidden)) ? "timed-out notice should be visible" : null) ||
+    ((await $(p, ".composer.disabled")) ? null : "composer should be disabled")],
+  ["reconnecting", "/s/lb/c/beats?demo=1&ws=reconnecting", "dark", async (p) =>
+    (await p.$eval("#offlineBar", (e) => e.hidden)) ? "reconnecting banner should be visible" : null],
+  ["empty-server", "/s/lb?demo=1&ws=empty", "light", async (p) => has(p, ".emptystate h3", "no-channels empty state")],
+  ["empty-live", "/s/lb/c/beats", "light", async (p) => has(p, ".emptystate", "empty state against the live (empty) DB")],
+];
+
+const browser = await chromium.launch({ executablePath: "/opt/pw-browsers/chromium-1194/chrome-linux/chrome" });
+const OUT = normalize(join(fileURLToPath(import.meta.url), ".."));
+let fails = 0;
+
+for (const [name, url, theme, assert] of CASES) {
+  const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  await ctx.addInitScript((t) => { try { localStorage.setItem("eski-theme", t); } catch {} }, theme);
+  const page = await ctx.newPage();
+  const errs = [];
+  page.on("console", (m) => { if (m.type() === "error" || m.type() === "warning") errs.push(`[${m.type()}] ${m.text()}`); });
+  page.on("pageerror", (e) => errs.push(`[pageerror] ${e.message}`));
+  await page.goto(`http://localhost:${PORT}${url}`, { waitUntil: "networkidle" }).catch(() => {});
+  await page.waitForTimeout(400);
+  if (SHOTS) await page.screenshot({ path: join(OUT, `ws-${name}.png`) });
+
+  const problems = [];
+  const structural = await assert(page).catch((e) => `assert threw: ${e.message}`);
+  if (structural) problems.push(structural);
+  const appErrs = errs.filter((e) => !/Failed to load resource|net::ERR|supabase|getSession|fetch|401|403|Access-Control/i.test(e));
+  if (appErrs.length) problems.push(...appErrs);
+
+  if (problems.length) { fails++; console.log(`✗ ${name}`); problems.forEach((p) => console.log("    " + p)); }
+  else console.log(`✓ ${name}`);
+  await ctx.close();
+}
+
+await browser.close();
+server.close();
+console.log(fails ? `\n✗ ${fails} FAIL` : "\n✓ all workspace states render, zero app console errors, both themes");
+process.exit(fails ? 1 : 0);
