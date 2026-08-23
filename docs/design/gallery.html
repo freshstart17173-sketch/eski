@@ -850,8 +850,6 @@ input{font:inherit;color:inherit}
 .fchip:hover{background:var(--plate)}
 .fchip.on{background:var(--ink);color:var(--on-ink)}
 .fchip .n{opacity:.55;margin-left:5px;font-variant-numeric:tabular-nums}
-.fchip.fchipstar .ic{color:#e0a92a}
-.fchip.fchipstar.on .ic{color:var(--on-ink)}
 /* drag-select marquee over the explorer grid */
 .rubberband{position:absolute;z-index:5;border:1px solid var(--ink);background:color-mix(in srgb,var(--ink),transparent 88%);pointer-events:none;border-radius:2px}
 /* browsing vs searching: the search-results strip that replaces the breadcrumb */
@@ -2451,17 +2449,13 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
             <button class="btn exfilter" data-fmenu="tagMenu" data-fmulti="1" aria-haspopup="menu" aria-expanded="false">Tag<svg class="ic sm"><use href="#i-chev"/></svg></button>
             <button class="btn exfilter" data-fmenu="dateMenu" aria-haspopup="menu" aria-expanded="false" id="exchDate">Anytime<svg class="ic sm"><use href="#i-chev"/></svg></button>
             <button class="btn exfilter" data-fmenu="sortMenu" aria-haspopup="menu" aria-expanded="false" id="exchSort">Latest<svg class="ic sm"><use href="#i-chev"/></svg></button>
+            <!-- Starred: a plain monochrome star toggle in line with the filters -->
+            <button class="iconbtn" id="fchipStarred" title="Starred" aria-pressed="false"><svg class="ic sm"><use href="#i-star"/></svg></button>
             <span style="flex:1"></span>
             <button class="btn newFolderBtn"><svg class="ic sm"><use href="#i-plus"/></svg>New folder</button>
             <button class="btn" id="exSelectBtn"><svg class="ic sm"><use href="#i-check"/></svg>Select</button>
             <!-- #47 the real upload entry point -->
             <button class="btn primary" id="showUpload4"><svg class="ic sm"><use href="#i-plus"/></svg>Upload</button>
-          </div>
-          <!-- the horizontal modifier row: Starred stays here as a simple toggle -->
-          <div class="toolbar" style="padding-top:0">
-            <div class="fchips">
-              <button class="fchip fchipstar" id="fchipStarred"><svg class="ic sm" style="width:12px;height:12px"><use href="#i-star"/></svg>Starred</button>
-            </div>
           </div>
           <div class="selbar" id="selbar"><span class="n"><span id="seln">0</span> selected</span>
             <button><svg class="ic sm"><use href="#i-download"/></svg>Download</button>
@@ -4874,10 +4868,12 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
     if(exSearch)exSearch.addEventListener('input',function(){setSearching(exSearch.value.trim());});
     if(exSearchClear)exSearchClear.addEventListener('click',function(){if(exSearch)exSearch.value='';setSearching('');if(exSearch)exSearch.focus();});
 
-    // Starred quick toggle (the one modifier left in the horizontal row)
+    // Starred: a plain star toggle sitting in line with the filters
     var fchipStarred=document.getElementById('fchipStarred');
     if(fchipStarred)fchipStarred.addEventListener('click',function(){
-      var on=fchipStarred.classList.toggle('on');showExview(on?'starred':'grid');});
+      var on=fchipStarred.classList.toggle('on');
+      fchipStarred.setAttribute('aria-pressed',on?'true':'false');
+      showExview(on?'starred':'grid');});
 
     // Selection: a Select mode toggle, plus ctrl/⌘-click, shift-range, and a
     // drag rubber-band over the grid. Integrates with the existing selbar.
