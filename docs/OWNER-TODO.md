@@ -29,14 +29,17 @@ real data:
    - Tell me **one or two emails** you'll sign in with for testing (e.g. your own +
      a second) so I can confirm the flow end-to-end.
 
-2. **Decide how a test server gets created.** There's no Create-Server screen yet
-   (that's P9), so the database has no server/channels/members/messages to go live
-   against. Pick one — **I can't decide this for you:**
-   - **(a) I seed a demo server for you now** — I insert a "Late Bloom LP"–style
-     server + channels + membership tied to your auth user (once #1 exists), so P4
-     live works immediately. Fastest path to a working preview. *(Recommended.)*
-   - **(b) We build P9 Create/Join first**, then you make a server through the UI, then
-     I wire P4 live against it. Cleaner order, but delays seeing live chat.
+2. ✅ **Demo server seeded** (2026-08-23, option a). "Late Bloom LP" now exists in the
+   database — 8 channels, 5 members, a thread + chatter in `#beats`. Both your emails
+   are **pre-created as accounts** so magic-link sign-in reconciles them:
+   `dexterekayu@gmail.com` = owner/admin, `freshstart17173@gmail.com` = member. (Plus
+   three demo authors `rae/dev/tomo@seed.eski.lol` for flavour — deletable anytime.)
+   RLS-verified: both accounts read the server + can post. The seed SQL is committed at
+   [`seed-late-bloom.sql`](seed-late-bloom.sql) (re-runnable). **⚠️ First sign-in check:**
+   the accounts were inserted directly, so the first time you request a magic link,
+   confirm it actually signs you in — if it doesn't, tell me and I'll drop the row so
+   GoTrue recreates it cleanly. (Note: the app has no sign-in *screen* yet — that's P9 —
+   so you can't sign in through the UI until P4.10 wires the session in / P9 builds auth.)
 
 Everything else Realtime needs is already done — the Supabase **Realtime publication**
 and replica identity were set up in P2 (no action from you there).
@@ -70,9 +73,11 @@ and replica identity were set up in P2 (no action from you there).
       `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `R2_BUCKET`, `R2_ACCOUNT_ID`,
       `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_PUBLIC_BASE_URL`.
       (Redeploy after editing — Vercel doesn't apply env changes to existing deploys.)
-- [ ] **Cloudflare R2 CORS** — when we build upload (~P5), apply
-      [`r2-cors.json`](../r2-cors.json) to the `eski` bucket and add the preview origin
-      (`https://preview.eski.lol`) to the allowed origins.
+- [ ] **Cloudflare R2 CORS** — [`r2-cors.json`](../r2-cors.json) now includes
+      `https://preview.eski.lol` in the upload (PUT) origins (added 2026-08-23). Paste
+      the file into the `eski` bucket's CORS policy (R2 → bucket → Settings → CORS) when
+      convenient; only actually needed once upload lands (~P5). Reads (`cdn.eski.lol`)
+      are already covered by the GET `*` rule, so no read-origin entry is needed.
 - [ ] **Supabase Auth → email** — the built-in mailer is rate-limited (~a few/hour).
       Add a real SMTP sender (the `SMTP_*` vars) before anyone but you signs in.
 - [ ] **Supabase Auth → URL config** — add `https://preview.eski.lol` (and any

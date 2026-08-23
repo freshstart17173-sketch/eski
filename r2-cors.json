@@ -8,10 +8,11 @@
     "MaxAgeSeconds": 86400
   },
   {
-    "_comment": "Uploads. A presigned PUT is already unforgeable without the signature, but there is no reason to let any page on the internet spend one, so this half stays named. Add a preview origin here only if you need to publish from it.",
+    "_comment": "Uploads. A presigned PUT is already unforgeable without the signature, but there is no reason to let any page on the internet spend one, so this half stays named — it's the ORIGIN the app runs on (where fetch()/PUT is issued), not the read domain (cdn.eski.lol reads are covered by the GET '*' rule above). preview.eski.lol added 2026-08-23 so the preview build can upload.",
     "AllowedOrigins": [
       "https://eski.lol",
       "https://www.eski.lol",
+      "https://preview.eski.lol",
       "http://localhost:3000",
       "http://localhost:8940",
       "http://localhost:8931"
