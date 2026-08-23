@@ -53,7 +53,10 @@ moderation writers, share-link/trash/star RPCs, `search_all`, …), the triggers
 refcount/meter maintenance; 30-day trash purge), and the realtime publication
 (`server:{id}` presence, `channel:{id}` changes, `user:{id}` bell).
 
-IN PROGRESS: (none)
+IN PROGRESS: P2 RPCs/triggers/search. DONE so far: P2.1–P2.5 (join_via_invite;
+add_collaborator/remove_collaborator/add_tag; mark_channel_read; toggle_reaction;
+pin_message/unpin_message) — applied + round-trip tested green, committed as
+schema-10/11. Building P2.6–P2.16 next.
 
 ---
 
