@@ -30,6 +30,17 @@ folded in below.) Brand art lives separately in
 > dropdown, and an optional message. The personal-work→server placement stays a
 > reference (no copy), per the CANON placement model.
 
+> **File-explorer interaction pass (2026-08-22).** Reworked selection + open to the
+> Google-Drive model: **no Select-mode button** — single click selects (highlights)
+> without opening, ⌘/Ctrl-click toggles, Shift-click ranges, ⌘/Ctrl-A all, Esc clears,
+> and a **drag marquee** selects on empty space (hand-rolled; CANON §E.6 notes viselect
+> as the buy option). **Double-click opens the Details pane, which is now the ONE media
+> viewer** — the bare lightbox "uploaded view" is retired; the pane is populated from
+> the clicked card (media + filename + honest Type). The **detail pane closes on a
+> backdrop click** (plus ✕ / Esc). The **Sort** control gained an **asc/desc** direction
+> toggle; confirmed Type/Channel/Uploader/Tag (+ search From/In/Scope) are multi-select,
+> Date/Sort single. CANON §C.6/§C.7/§E.6 + eski-style §5 updated.
+>
 > **Admin auto-hide rule (2026-08-22).** Admins can make new posts **hidden in the
 > File explorer library by default**, scoped **server-wide** (a toggle in Server
 > settings → Moderation) or **per-role** (a "Hide this role's posts by default" row

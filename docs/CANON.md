@@ -567,6 +567,16 @@ Instagram-style server media feed (unpreviewable files like `.flp/.zip` are hidd
 feed view; they appear in grid/list). Grid and list show subfolders + files of the
 **current** folder only.
 
+**Selection & open (Google-Drive model, owner 2026-08-22).** There is **no Select
+mode button**: a **single click selects** a card (deselecting the rest) and highlights
+it; **⌘/Ctrl-click** toggles, **Shift-click** ranges, **⌘/Ctrl-A** selects all,
+**Esc** clears, and a **drag on empty space marquees** (build tiny or buy `viselect`,
+§E.6); dragging a card is move-to-folder. A **double-click (or Enter) opens** the file.
+**Opening always uses the Details pane** (§C.7) — the media viewer + info rail; the
+old bare "lightbox / uploaded view" is retired. The **Sort** control carries an
+**ascending/descending** direction toggle beside it; Type/Channel/Uploader/Tag are
+**multi-select** dropdowns, Date and Sort single.
+
 | Element | Behaviour & states | DB | Desktop | Mobile |
 |---|---|---|---|---|
 | **Folder tree** | Collapsible nested tree of the server's folders (root → children); current folder highlighted; drag a file/folder onto a folder to move it; admin/perm can add/rename/delete a folder. | R `folders where server_id`; W `folders` · `move_to_folder` | Left rail | Drawer / breadcrumb sheet |
@@ -587,10 +597,14 @@ feed view; they appear in grid/list). Grid and list show subfolders + files of t
 
 ### C.7 Screen 4 — Details pane
 
-Opens from any card. **Arena layout (2026-08-18):** a near-full-screen split over a
-scrim — the **media takes the room** (left, grows to fill), a **fixed ~380px info
-rail** on the right. No drop shadow (scrim separates). Bigger than a modal on
-purpose: the media is the point.
+Opens from any card (double-click in the File explorer; single-click elsewhere).
+**This is the one media viewer for every file kind** — image fills the well, video/
+audio get the centred borderless play + transport, non-previewable shows the type
+card; there is no separate lightbox. **Arena layout (2026-08-18):** a near-full-screen
+split over a scrim — the **media takes the room** (left, grows to fill), a **fixed
+~380px info rail** on the right. No drop shadow (scrim separates). Bigger than a modal
+on purpose: the media is the point. **Closes on ✕, on Esc, and on a click of the dimmed
+backdrop** (like any modal, owner 2026-08-22).
 
 **Post vs server file — the load-bearing distinction (2026-08-18b).** The *same*
 arena shell serves two things; what differs is the discussion surface and which
@@ -1405,6 +1419,7 @@ Add the relevant tables to the `supabase_realtime` publication.
 | Message formatting (#5) | **Build tiny** | plain textarea + toolbar that inserts markdown; render with `marked` (small). No ProseMirror/Slate for v1 |
 | Mentions / channel autocomplete | **Build** | a prefix query over members/channels; trivial |
 | Drag-reorder (channels) | **Buy: SortableJS** | DnD edge cases (touch, autoscroll) are the time-sink |
+| File-browser multi-select (marquee + click/keyboard) | **Buy: viselect** (`@viselect/vanilla`, ~a few KB) OR **build tiny** | Google-Drive-style selection: single-click selects, ⌘/Ctrl + Shift-range, ⌘/Ctrl-A, Esc, and a **drag marquee**. viselect handles the rubber-band + autoscroll edge cases; a hand-rolled version (as mocked) is fine if you'd rather not add the dep. No Select *mode* button, and files **open in the Details pane on double-click** (the bare lightbox is retired) |
 | Zip export (F19) | **Buy: JSZip** | standard, client-side |
 | Local time / dates | **Build: `Intl`** | built in; store `profiles.tz` |
 | Quick switcher / shortcuts (#2) | **Build** | already mocked; a keydown map + fuzzy filter |

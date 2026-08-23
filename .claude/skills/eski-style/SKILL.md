@@ -287,6 +287,12 @@ Never remove `overflow` — wheel/touch/keyboard scroll must still work.
 
 ## 5. Details pane (§C.7) — the flagship overlay
 
+**This is the ONE media viewer** — there is no separate lightbox / "uploaded view"
+(retired 2026-08-22); every file opens here. It **closes on ✕, Esc, and a click of
+the dimmed backdrop** (the frame around the `.card2` — standard modal behaviour).
+In the File explorer a **double-click** opens it (single-click selects); elsewhere a
+single click opens it.
+
 Arena layout: a near-full-screen split on a `.scrim`. **Media takes the room**
 (left, grows); a fixed **info rail** (`--paper`, ~380px) on the right. Five media
 contexts, all the same frame:

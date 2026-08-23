@@ -370,9 +370,9 @@ input{font:inherit;color:inherit}
 .card .who{display:flex;align-items:center;gap:6px;color:var(--muted);font-size:var(--fs-xs);margin-top:5px}
 /* explorer grid actions + selection + lightbox (gap #11) */
 .cardsel{position:absolute;top:8px;left:8px;z-index:3;width:20px;height:20px;border-radius:var(--r);background:rgba(20,20,20,.5);box-shadow:inset 0 0 0 1px rgba(255,255,255,.7);display:none;place-items:center;cursor:pointer}
-/* the selection checkbox only appears in selection mode or when the card is
-   already picked — no stray empty box on plain hover (owner 2026-08-22). */
-.explayout.selecting .card:hover .cardsel,.explayout.selecting .card .cardsel,.card.sel .cardsel{display:grid}
+/* the check appears only on a selected card — selection is now click/marquee/keyboard
+   driven (single click selects), no hover checkbox and no Select mode (owner 2026-08-22). */
+.card.sel .cardsel{display:grid}
 .cardsel .ic{width:13px;height:13px;color:#fff;opacity:0}
 .card.sel .cardsel{background:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}.card.sel .cardsel .ic{opacity:1}
 .card.sel .media{outline:2px solid var(--ink);outline-offset:-2px}
@@ -851,7 +851,12 @@ input{font:inherit;color:inherit}
 .fchip.on{background:var(--ink);color:var(--on-ink)}
 .fchip .n{opacity:.55;margin-left:5px;font-variant-numeric:tabular-nums}
 /* drag-select marquee over the explorer grid */
-.rubberband{position:absolute;z-index:5;border:1px solid var(--ink);background:color-mix(in srgb,var(--ink),transparent 88%);pointer-events:none;border-radius:2px}
+.rubberband{position:fixed;z-index:60;border:1px solid var(--ink);background:color-mix(in srgb,var(--ink),transparent 88%);pointer-events:none;border-radius:2px}
+/* selected file card: clear highlight (a plate wash + ink media outline + the check) */
+.explayout .card.sel{background:var(--surface);border-radius:var(--r)}
+/* sort-direction chevron: down = descending (default), rotates up for ascending */
+#exSortDir .sortdirchev{transition:transform var(--t)}
+#exSortDir[aria-pressed="true"] .sortdirchev{transform:rotate(180deg)}
 /* browsing vs searching: the search-results strip that replaces the breadcrumb */
 .exsearchstate{display:flex;align-items:center;gap:8px;font-size:var(--fs-sm);color:var(--soft)}
 .exsearchstate b{color:var(--ink)}
@@ -2449,11 +2454,12 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
             <button class="btn exfilter" data-fmenu="tagMenu" data-fmulti="1" aria-haspopup="menu" aria-expanded="false">Tag<svg class="ic sm"><use href="#i-chev"/></svg></button>
             <button class="btn exfilter" data-fmenu="dateMenu" aria-haspopup="menu" aria-expanded="false" id="exchDate">Anytime<svg class="ic sm"><use href="#i-chev"/></svg></button>
             <button class="btn exfilter" data-fmenu="sortMenu" aria-haspopup="menu" aria-expanded="false" id="exchSort">Latest<svg class="ic sm"><use href="#i-chev"/></svg></button>
+            <!-- ascending / descending direction for the sort field -->
+            <button class="iconbtn" id="exSortDir" title="Descending (newest first)" aria-pressed="false"><svg class="ic sm sortdirchev"><use href="#i-chev"/></svg></button>
             <!-- Starred: a plain monochrome star toggle in line with the filters -->
             <button class="iconbtn" id="fchipStarred" title="Starred" aria-pressed="false"><svg class="ic sm"><use href="#i-star"/></svg></button>
             <span style="flex:1"></span>
             <button class="btn newFolderBtn"><svg class="ic sm"><use href="#i-plus"/></svg>New folder</button>
-            <button class="btn" id="exSelectBtn"><svg class="ic sm"><use href="#i-check"/></svg>Select</button>
             <!-- #47 the real upload entry point -->
             <button class="btn primary" id="showUpload4"><svg class="ic sm"><use href="#i-plus"/></svg>Upload</button>
           </div>
@@ -3357,17 +3363,8 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   </div>
 </div>
 
-<!-- LIGHTBOX (image / video viewer, opened from the media grid) -->
-<div class="lbox" id="lightbox" hidden>
-  <div class="lbhd"><span class="t" id="lbTitle">ref_drums.png</span><span class="mt" id="lbMeta">rae · #references · 2.1 MB</span>
-    <div class="acts"><button title="Download"><svg class="ic"><use href="#i-download"/></svg></button><button title="Copy link"><svg class="ic"><use href="#i-link"/></svg></button><button title="Details"><svg class="ic"><use href="#i-more"/></svg></button><button id="lbClose" title="Close"><svg class="ic"><use href="#i-x"/></svg></button></div></div>
-  <div class="lbstage"><span class="lbnav prev" id="lbPrev"><svg class="ic"><use href="#i-chev"/></svg></span>
-    <div class="shot c" id="lbShot"></div>
-    <div class="playover" id="lbPlay" hidden><svg class="ic f"><use href="#i-play"/></svg></div>
-    <span class="lbnav next" id="lbNext"><svg class="ic"><use href="#i-chev"/></svg></span></div>
-  <div class="lbmeta"><div class="sh">Shared in</div>
-    <div class="lbshared"><span class="lbchip"><svg class="ic"><use href="#i-hash"/></svg>references</span><span class="lbchip"><svg class="ic"><use href="#i-users"/></svg>sh040 crew</span><span class="lbchip"><svg class="ic"><use href="#i-mail"/></svg>mira</span></div></div>
-</div>
+<!-- LIGHTBOX retired (2026-08-22): every file opens the Details pane, which is the
+     media viewer + info rail. The bare "uploaded view" is gone. -->
 
 <!-- S13/B18 composer autocomplete, /, @, #, : triggers, anchored above the composer -->
 <div class="acpop" id="acPop" hidden><div class="achead" id="acHead"></div><div class="aclist" id="acList"></div></div>
@@ -4298,42 +4295,54 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   tb.addEventListener('click',function(){root.setAttribute('data-theme',dark()?'light':'dark');paint();});paint();
   applyHash();
 
+  // ===== Details pane. It IS the media viewer for every file (the old lightbox
+  // "uploaded view" is retired). Populated from the clicked card so the right media
+  // shows; the dimmed backdrop closes it, like any modal (owner 2026-08-22).
   var scrim=document.getElementById('scrim'),sheet=document.getElementById('detailsSheet');
-  function openD(){scrim.hidden=false;sheet.hidden=false;}
+  function detailKind(card){
+    if(card.querySelector('.media.audio')||card.dataset.lbkind==='audio')return 'audio';
+    if(card.dataset.lbkind==='video'||card.querySelector('.playover'))return 'video';
+    if(card.dataset.lbkind==='image'||(card.querySelector('.shot')&&!card.querySelector('.playover')))return 'image';
+    return 'other';}
+  function detailMediaHTML(card,kind){
+    var ext=(card.querySelector('.ext')||{}).textContent||'';
+    var shot=card.querySelector('.shot'),cls=shot?shot.className:'shot';
+    var play='<button class="dmbigplay" style="position:relative;z-index:1" title="Play / pause"><svg class="ic"><use href="#i-play"/></svg></button>';
+    if(kind==='image')return '<div class="'+cls+'" style="position:absolute;inset:0;border-radius:0"></div>';
+    if(kind==='video')return '<div class="'+cls+'" style="position:absolute;inset:0;border-radius:0"></div>'+play;
+    if(kind==='audio')return '<div class="dtype">'+play+'<span class="ext">'+ext+'</span></div>';
+    return '<div class="dtype"><svg class="ic"><use href="#i-file"/></svg><span class="ext">'+ext+'</span><span style="font-size:11px">no preview, download to open</span></div>';}
+  var TYPELBL={mp4:'MP4 video',mov:'MOV video',wav:'WAV audio',mp3:'MP3 audio',png:'PNG image',jpg:'JPEG image',jpeg:'JPEG image',gif:'GIF image',flp:'FL Studio project (.flp)',als:'Ableton Live set (.als)',aep:'After Effects project (.aep)',zip:'ZIP archive'};
+  function openDetails(card){
+    if(card&&card.classList){var kind=detailKind(card),title=(card.querySelector('.title')||{}).textContent||'';
+      var ext=((card.querySelector('.ext')||{}).textContent||'').toLowerCase()||(title.split('.').pop()||'').toLowerCase();
+      var dm=sheet.querySelector('.dmedia');if(dm)dm.innerHTML=detailMediaHTML(card,kind);
+      var fn=sheet.querySelector('.dfilename');if(fn&&title)fn.textContent=title;
+      var h2=sheet.querySelector('.scroll h2');if(h2&&title)h2.textContent=title;
+      // keep the Type row honest to the opened file (rest of the meta is sample data)
+      sheet.querySelectorAll('.meta .row').forEach(function(r){var k=r.querySelector('.k');
+        if(k&&k.textContent.trim()==='Type'){var v=r.querySelector('.v');if(v)v.textContent=TYPELBL[ext]||(ext?ext.toUpperCase()+' file':'File');}});}
+    scrim.hidden=false;sheet.hidden=false;}
   function closeD(){scrim.hidden=true;sheet.hidden=true;closeMenus();}
-  document.querySelectorAll('[data-open-details]').forEach(function(c){c.addEventListener('click',openD);});
-  document.getElementById('showDetails').addEventListener('click',openD);
-  document.getElementById('detailsClose').addEventListener('click',closeD);
-  scrim.addEventListener('click',closeD);
+  window.__openDetails=openDetails;
+  // non-explorer cards (feed / profile / chat) keep single-click open
+  document.querySelectorAll('[data-open-details]').forEach(function(c){
+    if(c.closest('.explayout'))return;
+    c.addEventListener('click',function(){openDetails(c);});});
+  var showDet=document.getElementById('showDetails');if(showDet)showDet.addEventListener('click',function(){openDetails();});
+  var detClose=document.getElementById('detailsClose');if(detClose)detClose.addEventListener('click',closeD);
+  if(scrim)scrim.addEventListener('click',closeD);
+  if(sheet)sheet.addEventListener('click',function(e){if(e.target===sheet)closeD();});   // click the backdrop to exit
+  document.addEventListener('keydown',function(e){if(sheet&&!sheet.hidden&&e.key==='Escape')closeD();});
 
-  // explorer: grid selection + per-card actions (gap #11)
+  // selection bar (explorer-scoped); per-card action buttons swallow the click
   var selbar=document.getElementById('selbar');
-  function refreshSel(){var n=document.querySelectorAll('.masonry .card.sel').length;
-    if(selbar){document.getElementById('seln').textContent=n;selbar.classList.toggle('open',n>0);}}
-  document.querySelectorAll('.masonry .cardsel').forEach(function(s){s.addEventListener('click',function(e){
-    e.stopPropagation();s.closest('.card').classList.toggle('sel');refreshSel();});});
-  document.querySelectorAll('.masonry .cardacts button').forEach(function(b){
-    b.addEventListener('click',function(e){e.stopPropagation();/* download / link / more are stubs in the mockup */});});
+  function refreshSel(){var n=document.querySelectorAll('.explayout .card.sel').length;
+    if(selbar){var s=document.getElementById('seln');if(s)s.textContent=n;selbar.classList.toggle('open',n>0);}}
+  document.querySelectorAll('.cardacts button').forEach(function(b){
+    b.addEventListener('click',function(e){e.stopPropagation();/* star wired separately; dl/link/more are stubs */});});
   var selClear=document.getElementById('selClear');
-  if(selClear)selClear.addEventListener('click',function(){document.querySelectorAll('.masonry .card.sel').forEach(function(c){c.classList.remove('sel');});refreshSel();});
-
-  // lightbox: image/video cards open a full viewer with a shared-in strip
-  var lb=document.getElementById('lightbox'),lbShot=document.getElementById('lbShot'),lbPlay=document.getElementById('lbPlay');
-  var lbCards=[].slice.call(document.querySelectorAll('.masonry .card[data-lightbox]')),lbIdx=0;
-  function lbShow(i){if(!lbCards.length)return;lbIdx=(i+lbCards.length)%lbCards.length;var card=lbCards[lbIdx];
-    var kind=card.dataset.lbkind,shot=card.querySelector('.shot');
-    lbShot.className='shot '+(shot?(shot.className.replace('shot','').trim()||''):'');lbShot.style.aspectRatio='16/9';
-    lbPlay.hidden=kind!=='video';
-    document.getElementById('lbTitle').textContent=(card.querySelector('.title')||{}).textContent||'';
-    var who=card.querySelector('.who');document.getElementById('lbMeta').textContent=who?who.textContent.replace(/\s+/g,' ').trim():'';}
-  function lbOpen(card){lbIdx=lbCards.indexOf(card);lb.hidden=false;lbShow(lbIdx);}
-  function lbClose(){lb.hidden=true;}
-  lbCards.forEach(function(card){card.addEventListener('click',function(){lbOpen(card);});});
-  document.getElementById('lbClose').addEventListener('click',lbClose);
-  document.getElementById('lbPrev').addEventListener('click',function(e){e.stopPropagation();lbShow(lbIdx-1);});
-  document.getElementById('lbNext').addEventListener('click',function(e){e.stopPropagation();lbShow(lbIdx+1);});
-  document.addEventListener('keydown',function(e){if(lb.hidden)return;
-    if(e.key==='Escape')lbClose();else if(e.key==='ArrowLeft')lbShow(lbIdx-1);else if(e.key==='ArrowRight')lbShow(lbIdx+1);});
+  if(selClear)selClear.addEventListener('click',function(){document.querySelectorAll('.explayout .card.sel').forEach(function(c){c.classList.remove('sel');});refreshSel();});
 
   var menus=['dlMenu','saveMenu','emojiMenu','msgMenu','cardMenu','folderMenu','channelMenu','dmMenu'].map(function(id){return document.getElementById(id);}).filter(Boolean);
   function closeMenus(){menus.forEach(function(m){m.classList.remove('open');});
@@ -4887,57 +4896,69 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
       fchipStarred.setAttribute('aria-pressed',on?'true':'false');
       showExview(on?'starred':'grid');});
 
-    // Selection: a Select mode toggle, plus ctrl/⌘-click, shift-range, and a
-    // drag rubber-band over the grid. Integrates with the existing selbar.
-    var exSelectBtn=document.getElementById('exSelectBtn');
-    function inSelectMode(){return explayout.classList.contains('selecting');}
-    function setSelectMode(on){explayout.classList.toggle('selecting',on);
-      if(exSelectBtn)exSelectBtn.classList.toggle('on',on);
-      if(!on){document.querySelectorAll('.exview .card.sel').forEach(function(c){c.classList.remove('sel');});refreshSel();}}
-    if(exSelectBtn)exSelectBtn.addEventListener('click',function(){setSelectMode(!inSelectMode());});
-    if(selClear)selClear.addEventListener('click',function(){setSelectMode(false);});
+    // Ascending / descending toggle for the sort field
+    var exSortDir=document.getElementById('exSortDir');
+    if(exSortDir)exSortDir.addEventListener('click',function(){
+      var asc=exSortDir.getAttribute('aria-pressed')!=='true';
+      exSortDir.setAttribute('aria-pressed',asc?'true':'false');
+      exSortDir.title=asc?'Ascending (oldest / A→Z first)':'Descending (newest first)';});
 
-    var gridView=document.querySelector('.exview[data-exview="grid"]');
-    if(gridView){
-      var lastIdx=-1;
-      function cards(){return Array.prototype.slice.call(gridView.querySelectorAll('.card:not(.foldercard)'));}
-      // capture-phase so modifier / select-mode clicks pre-empt opening details
-      gridView.addEventListener('click',function(e){
-        var card=e.target.closest('.card:not(.foldercard)');if(!card||!gridView.contains(card))return;
-        if(e.target.closest('.cardacts'))return;                 // per-card actions handle themselves
-        var pick=inSelectMode()||e.metaKey||e.ctrlKey||e.shiftKey||e.target.closest('.cardsel');
-        if(!pick)return;
-        e.preventDefault();e.stopPropagation();
-        var list=cards(),idx=list.indexOf(card);
-        if(e.shiftKey&&lastIdx>-1){var a=Math.min(lastIdx,idx),b=Math.max(lastIdx,idx);
-          for(var i=a;i<=b;i++)list[i].classList.add('sel');}
-        else{card.classList.toggle('sel');lastIdx=idx;}
-        refreshSel();
-      },true);
-
-      // Drag rubber-band: mousedown on empty grid space marquee-selects. (Dragging
-      // a card itself is the move-to-folder gesture, handled elsewhere.)
-      var band=null,ox=0,oy=0;
-      gridView.addEventListener('mousedown',function(e){
-        if(e.button!==0)return;if(e.target.closest('.card'))return;
-        var r=gridView.getBoundingClientRect();ox=e.clientX;oy=e.clientY;
-        band=document.createElement('div');band.className='rubberband';
-        gridView.appendChild(band);gridView.style.position='relative';
-        band.__r=r;e.preventDefault();
-      });
-      document.addEventListener('mousemove',function(e){
-        if(!band)return;var x=Math.min(e.clientX,ox),y=Math.min(e.clientY,oy),
-          w=Math.abs(e.clientX-ox),h=Math.abs(e.clientY-oy),r=band.__r;
-        band.style.left=(x-r.left)+'px';band.style.top=(y-r.top)+'px';band.style.width=w+'px';band.style.height=h+'px';
-        var bx1=x,by1=y,bx2=x+w,by2=y+h;
-        cards().forEach(function(c){var cr=c.getBoundingClientRect();
-          var hit=!(cr.right<bx1||cr.left>bx2||cr.bottom<by1||cr.top>by2);
-          c.classList.toggle('sel',hit);});
-        if(w>4||h>4){explayout.classList.add('selecting');if(exSelectBtn)exSelectBtn.classList.add('on');}
-        refreshSel();
-      });
-      document.addEventListener('mouseup',function(){if(band){band.remove();band=null;refreshSel();}});
-    }
+    // Selection (Google-Drive style, no Select button): single click selects one
+    // (deselecting the rest) without opening; ⌘/Ctrl-click toggles, Shift-click
+    // ranges, ⌘/Ctrl-A all, Esc clears; a double-click opens the details pane; a
+    // drag on empty space marquee-selects. (Dragging a card is move-to-folder.)
+    function activeView(){return explayout.querySelector('.exview:not([hidden])');}
+    function cards(){var v=activeView();return v?Array.prototype.slice.call(v.querySelectorAll('.card:not(.foldercard):not(.skelcard)')):[];}
+    function clearSel(){explayout.querySelectorAll('.card.sel').forEach(function(c){c.classList.remove('sel');});}
+    var anchor=-1;
+    explayout.addEventListener('click',function(e){
+      if(e.target.closest('.cardacts'))return;                        // per-card actions
+      if(e.target.closest('.filetree')||e.target.closest('.toolbar')||e.target.closest('.panehd')||e.target.closest('.selbar'))return;
+      if(e.target.closest('.foldercard'))return;                      // folders: open on dblclick, don't clear
+      var card=e.target.closest('.card:not(.foldercard):not(.skelcard)'),list=cards();
+      if(!card){if(!e.shiftKey&&!e.metaKey&&!e.ctrlKey){clearSel();refreshSel();}return;}   // empty space clears
+      var idx=list.indexOf(card);
+      if(e.shiftKey&&anchor>-1){if(!e.metaKey&&!e.ctrlKey)clearSel();
+        var a=Math.min(anchor,idx),b=Math.max(anchor,idx);for(var i=a;i<=b;i++)list[i].classList.add('sel');}
+      else if(e.metaKey||e.ctrlKey){card.classList.toggle('sel');anchor=idx;}
+      else{clearSel();card.classList.add('sel');anchor=idx;}
+      refreshSel();
+    });
+    explayout.addEventListener('dblclick',function(e){
+      if(e.target.closest('.cardacts'))return;
+      var card=e.target.closest('.card:not(.foldercard):not(.skelcard)');
+      if(card){openDetails(card);return;}
+      var fold=e.target.closest('.foldercard');if(fold&&typeof toast==='function')toast('Opening folder');   // mock: navigate
+    });
+    document.addEventListener('keydown',function(e){
+      var ex=document.querySelector('.screen[data-screen="explorer"]');if(!ex||ex.hidden)return;
+      var t=(e.target.tagName||'');if(t==='INPUT'||t==='TEXTAREA'||e.target.isContentEditable)return;
+      var sheetEl=document.getElementById('detailsSheet');
+      if((e.metaKey||e.ctrlKey)&&(e.key==='a'||e.key==='A')){e.preventDefault();cards().forEach(function(c){c.classList.add('sel');});refreshSel();}
+      else if(e.key==='Escape'){if(sheetEl&&!sheetEl.hidden)return;clearSel();refreshSel();}
+      else if(e.key==='Enter'){var s=explayout.querySelector('.card.sel');if(s){e.preventDefault();openDetails(s);}}
+    });
+    // Marquee: drag on empty space in the active view. Modifier-drag adds to the
+    // current selection; a plain drag replaces it.
+    var band=null,ox=0,oy=0,base=[];
+    explayout.addEventListener('mousedown',function(e){
+      if(e.button!==0)return;var v=activeView();if(!v||!v.contains(e.target))return;
+      if(e.target.closest('.card')||e.target.closest('.toolbar')||e.target.closest('.panehd')||e.target.closest('.selbar')||e.target.closest('.filetree'))return;
+      ox=e.clientX;oy=e.clientY;
+      base=(e.metaKey||e.ctrlKey||e.shiftKey)?cards().filter(function(c){return c.classList.contains('sel');}):[];
+      if(!base.length)clearSel();
+      band=document.createElement('div');band.className='rubberband';document.body.appendChild(band);e.preventDefault();
+    });
+    document.addEventListener('mousemove',function(e){
+      if(!band)return;var x=Math.min(e.clientX,ox),y=Math.min(e.clientY,oy),w=Math.abs(e.clientX-ox),h=Math.abs(e.clientY-oy);
+      band.style.left=x+'px';band.style.top=y+'px';band.style.width=w+'px';band.style.height=h+'px';
+      var bx2=x+w,by2=y+h;
+      cards().forEach(function(c){var r=c.getBoundingClientRect();
+        var hit=!(r.right<x||r.left>bx2||r.bottom<y||r.top>by2)||base.indexOf(c)>-1;
+        c.classList.toggle('sel',hit);});
+      refreshSel();
+    });
+    document.addEventListener('mouseup',function(){if(band){band.remove();band=null;refreshSel();}});
 
     // New folder (toolbar + both tree headers) — a named row appears in the mock.
     document.querySelectorAll('.newFolderBtn').forEach(function(b){b.addEventListener('click',function(e){e.stopPropagation();
