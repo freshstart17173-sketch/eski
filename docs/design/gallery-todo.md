@@ -30,6 +30,16 @@ folded in below.) Brand art lives separately in
 > dropdown, and an optional message. The personal-work→server placement stays a
 > reference (no copy), per the CANON placement model.
 
+> **Admin auto-hide rule (2026-08-22).** Admins can make new posts **hidden in the
+> File explorer library by default**, scoped **server-wide** (a toggle in Server
+> settings → Moderation) or **per-role** (a "Hide this role's posts by default" row
+> in the Roles editor). A `works`-insert trigger sets `works.hidden` when
+> `servers.hide_posts_by_default` is on or the poster holds a `roles.hide_posts_by_default`
+> role — distinct from the post-approval *hold* (#57): this only declutters the
+> library (Show-hidden reveals them; they still work in chat). CANON §E updated
+> (columns, trigger, §E.10 matrix); the Roles permission-matrix checkboxes are now
+> interactive.
+>
 > **Backend-coverage pass (2026-08-22).** Audited every clickable in the gallery
 > against the backend and closed the gaps in **CANON §E**: new tables `starred_items`
 > (Star ≠ Save), `share_links` ("anyone with the link"), `dm_message_reactions`; new

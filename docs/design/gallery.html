@@ -2896,6 +2896,8 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
                 <div class="permrow"><span class="cl">Add tags</span><span class="cbx on"><svg class="ic sm"><use href="#i-check"/></svg></span></div>
                 <div class="permrow"><span class="cl">Comment</span><span class="cbx on"><svg class="ic sm"><use href="#i-check"/></svg></span></div>
                 <div class="permrow"><span class="cl">Delete anyone's message</span><span class="cbx on"><svg class="ic sm"><use href="#i-check"/></svg></span></div>
+                <div class="pgh">Library</div>
+                <div class="permrow"><span class="cl">Hide this role's posts by default<small>Their new posts stay out of the File explorer library view (Show hidden reveals them). A declutter default, not an approval hold.</small></span><span class="cbx" data-roleattr="hide_posts"></span></div>
               </div>
             </div>
           </div>
@@ -2921,6 +2923,11 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
               <div class="mtrow"><div class="av sm">KO</div><div class="info"><b>kofi</b><small>posted “first loop pack” to #beats · held</small></div><button class="btn sm primary">Approve</button><button class="btn sm">Hide</button></div>
               <div class="mtrow"><div class="av sm">NL</div><div class="info"><b>nel</b><small>posted a reference image to #references · held</small></div><button class="btn sm primary">Approve</button><button class="btn sm">Hide</button></div>
             </div>
+
+            <!-- auto-hide rule: hide new posts from the file library by default -->
+            <div class="subh" style="margin-top:22px">File library defaults</div>
+            <div class="setrow" style="max-width:660px"><div class="cl"><b>Hide new posts from the library by default</b><small>New files posted anywhere in this server stay out of the organised File explorer view. They still work in chat and show under "Show hidden"; members can unhide their own, admins any. A declutter default, not an approval hold.</small></div><span class="tog" id="hidePostsServer"><i></i></span></div>
+            <div class="h2sub" style="margin:8px 0 0">Prefer to scope it? A <b>role</b> can hide only its holders' posts by default, set it per role in <b>Roles</b>.</div>
 
             <!-- #59 admin bulk file management -->
             <div class="subh" style="margin-top:22px">Bulk file actions</div>
@@ -4354,6 +4361,11 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
   function closeStorage(){if(storageScrim)storageScrim.hidden=true;if(storageModal)storageModal.hidden=true;}
   // "Manage storage" opens your profile's Storage & billing screen (not a modal) —
   // the full personal + server storage surface lives under user settings.
+  // Roles-editor permission matrix: make the square checkboxes toggle (incl. the
+  // per-role "Hide this role's posts by default" attribute).
+  document.querySelectorAll('.setpanel[data-panel="roles"] .permrow .cbx').forEach(function(c){
+    c.addEventListener('click',function(){var on=c.classList.toggle('on');
+      c.innerHTML=on?'<svg class="ic sm"><use href="#i-check"/></svg>':'';});});
   function gotoUserStorage(){show('usersettings');location.hash='usersettings';forceUsPanel('ustorage');}
   ['manageStorage','capUpgrade','ustorageManage'].forEach(function(id){var e=document.getElementById(id);if(e)e.addEventListener('click',gotoUserStorage);});
   // S11 billing portal · B21 sign-out-everywhere / add-account
