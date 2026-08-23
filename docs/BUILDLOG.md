@@ -41,6 +41,12 @@ is retired — those deliverables still live at their own paths, e.g.
 (Vercel). Supabase project is **`zidqagrmxeawpasurpwi` ("Eski")** — reachable via the
 Supabase MCP.
 
+**Deploy state (2026-08-23):** `preview` is at **`85956bc`** (P0–P3, owner-authorised
+fast-forward). Active work branch: `claude/dns-config-review-p20g6t` (same HEAD). `main`
+(prod) is untouched. When resuming: land green phase work on the work branch, then
+fast-forward `preview` to it (owner has standing OK for the preview push through P3;
+re-confirm for later phases).
+
 **Clean slate DONE** (owner authorised 2026-08-23): migration `clean_slate_retired_pivot`
 dropped every retired `public` table + function; `list_tables` is empty. Now building the
 fresh CANON §E schema in §E.8 order.
