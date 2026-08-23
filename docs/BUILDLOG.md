@@ -28,7 +28,7 @@ GOTCHA: channels.post_policy='admins' must reject non-admin inserts — test cov
 
 ## Current state
 
-**Phase: build. P0 DONE. P1 IN PROGRESS — groups 1–3 of 8 green. NEXT: P1 group 4 (channels+messages).**
+**Phase: build. P0 DONE. P1 IN PROGRESS — groups 1–6 of 8 green. NEXT: P1 group 7 (notifications+prefs+saves).**
 
 The spec is hand-off-ready: [`CANON.md`](CANON.md) is the contract (incl. §E.10, the
 per-control → backend coverage matrix), the [`design/gallery.html`](design/gallery.html)
