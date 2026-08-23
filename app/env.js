@@ -7,7 +7,9 @@
 export const SUPABASE_URL = "https://zidqagrmxeawpasurpwi.supabase.co";
 export const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_cZuZnUhWmEGESYb7BR1Kzg_nPjR8CZR";
 
-// Public read base for media. This is the rate-limited r2.dev dev domain; swap to
-// https://cdn.eski.lol once the eski.lol zone is on Cloudflare. Because the DB
-// stores object KEYS (never full URLs), that swap is this one line (.env.example).
-export const R2_PUBLIC_BASE_URL = "https://pub-b9e7c6b680ca415e9ffd5875bad0df03.r2.dev";
+// Public read base for media — the eski.lol zone is on Cloudflare and cdn.eski.lol
+// is bound to the R2 bucket (Proxied), so this is the custom domain, not the
+// rate-limited r2.dev dev host. The DB stores object KEYS (never full URLs), so a
+// media URL is `${R2_PUBLIC_BASE_URL}/${key}` — no trailing slash here. Keep this in
+// sync with the R2_PUBLIC_BASE_URL server env var in Vercel.
+export const R2_PUBLIC_BASE_URL = "https://cdn.eski.lol";

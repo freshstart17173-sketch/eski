@@ -47,11 +47,13 @@ _Last updated: 2026-08-23 (after P2 backend + P3 primitives; `preview` at 85956b
 
 - [ ] **Supabase Auth → enable "Leaked password protection"** (dashboard toggle;
       flagged by the security advisor — one click).
-- [ ] **R2 custom domain — record exists, finish the wiring.** Your DNS table already
-      shows `cdn.eski.lol  R2  (Proxied)` bound to the `eski` bucket (correct — R2 custom
-      domains must be orange-clouded). Remaining: set `R2_PUBLIC_BASE_URL=https://cdn.eski.lol`
-      in Vercel (one line — the DB stores object keys, not URLs) to drop the rate-limited
-      `r2.dev` dev domain, and add `https://cdn.eski.lol` to `r2-cors.json` when uploads land.
+- [x] **R2 custom domain wired to `cdn.eski.lol`.** DNS record exists (Proxied); the
+      client constant in `app/env.js` **and** `.env.example` now use `https://cdn.eski.lol`
+      (Claude, 2026-08-23). **You still must:** (a) set/confirm the `R2_PUBLIC_BASE_URL`
+      **Vercel env var** = `https://cdn.eski.lol` and **redeploy** (Vercel doesn't apply env
+      changes to existing deploys), and (b) add `https://cdn.eski.lol` to `r2-cors.json`
+      when uploads land (~P5). Note: no client code reads it yet (mediaUrl arrives in P5),
+      so nothing serves media today — this is correct prep.
 - [ ] **Stripe** (only when billing/storage-slider ships, ~P8) — a Stripe account +
       the webhook that writes `invoices` / flips `storage_balance.status`.
 - [ ] **Decide `main` vs `preview` promotion** — when the preview looks right, we merge
