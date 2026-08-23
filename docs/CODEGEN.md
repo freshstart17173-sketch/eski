@@ -82,6 +82,35 @@ repo alone. Three things make that true:
 - **Plan mode** at the top of each session: propose the session's steps and its
   definition-of-done, then execute in small commits.
 
+### Model routing — which model runs which session
+
+Each phase splits into **Opus sessions** and **Sonnet sessions** so you can open the
+right chat for the right work (and hand off between them, §6.1). The rule of thumb:
+**Opus owns the fence and the reactive/interaction core; Sonnet ports well-specified
+surfaces once the archetype exists.**
+
+| Phase | Session (session-sized unit) | Model | Why |
+|---|---|:--:|---|
+| **P0** | Scaffold: router + signals wiring + Supabase client + tokens/sprite | **Opus** | sets the reactive/data patterns everything reuses |
+| **P1** | Schema + RLS — every migration-unit | **Opus** | security-critical; an RLS mistake leaks data |
+| **P2** | RPCs + triggers + `search_all` | **Opus** | `security definer` correctness + audit-log side effects |
+| **P3** | Primitives (button/field/modal/menu/avatar/tag/toggle/checkbox/bar/toast/tabs/dropdown) | **Sonnet** | precise `eski-style` spec, mechanical port — *first* Menu/Dropdown archetype on Opus if it fights the spec |
+| **P4a** | Shell: rail · channel column · header · members rail · group headers | **Sonnet** | structural port from the gallery |
+| **P4b** | Chat core: message list/row · composer (markdown/@#/emoji) · thread · **Realtime GL** (channel subscribe · presence · typing · mark-read) | **Opus** | the reactive/Realtime heart of the app |
+| **P5a** | **Details pane** (the one media viewer + transport) · **File explorer** (selection/marquee/two mounts/folder tree) · **Upload** (sign + dedup + storage meter) | **Opus** | interaction-heavy + storage/dedup logic |
+| **P5b** | Feed grid · Profile shelves/POVs | **Sonnet** | grid + card port over an existing archetype |
+| **P7a** | DM Realtime · friendship-gated `create_dm` · live bell (`user:{id}`) | **Opus** | Realtime + gating |
+| **P7b** | Friends lists (All/Pending/Blocked) · Notification rows/tabs | **Sonnet** | list/row port |
+| **P8a** | Roles editor + permission matrix · assign-roles · channel-permissions · the **perm-gate GL** (`has_perm` re-checks) | **Opus** | the render must match the RLS fence exactly |
+| **P8b** | Settings panels: General · Channels · Moderation · Audit · Invites · Storage & billing | **Sonnet** | form/panel port |
+| **P9** | Create · Join · Sign-in · 404 · dead-invite · denied · quick-switcher | **Sonnet** | cards + states (quick-switcher scoping → Opus if it fights) |
+
+Two standing overrides, whichever model a phase names:
+- **Always Opus for the *first* instance of a new archetype** — the first list, the first
+  modal, the first media viewer — even inside a Sonnet phase; then Sonnet does the repeats.
+- **Escalate to Opus** any session where the two-signal gate keeps failing or the change
+  touches a policy/RPC. If in doubt, it's an Opus session.
+
 ### The two-half rhythm of every phase
 Backend precedes the UI that reads it. Within a phase: **author + apply + verify the
 backend (SQL via the Supabase MCP), then port the UI that consumes it.** The RLS policy
@@ -285,7 +314,7 @@ log at each Verify-green.
 - **Verify:** each matches its `eski-style` spec in both themes, all states, tokens only.
 - **Checkpoint:** commit; BUILDLOG.
 
-### P4 — Shell + Workspace (3–4 sessions; Opus for chat+Realtime, Sonnet for repeats)
+### P4 — Shell + Workspace (P4a shell = Sonnet · P4b chat + Realtime = Opus)
 - **Read:** CANON §C.4 (workspace template) + §C.3; `prompts/P4-shell-workspace.md`.
 - **Do:** the shell (rail 58 · channel column 232 · main · members 210; fills the
   viewport) → server rail + menus → channel column (server-name→server menu, **Files is a
@@ -301,7 +330,7 @@ log at each Verify-green.
   presence updates; every §C.4 state URL passes the two-signal gate.
 - **Checkpoint:** commit per surface; BUILDLOG.
 
-### P5 — Content screens (3–4 sessions; Opus for the details-pane viewer + explorer, Sonnet for the rest)
+### P5 — Content screens (P5a details / explorer / upload = Opus · P5b feed / profile = Sonnet)
 - **Read:** CANON §C.5 (Feed), §C.6 (File explorer — one component, two mounts; the
   Google-Drive selection model; Files-as-channel), §C.7 (Details pane — the one media
   viewer, backdrop close), §C.12 (Upload); `prompts/P5-content.md`.
@@ -317,7 +346,7 @@ log at each Verify-green.
   source; state URLs pass.
 - **Checkpoint:** commit; BUILDLOG.
 
-### P7 — Messages · Friends · Notifications (2 sessions; Opus for Realtime, Sonnet for lists)
+### P7 — Messages · Friends · Notifications (P7a DM Realtime + bell = Opus · P7b lists = Sonnet)
 - **Read:** CANON §C.11 (DMs/Friends), §C.13 (Notifications); `prompts/P7-boards-dms-notifs.md`.
 - **Do:** DM list + new-DM/group picker (friendship-gated) + conversation + composer;
   pin/mute/**hide**; Friends (All/Pending/Blocked, add-by-handle, accept/decline/block);
@@ -326,7 +355,7 @@ log at each Verify-green.
 - **Verify:** DM round-trip live; friendship RPCs gate correctly; bell updates in real time.
 - **Checkpoint:** commit; BUILDLOG.
 
-### P8 — Admin (3 sessions; Opus for roles/permissions, Sonnet for panels)
+### P8 — Admin (P8a roles + permissions = Opus · P8b panels = Sonnet)
 - **Read:** CANON §B (matrix), §C.16–C.19, §C.4 (moderation); `prompts/P8-admin.md`.
 - **Do:** settings shell + nav (with the Back-to-server item) → General (name/desc/icon/
   cover) → Channels (who-can-post/slowmode/default-folder/allowed-types/private→allow-list)
