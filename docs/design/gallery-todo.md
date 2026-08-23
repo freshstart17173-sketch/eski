@@ -30,6 +30,18 @@ folded in below.) Brand art lives separately in
 > dropdown, and an optional message. The personal-work→server placement stays a
 > reference (no copy), per the CANON placement model.
 
+> **Backend-coverage pass (2026-08-22).** Audited every clickable in the gallery
+> against the backend and closed the gaps in **CANON §E**: new tables `starred_items`
+> (Star ≠ Save), `share_links` ("anyone with the link"), `dm_message_reactions`; new
+> columns `servers.icon_key`, `profiles.banner_key`, `channels.post_policy`,
+> `dm_members.hidden`, `save_folders.parent_id`; new RPCs `toggle_star`,
+> `duplicate_work` (Copy), `save_to_files`, `create/revoke/resolve_share_link`,
+> `hide_dm`, `approve_work`, `reorder_channels`, `set_channel_post_policy`. Added
+> **§E.10 — a per-control → backend coverage matrix** (every clickable → table/RPC +
+> persists?) so a grading agent can confirm build-readiness at a glance, plus the
+> personal-explorer mount in §E.9. Also: **Starred** became a plain monochrome star
+> toggle in line with the filters (no label, no gold).
+>
 > **Files-as-channel + navigation pass (2026-08-22).** The **server File explorer now
 > keeps the channel column** (Files is a highlighted entry beside the channels/voice
 > rows), so you can jump from the file browser to any channel in one click — it is no

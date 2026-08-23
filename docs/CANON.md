@@ -23,8 +23,10 @@ Seven parts:
   model, and the utility/admin surfaces layered on after the first pass.
 - **§E Backend & data model** — the hand-off-ready plan: tables + RLS, key
   columns, RPCs/triggers, Realtime, edge functions, build-vs-buy, indexes, the
-  migration order, and a per-screen backend checklist. (This is where the retired
-  COLLAB backend doc was folded in; CODEGEN and the prompts cite it as §E.x.)
+  migration order, a per-screen backend checklist (§E.9), and a **per-control
+  backend coverage matrix (§E.10)** mapping every clickable to the table/RPC that
+  persists it. (This is where the retired COLLAB backend doc was folded in; CODEGEN
+  and the prompts cite it as §E.x.)
 - **§F End-to-end workflows** — two real collaborations traced through the
   product to confirm the pieces connect.
 - **§G Open owner decisions** — the genuine build-vs-buy / policy calls still
@@ -1263,7 +1265,7 @@ Each row: purpose · columns · RLS summary. `uid()` = `(select auth.uid())`.
 
 | Table | Purpose | Columns (beyond `id uuid pk default gen_random_uuid()`, `created_at`) | RLS |
 |---|---|---|---|
-| `servers` | a studio | `slug uniq, name, description, cover_key, owner_id→auth.users` | read: `member_of(id)`; write: `is_server_admin(id)` |
+| `servers` | a studio | `slug uniq, name, description, icon_key (the square rail/header icon), cover_key (the wide banner — distinct from the icon, gallery #34), owner_id→auth.users` | read: `member_of(id)`; write: `is_server_admin(id)`; **delete: owner only** |
 | `server_members` | membership + colour + timeout | `server_id, user_id, color smallint, timeout_until timestamptz, joined_at, posts_require_approval bool default false (gallery #57), pk(server_id,user_id)` | read: `member_of(server_id)`; self-leave; admin manages |
 | *(post-approval)* | a flagged member's posts are **held** | `works.approved_at timestamptz null` — when the poster's `posts_require_approval`, `approved_at` starts null and the work is **hidden from readers** until an admin's `approve_work(id)` sets it (gallery #57). Admin bulk moderation RPCs `delete_user_works(server,user)` / `archive_user_works(...)` / `export_user_works(...)` are `is_server_admin`-gated + `audit_log`ged (gallery #59). | read gate adds `approved_at is not null OR is own OR is_admin` |
 | `roles` | permission roles (§D.1) | `server_id, name, color smallint, position int, permissions bigint (flag bitmask), is_default bool (@everyone)` | read: `member_of(server_id)`; write: `has_perm(server_id,'manage_roles')` |
@@ -1271,7 +1273,7 @@ Each row: purpose · columns · RLS summary. `uid()` = `(select auth.uid())`.
 | `channel_roles` | v1 private-channel allow-list | `channel_id, role_id, pk(channel_id,role_id)` — zero rows = open to all members | read: member; write: `manage_channels` |
 | `server_invites` | invite links | `code text pk, server_id, created_by, expires_at, max_uses int, uses int default 0` | read: admin; use via RPC |
 | `channel_categories` | collapsible channel groups (gallery B3/B7) | `server_id, name, position int` — a channel's group; `channels.category_id` null = ungrouped | read: `member_of`; write: `manage_channels` |
-| `channels` | rooms | `server_id, category_id null→channel_categories (gallery B3), name, kind in(text,voice), topic, slowmode_sec int default 0, position int, default_folder_id null→folders (gallery #53), allowed_kinds text[] null (null=any; e.g. {image,video} — gallery #54)` | read: `can_view_channel(id)`; write: `manage_channels`; **insert of a work is rejected when its `kind` isn't in `allowed_kinds`** |
+| `channels` | rooms | `server_id, category_id null→channel_categories (gallery B3), name, kind in(text,voice), topic, slowmode_sec int default 0, position int, default_folder_id null→folders (gallery #53), allowed_kinds text[] null (null=any; e.g. {image,video} — gallery #54), post_policy in(everyone,admins) default everyone (the "Who can post" channel setting — an announcements channel is admins-only, gallery)` | read: `can_view_channel(id)`; write: `manage_channels`; **message/work insert rejected when `post_policy='admins'` and the poster lacks a post perm, and when a work's `kind` isn't in `allowed_kinds`** |
 
 **Chat, DMs, and people**
 
@@ -1283,10 +1285,11 @@ Each row: purpose · columns · RLS summary. `uid()` = `(select auth.uid())`.
 | `channel_reads` | unread/mention state | `user_id, channel_id, last_read_at, pk(user_id,channel_id)` | owner only |
 | `mentions` | @-index for badges | `message_id, mentioned_user, server_id` | read: mentioned user |
 | `dm_channels` | 1:1 and group DMs | `is_group bool, name null` | member of it |
-| `dm_members` | who's in a DM | `dm_channel_id, user_id, muted bool, pinned bool, last_read_at, pk(...)` | self |
+| `dm_members` | who's in a DM | `dm_channel_id, user_id, muted bool, pinned bool, hidden bool default false (Hide conversation / the reworked "close DM" — removes it from your list until the other party messages again; reversible, gallery), last_read_at, pk(...)` | self |
+| `dm_message_reactions` | emoji reactions on DM messages | `dm_message_id, user_id, emoji text, pk(dm_message_id,user_id,emoji)` — mirrors `message_reactions`; **built with the DM message-actions work (deferred TODO: reply/react in DMs)** | member of the DM |
 | `dm_messages` | DM chat | mirrors `messages` (dm_channel_id, user_id, body, parent_id, edited_at, deleted_at) | member of the DM |
 | `friendships` | add-by-handle | `a_user, b_user, status in(pending,accepted,blocked), requested_by, pk(a_user,b_user)` ordered pair | either party |
-| `profiles` | account (name, handle, bio, status, presence) | `handle uniq, name, bio, avatar_key, status_emoji, status_text, status_expires_at, presence_state, tz, pronouns, links jsonb` | read: public; write: self |
+| `profiles` | account (name, handle, bio, status, presence) | `handle uniq, name, bio, avatar_key, banner_key (the profile hero banner — distinct from the avatar, gallery Edit-profile), status_emoji, status_text, status_expires_at, presence_state, tz, pronouns, links jsonb` | read: public; write: self |
 | `notifications` | the bell | `user_id, kind in(mention,comment,join,reaction,invite,friend), actor_id, server_id null, target_type, target_id, excerpt text, read_at` | owner only |
 | `server_prefs` | per-server notification pref (gallery S7/B15) | `user_id, server_id, level in(all,mentions,none) default all, muted_until timestamptz null, suppress_everyone bool default false, pk(user_id,server_id)` — `suppress_everyone` drops @everyone/@here pings without silencing the whole server | self |
 | `channel_prefs` | per-channel notification pref (gallery S7/B4/B7) | `user_id, channel_id, level in(all,mentions,none,default) default default, muted_until timestamptz null, pk(user_id,channel_id)` — `default` inherits the server pref; drives the channel-column "hide muted" toggle | self |
@@ -1295,7 +1298,7 @@ Each row: purpose · columns · RLS summary. `uid()` = `(select auth.uid())`.
 
 | Table | Purpose | Columns | RLS |
 |---|---|---|---|
-| `works` | the uploaded thing | `owner_type in(user,server), owner_id, visibility in(public,personal,server), server_id null, title null, file_ext, kind, blob_sha→media_blobs, bytes, hidden bool default false (untracked/utility file — gallery #55), approved_at timestamptz null (gallery #57), deleted_at timestamptz null (soft-delete / Trash — gallery #42/B19), search_tsv tsvector generated` | `works_read` (§B.3): public, or own, or `visibility='server' & member_of`, or readable via any `placement`. **Hidden works are omitted from the File-explorer library view** unless "Show hidden" is on (#55); they still work inline in chat. **Trashed works (`deleted_at not null`) are omitted from every view except the Trash smart-folder**, and are hard-deleted (blob refcount decremented) 30 days after `deleted_at`. |
+| `works` | the uploaded thing | `owner_type in(user,server), owner_id, visibility in(public,personal,server), server_id null, title null, file_ext, kind, blob_sha→media_blobs, bytes, hidden bool default false (untracked/utility file — gallery #55), approved_at timestamptz null (gallery #57), deleted_at timestamptz null (soft-delete / Trash — gallery #42/B19), search_tsv tsvector generated` | `works_read` (§B.3): public, or own, or `visibility='server' & member_of`, or readable via any `placement`, or reachable through a valid (unexpired, unrevoked) `share_links` token. **Hidden works are omitted from the File-explorer library view** unless "Show hidden" is on (#55); they still work inline in chat. **Trashed works (`deleted_at not null`) are omitted from every view except the Trash smart-folder**, and are hard-deleted (blob refcount decremented) 30 days after `deleted_at`. |
 | `work_items` | items of a multi-item work | `work_id, blob_sha, position` | inherits the work |
 | `work_collaborators` | consent-gated collaborators (§D.3.1) | `work_id, user_id, role text null, status in(accepted,pending), pk(work_id,user_id)` | read: work-readers; write: owner + accepted collaborators; self-remove always |
 | `content_tags` | user labels | `work_id, tag text` | read: work-readers; write: owner + accepted collaborators |
@@ -1308,7 +1311,9 @@ Each row: purpose · columns · RLS summary. `uid()` = `(select auth.uid())`.
 | `invoices` | billing receipts (gallery S11) | `owner_type, owner_id, stripe_invoice_id, amount_cents, currency, status in(paid,open,void), hosted_url, created_at` | read: self / `manage_billing`; written by the Stripe webhook |
 | `sessions` | signed-in devices / accounts (gallery B21) | `user_id, device text, ip_hint, last_seen_at, current bool` | owner only; the account switcher + "sign out everywhere" read/revoke these |
 | `saved_items` | Save to my files (owner copy) | `user_id, work_id, folder_id null→save_folders, pk(user_id,work_id)` | owner only |
-| `save_folders` | personal bookmark folders | `user_id, name, pk(id)` | owner only |
+| `save_folders` | personal Drive folders (nested) | `user_id, parent_id null→save_folders (null=root; the personal My-files tree nests, gallery), name, pk(id)` | owner only |
+| `starred_items` | ⭐ starred/favourite works — **distinct from Save** (Star = a personal bookmark flag for the Starred smart-folder; Save = an owner-copy in your storage; the card offers both, gallery #43) | `user_id, work_id, created_at, pk(user_id,work_id)` | owner only |
+| `share_links` | "anyone with the link" share tokens (Share dialog / shared view, gallery #39/#40) | `token text pk, work_id, created_by, access in(view) default view, expires_at null, revoked_at null` — grants read of one work to a non-member via `/s/<token>`; the read policy honours a valid (unexpired, unrevoked) token; **beyond the 3 visibility layers** (public/server/private) so a private work can be link-shared without going public | read via the token RPC; write: owner / `manage` |
 
 **Moderation**
 
@@ -1356,6 +1361,14 @@ profiles.tz text · profiles.pronouns text · profiles.links jsonb  -- shown on 
 - `create_dm(handle)` / `create_group_dm(handles[])`, resolve handles→users (friendship required), find-or-create `dm_channels` + `dm_members`.
 - `add_friend(handle)` / `respond_friend(user, accept)` / `block_user(user)`.
 - `move_to_folder(work_id, folder_id)`, sets the file's `placement.folder_id`.
+- `toggle_star(work_id)`, insert/delete `starred_items` (the card ⭐ + the Starred smart-folder, gallery #43).
+- `duplicate_work(work_id, folder_id)`, the file **Copy** action (gallery #15): insert a new `works` row for the caller pointing at the **same `blob_sha`** (so `media_blobs.refcount++`, near-zero bytes via dedup), placed in `folder_id`; gated like upload.
+- `save_to_files(work_id, folder_id)` / `unsave(work_id)`, write `saved_items` (an owner copy; Save-whole-folder loops the folder's items).
+- `set_channel_post_policy(channel_id, policy)` and `reorder_channels(server_id, ordered_ids[])` / `reorder_categories(...)`, the channel-settings writers (drag-reorder + "Who can post"), gated `manage_channels`.
+- `create_share_link(work_id, expires_at null)` → a `share_links` token + URL; `revoke_share_link(token)`; `resolve_share_link(token)` returns the work if the token is valid (Share dialog / shared view, gallery #39/#40).
+- `hide_dm(dm_channel_id)`, set `dm_members.hidden=true` (the reworked close-DM); cleared when the other party sends or you reopen.
+- `approve_work(work_id)`, admin sets `works.approved_at=now()` for a held post (`posts_require_approval`, gallery #57); `audit_log`ged.
+- **Bulk selection ops** (the file-browser selection bar — Download / Move / Delete / Save on many, gallery #14) run as the caller looping the single-item RPCs (`move_to_folder`, soft-delete, `save_to_files`, `toggle_star`) inside one transaction; no separate bulk table. (Admin cross-user bulk is the `delete_user_works`/`archive_user_works`/`export_user_works` set above.)
 - `restore_work(work_id)` / `purge_work(work_id)` / `empty_trash(scope)` (gallery #42/B19): trash restore sets `works.deleted_at=null`; purge + empty hard-delete now (decrement blob refcount); a scheduled job purges anything past 30 days. Writer gated like delete (owner / moderation).
 - `adopt_work(work_id)`, move a work's owner → the server (needs `manage_billing`).
 - `billing_portal(owner_type, owner_id)` → a Stripe customer-portal URL (gallery S11); the Stripe webhook writes `invoices` + flips `storage_balance.status`.
@@ -1411,7 +1424,7 @@ Add the relevant tables to the `supabase_realtime` publication.
 ### E.8 Migration order (each a re-runnable file, `schema-*.sql` convention)
 1. `servers`, `server_members`, `server_invites` + `member_of`/`is_server_admin`.
 2. Granular roles: `roles` (seed owner + `@everyone`), `member_roles`, `channel_roles` + `has_perm`/`can_view_channel` (§D.1).
-3. `media_blobs`, `storage_meters`, `storage_balance`; `works` (+ `works_read`, §B.3), `work_items`, `folders`, `placement`, `work_collaborators`, `content_tags` (+ tag/credit consent RPCs).
+3. `media_blobs`, `storage_meters`, `storage_balance`; `works` (+ `works_read`, §B.3), `work_items`, `folders`, `placement`, `work_collaborators`, `content_tags`, `starred_items`, `share_links` (+ tag/credit consent RPCs, `toggle_star`, `duplicate_work`, the share-link RPCs).
 4. `channel_categories`, `channels` (+`category_id`), `messages` (+tsv), `message_reactions`, `message_pins`, `channel_reads`, `mentions`, gated on `can_view_channel`.
 5. `comments` (context, resolved_at); `profiles`.
 6. `dm_channels`/`dm_members`/`dm_messages`; `friendships`.
@@ -1425,15 +1438,83 @@ Add the relevant tables to the `supabase_realtime` publication.
 - **Channel Pins/Files**, `message_pins`; works placed in the channel (`placement where channel_id`) for Files.
 - **Search / quick switcher**, `search_all()` + FTS indexes, every hit filtered through the live read policy (`can_view_channel`).
 - **Feed**, `works` where `visibility='public'` and author ∈ friends (`friendships` accepted).
-- **File explorer**, `works` + `placement.folder_id` + `folders where server_id`; `storage_meters`/`storage_balance` for the storage footer; the **Trash smart-folder** reads `works where deleted_at not null` (restore/purge/empty via §E.3).
-- **Details pane**, `works` + `content_tags` + `work_collaborators` + `comments(context=public)` (posts) or the channel link (server files) + `saved_items` + transcode.
+- **File explorer (server mount)**, `works` + `placement.folder_id` + `folders where server_id`; `storage_meters`/`storage_balance` for the storage footer; the **Trash smart-folder** reads `works where deleted_at not null`; the **Starred smart-folder** reads `starred_items` (restore/purge/empty + star via §E.3). Mounts **inside the workspace shell** (the channel column stays; §C.6).
+- **File explorer (personal "My files" mount)**, the *same* component parameterised to the personal source: user-owned `works` (`owner_type='user'`) + `saved_items` + nested `save_folders`; `storage_meters`/`storage_balance` for `owner_type='user'` (the "Your storage" footer); its own Trash + Starred. No server chrome (the channel column, `channel`/`uploader` filters drop away).
+- **Details pane**, `works` + `content_tags` + `work_collaborators` + `comments(context=public)` (posts) or the channel link (server files) + `saved_items` + `starred_items` + `share_links` (Share dialog / update-visibility) + `duplicate_work` (Copy) + transcode.
 - **Profile / popout**, `profiles` (status/tz/pronouns/links) + `member_roles` + mutual servers (a join) + `friendships`.
-- **Messages / Friends**, `dm_channels`/`dm_members`/`dm_messages` + `friendships` (add/respond/block, the new-DM picker via `create_dm`/`create_group_dm`).
+- **Messages / Friends**, `dm_channels`/`dm_members`/`dm_messages` + `friendships` (add/respond/block, the new-DM picker via `create_dm`/`create_group_dm`); DM pin/mute/**hide** via `dm_members`; DM reply uses `dm_messages.parent_id`, DM reactions use `dm_message_reactions` (deferred with the DM message-actions TODO).
 - **Server settings**, `channels` (manage), `roles`/`member_roles`/`channel_roles`, `server_invites`, `server_bans`, `audit_log`, `storage_balance`/`storage_meters` (two sliders), `export_manifest`.
 - **Create / Join / new-server first-run**, `servers` insert (seed owner + `@everyone`) + `server_invites` + `join_via_invite`.
 - **Notifications**, `notifications` + Realtime `user:{id}`; inline reply reuses `messages`/`comments`; the bell dropdown reads the same feed.
 - **Sign-in / onboarding**, Supabase Auth + the sign-in/claim screen (§C.14) + unique `profiles.handle` claim.
 - **Call** *(v2 — deferred, not built)*, a LiveKit room per `channel`/`dm` id; Presence for who's in.
+
+### E.10 Interactive-control → backend coverage matrix
+
+**Completeness claim:** every clickable in `gallery.html` that changes state maps to
+a table + RPC below and **persists**; the only controls with no backend are the
+intentionally-ephemeral view toggles listed at the foot. Read this with §B (the
+permission gate on each write) and §E.1/§E.3 (the schema/RPCs named here).
+
+| Surface | Control / action | Backend (table · RPC · realtime) | Persists |
+|---|---|---|:--:|
+| **Chat** | send / edit / delete message | `messages` (insert/update/`deleted_at`) · RT `channel:{id}` | ✅ |
+| | react | `message_reactions` · `toggle_reaction` · RT | ✅ |
+| | reply in thread · "also send to channel" | `messages.parent_id` · `also_to_channel` | ✅ |
+| | pin / unpin | `message_pins` · `pin_message`/`unpin_message` | ✅ |
+| | mark read · jump-to-present | `channel_reads` · `mark_channel_read` | ✅ |
+| | typing indicator | RT `channel:{id}:typing` (broadcast) | ⏳ ephemeral |
+| **Channel column** | create text/voice channel | `channels` insert | ✅ |
+| | create / rename / reorder group | `channel_categories` · `set_channel_category`/`reorder_categories` | ✅ |
+| | reorder channels (drag) | `channels.position` · `reorder_channels` | ✅ |
+| | collapse a group · toggle members rail | client UI state | ⏳ ephemeral |
+| **Member popout** | Message · Add friend · Block · Report | `create_dm` · `add_friend` · `block_user` · `reports`/`file_report` | ✅ |
+| | Roles · Timeout · Kick · Ban | `set_member_roles` · `timeout_member` · `kick_member` · `ban_member` (+`audit_log`) | ✅ |
+| **Server menu** | Invite · Notification settings · Leave · Delete server | `server_invites` · `set_notif_level`→`server_prefs` · `server_members` delete · `servers` delete (owner) | ✅ |
+| **File explorer** | browse folders · breadcrumb · list/grid/feed view | `folders` · `placement.folder_id` · `works` read | (view toggle ⏳) |
+| | search · filters (type/channel/uploader/tag/date/sort) | `search_all` + client query args over `works`/`placement`/`content_tags` | ✅ (query) |
+| | **Star** (card ⭐ + Starred smart-folder) | `starred_items` · `toggle_star` | ✅ |
+| | **Copy** (duplicate in folder) | `duplicate_work` (same `blob_sha`, dedup) | ✅ |
+| | Copy link / Share | `share_links` · `create_share_link`/`revoke_share_link` | ✅ |
+| | Download (file / folder / selection) | signed URL via `api/sign.mjs`; folder via `export_manifest` | n/a |
+| | New folder (server / personal) | `folders` insert / `save_folders` insert (nested) | ✅ |
+| | Move (drag / menu) · Rename | `move_to_folder` · `works`/`folders` update | ✅ |
+| | Select mode · bulk Download/Move/Delete/Save | per-item RPC loop in one txn (§E.3) | ✅ |
+| | Show hidden · Hide from library | `works.hidden` | ✅ |
+| | Lock / Archive folder | `folders.locked` / `folders.archived` | ✅ |
+| | Trash: delete · restore · delete-forever · empty | `works.deleted_at` · `restore_work` · `purge_work` · `empty_trash` | ✅ |
+| | Crosspost to server · Update visibility | `placement` insert · `works.visibility` update | ✅ |
+| | storage footer · "manage" | `storage_meters`/`storage_balance`/`invoices` | ✅ |
+| **Details pane** | comments: add / reply / resolve | `comments` (`parent_id`,`resolved_at`) | ✅ |
+| | add tag · Save to my files | `content_tags` · `saved_items` (`save_to_files`) | ✅ |
+| | player speed/quality/seek/5s-skip | client; on-demand `transcode` for format | ⏳/n·a |
+| **Feed / Profile** | feed cards (friends' public) · shelves | `works` (visibility+friends) | read |
+| | layout toggle (grid⇄masonry) | client UI state | ⏳ ephemeral |
+| | Edit profile (name/handle/bio/avatar/banner) | `profiles` (+`banner_key`) | ✅ |
+| | custom status | `profiles.status_*` | ✅ |
+| **DMs / Friends** | new DM / group · send | `create_dm`/`create_group_dm` · `dm_messages` · RT | ✅ |
+| | pin · mute · **hide (close DM)** | `dm_members` (`pinned`/`muted`/`hidden`) | ✅ |
+| | reply · react *(DM message-actions — deferred TODO)* | `dm_messages.parent_id` · `dm_message_reactions` | ✅ (when built) |
+| | add / accept / decline / block friend | `add_friend` · `respond_friend` · `block_user` | ✅ |
+| **Notifications** | list · mark-all-read · per-item read · levels | `notifications` (RT `user:{id}`) · `mark_server_read` · `read_at` · `set_notif_level` | ✅ |
+| **Server settings** | general (name/desc/**icon**/**cover**) · Export | `servers` (`icon_key`/`cover_key`) · `export_manifest` | ✅ |
+| | channel settings: who-can-post · slowmode · default folder · allowed types · private | `channels` (`post_policy`,`slowmode_sec`,`default_folder_id`,`allowed_kinds`) · `channel_roles` | ✅ |
+| | roles: create/edit/permission-matrix/reorder/assign | `roles` · `member_roles` · `set_member_roles`/`set_channel_access` | ✅ |
+| | moderation: bans · post-approval queue · bulk-delete-user | `server_bans` · `approve_work` · `delete_user_works`/`archive_user_works` (+`audit_log`) | ✅ |
+| | audit log · invite links (create/revoke) | `audit_log` · `server_invites` | ✅ |
+| | storage & billing: two sliders · plan · portal · receipts | `storage_balance`/`storage_meters` · `billing_portal` · `invoices` | ✅ |
+| **User settings** | profile/account (email/password) · privacy | Supabase Auth · `profiles` · `friendships` | ✅ |
+| | account switcher · sign-out-everywhere · delete account | `sessions` · `revoke_session`/`revoke_all_sessions` · `delete_my_account` | ✅ |
+| | appearance (theme) | client / per-viewer | ⏳ ephemeral |
+| **Upload sheet** | pick files/folder · visibility tiles · add details · location (nested new folder) | `api/sign.mjs` + `works` + `placement` + `media_blobs` + `storage_meters`; `works.visibility`; `content_tags`; `folders`/`save_folders` | ✅ |
+| **Create / Join / Auth** | create server (2-step) · join by link · sign-in / claim handle | `servers` insert (+seed owner/`@everyone`/channels) · `join_via_invite` · Auth + unique `profiles.handle` | ✅ |
+| **Utility / state** | 404 · dead-invite · denied · blocked · pending · **shared view** · back buttons | reads only (shared via `share_links`); navigation is client route | read |
+
+**Intentionally client-only (no persistence needed, not gaps):** typing indicator
+(RT broadcast), the grid/list/feed and grid⇄masonry **view toggles**, channel-group
+collapse, the members-rail toggle, the theme switch, and transient player controls
+(speed/seek/skip). A viewer preference we *may* later persist (theme, last-open
+server) would land in a small `user_prefs` row — noted, not required for the beta.
 
 ---
 
