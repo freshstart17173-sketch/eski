@@ -28,7 +28,7 @@ GOTCHA: channels.post_policy='admins' must reject non-admin inserts — test cov
 
 ## Current state
 
-**Phase: build. P0 DONE. P1 (Schema + RLS) DONE — all 8 groups green + wrap. NEXT: P2 (RPCs + triggers + search + realtime).**
+**Phase: build. P0 DONE. P1 (Schema + RLS) DONE. P2 (RPCs + triggers + search) DONE — all 16 `prompts/P2-rpcs.md` prompts applied + round-trip tested green. NEXT: P3 (UI primitives).**
 
 The spec is hand-off-ready: [`CANON.md`](CANON.md) is the contract (incl. §E.10, the
 per-control → backend coverage matrix), the [`design/gallery.html`](design/gallery.html)
@@ -45,18 +45,22 @@ Supabase MCP.
 dropped every retired `public` table + function; `list_tables` is empty. Now building the
 fresh CANON §E schema in §E.8 order.
 
-**NEXT: P2 — RPCs + triggers + search + realtime.** Read CODEGEN §5 (P2) + CANON §E.3/
-§E.4/§E.7 + `prompts/P2-rpcs.md`. The tables + RLS fence all exist; P2 adds the
-`security definer` RPCs (`join_via_invite`, `create_dm`, `add_friend`, `toggle_reaction`,
-moderation writers, share-link/trash/star RPCs, `search_all`, …), the triggers
-(message-fanout → mentions/notifications; works-insert → search_tsv + auto-hide; blob
-refcount/meter maintenance; 30-day trash purge), and the realtime publication
-(`server:{id}` presence, `channel:{id}` changes, `user:{id}` bell).
+**NEXT: P3 — UI primitives.** Read CODEGEN §5 (P3) + `prompts/P3-primitives.md` +
+the `eski-style` skill. Start by regenerating + committing the TS types (Supabase MCP
+`generate_typescript_types`) now that the RPC surface is final (P1 GOTCHA E).
 
-IN PROGRESS: P2 RPCs/triggers/search. DONE so far: P2.1–P2.5 (join_via_invite;
-add_collaborator/remove_collaborator/add_tag; mark_channel_read; toggle_reaction;
-pin_message/unpin_message) — applied + round-trip tested green, committed as
-schema-10/11. Building P2.6–P2.16 next.
+**P2 residuals NOT in the `prompts/P2-rpcs.md` 16-prompt contract** (the narrative
+above mentioned them; the prompt file stops at P2.16 "backend complete"). These are
+owner decisions, not silently skipped — surface them before P3 relies on any:
+- `resolve_share_link(token)` — anon read of a work via a live share token. `can_read_work`
+  already grants the *read* through a live `share_links` row, but an anon viewer can't
+  SELECT `share_links` to resolve a token → wants a small SECURITY DEFINER lookup RPC.
+- 30-day trash purge — a scheduled job (pg_cron / edge function), not a request/response RPC.
+- Realtime publication (`server:{id}`/`channel:{id}`/`user:{id}`) — schema-07 notes this is
+  a P1-wrap concern; confirm the `supabase_realtime` publication actually lists the live
+  tables before P4 subscribes to them.
+- star / share-link management need no RPC: `starred_items` (star_all) and `share_links`
+  (share_write) are already direct RLS-gated table ops.
 
 ---
 
@@ -133,3 +137,38 @@ GOTCHA F: accepted security advisor WARNs — the SECURITY DEFINER gate helpers 
   can't be revoked. anon EXECUTE was tightened to just can_read_work. Optional future
   hardening: move all gate helpers into a non-exposed `private` schema. media_blobs is
   RLS-on/no-policy = deny-all by design (server-managed).
+
+## 2026-08-23 — P2 RPCs + triggers + search
+IN PROGRESS: (cleared)
+DONE: all 16 `prompts/P2-rpcs.md` prompts. Migrations p2_01_join_via_invite …
+  p2_06_search (+ p2_02 on-conflict fixups, p2_07_lock_internal_functions), applied to
+  project zidqagrmxeawpasurpwi. Committed as schema-10..15*.sql. Every RPC/trigger has a
+  role-switching round-trip test that PASSES (success delta + gate rejection), run in a
+  rolled-back txn via the Supabase MCP:
+  - 10 join_via_invite · 11 add_collaborator/remove_collaborator/add_tag,
+    mark_channel_read, toggle_reaction, pin/unpin_message
+  - 12 create_dm/create_group_dm, add_friend/respond_friend/block_user,
+    move_to_folder/create_folder (cycle-guarded)
+  - 13 ban/timeout/kick_member (+audit), set_member_roles, set_channel_access, export_manifest
+  - 14 triggers: message fan-out → mentions+notifications, edit/tombstone (msg+dm),
+    works search_tsv + auto-hide/approval-hold, comment mention → notification,
+    storage-meter + blob refcount (dedup)
+  - 15 search_all + GIN(body_tsv, search_tsv)
+  Advisors (security): ZERO rls-disabled / policy-permits-all (the acceptance gate).
+  Remaining WARNs are the accepted P1 posture (definer RPC/gate helper callable by
+  authenticated — inherent to the RPC pattern) + media_blobs deny-all INFO. The 4
+  internal helpers (meter_bump + trigger fns) were revoked from public/anon/authenticated
+  so they are NOT REST-exposed.
+NEXT: P3 (UI primitives) — regenerate + commit TS types first (GOTCHA E). See Current
+  state for the P2 residuals (resolve_share_link, trash-purge job, realtime publication)
+  that are outside the 16-prompt contract and await an owner call.
+GOTCHA G: a plpgsql param that shares a name with a column used bare in ON CONFLICT
+  (e.g. work_id, channel_id, message_id) is ambiguous — set `#variable_conflict use_column`
+  in the body and reach the param via `fn_name.param` when needed. Bit P2.2/2.3/2.5.
+GOTCHA H: search_all is SECURITY INVOKER on purpose — RLS itself is the leak fence, so no
+  in-body gate is needed and none can be forgotten. Testing an INVOKER function through the
+  Supabase MCP requires `set local role authenticated` (the service role bypasses RLS) in
+  addition to the jwt-claims GUC.
+GOTCHA I: moderation targets never include the owner; ON CONFLICT keeps a member's
+  @everyone row on set_member_roles; the storage meter counts DISTINCT owned blobs, so the
+  2nd work on the same owner+blob adds 0 bytes (dedup) and only the last unref frees them.
