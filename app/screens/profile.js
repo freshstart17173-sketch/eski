@@ -7,9 +7,10 @@
 import { el, toast, Avatar, openModal, Button } from "../ui.js";
 import { iconEl } from "../icons.js";
 import { navigate } from "../router.js";
-import { workCard } from "../cards.js";
+import { workCard, avatarUrl } from "../cards.js";
 import { openDetails } from "./details.js";
-import { updateProfile } from "../data.js";
+import { updateProfile, updateProfileImage, isDemo } from "../data.js";
+import { uploadBlobs } from "../upload-r2.js";
 
 const SHELVES = [
   { key: "public", label: "Public", icon: "globe" },
@@ -33,13 +34,17 @@ export function renderProfile(data) {
   const visibleShelves = pov === "owner" ? SHELVES : pov === "mutual" ? SHELVES.slice(0, 2) : SHELVES.slice(0, 1);
   const state = { shelf: visibleShelves[0].key, even: true, query: "" };
 
-  // hero — round avatar, name, @handle, bio, POV actions
+  // hero — round avatar (from avatar_key, initials fallback), name, @handle, bio, POV actions
   const who = el(".who", {}, whoKids(p));
+  const heroAv = Avatar({ name: p.initials || p.name, size: "lg", src: avatarUrl(p.avatar_key) });
   const actions = el(".actions");
-  if (pov === "owner") actions.append(el("button.btn.primary", { onClick: () => openEditProfile(data, () => who.replaceChildren(...whoKids(p))) }, [iconEl("pen", "sm"), "Edit profile"]));
+  if (pov === "owner") actions.append(el("button.btn.primary", { onClick: () => openEditProfile(data, {
+    onSaved: () => who.replaceChildren(...whoKids(p)),
+    onAvatar: (src) => setAvatarImg(heroAv, src, p.initials || p.name),
+  }) }, [iconEl("pen", "sm"), "Edit profile"]));
   else if (pov === "public") actions.append(el("button.btn.primary", { onClick: () => toast({ message: "Friend request sent" }) }, [iconEl("plus", "sm"), "Add friend"]));
   else actions.append(el("button.btn.primary", { onClick: () => toast({ message: "Message (P7)" }) }, [iconEl("mail", "sm"), "Message"]));
-  const hero = el(".phero", {}, [el(".top", {}, [Avatar({ name: p.initials || p.name, size: "lg" }), who, actions])]);
+  const hero = el(".phero", {}, [el(".top", {}, [heroAv, who, actions])]);
 
   // shelf tabs (+ Settings for owner) + search
   const tabs = el(".ptabs2");
@@ -105,16 +110,43 @@ function whoKids(p) {
   ];
 }
 
-// Edit-profile modal (CANON §C.10, gallery #epModal) — the text fields (name / handle /
-// bio) are a real self-only `profiles` write; on success the caller repaints the hero.
-// Avatar + banner are R2 uploads, deferred to the R2 write env (same gate as file uploads
-// and Download) — honest markers, not fakes. `onSaved` runs after the values are patched.
-function openEditProfile(data, onSaved) {
+// replace an avatar element's content with a photo (initials fallback on load error)
+function setAvatarImg(avEl, src, name) {
+  avEl.replaceChildren(); avEl.style.color = "";
+  if (!src) { avEl.textContent = (name || "?").trim().slice(0, 2).toUpperCase(); return; }
+  const img = el("img", { src, alt: name || "" });
+  img.addEventListener("error", () => { avEl.replaceChildren(); avEl.textContent = (name || "?").trim().slice(0, 2).toUpperCase(); }, { once: true });
+  avEl.append(img);
+}
+
+// Edit-profile modal (CANON §C.10, gallery #epModal). Text fields (name/handle/bio) are a
+// self-only `profiles` write (updateProfile). **Change photo is now a real upload**: pick an
+// image → upload-r2 (sign→PUT) → `profiles.avatar_key`, and the new photo repaints in the
+// dialog + the hero (via onAvatar). Demo previews the picked file locally (a blob URL), no R2.
+// Change banner stays a marker until a hero banner is rendered (banner_key write is ready).
+// `opts`: { onSaved, onAvatar }.
+function openEditProfile(data, opts = {}) {
   const p = data.profile;
+  const demo = isDemo();
+  const avImg = Avatar({ name: p.initials || p.name, size: "lg", src: avatarUrl(p.avatar_key) });
+  const fileInput = el("input", { type: "file", accept: "image/*", style: "display:none" });
+  fileInput.addEventListener("change", async () => {
+    const file = fileInput.files?.[0]; fileInput.value = "";
+    if (!file) return;
+    try {
+      let src;
+      if (demo) src = URL.createObjectURL(file);   // demo: local preview, never touches R2
+      else { const [{ key }] = await uploadBlobs([file]); await updateProfileImage("avatar_key", key); p.avatar_key = key; src = avatarUrl(key); }
+      setAvatarImg(avImg, src, p.name);
+      opts.onAvatar?.(src);
+      toast({ message: "Photo updated", icon: "check" });
+    } catch (e) { toast({ message: e?.message || "Couldn’t update your photo" }); }
+  });
   const avRow = el(".epavrow", { style: "display:flex;align-items:center;gap:12px;margin-bottom:6px" }, [
-    Avatar({ name: p.initials || p.name, size: "lg" }),
-    Button({ label: "Change photo", size: "sm", icon: "pen", onClick: () => toast({ message: "Profile photo (needs the R2 upload env)" }) }),
-    Button({ label: "Change banner", size: "sm", icon: "pen", onClick: () => toast({ message: "Profile banner (needs the R2 upload env)" }) }),
+    avImg,
+    fileInput,
+    Button({ label: "Change photo", size: "sm", icon: "pen", onClick: () => fileInput.click() }),
+    Button({ label: "Change banner", size: "sm", icon: "pen", onClick: () => toast({ message: "Profile banner (a hero banner render lands next)" }) }),
   ]);
 
   const nameI = el("input", { value: p.name || "", "aria-label": "Display name" });
@@ -142,7 +174,7 @@ function openEditProfile(data, onSaved) {
     try {
       const vals = await updateProfile({ name: nameI.value, handle: handleI.value, bio: bioI.value });
       Object.assign(p, vals, { initials: (vals.name || vals.handle).trim().slice(0, 2).toUpperCase() });
-      onSaved?.();
+      opts.onSaved?.();
       close();
       toast({ message: "Profile saved", icon: "check" });
     } catch (e) { toast({ message: e?.message || "Couldn’t save your profile" }); save.disabled = false; }

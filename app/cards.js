@@ -20,6 +20,10 @@ export function mediaUrl(work) {
   return `${R2_PUBLIC_BASE_URL}/${s.slice(0, 2)}/${s}.${work.file_ext}`;
 }
 
+// a profile photo/banner URL from its stored object key (profiles.avatar_key/banner_key,
+// already the full `${sha0:2}/${sha}.${ext}` path). Null when unset → the avatar shows initials.
+export function avatarUrl(key) { return key ? `${R2_PUBLIC_BASE_URL}/${key}` : null; }
+
 // Download a work's bytes with its real filename (not the content-addressed sha key).
 // The object lives cross-origin on cdn.eski.lol, where the `download` attribute is
 // ignored — so fetch the blob (R2's GET * CORS rule allows it) and save via a blob URL;

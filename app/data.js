@@ -749,7 +749,7 @@ export async function loadProfile(handle) {
 
   return {
     needsAuth: false, live: true, source: "profile", me, servers, dmUnread: 0, server: null,
-    profile: { id: prof.id, name: prof.name || prof.handle, handle: prof.handle, bio: prof.bio || "", initials: initials(prof.name || prof.handle), pronouns: prof.pronouns },
+    profile: { id: prof.id, name: prof.name || prof.handle, handle: prof.handle, bio: prof.bio || "", initials: initials(prof.name || prof.handle), pronouns: prof.pronouns, avatar_key: prof.avatar_key || null },
     pov, shelves,
   };
 }
@@ -759,6 +759,19 @@ export async function loadProfile(handle) {
 // globally UNIQUE, so a clash surfaces as "That handle is taken" (the constraint is the
 // fence). Avatar/banner are R2 uploads, deferred to the R2 write env like file uploads.
 // Returns the cleaned values so the profile hero repaints without a reload.
+// Set your profile photo (or banner) — a self-only `profiles` update of the stored object
+// key (RLS `prof_update`). The bytes are uploaded separately via upload-r2.js; this just
+// points the profile at the resulting key. `field` is "avatar_key" or "banner_key".
+export async function updateProfileImage(field, key) {
+  if (field !== "avatar_key" && field !== "banner_key") throw new Error("bad image field");
+  if (isDemo()) return key;
+  const user = session();
+  if (!user) throw new Error("Sign in");
+  const { error } = await supabase.from("profiles").update({ [field]: key }).eq("id", user.id);
+  if (error) throw new Error(error.message || "Couldn’t update your photo");
+  return key;
+}
+
 export async function updateProfile({ name, handle, bio }) {
   const h = (handle || "").trim().replace(/^@/, "");
   if (!h) throw new Error("A handle is required");

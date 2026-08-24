@@ -83,6 +83,13 @@ await run("edit-profile", "light", async (p) => {
   await p.waitForTimeout(200);
   const inModal = await p.$(".scrim .modal");
   if (!inModal) return "Edit-profile modal should open";
+  // avatar upload (P5.19): the avatar starts as initials; picking an image (demo previews it
+  // locally, no R2) turns it into an <img>.
+  if (await p.$(".scrim .modal .epavrow .av img")) return "avatar should start as initials (no photo yet)";
+  if (!(await p.$('.scrim .modal .epavrow input[type="file"]'))) return "Change photo should be a real file picker, not a stub";
+  await p.setInputFiles('.scrim .modal .epavrow input[type="file"]', join(ROOT, "eski_logo.png"));
+  await p.waitForTimeout(200);
+  if (!(await p.$(".scrim .modal .epavrow .av img"))) return "picking a photo should render it in the avatar";
   if (!(await p.$('.scrim .modal input[aria-label="Handle"]'))) return "handle field missing";
   if (!(await p.$('.scrim .modal .svnote'))) return "handle-change note missing";
   await p.fill('.scrim .modal input[aria-label="Display name"]', "jax okonkwo");

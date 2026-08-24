@@ -154,11 +154,17 @@ export function closeMenus() {
 // ── P3.6 Avatar + PresenceDot ─────────────────────────────────────────────────
 export function Avatar({ name = "", src, size = "md", colorIdx } = {}) {
   const a = el("." + ["av", size].filter(Boolean).join("."));
-  if (src) a.append(el("img", { src, alt: name }));
-  else {
+  const initials = () => {
     a.textContent = name.trim().slice(0, 2).toUpperCase() || "?";
     if (colorIdx != null) a.style.color = `var(--m${colorIdx})`;   // hue: server surfaces only
-  }
+  };
+  if (src) {
+    const img = el("img", { src, alt: name });
+    // a stored photo that 404s (key set but object gone) falls back to initials, never a
+    // broken image — the same graceful degrade the media cards use for missing bytes.
+    img.addEventListener("error", () => { a.replaceChildren(); initials(); }, { once: true });
+    a.append(img);
+  } else initials();
   return a;
 }
 export function PresenceDot({ state = "online", ring } = {}) {

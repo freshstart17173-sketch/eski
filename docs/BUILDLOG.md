@@ -1098,3 +1098,29 @@ NEXT: **P5.19 avatar/banner upload** (edit-profile "Change photo/banner" markers
 GOTCHA AT: a cross-origin `<a download>` (cdn.eski.lol ≠ app origin) is IGNORED by browsers —
   it navigates instead of saving with the filename. Must fetch → blob → objectURL to force the
   real filename; keep window.open as the fallback when the CORS fetch is refused.
+
+## 2026-08-24 — P5.19 Profile photo upload (avatar → R2 → avatar_key)
+IN PROGRESS: (cleared)
+DONE: **Change photo** in edit-profile is a real upload (was an R2 marker). New shared
+  primitive `app/upload-r2.js` — `uploadBlobs(files)` (hash → `/api/sign` presign → PUT →
+  returns the content-addressed `key`), the small-file counterpart to the upload sheet's inline
+  flow (kept separate on purpose — see the module header: the load-bearing post-upload path
+  isn't preview-verified yet, so this doesn't refactor it). Picking a photo uploads it and
+  writes `profiles.avatar_key` (`updateProfileImage`, self-only `prof_update` RLS); the new
+  photo repaints in the dialog **and** the profile hero (via `onAvatar`). `avatarUrl(key)`
+  (cards.js) builds the cdn URL; the **hero avatar now renders from `avatar_key`** (initials
+  fallback). The shared `Avatar` component gained a load-error fallback (a 404'd photo degrades
+  to initials, never a broken image). **Demo** previews the picked file locally (a blob URL, no
+  R2) so it's useful for screenshots + testable offline. Change banner stays a marker until a
+  hero banner render lands (its `banner_key` write path is ready via `updateProfileImage`).
+  Verified: `verify-profile.mjs` `edit-profile` — the avatar starts as initials, **Change photo**
+  is a real `<input type=file>` (not a stub), and `setInputFiles` (demo) turns the avatar into an
+  `<img>`. All profile cases GREEN; explorer/shared/feed/workspace/gallery GREEN both themes, zero
+  app console errors. Dialog screenshotted (picked photo round-cropped in the avatar).
+NEXT: **banner** render (a hero banner strip → wire Change banner the same way) and render
+  avatars from `avatar_key` on the **member rail / comments / cards** (loadProfile-style key on
+  those shapes). Then a true multi-file **zip** download, or **P7** (DMs · Friends ·
+  Notifications).
+GOTCHA AU: the real R2 round-trip (sign + PUT) can't run in-sandbox (no egress), so the live
+  photo upload is preview-verified; demo deliberately short-circuits to `URL.createObjectURL`
+  so the picker + render path is still exercised offline.
