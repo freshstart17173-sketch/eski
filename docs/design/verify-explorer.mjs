@@ -501,6 +501,51 @@ await detailsCase("dark");
   await ctx.close();
 }
 
+// Share dialog (P5.17) — visibility segment + link create/copy/revoke management.
+{
+  const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  const page = await ctx.newPage();
+  const errs = [];
+  page.on("console", (m) => { if (m.type() === "error" || m.type() === "warning") errs.push(`[${m.type()}] ${m.text()}`); });
+  page.on("pageerror", (e) => errs.push(`[pageerror] ${e.message}`));
+  await page.goto(`http://localhost:${PORT}/s/lb/files?demo=1&folder=beats`, { waitUntil: "networkidle" }).catch(() => {});
+  await page.waitForTimeout(300);
+  const problems = [];
+  const grid = '.exview[data-exview="grid"] .card:not(.foldercard)';
+  const first = await page.$(grid);
+  await first.hover();
+  await (await first.$('.cardacts [data-act="more"]')).click();
+  await page.waitForTimeout(120);
+  for (const b of await page.$$(".menu.open button")) { if ((await b.textContent()).includes("Share")) { await b.click(); break; } }
+  await page.waitForTimeout(150);
+  const title = await page.$eval(".scrim .modal .uhd b", (b) => b.textContent).catch(() => "");
+  if (!title.includes("Share")) problems.push(`Share dialog should open with a "Share …" title, got "${title}"`);
+  if ((await count(page, ".scrim .modal .seg .o, .scrim .modal .segmented button")) < 3 && (await count(page, ".scrim .modal [role='radiogroup'] button, .scrim .modal .visopt")) < 3) {
+    // the visibility control is a SegmentedControl; just assert 3 visibility labels are present
+    const txt = await page.$eval(".scrim .modal", (m) => m.textContent);
+    for (const w of ["Public", "Server", "Private"]) if (!txt.includes(w)) problems.push(`visibility control should show "${w}"`);
+  }
+  if (!(await $(page, ".scrim .modal .sharelinks .sharenone"))) problems.push("no-link state should show before a link is created");
+  // Create link → a link row with a readonly /shared/ URL appears
+  for (const b of await page.$$(".scrim .modal button")) { if ((await b.textContent()).includes("Create link")) { await b.click(); break; } }
+  await page.waitForTimeout(150);
+  const rows = await count(page, ".scrim .modal .sharelinks .sharerow2");
+  if (rows !== 1) problems.push(`Create link should add one link row, got ${rows}`);
+  const url = await page.$eval(".scrim .modal .sharerow2 input", (i) => i.value).catch(() => "");
+  if (!/\/shared\//.test(url)) problems.push(`the link should be a /shared/ URL, got "${url}"`);
+  if (await $(page, ".scrim .modal .sharelinks .sharenone")) problems.push("the no-link state should disappear once a link exists");
+  // Revoke → the row is removed, the no-link state returns
+  for (const b of await page.$$(".scrim .modal .sharerow2 button")) { if ((await b.textContent()).includes("Revoke")) { await b.click(); break; } }
+  await page.waitForTimeout(150);
+  if ((await count(page, ".scrim .modal .sharelinks .sharerow2")) !== 0) problems.push("Revoke should remove the link row");
+  if (!(await $(page, ".scrim .modal .sharelinks .sharenone"))) problems.push("the no-link state should return after revoking the last link");
+  const appErrs = errs.filter((e) => !/Failed to load resource|net::ERR|supabase|getSession|fetch|401|403|Access-Control/i.test(e));
+  if (appErrs.length) problems.push(...appErrs);
+  if (problems.length) { fails++; console.log("✗ share-dialog"); problems.forEach((p) => console.log("    " + p)); }
+  else console.log("✓ share-dialog");
+  await ctx.close();
+}
+
 // Starred — the seeded star badge, the quick-filter flat grid, and starring a card.
 {
   const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });

@@ -1049,3 +1049,30 @@ NEXT: share **management** — revoke a link (`share_links.revoked_at`; `revoke_
 GOTCHA AR: two same-named module-local helpers are NOT a clash — `explorer.js` `fmtBytes` and
   `cards.js` `typeCard` are private to their files; the EXPORTED ones live only in details.js.
   A cross-file grep flags them together; module scope keeps them independent.
+
+## 2026-08-24 — P5.17 Share dialog (visibility + link management)
+IN PROGRESS: (cleared)
+DONE: the full **Share dialog** (gallery #39), opened from **Share…** in both the card ⋯ menu
+  and the details ⋯ menu (the quick **Copy link** from P5.16 stays for the one-click path).
+  Two real write surfaces: **Visibility** (a `VisibilitySeg` Public/Server/Private → `setVisibility`,
+  `works.visibility` update fenced by `works_update`; the UI's "Private" maps to the DB noun
+  **personal** via `visFromDb`/`VIS_TO_DB`) and **Anyone with the link** management — `loadShareLinks`
+  lists the work's active tokens (share_read RLS: creator or work-writer), each row a readonly
+  `/shared/:token` URL with **Copy** + **Revoke** (`revokeShareLink` → a `revoked_at` tombstone,
+  so `resolve_share_link` then refuses it), plus **Create link** (`createShareLink`). To carry the
+  current visibility, `visibility` was added to the explorer works `select` (both server + personal)
+  and to `shapeWork`. Demo mutates the in-dialog link list optimistically (no network). CSS is three
+  new scoped classes (`.sharelinks/.sharerow2/.sharenone`); the visibility control + modal reuse
+  existing components.
+  Verified: `verify-explorer.mjs` +`share-dialog` — Share… opens the dialog (title, the 3
+  visibility options), the no-link state shows first, **Create link** adds one `/shared/` row, and
+  **Revoke** removes it and restores the no-link state. 19 explorer cases GREEN; shared/feed/
+  profile/workspace/gallery GREEN both themes, zero app console errors. Dialog screenshotted vs the
+  gallery (visibility segment, link row, Create/Done).
+NEXT: link **expiry** (a duration picker → `share_links.expires_at`) and the **People with access**
+  collaborator rows (gallery #39 lower half — the consent-gated `work_collaborators` system, a
+  bigger unit). Then **Download** / avatar-banner **upload** (R2 env is set — wire the signer path,
+  verify on preview), or **P7** (DMs · Friends · Notifications).
+GOTCHA AS: the visibility enum split — UI **Public/Server/Private** vs DB
+  **public/server/personal**. Always map at the data boundary (`VIS_TO_DB`/`visFromDb`); never send
+  "private" to Postgres (the check constraint rejects it) or show "personal" in the UI.

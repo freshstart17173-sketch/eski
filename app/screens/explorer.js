@@ -13,10 +13,10 @@
 // Files is a channel (CANON §C.6): the server's channel column stays to the left
 // so any other channel is one click away — the browser is never a dead-end.
 
-import { el, toast, openMenu, closeMenus, openModal } from "../ui.js";
+import { el, toast, openMenu, closeMenus, openModal, VisibilitySeg, Button } from "../ui.js";
 import { iconEl } from "../icons.js";
 import { navigate } from "../router.js";
-import { createFolder, moveToFolder, trashWorks, restoreWork, purgeWork, emptyTrash, loadTrash, starWork, unstarWork, saveToFiles, renameWork, setHidden, createShareLink, shareUrl } from "../data.js";
+import { createFolder, moveToFolder, trashWorks, restoreWork, purgeWork, emptyTrash, loadTrash, starWork, unstarWork, saveToFiles, renameWork, setHidden, createShareLink, shareUrl, loadShareLinks, revokeShareLink, setVisibility, visFromDb } from "../data.js";
 import { workCard, folderCard, mediaUrl, KIND_ICON } from "../cards.js";
 import { channelColumn } from "./workspace.js";
 import { openUpload } from "./upload.js";
@@ -823,6 +823,7 @@ function openCardMenu(data, state, rerender, w, anchor) {
   openMenu(anchor, [
     { label: w.starred ? "Unstar" : "Star", icon: "star", onClick: () => toggleStar(data, state, rerender, w) },
     ...(personal ? [] : [{ label: "Save to my files", icon: "save", onClick: () => saveOne(w) }]),
+    { label: "Share…", icon: "users", onClick: () => openShareDialog(w) },
     { label: "Copy link", icon: "link", onClick: () => copyLink(w) },
     { label: "Rename", icon: "pen", onClick: () => renameFile(data, state, rerender, w) },
     { label: "Move to…", icon: "folder", onClick: () => moveIds(data, state, rerender, [w.id]) },
@@ -843,6 +844,7 @@ export function detailMenuItems(data, state, rerender, w, { repaint, close }) {
   return [
     { label: w.starred ? "Unstar" : "Star", icon: "star", onClick: () => toggleStar(data, state, rerender, w, repaint) },
     ...(personal ? [] : [{ label: "Save to my files", icon: "save", onClick: () => saveOne(w) }]),
+    { label: "Share…", icon: "users", onClick: () => openShareDialog(w) },
     { label: "Copy link", icon: "link", onClick: () => copyLink(w) },
     { label: "Rename", icon: "pen", onClick: () => renameFile(data, state, rerender, w, repaint) },
     { label: "Move to…", icon: "folder", onClick: () => { close(); moveIds(data, state, rerender, [w.id]); } },
@@ -879,6 +881,54 @@ async function copyLink(w) {
     try { await navigator.clipboard?.writeText(url); toast({ message: "Link copied — anyone with it can view", icon: "link" }); }
     catch { toast({ message: url, icon: "link" }); }
   } catch (e) { toast({ message: e?.message || "Couldn’t create the link" }); }
+}
+
+// Share dialog (CANON §39/#61) — set visibility (Public/Server/Private → works.visibility)
+// and manage the "anyone with the link" tokens: list active links, copy or revoke each,
+// create a new one. All writes are RLS-fenced; demo mutates the in-dialog list optimistically.
+function openShareDialog(w) {
+  const demo = isDemoQS();
+  const seg = VisibilitySeg({
+    value: visFromDb(w.visibility || "public"),
+    onChange: async (v) => {
+      try { w.visibility = demo ? ({ public: "public", server: "server", private: "personal" })[v] : await setVisibility(w.id, v); toast({ message: "Visibility updated", icon: "check" }); }
+      catch (e) { toast({ message: e?.message || "Couldn’t update who can see this" }); }
+    },
+  });
+
+  const links = el(".sharelinks");
+  let list = [];
+  const paint = () => links.replaceChildren(
+    ...(list.length ? list.map(linkRow) : [el(".sharenone", {}, ["No active link yet."])]),
+    Button({ label: "Create link", size: "sm", icon: "plus", onClick: create }),
+  );
+  function linkRow(l) {
+    const url = shareUrl(l.token);
+    return el(".sharerow2", {}, [
+      el(".field", { style: "flex:1;min-width:0" }, [iconEl("link", "sm"), el("input", { readonly: true, value: url })]),
+      Button({ label: "Copy", size: "sm", icon: "copy", onClick: async () => { try { await navigator.clipboard?.writeText(url); toast({ message: "Link copied", icon: "link" }); } catch { toast({ message: url, icon: "link" }); } } }),
+      Button({ label: "Revoke", size: "sm", variant: "ghost", onClick: async () => {
+        try { if (!demo) await revokeShareLink(l.token); list = list.filter((x) => x.token !== l.token); paint(); toast({ message: "Link revoked" }); }
+        catch (e) { toast({ message: e?.message || "Couldn’t revoke the link" }); }
+      } }),
+    ]);
+  }
+  async function create() {
+    try { const token = await createShareLink(w.id); list = [{ token, created_at: new Date().toISOString() }, ...list]; paint(); }
+    catch (e) { toast({ message: e?.message || "Couldn’t create the link" }); }
+  }
+  paint();
+
+  const body = el("div", {}, [
+    el("label.ulab", {}, ["Visibility ", el("span", { style: "font-weight:400;color:var(--muted)" }, ["who can see this"])]),
+    seg,
+    el("label.ulab", {}, ["Anyone with the link"]),
+    links,
+  ]);
+  const done = Button({ label: "Done", variant: "primary" });
+  const { close } = openModal({ title: `Share “${w.title || w.name || "file"}”`, body, footer: [done] });
+  done.addEventListener("click", () => close());
+  if (!demo) loadShareLinks(w.id).then((rows) => { list = rows; paint(); }).catch(() => {});
 }
 
 function renameFile(data, state, rerender, w, after) {

@@ -215,7 +215,7 @@ function shapeWork(w, place, membersById, chanName, tags = []) {
   return {
     id: w.id, title: w.title, name: w.title,
     kind: w.kind, file_ext: w.file_ext, blob_sha: w.blob_sha, bytes: w.bytes,
-    hidden: !!w.hidden, created_at: w.created_at, tags,
+    hidden: !!w.hidden, visibility: w.visibility || null, created_at: w.created_at, tags,
     folderId: place?.folder_id || null,
     channelName: place?.channel_id ? chanName[place.channel_id] || null : null,
     who: a ? { name: a.name, colorIdx: a.colorIdx } : null,
@@ -250,7 +250,7 @@ export async function loadExplorer({ serverId, folderId, source = "server" } = {
   // caution as the workspace reads (GOTCHA U).
   const [{ data: folderRows }, { data: workRows }, { data: meterRows }, { data: balRows }] = await Promise.all([
     supabase.from("folders").select("id,name,parent_id,archived,locked").eq("server_id", sid).order("name"),
-    supabase.from("works").select("id,title,kind,file_ext,blob_sha,bytes,author_id,hidden,created_at").eq("server_id", sid).is("deleted_at", null).order("created_at", { ascending: false }),
+    supabase.from("works").select("id,title,kind,file_ext,blob_sha,bytes,author_id,hidden,visibility,created_at").eq("server_id", sid).is("deleted_at", null).order("created_at", { ascending: false }),
     supabase.from("storage_meters").select("bytes_used").eq("owner_type", "server").eq("owner_id", sid).maybeSingle(),
     supabase.from("storage_balance").select("purchased_gb,status").eq("owner_type", "server").eq("owner_id", sid).maybeSingle(),
   ]);
@@ -312,7 +312,7 @@ async function loadPersonalExplorer(user, folderId) {
 
   const [{ data: folderRows }, { data: workRows }, { data: meterRows }, { data: balRows }] = await Promise.all([
     supabase.from("save_folders").select("id,name,parent_id").eq("user_id", user.id).order("name"),
-    supabase.from("works").select("id,title,kind,file_ext,blob_sha,bytes,author_id,hidden,created_at").eq("owner_type", "user").eq("owner_id", user.id).is("deleted_at", null).order("created_at", { ascending: false }),
+    supabase.from("works").select("id,title,kind,file_ext,blob_sha,bytes,author_id,hidden,visibility,created_at").eq("owner_type", "user").eq("owner_id", user.id).is("deleted_at", null).order("created_at", { ascending: false }),
     supabase.from("storage_meters").select("bytes_used").eq("owner_type", "user").eq("owner_id", user.id).maybeSingle(),
     supabase.from("storage_balance").select("purchased_gb,status").eq("owner_type", "user").eq("owner_id", user.id).maybeSingle(),
   ]);
@@ -599,6 +599,37 @@ export async function createShareLink(workId) {
   const { error } = await supabase.from("share_links").insert({ token, work_id: workId, created_by: user.id });
   if (error) throw new Error(error.message || "Couldn’t create the link");
   return token;
+}
+
+// The share dialog's link management. `share_read` RLS lets the creator (or a work writer)
+// list the work's links; a revoke is a `revoked_at` tombstone (share_write RLS), so
+// resolve_share_link then refuses it. Active = not yet revoked.
+export async function loadShareLinks(workId) {
+  if (isDemo()) return [];   // demo starts empty; links are created optimistically in-dialog
+  const { data } = await supabase.from("share_links")
+    .select("token,created_at,expires_at,revoked_at")
+    .eq("work_id", workId).is("revoked_at", null)
+    .order("created_at", { ascending: false });
+  return data || [];
+}
+export async function revokeShareLink(token) {
+  if (isDemo()) return;
+  const { error } = await supabase.from("share_links").update({ revoked_at: new Date().toISOString() }).eq("token", token);
+  if (error) throw new Error(error.message || "Couldn’t revoke the link");
+}
+
+// Visibility (CANON §B.3 / #61) — the UI's Public/Server/Private maps to works.visibility
+// public/server/**personal** (the DB noun for Private). A plain `works_update` write
+// (can_write_work), with a check that server-visibility needs server membership.
+const VIS_TO_DB = { public: "public", server: "server", private: "personal" };
+const VIS_FROM_DB = { public: "public", server: "server", personal: "private" };
+export function visFromDb(dbVis) { return VIS_FROM_DB[dbVis] || "public"; }
+export async function setVisibility(workId, uiVis) {
+  const db = VIS_TO_DB[uiVis] || "public";
+  if (isDemo()) return db;
+  const { error } = await supabase.from("works").update({ visibility: db }).eq("id", workId);
+  if (error) throw new Error(error.message || "Couldn’t change who can see this");
+  return db;
 }
 
 // Resolve a token for the anon /shared/:token viewer. `resolve_share_link` is a SECURITY

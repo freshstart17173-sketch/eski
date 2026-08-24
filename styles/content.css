@@ -229,6 +229,14 @@
    opens ONLY the shared item, no way to browse the rest of the server. Media reuses the
    details-pane dispatch (fillMedia → .dtype in the well); meta/tags rows are the shared
    .meta/.dsec/.chips defined above. NO member hue (anon / out-of-server). */
+/* Share dialog (#39) link-management rows — a stack of active links, each a readonly URL
+   field + Copy + Revoke, plus a Create-link button. Lives inside a .modal .ubody. */
+.sharelinks{display:flex;flex-direction:column;gap:8px;margin-top:2px}
+.sharelinks .sharerow2{display:flex;align-items:center;gap:8px}
+.sharelinks .sharerow2 .field{flex:1;min-width:0}
+.sharelinks .sharerow2 .field input{min-width:0}
+.sharelinks .sharenone{font-size:var(--fs-sm);color:var(--muted)}
+
 .sharedview{position:fixed;inset:0;z-index:70;display:flex;flex-direction:column;background:var(--paper);overflow-y:auto}
 .sharedview .svhd{flex:none;display:flex;align-items:center;gap:var(--s3);padding:0 var(--s5);height:56px;background:var(--surface)}
 .sharedview .svhd .brand{font-weight:700;font-size:var(--fs-lg);letter-spacing:.02em}
