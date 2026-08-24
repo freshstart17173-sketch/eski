@@ -53,8 +53,11 @@ function mediaCell(work) {
   return typeCard(work);
 }
 
-// workCard(work, { onOpen, selectable, actions, showWho })
-export function workCard(work, { onOpen, selectable = false, actions = [], showWho = true } = {}) {
+// workCard(work, { onOpen, selectable, actions, showWho, hue })
+// `hue` (default true) applies the server member colour to the uploader chip. The
+// Feed and public profile pass hue:false — member colour is server-scoped and must
+// render nowhere public (CANON design rule) — so the author shows as plain text.
+export function workCard(work, { onOpen, selectable = false, actions = [], showWho = true, hue = true } = {}) {
   const media = mediaCell(work);
   if (selectable) media.prepend(el("span.cardsel", {}, [iconEl("check")]));
   if (actions.length) {
@@ -67,9 +70,13 @@ export function workCard(work, { onOpen, selectable = false, actions = [], showW
   const card = el("button.card", { "data-open-details": true, onClick: () => onOpen?.(work) }, [media, el(".title", {}, [work.title || work.name || "untitled"])]);
   if (showWho && work.who) {
     const who = el(".who");
-    const chip = el("span.uchip", {}, [el("span.dot"), work.who.name]);
-    if (work.who.colorIdx != null) chip.style.setProperty("--pc", `var(--m${work.who.colorIdx})`);
-    who.append(chip);
+    if (hue) {
+      const chip = el("span.uchip", {}, [el("span.dot"), work.who.name]);
+      if (work.who.colorIdx != null) chip.style.setProperty("--pc", `var(--m${work.who.colorIdx})`);
+      who.append(chip);
+    } else {
+      who.append(work.who.name);   // public context — plain author, no member hue
+    }
     if (work.channelName) who.append(document.createTextNode(" · #" + work.channelName));
     card.append(who);
   }

@@ -136,16 +136,19 @@ function infoRail(w, ctx, nav) {
 
 function metaRows(w, ctx) {
   const rows = [];
-  // Location — server › folder path, each segment opens the explorer there
-  const loc = el("span.loccrumb");
-  const serverBtn = el("button", { onClick: () => openFolder(ctx, null) }, [iconEl("folder", "sm"), ctx.serverName || "Server"]);
-  loc.append(serverBtn);
-  for (const seg of ctx.folderPath || []) {
-    loc.append(el("span.sl", {}, ["›"]), el("button", { onClick: () => openFolder(ctx, seg.id) }, [seg.name]));
+  // Location — root › folder path, each segment opens the explorer there. Shown
+  // for server/personal files (which live in a tree); a public post reached from
+  // the Feed has no local tree here, so it leads with Posted-by instead.
+  if (ctx.serverId || ctx.personal) {
+    const loc = el("span.loccrumb");
+    loc.append(el("button", { onClick: () => openFolder(ctx, null) }, [iconEl(ctx.personal ? "user" : "folder", "sm"), ctx.serverName || (ctx.personal ? "My files" : "Server")]));
+    for (const seg of ctx.folderPath || []) {
+      loc.append(el("span.sl", {}, ["›"]), el("button", { onClick: () => openFolder(ctx, seg.id) }, [seg.name]));
+    }
+    rows.push(metaRow("Location", loc));
   }
-  rows.push(metaRow("Location", loc));
 
-  if (w.who) rows.push(metaRow("Uploaded by", el("button.metalink", { onClick: () => toast({ message: `${w.who.name}'s profile (P5.10)` }) }, [w.who.name])));
+  if (w.who) rows.push(metaRow(ctx.isPost ? "Posted by" : "Uploaded by", el("button.metalink", { onClick: () => toast({ message: `${w.who.name}'s profile (P5.10)` }) }, [w.who.name])));
   if (w.channelName) rows.push(metaRow("Posted in", "#" + w.channelName));
   rows.push(metaRow("Added", fmtWhen(w.created_at)));
   if (w.file_ext) rows.push(metaRow("Format", w.file_ext.toUpperCase() + (w.kind && w.kind !== "other" ? ` · ${w.kind}` : "")));
@@ -188,11 +191,12 @@ function iconBtn(ic, title, onClick, { rotate, disabled, cls, x } = {}) {
 
 // a Location segment click leaves the pane for the explorer at that folder
 function openFolder(ctx, folderId) {
-  if (!ctx.serverId) return;
+  if (!ctx.personal && !ctx.serverId) return;
   closeDetails();
+  const base = ctx.personal ? "/files" : `/s/${ctx.serverId}/files`;
   const q = new URLSearchParams();
   if (folderId) q.set("folder", folderId);
   if (new URLSearchParams(location.search).get("demo") === "1") q.set("demo", "1");
   const qs = q.toString();
-  navigate(`/s/${ctx.serverId}/files` + (qs ? `?${qs}` : ""));
+  navigate(base + (qs ? `?${qs}` : ""));
 }

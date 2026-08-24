@@ -56,10 +56,25 @@ const CASES = [
   ["list-view", "/s/lb/files?demo=1&view=list", "light", async (p) =>
     (await has(p, '.exview[data-exview="list"] .flrow.flhd', "list header row")) ||
     (await has(p, '.exview[data-exview="list"] .flrow .flnm', "list file rows"))],
+  // feed view: flattened previewable subtree + inline comments; project files hidden
+  ["feed-view", "/s/lb/files?demo=1&folder=beats&view=feed", "light", async (p) =>
+    (await has(p, '.exview[data-exview="feed"] .ffnote', "feed note")) ||
+    (await has(p, ".filefeed .ffitem .ffmedia", "feed media items")) ||
+    (await has(p, ".filefeed .ffitem .ffcmts .cmt", "inline comments")) ||
+    ((await count(p, ".filefeed .ffitem")) !== 2 ? `beats has 2 previewable (wav+png), got ${await count(p, ".filefeed .ffitem")}` : null)],
   ["locked-folder", "/s/lb/files?demo=1", "light", async (p) =>
     has(p, ".ftrow .ftlock", "locked-folder lock icon")],
   ["empty-folder", "/s/lb/files?demo=1&folder=verses", "light", async (p) =>
     has(p, ".panebody .emptystate h3", "empty-folder state")],
+  // personal My-files mount: no channel column, "My files" root, "Your storage" foot
+  ["personal-light", "/files?demo=1", "light", async (p) =>
+    ((await $(p, "nav.chan")) ? "personal mount must NOT show the channel column" : null) ||
+    (await has(p, '.explayout[data-source="personal"] .filetree', "personal tree")) ||
+    ((await p.$eval(".filetree .fthd", (e) => e.textContent.trim())).startsWith("My files") ? null : "tree header should read My files") ||
+    ((await p.$eval(".ftfoot", (e) => e.textContent)).includes("Your storage") ? null : "footer should read Your storage") ||
+    (await has(p, '.exview[data-exview="grid"] .card', "personal grid cards"))],
+  ["personal-folder", "/files?demo=1&folder=bounces", "light", async (p) =>
+    ((await p.$eval(".crumbs b", (e) => e.textContent)) !== "Bounces" ? "breadcrumb should read Bounces" : null)],
 ];
 
 const browser = await chromium.launch({ executablePath: "/opt/pw-browsers/chromium-1194/chrome-linux/chrome" });
@@ -99,8 +114,14 @@ async function detailsCase(theme) {
   await page.goto(`http://localhost:${PORT}/s/lb/files?demo=1&folder=beats`, { waitUntil: "networkidle" }).catch(() => {});
   await page.waitForTimeout(300);
   const problems = [];
-  // open the first file card (not a folder card)
+  // single click SELECTS (Drive model), it must not open the details pane
   await page.click('.exview[data-exview="grid"] .card:not(.foldercard)');
+  await page.waitForTimeout(120);
+  if (await $(page, ".sheet")) problems.push("single click must select, not open details");
+  if (!(await $(page, ".card.sel"))) problems.push("single click should select the card");
+  if (!(await $(page, ".selbar.open"))) problems.push("selection should open the bulk bar");
+  // a double click OPENS the details pane
+  await page.dblclick('.exview[data-exview="grid"] .card:not(.foldercard)');
   await page.waitForTimeout(200);
   if (!(await $(page, ".sheet .card2 .dmedia"))) problems.push("details media well missing");
   if (!(await $(page, ".sheet .dinfo .dtop .dfilename"))) problems.push("info-rail filename missing");
@@ -124,6 +145,35 @@ async function detailsCase(theme) {
 }
 await detailsCase("light");
 await detailsCase("dark");
+
+// Type filter — pick Audio, only audio cards remain (beats has 1 wav of 4 files)
+{
+  const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  const page = await ctx.newPage();
+  const errs = [];
+  page.on("console", (m) => { if (m.type() === "error" || m.type() === "warning") errs.push(`[${m.type()}] ${m.text()}`); });
+  page.on("pageerror", (e) => errs.push(`[pageerror] ${e.message}`));
+  await page.goto(`http://localhost:${PORT}/s/lb/files?demo=1&folder=beats`, { waitUntil: "networkidle" }).catch(() => {});
+  await page.waitForTimeout(300);
+  const problems = [];
+  const before = await count(page, '.exview[data-exview="grid"] .card:not(.foldercard)');
+  if (before !== 4) problems.push(`beats should have 4 files, got ${before}`);
+  // open the Type dropdown (first .exfilter) and click "Audio"
+  await page.click(".toolbar .btn.exfilter");
+  await page.waitForTimeout(120);
+  const items = await page.$$(".menu.open button");
+  let clicked = false;
+  for (const it of items) { if ((await it.textContent()).includes("Audio")) { await it.click(); clicked = true; break; } }
+  if (!clicked) problems.push("Audio option not found in Type menu");
+  await page.waitForTimeout(150);
+  const after = await count(page, '.exview[data-exview="grid"] .card:not(.foldercard)');
+  if (after !== 1) problems.push(`Type=Audio should leave 1 file, got ${after}`);
+  const appErrs = errs.filter((e) => !/Failed to load resource|net::ERR|supabase|getSession|fetch|401|403|Access-Control/i.test(e));
+  if (appErrs.length) problems.push(...appErrs);
+  if (problems.length) { fails++; console.log("✗ type-filter"); problems.forEach((p) => console.log("    " + p)); }
+  else console.log("✓ type-filter");
+  await ctx.close();
+}
 
 // search-as-you-type (driven through the input, not the URL)
 {

@@ -167,3 +167,47 @@
 .sheet .flist .fi .fth{width:28px;height:28px;border-radius:3px;background:var(--plate);flex:none;display:grid;place-items:center;color:var(--muted)}
 .sheet .flist .fi .fn{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 @media(max-width:760px){.sheet .card2{flex-direction:column}.sheet .dmedia{min-height:42vh;flex:none}.sheet .dinfo{width:100%}}
+
+/* ── Profile (P5.10, CANON §C.10) — hero + shelf tabs + card grid ──────────────
+   Ported from the gallery. The avatar is round (people are round); shelf tabs use
+   the 2px ink underline like every tab strip; NO member hue anywhere (public). */
+.prof{flex:1;min-width:0;overflow-y:auto;background:var(--paper)}
+.phero{padding:var(--s5) var(--s5) var(--s4)}
+.phero .top{display:flex;gap:var(--s5);align-items:flex-start}
+.phero .who h1{font-size:var(--fs-xl);font-weight:600}
+.phero .who .handle{color:var(--muted);font-size:var(--fs-sm)}
+.phero .who .bio{margin-top:var(--s2);max-width:520px;color:var(--soft);font-size:var(--fs-sm)}
+.phero .actions{margin-left:auto;display:flex;gap:var(--s2)}
+.ptabs2{display:flex;gap:var(--s5);padding:0 var(--s5);background:var(--surface)}
+.ptab2{display:flex;align-items:center;gap:7px;padding:13px 0;color:var(--soft);position:relative;cursor:pointer}
+.ptab2:hover{color:var(--ink)}
+.ptab2 .ic{width:15px;height:15px;color:var(--muted)}
+.ptab2 .ct{color:var(--muted);font-size:var(--fs-xs)}
+.ptab2.on{color:var(--ink);font-weight:600}
+.ptab2.on .ic{color:var(--ink)}
+.ptab2.on::after{content:"";position:absolute;left:0;right:0;bottom:0;height:2px;background:var(--ink)}
+.ptab2:focus-visible{outline:none;box-shadow:inset 0 -2px 0 var(--ink)}
+.pbody{padding:var(--s5)}
+
+/* ── Explorer Feed view (P5.8) — flattened previewable subtree + inline comments ──
+   Instagram-style server media feed (CANON §C.6). Ported from the gallery; the
+   comment rows reuse the details pane's scoped .cmt (under .sheet) so here we scope
+   the feed's own comment bits under .filefeed. */
+.filefeed{max-width:620px;margin:0 auto}
+.ffnote{display:flex;gap:8px;font-size:var(--fs-xs);color:var(--muted);background:var(--surface);border-radius:var(--r);padding:9px 11px;margin-bottom:var(--s4)}
+.ffnote .ic{color:var(--soft);flex:none}
+.ffitem{margin-bottom:var(--s5)}
+.ffmedia{position:relative;background:var(--paper1);border-radius:var(--r);overflow:hidden;margin-bottom:8px;display:grid;place-items:center}
+.ffmedia img,.ffmedia video{width:100%;display:block}
+.ffmedia .dtype{position:static;padding:34px 0;display:flex;flex-direction:column;align-items:center;gap:8px;color:var(--muted)}
+.ffmedia .dtype .ic{width:34px;height:34px}
+.ffmedia .dtype .ext{font-size:var(--fs);font-weight:700;letter-spacing:.04em;color:var(--soft)}
+.ffmeta{display:flex;align-items:baseline;gap:10px;margin-bottom:8px}
+.ffmeta b{font-size:var(--fs-sm)}
+.ffmeta .who{font-size:var(--fs-xs);color:var(--muted)}
+.ffcmts{padding-left:2px}
+.filefeed .cmt{display:flex;gap:9px;margin-bottom:var(--s3)}
+.filefeed .cmt .bd{min-width:0}
+.filefeed .cmt .by{display:flex;align-items:baseline;gap:7px;font-size:var(--fs-xs)}
+.filefeed .cmt .by time{color:var(--muted);font-size:10px}
+.filefeed .cmt .tx{font-size:var(--fs-sm);color:var(--soft)}

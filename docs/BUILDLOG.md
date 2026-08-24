@@ -457,3 +457,155 @@ GOTCHA Y: the explorer opens details on a **single click** for now — the Googl
   select/marquee pass; single-click-opens matches "elsewhere a single click opens" and
   is the honest v1 until selection exists. Don't wire double-click before selection, or
   a plain click will do nothing.
+
+## 2026-08-24 — P5.6 Personal "My files" mount (explorer, personal source)
+IN PROGRESS: (cleared)
+DONE: the personal **My files** Drive — the SAME explorer component parameterised to the
+  personal source (CANON §C.6/§E), reached from the rail's folder button (now wired to
+  `/files`, highlighted when active) and the new `/files` route. `data.js
+  loadPersonalExplorer(user, folderId)`: reads the user's own `works`
+  (`owner_type='user'`, not-deleted) filed into nested `save_folders` (location via
+  `saved_items.folder_id`, else root), `content_tags`, and the **personal** storage
+  meter (`owner_type='user'`, 10 GB base). `loadExplorer({source})` branches to it;
+  `renderExplorer` handles `source==='personal'` — **no channel column** (its own tree is
+  the nav), tree/breadcrumb root = "My files", **"Your storage"** footer (user icon),
+  "Search your files" placeholder, Upload defaults to a personal (private) upload, and
+  the details Location crumb points back to `/files`. `demoExplorer('personal')` fixture
+  (`demoPersonalExplorer`) mirrors the live shape so `?demo=1` renders it. Server mount
+  unchanged (still mounts the channel column with Files highlighted).
+  Verified: `verify-explorer.mjs` extended — 11 states GREEN incl. personal-light (NO
+  channel column, "My files" tree header, "Your storage" foot, grid cards) and
+  personal-folder (breadcrumb), both themes, zero app console errors. Screenshot
+  eyeballed vs gallery personal tree — matches.
+NEXT: Feed view (the explorer's flattened previewable-only + inline-comments view) OR
+  the home Feed screen (friends' public posts — same card component, `visibility=public`
+  source); then Trash view + the filter/sort dropdowns + multi-select bulk bar; the
+  Save/New-folder write paths (`save_to_files`, `save_folders` insert).
+GOTCHA Z: a personal work's folder location comes from `saved_items.folder_id`, but a
+  straight personal **upload** writes no `saved_items` row (only saved/crossposted works
+  get one), so freshly-uploaded personal files sit at **root** until filed. If personal
+  uploads should land in a chosen folder, the upload write path needs a `saved_items`
+  insert — not built yet (upload.js only writes `placement` for server uploads).
+
+## 2026-08-24 — P5.1 home Feed (friends' public posts)
+IN PROGRESS: (cleared)
+DONE: the home **Feed** (CANON §C.5) — the friends-only portfolio grid, the public
+  counterpart to the explorer (same "one card renderer, parameterised by source"). Rail
+  Home button + `/` now render it for a signed-in user. `data.js loadFeed()`: accepted
+  friends (`friendships` where I'm a_user OR b_user, status='accepted') → their PUBLIC
+  works (`visibility='public'`, author ∈ friends, not-deleted), authors resolved from
+  `profiles` (name/handle, **no colorIdx** — the member hue is server-scoped and must
+  render nowhere public). `app/screens/feed.js renderFeed(data)`: wordmark + Feed/
+  Notifications/You nav (`.nav.on` underline) · search (title/author) · Type/Sort
+  dropdowns (placeholder actions) · **even ⇄ masonry** layout toggle (default even) ·
+  the shared `workCard` with **hue:false** (plain author text) · the "Your feed is quiet"
+  empty state with a Find-friends CTA. Cards open the Details pane as a **public post**
+  (`isPost:true` → a Comments section; a post has no local tree so the Location row is
+  dropped and it leads with **Posted by**). `cards.js workCard` gained a `hue` option
+  (default true; false = plain author, no `.uchip`). `main.js` wires the feed screen
+  (demo bypasses the signed-out landing so `/?demo=1` shows the fixture);
+  `demoFeed()` fixture added.
+  Verified: new `docs/design/verify-feed.mjs` GREEN — feed-light/dark (wordmark, active
+  nav, search, post cards, **no member-hue chips**) + post-details (public post: Comments
+  section present, no Location row, Posted-by present), both themes, zero app console
+  errors. Screenshot eyeballed vs gallery feed — matches.
+NEXT: Profile screen (§C.10 — hero + Public/Server/Private shelves, POV variants, same
+  card grid) OR the explorer Trash view (§C.6) + filter/sort dropdowns + multi-select;
+  then wire real comments (`comments` table, context public/server) so the post thread
+  and the explorer's Feed-view comments are live.
+GOTCHA AA: the Feed is empty until BOTH a friends system and public posts exist — no
+  friendships/public works are seeded, so live `/` shows the "quiet feed" empty state
+  (correct). Use `/?demo=1` to see the populated grid. Type/Sort are placeholder menus
+  (client filters land with the explorer filter pass).
+
+## 2026-08-24 — P5.10 Profile screen (shelves + POV)
+IN PROGRESS: (cleared)
+DONE: the **Profile** (CANON §C.10) — a person's shelves, reached from `/u/:handle`
+  (avatar menu → Profile, the Feed's "You" nav). `data.js loadProfile(handle)`: the
+  `profiles` row by handle, the viewer **POV** (owner if it's you, else `friendships`
+  accepted → mutual, else public), and the author's `works` grouped by visibility into
+  **Public / Server / Private** shelves (RLS is the real fence — we group whatever the
+  viewer may read). `app/screens/profile.js renderProfile(data)`: round avatar hero
+  (name · @handle · bio) with the **POV action** (owner→Edit profile · public→Add friend
+  · mutual→Message), shelf tabs with counts + **Settings** (owner only) + search, the
+  shared `workCard` grid (**hue:false** — a public profile is never server-scoped), and
+  per-shelf empty states. Cards open the Details pane (Public shelf → public post w/
+  comments). Which shelves a POV sees: owner all three, mutual Public+Server, public
+  Public only. CSS ported into `content.css` (`.prof/.phero/.ptabs2/.ptab2`) from the
+  gallery. `main.js` wires the profile screen; `demoProfile()` owner fixture for `?demo=1`.
+  Verified: new `docs/design/verify-profile.mjs` GREEN — owner-light/dark + shelf-switch
+  (round avatar, hero, 4 tabs, grid, exactly one active tab, Settings NOT active, NO
+  member-hue chips), both themes, zero app console errors. Screenshot eyeballed vs
+  gallery — matches.
+FIXED (found while building): `classList.toggle(cls, undefined)` **flips** instead of
+  clearing, which wrongly lit the Settings tab (it sits past the end of the shelves
+  array). Coerced the toggle arg to a real boolean; added a regression assertion.
+NEXT: the Edit-profile modal (owner) + user settings; then the explorer Trash view +
+  filter/sort dropdowns + multi-select; then wire real `comments` (post threads +
+  the explorer Feed-view). Backend for Save/New-folder/Download write paths still
+  pending (`save_to_files`, `save_folders` insert, R2 read env).
+GOTCHA AB: like the Feed, live profiles are sparse until public works + friendships
+  exist; `/u/<you>?demo=1` shows the populated owner self-view. The three POVs are
+  computed for chrome only — `works_read` + `friendships` enforce them server-side, so a
+  stranger's shelves come back empty even if the client asked for more.
+
+## 2026-08-24 — P5.6b Explorer selection model + bulk bar
+IN PROGRESS: (cleared)
+DONE: the Google-Drive **selection model** in the explorer grid (CANON §C.6), which
+  also retires the single-click-opens stopgap (GOTCHA Y). In `explorer.js`: a
+  **single click selects** a card (clearing the rest), **⌘/Ctrl-click toggles**,
+  **Shift-click ranges**, **⌘/Ctrl-A** selects everything in view, **Esc** clears, and a
+  **double-click opens** the Details pane. A selection lights the card (`.card.sel`
+  outline + check badge via `selectable:true`) and opens the **bulk bar** (`.selbar`:
+  "N selected · Download · Move to folder · Delete · Clear" — actions are wired to
+  toasts pending their write paths). Keyboard is a single self-cleaning document
+  listener (removes itself once the screen leaves the DOM; yields to the details overlay
+  and text inputs). A folder/search change clears the selection. Folders still descend on
+  a single click; list view keeps click-to-open (the bulk model is grid-focused, as in
+  the gallery). All `.selbar/.cardsel/.card.sel` CSS already existed (P5.4).
+  Verified: `verify-explorer.mjs` updated — the details case now asserts **single click
+  selects (no details, bulk bar opens)** and **double-click opens**; 11 states GREEN,
+  both themes, zero app console errors. Screenshot eyeballed (2 non-contiguous cards
+  selected, bulk bar) — matches gallery.
+NEXT: wire the bulk actions' write paths (delete→Trash, move_to_folder) + the Trash view
+  (§C.6); the filter/sort dropdowns + quick-filter chips; then real `comments`.
+
+## 2026-08-24 — P5.7 Explorer Type/Sort filters
+IN PROGRESS: (cleared)
+DONE: the explorer toolbar's **Type** + **Sort** filters and a **sort-direction** toggle
+  (single-select v1 — CANON's multi-select Type/Channel/Uploader/Tag + quick-filter chips
+  are a later pass). Type filters the grid by `works.kind` (All/Images/Audio/Video/Text/
+  Projects); Sort orders by Latest/Oldest/Name/Size with the direction chevron flipping
+  asc/desc; both re-render the contents in place and interact correctly with search,
+  folder nav, and the selection model. `sortFiles()` is the shared comparator. Reused the
+  existing `.btn`/menu primitives (`.exfilter` is a marker, styles as `.btn`).
+  Verified: `verify-explorer.mjs` +type-filter case (open Type → Audio → only the 1 audio
+  card of 4 remains); 12 states GREEN, both themes, zero app console errors.
+NEXT: multi-select filters + quick-filter chips + Date + (server) Channel/Uploader/Tag;
+  the write paths for the bulk-bar actions (delete→Trash `works.deleted_at`,
+  `move_to_folder`) + Trash view; New folder (`folders`/`save_folders` insert); then
+  real `comments`.
+
+## 2026-08-24 — P5.8 Explorer Feed view (grid/list/feed triad complete)
+IN PROGRESS: (cleared)
+DONE: the explorer's third view, **Feed** (CANON §C.6) — an Instagram-style server media
+  feed. `feedView()` flattens the current folder's whole **subtree** to the **previewable**
+  works (image/video/audio) newest-first (project files like .flp/.zip hidden — grid/list
+  show them), each rendered at natural width with a meta line (title · author · folder) and
+  its **comments inline** + a comment field. A note bar explains the flatten. Ported the
+  `.filefeed/.ffnote/.ffitem/.ffmedia/.ffmeta/.ffcmts` CSS into content.css (comment rows
+  scoped under `.filefeed`). The view dropdown now offers Grid/List/**Feed**; `feedMedia`
+  reuses the kind icons for the no-bytes-yet fallback. Demo works f2/f3 carry comment
+  fixtures so `?view=feed` shows real threads.
+  Verified: `verify-explorer.mjs` +feed-view case (note bar, media items, inline comments,
+  exactly the 2 previewable of beats' 4 files); 13 states GREEN, both themes, zero app
+  console errors. Screenshot eyeballed vs gallery feed view — matches.
+NEXT: live-load the feed's server comments (`comments` context='server') + a working
+  comment composer (insert), and the post details' public thread; then the write paths
+  for delete→Trash / move_to_folder / New folder / save_to_files (some RPCs — restore/
+  purge/empty_trash/save_to_files — are NOT yet in the DB, only move_to_folder is).
+GOTCHA AC: the trash + save RPCs from CANON §E.3 (`restore_work`, `purge_work`,
+  `empty_trash`, `save_to_files`, `unsave`) are NOT applied yet — only `move_to_folder`
+  exists. Wiring the bulk-bar Delete/Save and the Trash view needs those migrations first
+  (or a direct `works.deleted_at` update for soft-delete, but hard purge needs the blob
+  refcount RPC).

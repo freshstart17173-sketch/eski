@@ -8,7 +8,7 @@
 //                  realtime.js + workspace.js; this module does the initial reads.
 //  - signed out  → { needsAuth:true } so the shell shows a sign-in prompt.
 
-import { demoWorkspace, demoExplorer } from "./demo.js";
+import { demoWorkspace, demoExplorer, demoFeed, demoProfile } from "./demo.js";
 import { supabase } from "./supabase.js";
 import { session } from "./supabase.js";
 
@@ -205,7 +205,8 @@ export async function loadWorkspace({ serverId, channelId } = {}) {
 // the works living in it (a work's location = its `placement.folder_id`), and the
 // storage meter for the tree footer. Same rail/channel-column data as the
 // workspace, so the explorer mounts inside the same shell with Files highlighted.
-const SERVER_BASE_GB = 5;   // free baseline before purchased_gb (CANON §C.19)
+const SERVER_BASE_GB = 5;    // server free baseline before purchased_gb (CANON §C.19)
+const USER_BASE_GB = 10;     // personal free baseline (CANON §C.19)
 const GB = 1024 ** 3;
 
 // a raw works row + its placement/author → the card shape cards.js renders
@@ -221,10 +222,11 @@ function shapeWork(w, place, membersById, chanName, tags = []) {
   };
 }
 
-export async function loadExplorer({ serverId, folderId } = {}) {
-  if (isDemo()) return demoExplorer();
+export async function loadExplorer({ serverId, folderId, source = "server" } = {}) {
+  if (isDemo()) return demoExplorer(source);
   const user = session();
   if (!user) return { needsAuth: true, live: false };
+  if (source === "personal") return loadPersonalExplorer(user, folderId);
 
   const { myServers, servers } = await loadRail(user);
   const meBase = { id: user.id, name: user.email?.split("@")[0] || "you", initials: initials(user.email || "you"), handle: user.email?.split("@")[0] || "you", colorIdx: 1 };
@@ -291,6 +293,152 @@ export async function loadExplorer({ serverId, folderId } = {}) {
     currentFolderId: folderId || null,
     storage: { usedBytes, capGb, capBytes: capGb * GB, status: balRows?.status || "active", overCap: usedBytes > capGb * GB },
     activeServerId: sid,
+    source: "server",
+  };
+}
+
+// The personal "My files" mount (CANON §C.6/§E) — the SAME explorer component,
+// parameterised to the personal source: the user's own works (owner_type='user')
+// filed into nested `save_folders` (location via `saved_items.folder_id`, else
+// root), the personal storage meter ("Your storage"), and NO server chrome (the
+// channel column, channel/uploader filters drop away). Rail/servers still load so
+// the shell around it is intact.
+async function loadPersonalExplorer(user, folderId) {
+  const { servers } = await loadRail(user);
+  const me = { id: user.id, name: user.email?.split("@")[0] || "you", initials: initials(user.email || "you"), handle: user.email?.split("@")[0] || "you", colorIdx: 1 };
+
+  const [{ data: folderRows }, { data: workRows }, { data: meterRows }, { data: balRows }] = await Promise.all([
+    supabase.from("save_folders").select("id,name,parent_id").eq("user_id", user.id).order("name"),
+    supabase.from("works").select("id,title,kind,file_ext,blob_sha,bytes,author_id,hidden,created_at").eq("owner_type", "user").eq("owner_id", user.id).is("deleted_at", null).order("created_at", { ascending: false }),
+    supabase.from("storage_meters").select("bytes_used").eq("owner_type", "user").eq("owner_id", user.id).maybeSingle(),
+    supabase.from("storage_balance").select("purchased_gb,status").eq("owner_type", "user").eq("owner_id", user.id).maybeSingle(),
+  ]);
+
+  const works = workRows || [];
+  const workIds = works.map((w) => w.id);
+  // location + tags: saved_items.folder_id files a work into a personal folder
+  // (unfiled works — e.g. a straight personal upload — sit at root).
+  const savedFolderByWork = {}, tagsByWork = {};
+  if (workIds.length) {
+    const [{ data: savedRows }, { data: tagRows }] = await Promise.all([
+      supabase.from("saved_items").select("work_id,folder_id").eq("user_id", user.id).in("work_id", workIds),
+      supabase.from("content_tags").select("work_id,tag").in("work_id", workIds),
+    ]);
+    for (const s of savedRows || []) savedFolderByWork[s.work_id] = s.folder_id;
+    for (const t of tagRows || []) (tagsByWork[t.work_id] ||= []).push(t.tag);
+  }
+
+  const countByFolder = {};
+  for (const w of works) {
+    const fid = savedFolderByWork[w.id] || "__root__";
+    countByFolder[fid] = (countByFolder[fid] || 0) + 1;
+  }
+  const folders = (folderRows || []).map((f) => ({
+    id: f.id, name: f.name, parentId: f.parent_id, archived: false, locked: false,
+    count: countByFolder[f.id] || 0,
+  }));
+
+  const files = works.map((w) => ({
+    id: w.id, title: w.title, name: w.title,
+    kind: w.kind, file_ext: w.file_ext, blob_sha: w.blob_sha, bytes: w.bytes,
+    hidden: !!w.hidden, created_at: w.created_at, tags: tagsByWork[w.id] || [],
+    folderId: savedFolderByWork[w.id] || null,
+    channelName: null, who: null,   // personal files have no server context
+  }));
+
+  const usedBytes = Number(meterRows?.bytes_used || 0);
+  const capGb = USER_BASE_GB + Number(balRows?.purchased_gb || 0);
+
+  return {
+    needsAuth: false, live: true, source: "personal",
+    me, isAdmin: false, servers, dmUnread: 0,
+    server: null, channelGroups: [], membersById: {},
+    rootLabel: "My files", storageLabel: "Your storage",
+    folders, files,
+    currentFolderId: folderId || null,
+    storage: { usedBytes, capGb, capBytes: capGb * GB, status: balRows?.status || "active", overCap: usedBytes > capGb * GB },
+  };
+}
+
+// The home Feed (CANON §C.5) — the friends-only portfolio grid: friends' PUBLIC
+// posts (visibility='public' and author ∈ accepted friends), same card renderer as
+// the explorer, NO member colour (public context). The same "one component, two
+// sources" pair as the explorer — this is the public source. Returns the rail shape
+// plus `posts` (card-shaped works) so the shell wraps it.
+export async function loadFeed() {
+  if (isDemo()) return demoFeed();
+  const user = session();
+  if (!user) return { needsAuth: true, live: false };
+
+  const { servers } = await loadRail(user);
+  const me = { id: user.id, name: user.email?.split("@")[0] || "you", initials: initials(user.email || "you"), handle: user.email?.split("@")[0] || "you", colorIdx: 1 };
+
+  // accepted friends (symmetric pair table: I'm a_user OR b_user)
+  const { data: friRows } = await supabase.from("friendships").select("a_user,b_user,status").or(`a_user.eq.${user.id},b_user.eq.${user.id}`).eq("status", "accepted");
+  const friendIds = (friRows || []).map((f) => (f.a_user === user.id ? f.b_user : f.a_user));
+
+  let posts = [];
+  if (friendIds.length) {
+    const { data: workRows } = await supabase.from("works")
+      .select("id,title,kind,file_ext,blob_sha,bytes,author_id,created_at")
+      .eq("visibility", "public").in("author_id", friendIds).is("deleted_at", null)
+      .order("created_at", { ascending: false }).limit(120);
+    const authorIds = [...new Set((workRows || []).map((w) => w.author_id))];
+    const profById = {};
+    if (authorIds.length) {
+      const { data: profs } = await supabase.from("profiles").select("id,handle,name").in("id", authorIds);
+      for (const p of profs || []) profById[p.id] = p;
+    }
+    posts = (workRows || []).map((w) => {
+      const a = profById[w.author_id];
+      return {
+        id: w.id, title: w.title, name: w.title, kind: w.kind, file_ext: w.file_ext,
+        blob_sha: w.blob_sha, bytes: w.bytes, created_at: w.created_at, tags: [],
+        who: a ? { name: a.name || a.handle } : null,   // no colorIdx — public, no hue
+      };
+    });
+  }
+
+  return { needsAuth: false, live: true, source: "feed", me, isAdmin: false, servers, dmUnread: 0, server: null, posts };
+}
+
+// A Profile (CANON §C.10) — a person's shelves. POV is viewer-dependent, enforced
+// server-side by works_read + friendships (not a UI toggle): owner sees all three
+// shelves + Settings; a stranger sees only Public; a friend sees Public + Server.
+// We compute the POV for chrome, but RLS is the real fence — the shelf queries only
+// return what the viewer may read, so we just group what comes back by visibility.
+export async function loadProfile(handle) {
+  if (isDemo()) return demoProfile(handle);
+  const user = session();
+  if (!user) return { needsAuth: true, live: false };
+
+  const { servers } = await loadRail(user);
+  const me = { id: user.id, name: user.email?.split("@")[0] || "you", initials: initials(user.email || "you"), handle: user.email?.split("@")[0] || "you", colorIdx: 1 };
+
+  const { data: prof } = await supabase.from("profiles").select("id,handle,name,bio,avatar_key,pronouns").eq("handle", handle).maybeSingle();
+  if (!prof) return { needsAuth: false, live: true, notFound: true, me, servers, dmUnread: 0, server: null };
+
+  let pov = "public";
+  if (prof.id === user.id) pov = "owner";
+  else {
+    const { data: fr } = await supabase.from("friendships").select("status").or(`and(a_user.eq.${user.id},b_user.eq.${prof.id}),and(a_user.eq.${prof.id},b_user.eq.${user.id})`).eq("status", "accepted").maybeSingle();
+    if (fr) pov = "mutual";
+  }
+
+  // RLS gates what's visible; group whatever returns by visibility into shelves.
+  const { data: workRows } = await supabase.from("works")
+    .select("id,title,kind,file_ext,blob_sha,bytes,visibility,created_at")
+    .eq("author_id", prof.id).is("deleted_at", null).order("created_at", { ascending: false });
+  const shelves = { public: [], server: [], private: [] };
+  for (const w of workRows || []) {
+    const card = { id: w.id, title: w.title, name: w.title, kind: w.kind, file_ext: w.file_ext, blob_sha: w.blob_sha, bytes: w.bytes, created_at: w.created_at, tags: [], who: { name: prof.name || prof.handle } };
+    (shelves[w.visibility] ||= []).push(card);
+  }
+
+  return {
+    needsAuth: false, live: true, source: "profile", me, servers, dmUnread: 0, server: null,
+    profile: { id: prof.id, name: prof.name || prof.handle, handle: prof.handle, bio: prof.bio || "", initials: initials(prof.name || prof.handle), pronouns: prof.pronouns },
+    pov, shelves,
   };
 }
 

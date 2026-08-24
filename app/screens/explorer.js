@@ -16,12 +16,19 @@
 import { el, toast, openMenu } from "../ui.js";
 import { iconEl } from "../icons.js";
 import { navigate } from "../router.js";
-import { workCard, folderCard } from "../cards.js";
+import { workCard, folderCard, mediaUrl, KIND_ICON } from "../cards.js";
 import { channelColumn } from "./workspace.js";
 import { openUpload } from "./upload.js";
 import { openDetails } from "./details.js";
 
-const VIEWS = { grid: "Grid", list: "List" };
+const VIEWS = { grid: "Grid", list: "List", feed: "Feed" };
+const PREVIEWABLE = new Set(["image", "video", "audio"]);
+// filter/sort options (single-select v1). Type maps a label → works.kind ("all" = no
+// filter; "other" = Projects/archives). Sort keys drive the comparator in sortFiles().
+const TYPES = [["all", "All types"], ["image", "Images"], ["audio", "Audio"], ["video", "Video"], ["text", "Text"], ["other", "Projects"]];
+const SORTS = [["latest", "Latest"], ["oldest", "Oldest"], ["name", "Name"], ["size", "Size"]];
+const TYPE_LABEL = Object.fromEntries(TYPES.map(([k, v]) => [k, k === "all" ? "Type" : v]));
+const SORT_LABEL = Object.fromEntries(SORTS);
 
 function fmtBytes(n) {
   n = Number(n || 0);
@@ -61,33 +68,71 @@ export function renderExplorer(data, view = {}) {
     mode: VIEWS[view.mode] ? view.mode : "grid",
     query: "",
     collapsed: new Set(),   // folder ids whose children are hidden in the tree
+    selection: new Set(),   // selected work ids (Google-Drive model, §C.6)
+    lastIdx: -1,            // anchor for Shift-click range
+    type: "all",           // kind filter (all/image/audio/video/text/other)
+    sort: "latest",        // latest/oldest/name/size
+    dir: "desc",           // sort direction
   };
 
+  const personal = data.source === "personal";
   const pane = el(".pane");
-  const tree = el("nav.filetree", { "data-tree": "server" });
-  const layout = el(".explayout", { "data-source": "server" }, [tree, pane]);
+  const tree = el("nav.filetree", { "data-tree": personal ? "personal" : "server" });
+  const layout = el(".explayout", { "data-source": personal ? "personal" : "server" }, [tree, pane]);
 
-  screen.append(channelColumn(data, { filesActive: true }), layout);
+  // Server mount keeps the channel column beside the browser (Files is a channel,
+  // never a dead-end). The personal My-files mount hides it — its own tree is the
+  // navigation and it carries no server chrome (CANON §C.6).
+  if (personal) screen.append(layout);
+  else screen.append(channelColumn(data, { filesActive: true }), layout);
 
   const rerender = () => { paint(tree, pane, data, state, rerender); };
   rerender();
+
+  // Esc clears the selection; ⌘/Ctrl-A selects everything in view. A single document
+  // listener, self-cleaning once this screen leaves the DOM (a nav swaps #stage).
+  const onKey = (e) => {
+    if (!screen.isConnected) { document.removeEventListener("keydown", onKey); return; }
+    if (document.querySelector(".sheet")) return;   // the details overlay owns keys while open
+    const tag = document.activeElement?.tagName;
+    if (tag === "INPUT" || tag === "TEXTAREA") return;
+    if (e.key === "Escape" && state.selection.size) { state.selection.clear(); state.lastIdx = -1; state._refresh?.(); }
+    else if ((e.metaKey || e.ctrlKey) && (e.key === "a" || e.key === "A") && state.mode === "grid") {
+      e.preventDefault();
+      for (const w of state._files || []) state.selection.add(w.id);
+      state._refresh?.();
+    }
+  };
+  document.addEventListener("keydown", onKey);
   return screen;
 }
+
+// what the tree root / breadcrumb root reads as, and where a folder link points
+function rootLabel(data) { return data.source === "personal" ? (data.rootLabel || "My files") : data.server.name; }
+function filesHref(data, folderId) {
+  const base = data.source === "personal" ? "/files" : `/s/${data.server.id}/files`;
+  const q = new URLSearchParams();
+  if (folderId) q.set("folder", folderId);
+  if (isDemoQS()) q.set("demo", "1");
+  const s = q.toString();
+  return base + (s ? `?${s}` : "");
+}
+function isDemoQS() { return new URLSearchParams(location.search).get("demo") === "1"; }
 
 // ── the folder tree (left) ───────────────────────────────────────────────────
 function paintTree(tree, data, state, rerender) {
   const { folders, storage } = data;
   const childrenOf = (pid) => folders.filter((f) => (f.parentId || null) === pid);
 
-  const hd = el(".fthd", {}, ["Files",
+  const hd = el(".fthd", {}, [data.source === "personal" ? "My files" : "Files",
     el("button.iconbtn.sm.newFolderBtn", { title: "New folder", onClick: () => toast({ message: "New folder (P5.6)" }) }, [iconEl("plus", "sm")]),
   ]);
 
   const rows = [];
-  // the server root row (lvl0), then the nested folders under it
+  // the root row (lvl0), then the nested folders under it
   const rootOn = state.folderId == null;
   rows.push(treeRow({
-    label: data.server.name, level: 0, on: rootOn, hasKids: childrenOf(null).length > 0,
+    label: rootLabel(data), level: 0, on: rootOn, hasKids: childrenOf(null).length > 0,
     open: !state.collapsed.has("__root__"),
     onToggle: () => { toggle(state.collapsed, "__root__"); rerender(); },
     onOpen: () => { state.folderId = null; rerender(); },
@@ -112,7 +157,7 @@ function paintTree(tree, data, state, rerender) {
   const bottom = el(".ftbottom", {}, [
     el(".ftsep"),
     treeRow({ label: "Trash", level: 0, icon: "trash", meta: "30d", onOpen: () => toast({ message: "Trash view (P5.7)" }) }),
-    storageFoot(data.server.name, storage),
+    storageFoot(data, storage),
   ]);
 
   tree.replaceChildren(hd, ...rows, bottom);
@@ -135,13 +180,14 @@ function treeRow({ label, level = 0, on, hasKids, open, locked, archived, icon =
   return row;
 }
 
-function storageFoot(serverName, storage) {
+function storageFoot(data, storage) {
+  const personal = data.source === "personal";
   const pct = storage.capBytes ? Math.min(100, Math.round((storage.usedBytes / storage.capBytes) * 100)) : 0;
   const usedGb = (storage.usedBytes / 1024 ** 3);
   const usedLbl = usedGb < 10 ? usedGb.toFixed(usedGb < 1 ? 2 : 1) : Math.round(usedGb);
-  const sic = iconEl("server", "sm"); sic.style.verticalAlign = "-2px"; sic.style.color = "var(--muted)";
+  const sic = iconEl(personal ? "user" : "server", "sm"); sic.style.verticalAlign = "-2px"; sic.style.color = "var(--muted)";
   return el(".ftfoot", {}, [
-    sic, " This server's storage",
+    sic, personal ? " Your storage" : " This server's storage",
     el(".bar", {}, [el("i", { style: `width:${pct}%` })]),
     `${usedLbl} of ${storage.capGb} GB used · `,
     el("button.manageStorageLink", { style: "color:var(--soft);text-decoration:underline", onClick: () => toast({ message: "Storage & billing (P8)" }) }, ["manage"]),
@@ -157,7 +203,7 @@ function paint(tree, pane, data, state, rerender) {
   // breadcrumb (browsing) OR a search-results indicator (searching)
   const crumbs = el(".crumbs", { id: "exCrumbs" });
   const path = crumbPath(data.folders, state.folderId);
-  crumbs.append(el("button.crumbroot", { onClick: () => { state.folderId = null; rerender(); } }, [data.server.name]));
+  crumbs.append(el("button.crumbroot", { onClick: () => { state.folderId = null; rerender(); } }, [rootLabel(data)]));
   path.forEach((f, i) => {
     crumbs.append(el("span.sl", {}, ["/"]));
     if (i === path.length - 1) crumbs.append(el("b", {}, [f.name]));
@@ -179,18 +225,47 @@ function paint(tree, pane, data, state, rerender) {
   ]);
 
   // toolbar — search + New folder + Upload (filters/sort are a later pass)
+  const personal = data.source === "personal";
   const search = el(".field", {}, [iconEl("search", "sm"),
-    el("input", { placeholder: "Search this server's files", value: state.query, onInput: (e) => { state.query = e.target.value; repaintBody(); } }),
+    el("input", { placeholder: personal ? "Search your files" : "Search this server's files", value: state.query, onInput: (e) => { state.query = e.target.value; repaintBody(); } }),
   ]);
+  const uploadOpts = personal ? { visibility: "private" } : { visibility: "server", serverId: data.server.id, folderId: state.folderId };
+
+  // Type + Sort filters (single-select v1; CANON's multi-select is a later pass) and
+  // a sort-direction toggle. Each re-renders the contents in place.
+  const typeBtn = el("button.btn.exfilter", { "aria-haspopup": "menu", onClick: (e) => openMenu(e.currentTarget, TYPES.map(([k, label]) => ({ label: (state.type === k ? "✓ " : "") + label, onClick: () => { state.type = k; repaintBody(); } }))) }, [TYPE_LABEL[state.type], iconEl("chev", "sm")]);
+  const sortBtn = el("button.btn.exfilter", { "aria-haspopup": "menu", onClick: (e) => openMenu(e.currentTarget, SORTS.map(([k, label]) => ({ label: (state.sort === k ? "✓ " : "") + label, onClick: () => { state.sort = k; repaintBody(); } }))) }, [SORT_LABEL[state.sort], iconEl("chev", "sm")]);
+  const dirBtn = el("button.iconbtn", { title: state.dir === "desc" ? "Descending" : "Ascending", "aria-pressed": state.dir === "asc" ? "true" : "false", onClick: () => { state.dir = state.dir === "desc" ? "asc" : "desc"; repaintBody(); } }, [(() => { const g = iconEl("chev", "sm"); if (state.dir === "asc") g.style.transform = "rotate(180deg)"; return g; })()]);
+
   const toolbar = el(".toolbar", {}, [
-    search,
+    search, typeBtn, sortBtn, dirBtn,
     el("span", { style: "flex:1" }),
     el("button.btn.newFolderBtn", { onClick: () => toast({ message: "New folder (P5.6)" }) }, [iconEl("plus", "sm"), "New folder"]),
-    el("button.btn.primary", { onClick: () => openUpload({ visibility: "server", serverId: data.server.id, folderId: state.folderId }) }, [iconEl("plus", "sm"), "Upload"]),
+    el("button.btn.primary", { onClick: () => openUpload(uploadOpts) }, [iconEl("plus", "sm"), "Upload"]),
   ]);
 
+  const selbar = el(".selbar");
   const body = el(".panebody");
-  pane.replaceChildren(panehd, toolbar, body);
+  pane.replaceChildren(panehd, toolbar, selbar, body);
+
+  // selection controller (Google-Drive model): refreshSel repaints the .sel outlines
+  // and the bulk bar off state.selection, without rebuilding the grid.
+  const sel = { state, refresh: refreshSel };
+  state._refresh = refreshSel;   // for the screen-level key handler (Esc / ⌘A)
+  function refreshSel() {
+    body.querySelectorAll(".card[data-id]").forEach((c) => c.classList.toggle("sel", state.selection.has(c.dataset.id)));
+    const n = state.selection.size;
+    selbar.classList.toggle("open", n > 0);
+    if (n > 0) selbar.replaceChildren(
+      el("span.n", {}, [el("span", {}, [String(n)]), " selected"]),
+      selAct("download", "Download", () => toast({ message: "Download (needs the R2 read env)" })),
+      selAct("move", "Move to folder", () => toast({ message: "Move to folder (P5.6)" })),
+      selAct("trash", "Delete", () => toast({ message: "Delete → Trash (P5.7)" })),
+      el("span.sp"),
+      selAct("x", "Clear", () => { state.selection.clear(); state.lastIdx = -1; refreshSel(); }),
+    );
+  }
+
   repaintBody();
 
   // re-render only the contents (search-as-you-type) without rebuilding the tree/toolbar
@@ -200,12 +275,18 @@ function paint(tree, pane, data, state, rerender) {
     if (isSearch !== (panehd.firstChild === crumbs ? false : true)) {
       panehd.replaceChild(isSearch ? searchState : crumbs, panehd.firstChild);
     }
-    body.replaceChildren(contents(data, state, rerender));
+    state.selection.clear(); state.lastIdx = -1;   // a new file set clears the selection
+    body.replaceChildren(contents(data, state, rerender, sel));
+    refreshSel();
   }
 }
 
+function selAct(icon, label, onClick) {
+  return el("button", { title: label, onClick }, [iconEl(icon, "sm"), label]);
+}
+
 // the current folder's subfolders + files, as grid or list; or search results
-function contents(data, state, rerender) {
+function contents(data, state, rerender, sel) {
   const searching = state.query.trim().length > 0;
   const q = state.query.trim().toLowerCase();
 
@@ -219,11 +300,17 @@ function contents(data, state, rerender) {
     subfolders = data.folders.filter((f) => (f.parentId || null) === state.folderId);
     files = data.files.filter((w) => (w.folderId || null) === state.folderId);
   }
+  // Type filter, then sort (both apply to files only; subfolders always lead the grid)
+  if (state.type !== "all") files = files.filter((w) => w.kind === state.type);
+  files = sortFiles(files, state.sort, state.dir);
+  state._files = files;   // the current in-view set, for ⌘A select-all
 
-  // a card opens the Details pane (§C.7): server files, so tags but no comments;
+  // a card opens the Details pane (§C.7): server files carry tags but no comments;
   // siblings = the files in view (prev/next); Location = the file's own folder path.
+  const personal = data.source === "personal";
   const openFile = (w) => openDetails(w, {
-    serverId: data.server.id, serverName: data.server.name,
+    serverId: personal ? null : data.server.id,
+    serverName: rootLabel(data), personal,
     folderPath: crumbPath(data.folders, w.folderId),
     siblings: files, isPost: false,
   });
@@ -234,14 +321,73 @@ function contents(data, state, rerender) {
       : emptyState("folder", "This folder is empty", "Upload files or create a subfolder to fill it.");
   }
 
+  // Google-Drive selection (§C.6): single click selects (clears others), ⌘/Ctrl-click
+  // toggles, Shift-click ranges; a double-click opens. List view keeps click-to-open.
+  const onCardClick = (w, i, e) => {
+    const s = state.selection;
+    if (e.metaKey || e.ctrlKey) { s.has(w.id) ? s.delete(w.id) : s.add(w.id); state.lastIdx = i; }
+    else if (e.shiftKey && state.lastIdx >= 0) {
+      const [a, b] = [state.lastIdx, i].sort((x, y) => x - y);
+      for (let k = a; k <= b; k++) s.add(files[k].id);
+    } else { s.clear(); s.add(w.id); state.lastIdx = i; }
+    sel.refresh();
+  };
+
+  if (state.mode === "feed") return feedView(data, state, openFile);
   if (state.mode === "list") return listView(subfolders, files, { openFile, openFolder });
-  return gridView(subfolders, files, { openFile, openFolder });
+  return gridView(subfolders, files, { openFile, openFolder, onCardClick, showWho: data.source !== "personal" });
 }
 
-function gridView(subfolders, files, { openFile, openFolder }) {
+// Feed view (§C.6): flatten the current folder's whole SUBTREE to previewable works
+// (image/video/audio) newest-first, each with its comments inline — an Instagram-style
+// server media feed. Project files (.flp/.zip) are hidden here (grid/list show them).
+function feedView(data, state, openFile) {
+  // collect the current folder + all descendants
+  const wantIds = new Set();
+  (function walk(fid) { wantIds.add(fid); for (const f of data.folders) if ((f.parentId || null) === fid) walk(f.id); })(state.folderId);
+  let items = data.files.filter((w) => PREVIEWABLE.has(w.kind) && wantIds.has(w.folderId || null));
+  items = sortFiles(items, "latest", "desc");
+
+  const here = state.folderId ? (data.folders.find((f) => f.id === state.folderId)?.name || "this folder") : rootLabel(data);
+  const note = el(".ffnote", {}, [iconEl("home", "sm"), `Everything previewable in ${here} and its subfolders, newest first. Project files are hidden here — switch to grid or list for those.`]);
+
+  if (!items.length) return el(".exview.filefeed", { "data-exview": "feed" }, [note, emptyState("image", "Nothing to preview", "This folder has no images, audio, or video yet.")]);
+
+  const feed = el(".filefeed", {}, [note]);
+  for (const w of items) {
+    const folderName = w.folderId ? (data.folders.find((f) => f.id === w.folderId)?.name || "") : rootLabel(data);
+    const media = el(".ffmedia", { onClick: () => openFile(w) }, [feedMedia(w)]);
+    const meta = el(".ffmeta", {}, [el("b", {}, [w.title || "untitled"]), el("span.who", {}, [`${w.who?.name || ""}${folderName ? " · " + folderName : ""}`])]);
+    const cmts = el(".ffcmts", {}, [
+      ...(w.comments || []).map((c) => el(".cmt", {}, [
+        el(".av.sm", { style: c.colorIdx != null ? `color:var(--m${c.colorIdx})` : null }, [(c.name || "?").slice(0, 2).toUpperCase()]),
+        el(".bd", {}, [el(".by", {}, [el("span.u", {}, [c.name]), el("time", {}, [c.time || ""])]), el(".tx", {}, [c.text || ""])]),
+      ])),
+      el(".field", { style: "margin-top:6px" }, [el("input", { placeholder: "Comment" })]),
+    ]);
+    feed.append(el(".ffitem", {}, [media, meta, cmts]));
+  }
+  return el(".exview.filefeed", { "data-exview": "feed" }, [feed]);
+}
+
+function feedMedia(w) {
+  const url = mediaUrl(w);
+  if (w.kind === "image" && url) { const img = el("img", { src: url, alt: w.title || "", loading: "lazy" }); return img; }
+  if (w.kind === "video" && url) return el("video", { src: url, muted: true, preload: "metadata", playsinline: true });
+  const icon = iconEl(KIND_ICON[w.kind] || "file");   // image/video with no bytes yet
+  return el(".dtype", {}, [icon, el("span.ext", {}, [(w.file_ext || "").toUpperCase()])]);
+}
+
+function gridView(subfolders, files, { openFile, openFolder, onCardClick, showWho }) {
   const grid = el(".masonry.even");
   for (const f of subfolders) grid.append(folderCard(f, { onOpen: openFolder }));
-  for (const w of files) grid.append(workCard(w, { onOpen: openFile, showWho: true }));
+  files.forEach((w, i) => {
+    const card = workCard(w, { selectable: true, showWho });
+    card.dataset.id = w.id;
+    card.addEventListener("click", (e) => onCardClick(w, i, e));
+    card.addEventListener("dblclick", (e) => { e.preventDefault(); openFile(w); });
+    grid.append(card);
+  });
   return el(".exview", { "data-exview": "grid" }, [grid]);
 }
 
@@ -267,6 +413,21 @@ function listView(subfolders, files, { openFile, openFolder }) {
 }
 
 const KIND_LIST_ICON = { audio: "voice", image: "image", video: "video", text: "type", other: "file" };
+
+// sort a file list by the chosen key + direction. Name is A→Z at asc; the others are
+// natural (latest/largest first) at the default desc.
+function sortFiles(files, sort, dir) {
+  const out = files.slice();
+  const cmp = {
+    latest: (a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0),
+    oldest: (a, b) => new Date(a.created_at || 0) - new Date(b.created_at || 0),
+    name: (a, b) => (a.title || "").localeCompare(b.title || ""),
+    size: (a, b) => Number(b.bytes || 0) - Number(a.bytes || 0),
+  }[sort] || (() => 0);
+  out.sort(cmp);
+  if (dir === "asc") out.reverse();
+  return out;
+}
 
 // ── shared empty state (CANON §C.6 reusable pattern) ─────────────────────────
 function emptyState(icon, title, sub) {

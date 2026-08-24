@@ -140,7 +140,8 @@ export function demoWorkspace() {
 // workspace demo, shaped like loadExplorer()'s live return so the screen renders
 // identically from either source. Folders nest (beats › drums); files carry their
 // `folderId` (null = server root) and the member hue via `who.colorIdx`.
-export function demoExplorer() {
+export function demoExplorer(source = "server") {
+  if (source === "personal") return demoPersonalExplorer();
   const W = (id, title, kind, ext, bytes, who, folderId, channelName, tags = []) => ({
     id, title, name: title, kind, file_ext: ext, blob_sha: null, bytes,
     who: { name: who, colorIdx: P[who].colorIdx }, channelName, folderId,
@@ -176,8 +177,8 @@ export function demoExplorer() {
     ],
     files: [
       W("f1", "late_bloom_beat.flp", "other", "flp", 8.4e6, "dev", "beats", "beats", ["drums", "142bpm", "bridge"]),
-      W("f2", "bridge_scratch_rae.wav", "audio", "wav", 18e6, "rae", "beats", "beats", ["acapella"]),
-      W("f3", "ref_drums.png", "image", "png", 2.1e6, "rae", "beats", "beats", ["reference"]),
+      { ...W("f2", "bridge_scratch_rae.wav", "audio", "wav", 18e6, "rae", "beats", "beats", ["acapella"]), comments: [{ name: "dev", colorIdx: 3, time: "11:02 AM", text: "looping this under the second verse" }] },
+      { ...W("f3", "ref_drums.png", "image", "png", 2.1e6, "rae", "beats", "beats", ["reference"]), comments: [{ name: "jax", colorIdx: 5, time: "2:31 PM", text: "the break at 0:48 is the one" }] },
       W("f4", "bloom_master.als", "other", "als", 36e6, "jax", "beats", "beats", ["ableton", "master"]),
       W("f5", "moodboard.png", "image", "png", 3.3e6, "nel", "references", "references", ["cover", "wip"]),
       W("f6", "stems_sh040.zip", "other", "zip", 48e6, "tomo", "stems", "stems and sessions", ["stems"]),
@@ -186,5 +187,104 @@ export function demoExplorer() {
     currentFolderId: null,
     storage: { usedBytes: 74 * 1024 ** 3, capGb: 120, capBytes: 120 * 1024 ** 3, status: "active", overCap: false },
     activeServerId: "lb",
+    source: "server",
+  };
+}
+
+// A Profile demo fixture — the owner self-view (the gallery reference). All three
+// shelves + Settings; NO member colour (public profile). Collaborators are plain text.
+export function demoProfile(handle) {
+  const C = (id, title, kind, ext, who) => ({ id, title, name: title, kind, file_ext: ext, blob_sha: null, bytes: 0, created_at: "2026-08-18T10:00:00Z", tags: [], who: { name: who } });
+  return {
+    needsAuth: false, live: false, source: "profile",
+    me, dmUnread: 3, server: null,
+    servers: [
+      { id: "lb", name: "Late Bloom LP", initials: "LB" },
+      { id: "sp", name: "Specter", initials: "SP", mentions: 7 },
+      { id: "bs", name: "Beat swap", initials: "BS" },
+    ],
+    profile: { id: "me", name: "jax", handle: handle || "jax", initials: "JX", bio: "producer + engineer. building the Late Bloom LP with a few people.", pronouns: "they/them" },
+    pov: "owner",
+    shelves: {
+      public: [
+        C("pub1", "low ceilings, the finished verse", "audio", "wav", "jax, rae, tomo"),
+        C("pub2", "cover art, bloom", "image", "png", "nel, jax"),
+        C("pub3", "bloom, single", "audio", "wav", "jax, dev, tomo"),
+        C("pub4", "lyric visual", "video", "mp4", "sol"),
+        C("pub5", "On finishing things", "text", "md", "jax"),
+      ],
+      server: [
+        C("srv1", "late_bloom_beat.flp", "other", "flp", "jax"),
+        C("srv2", "bloom_master.als", "other", "als", "jax"),
+      ],
+      private: [
+        C("priv1", "rough_ideas.zip", "other", "zip", "jax"),
+        C("priv2", "voice_memo_03.m4a", "audio", "m4a", "jax"),
+        C("priv3", "moodboard_private.png", "image", "png", "jax"),
+      ],
+    },
+  };
+}
+
+// The home Feed demo fixture — friends' public posts, NO member colour (public).
+export function demoFeed() {
+  const P2 = (id, title, kind, ext, who, ar) => ({
+    id, title, name: title, kind, file_ext: ext, blob_sha: null, bytes: 0,
+    created_at: "2026-08-20T10:00:00Z", tags: [], who: { name: who }, ar,
+  });
+  return {
+    needsAuth: false, live: false, source: "feed",
+    me, isAdmin: false, dmUnread: 3, server: null,
+    servers: [
+      { id: "lb", name: "Late Bloom LP", initials: "LB" },
+      { id: "sp", name: "Specter", initials: "SP", mentions: 7 },
+      { id: "bs", name: "Beat swap", initials: "BS" },
+    ],
+    posts: [
+      P2("q1", "keyframe study, the falling sequence", "image", "png", "lin"),
+      P2("q2", "back half rework, drums finally sit right", "audio", "wav", "dev"),
+      P2("q3", "q3 comp reel, first pass", "video", "mp4", "mira"),
+      P2("q4", "On finishing things", "text", "md", "jax"),
+      P2("q5", "cover art studies, warm set", "image", "png", "nel"),
+      P2("q6", "low ceilings, verse idea", "audio", "wav", "rae"),
+      P2("q7", "title sequence, draft", "video", "mp4", "sol"),
+      P2("q8", "drum one-shots, vol 2", "audio", "wav", "jax"),
+      P2("q9", "session backup, aug", "other", "zip", "dev"),
+    ],
+  };
+}
+
+// The personal "My files" demo fixture — your own Drive, distinct from any server:
+// nested save-folders, own works, "Your storage" footer, no channel column.
+function demoPersonalExplorer() {
+  const F = (id, title, kind, ext, bytes, folderId, tags = []) => ({
+    id, title, name: title, kind, file_ext: ext, blob_sha: null, bytes,
+    who: null, channelName: null, folderId, created_at: "2026-08-12T09:00:00Z", hidden: false, tags,
+  });
+  return {
+    needsAuth: false, live: false, source: "personal",
+    me, isAdmin: false, dmUnread: 3,
+    servers: [
+      { id: "lb", name: "Late Bloom LP", initials: "LB" },
+      { id: "sp", name: "Specter", initials: "SP", mentions: 7 },
+      { id: "bs", name: "Beat swap", initials: "BS" },
+    ],
+    server: null, channelGroups: [], membersById: {},
+    rootLabel: "My files", storageLabel: "Your storage",
+    folders: [
+      { id: "saved", name: "Saved from servers", parentId: null, archived: false, locked: false, count: 2 },
+      { id: "uploads", name: "Uploads", parentId: null, archived: false, locked: false, count: 1 },
+      { id: "bounces", name: "Bounces", parentId: null, archived: false, locked: false, count: 1 },
+      { id: "screens", name: "Screenshots", parentId: null, archived: false, locked: false, count: 0 },
+    ],
+    files: [
+      F("p1", "late_bloom_master.wav", "audio", "wav", 32e6, "bounces", ["master", "bloom"]),
+      F("p2", "cover_bloom.png", "image", "png", 4.8e6, "saved", ["cover", "wip"]),
+      F("p3", "ref_moodboard.png", "image", "png", 3.1e6, "saved", ["reference"]),
+      F("p4", "verse_idea.m4a", "audio", "m4a", 6.2e6, "uploads", ["scratch"]),
+      F("p5", "todo.md", "text", "md", 1800, null, []),
+    ],
+    currentFolderId: null,
+    storage: { usedBytes: 22 * 1024 ** 3, capGb: 50, capBytes: 50 * 1024 ** 3, status: "active", overCap: false },
   };
 }
