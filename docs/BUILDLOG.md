@@ -28,22 +28,45 @@ GOTCHA: channels.post_policy='admins' must reject non-admin inserts — test cov
 
 ## Current state
 
-**Phase: build. P0–P3 DONE. P4 UI (P4.1–P4.9) DONE. P4.10/P4.11 [GL] live wiring CODE COMPLETE, e2e not yet run in-sandbox (see below). Demo server seeded. NEXT: run `docs/design/verify-live.mjs` in a network-capable env (or sign in on preview) to confirm the live spine, then P5.**
+**Phase: build. P0–P3 DONE. P4 UI (P4.1–P4.9) DONE. P4.10/P4.11 live wiring works on preview but has 6 bugs found in owner testing 2026-08-24 (list below). NEXT: fix the P4-LIVE-BUGS, then P5.**
 
-> **P4.10/P4.11 verification status (read before resuming).** The live code is
-> written and committed: live reads (`app/data.js`), the four Realtime channels +
-> send/mark-read (`app/realtime.js`), the live patching + typing + presence
-> (`app/screens/workspace.js`), and a minimal magic-link sign-in (`app/screens/signin.js`).
-> Verified: RLS reads for both real accounts (SQL), the Realtime publication carries
-> `messages`, the demo/UI harness is green (`verify-workspace.mjs`, 10 states), and the
-> sign-in screen renders (both themes). **NOT yet verified end-to-end:** the two-session
-> live test `docs/design/verify-live.mjs` could not run in THIS sandbox — headless
-> Chromium can't egress HTTPS through the agent proxy (both `supabase.co` *and*
-> `google.com` return "Failed to fetch" from the browser, while curl/node reach the
-> proxy fine; the localhost app loads once `--proxy-bypass-list=127.0.0.1;localhost`
-> is set, but cross-origin HTTPS still fails). Resume by running `verify-live.mjs`
-> where the browser can reach Supabase, or by signing in on `preview.eski.lol` and
-> opening two windows (dev@/rae@seed.eski.lol, pw `eski-demo-preview-2026`).
+> **P4.10/P4.11 — LIVE, with bugs to fix (owner tested on preview 2026-08-24).** The
+> live spine DOES work end-to-end on preview: sign-in, live send/receive, presence all
+> fired. But testing surfaced 6 bugs — fix these before P5. (In-sandbox note: the
+> two-session harness `verify-live.mjs` still can't run here — headless Chromium can't
+> egress HTTPS through the agent proxy — so verify fixes on preview or in a
+> network-capable env.)
+>
+> **P4-LIVE-BUGS (priority order):**
+> 1. **Members rail empty + every message author shows "unknown".** ROOT (likely): the
+>    `server_members.select('...,profile:profiles(...)')` embed in `loadWorkspace`
+>    fails (no FK `server_members.user_id`→`profiles`, or profiles RLS blocks reading
+>    co-members), so `memRows`/`membersById` come back empty → no member rows AND
+>    `shapeMessage` falls back to "unknown". FIX: fetch profiles in a SEPARATE query by
+>    id-list and merge; confirm profiles RLS lets a co-member read the row (add/adjust
+>    policy if not). This one bug causes both symptoms — do it first.
+> 2. **Markdown/formatting not rendered** — `**bold**`, `*italic*`, etc. show as literal
+>    text in the stream and nothing decorates in the box. `renderBody` only highlights
+>    @/#; add a minimal inline markdown renderer (bold/italic/strike/code/link), HTML-escaped.
+> 3. **Voice channels open as a text channel** (composer + "start of #the booth"). Voice
+>    is v2/deferred — a voice `.crow` must NOT route to a text channel or become the
+>    active channel; click → a "voice ships in v2" toast (or no-op). Also don't let
+>    `loadWorkspace` pick a voice channel as `activeChannel`.
+> 4. **Channel switching is very slow** — every nav re-runs the whole `loadWorkspace`
+>    (servers + members + roles + channels + messages + pins, many round trips). Cache
+>    the server-level reads per `serverId` (servers/members/roles/channels change rarely)
+>    so a channel switch only fetches that channel's messages + pins.
+> 5. **Sign-in flaky** — magic link often needs several reloads, and a signed-in session
+>    sometimes flashes back to the sign-in screen. Race: the first render runs before
+>    `ready` (getSession / `detectSessionInUrl` hash exchange) settles → shows sign-in;
+>    and transient `onChange` states re-render. FIX: hold the first in-shell render until
+>    `ready` resolves (a brief loading state), and don't drop to sign-in on a transient
+>    null during token exchange.
+> 6. **Members panel not toggleable** — likely a side effect of #1 (empty rail reads as
+>    absent); re-check the `#memToggle` handler once the rail is populated.
+>
+> Not bugs (expected this phase): Feed/DMs/Notifications/etc. show the "not yet ported"
+> placeholder — only the Workspace is built (P5+ port the rest).
 
 The spec is hand-off-ready: [`CANON.md`](CANON.md) is the contract (incl. §E.10, the
 per-control → backend coverage matrix), the [`design/gallery.html`](design/gallery.html)
