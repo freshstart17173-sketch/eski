@@ -56,6 +56,12 @@ const CASES = [
   ["list-view", "/s/lb/files?demo=1&view=list", "light", async (p) =>
     (await has(p, '.exview[data-exview="list"] .flrow.flhd', "list header row")) ||
     (await has(p, '.exview[data-exview="list"] .flrow .flnm', "list file rows"))],
+  // feed view: flattened previewable subtree + inline comments; project files hidden
+  ["feed-view", "/s/lb/files?demo=1&folder=beats&view=feed", "light", async (p) =>
+    (await has(p, '.exview[data-exview="feed"] .ffnote', "feed note")) ||
+    (await has(p, ".filefeed .ffitem .ffmedia", "feed media items")) ||
+    (await has(p, ".filefeed .ffitem .ffcmts .cmt", "inline comments")) ||
+    ((await count(p, ".filefeed .ffitem")) !== 2 ? `beats has 2 previewable (wav+png), got ${await count(p, ".filefeed .ffitem")}` : null)],
   ["locked-folder", "/s/lb/files?demo=1", "light", async (p) =>
     has(p, ".ftrow .ftlock", "locked-folder lock icon")],
   ["empty-folder", "/s/lb/files?demo=1&folder=verses", "light", async (p) =>

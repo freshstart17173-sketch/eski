@@ -16,12 +16,13 @@
 import { el, toast, openMenu } from "../ui.js";
 import { iconEl } from "../icons.js";
 import { navigate } from "../router.js";
-import { workCard, folderCard } from "../cards.js";
+import { workCard, folderCard, mediaUrl, KIND_ICON } from "../cards.js";
 import { channelColumn } from "./workspace.js";
 import { openUpload } from "./upload.js";
 import { openDetails } from "./details.js";
 
-const VIEWS = { grid: "Grid", list: "List" };
+const VIEWS = { grid: "Grid", list: "List", feed: "Feed" };
+const PREVIEWABLE = new Set(["image", "video", "audio"]);
 // filter/sort options (single-select v1). Type maps a label → works.kind ("all" = no
 // filter; "other" = Projects/archives). Sort keys drive the comparator in sortFiles().
 const TYPES = [["all", "All types"], ["image", "Images"], ["audio", "Audio"], ["video", "Video"], ["text", "Text"], ["other", "Projects"]];
@@ -332,8 +333,49 @@ function contents(data, state, rerender, sel) {
     sel.refresh();
   };
 
+  if (state.mode === "feed") return feedView(data, state, openFile);
   if (state.mode === "list") return listView(subfolders, files, { openFile, openFolder });
   return gridView(subfolders, files, { openFile, openFolder, onCardClick, showWho: data.source !== "personal" });
+}
+
+// Feed view (§C.6): flatten the current folder's whole SUBTREE to previewable works
+// (image/video/audio) newest-first, each with its comments inline — an Instagram-style
+// server media feed. Project files (.flp/.zip) are hidden here (grid/list show them).
+function feedView(data, state, openFile) {
+  // collect the current folder + all descendants
+  const wantIds = new Set();
+  (function walk(fid) { wantIds.add(fid); for (const f of data.folders) if ((f.parentId || null) === fid) walk(f.id); })(state.folderId);
+  let items = data.files.filter((w) => PREVIEWABLE.has(w.kind) && wantIds.has(w.folderId || null));
+  items = sortFiles(items, "latest", "desc");
+
+  const here = state.folderId ? (data.folders.find((f) => f.id === state.folderId)?.name || "this folder") : rootLabel(data);
+  const note = el(".ffnote", {}, [iconEl("home", "sm"), `Everything previewable in ${here} and its subfolders, newest first. Project files are hidden here — switch to grid or list for those.`]);
+
+  if (!items.length) return el(".exview.filefeed", { "data-exview": "feed" }, [note, emptyState("image", "Nothing to preview", "This folder has no images, audio, or video yet.")]);
+
+  const feed = el(".filefeed", {}, [note]);
+  for (const w of items) {
+    const folderName = w.folderId ? (data.folders.find((f) => f.id === w.folderId)?.name || "") : rootLabel(data);
+    const media = el(".ffmedia", { onClick: () => openFile(w) }, [feedMedia(w)]);
+    const meta = el(".ffmeta", {}, [el("b", {}, [w.title || "untitled"]), el("span.who", {}, [`${w.who?.name || ""}${folderName ? " · " + folderName : ""}`])]);
+    const cmts = el(".ffcmts", {}, [
+      ...(w.comments || []).map((c) => el(".cmt", {}, [
+        el(".av.sm", { style: c.colorIdx != null ? `color:var(--m${c.colorIdx})` : null }, [(c.name || "?").slice(0, 2).toUpperCase()]),
+        el(".bd", {}, [el(".by", {}, [el("span.u", {}, [c.name]), el("time", {}, [c.time || ""])]), el(".tx", {}, [c.text || ""])]),
+      ])),
+      el(".field", { style: "margin-top:6px" }, [el("input", { placeholder: "Comment" })]),
+    ]);
+    feed.append(el(".ffitem", {}, [media, meta, cmts]));
+  }
+  return el(".exview.filefeed", { "data-exview": "feed" }, [feed]);
+}
+
+function feedMedia(w) {
+  const url = mediaUrl(w);
+  if (w.kind === "image" && url) { const img = el("img", { src: url, alt: w.title || "", loading: "lazy" }); return img; }
+  if (w.kind === "video" && url) return el("video", { src: url, muted: true, preload: "metadata", playsinline: true });
+  const icon = iconEl(KIND_ICON[w.kind] || "file");   // image/video with no bytes yet
+  return el(".dtype", {}, [icon, el("span.ext", {}, [(w.file_ext || "").toUpperCase()])]);
 }
 
 function gridView(subfolders, files, { openFile, openFolder, onCardClick, showWho }) {

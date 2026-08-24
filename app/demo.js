@@ -177,8 +177,8 @@ export function demoExplorer(source = "server") {
     ],
     files: [
       W("f1", "late_bloom_beat.flp", "other", "flp", 8.4e6, "dev", "beats", "beats", ["drums", "142bpm", "bridge"]),
-      W("f2", "bridge_scratch_rae.wav", "audio", "wav", 18e6, "rae", "beats", "beats", ["acapella"]),
-      W("f3", "ref_drums.png", "image", "png", 2.1e6, "rae", "beats", "beats", ["reference"]),
+      { ...W("f2", "bridge_scratch_rae.wav", "audio", "wav", 18e6, "rae", "beats", "beats", ["acapella"]), comments: [{ name: "dev", colorIdx: 3, time: "11:02 AM", text: "looping this under the second verse" }] },
+      { ...W("f3", "ref_drums.png", "image", "png", 2.1e6, "rae", "beats", "beats", ["reference"]), comments: [{ name: "jax", colorIdx: 5, time: "2:31 PM", text: "the break at 0:48 is the one" }] },
       W("f4", "bloom_master.als", "other", "als", 36e6, "jax", "beats", "beats", ["ableton", "master"]),
       W("f5", "moodboard.png", "image", "png", 3.3e6, "nel", "references", "references", ["cover", "wip"]),
       W("f6", "stems_sh040.zip", "other", "zip", 48e6, "tomo", "stems", "stems and sessions", ["stems"]),

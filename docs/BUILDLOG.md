@@ -585,3 +585,27 @@ NEXT: multi-select filters + quick-filter chips + Date + (server) Channel/Upload
   the write paths for the bulk-bar actions (delete→Trash `works.deleted_at`,
   `move_to_folder`) + Trash view; New folder (`folders`/`save_folders` insert); then
   real `comments`.
+
+## 2026-08-24 — P5.8 Explorer Feed view (grid/list/feed triad complete)
+IN PROGRESS: (cleared)
+DONE: the explorer's third view, **Feed** (CANON §C.6) — an Instagram-style server media
+  feed. `feedView()` flattens the current folder's whole **subtree** to the **previewable**
+  works (image/video/audio) newest-first (project files like .flp/.zip hidden — grid/list
+  show them), each rendered at natural width with a meta line (title · author · folder) and
+  its **comments inline** + a comment field. A note bar explains the flatten. Ported the
+  `.filefeed/.ffnote/.ffitem/.ffmedia/.ffmeta/.ffcmts` CSS into content.css (comment rows
+  scoped under `.filefeed`). The view dropdown now offers Grid/List/**Feed**; `feedMedia`
+  reuses the kind icons for the no-bytes-yet fallback. Demo works f2/f3 carry comment
+  fixtures so `?view=feed` shows real threads.
+  Verified: `verify-explorer.mjs` +feed-view case (note bar, media items, inline comments,
+  exactly the 2 previewable of beats' 4 files); 13 states GREEN, both themes, zero app
+  console errors. Screenshot eyeballed vs gallery feed view — matches.
+NEXT: live-load the feed's server comments (`comments` context='server') + a working
+  comment composer (insert), and the post details' public thread; then the write paths
+  for delete→Trash / move_to_folder / New folder / save_to_files (some RPCs — restore/
+  purge/empty_trash/save_to_files — are NOT yet in the DB, only move_to_folder is).
+GOTCHA AC: the trash + save RPCs from CANON §E.3 (`restore_work`, `purge_work`,
+  `empty_trash`, `save_to_files`, `unsave`) are NOT applied yet — only `move_to_folder`
+  exists. Wiring the bulk-bar Delete/Save and the Trash view needs those migrations first
+  (or a direct `works.deleted_at` update for soft-delete, but hard purge needs the blob
+  refcount RPC).
