@@ -50,8 +50,7 @@ export function renderLanding() {
       <p class="lsub">Chat in servers and channels. Every file shared there lands in a real, organized
         drive: folders, search, and a feed of what's public. Comment on it, save a copy, find it again months later.</p>
       <div class="lcta">
-        <a class="btn primary" href="/signin">${icon("send")}Get started</a>
-        <a class="btn ghost" href="#features">See what's inside</a>
+        <a class="btn primary" href="/signin">Get started</a>
       </div>
     </div>
 
@@ -68,7 +67,7 @@ export function renderLanding() {
       </div>
     </div>
 
-    <div class="lsection" id="features">
+    <div class="lsection">
       <div class="lwrap">
         <h2>Everything a file needs</h2>
         <div class="lgrid">
@@ -84,7 +83,7 @@ export function renderLanding() {
 
     <div class="lclose">
       <h2>Stop losing files in a group chat.</h2>
-      <a class="btn primary" href="/signin">${icon("send")}Get started for free</a>
+      <a class="btn primary" href="/signin">Get started for free</a>
     </div>
 
     <footer class="lfoot">

@@ -55,5 +55,4 @@
 @media (max-width:560px){
   .lnav{padding:var(--s3) var(--s4)}
   .lmockgrid,.lgrid{grid-template-columns:1fr}
-  .lcta{flex-direction:column}
 }
