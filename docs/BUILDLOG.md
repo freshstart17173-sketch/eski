@@ -486,3 +486,34 @@ GOTCHA Z: a personal work's folder location comes from `saved_items.folder_id`, 
   get one), so freshly-uploaded personal files sit at **root** until filed. If personal
   uploads should land in a chosen folder, the upload write path needs a `saved_items`
   insert — not built yet (upload.js only writes `placement` for server uploads).
+
+## 2026-08-24 — P5.1 home Feed (friends' public posts)
+IN PROGRESS: (cleared)
+DONE: the home **Feed** (CANON §C.5) — the friends-only portfolio grid, the public
+  counterpart to the explorer (same "one card renderer, parameterised by source"). Rail
+  Home button + `/` now render it for a signed-in user. `data.js loadFeed()`: accepted
+  friends (`friendships` where I'm a_user OR b_user, status='accepted') → their PUBLIC
+  works (`visibility='public'`, author ∈ friends, not-deleted), authors resolved from
+  `profiles` (name/handle, **no colorIdx** — the member hue is server-scoped and must
+  render nowhere public). `app/screens/feed.js renderFeed(data)`: wordmark + Feed/
+  Notifications/You nav (`.nav.on` underline) · search (title/author) · Type/Sort
+  dropdowns (placeholder actions) · **even ⇄ masonry** layout toggle (default even) ·
+  the shared `workCard` with **hue:false** (plain author text) · the "Your feed is quiet"
+  empty state with a Find-friends CTA. Cards open the Details pane as a **public post**
+  (`isPost:true` → a Comments section; a post has no local tree so the Location row is
+  dropped and it leads with **Posted by**). `cards.js workCard` gained a `hue` option
+  (default true; false = plain author, no `.uchip`). `main.js` wires the feed screen
+  (demo bypasses the signed-out landing so `/?demo=1` shows the fixture);
+  `demoFeed()` fixture added.
+  Verified: new `docs/design/verify-feed.mjs` GREEN — feed-light/dark (wordmark, active
+  nav, search, post cards, **no member-hue chips**) + post-details (public post: Comments
+  section present, no Location row, Posted-by present), both themes, zero app console
+  errors. Screenshot eyeballed vs gallery feed — matches.
+NEXT: Profile screen (§C.10 — hero + Public/Server/Private shelves, POV variants, same
+  card grid) OR the explorer Trash view (§C.6) + filter/sort dropdowns + multi-select;
+  then wire real comments (`comments` table, context public/server) so the post thread
+  and the explorer's Feed-view comments are live.
+GOTCHA AA: the Feed is empty until BOTH a friends system and public posts exist — no
+  friendships/public works are seeded, so live `/` shows the "quiet feed" empty state
+  (correct). Use `/?demo=1` to see the populated grid. Type/Sort are placeholder menus
+  (client filters land with the explorer filter pass).

@@ -191,6 +191,34 @@ export function demoExplorer(source = "server") {
   };
 }
 
+// The home Feed demo fixture — friends' public posts, NO member colour (public).
+export function demoFeed() {
+  const P2 = (id, title, kind, ext, who, ar) => ({
+    id, title, name: title, kind, file_ext: ext, blob_sha: null, bytes: 0,
+    created_at: "2026-08-20T10:00:00Z", tags: [], who: { name: who }, ar,
+  });
+  return {
+    needsAuth: false, live: false, source: "feed",
+    me, isAdmin: false, dmUnread: 3, server: null,
+    servers: [
+      { id: "lb", name: "Late Bloom LP", initials: "LB" },
+      { id: "sp", name: "Specter", initials: "SP", mentions: 7 },
+      { id: "bs", name: "Beat swap", initials: "BS" },
+    ],
+    posts: [
+      P2("q1", "keyframe study, the falling sequence", "image", "png", "lin"),
+      P2("q2", "back half rework, drums finally sit right", "audio", "wav", "dev"),
+      P2("q3", "q3 comp reel, first pass", "video", "mp4", "mira"),
+      P2("q4", "On finishing things", "text", "md", "jax"),
+      P2("q5", "cover art studies, warm set", "image", "png", "nel"),
+      P2("q6", "low ceilings, verse idea", "audio", "wav", "rae"),
+      P2("q7", "title sequence, draft", "video", "mp4", "sol"),
+      P2("q8", "drum one-shots, vol 2", "audio", "wav", "jax"),
+      P2("q9", "session backup, aug", "other", "zip", "dev"),
+    ],
+  };
+}
+
 // The personal "My files" demo fixture — your own Drive, distinct from any server:
 // nested save-folders, own works, "Your storage" footer, no channel column.
 function demoPersonalExplorer() {

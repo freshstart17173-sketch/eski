@@ -8,11 +8,12 @@ import { signal, effect } from "./signals.js";
 import { start, match } from "./router.js";
 import { ready, session, onChange } from "./supabase.js";
 import { icon } from "./icons.js";
-import { loadWorkspace, loadExplorer, clearWorkspaceCache } from "./data.js";
+import { loadWorkspace, loadExplorer, loadFeed, clearWorkspaceCache, isDemo } from "./data.js";
 import { teardownRealtime } from "./realtime.js";
 import { renderRail, appFrame } from "./shell.js";
 import { renderWorkspace } from "./screens/workspace.js";
 import { renderExplorer } from "./screens/explorer.js";
+import { renderFeed } from "./screens/feed.js";
 import { closeDetails } from "./screens/details.js";
 import { renderSignin } from "./screens/signin.js";
 import { renderLanding } from "./screens/landing.js";
@@ -69,7 +70,7 @@ async function renderRoute(r) {
   // "/" with no session is the marketing home, not the in-shell Feed placeholder
   // or the bare sign-in prompt — every other signed-out deep link still falls
   // through to renderSignin() below via needsAuth.
-  if (r.screen === "feed" && r.path === "/" && !session()) { swap(renderLanding()); return; }
+  if (r.screen === "feed" && r.path === "/" && !session() && !isDemo()) { swap(renderLanding()); return; }
   if (!IN_SHELL.has(r.screen)) { swap(placeholder(r)); return; }
 
   // File explorer (P5.4) — its own read (folder tree + placed works + storage);
@@ -82,6 +83,15 @@ async function renderRoute(r) {
     if (mine !== token) return;
     if (exData.needsAuth) { swap(renderSignin()); return; }
     swap(appFrame(renderRail(exData, r), renderExplorer(exData, { folderId: folder, mode: q.get("view") })));
+    return;
+  }
+
+  // Home Feed (P5.1) — friends' public posts, same card grid as the explorer.
+  if (r.screen === "feed") {
+    const feedData = await loadFeed();
+    if (mine !== token) return;
+    if (feedData.needsAuth) { swap(renderSignin()); return; }
+    swap(appFrame(renderRail(feedData, r), renderFeed(feedData)));
     return;
   }
 
