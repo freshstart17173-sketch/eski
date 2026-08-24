@@ -915,3 +915,26 @@ NEXT: comment **delete/resolve** (own comment tombstone; author may remove — `
   new comment appears without reopening — mirror realtime.js message fanout). Then the other
   card-menu backends (Download, Copy link/`share_links`, Crosspost) or **Profile** writes
   (edit-profile, avatar/banner).
+
+## 2026-08-24 — P5.13b Delete own comment (tombstone)
+IN PROGRESS: (cleared)
+DONE: a comment thread now lets you **remove your own comment**. `loadComments` returns a
+  `mine` flag (`r.user_id === session().id`); `postComment` returns `mine:true`. New
+  `deleteComment(id)` sets `deleted_at` (a tombstone, matching the schema column + the
+  message-delete pattern, so the `is null` filter drops it) — `cmt_delete`/`cmt_update` RLS
+  fence it to the comment's author (post-author removal exists in the policy but is left to a
+  later pass). In `commentRow`, a `mine` comment gets a square `.iconbtn.cdel` (trash) revealed
+  on row hover (and on keyboard focus, so it isn't mouse-only) and pushed to the right edge;
+  deleting is optimistic on success, a rejection toasts. Demo seeds one own comment on q1
+  (`dc0`, jax) so the affordance shows on open.
+  Verified: `verify-feed.mjs` `post-details` extended — exactly the `mine` rows carry `.cdel`
+  (others do not), and a delete removes one row (after → after−1). Feed/profile/explorer/
+  gallery verifies GREEN both themes, zero app console errors. Screenshotted: trash shows only
+  on the jax row, hover-revealed, names neutral.
+NEXT: comment **Realtime** (a `comments` subscription so a new comment appears without
+  reopening — mirror realtime.js message fanout; not in-sandbox verifiable). Then the other
+  card-menu backends (Download, Copy link/`share_links`, Crosspost) or **Profile** writes
+  (edit-profile: name/bio/pronouns, avatar/banner — `profiles` update is a plain client write,
+  RLS `prof_update` = self only).
+GOTCHA AO: Playwright clicks an `opacity:0` element fine (actionability checks layout box +
+  visibility/display, not opacity), so the hover-reveal `.cdel` is testable without a hover.

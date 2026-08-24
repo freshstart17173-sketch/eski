@@ -17,7 +17,7 @@ import { iconEl } from "../icons.js";
 import { navigate } from "../router.js";
 import { MediaPlayer } from "../ui.js";
 import { mediaUrl, KIND_ICON } from "../cards.js";
-import { saveToFiles, unsaveWork, isWorkSaved, loadComments, postComment } from "../data.js";
+import { saveToFiles, unsaveWork, isWorkSaved, loadComments, postComment, deleteComment } from "../data.js";
 
 let openSheet = null;   // the single live overlay (only one details pane at a time)
 
@@ -208,8 +208,13 @@ function tagsSection(w) {
 function commentsSection(ctx, w) {
   let comments = [];
   const list = el(".cmtlist");
+  // remove one of your own comments — a tombstone (data.js), optimistic on success
+  const onDelete = async (c) => {
+    try { await deleteComment(c.id); comments = comments.filter((x) => x.id !== c.id); paint(); toast({ message: "Comment deleted" }); }
+    catch (e) { toast({ message: e?.message || "Couldn’t delete the comment" }); }
+  };
   const paint = () => list.replaceChildren(
-    ...(comments.length ? comments.map(commentRow) : [el(".cmtempty", {}, ["Be the first to comment."])])
+    ...(comments.length ? comments.map((c) => commentRow(c, onDelete)) : [el(".cmtempty", {}, ["Be the first to comment."])])
   );
   paint();
   // demo returns its fixture synchronously; live reads the table. Keep any optimistic
@@ -233,14 +238,20 @@ function commentsSection(ctx, w) {
   return el(".dsec", {}, [el(".lb", {}, ["Comments"]), list, field]);
 }
 
-function commentRow(c) {
-  return el(".cmt", {}, [
+function commentRow(c, onDelete) {
+  const kids = [
     el(".av.sm", {}, [(c.name || "?").slice(0, 2).toUpperCase()]),   // no hue — public context
     el(".bd", {}, [
       el(".by", {}, [el("span.u", {}, [c.name]), el("time", {}, [c.time || ""])]),
       el(".tx", {}, [c.text || ""]),
     ]),
-  ]);
+  ];
+  // your own comment gets a delete affordance (appears on row hover). RLS is the real fence.
+  if (c.mine && onDelete) {
+    const del = el("button.iconbtn.cdel", { title: "Delete comment", "aria-label": "Delete comment", onClick: () => onDelete(c) }, [iconEl("trash", "sm")]);
+    kids.push(del);
+  }
+  return el(".cmt", {}, kids);
 }
 
 // ── helpers ───────────────────────────────────────────────────────────────────

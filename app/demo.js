@@ -265,11 +265,12 @@ export function demoFeed() {
 // Post comments demo fixture (CANON §E.8.5) — public-context, per-post threads. NO member
 // hue (public), so no colorIdx. Only a couple of posts carry a thread; the rest read empty.
 export function demoComments(workId) {
-  const c = (id, name, text, time) => ({ id, name, text, time });
+  const c = (id, name, text, time, mine = false) => ({ id, name, text, time, mine });
   const THREADS = {
     q1: [
       c("dc1", "dev", "the falling frames read so clean here — what's driving the ease?", "2h"),
       c("dc2", "mira", "seconded, the timing on frame 40 is lovely.", "1h"),
+      c("dc0", "jax", "custom cubic on the last third — glad it lands.", "40m", true),   // mine → deletable
     ],
     q2: [
       c("dc3", "lin", "the low end finally has room. bus compression?", "3h"),

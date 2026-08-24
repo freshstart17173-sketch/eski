@@ -537,6 +537,7 @@ export async function isWorkSaved(workId) {
 // SEPARATELY into a byId map — the same embed hazard the workspace hit (bug #1).
 export async function loadComments(workId) {
   if (isDemo()) return demoComments(workId);
+  const user = session();
   const { data: rows, error } = await supabase.from("comments")
     .select("id,body,user_id,created_at")
     .eq("work_id", workId).is("deleted_at", null)
@@ -548,8 +549,20 @@ export async function loadComments(workId) {
   for (const p of profs || []) byId[p.id] = p;
   return rows.map((r) => {
     const a = byId[r.user_id];
-    return { id: r.id, name: a ? (a.name || a.handle) : "unknown", text: r.body || "", time: fmtTime(r.created_at) };
+    // `mine` drives the delete affordance; the post author can also remove, but that's a
+    // less common case left to a later pass — cmt_delete is the fence either way.
+    return { id: r.id, name: a ? (a.name || a.handle) : "unknown", text: r.body || "", time: fmtTime(r.created_at), mine: !!user && r.user_id === user.id };
   });
+}
+
+// Remove your own comment — a tombstone (set deleted_at), consistent with the schema's
+// deleted_at column and the message-delete pattern, so loadComments' `is null` filter drops
+// it. cmt_delete/cmt_update RLS fence it to the comment's author (or the post author); a
+// rejected write throws for the caller to toast.
+export async function deleteComment(commentId) {
+  if (isDemo()) return;
+  const { error } = await supabase.from("comments").update({ deleted_at: new Date().toISOString() }).eq("id", commentId);
+  if (error) throw new Error(error.message || "Couldn’t delete the comment");
 }
 
 // Post a comment on a public post. RLS (`cmt_insert`) is the fence: only the author or a
@@ -559,14 +572,14 @@ export async function loadComments(workId) {
 export async function postComment(workId, body) {
   const clean = (body || "").trim();
   if (!clean) throw new Error("Write something first");
-  if (isDemo()) return { id: "local-" + Date.now(), name: "jax", text: clean, time: "now" };
+  if (isDemo()) return { id: "local-" + Date.now(), name: "jax", text: clean, time: "now", mine: true };
   const user = session();
   if (!user) throw new Error("Sign in to comment");
   const { data, error } = await supabase.from("comments")
     .insert({ work_id: workId, user_id: user.id, body: clean })
     .select("id,body,created_at").single();
   if (error) throw new Error(error.message?.includes("row-level security") ? "Only the author and their friends can comment" : (error.message || "Couldn’t post the comment"));
-  return { id: data.id, name: user.email?.split("@")[0] || "you", text: data.body || clean, time: fmtTime(data.created_at) };
+  return { id: data.id, name: user.email?.split("@")[0] || "you", text: data.body || clean, time: fmtTime(data.created_at), mine: true };
 }
 
 // The home Feed (CANON §C.5) — the friends-only portfolio grid: friends' PUBLIC

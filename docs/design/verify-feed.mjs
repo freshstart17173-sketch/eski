@@ -100,6 +100,15 @@ for (const [name, url, theme, assert] of CASES) {
     const after = await count(page, ".sheet .cmtlist .cmt");
     if (after !== nComments + 1) problems.push(`posting should append a comment (${nComments} → ${nComments + 1}), got ${after}`);
     if ((await input.inputValue()) !== "") problems.push("comment input should clear after posting");
+    // delete-own-comment (P5.13b): only your own rows carry a .cdel; deleting removes the row.
+    const delBtns = await count(page, ".sheet .cmtlist .cmt .cdel");
+    if (delBtns < 1) problems.push("your own comment should carry a delete affordance");
+    const othersDel = await page.$$eval(".sheet .cmtlist .cmt", (rows) => rows.filter((r) => !r.querySelector(".cdel")).length);
+    if (othersDel < 1) problems.push("others' comments must NOT carry a delete affordance");
+    await page.click(".sheet .cmtlist .cmt .cdel");
+    await page.waitForTimeout(150);
+    const afterDel = await count(page, ".sheet .cmtlist .cmt");
+    if (afterDel !== after - 1) problems.push(`deleting should remove one comment (${after} → ${after - 1}), got ${afterDel}`);
   }
   const appErrs = errs.filter((e) => !/Failed to load resource|net::ERR|supabase|getSession|fetch|401|403|Access-Control/i.test(e));
   if (appErrs.length) problems.push(...appErrs);

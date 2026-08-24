@@ -204,6 +204,10 @@
 .sheet .cmt .by{display:flex;align-items:baseline;gap:7px;font-size:var(--fs-xs)}
 .sheet .cmt .by time{color:var(--muted);font-size:10px}
 .sheet .cmt .tx{font-size:var(--fs-sm);color:var(--soft)}
+/* delete-own-comment: pushed to the row's right edge, revealed on hover (keyboard-focus
+   too, so it isn't mouse-only). Reuses the square .iconbtn — no new button style. */
+.sheet .cmt .cdel{margin-left:auto;flex:none;opacity:0;transition:opacity .12s}
+.sheet .cmt:hover .cdel,.sheet .cmt .cdel:focus-visible{opacity:1}
 .sheet .cmtempty{font-size:var(--fs-sm);color:var(--muted);margin-bottom:var(--s3)}
 /* footer actions — inset hairline on top, buttons share width */
 .sheet .foot{position:relative;flex:none;padding:var(--s3) var(--s4);display:flex;gap:var(--s2)}
