@@ -1124,3 +1124,50 @@ NEXT: **banner** render (a hero banner strip → wire Change banner the same way
 GOTCHA AU: the real R2 round-trip (sign + PUT) can't run in-sandbox (no egress), so the live
   photo upload is preview-verified; demo deliberately short-circuits to `URL.createObjectURL`
   so the picker + render path is still exercised offline.
+
+## 2026-08-24 — P7.1a Messages screen + Friends panel (friends fully functional)
+IN PROGRESS: (cleared)
+DONE: the **Messages screen** (route `/messages` → `dms`, was a placeholder) is real — a
+  two-pane shell: the **DM thread list** (`.dmlist`: pinned + direct, group threads show
+  stacked avatars + a mute bell, presence dots on 1:1s) and a right pane that shows either a
+  **conversation placeholder** (opening a thread → header + "live view lands in P7.2") or the
+  **Friends panel**. Friends is fully wired: `loadDMsScreen()` reads friendships (ordered pair,
+  the "other" user is whichever end isn't me) + dm_channels/dm_members, fetching profiles
+  SEPARATELY into a byId map (bug-#1 embed hazard). Panel: **All** (accepted) / **Pending**
+  (incoming + outgoing) tabs; **add by exact handle** → `add_friend` RPC (`addFriend`); an
+  incoming request has **Accept/Decline** → `respond_friend` RPC (`respondFriend`, accept →
+  friends, decline → row deleted); a friend row has **Message** → `create_dm` RPC (`createDM`,
+  toasts "P7.2" for now since the conversation view isn't built). Optimistic UI, RLS is the
+  fence. **NO member hue** (DMs/friends are outside any server). New: `app/screens/dms.js`,
+  `demoDMs()` fixture, the ported `.dmlist/.friends/.frrow/.rbtn` CSS block in content.css,
+  `main.js` dms handler, `verify-dms.mjs`.
+  Verified: `verify-dms.mjs` — list renders (4 threads, group stacked avatars, Friends pending
+  count); the friends flow (All=3, Pending=1+1, accept moves a request into All=4, add grows
+  Outgoing) all GREEN both themes, zero app console errors. Screenshotted vs the gallery.
+  profile/explorer/feed/gallery regression-checked GREEN.
+NEXT (P7.2): the **DM conversation** — open a thread → load `dm_messages` (author profiles
+  fetched separately), a composer that inserts a `dm_message` (RLS `dm_member`), and Realtime
+  on the thread. Then wire the friend **Message** button + the DM-list rows to open it (they
+  currently show the placeholder), and DM row ⋯ actions (pin/mute/hide via dm_members). Then
+  **P7.3 Notifications** (route `/notifications`, still a placeholder; schema-07 + the
+  notifications table/triggers exist). The `create_group_dm` RPC + the "New message" button
+  (currently just opens Friends) are also pending.
+GOTCHA AV: `friendships` is an ORDERED pair with `check (a_user < b_user)` and one row per
+  pair — never assume "I'm a_user". `respond_friend` takes the OTHER user's id (target_id) and
+  errors on answering your own request; the row is DELETED on decline (not a status change).
+
+## Current state (updated 2026-08-24)
+**Phase: build. Live app on `preview` through P7.1a.** This session shipped (all on
+`preview.eski.lol`, branch `preview` fast-forwarded from `claude/eski-preview-deploy-h2pg6s`,
+both at the same head): P5.9d details ⋯ menu · P5.13/13b post comments + delete · P5.10b edit
+profile · P5.15 profile search · P5.14 tags · P5.16 share links + `/shared/:token` viewer ·
+P5.17 share dialog (visibility + link mgmt) · P5.18 Download (real R2 read) · P5.19 profile
+photo upload · **P7.1a Messages + Friends**. Two honest markers remain from P5.19: **Change
+banner** (banner_key write path ready, needs a hero banner render) and rendering avatars from
+`avatar_key` on the member rail / comments / cards (only the profile hero + DM/friend rows do
+so far). Owner has done all external config (auth URL, Vercel env, R2 CORS/SMTP) — the real R2
+round-trips (upload PUT, cdn fetch) can only be exercised on `preview`, not in-sandbox.
+**Verify before committing:** `node docs/design/verify.mjs` (gallery) + the per-screen app
+verifies (`verify-{workspace,explorer,feed,profile,shared,dms,primitives,live}.mjs`); `live`
+needs real network (fails in-sandbox) and `primitives` has one known-flaky MediaPlayer
+autoplay check — neither is a regression.

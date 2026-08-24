@@ -293,6 +293,31 @@ export function demoSharedWork(token) {
   };
 }
 
+// Messages + Friends demo fixture (P7.1) — DM threads + the friends panel (accepted +
+// pending, incoming & outgoing). No member hue (DMs are outside any server).
+export function demoDMs() {
+  const u = (id, name, presence = "online") => ({ id, name, handle: name, initials: name.slice(0, 2).toUpperCase(), avatar_key: null, presence });
+  return {
+    needsAuth: false, live: false, source: "dms", me, dmUnread: 3, server: null,
+    servers: [
+      { id: "lb", name: "Late Bloom LP", initials: "LB" },
+      { id: "sp", name: "Specter", initials: "SP", mentions: 7 },
+      { id: "bs", name: "Beat swap", initials: "BS" },
+    ],
+    dms: [
+      { id: "d1", group: false, name: "mira", members: [u("mira", "mira")], pinned: true, muted: false },
+      { id: "d2", group: true, name: "sh040 crew", members: [u("mira", "mira"), u("lin", "lin"), u("sol", "sol", "idle")], pinned: false, muted: true },
+      { id: "d3", group: false, name: "dev", members: [u("dev", "dev")], pinned: false, muted: false },
+      { id: "d4", group: false, name: "tomo", members: [u("tomo", "tomo", "offline")], pinned: false, muted: false },
+    ],
+    friends: {
+      accepted: [u("dev", "dev"), u("mira", "mira"), u("rae", "rae")],
+      incoming: [u("lin", "lin")],
+      outgoing: [u("sol", "sol")],
+    },
+  };
+}
+
 // The personal "My files" demo fixture — your own Drive, distinct from any server:
 // nested save-folders, own works, "Your storage" footer, no channel column.
 function demoPersonalExplorer() {

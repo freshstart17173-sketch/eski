@@ -8,7 +8,7 @@ import { signal, effect } from "./signals.js";
 import { start, match } from "./router.js";
 import { ready, session, onChange } from "./supabase.js";
 import { icon } from "./icons.js";
-import { loadWorkspace, loadExplorer, loadFeed, loadProfile, loadSharedWork, clearWorkspaceCache, isDemo } from "./data.js";
+import { loadWorkspace, loadExplorer, loadFeed, loadProfile, loadSharedWork, loadDMsScreen, clearWorkspaceCache, isDemo } from "./data.js";
 import { teardownRealtime } from "./realtime.js";
 import { renderRail, appFrame } from "./shell.js";
 import { renderWorkspace } from "./screens/workspace.js";
@@ -19,6 +19,7 @@ import { closeDetails } from "./screens/details.js";
 import { renderSignin } from "./screens/signin.js";
 import { renderLanding } from "./screens/landing.js";
 import { renderShared } from "./screens/shared.js";
+import { renderDMs } from "./screens/dms.js";
 
 const stage = document.getElementById("stage");
 
@@ -103,6 +104,15 @@ async function renderRoute(r) {
     if (mine !== token) return;
     if (feedData.needsAuth) { swap(renderSignin()); return; }
     swap(appFrame(renderRail(feedData, r), renderFeed(feedData)));
+    return;
+  }
+
+  // Messages (P7.1) — DM thread list + the Friends panel.
+  if (r.screen === "dms") {
+    const dmData = await loadDMsScreen();
+    if (mine !== token) return;
+    if (dmData.needsAuth) { swap(renderSignin()); return; }
+    swap(appFrame(renderRail(dmData, r), renderDMs(dmData)));
     return;
   }
 

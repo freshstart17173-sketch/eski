@@ -8,7 +8,7 @@
 //                  realtime.js + workspace.js; this module does the initial reads.
 //  - signed out  → { needsAuth:true } so the shell shows a sign-in prompt.
 
-import { demoWorkspace, demoExplorer, demoFeed, demoProfile, demoComments, demoSharedWork } from "./demo.js";
+import { demoWorkspace, demoExplorer, demoFeed, demoProfile, demoComments, demoSharedWork, demoDMs } from "./demo.js";
 import { supabase } from "./supabase.js";
 import { session } from "./supabase.js";
 
@@ -783,6 +783,87 @@ export async function updateProfile({ name, handle, bio }) {
   const { error } = await supabase.from("profiles").update(vals).eq("id", user.id);
   if (error) throw new Error(/duplicate|unique|23505/i.test(error.message || "") ? "That handle is taken" : (error.message || "Couldn’t save your profile"));
   return vals;
+}
+
+// ── Messages + Friends (P7.1, CANON §C — dms/friends) ────────────────────────
+// The Messages screen: the DM thread list + the Friends panel. Friendships are an ORDERED
+// pair (a_user < b_user); the "other" user is whichever end isn't me. dm_members / profiles
+// have no FK to each other (user_id → auth.users), so profiles are fetched SEPARATELY into a
+// byId map (the bug #1 embed hazard). No member hue — DMs/friends are outside any server.
+export async function loadDMsScreen() {
+  if (isDemo()) return demoDMs();
+  const user = session();
+  if (!user) return { needsAuth: true, live: false };
+  const { servers } = await loadRail(user);
+  const me = { id: user.id, name: user.email?.split("@")[0] || "you", initials: initials(user.email || "you"), handle: user.email?.split("@")[0] || "you", colorIdx: 1 };
+
+  const { data: friRows } = await supabase.from("friendships")
+    .select("a_user,b_user,status,requested_by").or(`a_user.eq.${user.id},b_user.eq.${user.id}`);
+  const { data: myDmMem } = await supabase.from("dm_members").select("dm_channel_id,pinned,muted,hidden").eq("user_id", user.id);
+  const dmIds = (myDmMem || []).filter((m) => !m.hidden).map((m) => m.dm_channel_id);
+  let channels = [], dmMemberRows = [];
+  if (dmIds.length) {
+    const [{ data: chs }, { data: mems }] = await Promise.all([
+      supabase.from("dm_channels").select("id,is_group,name").in("id", dmIds),
+      supabase.from("dm_members").select("dm_channel_id,user_id").in("dm_channel_id", dmIds),
+    ]);
+    channels = chs || []; dmMemberRows = mems || [];
+  }
+
+  const allIds = [...new Set([
+    ...(friRows || []).map((f) => (f.a_user === user.id ? f.b_user : f.a_user)),
+    ...dmMemberRows.filter((m) => m.user_id !== user.id).map((m) => m.user_id),
+  ])];
+  const profById = {};
+  if (allIds.length) {
+    const { data: profs } = await supabase.from("profiles").select("id,handle,name,avatar_key,presence_state").in("id", allIds);
+    for (const p of profs || []) profById[p.id] = p;
+  }
+  const shapeUser = (id) => {
+    const p = profById[id];
+    const nm = p?.name || p?.handle || "user";
+    return { id, name: nm, handle: p?.handle || nm, initials: initials(nm), avatar_key: p?.avatar_key || null, presence: p?.presence_state || "offline" };
+  };
+
+  const accepted = [], incoming = [], outgoing = [];
+  for (const f of friRows || []) {
+    const u = shapeUser(f.a_user === user.id ? f.b_user : f.a_user);
+    if (f.status === "accepted") accepted.push(u);
+    else if (f.status === "pending") (f.requested_by === user.id ? outgoing : incoming).push(u);
+  }
+
+  const memByChannel = {};
+  for (const m of dmMemberRows) (memByChannel[m.dm_channel_id] ||= []).push(m.user_id);
+  const metaById = {}; for (const m of myDmMem || []) metaById[m.dm_channel_id] = m;
+  const dms = channels.map((ch) => {
+    const others = (memByChannel[ch.id] || []).filter((id) => id !== user.id).map(shapeUser);
+    const meta = metaById[ch.id] || {};
+    return { id: ch.id, group: ch.is_group, name: ch.is_group ? (ch.name || others.map((o) => o.name).join(", ")) : (others[0]?.name || "dm"), members: others, pinned: !!meta.pinned, muted: !!meta.muted };
+  });
+
+  return { needsAuth: false, live: true, source: "dms", me, servers, dmUnread: 0, server: null, dms, friends: { accepted, incoming, outgoing } };
+}
+
+// Send a friend request by exact handle (add_friend RPC; idempotent on an existing pair).
+export async function addFriend(handle) {
+  const clean = (handle || "").trim().replace(/^@/, "");
+  if (!clean) throw new Error("Enter a username");
+  if (isDemo()) return;
+  const { error } = await supabase.rpc("add_friend", { handle: clean });
+  if (error) throw new Error(/no such handle/i.test(error.message) ? "No user with that username" : /blocked/i.test(error.message) ? "You can’t add this user" : (error.message || "Couldn’t send the request"));
+}
+// Answer an incoming request (respond_friend RPC): accept → friends, decline → the row is deleted.
+export async function respondFriend(targetId, accept) {
+  if (isDemo()) return;
+  const { error } = await supabase.rpc("respond_friend", { target_id: targetId, accept });
+  if (error) throw new Error(error.message || "Couldn’t respond to the request");
+}
+// Open (or create) a 1:1 DM with a friend by handle (create_dm RPC → the dm_channels row).
+export async function createDM(handle) {
+  if (isDemo()) return null;
+  const { data, error } = await supabase.rpc("create_dm", { handle: (handle || "").trim().replace(/^@/, "") });
+  if (error) throw new Error(error.message || "Couldn’t start the conversation");
+  return data;
 }
 
 // a channel's thread (parent + replies), loaded on demand when a thread opens
