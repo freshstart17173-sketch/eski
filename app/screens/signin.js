@@ -13,7 +13,7 @@ import { signInWithOtp } from "../supabase.js";
 export function renderSignin() {
   const screen = el(".screen", { "data-screen": "auth" });
   const card = el(".authcard");
-  card.innerHTML = `<div class="wm">eski</div><p class="sub">Sign in with a magic link — no password.</p>`;
+  card.innerHTML = `<div class="wm wordmark">eski!</div><p class="sub">Sign in with a magic link — no password.</p>`;
 
   const field = Field({ icon: "mail", type: "email", placeholder: "you@email.com" });
   const btn = Button({ label: "Send magic link", variant: "primary", icon: "send" });

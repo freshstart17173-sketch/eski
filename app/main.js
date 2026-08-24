@@ -112,6 +112,6 @@ onChange((sess, event) => {
 function loading() {
   const s = document.createElement("section");
   s.className = "screen";
-  s.innerHTML = `<div class="ph" style="color:var(--muted)">eski</div>`;
+  s.innerHTML = `<div class="ph wordmark" style="color:var(--muted)">eski!</div>`;
   return s;
 }

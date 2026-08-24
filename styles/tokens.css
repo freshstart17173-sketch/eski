@@ -27,6 +27,10 @@
   /* type scale */
   --fs-mi:11px; --fs-xs:12px; --fs-sm:13px; --fs:14.5px; --fs-lg:16px; --fs-xl:20px;
   --font:'Jost','Avenir Next','Segoe UI',Arial,sans-serif;
+  /* the eski! wordmark face. Gnomon when its subset is embedded in _fonts.css
+     (see the @font-face stub there); falls back to the body face until then, so
+     nothing loads slow or breaks. One token → every wordmark switches at once. */
+  --font-wordmark:'Gnomon',var(--font);
 
   /* space, radius, motion */
   --s1:4px; --s2:8px; --s3:12px; --s4:16px; --s5:24px; --s6:40px;
