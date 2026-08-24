@@ -17,6 +17,7 @@ import { iconEl } from "../icons.js";
 import { navigate } from "../router.js";
 import { MediaPlayer } from "../ui.js";
 import { mediaUrl, KIND_ICON } from "../cards.js";
+import { saveToFiles, unsaveWork, isWorkSaved } from "../data.js";
 
 let openSheet = null;   // the single live overlay (only one details pane at a time)
 
@@ -128,10 +129,37 @@ function infoRail(w, ctx, nav) {
 
   const foot = el(".foot", {}, [
     el("button.btn.primary", { onClick: () => toast({ message: "Download (needs the R2 read env)", icon: "download" }) }, [iconEl("download", "sm"), "Download", iconEl("chev", "sm")]),
-    el("button.btn", { onClick: () => toast({ message: "Save to my files (P5.8)", icon: "save" }) }, [iconEl("save", "sm"), "Save to my files"]),
+    // Save to my files: a real saved_items pointer (§E.3), a toggle. Hidden on a personal
+    // file — it's already in your library. Own state is confirmed async on open.
+    ctx.personal ? null : saveButton(w),
   ]);
 
   return el(".dinfo", {}, [top, scroll, foot]);
+}
+
+function isDemoQS() { return new URLSearchParams(location.search).get("demo") === "1"; }
+
+// Save to my files — a toggle backed by a real `saved_items` pointer (§E.3). The label +
+// icon carry the state (Save ⇄ Saved); the current state is confirmed async after open so
+// a re-open of an already-saved file reads correctly. Demo toggles optimistically.
+function saveButton(w) {
+  const btn = el("button.btn");
+  let saved = false, busy = false;
+  const render = () => btn.replaceChildren(iconEl(saved ? "check" : "save", "sm"), saved ? "Saved to my files" : "Save to my files");
+  render();
+  btn.addEventListener("click", async () => {
+    if (busy) return;
+    busy = true;
+    const next = !saved;
+    try {
+      if (!isDemoQS()) { next ? await saveToFiles(w.id) : await unsaveWork(w.id); }
+      saved = next; render();
+      toast({ message: saved ? "Saved to your files" : "Removed from your files", icon: saved ? "check" : "save" });
+    } catch (e) { toast({ message: e?.message || "Couldn’t save" }); }
+    busy = false;
+  });
+  if (!isDemoQS()) isWorkSaved(w.id).then((s) => { if (s) { saved = true; render(); } }).catch(() => {});
+  return btn;
 }
 
 function metaRows(w, ctx) {

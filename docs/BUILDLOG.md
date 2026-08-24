@@ -737,3 +737,29 @@ GOTCHA AG: `loadTrash` doesn't fetch each work's `placement.folder_id`, so a liv
 GOTCHA AH: the server Trash view shows only **your own** trashed works (RLS `can_read_work`
   denies other members' trashed rows even to an admin). That's the safe default; an admin
   takedown is not "restorable by the admin" — only the author sees/restores it.
+
+## 2026-08-24 — P5.8b Save to my files (details pane, real saved_items write)
+IN PROGRESS: (cleared)
+DONE: wired the details-pane **Save to my files** button (was a `toast("P5.8")` stub) to a
+  **real write path** — a `saved_items` owner-copy pointer (CANON §E.3 `save_to_files`/
+  `unsave`). `saved_items` RLS (`si_all`: user_id = auth.uid()) already fences it to the
+  caller's own rows and `authenticated` holds the grants, so `data.js` gained plain client
+  writers: `saveToFiles(workId, folderId=null)` (idempotent upsert on PK user_id+work_id),
+  `unsaveWork(workId)` (delete the pointer — the work is untouched), `isWorkSaved(workId)`.
+  The button is a **toggle**: label + icon carry the state (Save ⇄ Saved to my files), the
+  current state is confirmed **async after open** so re-opening an already-saved file reads
+  right, and it's **hidden on a personal file** (already in your library). Demo toggles
+  optimistically (no network).
+  Verified: `verify-explorer.mjs` details case +Save-toggle assertions (button reads "Save
+  to my files" → click → "Saved to my files" → click → back); details-light + details-dark
+  GREEN, **17** explorer states GREEN, both themes, zero app console errors. Full gallery
+  verify GREEN.
+NEXT: the **Starred** smart-folder + quick-filter (`starred_items` + `toggle_star` — check
+  `list_migrations`; the table/RPC may not be applied). Card **right-click context menu** —
+  now that Move to…/Delete(→Trash)/Save are all real writers, a fuller menu is honest
+  (Download still waits on the R2 read env; Rename = a `works.title` update, RLS-gated like
+  delete; Copy link = a `share_links` insert / `resolve_share_link` exists). Live **Save**
+  should also target a chosen personal folder (folderId) via the same picker, not just root.
+GOTCHA AI: Save filed at personal **root** (folder_id null) for now — the details pane has
+  no folder chooser. The picker (`openMovePicker`) is server-scoped; a personal-folder
+  variant would let Save-to-a-folder reuse it.

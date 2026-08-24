@@ -133,6 +133,18 @@ async function detailsCase(theme) {
   // Size row must be last (eski-style §5)
   const lastKey = await page.$$eval(".sheet .meta .row .k", (ks) => ks[ks.length - 1]?.textContent);
   if (lastKey !== "Size") problems.push(`Size must be the last meta row, got "${lastKey}"`);
+  // Save to my files: a real toggle (demo flips optimistically) — Save ⇄ Saved
+  const saveBtn = await page.$(".sheet .foot .btn:not(.primary)");
+  if (!saveBtn) problems.push("Save to my files button missing");
+  else {
+    if (!(await saveBtn.textContent()).includes("Save to my files")) problems.push("Save button should read 'Save to my files'");
+    await saveBtn.click();
+    await page.waitForTimeout(120);
+    if (!(await saveBtn.textContent()).includes("Saved to my files")) problems.push("Save button should flip to 'Saved to my files'");
+    await saveBtn.click();
+    await page.waitForTimeout(120);
+    if (!(await saveBtn.textContent()).includes("Save to my files")) problems.push("Save button should toggle back to 'Save to my files'");
+  }
   // Esc closes
   await page.keyboard.press("Escape");
   await page.waitForTimeout(150);

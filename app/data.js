@@ -467,6 +467,31 @@ export async function loadTrash({ source = "server", serverId, membersById = {} 
   }));
 }
 
+// ── Save to my files (CANON §E.3 save_to_files / unsave) ─────────────────────
+// An owner copy pointer into the personal library: a `saved_items` row (PK user_id+
+// work_id, filed via folder_id — null = personal root). `saved_items` RLS (`si_all`)
+// already fences it to the caller's own rows, so these are plain client writes. Save is
+// idempotent (upsert); unsave removes the pointer (the work itself is untouched).
+export async function saveToFiles(workId, folderId = null) {
+  const user = session();
+  if (!user) throw new Error("Sign in to save files");
+  const { error } = await supabase.from("saved_items").upsert({ user_id: user.id, work_id: workId, folder_id: folderId }, { onConflict: "user_id,work_id" });
+  if (error) throw error;
+}
+export async function unsaveWork(workId) {
+  const user = session();
+  if (!user) throw new Error("Sign in");
+  const { error } = await supabase.from("saved_items").delete().eq("user_id", user.id).eq("work_id", workId);
+  if (error) throw error;
+}
+export async function isWorkSaved(workId) {
+  if (isDemo()) return false;
+  const user = session();
+  if (!user) return false;
+  const { data } = await supabase.from("saved_items").select("work_id").eq("user_id", user.id).eq("work_id", workId).maybeSingle();
+  return !!data;
+}
+
 // The home Feed (CANON §C.5) — the friends-only portfolio grid: friends' PUBLIC
 // posts (visibility='public' and author ∈ accepted friends), same card renderer as
 // the explorer, NO member colour (public context). The same "one component, two
