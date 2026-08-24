@@ -13,10 +13,8 @@
 
 /* ── hero ────────────────────────────────────────────────────────────────── */
 .lhero{max-width:640px;margin:0 auto;padding:var(--s6) var(--s4) var(--s5);text-align:center}
-.leyebrow{margin:0;color:var(--muted);font-size:var(--fs-xs);font-weight:600;
-  text-transform:uppercase;letter-spacing:.08em}
-.lhero h1{margin:var(--s3) 0;font-size:clamp(1.9rem,4.5vw,3rem);line-height:1.15;font-weight:700}
-.lsub{margin:0 auto;max-width:520px;color:var(--soft);font-size:var(--fs-lg);line-height:1.5}
+.lhero h1{margin:0;font-size:clamp(1.9rem,4.5vw,3rem);line-height:1.15;font-weight:700}
+.lsub{margin:var(--s4) auto 0;max-width:520px;color:var(--soft);font-size:var(--fs-lg);line-height:1.5}
 .lcta{display:flex;align-items:center;justify-content:center;gap:var(--s3);margin-top:var(--s4)}
 
 /* ── decorative preview grid (no interaction — aria-hidden) ─────────────── */
@@ -30,9 +28,8 @@
 .lmockname{color:var(--ink);font-weight:500;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .lmockby{color:var(--muted);flex:none}
 
-/* ── feature / use sections ──────────────────────────────────────────────── */
+/* ── feature grid ─────────────────────────────────────────────────────────── */
 .lsection{padding:var(--s6) var(--s4)}
-.lsection.alt{background:var(--surface)}
 .lwrap{max-width:900px;margin:0 auto}
 .lsection h2{margin:0 0 var(--s5);text-align:center;font-size:var(--fs-xl);font-weight:700}
 
@@ -42,11 +39,6 @@
   background:var(--paper1);border-radius:var(--r);color:var(--ink)}
 .lcard h3{margin:0 0 var(--s1);font-size:var(--fs-lg);font-weight:600}
 .lcard p{margin:0;color:var(--soft);font-size:var(--fs-sm);line-height:1.5}
-
-.luses{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--s4)}
-.luse{background:var(--plate);border-radius:var(--r);padding:var(--s4)}
-.luse b{font-size:var(--fs);color:var(--ink)}
-.luse p{margin:var(--s1) 0 0;color:var(--soft);font-size:var(--fs-sm);line-height:1.5}
 
 /* ── closing CTA + footer ────────────────────────────────────────────────── */
 .lclose{padding:var(--s6) var(--s4);text-align:center}
@@ -58,10 +50,10 @@
 .lfoot .wordmark{font-size:var(--fs-lg);color:var(--soft)}
 
 @media (max-width:820px){
-  .lmockgrid,.lgrid,.luses{grid-template-columns:repeat(2,1fr)}
+  .lmockgrid,.lgrid{grid-template-columns:repeat(2,1fr)}
 }
 @media (max-width:560px){
   .lnav{padding:var(--s3) var(--s4)}
-  .lmockgrid,.lgrid,.luses{grid-template-columns:1fr}
+  .lmockgrid,.lgrid{grid-template-columns:1fr}
   .lcta{flex-direction:column}
 }

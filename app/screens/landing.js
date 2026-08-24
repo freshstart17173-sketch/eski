@@ -3,33 +3,27 @@
 // still falls through to the plain magic-link prompt (screens/signin.js) — the
 // landing page owns exactly one URL, it isn't a general signed-out fallback.
 //
-// Pitches eski as a social file library (the "social file sharing" framing),
-// not the internal "servers/channels" jargon CANON uses for the builders — but
-// every claim here maps to a real CANON concept (Feed, server, File explorer,
-// comments, visibility, friends) so the copy never promises something the
-// contract doesn't back.
+// Copy describes the product only — no audience targeting ("for bands", "for
+// creatives"). The pitch is mechanical: Discord, with a real file server
+// underneath. Every claim maps to a real CANON concept (Feed, server, File
+// explorer, comments, visibility, friends) so nothing here promises something
+// the contract doesn't back.
 
 import { icon } from "../icons.js";
 
 const FEATURES = [
   { ic: "grid", title: "A feed, not a folder dump",
-    body: "Friends’ public posts show up like a feed — scroll what people are making, not a file listing." },
-  { ic: "server", title: "Servers for your crew",
+    body: "Public posts show up like a feed — scroll what's shared, not a file listing." },
+  { ic: "server", title: "Servers and channels",
     body: "Invite people into a server, split talk into channels, and keep every file that gets shared there." },
   { ic: "folder", title: "A real drive underneath",
-    body: "Nested folders and search give the work a permanent home — nothing gets lost in scrollback." },
-  { ic: "comment", title: "Feedback where the work lives",
+    body: "Nested folders and search give every file a permanent home — nothing gets lost in scrollback." },
+  { ic: "comment", title: "Comments where the file lives",
     body: "Comment on a post, or reply in the channel it was shared in — never chase a file across five threads." },
   { ic: "lock", title: "Public, server, or just you",
-    body: "Every file picks one of three audiences, labelled the same way everywhere, so you always know who’s looking." },
-  { ic: "mail", title: "Friends, not followers",
-    body: "One mutual relationship. Add a friend and their public work lands in your feed and your DMs open up." },
-];
-
-const USES = [
-  { label: "Bands", body: "Drop a rough mix in #demos and keep stems in the drive — no re-uploading a file just to get notes on it." },
-  { label: "Artists", body: "Post finished pieces to your public shelf; keep works-in-progress private until they’re ready to share." },
-  { label: "Studios", body: "One server per project — a single place for renders, feedback, and everyone who needs to see them." },
+    body: "Every file picks one of three audiences, labelled the same way everywhere, so you always know who's looking." },
+  { ic: "mail", title: "Friends and DMs",
+    body: "One mutual relationship. Add a friend and their public posts land in your feed and your DMs open up." },
 ];
 
 const MOCK = [
@@ -52,10 +46,9 @@ export function renderLanding() {
     </header>
 
     <div class="lhero">
-      <p class="leyebrow">a social file library for creative teams</p>
-      <h1>Share the work.<br>Keep every file where it belongs.</h1>
-      <p class="lsub">Post to friends like a feed. Organize a team like a drive. Talk about it in
-        channels that remember everything — without losing a version in a group chat.</p>
+      <h1>Discord, with a file server built in.</h1>
+      <p class="lsub">Chat in servers and channels. Every file shared there lands in a real, organized
+        drive — folders, search, and a feed of what's public. Comment on it, save a copy, find it again months later.</p>
       <div class="lcta">
         <a class="btn primary" href="/signin">${icon("send")}Get started</a>
         <a class="btn ghost" href="#features">See what’s inside</a>
@@ -89,19 +82,6 @@ export function renderLanding() {
       </div>
     </div>
 
-    <div class="lsection alt">
-      <div class="lwrap">
-        <h2>Built for people who make things</h2>
-        <div class="luses">
-          ${USES.map((u) => `
-            <div class="luse">
-              <b>${u.label}</b>
-              <p>${u.body}</p>
-            </div>`).join("")}
-        </div>
-      </div>
-    </div>
-
     <div class="lclose">
       <h2>Stop losing files in a group chat.</h2>
       <a class="btn primary" href="/signin">${icon("send")}Get started — it’s free</a>
@@ -109,7 +89,7 @@ export function renderLanding() {
 
     <footer class="lfoot">
       <span class="wordmark">eski!</span>
-      <span class="lfootsub">a social file library for creative teams</span>
+      <span class="lfootsub">Discord with a file server.</span>
     </footer>
   `;
   return screen;
