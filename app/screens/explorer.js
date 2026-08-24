@@ -16,7 +16,7 @@
 import { el, toast, openMenu, closeMenus, openModal } from "../ui.js";
 import { iconEl } from "../icons.js";
 import { navigate } from "../router.js";
-import { createFolder, moveToFolder, trashWorks, restoreWork, purgeWork, emptyTrash, loadTrash } from "../data.js";
+import { createFolder, moveToFolder, trashWorks, restoreWork, purgeWork, emptyTrash, loadTrash, starWork, unstarWork } from "../data.js";
 import { workCard, folderCard, mediaUrl, KIND_ICON } from "../cards.js";
 import { channelColumn } from "./workspace.js";
 import { openUpload } from "./upload.js";
@@ -85,6 +85,7 @@ export function renderExplorer(data, view = {}) {
     sort: "latest",        // latest/oldest/name/size
     dir: "desc",           // sort direction
     trash: false,           // the Trash smart-folder is open
+    starred: false,         // the Starred quick-filter is on (flat grid of starred works)
   };
   // trashed rows shown in the Trash view: seeded from the demo fixture, refreshed from
   // the DB on entering Trash in live mode, and kept in sync by the row actions.
@@ -284,8 +285,12 @@ function paint(tree, pane, data, state, rerender) {
 
   // New folder + Upload travel together as one right-aligned unit (.tbactions), so a
   // narrow pane wraps them as a pair to a second row instead of orphaning Upload.
+  // Starred quick-filter: a plain star toggle in line with the filters. When on, the pane
+  // shows a flat grid of every starred work (like a smart-folder), gold when active.
+  const starFilterBtn = el("button.iconbtn.exstar" + (state.starred ? ".on" : ""), { title: "Starred", "aria-pressed": state.starred ? "true" : "false", onClick: () => { state.starred = !state.starred; starFilterBtn.classList.toggle("on", state.starred); starFilterBtn.setAttribute("aria-pressed", state.starred ? "true" : "false"); repaintBody(); } }, [iconEl("star", "sm")]);
+
   const toolbar = el(".toolbar", {}, [
-    search, typeBtn, chanBtn, uploaderBtn, tagBtn, dateBtn, sortBtn, dirBtn,
+    search, typeBtn, chanBtn, uploaderBtn, tagBtn, dateBtn, sortBtn, dirBtn, starFilterBtn,
     el(".tbactions", {}, [
       el("button.btn.newFolderBtn", { onClick: () => newFolder(data, state, rerender, state.folderId) }, [iconEl("plus", "sm"), "New folder"]),
       el("button.btn.primary", { onClick: () => openUpload(uploadOpts) }, [iconEl("plus", "sm"), "Upload"]),
@@ -341,7 +346,10 @@ function contents(data, state, rerender, sel) {
   const openFolder = (f) => { state.folderId = f.id; state.query = ""; rerender(); };
 
   let subfolders, files;
-  if (searching) {
+  if (state.starred) {
+    subfolders = [];   // Starred is a flat grid of every starred work (no folders)
+    files = data.files.filter((w) => w.starred);
+  } else if (searching) {
     subfolders = [];   // search flattens the whole tree to matching files
     files = data.files.filter((w) => (w.title || "").toLowerCase().includes(q));
   } else {
@@ -369,6 +377,7 @@ function contents(data, state, rerender, sel) {
   });
 
   if (!subfolders.length && !files.length) {
+    if (state.starred) return emptyState("star", "No starred files", "Star a file (the ★ on its card) to keep it here.");
     return searching
       ? emptyState("search", "No results", `Nothing here matches “${state.query.trim()}”.`)
       : emptyState("folder", "This folder is empty", "Upload files or create a subfolder to fill it.");
@@ -386,9 +395,10 @@ function contents(data, state, rerender, sel) {
     sel.refresh();
   };
 
+  const onStar = (w) => toggleStar(data, state, rerender, w);
   if (state.mode === "feed") return feedView(data, state, openFile);
   if (state.mode === "list") return listView(subfolders, files, { openFile, openFolder });
-  return gridView(subfolders, files, { openFile, openFolder, onCardClick, showWho: data.source !== "personal" });
+  return gridView(subfolders, files, { openFile, openFolder, onCardClick, onStar, showWho: data.source !== "personal" });
 }
 
 // Feed view (§C.6): flatten the current folder's whole SUBTREE to previewable works
@@ -431,11 +441,11 @@ function feedMedia(w) {
   return el(".dtype", {}, [icon, el("span.ext", {}, [(w.file_ext || "").toUpperCase()])]);
 }
 
-function gridView(subfolders, files, { openFile, openFolder, onCardClick, showWho }) {
+function gridView(subfolders, files, { openFile, openFolder, onCardClick, onStar, showWho }) {
   const grid = el(".masonry.even");
   for (const f of subfolders) grid.append(folderCard(f, { onOpen: openFolder }));
   files.forEach((w, i) => {
-    const card = workCard(w, { selectable: true, showWho });
+    const card = workCard(w, { selectable: true, showWho, starred: !!w.starred, onStar });
     card.dataset.id = w.id;
     card.addEventListener("click", (e) => onCardClick(w, i, e));
     card.addEventListener("dblclick", (e) => { e.preventDefault(); openFile(w); });
@@ -764,3 +774,22 @@ function emptyNow(data, rerender) {
     data._trash = []; rerender(); toast({ message: "Trash emptied" });
   }).catch((e) => toast({ message: e?.message || "Couldn’t empty Trash" }));
 }
+
+// ── Star (CANON §C.6 / §E.3) ─────────────────────────────────────────────────
+// Toggle a work's star — a real starred_items write (demo optimistic), reflected on the
+// card IN PLACE so it doesn't clear the selection. In the Starred filter view, unstarring
+// drops the card, so rerender there to keep the flat grid (+ empty state) correct.
+function toggleStar(data, state, rerender, w) {
+  const next = !w.starred;
+  (isDemoQS() ? Promise.resolve() : (next ? starWork(w.id) : unstarWork(w.id))).then(() => {
+    w.starred = next;
+    if (state.starred && !next) { rerender(); return; }
+    const card = document.querySelector(`.card[data-id="${cssEscape(w.id)}"]`);
+    if (card) {
+      card.classList.toggle("starred", next);
+      const sb = card.querySelector('.cardacts [data-act="star"]');
+      if (sb) { sb.classList.toggle("starred", next); sb.title = next ? "Unstar" : "Star"; }
+    }
+  }).catch((e) => toast({ message: e?.message || "Couldn’t update star" }));
+}
+function cssEscape(s) { return (window.CSS && CSS.escape) ? CSS.escape(s) : String(s).replace(/["\\]/g, "\\$&"); }

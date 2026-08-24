@@ -12,6 +12,9 @@
   --ink:#131313; --soft:#363636; --muted:#5C5C5C;
   --line:#CFCFCF; --line2:#B0B0B0;
   --on-ink:#FCFCFC; --tagbg:#DCDCDC; --danger:#C63A28; --railbg:#E4E4E4;
+  /* the one sanctioned non-mono accent: a gold star (starred files). Reads on both
+     themes, so it is defined once here and not swapped in the dark block. */
+  --star:#E0A92A;
 
   /* Member identity hues (server-scoped; never on public profile/Feed).
      30 perceptually-even hues — baked from the gallery's authoritative OKLCH

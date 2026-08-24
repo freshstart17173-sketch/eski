@@ -57,17 +57,21 @@ function mediaCell(work) {
 // `hue` (default true) applies the server member colour to the uploader chip. The
 // Feed and public profile pass hue:false — member colour is server-scoped and must
 // render nowhere public (CANON design rule) — so the author shows as plain text.
-export function workCard(work, { onOpen, selectable = false, actions = [], showWho = true, hue = true } = {}) {
+export function workCard(work, { onOpen, selectable = false, actions = [], showWho = true, hue = true, starred = false, onStar } = {}) {
   const media = mediaCell(work);
   if (selectable) media.prepend(el("span.cardsel", {}, [iconEl("check")]));
-  if (actions.length) {
-    const acts = el(".cardacts", {}, actions.map((a) => {
-      const b = el("button", { title: a.title, "data-act": a.act, onClick: (e) => { e.stopPropagation(); a.onClick?.(work); } }, [iconEl(a.icon)]);
-      return b;
-    }));
-    media.append(acts);
+  // starred: a persistent gold badge (CSS shows it via .card.starred) + a star hover
+  // action that toggles it. onStar is the real writer; without it neither renders.
+  if (onStar) media.prepend(el("span.cardstar", { title: "Starred" }, [iconEl("star")]));
+  const acts = onStar
+    ? [{ act: "star", icon: "star", title: starred ? "Unstar" : "Star", cls: starred ? "starred" : "", onClick: onStar }, ...actions]
+    : actions;
+  if (acts.length) {
+    const bar = el(".cardacts", {}, acts.map((a) =>
+      el("button" + (a.cls ? "." + a.cls : ""), { title: a.title, "data-act": a.act, onClick: (e) => { e.stopPropagation(); a.onClick?.(work); } }, [iconEl(a.icon)])));
+    media.append(bar);
   }
-  const card = el("button.card", { "data-open-details": true, onClick: () => onOpen?.(work) }, [media, el(".title", {}, [work.title || work.name || "untitled"])]);
+  const card = el("button.card" + (starred ? ".starred" : ""), { "data-open-details": true, onClick: () => onOpen?.(work) }, [media, el(".title", {}, [work.title || work.name || "untitled"])]);
   if (showWho && work.who) {
     const who = el(".who");
     if (hue) {

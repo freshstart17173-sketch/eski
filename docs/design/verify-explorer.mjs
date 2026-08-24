@@ -337,6 +337,53 @@ await detailsCase("dark");
   await ctx.close();
 }
 
+// Starred — the seeded star badge, the quick-filter flat grid, and starring a card.
+{
+  const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  const page = await ctx.newPage();
+  const errs = [];
+  page.on("console", (m) => { if (m.type() === "error" || m.type() === "warning") errs.push(`[${m.type()}] ${m.text()}`); });
+  page.on("pageerror", (e) => errs.push(`[pageerror] ${e.message}`));
+  await page.goto(`http://localhost:${PORT}/s/lb/files?demo=1&folder=beats`, { waitUntil: "networkidle" }).catch(() => {});
+  await page.waitForTimeout(300);
+  const problems = [];
+  const grid = '.exview[data-exview="grid"] .card:not(.foldercard)';
+  // beats has one seeded starred file (f3) — its card shows the gold badge
+  if ((await count(page, ".card.starred")) !== 1) problems.push(`beats should show 1 starred card, got ${await count(page, ".card.starred")}`);
+  if (!(await $(page, ".card.starred .cardstar"))) problems.push("starred card should show the persistent star badge");
+  // the Starred quick-filter → flat grid of all starred works (f3 + f5 = 2)
+  await page.click(".toolbar .iconbtn.exstar");
+  await page.waitForTimeout(150);
+  if (!(await page.$eval(".toolbar .iconbtn.exstar", (b) => b.classList.contains("on")))) problems.push("Starred toggle should be active (.on)");
+  if ((await count(page, grid)) !== 2) problems.push(`Starred grid should hold 2 starred works, got ${await count(page, grid)}`);
+  if ((await count(page, ".card.starred")) !== 2) problems.push("both cards in the Starred grid should be starred");
+  // turn the filter off → back to the folder
+  await page.click(".toolbar .iconbtn.exstar");
+  await page.waitForTimeout(150);
+  if (await page.$eval(".toolbar .iconbtn.exstar", (b) => b.classList.contains("on"))) problems.push("Starred toggle should turn off");
+  // star a not-yet-starred card via its hover action → beats now shows 2 starred
+  const first = await page.$(grid);
+  await first.hover();
+  await page.waitForTimeout(80);
+  const starAct = await first.$('.cardacts [data-act="star"]');
+  if (!starAct) problems.push("card should carry a star hover action");
+  else {
+    await starAct.click();
+    await page.waitForTimeout(150);
+    if ((await count(page, ".card.starred")) !== 2) problems.push(`starring should raise beats' starred count to 2, got ${await count(page, ".card.starred")}`);
+    // unstar it back
+    await first.hover();
+    await starAct.click();
+    await page.waitForTimeout(150);
+    if ((await count(page, ".card.starred")) !== 1) problems.push("unstarring should return beats to 1 starred");
+  }
+  const appErrs = errs.filter((e) => !/Failed to load resource|net::ERR|supabase|getSession|fetch|401|403|Access-Control/i.test(e));
+  if (appErrs.length) problems.push(...appErrs);
+  if (problems.length) { fails++; console.log("✗ starred"); problems.forEach((p) => console.log("    " + p)); }
+  else console.log("✓ starred");
+  await ctx.close();
+}
+
 // Trash — Delete→Trash from a folder, then the Trash view: retention notice, days-left
 // (one near-expiry warn), Restore, Delete forever, Empty. Demo runs optimistically; the
 // real path is the works.deleted_at writes / hard delete in §E.3.

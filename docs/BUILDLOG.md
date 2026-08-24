@@ -763,3 +763,35 @@ NEXT: the **Starred** smart-folder + quick-filter (`starred_items` + `toggle_sta
 GOTCHA AI: Save filed at personal **root** (folder_id null) for now — the details pane has
   no folder chooser. The picker (`openMovePicker`) is server-scoped; a personal-folder
   variant would let Save-to-a-folder reuse it.
+
+## 2026-08-24 — P5.9 Starred (card star + gold badge + quick-filter · real writes)
+IN PROGRESS: (cleared)
+DONE: the **Starred** feature end-to-end (CANON §C.6/§E.3, gallery #43/B20) — **no new
+  migration**. Star/unstar are plain client writes: `starred_items` (PK user_id+work_id) has
+  owner-only RLS (`star_all`) and the `authenticated` CRUD grant, so `data.js` gained
+  `starWork` (idempotent upsert) + `unstarWork`; both explorer loaders now fetch the user's
+  starred set (one extra `starred_items` select alongside placements/tags) and stamp
+  `w.starred`. In `cards.js` `workCard` grew a `starred`/`onStar` pair: a persistent **gold
+  star badge** (`.cardstar`, shown via `.card.starred`, hidden on hover) + a **star hover
+  action** (gold + filled when on) as the card's first `.cardacts` button — no stub
+  download/link/more added (those wait on the R2 read env / share links). Added the one
+  sanctioned non-mono token **`--star:#E0A92A`** (defined once, reads on both themes) and the
+  badge/action/quick-filter CSS. In `explorer.js`: `toggleStar` writes then updates the card
+  **in place** (keeps the selection; rerenders only when unstarring inside the filter view);
+  the **Starred quick-filter** (`.iconbtn.exstar`, gold when active) in line with the filters
+  flattens the pane to a grid of every starred work (like a smart-folder) with its own "No
+  starred files" empty state. Demo seeds 2 starred (f3/f5) + toggles optimistically.
+  Verified: `verify-explorer.mjs` +`starred` case (seeded badge; quick-filter → 2-work flat
+  grid, toggle .on; star a card via its hover action → count 1→2 → unstar → 1); **18**
+  explorer states GREEN, both themes, zero app console errors. Starred grid screenshot
+  eyeballed light+dark — gold badge + active gold toggle, everything else mono. Full gallery
+  verify GREEN.
+NEXT: the card **right-click / ⋯ context menu** — Star (done), Move to…, Delete (→Trash),
+  Save to my files are all real writers now, so a fuller menu is honest (Download waits on
+  the R2 read env; Rename = a `works.title` update RLS-gated like delete; Copy link = a
+  `share_links` insert, `resolve_share_link` exists). Also: unstar-from-details, and the
+  personal-mount Save-to-a-folder chooser (GOTCHA AI).
+GOTCHA AJ: the star hover action lives in `.cardacts` (display:none until `.card:hover`),
+  so a headless click must `hover()` the card first. The badge + action share the top-left
+  corner with `.cardsel` (selection check) as in the gallery — a starred+selected card
+  overlaps there by design (LAW); revisit only if it reads badly in real use.

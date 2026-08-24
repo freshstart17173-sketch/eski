@@ -131,6 +131,16 @@
 .cardacts button:hover{background:rgba(20,20,20,.85)}
 .cardacts button:active{background:#fff;color:#131313}
 .cardacts .ic{width:15px;height:15px}
+/* #43 starred: a persistent gold star badge on the media (top-left); on hover the
+   hover-action star takes over. The starred hover-action star reads gold + filled. */
+.cardstar{position:absolute;top:7px;left:7px;z-index:2;color:var(--star);display:none;filter:drop-shadow(0 1px 2px rgba(0,0,0,.45))}
+.cardstar .ic{width:17px;height:17px}
+.card.starred .cardstar{display:block}
+.card.starred:hover .cardstar{display:none}
+.cardacts button.starred{color:var(--star)}
+.cardacts button.starred .ic{fill:currentColor}
+/* the Starred quick-filter toggle (in line with the filters): gold when active */
+.iconbtn.exstar.on{color:var(--star);background:var(--plate)}
 .card .media img.shot{object-fit:cover}
 .who .uchip{margin-right:2px}
 

@@ -259,13 +259,16 @@ export async function loadExplorer({ serverId, folderId, source = "server" } = {
   const workIds = works.map((w) => w.id);
   const placeById = {};
   const tagsByWork = {};
+  const starred = new Set();
   if (workIds.length) {
-    const [{ data: plRows }, { data: tagRows }] = await Promise.all([
+    const [{ data: plRows }, { data: tagRows }, { data: starRows }] = await Promise.all([
       supabase.from("placement").select("work_id,folder_id,channel_id").eq("surface", "server").eq("surface_id", sid).in("work_id", workIds),
       supabase.from("content_tags").select("work_id,tag").in("work_id", workIds),
+      supabase.from("starred_items").select("work_id").eq("user_id", user.id).in("work_id", workIds),
     ]);
     for (const p of plRows || []) placeById[p.work_id] = p;   // one server placement per work
     for (const t of tagRows || []) (tagsByWork[t.work_id] ||= []).push(t.tag);
+    for (const s of starRows || []) starred.add(s.work_id);
   }
 
   // per-folder file counts (all folders, for the tree tiles); root = null
@@ -279,7 +282,7 @@ export async function loadExplorer({ serverId, folderId, source = "server" } = {
     count: countByFolder[f.id] || 0,
   }));
 
-  const files = works.map((w) => shapeWork(w, placeById[w.id], membersById, chanName, tagsByWork[w.id] || []));
+  const files = works.map((w) => { const f = shapeWork(w, placeById[w.id], membersById, chanName, tagsByWork[w.id] || []); f.starred = starred.has(w.id); return f; });
 
   const usedBytes = Number(meterRows?.bytes_used || 0);
   const capGb = SERVER_BASE_GB + Number(balRows?.purchased_gb || 0);
@@ -318,14 +321,16 @@ async function loadPersonalExplorer(user, folderId) {
   const workIds = works.map((w) => w.id);
   // location + tags: saved_items.folder_id files a work into a personal folder
   // (unfiled works — e.g. a straight personal upload — sit at root).
-  const savedFolderByWork = {}, tagsByWork = {};
+  const savedFolderByWork = {}, tagsByWork = {}, starred = new Set();
   if (workIds.length) {
-    const [{ data: savedRows }, { data: tagRows }] = await Promise.all([
+    const [{ data: savedRows }, { data: tagRows }, { data: starRows }] = await Promise.all([
       supabase.from("saved_items").select("work_id,folder_id").eq("user_id", user.id).in("work_id", workIds),
       supabase.from("content_tags").select("work_id,tag").in("work_id", workIds),
+      supabase.from("starred_items").select("work_id").eq("user_id", user.id).in("work_id", workIds),
     ]);
     for (const s of savedRows || []) savedFolderByWork[s.work_id] = s.folder_id;
     for (const t of tagRows || []) (tagsByWork[t.work_id] ||= []).push(t.tag);
+    for (const s of starRows || []) starred.add(s.work_id);
   }
 
   const countByFolder = {};
@@ -342,7 +347,7 @@ async function loadPersonalExplorer(user, folderId) {
     id: w.id, title: w.title, name: w.title,
     kind: w.kind, file_ext: w.file_ext, blob_sha: w.blob_sha, bytes: w.bytes,
     hidden: !!w.hidden, created_at: w.created_at, tags: tagsByWork[w.id] || [],
-    folderId: savedFolderByWork[w.id] || null,
+    folderId: savedFolderByWork[w.id] || null, starred: starred.has(w.id),
     channelName: null, who: null,   // personal files have no server context
   }));
 
@@ -465,6 +470,22 @@ export async function loadTrash({ source = "server", serverId, membersById = {} 
     blob_sha: w.blob_sha, bytes: w.bytes, created_at: w.created_at, deletedAt: w.deleted_at,
     who: source === "personal" ? null : (membersById[w.author_id] ? { name: membersById[w.author_id].name } : null),
   }));
+}
+
+// ── Star (CANON §C.6 / §E.3) ─────────────────────────────────────────────────
+// A per-user star on a work — `starred_items` (PK user_id+work_id), owner-only RLS
+// (`star_all`), granted to authenticated. So star/unstar are plain client writes.
+export async function starWork(workId) {
+  const user = session();
+  if (!user) throw new Error("Sign in to star files");
+  const { error } = await supabase.from("starred_items").upsert({ user_id: user.id, work_id: workId }, { onConflict: "user_id,work_id" });
+  if (error) throw error;
+}
+export async function unstarWork(workId) {
+  const user = session();
+  if (!user) throw new Error("Sign in");
+  const { error } = await supabase.from("starred_items").delete().eq("user_id", user.id).eq("work_id", workId);
+  if (error) throw error;
 }
 
 // ── Save to my files (CANON §E.3 save_to_files / unsave) ─────────────────────
