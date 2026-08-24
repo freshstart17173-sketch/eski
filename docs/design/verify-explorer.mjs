@@ -190,6 +190,39 @@ async function detailsCase(theme) {
     await page.waitForTimeout(80);
   }
 
+  // Tags (P5.14) — an editable explorer file shows the add "+" and removable chips; adding
+  // via the inline input appends a chip, removing via the chip × drops one (demo-optimistic).
+  const tagAdd = await page.$(".sheet .dsec .chips .addtag");
+  const tagsBefore = await count(page, ".sheet .dsec .chips .tag");
+  if (!tagAdd) problems.push("an editable file should show the add-tag +");
+  else if (tagsBefore < 1) problems.push("the demo file should carry tags to test removal");
+  else {
+    await tagAdd.click();
+    await page.waitForTimeout(100);
+    const tagInput = await page.$(".sheet .dsec .chips .field input");
+    if (!tagInput) problems.push("add-tag should open an inline input");
+    else {
+      await tagInput.fill("newtag");
+      await tagInput.press("Enter");
+      await page.waitForTimeout(150);
+      const tagsAfter = await count(page, ".sheet .dsec .chips .tag");
+      if (tagsAfter !== tagsBefore + 1) problems.push(`adding a tag should append one chip (${tagsBefore} → ${tagsBefore + 1}), got ${tagsAfter}`);
+      if (await $(page, ".sheet .dsec .chips .field input")) problems.push("the tag input should close after adding");
+    }
+    // remove the first tag — its × is hover-revealed (display:none until :hover), so hover
+    // the chip first, then click the ×.
+    const firstTag = await page.$(".sheet .dsec .chips .tag.rm");
+    if (!firstTag) problems.push("editable tags should be removable (.tag.rm)");
+    else {
+      await firstTag.hover();
+      await page.waitForTimeout(80);
+      await (await firstTag.$(".x")).click();
+      await page.waitForTimeout(150);
+      const tagsAfterRm = await count(page, ".sheet .dsec .chips .tag");
+      if (tagsAfterRm !== tagsBefore) problems.push(`removing a tag should drop one chip (back to ${tagsBefore}), got ${tagsAfterRm}`);
+    }
+  }
+
   // Esc closes
   await page.keyboard.press("Escape");
   await page.waitForTimeout(150);

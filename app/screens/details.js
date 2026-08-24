@@ -17,7 +17,7 @@ import { iconEl } from "../icons.js";
 import { navigate } from "../router.js";
 import { MediaPlayer } from "../ui.js";
 import { mediaUrl, KIND_ICON } from "../cards.js";
-import { saveToFiles, unsaveWork, isWorkSaved, loadComments, postComment, deleteComment } from "../data.js";
+import { saveToFiles, unsaveWork, isWorkSaved, loadComments, postComment, deleteComment, addTag, removeTag } from "../data.js";
 
 let openSheet = null;   // the single live overlay (only one details pane at a time)
 
@@ -129,7 +129,9 @@ function infoRail(w, ctx, nav) {
   const scroll = el(".scroll", {}, [
     el("h2", {}, [w.title || w.name || "untitled"]),
     metaRows(w, ctx),
-    (w.tags && w.tags.length) ? tagsSection(w) : null,
+    // tags: shown when the work carries any, OR when it's editable (an explorer file, which
+    // is the same signal that gives it the ⋯ edit menu) so the first tag can be added.
+    (ctx.menuItemsFor || (w.tags && w.tags.length)) ? tagsSection(w, ctx) : null,
     // server file = NO discussion section (chat handles replies); post = comments
     ctx.isPost ? commentsSection(ctx, w) : null,
   ]);
@@ -195,9 +197,47 @@ function metaRow(k, v) {
   return el(".row", {}, [el("span.k", {}, [k]), el("span.v", {}, [v])]);
 }
 
-function tagsSection(w) {
-  const chips = el(".chips", {}, w.tags.map((t) => Tag({ label: t })));
-  chips.append(el("button.addtag", { title: "Add tag", onClick: () => toast({ message: "Add tag (P5.9)" }) }, [iconEl("plus", "sm")]));
+// Tags — read-only on a non-editable post, add/remove on an editable explorer file (gated by
+// ctx.menuItemsFor, the same signal as the ⋯ edit menu). Writes go to content_tags; RLS is
+// the real fence. The "+" swaps to an inline input (Enter adds, Esc cancels); each chip on an
+// editable work carries a remove ×. Optimistic: the local w.tags is patched then repainted.
+function tagsSection(w, ctx = {}) {
+  const editable = !!ctx.menuItemsFor;
+  if (!w.tags) w.tags = [];
+  const chips = el(".chips");
+
+  async function add(raw) {
+    const clean = (raw || "").trim().replace(/^#/, "").toLowerCase();
+    if (!clean) return;
+    if (w.tags.includes(clean)) { toast({ message: "Already tagged" }); paint(); return; }
+    try { if (!isDemoQS()) await addTag(w.id, clean); w.tags.push(clean); paint(); }
+    catch (e) { toast({ message: e?.message || "Couldn’t add the tag" }); paint(); }
+  }
+  async function remove(t) {
+    try { if (!isDemoQS()) await removeTag(w.id, t); w.tags = w.tags.filter((x) => x !== t); paint(); }
+    catch (e) { toast({ message: e?.message || "Couldn’t remove the tag" }); }
+  }
+  function openInput() {
+    const input = el("input", { placeholder: "tag", "aria-label": "New tag" });
+    const holder = el(".field", { style: "max-width:130px;height:26px" }, [input]);
+    // `closed` guards the double-fire: committing on Enter repaints (detaching the input),
+    // which fires blur — without the guard that would re-add the same value.
+    let closed = false;
+    const done = (v) => { if (closed) return; closed = true; (v || "").trim() ? add(v) : paint(); };
+    chips.replaceChildren(...w.tags.map(chip), holder);
+    input.focus();
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") { e.preventDefault(); done(input.value); }
+      else if (e.key === "Escape") { e.preventDefault(); closed = true; paint(); }
+    });
+    input.addEventListener("blur", () => done(input.value));
+  }
+  function chip(t) { return Tag({ label: t, removable: editable, onRemove: () => remove(t) }); }
+  function paint() {
+    chips.replaceChildren(...w.tags.map(chip));
+    if (editable) chips.append(el("button.addtag", { title: "Add tag", "aria-label": "Add tag", onClick: openInput }, [iconEl("plus", "sm")]));
+  }
+  paint();
   return el(".dsec", {}, [el(".lb", {}, ["Tags"]), chips]);
 }
 

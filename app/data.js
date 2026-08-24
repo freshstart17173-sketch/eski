@@ -565,6 +565,26 @@ export async function deleteComment(commentId) {
   if (error) throw new Error(error.message || "Couldn’t delete the comment");
 }
 
+// ── Tags (CANON §E.10, content_tags) ─────────────────────────────────────────
+// A work's tags, `content_tags(work_id, tag)` with `unique(work_id,tag)`. `ct_write` RLS
+// fences writes to who can write the work (author/admin) or an accepted collaborator, so
+// these are plain client writes. Tags are normalised (trim, drop a leading #, lowercase) so
+// "Bridge" and "bridge" are the same tag; a duplicate insert is a no-op success (idempotent).
+export async function addTag(workId, tag) {
+  const clean = (tag || "").trim().replace(/^#/, "").toLowerCase();
+  if (!clean) throw new Error("A tag can’t be empty");
+  if (clean.length > 40) throw new Error("That tag is too long");
+  if (isDemo()) return clean;
+  const { error } = await supabase.from("content_tags").insert({ work_id: workId, tag: clean });
+  if (error && !/duplicate|unique|23505/i.test(error.message || "")) throw new Error(error.message || "Couldn’t add the tag");
+  return clean;
+}
+export async function removeTag(workId, tag) {
+  if (isDemo()) return;
+  const { error } = await supabase.from("content_tags").delete().eq("work_id", workId).eq("tag", tag);
+  if (error) throw new Error(error.message || "Couldn’t remove the tag");
+}
+
 // Post a comment on a public post. RLS (`cmt_insert`) is the fence: only the author or a
 // friend of the author may insert — a stranger's write is rejected by Postgres, surfaced
 // here as a thrown error the caller turns into a toast (UI is only the signpost). Returns

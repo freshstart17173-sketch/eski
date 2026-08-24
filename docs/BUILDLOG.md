@@ -986,3 +986,32 @@ NEXT: **user settings** (the profile Settings tab, still `toast("P9")`) is the l
   gated (avatar/banner, Download, upload-dependent Copy link) or not in-sandbox verifiable
   (comment Realtime). Natural next phase: **P7** (DMs · Friends · Notifications) or the P9
   utility screens (sign-in, create/join, 404, quick-switcher).
+
+## 2026-08-24 — P5.14 Add / remove tags (+ menu-Escape scoping fix)
+IN PROGRESS: (cleared)
+DONE: the details-pane **Tags** are now editable (the "+" was a `toast("P5.9")` stub). New
+  `addTag(workId,tag)` / `removeTag(workId,tag)` in data.js write `content_tags` (unique
+  (work_id,tag)); tags are normalised (trim, drop a leading #, lowercase) so "Bridge" and
+  "bridge" collapse, and a duplicate insert is an idempotent no-op success. `ct_write` RLS is
+  the fence (author/admin or accepted collaborator). `tagsSection(w,ctx)` now renders when the
+  work is **editable** (`ctx.menuItemsFor` — the same signal that gives an explorer file its ⋯
+  menu) OR carries tags, so the first tag can be added to a tagless file; a public post stays
+  read-only. The "+" swaps to an inline `.field` input (Enter adds, Esc cancels, blur commits
+  non-empty), each editable chip carries the `Tag({removable})` × (hover-revealed), and writes
+  are optimistic on the local `w.tags` then repainted.
+  **Bug fixed en route:** `openMenu`'s Escape now `preventDefault()+stopPropagation()`s, so
+  closing a menu no longer bubbles Escape to a parent surface's own handler — previously
+  Escape inside the details-pane ⋯ menu closed the menu AND the whole sheet. (Flagged as a
+  wart in P5.9d GOTCHA AK; now actually fixed. The primitives "Menu: Esc closes" case still
+  passes — the menu still closes, it just doesn't leak the key.)
+  Verified: `verify-explorer.mjs` `details-{light,dark}` extended — the editable file shows the
+  add-tag +, opening it reveals the inline input, Enter appends a chip (3→4) and closes the
+  input, and removing via a hover-revealed × drops it back to 3. 18 explorer cases GREEN; feed/
+  profile/workspace/primitives(Menu)/gallery GREEN both themes, zero app console errors. Tag
+  editor screenshotted (tags as coloured bold text, hover ×, inline add input).
+NEXT: **share_links "Copy link"** needs the shared-view route (`/shared/:token` +
+  `resolve_share_link`) built alongside it — a self-contained next feature (gallery #40). Then
+  **Download**/avatar-banner upload (R2 env now set per owner — wire the signer path, verify on
+  preview), or **P7** (DMs · Friends · Notifications).
+GOTCHA AQ: `.tag .x` is `display:none` until `.tag.rm:hover` — Playwright can't click a
+  zero-box element cold, so a test must `.hover()` the chip first, then click the ×.

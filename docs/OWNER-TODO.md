@@ -4,8 +4,12 @@ Your action items (the things Claude can't do — external dashboards + accounts
 snapshot of where the build is. Claude tracks the *code* build in
 [`BUILDLOG.md`](BUILDLOG.md); this file is **your** list.
 
-_Last updated: 2026-08-23 (after P4 UI — shell + Workspace; `preview` fast-forwarded to
-the P4 UI commit)._
+_Last updated: 2026-08-24 (P5 content on `preview` through P5.15). **Owner confirmed
+(2026-08-24) the external config below is DONE** — Supabase Auth URL config + SMTP, the
+Vercel env vars, and the R2 CORS paste. Sign-in is built (`app/screens/signin.js`, wired in
+`main.js`) and the P4.10 live spine (sign-in, live send/receive, presence) was confirmed on
+`preview`. The ⚠️/🟠 blocks below are kept for history; treat their checkboxes as ticked
+unless a live test says otherwise._
 
 ---
 

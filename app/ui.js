@@ -134,7 +134,9 @@ export function openMenu(anchor, items = []) {
   let idx = -1;
   function move(d) { idx = (idx + d + rows.length) % rows.length; rows[idx]?.focus(); }
   function onKey(e) {
-    if (e.key === "Escape") { closeMenus(); anchor.focus?.(); }
+    // Escape closes ONLY the menu — stop it bubbling to a parent surface's own Escape
+    // handler (e.g. the details-pane sheet), which would otherwise close both at once.
+    if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); closeMenus(); anchor.focus?.(); }
     else if (e.key === "ArrowDown") { e.preventDefault(); move(1); }
     else if (e.key === "ArrowUp") { e.preventDefault(); move(-1); }
   }
