@@ -141,10 +141,10 @@ export function demoWorkspace() {
 // identically from either source. Folders nest (beats › drums); files carry their
 // `folderId` (null = server root) and the member hue via `who.colorIdx`.
 export function demoExplorer() {
-  const W = (id, title, kind, ext, bytes, who, folderId, channelName) => ({
+  const W = (id, title, kind, ext, bytes, who, folderId, channelName, tags = []) => ({
     id, title, name: title, kind, file_ext: ext, blob_sha: null, bytes,
     who: { name: who, colorIdx: P[who].colorIdx }, channelName, folderId,
-    created_at: "2026-08-15T12:00:00Z", hidden: false,
+    created_at: "2026-08-15T12:00:00Z", hidden: false, tags,
   });
   return {
     needsAuth: false, live: false,
@@ -175,13 +175,13 @@ export function demoExplorer() {
       { id: "stems", name: "stems and sessions", parentId: null, archived: false, locked: true, count: 1 },
     ],
     files: [
-      W("f1", "late_bloom_beat.flp", "other", "flp", 8.4e6, "dev", "beats", "beats"),
-      W("f2", "bridge_scratch_rae.wav", "audio", "wav", 18e6, "rae", "beats", "beats"),
-      W("f3", "ref_drums.png", "image", "png", 2.1e6, "rae", "beats", "beats"),
-      W("f4", "bloom_master.als", "other", "als", 36e6, "jax", "beats", "beats"),
-      W("f5", "moodboard.png", "image", "png", 3.3e6, "nel", "references", "references"),
-      W("f6", "stems_sh040.zip", "other", "zip", 48e6, "tomo", "stems", "stems and sessions"),
-      W("f7", "session_notes.md", "text", "md", 4200, "jax", null, null),
+      W("f1", "late_bloom_beat.flp", "other", "flp", 8.4e6, "dev", "beats", "beats", ["drums", "142bpm", "bridge"]),
+      W("f2", "bridge_scratch_rae.wav", "audio", "wav", 18e6, "rae", "beats", "beats", ["acapella"]),
+      W("f3", "ref_drums.png", "image", "png", 2.1e6, "rae", "beats", "beats", ["reference"]),
+      W("f4", "bloom_master.als", "other", "als", 36e6, "jax", "beats", "beats", ["ableton", "master"]),
+      W("f5", "moodboard.png", "image", "png", 3.3e6, "nel", "references", "references", ["cover", "wip"]),
+      W("f6", "stems_sh040.zip", "other", "zip", 48e6, "tomo", "stems", "stems and sessions", ["stems"]),
+      W("f7", "session_notes.md", "text", "md", 4200, "jax", null, null, []),
     ],
     currentFolderId: null,
     storage: { usedBytes: 74 * 1024 ** 3, capGb: 120, capBytes: 120 * 1024 ** 3, status: "active", overCap: false },

@@ -209,12 +209,12 @@ const SERVER_BASE_GB = 5;   // free baseline before purchased_gb (CANON §C.19)
 const GB = 1024 ** 3;
 
 // a raw works row + its placement/author → the card shape cards.js renders
-function shapeWork(w, place, membersById, chanName) {
+function shapeWork(w, place, membersById, chanName, tags = []) {
   const a = membersById[w.author_id];
   return {
     id: w.id, title: w.title, name: w.title,
     kind: w.kind, file_ext: w.file_ext, blob_sha: w.blob_sha, bytes: w.bytes,
-    hidden: !!w.hidden, created_at: w.created_at,
+    hidden: !!w.hidden, created_at: w.created_at, tags,
     folderId: place?.folder_id || null,
     channelName: place?.channel_id ? chanName[place.channel_id] || null : null,
     who: a ? { name: a.name, colorIdx: a.colorIdx } : null,
@@ -256,9 +256,14 @@ export async function loadExplorer({ serverId, folderId } = {}) {
   const works = workRows || [];
   const workIds = works.map((w) => w.id);
   const placeById = {};
+  const tagsByWork = {};
   if (workIds.length) {
-    const { data: plRows } = await supabase.from("placement").select("work_id,folder_id,channel_id").eq("surface", "server").eq("surface_id", sid).in("work_id", workIds);
+    const [{ data: plRows }, { data: tagRows }] = await Promise.all([
+      supabase.from("placement").select("work_id,folder_id,channel_id").eq("surface", "server").eq("surface_id", sid).in("work_id", workIds),
+      supabase.from("content_tags").select("work_id,tag").in("work_id", workIds),
+    ]);
     for (const p of plRows || []) placeById[p.work_id] = p;   // one server placement per work
+    for (const t of tagRows || []) (tagsByWork[t.work_id] ||= []).push(t.tag);
   }
 
   // per-folder file counts (all folders, for the tree tiles); root = null
@@ -272,7 +277,7 @@ export async function loadExplorer({ serverId, folderId } = {}) {
     count: countByFolder[f.id] || 0,
   }));
 
-  const files = works.map((w) => shapeWork(w, placeById[w.id], membersById, chanName));
+  const files = works.map((w) => shapeWork(w, placeById[w.id], membersById, chanName, tagsByWork[w.id] || []));
 
   const usedBytes = Number(meterRows?.bytes_used || 0);
   const capGb = SERVER_BASE_GB + Number(balRows?.purchased_gb || 0);

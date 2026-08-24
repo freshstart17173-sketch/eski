@@ -88,6 +88,43 @@ for (const [name, url, theme, assert] of CASES) {
   await ctx.close();
 }
 
+// details pane — open a card, inspect the arena, navigate, close
+async function detailsCase(theme) {
+  const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  await ctx.addInitScript((t) => { try { localStorage.setItem("eski-theme", t); } catch {} }, theme);
+  const page = await ctx.newPage();
+  const errs = [];
+  page.on("console", (m) => { if (m.type() === "error" || m.type() === "warning") errs.push(`[${m.type()}] ${m.text()}`); });
+  page.on("pageerror", (e) => errs.push(`[pageerror] ${e.message}`));
+  await page.goto(`http://localhost:${PORT}/s/lb/files?demo=1&folder=beats`, { waitUntil: "networkidle" }).catch(() => {});
+  await page.waitForTimeout(300);
+  const problems = [];
+  // open the first file card (not a folder card)
+  await page.click('.exview[data-exview="grid"] .card:not(.foldercard)');
+  await page.waitForTimeout(200);
+  if (!(await $(page, ".sheet .card2 .dmedia"))) problems.push("details media well missing");
+  if (!(await $(page, ".sheet .dinfo .dtop .dfilename"))) problems.push("info-rail filename missing");
+  if ((await count(page, ".sheet .meta .row")) < 4) problems.push("expected ≥4 metadata rows");
+  if (!(await $(page, ".sheet .meta .loccrumb button"))) problems.push("Location breadcrumb missing");
+  if (!(await $(page, ".sheet .dsec .chips .tag"))) problems.push("tags section missing");
+  if (await $(page, ".sheet .dsec .cmt")) problems.push("server file should have NO comments");
+  if (!(await $(page, ".sheet .foot .btn.primary"))) problems.push("Download action missing");
+  // Size row must be last (eski-style §5)
+  const lastKey = await page.$$eval(".sheet .meta .row .k", (ks) => ks[ks.length - 1]?.textContent);
+  if (lastKey !== "Size") problems.push(`Size must be the last meta row, got "${lastKey}"`);
+  // Esc closes
+  await page.keyboard.press("Escape");
+  await page.waitForTimeout(150);
+  if (await $(page, ".sheet")) problems.push("Esc should close the details pane");
+  const appErrs = errs.filter((e) => !/Failed to load resource|net::ERR|supabase|getSession|fetch|401|403|Access-Control/i.test(e));
+  if (appErrs.length) problems.push(...appErrs);
+  if (problems.length) { fails++; console.log(`✗ details-${theme}`); problems.forEach((p) => console.log("    " + p)); }
+  else console.log(`✓ details-${theme}`);
+  await ctx.close();
+}
+await detailsCase("light");
+await detailsCase("dark");
+
 // search-as-you-type (driven through the input, not the URL)
 {
   const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });

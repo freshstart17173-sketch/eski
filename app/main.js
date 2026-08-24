@@ -13,6 +13,7 @@ import { teardownRealtime } from "./realtime.js";
 import { renderRail, appFrame } from "./shell.js";
 import { renderWorkspace } from "./screens/workspace.js";
 import { renderExplorer } from "./screens/explorer.js";
+import { closeDetails } from "./screens/details.js";
 import { renderSignin } from "./screens/signin.js";
 import { renderLanding } from "./screens/landing.js";
 
@@ -62,6 +63,7 @@ let token = 0;   // guards against a stale async render landing after a newer na
 async function renderRoute(r) {
   const mine = ++token;
   teardownRealtime();                                  // kill the previous view's subscriptions
+  closeDetails();                                       // a nav closes any open details overlay
 
   if (r.screen === "auth") { swap(renderSignin()); return; }   // /signin — full screen, no shell
   // "/" with no session is the marketing home, not the in-shell Feed placeholder

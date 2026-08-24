@@ -19,6 +19,7 @@ import { navigate } from "../router.js";
 import { workCard, folderCard } from "../cards.js";
 import { channelColumn } from "./workspace.js";
 import { openUpload } from "./upload.js";
+import { openDetails } from "./details.js";
 
 const VIEWS = { grid: "Grid", list: "List" };
 
@@ -208,7 +209,6 @@ function contents(data, state, rerender) {
   const searching = state.query.trim().length > 0;
   const q = state.query.trim().toLowerCase();
 
-  const openFile = (w) => toast({ message: `Open ${w.title} (Details pane, P5.5)`, icon: "file" });
   const openFolder = (f) => { state.folderId = f.id; state.query = ""; rerender(); };
 
   let subfolders, files;
@@ -219,6 +219,14 @@ function contents(data, state, rerender) {
     subfolders = data.folders.filter((f) => (f.parentId || null) === state.folderId);
     files = data.files.filter((w) => (w.folderId || null) === state.folderId);
   }
+
+  // a card opens the Details pane (§C.7): server files, so tags but no comments;
+  // siblings = the files in view (prev/next); Location = the file's own folder path.
+  const openFile = (w) => openDetails(w, {
+    serverId: data.server.id, serverName: data.server.name,
+    folderPath: crumbPath(data.folders, w.folderId),
+    siblings: files, isPost: false,
+  });
 
   if (!subfolders.length && !files.length) {
     return searching
