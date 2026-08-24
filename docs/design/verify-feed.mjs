@@ -83,6 +83,24 @@ for (const [name, url, theme, assert] of CASES) {
   const ks = await page.$$eval(".sheet .meta .row .k", (n) => n.map((e) => e.textContent));
   if (ks.includes("Location")) problems.push("a feed post should not show a Location row");
   if (!ks.includes("Posted by")) problems.push("a feed post should show Posted by");
+  // comment thread (P5.13): the first demo post (q1) carries 2 seeded comments, and the
+  // names must be NEUTRAL — the member hue is server-scoped, forbidden on the Feed.
+  await page.waitForTimeout(150);   // let loadComments resolve
+  const nComments = await count(page, ".sheet .cmtlist .cmt");
+  if (nComments < 2) problems.push(`q1 should load its 2 seeded comments, got ${nComments}`);
+  const hued = await page.$$eval(".sheet .cmt .by .u", (ns) => ns.filter((n) => /\bm\d\b/.test(n.className) || /color:/.test(n.getAttribute("style") || "")).length);
+  if (hued) problems.push("comment author names must be neutral (no member hue) in the public Feed");
+  // posting appends optimistically (demo write path)
+  const input = await page.$(".sheet .dsec .field input");
+  if (!input) problems.push("comment input missing");
+  else {
+    await input.fill("clean low end on this one");
+    await input.press("Enter");
+    await page.waitForTimeout(150);
+    const after = await count(page, ".sheet .cmtlist .cmt");
+    if (after !== nComments + 1) problems.push(`posting should append a comment (${nComments} → ${nComments + 1}), got ${after}`);
+    if ((await input.inputValue()) !== "") problems.push("comment input should clear after posting");
+  }
   const appErrs = errs.filter((e) => !/Failed to load resource|net::ERR|supabase|getSession|fetch|401|403|Access-Control/i.test(e));
   if (appErrs.length) problems.push(...appErrs);
   if (problems.length) { fails++; console.log("✗ post-details"); problems.forEach((p) => console.log("    " + p)); }

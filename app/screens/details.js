@@ -17,7 +17,7 @@ import { iconEl } from "../icons.js";
 import { navigate } from "../router.js";
 import { MediaPlayer } from "../ui.js";
 import { mediaUrl, KIND_ICON } from "../cards.js";
-import { saveToFiles, unsaveWork, isWorkSaved } from "../data.js";
+import { saveToFiles, unsaveWork, isWorkSaved, loadComments, postComment } from "../data.js";
 
 let openSheet = null;   // the single live overlay (only one details pane at a time)
 
@@ -131,7 +131,7 @@ function infoRail(w, ctx, nav) {
     metaRows(w, ctx),
     (w.tags && w.tags.length) ? tagsSection(w) : null,
     // server file = NO discussion section (chat handles replies); post = comments
-    ctx.isPost ? commentsSection(ctx) : null,
+    ctx.isPost ? commentsSection(ctx, w) : null,
   ]);
 
   const foot = el(".foot", {}, [
@@ -201,16 +201,46 @@ function tagsSection(w) {
   return el(".dsec", {}, [el(".lb", {}, ["Tags"]), chips]);
 }
 
-function commentsSection(ctx) {
-  const list = el("div", {}, (ctx.comments || []).map((c) => el(".cmt", {}, [
-    el(".av.sm", { style: c.colorIdx != null ? `color:var(--m${c.colorIdx})` : null }, [(c.name || "?").slice(0, 2).toUpperCase()]),
+// Public-post comment thread (CANON §E.8.5) — read + post, wired to `comments`. Public
+// context, so NEVER the member hue: author names stay neutral (no colorIdx). The thread
+// loads async on open; the input posts (Enter), appending optimistically. RLS is the real
+// fence on who may comment (author + friends) — a rejection surfaces as a toast.
+function commentsSection(ctx, w) {
+  let comments = [];
+  const list = el(".cmtlist");
+  const paint = () => list.replaceChildren(
+    ...(comments.length ? comments.map(commentRow) : [el(".cmtempty", {}, ["Be the first to comment."])])
+  );
+  paint();
+  // demo returns its fixture synchronously; live reads the table. Keep any optimistic
+  // local- rows if the fetch resolves after a quick first post.
+  loadComments(w.id).then((cs) => { comments = (cs || []).concat(comments.filter((c) => String(c.id).startsWith("local-"))); paint(); }).catch(() => {});
+
+  const input = el("input", { placeholder: "Add a comment", "aria-label": "Add a comment" });
+  const send = async () => {
+    const body = input.value.trim();
+    if (!body || input.disabled) return;
+    input.disabled = true;
+    try {
+      const c = await postComment(w.id, body);
+      comments.push(c); paint();
+      input.value = "";
+    } catch (e) { toast({ message: e?.message || "Couldn’t post the comment" }); }
+    input.disabled = false; input.focus();
+  };
+  input.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); send(); } });
+  const field = el(".field", { style: "margin-top:8px" }, [input]);
+  return el(".dsec", {}, [el(".lb", {}, ["Comments"]), list, field]);
+}
+
+function commentRow(c) {
+  return el(".cmt", {}, [
+    el(".av.sm", {}, [(c.name || "?").slice(0, 2).toUpperCase()]),   // no hue — public context
     el(".bd", {}, [
-      el(".by", {}, [el("span.u", { style: c.colorIdx != null ? `color:var(--m${c.colorIdx})` : null, class: c.colorIdx != null ? `u m${c.colorIdx}` : "u" }, [c.name]), el("time", {}, [c.time || ""])]),
+      el(".by", {}, [el("span.u", {}, [c.name]), el("time", {}, [c.time || ""])]),
       el(".tx", {}, [c.text || ""]),
     ]),
-  ])));
-  const field = el(".field", { style: "margin-top:8px" }, [el("input", { placeholder: "Add a comment" })]);
-  return el(".dsec", {}, [el(".lb", {}, ["Comments"]), list, field]);
+  ]);
 }
 
 // ── helpers ───────────────────────────────────────────────────────────────────

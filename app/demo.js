@@ -262,6 +262,22 @@ export function demoFeed() {
   };
 }
 
+// Post comments demo fixture (CANON §E.8.5) — public-context, per-post threads. NO member
+// hue (public), so no colorIdx. Only a couple of posts carry a thread; the rest read empty.
+export function demoComments(workId) {
+  const c = (id, name, text, time) => ({ id, name, text, time });
+  const THREADS = {
+    q1: [
+      c("dc1", "dev", "the falling frames read so clean here — what's driving the ease?", "2h"),
+      c("dc2", "mira", "seconded, the timing on frame 40 is lovely.", "1h"),
+    ],
+    q2: [
+      c("dc3", "lin", "the low end finally has room. bus compression?", "3h"),
+    ],
+  };
+  return THREADS[workId] || [];
+}
+
 // The personal "My files" demo fixture — your own Drive, distinct from any server:
 // nested save-folders, own works, "Your storage" footer, no channel column.
 function demoPersonalExplorer() {

@@ -8,7 +8,7 @@
 //                  realtime.js + workspace.js; this module does the initial reads.
 //  - signed out  → { needsAuth:true } so the shell shows a sign-in prompt.
 
-import { demoWorkspace, demoExplorer, demoFeed, demoProfile } from "./demo.js";
+import { demoWorkspace, demoExplorer, demoFeed, demoProfile, demoComments } from "./demo.js";
 import { supabase } from "./supabase.js";
 import { session } from "./supabase.js";
 
@@ -528,6 +528,45 @@ export async function isWorkSaved(workId) {
   if (!user) return false;
   const { data } = await supabase.from("saved_items").select("work_id").eq("user_id", user.id).eq("work_id", workId).maybeSingle();
   return !!data;
+}
+
+// ── Post comments (CANON §E.8.5) ─────────────────────────────────────────────
+// Comments are POST-level and public-context only (a server file discusses in its
+// channel), so the thread renders NO member hue — colorIdx stays null throughout.
+// `comments.user_id` points at auth.users (no FK to profiles), so authors are fetched
+// SEPARATELY into a byId map — the same embed hazard the workspace hit (bug #1).
+export async function loadComments(workId) {
+  if (isDemo()) return demoComments(workId);
+  const { data: rows, error } = await supabase.from("comments")
+    .select("id,body,user_id,created_at")
+    .eq("work_id", workId).is("deleted_at", null)
+    .order("created_at", { ascending: true }).limit(200);
+  if (error || !rows?.length) return [];
+  const uids = [...new Set(rows.map((r) => r.user_id))];
+  const byId = {};
+  const { data: profs } = await supabase.from("profiles").select("id,handle,name").in("id", uids);
+  for (const p of profs || []) byId[p.id] = p;
+  return rows.map((r) => {
+    const a = byId[r.user_id];
+    return { id: r.id, name: a ? (a.name || a.handle) : "unknown", text: r.body || "", time: fmtTime(r.created_at) };
+  });
+}
+
+// Post a comment on a public post. RLS (`cmt_insert`) is the fence: only the author or a
+// friend of the author may insert — a stranger's write is rejected by Postgres, surfaced
+// here as a thrown error the caller turns into a toast (UI is only the signpost). Returns
+// the shaped comment so the thread appends it without a refetch.
+export async function postComment(workId, body) {
+  const clean = (body || "").trim();
+  if (!clean) throw new Error("Write something first");
+  if (isDemo()) return { id: "local-" + Date.now(), name: "jax", text: clean, time: "now" };
+  const user = session();
+  if (!user) throw new Error("Sign in to comment");
+  const { data, error } = await supabase.from("comments")
+    .insert({ work_id: workId, user_id: user.id, body: clean })
+    .select("id,body,created_at").single();
+  if (error) throw new Error(error.message?.includes("row-level security") ? "Only the author and their friends can comment" : (error.message || "Couldn’t post the comment"));
+  return { id: data.id, name: user.email?.split("@")[0] || "you", text: data.body || clean, time: fmtTime(data.created_at) };
 }
 
 // The home Feed (CANON §C.5) — the friends-only portfolio grid: friends' PUBLIC

@@ -204,6 +204,7 @@
 .sheet .cmt .by{display:flex;align-items:baseline;gap:7px;font-size:var(--fs-xs)}
 .sheet .cmt .by time{color:var(--muted);font-size:10px}
 .sheet .cmt .tx{font-size:var(--fs-sm);color:var(--soft)}
+.sheet .cmtempty{font-size:var(--fs-sm);color:var(--muted);margin-bottom:var(--s3)}
 /* footer actions — inset hairline on top, buttons share width */
 .sheet .foot{position:relative;flex:none;padding:var(--s3) var(--s4);display:flex;gap:var(--s2)}
 .sheet .foot::after{content:"";position:absolute;left:var(--hair-inset);right:var(--hair-inset);top:0;height:1px;background:var(--line)}

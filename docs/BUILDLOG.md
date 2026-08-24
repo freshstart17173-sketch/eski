@@ -883,3 +883,35 @@ NEXT: as their backends land — **Download** (R2 read env), **Copy link** (`sha
 GOTCHA AM: `.scrim` (80) sat *below* the details `.sheet` (81) — a modal opened from the
   pane rendered behind it, invisible under the sheet's own dim. Raised scrim to 82. Any
   future full-screen overlay above a modal must land above 82 (and below the 90 menu layer).
+
+## 2026-08-24 — P5.13 Post comments (public-post thread · live read + write)
+IN PROGRESS: (cleared)
+DONE: the Details-pane **comment thread** on a public post is now real — it was an empty
+  list + a dead input. Wired to the `comments` table (schema-05, CANON §E.8.5): comments are
+  POST-level and public-context only (a server file discusses in its channel, so the explorer
+  panes still carry NO thread). New in `data.js`: `loadComments(workId)` (read
+  `comments` where deleted_at is null, oldest-first) and `postComment(workId,body)` (insert).
+  `comments.user_id → auth.users` has NO FK to `profiles`, so authors are fetched SEPARATELY
+  into a byId map — the same embed hazard the workspace hit (bug #1), not an embed. **No
+  member hue:** the thread is public context, so author names render NEUTRAL (colorIdx stays
+  null) — the server-scoped hue is forbidden on the Feed (CLAUDE.md). `details.js`
+  `commentsSection(ctx,w)` loads async on open, renders via a shared `commentRow`, and the
+  input posts on Enter, appending optimistically + clearing; a keep-local- merge guards the
+  rare race where the fetch resolves after a fast first post. **RLS is the fence:** `cmt_insert`
+  allows only the author or a friend of the author — a stranger's insert is rejected by
+  Postgres and surfaced as a toast ("Only the author and their friends can comment"); the
+  UI stays the signpost. Demo seeds threads on q1 (2) / q2 (1) via `demoComments`; posting in
+  demo appends optimistically (no network). Added `.cmtempty` (muted "Be the first to
+  comment.").
+  Verified: `verify-feed.mjs` `post-details` extended — q1 loads its 2 seeded comments, the
+  names assert NEUTRAL (no `m\d` class, no inline color), and an Enter-post appends 0→3 and
+  clears the field. Feed/profile/explorer/gallery verifies all GREEN both themes, zero app
+  console errors. Thread screenshotted both themes (neutral names, avatars, input).
+GOTCHA AN: `Node.replaceChildren(arr)` does NOT flatten — passing `comments.map(row)` (an
+  array) as one arg appends nothing. Must spread: `replaceChildren(...nodes)`. Caught by the
+  verify (0 comments) before it shipped.
+NEXT: comment **delete/resolve** (own comment tombstone; author may remove — `cmt_update`/
+  `cmt_delete` exist), and **Realtime** on the thread (a `comments` channel subscription so a
+  new comment appears without reopening — mirror realtime.js message fanout). Then the other
+  card-menu backends (Download, Copy link/`share_links`, Crosspost) or **Profile** writes
+  (edit-profile, avatar/banner).
