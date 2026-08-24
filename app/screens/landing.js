@@ -42,7 +42,7 @@ export function renderLanding() {
   screen.innerHTML = `
     <header class="lnav">
       <a class="lbrand wordmark" href="/">eski!</a>
-      <a class="btn outline" href="/signin">Sign in</a>
+      <a class="btn" href="/signin">Sign in</a>
     </header>
 
     <div class="lhero">
