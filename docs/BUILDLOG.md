@@ -637,3 +637,33 @@ NEXT: wire the bulk-bar **Move to folder** to the `move_to_folder` RPC (exists) 
 GOTCHA AD: `create_folder` returns the `folders` row (id/name/parent_id/archived/locked);
   I read `parent_id` off it for the folder shape. `save_folders` has no archived/locked
   columns (personal folders can't be locked) — the shape hardcodes both false there.
+
+## 2026-08-24 — P5.6d Move to folder (real write path + picker)
+IN PROGRESS: (cleared)
+DONE: the bulk-bar **Move to folder** action (was a `toast("P5.6")` stub) now opens the
+  gallery **destination picker** and hits a **real write path**. The picker (`openMovePicker`
+  in `explorer.js`, a `wide` `openModal`): a "Destination in <server>" label, the folder
+  tree in a scroll well (`.movetree` reusing `.ftrow`/`.lvlN`), **locked server folders are
+  disabled rows** (lock icon + `.svnote` "Locked folders can't receive files"), a **New
+  folder** shortcut that creates a destination under the current highlight without leaving
+  the dialog (reuses the P5.6c prompt + `createFolder`), and **Move here** disabled until a
+  destination is picked. On submit, `moveToFolder()` in `data.js` calls the **`move_to_
+  folder` RPC per work** on a server (the RPC is the fence — manage-files gate, rejects a
+  folder outside the work's server, null = root) and a **`saved_items` upsert** (PK
+  user_id+work_id, so a never-filed and an already-filed work both land in one call) in
+  My-files. Moved works get their new `folderId`, the screen rerenders (they leave the
+  current folder view) and the selection clears. Demo moves optimistically (no network).
+  Added `.movetree/.ulab/.svnote` to `content.css` (the picker classes were gallery-only).
+  Verified: `verify-explorer.mjs` +`move-to-folder` case (select → open picker → Move here
+  disabled until Root picked → Move → picker closes, selection clears, file leaves beats);
+  **15** explorer states GREEN, both themes, zero app console errors. Move picker screenshot
+  eyeballed light+dark vs gallery §Move-to-folder — matches (root+nested tree, locked rows
+  greyed with lock, selected row highlighted, scrim not shadow). Full gallery verify GREEN.
+NEXT: multi-select filters + quick-filter chips (§C.6) — the `.fchip` quick-filters +
+  multi-select Type/Channel/Uploader/Tag; OR card right-click context menu ("Move to…",
+  "Download", "Delete") reusing the picker. Delete→Trash + the Trash view still need the
+  user-facing trash RPCs (only `create_folder`/`move_to_folder`/`purge_trashed_works`
+  exist) or a `works.deleted_at` soft-delete + RLS UPDATE policy.
+GOTCHA AE: `move_to_folder` is one-target — bulk = a loop of RPC calls; a partial failure
+  leaves earlier works moved and throws on the first bad one (the toast surfaces it). The
+  personal path is a single `saved_items` upsert (atomic). Both fine for the beta.

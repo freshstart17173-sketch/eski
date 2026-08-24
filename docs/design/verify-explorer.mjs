@@ -233,6 +233,47 @@ await detailsCase("dark");
   await ctx.close();
 }
 
+// Move to folder — select a file in beats, open the picker, choose Root, Move here.
+// The moved file leaves the beats view and the selection clears (demo moves optimistically;
+// the real path is the move_to_folder RPC / saved_items upsert).
+{
+  const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  const page = await ctx.newPage();
+  const errs = [];
+  page.on("console", (m) => { if (m.type() === "error" || m.type() === "warning") errs.push(`[${m.type()}] ${m.text()}`); });
+  page.on("pageerror", (e) => errs.push(`[pageerror] ${e.message}`));
+  await page.goto(`http://localhost:${PORT}/s/lb/files?demo=1&folder=beats`, { waitUntil: "networkidle" }).catch(() => {});
+  await page.waitForTimeout(300);
+  const problems = [];
+  const before = await count(page, '.exview[data-exview="grid"] .card:not(.foldercard)');
+  await page.click('.exview[data-exview="grid"] .card:not(.foldercard)');   // select one
+  await page.waitForTimeout(120);
+  if (!(await $(page, ".selbar.open"))) problems.push("selecting a card should open the bulk bar");
+  const moveBtns = await page.$$(".selbar button");
+  let opened = false;
+  for (const b of moveBtns) { if ((await b.textContent()).includes("Move to folder")) { await b.click(); opened = true; break; } }
+  if (!opened) problems.push("bulk bar Move to folder button not found");
+  await page.waitForTimeout(150);
+  if (!(await $(page, ".scrim .movetree .ftrow"))) problems.push("move picker tree should render");
+  const goDisabled0 = await page.$eval(".scrim .modal .btn.primary", (b) => b.disabled).catch(() => null);
+  if (goDisabled0 !== true) problems.push("Move here should be disabled before a destination is chosen");
+  await page.click(".scrim .movetree .ftrow.lvl0");   // Root
+  await page.waitForTimeout(80);
+  const goDisabled1 = await page.$eval(".scrim .modal .btn.primary", (b) => b.disabled).catch(() => null);
+  if (goDisabled1 !== false) problems.push("Move here should enable once a destination is picked");
+  await page.click(".scrim .modal .btn.primary");   // Move here
+  await page.waitForTimeout(200);
+  if (await $(page, ".scrim .modal")) problems.push("picker should close after Move");
+  if (await $(page, ".selbar.open")) problems.push("selection should clear after a move");
+  const after = await count(page, '.exview[data-exview="grid"] .card:not(.foldercard)');
+  if (after !== before - 1) problems.push(`moved file should leave beats (${before}→${before - 1}), got ${after}`);
+  const appErrs = errs.filter((e) => !/Failed to load resource|net::ERR|supabase|getSession|fetch|401|403|Access-Control/i.test(e));
+  if (appErrs.length) problems.push(...appErrs);
+  if (problems.length) { fails++; console.log("✗ move-to-folder"); problems.forEach((p) => console.log("    " + p)); }
+  else console.log("✓ move-to-folder");
+  await ctx.close();
+}
+
 await browser.close();
 server.close();
 console.log(fails ? `\n✗ ${fails} FAIL` : "\n✓ all explorer states render, zero app console errors, both themes");

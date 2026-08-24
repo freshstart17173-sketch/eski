@@ -16,7 +16,7 @@
 import { el, toast, openMenu, openModal } from "../ui.js";
 import { iconEl } from "../icons.js";
 import { navigate } from "../router.js";
-import { createFolder } from "../data.js";
+import { createFolder, moveToFolder } from "../data.js";
 import { workCard, folderCard, mediaUrl, KIND_ICON } from "../cards.js";
 import { channelColumn } from "./workspace.js";
 import { openUpload } from "./upload.js";
@@ -260,7 +260,7 @@ function paint(tree, pane, data, state, rerender) {
     if (n > 0) selbar.replaceChildren(
       el("span.n", {}, [el("span", {}, [String(n)]), " selected"]),
       selAct("download", "Download", () => toast({ message: "Download (needs the R2 read env)" })),
-      selAct("move", "Move to folder", () => toast({ message: "Move to folder (P5.6)" })),
+      selAct("move", "Move to folder", () => moveSelected(data, state, rerender)),
       selAct("trash", "Delete", () => toast({ message: "Delete → Trash (P5.7)" })),
       el("span.sp"),
       selAct("x", "Clear", () => { state.selection.clear(); state.lastIdx = -1; refreshSel(); }),
@@ -484,4 +484,90 @@ function promptFolderName(onSubmit) {
   create.addEventListener("click", submit);
   cancel.addEventListener("click", () => modal.close());
   setTimeout(() => input.focus(), 0);
+}
+
+// ── Move to folder (CANON §C.6 bulk bar) ─────────────────────────────────────
+// Move the current selection into a folder the user picks. The write path is real
+// (`move_to_folder` RPC per work on a server, a `saved_items` upsert in My-files); demo
+// moves optimistically. On success the moved works get their new `folderId` and the
+// screen rerenders — they leave the current folder view — and the selection clears.
+function moveSelected(data, state, rerender) {
+  const ids = [...state.selection];
+  if (!ids.length) return;
+  openMovePicker(data, state, async (destId) => {
+    if (!isDemoQS()) await moveToFolder({ source: data.source, works: ids, destFolderId: destId });
+    const set = new Set(ids);
+    for (const w of data.files) if (set.has(w.id)) w.folderId = destId;
+    state.selection.clear(); state.lastIdx = -1;
+    rerender();
+    toast({ message: `Moved ${ids.length} file${ids.length === 1 ? "" : "s"}` });
+  });
+}
+
+// The destination picker (gallery "Move to folder" modal): the folder tree in a scroll
+// well (reuses .ftrow), a locked server folder can't receive files (disabled row), and a
+// New-folder shortcut creates a destination under the current highlight without leaving
+// the dialog. onPick(destId) may be async and may throw — a throw keeps the modal open
+// and toasts the reason. destId is null for the server/personal root.
+function openMovePicker(data, state, onPick) {
+  const well = el(".movetree");
+  const hasLocked = data.folders.some((f) => f.locked);
+  const body = el("div", {}, [
+    el(".ulab", {}, ["Destination in ", el("b", {}, [rootLabel(data)])]),
+    well,
+    ...(hasLocked ? [el(".svnote", {}, [iconEl("move", "sm"), el("span", {}, ["Locked folders can’t receive files."])])] : []),
+  ]);
+  const newBtn = el("button.btn.ghost", { style: "margin-right:auto" }, ["New folder"]);
+  const cancel = el("button.btn", {}, ["Cancel"]);
+  const go = el("button.btn.primary", { disabled: true }, ["Move here"]);
+  const modal = openModal({ title: "Move to folder", body, footer: [newBtn, cancel, go], size: "wide" });
+
+  let dest, hasSel = false, busy = false;
+  const rowById = new Map();
+  const select = (id) => {
+    well.querySelectorAll(".ftrow.on").forEach((r) => r.classList.remove("on"));
+    rowById.get(id ?? "__root__")?.classList.add("on");
+    dest = id; hasSel = true; go.disabled = busy;
+  };
+  const pickRow = (id, label, depth, locked) => {
+    const row = el(`button.ftrow.lvl${Math.min(depth, 3)}` + (locked ? ".archived" : ""), { disabled: !!locked });
+    row.append(el("span.tw"));
+    const ic = iconEl(locked ? "lock" : "folder", "sm"); ic.classList.add("fic");
+    row.append(ic, el("span.fn", {}, [label]));
+    if (locked) { const l = iconEl("lock", "sm"); l.classList.add("ftlock"); row.append(l); }
+    if (!locked) row.addEventListener("click", () => select(id));
+    rowById.set(id ?? "__root__", row);
+    return row;
+  };
+  const renderWell = () => {
+    rowById.clear();
+    const rows = [pickRow(null, rootLabel(data), 0, false)];
+    (function walk(pid, depth) {
+      for (const f of data.folders.filter((x) => (x.parentId || null) === pid).sort((a, b) => a.name.localeCompare(b.name))) {
+        rows.push(pickRow(f.id, f.name, depth, f.locked));
+        walk(f.id, depth + 1);
+      }
+    })(null, 1);
+    well.replaceChildren(...rows);
+    if (hasSel) { const r = rowById.get(dest ?? "__root__"); if (r) r.classList.add("on"); }
+  };
+  renderWell();
+
+  newBtn.addEventListener("click", () => promptFolderName(async (name) => {
+    const parent = hasSel ? dest : null;
+    let folder;
+    if (isDemoQS()) folder = { id: "f-new-" + Date.now(), name, parentId: parent ?? null, archived: false, locked: false, count: 0 };
+    else folder = await createFolder({ source: data.source, serverId: data.server?.id, parentId: parent ?? null, name });
+    data.folders.push(folder);
+    renderWell();
+    select(folder.id);
+    toast({ message: `Folder “${name}” created` });
+  }));
+  cancel.addEventListener("click", () => modal.close());
+  go.addEventListener("click", async () => {
+    if (!hasSel || busy) return;
+    busy = true; go.disabled = true; go.textContent = "Moving…";
+    try { await onPick(dest); modal.close(); }
+    catch (e) { busy = false; go.disabled = false; go.textContent = "Move here"; toast({ message: e?.message || "Couldn’t move the files" }); }
+  });
 }

@@ -385,6 +385,29 @@ export async function createFolder({ source = "server", serverId, parentId = nul
   return { id: row.id, name: row.name, parentId: row.parent_id, archived: !!row.archived, locked: !!row.locked, count: 0 };
 }
 
+// Re-file the given works into `destFolderId` (null = root) in the mounted source. On
+// a server this is the `move_to_folder` RPC per work — the RPC is the fence (manage_
+// files gate, rejects a folder outside the work's server). In My-files it's an upsert
+// into `saved_items` (PK user_id+work_id) so a never-filed work (no row yet) and an
+// already-filed one both land in one call, guarded by RLS on user_id. A move changes
+// only where a file lives, not its visibility. Throws on the first failure so the caller
+// can surface it; in demo mode there is no network (the caller moves optimistically).
+export async function moveToFolder({ source = "server", works = [], destFolderId = null }) {
+  if (!works.length) return;
+  if (source === "personal") {
+    const user = session();
+    if (!user) throw new Error("Sign in to move files");
+    const rows = works.map((id) => ({ user_id: user.id, work_id: id, folder_id: destFolderId }));
+    const { error } = await supabase.from("saved_items").upsert(rows, { onConflict: "user_id,work_id" });
+    if (error) throw error;
+    return;
+  }
+  for (const id of works) {
+    const { error } = await supabase.rpc("move_to_folder", { target: id, folder_id: destFolderId });
+    if (error) throw error;
+  }
+}
+
 // The home Feed (CANON §C.5) — the friends-only portfolio grid: friends' PUBLIC
 // posts (visibility='public' and author ∈ accepted friends), same card renderer as
 // the explorer, NO member colour (public context). The same "one component, two

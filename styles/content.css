@@ -56,6 +56,14 @@
 .ftrow.archived{opacity:.5}
 .ftsep{height:1px;background:var(--line);margin:6px 8px}
 .ftrow.lvl0{padding-left:8px}.ftrow.lvl1{padding-left:22px}.ftrow.lvl2{padding-left:36px}.ftrow.lvl3{padding-left:50px}
+/* Move-to-folder picker (bulk bar / card menu): the destination tree in a scroll
+   well reuses .ftrow. A locked folder can't receive files, so its row is disabled. */
+.movetree{max-height:240px;overflow:auto;background:var(--surface);border-radius:var(--r);padding:6px;margin-top:2px}
+.movetree .ftrow[disabled]{opacity:.45;cursor:not-allowed}
+.ulab{display:block;font-size:var(--fs-sm);color:var(--soft);margin-bottom:2px}
+.ulab b{color:var(--ink);font-weight:600}
+.svnote{display:flex;align-items:center;gap:6px;margin-top:8px;font-size:var(--fs-xs);color:var(--muted)}
+.svnote .ic{flex:none;color:var(--muted)}
 .ftfoot{margin-top:6px;padding:10px 8px 6px;font-size:var(--fs-xs);color:var(--muted)}
 .ftfoot .bar{margin:6px 0 4px}
 .crumbs{display:flex;align-items:center;gap:7px;font-size:var(--fs-sm);color:var(--muted);min-width:0;flex-wrap:wrap}
