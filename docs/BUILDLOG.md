@@ -356,3 +356,32 @@ GOTCHA U: PostgREST embeds need a real FK. `server_members` has NONE (user_id �
 GOTCHA V: `renderBody` builds HTML via innerHTML but ONLY after HTML-escaping the raw
   body, so the injected `<strong>/<em>/<code>/<a>/.men` are the only markup — no XSS.
   Keep the escape first if you extend the markdown.
+
+## 2026-08-24 — P5.11/P5.12 Upload (sheet + write path) + favicon
+IN PROGRESS: (cleared)
+DONE: real Upload. `app/screens/upload.js` `openUpload({visibility,serverId,channelId,
+  folderId})`: dropzone (drag/click, ext-allowlist matching the signer's EXT set) →
+  VisibilitySeg (reused primitive) → server/folder picker (real: lists the user's
+  servers + that server's folders) → "Add details" (`<details>`: title/tags/collabs
+  chip input) → Post. Write path: sha256 (crypto.subtle) → POST /api/sign (Bearer
+  from rawSession) → PUT bytes to R2 → insert `works` (owner_type/owner_id/visibility/
+  server_id/blob_sha/bytes; the works_blob_meter trigger dedups + meters) → Server
+  upload also inserts `placement` (surface='server', folder_id) → tags via content_tags
+  → collaborators via add_collaborator(work_id,handle,role). Wired the workspace
+  composer attach (live) → openUpload for the current channel. `styles/content.css`
+  (new, wired into index.html) holds P5 content CSS: .dropzone/.fl/.addmore/.ustore.
+  Favicon: repo logo is already BLACK; created favicon.ico (copy) + cache-busted the
+  icon links (an earlier GREEN logo was stuck in the 7-day vercel cache).
+  Verified: app compiles + all workspace states green (verify-workspace.mjs); works/
+  placement RLS insert checks + add_collaborator/quota confirmed via SQL. The R2 PUT
+  itself is unverifiable in-sandbox + owner-gated (see NEXT).
+NEXT: Explorer (P5.4/5.5) reads what Upload writes; then Details, Feed, Profile.
+OWNER for uploads to work on preview: the R2 **write** env vars in Vercel
+  (R2_ACCOUNT_ID, R2_BUCKET, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY) + SUPABASE_URL/
+  SUPABASE_PUBLISHABLE_KEY, and the bucket **CORS** (paste r2-cors.json). R2_PUBLIC_BASE_URL
+  (already set) is read-only; it does NOT let the signer write.
+GOTCHA W: works `visibility` maps to owner_type/owner_id — server upload = owner_type
+  'server', owner_id=server_id=serverId (needs `upload` perm, @everyone has it);
+  personal = owner_type 'user', owner_id=me. The prompt's "storage_source/
+  billing_server_id" are these columns, not literal columns. placement.pl_write needs
+  placed_by=auth.uid() AND can_read_work — so insert the work first, then the placement.

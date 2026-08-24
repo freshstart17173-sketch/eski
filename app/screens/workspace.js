@@ -16,6 +16,7 @@ import { iconEl } from "../icons.js";
 import { navigate } from "../router.js";
 import { isDemo, shapeMessage, loadThread } from "../data.js";
 import { subscribeChannelMessages, subscribeTyping, sendTyping, subscribeServerPresence, markRead, sendMessage } from "../realtime.js";
+import { openUpload } from "./upload.js";
 
 // ── text rendering ──────────────────────────────────────────────────────────
 // A message body is HTML-escaped first, then a small inline-markdown pass turns
@@ -236,7 +237,9 @@ function composer(data, view, ctx = {}) {
   send.addEventListener("click", () => input.value.trim() && doSend(input, send, ctx));
 
   const field = el(".field", {}, [
-    IconButton({ icon: "clip", title: "Attach files", onClick: () => toast({ message: "Attach (P5 upload)" }) }),
+    IconButton({ icon: "clip", title: "Attach files", onClick: () => ctx.live
+      ? openUpload({ visibility: "server", serverId: ctx.serverId, channelId: ctx.channelId })
+      : toast({ message: "Sign in to upload files" }) }),
     input, iconEl("at", "sm"), send,
   ]);
   field.querySelector(".iconbtn").style.cssText = "width:26px;height:26px";

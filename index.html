@@ -15,7 +15,12 @@
 <link rel="stylesheet" href="/styles/base.css">
 <link rel="stylesheet" href="/styles/primitives.css">
 <link rel="stylesheet" href="/styles/shell.css">
-<link rel="icon" href="/eski_logo.png">
+<link rel="stylesheet" href="/styles/content.css">
+<!-- favicon: the BLACK "e!" mark. The ?v bust forces a refetch past the 7-day
+     cache (an earlier green logo got cached); favicon.ico covers the browser's
+     default /favicon.ico request so it never falls back to a stale/green icon. -->
+<link rel="icon" type="image/png" href="/eski_logo.png?v=3">
+<link rel="shortcut icon" href="/favicon.ico?v=3">
 
 <!-- the app: a module, deferred by default -->
 <script type="module" src="/app/main.js"></script>
