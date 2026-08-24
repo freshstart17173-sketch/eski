@@ -1,0 +1,67 @@
+/* landing.css — the signed-out marketing home (screens/landing.js). Tokens
+   and components only (buttons, icons, background steps); no new colours, no
+   new radius. Everything scoped under .landing so nothing here can leak onto
+   an in-app screen the way a bare .card/.meta rule has before. */
+
+.screen.landing{display:block;overflow-x:hidden;overflow-y:auto;background:var(--paper)}
+
+/* ── nav ─────────────────────────────────────────────────────────────────── */
+.lnav{position:sticky;top:0;z-index:5;display:flex;align-items:center;justify-content:space-between;
+  padding:var(--s3) var(--s6);background:var(--paper)}
+.lnav::after{content:"";position:absolute;left:var(--hair-inset);right:var(--hair-inset);bottom:0;height:1px;background:var(--line)}
+.lbrand{font-size:var(--fs-xl);color:var(--ink)}
+
+/* ── hero ────────────────────────────────────────────────────────────────── */
+.lhero{max-width:640px;margin:0 auto;padding:var(--s6) var(--s4) var(--s5);text-align:center}
+.leyebrow{margin:0;color:var(--muted);font-size:var(--fs-xs);font-weight:600;
+  text-transform:uppercase;letter-spacing:.08em}
+.lhero h1{margin:var(--s3) 0;font-size:clamp(1.9rem,4.5vw,3rem);line-height:1.15;font-weight:700}
+.lsub{margin:0 auto;max-width:520px;color:var(--soft);font-size:var(--fs-lg);line-height:1.5}
+.lcta{display:flex;align-items:center;justify-content:center;gap:var(--s3);margin-top:var(--s4)}
+
+/* ── decorative preview grid (no interaction — aria-hidden) ─────────────── */
+.lmock{max-width:900px;margin:0 auto;padding:0 var(--s4) var(--s6)}
+.lmockgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--s3)}
+.lmockcard{background:var(--surface);border-radius:var(--r);overflow:hidden}
+.lmockmedia{aspect-ratio:1;display:grid;place-items:center;background:var(--paper1);color:var(--muted)}
+.lmockmedia .ic{width:28px;height:28px}
+.lmockmeta{display:flex;align-items:center;justify-content:space-between;gap:var(--s2);
+  padding:var(--s2) var(--s3);font-size:var(--fs-xs)}
+.lmockname{color:var(--ink);font-weight:500;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lmockby{color:var(--muted);flex:none}
+
+/* ── feature / use sections ──────────────────────────────────────────────── */
+.lsection{padding:var(--s6) var(--s4)}
+.lsection.alt{background:var(--surface)}
+.lwrap{max-width:900px;margin:0 auto}
+.lsection h2{margin:0 0 var(--s5);text-align:center;font-size:var(--fs-xl);font-weight:700}
+
+.lgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--s4)}
+.lcard{background:var(--surface);border-radius:var(--r);padding:var(--s4)}
+.lic{display:grid;place-items:center;width:34px;height:34px;margin-bottom:var(--s3);
+  background:var(--paper1);border-radius:var(--r);color:var(--ink)}
+.lcard h3{margin:0 0 var(--s1);font-size:var(--fs-lg);font-weight:600}
+.lcard p{margin:0;color:var(--soft);font-size:var(--fs-sm);line-height:1.5}
+
+.luses{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--s4)}
+.luse{background:var(--plate);border-radius:var(--r);padding:var(--s4)}
+.luse b{font-size:var(--fs);color:var(--ink)}
+.luse p{margin:var(--s1) 0 0;color:var(--soft);font-size:var(--fs-sm);line-height:1.5}
+
+/* ── closing CTA + footer ────────────────────────────────────────────────── */
+.lclose{padding:var(--s6) var(--s4);text-align:center}
+.lclose h2{margin:0 0 var(--s4);font-size:var(--fs-xl);font-weight:700}
+
+.lfoot{position:relative;display:flex;flex-direction:column;align-items:center;gap:var(--s1);
+  padding:var(--s5) var(--s4) var(--s6);color:var(--muted);font-size:var(--fs-xs)}
+.lfoot::before{content:"";position:absolute;left:var(--hair-inset);right:var(--hair-inset);top:0;height:1px;background:var(--line)}
+.lfoot .wordmark{font-size:var(--fs-lg);color:var(--soft)}
+
+@media (max-width:820px){
+  .lmockgrid,.lgrid,.luses{grid-template-columns:repeat(2,1fr)}
+}
+@media (max-width:560px){
+  .lnav{padding:var(--s3) var(--s4)}
+  .lmockgrid,.lgrid,.luses{grid-template-columns:1fr}
+  .lcta{flex-direction:column}
+}

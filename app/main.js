@@ -13,6 +13,7 @@ import { teardownRealtime } from "./realtime.js";
 import { renderRail, appFrame } from "./shell.js";
 import { renderWorkspace } from "./screens/workspace.js";
 import { renderSignin } from "./screens/signin.js";
+import { renderLanding } from "./screens/landing.js";
 
 const stage = document.getElementById("stage");
 
@@ -62,6 +63,10 @@ async function renderRoute(r) {
   teardownRealtime();                                  // kill the previous view's subscriptions
 
   if (r.screen === "auth") { swap(renderSignin()); return; }   // /signin — full screen, no shell
+  // "/" with no session is the marketing home, not the in-shell Feed placeholder
+  // or the bare sign-in prompt — every other signed-out deep link still falls
+  // through to renderSignin() below via needsAuth.
+  if (r.screen === "feed" && r.path === "/" && !session()) { swap(renderLanding()); return; }
   if (!IN_SHELL.has(r.screen)) { swap(placeholder(r)); return; }
 
   const data = await loadWorkspace({ serverId: r.params.serverId, channelId: r.params.channelId });
