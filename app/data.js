@@ -8,7 +8,7 @@
 //                  realtime.js + workspace.js; this module does the initial reads.
 //  - signed out  → { needsAuth:true } so the shell shows a sign-in prompt.
 
-import { demoWorkspace, demoExplorer, demoFeed } from "./demo.js";
+import { demoWorkspace, demoExplorer, demoFeed, demoProfile } from "./demo.js";
 import { supabase } from "./supabase.js";
 import { session } from "./supabase.js";
 
@@ -400,6 +400,46 @@ export async function loadFeed() {
   }
 
   return { needsAuth: false, live: true, source: "feed", me, isAdmin: false, servers, dmUnread: 0, server: null, posts };
+}
+
+// A Profile (CANON §C.10) — a person's shelves. POV is viewer-dependent, enforced
+// server-side by works_read + friendships (not a UI toggle): owner sees all three
+// shelves + Settings; a stranger sees only Public; a friend sees Public + Server.
+// We compute the POV for chrome, but RLS is the real fence — the shelf queries only
+// return what the viewer may read, so we just group what comes back by visibility.
+export async function loadProfile(handle) {
+  if (isDemo()) return demoProfile(handle);
+  const user = session();
+  if (!user) return { needsAuth: true, live: false };
+
+  const { servers } = await loadRail(user);
+  const me = { id: user.id, name: user.email?.split("@")[0] || "you", initials: initials(user.email || "you"), handle: user.email?.split("@")[0] || "you", colorIdx: 1 };
+
+  const { data: prof } = await supabase.from("profiles").select("id,handle,name,bio,avatar_key,pronouns").eq("handle", handle).maybeSingle();
+  if (!prof) return { needsAuth: false, live: true, notFound: true, me, servers, dmUnread: 0, server: null };
+
+  let pov = "public";
+  if (prof.id === user.id) pov = "owner";
+  else {
+    const { data: fr } = await supabase.from("friendships").select("status").or(`and(a_user.eq.${user.id},b_user.eq.${prof.id}),and(a_user.eq.${prof.id},b_user.eq.${user.id})`).eq("status", "accepted").maybeSingle();
+    if (fr) pov = "mutual";
+  }
+
+  // RLS gates what's visible; group whatever returns by visibility into shelves.
+  const { data: workRows } = await supabase.from("works")
+    .select("id,title,kind,file_ext,blob_sha,bytes,visibility,created_at")
+    .eq("author_id", prof.id).is("deleted_at", null).order("created_at", { ascending: false });
+  const shelves = { public: [], server: [], private: [] };
+  for (const w of workRows || []) {
+    const card = { id: w.id, title: w.title, name: w.title, kind: w.kind, file_ext: w.file_ext, blob_sha: w.blob_sha, bytes: w.bytes, created_at: w.created_at, tags: [], who: { name: prof.name || prof.handle } };
+    (shelves[w.visibility] ||= []).push(card);
+  }
+
+  return {
+    needsAuth: false, live: true, source: "profile", me, servers, dmUnread: 0, server: null,
+    profile: { id: prof.id, name: prof.name || prof.handle, handle: prof.handle, bio: prof.bio || "", initials: initials(prof.name || prof.handle), pronouns: prof.pronouns },
+    pov, shelves,
+  };
 }
 
 // a channel's thread (parent + replies), loaded on demand when a thread opens

@@ -517,3 +517,34 @@ GOTCHA AA: the Feed is empty until BOTH a friends system and public posts exist 
   friendships/public works are seeded, so live `/` shows the "quiet feed" empty state
   (correct). Use `/?demo=1` to see the populated grid. Type/Sort are placeholder menus
   (client filters land with the explorer filter pass).
+
+## 2026-08-24 — P5.10 Profile screen (shelves + POV)
+IN PROGRESS: (cleared)
+DONE: the **Profile** (CANON §C.10) — a person's shelves, reached from `/u/:handle`
+  (avatar menu → Profile, the Feed's "You" nav). `data.js loadProfile(handle)`: the
+  `profiles` row by handle, the viewer **POV** (owner if it's you, else `friendships`
+  accepted → mutual, else public), and the author's `works` grouped by visibility into
+  **Public / Server / Private** shelves (RLS is the real fence — we group whatever the
+  viewer may read). `app/screens/profile.js renderProfile(data)`: round avatar hero
+  (name · @handle · bio) with the **POV action** (owner→Edit profile · public→Add friend
+  · mutual→Message), shelf tabs with counts + **Settings** (owner only) + search, the
+  shared `workCard` grid (**hue:false** — a public profile is never server-scoped), and
+  per-shelf empty states. Cards open the Details pane (Public shelf → public post w/
+  comments). Which shelves a POV sees: owner all three, mutual Public+Server, public
+  Public only. CSS ported into `content.css` (`.prof/.phero/.ptabs2/.ptab2`) from the
+  gallery. `main.js` wires the profile screen; `demoProfile()` owner fixture for `?demo=1`.
+  Verified: new `docs/design/verify-profile.mjs` GREEN — owner-light/dark + shelf-switch
+  (round avatar, hero, 4 tabs, grid, exactly one active tab, Settings NOT active, NO
+  member-hue chips), both themes, zero app console errors. Screenshot eyeballed vs
+  gallery — matches.
+FIXED (found while building): `classList.toggle(cls, undefined)` **flips** instead of
+  clearing, which wrongly lit the Settings tab (it sits past the end of the shelves
+  array). Coerced the toggle arg to a real boolean; added a regression assertion.
+NEXT: the Edit-profile modal (owner) + user settings; then the explorer Trash view +
+  filter/sort dropdowns + multi-select; then wire real `comments` (post threads +
+  the explorer Feed-view). Backend for Save/New-folder/Download write paths still
+  pending (`save_to_files`, `save_folders` insert, R2 read env).
+GOTCHA AB: like the Feed, live profiles are sparse until public works + friendships
+  exist; `/u/<you>?demo=1` shows the populated owner self-view. The three POVs are
+  computed for chrome only — `works_read` + `friendships` enforce them server-side, so a
+  stranger's shelves come back empty even if the client asked for more.

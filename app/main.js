@@ -8,12 +8,13 @@ import { signal, effect } from "./signals.js";
 import { start, match } from "./router.js";
 import { ready, session, onChange } from "./supabase.js";
 import { icon } from "./icons.js";
-import { loadWorkspace, loadExplorer, loadFeed, clearWorkspaceCache, isDemo } from "./data.js";
+import { loadWorkspace, loadExplorer, loadFeed, loadProfile, clearWorkspaceCache, isDemo } from "./data.js";
 import { teardownRealtime } from "./realtime.js";
 import { renderRail, appFrame } from "./shell.js";
 import { renderWorkspace } from "./screens/workspace.js";
 import { renderExplorer } from "./screens/explorer.js";
 import { renderFeed } from "./screens/feed.js";
+import { renderProfile } from "./screens/profile.js";
 import { closeDetails } from "./screens/details.js";
 import { renderSignin } from "./screens/signin.js";
 import { renderLanding } from "./screens/landing.js";
@@ -92,6 +93,15 @@ async function renderRoute(r) {
     if (mine !== token) return;
     if (feedData.needsAuth) { swap(renderSignin()); return; }
     swap(appFrame(renderRail(feedData, r), renderFeed(feedData)));
+    return;
+  }
+
+  // Profile (P5.10) — a person's shelves, POV-gated.
+  if (r.screen === "profile") {
+    const profData = await loadProfile(r.params.handle);
+    if (mine !== token) return;
+    if (profData.needsAuth) { swap(renderSignin()); return; }
+    swap(appFrame(renderRail(profData, r), renderProfile(profData)));
     return;
   }
 

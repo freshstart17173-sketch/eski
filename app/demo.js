@@ -191,6 +191,41 @@ export function demoExplorer(source = "server") {
   };
 }
 
+// A Profile demo fixture — the owner self-view (the gallery reference). All three
+// shelves + Settings; NO member colour (public profile). Collaborators are plain text.
+export function demoProfile(handle) {
+  const C = (id, title, kind, ext, who) => ({ id, title, name: title, kind, file_ext: ext, blob_sha: null, bytes: 0, created_at: "2026-08-18T10:00:00Z", tags: [], who: { name: who } });
+  return {
+    needsAuth: false, live: false, source: "profile",
+    me, dmUnread: 3, server: null,
+    servers: [
+      { id: "lb", name: "Late Bloom LP", initials: "LB" },
+      { id: "sp", name: "Specter", initials: "SP", mentions: 7 },
+      { id: "bs", name: "Beat swap", initials: "BS" },
+    ],
+    profile: { id: "me", name: "jax", handle: handle || "jax", initials: "JX", bio: "producer + engineer. building the Late Bloom LP with a few people.", pronouns: "they/them" },
+    pov: "owner",
+    shelves: {
+      public: [
+        C("pub1", "low ceilings, the finished verse", "audio", "wav", "jax, rae, tomo"),
+        C("pub2", "cover art, bloom", "image", "png", "nel, jax"),
+        C("pub3", "bloom, single", "audio", "wav", "jax, dev, tomo"),
+        C("pub4", "lyric visual", "video", "mp4", "sol"),
+        C("pub5", "On finishing things", "text", "md", "jax"),
+      ],
+      server: [
+        C("srv1", "late_bloom_beat.flp", "other", "flp", "jax"),
+        C("srv2", "bloom_master.als", "other", "als", "jax"),
+      ],
+      private: [
+        C("priv1", "rough_ideas.zip", "other", "zip", "jax"),
+        C("priv2", "voice_memo_03.m4a", "audio", "m4a", "jax"),
+        C("priv3", "moodboard_private.png", "image", "png", "jax"),
+      ],
+    },
+  };
+}
+
 // The home Feed demo fixture — friends' public posts, NO member colour (public).
 export function demoFeed() {
   const P2 = (id, title, kind, ext, who, ar) => ({
