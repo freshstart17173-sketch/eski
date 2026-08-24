@@ -31,7 +31,7 @@ export function renderProfile(data) {
   const pov = data.pov || "public";
   // which shelves this POV may see: owner all three; mutual Public+Server; public only Public
   const visibleShelves = pov === "owner" ? SHELVES : pov === "mutual" ? SHELVES.slice(0, 2) : SHELVES.slice(0, 1);
-  const state = { shelf: visibleShelves[0].key, even: true };
+  const state = { shelf: visibleShelves[0].key, even: true, query: "" };
 
   // hero — round avatar, name, @handle, bio, POV actions
   const who = el(".who", {}, whoKids(p));
@@ -52,7 +52,23 @@ export function renderProfile(data) {
     tabs.append(tab);
   }
   if (pov === "owner") tabs.append(el("button.ptab2", { onClick: () => toast({ message: "User settings (P9)" }) }, [iconEl("settings"), "Settings"]));
-  tabs.append(el("button.iconbtn", { style: "margin-left:auto", title: "Search this profile", onClick: () => toast({ message: "Search profile (P5.15)" }) }, [iconEl("search")]));
+
+  // search — a toggle that reveals an inline filter over the VISIBLE shelf (title match);
+  // it's a client-side narrow of what's already loaded, not a new query, so no backend call.
+  const searchInput = el("input", { placeholder: "Search this profile", "aria-label": "Search this profile" });
+  const searchField = el(".field.psearch", { style: "margin-left:auto;max-width:240px;display:none" }, [searchInput]);
+  const searchBtn = el("button.iconbtn", { style: "margin-left:auto", title: "Search this profile", "aria-label": "Search this profile", onClick: () => toggleSearch() });
+  searchBtn.append(iconEl("search"));
+  searchInput.addEventListener("input", () => { state.query = searchInput.value.trim(); paint(); });
+  searchInput.addEventListener("keydown", (e) => { if (e.key === "Escape") { e.preventDefault(); toggleSearch(false); } });
+  function toggleSearch(on) {
+    const show = on == null ? searchField.style.display === "none" : on;
+    searchField.style.display = show ? "flex" : "none";
+    searchBtn.style.display = show ? "none" : "";
+    if (show) searchInput.focus();
+    else if (state.query) { searchInput.value = ""; state.query = ""; paint(); }
+  }
+  tabs.append(searchBtn, searchField);
 
   prof.append(hero, tabs, body);
   paint();
@@ -63,8 +79,15 @@ export function renderProfile(data) {
     // undefined) *flips* rather than clears, which would wrongly light the Settings
     // tab (it sits past the end of visibleShelves).
     tabs.querySelectorAll(".ptab2").forEach((t, i) => t.classList.toggle("on", !!(visibleShelves[i] && visibleShelves[i].key === state.shelf)));
-    const works = data.shelves?.[state.shelf] || [];
-    if (!works.length) { body.replaceChildren(shelfEmpty(state.shelf)); return; }
+    let works = data.shelves?.[state.shelf] || [];
+    const q = state.query.toLowerCase();
+    if (q) works = works.filter((w) => (w.title || w.name || "").toLowerCase().includes(q));
+    if (!works.length) {
+      body.replaceChildren(q
+        ? emptyState("search", "No results", `Nothing on this shelf matches “${state.query}”.`)
+        : shelfEmpty(state.shelf));
+      return;
+    }
     const openPost = (w) => openDetails(w, { serverName: null, personal: false, isPost: state.shelf === "public", comments: [], siblings: works });
     const grid = el(".masonry" + (state.even ? ".even" : ""));
     for (const w of works) grid.append(workCard(w, { onOpen: openPost, hue: false }));

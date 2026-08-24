@@ -104,6 +104,33 @@ await run("edit-profile", "light", async (p) => {
   return null;
 });
 
+// Search profile (P5.15) — the search toggle reveals an inline filter over the visible
+// shelf; a matching query narrows the grid, a non-matching one shows the no-results state,
+// and clearing (Esc) restores the full shelf.
+await run("profile-search", "light", async (p) => {
+  const total = await count(p, ".pbody .masonry .card");
+  if (total < 2) return "the Public shelf needs ≥2 cards to test filtering";
+  await p.click(".ptabs2 .iconbtn");   // the search toggle
+  await p.waitForTimeout(120);
+  const field = await p.$(".ptabs2 .psearch");
+  if (!field || await field.isHidden()) return "search field should reveal on toggle";
+  // a demo public title contains "bloom" (pub2 cover art, pub3 single) — filter to it
+  await p.fill(".ptabs2 .psearch input", "bloom");
+  await p.waitForTimeout(150);
+  const filtered = await count(p, ".pbody .masonry .card");
+  if (!(filtered > 0 && filtered < total)) return `filter should narrow the grid (was ${total}, got ${filtered})`;
+  // a nonsense query → the no-results empty state
+  await p.fill(".ptabs2 .psearch input", "zzzznotathing");
+  await p.waitForTimeout(150);
+  if (!(await p.$(".pbody .emptystate"))) return "a non-matching query should show the no-results state";
+  // Esc clears + restores the full shelf
+  await p.press(".ptabs2 .psearch input", "Escape");
+  await p.waitForTimeout(150);
+  const restored = await count(p, ".pbody .masonry .card");
+  if (restored !== total) return `Esc should restore the full shelf (${total}), got ${restored}`;
+  return null;
+});
+
 await browser.close();
 server.close();
 console.log(fails ? `\n✗ ${fails} FAIL` : "\n✓ all profile states render, zero app console errors, both themes");

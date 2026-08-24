@@ -966,3 +966,23 @@ NEXT: **avatar/banner** upload (when the R2 write env lands — reuse the upload
 GOTCHA AP: icons.js warns (console) on any `#i-*` not in the mounted sprite, and the verify
   harness counts console warnings as failures — so a new surface must only use icons that
   exist (grep the sprite / gallery first). `i-info` does not exist; `i-check` does.
+
+## 2026-08-24 — P5.15 Search profile (inline shelf filter)
+IN PROGRESS: (cleared)
+DONE: the profile **Search** button (was a `toast("P5.15")` stub) now toggles an inline
+  filter over the VISIBLE shelf — a client-side title narrow of what's already loaded, not a
+  new query, so no backend call. The search `.iconbtn` swaps for a `.field.psearch` input
+  (both right-aligned, one shown at a time); typing filters the masonry live, a non-matching
+  query shows the `search`/"No results" empty state, and Esc (or re-toggling) clears the
+  query + restores the full shelf. `state.query` gates `paint()`; the tab counts stay the
+  shelf totals (correct — they count the shelf, not the filtered view). Switching shelves
+  keeps the active query, so it narrows the newly-shown shelf too.
+  Verified: `verify-profile.mjs` +`profile-search` — toggling reveals the field, "bloom"
+  narrows the 5-card Public shelf to its matches (>0 and <total), a nonsense query shows the
+  no-results state, and Esc restores all 5. All 5 profile cases GREEN; feed/explorer/
+  workspace/gallery GREEN both themes, zero app console errors. Screenshotted (active filter).
+NEXT: **user settings** (the profile Settings tab, still `toast("P9")`) is the last profile
+  stub, but it's a whole P9 screen. Otherwise the remaining P5 write surfaces are owner-env-
+  gated (avatar/banner, Download, upload-dependent Copy link) or not in-sandbox verifiable
+  (comment Realtime). Natural next phase: **P7** (DMs · Friends · Notifications) or the P9
+  utility screens (sign-in, create/join, 404, quick-switcher).
