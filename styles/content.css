@@ -74,6 +74,21 @@
 .btn.exfilter .fc{opacity:.55;margin-left:2px;font-variant-numeric:tabular-nums}
 .menu .fcheck{width:14px;flex:none;text-align:center;color:var(--ink)}
 .menu button.fclear{color:var(--muted);font-size:var(--fs-xs)}
+/* Trash smart-folder (gallery B19): a retention notice + Empty over soft-deleted rows,
+   each with a days-left countdown (danger-red near expiry) and hover Restore/Delete. */
+.trashnote{display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--surface);border-radius:var(--r);margin:0 0 var(--s3);font-size:var(--fs-sm);color:var(--soft)}
+.trashnote .ic{color:var(--muted)}
+.trashnote .btn{margin-left:auto}
+.trrow{display:flex;align-items:center;gap:12px;padding:8px 6px;box-shadow:inset 0 -1px 0 var(--line)}
+.trrow .tmed{width:34px;height:34px;flex:none;border-radius:var(--r);background:var(--surface);display:grid;place-items:center;color:var(--muted);overflow:hidden}
+.trrow .tmed img{width:100%;height:100%;object-fit:cover}
+.trrow .tinfo{min-width:0;flex:1}
+.trrow .trname{font-size:var(--fs-sm);color:var(--soft);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.trrow .tsub{font-size:var(--fs-xs);color:var(--muted)}
+.trrow .tleft{font-size:var(--fs-xs);color:var(--muted);flex:none}
+.trrow .tleft.warn{color:var(--danger)}
+.trrow .tacts{display:flex;gap:6px;flex:none;opacity:0;transition:opacity var(--t)}
+.trrow:hover .tacts{opacity:1}
 .ftfoot{margin-top:6px;padding:10px 8px 6px;font-size:var(--fs-xs);color:var(--muted)}
 .ftfoot .bar{margin:6px 0 4px}
 .crumbs{display:flex;align-items:center;gap:7px;font-size:var(--fs-sm);color:var(--muted);min-width:0;flex-wrap:wrap}

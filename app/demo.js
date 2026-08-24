@@ -185,6 +185,13 @@ export function demoExplorer(source = "server") {
       W("f7", "session_notes.md", "text", "md", 4200, "jax", null, null, []),
     ],
     currentFolderId: null,
+    // Trash smart-folder fixture (gallery B19): soft-deleted rows with varied days-left,
+    // the last near expiry (warn). deletedAt is relative to now so the countdown is live.
+    trash: [
+      { id: "t1", title: "old_bounce_rough.wav", name: "old_bounce_rough.wav", kind: "audio", file_ext: "wav", blob_sha: null, bytes: 12e6, deletedAt: new Date(Date.now() - 1 * 86400000).toISOString(), who: { name: "dev" } },
+      { id: "t2", title: "late_bloom_beat_alt.flp", name: "late_bloom_beat_alt.flp", kind: "other", file_ext: "flp", blob_sha: null, bytes: 9e6, deletedAt: new Date(Date.now() - 9 * 86400000).toISOString(), who: { name: "dev" } },
+      { id: "t3", title: "ref_moodboard.png", name: "ref_moodboard.png", kind: "image", file_ext: "png", blob_sha: null, bytes: 2.4e6, deletedAt: new Date(Date.now() - 24 * 86400000).toISOString(), who: { name: "rae" } },
+    ],
     storage: { usedBytes: 74 * 1024 ** 3, capGb: 120, capBytes: 120 * 1024 ** 3, status: "active", overCap: false },
     activeServerId: "lb",
     source: "server",

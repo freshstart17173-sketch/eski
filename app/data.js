@@ -408,6 +408,65 @@ export async function moveToFolder({ source = "server", works = [], destFolderId
   }
 }
 
+// ── Trash (CANON §C.6 / §E.3) ────────────────────────────────────────────────
+// Soft-delete, restore, and hard-purge are plain client writes, not RPCs: the `works`
+// RLS already gates update/delete on `can_write_work` (author or server admin), a soft-
+// deleted work stays readable by its author (can_read_work's owner branch skips the
+// deleted_at guard), and the AFTER trigger `works_blob_meter` correctly leaves the
+// storage meter untouched on a deleted_at flip (kept 30 days) and decrements it on the
+// hard DELETE. So the writers here are direct table writes; the fence is the policy.
+
+// Soft-delete: move works to Trash. Bulk = one update over the id set (RLS filters the
+// set to writable rows). Kept 30 days, then the purge job hard-deletes them (§E.3).
+export async function trashWorks(ids = []) {
+  if (!ids.length) return;
+  const { error } = await supabase.from("works").update({ deleted_at: new Date().toISOString() }).in("id", ids);
+  if (error) throw error;
+}
+// Restore from Trash: clear deleted_at (the row is readable by its author while trashed).
+export async function restoreWork(id) {
+  const { error } = await supabase.from("works").update({ deleted_at: null }).eq("id", id);
+  if (error) throw error;
+}
+// Delete forever: the hard DELETE fires works_blob_meter → blob refcount-- + meter--.
+export async function purgeWork(id) {
+  const { error } = await supabase.from("works").delete().eq("id", id);
+  if (error) throw error;
+}
+// Empty trash: hard-delete every trashed work in scope (RLS keeps it to writable rows).
+export async function emptyTrash({ source = "server", serverId } = {}) {
+  let q = supabase.from("works").delete().not("deleted_at", "is", null);
+  if (source === "personal") {
+    const user = session();
+    if (!user) throw new Error("Sign in");
+    q = q.eq("owner_type", "user").eq("owner_id", user.id);
+  } else {
+    q = q.eq("server_id", serverId);
+  }
+  const { error } = await q;
+  if (error) throw error;
+}
+// The Trash smart-folder's contents — trashed works the caller can read (RLS returns
+// their own). Shaped for the trash list: name, kind icon, uploader, trashed-at.
+export async function loadTrash({ source = "server", serverId, membersById = {} } = {}) {
+  if (isDemo()) return [];
+  const cols = "id,title,kind,file_ext,blob_sha,bytes,author_id,created_at,deleted_at";
+  let q = supabase.from("works").select(cols).not("deleted_at", "is", null).order("deleted_at", { ascending: false });
+  if (source === "personal") {
+    const user = session();
+    if (!user) return [];
+    q = q.eq("owner_type", "user").eq("owner_id", user.id);
+  } else {
+    q = q.eq("server_id", serverId);
+  }
+  const { data: rows } = await q;
+  return (rows || []).map((w) => ({
+    id: w.id, title: w.title, name: w.title, kind: w.kind, file_ext: w.file_ext,
+    blob_sha: w.blob_sha, bytes: w.bytes, created_at: w.created_at, deletedAt: w.deleted_at,
+    who: source === "personal" ? null : (membersById[w.author_id] ? { name: membersById[w.author_id].name } : null),
+  }));
+}
+
 // The home Feed (CANON §C.5) — the friends-only portfolio grid: friends' PUBLIC
 // posts (visibility='public' and author ∈ accepted friends), same card renderer as
 // the explorer, NO member colour (public context). The same "one component, two

@@ -325,6 +325,57 @@ await detailsCase("dark");
   await ctx.close();
 }
 
+// Trash — Delete→Trash from a folder, then the Trash view: retention notice, days-left
+// (one near-expiry warn), Restore, Delete forever, Empty. Demo runs optimistically; the
+// real path is the works.deleted_at writes / hard delete in §E.3.
+{
+  const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  const page = await ctx.newPage();
+  const errs = [];
+  page.on("console", (m) => { if (m.type() === "error" || m.type() === "warning") errs.push(`[${m.type()}] ${m.text()}`); });
+  page.on("pageerror", (e) => errs.push(`[pageerror] ${e.message}`));
+  await page.goto(`http://localhost:${PORT}/s/lb/files?demo=1&folder=beats`, { waitUntil: "networkidle" }).catch(() => {});
+  await page.waitForTimeout(300);
+  const problems = [];
+  const grid = '.exview[data-exview="grid"] .card:not(.foldercard)';
+  const before = await count(page, grid);
+  // Delete one file → Trash
+  await page.click(grid);
+  await page.waitForTimeout(120);
+  for (const b of await page.$$(".selbar button")) { if ((await b.textContent()).includes("Delete")) { await b.click(); break; } }
+  await page.waitForTimeout(200);
+  if ((await count(page, grid)) !== before - 1) problems.push(`delete should remove a file from the folder (${before}→${before - 1})`);
+  if (await $(page, ".selbar.open")) problems.push("selection should clear after delete");
+  // open Trash
+  for (const r of await page.$$(".filetree .ftrow")) { if ((await r.textContent()).includes("Trash")) { await r.click(); break; } }
+  await page.waitForTimeout(200);
+  if (!(await $(page, '.exview[data-exview="trash"] .trashnote'))) problems.push("Trash retention notice missing");
+  if (!(await $(page, ".trashnote .btn.danger"))) problems.push("Empty trash now button missing");
+  let n = await count(page, ".trrow");
+  if (n !== 4) problems.push(`Trash should hold 3 seeded + 1 just-deleted = 4, got ${n}`);
+  if (!(await $(page, ".trrow .tleft.warn"))) problems.push("a near-expiry row should show the warn countdown");
+  // Restore the first row
+  await page.hover(".trrow");
+  for (const b of await page.$$(".trrow .tacts button")) { if ((await b.textContent()).includes("Restore")) { await b.click(); break; } }
+  await page.waitForTimeout(150);
+  if ((await count(page, ".trrow")) !== 3) problems.push(`Restore should drop Trash to 3, got ${await count(page, ".trrow")}`);
+  // Delete forever the first row
+  await page.hover(".trrow");
+  for (const b of await page.$$(".trrow .tacts button")) { if ((await b.textContent()).includes("Delete forever")) { await b.click(); break; } }
+  await page.waitForTimeout(150);
+  if ((await count(page, ".trrow")) !== 2) problems.push(`Delete forever should drop Trash to 2, got ${await count(page, ".trrow")}`);
+  // Empty trash → empty state
+  await page.click(".trashnote .btn.danger");
+  await page.waitForTimeout(150);
+  if ((await count(page, ".trrow")) !== 0) problems.push("Empty should remove all trash rows");
+  if (!(await $(page, '.exview[data-exview="trash"] .emptystate'))) problems.push("empty Trash should show the empty state");
+  const appErrs = errs.filter((e) => !/Failed to load resource|net::ERR|supabase|getSession|fetch|401|403|Access-Control/i.test(e));
+  if (appErrs.length) problems.push(...appErrs);
+  if (problems.length) { fails++; console.log("✗ trash"); problems.forEach((p) => console.log("    " + p)); }
+  else console.log("✓ trash");
+  await ctx.close();
+}
+
 await browser.close();
 server.close();
 console.log(fails ? `\n✗ ${fails} FAIL` : "\n✓ all explorer states render, zero app console errors, both themes");

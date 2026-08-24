@@ -698,3 +698,42 @@ NEXT: the **Starred** quick-filter is deferred — works carry no `starred`/`pin
 GOTCHA AF: filters persist across folder navigation + search (they live in screen `state`,
   not reset by `repaintBody`, which only clears the selection). `repaintBody` rebuilds the
   body but NOT the toolbar, so each filter button self-refreshes its count/label in place.
+
+## 2026-08-24 — P5.7c Trash end-to-end (Delete→Trash · view · restore · purge · empty)
+IN PROGRESS: (cleared)
+DONE: the whole **Trash** cluster (CANON §C.6/§E.3, gallery B19) — **with NO new
+  migration**. Key finding: soft-delete / restore / purge are **plain client writes**, the
+  `works` RLS already fences them (`works_update`/`works_delete` gate on `can_write_work` =
+  author or server admin; `authenticated` holds the UPDATE/DELETE grants), a trashed work
+  stays readable by its author (`can_read_work`'s owner branch skips the `deleted_at`
+  guard), and the `works_blob_meter` AFTER trigger correctly leaves the storage meter
+  untouched on a `deleted_at` flip (kept 30 days) and decrements it + the blob refcount on
+  the hard DELETE. So `data.js` gained direct writers — `trashWorks` (bulk soft-delete),
+  `restoreWork`, `purgeWork`, `emptyTrash(scope)`, and `loadTrash` (reads the caller's own
+  trashed works). Wired in `explorer.js`: the bulk-bar **Delete** → Trash with an **Undo**
+  toast (one-action restore); the tree **Trash** row opens the **Trash view** (`paintTrash`)
+  — the retention notice + **Empty trash now** (danger) over rows showing media icon · name
+  · uploader/when · a **days-left countdown that turns danger-red ≤7d** · hover **Restore /
+  Delete forever**. Entering Trash refetches from the DB in live mode; the demo seeds 3
+  rows (29d/21d/6d — the last warn). `data._trash`/`data.files` stay in sync across every
+  action (no refetch). Ported the B19 CSS (`.trashnote/.trrow/.tmed/.tinfo/.tleft/.tacts`)
+  into content.css.
+  Verified: `verify-explorer.mjs` +`trash` case (Delete removes from folder + clears the
+  selection → Trash holds 3+1=4 with a warn row → Restore→3 → Delete forever→2 → Empty→0 +
+  empty state); **17** explorer states GREEN, both themes, zero app console errors. Trash
+  view screenshot eyeballed light+dark vs gallery B19 — matches (notice, danger Empty, red
+  6d, hover actions). Full gallery verify GREEN.
+NEXT: **Save to my files** (`saved_items` insert per CANON §E.3 `save_to_files`/`unsave`)
+  + the **Starred** smart-folder (`starred_items` + `toggle_star` — the deferred quick-
+  filter; needs the table/RPC which may not be applied — check `list_migrations`); the card
+  **right-click context menu** (Move to…/Delete reuse the picker + trash writers now, plus
+  Download once R2 read env lands). Card **rename** (works.title update, RLS-gated like
+  delete). Drag-and-drop file→folder (`.dropinto` CSS exists) reusing `moveToFolder`.
+GOTCHA AG: `loadTrash` doesn't fetch each work's `placement.folder_id`, so a live restore
+  re-adds the file to `data.files` without its folderId (shows at root until the next full
+  explorer load; the DB row is correct — only deleted_at was cleared). Demo restores keep
+  the folder (the fixture rows carry it). Fetch placement in loadTrash to make live restore
+  land in the right folder in-session.
+GOTCHA AH: the server Trash view shows only **your own** trashed works (RLS `can_read_work`
+  denies other members' trashed rows even to an admin). That's the safe default; an admin
+  takedown is not "restorable by the admin" — only the author sees/restores it.

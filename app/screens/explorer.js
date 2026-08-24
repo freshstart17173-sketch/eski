@@ -16,7 +16,7 @@
 import { el, toast, openMenu, closeMenus, openModal } from "../ui.js";
 import { iconEl } from "../icons.js";
 import { navigate } from "../router.js";
-import { createFolder, moveToFolder } from "../data.js";
+import { createFolder, moveToFolder, trashWorks, restoreWork, purgeWork, emptyTrash, loadTrash } from "../data.js";
 import { workCard, folderCard, mediaUrl, KIND_ICON } from "../cards.js";
 import { channelColumn } from "./workspace.js";
 import { openUpload } from "./upload.js";
@@ -84,7 +84,11 @@ export function renderExplorer(data, view = {}) {
     date: "any",            // any/today/week/month/year
     sort: "latest",        // latest/oldest/name/size
     dir: "desc",           // sort direction
+    trash: false,           // the Trash smart-folder is open
   };
+  // trashed rows shown in the Trash view: seeded from the demo fixture, refreshed from
+  // the DB on entering Trash in live mode, and kept in sync by the row actions.
+  if (!data._trash) data._trash = (data.trash || []).slice();
 
   const personal = data.source === "personal";
   const pane = el(".pane");
@@ -141,12 +145,12 @@ function paintTree(tree, data, state, rerender) {
 
   const rows = [];
   // the root row (lvl0), then the nested folders under it
-  const rootOn = state.folderId == null;
+  const rootOn = state.folderId == null && !state.trash;
   rows.push(treeRow({
     label: rootLabel(data), level: 0, on: rootOn, hasKids: childrenOf(null).length > 0,
     open: !state.collapsed.has("__root__"),
     onToggle: () => { toggle(state.collapsed, "__root__"); rerender(); },
-    onOpen: () => { state.folderId = null; rerender(); },
+    onOpen: () => { state.folderId = null; state.trash = false; rerender(); },
   }));
   if (!state.collapsed.has("__root__")) walk(null, 1);
 
@@ -155,10 +159,10 @@ function paintTree(tree, data, state, rerender) {
       const kids = childrenOf(f.id);
       const open = !state.collapsed.has(f.id);
       rows.push(treeRow({
-        label: f.name, level, on: state.folderId === f.id, hasKids: kids.length > 0, open,
+        label: f.name, level, on: state.folderId === f.id && !state.trash, hasKids: kids.length > 0, open,
         locked: f.locked, archived: f.archived,
         onToggle: () => { toggle(state.collapsed, f.id); rerender(); },
-        onOpen: () => { state.folderId = f.id; state.query = ""; rerender(); },
+        onOpen: () => { state.folderId = f.id; state.query = ""; state.trash = false; rerender(); },
       }));
       if (open && kids.length) walk(f.id, level + 1);
     }
@@ -167,7 +171,7 @@ function paintTree(tree, data, state, rerender) {
   // Trash + storage footer pinned to the foot
   const bottom = el(".ftbottom", {}, [
     el(".ftsep"),
-    treeRow({ label: "Trash", level: 0, icon: "trash", meta: "30d", onOpen: () => toast({ message: "Trash view (P5.7)" }) }),
+    treeRow({ label: "Trash", level: 0, icon: "trash", meta: "30d", on: state.trash, onOpen: () => enterTrash(data, state, rerender) }),
     storageFoot(data, storage),
   ]);
 
@@ -208,6 +212,8 @@ function storageFoot(data, storage) {
 // ── the pane (breadcrumb · toolbar · contents) ───────────────────────────────
 function paint(tree, pane, data, state, rerender) {
   paintTree(tree, data, state, rerender);
+
+  if (state.trash) { paintTrash(pane, data, state, rerender); return; }
 
   const searching = state.query.trim().length > 0;
 
@@ -302,7 +308,7 @@ function paint(tree, pane, data, state, rerender) {
       el("span.n", {}, [el("span", {}, [String(n)]), " selected"]),
       selAct("download", "Download", () => toast({ message: "Download (needs the R2 read env)" })),
       selAct("move", "Move to folder", () => moveSelected(data, state, rerender)),
-      selAct("trash", "Delete", () => toast({ message: "Delete → Trash (P5.7)" })),
+      selAct("trash", "Delete", () => trashSelected(data, state, rerender)),
       el("span.sp"),
       selAct("x", "Clear", () => { state.selection.clear(); state.lastIdx = -1; refreshSel(); }),
     );
@@ -663,4 +669,98 @@ function openMovePicker(data, state, onPick) {
     try { await onPick(dest); modal.close(); }
     catch (e) { busy = false; go.disabled = false; go.textContent = "Move here"; toast({ message: e?.message || "Couldn’t move the files" }); }
   });
+}
+
+// ── Trash (CANON §C.6 / §E.3 · gallery B19) ──────────────────────────────────
+// Soft-deleted works, kept 30 days then hard-purged by the scheduled job. Entering the
+// view fetches the caller's trashed works in live mode (they persist across sessions);
+// the demo fixture seeds a few. Delete→Trash / Restore / Delete-forever / Empty all write
+// through (§E.3, plain client writes) and keep data._trash + data.files in sync — no
+// refetch, matching the explorer's one-fetch model.
+const TRASH_DAYS = 30;
+function daysLeft(deletedAt) { return Math.max(0, Math.ceil(TRASH_DAYS - (Date.now() - new Date(deletedAt).getTime()) / 86400000)); }
+function fmtWhen(ts) { const d = Math.floor((Date.now() - new Date(ts).getTime()) / 86400000); return d <= 0 ? "today" : d === 1 ? "1 day ago" : `${d} days ago`; }
+
+// enter the Trash smart-folder; in live mode refresh the list from the DB first
+function enterTrash(data, state, rerender) {
+  state.trash = true; state.selection.clear(); state.lastIdx = -1;
+  rerender();
+  if (!isDemoQS()) {
+    loadTrash({ source: data.source, serverId: data.server?.id, membersById: data.membersById || {} })
+      .then((rows) => { data._trash = rows; if (state.trash) rerender(); })
+      .catch(() => {});
+  }
+}
+
+// Delete the current selection → Trash (recoverable). The works leave the folder view and
+// appear in Trash; an Undo toast restores them in one action.
+function trashSelected(data, state, rerender) {
+  const ids = [...state.selection];
+  if (!ids.length) return;
+  const moved = data.files.filter((w) => state.selection.has(w.id));
+  (isDemoQS() ? Promise.resolve() : trashWorks(ids)).then(() => {
+    const now = new Date().toISOString();
+    data.files = data.files.filter((w) => !ids.includes(w.id));
+    for (const w of moved) data._trash.unshift({ ...w, deletedAt: now });
+    state.selection.clear(); state.lastIdx = -1;
+    rerender();
+    toast({ message: `Moved ${ids.length} to Trash`, icon: "trash", action: { label: "Undo", onClick: () => restoreMany(data, state, rerender, ids) } });
+  }).catch((e) => toast({ message: e?.message || "Couldn’t delete" }));
+}
+
+// restore several works out of Trash (the Undo path); each is a real deleted_at=null write
+function restoreMany(data, state, rerender, ids) {
+  const set = new Set(ids);
+  const back = data._trash.filter((w) => set.has(w.id));
+  (isDemoQS() ? Promise.resolve() : Promise.all(ids.map(restoreWork))).then(() => {
+    data._trash = data._trash.filter((w) => !set.has(w.id));
+    for (const w of back) { const { deletedAt, ...rest } = w; data.files.push(rest); }
+    rerender();
+  }).catch((e) => toast({ message: e?.message || "Couldn’t restore" }));
+}
+
+function paintTrash(pane, data, state, rerender) {
+  const rows = data._trash || [];
+  const panehd = el(".panehd", {}, [el(".crumbs", {}, [el("b", {}, ["Trash"])])]);
+  const view = el(".exview", { "data-exview": "trash" });
+  const empty = el("button.btn.sm.danger", { disabled: !rows.length, onClick: () => emptyNow(data, rerender) }, [iconEl("trash", "sm"), "Empty trash now"]);
+  view.append(el(".trashnote", {}, [iconEl("trash", "sm"), el("span", {}, ["Items are permanently deleted ", el("b", {}, ["30 days"]), " after they’re trashed."]), empty]));
+  if (!rows.length) view.append(emptyState("trash", "Trash is empty", "Files you delete are kept here for 30 days, then removed."));
+  else for (const w of rows) view.append(trashRow(w, data, rerender));
+  pane.replaceChildren(panehd, el(".panebody", {}, [view]));
+}
+
+function trashRow(w, data, rerender) {
+  const left = daysLeft(w.deletedAt);
+  const acts = el(".tacts", {}, [
+    el("button.btn.sm", { onClick: () => restoreMany(data, null, rerender, [w.id]) }, [iconEl("undo", "sm"), "Restore"]),
+    el("button.btn.sm.danger", { onClick: () => purgeRow(data, rerender, w) }, ["Delete forever"]),
+  ]);
+  return el(".trrow", {}, [
+    el(".tmed", {}, [trashThumb(w)]),
+    el(".tinfo", {}, [el(".trname", {}, [w.title || w.name || "untitled"]), el(".tsub", {}, [`${w.who?.name ? w.who.name + " · " : ""}trashed ${fmtWhen(w.deletedAt)}`])]),
+    el("span.tleft" + (left <= 7 ? ".warn" : ""), {}, [`${left}d left`]),
+    acts,
+  ]);
+}
+
+function trashThumb(w) {
+  const url = mediaUrl(w);
+  if (w.kind === "image" && url) return el("img", { src: url, alt: "", loading: "lazy" });
+  return iconEl(KIND_LIST_ICON[w.kind] || "file", "sm");
+}
+
+function purgeRow(data, rerender, w) {
+  (isDemoQS() ? Promise.resolve() : purgeWork(w.id)).then(() => {
+    data._trash = data._trash.filter((x) => x.id !== w.id);
+    rerender();
+    toast({ message: "Deleted forever" });
+  }).catch((e) => toast({ message: e?.message || "Couldn’t delete" }));
+}
+
+function emptyNow(data, rerender) {
+  if (!data._trash.length) return;
+  (isDemoQS() ? Promise.resolve() : emptyTrash({ source: data.source, serverId: data.server?.id })).then(() => {
+    data._trash = []; rerender(); toast({ message: "Trash emptied" });
+  }).catch((e) => toast({ message: e?.message || "Couldn’t empty Trash" }));
 }
