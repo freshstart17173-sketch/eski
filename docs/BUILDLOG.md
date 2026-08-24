@@ -795,3 +795,31 @@ GOTCHA AJ: the star hover action lives in `.cardacts` (display:none until `.card
   so a headless click must `hover()` the card first. The badge + action share the top-left
   corner with `.cardsel` (selection check) as in the gallery — a starred+selected card
   overlaps there by design (LAW); revisit only if it reads badly in real use.
+
+## 2026-08-24 — P5.9b Card ⋯/right-click menu + Rename
+IN PROGRESS: (cleared)
+DONE: the card **⋯ / right-click context menu** (CANON §C.6, gallery card menu) wiring only
+  the actions that have a **real write path** — **Star/Unstar · Save to my files · Rename ·
+  Move to… · Delete** — no stubs (Download waits on the R2 read env, Copy link on
+  share_links, Hide-from-library on the Show-hidden filter; each returns as its backend
+  lands). `workCard` cards now carry a **⋯ hover action** beside the star (`onMenu`), and a
+  **right-click** on any card opens the same menu. New writer `renameWork(id,title)` in
+  data.js (a `works.title` update, fenced by `works_update`/can_write_work — same gate as
+  delete; the trigger re-derives search_tsv). Generalised the single-field prompt to
+  `promptText({title,placeholder,value,submit,…})` — New folder still uses it; **Rename**
+  reuses it prefilled + text-selected (submit disabled until the name changes). Refactored
+  `moveSelected`/`trashSelected` into id-taking `moveIds`/`trashIds` so the bulk bar and a
+  single card menu share one path. Save is omitted on a personal file (already yours). Demo
+  writes optimistically.
+  Verified: `verify-explorer.mjs` +`card-menu` case (menu lists the 5 real actions; Rename
+  prefills the current name → change → the card title updates + prompt closes; menu Delete
+  removes one card from the folder); **19** explorer states GREEN, both themes, zero app
+  console errors. Card menu screenshot eyeballed — [star, ⋯] hover actions, menu items with
+  Delete in danger red, anchored to the ⋯ button. Full gallery verify GREEN.
+NEXT: as their backends land — **Download** (R2 read env), **Copy link** (`share_links`
+  insert; `resolve_share_link` exists), **Hide from library** (a `works.hidden` toggle +
+  the panehd Show-hidden filter, currently a stub), **Crosspost to server…**. Also
+  unstar/rename from the details pane, and the personal Save-to-a-folder chooser (GOTCHA AI).
+GOTCHA AK: nested `<button>` — the card is a `button`, its `.cardacts` star/⋯ are buttons
+  inside it. Each action's onClick calls `e.stopPropagation()` so it doesn't trigger the
+  card's select/open. Right-click uses `contextmenu` (preventDefault) → the same menu.

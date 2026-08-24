@@ -16,7 +16,7 @@
 import { el, toast, openMenu, closeMenus, openModal } from "../ui.js";
 import { iconEl } from "../icons.js";
 import { navigate } from "../router.js";
-import { createFolder, moveToFolder, trashWorks, restoreWork, purgeWork, emptyTrash, loadTrash, starWork, unstarWork } from "../data.js";
+import { createFolder, moveToFolder, trashWorks, restoreWork, purgeWork, emptyTrash, loadTrash, starWork, unstarWork, saveToFiles, renameWork } from "../data.js";
 import { workCard, folderCard, mediaUrl, KIND_ICON } from "../cards.js";
 import { channelColumn } from "./workspace.js";
 import { openUpload } from "./upload.js";
@@ -396,9 +396,10 @@ function contents(data, state, rerender, sel) {
   };
 
   const onStar = (w) => toggleStar(data, state, rerender, w);
+  const onMenu = (w, anchor) => openCardMenu(data, state, rerender, w, anchor);
   if (state.mode === "feed") return feedView(data, state, openFile);
   if (state.mode === "list") return listView(subfolders, files, { openFile, openFolder });
-  return gridView(subfolders, files, { openFile, openFolder, onCardClick, onStar, showWho: data.source !== "personal" });
+  return gridView(subfolders, files, { openFile, openFolder, onCardClick, onStar, onMenu, showWho: data.source !== "personal" });
 }
 
 // Feed view (§C.6): flatten the current folder's whole SUBTREE to previewable works
@@ -441,14 +442,16 @@ function feedMedia(w) {
   return el(".dtype", {}, [icon, el("span.ext", {}, [(w.file_ext || "").toUpperCase()])]);
 }
 
-function gridView(subfolders, files, { openFile, openFolder, onCardClick, onStar, showWho }) {
+function gridView(subfolders, files, { openFile, openFolder, onCardClick, onStar, onMenu, showWho }) {
   const grid = el(".masonry.even");
   for (const f of subfolders) grid.append(folderCard(f, { onOpen: openFolder }));
   files.forEach((w, i) => {
-    const card = workCard(w, { selectable: true, showWho, starred: !!w.starred, onStar });
+    const actions = onMenu ? [{ act: "more", icon: "more", title: "More", onClick: (ww) => onMenu(ww, card.querySelector('.cardacts [data-act="more"]') || card) }] : [];
+    const card = workCard(w, { selectable: true, showWho, starred: !!w.starred, onStar, actions });
     card.dataset.id = w.id;
     card.addEventListener("click", (e) => onCardClick(w, i, e));
     card.addEventListener("dblclick", (e) => { e.preventDefault(); openFile(w); });
+    card.addEventListener("contextmenu", (e) => { e.preventDefault(); onMenu?.(w, card); });
     grid.append(card);
   });
   return el(".exview", { "data-exview": "grid" }, [grid]);
@@ -570,29 +573,33 @@ function newFolder(data, state, rerender, parentId) {
   });
 }
 
-// The reusable single-field prompt (gallery "Prompt" dialog): a text input over the
-// scrim, Create disabled until it's non-empty, Enter submits. onSubmit(name) may be
-// async and may throw — a throw keeps the modal open and surfaces the reason as a toast
-// so the user can retry (e.g. a duplicate name or a permission failure from the RPC).
 function promptFolderName(onSubmit) {
-  const input = el("input", { placeholder: "Folder name" });
-  const create = el("button.btn.primary", { disabled: true }, ["Create"]);
+  promptText({ title: "New folder", placeholder: "Folder name", submit: "Create", busyLabel: "Creating…", fail: "Couldn’t create the folder" }, onSubmit);
+}
+
+// The reusable single-field prompt (gallery "Prompt" dialog): a text input over the scrim,
+// the submit button disabled until it's non-empty and different from the prefill, Enter
+// submits. onSubmit(value) may be async and may throw — a throw keeps the modal open and
+// surfaces the reason as a toast so the user can retry. Used by New folder + Rename.
+function promptText({ title, placeholder = "", value = "", submit = "Save", busyLabel = "Saving…", fail = "Couldn’t save" }, onSubmit) {
+  const input = el("input", { placeholder, value });
+  const go = el("button.btn.primary", { disabled: true }, [submit]);
   const cancel = el("button.btn.ghost", {}, ["Cancel"]);
-  const modal = openModal({ title: "New folder", body: el(".field", {}, [input]), footer: [cancel, create] });
+  const modal = openModal({ title, body: el(".field", {}, [input]), footer: [cancel, go] });
   let busy = false;
-  const sync = () => { create.disabled = busy || !input.value.trim(); };
-  const submit = async () => {
-    const name = input.value.trim();
-    if (!name || busy) return;
-    busy = true; create.textContent = "Creating…"; sync();
-    try { await onSubmit(name); modal.close(); }
-    catch (e) { busy = false; create.textContent = "Create"; sync(); toast({ message: e?.message || "Couldn’t create the folder" }); }
+  const sync = () => { const v = input.value.trim(); go.disabled = busy || !v || v === value.trim(); };
+  const run = async () => {
+    const v = input.value.trim();
+    if (!v || busy || v === value.trim()) return;
+    busy = true; go.textContent = busyLabel; sync();
+    try { await onSubmit(v); modal.close(); }
+    catch (e) { busy = false; go.textContent = submit; sync(); toast({ message: e?.message || fail }); }
   };
   input.addEventListener("input", sync);
-  input.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); submit(); } });
-  create.addEventListener("click", submit);
+  input.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); run(); } });
+  go.addEventListener("click", run);
   cancel.addEventListener("click", () => modal.close());
-  setTimeout(() => input.focus(), 0);
+  setTimeout(() => { input.focus(); input.select(); }, 0);
 }
 
 // ── Move to folder (CANON §C.6 bulk bar) ─────────────────────────────────────
@@ -600,8 +607,10 @@ function promptFolderName(onSubmit) {
 // (`move_to_folder` RPC per work on a server, a `saved_items` upsert in My-files); demo
 // moves optimistically. On success the moved works get their new `folderId` and the
 // screen rerenders — they leave the current folder view — and the selection clears.
-function moveSelected(data, state, rerender) {
-  const ids = [...state.selection];
+function moveSelected(data, state, rerender) { moveIds(data, state, rerender, [...state.selection]); }
+
+// Move a specific set of works (the bulk selection, or one card from its menu).
+function moveIds(data, state, rerender, ids) {
   if (!ids.length) return;
   openMovePicker(data, state, async (destId) => {
     if (!isDemoQS()) await moveToFolder({ source: data.source, works: ids, destFolderId: destId });
@@ -704,10 +713,13 @@ function enterTrash(data, state, rerender) {
 
 // Delete the current selection → Trash (recoverable). The works leave the folder view and
 // appear in Trash; an Undo toast restores them in one action.
-function trashSelected(data, state, rerender) {
-  const ids = [...state.selection];
+function trashSelected(data, state, rerender) { trashIds(data, state, rerender, [...state.selection]); }
+
+// Soft-delete a specific set of works → Trash (the bulk selection, or one card menu).
+function trashIds(data, state, rerender, ids) {
   if (!ids.length) return;
-  const moved = data.files.filter((w) => state.selection.has(w.id));
+  const set = new Set(ids);
+  const moved = data.files.filter((w) => set.has(w.id));
   (isDemoQS() ? Promise.resolve() : trashWorks(ids)).then(() => {
     const now = new Date().toISOString();
     data.files = data.files.filter((w) => !ids.includes(w.id));
@@ -793,3 +805,34 @@ function toggleStar(data, state, rerender, w) {
   }).catch((e) => toast({ message: e?.message || "Couldn’t update star" }));
 }
 function cssEscape(s) { return (window.CSS && CSS.escape) ? CSS.escape(s) : String(s).replace(/["\\]/g, "\\$&"); }
+
+// ── Card ⋯ / right-click menu (CANON §C.6, gallery card menu) ─────────────────
+// Only actions with a real write path today — Star, Save to my files, Rename, Move to…,
+// Delete. No stubs: Download waits on the R2 read env, Copy link on share_links, Hide from
+// library on the Show-hidden filter (each returns as its backend lands). Save is omitted on
+// a personal file (already yours). Anchored to the ⋯ button (or the card, for right-click).
+function openCardMenu(data, state, rerender, w, anchor) {
+  const personal = data.source === "personal";
+  openMenu(anchor, [
+    { label: w.starred ? "Unstar" : "Star", icon: "star", onClick: () => toggleStar(data, state, rerender, w) },
+    ...(personal ? [] : [{ label: "Save to my files", icon: "save", onClick: () => saveOne(w) }]),
+    { label: "Rename", icon: "pen", onClick: () => renameFile(data, state, rerender, w) },
+    { label: "Move to…", icon: "folder", onClick: () => moveIds(data, state, rerender, [w.id]) },
+    { sep: true },
+    { label: "Delete", icon: "trash", danger: true, onClick: () => trashIds(data, state, rerender, [w.id]) },
+  ]);
+}
+
+function saveOne(w) {
+  (isDemoQS() ? Promise.resolve() : saveToFiles(w.id)).then(() => toast({ message: "Saved to your files", icon: "save" }))
+    .catch((e) => toast({ message: e?.message || "Couldn’t save" }));
+}
+
+function renameFile(data, state, rerender, w) {
+  promptText({ title: "Rename", placeholder: "Name", value: w.title || w.name || "", submit: "Rename", busyLabel: "Renaming…", fail: "Couldn’t rename" }, async (name) => {
+    if (!isDemoQS()) await renameWork(w.id, name);
+    w.title = name; w.name = name;
+    rerender();
+    toast({ message: "Renamed" });
+  });
+}

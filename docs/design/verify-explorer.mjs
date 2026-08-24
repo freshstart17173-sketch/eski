@@ -337,6 +337,55 @@ await detailsCase("dark");
   await ctx.close();
 }
 
+// Card menu — the ⋯ / right-click menu (real actions only) + Rename + menu Delete.
+{
+  const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  const page = await ctx.newPage();
+  const errs = [];
+  page.on("console", (m) => { if (m.type() === "error" || m.type() === "warning") errs.push(`[${m.type()}] ${m.text()}`); });
+  page.on("pageerror", (e) => errs.push(`[pageerror] ${e.message}`));
+  await page.goto(`http://localhost:${PORT}/s/lb/files?demo=1&folder=beats`, { waitUntil: "networkidle" }).catch(() => {});
+  await page.waitForTimeout(300);
+  const problems = [];
+  const grid = '.exview[data-exview="grid"] .card:not(.foldercard)';
+  const before = await count(page, grid);
+  // open the ⋯ menu on the first card
+  const first = await page.$(grid);
+  await first.hover();
+  await page.waitForTimeout(80);
+  await (await first.$('.cardacts [data-act="more"]')).click();
+  await page.waitForTimeout(120);
+  const items = await page.$$eval(".menu.open button", (bs) => bs.map((b) => b.textContent.trim()));
+  for (const want of ["Star", "Save to my files", "Rename", "Move to…", "Delete"]) {
+    if (!items.some((t) => t.includes(want))) problems.push(`card menu missing "${want}" (got ${JSON.stringify(items)})`);
+  }
+  // Rename → prompt prefilled with the current name → change it → the card title updates
+  for (const b of await page.$$(".menu.open button")) { if ((await b.textContent()).includes("Rename")) { await b.click(); break; } }
+  await page.waitForTimeout(120);
+  const val = await page.$eval(".scrim .modal .field input", (i) => i.value).catch(() => "");
+  if (!val.includes("late_bloom")) problems.push(`Rename prompt should prefill the current name, got "${val}"`);
+  await page.fill(".scrim .modal .field input", "renamed_take.flp");
+  await page.waitForTimeout(60);
+  for (const b of await page.$$(".scrim .modal .btn.primary")) { await b.click(); break; }
+  await page.waitForTimeout(150);
+  if (await $(page, ".scrim .modal")) problems.push("Rename prompt should close after submit");
+  const titles = await page.$$eval(".exview[data-exview=\"grid\"] .card .title", (ts) => ts.map((t) => t.textContent));
+  if (!titles.some((t) => t.includes("renamed_take.flp"))) problems.push("renamed title should appear on the card");
+  // Delete from the menu removes the card from the folder
+  const card2 = await page.$(grid);
+  await card2.hover();
+  await (await card2.$('.cardacts [data-act="more"]')).click();
+  await page.waitForTimeout(120);
+  for (const b of await page.$$(".menu.open button")) { if ((await b.textContent()).trim() === "Delete") { await b.click(); break; } }
+  await page.waitForTimeout(150);
+  if ((await count(page, grid)) !== before - 1) problems.push(`menu Delete should remove one card (${before}→${before - 1}), got ${await count(page, grid)}`);
+  const appErrs = errs.filter((e) => !/Failed to load resource|net::ERR|supabase|getSession|fetch|401|403|Access-Control/i.test(e));
+  if (appErrs.length) problems.push(...appErrs);
+  if (problems.length) { fails++; console.log("✗ card-menu"); problems.forEach((p) => console.log("    " + p)); }
+  else console.log("✓ card-menu");
+  await ctx.close();
+}
+
 // Starred — the seeded star badge, the quick-filter flat grid, and starring a card.
 {
   const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });

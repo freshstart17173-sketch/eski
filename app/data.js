@@ -472,6 +472,15 @@ export async function loadTrash({ source = "server", serverId, membersById = {} 
   }));
 }
 
+// Rename a work — a plain `works.title` update, fenced by `works_update` (can_write_work:
+// author or server admin), same gate as delete. The trigger re-derives search_tsv.
+export async function renameWork(workId, title) {
+  const clean = (title || "").trim();
+  if (!clean) throw new Error("Name is required");
+  const { error } = await supabase.from("works").update({ title: clean }).eq("id", workId);
+  if (error) throw error;
+}
+
 // ── Star (CANON §C.6 / §E.3) ─────────────────────────────────────────────────
 // A per-user star on a work — `starred_items` (PK user_id+work_id), owner-only RLS
 // (`star_all`), granted to authenticated. So star/unstar are plain client writes.
