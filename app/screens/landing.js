@@ -13,17 +13,17 @@ import { icon } from "../icons.js";
 
 const FEATURES = [
   { ic: "grid", title: "A feed, not a folder dump",
-    body: "Public posts show up like a feed — scroll what's shared, not a file listing." },
+    body: "Public posts show up like a feed. Scroll what's shared, not a file listing." },
   { ic: "server", title: "Servers and channels",
     body: "Invite people into a server, split talk into channels, and keep every file that gets shared there." },
   { ic: "folder", title: "A real drive underneath",
-    body: "Nested folders and search give every file a permanent home — nothing gets lost in scrollback." },
+    body: "Nested folders and search give every file a permanent home, so nothing gets lost in scrollback." },
   { ic: "comment", title: "Comments where the file lives",
-    body: "Comment on a post, or reply in the channel it was shared in — never chase a file across five threads." },
+    body: "Comment on a post, or reply in the channel it was shared in, instead of chasing a file across five threads." },
   { ic: "lock", title: "Public, server, or just you",
     body: "Every file picks one of three audiences, labelled the same way everywhere, so you always know who's looking." },
   { ic: "mail", title: "Friends and DMs",
-    body: "One mutual relationship. Add a friend and their public posts land in your feed and your DMs open up." },
+    body: "Friendship goes both ways. Add someone and their public posts show up in your feed, with DMs open too." },
 ];
 
 const MOCK = [
@@ -48,10 +48,10 @@ export function renderLanding() {
     <div class="lhero">
       <h1>Discord, with a file server built in.</h1>
       <p class="lsub">Chat in servers and channels. Every file shared there lands in a real, organized
-        drive — folders, search, and a feed of what's public. Comment on it, save a copy, find it again months later.</p>
+        drive: folders, search, and a feed of what's public. Comment on it, save a copy, find it again months later.</p>
       <div class="lcta">
         <a class="btn primary" href="/signin">${icon("send")}Get started</a>
-        <a class="btn ghost" href="#features">See what’s inside</a>
+        <a class="btn ghost" href="#features">See what's inside</a>
       </div>
     </div>
 
@@ -84,7 +84,7 @@ export function renderLanding() {
 
     <div class="lclose">
       <h2>Stop losing files in a group chat.</h2>
-      <a class="btn primary" href="/signin">${icon("send")}Get started — it’s free</a>
+      <a class="btn primary" href="/signin">${icon("send")}Get started for free</a>
     </div>
 
     <footer class="lfoot">
