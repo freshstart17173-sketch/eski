@@ -938,3 +938,31 @@ NEXT: comment **Realtime** (a `comments` subscription so a new comment appears w
   RLS `prof_update` = self only).
 GOTCHA AO: Playwright clicks an `opacity:0` element fine (actionability checks layout box +
   visibility/display, not opacity), so the hover-reveal `.cdel` is testable without a hover.
+
+## 2026-08-24 — P5.10b Edit profile (name / handle / bio — real write)
+IN PROGRESS: (cleared)
+DONE: the owner's **Edit profile** action (was a `toast("P5.10b")` stub) now opens the real
+  modal (gallery `#epModal`, CANON §C.10) and writes the text fields. New `updateProfile
+  ({name,handle,bio})` in data.js — a plain self-only `profiles` update (RLS `prof_update` =
+  id === auth.uid()). Handle is validated (`^[a-z0-9_]+$`, @ stripped) and is globally
+  UNIQUE, so a clash surfaces as **"That handle is taken"** (the constraint is the fence; the
+  23505/unique/duplicate match covers PostgREST's error shapes). On success the hero repaints
+  in place: the identity block was extracted to `whoKids(p)` so `Object.assign(p, vals)` +
+  `who.replaceChildren(...)` reflects the new name/handle/bio (the bio row appears/disappears
+  cleanly). **Avatar + banner are honest R2 markers** — "Change photo/banner" buttons that
+  toast "needs the R2 upload env", the same gate as file uploads and Download; not fakes, per
+  the build-the-real-thing principle. The svnote uses `#i-check` (no `i-info` in the sprite —
+  an unknown icon would trip icons.js' dev warning, which the verify treats as an error).
+  Verified: `verify-profile.mjs` +`edit-profile` — the modal opens from the owner action,
+  editing name+bio and saving closes it and repaints the hero (name + bio), and an invalid
+  handle ("no spaces!") keeps the modal open (rejected). owner-light/dark, shelf-switch,
+  edit-profile all GREEN; feed/explorer/workspace/gallery GREEN both themes, zero app console
+  errors. Modal screenshotted both themes (round avatar, @-prefixed handle, note, scrim/no
+  shadow — matches the gallery).
+NEXT: **avatar/banner** upload (when the R2 write env lands — reuse the upload signer path);
+  **user settings** (the profile Settings tab, still `toast("P9")`) and **Search profile**
+  (P5.15). Or the other card-menu backends (Download, Copy link/`share_links`, Crosspost), or
+  comment **Realtime** (not in-sandbox verifiable).
+GOTCHA AP: icons.js warns (console) on any `#i-*` not in the mounted sprite, and the verify
+  harness counts console warnings as failures — so a new surface must only use icons that
+  exist (grep the sprite / gallery first). `i-info` does not exist; `i-check` does.

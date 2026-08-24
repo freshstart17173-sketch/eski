@@ -4,11 +4,12 @@
 // friend; a friend sees Public + Server + Message. Same card renderer as the Feed,
 // NO member colour (a public profile is never server-scoped).
 
-import { el, toast, Avatar } from "../ui.js";
+import { el, toast, Avatar, openModal, Button } from "../ui.js";
 import { iconEl } from "../icons.js";
 import { navigate } from "../router.js";
 import { workCard } from "../cards.js";
 import { openDetails } from "./details.js";
+import { updateProfile } from "../data.js";
 
 const SHELVES = [
   { key: "public", label: "Public", icon: "globe" },
@@ -33,16 +34,11 @@ export function renderProfile(data) {
   const state = { shelf: visibleShelves[0].key, even: true };
 
   // hero — round avatar, name, @handle, bio, POV actions
+  const who = el(".who", {}, whoKids(p));
   const actions = el(".actions");
-  if (pov === "owner") actions.append(el("button.btn.primary", { onClick: () => toast({ message: "Edit profile (P5.10b)" }) }, [iconEl("pen", "sm"), "Edit profile"]));
+  if (pov === "owner") actions.append(el("button.btn.primary", { onClick: () => openEditProfile(data, () => who.replaceChildren(...whoKids(p))) }, [iconEl("pen", "sm"), "Edit profile"]));
   else if (pov === "public") actions.append(el("button.btn.primary", { onClick: () => toast({ message: "Friend request sent" }) }, [iconEl("plus", "sm"), "Add friend"]));
   else actions.append(el("button.btn.primary", { onClick: () => toast({ message: "Message (P7)" }) }, [iconEl("mail", "sm"), "Message"]));
-
-  const who = el(".who", {}, [
-    el("h1", {}, [p.name]),
-    el(".handle", {}, ["@" + p.handle]),
-    p.bio ? el(".bio", {}, [p.bio]) : null,
-  ]);
   const hero = el(".phero", {}, [el(".top", {}, [Avatar({ name: p.initials || p.name, size: "lg" }), who, actions])]);
 
   // shelf tabs (+ Settings for owner) + search
@@ -74,6 +70,60 @@ export function renderProfile(data) {
     for (const w of works) grid.append(workCard(w, { onOpen: openPost, hue: false }));
     body.replaceChildren(grid);
   }
+}
+
+// the hero identity block — extracted so Edit-profile can repaint it in place after a save
+// (the bio row only exists when there's a bio, so replaceChildren rebuilds cleanly).
+function whoKids(p) {
+  return [
+    el("h1", {}, [p.name]),
+    el(".handle", {}, ["@" + p.handle]),
+    p.bio ? el(".bio", {}, [p.bio]) : null,
+  ];
+}
+
+// Edit-profile modal (CANON §C.10, gallery #epModal) — the text fields (name / handle /
+// bio) are a real self-only `profiles` write; on success the caller repaints the hero.
+// Avatar + banner are R2 uploads, deferred to the R2 write env (same gate as file uploads
+// and Download) — honest markers, not fakes. `onSaved` runs after the values are patched.
+function openEditProfile(data, onSaved) {
+  const p = data.profile;
+  const avRow = el(".epavrow", { style: "display:flex;align-items:center;gap:12px;margin-bottom:6px" }, [
+    Avatar({ name: p.initials || p.name, size: "lg" }),
+    Button({ label: "Change photo", size: "sm", icon: "pen", onClick: () => toast({ message: "Profile photo (needs the R2 upload env)" }) }),
+    Button({ label: "Change banner", size: "sm", icon: "pen", onClick: () => toast({ message: "Profile banner (needs the R2 upload env)" }) }),
+  ]);
+
+  const nameI = el("input", { value: p.name || "", "aria-label": "Display name" });
+  const handleI = el("input", { value: p.handle || "", "aria-label": "Handle" });
+  const bioI = el("input", { value: p.bio || "", "aria-label": "Bio" });
+
+  const body = el("div", {}, [
+    avRow,
+    el("label.ulab", {}, ["Display name"]),
+    el(".field", {}, [nameI]),
+    el("label.ulab", {}, ["Handle"]),
+    el(".field", {}, [el("span", { style: "color:var(--muted)" }, ["@"]), handleI]),
+    el(".svnote", {}, [iconEl("check", "sm"), el("span", {}, ["Changing your handle breaks old links to your profile."])]),
+    el("label.ulab", {}, ["Bio"]),
+    el(".field", {}, [bioI]),
+  ]);
+
+  const cancel = Button({ label: "Cancel", variant: "ghost" });
+  const save = Button({ label: "Save profile", variant: "primary" });
+  const { close } = openModal({ title: "Edit profile", body, footer: [cancel, save] });
+  cancel.addEventListener("click", () => close());
+  save.addEventListener("click", async () => {
+    if (save.disabled) return;
+    save.disabled = true;
+    try {
+      const vals = await updateProfile({ name: nameI.value, handle: handleI.value, bio: bioI.value });
+      Object.assign(p, vals, { initials: (vals.name || vals.handle).trim().slice(0, 2).toUpperCase() });
+      onSaved?.();
+      close();
+      toast({ message: "Profile saved", icon: "check" });
+    } catch (e) { toast({ message: e?.message || "Couldn’t save your profile" }); save.disabled = false; }
+  });
 }
 
 function shelfEmpty(shelf) {

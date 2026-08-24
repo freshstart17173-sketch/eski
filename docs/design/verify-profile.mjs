@@ -76,6 +76,34 @@ await run("shelf-switch", "light", async (p) => {
   return (await p.$eval(".ptabs2 .ptab2:nth-child(3)", (e) => e.classList.contains("on"))) ? null : "Private tab should activate";
 });
 
+// Edit profile (P5.10b) — open the modal from the owner's Edit-profile action, change the
+// name + bio, save, and confirm the hero repaints in place (demo write is optimistic).
+await run("edit-profile", "light", async (p) => {
+  await p.click(".phero .actions .btn.primary");   // Edit profile (owner POV)
+  await p.waitForTimeout(200);
+  const inModal = await p.$(".scrim .modal");
+  if (!inModal) return "Edit-profile modal should open";
+  if (!(await p.$('.scrim .modal input[aria-label="Handle"]'))) return "handle field missing";
+  if (!(await p.$('.scrim .modal .svnote'))) return "handle-change note missing";
+  await p.fill('.scrim .modal input[aria-label="Display name"]', "jax okonkwo");
+  await p.fill('.scrim .modal input[aria-label="Bio"]', "producer, engineer, and now with a longer bio.");
+  await p.click('.scrim .modal button:has-text("Save profile")');
+  await p.waitForTimeout(200);
+  if (await p.$(".scrim .modal")) return "modal should close on save";
+  const name = await p.$eval(".phero .who h1", (e) => e.textContent);
+  if (name !== "jax okonkwo") return `hero name should repaint to the new name, got "${name}"`;
+  const bio = await p.$eval(".phero .who .bio", (e) => e.textContent).catch(() => null);
+  if (!bio || !bio.includes("longer bio")) return "hero bio should repaint to the new bio";
+  // invalid handle is rejected (the modal stays open, a toast fires)
+  await p.click(".phero .actions .btn.primary");
+  await p.waitForTimeout(150);
+  await p.fill('.scrim .modal input[aria-label="Handle"]', "no spaces!");
+  await p.click('.scrim .modal button:has-text("Save profile")');
+  await p.waitForTimeout(150);
+  if (!(await p.$(".scrim .modal"))) return "an invalid handle should keep the modal open";
+  return null;
+});
+
 await browser.close();
 server.close();
 console.log(fails ? `\n✗ ${fails} FAIL` : "\n✓ all profile states render, zero app console errors, both themes");

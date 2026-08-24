@@ -664,6 +664,24 @@ export async function loadProfile(handle) {
   };
 }
 
+// Edit your own profile (CANON §C.10) — the text fields (name / handle / bio). A plain
+// self-only `profiles` update (RLS `prof_update` = id === auth.uid()). The handle is
+// globally UNIQUE, so a clash surfaces as "That handle is taken" (the constraint is the
+// fence). Avatar/banner are R2 uploads, deferred to the R2 write env like file uploads.
+// Returns the cleaned values so the profile hero repaints without a reload.
+export async function updateProfile({ name, handle, bio }) {
+  const h = (handle || "").trim().replace(/^@/, "");
+  if (!h) throw new Error("A handle is required");
+  if (!/^[a-z0-9_]+$/i.test(h)) throw new Error("Handles use only letters, numbers, and underscores");
+  const vals = { name: (name || "").trim() || h, handle: h, bio: (bio || "").trim() };
+  if (isDemo()) return vals;
+  const user = session();
+  if (!user) throw new Error("Sign in");
+  const { error } = await supabase.from("profiles").update(vals).eq("id", user.id);
+  if (error) throw new Error(/duplicate|unique|23505/i.test(error.message || "") ? "That handle is taken" : (error.message || "Couldn’t save your profile"));
+  return vals;
+}
+
 // a channel's thread (parent + replies), loaded on demand when a thread opens
 export async function loadThread(parentId, membersById) {
   const { data: parent } = await supabase.from("messages").select("id,body,created_at,edited_at,user_id,channel_id").eq("id", parentId).maybeSingle();
