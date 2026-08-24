@@ -108,8 +108,14 @@ async function detailsCase(theme) {
   await page.goto(`http://localhost:${PORT}/s/lb/files?demo=1&folder=beats`, { waitUntil: "networkidle" }).catch(() => {});
   await page.waitForTimeout(300);
   const problems = [];
-  // open the first file card (not a folder card)
+  // single click SELECTS (Drive model), it must not open the details pane
   await page.click('.exview[data-exview="grid"] .card:not(.foldercard)');
+  await page.waitForTimeout(120);
+  if (await $(page, ".sheet")) problems.push("single click must select, not open details");
+  if (!(await $(page, ".card.sel"))) problems.push("single click should select the card");
+  if (!(await $(page, ".selbar.open"))) problems.push("selection should open the bulk bar");
+  // a double click OPENS the details pane
+  await page.dblclick('.exview[data-exview="grid"] .card:not(.foldercard)');
   await page.waitForTimeout(200);
   if (!(await $(page, ".sheet .card2 .dmedia"))) problems.push("details media well missing");
   if (!(await $(page, ".sheet .dinfo .dtop .dfilename"))) problems.push("info-rail filename missing");

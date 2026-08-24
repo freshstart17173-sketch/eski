@@ -61,6 +61,8 @@ export function renderExplorer(data, view = {}) {
     mode: VIEWS[view.mode] ? view.mode : "grid",
     query: "",
     collapsed: new Set(),   // folder ids whose children are hidden in the tree
+    selection: new Set(),   // selected work ids (Google-Drive model, §C.6)
+    lastIdx: -1,            // anchor for Shift-click range
   };
 
   const personal = data.source === "personal";
@@ -76,6 +78,22 @@ export function renderExplorer(data, view = {}) {
 
   const rerender = () => { paint(tree, pane, data, state, rerender); };
   rerender();
+
+  // Esc clears the selection; ⌘/Ctrl-A selects everything in view. A single document
+  // listener, self-cleaning once this screen leaves the DOM (a nav swaps #stage).
+  const onKey = (e) => {
+    if (!screen.isConnected) { document.removeEventListener("keydown", onKey); return; }
+    if (document.querySelector(".sheet")) return;   // the details overlay owns keys while open
+    const tag = document.activeElement?.tagName;
+    if (tag === "INPUT" || tag === "TEXTAREA") return;
+    if (e.key === "Escape" && state.selection.size) { state.selection.clear(); state.lastIdx = -1; state._refresh?.(); }
+    else if ((e.metaKey || e.ctrlKey) && (e.key === "a" || e.key === "A") && state.mode === "grid") {
+      e.preventDefault();
+      for (const w of state._files || []) state.selection.add(w.id);
+      state._refresh?.();
+    }
+  };
+  document.addEventListener("keydown", onKey);
   return screen;
 }
 
@@ -209,8 +227,28 @@ function paint(tree, pane, data, state, rerender) {
     el("button.btn.primary", { onClick: () => openUpload(uploadOpts) }, [iconEl("plus", "sm"), "Upload"]),
   ]);
 
+  const selbar = el(".selbar");
   const body = el(".panebody");
-  pane.replaceChildren(panehd, toolbar, body);
+  pane.replaceChildren(panehd, toolbar, selbar, body);
+
+  // selection controller (Google-Drive model): refreshSel repaints the .sel outlines
+  // and the bulk bar off state.selection, without rebuilding the grid.
+  const sel = { state, refresh: refreshSel };
+  state._refresh = refreshSel;   // for the screen-level key handler (Esc / ⌘A)
+  function refreshSel() {
+    body.querySelectorAll(".card[data-id]").forEach((c) => c.classList.toggle("sel", state.selection.has(c.dataset.id)));
+    const n = state.selection.size;
+    selbar.classList.toggle("open", n > 0);
+    if (n > 0) selbar.replaceChildren(
+      el("span.n", {}, [el("span", {}, [String(n)]), " selected"]),
+      selAct("download", "Download", () => toast({ message: "Download (needs the R2 read env)" })),
+      selAct("move", "Move to folder", () => toast({ message: "Move to folder (P5.6)" })),
+      selAct("trash", "Delete", () => toast({ message: "Delete → Trash (P5.7)" })),
+      el("span.sp"),
+      selAct("x", "Clear", () => { state.selection.clear(); state.lastIdx = -1; refreshSel(); }),
+    );
+  }
+
   repaintBody();
 
   // re-render only the contents (search-as-you-type) without rebuilding the tree/toolbar
@@ -220,12 +258,18 @@ function paint(tree, pane, data, state, rerender) {
     if (isSearch !== (panehd.firstChild === crumbs ? false : true)) {
       panehd.replaceChild(isSearch ? searchState : crumbs, panehd.firstChild);
     }
-    body.replaceChildren(contents(data, state, rerender));
+    state.selection.clear(); state.lastIdx = -1;   // a new file set clears the selection
+    body.replaceChildren(contents(data, state, rerender, sel));
+    refreshSel();
   }
 }
 
+function selAct(icon, label, onClick) {
+  return el("button", { title: label, onClick }, [iconEl(icon, "sm"), label]);
+}
+
 // the current folder's subfolders + files, as grid or list; or search results
-function contents(data, state, rerender) {
+function contents(data, state, rerender, sel) {
   const searching = state.query.trim().length > 0;
   const q = state.query.trim().toLowerCase();
 
@@ -239,6 +283,7 @@ function contents(data, state, rerender) {
     subfolders = data.folders.filter((f) => (f.parentId || null) === state.folderId);
     files = data.files.filter((w) => (w.folderId || null) === state.folderId);
   }
+  state._files = files;   // the current in-view set, for ⌘A select-all
 
   // a card opens the Details pane (§C.7): server files carry tags but no comments;
   // siblings = the files in view (prev/next); Location = the file's own folder path.
@@ -256,14 +301,32 @@ function contents(data, state, rerender) {
       : emptyState("folder", "This folder is empty", "Upload files or create a subfolder to fill it.");
   }
 
+  // Google-Drive selection (§C.6): single click selects (clears others), ⌘/Ctrl-click
+  // toggles, Shift-click ranges; a double-click opens. List view keeps click-to-open.
+  const onCardClick = (w, i, e) => {
+    const s = state.selection;
+    if (e.metaKey || e.ctrlKey) { s.has(w.id) ? s.delete(w.id) : s.add(w.id); state.lastIdx = i; }
+    else if (e.shiftKey && state.lastIdx >= 0) {
+      const [a, b] = [state.lastIdx, i].sort((x, y) => x - y);
+      for (let k = a; k <= b; k++) s.add(files[k].id);
+    } else { s.clear(); s.add(w.id); state.lastIdx = i; }
+    sel.refresh();
+  };
+
   if (state.mode === "list") return listView(subfolders, files, { openFile, openFolder });
-  return gridView(subfolders, files, { openFile, openFolder });
+  return gridView(subfolders, files, { openFile, openFolder, onCardClick, showWho: data.source !== "personal" });
 }
 
-function gridView(subfolders, files, { openFile, openFolder }) {
+function gridView(subfolders, files, { openFile, openFolder, onCardClick, showWho }) {
   const grid = el(".masonry.even");
   for (const f of subfolders) grid.append(folderCard(f, { onOpen: openFolder }));
-  for (const w of files) grid.append(workCard(w, { onOpen: openFile, showWho: true }));
+  files.forEach((w, i) => {
+    const card = workCard(w, { selectable: true, showWho });
+    card.dataset.id = w.id;
+    card.addEventListener("click", (e) => onCardClick(w, i, e));
+    card.addEventListener("dblclick", (e) => { e.preventDefault(); openFile(w); });
+    grid.append(card);
+  });
   return el(".exview", { "data-exview": "grid" }, [grid]);
 }
 

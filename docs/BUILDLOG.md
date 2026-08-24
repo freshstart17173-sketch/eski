@@ -548,3 +548,24 @@ GOTCHA AB: like the Feed, live profiles are sparse until public works + friendsh
   exist; `/u/<you>?demo=1` shows the populated owner self-view. The three POVs are
   computed for chrome only — `works_read` + `friendships` enforce them server-side, so a
   stranger's shelves come back empty even if the client asked for more.
+
+## 2026-08-24 — P5.6b Explorer selection model + bulk bar
+IN PROGRESS: (cleared)
+DONE: the Google-Drive **selection model** in the explorer grid (CANON §C.6), which
+  also retires the single-click-opens stopgap (GOTCHA Y). In `explorer.js`: a
+  **single click selects** a card (clearing the rest), **⌘/Ctrl-click toggles**,
+  **Shift-click ranges**, **⌘/Ctrl-A** selects everything in view, **Esc** clears, and a
+  **double-click opens** the Details pane. A selection lights the card (`.card.sel`
+  outline + check badge via `selectable:true`) and opens the **bulk bar** (`.selbar`:
+  "N selected · Download · Move to folder · Delete · Clear" — actions are wired to
+  toasts pending their write paths). Keyboard is a single self-cleaning document
+  listener (removes itself once the screen leaves the DOM; yields to the details overlay
+  and text inputs). A folder/search change clears the selection. Folders still descend on
+  a single click; list view keeps click-to-open (the bulk model is grid-focused, as in
+  the gallery). All `.selbar/.cardsel/.card.sel` CSS already existed (P5.4).
+  Verified: `verify-explorer.mjs` updated — the details case now asserts **single click
+  selects (no details, bulk bar opens)** and **double-click opens**; 11 states GREEN,
+  both themes, zero app console errors. Screenshot eyeballed (2 non-contiguous cards
+  selected, bulk bar) — matches gallery.
+NEXT: wire the bulk actions' write paths (delete→Trash, move_to_folder) + the Trash view
+  (§C.6); the filter/sort dropdowns + quick-filter chips; then real `comments`.
