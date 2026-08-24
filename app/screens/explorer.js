@@ -16,7 +16,7 @@
 import { el, toast, openMenu, closeMenus, openModal } from "../ui.js";
 import { iconEl } from "../icons.js";
 import { navigate } from "../router.js";
-import { createFolder, moveToFolder, trashWorks, restoreWork, purgeWork, emptyTrash, loadTrash, starWork, unstarWork, saveToFiles, renameWork } from "../data.js";
+import { createFolder, moveToFolder, trashWorks, restoreWork, purgeWork, emptyTrash, loadTrash, starWork, unstarWork, saveToFiles, renameWork, setHidden } from "../data.js";
 import { workCard, folderCard, mediaUrl, KIND_ICON } from "../cards.js";
 import { channelColumn } from "./workspace.js";
 import { openUpload } from "./upload.js";
@@ -86,6 +86,7 @@ export function renderExplorer(data, view = {}) {
     dir: "desc",           // sort direction
     trash: false,           // the Trash smart-folder is open
     starred: false,         // the Starred quick-filter is on (flat grid of starred works)
+    showHidden: false,      // reveal hidden/utility works in the library view (#55)
   };
   // trashed rows shown in the Trash view: seeded from the demo fixture, refreshed from
   // the DB on entering Trash in live mode, and kept in sync by the row actions.
@@ -234,12 +235,12 @@ function paint(tree, pane, data, state, rerender) {
   ]);
 
   const viewBtn = el("button.btn", { "aria-haspopup": "menu", onClick: (e) => openMenu(e.currentTarget, Object.entries(VIEWS).map(([k, v]) => ({ label: v, onClick: () => { state.mode = k; rerender(); } }))) }, [el("span", {}, [VIEWS[state.mode]]), iconEl("chev", "sm")]);
+  // Show-hidden (#55): a tucked toggle — hidden/utility works are omitted from the library
+  // view unless this is on. It reveals them (dimmed); it does not rebuild the toolbar.
+  const hiddenBtn = el("button.iconbtn" + (state.showHidden ? ".on" : ""), { title: state.showHidden ? "Hiding hidden files" : "Show hidden files", "aria-pressed": state.showHidden ? "true" : "false", onClick: () => { state.showHidden = !state.showHidden; hiddenBtn.classList.toggle("on", state.showHidden); hiddenBtn.setAttribute("aria-pressed", state.showHidden ? "true" : "false"); hiddenBtn.setAttribute("title", state.showHidden ? "Hiding hidden files" : "Show hidden files"); repaintBody(); } }, [iconEl("hide", "sm")]);
   const panehd = el(".panehd", {}, [
     searching ? searchState : crumbs,
-    el(".hdctl", {}, [
-      el("button.iconbtn", { title: "Show hidden files", onClick: () => toast({ message: "Show hidden (P5.5)" }) }, [iconEl("hide", "sm")]),
-      viewBtn,
-    ]),
+    el(".hdctl", {}, [hiddenBtn, viewBtn]),
   ]);
 
   // toolbar — search · filters (Type/Channel/Uploader/Tag/Date/Sort) · New folder · Upload
@@ -356,6 +357,8 @@ function contents(data, state, rerender, sel) {
     subfolders = data.folders.filter((f) => (f.parentId || null) === state.folderId);
     files = data.files.filter((w) => (w.folderId || null) === state.folderId);
   }
+  // Hidden/utility works (#55) are omitted from the library view unless Show-hidden is on.
+  if (!state.showHidden) files = files.filter((w) => !w.hidden);
   // Facet filters, then sort (all apply to files only; subfolders always lead the grid).
   // Within a facet the selected values union; across facets they intersect (§C.6).
   if (state.types.size) files = files.filter((w) => state.types.has(w.kind));
@@ -448,6 +451,7 @@ function gridView(subfolders, files, { openFile, openFolder, onCardClick, onStar
   files.forEach((w, i) => {
     const actions = onMenu ? [{ act: "more", icon: "more", title: "More", onClick: (ww) => onMenu(ww, card.querySelector('.cardacts [data-act="more"]') || card) }] : [];
     const card = workCard(w, { selectable: true, showWho, starred: !!w.starred, onStar, actions });
+    if (w.hidden) card.classList.add("ishidden");
     card.dataset.id = w.id;
     card.addEventListener("click", (e) => onCardClick(w, i, e));
     card.addEventListener("dblclick", (e) => { e.preventDefault(); openFile(w); });
@@ -818,9 +822,21 @@ function openCardMenu(data, state, rerender, w, anchor) {
     ...(personal ? [] : [{ label: "Save to my files", icon: "save", onClick: () => saveOne(w) }]),
     { label: "Rename", icon: "pen", onClick: () => renameFile(data, state, rerender, w) },
     { label: "Move to…", icon: "folder", onClick: () => moveIds(data, state, rerender, [w.id]) },
+    { label: w.hidden ? "Show in library" : "Hide from library", icon: "hide", onClick: () => toggleHidden(data, state, rerender, w) },
     { sep: true },
     { label: "Delete", icon: "trash", danger: true, onClick: () => trashIds(data, state, rerender, [w.id]) },
   ]);
+}
+
+// Hide/show a work in the library view (#55) — a real works.hidden toggle. When hiding
+// while Show-hidden is off the card leaves the view, so rerender to reflect it.
+function toggleHidden(data, state, rerender, w) {
+  const next = !w.hidden;
+  (isDemoQS() ? Promise.resolve() : setHidden(w.id, next)).then(() => {
+    w.hidden = next;
+    rerender();
+    toast({ message: next ? "Hidden from the library" : "Shown in the library", icon: "hide" });
+  }).catch((e) => toast({ message: e?.message || "Couldn’t update" }));
 }
 
 function saveOne(w) {

@@ -472,6 +472,14 @@ export async function loadTrash({ source = "server", serverId, membersById = {} 
   }));
 }
 
+// Hide/show a work in the library view (#55) — a `works.hidden` toggle, fenced by
+// `works_update` (can_write_work). Hidden keeps a utility file out of the organised
+// explorer view (Show-hidden reveals it); it still works inline in chat.
+export async function setHidden(workId, hidden) {
+  const { error } = await supabase.from("works").update({ hidden: !!hidden }).eq("id", workId);
+  if (error) throw error;
+}
+
 // Rename a work — a plain `works.title` update, fenced by `works_update` (can_write_work:
 // author or server admin), same gate as delete. The trigger re-derives search_tsv.
 export async function renameWork(workId, title) {

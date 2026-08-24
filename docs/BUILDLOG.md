@@ -823,3 +823,29 @@ NEXT: as their backends land — **Download** (R2 read env), **Copy link** (`sha
 GOTCHA AK: nested `<button>` — the card is a `button`, its `.cardacts` star/⋯ are buttons
   inside it. Each action's onClick calls `e.stopPropagation()` so it doesn't trigger the
   card's select/open. Right-click uses `contextmenu` (preventDefault) → the same menu.
+
+## 2026-08-24 — P5.9c Hide from library (#55) + Show-hidden
+IN PROGRESS: (cleared)
+DONE: the **Hide from library** feature (CANON #55) — a hidden/utility work is omitted from
+  the organised explorer view unless **Show-hidden** is on. The panehd Show-hidden toggle
+  (was a `toast("P5.5")` stub) is now a real `.iconbtn.on` toggle: `state.showHidden` gates
+  `contents()` (`if (!showHidden) files = files.filter(w => !w.hidden)`), applied in folder /
+  search / Starred views alike. Revealed hidden cards read **dimmed** (`.card.ishidden`,
+  opacity .55, lifts on hover) — same low-presence signal as the archived tree row, no new
+  chrome. The card ⋯ menu gained **Hide from library / Show in library** (real writer
+  `setHidden(id,hidden)` — a `works.hidden` update fenced by `works_update`/can_write_work);
+  hiding a work drops it from the view (rerender). Demo seeds a hidden utility file (`f8
+  system_cache.tmp`) at root.
+  Verified: `verify-explorer.mjs` +`hidden` case (root hides f8; Show-hidden reveals it
+  dimmed + toggle active; off re-hides; the ⋯ Hide drops a visible work from the view);
+  **20** explorer states GREEN, both themes, zero app console errors. Full gallery verify
+  GREEN.
+NEXT: the remaining card-menu items as their backends land — **Download** (R2 read env),
+  **Copy link** (`share_links` insert; `resolve_share_link` exists), **Crosspost to
+  server…**. Details-pane parity (unstar/rename/hide from the viewer), and the personal
+  Save-to-a-folder chooser (GOTCHA AI). The explorer's write surface (New folder · Move ·
+  Trash · Star · Save · Rename · Hide) is now real end-to-end — a natural point to move to
+  the **Feed comments** live path or **Profile** writes next.
+GOTCHA AL: `.iconbtn.on` is a generic pressed-toggle style (Show-hidden); the Starred
+  toggle keeps its gold via the more-specific `.iconbtn.exstar.on`. Order-independent —
+  specificity (3 vs 2 classes) decides, not source order.

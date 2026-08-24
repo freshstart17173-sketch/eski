@@ -141,6 +141,12 @@
 .cardacts button.starred .ic{fill:currentColor}
 /* the Starred quick-filter toggle (in line with the filters): gold when active */
 .iconbtn.exstar.on{color:var(--star);background:var(--plate)}
+/* a pressed icon toggle (e.g. Show-hidden) reads as filled chrome */
+.iconbtn.on{background:var(--plate);color:var(--ink)}
+/* #55 a hidden/utility work, revealed by Show-hidden, reads dimmed (same signal as an
+   archived tree row) — no new chrome, just lowered presence. */
+.card.ishidden{opacity:.55}
+.card.ishidden:hover{opacity:1}
 .card .media img.shot{object-fit:cover}
 .who .uchip{margin-right:2px}
 

@@ -337,6 +337,43 @@ await detailsCase("dark");
   await ctx.close();
 }
 
+// Hidden (#55) — Show-hidden reveals the dimmed utility file; the card menu hides a work.
+{
+  const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  const page = await ctx.newPage();
+  const errs = [];
+  page.on("console", (m) => { if (m.type() === "error" || m.type() === "warning") errs.push(`[${m.type()}] ${m.text()}`); });
+  page.on("pageerror", (e) => errs.push(`[pageerror] ${e.message}`));
+  await page.goto(`http://localhost:${PORT}/s/lb/files?demo=1`, { waitUntil: "networkidle" }).catch(() => {});
+  await page.waitForTimeout(300);
+  const problems = [];
+  const grid = '.exview[data-exview="grid"] .card:not(.foldercard)';
+  const visible = await count(page, grid);   // root shows f7; f8 is hidden
+  // Show-hidden reveals the dimmed utility file
+  await page.click(".panehd .hdctl .iconbtn");
+  await page.waitForTimeout(150);
+  if (!(await page.$eval(".panehd .hdctl .iconbtn", (b) => b.classList.contains("on")))) problems.push("Show-hidden toggle should be active");
+  if ((await count(page, grid)) !== visible + 1) problems.push(`Show-hidden should reveal one more card (${visible}→${visible + 1}), got ${await count(page, grid)}`);
+  if (!(await $(page, ".card.ishidden"))) problems.push("the revealed hidden card should read dimmed (.ishidden)");
+  // toggle off → back to the visible-only set
+  await page.click(".panehd .hdctl .iconbtn");
+  await page.waitForTimeout(150);
+  if ((await count(page, grid)) !== visible) problems.push("turning Show-hidden off should hide the utility file again");
+  // Hide a visible work from its ⋯ menu → it drops out of the library view
+  const first = await page.$(grid);
+  await first.hover();
+  await (await first.$('.cardacts [data-act="more"]')).click();
+  await page.waitForTimeout(120);
+  for (const b of await page.$$(".menu.open button")) { if ((await b.textContent()).includes("Hide from library")) { await b.click(); break; } }
+  await page.waitForTimeout(150);
+  if ((await count(page, grid)) !== visible - 1) problems.push(`hiding a work should drop it from the view (${visible}→${visible - 1}), got ${await count(page, grid)}`);
+  const appErrs = errs.filter((e) => !/Failed to load resource|net::ERR|supabase|getSession|fetch|401|403|Access-Control/i.test(e));
+  if (appErrs.length) problems.push(...appErrs);
+  if (problems.length) { fails++; console.log("✗ hidden"); problems.forEach((p) => console.log("    " + p)); }
+  else console.log("✓ hidden");
+  await ctx.close();
+}
+
 // Card menu — the ⋯ / right-click menu (real actions only) + Rename + menu Delete.
 {
   const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
