@@ -28,7 +28,18 @@ GOTCHA: channels.post_policy='admins' must reject non-admin inserts — test cov
 
 ## Current state
 
-**Phase: build. P0–P3 DONE. P4 UI (P4.1–P4.9) DONE. P4.10/P4.11 live: 6 owner-found bugs ALL FIXED IN CODE 2026-08-24 (see below), pending a preview re-test (can't run the browser e2e in-sandbox). NEXT: owner re-tests on preview; then P5.**
+**Phase: build. P0–P4 DONE (P4 live fixes verified better by owner 2026-08-24). P5 (content) IN PROGRESS — Upload first (it generates the real `works` every other P5 surface reads). Upload quota RPC restored + verified. NEXT: finish Upload UI + write path, then Explorer/Details/Feed/Profile. Owner must apply R2 CORS + set R2 env vars in Vercel before uploads work.**
+
+> **Working principle (owner, 2026-08-24): build the REAL thing, don't fake.** No demo
+> fixtures dressed as working features; the `?demo=1` fixture stays a dev/screenshot aid
+> only. Where something genuinely belongs to a later phase, leave an explicit "P*n*"
+> marker, not a fake. Document + commit + push per surface (tokens can cut out).
+>
+> **P5 verifiability:** browser network + R2 can't be exercised in-sandbox, so live
+> reads/writes are verified via SQL (MCP) + offline UI render; the owner confirms the
+> full path on preview. Upload also needs the owner's R2 CORS (paste `r2-cors.json`) +
+> the R2_* Vercel env vars (see OWNER-TODO) — until then the signer works but the R2
+> PUT will CORS-fail.
 
 > **P4.10/P4.11 — 6 preview bugs, all fixed in code (owner test 2026-08-24; re-test on preview).**
 > The live spine works end-to-end on preview (sign-in, live send/receive, presence).
