@@ -140,6 +140,35 @@ async function detailsCase(theme) {
 await detailsCase("light");
 await detailsCase("dark");
 
+// Type filter — pick Audio, only audio cards remain (beats has 1 wav of 4 files)
+{
+  const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  const page = await ctx.newPage();
+  const errs = [];
+  page.on("console", (m) => { if (m.type() === "error" || m.type() === "warning") errs.push(`[${m.type()}] ${m.text()}`); });
+  page.on("pageerror", (e) => errs.push(`[pageerror] ${e.message}`));
+  await page.goto(`http://localhost:${PORT}/s/lb/files?demo=1&folder=beats`, { waitUntil: "networkidle" }).catch(() => {});
+  await page.waitForTimeout(300);
+  const problems = [];
+  const before = await count(page, '.exview[data-exview="grid"] .card:not(.foldercard)');
+  if (before !== 4) problems.push(`beats should have 4 files, got ${before}`);
+  // open the Type dropdown (first .exfilter) and click "Audio"
+  await page.click(".toolbar .btn.exfilter");
+  await page.waitForTimeout(120);
+  const items = await page.$$(".menu.open button");
+  let clicked = false;
+  for (const it of items) { if ((await it.textContent()).includes("Audio")) { await it.click(); clicked = true; break; } }
+  if (!clicked) problems.push("Audio option not found in Type menu");
+  await page.waitForTimeout(150);
+  const after = await count(page, '.exview[data-exview="grid"] .card:not(.foldercard)');
+  if (after !== 1) problems.push(`Type=Audio should leave 1 file, got ${after}`);
+  const appErrs = errs.filter((e) => !/Failed to load resource|net::ERR|supabase|getSession|fetch|401|403|Access-Control/i.test(e));
+  if (appErrs.length) problems.push(...appErrs);
+  if (problems.length) { fails++; console.log("✗ type-filter"); problems.forEach((p) => console.log("    " + p)); }
+  else console.log("✓ type-filter");
+  await ctx.close();
+}
+
 // search-as-you-type (driven through the input, not the URL)
 {
   const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });

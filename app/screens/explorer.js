@@ -22,6 +22,12 @@ import { openUpload } from "./upload.js";
 import { openDetails } from "./details.js";
 
 const VIEWS = { grid: "Grid", list: "List" };
+// filter/sort options (single-select v1). Type maps a label → works.kind ("all" = no
+// filter; "other" = Projects/archives). Sort keys drive the comparator in sortFiles().
+const TYPES = [["all", "All types"], ["image", "Images"], ["audio", "Audio"], ["video", "Video"], ["text", "Text"], ["other", "Projects"]];
+const SORTS = [["latest", "Latest"], ["oldest", "Oldest"], ["name", "Name"], ["size", "Size"]];
+const TYPE_LABEL = Object.fromEntries(TYPES.map(([k, v]) => [k, k === "all" ? "Type" : v]));
+const SORT_LABEL = Object.fromEntries(SORTS);
 
 function fmtBytes(n) {
   n = Number(n || 0);
@@ -63,6 +69,9 @@ export function renderExplorer(data, view = {}) {
     collapsed: new Set(),   // folder ids whose children are hidden in the tree
     selection: new Set(),   // selected work ids (Google-Drive model, §C.6)
     lastIdx: -1,            // anchor for Shift-click range
+    type: "all",           // kind filter (all/image/audio/video/text/other)
+    sort: "latest",        // latest/oldest/name/size
+    dir: "desc",           // sort direction
   };
 
   const personal = data.source === "personal";
@@ -220,8 +229,15 @@ function paint(tree, pane, data, state, rerender) {
     el("input", { placeholder: personal ? "Search your files" : "Search this server's files", value: state.query, onInput: (e) => { state.query = e.target.value; repaintBody(); } }),
   ]);
   const uploadOpts = personal ? { visibility: "private" } : { visibility: "server", serverId: data.server.id, folderId: state.folderId };
+
+  // Type + Sort filters (single-select v1; CANON's multi-select is a later pass) and
+  // a sort-direction toggle. Each re-renders the contents in place.
+  const typeBtn = el("button.btn.exfilter", { "aria-haspopup": "menu", onClick: (e) => openMenu(e.currentTarget, TYPES.map(([k, label]) => ({ label: (state.type === k ? "✓ " : "") + label, onClick: () => { state.type = k; repaintBody(); } }))) }, [TYPE_LABEL[state.type], iconEl("chev", "sm")]);
+  const sortBtn = el("button.btn.exfilter", { "aria-haspopup": "menu", onClick: (e) => openMenu(e.currentTarget, SORTS.map(([k, label]) => ({ label: (state.sort === k ? "✓ " : "") + label, onClick: () => { state.sort = k; repaintBody(); } }))) }, [SORT_LABEL[state.sort], iconEl("chev", "sm")]);
+  const dirBtn = el("button.iconbtn", { title: state.dir === "desc" ? "Descending" : "Ascending", "aria-pressed": state.dir === "asc" ? "true" : "false", onClick: () => { state.dir = state.dir === "desc" ? "asc" : "desc"; repaintBody(); } }, [(() => { const g = iconEl("chev", "sm"); if (state.dir === "asc") g.style.transform = "rotate(180deg)"; return g; })()]);
+
   const toolbar = el(".toolbar", {}, [
-    search,
+    search, typeBtn, sortBtn, dirBtn,
     el("span", { style: "flex:1" }),
     el("button.btn.newFolderBtn", { onClick: () => toast({ message: "New folder (P5.6)" }) }, [iconEl("plus", "sm"), "New folder"]),
     el("button.btn.primary", { onClick: () => openUpload(uploadOpts) }, [iconEl("plus", "sm"), "Upload"]),
@@ -283,6 +299,9 @@ function contents(data, state, rerender, sel) {
     subfolders = data.folders.filter((f) => (f.parentId || null) === state.folderId);
     files = data.files.filter((w) => (w.folderId || null) === state.folderId);
   }
+  // Type filter, then sort (both apply to files only; subfolders always lead the grid)
+  if (state.type !== "all") files = files.filter((w) => w.kind === state.type);
+  files = sortFiles(files, state.sort, state.dir);
   state._files = files;   // the current in-view set, for ⌘A select-all
 
   // a card opens the Details pane (§C.7): server files carry tags but no comments;
@@ -352,6 +371,21 @@ function listView(subfolders, files, { openFile, openFolder }) {
 }
 
 const KIND_LIST_ICON = { audio: "voice", image: "image", video: "video", text: "type", other: "file" };
+
+// sort a file list by the chosen key + direction. Name is A→Z at asc; the others are
+// natural (latest/largest first) at the default desc.
+function sortFiles(files, sort, dir) {
+  const out = files.slice();
+  const cmp = {
+    latest: (a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0),
+    oldest: (a, b) => new Date(a.created_at || 0) - new Date(b.created_at || 0),
+    name: (a, b) => (a.title || "").localeCompare(b.title || ""),
+    size: (a, b) => Number(b.bytes || 0) - Number(a.bytes || 0),
+  }[sort] || (() => 0);
+  out.sort(cmp);
+  if (dir === "asc") out.reverse();
+  return out;
+}
 
 // ── shared empty state (CANON §C.6 reusable pattern) ─────────────────────────
 function emptyState(icon, title, sub) {

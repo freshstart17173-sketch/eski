@@ -569,3 +569,19 @@ DONE: the Google-Drive **selection model** in the explorer grid (CANON §C.6), w
   selected, bulk bar) — matches gallery.
 NEXT: wire the bulk actions' write paths (delete→Trash, move_to_folder) + the Trash view
   (§C.6); the filter/sort dropdowns + quick-filter chips; then real `comments`.
+
+## 2026-08-24 — P5.7 Explorer Type/Sort filters
+IN PROGRESS: (cleared)
+DONE: the explorer toolbar's **Type** + **Sort** filters and a **sort-direction** toggle
+  (single-select v1 — CANON's multi-select Type/Channel/Uploader/Tag + quick-filter chips
+  are a later pass). Type filters the grid by `works.kind` (All/Images/Audio/Video/Text/
+  Projects); Sort orders by Latest/Oldest/Name/Size with the direction chevron flipping
+  asc/desc; both re-render the contents in place and interact correctly with search,
+  folder nav, and the selection model. `sortFiles()` is the shared comparator. Reused the
+  existing `.btn`/menu primitives (`.exfilter` is a marker, styles as `.btn`).
+  Verified: `verify-explorer.mjs` +type-filter case (open Type → Audio → only the 1 audio
+  card of 4 remains); 12 states GREEN, both themes, zero app console errors.
+NEXT: multi-select filters + quick-filter chips + Date + (server) Channel/Uploader/Tag;
+  the write paths for the bulk-bar actions (delete→Trash `works.deleted_at`,
+  `move_to_folder`) + Trash view; New folder (`folders`/`save_folders` insert); then
+  real `comments`.
