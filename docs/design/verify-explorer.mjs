@@ -60,6 +60,15 @@ const CASES = [
     has(p, ".ftrow .ftlock", "locked-folder lock icon")],
   ["empty-folder", "/s/lb/files?demo=1&folder=verses", "light", async (p) =>
     has(p, ".panebody .emptystate h3", "empty-folder state")],
+  // personal My-files mount: no channel column, "My files" root, "Your storage" foot
+  ["personal-light", "/files?demo=1", "light", async (p) =>
+    ((await $(p, "nav.chan")) ? "personal mount must NOT show the channel column" : null) ||
+    (await has(p, '.explayout[data-source="personal"] .filetree', "personal tree")) ||
+    ((await p.$eval(".filetree .fthd", (e) => e.textContent.trim())).startsWith("My files") ? null : "tree header should read My files") ||
+    ((await p.$eval(".ftfoot", (e) => e.textContent)).includes("Your storage") ? null : "footer should read Your storage") ||
+    (await has(p, '.exview[data-exview="grid"] .card', "personal grid cards"))],
+  ["personal-folder", "/files?demo=1&folder=bounces", "light", async (p) =>
+    ((await p.$eval(".crumbs b", (e) => e.textContent)) !== "Bounces" ? "breadcrumb should read Bounces" : null)],
 ];
 
 const browser = await chromium.launch({ executablePath: "/opt/pw-browsers/chromium-1194/chrome-linux/chrome" });

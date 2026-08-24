@@ -11,6 +11,7 @@
 // data-screen name from CANON §C.3.
 const ROUTES = [
   { pattern: "/",                          screen: "feed" },
+  { pattern: "/files",                     screen: "explorer" },   // personal My-files mount
   { pattern: "/messages",                  screen: "dms" },
   { pattern: "/notifications",             screen: "notifications" },
   { pattern: "/upload",                    screen: "upload" },      // modal route

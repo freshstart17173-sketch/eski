@@ -138,8 +138,8 @@ function metaRows(w, ctx) {
   const rows = [];
   // Location — server › folder path, each segment opens the explorer there
   const loc = el("span.loccrumb");
-  const serverBtn = el("button", { onClick: () => openFolder(ctx, null) }, [iconEl("folder", "sm"), ctx.serverName || "Server"]);
-  loc.append(serverBtn);
+  const rootBtn = el("button", { onClick: () => openFolder(ctx, null) }, [iconEl(ctx.personal ? "user" : "folder", "sm"), ctx.serverName || (ctx.personal ? "My files" : "Server")]);
+  loc.append(rootBtn);
   for (const seg of ctx.folderPath || []) {
     loc.append(el("span.sl", {}, ["›"]), el("button", { onClick: () => openFolder(ctx, seg.id) }, [seg.name]));
   }
@@ -188,11 +188,12 @@ function iconBtn(ic, title, onClick, { rotate, disabled, cls, x } = {}) {
 
 // a Location segment click leaves the pane for the explorer at that folder
 function openFolder(ctx, folderId) {
-  if (!ctx.serverId) return;
+  if (!ctx.personal && !ctx.serverId) return;
   closeDetails();
+  const base = ctx.personal ? "/files" : `/s/${ctx.serverId}/files`;
   const q = new URLSearchParams();
   if (folderId) q.set("folder", folderId);
   if (new URLSearchParams(location.search).get("demo") === "1") q.set("demo", "1");
   const qs = q.toString();
-  navigate(`/s/${ctx.serverId}/files` + (qs ? `?${qs}` : ""));
+  navigate(base + (qs ? `?${qs}` : ""));
 }

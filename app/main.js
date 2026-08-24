@@ -77,7 +77,8 @@ async function renderRoute(r) {
   if (r.screen === "explorer") {
     const q = new URLSearchParams(location.search);
     const folder = q.get("folder");
-    const exData = await loadExplorer({ serverId: r.params.serverId, folderId: folder });
+    const source = r.params.serverId ? "server" : "personal";   // /files = personal mount
+    const exData = await loadExplorer({ serverId: r.params.serverId, folderId: folder, source });
     if (mine !== token) return;
     if (exData.needsAuth) { swap(renderSignin()); return; }
     swap(appFrame(renderRail(exData, r), renderExplorer(exData, { folderId: folder, mode: q.get("view") })));

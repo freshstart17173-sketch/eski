@@ -63,31 +63,48 @@ export function renderExplorer(data, view = {}) {
     collapsed: new Set(),   // folder ids whose children are hidden in the tree
   };
 
+  const personal = data.source === "personal";
   const pane = el(".pane");
-  const tree = el("nav.filetree", { "data-tree": "server" });
-  const layout = el(".explayout", { "data-source": "server" }, [tree, pane]);
+  const tree = el("nav.filetree", { "data-tree": personal ? "personal" : "server" });
+  const layout = el(".explayout", { "data-source": personal ? "personal" : "server" }, [tree, pane]);
 
-  screen.append(channelColumn(data, { filesActive: true }), layout);
+  // Server mount keeps the channel column beside the browser (Files is a channel,
+  // never a dead-end). The personal My-files mount hides it — its own tree is the
+  // navigation and it carries no server chrome (CANON §C.6).
+  if (personal) screen.append(layout);
+  else screen.append(channelColumn(data, { filesActive: true }), layout);
 
   const rerender = () => { paint(tree, pane, data, state, rerender); };
   rerender();
   return screen;
 }
 
+// what the tree root / breadcrumb root reads as, and where a folder link points
+function rootLabel(data) { return data.source === "personal" ? (data.rootLabel || "My files") : data.server.name; }
+function filesHref(data, folderId) {
+  const base = data.source === "personal" ? "/files" : `/s/${data.server.id}/files`;
+  const q = new URLSearchParams();
+  if (folderId) q.set("folder", folderId);
+  if (isDemoQS()) q.set("demo", "1");
+  const s = q.toString();
+  return base + (s ? `?${s}` : "");
+}
+function isDemoQS() { return new URLSearchParams(location.search).get("demo") === "1"; }
+
 // ── the folder tree (left) ───────────────────────────────────────────────────
 function paintTree(tree, data, state, rerender) {
   const { folders, storage } = data;
   const childrenOf = (pid) => folders.filter((f) => (f.parentId || null) === pid);
 
-  const hd = el(".fthd", {}, ["Files",
+  const hd = el(".fthd", {}, [data.source === "personal" ? "My files" : "Files",
     el("button.iconbtn.sm.newFolderBtn", { title: "New folder", onClick: () => toast({ message: "New folder (P5.6)" }) }, [iconEl("plus", "sm")]),
   ]);
 
   const rows = [];
-  // the server root row (lvl0), then the nested folders under it
+  // the root row (lvl0), then the nested folders under it
   const rootOn = state.folderId == null;
   rows.push(treeRow({
-    label: data.server.name, level: 0, on: rootOn, hasKids: childrenOf(null).length > 0,
+    label: rootLabel(data), level: 0, on: rootOn, hasKids: childrenOf(null).length > 0,
     open: !state.collapsed.has("__root__"),
     onToggle: () => { toggle(state.collapsed, "__root__"); rerender(); },
     onOpen: () => { state.folderId = null; rerender(); },
@@ -112,7 +129,7 @@ function paintTree(tree, data, state, rerender) {
   const bottom = el(".ftbottom", {}, [
     el(".ftsep"),
     treeRow({ label: "Trash", level: 0, icon: "trash", meta: "30d", onOpen: () => toast({ message: "Trash view (P5.7)" }) }),
-    storageFoot(data.server.name, storage),
+    storageFoot(data, storage),
   ]);
 
   tree.replaceChildren(hd, ...rows, bottom);
@@ -135,13 +152,14 @@ function treeRow({ label, level = 0, on, hasKids, open, locked, archived, icon =
   return row;
 }
 
-function storageFoot(serverName, storage) {
+function storageFoot(data, storage) {
+  const personal = data.source === "personal";
   const pct = storage.capBytes ? Math.min(100, Math.round((storage.usedBytes / storage.capBytes) * 100)) : 0;
   const usedGb = (storage.usedBytes / 1024 ** 3);
   const usedLbl = usedGb < 10 ? usedGb.toFixed(usedGb < 1 ? 2 : 1) : Math.round(usedGb);
-  const sic = iconEl("server", "sm"); sic.style.verticalAlign = "-2px"; sic.style.color = "var(--muted)";
+  const sic = iconEl(personal ? "user" : "server", "sm"); sic.style.verticalAlign = "-2px"; sic.style.color = "var(--muted)";
   return el(".ftfoot", {}, [
-    sic, " This server's storage",
+    sic, personal ? " Your storage" : " This server's storage",
     el(".bar", {}, [el("i", { style: `width:${pct}%` })]),
     `${usedLbl} of ${storage.capGb} GB used · `,
     el("button.manageStorageLink", { style: "color:var(--soft);text-decoration:underline", onClick: () => toast({ message: "Storage & billing (P8)" }) }, ["manage"]),
@@ -157,7 +175,7 @@ function paint(tree, pane, data, state, rerender) {
   // breadcrumb (browsing) OR a search-results indicator (searching)
   const crumbs = el(".crumbs", { id: "exCrumbs" });
   const path = crumbPath(data.folders, state.folderId);
-  crumbs.append(el("button.crumbroot", { onClick: () => { state.folderId = null; rerender(); } }, [data.server.name]));
+  crumbs.append(el("button.crumbroot", { onClick: () => { state.folderId = null; rerender(); } }, [rootLabel(data)]));
   path.forEach((f, i) => {
     crumbs.append(el("span.sl", {}, ["/"]));
     if (i === path.length - 1) crumbs.append(el("b", {}, [f.name]));
@@ -179,14 +197,16 @@ function paint(tree, pane, data, state, rerender) {
   ]);
 
   // toolbar — search + New folder + Upload (filters/sort are a later pass)
+  const personal = data.source === "personal";
   const search = el(".field", {}, [iconEl("search", "sm"),
-    el("input", { placeholder: "Search this server's files", value: state.query, onInput: (e) => { state.query = e.target.value; repaintBody(); } }),
+    el("input", { placeholder: personal ? "Search your files" : "Search this server's files", value: state.query, onInput: (e) => { state.query = e.target.value; repaintBody(); } }),
   ]);
+  const uploadOpts = personal ? { visibility: "private" } : { visibility: "server", serverId: data.server.id, folderId: state.folderId };
   const toolbar = el(".toolbar", {}, [
     search,
     el("span", { style: "flex:1" }),
     el("button.btn.newFolderBtn", { onClick: () => toast({ message: "New folder (P5.6)" }) }, [iconEl("plus", "sm"), "New folder"]),
-    el("button.btn.primary", { onClick: () => openUpload({ visibility: "server", serverId: data.server.id, folderId: state.folderId }) }, [iconEl("plus", "sm"), "Upload"]),
+    el("button.btn.primary", { onClick: () => openUpload(uploadOpts) }, [iconEl("plus", "sm"), "Upload"]),
   ]);
 
   const body = el(".panebody");
@@ -220,10 +240,12 @@ function contents(data, state, rerender) {
     files = data.files.filter((w) => (w.folderId || null) === state.folderId);
   }
 
-  // a card opens the Details pane (§C.7): server files, so tags but no comments;
+  // a card opens the Details pane (§C.7): server files carry tags but no comments;
   // siblings = the files in view (prev/next); Location = the file's own folder path.
+  const personal = data.source === "personal";
   const openFile = (w) => openDetails(w, {
-    serverId: data.server.id, serverName: data.server.name,
+    serverId: personal ? null : data.server.id,
+    serverName: rootLabel(data), personal,
     folderPath: crumbPath(data.folders, w.folderId),
     siblings: files, isPost: false,
   });

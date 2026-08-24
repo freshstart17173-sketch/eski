@@ -457,3 +457,32 @@ GOTCHA Y: the explorer opens details on a **single click** for now — the Googl
   select/marquee pass; single-click-opens matches "elsewhere a single click opens" and
   is the honest v1 until selection exists. Don't wire double-click before selection, or
   a plain click will do nothing.
+
+## 2026-08-24 — P5.6 Personal "My files" mount (explorer, personal source)
+IN PROGRESS: (cleared)
+DONE: the personal **My files** Drive — the SAME explorer component parameterised to the
+  personal source (CANON §C.6/§E), reached from the rail's folder button (now wired to
+  `/files`, highlighted when active) and the new `/files` route. `data.js
+  loadPersonalExplorer(user, folderId)`: reads the user's own `works`
+  (`owner_type='user'`, not-deleted) filed into nested `save_folders` (location via
+  `saved_items.folder_id`, else root), `content_tags`, and the **personal** storage
+  meter (`owner_type='user'`, 10 GB base). `loadExplorer({source})` branches to it;
+  `renderExplorer` handles `source==='personal'` — **no channel column** (its own tree is
+  the nav), tree/breadcrumb root = "My files", **"Your storage"** footer (user icon),
+  "Search your files" placeholder, Upload defaults to a personal (private) upload, and
+  the details Location crumb points back to `/files`. `demoExplorer('personal')` fixture
+  (`demoPersonalExplorer`) mirrors the live shape so `?demo=1` renders it. Server mount
+  unchanged (still mounts the channel column with Files highlighted).
+  Verified: `verify-explorer.mjs` extended — 11 states GREEN incl. personal-light (NO
+  channel column, "My files" tree header, "Your storage" foot, grid cards) and
+  personal-folder (breadcrumb), both themes, zero app console errors. Screenshot
+  eyeballed vs gallery personal tree — matches.
+NEXT: Feed view (the explorer's flattened previewable-only + inline-comments view) OR
+  the home Feed screen (friends' public posts — same card component, `visibility=public`
+  source); then Trash view + the filter/sort dropdowns + multi-select bulk bar; the
+  Save/New-folder write paths (`save_to_files`, `save_folders` insert).
+GOTCHA Z: a personal work's folder location comes from `saved_items.folder_id`, but a
+  straight personal **upload** writes no `saved_items` row (only saved/crossposted works
+  get one), so freshly-uploaded personal files sit at **root** until filed. If personal
+  uploads should land in a chosen folder, the upload write path needs a `saved_items`
+  insert — not built yet (upload.js only writes `placement` for server uploads).

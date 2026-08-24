@@ -140,7 +140,8 @@ export function demoWorkspace() {
 // workspace demo, shaped like loadExplorer()'s live return so the screen renders
 // identically from either source. Folders nest (beats › drums); files carry their
 // `folderId` (null = server root) and the member hue via `who.colorIdx`.
-export function demoExplorer() {
+export function demoExplorer(source = "server") {
+  if (source === "personal") return demoPersonalExplorer();
   const W = (id, title, kind, ext, bytes, who, folderId, channelName, tags = []) => ({
     id, title, name: title, kind, file_ext: ext, blob_sha: null, bytes,
     who: { name: who, colorIdx: P[who].colorIdx }, channelName, folderId,
@@ -186,5 +187,41 @@ export function demoExplorer() {
     currentFolderId: null,
     storage: { usedBytes: 74 * 1024 ** 3, capGb: 120, capBytes: 120 * 1024 ** 3, status: "active", overCap: false },
     activeServerId: "lb",
+    source: "server",
+  };
+}
+
+// The personal "My files" demo fixture — your own Drive, distinct from any server:
+// nested save-folders, own works, "Your storage" footer, no channel column.
+function demoPersonalExplorer() {
+  const F = (id, title, kind, ext, bytes, folderId, tags = []) => ({
+    id, title, name: title, kind, file_ext: ext, blob_sha: null, bytes,
+    who: null, channelName: null, folderId, created_at: "2026-08-12T09:00:00Z", hidden: false, tags,
+  });
+  return {
+    needsAuth: false, live: false, source: "personal",
+    me, isAdmin: false, dmUnread: 3,
+    servers: [
+      { id: "lb", name: "Late Bloom LP", initials: "LB" },
+      { id: "sp", name: "Specter", initials: "SP", mentions: 7 },
+      { id: "bs", name: "Beat swap", initials: "BS" },
+    ],
+    server: null, channelGroups: [], membersById: {},
+    rootLabel: "My files", storageLabel: "Your storage",
+    folders: [
+      { id: "saved", name: "Saved from servers", parentId: null, archived: false, locked: false, count: 2 },
+      { id: "uploads", name: "Uploads", parentId: null, archived: false, locked: false, count: 1 },
+      { id: "bounces", name: "Bounces", parentId: null, archived: false, locked: false, count: 1 },
+      { id: "screens", name: "Screenshots", parentId: null, archived: false, locked: false, count: 0 },
+    ],
+    files: [
+      F("p1", "late_bloom_master.wav", "audio", "wav", 32e6, "bounces", ["master", "bloom"]),
+      F("p2", "cover_bloom.png", "image", "png", 4.8e6, "saved", ["cover", "wip"]),
+      F("p3", "ref_moodboard.png", "image", "png", 3.1e6, "saved", ["reference"]),
+      F("p4", "verse_idea.m4a", "audio", "m4a", 6.2e6, "uploads", ["scratch"]),
+      F("p5", "todo.md", "text", "md", 1800, null, []),
+    ],
+    currentFolderId: null,
+    storage: { usedBytes: 22 * 1024 ** 3, capGb: 50, capBytes: 50 * 1024 ** 3, status: "active", overCap: false },
   };
 }

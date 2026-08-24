@@ -21,7 +21,8 @@ export function renderRail(data, route) {
   // Feed / Messages / My-files
   rail.append(railBtn({ icon: "home", title: "Feed", on: route.screen === "feed", onClick: () => navigate(withDemo("/")) }));
   rail.append(railBtn({ icon: "mail", title: "Messages", on: route.screen === "dms", count: data.dmUnread, onClick: () => navigate(withDemo("/messages")) }));
-  rail.append(railBtn({ icon: "folder", title: "My files (your personal Drive)", onClick: () => toast({ message: "Personal Drive (P5 explorer)" }) }));
+  const onMyFiles = route.screen === "explorer" && !route.params?.serverId;
+  rail.append(railBtn({ icon: "folder", title: "My files (your personal Drive)", on: onMyFiles, onClick: () => navigate(withDemo("/files")) }));
   rail.append(el(".railsep"));
 
   // one badge per server the member is in
