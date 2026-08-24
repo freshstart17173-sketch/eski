@@ -19,6 +19,7 @@ const ROUTES = [
   { pattern: "/search",                    screen: "search" },
   { pattern: "/signin",                    screen: "auth" },
   { pattern: "/join/:code",                screen: "join" },
+  { pattern: "/shared/:token",             screen: "shared" },
   { pattern: "/u/:handle",                 screen: "profile" },
   { pattern: "/s/:serverId/c/:channelId",  screen: "workspace" },
   { pattern: "/s/:serverId/settings",      screen: "settings" },

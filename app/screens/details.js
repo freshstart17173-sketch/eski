@@ -21,7 +21,7 @@ import { saveToFiles, unsaveWork, isWorkSaved, loadComments, postComment, delete
 
 let openSheet = null;   // the single live overlay (only one details pane at a time)
 
-function fmtBytes(n) {
+export function fmtBytes(n) {
   n = Number(n || 0);
   if (!n) return "—";
   const u = ["B", "KB", "MB", "GB", "TB"]; let i = 0;
@@ -89,23 +89,33 @@ function isMediaFocused() {
 
 // ── media well ───────────────────────────────────────────────────────────────
 function mediaArea(w) {
-  const url = mediaUrl(w);
-  if (w.kind === "image" && url) {
-    const well = el(".dmedia.bare");
-    const img = el("img", { src: url, alt: w.title || "" });
-    img.addEventListener("error", () => { well.classList.remove("bare"); well.replaceChildren(typeCard(w)); }, { once: true });
-    well.append(img);
-    return well;
-  }
-  if ((w.kind === "audio" || w.kind === "video") && url) {
-    const player = MediaPlayer({ src: url, kind: w.kind });
-    return el(".dmedia.bare", {}, [player]);
-  }
-  // non-previewable, or no bytes yet — a type card fills the well
-  return el(".dmedia", {}, [typeCard(w)]);
+  const well = el(".dmedia");
+  fillMedia(well, w);
+  return well;
 }
 
-function typeCard(w) {
+// The full-viewer media dispatch, shared with the shared-link viewer (screens/shared.js)
+// so there's ONE place that decides image-vs-player-vs-typecard: fills `mount` with the
+// right node for the kind, adding `.bare` when real bytes render (no padding around the
+// media) and falling back to a type card when the bytes are missing/broken.
+export function fillMedia(mount, w) {
+  const url = mediaUrl(w);
+  if (w.kind === "image" && url) {
+    mount.classList.add("bare");
+    const img = el("img", { src: url, alt: w.title || "" });
+    img.addEventListener("error", () => { mount.classList.remove("bare"); mount.replaceChildren(typeCard(w)); }, { once: true });
+    mount.replaceChildren(img);
+    return;
+  }
+  if ((w.kind === "audio" || w.kind === "video") && url) {
+    mount.classList.add("bare");
+    mount.replaceChildren(MediaPlayer({ src: url, kind: w.kind }));
+    return;
+  }
+  mount.replaceChildren(typeCard(w));   // non-previewable, or no bytes yet
+}
+
+export function typeCard(w) {
   const icon = iconEl(KIND_ICON[w.kind] || "file");
   const kids = [icon, el("span.ext", {}, [(w.file_ext || "").toUpperCase()])];
   // honest note: real bytes only arrive with a live R2 upload

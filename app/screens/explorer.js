@@ -16,7 +16,7 @@
 import { el, toast, openMenu, closeMenus, openModal } from "../ui.js";
 import { iconEl } from "../icons.js";
 import { navigate } from "../router.js";
-import { createFolder, moveToFolder, trashWorks, restoreWork, purgeWork, emptyTrash, loadTrash, starWork, unstarWork, saveToFiles, renameWork, setHidden } from "../data.js";
+import { createFolder, moveToFolder, trashWorks, restoreWork, purgeWork, emptyTrash, loadTrash, starWork, unstarWork, saveToFiles, renameWork, setHidden, createShareLink, shareUrl } from "../data.js";
 import { workCard, folderCard, mediaUrl, KIND_ICON } from "../cards.js";
 import { channelColumn } from "./workspace.js";
 import { openUpload } from "./upload.js";
@@ -823,6 +823,7 @@ function openCardMenu(data, state, rerender, w, anchor) {
   openMenu(anchor, [
     { label: w.starred ? "Unstar" : "Star", icon: "star", onClick: () => toggleStar(data, state, rerender, w) },
     ...(personal ? [] : [{ label: "Save to my files", icon: "save", onClick: () => saveOne(w) }]),
+    { label: "Copy link", icon: "link", onClick: () => copyLink(w) },
     { label: "Rename", icon: "pen", onClick: () => renameFile(data, state, rerender, w) },
     { label: "Move to…", icon: "folder", onClick: () => moveIds(data, state, rerender, [w.id]) },
     { label: w.hidden ? "Show in library" : "Hide from library", icon: "hide", onClick: () => toggleHidden(data, state, rerender, w) },
@@ -842,6 +843,7 @@ export function detailMenuItems(data, state, rerender, w, { repaint, close }) {
   return [
     { label: w.starred ? "Unstar" : "Star", icon: "star", onClick: () => toggleStar(data, state, rerender, w, repaint) },
     ...(personal ? [] : [{ label: "Save to my files", icon: "save", onClick: () => saveOne(w) }]),
+    { label: "Copy link", icon: "link", onClick: () => copyLink(w) },
     { label: "Rename", icon: "pen", onClick: () => renameFile(data, state, rerender, w, repaint) },
     { label: "Move to…", icon: "folder", onClick: () => { close(); moveIds(data, state, rerender, [w.id]); } },
     { label: w.hidden ? "Show in library" : "Hide from library", icon: "hide", onClick: () => toggleHidden(data, state, rerender, w, repaint) },
@@ -865,6 +867,18 @@ function toggleHidden(data, state, rerender, w, after) {
 function saveOne(w) {
   (isDemoQS() ? Promise.resolve() : saveToFiles(w.id)).then(() => toast({ message: "Saved to your files", icon: "save" }))
     .catch((e) => toast({ message: e?.message || "Couldn’t save" }));
+}
+
+// Copy link (CANON #39) — mint a share_links token and copy the /shared/:token URL. The
+// clipboard write can be blocked (permissions / no gesture), so it falls back to showing
+// the URL in the toast so the link is never lost.
+async function copyLink(w) {
+  try {
+    const token = await createShareLink(w.id);
+    const url = shareUrl(token);
+    try { await navigator.clipboard?.writeText(url); toast({ message: "Link copied — anyone with it can view", icon: "link" }); }
+    catch { toast({ message: url, icon: "link" }); }
+  } catch (e) { toast({ message: e?.message || "Couldn’t create the link" }); }
 }
 
 function renameFile(data, state, rerender, w, after) {

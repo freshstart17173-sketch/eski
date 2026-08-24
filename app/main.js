@@ -8,7 +8,7 @@ import { signal, effect } from "./signals.js";
 import { start, match } from "./router.js";
 import { ready, session, onChange } from "./supabase.js";
 import { icon } from "./icons.js";
-import { loadWorkspace, loadExplorer, loadFeed, loadProfile, clearWorkspaceCache, isDemo } from "./data.js";
+import { loadWorkspace, loadExplorer, loadFeed, loadProfile, loadSharedWork, clearWorkspaceCache, isDemo } from "./data.js";
 import { teardownRealtime } from "./realtime.js";
 import { renderRail, appFrame } from "./shell.js";
 import { renderWorkspace } from "./screens/workspace.js";
@@ -18,6 +18,7 @@ import { renderProfile } from "./screens/profile.js";
 import { closeDetails } from "./screens/details.js";
 import { renderSignin } from "./screens/signin.js";
 import { renderLanding } from "./screens/landing.js";
+import { renderShared } from "./screens/shared.js";
 
 const stage = document.getElementById("stage");
 
@@ -68,6 +69,15 @@ async function renderRoute(r) {
   closeDetails();                                       // a nav closes any open details overlay
 
   if (r.screen === "auth") { swap(renderSignin()); return; }   // /signin — full screen, no shell
+
+  // /shared/:token — the read-only shared-link viewer. A standalone page (no shell, works
+  // signed-out), so it covers the rail: no way to browse the rest of the server.
+  if (r.screen === "shared") {
+    const shData = await loadSharedWork(r.params.token);
+    if (mine !== token) return;
+    swap(renderShared(shData));
+    return;
+  }
   // "/" with no session is the marketing home, not the in-shell Feed placeholder
   // or the bare sign-in prompt — every other signed-out deep link still falls
   // through to renderSignin() below via needsAuth.

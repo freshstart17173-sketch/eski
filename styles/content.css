@@ -168,9 +168,9 @@
 .sheet .dmedia>.dmplayer video{height:100%;object-fit:contain}
 /* type card fills the well (never a small top-left box, never a fake thumb) */
 .sheet .dtype{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;color:var(--muted)}
-.sheet .dtype .ic{width:46px;height:46px}
-.sheet .dtype .ext{font-size:var(--fs-xl);font-weight:700;letter-spacing:.05em;color:var(--soft)}
-.sheet .dtype .nb{font-size:11px;color:var(--muted)}
+.sheet .dtype .ic,.sharedview .dtype .ic{width:46px;height:46px}
+.sheet .dtype .ext,.sharedview .dtype .ext{font-size:var(--fs-xl);font-weight:700;letter-spacing:.05em;color:var(--soft)}
+.sheet .dtype .nb,.sharedview .dtype .nb{font-size:11px;color:var(--muted)}
 /* info rail */
 .sheet .dinfo{flex:none;width:380px;min-width:0;display:flex;flex-direction:column;overflow:hidden;background:var(--paper)}
 .sheet .dtop{position:relative;flex:none;display:flex;align-items:center;gap:6px;padding:var(--s3) var(--s4)}
@@ -180,10 +180,12 @@
 .sheet .scroll{flex:1;overflow-y:auto;padding:0 var(--s4) var(--s4)}
 .sheet .dinfo h2{font-size:var(--fs-lg);font-weight:600;margin:var(--s4) 0 var(--s3)}
 /* dense are.na metadata: key left (muted), value right (ink) */
-.sheet .meta{display:flex;flex-direction:column;gap:var(--s1);margin:0 0 var(--s3);font-size:var(--fs-sm)}
-.sheet .meta .row{display:flex;justify-content:space-between;align-items:center;gap:16px;min-height:22px}
-.sheet .meta .k{flex:none;color:var(--muted);font-size:var(--fs-xs);line-height:1.2}
-.sheet .meta .v{flex:1;min-width:0;color:var(--ink);text-align:right;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* meta/tags rows are shared by the details pane (.sheet) and the shared-link viewer
+   (.sharedview) — one definition, two scopes, so the two can't drift apart. */
+.sheet .meta,.sharedview .meta{display:flex;flex-direction:column;gap:var(--s1);margin:0 0 var(--s3);font-size:var(--fs-sm)}
+.sheet .meta .row,.sharedview .meta .row{display:flex;justify-content:space-between;align-items:center;gap:16px;min-height:22px}
+.sheet .meta .k,.sharedview .meta .k{flex:none;color:var(--muted);font-size:var(--fs-xs);line-height:1.2}
+.sheet .meta .v,.sharedview .meta .v{flex:1;min-width:0;color:var(--ink);text-align:right;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .sheet .metalink{padding:0;font-weight:600;color:var(--ink);font-size:var(--fs-sm);cursor:pointer}
 .sheet .metalink:hover{text-decoration:underline}
 .sheet .loccrumb{display:inline-flex;align-items:center;gap:5px;justify-content:flex-end;flex-wrap:wrap}
@@ -192,9 +194,9 @@
 .sheet .loccrumb .ic{width:13px;height:13px;color:var(--muted)}
 .sheet .loccrumb .sl{color:var(--line2)}
 /* sections (tags, comments) */
-.sheet .dsec{margin-top:var(--s4)}
-.sheet .dsec .lb{color:var(--muted);font-size:var(--fs-xs);font-weight:600;margin-bottom:8px}
-.sheet .chips{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.sheet .dsec,.sharedview .dsec{margin-top:var(--s4)}
+.sheet .dsec .lb,.sharedview .dsec .lb{color:var(--muted);font-size:var(--fs-xs);font-weight:600;margin-bottom:8px}
+.sheet .chips,.sharedview .chips{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
 .sheet .addtag{width:22px;height:22px;display:grid;place-items:center;border-radius:var(--r);color:var(--muted);cursor:pointer}
 .sheet .addtag:hover{background:var(--surface);color:var(--ink)}
 .sheet .addtag .ic{width:13px;height:13px}
@@ -221,6 +223,31 @@
 .sheet .flist .fi .fth{width:28px;height:28px;border-radius:3px;background:var(--plate);flex:none;display:grid;place-items:center;color:var(--muted)}
 .sheet .flist .fi .fn{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 @media(max-width:760px){.sheet .card2{flex-direction:column}.sheet .dmedia{min-height:42vh;flex:none}.sheet .dinfo{width:100%}}
+
+/* ── Shared-link viewer (P5.16, CANON #40) — a standalone read-only page ────────
+   Ported from the gallery. Covers the rail (it isn't inside the shell): a share link
+   opens ONLY the shared item, no way to browse the rest of the server. Media reuses the
+   details-pane dispatch (fillMedia → .dtype in the well); meta/tags rows are the shared
+   .meta/.dsec/.chips defined above. NO member hue (anon / out-of-server). */
+.sharedview{position:fixed;inset:0;z-index:70;display:flex;flex-direction:column;background:var(--paper);overflow-y:auto}
+.sharedview .svhd{flex:none;display:flex;align-items:center;gap:var(--s3);padding:0 var(--s5);height:56px;background:var(--surface)}
+.sharedview .svhd .brand{font-weight:700;font-size:var(--fs-lg);letter-spacing:.02em}
+.sharedview .svhd .svctx{font-size:var(--fs-sm);color:var(--muted)}
+.sharedview .svhd .svacts{margin-left:auto;display:flex;gap:var(--s2)}
+.sharedview .svbody{flex:1;display:grid;grid-template-columns:1fr 340px;gap:var(--s5);padding:var(--s5);width:100%;max-width:1180px;margin:0 auto}
+.sharedview .svmedia{position:relative;background:var(--paper1);border-radius:var(--r);min-height:440px;display:flex;align-items:center;justify-content:center;padding:var(--s5)}
+.sharedview .svmedia.bare{padding:0}
+.sharedview .svmedia>img{max-width:100%;max-height:100%;object-fit:contain}
+.sharedview .svmedia>.dmplayer{width:100%;height:100%;background:none}
+.sharedview .svmedia .dtype{position:static;height:auto;background:none;display:flex;flex-direction:column;align-items:center;gap:12px;color:var(--muted)}
+.sharedview .svmeta h1{font-size:var(--fs-xl);font-weight:600;margin-bottom:var(--s4)}
+.sharedview .svbody.svexpired{display:block;text-align:center;max-width:460px}
+.sharedview .deadshare{padding:calc(var(--s5)*2) 0;text-align:center}
+.sharedview .deadshare .deadicon{width:64px;height:64px;border-radius:var(--r);background:var(--plate);display:grid;place-items:center;margin:0 auto var(--s3)}
+.sharedview .deadshare .deadicon .ic{width:26px;height:26px;color:var(--muted)}
+.sharedview .deadshare h1{font-size:var(--fs-xl);font-weight:600}
+.sharedview .deadshare .lead{color:var(--muted);font-size:var(--fs-sm);margin-top:var(--s2)}
+@media(max-width:760px){.sharedview .svbody{grid-template-columns:1fr}}
 
 /* ── Profile (P5.10, CANON §C.10) — hero + shelf tabs + card grid ──────────────
    Ported from the gallery. The avatar is round (people are round); shelf tabs use

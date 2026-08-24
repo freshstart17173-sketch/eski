@@ -279,6 +279,20 @@ export function demoComments(workId) {
   return THREADS[workId] || [];
 }
 
+// Shared-link viewer demo fixture (CANON #40) — what a /shared/:token link opens to. A
+// `?demo=1` token of "expired" (or "dead") shows the dead-link state; anything else shows a
+// shared file. No member hue (anon / out-of-server context).
+export function demoSharedWork(token) {
+  if (token === "expired" || token === "dead") return { dead: true };
+  return {
+    work: {
+      id: "sh1", title: "late_bloom_beat.flp", name: "late_bloom_beat.flp", kind: "other",
+      file_ext: "flp", blob_sha: null, bytes: 8_400_000, created_at: "2026-08-18T10:00:00Z",
+      who: { name: "dev" }, tags: ["drums", "142bpm", "bridge"],
+    },
+  };
+}
+
 // The personal "My files" demo fixture — your own Drive, distinct from any server:
 // nested save-folders, own works, "Your storage" footer, no channel column.
 function demoPersonalExplorer() {

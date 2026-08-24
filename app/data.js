@@ -8,7 +8,7 @@
 //                  realtime.js + workspace.js; this module does the initial reads.
 //  - signed out  → { needsAuth:true } so the shell shows a sign-in prompt.
 
-import { demoWorkspace, demoExplorer, demoFeed, demoProfile, demoComments } from "./demo.js";
+import { demoWorkspace, demoExplorer, demoFeed, demoProfile, demoComments, demoSharedWork } from "./demo.js";
 import { supabase } from "./supabase.js";
 import { session } from "./supabase.js";
 
@@ -583,6 +583,45 @@ export async function removeTag(workId, tag) {
   if (isDemo()) return;
   const { error } = await supabase.from("content_tags").delete().eq("work_id", workId).eq("tag", tag);
   if (error) throw new Error(error.message || "Couldn’t remove the tag");
+}
+
+// ── Share links (CANON §E.10 / #39-40, share_links + resolve_share_link) ──────
+// "Anyone with the link" — a `share_links` row (token PK). `share_write` RLS fences
+// creation to who can write the work, so this is a plain client insert. The token is
+// URL-safe random; the link opens the read-only /shared/:token viewer (no shell).
+export function shareUrl(token) { return `${location.origin}/shared/${token}`; }
+
+export async function createShareLink(workId) {
+  const token = (crypto.randomUUID?.() || (Math.random().toString(36).slice(2) + Date.now().toString(36))).replace(/-/g, "");
+  if (isDemo()) return token;
+  const user = session();
+  if (!user) throw new Error("Sign in to share");
+  const { error } = await supabase.from("share_links").insert({ token, work_id: workId, created_by: user.id });
+  if (error) throw new Error(error.message || "Couldn’t create the link");
+  return token;
+}
+
+// Resolve a token for the anon /shared/:token viewer. `resolve_share_link` is a SECURITY
+// DEFINER RPC (anon-callable) that refuses a revoked/expired/invalid token and returns the
+// work; the client then reads tags + the author name (both allowed once the live link
+// grants can_read_work). Any failure collapses to { dead:true } → the "link expired" state.
+export async function loadSharedWork(token) {
+  if (isDemo()) return demoSharedWork(token);
+  const { data: w, error } = await supabase.rpc("resolve_share_link", { token });
+  if (error || !w) return { dead: true };
+  let who = null;
+  if (w.author_id) {
+    const { data: prof } = await supabase.from("profiles").select("handle,name").eq("id", w.author_id).maybeSingle();
+    if (prof) who = { name: prof.name || prof.handle };
+  }
+  const { data: tagRows } = await supabase.from("content_tags").select("tag").eq("work_id", w.id);
+  return {
+    work: {
+      id: w.id, title: w.title, name: w.title, kind: w.kind, file_ext: w.file_ext,
+      blob_sha: w.blob_sha, bytes: w.bytes, created_at: w.created_at,
+      who, tags: (tagRows || []).map((t) => t.tag),   // no colorIdx — anon/out-of-server, no hue
+    },
+  };
 }
 
 // Post a comment on a public post. RLS (`cmt_insert`) is the fence: only the author or a

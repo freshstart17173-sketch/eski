@@ -1015,3 +1015,37 @@ NEXT: **share_links "Copy link"** needs the shared-view route (`/shared/:token` 
   preview), or **P7** (DMs · Friends · Notifications).
 GOTCHA AQ: `.tag .x` is `display:none` until `.tag.rm:hover` — Playwright can't click a
   zero-box element cold, so a test must `.hover()` the chip first, then click the ×.
+
+## 2026-08-24 — P5.16 Share links (Copy link + the read-only /shared/:token viewer)
+IN PROGRESS: (cleared)
+DONE: "Anyone with the link" sharing, end to end. **Copy link** (was deferred in the card
+  menu) is wired in BOTH the card ⋯ menu and the details-pane ⋯ menu: `createShareLink(workId)`
+  mints a `share_links` token (URL-safe random; `share_write` RLS fences creation to who can
+  write the work) and copies `shareUrl(token)` = `/shared/:token`; the clipboard write falls
+  back to showing the URL in the toast when blocked (no gesture / permissions). **New screen**
+  `app/screens/shared.js` (+ route `/shared/:token`, wired full-screen in main.js like signin —
+  no shell, works signed-out): the read-only viewer shows ONLY the shared work — media, title,
+  Shared-by / Type / Size / Access rows, tags, and a read-only lock note — with **no rail, no
+  navigation**. It resolves the token via `loadSharedWork` → the anon `resolve_share_link` RPC
+  (refuses revoked/expired/invalid → the "link is no longer active" dead state), then reads the
+  author name + tags (the live link grants can_read_work). **No member hue** (anon /
+  out-of-server context), consistent with the Feed.
+  **Reuse, not duplication:** the full-viewer media dispatch (image / player / type-card) was
+  extracted from details.js into an exported `fillMedia(mount,w)` (+ `typeCard`, `fmtBytes`)
+  used by BOTH the details pane and the shared viewer — one place decides how a kind renders.
+  CSS ported from the gallery (#40 `.sharedview`), and the meta/tags rows are the SAME
+  `.sheet .meta/.dsec/.chips` rules **widened** to also match `.sharedview` (one definition,
+  two scopes — no drift, no second selector).
+  Verified: new `verify-shared.mjs` — the live file renders the standalone viewer (no rail,
+  meta rows incl. Access, tags, lock note, neutral name) in both themes, and the "expired"
+  token shows the dead state with no media. shared/explorer/feed/profile/workspace/gallery all
+  GREEN, zero app console errors. Both states screenshotted vs the gallery (regenerable PNGs
+  not committed).
+NEXT: share **management** — revoke a link (`share_links.revoked_at`; `revoke_share_link` per
+  CANON) and an expiry option, surfaced in a small Share dialog (gallery #39 has the Google-
+  Drive share panel with a visibility control). Then **Download** / avatar-banner **upload**
+  (R2 env now set per owner — wire the signer path, verify on preview), or **P7** (DMs ·
+  Friends · Notifications).
+GOTCHA AR: two same-named module-local helpers are NOT a clash — `explorer.js` `fmtBytes` and
+  `cards.js` `typeCard` are private to their files; the EXPORTED ones live only in details.js.
+  A cross-file grep flags them together; module scope keeps them independent.
