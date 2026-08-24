@@ -17,7 +17,7 @@ import { el, toast, openMenu, closeMenus, openModal, VisibilitySeg, Button } fro
 import { iconEl } from "../icons.js";
 import { navigate } from "../router.js";
 import { createFolder, moveToFolder, trashWorks, restoreWork, purgeWork, emptyTrash, loadTrash, starWork, unstarWork, saveToFiles, renameWork, setHidden, createShareLink, shareUrl, loadShareLinks, revokeShareLink, setVisibility, visFromDb } from "../data.js";
-import { workCard, folderCard, mediaUrl, KIND_ICON } from "../cards.js";
+import { workCard, folderCard, mediaUrl, KIND_ICON, downloadWork } from "../cards.js";
 import { channelColumn } from "./workspace.js";
 import { openUpload } from "./upload.js";
 import { openDetails } from "./details.js";
@@ -312,7 +312,7 @@ function paint(tree, pane, data, state, rerender) {
     selbar.classList.toggle("open", n > 0);
     if (n > 0) selbar.replaceChildren(
       el("span.n", {}, [el("span", {}, [String(n)]), " selected"]),
-      selAct("download", "Download", () => toast({ message: "Download (needs the R2 read env)" })),
+      selAct("download", "Download", () => downloadSelected(state)),
       selAct("move", "Move to folder", () => moveSelected(data, state, rerender)),
       selAct("trash", "Delete", () => trashSelected(data, state, rerender)),
       el("span.sp"),
@@ -869,6 +869,17 @@ function toggleHidden(data, state, rerender, w, after) {
 function saveOne(w) {
   (isDemoQS() ? Promise.resolve() : saveToFiles(w.id)).then(() => toast({ message: "Saved to your files", icon: "save" }))
     .catch((e) => toast({ message: e?.message || "Couldn’t save" }));
+}
+
+// Bulk Download (selection) — download each selected work that has stored bytes. A true
+// zip-as-one-file is a later enhancement; this is honest per-file download. Files with no
+// bytes yet (nothing uploaded) are skipped, with one message if the whole selection is empty.
+function downloadSelected(state) {
+  const works = (state._files || []).filter((w) => state.selection.has(w.id));
+  const ready = works.filter((w) => mediaUrl(w));
+  if (!ready.length) { toast({ message: "None of the selected files have stored bytes yet." }); return; }
+  if (ready.length > 5) toast({ message: `Starting ${ready.length} downloads…`, icon: "download" });
+  ready.forEach((w) => downloadWork(w));
 }
 
 // Copy link (CANON #39) — mint a share_links token and copy the /shared/:token URL. The

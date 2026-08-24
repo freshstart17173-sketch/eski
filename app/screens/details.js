@@ -16,7 +16,7 @@ import { el, toast, Tag, openMenu } from "../ui.js";
 import { iconEl } from "../icons.js";
 import { navigate } from "../router.js";
 import { MediaPlayer } from "../ui.js";
-import { mediaUrl, KIND_ICON } from "../cards.js";
+import { mediaUrl, KIND_ICON, downloadWork } from "../cards.js";
 import { saveToFiles, unsaveWork, isWorkSaved, loadComments, postComment, deleteComment, addTag, removeTag } from "../data.js";
 
 let openSheet = null;   // the single live overlay (only one details pane at a time)
@@ -147,7 +147,7 @@ function infoRail(w, ctx, nav) {
   ]);
 
   const foot = el(".foot", {}, [
-    el("button.btn.primary", { onClick: () => toast({ message: "Download (needs the R2 read env)", icon: "download" }) }, [iconEl("download", "sm"), "Download", iconEl("chev", "sm")]),
+    el("button.btn.primary", { onClick: () => downloadWork(w) }, [iconEl("download", "sm"), "Download"]),
     // Save to my files: a real saved_items pointer (§E.3), a toggle. Hidden on a personal
     // file — it's already in your library. Own state is confirmed async on open.
     ctx.personal ? null : saveButton(w),

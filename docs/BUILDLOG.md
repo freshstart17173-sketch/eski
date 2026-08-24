@@ -1076,3 +1076,25 @@ NEXT: link **expiry** (a duration picker → `share_links.expires_at`) and the *
 GOTCHA AS: the visibility enum split — UI **Public/Server/Private** vs DB
   **public/server/personal**. Always map at the data boundary (`VIS_TO_DB`/`visFromDb`); never send
   "private" to Postgres (the check constraint rejects it) or show "personal" in the UI.
+
+## 2026-08-24 — P5.18 Download (real R2 read path)
+IN PROGRESS: (cleared)
+DONE: **Download** is real (was an "needs the R2 read env" marker) — the env is set
+  (R2_PUBLIC_BASE_URL = cdn.eski.lol). New `downloadWork(work)` in cards.js (beside mediaUrl):
+  the object lives cross-origin on cdn.eski.lol where the `download` attribute is ignored, so
+  it fetches the blob (R2's GET * CORS allows it) and saves via a blob URL, falling back to
+  opening the URL directly if the fetch is blocked or the object is missing; a work with no
+  stored bytes yet says so instead of 404ing. Wired the **details-pane** and **shared-viewer**
+  Download buttons (dropped the details button's dangling chevron — single-file download needs
+  no menu), and the **bulk-bar Download** (`downloadSelected` — each selected work with bytes;
+  a true zip-as-one is a later enhancement).
+  Verified: `verify-explorer.mjs` `details-*` — clicking Download on a bytes-less demo file
+  runs `downloadWork` and surfaces the honest "no stored bytes yet" toast, zero console errors
+  (the real R2 fetch is preview-verified, not in-sandbox). Full suite GREEN both themes.
+NEXT: **P5.19 avatar/banner upload** (edit-profile "Change photo/banner" markers → the real
+  sign→PUT→profiles.avatar_key path, reusing the upload signer), then avatars render from the
+  key. After that, the last P5 gap is a true multi-file **zip** download. Or **P7** (DMs ·
+  Friends · Notifications).
+GOTCHA AT: a cross-origin `<a download>` (cdn.eski.lol ≠ app origin) is IGNORED by browsers —
+  it navigates instead of saving with the filename. Must fetch → blob → objectURL to force the
+  real filename; keep window.open as the fallback when the CORS fetch is refused.

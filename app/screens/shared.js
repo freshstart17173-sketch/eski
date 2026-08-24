@@ -8,6 +8,7 @@
 import { el, toast } from "../ui.js";
 import { iconEl } from "../icons.js";
 import { fillMedia, fmtBytes } from "./details.js";
+import { downloadWork } from "../cards.js";
 import { saveToFiles } from "../data.js";
 
 const KIND_LABEL = { audio: "Audio", image: "Image", video: "Video", text: "Text", other: "File" };
@@ -34,7 +35,7 @@ export function renderShared(data) {
   // the R2 read env (same marker as the details pane). RLS is the fence on Save.
   head.append(el(".svacts", {}, [
     el("button.btn", { onClick: () => saveOne(w) }, [iconEl("save", "sm"), "Save to my files"]),
-    el("button.btn.primary", { onClick: () => toast({ message: "Download (needs the R2 read env)", icon: "download" }) }, [iconEl("download", "sm"), "Download"]),
+    el("button.btn.primary", { onClick: () => downloadWork(w) }, [iconEl("download", "sm"), "Download"]),
   ]));
 
   const media = el(".svmedia");

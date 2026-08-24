@@ -8,7 +8,7 @@
 // file_ext); the public URL is `${R2_PUBLIC_BASE_URL}/${sha0:2}/${sha}.${ext}`.
 // Until a real upload exists the bytes 404 — image/video fall back to a type card.
 
-import { el } from "./ui.js";
+import { el, toast } from "./ui.js";
 import { iconEl } from "./icons.js";
 import { R2_PUBLIC_BASE_URL } from "./env.js";
 
@@ -18,6 +18,27 @@ export function mediaUrl(work) {
   if (!work?.blob_sha || !work?.file_ext) return null;
   const s = work.blob_sha;
   return `${R2_PUBLIC_BASE_URL}/${s.slice(0, 2)}/${s}.${work.file_ext}`;
+}
+
+// Download a work's bytes with its real filename (not the content-addressed sha key).
+// The object lives cross-origin on cdn.eski.lol, where the `download` attribute is
+// ignored — so fetch the blob (R2's GET * CORS rule allows it) and save via a blob URL;
+// if that's blocked or the object is missing, fall back to opening the URL directly. A
+// work with no stored bytes yet (no upload) has nothing to download — say so, don't 404.
+export async function downloadWork(work) {
+  const url = mediaUrl(work);
+  if (!url) { toast({ message: "This file has no stored bytes yet — nothing to download." }); return; }
+  const name = work.title || work.name || `file.${work.file_ext || "bin"}`;
+  try {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`R2 ${res.status}`);
+    const href = URL.createObjectURL(await res.blob());
+    const a = el("a", { href, download: name });
+    document.body.append(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(href), 5000);
+  } catch {
+    window.open(url, "_blank", "noopener");   // cross-origin block / missing object → let the browser handle it
+  }
 }
 
 function typeCard(work) {

@@ -130,6 +130,12 @@ async function detailsCase(theme) {
   if (!(await $(page, ".sheet .dsec .chips .tag"))) problems.push("tags section missing");
   if (await $(page, ".sheet .dsec .cmt")) problems.push("server file should have NO comments");
   if (!(await $(page, ".sheet .foot .btn.primary"))) problems.push("Download action missing");
+  // Download (P5.18) is wired — clicking it on a bytes-less demo file runs downloadWork and
+  // surfaces the honest "no stored bytes yet" toast (the real R2 fetch is preview-verified).
+  await page.click(".sheet .foot .btn.primary");
+  await page.waitForTimeout(120);
+  const dlToast = await page.$eval(".toaststack", (t) => t.textContent).catch(() => "");
+  if (!/stored bytes/i.test(dlToast)) problems.push(`Download should toast the no-bytes notice on a demo file, got "${dlToast}"`);
   // Size row must be last (eski-style §5)
   const lastKey = await page.$$eval(".sheet .meta .row .k", (ks) => ks[ks.length - 1]?.textContent);
   if (lastKey !== "Size") problems.push(`Size must be the last meta row, got "${lastKey}"`);
