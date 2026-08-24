@@ -133,7 +133,11 @@ function openMsgMenu(anchor, msg, own) {
 }
 
 // ── channel column (P4.3) ───────────────────────────────────────────────────
-function channelColumn(data, view) {
+// Exported so the File explorer mounts the SAME column (Files highlighted) — the
+// owner's "Files is a channel, not a standalone server" rule (CANON §C.6): one
+// click from the browser back to any channel. `view.filesActive` swaps the
+// highlight onto the Files row and drops the (placeholder) voice minibar.
+export function channelColumn(data, view) {
   const activeId = view.channelId || data.channel?.id;
 
   // server header — the bar opens the server menu (admin sees Settings)
@@ -153,9 +157,10 @@ function channelColumn(data, view) {
   const srvhd = el(".srvhd", {}, [el(".srvcover"), bar]);
 
   const body = el(".chanbody");
-  // Files is a channel entry → opens the File explorer
+  // Files is a channel entry → opens the File explorer (highlighted when we ARE
+  // the explorer, so the column reads like any other active channel).
   body.append(el(".cgroup", {}, [
-    el("button.crow", { onClick: () => navigate(withDemo(`/s/${data.server.id}/files`)) }, [iconEl("folder"), el("span.nm", {}, ["Files"])]),
+    el("button.crow" + (view.filesActive ? ".on" : ""), { onClick: () => navigate(withDemo(`/s/${data.server.id}/files`)) }, [iconEl("folder"), el("span.nm", {}, ["Files"])]),
   ]));
 
   for (const g of data.channelGroups) {
@@ -194,7 +199,9 @@ function channelColumn(data, view) {
     body.append(group);
   }
 
-  // voice minibar (WIP placeholder — voice ships v2)
+  // voice minibar (WIP placeholder — voice ships v2). The explorer drops it: it's
+  // a chat-context affordance, out of place under a file browser.
+  if (view.filesActive) return el("nav.chan", {}, [srvhd, body]);
   const mini = el(".voicemini", { title: "Voice (in progress)" }, [
     el(".vmtop", {}, [el("span.vmdot"), el(".vminfo", {}, [el("b", {}, ["Voice connected"]), el("small", {}, [`the booth · ${data.server.name}`])]),
       IconButton({ icon: "mic", title: "Mic" }), IconButton({ icon: "leave", title: "Leave" })]),

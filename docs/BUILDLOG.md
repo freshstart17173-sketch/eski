@@ -387,3 +387,36 @@ GOTCHA W: works `visibility` maps to owner_type/owner_id — server upload = own
   personal = owner_type 'user', owner_id=me. The prompt's "storage_source/
   billing_server_id" are these columns, not literal columns. placement.pl_write needs
   placed_by=auth.uid() AND can_read_work — so insert the work first, then the placement.
+
+## 2026-08-24 — P5.4/P5.5 File explorer (server mount)
+IN PROGRESS: (cleared)
+DONE: the server **File explorer** — the Drive half of the app, reading what Upload
+  writes. `app/screens/explorer.js` `renderExplorer(data, view)`: the reused channel
+  column (Files highlighted, `channelColumn` now exported from workspace.js with
+  `view.filesActive`) · a nested **folder tree** (root = server name, collapsible
+  twisties, current folder highlighted, lock/30d-Trash rows) · a **storage footer**
+  (used/cap bar) · **breadcrumb ⇄ search-results** header swap · a compact **Grid/List**
+  view dropdown · **grid** (folder cards + the shared `workCard` renderer) and **list**
+  (name/type/size/uploader/added rows) · **search-as-you-type** (flattens the tree to
+  title matches) · reusable **empty states**. One fetch, client-side navigation:
+  `loadExplorer({serverId,folderId})` in `app/data.js` reads `folders` + `works`
+  (server_id, deleted_at null) + `placement` (folder location + channel, fetched
+  separately — no embed, per GOTCHA U) + the `storage_meters`/`storage_balance` meter,
+  and shapes works to the card model; folder position is pure client filtering. Wired
+  into `app/main.js` (explorer route → `loadExplorer` → `renderExplorer`, `?folder=`/
+  `?view=` deep links). Demo fixture `demoExplorer()` in `app/demo.js` mirrors the live
+  shape so `?demo=1` renders identically. All CSS was already ported (the P5.4 WIP
+  commit: `.explayout/.filetree/.exview/.flrow` in content.css, `.card/.masonry/
+  .emptystate` in shell.css) — no new selectors added.
+  Verified: new `docs/design/verify-explorer.mjs` GREEN (7 states incl. grid/list,
+  folder deep-link, locked folder, empty folder, search, both themes, zero app console
+  errors); verify-workspace.mjs still GREEN after the `channelColumn` export change.
+  Screenshots eyeballed against gallery #60 — matches (tree, breadcrumb, kind-cards,
+  uploader hue chips, storage foot).
+NEXT: Details pane (P5.5 — open a card → the media viewer + info rail), then the
+  personal **My files** mount (hides the channel column, `owner_type='user'` source),
+  then Feed view + Trash + the filter/sort dropdowns + multi-select bulk bar.
+GOTCHA X: card media 404s until a real R2 upload exists — `mediaUrl()` returns null
+  when `blob_sha` is null, so image/video cells fall back to the type card (by design;
+  the demo fixture leaves blob_sha null, so its images show as PNG type cards). A live
+  upload with real bytes is what turns them into thumbnails.

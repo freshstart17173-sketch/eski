@@ -120,6 +120,8 @@ export function demoWorkspace() {
       ] },
     ],
 
+    // (the File explorer's own demo fixture lives in demoExplorer(), below)
+
     // a thread opened from m1's "3 replies"
     thread: {
       channel: "beats",
@@ -131,5 +133,58 @@ export function demoWorkspace() {
         { author: P.tomo, time: "2:26 PM", body: "on it, pushing a new bounce in a sec" },
       ],
     },
+  };
+}
+
+// The File-explorer fixture (P5.4) — the same Late Bloom LP server as the
+// workspace demo, shaped like loadExplorer()'s live return so the screen renders
+// identically from either source. Folders nest (beats › drums); files carry their
+// `folderId` (null = server root) and the member hue via `who.colorIdx`.
+export function demoExplorer() {
+  const W = (id, title, kind, ext, bytes, who, folderId, channelName) => ({
+    id, title, name: title, kind, file_ext: ext, blob_sha: null, bytes,
+    who: { name: who, colorIdx: P[who].colorIdx }, channelName, folderId,
+    created_at: "2026-08-15T12:00:00Z", hidden: false,
+  });
+  return {
+    needsAuth: false, live: false,
+    me, isAdmin: true, dmUnread: 3,
+    servers: [
+      { id: "lb", name: "Late Bloom LP", initials: "LB", active: true },
+      { id: "sp", name: "Specter", initials: "SP", mentions: 7 },
+      { id: "bs", name: "Beat swap", initials: "BS" },
+    ],
+    server: { id: "lb", name: "Late Bloom LP", initials: "LB" },
+    channelGroups: [
+      { kind: "text", label: "Channels", channels: [
+        { id: "announcements", name: "announcements" }, { id: "beats", name: "beats" },
+        { id: "verses", name: "verses" }, { id: "mixing", name: "mixing" },
+        { id: "references", name: "references" }, { id: "stems", name: "stems and sessions" },
+      ] },
+      { kind: "voice", label: "Voice", channels: [
+        { id: "booth", name: "the booth", voice: [] }, { id: "cowrite", name: "co-writing", voice: [] },
+      ] },
+    ],
+    membersById: {},
+    folders: [
+      { id: "beats", name: "beats", parentId: null, archived: false, locked: false, count: 4 },
+      { id: "drums", name: "drums", parentId: "beats", archived: false, locked: false, count: 0 },
+      { id: "verses", name: "verses", parentId: null, archived: false, locked: false, count: 0 },
+      { id: "mixing", name: "mixing", parentId: null, archived: false, locked: false, count: 0 },
+      { id: "references", name: "references", parentId: null, archived: false, locked: false, count: 1 },
+      { id: "stems", name: "stems and sessions", parentId: null, archived: false, locked: true, count: 1 },
+    ],
+    files: [
+      W("f1", "late_bloom_beat.flp", "other", "flp", 8.4e6, "dev", "beats", "beats"),
+      W("f2", "bridge_scratch_rae.wav", "audio", "wav", 18e6, "rae", "beats", "beats"),
+      W("f3", "ref_drums.png", "image", "png", 2.1e6, "rae", "beats", "beats"),
+      W("f4", "bloom_master.als", "other", "als", 36e6, "jax", "beats", "beats"),
+      W("f5", "moodboard.png", "image", "png", 3.3e6, "nel", "references", "references"),
+      W("f6", "stems_sh040.zip", "other", "zip", 48e6, "tomo", "stems", "stems and sessions"),
+      W("f7", "session_notes.md", "text", "md", 4200, "jax", null, null),
+    ],
+    currentFolderId: null,
+    storage: { usedBytes: 74 * 1024 ** 3, capGb: 120, capBytes: 120 * 1024 ** 3, status: "active", overCap: false },
+    activeServerId: "lb",
   };
 }

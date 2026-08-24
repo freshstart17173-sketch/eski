@@ -111,7 +111,7 @@ and replica identity were set up in P2 (no action from you there).
 | **P2** | RPCs + triggers + search + realtime (+ share resolver, trash purge) | ✅ done, applied + round-trip tested + on `preview` |
 | **P3** | Design-system primitives (buttons/fields/modals/player/…) | ✅ done, verified both themes + on `preview` |
 | **P4** | Shell + Workspace (chat, members, composer, realtime) | 🟢 UI done, on `preview`; **Realtime (P4.10/11) next — see top block** |
-| P5 | Feed · File explorer · Details pane · Profile · Upload | pending |
+| P5 | Feed · File explorer · Details pane · Profile · Upload | 🟡 Upload + **File explorer** done; Details/Feed/Profile pending |
 | P7 | Messages/DMs · Friends · Notifications | pending |
 | P8 | Admin (roles, permissions, moderation, billing) | pending |
 | P9 | Create · Join · Sign-in · 404 · quick-switcher | pending |
