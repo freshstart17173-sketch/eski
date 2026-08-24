@@ -13,7 +13,7 @@
 // Files is a channel (CANON §C.6): the server's channel column stays to the left
 // so any other channel is one click away — the browser is never a dead-end.
 
-import { el, toast, openMenu, openModal } from "../ui.js";
+import { el, toast, openMenu, closeMenus, openModal } from "../ui.js";
 import { iconEl } from "../icons.js";
 import { navigate } from "../router.js";
 import { createFolder, moveToFolder } from "../data.js";
@@ -24,12 +24,18 @@ import { openDetails } from "./details.js";
 
 const VIEWS = { grid: "Grid", list: "List", feed: "Feed" };
 const PREVIEWABLE = new Set(["image", "video", "audio"]);
-// filter/sort options (single-select v1). Type maps a label → works.kind ("all" = no
-// filter; "other" = Projects/archives). Sort keys drive the comparator in sortFiles().
-const TYPES = [["all", "All types"], ["image", "Images"], ["audio", "Audio"], ["video", "Video"], ["text", "Text"], ["other", "Projects"]];
+// Filters (CANON §C.6): Type/Channel/Uploader/Tag are multi-select (an empty set = no
+// filter, the union within a facet, the intersection across facets); Date and Sort are
+// single-select. Type maps to works.kind ("other" = Projects/archives). Channel/Uploader/
+// Tag options are derived from the data. Sort keys drive the comparator in sortFiles().
+const TYPES = [["image", "Images"], ["audio", "Audio"], ["video", "Video"], ["text", "Text"], ["other", "Projects"]];
 const SORTS = [["latest", "Latest"], ["oldest", "Oldest"], ["name", "Name"], ["size", "Size"]];
-const TYPE_LABEL = Object.fromEntries(TYPES.map(([k, v]) => [k, k === "all" ? "Type" : v]));
 const SORT_LABEL = Object.fromEntries(SORTS);
+// Date windows measured back from now; "today" is since local midnight, the rest are
+// rolling N-day windows. "any" is the no-filter default.
+const DATES = [["any", "Anytime"], ["today", "Today"], ["week", "This week"], ["month", "This month"], ["year", "This year"]];
+const DATE_LABEL = Object.fromEntries(DATES);
+const DATE_DAYS = { week: 7, month: 30, year: 365 };
 
 function fmtBytes(n) {
   n = Number(n || 0);
@@ -71,7 +77,11 @@ export function renderExplorer(data, view = {}) {
     collapsed: new Set(),   // folder ids whose children are hidden in the tree
     selection: new Set(),   // selected work ids (Google-Drive model, §C.6)
     lastIdx: -1,            // anchor for Shift-click range
-    type: "all",           // kind filter (all/image/audio/video/text/other)
+    types: new Set(),       // kind filter — empty = all (image/audio/video/text/other)
+    channels: new Set(),    // by placement channel name (server only)
+    uploaders: new Set(),   // by author name (server only)
+    tags: new Set(),        // by content tag
+    date: "any",            // any/today/week/month/year
     sort: "latest",        // latest/oldest/name/size
     dir: "desc",           // sort direction
   };
@@ -225,24 +235,55 @@ function paint(tree, pane, data, state, rerender) {
     ]),
   ]);
 
-  // toolbar — search + New folder + Upload (filters/sort are a later pass)
+  // toolbar — search · filters (Type/Channel/Uploader/Tag/Date/Sort) · New folder · Upload
   const personal = data.source === "personal";
   const search = el(".field", {}, [iconEl("search", "sm"),
     el("input", { placeholder: personal ? "Search your files" : "Search this server's files", value: state.query, onInput: (e) => { state.query = e.target.value; repaintBody(); } }),
   ]);
   const uploadOpts = personal ? { visibility: "private" } : { visibility: "server", serverId: data.server.id, folderId: state.folderId };
 
-  // Type + Sort filters (single-select v1; CANON's multi-select is a later pass) and
-  // a sort-direction toggle. Each re-renders the contents in place.
-  const typeBtn = el("button.btn.exfilter", { "aria-haspopup": "menu", onClick: (e) => openMenu(e.currentTarget, TYPES.map(([k, label]) => ({ label: (state.type === k ? "✓ " : "") + label, onClick: () => { state.type = k; repaintBody(); } }))) }, [TYPE_LABEL[state.type], iconEl("chev", "sm")]);
-  const sortBtn = el("button.btn.exfilter", { "aria-haspopup": "menu", onClick: (e) => openMenu(e.currentTarget, SORTS.map(([k, label]) => ({ label: (state.sort === k ? "✓ " : "") + label, onClick: () => { state.sort = k; repaintBody(); } }))) }, [SORT_LABEL[state.sort], iconEl("chev", "sm")]);
-  const dirBtn = el("button.iconbtn", { title: state.dir === "desc" ? "Descending" : "Ascending", "aria-pressed": state.dir === "asc" ? "true" : "false", onClick: () => { state.dir = state.dir === "desc" ? "asc" : "desc"; repaintBody(); } }, [(() => { const g = iconEl("chev", "sm"); if (state.dir === "asc") g.style.transform = "rotate(180deg)"; return g; })()]);
+  // Facet options derived from ALL files (stable across folder nav, not just the folder
+  // in view). Type is a fixed set; Channel/Uploader/Tag come from the data.
+  const uniq = (arr) => [...new Set(arr.filter(Boolean))].sort();
+  const channelOpts = uniq(data.files.map((w) => w.channelName)).map((c) => [c, c]);
+  const uploaderOpts = uniq(data.files.map((w) => w.who?.name)).map((u) => [u, u]);
+  const tagOpts = uniq(data.files.flatMap((w) => w.tags || [])).map((t) => [t, t]);
 
+  // a multi-select filter button: filled + counted when it has selections, disabled when
+  // its facet has no options. The menu toggles in place; refreshBtn keeps the count live
+  // (repaintBody rebuilds only the body, never the toolbar, so the button self-updates).
+  const multiBtn = (label, set, options) => {
+    const b = el("button.btn.exfilter", { "aria-haspopup": "menu", disabled: options.length === 0 });
+    const refreshBtn = () => {
+      const n = set.size;
+      b.replaceChildren(label, ...(n ? [el("span.fc", {}, [String(n)])] : []), iconEl("chev", "sm"));
+      b.classList.toggle("on", n > 0);
+    };
+    refreshBtn();
+    b.addEventListener("click", () => openFilterMenu(b, options, set, () => { refreshBtn(); repaintBody(); }));
+    return b;
+  };
+  const typeBtn = multiBtn("Type", state.types, TYPES);
+  const tagBtn = multiBtn("Tag", state.tags, tagOpts);
+  // Channel + Uploader are server context only (personal files carry neither)
+  const chanBtn = personal ? null : multiBtn("Channel", state.channels, channelOpts);
+  const uploaderBtn = personal ? null : multiBtn("Uploader", state.uploaders, uploaderOpts);
+
+  // Date + Sort are single-select (openMenu with a ✓ prefix; the button label updates)
+  const dateBtn = el("button.btn.exfilter" + (state.date !== "any" ? ".on" : ""), { "aria-haspopup": "menu" }, [el("span.dlbl", {}, [state.date === "any" ? "Date" : DATE_LABEL[state.date]]), iconEl("chev", "sm")]);
+  dateBtn.addEventListener("click", () => openMenu(dateBtn, DATES.map(([k, lbl]) => ({ label: (state.date === k ? "✓ " : "") + lbl, onClick: () => { state.date = k; dateBtn.querySelector(".dlbl").textContent = k === "any" ? "Date" : DATE_LABEL[k]; dateBtn.classList.toggle("on", k !== "any"); repaintBody(); } }))));
+  const sortBtn = el("button.btn.exfilter", { "aria-haspopup": "menu" }, [el("span.slbl", {}, [SORT_LABEL[state.sort]]), iconEl("chev", "sm")]);
+  sortBtn.addEventListener("click", () => openMenu(sortBtn, SORTS.map(([k, lbl]) => ({ label: (state.sort === k ? "✓ " : "") + lbl, onClick: () => { state.sort = k; sortBtn.querySelector(".slbl").textContent = SORT_LABEL[k]; repaintBody(); } }))));
+  const dirBtn = el("button.iconbtn", { title: state.dir === "desc" ? "Descending" : "Ascending", "aria-pressed": state.dir === "asc" ? "true" : "false", onClick: () => { state.dir = state.dir === "desc" ? "asc" : "desc"; dirBtn.setAttribute("title", state.dir === "desc" ? "Descending" : "Ascending"); dirBtn.setAttribute("aria-pressed", state.dir === "asc" ? "true" : "false"); dirBtn.firstChild.style.transform = state.dir === "asc" ? "rotate(180deg)" : ""; repaintBody(); } }, [(() => { const g = iconEl("chev", "sm"); if (state.dir === "asc") g.style.transform = "rotate(180deg)"; return g; })()]);
+
+  // New folder + Upload travel together as one right-aligned unit (.tbactions), so a
+  // narrow pane wraps them as a pair to a second row instead of orphaning Upload.
   const toolbar = el(".toolbar", {}, [
-    search, typeBtn, sortBtn, dirBtn,
-    el("span", { style: "flex:1" }),
-    el("button.btn.newFolderBtn", { onClick: () => newFolder(data, state, rerender, state.folderId) }, [iconEl("plus", "sm"), "New folder"]),
-    el("button.btn.primary", { onClick: () => openUpload(uploadOpts) }, [iconEl("plus", "sm"), "Upload"]),
+    search, typeBtn, chanBtn, uploaderBtn, tagBtn, dateBtn, sortBtn, dirBtn,
+    el(".tbactions", {}, [
+      el("button.btn.newFolderBtn", { onClick: () => newFolder(data, state, rerender, state.folderId) }, [iconEl("plus", "sm"), "New folder"]),
+      el("button.btn.primary", { onClick: () => openUpload(uploadOpts) }, [iconEl("plus", "sm"), "Upload"]),
+    ]),
   ]);
 
   const selbar = el(".selbar");
@@ -301,8 +342,13 @@ function contents(data, state, rerender, sel) {
     subfolders = data.folders.filter((f) => (f.parentId || null) === state.folderId);
     files = data.files.filter((w) => (w.folderId || null) === state.folderId);
   }
-  // Type filter, then sort (both apply to files only; subfolders always lead the grid)
-  if (state.type !== "all") files = files.filter((w) => w.kind === state.type);
+  // Facet filters, then sort (all apply to files only; subfolders always lead the grid).
+  // Within a facet the selected values union; across facets they intersect (§C.6).
+  if (state.types.size) files = files.filter((w) => state.types.has(w.kind));
+  if (state.channels.size) files = files.filter((w) => state.channels.has(w.channelName));
+  if (state.uploaders.size) files = files.filter((w) => state.uploaders.has(w.who?.name));
+  if (state.tags.size) files = files.filter((w) => (w.tags || []).some((t) => state.tags.has(t)));
+  if (state.date !== "any") { const cut = dateCutoff(state.date); files = files.filter((w) => new Date(w.created_at || 0) >= cut); }
   files = sortFiles(files, state.sort, state.dir);
   state._files = files;   // the current in-view set, for ⌘A select-all
 
@@ -428,6 +474,53 @@ function sortFiles(files, sort, dir) {
   out.sort(cmp);
   if (dir === "asc") out.reverse();
   return out;
+}
+
+function dateCutoff(key) {
+  const now = new Date();
+  if (key === "today") { const d = new Date(now); d.setHours(0, 0, 0, 0); return d; }
+  return new Date(now.getTime() - (DATE_DAYS[key] || 0) * 86400000);
+}
+
+// A multi-select filter menu (CANON §C.6): checkable rows that toggle IN PLACE without
+// closing (unlike openMenu, which closes on pick), a Clear row when anything is selected,
+// and outside-click / Esc to dismiss. `selected` is the live Set the button reads;
+// `onChange` refreshes the button + repaints the contents after each toggle.
+function openFilterMenu(anchor, options, selected, onChange) {
+  closeMenus();
+  const menu = el(".menu.open", { role: "menu" });
+  if (selected.size) {
+    const clear = el("button.fclear", { role: "menuitem" }, ["Clear"]);
+    clear.addEventListener("click", (e) => { e.stopPropagation(); selected.clear(); closeMenus(); onChange(); });
+    menu.append(clear, el(".sep"));
+  }
+  for (const [key, label] of options) {
+    const on = selected.has(key);
+    const mark = el("span.fcheck", {}, [on ? "✓" : ""]);
+    const row = el("button", { role: "menuitemcheckbox", "aria-checked": on ? "true" : "false" }, [mark, el("span", {}, [label])]);
+    row.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const now = !selected.has(key);
+      now ? selected.add(key) : selected.delete(key);
+      row.setAttribute("aria-checked", now ? "true" : "false");
+      mark.textContent = now ? "✓" : "";
+      onChange();
+    });
+    menu.append(row);
+  }
+  document.body.append(menu);
+  const r = anchor.getBoundingClientRect();
+  const mw = menu.offsetWidth, mh = menu.offsetHeight;
+  let top = r.bottom + 4;
+  if (top + mh > window.innerHeight - 8) top = Math.max(8, r.top - mh - 4);
+  menu.style.left = Math.max(8, Math.min(r.left, window.innerWidth - mw - 8)) + "px";
+  menu.style.top = top + "px";
+  anchor.setAttribute("aria-expanded", "true");
+  menu._cleanup = () => { anchor.setAttribute("aria-expanded", "false"); document.removeEventListener("mousedown", onDoc, true); };
+  function onDoc(e) { if (!menu.contains(e.target) && e.target !== anchor && !anchor.contains(e.target)) closeMenus(); }
+  menu.addEventListener("keydown", (e) => { if (e.key === "Escape") { closeMenus(); anchor.focus?.(); } });
+  setTimeout(() => document.addEventListener("mousedown", onDoc, true));
+  return menu;
 }
 
 // ── shared empty state (CANON §C.6 reusable pattern) ─────────────────────────

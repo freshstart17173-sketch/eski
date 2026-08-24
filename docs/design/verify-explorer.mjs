@@ -197,6 +197,57 @@ await detailsCase("dark");
   await ctx.close();
 }
 
+// Multi-select filters — Type unions within the facet, facets intersect, Clear resets.
+{
+  const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  const page = await ctx.newPage();
+  const errs = [];
+  page.on("console", (m) => { if (m.type() === "error" || m.type() === "warning") errs.push(`[${m.type()}] ${m.text()}`); });
+  page.on("pageerror", (e) => errs.push(`[pageerror] ${e.message}`));
+  await page.goto(`http://localhost:${PORT}/s/lb/files?demo=1&folder=beats`, { waitUntil: "networkidle" }).catch(() => {});
+  await page.waitForTimeout(300);
+  const problems = [];
+  const grid = '.exview[data-exview="grid"] .card:not(.foldercard)';
+  const clickFilter = async (label) => {
+    for (const b of await page.$$(".toolbar .btn.exfilter")) { if ((await b.textContent()).trim().startsWith(label)) { await b.click(); await page.waitForTimeout(100); return true; } }
+    return false;
+  };
+  const clickItem = async (text) => {
+    for (const it of await page.$$(".menu.open button")) { if ((await it.textContent()).trim() === text || (await it.textContent()).includes(text)) { await it.click(); await page.waitForTimeout(100); return true; } }
+    return false;
+  };
+  if ((await count(page, grid)) !== 4) problems.push("beats should start with 4 files");
+  // Type = Audio ∪ Images → f2 (audio) + f3 (image) = 2
+  await clickFilter("Type");
+  await clickItem("Audio");
+  await clickItem("Images");
+  if ((await count(page, grid)) !== 2) problems.push(`Type Audio∪Images should leave 2, got ${await count(page, grid)}`);
+  // the Type button now reads a count and is active
+  const typeText = await page.$$eval(".toolbar .btn.exfilter", (bs) => bs.find((b) => b.textContent.trim().startsWith("Type"))?.textContent || "");
+  if (!typeText.includes("2")) problems.push(`Type button should show count 2, got "${typeText}"`);
+  const typeOn = await page.$$eval(".toolbar .btn.exfilter", (bs) => bs.find((b) => b.textContent.trim().startsWith("Type"))?.classList.contains("on"));
+  if (!typeOn) problems.push("Type button should be active (.on) with selections");
+  // add Uploader = rae → intersect: f2+f3 are both rae → still 2
+  await clickFilter("Uploader");
+  await clickItem("rae");
+  if ((await count(page, grid)) !== 2) problems.push(`+Uploader rae should keep 2, got ${await count(page, grid)}`);
+  // add Tag = reference → intersect: only f3 → 1
+  await clickFilter("Tag");
+  await clickItem("reference");
+  if ((await count(page, grid)) !== 1) problems.push(`+Tag reference should leave 1, got ${await count(page, grid)}`);
+  // Clear the Type facet → f3 still matches rae+reference → still 1, Type no longer active
+  await clickFilter("Type");
+  await clickItem("Clear");
+  if ((await count(page, grid)) !== 1) problems.push(`clearing Type should keep 1, got ${await count(page, grid)}`);
+  const typeOn2 = await page.$$eval(".toolbar .btn.exfilter", (bs) => bs.find((b) => b.textContent.trim().startsWith("Type"))?.classList.contains("on"));
+  if (typeOn2) problems.push("Type button should be inactive after Clear");
+  const appErrs = errs.filter((e) => !/Failed to load resource|net::ERR|supabase|getSession|fetch|401|403|Access-Control/i.test(e));
+  if (appErrs.length) problems.push(...appErrs);
+  if (problems.length) { fails++; console.log("✗ multi-filter"); problems.forEach((p) => console.log("    " + p)); }
+  else console.log("✓ multi-filter");
+  await ctx.close();
+}
+
 // New folder — open the prompt, Create disabled until named, then the new subfolder
 // appears in view (demo mode inserts optimistically; the real path is the create_folder
 // RPC / save_folders insert). Created under beats, so it shows as a beats subfolder card.

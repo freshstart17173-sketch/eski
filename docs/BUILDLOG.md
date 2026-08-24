@@ -667,3 +667,34 @@ NEXT: multi-select filters + quick-filter chips (§C.6) — the `.fchip` quick-f
 GOTCHA AE: `move_to_folder` is one-target — bulk = a loop of RPC calls; a partial failure
   leaves earlier works moved and throws on the first bad one (the toast surfaces it). The
   personal path is a single `saved_items` upsert (atomic). Both fine for the beta.
+
+## 2026-08-24 — P5.7b Explorer multi-select filters (full facet set)
+IN PROGRESS: (cleared)
+DONE: replaced the single-select v1 Type/Sort with the **full filter set** (CANON §C.6,
+  gallery toolbar): **Type / Channel / Uploader / Tag** are **multi-select**, **Date** and
+  **Sort** single. Within a facet the picks **union**; across facets they **intersect**.
+  Channel + Uploader are server-context only (hidden on the personal mount); their options
+  (plus Tag's) are **derived from all files** so the set is stable across folder nav. Each
+  multi filter opens `openFilterMenu` — checkable rows that **toggle in place** without
+  closing (unlike `openMenu`), a **Clear** row when anything's picked, outside-click/Esc to
+  dismiss; the button fills (`.exfilter.on`) and shows a live **count badge** (`.fc`). Date
+  windows are today (since midnight) / this week / month / year via `dateCutoff`. A facet
+  with no options disables its button. Fixed a **toolbar overflow**: New folder + Upload now
+  travel as one right-aligned `.tbactions` unit (wraps as a pair on a narrow pane instead of
+  orphaning Upload), and the search field max shrank 420→340 — the row is one line again at
+  the real ~938px pane width.
+  Verified: `verify-explorer.mjs` +`multi-filter` case (Type Audio∪Images→2, +Uploader rae
+  intersect→2, +Tag reference→1, Clear Type→still 1 + button inactive) and the existing
+  type-filter case now drives the multi menu; **16** explorer states GREEN, both themes,
+  zero app console errors. Toolbar + open multi-menu screenshot eyeballed light+dark vs
+  gallery §toolbar — one row, check gutter aligns, active Type shows "2" + fill. Full
+  gallery verify GREEN.
+NEXT: the **Starred** quick-filter is deferred — works carry no `starred`/`pinned` field
+  yet, so adding the toggle would be faking (leave it out until the schema has it). Card
+  **right-click context menu** ("Move to…" reusing the picker, Download, Delete) is the
+  next natural surface; Delete→Trash + the Trash view still need the user-facing trash RPCs
+  (only `create_folder`/`move_to_folder`/`purge_trashed_works` exist) or a `works.deleted_
+  at` soft-delete + RLS UPDATE policy.
+GOTCHA AF: filters persist across folder navigation + search (they live in screen `state`,
+  not reset by `repaintBody`, which only clears the selection). `repaintBody` rebuilds the
+  body but NOT the toolbar, so each filter button self-refreshes its count/label in place.

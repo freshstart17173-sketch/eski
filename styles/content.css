@@ -33,7 +33,10 @@
 .panehd .title{font-weight:600;font-size:var(--fs-lg)}
 .panehd nav{margin-left:auto;display:flex;gap:var(--s4)}
 .toolbar{flex:none;display:flex;align-items:center;gap:var(--s2);padding:var(--s3) var(--s5);background:var(--paper);flex-wrap:wrap}
-.toolbar .field{flex:1;min-width:200px;max-width:420px}
+.toolbar .field{flex:1;min-width:170px;max-width:340px}
+/* New folder + Upload as one right-aligned unit: fits on the filter row when there's
+   room, wraps to a second row as a pair (right-aligned) when the pane is narrow. */
+.toolbar .tbactions{display:flex;gap:var(--s2);margin-left:auto}
 .panebody{flex:1;overflow-y:auto;padding:var(--s4) var(--s5) var(--s5)}
 .seclabel{color:var(--muted);font-size:var(--fs-xs);font-weight:600;margin:0 0 var(--s3)}
 
@@ -64,6 +67,13 @@
 .ulab b{color:var(--ink);font-weight:600}
 .svnote{display:flex;align-items:center;gap:6px;margin-top:8px;font-size:var(--fs-xs);color:var(--muted)}
 .svnote .ic{flex:none;color:var(--muted)}
+/* Explorer filter chrome: an active filter (with selections) reads as filled chrome
+   and carries its count; the multi-select menu gets a fixed-width check gutter so the
+   labels line up whether or not a row is ticked. */
+.btn.exfilter.on{background:var(--plate);color:var(--ink)}
+.btn.exfilter .fc{opacity:.55;margin-left:2px;font-variant-numeric:tabular-nums}
+.menu .fcheck{width:14px;flex:none;text-align:center;color:var(--ink)}
+.menu button.fclear{color:var(--muted);font-size:var(--fs-xs)}
 .ftfoot{margin-top:6px;padding:10px 8px 6px;font-size:var(--fs-xs);color:var(--muted)}
 .ftfoot .bar{margin:6px 0 4px}
 .crumbs{display:flex;align-items:center;gap:7px;font-size:var(--fs-sm);color:var(--muted);min-width:0;flex-wrap:wrap}
