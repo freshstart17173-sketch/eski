@@ -13,9 +13,10 @@
 // Files is a channel (CANON §C.6): the server's channel column stays to the left
 // so any other channel is one click away — the browser is never a dead-end.
 
-import { el, toast, openMenu } from "../ui.js";
+import { el, toast, openMenu, openModal } from "../ui.js";
 import { iconEl } from "../icons.js";
 import { navigate } from "../router.js";
+import { createFolder } from "../data.js";
 import { workCard, folderCard, mediaUrl, KIND_ICON } from "../cards.js";
 import { channelColumn } from "./workspace.js";
 import { openUpload } from "./upload.js";
@@ -125,7 +126,7 @@ function paintTree(tree, data, state, rerender) {
   const childrenOf = (pid) => folders.filter((f) => (f.parentId || null) === pid);
 
   const hd = el(".fthd", {}, [data.source === "personal" ? "My files" : "Files",
-    el("button.iconbtn.sm.newFolderBtn", { title: "New folder", onClick: () => toast({ message: "New folder (P5.6)" }) }, [iconEl("plus", "sm")]),
+    el("button.iconbtn.sm.newFolderBtn", { title: "New folder", onClick: () => newFolder(data, state, rerender, state.folderId) }, [iconEl("plus", "sm")]),
   ]);
 
   const rows = [];
@@ -240,7 +241,7 @@ function paint(tree, pane, data, state, rerender) {
   const toolbar = el(".toolbar", {}, [
     search, typeBtn, sortBtn, dirBtn,
     el("span", { style: "flex:1" }),
-    el("button.btn.newFolderBtn", { onClick: () => toast({ message: "New folder (P5.6)" }) }, [iconEl("plus", "sm"), "New folder"]),
+    el("button.btn.newFolderBtn", { onClick: () => newFolder(data, state, rerender, state.folderId) }, [iconEl("plus", "sm"), "New folder"]),
     el("button.btn.primary", { onClick: () => openUpload(uploadOpts) }, [iconEl("plus", "sm"), "Upload"]),
   ]);
 
@@ -436,3 +437,51 @@ function emptyState(icon, title, sub) {
 }
 
 function toggle(set, id) { set.has(id) ? set.delete(id) : set.add(id); }
+
+// ── New folder (CANON §C.6) ──────────────────────────────────────────────────
+// Create a folder under the folder currently in view. The write path is real
+// (`create_folder` RPC on a server, a `save_folders` insert in My-files); in the
+// `?demo=1` fixture there is no network, so we insert optimistically only. On success
+// we push the row into `data.folders` and rerender from it — no refetch, matching the
+// explorer's one-fetch/client-nav model.
+function newFolder(data, state, rerender, parentId) {
+  promptFolderName(async (name) => {
+    let folder;
+    if (isDemoQS()) {
+      folder = { id: "f-new-" + Date.now(), name, parentId: parentId ?? null, archived: false, locked: false, count: 0 };
+    } else {
+      folder = await createFolder({ source: data.source, serverId: data.server?.id, parentId: parentId ?? null, name });
+    }
+    data.folders.push(folder);
+    // reveal the new child: expand the parent (and the root) so it isn't hidden
+    if (parentId != null) state.collapsed.delete(parentId);
+    state.collapsed.delete("__root__");
+    rerender();
+    toast({ message: `Folder “${name}” created` });
+  });
+}
+
+// The reusable single-field prompt (gallery "Prompt" dialog): a text input over the
+// scrim, Create disabled until it's non-empty, Enter submits. onSubmit(name) may be
+// async and may throw — a throw keeps the modal open and surfaces the reason as a toast
+// so the user can retry (e.g. a duplicate name or a permission failure from the RPC).
+function promptFolderName(onSubmit) {
+  const input = el("input", { placeholder: "Folder name" });
+  const create = el("button.btn.primary", { disabled: true }, ["Create"]);
+  const cancel = el("button.btn.ghost", {}, ["Cancel"]);
+  const modal = openModal({ title: "New folder", body: el(".field", {}, [input]), footer: [cancel, create] });
+  let busy = false;
+  const sync = () => { create.disabled = busy || !input.value.trim(); };
+  const submit = async () => {
+    const name = input.value.trim();
+    if (!name || busy) return;
+    busy = true; create.textContent = "Creating…"; sync();
+    try { await onSubmit(name); modal.close(); }
+    catch (e) { busy = false; create.textContent = "Create"; sync(); toast({ message: e?.message || "Couldn’t create the folder" }); }
+  };
+  input.addEventListener("input", sync);
+  input.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); submit(); } });
+  create.addEventListener("click", submit);
+  cancel.addEventListener("click", () => modal.close());
+  setTimeout(() => input.focus(), 0);
+}

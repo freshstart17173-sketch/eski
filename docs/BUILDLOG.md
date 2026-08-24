@@ -609,3 +609,31 @@ GOTCHA AC: the trash + save RPCs from CANON §E.3 (`restore_work`, `purge_work`,
   exists. Wiring the bulk-bar Delete/Save and the Trash view needs those migrations first
   (or a direct `works.deleted_at` update for soft-delete, but hard purge needs the blob
   refcount RPC).
+
+## 2026-08-24 — P5.6c New folder (real write path)
+IN PROGRESS: (cleared)
+DONE: the **New folder** flow (CANON §C.6) — both the toolbar and folder-tree-header
+  `newFolderBtn` (they were `toast("P5.6")` stubs) now open the reusable single-field
+  **prompt** dialog (gallery "Prompt" panel: `openModal` → `.field` input → Cancel/Create;
+  Create is disabled until the name is non-empty, Enter submits, a throw keeps the modal
+  open and toasts the reason so the user can retry). On submit it hits a **real write
+  path**: `createFolder()` in `data.js` calls the `create_folder` RPC for a server mount
+  (the RPC is the fence — gates `has_perm(manage_channels)`, rejects cross-server parents)
+  and a direct `save_folders` insert for the personal My-files mount (RLS on `user_id`).
+  The new row is pushed into `data.folders` and the screen rerenders from it — no refetch,
+  matching the explorer's one-fetch/client-nav model — created under the folder in view,
+  with the parent + root un-collapsed so the child is visible. In `?demo=1` there is no
+  network, so the insert is optimistic-only (keeps the fixture a screenshot aid, per the
+  owner's "don't fake" principle — the real path is the RPC/insert above).
+  Verified: `verify-explorer.mjs` +`new-folder` case (open prompt → Create disabled empty
+  → type name → Create enables → submit → prompt closes → new subfolder card appears under
+  beats); **14** explorer states GREEN, both themes, zero app console errors. Full gallery
+  verify GREEN (21 screens · 65 states · 45 dialogs).
+NEXT: wire the bulk-bar **Move to folder** to the `move_to_folder` RPC (exists) with a
+  folder-picker; then multi-select filters + quick-filter chips (§C.6). Delete→Trash + the
+  Trash view still need the user-facing trash RPCs (`restore_work`/`empty_trash`/`save_to_
+  files` — NOT applied; only `create_folder`/`move_to_folder`/`purge_trashed_works` exist,
+  the last cron-only) or a direct `works.deleted_at` soft-delete + an RLS UPDATE policy.
+GOTCHA AD: `create_folder` returns the `folders` row (id/name/parent_id/archived/locked);
+  I read `parent_id` off it for the folder shape. `save_folders` has no archived/locked
+  columns (personal folders can't be locked) — the shape hardcodes both false there.

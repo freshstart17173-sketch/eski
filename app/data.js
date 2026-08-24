@@ -360,6 +360,31 @@ async function loadPersonalExplorer(user, folderId) {
   };
 }
 
+// Create a folder under `parentId` (null = root) in whichever explorer source is
+// mounted. Server folders go through the `create_folder` RPC — the RPC is the fence
+// (it gates on has_perm(manage_channels) and forbids cross-server parents), the UI is
+// only the signpost. Personal folders are the user's own `save_folders` rows, guarded
+// by RLS on user_id, so a direct insert is correct there (no server-scoped permission
+// to check). Returns the new row in the explorer's folder shape so the caller can push
+// it into `data.folders` and rerender without a refetch. In demo mode there is no
+// network — the caller does its own optimistic insert.
+export async function createFolder({ source = "server", serverId, parentId = null, name }) {
+  const clean = (name || "").trim();
+  if (!clean) throw new Error("Folder name is required");
+  if (source === "personal") {
+    const user = session();
+    if (!user) throw new Error("Sign in to create folders");
+    const { data: row, error } = await supabase.from("save_folders")
+      .insert({ user_id: user.id, parent_id: parentId, name: clean })
+      .select("id,name,parent_id").single();
+    if (error) throw error;
+    return { id: row.id, name: row.name, parentId: row.parent_id, archived: false, locked: false, count: 0 };
+  }
+  const { data: row, error } = await supabase.rpc("create_folder", { server_id: serverId, parent_id: parentId, name: clean });
+  if (error) throw error;
+  return { id: row.id, name: row.name, parentId: row.parent_id, archived: !!row.archived, locked: !!row.locked, count: 0 };
+}
+
 // The home Feed (CANON §C.5) — the friends-only portfolio grid: friends' PUBLIC
 // posts (visibility='public' and author ∈ accepted friends), same card renderer as
 // the explorer, NO member colour (public context). The same "one component, two

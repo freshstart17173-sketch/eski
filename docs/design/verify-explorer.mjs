@@ -197,6 +197,42 @@ await detailsCase("dark");
   await ctx.close();
 }
 
+// New folder — open the prompt, Create disabled until named, then the new subfolder
+// appears in view (demo mode inserts optimistically; the real path is the create_folder
+// RPC / save_folders insert). Created under beats, so it shows as a beats subfolder card.
+{
+  const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  const page = await ctx.newPage();
+  const errs = [];
+  page.on("console", (m) => { if (m.type() === "error" || m.type() === "warning") errs.push(`[${m.type()}] ${m.text()}`); });
+  page.on("pageerror", (e) => errs.push(`[pageerror] ${e.message}`));
+  await page.goto(`http://localhost:${PORT}/s/lb/files?demo=1&folder=beats`, { waitUntil: "networkidle" }).catch(() => {});
+  await page.waitForTimeout(300);
+  const problems = [];
+  const before = await count(page, ".exview .foldercard");
+  await page.click(".toolbar .btn.newFolderBtn");
+  await page.waitForTimeout(150);
+  if (!(await $(page, ".scrim .modal .field input"))) problems.push("New-folder prompt should open");
+  const disabled0 = await page.$eval(".scrim .modal .btn.primary", (b) => b.disabled).catch(() => null);
+  if (disabled0 !== true) problems.push("Create should be disabled with an empty name");
+  await page.fill(".scrim .modal .field input", "Field notes");
+  await page.waitForTimeout(80);
+  const disabled1 = await page.$eval(".scrim .modal .btn.primary", (b) => b.disabled).catch(() => null);
+  if (disabled1 !== false) problems.push("Create should enable once a name is typed");
+  await page.click(".scrim .modal .btn.primary");
+  await page.waitForTimeout(200);
+  if (await $(page, ".scrim .modal")) problems.push("prompt should close after Create");
+  const after = await count(page, ".exview .foldercard");
+  if (after !== before + 1) problems.push(`expected one new subfolder card (${before}→${before + 1}), got ${after}`);
+  const names = await page.$$eval(".exview .foldercard", (cs) => cs.map((c) => c.textContent));
+  if (!names.some((t) => t.includes("Field notes"))) problems.push('new folder "Field notes" not shown');
+  const appErrs = errs.filter((e) => !/Failed to load resource|net::ERR|supabase|getSession|fetch|401|403|Access-Control/i.test(e));
+  if (appErrs.length) problems.push(...appErrs);
+  if (problems.length) { fails++; console.log("✗ new-folder"); problems.forEach((p) => console.log("    " + p)); }
+  else console.log("✓ new-folder");
+  await ctx.close();
+}
+
 await browser.close();
 server.close();
 console.log(fails ? `\n✗ ${fails} FAIL` : "\n✓ all explorer states render, zero app console errors, both themes");
