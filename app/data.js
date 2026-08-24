@@ -8,7 +8,7 @@
 //                  realtime.js + workspace.js; this module does the initial reads.
 //  - signed out  → { needsAuth:true } so the shell shows a sign-in prompt.
 
-import { demoWorkspace } from "./demo.js";
+import { demoWorkspace, demoExplorer } from "./demo.js";
 import { supabase } from "./supabase.js";
 import { session } from "./supabase.js";
 
@@ -196,6 +196,101 @@ export async function loadWorkspace({ serverId, channelId } = {}) {
     messages, typing: [], pins, files: [], memberGroups, thread: null,
     membersById,
     activeServerId: sid, activeChannelId: activeChannel?.id || null,
+  };
+}
+
+// ── the File explorer read (P5.4) ───────────────────────────────────────────
+// The server File explorer + home Feed are one component parameterised by source
+// (CANON §C.6); this is the SERVER source. It reads the server's folder tree and
+// the works living in it (a work's location = its `placement.folder_id`), and the
+// storage meter for the tree footer. Same rail/channel-column data as the
+// workspace, so the explorer mounts inside the same shell with Files highlighted.
+const SERVER_BASE_GB = 5;   // free baseline before purchased_gb (CANON §C.19)
+const GB = 1024 ** 3;
+
+// a raw works row + its placement/author → the card shape cards.js renders
+function shapeWork(w, place, membersById, chanName, tags = []) {
+  const a = membersById[w.author_id];
+  return {
+    id: w.id, title: w.title, name: w.title,
+    kind: w.kind, file_ext: w.file_ext, blob_sha: w.blob_sha, bytes: w.bytes,
+    hidden: !!w.hidden, created_at: w.created_at, tags,
+    folderId: place?.folder_id || null,
+    channelName: place?.channel_id ? chanName[place.channel_id] || null : null,
+    who: a ? { name: a.name, colorIdx: a.colorIdx } : null,
+  };
+}
+
+export async function loadExplorer({ serverId, folderId } = {}) {
+  if (isDemo()) return demoExplorer();
+  const user = session();
+  if (!user) return { needsAuth: true, live: false };
+
+  const { myServers, servers } = await loadRail(user);
+  const meBase = { id: user.id, name: user.email?.split("@")[0] || "you", initials: initials(user.email || "you"), handle: user.email?.split("@")[0] || "you", colorIdx: 1 };
+
+  const activeServer = myServers.find((r) => r.server && r.server.id === serverId)?.server
+    || (!serverId ? myServers[0]?.server : null);
+  if (!activeServer) return { needsAuth: false, live: true, noServer: true, me: meBase, servers, dmUnread: 0 };
+  const sid = activeServer.id;
+
+  const bundle = await loadServerBundle(activeServer);
+  const { membersById, channelGroups, textCh } = bundle;
+  const meMember = membersById[user.id];
+  const me = meMember
+    ? { id: user.id, name: meMember.name, initials: meMember.initials, handle: meMember.handle || meMember.name, colorIdx: meMember.colorIdx }
+    : meBase;
+  const chanName = {};
+  for (const c of textCh) chanName[c.id] = c.name;
+
+  // folder tree · works in this server · placements (folder location + channel) ·
+  // the storage meter. Placements are fetched separately (no embed) — the same FK
+  // caution as the workspace reads (GOTCHA U).
+  const [{ data: folderRows }, { data: workRows }, { data: meterRows }, { data: balRows }] = await Promise.all([
+    supabase.from("folders").select("id,name,parent_id,archived,locked").eq("server_id", sid).order("name"),
+    supabase.from("works").select("id,title,kind,file_ext,blob_sha,bytes,author_id,hidden,created_at").eq("server_id", sid).is("deleted_at", null).order("created_at", { ascending: false }),
+    supabase.from("storage_meters").select("bytes_used").eq("owner_type", "server").eq("owner_id", sid).maybeSingle(),
+    supabase.from("storage_balance").select("purchased_gb,status").eq("owner_type", "server").eq("owner_id", sid).maybeSingle(),
+  ]);
+
+  const works = workRows || [];
+  const workIds = works.map((w) => w.id);
+  const placeById = {};
+  const tagsByWork = {};
+  if (workIds.length) {
+    const [{ data: plRows }, { data: tagRows }] = await Promise.all([
+      supabase.from("placement").select("work_id,folder_id,channel_id").eq("surface", "server").eq("surface_id", sid).in("work_id", workIds),
+      supabase.from("content_tags").select("work_id,tag").in("work_id", workIds),
+    ]);
+    for (const p of plRows || []) placeById[p.work_id] = p;   // one server placement per work
+    for (const t of tagRows || []) (tagsByWork[t.work_id] ||= []).push(t.tag);
+  }
+
+  // per-folder file counts (all folders, for the tree tiles); root = null
+  const countByFolder = {};
+  for (const w of works) {
+    const fid = placeById[w.id]?.folder_id || "__root__";
+    countByFolder[fid] = (countByFolder[fid] || 0) + 1;
+  }
+  const folders = (folderRows || []).map((f) => ({
+    id: f.id, name: f.name, parentId: f.parent_id, archived: !!f.archived, locked: !!f.locked,
+    count: countByFolder[f.id] || 0,
+  }));
+
+  const files = works.map((w) => shapeWork(w, placeById[w.id], membersById, chanName, tagsByWork[w.id] || []));
+
+  const usedBytes = Number(meterRows?.bytes_used || 0);
+  const capGb = SERVER_BASE_GB + Number(balRows?.purchased_gb || 0);
+
+  return {
+    needsAuth: false, live: true,
+    me, isAdmin: !!membersById[user.id]?.admin, servers, dmUnread: 0,
+    server: { id: sid, name: activeServer.name, initials: initials(activeServer.name) },
+    channelGroups, membersById,
+    folders, files,
+    currentFolderId: folderId || null,
+    storage: { usedBytes, capGb, capBytes: capGb * GB, status: balRows?.status || "active", overCap: usedBytes > capGb * GB },
+    activeServerId: sid,
   };
 }
 

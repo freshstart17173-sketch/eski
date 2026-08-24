@@ -8,10 +8,12 @@ import { signal, effect } from "./signals.js";
 import { start, match } from "./router.js";
 import { ready, session, onChange } from "./supabase.js";
 import { icon } from "./icons.js";
-import { loadWorkspace, clearWorkspaceCache } from "./data.js";
+import { loadWorkspace, loadExplorer, clearWorkspaceCache } from "./data.js";
 import { teardownRealtime } from "./realtime.js";
 import { renderRail, appFrame } from "./shell.js";
 import { renderWorkspace } from "./screens/workspace.js";
+import { renderExplorer } from "./screens/explorer.js";
+import { closeDetails } from "./screens/details.js";
 import { renderSignin } from "./screens/signin.js";
 import { renderLanding } from "./screens/landing.js";
 
@@ -61,6 +63,7 @@ let token = 0;   // guards against a stale async render landing after a newer na
 async function renderRoute(r) {
   const mine = ++token;
   teardownRealtime();                                  // kill the previous view's subscriptions
+  closeDetails();                                       // a nav closes any open details overlay
 
   if (r.screen === "auth") { swap(renderSignin()); return; }   // /signin — full screen, no shell
   // "/" with no session is the marketing home, not the in-shell Feed placeholder
@@ -68,6 +71,18 @@ async function renderRoute(r) {
   // through to renderSignin() below via needsAuth.
   if (r.screen === "feed" && r.path === "/" && !session()) { swap(renderLanding()); return; }
   if (!IN_SHELL.has(r.screen)) { swap(placeholder(r)); return; }
+
+  // File explorer (P5.4) — its own read (folder tree + placed works + storage);
+  // mounts in the same shell as the workspace, Files highlighted in the column.
+  if (r.screen === "explorer") {
+    const q = new URLSearchParams(location.search);
+    const folder = q.get("folder");
+    const exData = await loadExplorer({ serverId: r.params.serverId, folderId: folder });
+    if (mine !== token) return;
+    if (exData.needsAuth) { swap(renderSignin()); return; }
+    swap(appFrame(renderRail(exData, r), renderExplorer(exData, { folderId: folder, mode: q.get("view") })));
+    return;
+  }
 
   const data = await loadWorkspace({ serverId: r.params.serverId, channelId: r.params.channelId });
   if (mine !== token) return;   // a newer navigation already rendered

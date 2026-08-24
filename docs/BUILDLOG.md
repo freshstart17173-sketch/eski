@@ -387,3 +387,73 @@ GOTCHA W: works `visibility` maps to owner_type/owner_id — server upload = own
   personal = owner_type 'user', owner_id=me. The prompt's "storage_source/
   billing_server_id" are these columns, not literal columns. placement.pl_write needs
   placed_by=auth.uid() AND can_read_work — so insert the work first, then the placement.
+
+## 2026-08-24 — P5.4/P5.5 File explorer (server mount)
+IN PROGRESS: (cleared)
+DONE: the server **File explorer** — the Drive half of the app, reading what Upload
+  writes. `app/screens/explorer.js` `renderExplorer(data, view)`: the reused channel
+  column (Files highlighted, `channelColumn` now exported from workspace.js with
+  `view.filesActive`) · a nested **folder tree** (root = server name, collapsible
+  twisties, current folder highlighted, lock/30d-Trash rows) · a **storage footer**
+  (used/cap bar) · **breadcrumb ⇄ search-results** header swap · a compact **Grid/List**
+  view dropdown · **grid** (folder cards + the shared `workCard` renderer) and **list**
+  (name/type/size/uploader/added rows) · **search-as-you-type** (flattens the tree to
+  title matches) · reusable **empty states**. One fetch, client-side navigation:
+  `loadExplorer({serverId,folderId})` in `app/data.js` reads `folders` + `works`
+  (server_id, deleted_at null) + `placement` (folder location + channel, fetched
+  separately — no embed, per GOTCHA U) + the `storage_meters`/`storage_balance` meter,
+  and shapes works to the card model; folder position is pure client filtering. Wired
+  into `app/main.js` (explorer route → `loadExplorer` → `renderExplorer`, `?folder=`/
+  `?view=` deep links). Demo fixture `demoExplorer()` in `app/demo.js` mirrors the live
+  shape so `?demo=1` renders identically. All CSS was already ported (the P5.4 WIP
+  commit: `.explayout/.filetree/.exview/.flrow` in content.css, `.card/.masonry/
+  .emptystate` in shell.css) — no new selectors added.
+  Verified: new `docs/design/verify-explorer.mjs` GREEN (7 states incl. grid/list,
+  folder deep-link, locked folder, empty folder, search, both themes, zero app console
+  errors); verify-workspace.mjs still GREEN after the `channelColumn` export change.
+  Screenshots eyeballed against gallery #60 — matches (tree, breadcrumb, kind-cards,
+  uploader hue chips, storage foot).
+NEXT: Details pane (P5.5 — open a card → the media viewer + info rail), then the
+  personal **My files** mount (hides the channel column, `owner_type='user'` source),
+  then Feed view + Trash + the filter/sort dropdowns + multi-select bulk bar.
+GOTCHA X: card media 404s until a real R2 upload exists — `mediaUrl()` returns null
+  when `blob_sha` is null, so image/video cells fall back to the type card (by design;
+  the demo fixture leaves blob_sha null, so its images show as PNG type cards). A live
+  upload with real bytes is what turns them into thumbnails.
+
+## 2026-08-24 — P5.5 Details pane (the one media viewer)
+IN PROGRESS: (cleared)
+DONE: the **Details pane** (CANON §C.7, eski-style §5) — the ONE media viewer, opened
+  from any file card in the explorer. `app/screens/details.js` `openDetails(work, ctx)`:
+  a near-full-screen **arena** on a scrim (media takes the room left, a fixed 380px info
+  rail right), **closes on ✕ / Esc / backdrop click**. Media by kind — image fills the
+  well, audio/video reuse the P3 `MediaPlayer` (real transport) when bytes exist, and
+  non-previewable (or, until a real R2 upload lands, anything with no blob) shows a
+  **type card** ("preview loads after upload" / "no preview, download to open"), never a
+  fake thumbnail. Info rail: `.dtop` (filename · Report · prev/next chevrons · close,
+  inset hairline under) · `.scroll` (h2 title · dense are.na `.meta` rows: Location
+  breadcrumb → Uploaded by → Posted in #channel → Added → Format → **Size last** · Tags
+  as bold text) · `.foot` (Download, Save to my files, inset hairline on top). **Server
+  file = NO comment thread** (chat handles replies); the `isPost` path renders a comment
+  thread for later (Feed/Profile). Prev/next steps through the folder's files (siblings);
+  ←/→ navigate unless a media player is focused (there they're 5s skip). Location crumbs
+  open the explorer at that folder (preserves `?demo=1`). Wired `explorer.js` `openFile`
+  → `openDetails`; `data.js loadExplorer` now also fetches `content_tags` (one batched
+  `.in()` query) and attaches `tags` per work; `demoExplorer()` carries tags; `main.js`
+  calls `closeDetails()` on every route change (the sheet lives on `body`, not `stage`).
+  CSS: ported the arena block into `styles/content.css` **scoped under `.sheet`** so the
+  generic names (.meta/.row/.foot/.cmt/.by/.tx) never leak (the leaked-`.msg` trap); the
+  `.dmbigplay/.dmtransport/.tbtn/.navarrow` media pieces are the P3 primitives, reused.
+  Verified: `docs/design/verify-explorer.mjs` extended — 9 states GREEN incl.
+  details-light/dark (arena structure, ≥4 meta rows, Location crumb, tags present, NO
+  comments on a server file, Size is the last row, Esc closes), both themes, zero app
+  console errors. Screenshots eyeballed vs gallery arena panels — matches.
+NEXT: the personal **My files** mount (hides the channel column, `owner_type='user'`
+  source, "Your storage" footer), then Feed view + Trash + the filter/sort dropdowns +
+  multi-select bulk bar; the Details **Download**/**Save** write paths need the R2 read
+  env + `saved_items` RPC.
+GOTCHA Y: the explorer opens details on a **single click** for now — the Google-Drive
+  "single-click selects, double-click opens" model (CANON §C.6) waits on the multi-
+  select/marquee pass; single-click-opens matches "elsewhere a single click opens" and
+  is the honest v1 until selection exists. Don't wire double-click before selection, or
+  a plain click will do nothing.
