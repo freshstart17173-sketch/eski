@@ -145,6 +145,51 @@ async function detailsCase(theme) {
     await page.waitForTimeout(120);
     if (!(await saveBtn.textContent()).includes("Save to my files")) problems.push("Save button should toggle back to 'Save to my files'");
   }
+  // ⋯ file-actions menu (P5.9d parity) — the same actions the card ⋯ menu offers,
+  // reachable from the open viewer. It lives in the info-rail header.
+  const moreBtn = await page.$('.sheet .dtop button[aria-haspopup="menu"]');
+  if (!moreBtn) problems.push("details ⋯ actions button missing");
+  else {
+    await moreBtn.click();
+    await page.waitForTimeout(120);
+    const labels = await page.$$eval(".menu.open button", (bs) => bs.map((b) => b.textContent.trim()));
+    for (const want of ["Rename", "Move to…", "Delete", "Save to my files"]) {
+      if (!labels.some((l) => l.includes(want))) problems.push(`⋯ menu missing "${want}" (got ${JSON.stringify(labels)})`);
+    }
+    if (!labels.some((l) => /Star|Unstar/.test(l))) problems.push("⋯ menu missing Star/Unstar");
+    if (!labels.some((l) => /Hide from library|Show in library/.test(l))) problems.push("⋯ menu missing Hide/Show");
+    // Rename in place: the prompt must layer ABOVE the sheet (z-index fix), and on submit
+    // the pane's filename updates while the viewer stays open.
+    await page.click('.menu.open button:has-text("Rename")');
+    await page.waitForTimeout(150);
+    const promptZ = await page.$eval(".scrim", (s) => parseInt(getComputedStyle(s).zIndex, 10));
+    const sheetZ = await page.$eval(".sheet", (s) => parseInt(getComputedStyle(s).zIndex, 10));
+    if (!(promptZ > sheetZ)) problems.push(`Rename prompt (z${promptZ}) must sit above the details sheet (z${sheetZ})`);
+    const nameInput = await page.$(".scrim .modal input");
+    if (!nameInput) problems.push("Rename prompt input missing");
+    else {
+      await nameInput.fill("renamed_in_viewer");
+      await page.click('.scrim .modal button:has-text("Rename")');
+      await page.waitForTimeout(150);
+      if (await $(page, ".scrim")) problems.push("Rename prompt should close on submit");
+      if (!(await $(page, ".sheet"))) problems.push("details pane should stay open after an in-viewer rename");
+      const fn = await page.$eval(".sheet .dtop .dfilename", (n) => n.textContent);
+      if (fn !== "renamed_in_viewer") problems.push(`filename should repaint to the new name, got "${fn}"`);
+    }
+    // Hide flips the menu label in place (pane stays open on the file)
+    await page.click('.sheet .dtop button[aria-haspopup="menu"]');
+    await page.waitForTimeout(120);
+    await page.click('.menu.open button:has-text("Hide from library")');
+    await page.waitForTimeout(150);
+    if (!(await $(page, ".sheet"))) problems.push("Hide from the viewer should keep the pane open");
+    await page.click('.sheet .dtop button[aria-haspopup="menu"]');
+    await page.waitForTimeout(120);
+    const afterHide = await page.$$eval(".menu.open button", (bs) => bs.map((b) => b.textContent.trim()));
+    if (!afterHide.some((l) => l.includes("Show in library"))) problems.push("⋯ menu should read 'Show in library' after hiding");
+    await page.keyboard.press("Escape");   // close the menu
+    await page.waitForTimeout(80);
+  }
+
   // Esc closes
   await page.keyboard.press("Escape");
   await page.waitForTimeout(150);

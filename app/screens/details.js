@@ -12,7 +12,7 @@
 // transport) when bytes exist; non-previewable (and, until a real R2 upload exists,
 // anything with no blob) shows a type card — never a fake thumbnail.
 
-import { el, toast, Tag } from "../ui.js";
+import { el, toast, Tag, openMenu } from "../ui.js";
 import { iconEl } from "../icons.js";
 import { navigate } from "../router.js";
 import { MediaPlayer } from "../ui.js";
@@ -59,7 +59,11 @@ export function openDetails(work, ctx = {}) {
   const go = (d) => { const n = idx + d; if (n < 0 || n >= sibs.length) return; idx = n; paint(sibs[idx]); };
 
   function paint(w) {
-    card.replaceChildren(mediaArea(w), infoRail(w, ctx, { go, hasPrev: idx > 0, hasNext: idx < sibs.length - 1 }));
+    const nav = { go, hasPrev: idx > 0, hasNext: idx < sibs.length - 1 };
+    // file actions (⋯) — supplied by the explorer; a public post (feed/profile) omits them.
+    // repaint re-renders the pane in place after an in-viewer star/rename/hide.
+    if (ctx.menuItemsFor) nav.openActions = (anchor) => openMenu(anchor, ctx.menuItemsFor(w, { repaint: () => paint(w), close: closeDetails }));
+    card.replaceChildren(mediaArea(w), infoRail(w, ctx, nav));
   }
   paint(work);
 
@@ -113,6 +117,9 @@ function typeCard(w) {
 function infoRail(w, ctx, nav) {
   const top = el(".dtop", {}, [
     el("span.dfilename", {}, [w.title || w.name || "untitled"]),
+    // ⋯ file actions (star/rename/move/hide/delete) — only for files the explorer owns;
+    // a public post carries no menuItemsFor, so the button doesn't render there.
+    nav.openActions ? iconBtn("more", "More actions", (e) => nav.openActions(e.currentTarget), { haspopup: true }) : null,
     iconBtn("flag", "Report", () => toast({ message: "Report (P8)" })),
     iconBtn("chev", "Previous item", () => nav.go(-1), { rotate: 90, disabled: !nav.hasPrev, cls: "sp" }),
     iconBtn("chev", "Next item", () => nav.go(1), { rotate: -90, disabled: !nav.hasNext }),
@@ -207,9 +214,10 @@ function commentsSection(ctx) {
 }
 
 // ── helpers ───────────────────────────────────────────────────────────────────
-function iconBtn(ic, title, onClick, { rotate, disabled, cls, x } = {}) {
+function iconBtn(ic, title, onClick, { rotate, disabled, cls, x, haspopup } = {}) {
   const b = el("button.iconbtn" + (cls ? "." + cls : ""), { title, "aria-label": title, onClick, disabled: disabled || null });
   if (x) b.setAttribute("data-x", "1");
+  if (haspopup) b.setAttribute("aria-haspopup", "menu");
   const g = iconEl(ic, "sm");
   if (rotate) g.style.transform = `rotate(${rotate}deg)`;
   b.append(g);

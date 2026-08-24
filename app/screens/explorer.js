@@ -377,6 +377,8 @@ function contents(data, state, rerender, sel) {
     serverName: rootLabel(data), personal,
     folderPath: crumbPath(data.folders, w.folderId),
     siblings: files, isPost: false,
+    // the viewer's ⋯ menu = the card menu (P5.9d): star/rename/move/hide/delete from the pane
+    menuItemsFor: (ww, hooks) => detailMenuItems(data, state, rerender, ww, hooks),
   });
 
   if (!subfolders.length && !files.length) {
@@ -795,17 +797,18 @@ function emptyNow(data, rerender) {
 // Toggle a work's star — a real starred_items write (demo optimistic), reflected on the
 // card IN PLACE so it doesn't clear the selection. In the Starred filter view, unstarring
 // drops the card, so rerender there to keep the flat grid (+ empty state) correct.
-function toggleStar(data, state, rerender, w) {
+function toggleStar(data, state, rerender, w, after) {
   const next = !w.starred;
   (isDemoQS() ? Promise.resolve() : (next ? starWork(w.id) : unstarWork(w.id))).then(() => {
     w.starred = next;
-    if (state.starred && !next) { rerender(); return; }
+    if (state.starred && !next) { rerender(); after?.(); return; }
     const card = document.querySelector(`.card[data-id="${cssEscape(w.id)}"]`);
     if (card) {
       card.classList.toggle("starred", next);
       const sb = card.querySelector('.cardacts [data-act="star"]');
       if (sb) { sb.classList.toggle("starred", next); sb.title = next ? "Unstar" : "Star"; }
     }
+    after?.();   // let an open details pane repaint its own star label
   }).catch((e) => toast({ message: e?.message || "Couldn’t update star" }));
 }
 function cssEscape(s) { return (window.CSS && CSS.escape) ? CSS.escape(s) : String(s).replace(/["\\]/g, "\\$&"); }
@@ -828,14 +831,34 @@ function openCardMenu(data, state, rerender, w, anchor) {
   ]);
 }
 
+// The SAME actions the card ⋯ menu offers, handed to the open Details pane (P5.9d parity)
+// so a file can be starred/renamed/moved/hidden/deleted from the viewer, not only its card.
+// One source of write logic: this reuses the card handlers, threading the pane's own hooks —
+// `repaint` re-renders the pane in place (star/rename/hide, which keep it open), `close`
+// dismisses it first (Move opens a picker; Delete removes the file from view). The grid
+// behind is refreshed by each handler's own rerender, so both surfaces stay in sync.
+export function detailMenuItems(data, state, rerender, w, { repaint, close }) {
+  const personal = data.source === "personal";
+  return [
+    { label: w.starred ? "Unstar" : "Star", icon: "star", onClick: () => toggleStar(data, state, rerender, w, repaint) },
+    ...(personal ? [] : [{ label: "Save to my files", icon: "save", onClick: () => saveOne(w) }]),
+    { label: "Rename", icon: "pen", onClick: () => renameFile(data, state, rerender, w, repaint) },
+    { label: "Move to…", icon: "folder", onClick: () => { close(); moveIds(data, state, rerender, [w.id]); } },
+    { label: w.hidden ? "Show in library" : "Hide from library", icon: "hide", onClick: () => toggleHidden(data, state, rerender, w, repaint) },
+    { sep: true },
+    { label: "Delete", icon: "trash", danger: true, onClick: () => { close(); trashIds(data, state, rerender, [w.id]); } },
+  ];
+}
+
 // Hide/show a work in the library view (#55) — a real works.hidden toggle. When hiding
 // while Show-hidden is off the card leaves the view, so rerender to reflect it.
-function toggleHidden(data, state, rerender, w) {
+function toggleHidden(data, state, rerender, w, after) {
   const next = !w.hidden;
   (isDemoQS() ? Promise.resolve() : setHidden(w.id, next)).then(() => {
     w.hidden = next;
     rerender();
     toast({ message: next ? "Hidden from the library" : "Shown in the library", icon: "hide" });
+    after?.();   // details pane stays open on the file; repaint flips its Hide/Show label
   }).catch((e) => toast({ message: e?.message || "Couldn’t update" }));
 }
 
@@ -844,11 +867,12 @@ function saveOne(w) {
     .catch((e) => toast({ message: e?.message || "Couldn’t save" }));
 }
 
-function renameFile(data, state, rerender, w) {
+function renameFile(data, state, rerender, w, after) {
   promptText({ title: "Rename", placeholder: "Name", value: w.title || w.name || "", submit: "Rename", busyLabel: "Renaming…", fail: "Couldn’t rename" }, async (name) => {
     if (!isDemoQS()) await renameWork(w.id, name);
     w.title = name; w.name = name;
     rerender();
     toast({ message: "Renamed" });
+    after?.();   // details pane repaints its title/filename from the mutated work
   });
 }

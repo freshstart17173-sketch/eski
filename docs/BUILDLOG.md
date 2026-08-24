@@ -849,3 +849,37 @@ NEXT: the remaining card-menu items as their backends land — **Download** (R2 
 GOTCHA AL: `.iconbtn.on` is a generic pressed-toggle style (Show-hidden); the Starred
   toggle keeps its gold via the more-specific `.iconbtn.exstar.on`. Order-independent —
   specificity (3 vs 2 classes) decides, not source order.
+
+## 2026-08-24 — P5.9d Details-pane action menu (card-menu parity in the viewer)
+IN PROGRESS: (cleared)
+DONE: the open **Details pane** now carries the **same ⋯ action menu the card offers** —
+  Star/Unstar · Save to my files · Rename · Move to… · Hide/Show in library · Delete — so a
+  file is actionable from the viewer, not only from its card in the grid. A ⋯ `.iconbtn`
+  (aria-haspopup=menu) sits in the info-rail header (`.dtop`, before Report); it renders
+  **only when the caller supplies actions** — the explorer passes `menuItemsFor`, so public
+  posts (feed/profile) show no menu. **One source of write logic:** `explorer.js`
+  `detailMenuItems()` reuses the card handlers (`toggleStar/renameFile/moveIds/toggleHidden/
+  trashIds`), threading the pane's own hooks — `repaint()` re-renders the pane in place after
+  an in-viewer Star/Rename/Hide (the pane stays open, its title/labels update), `close()`
+  dismisses it first for Move (opens the destination picker) and Delete (the file leaves the
+  view). The grid behind refreshes via each handler's existing `rerender()`, so both surfaces
+  stay in sync. Added an optional `after` callback to `toggleStar/toggleHidden/renameFile`
+  (card path passes none — unchanged) so the pane can repaint after the write resolves.
+  **Layer fix:** `.scrim` z-index 80 → **82** (above the details `.sheet` at 81) — a modal is
+  always spawned *from within* a surface (the Rename prompt opens from the pane's ⋯ menu), so
+  it is the newer, active interaction and must sit on top of the viewer that opened it, never
+  behind it; menus (90) and toasts (95) still float above modals. Comment in
+  `styles/primitives.css` records why.
+  Verified: `verify-explorer.mjs` `details-{light,dark}` extended — the ⋯ menu lists all six
+  actions; Rename opens a prompt that asserts `promptZ > sheetZ`, submits, and the pane's
+  filename repaints in place while the pane stays open; Hide flips the menu label to
+  "Show in library" with the pane still open. **18** explorer cases GREEN both themes, zero
+  app console errors. Menu screenshotted in both themes (anchored under ⋯, Delete in danger
+  red, square icons — matches the card menu). Full gallery `verify.mjs` GREEN.
+NEXT: as their backends land — **Download** (R2 read env), **Copy link** (`share_links`
+  insert; `resolve_share_link` exists), **Crosspost to server…**, plus **Add tag** (details
+  Tags +) and the personal **Save-to-a-folder** chooser. Or move to a new surface: the
+  **Feed comments** live write path, or **Profile** writes (edit-profile, shelves).
+GOTCHA AM: `.scrim` (80) sat *below* the details `.sheet` (81) — a modal opened from the
+  pane rendered behind it, invisible under the sheet's own dim. Raised scrim to 82. Any
+  future full-screen overlay above a modal must land above 82 (and below the 90 menu layer).
