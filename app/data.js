@@ -55,60 +55,64 @@ function emptyWorkspace(serverId, channelId, needsAuth) {
   };
 }
 
-// ── the live read (P4.10) ───────────────────────────────────────────────────
-export async function loadWorkspace({ serverId, channelId } = {}) {
-  if (isDemo()) return demoWorkspace();
-  const user = session();
-  if (!user) return emptyWorkspace(serverId, channelId, /*needsAuth*/ true);
+// ── caches (P4-BUG#4: channel switching was re-reading everything) ──────────
+// Server-level data changes rarely; cache it so a channel switch only fetches the
+// new channel's messages. Cleared on sign-out (main.js) so a different account can't
+// read a previous one's cached rail/members.
+const _cache = { rail: null, servers: new Map() };
+export function clearWorkspaceCache() { _cache.rail = null; _cache.servers.clear(); }
 
-  // my profile + the servers I'm in (rail)
-  const [{ data: prof }, { data: myServers }] = await Promise.all([
-    supabase.from("profiles").select("handle,name").eq("id", user.id).maybeSingle(),
-    supabase.from("server_members").select("color, server:servers(id,name,owner_id)").eq("user_id", user.id),
-  ]);
-  const servers = (myServers || []).filter((r) => r.server).map((r) => ({
-    id: r.server.id, name: r.server.name, initials: initials(r.server.name),
-  }));
-  const meName = prof?.name || prof?.handle || user.email?.split("@")[0] || "you";
-  const me = { id: user.id, name: meName, initials: initials(meName), handle: prof?.handle || meName, colorIdx: 1 };
+async function loadRail(user) {
+  if (_cache.rail) return _cache.rail;
+  const { data: myServers } = await supabase.from("server_members").select("color, server:servers(id,name,owner_id)").eq("user_id", user.id);
+  const rows = myServers || [];
+  const servers = rows.filter((r) => r.server).map((r) => ({ id: r.server.id, name: r.server.name, initials: initials(r.server.name) }));
+  _cache.rail = { myServers: rows, servers };
+  return _cache.rail;
+}
 
-  const activeServer = (myServers || []).find((r) => r.server && r.server.id === serverId)?.server
-    || (!serverId ? myServers?.[0]?.server : null);
-  if (!activeServer) {
-    const base = emptyWorkspace(serverId, channelId, false);
-    return { ...base, me, servers };
-  }
+const MANAGE_SERVER = 1n;   // perm_bit('manage_server')
+
+async function loadServerBundle(activeServer) {
   const sid = activeServer.id;
+  if (_cache.servers.has(sid)) return _cache.servers.get(sid);
 
-  // members (+ roles for admin grouping) and channels, in parallel
   const [{ data: memRows }, { data: roleRows }, { data: chans }] = await Promise.all([
-    supabase.from("server_members").select("user_id,color,status,profile:profiles(handle,name,presence_state,status_text)").eq("server_id", sid),
+    supabase.from("server_members").select("user_id,color,status").eq("server_id", sid),
     supabase.from("member_roles").select("user_id, role:roles(permissions)").eq("server_id", sid),
     supabase.from("channels").select("id,name,kind,position,slowmode_sec,post_policy").eq("server_id", sid).order("position"),
   ]);
+  // profiles are fetched SEPARATELY, not embedded: server_members has no FK to
+  // profiles (its user_id points at auth.users), so a PostgREST embed errors out and
+  // returned nothing — the bug behind the empty members rail + "unknown" authors.
+  const uids = (memRows || []).map((m) => m.user_id);
+  const { data: profRows } = uids.length
+    ? await supabase.from("profiles").select("id,handle,name,presence_state,status_text").in("id", uids)
+    : { data: [] };
+  const profById = {};
+  for (const p of profRows || []) profById[p.id] = p;
 
-  // admin = server owner OR holds a role with the manage_server bit (1)
-  const MANAGE_SERVER = 1n;
   const adminBits = {};
-  for (const r of roleRows || []) { if (r.role && (BigInt(r.role.permissions) & MANAGE_SERVER)) adminBits[r.user_id] = true; }
+  for (const r of roleRows || []) if (r.role && (BigInt(r.role.permissions) & MANAGE_SERVER)) adminBits[r.user_id] = true;
+
   const membersById = {};
   for (const m of memRows || []) {
-    const nm = m.profile?.name || m.profile?.handle || "member";
-    membersById[m.user_id] = { id: m.user_id, name: nm, colorIdx: m.color || 1, initials: initials(nm),
-      presence: m.profile?.presence_state || "offline", doing: m.profile?.status_text || "",
-      admin: m.user_id === activeServer.owner_id || !!adminBits[m.user_id] };
+    const p = profById[m.user_id];
+    const nm = p?.name || p?.handle || "member";
+    membersById[m.user_id] = {
+      id: m.user_id, name: nm, handle: p?.handle || nm, colorIdx: m.color || 1, initials: initials(nm),
+      presence: p?.presence_state || "offline", doing: p?.status_text || "",
+      admin: m.user_id === activeServer.owner_id || !!adminBits[m.user_id],
+    };
   }
-  if (membersById[user.id]) me.colorIdx = membersById[user.id].colorIdx;
-
   const admins = [], members = [];
-  for (const [uid, m] of Object.entries(membersById)) (m.admin ? admins : members).push(m);
+  for (const m of Object.values(membersById)) (m.admin ? admins : members).push(m);
   const byName = (a, b) => a.name.localeCompare(b.name);
   const memberGroups = [
     admins.length && { label: "Admins", members: admins.sort(byName) },
     members.length && { label: "Members", members: members.sort(byName) },
   ].filter(Boolean);
 
-  // channel groups by kind, preserving order
   const textCh = (chans || []).filter((c) => c.kind !== "voice");
   const voiceCh = (chans || []).filter((c) => c.kind === "voice");
   const channelGroups = [
@@ -116,7 +120,36 @@ export async function loadWorkspace({ serverId, channelId } = {}) {
     voiceCh.length && { kind: "voice", label: "Voice", channels: voiceCh.map((c) => ({ id: c.id, name: c.name, voice: [] })) },
   ].filter(Boolean);
 
-  const activeChannel = (chans || []).find((c) => c.id === channelId) || textCh[0] || null;
+  const bundle = { sid, membersById, memberGroups, channelGroups, textCh, server: { id: sid, name: activeServer.name, initials: initials(activeServer.name) } };
+  _cache.servers.set(sid, bundle);
+  return bundle;
+}
+
+// ── the live read (P4.10) ───────────────────────────────────────────────────
+export async function loadWorkspace({ serverId, channelId } = {}) {
+  if (isDemo()) return demoWorkspace();
+  const user = session();
+  if (!user) return emptyWorkspace(serverId, channelId, /*needsAuth*/ true);
+
+  const { myServers, servers } = await loadRail(user);
+  const meBase = { id: user.id, name: user.email?.split("@")[0] || "you", initials: initials(user.email || "you"), handle: user.email?.split("@")[0] || "you", colorIdx: 1 };
+
+  const activeServer = myServers.find((r) => r.server && r.server.id === serverId)?.server
+    || (!serverId ? myServers[0]?.server : null);
+  if (!activeServer) return { ...emptyWorkspace(serverId, channelId, false), me: meBase, servers };
+  const sid = activeServer.id;
+
+  // server-level data (members/roles/channels/profiles) is cached per server — a
+  // channel switch within the same server then only fetches that channel's messages.
+  const bundle = await loadServerBundle(activeServer);
+  const { membersById, memberGroups, channelGroups, textCh } = bundle;
+  const meMember = membersById[user.id];
+  const me = meMember
+    ? { id: user.id, name: meMember.name, initials: meMember.initials, handle: meMember.handle || meMember.name, colorIdx: meMember.colorIdx }
+    : meBase;
+
+  // voice channels are v2 — never selectable as the active (text) channel (P4-BUG#3)
+  const activeChannel = textCh.find((c) => c.id === channelId) || textCh[0] || null;
 
   let messages = [], pins = [], pinCount = 0;
   if (activeChannel) {

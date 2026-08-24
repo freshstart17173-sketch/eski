@@ -28,45 +28,31 @@ GOTCHA: channels.post_policy='admins' must reject non-admin inserts — test cov
 
 ## Current state
 
-**Phase: build. P0–P3 DONE. P4 UI (P4.1–P4.9) DONE. P4.10/P4.11 live wiring works on preview but has 6 bugs found in owner testing 2026-08-24 (list below). NEXT: fix the P4-LIVE-BUGS, then P5.**
+**Phase: build. P0–P3 DONE. P4 UI (P4.1–P4.9) DONE. P4.10/P4.11 live: 6 owner-found bugs ALL FIXED IN CODE 2026-08-24 (see below), pending a preview re-test (can't run the browser e2e in-sandbox). NEXT: owner re-tests on preview; then P5.**
 
-> **P4.10/P4.11 — LIVE, with bugs to fix (owner tested on preview 2026-08-24).** The
-> live spine DOES work end-to-end on preview: sign-in, live send/receive, presence all
-> fired. But testing surfaced 6 bugs — fix these before P5. (In-sandbox note: the
-> two-session harness `verify-live.mjs` still can't run here — headless Chromium can't
-> egress HTTPS through the agent proxy — so verify fixes on preview or in a
-> network-capable env.)
->
-> **P4-LIVE-BUGS (priority order):**
-> 1. **Members rail empty + every message author shows "unknown".** ROOT (likely): the
->    `server_members.select('...,profile:profiles(...)')` embed in `loadWorkspace`
->    fails (no FK `server_members.user_id`→`profiles`, or profiles RLS blocks reading
->    co-members), so `memRows`/`membersById` come back empty → no member rows AND
->    `shapeMessage` falls back to "unknown". FIX: fetch profiles in a SEPARATE query by
->    id-list and merge; confirm profiles RLS lets a co-member read the row (add/adjust
->    policy if not). This one bug causes both symptoms — do it first.
-> 2. **Markdown/formatting not rendered** — `**bold**`, `*italic*`, etc. show as literal
->    text in the stream and nothing decorates in the box. `renderBody` only highlights
->    @/#; add a minimal inline markdown renderer (bold/italic/strike/code/link), HTML-escaped.
-> 3. **Voice channels open as a text channel** (composer + "start of #the booth"). Voice
->    is v2/deferred — a voice `.crow` must NOT route to a text channel or become the
->    active channel; click → a "voice ships in v2" toast (or no-op). Also don't let
->    `loadWorkspace` pick a voice channel as `activeChannel`.
-> 4. **Channel switching is very slow** — every nav re-runs the whole `loadWorkspace`
->    (servers + members + roles + channels + messages + pins, many round trips). Cache
->    the server-level reads per `serverId` (servers/members/roles/channels change rarely)
->    so a channel switch only fetches that channel's messages + pins.
-> 5. **Sign-in flaky** — magic link often needs several reloads, and a signed-in session
->    sometimes flashes back to the sign-in screen. Race: the first render runs before
->    `ready` (getSession / `detectSessionInUrl` hash exchange) settles → shows sign-in;
->    and transient `onChange` states re-render. FIX: hold the first in-shell render until
->    `ready` resolves (a brief loading state), and don't drop to sign-in on a transient
->    null during token exchange.
-> 6. **Members panel not toggleable** — likely a side effect of #1 (empty rail reads as
->    absent); re-check the `#memToggle` handler once the rail is populated.
->
-> Not bugs (expected this phase): Feed/DMs/Notifications/etc. show the "not yet ported"
-> placeholder — only the Workspace is built (P5+ port the rest).
+> **P4.10/P4.11 — 6 preview bugs, all fixed in code (owner test 2026-08-24; re-test on preview).**
+> The live spine works end-to-end on preview (sign-in, live send/receive, presence).
+> Testing surfaced 6 bugs — **all now fixed** (verify on preview; the two-session
+> harness `verify-live.mjs` still can't run in-sandbox — headless Chromium can't egress
+> HTTPS through the agent proxy). Fixes, by bug:
+> 1. Empty members + "unknown" authors → **FIXED**: root cause confirmed via SQL —
+>    `server_members` has NO FK to `profiles` (its user_id → auth.users), so the
+>    PostgREST embed errored and returned nothing. Now fetch profiles in a SEPARATE
+>    `.in('id',uids)` query (profiles read policy is `true`, so co-members resolve).
+> 2. Markdown not rendered → **FIXED**: `renderBody` now HTML-escapes then applies an
+>    inline-markdown pass (`**b**`/`*i*`/`~~s~~`/`` `code` ``/links) + @/# spans.
+> 3. Voice channels opened as text → **FIXED**: voice `.crow` → "voice ships in v2"
+>    toast; `loadWorkspace` never picks a voice channel as the active (text) channel.
+> 4. Slow channel switching → **FIXED**: server-level reads (rail/members/roles/
+>    channels/profiles) cached per serverId (`clearWorkspaceCache` on sign-out); a
+>    channel switch now only fetches that channel's messages/pins/reactions.
+> 5. Flaky sign-in → **FIXED**: first render held until `ready` (getSession/URL exchange)
+>    settles behind a loading state; transient null sessions (token refresh) no longer
+>    flip a signed-in view back to the sign-in screen (event passed through onChange).
+> 6. Members panel not toggleable → **FIXED as a side effect of #1** (empty rail read as
+>    absent); toggle handler is correct once the rail is populated.
+> Not bugs: Feed/DMs/etc. show the "not yet ported" placeholder — only Workspace is
+> built (P5+). Re-test steps unchanged (sign in on preview, two windows).
 
 The spec is hand-off-ready: [`CANON.md`](CANON.md) is the contract (incl. §E.10, the
 per-control → backend coverage matrix), the [`design/gallery.html`](design/gallery.html)
@@ -336,3 +322,26 @@ GOTCHA S: `messages` insert needs `user_id` explicitly (NOT NULL, no default); R
 GOTCHA T: live route params are real UUIDs (`/s/<uuid>/c/<uuid>`), NOT the demo's `lb`/
   `beats` slugs — `loadWorkspace` matches the server by id, so a slug route finds nothing
   live. In-app rail/channel links already emit UUIDs; only hand-typed URLs need care.
+
+## 2026-08-24 — P4.10/P4.11 preview-bug fixes (6, all in code)
+IN PROGRESS: (cleared)
+DONE: fixed all 6 bugs from the owner's preview test (details + per-bug status in the
+  callout under "Current state"). Touched `app/data.js` (separate profiles query +
+  per-server cache + text-only active channel + `clearWorkspaceCache`),
+  `app/screens/workspace.js` (inline-markdown `renderBody`, voice-channel no-op),
+  `app/supabase.js` (pass the auth event through `onChange`), `app/main.js` (hold first
+  render until `ready`, loading state, ignore transient-null sessions, clear cache on
+  sign-out), `styles/shell.css` (`.tx code/a/strong/del`). Verified at the layers
+  reachable in-sandbox: `verify-workspace.mjs` GREEN (10 states incl. markdown +
+  signed-out sign-in, both themes); confirmed via SQL that `server_members` has no FK to
+  `profiles` (the bug-1 root cause) and that `profiles` read policy is `true` (so the
+  separate fetch resolves), and that the pins/roles embeds DO have FKs (fine as-is).
+NEXT: owner re-tests on preview (browser e2e can't run in-sandbox); then P5.
+GOTCHA U: PostgREST embeds need a real FK. `server_members` has NONE (user_id → auth.users,
+  cross-schema), so `select('...,profile:profiles(...)')` silently returned nothing —
+  fetch profiles separately by id list. The pins (`message:messages`) and roles
+  (`role:roles`) embeds are fine because those FKs exist. When adding an embed, verify
+  the FK first.
+GOTCHA V: `renderBody` builds HTML via innerHTML but ONLY after HTML-escaping the raw
+  body, so the injected `<strong>/<em>/<code>/<a>/.men` are the only markup — no XSS.
+  Keep the escape first if you extend the markdown.

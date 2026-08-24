@@ -122,6 +122,11 @@
 .msg .tx{font-size:var(--fs-sm);color:var(--soft);margin-top:1px}
 .msg .tx .men{font-weight:600}
 .msg .tx .edited{color:var(--muted);font-size:var(--fs-xs)}
+/* inline markdown in a message/thread/pin body */
+.tx code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.92em;background:var(--plate);border-radius:3px;padding:1px 5px}
+.tx a{color:var(--ink);text-decoration:underline;text-underline-offset:2px}
+.tx strong{font-weight:700}
+.tx del{opacity:.75}
 /* username: the ONE place member colour renders (server surface). The hue is set
    inline per-member (style.color:var(--mN)) so all 30 hues work, not just 1–6. */
 .u{font-weight:600}

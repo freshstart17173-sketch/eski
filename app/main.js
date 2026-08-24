@@ -8,7 +8,7 @@ import { signal, effect } from "./signals.js";
 import { start, match } from "./router.js";
 import { ready, session, onChange } from "./supabase.js";
 import { icon } from "./icons.js";
-import { loadWorkspace } from "./data.js";
+import { loadWorkspace, clearWorkspaceCache } from "./data.js";
 import { teardownRealtime } from "./realtime.js";
 import { renderRail, appFrame } from "./shell.js";
 import { renderWorkspace } from "./screens/workspace.js";
@@ -83,11 +83,35 @@ async function renderRoute(r) {
 
 function swap(node) { stage.replaceChildren(node); }
 
-// route changes flow into the signal; the effect re-renders (async).
+// route changes flow into the signal.
 start((m) => { route.value = m; });
-effect(() => { renderRoute(route.value); });
 
-// Auth hydration / sign-in / sign-out all re-render the current route, since what
-// a route shows depends on the session (workspace vs the sign-in prompt).
-ready.then(() => { authed.value = !!session(); renderRoute(route.peek()); });
-onChange(() => { authed.value = !!session(); renderRoute(route.peek()); });
+// Hold the first render until `ready` — getSession()/detectSessionInUrl must settle
+// before we decide "signed in vs sign-in", or a magic-link return flashes the sign-in
+// screen (and looked like it "needed several reloads"). A brief loading state covers
+// the gap. After ready, an effect re-renders on every route change.
+stage.replaceChildren(loading());
+let started = false;
+ready.then(() => {
+  authed.value = !!session();
+  started = true;
+  effect(() => { renderRoute(route.value); });
+});
+
+// Sign-in / sign-out / refresh re-render the current route (what a route shows depends
+// on the session). Ignore a transient null that isn't a real sign-out — token refresh
+// can briefly report no session — so a signed-in view doesn't flicker to the sign-in
+// screen (P4-BUG#5). Clear the per-server cache on sign-out so accounts don't bleed.
+onChange((sess, event) => {
+  authed.value = !!session();
+  if (event === "SIGNED_OUT") clearWorkspaceCache();
+  if (!session() && event && event !== "SIGNED_OUT" && event !== "INITIAL_SESSION") return;
+  if (started) renderRoute(route.peek());
+});
+
+function loading() {
+  const s = document.createElement("section");
+  s.className = "screen";
+  s.innerHTML = `<div class="ph" style="color:var(--muted)">eski</div>`;
+  return s;
+}

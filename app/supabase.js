@@ -31,10 +31,11 @@ export const ready = supabase.auth.getSession()
   .catch(() => { _session = null; });
 
 // Keep _session live and fan out to subscribers on every auth transition
-// (sign-in, sign-out, token refresh, magic-link return).
-supabase.auth.onAuthStateChange((_event, session) => {
+// (sign-in, sign-out, token refresh, magic-link return). The event name is passed
+// through so callers can tell a real SIGNED_OUT from a transient null.
+supabase.auth.onAuthStateChange((event, session) => {
   _session = session ?? null;
-  for (const cb of [...listeners]) cb(_session);
+  for (const cb of [...listeners]) cb(_session, event);
 });
 
 /** Current auth user, or null. Only meaningful after `await ready`. */

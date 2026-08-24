@@ -18,26 +18,32 @@ import { isDemo, shapeMessage, loadThread } from "../data.js";
 import { subscribeChannelMessages, subscribeTyping, sendTyping, subscribeServerPresence, markRead, sendMessage } from "../realtime.js";
 
 // ── text rendering ──────────────────────────────────────────────────────────
-// A message body is escaped, then @mentions and #channel refs become .men spans
-// (member hue applied inline for @). Full markdown (bold/italic/links via marked)
-// is a P4.10 concern; the demo bodies only use mentions, so this covers the law.
+// A message body is HTML-escaped first, then a small inline-markdown pass turns
+// **bold** / *italic* / ~~strike~~ / `code` / [text](url) into tags, and @mention /
+// #channel into .men spans (member hue applied inline for @). We escape BEFORE
+// inserting any tags, so the injected markup is the only HTML — safe innerHTML.
+// (A full markdown lib — `marked` — is deferred; this covers the composer's toolbar.)
+const esc = (s) => s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+function mdToHtml(text, mentions) {
+  let s = esc(String(text || ""));
+  s = s.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, (_m, t, u) => `<a href="${u}" target="_blank" rel="noopener noreferrer">${t}</a>`);
+  s = s.replace(/`([^`]+)`/g, "<code>$1</code>");
+  s = s.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+  s = s.replace(/~~([^~]+)~~/g, "<del>$1</del>");
+  s = s.replace(/(^|[^*])\*([^*\s][^*]*?)\*(?!\*)/g, "$1<em>$2</em>");   // *italic*, not ** or bare *
+  const hueOf = (name) => (mentions || []).find((m) => m.name === name)?.colorIdx;
+  s = s.replace(/(^|\s)@([\w.-]+)/g, (_m, sp, name) => {
+    const hue = hueOf(name);
+    return `${sp}<span class="men"${hue != null ? ` style="color:var(--m${hue})"` : ""}>@${name}</span>`;
+  });
+  s = s.replace(/(^|\s)#([\w.-]+)/g, `$1<span class="men">#$2</span>`);
+  return s;
+}
+
 function renderBody(msg) {
   const tx = el(".tx");
-  const hueOf = (name) => (msg.mentions || []).find((m) => m.name === name)?.colorIdx;
-  const parts = String(msg.body || "").split(/(\s+)/);
-  for (const part of parts) {
-    if (/^@[\w.-]+$/.test(part)) {
-      const name = part.slice(1);
-      const s = el("span.men", {}, [part]);
-      const hue = hueOf(name);
-      if (hue != null) s.style.color = `var(--m${hue})`;   // mention hue, server-scoped
-      tx.append(s);
-    } else if (/^#[\w.-]+$/.test(part)) {
-      tx.append(el("span.men", {}, [part]));               // channel ref: bold, no hue
-    } else {
-      tx.append(document.createTextNode(part));
-    }
-  }
+  tx.innerHTML = mdToHtml(msg.body, msg.mentions);
   if (msg.edited) { tx.append(document.createTextNode(" ")); tx.append(el("span.edited", {}, ["(edited)"])); }
   return tx;
 }
@@ -161,10 +167,13 @@ function channelColumn(data, view) {
       label.append(add);
     }
     const group = el(".cgroup", {}, [label]);
+    const voice = g.kind === "voice";
     for (const ch of g.channels) {
-      const on = ch.id === activeId;
-      const row = el("button.crow" + (on ? ".on" : ""), { onClick: () => openChannel(data, ch, row) }, [
-        iconEl(g.kind === "voice" ? "voice" : "hash"),
+      const on = ch.id === activeId && !voice;
+      // voice is v2 — a voice channel never opens a text view, it just notes it's coming
+      const onClick = voice ? () => toast({ message: "Voice channels ship in v2" }) : () => openChannel(data, ch, row);
+      const row = el("button.crow" + (on ? ".on" : ""), { onClick }, [
+        iconEl(voice ? "voice" : "hash"),
         el("span.nm", { style: ch.unread ? "font-weight:600;color:var(--ink)" : null }, [ch.name]),
       ]);
       if (ch.mentions) row.append(el("span.ct", {}, [String(ch.mentions)]));
