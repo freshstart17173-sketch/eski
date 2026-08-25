@@ -21,6 +21,7 @@ import { renderLanding } from "./screens/landing.js";
 import { renderShared } from "./screens/shared.js";
 import { renderDMs } from "./screens/dms.js";
 import { renderNotifications } from "./screens/notifications.js";
+import { renderNotFound } from "./screens/notfound.js";
 
 const stage = document.getElementById("stage");
 
@@ -71,6 +72,7 @@ async function renderRoute(r) {
   closeDetails();                                       // a nav closes any open details overlay
 
   if (r.screen === "auth") { swap(renderSignin()); return; }   // /signin — full screen, no shell
+  if (r.screen === "notfound") { swap(renderNotFound()); return; }   // 404 — full screen, no shell
 
   // /shared/:token — the read-only shared-link viewer. A standalone page (no shell, works
   // signed-out), so it covers the rail: no way to browse the rest of the server.

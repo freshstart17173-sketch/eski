@@ -1492,3 +1492,13 @@ NEXT: **Delete server** (owner, type-to-confirm — needs a servers-delete path 
   invite **management** (expiry/max-uses/revoke), server **icon/cover** upload. Standing:
   Realtime, permalinks, storage/billing, audit log. Server lifecycle is now real end-to-end:
   create · invite · join · leave · (+ channels, settings, moderation, roles).
+
+## 2026-08-24 — P9.4 404 / not-found screen
+IN PROGRESS: (cleared)
+DONE: an unknown route (router `NOT_FOUND`) now renders a proper **404** (was the generic
+  ported-screen placeholder) — a standalone centered card (gallery #e404): "404 · Page not
+  found" + a **Go to your feed** button. Full-screen, no shell (`app/screens/notfound.js`,
+  wired in main.js next to signin). Verified by smoke test — an unmatched path renders the 404
+  heading + button, zero app console errors.
+NEXT: **Delete server** (owner type-to-confirm), **invite management** (expiry/revoke), server
+  **icon/cover** + profile **banner** uploads. Standing: Realtime, permalinks, billing, audit log.
