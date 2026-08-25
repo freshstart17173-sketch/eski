@@ -8,7 +8,7 @@
 //                  realtime.js + workspace.js; this module does the initial reads.
 //  - signed out  → { needsAuth:true } so the shell shows a sign-in prompt.
 
-import { demoWorkspace, demoExplorer, demoFeed, demoProfile, demoComments, demoSharedWork, demoDMs, demoDMThread, demoNotifications } from "./demo.js";
+import { demoWorkspace, demoExplorer, demoFeed, demoProfile, demoComments, demoSharedWork, demoDMs, demoDMThread, demoNotifications, demoInvites } from "./demo.js";
 import { supabase } from "./supabase.js";
 import { session } from "./supabase.js";
 
@@ -1118,13 +1118,36 @@ export async function leaveServer(serverId) {
 
 // Create an invite for a server — a direct `server_invites` insert (si_insert = admin). The
 // code is URL-safe random; the shareable link is `/join/:code`, consumed by join_via_invite.
-export async function createInvite(serverId) {
+// Mint an invite code. opts.expiresDays (null = never) and opts.maxUses (null = unlimited) map
+// to the server_invites columns join_via_invite already enforces (expiry + a locked uses check).
+export async function createInvite(serverId, { expiresDays = null, maxUses = null } = {}) {
   const code = (crypto.randomUUID?.() || (Math.random().toString(36).slice(2) + Date.now().toString(36))).replace(/-/g, "").slice(0, 12);
   if (isDemo()) return code;
   const user = session();
-  const { error } = await supabase.from("server_invites").insert({ code, server_id: serverId, created_by: user?.id || null });
+  const expires_at = expiresDays ? new Date(Date.now() + expiresDays * 864e5).toISOString() : null;
+  const { error } = await supabase.from("server_invites").insert({ code, server_id: serverId, created_by: user?.id || null, expires_at, max_uses: maxUses });
   if (error) throw new Error(error.message || "Couldn’t create the invite");
   return code;
+}
+
+// The active invite links for a server (admin-only read via si_read). Expired ones are dropped
+// so the list shows only links that still work; each carries its expiry + usage for the panel.
+export async function loadInvites(serverId) {
+  if (isDemo()) return demoInvites();
+  const { data, error } = await supabase.from("server_invites")
+    .select("code,expires_at,max_uses,uses,created_at")
+    .eq("server_id", serverId)
+    .or("expires_at.is.null,expires_at.gt." + new Date().toISOString())
+    .order("created_at", { ascending: false });
+  if (error) throw new Error(error.message || "Couldn’t load the invites");
+  return data || [];
+}
+
+// Revoke an invite (a hard delete under si_delete). join_via_invite then sees no row → invalid.
+export async function revokeInvite(code) {
+  if (isDemo()) return;
+  const { error } = await supabase.from("server_invites").delete().eq("code", code);
+  if (error) throw new Error(error.message || "Couldn’t revoke the invite");
 }
 
 // Join a server by an invite code or a pasted invite link (join_via_invite RPC).

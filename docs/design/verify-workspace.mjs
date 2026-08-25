@@ -161,8 +161,25 @@ const CASES = [
     if (!items.some((t) => t.includes("Invite people"))) return "server menu missing Invite people";
     for (const b of await p.$$(".menu.open button")) { if ((await b.textContent()).includes("Invite people")) { await b.click(); break; } }
     await p.waitForTimeout(150);
+    if (!(await $(p, ".scrim .modal .sharelinks"))) return "Invite should open the invite-management modal";
+    // the 2 demo invite links list, each with its usage/expiry meta line
+    if ((await p.$$(".scrim .modal .sharelinks .invitem")).length !== 2) return "expected the 2 demo invite links";
+    if (!(await $(p, ".scrim .modal .sharelinks .invmeta"))) return "each invite should show a usage/expiry line";
+    // expiry + max-uses selectors present
+    if ((await p.$$(".scrim .modal .selbtn")).length < 2) return "expiry + max-uses selectors expected";
+    // create a new link → a third row appears + a toast confirms
+    await p.click('.scrim .modal button:has-text("Create link")');
+    await p.waitForTimeout(150);
+    if ((await p.$$(".scrim .modal .sharelinks .invitem")).length !== 3) return "Create link should append an invite row";
     const toastText = await p.$eval(".toaststack", (t) => t.textContent).catch(() => "");
-    if (!/invite|join\//i.test(toastText)) return `Invite should surface a link toast, got "${toastText}"`;
+    if (!/invite|join\/|copied/i.test(toastText)) return `Create link should surface a toast, got "${toastText}"`;
+    // revoke the first link → the row drops
+    await p.click('.scrim .modal .sharelinks .invitem:first-child button:has-text("Revoke")');
+    await p.waitForTimeout(150);
+    if ((await p.$$(".scrim .modal .sharelinks .invitem")).length !== 2) return "Revoke should drop the invite row";
+    await p.click('.scrim .modal button:has-text("Done")');
+    await p.waitForTimeout(120);
+    if (await $(p, ".scrim .modal")) return "Done should close the invite modal";
     return null;
   }],
   ["delete-server", "/s/lb/c/beats?demo=1", "light", async (p) => {

@@ -15,7 +15,7 @@ import { el, Avatar, IconButton, openMenu, closeMenus, toast, openModal, Button,
 import { iconEl } from "../icons.js";
 import { navigate } from "../router.js";
 import { avatarUrl } from "../cards.js";
-import { isDemo, shapeMessage, loadThread, toggleReaction, deleteMessage, pinMessage, editMessage, kickMember, timeoutMember, banMember, setMemberRoles, createChannel, updateChannel, createInvite, leaveServer, deleteServer, loadServerPrefs, setServerPrefs } from "../data.js";
+import { isDemo, shapeMessage, loadThread, toggleReaction, deleteMessage, pinMessage, editMessage, kickMember, timeoutMember, banMember, setMemberRoles, createChannel, updateChannel, createInvite, loadInvites, revokeInvite, leaveServer, deleteServer, loadServerPrefs, setServerPrefs } from "../data.js";
 import { subscribeChannelMessages, subscribeTyping, sendTyping, subscribeServerPresence, markRead, sendMessage } from "../realtime.js";
 import { openUpload } from "./upload.js";
 
@@ -524,13 +524,83 @@ function leaveServerFlow(data) {
   });
 }
 
-// Invite people — mint a server_invites code and copy the /join/:code link (clipboard can be
-// blocked, so it falls back to showing the URL in the toast). Consumed by join_via_invite.
+// Invite people (gallery #inviteModal) — create a link with an expiry + max-uses, copy it, and
+// manage the active links (list + revoke). Every link is consumed by join_via_invite, which
+// enforces the same expiry/uses server-side; revoke is a hard delete, so the code stops working.
+const inviteUrl = (code) => `${location.origin}/join/${code}`;
+const EXPIRY = [["7 days", 7], ["1 day", 1], ["30 days", 30], ["Never", null]];
+const USES = [["No limit", null], ["1 use", 1], ["10 uses", 10], ["25 uses", 25]];
+
 async function inviteFlow(data) {
-  try {
-    const code = await createInvite(data.server.id);
-    await copyToClipboard(`${location.origin}/join/${code}`, { ok: "Invite link copied — share it to add people" });
-  } catch (e) { toast({ message: e?.message || "Couldn’t create the invite" }); }
+  let invites = [];
+  try { invites = await loadInvites(data.server.id); } catch { invites = []; }
+  let expiresDays = 7, maxUses = null;
+
+  // the active-links list — each row copies or revokes; empty until the first mint.
+  const list = el(".sharelinks");
+  const paintList = () => list.replaceChildren(...(invites.length
+    ? invites.map(linkRow)
+    : [el(".sharenone", {}, ["No active links yet — create one below."])]));
+  function linkRow(inv) {
+    const meta = [inv.expires_at ? `expires ${relDays(inv.expires_at)}` : "never expires",
+                  inv.max_uses ? `${inv.uses}/${inv.max_uses} uses` : `${inv.uses} uses`].join(" · ");
+    return el(".invitem", {}, [
+      el(".sharerow2", {}, [
+        el(".field", { style: "flex:1;min-width:0" }, [iconEl("link", "sm"), el("input", { readonly: true, value: inviteUrl(inv.code) })]),
+        Button({ label: "Copy", size: "sm", icon: "copy", onClick: () => copyToClipboard(inviteUrl(inv.code), { ok: "Invite link copied" }) }),
+        Button({ label: "Revoke", size: "sm", variant: "ghost", onClick: async (e) => {
+          const btn = e.currentTarget; btn.disabled = true;
+          try { await revokeInvite(inv.code); invites = invites.filter((x) => x.code !== inv.code); paintList(); toast({ message: "Invite revoked" }); }
+          catch (err) { btn.disabled = false; toast({ message: err?.message || "Couldn’t revoke the link" }); }
+        } }),
+      ]),
+      el(".invmeta", {}, [meta]),
+    ]);
+  }
+
+  // the two selectors (expiry + max uses) drive the NEXT link's settings.
+  const expBtn = selectBtn(EXPIRY.find(([, v]) => v === expiresDays)[0], EXPIRY, (label, v) => { expiresDays = v; expBtn.querySelector("span").textContent = label; });
+  const useBtn = selectBtn(USES.find(([, v]) => v === maxUses)[0], USES, (label, v) => { maxUses = v; useBtn.querySelector("span").textContent = label; });
+
+  const create = Button({ label: "Create link", size: "sm", icon: "plus" });
+  create.addEventListener("click", async () => {
+    create.disabled = true;
+    try {
+      const code = await createInvite(data.server.id, { expiresDays, maxUses });
+      const inv = isDemo()
+        ? { code, expires_at: expiresDays ? new Date(Date.now() + expiresDays * 864e5).toISOString() : null, max_uses: maxUses, uses: 0, created_at: new Date().toISOString() }
+        : (await loadInvites(data.server.id))[0];
+      invites = [inv, ...invites.filter((x) => x.code !== inv.code)]; paintList();
+      await copyToClipboard(inviteUrl(inv.code), { ok: "Invite link created and copied" });
+    } catch (e) { toast({ message: e?.message || "Couldn’t create the invite" }); }
+    finally { create.disabled = false; }
+  });
+
+  const body = el("div", {}, [
+    el("label.ulab", {}, ["Active invite links"]), list,
+    el(".urow", { style: "margin-top:12px;gap:8px" }, [
+      el("div", { style: "flex:1" }, [el("label.ulab", {}, ["New link expires"]), expBtn]),
+      el("div", { style: "flex:1" }, [el("label.ulab", {}, ["Max uses"]), useBtn]),
+    ]),
+    el(".invcreate", { style: "margin-top:12px" }, [create]),
+  ]);
+  paintList();
+  const done = Button({ label: "Done", variant: "primary" });
+  const { close } = openModal({ title: `Invite to ${data.server.name}`, body, footer: [done] });
+  done.addEventListener("click", () => close());
+}
+
+// A full-width dropdown trigger (selbtn) that opens a menu of [label, value] and reports the pick.
+function selectBtn(current, options, onPick) {
+  const b = el("button.selbtn", { style: "width:100%;justify-content:space-between", "aria-haspopup": "menu" }, [el("span", {}, [current]), iconEl("chev", "sm")]);
+  b.addEventListener("click", () => openMenu(b, options.map(([label, v]) => ({ label, onClick: () => onPick(label, v) }))));
+  return b;
+}
+
+// "expires in N days" / "today" for an ISO timestamp — the invite list's human expiry.
+function relDays(iso) {
+  const d = Math.round((new Date(iso) - Date.now()) / 864e5);
+  return d <= 0 ? "today" : d === 1 ? "in 1 day" : `in ${d} days`;
 }
 
 // Channel settings (manage_channels): edit name / topic / slowmode / post-policy → updateChannel.

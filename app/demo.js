@@ -347,6 +347,17 @@ export function demoNotifications() {
   };
 }
 
+// Active invite links for the invite-management panel (P9.3). Shapes match loadInvites():
+// {code, expires_at, max_uses, uses, created_at}. One never-expiring open link, one capped +
+// dated, so the panel exercises both the "never / in N days" and "N of M uses" renders.
+export function demoInvites() {
+  const days = (n) => new Date(Date.now() + n * 864e5).toISOString();
+  return [
+    { code: "lb-open-9f2", expires_at: null, max_uses: null, uses: 12, created_at: days(-9) },
+    { code: "lb-crew-7ka", expires_at: days(6), max_uses: 25, uses: 4, created_at: days(-1) },
+  ];
+}
+
 // A DM conversation demo fixture (P7.2). Keyed by channel id; unknown ids start empty so a
 // freshly-opened chat (e.g. from the friend Message button) shows just the composer.
 export function demoDMThread(id) {
