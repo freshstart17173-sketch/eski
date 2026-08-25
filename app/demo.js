@@ -358,6 +358,17 @@ export function demoInvites() {
   ];
 }
 
+// Audit-log demo fixtures (P9.7) — shapes match loadAuditLog(): {id, action, actor, target,
+// time, reason, until}. Covers each recorded action (timeout/kick/ban) so the panel renders
+// its three verbs + the optional reason line.
+export function demoAudit() {
+  return [
+    { id: "a1", action: "ban", actor: "jax", target: "spam_bot", time: "2:40 PM", reason: "posting scam links", until: null },
+    { id: "a2", action: "timeout", actor: "rae", target: "dev", time: "1:12 PM", reason: null, until: new Date(Date.now() + 36e5).toISOString() },
+    { id: "a3", action: "kick", actor: "jax", target: "tomo", time: "Yesterday", reason: null, until: null },
+  ];
+}
+
 // A DM conversation demo fixture (P7.2). Keyed by channel id; unknown ids start empty so a
 // freshly-opened chat (e.g. from the friend Message button) shows just the composer.
 export function demoDMThread(id) {

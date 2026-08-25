@@ -16,7 +16,7 @@ import { iconEl } from "../icons.js";
 import { navigate } from "../router.js";
 import { avatarUrl } from "../cards.js";
 import { uploadBlobs } from "../upload-r2.js";
-import { isDemo, shapeMessage, loadThread, toggleReaction, deleteMessage, pinMessage, editMessage, kickMember, timeoutMember, banMember, setMemberRoles, createChannel, updateChannel, createInvite, loadInvites, revokeInvite, updateServer, leaveServer, deleteServer, loadServerPrefs, setServerPrefs } from "../data.js";
+import { isDemo, shapeMessage, loadThread, toggleReaction, deleteMessage, pinMessage, editMessage, kickMember, timeoutMember, banMember, setMemberRoles, createChannel, updateChannel, createInvite, loadInvites, revokeInvite, updateServer, loadAuditLog, leaveServer, deleteServer, loadServerPrefs, setServerPrefs } from "../data.js";
 import { subscribeChannelMessages, subscribeTyping, sendTyping, subscribeServerPresence, markRead, sendMessage } from "../realtime.js";
 import { openUpload } from "./upload.js";
 
@@ -216,6 +216,7 @@ export function channelColumn(data, view) {
   bar.addEventListener("click", () => {
     const items = [];
     if (data.isAdmin) items.push({ label: "Server settings", icon: "settings", onClick: () => openServerSettings(data) });
+    if (data.isAdmin) items.push({ label: "Audit log", icon: "flag", onClick: () => openAuditLog(data) });
     items.push({ label: "Invite people", icon: "plus", onClick: () => inviteFlow(data) });
     items.push({ label: "Notification settings", icon: "bell", onClick: () => notifSettingsFlow(data) });
     items.push({ sep: true });
@@ -590,6 +591,32 @@ function openServerSettings(data) {
     } catch (e) { toast({ message: e?.message || "Couldn’t save" }); save.disabled = false; }
   });
 }
+
+// Audit log (admin) — the moderation actions the kick/ban/timeout RPCs record, newest first.
+// Read-only; a name gate isn't needed (audit_read fences it server-side). Each row reads
+// "<actor> <verb> <target>" with an optional reason and the time.
+const AUDIT_VERB = { ban: ["banned", "lock"], timeout: ["timed out", "clock"], kick: ["kicked", "leave"] };
+async function openAuditLog(data) {
+  const list = el(".auditlist", {}, [el(".sharenone", {}, ["Loading…"])]);
+  const done = Button({ label: "Done", variant: "primary" });
+  const { close } = openModal({ title: `${data.server.name} — audit log`, body: el("div", {}, [list]), footer: [done] });
+  done.addEventListener("click", () => close());
+  let rows = [];
+  try { rows = await loadAuditLog(data.server.id); } catch (e) { list.replaceChildren(el(".sharenone", {}, [e?.message || "Couldn’t load the audit log"])); return; }
+  list.replaceChildren(...(rows.length ? rows.map(auditRow) : [el(".sharenone", {}, ["No moderation actions yet."])]));
+}
+function auditRow(r) {
+  const [verb, ic] = AUDIT_VERB[r.action] || [r.action, "flag"];
+  return el(".arow", {}, [
+    el(".aic", {}, [iconEl(ic, "sm")]),
+    el(".abd", {}, [
+      el("span.atx", { html: `<b>${escapeHtml(r.actor)}</b> ${verb}${r.target ? ` <b>${escapeHtml(r.target)}</b>` : ""}` }),
+      r.reason ? el("span.asub", {}, [`“${r.reason}”`]) : null,
+    ]),
+    el("time.atime", {}, [r.time]),
+  ]);
+}
+function escapeHtml(s) { return String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c])); }
 
 // Invite people (gallery #inviteModal) — create a link with an expiry + max-uses, copy it, and
 // manage the active links (list + revoke). Every link is consumed by join_via_invite, which

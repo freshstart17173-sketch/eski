@@ -8,7 +8,7 @@
 //                  realtime.js + workspace.js; this module does the initial reads.
 //  - signed out  → { needsAuth:true } so the shell shows a sign-in prompt.
 
-import { demoWorkspace, demoExplorer, demoFeed, demoProfile, demoComments, demoSharedWork, demoDMs, demoDMThread, demoNotifications, demoInvites } from "./demo.js";
+import { demoWorkspace, demoExplorer, demoFeed, demoProfile, demoComments, demoSharedWork, demoDMs, demoDMThread, demoNotifications, demoInvites, demoAudit } from "./demo.js";
 import { supabase } from "./supabase.js";
 import { session } from "./supabase.js";
 
@@ -1011,6 +1011,28 @@ export async function markAllNotifsRead() {
   const user = session();
   if (!user) return;
   await supabase.from("notifications").update({ read_at: new Date().toISOString() }).eq("user_id", user.id).is("read_at", null);
+}
+
+// The server audit log (CANON §D — utility screens) — moderation actions the kick/ban/timeout
+// RPCs record. Admin/view_audit only (audit_read). actor_id + target_id point at auth.users with
+// NO FK to profiles, so names are fetched SEPARATELY into a byId map (the #1 embed hazard), never
+// PostgREST-embedded. Returns shaped rows: {id, action, actor, target, time, reason, until}.
+export async function loadAuditLog(serverId) {
+  if (isDemo()) return demoAudit();
+  const { data: rows, error } = await supabase.from("audit_log")
+    .select("id,action,actor_id,target_type,target_id,meta,created_at")
+    .eq("server_id", serverId).order("created_at", { ascending: false }).limit(100);
+  if (error) throw new Error(error.message || "Couldn’t load the audit log");
+  const ids = [...new Set((rows || []).flatMap((r) => [r.actor_id, r.target_type === "user" ? r.target_id : null]).filter(Boolean))];
+  const byId = {};
+  if (ids.length) { const { data } = await supabase.from("profiles").select("id,handle,name").in("id", ids); for (const p of data || []) byId[p.id] = p; }
+  const nameOf = (id) => byId[id] ? (byId[id].name || byId[id].handle) : "someone";
+  return (rows || []).map((r) => ({
+    id: r.id, action: r.action,
+    actor: r.actor_id ? nameOf(r.actor_id) : "a former admin",
+    target: r.target_type === "user" ? nameOf(r.target_id) : null,
+    time: fmtTime(r.created_at), reason: r.meta?.reason || null, until: r.meta?.until || null,
+  }));
 }
 
 // Delete your own channel message — a tombstone (deleted_at); loadWorkspace filters

@@ -249,6 +249,16 @@
 /* Edit-profile banner well (gallery .epbanner) — a wide preview with the upload button pinned
    bottom-right; the picked/stored banner fills it. Media stays square (--r), no round. */
 .epbanner{height:84px;background:var(--paper1) center/cover no-repeat;border-radius:var(--r);display:flex;align-items:flex-end;justify-content:flex-end;padding:8px;margin-bottom:10px}
+/* audit log — a read-only moderation feed; rows separate by row, not borders. */
+.auditlist{display:flex;flex-direction:column;max-height:340px;overflow:auto;margin:-4px -4px 0}
+.auditlist .arow{display:flex;align-items:flex-start;gap:10px;padding:8px 6px;border-radius:var(--r)}
+.auditlist .arow:hover{background:var(--surface)}
+.auditlist .aic{flex:none;width:22px;height:22px;display:grid;place-items:center;color:var(--muted)}
+.auditlist .abd{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.auditlist .atx{font-size:var(--fs-sm);color:var(--soft)}
+.auditlist .atx b{color:var(--ink);font-weight:600}
+.auditlist .asub{font-size:var(--fs-xs);color:var(--muted)}
+.auditlist .atime{flex:none;font-size:var(--fs-xs);color:var(--muted)}
 
 .sharedview{position:fixed;inset:0;z-index:70;display:flex;flex-direction:column;background:var(--paper);overflow-y:auto}
 .sharedview .svhd{flex:none;display:flex;align-items:center;gap:var(--s3);padding:0 var(--s5);height:56px;background:var(--surface)}

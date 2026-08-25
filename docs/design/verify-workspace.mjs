@@ -188,6 +188,24 @@ const CASES = [
     if (await $(p, ".scrim .modal")) return "Done should close the invite modal";
     return null;
   }],
+  ["audit-log", "/s/lb/c/beats?demo=1", "light", async (p) => {
+    await p.click("nav.chan .srvbar");
+    await p.waitForTimeout(120);
+    const items = await p.$$eval(".menu.open button", (bs) => bs.map((b) => b.textContent.trim()));
+    if (!items.some((t) => t.includes("Audit log"))) return "admin server menu missing Audit log";
+    for (const b of await p.$$(".menu.open button")) { if ((await b.textContent()).trim() === "Audit log") { await b.click(); break; } }
+    await p.waitForTimeout(150);
+    if (!(await $(p, ".scrim .modal .auditlist"))) return "Audit log should open a modal list";
+    if ((await p.$$(".scrim .modal .auditlist .arow")).length !== 3) return "expected the 3 demo audit rows";
+    // the ban row carries a reason line; each row names an actor + target
+    if (!(await $(p, ".scrim .modal .auditlist .arow .asub"))) return "a reason line should render for the ban";
+    const first = await p.$eval(".scrim .modal .auditlist .arow .atx", (e) => e.textContent);
+    if (!/banned/.test(first)) return `newest row should be the ban, got "${first}"`;
+    await p.click('.scrim .modal button:has-text("Done")');
+    await p.waitForTimeout(120);
+    if (await $(p, ".scrim .modal")) return "Done should close the audit log";
+    return null;
+  }],
   ["server-settings", "/s/lb/c/beats?demo=1", "light", async (p) => {
     await p.click("nav.chan .srvbar");
     await p.waitForTimeout(120);
