@@ -8,7 +8,7 @@
 //                  realtime.js + workspace.js; this module does the initial reads.
 //  - signed out  → { needsAuth:true } so the shell shows a sign-in prompt.
 
-import { demoWorkspace, demoExplorer, demoFeed, demoProfile, demoComments, demoSharedWork, demoDMs } from "./demo.js";
+import { demoWorkspace, demoExplorer, demoFeed, demoProfile, demoComments, demoSharedWork, demoDMs, demoDMThread } from "./demo.js";
 import { supabase } from "./supabase.js";
 import { session } from "./supabase.js";
 
@@ -859,11 +859,46 @@ export async function respondFriend(targetId, accept) {
   if (error) throw new Error(error.message || "Couldn’t respond to the request");
 }
 // Open (or create) a 1:1 DM with a friend by handle (create_dm RPC → the dm_channels row).
+// The RPC returns the dm_channels row; we hand back its id so the caller opens the thread.
 export async function createDM(handle) {
   if (isDemo()) return null;
   const { data, error } = await supabase.rpc("create_dm", { handle: (handle || "").trim().replace(/^@/, "") });
   if (error) throw new Error(error.message || "Couldn’t start the conversation");
-  return data;
+  return data?.id || null;
+}
+
+// ── DM conversation (P7.2) ───────────────────────────────────────────────────
+// A thread's messages. Members read (dmsg_read = dm_member). Authors have no FK to profiles
+// (user_id → auth.users), so profiles are fetched SEPARATELY into a byId map (bug-#1 hazard).
+// No member hue — DMs are outside any server, so author names render neutral.
+function shapeDM(r, byId, meId) {
+  const p = byId[r.user_id];
+  const nm = p?.name || p?.handle || "user";
+  return { id: r.id, author: { name: nm, initials: initials(nm), avatar_key: p?.avatar_key || null }, time: fmtTime(r.created_at), body: r.body || "", mine: r.user_id === meId };
+}
+export async function loadDMThread(dmChannelId) {
+  if (isDemo()) return demoDMThread(dmChannelId);
+  const user = session();
+  if (!user) return { messages: [], memberById: {}, dmChannelId };
+  const { data: rows } = await supabase.from("dm_messages")
+    .select("id,body,user_id,created_at").eq("dm_channel_id", dmChannelId).is("deleted_at", null)
+    .order("created_at", { ascending: true }).limit(300);
+  const uids = [...new Set((rows || []).map((r) => r.user_id))];
+  const byId = {};
+  if (uids.length) { const { data: profs } = await supabase.from("profiles").select("id,handle,name,avatar_key").in("id", uids); for (const p of profs || []) byId[p.id] = p; }
+  return { messages: (rows || []).map((r) => shapeDM(r, byId, user.id)), memberById: byId, dmChannelId };
+}
+// Send a DM — a plain `dm_messages` insert (dmsg_insert = own + dm_member). Returns the shaped
+// row so the stream appends it without a refetch (Realtime echo lands in a later pass).
+export async function sendDM(dmChannelId, body) {
+  const clean = (body || "").trim();
+  if (!clean) throw new Error("Write something first");
+  if (isDemo()) return { id: "local-" + Date.now(), author: { name: "jax", initials: "JX", avatar_key: null }, time: "now", body: clean, mine: true };
+  const user = session();
+  if (!user) throw new Error("Sign in");
+  const { data, error } = await supabase.from("dm_messages").insert({ dm_channel_id: dmChannelId, user_id: user.id, body: clean }).select("id,body,created_at").single();
+  if (error) throw new Error(error.message || "Couldn’t send the message");
+  return { id: data.id, author: { name: user.email?.split("@")[0] || "you", initials: initials(user.email || "you"), avatar_key: null }, time: fmtTime(data.created_at), body: data.body || clean, mine: true };
 }
 
 // a channel's thread (parent + replies), loaded on demand when a thread opens

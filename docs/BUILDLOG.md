@@ -1171,3 +1171,24 @@ round-trips (upload PUT, cdn fetch) can only be exercised on `preview`, not in-s
 verifies (`verify-{workspace,explorer,feed,profile,shared,dms,primitives,live}.mjs`); `live`
 needs real network (fails in-sandbox) and `primitives` has one known-flaky MediaPlayer
 autoplay check — neither is a regression.
+
+## 2026-08-24 — P7.2 DM conversation (open a thread · send · append)
+IN PROGRESS: (cleared)
+DONE: the **DM conversation** is live (was a placeholder). `loadDMThread(dmChannelId)` reads
+  `dm_messages` (members read via `dmsg_read`), author profiles fetched SEPARATELY (bug-#1);
+  `sendDM` inserts a `dm_message` (`dmsg_insert` = own + dm_member) and returns the shaped row
+  so the stream appends without a refetch. `showConvo` now renders a real header + `.stream`
+  (reusing the workspace `.msg/.stream/.composer` CSS) + a composer that sends on Enter/click,
+  auto-scrolls, and clears; author names are **neutral** (no hue — DMs are outside any server).
+  The DM-list rows and the Friends-panel **Message** button both open it (`createDM` returns
+  the channel id → `showConvo`; demo uses a synthetic id → empty thread + composer). New:
+  `demoDMThread()` fixture, `loadDMThread`/`sendDM`, `createDM` now returns the channel id.
+  Verified: `verify-dms.mjs` +`conversation` — opening mira's thread loads 3 messages, the
+  composer appends a 4th and clears, and the friend Message button opens a conversation with a
+  composer. All dms cases + workspace GREEN, zero app console errors. Screenshotted.
+NEXT (P7.2b/P7.3): DM **Realtime** (subscribe `dm_messages` on the open thread — mirror
+  realtime.js channel fanout; not in-sandbox verifiable), DM row **⋯ actions** (pin/mute/hide
+  via `dm_members`), DM **message actions** (reply/react/delete — the owner-deferred TODO), the
+  **New message / group DM** flow (`create_group_dm`), then **P7.3 Notifications** (route
+  `/notifications`, schema-07 + notifications table/triggers exist). Also the P5.19 markers:
+  banner render + avatars-from-key on rail/comments/cards.

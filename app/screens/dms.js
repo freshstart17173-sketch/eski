@@ -7,7 +7,7 @@
 import { el, toast, Avatar, PresenceDot } from "../ui.js";
 import { iconEl } from "../icons.js";
 import { navigate } from "../router.js";
-import { addFriend, respondFriend, createDM } from "../data.js";
+import { addFriend, respondFriend, createDM, loadDMThread, sendDM } from "../data.js";
 import { avatarUrl } from "../cards.js";
 
 function isDemoQS() { return new URLSearchParams(location.search).get("demo") === "1"; }
@@ -70,11 +70,46 @@ function showEmpty(right) {
   right.replaceChildren(el("main.dmmain", {}, [emptyState("mail", "Your messages", "Pick a conversation, or open Friends to start one.")]));
 }
 function showConvo(right, d) {
-  // the live conversation (send/receive) lands in P7.2 — for now the header + a marker
+  // real conversation (P7.2): header + message stream + composer. Messages load async; the
+  // composer inserts a dm_message and appends it (Realtime echo lands in a later pass).
+  const stream = el(".stream");
+  const scrollDown = () => { stream.scrollTop = stream.scrollHeight; };
+  const paint = (messages) => { stream.replaceChildren(...(messages.length ? messages.map(dmMessageRow) : [emptyState("mail", d.name, "No messages yet — say hi.")])); scrollDown(); };
+  paint([]);
+  loadDMThread(d.id).then((t) => paint(t.messages || [])).catch(() => {});
+
+  const input = el("input", { placeholder: "Message " + d.name, "aria-label": "Message" });
+  const send = async () => {
+    const body = input.value.trim();
+    if (!body || input.disabled) return;
+    input.disabled = true;
+    try {
+      const msg = await sendDM(d.id, body);
+      if (!stream.querySelector(".msg")) stream.replaceChildren();   // clear the empty state
+      stream.append(dmMessageRow(msg)); scrollDown();
+      input.value = "";
+    } catch (e) { toast({ message: e?.message || "Couldn’t send" }); }
+    input.disabled = false; input.focus();
+  };
+  input.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); send(); } });
+
   right.replaceChildren(el("main.dmmain", {}, [
-    el(".mainhd", {}, [Avatar({ name: d.members[0]?.initials || d.name, size: "sm" }), el("span.t", {}, [d.name]), d.group ? null : el("span.sub", {}, ["@" + (d.members[0]?.handle || d.name)])]),
-    emptyState("mail", d.name, "The live conversation view lands next (P7.2)."),
+    el(".mainhd", {}, [Avatar({ name: d.members[0]?.initials || d.name, size: "sm", src: avatarUrl(d.members[0]?.avatar_key) }), el("span.t", {}, [d.name]), d.group ? null : el("span.sub", {}, ["@" + (d.members[0]?.handle || d.name)])]),
+    stream,
+    el(".composer", {}, [el(".field", {}, [input, el("button.snd", { title: "Send", onClick: send }, [iconEl("send", "sm")])])]),
   ]));
+  input.focus();
+}
+
+// a lean DM message row (no member hue — DMs are outside any server)
+function dmMessageRow(m) {
+  return el(".msg", {}, [
+    Avatar({ name: m.author.initials, size: "sm", src: avatarUrl(m.author.avatar_key) }),
+    el(".bd", {}, [
+      el(".by", {}, [el("span.u", {}, [m.author.name]), el("time", {}, [m.time || ""])]),
+      el(".tx", {}, [m.body || ""]),
+    ]),
+  ]);
 }
 
 // ── right: the Friends panel ──────────────────────────────────────────────────
@@ -156,8 +191,11 @@ function showFriends(right, data, friendsBtn) {
     } catch (e) { toast({ message: e?.message || "Couldn’t respond" }); }
   }
   async function messageFriend(u) {
-    try { if (!isDemoQS()) await createDM(u.handle); toast({ message: `Opening a chat with ${u.name} (P7.2)` }); }
-    catch (e) { toast({ message: e?.message || "Couldn’t start the conversation" }); }
+    try {
+      const chId = isDemoQS() ? "dm-" + u.id : await createDM(u.handle);
+      friendsBtn.classList.remove("on");
+      showConvo(right, { id: chId || ("dm-" + u.id), name: u.name, members: [u], group: false });
+    } catch (e) { toast({ message: e?.message || "Couldn’t start the conversation" }); }
   }
 
   paint();

@@ -318,6 +318,24 @@ export function demoDMs() {
   };
 }
 
+// A DM conversation demo fixture (P7.2). Keyed by channel id; unknown ids start empty so a
+// freshly-opened chat (e.g. from the friend Message button) shows just the composer.
+export function demoDMThread(id) {
+  const m = (mid, name, initials, body, time, mine = false) => ({ id: mid, author: { name, initials, avatar_key: null }, time, body, mine });
+  const THREADS = {
+    d1: [
+      m("m1", "mira", "MI", "saw your comps on tiktok, insane. this is so much cleaner than a drive folder", "6:02 PM"),
+      m("m2", "jax", "JX", "ha thanks — sending you the Late Bloom link, it drops you straight in", "6:03 PM", true),
+      m("m3", "mira", "MI", "in. the file explorer is unreal", "6:10 PM"),
+    ],
+    d3: [
+      m("m4", "dev", "DV", "bounced the new drums, check the bridge", "2:40 PM"),
+      m("m5", "jax", "JX", "on it", "2:41 PM", true),
+    ],
+  };
+  return { messages: THREADS[id] || [], memberById: {}, dmChannelId: id };
+}
+
 // The personal "My files" demo fixture — your own Drive, distinct from any server:
 // nested save-folders, own works, "Your storage" footer, no channel column.
 function demoPersonalExplorer() {

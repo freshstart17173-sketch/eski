@@ -103,6 +103,29 @@ await run("friends-flow", "light", async (p) => {
   return null;
 });
 
+// the DM conversation (P7.2): opening a thread loads its messages; the composer sends and
+// appends; the friend Message button opens a fresh conversation.
+await run("conversation", "light", async (p) => {
+  await p.click(".dmrow");   // the pinned mira thread (d1)
+  await p.waitForTimeout(200);
+  if (!(await $(p, ".dmmain .stream"))) return "opening a thread should show the conversation";
+  const before = await count(p, ".dmmain .stream .msg");
+  if (before < 3) return `mira's demo thread should load 3 messages, got ${before}`;
+  if (!(await $(p, ".dmmain .composer input"))) return "the composer is missing";
+  await p.fill(".dmmain .composer input", "hey from the test");
+  await p.press(".dmmain .composer input", "Enter");
+  await p.waitForTimeout(150);
+  if ((await count(p, ".dmmain .stream .msg")) !== before + 1) return "sending should append a message";
+  if ((await p.$eval(".dmmain .composer input", (i) => i.value)) !== "") return "the composer should clear after sending";
+  // open a conversation from the Friends panel Message button
+  await p.click(".dmfriends");
+  await p.waitForTimeout(150);
+  await p.click(".friends .frrow .rbtn");   // Message the first friend
+  await p.waitForTimeout(200);
+  if (!(await $(p, ".dmmain .composer input"))) return "the Message button should open a conversation with a composer";
+  return null;
+});
+
 await browser.close();
 server.close();
 console.log(fails ? `\n✗ ${fails} FAIL` : "\n✓ all Messages/Friends states render, zero app console errors, both themes");
