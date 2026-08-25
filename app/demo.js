@@ -94,6 +94,8 @@ export function demoWorkspace() {
       { id: "m5", author: P.tomo, time: "2:47 PM",
         body: "ableton user here, opened dev's stems fine. one note on the low end, dropped a comment on the bounce",
         attach: { kind: "file", name: "stems_sh040.zip", ext: "ZIP", size: "48 MB" } },
+      { id: "m6", author: P.jax, time: "2:52 PM",
+        body: "on it — re-cutting the bridge now, new bounce in ~20" },
     ],
 
     typing: ["tomo"],

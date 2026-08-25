@@ -1010,6 +1010,14 @@ export async function pinMessage(messageId) {
   const { error } = await supabase.rpc("pin_message", { message_id: messageId });
   if (error) throw new Error(error.message || "Couldn’t pin the message");
 }
+// Edit your own channel message — a `messages` body update + edited_at stamp (msg_update = own).
+export async function editMessage(messageId, body) {
+  const clean = (body || "").trim();
+  if (!clean) throw new Error("Message can’t be empty");
+  if (isDemo()) return;
+  const { error } = await supabase.from("messages").update({ body: clean, edited_at: new Date().toISOString() }).eq("id", messageId);
+  if (error) throw new Error(error.message || "Couldn’t edit the message");
+}
 
 // ── Moderation (P8, CANON §B — admin RPCs) ───────────────────────────────────
 // Kick / Timeout / Ban a member. All are SECURITY DEFINER RPCs, perm-gated server-side (the

@@ -1330,3 +1330,19 @@ NEXT: **Server settings** screens (general/roles-editor/moderation/channels — 
   not yet ported; a roles *editor* to create/rename/recolour roles + set permissions is the big
   one), the **audit log** view. Also outstanding: DM/notif/reaction **Realtime**, message inline
   edit/permalinks, **P9 create/join** (needs new RPCs), P5.19 avatars-from-key.
+
+## 2026-08-24 — P4.13b Inline message edit
+IN PROGRESS: (cleared)
+DONE: the message ⋯ **Edit** (own message) is real — it swaps the `.tx` body for an inline
+  input; **Enter** saves (`editMessage` → `messages.body` + `edited_at`, `msg_update` = own) and
+  re-renders via `renderBody` with the **(edited)** marker; **Esc**/empty restores. Uses the same
+  `renderBody` path as a live Realtime edit, so they stay consistent. Added a jax-authored demo
+  message (m6) so own-message actions (Edit/Delete) are exercisable. New `.editinput` CSS.
+  Verified: `verify-workspace.mjs` +`msg-edit` — Edit swaps in an input, Enter renders the new
+  body + (edited), and Delete then removes the row. All workspace cases GREEN, gallery GREEN,
+  zero app console errors.
+NEXT: message **permalinks** (Copy link — needs a permalink route + jump-to-message); **Realtime**
+  for DM/notif/reactions/edits (not in-sandbox verifiable); **Server settings** screens + roles
+  editor + audit log (P8 remainder); **P9 create/join** (needs new RPCs); P5.19 avatars-from-key.
+  The channel message surface (send · react · reply-thread · edit · delete · pin · moderate ·
+  roles) is now feature-complete except permalinks + Realtime edit/delete echo.

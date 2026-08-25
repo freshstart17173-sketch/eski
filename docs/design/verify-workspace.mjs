@@ -117,6 +117,34 @@ const CASES = [
     if ((await p.$$(".mem .mrow")).length !== before - 1) return "confirming Kick should drop the member row";
     return null;
   }],
+  ["msg-edit", "/s/lb/c/beats?demo=1", "light", async (p) => {
+    // the own (jax) message m6 gets Edit/Delete; inline-edit its body, then delete it
+    const own = await p.$('.stream .msg[data-mid="m6"]');
+    if (!own) return "the demo stream should include an own message (m6)";
+    await own.hover();
+    await p.waitForTimeout(80);
+    await (await own.$(".hoveracts button:last-child")).click();   // ⋯
+    await p.waitForTimeout(120);
+    for (const b of await p.$$(".menu.open button")) { if ((await b.textContent()).includes("Edit message")) { await b.click(); break; } }
+    await p.waitForTimeout(120);
+    const input = await p.$('.msg[data-mid="m6"] .editinput');
+    if (!input) return "Edit should swap the body for an input";
+    await input.fill("re-cut done, new bounce is up");
+    await input.press("Enter");
+    await p.waitForTimeout(150);
+    const tx = await p.$eval('.msg[data-mid="m6"] .tx', (e) => e.textContent);
+    if (!tx.includes("re-cut done")) return `the edited body should render, got "${tx}"`;
+    if (!(await $(p, '.msg[data-mid="m6"] .tx .edited'))) return "an edited message should show the (edited) marker";
+    // delete it
+    await p.hover('.msg[data-mid="m6"]');
+    await p.waitForTimeout(60);
+    await p.click('.msg[data-mid="m6"] .hoveracts button:last-child');
+    await p.waitForTimeout(120);
+    for (const b of await p.$$(".menu.open button")) { if ((await b.textContent()).trim() === "Delete message") { await b.click(); break; } }
+    await p.waitForTimeout(150);
+    if (await $(p, '.msg[data-mid="m6"]')) return "deleting should remove the message row";
+    return null;
+  }],
   ["thread", "/s/lb/c/beats?demo=1&ws=thread", "light", async (p) =>
     (await has(p, ".threadpane .tpbody .msg", "thread pane")) ||
     (await has(p, ".threadpane .alsosend", "also-to-channel toggle")) ||

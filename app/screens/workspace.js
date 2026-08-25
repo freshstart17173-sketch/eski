@@ -14,7 +14,7 @@
 import { el, Avatar, IconButton, openMenu, closeMenus, toast, openModal, Button } from "../ui.js";
 import { iconEl } from "../icons.js";
 import { navigate } from "../router.js";
-import { isDemo, shapeMessage, loadThread, toggleReaction, deleteMessage, pinMessage, kickMember, timeoutMember, banMember, setMemberRoles } from "../data.js";
+import { isDemo, shapeMessage, loadThread, toggleReaction, deleteMessage, pinMessage, editMessage, kickMember, timeoutMember, banMember, setMemberRoles } from "../data.js";
 import { subscribeChannelMessages, subscribeTyping, sendTyping, subscribeServerPresence, markRead, sendMessage } from "../realtime.js";
 import { openUpload } from "./upload.js";
 
@@ -149,10 +149,30 @@ function reactionsBar(msg) {
   return { bar, add };
 }
 
+// Inline edit (own message): swap the .tx body for an input; Enter saves (editMessage +
+// re-render with an "(edited)" marker), Esc/empty restores. Realtime edit uses the same
+// renderBody path (line ~"newTx"), so this stays consistent with a live edit landing.
+function startEdit(msg) {
+  const tx = document.querySelector(`.msg[data-mid="${msg.id}"] .bd .tx`);
+  if (!tx) return;
+  const input = el("input.editinput", { value: msg.body || "", "aria-label": "Edit message" });
+  const editWrap = el(".editrow", {}, [input]);
+  const restore = () => editWrap.replaceWith(renderBody(msg));
+  const saveEdit = async () => {
+    const v = input.value.trim();
+    if (!v || v === msg.body) return restore();
+    try { if (!isDemo()) await editMessage(msg.id, v); msg.body = v; msg.edited = true; restore(); toast({ message: "Message edited" }); }
+    catch (e) { toast({ message: e?.message || "Couldn’t edit the message" }); }
+  };
+  input.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); saveEdit(); } else if (e.key === "Escape") { e.preventDefault(); restore(); } });
+  tx.replaceWith(editWrap);
+  input.focus(); input.select();
+}
+
 // the ⋯ menu: own message adds Edit/Delete; everyone gets Pin + Copy link
 function openMsgMenu(anchor, msg, own) {
   const items = [];
-  if (own) items.push({ label: "Edit message", icon: "pen", onClick: () => toast({ message: "Inline edit (P4.13)" }) });
+  if (own) items.push({ label: "Edit message", icon: "pen", onClick: () => startEdit(msg) });
   items.push({ label: "Pin to channel", icon: "pin", onClick: async () => {
     try { if (!isDemo()) await pinMessage(msg.id); toast({ message: "Pinned to the channel", icon: "pin" }); }
     catch (e) { toast({ message: e?.message || "Couldn’t pin" }); }
