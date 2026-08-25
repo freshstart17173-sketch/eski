@@ -15,7 +15,8 @@ import { el, Avatar, IconButton, openMenu, closeMenus, toast, openModal, Button,
 import { iconEl } from "../icons.js";
 import { navigate } from "../router.js";
 import { avatarUrl } from "../cards.js";
-import { isDemo, shapeMessage, loadThread, toggleReaction, deleteMessage, pinMessage, editMessage, kickMember, timeoutMember, banMember, setMemberRoles, createChannel, updateChannel, createInvite, loadInvites, revokeInvite, leaveServer, deleteServer, loadServerPrefs, setServerPrefs } from "../data.js";
+import { uploadBlobs } from "../upload-r2.js";
+import { isDemo, shapeMessage, loadThread, toggleReaction, deleteMessage, pinMessage, editMessage, kickMember, timeoutMember, banMember, setMemberRoles, createChannel, updateChannel, createInvite, loadInvites, revokeInvite, updateServer, leaveServer, deleteServer, loadServerPrefs, setServerPrefs } from "../data.js";
 import { subscribeChannelMessages, subscribeTyping, sendTyping, subscribeServerPresence, markRead, sendMessage } from "../realtime.js";
 import { openUpload } from "./upload.js";
 
@@ -209,12 +210,12 @@ export function channelColumn(data, view) {
 
   // server header — the bar opens the server menu (admin sees Settings)
   const bar = el("button.srvbar", { "aria-haspopup": "menu", "aria-expanded": "false", title: "Server menu" }, [
-    el("span.srvicon", {}, [data.server.initials]), el("b", {}, [data.server.name]), iconEl("chev", "sm"),
+    srvIconEl(data.server), el("b", {}, [data.server.name]), iconEl("chev", "sm"),
   ]);
   bar.querySelector(".ic")?.classList.add("srvchev");
   bar.addEventListener("click", () => {
     const items = [];
-    if (data.isAdmin) items.push({ label: "Server settings", icon: "settings", onClick: () => navigate(`/s/${data.server.id}/settings`) });
+    if (data.isAdmin) items.push({ label: "Server settings", icon: "settings", onClick: () => openServerSettings(data) });
     items.push({ label: "Invite people", icon: "plus", onClick: () => inviteFlow(data) });
     items.push({ label: "Notification settings", icon: "bell", onClick: () => notifSettingsFlow(data) });
     items.push({ sep: true });
@@ -521,6 +522,72 @@ function leaveServerFlow(data) {
     if (go.disabled) return; go.disabled = true;
     try { if (!isDemo()) await leaveServer(data.server.id); close(); if (isDemo()) toast({ message: "Left the server" }); else navigate(withDemo("/")); }
     catch (e) { toast({ message: e?.message || "Couldn’t leave" }); go.disabled = false; }
+  });
+}
+
+// The server header badge — its uploaded icon (square, radius via .srvicon) or the initials.
+// A load error falls back to initials so the header is never blank.
+function srvIconEl(server) {
+  const span = el("span.srvicon");
+  const url = avatarUrl(server.icon_key);
+  if (url) {
+    const im = el("img", { src: url, alt: server.name || "" });
+    im.addEventListener("error", () => { span.replaceChildren(); span.textContent = server.initials; }, { once: true });
+    span.append(im);
+  } else span.textContent = server.initials;
+  return span;
+}
+
+// Server settings (admin) — gallery Server-settings → Overview: the server name + a square icon
+// and a wide cover, both R2 uploads (uploadBlobs → updateServer(icon_key/cover_key)). Only the
+// changed keys are written. Demo previews the picked image locally (a blob URL), never R2. The
+// rail + header repaint on the NEXT navigation (they read the cached bundle we mutate here).
+function openServerSettings(data) {
+  const demo = isDemo();
+  const s = data.server;
+
+  const iconPrev = el(".cv.icon", {}, [avatarUrl(s.icon_key) ? el("img", { src: avatarUrl(s.icon_key), alt: "" }) : document.createTextNode(s.initials)]);
+  const coverPrev = el(".cv", {}, [avatarUrl(s.cover_key) ? el("img", { src: avatarUrl(s.cover_key), alt: "" }) : iconEl("image")]);
+
+  const pick = (field, prev) => {
+    const input = el("input", { type: "file", accept: "image/*", style: "display:none" });
+    input.addEventListener("change", async () => {
+      const file = input.files?.[0]; input.value = "";
+      if (!file) return;
+      try {
+        let src;
+        if (demo) src = URL.createObjectURL(file);
+        else { const [{ key }] = await uploadBlobs([file]); await updateServer(s.id, { [field]: key }); s[field] = key; src = avatarUrl(key); }
+        prev.replaceChildren(el("img", { src, alt: "" }));
+        toast({ message: field === "icon_key" ? "Server icon updated" : "Server cover updated", icon: "check" });
+      } catch (e) { toast({ message: e?.message || "Couldn’t upload the image" }); }
+    });
+    return input;
+  };
+  const iconInput = pick("icon_key", iconPrev);
+  const coverInput = pick("cover_key", coverPrev);
+
+  const nameI = el("input", { value: s.name || "", "aria-label": "Server name" });
+  const body = el("div", {}, [
+    el("label.ulab", {}, ["Server name"]), el(".field", {}, [nameI]),
+    el(".frow", { style: "margin-top:12px" }, [el("label.ulab", {}, ["Server icon"]), el(".coverpick", {}, [
+      iconPrev, iconInput, Button({ label: "Upload", size: "sm", icon: "image", onClick: () => iconInput.click() }),
+    ])]),
+    el(".frow", { style: "margin-top:12px" }, [el("label.ulab", {}, ["Cover"]), el(".coverpick", {}, [
+      coverPrev, coverInput, Button({ label: "Upload", size: "sm", icon: "image", onClick: () => coverInput.click() }),
+    ])]),
+  ]);
+  const cancel = Button({ label: "Cancel", variant: "ghost" });
+  const save = Button({ label: "Save", variant: "primary" });
+  const { close } = openModal({ title: "Server settings", body, footer: [cancel, save] });
+  cancel.addEventListener("click", () => close());
+  save.addEventListener("click", async () => {
+    if (save.disabled) return; save.disabled = true;
+    try {
+      const patch = await updateServer(s.id, { name: nameI.value });
+      Object.assign(s, patch, patch.name ? { initials: patch.name.trim().slice(0, 2).toUpperCase() } : {});
+      close(); toast({ message: "Server settings saved", icon: "check" });
+    } catch (e) { toast({ message: e?.message || "Couldn’t save" }); save.disabled = false; }
   });
 }
 

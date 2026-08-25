@@ -11,6 +11,7 @@ import { iconEl } from "./icons.js";
 import { navigate } from "./router.js";
 import { signOut } from "./supabase.js";
 import { isDemo, createServer, joinServer } from "./data.js";
+import { avatarUrl } from "./cards.js";
 
 function withDemo(path) { return isDemo() ? path + "?demo=1" : path; }
 
@@ -29,7 +30,7 @@ export function renderRail(data, route) {
   const activeServer = route.params?.serverId || (route.screen === "workspace" && data.server?.id) || (isDemo() ? data.server?.id : null);
   for (const s of data.servers) {
     const on = s.id === activeServer || (!activeServer && s.active);
-    rail.append(railBtn({ label: s.initials, title: s.name, on, count: s.mentions, dot: s.unread && !s.mentions, onClick: () => navigate(withDemo(`/s/${s.id}`)) }));
+    rail.append(railBtn({ label: s.initials, img: avatarUrl(s.icon_key), title: s.name, on, count: s.mentions, dot: s.unread && !s.mentions, onClick: () => navigate(withDemo(`/s/${s.id}`)) }));
   }
   rail.append(el(".railsep"));
 
@@ -53,9 +54,16 @@ export function renderRail(data, route) {
   return rail;
 }
 
-function railBtn({ icon, label, title, on, count, dot, onClick }) {
+function railBtn({ icon, label, img, title, on, count, dot, onClick }) {
   const b = el("button.railbtn" + (on ? ".on" : ""), { title, onClick });
-  if (icon) b.append(iconEl(icon)); else b.append(document.createTextNode(label));
+  if (icon) b.append(iconEl(icon));
+  else if (img) {
+    // a server with an uploaded icon shows it (square, per the radius rule); a load error
+    // (missing/renamed object) falls back to the initials so the badge is never blank.
+    const im = el("img.railimg", { src: img, alt: title || "" });
+    im.addEventListener("error", () => b.replaceChildren(document.createTextNode(label)), { once: true });
+    b.append(im);
+  } else b.append(document.createTextNode(label));
   if (count) b.append(el("span.ct", {}, [String(count)]));
   else if (dot) b.append(el("span.rdot"));
   return b;

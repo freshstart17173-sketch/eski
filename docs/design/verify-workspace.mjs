@@ -182,6 +182,27 @@ const CASES = [
     if (await $(p, ".scrim .modal")) return "Done should close the invite modal";
     return null;
   }],
+  ["server-settings", "/s/lb/c/beats?demo=1", "light", async (p) => {
+    await p.click("nav.chan .srvbar");
+    await p.waitForTimeout(120);
+    for (const b of await p.$$(".menu.open button")) { if ((await b.textContent()).trim() === "Server settings") { await b.click(); break; } }
+    await p.waitForTimeout(150);
+    if (!(await $(p, ".scrim .modal"))) return "Server settings should open a modal";
+    if (!(await $(p, '.scrim .modal input[aria-label="Server name"]'))) return "name field missing";
+    if (!(await $(p, ".scrim .modal .coverpick .cv.icon"))) return "square icon preview missing";
+    if ((await p.$$(".scrim .modal .coverpick")).length !== 2) return "expected an icon + a cover picker";
+    // picking an image previews it locally (demo blob URL) → the icon preview becomes an <img>
+    const px = Buffer.from("89504e470d0a1a0a0000000d49484452000000010000000108060000001f15c4890000000d4944415478da63f8cfc0f01f0005000100ff9a2c0d0000000049454e44ae426082", "hex");
+    await p.setInputFiles('.scrim .modal .coverpick:first-of-type input[type=file]', { name: "icon.png", mimeType: "image/png", buffer: px });
+    await p.waitForTimeout(150);
+    if (!(await $(p, ".scrim .modal .coverpick .cv.icon img"))) return "picking an icon should preview it as an image";
+    // rename + Save closes
+    await p.fill('.scrim .modal input[aria-label="Server name"]', "Late Bloom Sessions");
+    await p.click('.scrim .modal button:has-text("Save")');
+    await p.waitForTimeout(150);
+    if (await $(p, ".scrim .modal")) return "saving should close the modal";
+    return null;
+  }],
   ["delete-server", "/s/lb/c/beats?demo=1", "light", async (p) => {
     // demo jax owns Late Bloom → the menu offers Delete server (type-to-confirm)
     await p.click("nav.chan .srvbar");

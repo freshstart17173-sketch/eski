@@ -64,9 +64,9 @@ export function clearWorkspaceCache() { _cache.rail = null; _cache.servers.clear
 
 async function loadRail(user) {
   if (_cache.rail) return _cache.rail;
-  const { data: myServers } = await supabase.from("server_members").select("color, server:servers(id,name,owner_id)").eq("user_id", user.id);
+  const { data: myServers } = await supabase.from("server_members").select("color, server:servers(id,name,owner_id,icon_key,cover_key)").eq("user_id", user.id);
   const rows = myServers || [];
-  const servers = rows.filter((r) => r.server).map((r) => ({ id: r.server.id, name: r.server.name, initials: initials(r.server.name) }));
+  const servers = rows.filter((r) => r.server).map((r) => ({ id: r.server.id, name: r.server.name, initials: initials(r.server.name), icon_key: r.server.icon_key || null }));
   _cache.rail = { myServers: rows, servers };
   return _cache.rail;
 }
@@ -131,7 +131,7 @@ async function loadServerBundle(activeServer) {
     voiceCh.length && { kind: "voice", label: "Voice", channels: voiceCh.map((c) => ({ id: c.id, name: c.name, voice: [] })) },
   ].filter(Boolean);
 
-  const bundle = { sid, membersById, memberGroups, channelGroups, textCh, serverRoles, server: { id: sid, name: activeServer.name, initials: initials(activeServer.name) } };
+  const bundle = { sid, membersById, memberGroups, channelGroups, textCh, serverRoles, server: { id: sid, name: activeServer.name, initials: initials(activeServer.name), icon_key: activeServer.icon_key || null, cover_key: activeServer.cover_key || null } };
   _cache.servers.set(sid, bundle);
   return bundle;
 }
@@ -794,6 +794,22 @@ export async function updateProfile({ name, handle, bio }) {
   const { error } = await supabase.from("profiles").update(vals).eq("id", user.id);
   if (error) throw new Error(/duplicate|unique|23505/i.test(error.message || "") ? "That handle is taken" : (error.message || "Couldn’t save your profile"));
   return vals;
+}
+
+// Edit a server's identity (name + icon_key + cover_key) — a `servers` update fenced by
+// servers_update (is_server_admin). Only the provided keys are written, so a name-only save
+// doesn't clobber the icon. The image bytes are uploaded separately (upload-r2.js); this just
+// points the row at the resulting object keys. Returns the applied patch for an in-place repaint.
+export async function updateServer(serverId, patch = {}) {
+  const p = {};
+  if (patch.name != null) { const n = String(patch.name).trim(); if (!n) throw new Error("A server name is required"); p.name = n; }
+  if (patch.icon_key !== undefined) p.icon_key = patch.icon_key;
+  if (patch.cover_key !== undefined) p.cover_key = patch.cover_key;
+  if (!Object.keys(p).length) return {};
+  if (isDemo()) return p;
+  const { error } = await supabase.from("servers").update(p).eq("id", serverId);
+  if (error) throw new Error(error.message || "Couldn’t save the server");
+  return p;
 }
 
 // ── Messages + Friends (P7.1, CANON §C — dms/friends) ────────────────────────

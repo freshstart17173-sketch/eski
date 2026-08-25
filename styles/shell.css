@@ -19,6 +19,8 @@
 .rail{flex:none;width:var(--rail);background:var(--railbg);display:flex;flex-direction:column;align-items:center;gap:var(--s2);padding:var(--s2) 0;overflow-y:auto}
 .railbtn{position:relative;width:38px;height:38px;flex:none;display:grid;place-items:center;border-radius:var(--r);background:var(--surface);color:var(--soft);font-weight:700;font-size:var(--fs-sm);transition:background var(--t),color var(--t)}
 .railbtn:hover{background:var(--plate)}
+/* server icon fills the square badge (radius --r, never round — round is avatars/dots only). */
+.railbtn .railimg{width:100%;height:100%;object-fit:cover;border-radius:var(--r)}
 .railbtn.on{background:var(--ink);color:var(--on-ink)}
 .railbtn .ct{position:absolute;top:-2px;right:-2px;min-width:15px;height:15px;padding:0 4px;background:var(--ink);color:var(--on-ink);border-radius:var(--r);font-size:9px;font-weight:700;display:grid;place-items:center}
 .railbtn.on .ct{background:var(--paper);color:var(--ink)}
@@ -66,7 +68,8 @@
 .srvbar:hover{background:linear-gradient(to top,rgba(0,0,0,.76),rgba(0,0,0,.26) 62%,rgba(0,0,0,.05))}
 .srvchev{margin-left:auto;color:rgba(255,255,255,.72);transition:transform var(--t)}
 .srvbar[aria-expanded="true"] .srvchev{transform:rotate(180deg);color:#fff}
-.srvicon{width:40px;height:40px;flex:none;border-radius:var(--r);background:var(--ink);color:var(--on-ink);display:grid;place-items:center;font-weight:700;font-size:var(--fs-sm);box-shadow:0 0 0 2px rgba(255,255,255,.16)}
+.srvicon{width:40px;height:40px;flex:none;border-radius:var(--r);background:var(--ink);color:var(--on-ink);display:grid;place-items:center;font-weight:700;font-size:var(--fs-sm);box-shadow:0 0 0 2px rgba(255,255,255,.16);overflow:hidden}
+.srvicon img{width:100%;height:100%;object-fit:cover}
 .srvbar b{font-size:var(--fs-sm);color:#fff}
 .chanbody{flex:1;overflow-y:auto;padding:var(--s3) var(--s2)}
 .cgroup{margin-bottom:var(--s4)}
