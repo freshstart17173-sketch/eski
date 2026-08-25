@@ -22,6 +22,7 @@ import { renderShared } from "./screens/shared.js";
 import { renderDMs } from "./screens/dms.js";
 import { renderNotifications } from "./screens/notifications.js";
 import { renderNotFound } from "./screens/notfound.js";
+import { openSwitcher, closeSwitcher } from "./screens/switcher.js";
 
 const stage = document.getElementById("stage");
 
@@ -70,6 +71,7 @@ async function renderRoute(r) {
   const mine = ++token;
   teardownRealtime();                                  // kill the previous view's subscriptions
   closeDetails();                                       // a nav closes any open details overlay
+  closeSwitcher();                                      // …and any open quick-switcher
 
   if (r.screen === "auth") { swap(renderSignin()); return; }   // /signin — full screen, no shell
   if (r.screen === "notfound") { swap(renderNotFound()); return; }   // 404 — full screen, no shell
@@ -181,6 +183,17 @@ onChange((sess, event) => {
   if (!session() && event && event !== "SIGNED_OUT" && event !== "INITIAL_SESSION") return;
   if (started) renderRoute(route.peek());
 });
+
+// ⌘K / Ctrl-K opens the quick-switcher anywhere inside the app (not the marketing
+// home or bare sign-in — there's nowhere to jump to yet). A second press toggles it
+// shut, which openSwitcher() handles. Capture phase so a focused field can't swallow it.
+document.addEventListener("keydown", (e) => {
+  if ((e.metaKey || e.ctrlKey) && (e.key === "k" || e.key === "K")) {
+    if (!authed.value && !isDemo()) return;
+    e.preventDefault();
+    openSwitcher();
+  }
+}, true);
 
 function loading() {
   const s = document.createElement("section");

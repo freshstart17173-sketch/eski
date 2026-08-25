@@ -1037,6 +1037,22 @@ export async function banMember(serverId, targetUser, reason) {
   const { error } = await supabase.rpc("ban_member", { server_id: serverId, target_user: targetUser, reason: reason || null });
   if (error) throw new Error(error.message || "Couldn’t ban the member");
 }
+// Quick-switcher (⌘K) data — your servers + accepted friends, for a global jump palette.
+export async function loadSwitcher() {
+  if (isDemo()) return {
+    servers: [{ id: "lb", name: "Late Bloom LP", initials: "LB" }, { id: "sp", name: "Specter", initials: "SP" }, { id: "bs", name: "Beat swap", initials: "BS" }],
+    friends: [{ name: "dev", handle: "dev", initials: "DV" }, { name: "mira", handle: "mira", initials: "MI" }, { name: "rae", handle: "rae", initials: "RA" }],
+  };
+  const user = session();
+  if (!user) return { servers: [], friends: [] };
+  const { servers } = await loadRail(user);
+  const { data: friRows } = await supabase.from("friendships").select("a_user,b_user,status").or(`a_user.eq.${user.id},b_user.eq.${user.id}`).eq("status", "accepted");
+  const ids = (friRows || []).map((f) => (f.a_user === user.id ? f.b_user : f.a_user));
+  let friends = [];
+  if (ids.length) { const { data: profs } = await supabase.from("profiles").select("id,handle,name").in("id", ids); friends = (profs || []).map((p) => ({ name: p.name || p.handle, handle: p.handle, initials: initials(p.name || p.handle) })); }
+  return { servers, friends };
+}
+
 // ── Create / join a server (P9) ──────────────────────────────────────────────
 // Create a server ENTIRELY client-side: has_perm() grants the server owner (owner_id) every
 // permission, so each insert passes its own RLS in turn — no RPC needed. Order matters:
