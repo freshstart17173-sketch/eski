@@ -1554,3 +1554,25 @@ NEXT: server **icon/cover** + profile **banner** uploads (R2; note the banner st
   panel); **audit log**; the gallery's invite-by-handle + suggested-people rows (deferred — needs a
   friends-not-in-server query + an invite-to-user notification RPC, untestable in-sandbox). Standing:
   **Realtime** (DM/notif/reaction/edit echo, untestable offline), **billing** (Stripe).
+
+## 2026-08-25 — P9.4 server icon/cover · P9.5 profile banner
+IN PROGRESS: (cleared)
+DONE (both GREEN in demo, both themes, zero app console errors):
+  - **P9.4 server settings (icon + cover)** — commit `20fba9a`. The server menu's **Server settings**
+    (admin) opens a real modal (was a route to the vestigial `/settings`): name + a square **icon**
+    and a wide **cover**, both R2 uploads (`uploadBlobs → updateServer(icon_key/cover_key)`, fenced
+    by `servers_update`; only changed keys written). `loadRail` + `loadServerBundle` now carry
+    `icon_key/cover_key`, and the **rail badge + channel-column header render the uploaded icon**
+    (square, --r, initials fallback on load error). Ported gallery `.coverpick/.cv/.frow`. Verify:
+    `verify-workspace` server-settings (modal + pickers + local image preview + rename).
+  - **P9.5 profile banner** — commit `a12c910`. Edit-profile's **Change banner** (a toast stub) is now
+    the gallery `.epbanner` well: previews `banner_key` and uploads a new one
+    (`uploadBlobs → updateProfileImage("banner_key")` — write path already existed). `loadProfile`
+    returns `banner_key`. NB the gallery renders **no banner on the profile hero**, so the well is
+    where it lives; a hero render can follow if a design lands. Verify: `verify-profile` edit-profile
+    (well starts empty → fills on pick).
+NEXT: **audit log** (needs a backend table/trigger — check schema first); the create-server modal's
+  optional **icon** field (gallery ~L3057); invite **by-handle** + suggested people (needs a
+  friends-not-in-server query + invite-to-user notification RPC). Standing: **Realtime** (echo,
+  untestable offline), **billing** (Stripe). Live R2 round-trips (icon/cover/banner/photo) are
+  preview-verified — the sandbox browser can't egress to R2, so demo previews locally (blob URL).
