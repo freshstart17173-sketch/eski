@@ -126,6 +126,30 @@ await run("conversation", "light", async (p) => {
   return null;
 });
 
+// DM row actions (P7.1b): the ⋯ menu offers Pin / Mute / Hide; hiding drops the row, and
+// pinning moves a row into the Pinned section (it gains a pin marker).
+await run("dm-actions", "light", async (p) => {
+  const before = await count(p, ".dmrow");
+  const mores = await p.$$(".dmrow .more2");
+  await mores[mores.length - 1].click();   // the last (unpinned) thread
+  await p.waitForTimeout(120);
+  const items = await p.$$eval(".menu.open button", (bs) => bs.map((b) => b.textContent.trim()));
+  for (const w of ["Pin", "Mute", "Hide conversation"]) if (!items.some((t) => t.includes(w))) return `DM menu missing "${w}" (got ${JSON.stringify(items)})`;
+  for (const b of await p.$$(".menu.open button")) { if ((await b.textContent()).includes("Hide")) { await b.click(); break; } }
+  await p.waitForTimeout(150);
+  if ((await count(p, ".dmrow")) !== before - 1) return "Hide should remove the conversation from the list";
+  // pin the last remaining direct row → a second pin marker appears in the list
+  const pinsBefore = await p.$$eval(".dmrow .dmtrail .ic", (ns) => ns.filter((n) => (n.querySelector("use") || {}).getAttribute?.("href") === "#i-pin").length);
+  const mores2 = await p.$$(".dmrow .more2");
+  await mores2[mores2.length - 1].click();
+  await p.waitForTimeout(120);
+  for (const b of await p.$$(".menu.open button")) { if ((await b.textContent()).trim() === "Pin") { await b.click(); break; } }
+  await p.waitForTimeout(150);
+  const pinsAfter = await p.$$eval(".dmrow .dmtrail .ic", (ns) => ns.filter((n) => (n.querySelector("use") || {}).getAttribute?.("href") === "#i-pin").length);
+  if (pinsAfter !== pinsBefore + 1) return `pinning should add a pin marker (${pinsBefore} → ${pinsBefore + 1}), got ${pinsAfter}`;
+  return null;
+});
+
 await browser.close();
 server.close();
 console.log(fails ? `\n✗ ${fails} FAIL` : "\n✓ all Messages/Friends states render, zero app console errors, both themes");

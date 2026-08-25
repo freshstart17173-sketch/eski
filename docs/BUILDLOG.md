@@ -1218,3 +1218,19 @@ NEXT: DM/notification **Realtime** (subscribe inserts — not in-sandbox verifia
 GOTCHA AW: Playwright element handles go STALE when the surface re-renders (a tab strip that
   `replaceChildren`s on click). Re-query by selector (`:has-text(...)`) between clicks instead
   of holding an array of handles — "Element is not attached to the DOM" is the tell.
+
+## 2026-08-24 — P7.1b DM row actions (pin / mute / hide)
+IN PROGRESS: (cleared)
+DONE: DM thread rows gained a **⋯ menu** (and right-click) — **Pin/Unpin · Mute/Unmute ·
+  Hide conversation** — wired to `setDMPref(dmChannelId, patch)` (a `dm_members` update fenced
+  to your own row, `dmm_update`). The list **repaints** on change: pinning jumps a row into the
+  Pinned section (pin marker), hiding drops it (the reversible "close DM"). The trailing cluster
+  (`.dmtrail`: muted bell / pin marker + the hover-revealed `.more2`) replaced the ad-hoc
+  trailing icon so there's no margin conflict. Demo mutates `data.dms` optimistically.
+  Verified: `verify-dms.mjs` +`dm-actions` — the menu lists Pin/Mute/Hide, Hide removes a row,
+  Pin adds a second pin marker. All 5 dms cases GREEN both themes, zero app console errors.
+NEXT: DM/notification **Realtime** (subscribe inserts — not in-sandbox verifiable); **group DM**
+  creation (`create_group_dm`) + the "New message" flow; notification **bell badge** + row→target
+  navigation; the P5.19 markers (banner render is out of scope — the gallery profile has no
+  banner design; avatars-from-key on member rail/comments/chat remains). Bigger: **P8** (admin:
+  roles/permissions/moderation/billing) or **P9** (create/join/404/quick-switcher).

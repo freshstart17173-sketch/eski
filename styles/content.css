@@ -295,7 +295,11 @@
 .dmrow{display:flex;align-items:center;gap:var(--s2);padding:7px var(--s2);border-radius:var(--r);cursor:pointer;transition:background var(--t)}
 .dmrow:hover,.dmrow.on{background:var(--plate)}
 .dmrow .nm{font-size:var(--fs-sm);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.dmrow .ic{margin-left:auto;color:var(--muted);flex:none}
+.dmrow .dmtrail{margin-left:auto;display:flex;align-items:center;gap:4px;flex:none}
+.dmrow .dmtrail>.ic{color:var(--muted)}
+.dmrow .more2{color:var(--muted);opacity:0;flex:none;display:grid;place-items:center;width:22px;height:22px;border-radius:var(--r)}
+.dmrow:hover .more2{opacity:1}
+.dmrow .more2:hover{background:var(--surface);color:var(--ink)}
 .dmrow.group .gav{display:flex;flex:none}
 .dmrow.group .gav .av{margin-left:-8px;box-shadow:0 0 0 2px var(--surface)}
 .dmrow.group .gav .av:first-child{margin-left:0}

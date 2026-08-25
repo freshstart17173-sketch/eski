@@ -867,6 +867,17 @@ export async function createDM(handle) {
   return data?.id || null;
 }
 
+// Update your own DM membership prefs (pin / mute / hide) — a `dm_members` update fenced to
+// your own row (dmm_update). `hide` is the reversible "close DM" (it drops from the list until
+// a new message or a re-open). Patch is any of { pinned, muted, hidden }.
+export async function setDMPref(dmChannelId, patch) {
+  if (isDemo()) return;
+  const user = session();
+  if (!user) throw new Error("Sign in");
+  const { error } = await supabase.from("dm_members").update(patch).eq("dm_channel_id", dmChannelId).eq("user_id", user.id);
+  if (error) throw new Error(error.message || "Couldn’t update the conversation");
+}
+
 // ── DM conversation (P7.2) ───────────────────────────────────────────────────
 // A thread's messages. Members read (dmsg_read = dm_member). Authors have no FK to profiles
 // (user_id → auth.users), so profiles are fetched SEPARATELY into a byId map (bug-#1 hazard).

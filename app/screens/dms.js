@@ -4,10 +4,10 @@
 // answer incoming requests (accept/decline), see outgoing pending, and add a friend by
 // exact handle. NO member hue — DMs and friends live outside any server.
 
-import { el, toast, Avatar, PresenceDot } from "../ui.js";
+import { el, toast, Avatar, PresenceDot, openMenu } from "../ui.js";
 import { iconEl } from "../icons.js";
 import { navigate } from "../router.js";
-import { addFriend, respondFriend, createDM, loadDMThread, sendDM } from "../data.js";
+import { addFriend, respondFriend, createDM, loadDMThread, sendDM, setDMPref } from "../data.js";
 import { avatarUrl } from "../cards.js";
 
 function isDemoQS() { return new URLSearchParams(location.search).get("demo") === "1"; }
@@ -36,12 +36,33 @@ function dmList(data, right) {
   addInput.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); addByUsername(addInput); } });
 
   const rows = el(".dmrows");
-  const pinned = (data.dms || []).filter((d) => d.pinned);
-  const rest = (data.dms || []).filter((d) => !d.pinned);
-  const openConvo = (d) => { showConvo(right, d); [...rows.children].forEach((c) => c.classList?.remove("on")); };
-  if (pinned.length) { rows.append(el(".dmsec", {}, ["Pinned"])); for (const d of pinned) rows.append(dmRow(d, openConvo)); }
-  if (rest.length) { rows.append(el(".dmsec", {}, ["Direct messages"])); for (const d of rest) rows.append(dmRow(d, openConvo)); }
-  if (!pinned.length && !rest.length) rows.append(el(".dmnone", {}, ["No conversations yet."]));
+  const openConvo = (d) => { showConvo(right, d); };
+  // pin/mute/hide mutate data.dms in place; the list repaints (hidden threads drop out,
+  // pinned ones jump to the Pinned section). RLS is the fence via setDMPref.
+  const rowMenu = (d, anchor) => openMenu(anchor, [
+    { label: d.pinned ? "Unpin" : "Pin", icon: "pin", onClick: () => setPref(d, { pinned: !d.pinned }) },
+    { label: d.muted ? "Unmute" : "Mute", icon: "bell", onClick: () => setPref(d, { muted: !d.muted }) },
+    { sep: true },
+    { label: "Hide conversation", icon: "hide", onClick: () => setPref(d, { hidden: true }) },
+  ]);
+  async function setPref(d, patch) {
+    try {
+      if (!isDemoQS()) await setDMPref(d.id, patch);
+      Object.assign(d, patch);
+      if (patch.hidden) data.dms = data.dms.filter((x) => x.id !== d.id);
+      paintRows();
+      toast({ message: patch.hidden ? "Conversation hidden" : patch.pinned != null ? (patch.pinned ? "Pinned" : "Unpinned") : (patch.muted ? "Muted" : "Unmuted") });
+    } catch (e) { toast({ message: e?.message || "Couldn’t update" }); }
+  }
+  function paintRows() {
+    rows.replaceChildren();
+    const pinned = (data.dms || []).filter((d) => d.pinned);
+    const rest = (data.dms || []).filter((d) => !d.pinned);
+    if (pinned.length) { rows.append(el(".dmsec", {}, ["Pinned"])); for (const d of pinned) rows.append(dmRow(d, openConvo, rowMenu)); }
+    if (rest.length) { rows.append(el(".dmsec", {}, ["Direct messages"])); for (const d of rest) rows.append(dmRow(d, openConvo, rowMenu)); }
+    if (!pinned.length && !rest.length) rows.append(el(".dmnone", {}, ["No conversations yet."]));
+  }
+  paintRows();
 
   return el(".dmlist", {}, [
     el(".hd", {}, ["Messages", el("button.iconbtn.sm", { style: "margin-left:auto", title: "New message", onClick: () => showFriends(right, data, friendsBtn) }, [iconEl("pen", "sm")])]),
@@ -49,8 +70,11 @@ function dmList(data, right) {
   ]);
 }
 
-function dmRow(d, openConvo) {
-  const row = el(".dmrow" + (d.group ? ".group" : "") + ".dmconvo", { onClick: () => { openConvo(d); row.classList.add("on"); } });
+function dmRow(d, openConvo, rowMenu) {
+  const row = el(".dmrow" + (d.group ? ".group" : "") + ".dmconvo", {
+    onClick: (e) => { if (e.target.closest?.(".more2")) return; openConvo(d); [...row.parentElement.children].forEach((c) => c.classList?.remove("on")); row.classList.add("on"); },
+    oncontextmenu: (e) => { e.preventDefault(); rowMenu(d, row); },
+  });
   if (d.group) {
     row.append(el(".gav", {}, d.members.slice(0, 3).map((m) => Avatar({ name: m.initials, size: "sm", src: avatarUrl(m.avatar_key) }))));
   } else {
@@ -60,8 +84,11 @@ function dmRow(d, openConvo) {
     row.append(av);
   }
   row.append(el("span.nm", {}, [d.name]));
-  if (d.pinned) row.append(iconEl("pin", "sm"));
-  else if (d.muted) row.append(iconEl("bell", "sm"));
+  const trail = el(".dmtrail", {}, [
+    d.pinned ? iconEl("pin", "sm") : (d.muted ? iconEl("bell", "sm") : null),
+    el("button.more2", { title: "More", "aria-haspopup": "menu", onClick: (e) => { e.stopPropagation(); rowMenu(d, e.currentTarget); } }, [iconEl("more", "sm")]),
+  ]);
+  row.append(trail);
   return row;
 }
 
