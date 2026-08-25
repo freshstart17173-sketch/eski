@@ -9,8 +9,10 @@ import { iconEl } from "../icons.js";
 import { navigate } from "../router.js";
 import { workCard, avatarUrl } from "../cards.js";
 import { openDetails } from "./details.js";
-import { updateProfile, updateProfileImage, isDemo } from "../data.js";
+import { updateProfile, updateProfileImage, isDemo, addFriend, createDM } from "../data.js";
 import { uploadBlobs } from "../upload-r2.js";
+
+function withDemo(path) { return isDemo() ? path + (path.includes("?") ? "&" : "?") + "demo=1" : path; }
 
 const SHELVES = [
   { key: "public", label: "Public", icon: "globe" },
@@ -42,8 +44,14 @@ export function renderProfile(data) {
     onSaved: () => who.replaceChildren(...whoKids(p)),
     onAvatar: (src) => setAvatarImg(heroAv, src, p.initials || p.name),
   }) }, [iconEl("pen", "sm"), "Edit profile"]));
-  else if (pov === "public") actions.append(el("button.btn.primary", { onClick: () => toast({ message: "Friend request sent" }) }, [iconEl("plus", "sm"), "Add friend"]));
-  else actions.append(el("button.btn.primary", { onClick: () => toast({ message: "Message (P7)" }) }, [iconEl("mail", "sm"), "Message"]));
+  else if (pov === "public") actions.append(el("button.btn.primary", { onClick: async () => {
+    try { if (!isDemo()) await addFriend(p.handle); toast({ message: "Friend request sent", icon: "check" }); }
+    catch (e) { toast({ message: e?.message || "Couldn’t send the request" }); }
+  } }, [iconEl("plus", "sm"), "Add friend"]));
+  else actions.append(el("button.btn.primary", { onClick: async () => {
+    try { if (!isDemo()) await createDM(p.handle); navigate(withDemo("/messages")); }
+    catch (e) { toast({ message: e?.message || "Couldn’t start the conversation" }); }
+  } }, [iconEl("mail", "sm"), "Message"]));
   const hero = el(".phero", {}, [el(".top", {}, [heroAv, who, actions])]);
 
   // shelf tabs (+ Settings for owner) + search

@@ -1380,3 +1380,15 @@ NEXT: **Edit/Channel settings** (rename/topic/slowmode/post-policy — a `channe
   channel **reorder persistence** (reorder_channels RPC), the rest of **Server settings**
   (general/roles editor/moderation/audit log), profile **Message → DM** + Posted-by nav (small
   client wireups). Untestable/blocked as before: Realtime, permalinks, P9 create/join (new RPCs).
+
+## 2026-08-24 — P7.4 Profile social actions (Add friend / Message)
+IN PROGRESS: (cleared)
+DONE: the profile hero's POV actions were toast stubs — **Add friend** (public POV) now calls
+  `addFriend(p.handle)`; **Message** (mutual POV) calls `createDM(p.handle)` then navigates to
+  `/messages`. Owner POV (Edit profile) is unchanged. NOTE: the app's demo profile is always
+  owner-POV, so these two buttons aren't reachable in demo — verified only as no-regression on
+  the owner profile; the real flows are preview-verified (a public/mutual-POV demo profile would
+  be needed to click-test them, deferred as low value).
+NEXT: a public/mutual-POV demo profile to exercise Add friend/Message; Posted-by → profile nav
+  (needs `handle` on the who-shape); the remaining Server-settings/channel-settings surfaces;
+  and the standing untestable/blocked set (Realtime, permalinks, P9 create/join RPCs).
