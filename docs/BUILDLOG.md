@@ -1502,3 +1502,18 @@ DONE: an unknown route (router `NOT_FOUND`) now renders a proper **404** (was th
   heading + button, zero app console errors.
 NEXT: **Delete server** (owner type-to-confirm), **invite management** (expiry/revoke), server
   **icon/cover** + profile **banner** uploads. Standing: Realtime, permalinks, billing, audit log.
+
+## 2026-08-24 — P9.5 Delete server (owner, type-to-confirm)
+IN PROGRESS: (cleared)
+DONE: the server menu now offers **Delete server** to the owner (was Leave-only). `deleteServer
+  (serverId)` deletes the `servers` row (servers_delete = owner_id; FK cascades wipe members/
+  channels/works/invites) behind a **type-to-confirm** — the Delete button stays disabled until
+  the exact server name is typed. Non-owners still get **Leave server**. Demo now sets
+  `isOwner:true` (jax owns Late Bloom), so the demo exercises the owner path.
+  Verified: `verify-workspace.mjs` `delete-server` — the menu offers Delete server, the button is
+  disabled until the name matches, then confirming closes the modal. All workspace cases GREEN
+  both themes, zero app console errors. The owner's full server lifecycle is now real: **create →
+  invite → (others join) → settings/moderation/roles → delete.**
+NEXT: invite **management** (list/expiry/revoke — `server_invites` read+update exist); server
+  **icon/cover** + profile **banner** uploads (R2); a quick-switcher (⌘K). Standing: Realtime,
+  permalinks, billing (Stripe), audit log.

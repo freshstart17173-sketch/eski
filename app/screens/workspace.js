@@ -15,7 +15,7 @@ import { el, Avatar, IconButton, openMenu, closeMenus, toast, openModal, Button 
 import { iconEl } from "../icons.js";
 import { navigate } from "../router.js";
 import { avatarUrl } from "../cards.js";
-import { isDemo, shapeMessage, loadThread, toggleReaction, deleteMessage, pinMessage, editMessage, kickMember, timeoutMember, banMember, setMemberRoles, createChannel, updateChannel, createInvite, leaveServer } from "../data.js";
+import { isDemo, shapeMessage, loadThread, toggleReaction, deleteMessage, pinMessage, editMessage, kickMember, timeoutMember, banMember, setMemberRoles, createChannel, updateChannel, createInvite, leaveServer, deleteServer } from "../data.js";
 import { subscribeChannelMessages, subscribeTyping, sendTyping, subscribeServerPresence, markRead, sendMessage } from "../realtime.js";
 import { openUpload } from "./upload.js";
 
@@ -208,7 +208,9 @@ export function channelColumn(data, view) {
     items.push({ label: "Invite people", icon: "plus", onClick: () => inviteFlow(data) });
     items.push({ label: "Notification settings", icon: "bell", onClick: () => toast({ message: "Notifications (P8)" }) });
     items.push({ sep: true });
-    items.push({ label: "Leave server", icon: "leave", danger: true, onClick: () => leaveServerFlow(data) });
+    items.push(data.isOwner
+      ? { label: "Delete server", icon: "trash", danger: true, onClick: () => deleteServerFlow(data) }
+      : { label: "Leave server", icon: "leave", danger: true, onClick: () => leaveServerFlow(data) });
     openMenu(bar, items);
   });
   const srvhd = el(".srvhd", {}, [el(".srvcover"), bar]);
@@ -449,6 +451,27 @@ function timeoutMemberFlow(data, p) {
     try { const until = new Date(Date.now() + ms).toISOString(); if (!isDemo()) await timeoutMember(data.server.id, p.id, until); toast({ message: `${p.name} timed out for ${label}`, icon: "clock" }); }
     catch (e) { toast({ message: e?.message || "Couldn’t time out the member" }); }
   } })));
+}
+
+// Delete server (owner) — a type-to-confirm (type the exact name) → deleteServer → Feed. FK
+// cascades wipe everything; irreversible, hence the name gate.
+function deleteServerFlow(data) {
+  const input = el("input", { placeholder: data.server.name, "aria-label": "Type the server name" });
+  const del = Button({ label: "Delete server", variant: "danger", disabled: true });
+  const cancel = Button({ label: "Cancel", variant: "ghost" });
+  input.addEventListener("input", () => { del.disabled = input.value.trim() !== data.server.name; });
+  const body = el("div", {}, [
+    el("p", { style: "color:var(--soft);font-size:var(--fs-sm);line-height:1.5" }, [`This permanently deletes ${data.server.name} and everything in it — channels, files, and messages. It can't be undone.`]),
+    el("label.ulab", {}, ["Type ", el("b", {}, [data.server.name]), " to confirm"]),
+    el(".field", {}, [input]),
+  ]);
+  const { close } = openModal({ title: `Delete ${data.server.name}?`, body, footer: [cancel, del] });
+  cancel.addEventListener("click", () => close());
+  del.addEventListener("click", async () => {
+    if (del.disabled) return; del.disabled = true;
+    try { if (!isDemo()) await deleteServer(data.server.id); close(); if (isDemo()) toast({ message: "Server deleted" }); else navigate(withDemo("/")); }
+    catch (e) { toast({ message: e?.message || "Couldn’t delete the server" }); del.disabled = false; }
+  });
 }
 
 // Leave server — a confirm, then delete your own membership → back to the Feed. Owners are

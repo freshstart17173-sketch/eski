@@ -27,6 +27,7 @@ export function demoWorkspace() {
   return {
     me,
     isAdmin: true,                      // jax is an admin of this server
+    isOwner: true,                      // ...and its owner (drives Delete vs Leave)
     serverRoles: [
       { id: "r-producer", name: "Producer", color: 3 },
       { id: "r-vocalist", name: "Vocalist", color: 1 },

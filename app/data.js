@@ -1063,6 +1063,15 @@ export async function createServer(name, channels = ["general"]) {
   return srv;
 }
 
+// Delete a server (owner only, servers_delete = owner_id). FK cascades remove its members,
+// channels, works, invites, etc. Irreversible — the UI gates it behind a type-to-confirm.
+export async function deleteServer(serverId) {
+  if (isDemo()) return;
+  const { error } = await supabase.from("servers").delete().eq("id", serverId);
+  if (error) throw new Error(error.message || "Couldn’t delete the server");
+  clearWorkspaceCache();
+}
+
 // Leave a server — delete your own `server_members` row (sm_delete = own or admin). Owners
 // are guarded in the UI (they'd orphan the server); everyone else leaves cleanly.
 export async function leaveServer(serverId) {
