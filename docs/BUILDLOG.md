@@ -1451,3 +1451,17 @@ NEXT: an invite **management** surface (expiry/max-uses/revoke — the columns e
   server** (still a stub — needs owner-can't-leave handling); server **icon/cover** upload (R2).
   Standing untestable/deferred: Realtime, permalinks, storage/billing, audit log, the
   vestigial `/create` full-screen route.
+
+## 2026-08-24 — P9.3 Leave server
+IN PROGRESS: (cleared)
+DONE: the server menu's **Leave server** (was a `toast` stub) is real — a confirm modal →
+  `leaveServer(serverId)` deletes your own `server_members` row (`sm_delete` = own) → back to the
+  Feed (cache cleared so the rail drops the server). **Owners are guarded**: `loadWorkspace` now
+  returns `isOwner` (activeServer.owner_id === me), and an owner is steered to "delete it from
+  Server settings" rather than orphaning a server they own.
+  Verified: `verify-workspace.mjs` +`leave-server` — the server menu opens, Leave opens a confirm,
+  confirming closes it. All workspace cases GREEN both themes, zero app console errors.
+NEXT: **Delete server** (owner, type-to-confirm — needs a servers-delete path / RPC check),
+  invite **management** (expiry/max-uses/revoke), server **icon/cover** upload. Standing:
+  Realtime, permalinks, storage/billing, audit log. Server lifecycle is now real end-to-end:
+  create · invite · join · leave · (+ channels, settings, moderation, roles).

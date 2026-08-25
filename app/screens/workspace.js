@@ -15,7 +15,7 @@ import { el, Avatar, IconButton, openMenu, closeMenus, toast, openModal, Button 
 import { iconEl } from "../icons.js";
 import { navigate } from "../router.js";
 import { avatarUrl } from "../cards.js";
-import { isDemo, shapeMessage, loadThread, toggleReaction, deleteMessage, pinMessage, editMessage, kickMember, timeoutMember, banMember, setMemberRoles, createChannel, updateChannel, createInvite } from "../data.js";
+import { isDemo, shapeMessage, loadThread, toggleReaction, deleteMessage, pinMessage, editMessage, kickMember, timeoutMember, banMember, setMemberRoles, createChannel, updateChannel, createInvite, leaveServer } from "../data.js";
 import { subscribeChannelMessages, subscribeTyping, sendTyping, subscribeServerPresence, markRead, sendMessage } from "../realtime.js";
 import { openUpload } from "./upload.js";
 
@@ -208,7 +208,7 @@ export function channelColumn(data, view) {
     items.push({ label: "Invite people", icon: "plus", onClick: () => inviteFlow(data) });
     items.push({ label: "Notification settings", icon: "bell", onClick: () => toast({ message: "Notifications (P8)" }) });
     items.push({ sep: true });
-    items.push({ label: "Leave server", icon: "leave", danger: true, onClick: () => toast({ message: "Left server" }) });
+    items.push({ label: "Leave server", icon: "leave", danger: true, onClick: () => leaveServerFlow(data) });
     openMenu(bar, items);
   });
   const srvhd = el(".srvhd", {}, [el(".srvcover"), bar]);
@@ -449,6 +449,22 @@ function timeoutMemberFlow(data, p) {
     try { const until = new Date(Date.now() + ms).toISOString(); if (!isDemo()) await timeoutMember(data.server.id, p.id, until); toast({ message: `${p.name} timed out for ${label}`, icon: "clock" }); }
     catch (e) { toast({ message: e?.message || "Couldn’t time out the member" }); }
   } })));
+}
+
+// Leave server — a confirm, then delete your own membership → back to the Feed. Owners are
+// steered to Server settings (leaving would orphan a server they own).
+function leaveServerFlow(data) {
+  if (data.isOwner) { toast({ message: "You own this server — delete it from Server settings instead." }); return; }
+  const go = Button({ label: "Leave", variant: "danger" });
+  const cancel = Button({ label: "Cancel", variant: "ghost" });
+  const body = el("p", { style: "color:var(--soft);font-size:var(--fs-sm);line-height:1.5" }, [`Leave ${data.server.name}? You'll need a fresh invite to rejoin.`]);
+  const { close } = openModal({ title: `Leave ${data.server.name}?`, body, footer: [cancel, go] });
+  cancel.addEventListener("click", () => close());
+  go.addEventListener("click", async () => {
+    if (go.disabled) return; go.disabled = true;
+    try { if (!isDemo()) await leaveServer(data.server.id); close(); if (isDemo()) toast({ message: "Left the server" }); else navigate(withDemo("/")); }
+    catch (e) { toast({ message: e?.message || "Couldn’t leave" }); go.disabled = false; }
+  });
 }
 
 // Invite people — mint a server_invites code and copy the /join/:code link (clipboard can be

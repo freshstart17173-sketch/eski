@@ -200,7 +200,7 @@ export async function loadWorkspace({ serverId, channelId } = {}) {
 
   return {
     needsAuth: false, live: true,
-    me, isAdmin: !!membersById[user.id]?.admin, servers, dmUnread: 0,
+    me, isAdmin: !!membersById[user.id]?.admin, isOwner: activeServer.owner_id === user.id, servers, dmUnread: 0,
     server: { id: sid, name: activeServer.name, initials: initials(activeServer.name) },
     channelGroups,
     channel: activeChannel ? { id: activeChannel.id, name: activeChannel.name, topic: "", pins: pinCount, files: 0, slowmode: activeChannel.slowmode_sec, postPolicy: activeChannel.post_policy } : null,
@@ -1061,6 +1061,17 @@ export async function createServer(name, channels = ["general"]) {
   await supabase.from("channels").insert((names.length ? names : ["general"]).map((n, i) => ({ server_id: srv.id, name: n, kind: "text", position: i })));
   clearWorkspaceCache();   // the rail must re-read to show the new server
   return srv;
+}
+
+// Leave a server — delete your own `server_members` row (sm_delete = own or admin). Owners
+// are guarded in the UI (they'd orphan the server); everyone else leaves cleanly.
+export async function leaveServer(serverId) {
+  if (isDemo()) return;
+  const user = session();
+  if (!user) throw new Error("Sign in");
+  const { error } = await supabase.from("server_members").delete().eq("server_id", serverId).eq("user_id", user.id);
+  if (error) throw new Error(error.message || "Couldn’t leave the server");
+  clearWorkspaceCache();
 }
 
 // Create an invite for a server — a direct `server_invites` insert (si_insert = admin). The

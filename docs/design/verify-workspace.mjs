@@ -152,6 +152,17 @@ const CASES = [
     if (!/invite|join\//i.test(toastText)) return `Invite should surface a link toast, got "${toastText}"`;
     return null;
   }],
+  ["leave-server", "/s/lb/c/beats?demo=1", "light", async (p) => {
+    await p.click("nav.chan .srvbar");
+    await p.waitForTimeout(120);
+    for (const b of await p.$$(".menu.open button")) { if ((await b.textContent()).includes("Leave server")) { await b.click(); break; } }
+    await p.waitForTimeout(150);
+    if (!(await $(p, ".scrim .modal"))) return "Leave server should open a confirm";
+    await p.click('.scrim .modal button:has-text("Leave")');
+    await p.waitForTimeout(150);
+    if (await $(p, ".scrim .modal")) return "confirming Leave should close the modal (demo toasts)";
+    return null;
+  }],
   ["channel-settings", "/s/lb/c/beats?demo=1", "light", async (p) => {
     const row = await p.$("nav.chan .crow");
     await row.hover();
