@@ -86,6 +86,26 @@ const CASES = [
     await p.waitForTimeout(100);
     return null;
   }],
+  ["moderation", "/s/lb/c/beats?demo=1", "light", async (p) => {
+    // click a non-me member row → the admin moderation menu opens
+    const rows = await p.$$(".mem .mrow");
+    let target = null;
+    for (const r of rows) { const nm = await r.$eval(".nm", (e) => e.textContent).catch(() => ""); if (nm && nm.trim() !== "jax") { target = r; break; } }
+    if (!target) return "no manageable member row found";
+    await target.click();
+    await p.waitForTimeout(120);
+    const items = await p.$$eval(".menu.open button", (bs) => bs.map((b) => b.textContent.trim()));
+    for (const w of ["Timeout", "Kick from server", "Ban from server"]) if (!items.some((t) => t.includes(w))) return `member menu missing "${w}" (got ${JSON.stringify(items)})`;
+    // Kick → confirm modal → confirming drops the member row
+    const before = (await p.$$(".mem .mrow")).length;
+    for (const b of await p.$$(".menu.open button")) { if ((await b.textContent()).includes("Kick")) { await b.click(); break; } }
+    await p.waitForTimeout(150);
+    if (!(await $(p, ".scrim .modal"))) return "Kick should open a confirm modal";
+    await p.click('.scrim .modal button:has-text("Kick")');
+    await p.waitForTimeout(150);
+    if ((await p.$$(".mem .mrow")).length !== before - 1) return "confirming Kick should drop the member row";
+    return null;
+  }],
   ["thread", "/s/lb/c/beats?demo=1&ws=thread", "light", async (p) =>
     (await has(p, ".threadpane .tpbody .msg", "thread pane")) ||
     (await has(p, ".threadpane .alsosend", "also-to-channel toggle")) ||

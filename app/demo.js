@@ -14,13 +14,13 @@ export const me = { id: "me", name: "jax", initials: "JX", handle: "jax", colorI
 
 // people, keyed so messages/members/pins share one identity + hue
 const P = {
-  jax:  { name: "jax",  initials: "JX", colorIdx: 5 },
-  rae:  { name: "rae",  initials: "RA", colorIdx: 1 },
-  dev:  { name: "dev",  initials: "DV", colorIdx: 3 },
-  tomo: { name: "tomo", initials: "TM", colorIdx: 2 },
-  kofi: { name: "kofi", initials: "KO", colorIdx: 4 },
-  nel:  { name: "nel",  initials: "NL", colorIdx: 6 },
-  mira: { name: "mira", initials: "MI", colorIdx: 4 },
+  jax:  { id: "u-jax",  name: "jax",  initials: "JX", colorIdx: 5 },
+  rae:  { id: "u-rae",  name: "rae",  initials: "RA", colorIdx: 1 },
+  dev:  { id: "u-dev",  name: "dev",  initials: "DV", colorIdx: 3 },
+  tomo: { id: "u-tomo", name: "tomo", initials: "TM", colorIdx: 2 },
+  kofi: { id: "u-kofi", name: "kofi", initials: "KO", colorIdx: 4 },
+  nel:  { id: "u-nel",  name: "nel",  initials: "NL", colorIdx: 6 },
+  mira: { id: "u-mira", name: "mira", initials: "MI", colorIdx: 4 },
 };
 
 export function demoWorkspace() {

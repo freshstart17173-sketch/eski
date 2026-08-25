@@ -992,6 +992,25 @@ export async function pinMessage(messageId) {
   if (error) throw new Error(error.message || "Couldn’t pin the message");
 }
 
+// ── Moderation (P8, CANON §B — admin RPCs) ───────────────────────────────────
+// Kick / Timeout / Ban a member. All are SECURITY DEFINER RPCs, perm-gated server-side (the
+// caller must hold the kick/ban/timeout permission) — the UI is only the signpost.
+export async function kickMember(serverId, targetUser) {
+  if (isDemo()) return;
+  const { error } = await supabase.rpc("kick_member", { server_id: serverId, target_user: targetUser });
+  if (error) throw new Error(error.message || "Couldn’t remove the member");
+}
+export async function timeoutMember(serverId, targetUser, until) {
+  if (isDemo()) return;
+  const { error } = await supabase.rpc("timeout_member", { server_id: serverId, target_user: targetUser, until });
+  if (error) throw new Error(error.message || "Couldn’t time out the member");
+}
+export async function banMember(serverId, targetUser, reason) {
+  if (isDemo()) return;
+  const { error } = await supabase.rpc("ban_member", { server_id: serverId, target_user: targetUser, reason: reason || null });
+  if (error) throw new Error(error.message || "Couldn’t ban the member");
+}
+
 // Toggle your reaction to a channel message (toggle_reaction RPC — adds if absent, removes if
 // present; returns true=added / false=removed). The caller flips the chip optimistically.
 export async function toggleReaction(messageId, emoji) {

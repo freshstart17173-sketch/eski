@@ -1282,3 +1282,20 @@ NEXT: message **inline edit** + **permalinks**, pin **Realtime**/pins-panel refr
   backend-blocked pillars remain (**P9 create/join** needs new RPCs; **P8 moderation** RPCs
   exist — ban/kick/timeout/set_member_roles — but need the member-popover/settings UI wired,
   a good next chunk). Plus the deferred DM/thread message actions and P5.19 avatars-from-key.
+
+## 2026-08-24 — P8.1 Member moderation (Timeout / Kick / Ban)
+IN PROGRESS: (cleared)
+DONE: the members-rail **admin menu** (was Timeout/Kick `toast` stubs) now runs the real admin
+  RPCs, perm-gated server-side: **Timeout** opens a duration picker (5m/1h/1d/1w) →
+  `timeout_member(until)`; **Kick from server** and **Ban from server** open a danger confirm
+  (reason field, audit-log note) → `kick_member` / `ban_member`, then drop the member's row
+  from the rail optimistically. `data.server.id` + the member's `p.id` target the RPC. **Manage
+  roles** stays a marker (needs the server role list loaded — P8.5). Added `id` to the demo
+  authors so member rows carry `data-uid` (the menu only shows for a non-you member with an id).
+  Verified: `verify-workspace.mjs` +`moderation` — clicking a member opens the menu (Timeout/
+  Kick/Ban), Kick opens a confirm modal, confirming drops the row. All workspace cases GREEN
+  both themes, zero app console errors.
+NEXT: **P8.5 Manage roles** (load the server's roles → `set_member_roles` checklist) and the
+  **Server settings** screens (general/roles/moderation/channels — many are gallery panels not
+  yet ported), the audit log view. Also still: DM/notification **Realtime**, message inline
+  edit/permalinks, P9 create/join (needs new RPCs), P5.19 avatars-from-key.

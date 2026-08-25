@@ -11,10 +11,10 @@
 //   loading · empty (no channels) · zero-messages · timedout/slowmode composer ·
 //   reconnecting banner · thread open · pins/files tab.
 
-import { el, Avatar, IconButton, openMenu, closeMenus, toast } from "../ui.js";
+import { el, Avatar, IconButton, openMenu, closeMenus, toast, openModal, Button } from "../ui.js";
 import { iconEl } from "../icons.js";
 import { navigate } from "../router.js";
-import { isDemo, shapeMessage, loadThread, toggleReaction, deleteMessage, pinMessage } from "../data.js";
+import { isDemo, shapeMessage, loadThread, toggleReaction, deleteMessage, pinMessage, kickMember, timeoutMember, banMember } from "../data.js";
 import { subscribeChannelMessages, subscribeTyping, sendTyping, subscribeServerPresence, markRead, sendMessage } from "../realtime.js";
 import { openUpload } from "./upload.js";
 
@@ -399,15 +399,18 @@ function membersRail(data) {
       av.append(el("span.pr" + (off ? ".off" : p.presence === "idle" ? ".idle" : p.presence === "dnd" ? ".dnd" : "")));
       const nm = el("span.u", {}, [p.name]); nm.style.color = `var(--m${p.colorIdx})`;
       const row = el(".mrow" + (off ? ".off" : ""), { "data-uid": p.id || null }, [av, el(".info", {}, [el(".nm", {}, [nm]), el(".doing", {}, [p.doing])])]);
-      // admin hover → manage (role toggle P8.5, timeout, kick)
-      if (data.isAdmin && p.name !== data.me.name) {
+      // admin click → moderation menu (Timeout / Kick / Ban — real admin RPCs, perm-gated
+      // server-side; Manage roles needs the role list, still a marker). data.server.id is the
+      // server; p.id the target. On kick/ban the row leaves the rail optimistically.
+      if (data.isAdmin && p.name !== data.me.name && p.id) {
         row.style.cursor = "pointer";
         row.addEventListener("click", () => openMenu(row, [
           { header: p.name },
-          { label: "Manage roles", icon: "user", onClick: () => toast({ message: "Roles (P8.5)" }) },
-          { label: "Timeout", icon: "clock", onClick: () => toast({ message: "Timed out" }) },
+          { label: "Manage roles", icon: "user", onClick: () => toast({ message: "Role assignment (P8.5)" }) },
+          { label: "Timeout", icon: "clock", onClick: () => timeoutMemberFlow(data, p) },
           { sep: true },
-          { label: "Kick from server", icon: "leave", danger: true, onClick: () => toast({ message: "Kicked" }) },
+          { label: "Kick from server", icon: "leave", danger: true, onClick: () => confirmModerate(data, p, "kick") },
+          { label: "Ban from server", icon: "leave", danger: true, onClick: () => confirmModerate(data, p, "ban") },
         ]));
       }
       grp.append(row);
@@ -415,6 +418,42 @@ function membersRail(data) {
     rail.append(grp);
   }
   return rail;
+}
+
+// Timeout: pick a duration → timeout_member(until). Anchored to the member's row.
+function timeoutMemberFlow(data, p) {
+  const DUR = [["5 minutes", 5 * 60e3], ["1 hour", 60 * 60e3], ["1 day", 24 * 60 * 60e3], ["1 week", 7 * 24 * 60 * 60e3]];
+  const anchor = document.querySelector(`.mrow[data-uid="${p.id}"]`) || document.body;
+  openMenu(anchor, DUR.map(([label, ms]) => ({ label: `Time out ${label}`, icon: "clock", onClick: async () => {
+    try { const until = new Date(Date.now() + ms).toISOString(); if (!isDemo()) await timeoutMember(data.server.id, p.id, until); toast({ message: `${p.name} timed out for ${label}`, icon: "clock" }); }
+    catch (e) { toast({ message: e?.message || "Couldn’t time out the member" }); }
+  } })));
+}
+
+// Kick / Ban confirm (danger) → the admin RPC, then drop the member's row from the rail.
+function confirmModerate(data, p, kind) {
+  const isBan = kind === "ban";
+  const reason = el("input", { placeholder: "e.g. spamming #beats", "aria-label": "Reason" });
+  const go = Button({ label: isBan ? "Ban" : "Kick", variant: "danger" });
+  const cancel = Button({ label: "Cancel", variant: "ghost" });
+  const body = el("div", {}, [
+    el("p", { style: "color:var(--soft);font-size:var(--fs-sm);line-height:1.5;margin:2px 0 4px" }, [isBan
+      ? `This removes ${p.name} from ${data.server.name} and blocks their account from rejoining on any invite link.`
+      : `This removes ${p.name} from ${data.server.name}. They can rejoin on a fresh invite.`]),
+    el("label.ulab", {}, ["Reason ", el("span", { style: "font-weight:400;color:var(--muted)" }, ["saved to the audit log"])]),
+    el(".field", {}, [reason]),
+  ]);
+  const { close } = openModal({ title: `${isBan ? "Ban" : "Kick"} ${p.name}?`, body, footer: [cancel, go] });
+  cancel.addEventListener("click", () => close());
+  go.addEventListener("click", async () => {
+    if (go.disabled) return; go.disabled = true;
+    try {
+      if (!isDemo()) { isBan ? await banMember(data.server.id, p.id, reason.value.trim()) : await kickMember(data.server.id, p.id); }
+      document.querySelector(`.mrow[data-uid="${p.id}"]`)?.remove();
+      close();
+      toast({ message: isBan ? `${p.name} banned` : `${p.name} removed`, icon: "check" });
+    } catch (e) { toast({ message: e?.message || "Couldn’t complete the action" }); go.disabled = false; }
+  });
 }
 
 // ── thread pane (P4.8) ──────────────────────────────────────────────────────
