@@ -1037,6 +1037,43 @@ export async function banMember(serverId, targetUser, reason) {
   const { error } = await supabase.rpc("ban_member", { server_id: serverId, target_user: targetUser, reason: reason || null });
   if (error) throw new Error(error.message || "Couldn’t ban the member");
 }
+// ── Create / join a server (P9) ──────────────────────────────────────────────
+// Create a server ENTIRELY client-side: has_perm() grants the server owner (owner_id) every
+// permission, so each insert passes its own RLS in turn — no RPC needed. Order matters:
+// server → owner membership (sm_insert=is_server_admin, true for the owner) → the @everyone
+// default role (permissions = everyone_perms() = 113664, the non-admin baseline) → starter
+// channels. NOTE: these are separate inserts, not one transaction — a mid-sequence failure
+// (unlikely: only the owner's own network) would leave a partial server; a future atomic
+// create_server RPC would harden it. `everyone_perms()` is inlined as 113664 (see schema-02).
+const EVERYONE_PERMS = 113664;
+export async function createServer(name, channels = ["general"]) {
+  const clean = (name || "").trim();
+  if (!clean) throw new Error("A server name is required");
+  if (isDemo()) return { id: "new-server", name: clean };
+  const user = session();
+  if (!user) throw new Error("Sign in to create a server");
+  const { data: srv, error } = await supabase.from("servers").insert({ name: clean, owner_id: user.id }).select("id,name").single();
+  if (error) throw new Error(error.message || "Couldn’t create the server");
+  const { error: me } = await supabase.from("server_members").insert({ server_id: srv.id, user_id: user.id, color: 1 });
+  if (me) throw new Error(me.message || "Couldn’t set up your membership");
+  await supabase.from("roles").insert({ server_id: srv.id, name: "everyone", is_default: true, permissions: EVERYONE_PERMS, position: 0 });
+  const names = (channels.length ? channels : ["general"]).map((n) => n.trim().toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "")).filter(Boolean);
+  await supabase.from("channels").insert((names.length ? names : ["general"]).map((n, i) => ({ server_id: srv.id, name: n, kind: "text", position: i })));
+  clearWorkspaceCache();   // the rail must re-read to show the new server
+  return srv;
+}
+
+// Join a server by an invite code or a pasted invite link (join_via_invite RPC).
+export async function joinServer(input) {
+  const code = String(input || "").trim().split("?")[0].split("/").filter(Boolean).pop();
+  if (!code) throw new Error("Paste an invite link or code");
+  if (isDemo()) return { id: "joined", name: "the server" };
+  const { data, error } = await supabase.rpc("join_via_invite", { code });
+  if (error) throw new Error(/expired|revoked|invalid|full|not found|no such/i.test(error.message || "") ? "That invite link isn’t valid anymore" : (error.message || "Couldn’t join the server"));
+  clearWorkspaceCache();
+  return data;
+}
+
 // Create a channel — a direct `channels` insert, fenced by `ch_write` (manage_channels). The
 // name is normalised to a handle (lowercase, dashes). Returns the new {id,name} so the caller
 // can navigate into it.

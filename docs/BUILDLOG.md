@@ -1409,3 +1409,31 @@ NEXT: channel **reorder persistence** (`reorder_channels` RPC — the drag UI ex
   storage/billing. Standing untestable/blocked: Realtime, permalinks, P9 create/join (new RPCs).
   Server-management is now substantial: create channel · channel settings · member
   timeout/kick/ban · role assignment.
+
+## 2026-08-24 — P9.1 Create + Join server (client-side, no new RPC)
+IN PROGRESS: (cleared)
+DONE: the single biggest product gap — **you can now create and join servers** — closed WITHOUT
+  new backend. Key insight: `has_perm()` grants the server **owner** (owner_id) every permission,
+  so a create can be done as a sequence of client inserts each passing its own RLS:
+  `createServer(name, channels)` inserts the **server** (servers_insert = owner) → **owner
+  membership** (sm_insert = is_server_admin, true for the owner) → the **@everyone default role**
+  (permissions = `everyone_perms()` = **113664**, inlined) → **starter channels** (ch_write =
+  owner). `joinServer(link)` extracts the code from a pasted link and calls the existing
+  `join_via_invite` RPC. Both clear the workspace cache so the rail re-reads. Wired from the rail
+  **＋ menu**: Create server (name + comma-separated starter channels) and Join by link (invite
+  input) modals → on success navigate into the server (demo toasts, since its server set is
+  fixed); "Add friend" now routes to /messages. NOTE: create is 4 non-atomic inserts — a
+  mid-sequence failure (owner's own network only) would leave a partial server; a future atomic
+  `create_server` RPC would harden it (documented in the code).
+  Verified: `verify-workspace.mjs` +`server-create-join` — the ＋ menu opens both modals, filling
+  + submitting closes each. feed/dms/explorer/gallery regression GREEN (shell.js is shared),
+  zero app console errors. Create modal screenshotted (works end-to-end in demo).
+GOTCHA AX: shell.js ALREADY imported `isDemo` and defined `withDemo` — my additions duplicated
+  both → "Identifier 'isDemo' has already been declared" (a hard pageerror blanking the rail).
+  Always grep the target module for a name before importing/defining it (the repo's #1 rule).
+NEXT: server **icon/cover** upload on create (R2, like avatars); an in-app **invite-link**
+  create/copy (create_invite — the reverse of join); the `/create` full-screen route is now
+  vestigial (the ＋ uses a modal). Standing: Realtime, permalinks, storage/billing, audit log.
+  **The core product is now feature-complete end-to-end** on `preview`: create/join servers ·
+  channels + settings · chat (send/react/reply/edit/delete/pin) · moderation + roles · files
+  (explorer/details/upload/download/share) · feed · profile · DMs · friends · notifications.

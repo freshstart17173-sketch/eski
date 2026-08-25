@@ -117,6 +117,30 @@ const CASES = [
     if ((await p.$$(".mem .mrow")).length !== before - 1) return "confirming Kick should drop the member row";
     return null;
   }],
+  ["server-create-join", "/s/lb/c/beats?demo=1", "light", async (p) => {
+    await p.click('.rail .railbtn[title="Create or join a server"]');
+    await p.waitForTimeout(120);
+    const items = await p.$$eval(".menu.open button", (bs) => bs.map((b) => b.textContent.trim()));
+    for (const w of ["Create server", "Join by link"]) if (!items.some((t) => t.includes(w))) return `+ menu missing "${w}"`;
+    for (const b of await p.$$(".menu.open button")) { if ((await b.textContent()).includes("Create server")) { await b.click(); break; } }
+    await p.waitForTimeout(150);
+    if (!(await $(p, '.scrim .modal input[aria-label="Server name"]'))) return "Create server modal should open";
+    await p.fill('.scrim .modal input[aria-label="Server name"]', "Test Studio");
+    await p.click('.scrim .modal button:has-text("Create server")');
+    await p.waitForTimeout(150);
+    if (await $(p, ".scrim .modal")) return "creating should close the modal (demo toasts)";
+    // Join by link
+    await p.click('.rail .railbtn[title="Create or join a server"]');
+    await p.waitForTimeout(120);
+    for (const b of await p.$$(".menu.open button")) { if ((await b.textContent()).includes("Join by link")) { await b.click(); break; } }
+    await p.waitForTimeout(150);
+    if (!(await $(p, '.scrim .modal input[aria-label="Invite link"]'))) return "Join modal should open";
+    await p.fill('.scrim .modal input[aria-label="Invite link"]', "join.eski.lol/late-bloom-77");
+    await p.click('.scrim .modal button:has-text("Join")');
+    await p.waitForTimeout(150);
+    if (await $(p, ".scrim .modal")) return "joining should close the modal (demo toasts)";
+    return null;
+  }],
   ["channel-settings", "/s/lb/c/beats?demo=1", "light", async (p) => {
     const row = await p.$("nav.chan .crow");
     await row.hover();
