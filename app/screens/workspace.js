@@ -15,7 +15,7 @@ import { el, Avatar, IconButton, openMenu, closeMenus, toast, openModal, Button 
 import { iconEl } from "../icons.js";
 import { navigate } from "../router.js";
 import { avatarUrl } from "../cards.js";
-import { isDemo, shapeMessage, loadThread, toggleReaction, deleteMessage, pinMessage, editMessage, kickMember, timeoutMember, banMember, setMemberRoles, createChannel, updateChannel, createInvite, leaveServer, deleteServer } from "../data.js";
+import { isDemo, shapeMessage, loadThread, toggleReaction, deleteMessage, pinMessage, editMessage, kickMember, timeoutMember, banMember, setMemberRoles, createChannel, updateChannel, createInvite, leaveServer, deleteServer, loadServerPrefs, setServerPrefs } from "../data.js";
 import { subscribeChannelMessages, subscribeTyping, sendTyping, subscribeServerPresence, markRead, sendMessage } from "../realtime.js";
 import { openUpload } from "./upload.js";
 
@@ -206,7 +206,7 @@ export function channelColumn(data, view) {
     const items = [];
     if (data.isAdmin) items.push({ label: "Server settings", icon: "settings", onClick: () => navigate(`/s/${data.server.id}/settings`) });
     items.push({ label: "Invite people", icon: "plus", onClick: () => inviteFlow(data) });
-    items.push({ label: "Notification settings", icon: "bell", onClick: () => toast({ message: "Notifications (P8)" }) });
+    items.push({ label: "Notification settings", icon: "bell", onClick: () => notifSettingsFlow(data) });
     items.push({ sep: true });
     items.push(data.isOwner
       ? { label: "Delete server", icon: "trash", danger: true, onClick: () => deleteServerFlow(data) }
@@ -451,6 +451,30 @@ function timeoutMemberFlow(data, p) {
     try { const until = new Date(Date.now() + ms).toISOString(); if (!isDemo()) await timeoutMember(data.server.id, p.id, until); toast({ message: `${p.name} timed out for ${label}`, icon: "clock" }); }
     catch (e) { toast({ message: e?.message || "Couldn’t time out the member" }); }
   } })));
+}
+
+// Server notification settings (server_prefs) — notify level + suppress-@everyone → upsert.
+// Reads the current prefs first (live), then opens the modal pre-filled.
+async function notifSettingsFlow(data) {
+  let level = "all", suppress = false;
+  if (!isDemo()) { try { const cur = await loadServerPrefs(data.server.id); level = cur.level || "all"; suppress = !!cur.suppress_everyone; } catch {} }
+  const LEVELS = [["all", "All messages"], ["mentions", "Only @mentions"], ["none", "Nothing"]];
+  const levelBtn = el("button.selbtn", { style: "width:100%;justify-content:space-between", "aria-haspopup": "menu" }, [el("span", {}, [LEVELS.find(([v]) => v === level)[1]]), iconEl("chev", "sm")]);
+  levelBtn.addEventListener("click", () => openMenu(levelBtn, LEVELS.map(([v, l]) => ({ label: l, onClick: () => { level = v; levelBtn.querySelector("span").textContent = l; } }))));
+  const supCb = el("input", { type: "checkbox", "aria-label": "Suppress @everyone" }); supCb.checked = suppress;
+  const save = Button({ label: "Save", variant: "primary" });
+  const cancel = Button({ label: "Cancel", variant: "ghost" });
+  const body = el("div", {}, [
+    el("label.ulab", {}, ["Notify me about"]), levelBtn,
+    el("label.setrow2", { style: "display:flex;align-items:center;gap:10px;margin-top:14px;cursor:pointer;font-size:var(--fs-sm)" }, [supCb, el("span", {}, ["Suppress @everyone and @here"])]),
+  ]);
+  const { close } = openModal({ title: `${data.server.name} notifications`, body, footer: [cancel, save] });
+  cancel.addEventListener("click", () => close());
+  save.addEventListener("click", async () => {
+    if (save.disabled) return; save.disabled = true;
+    try { if (!isDemo()) await setServerPrefs(data.server.id, { level, suppress_everyone: supCb.checked }); close(); toast({ message: "Notification settings saved", icon: "check" }); }
+    catch (e) { toast({ message: e?.message || "Couldn’t save" }); save.disabled = false; }
+  });
 }
 
 // Delete server (owner) — a type-to-confirm (type the exact name) → deleteServer → Feed. FK

@@ -141,6 +141,19 @@ const CASES = [
     if (await $(p, ".scrim .modal")) return "joining should close the modal (demo toasts)";
     return null;
   }],
+  ["notif-settings", "/s/lb/c/beats?demo=1", "light", async (p) => {
+    await p.click("nav.chan .srvbar");
+    await p.waitForTimeout(120);
+    for (const b of await p.$$(".menu.open button")) { if ((await b.textContent()).includes("Notification settings")) { await b.click(); break; } }
+    await p.waitForTimeout(150);
+    if (!(await $(p, ".scrim .modal .selbtn"))) return "notif settings should open with a level selector";
+    if (!(await $(p, '.scrim .modal input[aria-label="Suppress @everyone"]'))) return "suppress-@everyone toggle missing";
+    await p.click('.scrim .modal input[aria-label="Suppress @everyone"]');
+    await p.click('.scrim .modal button:has-text("Save")');
+    await p.waitForTimeout(150);
+    if (await $(p, ".scrim .modal")) return "saving notif settings should close the modal";
+    return null;
+  }],
   ["invite", "/s/lb/c/beats?demo=1", "light", async (p) => {
     await p.click("nav.chan .srvbar");
     await p.waitForTimeout(120);

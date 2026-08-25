@@ -1063,6 +1063,23 @@ export async function createServer(name, channels = ["general"]) {
   return srv;
 }
 
+// Per-user server notification prefs (server_prefs, sp_all = own). level: all/mentions/none;
+// suppress_everyone hides @everyone/@here pings. Read the current, upsert on save.
+export async function loadServerPrefs(serverId) {
+  if (isDemo()) return { level: "all", suppress_everyone: false };
+  const user = session();
+  if (!user) return { level: "all", suppress_everyone: false };
+  const { data } = await supabase.from("server_prefs").select("level,suppress_everyone").eq("user_id", user.id).eq("server_id", serverId).maybeSingle();
+  return data || { level: "all", suppress_everyone: false };
+}
+export async function setServerPrefs(serverId, patch) {
+  if (isDemo()) return;
+  const user = session();
+  if (!user) throw new Error("Sign in");
+  const { error } = await supabase.from("server_prefs").upsert({ user_id: user.id, server_id: serverId, ...patch }, { onConflict: "user_id,server_id" });
+  if (error) throw new Error(error.message || "Couldn’t save your notification settings");
+}
+
 // Delete a server (owner only, servers_delete = owner_id). FK cascades remove its members,
 // channels, works, invites, etc. Irreversible — the UI gates it behind a type-to-confirm.
 export async function deleteServer(serverId) {

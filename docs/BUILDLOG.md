@@ -1517,3 +1517,16 @@ DONE: the server menu now offers **Delete server** to the owner (was Leave-only)
 NEXT: invite **management** (list/expiry/revoke — `server_invites` read+update exist); server
   **icon/cover** + profile **banner** uploads (R2); a quick-switcher (⌘K). Standing: Realtime,
   permalinks, billing (Stripe), audit log.
+
+## 2026-08-24 — P8.4 Server notification settings
+IN PROGRESS: (cleared)
+DONE: the server menu's **Notification settings** (was a `toast` stub) opens a real modal —
+  **notify level** (All messages / Only @mentions / Nothing) + **suppress @everyone/@here** →
+  `setServerPrefs(serverId, {level, suppress_everyone})` (upsert `server_prefs`, sp_all = own).
+  `loadServerPrefs` pre-fills the current values on open (live).
+  Verified: `verify-workspace.mjs` +`notif-settings` — the menu opens the modal (level selector
+  + suppress toggle), toggling + Save closes it. All workspace cases GREEN both themes, zero app
+  console errors.
+NEXT: channel-level notif prefs (`channel_prefs`); invite management; icon/cover/banner uploads.
+  Standing: Realtime, permalinks, billing, audit log. The server menu is now fully wired
+  (settings · invite · notification settings · leave/delete).
