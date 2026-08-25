@@ -1299,3 +1299,17 @@ NEXT: **P8.5 Manage roles** (load the server's roles → `set_member_roles` chec
   **Server settings** screens (general/roles/moderation/channels — many are gallery panels not
   yet ported), the audit log view. Also still: DM/notification **Realtime**, message inline
   edit/permalinks, P9 create/join (needs new RPCs), P5.19 avatars-from-key.
+
+## 2026-08-24 — P7.3b Notification row navigation
+IN PROGRESS: (cleared)
+DONE: clicking a notification row now **navigates to its target** (and marks it read). A
+  best-effort `href` is computed in `shapeNotif` (`notifHref`): a friend request → `/messages`,
+  any server-scoped event → `/s/{server_id}`; exact channel/message/post permalinks come with
+  permalink routing later (null = mark-read only, no nav). The row's ✓ still marks read WITHOUT
+  navigating (stopPropagation). Demo notifications carry explicit hrefs.
+  Verified: `verify-notifications.mjs` `read-flow` updated — the ✓ marks a row read, Mark all
+  read clears all, and clicking a row navigates to `/s/lb`. All notifications cases GREEN both
+  themes, zero app console errors.
+NEXT: exact permalink targets (channel/message/post) once a permalink route exists; a bell
+  entry/badge in the rail. Remaining: Realtime (DM/notif/reaction), message inline edit, P8.5
+  role assignment + server settings screens, P9 create/join (new RPCs), P5.19 avatars-from-key.

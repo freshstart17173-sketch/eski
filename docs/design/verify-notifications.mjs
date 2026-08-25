@@ -69,15 +69,22 @@ await run("read-flow", "light", async (p) => {
   if ((await count(p, ".notif .nrow")) !== 1) return "the Mentions tab should show only mentions";
   await p.click('.notif .ntab:has-text("All")');
   await p.waitForTimeout(120);
-  // click a row → it loses unread
+  // mark one read via its ✓ (hover-revealed; stopPropagation → no navigate)
   const beforeUnread = await count(p, ".notif .nrow.unread");
-  await p.click(".notif .nrow.unread");
+  const row = await p.$(".notif .nrow.unread");
+  await row.hover();
+  await p.waitForTimeout(80);
+  await (await row.$(".donebtn")).click();
   await p.waitForTimeout(120);
-  if ((await count(p, ".notif .nrow.unread")) !== beforeUnread - 1) return "clicking an unread row should mark it read";
+  if ((await count(p, ".notif .nrow.unread")) !== beforeUnread - 1) return "the ✓ should mark a row read";
   // Mark all read → zero unread
   await p.click(".notif .notifhd .mark");
   await p.waitForTimeout(120);
   if ((await count(p, ".notif .nrow.unread")) !== 0) return "Mark all read should clear every unread dot";
+  // clicking a row navigates to its target (n1 → /s/lb)
+  await p.click(".notif .nrow");
+  await p.waitForTimeout(200);
+  if (!/\/s\/lb/.test(p.url())) return `clicking a notification should navigate to its target, url=${p.url()}`;
   return null;
 });
 

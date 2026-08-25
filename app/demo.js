@@ -320,13 +320,13 @@ export function demoDMs() {
 
 // Notifications demo fixture (P7.3) — in-app notifications of every kind, some unread.
 export function demoNotifications() {
-  const n = (id, kind, actor, icon, text, context, excerpt, time, read) => ({ id, kind, actor, avatar_key: null, icon, text, context, excerpt, time, read });
+  const n = (id, kind, actor, icon, text, context, excerpt, time, read, href) => ({ id, kind, actor, avatar_key: null, icon, text, context, excerpt, time, read, href });
   const items = [
-    n("n1", "mention", "rae", "at", "mentioned you in #beats", "Late Bloom LP", "@jax can you re-cut the bridge drums before the session?", "2:31 PM", false),
-    n("n2", "comment", "mira", "comment", "left a comment on sh040_comp.mov", "Specter", "near building edge is ghosting, needs a garbage matte", "1:04 PM", false),
-    n("n3", "friend", "lin", "user", "sent you a friend request", null, "", "12:20 PM", false),
-    n("n4", "join", "nel", "user", "joined Late Bloom LP from your invite link", "Late Bloom LP", "", "Yesterday", true),
-    n("n5", "reaction", "dev", "smile", "reacted 🔥 to your message", "Late Bloom LP", "", "Tue", true),
+    n("n1", "mention", "rae", "at", "mentioned you in #beats", "Late Bloom LP", "@jax can you re-cut the bridge drums before the session?", "2:31 PM", false, "/s/lb"),
+    n("n2", "comment", "mira", "comment", "left a comment on sh040_comp.mov", "Specter", "near building edge is ghosting, needs a garbage matte", "1:04 PM", false, "/s/sp"),
+    n("n3", "friend", "lin", "user", "sent you a friend request", null, "", "12:20 PM", false, "/messages"),
+    n("n4", "join", "nel", "user", "joined Late Bloom LP from your invite link", "Late Bloom LP", "", "Yesterday", true, "/s/lb"),
+    n("n5", "reaction", "dev", "smile", "reacted 🔥 to your message", "Late Bloom LP", "", "Tue", true, "/s/lb"),
   ];
   return {
     needsAuth: false, live: false, source: "notifications", me, dmUnread: 3, server: null,

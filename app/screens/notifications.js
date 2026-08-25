@@ -5,9 +5,11 @@
 
 import { el, toast } from "../ui.js";
 import { iconEl } from "../icons.js";
+import { navigate } from "../router.js";
 import { markNotifRead, markAllNotifsRead } from "../data.js";
 
 function isDemoQS() { return new URLSearchParams(location.search).get("demo") === "1"; }
+function withDemo(path) { return isDemoQS() ? path + (path.includes("?") ? "&" : "?") + "demo=1" : path; }
 const TABS = [["all", "All"], ["mentions", "Mentions"]];
 
 export function renderNotifications(data) {
@@ -36,7 +38,7 @@ export function renderNotifications(data) {
     if (!shown.length) { panel.replaceChildren(emptyState("bell", "You're all caught up", state.tab === "mentions" ? "Mentions of you show up here." : "Mentions, comments, reactions, joins, and friend requests land here.")); return; }
     panel.replaceChildren(...shown.map((item) => {
       const done = el("button.donebtn", { title: "Mark read", onClick: (e) => { e.stopPropagation(); markRead(item, row); } }, [iconEl("check", "sm")]);
-      const row = el(".nrow" + (item.read ? "" : ".unread"), { onClick: () => markRead(item, row) }, [
+      const row = el(".nrow" + (item.read ? "" : ".unread"), { onClick: () => { markRead(item, row); if (item.href) navigate(withDemo(item.href)); } }, [
         el(".nic", {}, [iconEl(item.icon || "bell", "sm")]),
         el(".nbd", {}, [
           el(".ntx", {}, [el("b", {}, [item.actor]), " " + item.text]),

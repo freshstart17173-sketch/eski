@@ -927,6 +927,14 @@ export async function sendDM(dmChannelId, body) {
 // row text is built from `kind` + the actor; the excerpt renders as a quote. No member hue.
 const NOTIF_VERB = { mention: "mentioned you", comment: "commented on your post", join: "joined", reaction: "reacted to your message", invite: "invited you", friend: "sent you a friend request" };
 const NOTIF_ICON = { mention: "at", comment: "comment", join: "user", reaction: "smile", invite: "mail", friend: "user" };
+// Where a notification leads when clicked (best-effort v1): a friend request → Messages, any
+// server-scoped event → that server. Exact target permalinks (channel/message/post) arrive
+// with permalink routing later; null means the row just marks read without navigating.
+function notifHref(r) {
+  if (r.kind === "friend") return "/messages";
+  if (r.server_id) return `/s/${r.server_id}`;
+  return null;
+}
 function shapeNotif(r, actById, srvById) {
   const a = actById[r.actor_id];
   const actor = a?.name || a?.handle || "someone";
@@ -935,7 +943,7 @@ function shapeNotif(r, actById, srvById) {
     id: r.id, kind: r.kind, actor, avatar_key: a?.avatar_key || null,
     text: NOTIF_VERB[r.kind] || "sent you a notification",
     icon: NOTIF_ICON[r.kind] || "bell",
-    context: srv, excerpt: r.excerpt || "",
+    context: srv, excerpt: r.excerpt || "", href: notifHref(r),
     time: fmtWhen(r.created_at), read: !!r.read_at,
   };
 }
