@@ -79,7 +79,7 @@ async function loadServerBundle(activeServer) {
 
   const [{ data: memRows }, { data: roleRows }, { data: chans }] = await Promise.all([
     supabase.from("server_members").select("user_id,color,status").eq("server_id", sid),
-    supabase.from("member_roles").select("user_id, role:roles(permissions)").eq("server_id", sid),
+    supabase.from("member_roles").select("user_id, role:roles(id,name,color,permissions,is_default)").eq("server_id", sid),
     supabase.from("channels").select("id,name,kind,position,slowmode_sec,post_policy").eq("server_id", sid).order("position"),
   ]);
   // profiles are fetched SEPARATELY, not embedded: server_members has no FK to
@@ -92,8 +92,18 @@ async function loadServerBundle(activeServer) {
   const profById = {};
   for (const p of profRows || []) profById[p.id] = p;
 
-  const adminBits = {};
-  for (const r of roleRows || []) if (r.role && (BigInt(r.role.permissions) & MANAGE_SERVER)) adminBits[r.user_id] = true;
+  // member_roles → roles is a real FK, so the embed works. Derive: admin bits (manage_server),
+  // the server's assignable (non-default) roles, and each member's current non-default role ids.
+  const adminBits = {}, memberRoleIds = {}, rolesById = {};
+  for (const r of roleRows || []) {
+    if (!r.role) continue;
+    if (BigInt(r.role.permissions) & MANAGE_SERVER) adminBits[r.user_id] = true;
+    if (!r.role.is_default) {
+      (memberRoleIds[r.user_id] ||= []).push(r.role.id);
+      rolesById[r.role.id] = { id: r.role.id, name: r.role.name, color: r.role.color || 1 };
+    }
+  }
+  const serverRoles = Object.values(rolesById);
 
   const membersById = {};
   for (const m of memRows || []) {
@@ -103,6 +113,7 @@ async function loadServerBundle(activeServer) {
       id: m.user_id, name: nm, handle: p?.handle || nm, colorIdx: m.color || 1, initials: initials(nm),
       presence: p?.presence_state || "offline", doing: p?.status_text || "",
       admin: m.user_id === activeServer.owner_id || !!adminBits[m.user_id],
+      roleIds: memberRoleIds[m.user_id] || [],
     };
   }
   const admins = [], members = [];
@@ -120,7 +131,7 @@ async function loadServerBundle(activeServer) {
     voiceCh.length && { kind: "voice", label: "Voice", channels: voiceCh.map((c) => ({ id: c.id, name: c.name, voice: [] })) },
   ].filter(Boolean);
 
-  const bundle = { sid, membersById, memberGroups, channelGroups, textCh, server: { id: sid, name: activeServer.name, initials: initials(activeServer.name) } };
+  const bundle = { sid, membersById, memberGroups, channelGroups, textCh, serverRoles, server: { id: sid, name: activeServer.name, initials: initials(activeServer.name) } };
   _cache.servers.set(sid, bundle);
   return bundle;
 }
@@ -142,7 +153,7 @@ export async function loadWorkspace({ serverId, channelId } = {}) {
   // server-level data (members/roles/channels/profiles) is cached per server — a
   // channel switch within the same server then only fetches that channel's messages.
   const bundle = await loadServerBundle(activeServer);
-  const { membersById, memberGroups, channelGroups, textCh } = bundle;
+  const { membersById, memberGroups, channelGroups, textCh, serverRoles } = bundle;
   const meMember = membersById[user.id];
   const me = meMember
     ? { id: user.id, name: meMember.name, initials: meMember.initials, handle: meMember.handle || meMember.name, colorIdx: meMember.colorIdx }
@@ -194,7 +205,7 @@ export async function loadWorkspace({ serverId, channelId } = {}) {
     channelGroups,
     channel: activeChannel ? { id: activeChannel.id, name: activeChannel.name, topic: "", pins: pinCount, files: 0, slowmode: activeChannel.slowmode_sec, postPolicy: activeChannel.post_policy } : null,
     messages, typing: [], pins, files: [], memberGroups, thread: null,
-    membersById,
+    membersById, serverRoles,
     activeServerId: sid, activeChannelId: activeChannel?.id || null,
   };
 }
@@ -1017,6 +1028,12 @@ export async function banMember(serverId, targetUser, reason) {
   if (isDemo()) return;
   const { error } = await supabase.rpc("ban_member", { server_id: serverId, target_user: targetUser, reason: reason || null });
   if (error) throw new Error(error.message || "Couldn’t ban the member");
+}
+// Replace a member's assignable (non-default) roles (set_member_roles RPC, manage_roles-gated).
+export async function setMemberRoles(serverId, targetUser, roleIds) {
+  if (isDemo()) return;
+  const { error } = await supabase.rpc("set_member_roles", { server_id: serverId, target_user: targetUser, role_ids: roleIds });
+  if (error) throw new Error(error.message || "Couldn’t update the member's roles");
 }
 
 // Toggle your reaction to a channel message (toggle_reaction RPC — adds if absent, removes if

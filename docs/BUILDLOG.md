@@ -1313,3 +1313,20 @@ DONE: clicking a notification row now **navigates to its target** (and marks it 
 NEXT: exact permalink targets (channel/message/post) once a permalink route exists; a bell
   entry/badge in the rail. Remaining: Realtime (DM/notif/reaction), message inline edit, P8.5
   role assignment + server settings screens, P9 create/join (new RPCs), P5.19 avatars-from-key.
+
+## 2026-08-24 — P8.5 Manage roles (assign server roles to a member)
+IN PROGRESS: (cleared)
+DONE: the members-rail **Manage roles** action (was a marker) opens a **checklist** of the
+  server's assignable (non-default) roles, pre-checked for the member's current ones → Save
+  runs `set_member_roles(server_id, target_user, role_ids)` (manage_roles-gated server-side).
+  `loadServerBundle` now derives `serverRoles` (non-default {id,name,color}) and each member's
+  `roleIds` from the `member_roles→roles` embed (a real FK, so the embed is fine); both flow
+  into the workspace data + member shapes. Role colour swatches are **square** (`.rsw` --r —
+  round is avatars/dots only). Demo seeds 3 roles (Producer/Vocalist/Mixer) + a member's roleIds.
+  Verified: `verify-workspace.mjs` `moderation` extended — Manage roles lists the 3 roles,
+  toggling + Save closes the modal; the Kick flow still drops the row. All workspace cases GREEN
+  both themes, gallery GREEN, zero app console errors.
+NEXT: **Server settings** screens (general/roles-editor/moderation/channels — gallery panels
+  not yet ported; a roles *editor* to create/rename/recolour roles + set permissions is the big
+  one), the **audit log** view. Also outstanding: DM/notif/reaction **Realtime**, message inline
+  edit/permalinks, **P9 create/join** (needs new RPCs), P5.19 avatars-from-key.

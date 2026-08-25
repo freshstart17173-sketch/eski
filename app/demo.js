@@ -27,6 +27,11 @@ export function demoWorkspace() {
   return {
     me,
     isAdmin: true,                      // jax is an admin of this server
+    serverRoles: [
+      { id: "r-producer", name: "Producer", color: 3 },
+      { id: "r-vocalist", name: "Vocalist", color: 1 },
+      { id: "r-mixer", name: "Mixer", color: 5 },
+    ],
     // server rail
     servers: [
       { id: "lb", name: "Late Bloom LP", initials: "LB", active: true },
@@ -113,8 +118,8 @@ export function demoWorkspace() {
         { ...P.rae, doing: "recording", presence: "online" },
       ] },
       { label: "Members", members: [
-        { ...P.dev, doing: "in FL Studio", presence: "online" },
-        { ...P.tomo, doing: "reviewing the beat", presence: "online" },
+        { ...P.dev, doing: "in FL Studio", presence: "online", roleIds: ["r-producer"] },
+        { ...P.tomo, doing: "reviewing the beat", presence: "online", roleIds: [] },
         { ...P.kofi, doing: "offline", presence: "offline" },
         { ...P.nel,  doing: "offline", presence: "offline" },
       ] },

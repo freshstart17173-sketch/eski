@@ -96,6 +96,17 @@ const CASES = [
     await p.waitForTimeout(120);
     const items = await p.$$eval(".menu.open button", (bs) => bs.map((b) => b.textContent.trim()));
     for (const w of ["Timeout", "Kick from server", "Ban from server"]) if (!items.some((t) => t.includes(w))) return `member menu missing "${w}" (got ${JSON.stringify(items)})`;
+    // Manage roles → a checklist of the 3 demo roles opens and saves
+    for (const b of await p.$$(".menu.open button")) { if ((await b.textContent()).includes("Manage roles")) { await b.click(); break; } }
+    await p.waitForTimeout(150);
+    if ((await p.$$(".scrim .modal .rolelist .rolerow")).length !== 3) return "Manage roles should list the 3 server roles";
+    await p.click(".scrim .modal .rolerow input");   // toggle a role
+    await p.click('.scrim .modal button:has-text("Save roles")');
+    await p.waitForTimeout(150);
+    if (await $(p, ".scrim .modal")) return "saving roles should close the modal";
+    // re-open the member menu for the Kick flow below
+    await target.click();
+    await p.waitForTimeout(120);
     // Kick → confirm modal → confirming drops the member row
     const before = (await p.$$(".mem .mrow")).length;
     for (const b of await p.$$(".menu.open button")) { if ((await b.textContent()).includes("Kick")) { await b.click(); break; } }

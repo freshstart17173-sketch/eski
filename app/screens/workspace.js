@@ -14,7 +14,7 @@
 import { el, Avatar, IconButton, openMenu, closeMenus, toast, openModal, Button } from "../ui.js";
 import { iconEl } from "../icons.js";
 import { navigate } from "../router.js";
-import { isDemo, shapeMessage, loadThread, toggleReaction, deleteMessage, pinMessage, kickMember, timeoutMember, banMember } from "../data.js";
+import { isDemo, shapeMessage, loadThread, toggleReaction, deleteMessage, pinMessage, kickMember, timeoutMember, banMember, setMemberRoles } from "../data.js";
 import { subscribeChannelMessages, subscribeTyping, sendTyping, subscribeServerPresence, markRead, sendMessage } from "../realtime.js";
 import { openUpload } from "./upload.js";
 
@@ -406,7 +406,7 @@ function membersRail(data) {
         row.style.cursor = "pointer";
         row.addEventListener("click", () => openMenu(row, [
           { header: p.name },
-          { label: "Manage roles", icon: "user", onClick: () => toast({ message: "Role assignment (P8.5)" }) },
+          { label: "Manage roles", icon: "user", onClick: () => openRolesModal(data, p) },
           { label: "Timeout", icon: "clock", onClick: () => timeoutMemberFlow(data, p) },
           { sep: true },
           { label: "Kick from server", icon: "leave", danger: true, onClick: () => confirmModerate(data, p, "kick") },
@@ -428,6 +428,31 @@ function timeoutMemberFlow(data, p) {
     try { const until = new Date(Date.now() + ms).toISOString(); if (!isDemo()) await timeoutMember(data.server.id, p.id, until); toast({ message: `${p.name} timed out for ${label}`, icon: "clock" }); }
     catch (e) { toast({ message: e?.message || "Couldn’t time out the member" }); }
   } })));
+}
+
+// Manage roles: a checklist of the server's assignable (non-default) roles, pre-checked for
+// the member's current ones → set_member_roles. Role swatches are SQUARE (--r) — round is
+// avatars/dots only.
+function openRolesModal(data, p) {
+  const roles = data.serverRoles || [];
+  const current = new Set(p.roleIds || []);
+  const boxes = roles.map((r) => {
+    const cb = el("input", { type: "checkbox", "aria-label": r.name }); cb.checked = current.has(r.id);
+    return { r, cb, row: el("label.rolerow", {}, [cb, el("span.rsw", { style: `background:var(--m${r.color || 1})` }), el("span", {}, [r.name])]) };
+  });
+  const save = Button({ label: "Save roles", variant: "primary" });
+  const cancel = Button({ label: "Cancel", variant: "ghost" });
+  const body = roles.length
+    ? el(".rolelist", {}, boxes.map((b) => b.row))
+    : el("p", { style: "color:var(--muted);font-size:var(--fs-sm)" }, ["This server has no assignable roles yet."]);
+  const { close } = openModal({ title: `Roles for ${p.name}`, body, footer: [cancel, save] });
+  cancel.addEventListener("click", () => close());
+  save.addEventListener("click", async () => {
+    if (save.disabled) return; save.disabled = true;
+    const ids = boxes.filter((b) => b.cb.checked).map((b) => b.r.id);
+    try { if (!isDemo()) await setMemberRoles(data.server.id, p.id, ids); p.roleIds = ids; close(); toast({ message: "Roles updated", icon: "check" }); }
+    catch (e) { toast({ message: e?.message || "Couldn’t update roles" }); save.disabled = false; }
+  });
 }
 
 // Kick / Ban confirm (danger) → the admin RPC, then drop the member's row from the rail.
