@@ -1268,3 +1268,17 @@ NEXT: message-reaction **Realtime** + who-reacted tooltip; the owner-deferred **
   in-sandbox job). Buildable next without new backend: notification **row→target navigation**,
   the P5.19 **avatars-from-key** (member rail/comments/chat — invisible in demo, live-only),
   or **P8 moderation** if its kick/ban/timeout RPCs exist (check first).
+
+## 2026-08-24 — P4.13 Channel message ⋯ actions (Delete + Pin)
+IN PROGRESS: (cleared)
+DONE: the channel message ⋯ menu's **Delete** and **Pin to channel** were `toast` stubs; both
+  are real now. `deleteMessage(id)` tombstones (`messages.deleted_at`, `msg_update` = own or
+  moderator) and the row is removed from the stream optimistically; `pinMessage(id)` calls the
+  `pin_message` RPC (perm-gated server-side). **Edit** and **Copy link** stay honest markers
+  (inline edit UI + message permalinks are P4.13-follow / need a permalink route).
+  Verified: `verify-workspace.mjs` +`msg-menu` — the ⋯ menu lists Pin/Copy link, and Pin fires
+  clean. All workspace cases GREEN both themes, zero app console errors.
+NEXT: message **inline edit** + **permalinks**, pin **Realtime**/pins-panel refresh. The larger
+  backend-blocked pillars remain (**P9 create/join** needs new RPCs; **P8 moderation** RPCs
+  exist — ban/kick/timeout/set_member_roles — but need the member-popover/settings UI wired,
+  a good next chunk). Plus the deferred DM/thread message actions and P5.19 avatars-from-key.

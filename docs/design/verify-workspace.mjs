@@ -71,6 +71,21 @@ const CASES = [
     if (after <= before) return "adding an emoji should append a reaction chip";
     return null;
   }],
+  ["msg-menu", "/s/lb/c/beats?demo=1", "light", async (p) => {
+    const msg = await p.$(".stream .msg");
+    await msg.hover();
+    await p.waitForTimeout(80);
+    const acts = await msg.$$(".hoveracts button");
+    await acts[acts.length - 1].click();   // the ⋯ (More) hover action
+    await p.waitForTimeout(120);
+    const items = await p.$$eval(".menu.open button", (bs) => bs.map((b) => b.textContent.trim()));
+    if (!items.some((t) => t.includes("Pin to channel"))) return "message menu missing Pin to channel";
+    if (!items.some((t) => t.includes("Copy link"))) return "message menu missing Copy link";
+    // Pin fires without error (demo no-ops; the toast confirms wiring)
+    for (const b of await p.$$(".menu.open button")) { if ((await b.textContent()).includes("Pin to channel")) { await b.click(); break; } }
+    await p.waitForTimeout(100);
+    return null;
+  }],
   ["thread", "/s/lb/c/beats?demo=1&ws=thread", "light", async (p) =>
     (await has(p, ".threadpane .tpbody .msg", "thread pane")) ||
     (await has(p, ".threadpane .alsosend", "also-to-channel toggle")) ||

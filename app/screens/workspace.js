@@ -14,7 +14,7 @@
 import { el, Avatar, IconButton, openMenu, closeMenus, toast } from "../ui.js";
 import { iconEl } from "../icons.js";
 import { navigate } from "../router.js";
-import { isDemo, shapeMessage, loadThread, toggleReaction } from "../data.js";
+import { isDemo, shapeMessage, loadThread, toggleReaction, deleteMessage, pinMessage } from "../data.js";
 import { subscribeChannelMessages, subscribeTyping, sendTyping, subscribeServerPresence, markRead, sendMessage } from "../realtime.js";
 import { openUpload } from "./upload.js";
 
@@ -152,10 +152,19 @@ function reactionsBar(msg) {
 // the ⋯ menu: own message adds Edit/Delete; everyone gets Pin + Copy link
 function openMsgMenu(anchor, msg, own) {
   const items = [];
-  if (own) items.push({ label: "Edit message", icon: "pen", onClick: () => toast({ message: "Edit (P4.10)" }) });
-  items.push({ label: "Pin to channel", icon: "pin", onClick: () => toast({ message: "Pinned" }) });
-  items.push({ label: "Copy link", icon: "link", onClick: () => toast({ message: "Link copied" }) });
-  if (own) { items.push({ sep: true }); items.push({ label: "Delete message", icon: "trash", danger: true, onClick: () => toast({ message: "Deleted" }) }); }
+  if (own) items.push({ label: "Edit message", icon: "pen", onClick: () => toast({ message: "Inline edit (P4.13)" }) });
+  items.push({ label: "Pin to channel", icon: "pin", onClick: async () => {
+    try { if (!isDemo()) await pinMessage(msg.id); toast({ message: "Pinned to the channel", icon: "pin" }); }
+    catch (e) { toast({ message: e?.message || "Couldn’t pin" }); }
+  } });
+  items.push({ label: "Copy link", icon: "link", onClick: () => toast({ message: "Message links land with permalinks (P4.13)" }) });
+  if (own) {
+    items.push({ sep: true });
+    items.push({ label: "Delete message", icon: "trash", danger: true, onClick: async () => {
+      try { if (!isDemo()) await deleteMessage(msg.id); document.querySelector(`.msg[data-mid="${msg.id}"]`)?.remove(); toast({ message: "Message deleted" }); }
+      catch (e) { toast({ message: e?.message || "Couldn’t delete" }); }
+    } });
+  }
   openMenu(anchor, items);
 }
 

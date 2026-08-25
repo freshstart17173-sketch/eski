@@ -978,6 +978,20 @@ export async function markAllNotifsRead() {
   await supabase.from("notifications").update({ read_at: new Date().toISOString() }).eq("user_id", user.id).is("read_at", null);
 }
 
+// Delete your own channel message — a tombstone (deleted_at); loadWorkspace filters
+// `deleted_at is null`, so it drops from the stream. `msg_update` fences it (own or a
+// moderator). Pin a message to the channel via the pin_message RPC (perm-gated server-side).
+export async function deleteMessage(messageId) {
+  if (isDemo()) return;
+  const { error } = await supabase.from("messages").update({ deleted_at: new Date().toISOString() }).eq("id", messageId);
+  if (error) throw new Error(error.message || "Couldn’t delete the message");
+}
+export async function pinMessage(messageId) {
+  if (isDemo()) return;
+  const { error } = await supabase.rpc("pin_message", { message_id: messageId });
+  if (error) throw new Error(error.message || "Couldn’t pin the message");
+}
+
 // Toggle your reaction to a channel message (toggle_reaction RPC — adds if absent, removes if
 // present; returns true=added / false=removed). The caller flips the chip optimistically.
 export async function toggleReaction(messageId, emoji) {
