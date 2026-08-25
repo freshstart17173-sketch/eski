@@ -14,6 +14,7 @@
 import { el, Avatar, IconButton, openMenu, closeMenus, toast, openModal, Button } from "../ui.js";
 import { iconEl } from "../icons.js";
 import { navigate } from "../router.js";
+import { avatarUrl } from "../cards.js";
 import { isDemo, shapeMessage, loadThread, toggleReaction, deleteMessage, pinMessage, editMessage, kickMember, timeoutMember, banMember, setMemberRoles } from "../data.js";
 import { subscribeChannelMessages, subscribeTyping, sendTyping, subscribeServerPresence, markRead, sendMessage } from "../realtime.js";
 import { openUpload } from "./upload.js";
@@ -120,7 +121,7 @@ function messageRow(msg, data, { onOpenThread } = {}) {
   bd.append(rx.bar);   // reactions (empty bar renders nothing until one is added)
   if (msg.replies) bd.append(el(".reply", { onClick: () => onOpenThread?.(msg) }, [iconEl("reply", "sm"), `${msg.replies} replies`]));
 
-  return el(".msg", { "data-mid": msg.id }, [acts, Avatar({ name: msg.author.name, size: "sm" }), bd]);
+  return el(".msg", { "data-mid": msg.id }, [acts, Avatar({ name: msg.author.name, size: "sm", src: avatarUrl(msg.author.avatar_key) }), bd]);
 }
 
 // a message's reaction chips — toggle your own (toggle_reaction), add via the smile picker.
@@ -415,7 +416,7 @@ function membersRail(data) {
     const grp = el(".memg", {}, [el(".lb", {}, [`${g.label}, ${g.members.length}`])]);
     for (const p of g.members) {
       const off = p.presence === "offline";
-      const av = Avatar({ name: p.name, size: "sm" });
+      const av = Avatar({ name: p.name, size: "sm", src: avatarUrl(p.avatar_key) });
       av.append(el("span.pr" + (off ? ".off" : p.presence === "idle" ? ".idle" : p.presence === "dnd" ? ".dnd" : "")));
       const nm = el("span.u", {}, [p.name]); nm.style.color = `var(--m${p.colorIdx})`;
       const row = el(".mrow" + (off ? ".off" : ""), { "data-uid": p.id || null }, [av, el(".info", {}, [el(".nm", {}, [nm]), el(".doing", {}, [p.doing])])]);

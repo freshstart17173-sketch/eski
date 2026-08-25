@@ -1346,3 +1346,22 @@ NEXT: message **permalinks** (Copy link — needs a permalink route + jump-to-me
   editor + audit log (P8 remainder); **P9 create/join** (needs new RPCs); P5.19 avatars-from-key.
   The channel message surface (send · react · reply-thread · edit · delete · pin · moderate ·
   roles) is now feature-complete except permalinks + Realtime edit/delete echo.
+
+## 2026-08-24 — P5.19b Avatars render from avatar_key (member rail · chat · comments)
+IN PROGRESS: (cleared)
+DONE: closes the P5.19 gap — an uploaded profile photo (`profiles.avatar_key`) now renders
+  **everywhere a person appears**, not just the profile hero + DM/friend rows. `loadServerBundle`
+  fetches `avatar_key` and carries it on each member; `shapeMessage` puts it on the message
+  author; `loadComments` puts it on the comment author. Render sites swapped to `Avatar({src:
+  avatarUrl(...)})`: the **members rail**, **chat message** avatars, and the **details-pane
+  comment** avatars (was initials-only). The shared `Avatar` load-error fallback (P5.19) means a
+  missing/404 photo degrades to initials, so demo (no keys) is unchanged — initials as before.
+  Verified: full app suite (workspace/feed/profile/explorer/dms/notifications/shared) + gallery
+  GREEN both themes, zero app console errors — the no-regression check, since demo carries no
+  keys; the real photos are preview-verified.
+NEXT: the remaining work is Realtime (DM/notif/reaction/edit echo — not in-sandbox verifiable),
+  message **permalinks** + Copy link, **Server settings** screens + roles editor + audit log
+  (P8 remainder), and **P9 create/join server** (blocked on new `create_server`/join RPCs — a
+  migration job, not in-sandbox). Core product surfaces (feed · explorer · details · profile ·
+  upload/download · sharing · workspace chat w/ reactions/edit/moderation/roles · DMs · friends ·
+  notifications) are all real on `preview`.

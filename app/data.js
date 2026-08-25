@@ -32,7 +32,7 @@ export function shapeMessage(row, members) {
   const mentions = Object.values(members).filter((m) => body.includes("@" + m.name)).map((m) => ({ name: m.name, colorIdx: m.colorIdx }));
   return {
     id: row.id,
-    author: { name: a.name, initials: initials(a.name), colorIdx: a.colorIdx },
+    author: { name: a.name, initials: initials(a.name), colorIdx: a.colorIdx, avatar_key: a.avatar_key || null },
     time: fmtTime(row.created_at),
     body, edited: !!row.edited_at, mentions,
     reactions: [], replies: 0,
@@ -87,7 +87,7 @@ async function loadServerBundle(activeServer) {
   // returned nothing — the bug behind the empty members rail + "unknown" authors.
   const uids = (memRows || []).map((m) => m.user_id);
   const { data: profRows } = uids.length
-    ? await supabase.from("profiles").select("id,handle,name,presence_state,status_text").in("id", uids)
+    ? await supabase.from("profiles").select("id,handle,name,presence_state,status_text,avatar_key").in("id", uids)
     : { data: [] };
   const profById = {};
   for (const p of profRows || []) profById[p.id] = p;
@@ -113,7 +113,7 @@ async function loadServerBundle(activeServer) {
       id: m.user_id, name: nm, handle: p?.handle || nm, colorIdx: m.color || 1, initials: initials(nm),
       presence: p?.presence_state || "offline", doing: p?.status_text || "",
       admin: m.user_id === activeServer.owner_id || !!adminBits[m.user_id],
-      roleIds: memberRoleIds[m.user_id] || [],
+      roleIds: memberRoleIds[m.user_id] || [], avatar_key: p?.avatar_key || null,
     };
   }
   const admins = [], members = [];
@@ -556,13 +556,13 @@ export async function loadComments(workId) {
   if (error || !rows?.length) return [];
   const uids = [...new Set(rows.map((r) => r.user_id))];
   const byId = {};
-  const { data: profs } = await supabase.from("profiles").select("id,handle,name").in("id", uids);
+  const { data: profs } = await supabase.from("profiles").select("id,handle,name,avatar_key").in("id", uids);
   for (const p of profs || []) byId[p.id] = p;
   return rows.map((r) => {
     const a = byId[r.user_id];
     // `mine` drives the delete affordance; the post author can also remove, but that's a
     // less common case left to a later pass — cmt_delete is the fence either way.
-    return { id: r.id, name: a ? (a.name || a.handle) : "unknown", text: r.body || "", time: fmtTime(r.created_at), mine: !!user && r.user_id === user.id };
+    return { id: r.id, name: a ? (a.name || a.handle) : "unknown", avatar_key: a?.avatar_key || null, text: r.body || "", time: fmtTime(r.created_at), mine: !!user && r.user_id === user.id };
   });
 }
 

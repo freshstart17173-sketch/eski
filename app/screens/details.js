@@ -12,11 +12,11 @@
 // transport) when bytes exist; non-previewable (and, until a real R2 upload exists,
 // anything with no blob) shows a type card — never a fake thumbnail.
 
-import { el, toast, Tag, openMenu } from "../ui.js";
+import { el, toast, Tag, openMenu, Avatar } from "../ui.js";
 import { iconEl } from "../icons.js";
 import { navigate } from "../router.js";
 import { MediaPlayer } from "../ui.js";
-import { mediaUrl, KIND_ICON, downloadWork } from "../cards.js";
+import { mediaUrl, KIND_ICON, downloadWork, avatarUrl } from "../cards.js";
 import { saveToFiles, unsaveWork, isWorkSaved, loadComments, postComment, deleteComment, addTag, removeTag } from "../data.js";
 
 let openSheet = null;   // the single live overlay (only one details pane at a time)
@@ -290,7 +290,7 @@ function commentsSection(ctx, w) {
 
 function commentRow(c, onDelete) {
   const kids = [
-    el(".av.sm", {}, [(c.name || "?").slice(0, 2).toUpperCase()]),   // no hue — public context
+    Avatar({ name: c.name || "?", size: "sm", src: avatarUrl(c.avatar_key) }),   // no hue — public context
     el(".bd", {}, [
       el(".by", {}, [el("span.u", {}, [c.name]), el("time", {}, [c.time || ""])]),
       el(".tx", {}, [c.text || ""]),
