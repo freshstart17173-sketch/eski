@@ -978,6 +978,17 @@ export async function markAllNotifsRead() {
   await supabase.from("notifications").update({ read_at: new Date().toISOString() }).eq("user_id", user.id).is("read_at", null);
 }
 
+// Toggle your reaction to a channel message (toggle_reaction RPC — adds if absent, removes if
+// present; returns true=added / false=removed). The caller flips the chip optimistically.
+export async function toggleReaction(messageId, emoji) {
+  if (isDemo()) return null;
+  const user = session();
+  if (!user) throw new Error("Sign in to react");
+  const { data, error } = await supabase.rpc("toggle_reaction", { message_id: messageId, emoji });
+  if (error) throw new Error(error.message || "Couldn’t react");
+  return data;
+}
+
 // a channel's thread (parent + replies), loaded on demand when a thread opens
 export async function loadThread(parentId, membersById) {
   const { data: parent } = await supabase.from("messages").select("id,body,created_at,edited_at,user_id,channel_id").eq("id", parentId).maybeSingle();

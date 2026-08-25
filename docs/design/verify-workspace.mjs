@@ -47,6 +47,30 @@ const CASES = [
     (await has(p, ".mem .mrow", "members rail")) ||
     (await has(p, ".composer .richcomposer .field input", "composer"))],
   ["default-dark", "/s/lb/c/beats?demo=1", "dark", async (p) => has(p, ".stream .msg .u", "member-hue byline")],
+  ["reactions", "/s/lb/c/beats?demo=1", "light", async (p) => {
+    // toggling a demo reaction chip adds mine (+1, .on); toggling again removes it
+    const chip = await p.$(".stream .msg .reactions .react");
+    if (!chip) return "a demo message should show reaction chips";
+    const nBefore = Number(await chip.$eval(".n", (e) => e.textContent));
+    await chip.click();
+    await p.waitForTimeout(120);
+    const first = await p.$(".stream .msg .reactions .react");
+    const nAfter = Number(await first.$eval(".n", (e) => e.textContent));
+    if (nAfter !== nBefore + 1) return `toggling a reaction should add mine (${nBefore}→${nBefore + 1}), got ${nAfter}`;
+    if (!(await first.evaluate((e) => e.classList.contains("on")))) return "my reaction chip should show active (.on)";
+    // add a new emoji via the smile React picker
+    const msg = await p.$(".stream .msg");
+    await msg.hover();
+    await p.waitForTimeout(80);
+    const before = (await msg.$$(".reactions .react")).length;
+    await (await msg.$(".hoveracts button")).click();   // the smile (React) hover action
+    await p.waitForTimeout(120);
+    await p.click(".menu.open button");                 // pick the first emoji
+    await p.waitForTimeout(120);
+    const after = (await (await p.$(".stream .msg")).$$(".reactions .react")).length;
+    if (after <= before) return "adding an emoji should append a reaction chip";
+    return null;
+  }],
   ["thread", "/s/lb/c/beats?demo=1&ws=thread", "light", async (p) =>
     (await has(p, ".threadpane .tpbody .msg", "thread pane")) ||
     (await has(p, ".threadpane .alsosend", "also-to-channel toggle")) ||

@@ -14,7 +14,7 @@
 import { el, Avatar, IconButton, openMenu, closeMenus, toast } from "../ui.js";
 import { iconEl } from "../icons.js";
 import { navigate } from "../router.js";
-import { isDemo, shapeMessage, loadThread } from "../data.js";
+import { isDemo, shapeMessage, loadThread, toggleReaction } from "../data.js";
 import { subscribeChannelMessages, subscribeTyping, sendTyping, subscribeServerPresence, markRead, sendMessage } from "../realtime.js";
 import { openUpload } from "./upload.js";
 
@@ -105,8 +105,9 @@ function messageRow(msg, data, { onOpenThread } = {}) {
   if (msg.newDivider) return el(".newdiv", {}, [el("span", {}, ["New messages"])]);
 
   const own = msg.author.name === data.me.name;
+  const rx = reactionsBar(msg);   // manages msg.reactions + toggling; the smile button adds
   const acts = el(".hoveracts", {}, [
-    IconButton({ icon: "smile", title: "React", onClick: () => toast({ message: "Reaction added" }) }),
+    IconButton({ icon: "smile", title: "React", onClick: (e) => openMenu(e.currentTarget, REACT_EMOJI.map((em) => ({ label: em, onClick: () => rx.add(em) }))) }),
     IconButton({ icon: "reply", title: "Reply", onClick: () => onOpenThread?.(msg) }),
     IconButton({ icon: "more", title: "More", onClick: (e) => openMsgMenu(e.currentTarget, msg, own) }),
   ]);
@@ -116,10 +117,36 @@ function messageRow(msg, data, { onOpenThread } = {}) {
   if (msg.body) bd.append(renderBody(msg));
   if (msg.attach) bd.append(fileCard(msg.attach));
   if (msg.clump) bd.append(fileClump(msg.clump, msg.clumpMore));
-  if (msg.reactions?.length) bd.append(el(".reactions", {}, msg.reactions.map((r) => el("span.react", { onClick: () => toast({ message: "Reaction toggled" }) }, [`${r.emoji}`, el("span.n", {}, [String(r.n)])]))));
+  bd.append(rx.bar);   // reactions (empty bar renders nothing until one is added)
   if (msg.replies) bd.append(el(".reply", { onClick: () => onOpenThread?.(msg) }, [iconEl("reply", "sm"), `${msg.replies} replies`]));
 
   return el(".msg", { "data-mid": msg.id }, [acts, Avatar({ name: msg.author.name, size: "sm" }), bd]);
+}
+
+// a message's reaction chips — toggle your own (toggle_reaction), add via the smile picker.
+// Optimistic: mutate msg.reactions ({emoji,n,mine}) + repaint; the RPC is fire-and-forget.
+const REACT_EMOJI = ["👍", "🔥", "😂", "❤️", "🎉", "👀"];
+function reactionsBar(msg) {
+  if (!msg.reactions) msg.reactions = [];
+  const bar = el(".reactions");
+  const paint = () => bar.replaceChildren(...msg.reactions.map((r) =>
+    el("span.react" + (r.mine ? ".on" : ""), { onClick: () => flip(r) }, [r.emoji, el("span.n", {}, [String(r.n)])])));
+  function flip(r) {
+    const wasMine = !!r.mine;
+    r.mine = !wasMine; r.n += wasMine ? -1 : 1;
+    if (r.n <= 0) msg.reactions = msg.reactions.filter((x) => x !== r);
+    paint();
+    if (!isDemo()) toggleReaction(msg.id, r.emoji).catch(() => {});
+  }
+  function add(emoji) {
+    let r = msg.reactions.find((x) => x.emoji === emoji);
+    if (r) { if (!r.mine) { r.mine = true; r.n++; } }
+    else { r = { emoji, n: 1, mine: true }; msg.reactions.push(r); }
+    paint();
+    if (!isDemo()) toggleReaction(msg.id, emoji).catch(() => {});
+  }
+  paint();
+  return { bar, add };
 }
 
 // the ⋯ menu: own message adds Edit/Delete; everyone gets Pin + Copy link

@@ -1250,3 +1250,21 @@ NEXT: DM/notification **Realtime** (not in-sandbox verifiable); notification **r
   roles/permissions/moderation/billing) · **P9** (create/join server, 404, quick-switcher).
   The Messages surface (list · friends · conversation · row actions · new message) is now
   feature-complete except Realtime + group-DM naming/settings.
+
+## 2026-08-24 — P4.12 Channel message reactions (toggle + add)
+IN PROGRESS: (cleared)
+DONE: channel-message **reactions** are wired (the chip click + the smile hover button were
+  `toast` stubs). `toggleReaction(messageId, emoji)` calls the `toggle_reaction` RPC (adds if
+  absent, removes if present). `reactionsBar(msg)` in workspace.js manages `msg.reactions`
+  ({emoji,n,mine}) and repaints: clicking a chip flips your own reaction (+1/.on ⇄ -1, chip
+  drops at 0), and the **smile hover button** opens a small emoji picker that adds one. Reuses
+  the existing `.react`/`.react.on` CSS. Optimistic — the RPC is fire-and-forget.
+  Verified: `verify-workspace.mjs` +`reactions` — toggling a demo chip adds mine (+1, .on) and
+  the smile picker appends a new chip. All workspace cases GREEN both themes, zero app console
+  errors.
+NEXT: message-reaction **Realtime** + who-reacted tooltip; the owner-deferred **DM/thread
+  message actions** (reply/react/⋯) stay deferred. Backend-blocked: **P9 create/join server**
+  needs a `create_server`/`join` RPC (none exists — a migration + Supabase MCP apply, not an
+  in-sandbox job). Buildable next without new backend: notification **row→target navigation**,
+  the P5.19 **avatars-from-key** (member rail/comments/chat — invisible in demo, live-only),
+  or **P8 moderation** if its kick/ban/timeout RPCs exist (check first).
