@@ -878,6 +878,15 @@ export async function setDMPref(dmChannelId, patch) {
   if (error) throw new Error(error.message || "Couldn’t update the conversation");
 }
 
+// Start a group DM with several friends by handle (create_group_dm RPC → the dm_channels row).
+export async function createGroupDM(handles) {
+  if (isDemo()) return null;
+  const clean = (handles || []).map((h) => (h || "").trim().replace(/^@/, "")).filter(Boolean);
+  const { data, error } = await supabase.rpc("create_group_dm", { handles: clean });
+  if (error) throw new Error(error.message || "Couldn’t start the group");
+  return data?.id || null;
+}
+
 // ── DM conversation (P7.2) ───────────────────────────────────────────────────
 // A thread's messages. Members read (dmsg_read = dm_member). Authors have no FK to profiles
 // (user_id → auth.users), so profiles are fetched SEPARATELY into a byId map (bug-#1 hazard).

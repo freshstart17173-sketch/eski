@@ -150,6 +150,22 @@ await run("dm-actions", "light", async (p) => {
   return null;
 });
 
+// New message (P7.1c): the pen opens a friend picker; picking one and starting opens a
+// conversation with a composer.
+await run("new-message", "light", async (p) => {
+  await p.click('.dmlist .hd .iconbtn');   // the "New message" pen
+  await p.waitForTimeout(150);
+  if (!(await $(p, ".scrim .modal .nmlist"))) return "the New message picker should open with the friends list";
+  if ((await count(p, ".scrim .modal .nmrow")) !== 3) return "the picker should list the 3 friends";
+  await p.click(".scrim .modal .nmrow input");   // pick the first friend
+  await p.waitForTimeout(80);
+  await p.click('.scrim .modal button:has-text("Start conversation")');
+  await p.waitForTimeout(200);
+  if (await $(p, ".scrim .modal")) return "starting should close the picker";
+  if (!(await $(p, ".dmmain .composer input"))) return "starting should open a conversation with a composer";
+  return null;
+});
+
 await browser.close();
 server.close();
 console.log(fails ? `\n✗ ${fails} FAIL` : "\n✓ all Messages/Friends states render, zero app console errors, both themes");

@@ -4,10 +4,10 @@
 // answer incoming requests (accept/decline), see outgoing pending, and add a friend by
 // exact handle. NO member hue — DMs and friends live outside any server.
 
-import { el, toast, Avatar, PresenceDot, openMenu } from "../ui.js";
+import { el, toast, Avatar, PresenceDot, openMenu, openModal, Button } from "../ui.js";
 import { iconEl } from "../icons.js";
 import { navigate } from "../router.js";
-import { addFriend, respondFriend, createDM, loadDMThread, sendDM, setDMPref } from "../data.js";
+import { addFriend, respondFriend, createDM, createGroupDM, loadDMThread, sendDM, setDMPref } from "../data.js";
 import { avatarUrl } from "../cards.js";
 
 function isDemoQS() { return new URLSearchParams(location.search).get("demo") === "1"; }
@@ -65,7 +65,7 @@ function dmList(data, right) {
   paintRows();
 
   return el(".dmlist", {}, [
-    el(".hd", {}, ["Messages", el("button.iconbtn.sm", { style: "margin-left:auto", title: "New message", onClick: () => showFriends(right, data, friendsBtn) }, [iconEl("pen", "sm")])]),
+    el(".hd", {}, ["Messages", el("button.iconbtn.sm", { style: "margin-left:auto", title: "New message", onClick: () => openNewMessage(data, right) }, [iconEl("pen", "sm")])]),
     friendsBtn, addField, rows,
   ]);
 }
@@ -90,6 +90,37 @@ function dmRow(d, openConvo, rowMenu) {
   ]);
   row.append(trail);
   return row;
+}
+
+// New message — pick one friend (→ createDM) or several (→ createGroupDM), then open it.
+function openNewMessage(data, right) {
+  const friends = data.friends?.accepted || [];
+  const chosen = new Set();
+  const start = Button({ label: "Start conversation", variant: "primary", disabled: true });
+  const list = el(".nmlist", {}, friends.map((u) => el("label.nmrow", {}, [
+    el("input", { type: "checkbox", "aria-label": u.name, onchange: (e) => { e.target.checked ? chosen.add(u) : chosen.delete(u); start.disabled = chosen.size === 0; } }),
+    avatarWithPresence(u), el("span.nmname", {}, [u.name]),
+  ])));
+  const cancel = Button({ label: "Cancel", variant: "ghost" });
+  const body = friends.length ? list : el("p", { style: "color:var(--muted);font-size:var(--fs-sm)" }, ["Add a friend first to start a conversation."]);
+  const { close } = openModal({ title: "New message", body, footer: [cancel, start] });
+  cancel.addEventListener("click", () => close());
+  start.addEventListener("click", async () => {
+    const arr = [...chosen];
+    if (!arr.length) return;
+    try {
+      let d;
+      if (arr.length === 1) {
+        const id = isDemoQS() ? "dm-" + arr[0].id : await createDM(arr[0].handle);
+        d = { id: id || ("dm-" + arr[0].id), name: arr[0].name, members: [arr[0]], group: false };
+      } else {
+        const id = isDemoQS() ? "g-" + Date.now() : await createGroupDM(arr.map((u) => u.handle));
+        d = { id: id || ("g-" + Date.now()), name: arr.map((u) => u.name).join(", "), members: arr, group: true };
+      }
+      close();
+      showConvo(right, d);
+    } catch (e) { toast({ message: e?.message || "Couldn’t start the conversation" }); }
+  });
 }
 
 // ── right: conversation placeholder (P7.2) / empty inbox ──────────────────────

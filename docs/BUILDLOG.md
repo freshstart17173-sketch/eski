@@ -1234,3 +1234,19 @@ NEXT: DM/notification **Realtime** (subscribe inserts — not in-sandbox verifia
   navigation; the P5.19 markers (banner render is out of scope — the gallery profile has no
   banner design; avatars-from-key on member rail/comments/chat remains). Bigger: **P8** (admin:
   roles/permissions/moderation/billing) or **P9** (create/join/404/quick-switcher).
+
+## 2026-08-24 — P7.1c New message / group DM
+IN PROGRESS: (cleared)
+DONE: the **New message** pen (was opening Friends) now opens a **friend picker** modal —
+  checkbox rows of your accepted friends; **Start conversation** opens a 1:1 (`createDM`) for
+  one pick or a **group DM** (`createGroupDM` → `create_group_dm` RPC) for several, then shows
+  the conversation. Demo synthesises the channel id. New CSS `.nmlist/.nmrow`.
+  Verified: `verify-dms.mjs` +`new-message` — the pen opens the picker (3 friends), picking one
+  and starting closes it and opens a conversation with a composer. All 6 dms cases GREEN both
+  themes, zero app console errors.
+NEXT: DM/notification **Realtime** (not in-sandbox verifiable); notification **row→target
+  navigation** + a bell entry/badge; the P5.19 **avatars-from-key** on member rail/comments/chat
+  (banner render stays out of scope — no gallery design). Bigger pillars: **P8** (admin:
+  roles/permissions/moderation/billing) · **P9** (create/join server, 404, quick-switcher).
+  The Messages surface (list · friends · conversation · row actions · new message) is now
+  feature-complete except Realtime + group-DM naming/settings.

@@ -336,6 +336,11 @@
 .rbtn{width:26px;height:26px;display:grid;place-items:center;border-radius:var(--r);background:var(--surface);color:var(--soft);transition:background var(--t),color var(--t)}
 .rbtn:hover{background:var(--plate);color:var(--ink)}
 .rbtn.ok:hover{color:var(--m3)}.rbtn.no:hover{color:var(--m1)}
+/* New-message friend picker (modal) */
+.nmlist{display:flex;flex-direction:column;gap:2px;max-height:320px;overflow-y:auto}
+.nmrow{display:flex;align-items:center;gap:10px;padding:7px 8px;border-radius:var(--r);cursor:pointer}
+.nmrow:hover{background:var(--surface)}
+.nmrow .nmname{font-size:var(--fs-sm);font-weight:600}
 
 /* ── Profile (P5.10, CANON §C.10) — hero + shelf tabs + card grid ──────────────
    Ported from the gallery. The avatar is round (people are round); shelf tabs use
