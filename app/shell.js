@@ -10,8 +10,9 @@ import { el, Avatar, openMenu, toast, openModal, Button } from "./ui.js";
 import { iconEl } from "./icons.js";
 import { navigate } from "./router.js";
 import { signOut } from "./supabase.js";
-import { isDemo, createServer, joinServer } from "./data.js";
+import { isDemo, createServer, joinServer, updateServer } from "./data.js";
 import { avatarUrl } from "./cards.js";
+import { uploadBlobs } from "./upload-r2.js";
 
 function withDemo(path) { return isDemo() ? path + "?demo=1" : path; }
 
@@ -69,16 +70,37 @@ function railBtn({ icon, label, img, title, on, count, dot, onClick }) {
   return b;
 }
 
-// Create server (P9) — name + comma-separated starter channels → createServer (client-side,
-// RLS-fenced) → land in the new server. Demo just toasts (its server set is fixed).
+// A coverpick (gallery) that holds the picked File and previews it locally — the server doesn't
+// exist yet at create time, so the bytes upload only after createServer returns an id. `square`
+// makes the icon variant (.cv.icon). Returns { node, file() }.
+function coverPicker({ square, label } = {}) {
+  let file = null;
+  const prev = el(".cv" + (square ? ".icon" : ""), {}, [iconEl("image")]);
+  const input = el("input", { type: "file", accept: "image/*", style: "display:none" });
+  input.addEventListener("change", () => {
+    file = input.files?.[0] || null; input.value = "";
+    if (file) prev.replaceChildren(el("img", { src: URL.createObjectURL(file), alt: "" }));
+  });
+  const node = el(".coverpick", {}, [prev, input, Button({ label: "Upload", size: "sm", icon: "image", onClick: () => input.click() })]);
+  return { node, file: () => file };
+}
+
+// Create server (P9) — name + optional icon/cover + comma-separated starter channels →
+// createServer (client-side, RLS-fenced) → attach the art (uploadBlobs → updateServer) → land in
+// the new server. Demo just previews + toasts (its server set is fixed).
 function openCreateServer() {
   const nameI = el("input", { placeholder: "e.g. Late Bloom LP", "aria-label": "Server name" });
   const chansI = el("input", { value: "general, wips, references", "aria-label": "Starter channels" });
+  const iconPick = coverPicker({ square: true });
+  const coverPick = coverPicker({});
   const create = Button({ label: "Create server", variant: "primary" });
   const cancel = Button({ label: "Cancel", variant: "ghost" });
+  const optional = () => el("span", { style: "font-weight:400;color:var(--muted)" }, ["optional"]);
   const body = el("div", {}, [
     el("label.ulab", {}, ["Server name"]), el(".field", {}, [nameI]),
-    el("label.ulab", {}, ["Starter channels ", el("span", { style: "font-weight:400;color:var(--muted)" }, ["comma-separated"])]), el(".field", {}, [chansI]),
+    el(".frow", { style: "margin-top:12px" }, [el("label.ulab", {}, ["Server icon ", optional()]), iconPick.node]),
+    el(".frow", { style: "margin-top:12px" }, [el("label.ulab", {}, ["Cover ", optional()]), coverPick.node]),
+    el("label.ulab", { style: "margin-top:12px;display:block" }, ["Starter channels ", el("span", { style: "font-weight:400;color:var(--muted)" }, ["comma-separated"])]), el(".field", {}, [chansI]),
     el(".svnote", {}, [iconEl("check", "sm"), el("span", {}, ["A private studio — you invite people with a link, there's no public listing."])]),
   ]);
   const { close } = openModal({ title: "New server", body, footer: [cancel, create] });
@@ -89,6 +111,13 @@ function openCreateServer() {
     create.disabled = true;
     try {
       const srv = await createServer(name, chansI.value.split(",").map((s) => s.trim()).filter(Boolean));
+      // attach the art after the row exists (live only — the picks are local File objects).
+      if (!isDemo()) {
+        const patch = {};
+        if (iconPick.file()) { const [{ key }] = await uploadBlobs([iconPick.file()]); patch.icon_key = key; }
+        if (coverPick.file()) { const [{ key }] = await uploadBlobs([coverPick.file()]); patch.cover_key = key; }
+        if (Object.keys(patch).length) await updateServer(srv.id, patch).catch(() => {});
+      }
       close();
       if (isDemo()) toast({ message: `${srv.name} created`, icon: "check" });
       else navigate(`/s/${srv.id}`);

@@ -125,6 +125,12 @@ const CASES = [
     for (const b of await p.$$(".menu.open button")) { if ((await b.textContent()).includes("Create server")) { await b.click(); break; } }
     await p.waitForTimeout(150);
     if (!(await $(p, '.scrim .modal input[aria-label="Server name"]'))) return "Create server modal should open";
+    // optional icon/cover pickers present; picking an icon previews it locally
+    if ((await p.$$(".scrim .modal .coverpick")).length !== 2) return "create modal should offer icon + cover pickers";
+    const px = Buffer.from("89504e470d0a1a0a0000000d49484452000000010000000108060000001f15c4890000000d4944415478da63f8cfc0f01f0005000100ff9a2c0d0000000049454e44ae426082", "hex");
+    await p.setInputFiles('.scrim .modal .coverpick:first-of-type input[type=file]', { name: "i.png", mimeType: "image/png", buffer: px });
+    await p.waitForTimeout(120);
+    if (!(await $(p, ".scrim .modal .coverpick .cv.icon img"))) return "picking a server icon should preview it";
     await p.fill('.scrim .modal input[aria-label="Server name"]', "Test Studio");
     await p.click('.scrim .modal button:has-text("Create server")');
     await p.waitForTimeout(150);
