@@ -1365,3 +1365,18 @@ NEXT: the remaining work is Realtime (DM/notif/reaction/edit echo — not in-san
   migration job, not in-sandbox). Core product surfaces (feed · explorer · details · profile ·
   upload/download · sharing · workspace chat w/ reactions/edit/moderation/roles · DMs · friends ·
   notifications) are all real on `preview`.
+
+## 2026-08-24 — P8.2 Create channel
+IN PROGRESS: (cleared)
+DONE: **Create channel** (was a `toast("P8")` stub in the channel-column ＋ and Settings) is
+  real. `createChannel(serverId, name, kind)` is a direct `channels` insert (fenced by
+  `ch_write` = manage_channels), name normalised to a handle (lowercase, dashes), unique-name
+  clash surfaced. `createChannelFlow` opens a name modal → creates → navigates into the new
+  channel (demo toasts, since its channel set is fixed). The **voice** group ＋ toasts "ships
+  in v2" (consistent with the WIP voice treatment).
+  Verified: `verify-workspace.mjs` +`create-channel` — the ＋ opens the name modal, submitting
+  closes it. All workspace cases GREEN both themes, zero app console errors.
+NEXT: **Edit/Channel settings** (rename/topic/slowmode/post-policy — a `channels` update),
+  channel **reorder persistence** (reorder_channels RPC), the rest of **Server settings**
+  (general/roles editor/moderation/audit log), profile **Message → DM** + Posted-by nav (small
+  client wireups). Untestable/blocked as before: Realtime, permalinks, P9 create/join (new RPCs).

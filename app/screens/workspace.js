@@ -15,7 +15,7 @@ import { el, Avatar, IconButton, openMenu, closeMenus, toast, openModal, Button 
 import { iconEl } from "../icons.js";
 import { navigate } from "../router.js";
 import { avatarUrl } from "../cards.js";
-import { isDemo, shapeMessage, loadThread, toggleReaction, deleteMessage, pinMessage, editMessage, kickMember, timeoutMember, banMember, setMemberRoles } from "../data.js";
+import { isDemo, shapeMessage, loadThread, toggleReaction, deleteMessage, pinMessage, editMessage, kickMember, timeoutMember, banMember, setMemberRoles, createChannel } from "../data.js";
 import { subscribeChannelMessages, subscribeTyping, sendTyping, subscribeServerPresence, markRead, sendMessage } from "../realtime.js";
 import { openUpload } from "./upload.js";
 
@@ -226,7 +226,7 @@ export function channelColumn(data, view) {
     ]);
     label.querySelector(".cgtoggle .ic")?.classList.add("cgcaret");
     if (data.isAdmin) {
-      const add = el("button.cgadd", { title: g.kind === "voice" ? "Create voice channel" : "Create channel", onClick: () => toast({ message: "Create channel (P8)" }) }, [iconEl("plus", "sm")]);
+      const add = el("button.cgadd", { title: g.kind === "voice" ? "Create voice channel" : "Create channel", onClick: () => g.kind === "voice" ? toast({ message: "Voice channels ship in v2" }) : createChannelFlow(data, "text") }, [iconEl("plus", "sm")]);
       label.append(add);
     }
     const group = el(".cgroup", {}, [label]);
@@ -451,6 +451,31 @@ function timeoutMemberFlow(data, p) {
   } })));
 }
 
+// Create a text channel (manage_channels): a name modal → createChannel → navigate into it
+// (demo just toasts, since its channel set is fixed).
+function createChannelFlow(data, kind = "text") {
+  const input = el("input", { placeholder: "new-channel", "aria-label": "Channel name" });
+  const create = Button({ label: "Create channel", variant: "primary" });
+  const cancel = Button({ label: "Cancel", variant: "ghost" });
+  const body = el("div", {}, [el("label.ulab", {}, ["Channel name"]), el(".field", {}, [el("span", { style: "color:var(--muted)" }, ["#"]), input])]);
+  const { close } = openModal({ title: "New channel", body, footer: [cancel, create] });
+  cancel.addEventListener("click", () => close());
+  const submit = async () => {
+    const name = input.value.trim();
+    if (!name || create.disabled) return;
+    create.disabled = true;
+    try {
+      const ch = await createChannel(data.server.id, name, kind);
+      close();
+      if (isDemo()) toast({ message: `#${ch.name} created`, icon: "check" });
+      else navigate(`/s/${data.server.id}/c/${ch.id}`);
+    } catch (e) { toast({ message: e?.message || "Couldn’t create the channel" }); create.disabled = false; }
+  };
+  create.addEventListener("click", submit);
+  input.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); submit(); } });
+  input.focus();
+}
+
 // Manage roles: a checklist of the server's assignable (non-default) roles, pre-checked for
 // the member's current ones → set_member_roles. Role swatches are SQUARE (--r) — round is
 // avatars/dots only.
@@ -618,7 +643,7 @@ export function renderWorkspace(data, view = {}) {
         iconEl("hash"),
         el("h3", {}, [data.server ? "No channels yet" : "Pick a server"]),
         el("p", {}, [data.server ? (data.isAdmin ? "Create the first channel to start the conversation." : "An admin hasn't set up any channels here yet.") : "Choose a server from the rail, or create one, to start collaborating."]),
-        data.server && data.isAdmin ? btnPrimary("Create channel", "plus", () => toast({ message: "Create channel (P8)" })) : null,
+        data.server && data.isAdmin ? btnPrimary("Create channel", "plus", () => createChannelFlow(data, "text")) : null,
       ])]),
     );
     return screen;

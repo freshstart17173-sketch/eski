@@ -117,6 +117,18 @@ const CASES = [
     if ((await p.$$(".mem .mrow")).length !== before - 1) return "confirming Kick should drop the member row";
     return null;
   }],
+  ["create-channel", "/s/lb/c/beats?demo=1", "light", async (p) => {
+    const add = await p.$("nav.chan .cgadd");
+    if (!add) return "the channel-group + (create channel) is missing";
+    await add.click();
+    await p.waitForTimeout(150);
+    if (!(await $(p, ".scrim .modal"))) return "Create channel should open a name modal";
+    await p.fill(".scrim .modal .field input", "renders");
+    await p.press(".scrim .modal .field input", "Enter");
+    await p.waitForTimeout(150);
+    if (await $(p, ".scrim .modal")) return "creating should close the modal (demo toasts)";
+    return null;
+  }],
   ["msg-edit", "/s/lb/c/beats?demo=1", "light", async (p) => {
     // the own (jax) message m6 gets Edit/Delete; inline-edit its body, then delete it
     const own = await p.$('.stream .msg[data-mid="m6"]');

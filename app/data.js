@@ -1037,6 +1037,18 @@ export async function banMember(serverId, targetUser, reason) {
   const { error } = await supabase.rpc("ban_member", { server_id: serverId, target_user: targetUser, reason: reason || null });
   if (error) throw new Error(error.message || "Couldn’t ban the member");
 }
+// Create a channel — a direct `channels` insert, fenced by `ch_write` (manage_channels). The
+// name is normalised to a handle (lowercase, dashes). Returns the new {id,name} so the caller
+// can navigate into it.
+export async function createChannel(serverId, name, kind = "text") {
+  const clean = (name || "").trim().toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
+  if (!clean) throw new Error("A channel name is required");
+  if (isDemo()) return { id: "new-" + clean, name: clean };
+  const { data, error } = await supabase.from("channels").insert({ server_id: serverId, name: clean, kind }).select("id,name").single();
+  if (error) throw new Error(/duplicate|unique|23505/i.test(error.message || "") ? "A channel with that name already exists" : (error.message || "Couldn’t create the channel"));
+  return data;
+}
+
 // Replace a member's assignable (non-default) roles (set_member_roles RPC, manage_roles-gated).
 export async function setMemberRoles(serverId, targetUser, roleIds) {
   if (isDemo()) return;
