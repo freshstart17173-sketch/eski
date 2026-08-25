@@ -1063,6 +1063,17 @@ export async function createServer(name, channels = ["general"]) {
   return srv;
 }
 
+// Create an invite for a server — a direct `server_invites` insert (si_insert = admin). The
+// code is URL-safe random; the shareable link is `/join/:code`, consumed by join_via_invite.
+export async function createInvite(serverId) {
+  const code = (crypto.randomUUID?.() || (Math.random().toString(36).slice(2) + Date.now().toString(36))).replace(/-/g, "").slice(0, 12);
+  if (isDemo()) return code;
+  const user = session();
+  const { error } = await supabase.from("server_invites").insert({ code, server_id: serverId, created_by: user?.id || null });
+  if (error) throw new Error(error.message || "Couldn’t create the invite");
+  return code;
+}
+
 // Join a server by an invite code or a pasted invite link (join_via_invite RPC).
 export async function joinServer(input) {
   const code = String(input || "").trim().split("?")[0].split("/").filter(Boolean).pop();

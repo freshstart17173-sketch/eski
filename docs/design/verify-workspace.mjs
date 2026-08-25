@@ -141,6 +141,17 @@ const CASES = [
     if (await $(p, ".scrim .modal")) return "joining should close the modal (demo toasts)";
     return null;
   }],
+  ["invite", "/s/lb/c/beats?demo=1", "light", async (p) => {
+    await p.click("nav.chan .srvbar");
+    await p.waitForTimeout(120);
+    const items = await p.$$eval(".menu.open button", (bs) => bs.map((b) => b.textContent.trim()));
+    if (!items.some((t) => t.includes("Invite people"))) return "server menu missing Invite people";
+    for (const b of await p.$$(".menu.open button")) { if ((await b.textContent()).includes("Invite people")) { await b.click(); break; } }
+    await p.waitForTimeout(150);
+    const toastText = await p.$eval(".toaststack", (t) => t.textContent).catch(() => "");
+    if (!/invite|join\//i.test(toastText)) return `Invite should surface a link toast, got "${toastText}"`;
+    return null;
+  }],
   ["channel-settings", "/s/lb/c/beats?demo=1", "light", async (p) => {
     const row = await p.$("nav.chan .crow");
     await row.hover();

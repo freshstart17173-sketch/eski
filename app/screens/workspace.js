@@ -15,7 +15,7 @@ import { el, Avatar, IconButton, openMenu, closeMenus, toast, openModal, Button 
 import { iconEl } from "../icons.js";
 import { navigate } from "../router.js";
 import { avatarUrl } from "../cards.js";
-import { isDemo, shapeMessage, loadThread, toggleReaction, deleteMessage, pinMessage, editMessage, kickMember, timeoutMember, banMember, setMemberRoles, createChannel, updateChannel } from "../data.js";
+import { isDemo, shapeMessage, loadThread, toggleReaction, deleteMessage, pinMessage, editMessage, kickMember, timeoutMember, banMember, setMemberRoles, createChannel, updateChannel, createInvite } from "../data.js";
 import { subscribeChannelMessages, subscribeTyping, sendTyping, subscribeServerPresence, markRead, sendMessage } from "../realtime.js";
 import { openUpload } from "./upload.js";
 
@@ -205,7 +205,7 @@ export function channelColumn(data, view) {
   bar.addEventListener("click", () => {
     const items = [];
     if (data.isAdmin) items.push({ label: "Server settings", icon: "settings", onClick: () => navigate(`/s/${data.server.id}/settings`) });
-    items.push({ label: "Invite people", icon: "plus", onClick: () => toast({ message: "Invite link copied" }) });
+    items.push({ label: "Invite people", icon: "plus", onClick: () => inviteFlow(data) });
     items.push({ label: "Notification settings", icon: "bell", onClick: () => toast({ message: "Notifications (P8)" }) });
     items.push({ sep: true });
     items.push({ label: "Leave server", icon: "leave", danger: true, onClick: () => toast({ message: "Left server" }) });
@@ -449,6 +449,17 @@ function timeoutMemberFlow(data, p) {
     try { const until = new Date(Date.now() + ms).toISOString(); if (!isDemo()) await timeoutMember(data.server.id, p.id, until); toast({ message: `${p.name} timed out for ${label}`, icon: "clock" }); }
     catch (e) { toast({ message: e?.message || "Couldn’t time out the member" }); }
   } })));
+}
+
+// Invite people — mint a server_invites code and copy the /join/:code link (clipboard can be
+// blocked, so it falls back to showing the URL in the toast). Consumed by join_via_invite.
+async function inviteFlow(data) {
+  try {
+    const code = await createInvite(data.server.id);
+    const url = `${location.origin}/join/${code}`;
+    try { await navigator.clipboard?.writeText(url); toast({ message: "Invite link copied — share it to add people", icon: "link" }); }
+    catch { toast({ message: url, icon: "link" }); }
+  } catch (e) { toast({ message: e?.message || "Couldn’t create the invite" }); }
 }
 
 // Channel settings (manage_channels): edit name / topic / slowmode / post-policy → updateChannel.

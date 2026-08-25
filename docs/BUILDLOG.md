@@ -1437,3 +1437,17 @@ NEXT: server **icon/cover** upload on create (R2, like avatars); an in-app **inv
   **The core product is now feature-complete end-to-end** on `preview`: create/join servers ·
   channels + settings · chat (send/react/reply/edit/delete/pin) · moderation + roles · files
   (explorer/details/upload/download/share) · feed · profile · DMs · friends · notifications.
+
+## 2026-08-24 — P9.2 Create invite link (completes the create→invite→join loop)
+IN PROGRESS: (cleared)
+DONE: the server menu's **Invite people** (was a `toast` stub) now mints a real invite:
+  `createInvite(serverId)` inserts a `server_invites` row (si_insert = admin) with a URL-safe
+  code, and copies the `/join/:code` link (clipboard-blocked → the URL shows in the toast).
+  That link is consumed by `joinServer` → `join_via_invite` (P9.1) — so the full loop is now
+  real: **create a server → generate an invite → someone joins by it.**
+  Verified: `verify-workspace.mjs` +`invite` — the server menu opens, Invite people surfaces a
+  `/join/` link toast. All workspace cases GREEN both themes, zero app console errors.
+NEXT: an invite **management** surface (expiry/max-uses/revoke — the columns exist); **Leave
+  server** (still a stub — needs owner-can't-leave handling); server **icon/cover** upload (R2).
+  Standing untestable/deferred: Realtime, permalinks, storage/billing, audit log, the
+  vestigial `/create` full-screen route.
