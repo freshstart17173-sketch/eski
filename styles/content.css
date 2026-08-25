@@ -246,6 +246,9 @@
 .coverpick .cv{width:132px;height:78px;background:var(--paper1);border-radius:var(--r);display:grid;place-items:center;color:var(--muted);overflow:hidden}
 .coverpick .cv.icon{width:64px;height:64px;background:var(--ink);color:var(--on-ink);font-weight:700;font-size:var(--fs-lg)}
 .coverpick .cv img{width:100%;height:100%;object-fit:cover}
+/* Edit-profile banner well (gallery .epbanner) — a wide preview with the upload button pinned
+   bottom-right; the picked/stored banner fills it. Media stays square (--r), no round. */
+.epbanner{height:84px;background:var(--paper1) center/cover no-repeat;border-radius:var(--r);display:flex;align-items:flex-end;justify-content:flex-end;padding:8px;margin-bottom:10px}
 
 .sharedview{position:fixed;inset:0;z-index:70;display:flex;flex-direction:column;background:var(--paper);overflow-y:auto}
 .sharedview .svhd{flex:none;display:flex;align-items:center;gap:var(--s3);padding:0 var(--s5);height:56px;background:var(--surface)}

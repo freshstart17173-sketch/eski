@@ -90,6 +90,13 @@ await run("edit-profile", "light", async (p) => {
   await p.setInputFiles('.scrim .modal .epavrow input[type="file"]', join(ROOT, "eski_logo.png"));
   await p.waitForTimeout(200);
   if (!(await p.$(".scrim .modal .epavrow .av img"))) return "picking a photo should render it in the avatar";
+  // banner upload (P9.5): the well starts empty; picking an image fills its background-image.
+  const well = await p.$(".scrim .modal .epbanner");
+  if (!well) return "the banner well (.epbanner) should be present";
+  if (await well.evaluate((e) => !!e.style.backgroundImage)) return "banner well should start empty (no banner yet)";
+  await p.setInputFiles('.scrim .modal .epbanner input[type="file"]', join(ROOT, "eski_logo.png"));
+  await p.waitForTimeout(200);
+  if (!(await well.evaluate((e) => !!e.style.backgroundImage))) return "picking a banner should preview it in the well";
   if (!(await p.$('.scrim .modal input[aria-label="Handle"]'))) return "handle field missing";
   if (!(await p.$('.scrim .modal .svnote'))) return "handle-change note missing";
   await p.fill('.scrim .modal input[aria-label="Display name"]', "jax okonkwo");

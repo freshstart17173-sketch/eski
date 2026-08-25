@@ -738,7 +738,7 @@ export async function loadProfile(handle) {
   const { servers } = await loadRail(user);
   const me = { id: user.id, name: user.email?.split("@")[0] || "you", initials: initials(user.email || "you"), handle: user.email?.split("@")[0] || "you", colorIdx: 1 };
 
-  const { data: prof } = await supabase.from("profiles").select("id,handle,name,bio,avatar_key,pronouns").eq("handle", handle).maybeSingle();
+  const { data: prof } = await supabase.from("profiles").select("id,handle,name,bio,avatar_key,banner_key,pronouns").eq("handle", handle).maybeSingle();
   if (!prof) return { needsAuth: false, live: true, notFound: true, me, servers, dmUnread: 0, server: null };
 
   let pov = "public";
@@ -760,7 +760,7 @@ export async function loadProfile(handle) {
 
   return {
     needsAuth: false, live: true, source: "profile", me, servers, dmUnread: 0, server: null,
-    profile: { id: prof.id, name: prof.name || prof.handle, handle: prof.handle, bio: prof.bio || "", initials: initials(prof.name || prof.handle), pronouns: prof.pronouns, avatar_key: prof.avatar_key || null },
+    profile: { id: prof.id, name: prof.name || prof.handle, handle: prof.handle, bio: prof.bio || "", initials: initials(prof.name || prof.handle), pronouns: prof.pronouns, avatar_key: prof.avatar_key || null, banner_key: prof.banner_key || null },
     pov, shelves,
   };
 }

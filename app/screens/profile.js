@@ -150,11 +150,30 @@ function openEditProfile(data, opts = {}) {
       toast({ message: "Photo updated", icon: "check" });
     } catch (e) { toast({ message: e?.message || "Couldn’t update your photo" }); }
   });
+  // Banner well (gallery .epbanner) — shows the current banner and a real upload. banner_key is
+  // stored (updateProfileImage) and previewed here; the gallery renders no banner on the profile
+  // hero, so this well is where it lives. Demo previews the picked file locally (a blob URL).
+  const bannerWell = el(".epbanner");
+  const setBanner = (src) => { bannerWell.style.backgroundImage = src ? `url("${src}")` : ""; };
+  setBanner(avatarUrl(p.banner_key));
+  const bannerInput = el("input", { type: "file", accept: "image/*", style: "display:none" });
+  bannerInput.addEventListener("change", async () => {
+    const file = bannerInput.files?.[0]; bannerInput.value = "";
+    if (!file) return;
+    try {
+      let src;
+      if (demo) src = URL.createObjectURL(file);
+      else { const [{ key }] = await uploadBlobs([file]); await updateProfileImage("banner_key", key); p.banner_key = key; src = avatarUrl(key); }
+      setBanner(src);
+      toast({ message: "Banner updated", icon: "check" });
+    } catch (e) { toast({ message: e?.message || "Couldn’t update your banner" }); }
+  });
+  bannerWell.append(bannerInput, Button({ label: "Change banner", size: "sm", icon: "pen", onClick: () => bannerInput.click() }));
+
   const avRow = el(".epavrow", { style: "display:flex;align-items:center;gap:12px;margin-bottom:6px" }, [
     avImg,
     fileInput,
     Button({ label: "Change photo", size: "sm", icon: "pen", onClick: () => fileInput.click() }),
-    Button({ label: "Change banner", size: "sm", icon: "pen", onClick: () => toast({ message: "Profile banner (a hero banner render lands next)" }) }),
   ]);
 
   const nameI = el("input", { value: p.name || "", "aria-label": "Display name" });
@@ -162,6 +181,7 @@ function openEditProfile(data, opts = {}) {
   const bioI = el("input", { value: p.bio || "", "aria-label": "Bio" });
 
   const body = el("div", {}, [
+    bannerWell,
     avRow,
     el("label.ulab", {}, ["Display name"]),
     el(".field", {}, [nameI]),
