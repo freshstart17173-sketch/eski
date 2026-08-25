@@ -114,23 +114,26 @@ and replica identity were set up in P2 (no action from you there).
 | **P1** | Schema + RLS — ~41 tables, all policies, allow/deny tested | ✅ done, applied + on `preview` |
 | **P2** | RPCs + triggers + search + realtime (+ share resolver, trash purge) | ✅ done, applied + round-trip tested + on `preview` |
 | **P3** | Design-system primitives (buttons/fields/modals/player/…) | ✅ done, verified both themes + on `preview` |
-| **P4** | Shell + Workspace (chat, members, composer, realtime) | 🟢 UI done, on `preview`; **Realtime (P4.10/11) next — see top block** |
-| P5 | Feed · File explorer · Details pane · Profile · Upload | 🟢 Upload + **File explorer** (server + **My files**) + **Details pane** + **Feed** + **Profile** done; polish/edit-modals remain |
-| P7 | Messages/DMs · Friends · Notifications | pending |
-| P8 | Admin (roles, permissions, moderation, billing) | pending |
-| P9 | Create · Join · Sign-in · 404 · quick-switcher | pending |
+| **P4** | Shell + Workspace (chat, members, composer) | ✅ UI + reactions/edit/delete/pin/moderation/roles real on `preview`; **Realtime echo** is the one gap |
+| **P5** | Feed · Explorer · Details · Profile · Upload/Download · Sharing | ✅ all real on `preview` (incl. photo upload, download, share dialog + `/shared/:token`) |
+| **P7** | Messages/DMs · Friends · Notifications | ✅ all real on `preview` (list · friends · conversation · new/group DM · notifications); Realtime echo pending |
+| **P8** | Admin (moderation, roles, channels) | 🟢 moderation + role assignment + create/edit channel real; **billing/storage-slider** (Stripe) + audit log + full settings-screen port remain |
+| **P9** | Create · Join · Invite · Leave server | ✅ real on `preview` (client-side create; `join_via_invite`; invite create; leave). Sign-in exists (P4.10). Delete-server + 404 + quick-switcher remain |
 
-**Reality check:** this is a large app (Discord × Google Drive). Backend is complete
-(P1 schema/RLS + P2 RPCs/triggers/search/realtime, all live on Supabase), the P3 UI
-primitives are built, and the **P4 shell + Workspace UI** is assembled and on `preview`.
-The remaining work is the rest of the UI-assembly phases (P4 Realtime, then P5–P9),
-which are many sessions. Each checkpoints green on `preview` so you can watch it fill
-in. **Note:** the `gallery.html` reference is close but not 100% complete — some
-features are missing, so `eski-style` is the value authority and gaps get flagged,
-not invented.
+**Reality check (2026-08-24):** the **core product is feature-complete end-to-end on
+`preview`** — you can create/join servers, chat (with reactions/edit/delete/pin/moderation/
+roles), manage files (upload/download/share), post to the feed, DM friends, and get
+notifications. What's left is **Realtime** (live message/notification echo — built in P2 on the
+DB side, the client subscriptions are the remaining wiring), **billing** (needs your Stripe),
+and a handful of edge/admin surfaces (delete-server, audit log, invite management, icon/banner
+uploads). **Note:** create-server is done as 4 client inserts under RLS (works because the owner
+passes every permission check); it's not atomic — if you want it bulletproof, a `create_server`
+RPC is a nice-to-have, not a blocker. The `gallery.html` reference is close but not 100%
+complete, so `eski-style` is the value authority and gaps get flagged, not invented.
 
-**`preview` carries P0–P3 + the P4 UI.** The active work branch is
-`claude/catch-up-p4-d3efls`; `main` (prod / eski.lol) is untouched — promote
+**`preview` carries P0–P9 core.** The active work branch is
+`claude/eski-preview-deploy-h2pg6s` (kept level with `preview`); `main` (prod / eski.lol) is
+untouched — promote
 `preview → main` when it looks right.
 
 **Supabase project:** `Eski` (`zidqagrmxeawpasurpwi`) — the old retired-product schema

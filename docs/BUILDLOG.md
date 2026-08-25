@@ -28,7 +28,34 @@ GOTCHA: channels.post_policy='admins' must reject non-admin inserts — test cov
 
 ## Current state
 
-**Phase: build. P0–P4 DONE. P5 (content) IN PROGRESS. DONE so far: Upload (P5.11/P5.12 — sheet + write path + `claim_upload_quota` RPC), the "eski!" Gnomon wordmark, favicon fix. IN PROGRESS: File explorer (P5.4/P5.5) — the shared `app/cards.js` work-card renderer + explorer CSS in `styles/content.css` are done; STILL TODO: `loadExplorer()` in data.js, `app/screens/explorer.js` (tree/breadcrumb/grid/list/feed/storage-footer), and route wiring (the `explorer` route + the workspace Files entries). Then Details (P5.6–5.8), Feed (P5.1–5.3), Profile (P5.9/5.10). Owner still must apply R2 CORS + set R2 WRITE env vars in Vercel before uploads (hence any content) work.**
+**Phase: build. P0–P9 core all real on `preview` (2026-08-24). The app is feature-complete
+end-to-end for the core product; what's left is Realtime, a few edge/admin surfaces, and
+billing.** The freshest per-feature detail is in the dated entries below (newest last) — this
+header is the map. Branches `preview` and `claude/eski-preview-deploy-h2pg6s` are kept at the
+same head; `preview.eski.lol` deploys from `preview`.
+
+What's REAL (wired to Supabase, verified by the per-screen `verify-*.mjs` in demo + offline
+render; the R2 round-trips + live sends are preview-verified since the sandbox browser can't
+egress):
+- **Servers/workspace:** create · invite (`server_invites`) · join (`join_via_invite`) · leave ·
+  create channel · channel settings (name/topic/slowmode/post-policy) · chat send/receive ·
+  reactions (`toggle_reaction`) · reply-threads · edit · delete · pin · moderation (timeout/
+  kick/ban) · role assignment (`set_member_roles`). Create-server is 4 client inserts under RLS
+  (owner passes every `has_perm`), NOT atomic — a future `create_server` RPC would harden it.
+- **Files:** explorer (server + personal) · details pane (the one viewer) · upload (sheet +
+  `api/sign.mjs` R2 PUT) · download (cdn fetch→blob) · move/trash/star/rename/hide/tags · share
+  dialog (visibility + `share_links` create/revoke) + the read-only `/shared/:token` viewer.
+- **Social:** feed · profile (shelves/POV/search/edit-profile + photo upload→`avatar_key`,
+  rendered on hero/rail/chat/comments) · post comments (read/post/delete) · DMs (list · friends
+  add/accept/decline · conversation send · pin/mute/hide · new/group DM) · notifications
+  (list · mark-read · row→target nav).
+
+What's NOT done: **Realtime** (DM/notif/reaction/edit echo — can't be exercised in-sandbox);
+message **permalinks** (Copy link); **Delete server** / invite management (expiry/revoke);
+server **icon/cover** + profile **banner** upload; **storage/billing** (needs Stripe, ~P8);
+**audit log**; the full-screen Server-settings port (the `/create` + `/s/:id/settings` routes
+are now largely vestigial — most actions moved to modals). See the newest dated entries for the
+exact NEXT on each.
 
 > **Explorer resume notes.** `app/cards.js` exports `mediaUrl(work)`, `workCard(work,{onOpen,selectable,actions,showWho})`, `folderCard(folder,{onOpen})` — the ONE card renderer (P5.2), graceful type-card fallback when R2 bytes are missing. `styles/content.css` already has the pane/tree/crumbs/grid/list/foldercard/selbar/cardacts CSS. Build `loadExplorer({serverId,folderId})` reusing the cached `loadServerBundle` (members+channels) + folders (`folders` table, nested via parent_id) + files (`placement` where surface='server', surface_id=serverId, folder_id=<cur> → embed `work:works(...)`; verify the placement→works FK first) + storage (`storage_meters`/`storage_balance` for owner_type='server'). Then `renderExplorer(data)` and wire `main.js` route `explorer` + the workspace `Files` crow (currently navigates to `/s/{id}/files`). `.wordmark` class → use it for the explorer/feed/profile "eski!" wordmarks too.
 
