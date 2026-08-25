@@ -15,7 +15,7 @@ import { el, Avatar, IconButton, openMenu, closeMenus, toast, openModal, Button 
 import { iconEl } from "../icons.js";
 import { navigate } from "../router.js";
 import { avatarUrl } from "../cards.js";
-import { isDemo, shapeMessage, loadThread, toggleReaction, deleteMessage, pinMessage, editMessage, kickMember, timeoutMember, banMember, setMemberRoles, createChannel } from "../data.js";
+import { isDemo, shapeMessage, loadThread, toggleReaction, deleteMessage, pinMessage, editMessage, kickMember, timeoutMember, banMember, setMemberRoles, createChannel, updateChannel } from "../data.js";
 import { subscribeChannelMessages, subscribeTyping, sendTyping, subscribeServerPresence, markRead, sendMessage } from "../realtime.js";
 import { openUpload } from "./upload.js";
 
@@ -240,7 +240,7 @@ export function channelColumn(data, view) {
         el("span.nm", { style: ch.unread ? "font-weight:600;color:var(--ink)" : null }, [ch.name]),
       ]);
       if (ch.mentions) row.append(el("span.ct", {}, [String(ch.mentions)]));
-      if (data.isAdmin) row.append(el("span.cgear", { title: "Edit channel", onClick: (e) => { e.stopPropagation(); toast({ message: "Channel settings (P8)" }); } }, [iconEl("settings", "sm")]));
+      if (data.isAdmin && !voice) row.append(el("span.cgear", { title: "Edit channel", onClick: (e) => { e.stopPropagation(); openChannelSettings(data, ch); } }, [iconEl("settings", "sm")]));
       group.append(row);
       // voice channels list who's in them
       if (g.kind === "voice" && ch.voice?.length) {
@@ -449,6 +449,40 @@ function timeoutMemberFlow(data, p) {
     try { const until = new Date(Date.now() + ms).toISOString(); if (!isDemo()) await timeoutMember(data.server.id, p.id, until); toast({ message: `${p.name} timed out for ${label}`, icon: "clock" }); }
     catch (e) { toast({ message: e?.message || "Couldn’t time out the member" }); }
   } })));
+}
+
+// Channel settings (manage_channels): edit name / topic / slowmode / post-policy → updateChannel.
+// Live navigates to refresh the header; demo just toasts (the demo channel set is fixed).
+function openChannelSettings(data, ch) {
+  const name = el("input", { value: ch.name || "", "aria-label": "Channel name" });
+  const topic = el("input", { value: ch.topic || "", placeholder: "What's this channel about?", "aria-label": "Topic" });
+  const SLOW = [[0, "Off"], [5, "5s"], [10, "10s"], [30, "30s"], [60, "1m"], [300, "5m"]];
+  let slow = ch.slowmode || 0;
+  const slowBtn = el("button.selbtn", { style: "width:100%;justify-content:space-between", "aria-haspopup": "menu" }, [el("span", {}, [SLOW.find(([s]) => s === slow)?.[1] || "Off"]), iconEl("chev", "sm")]);
+  slowBtn.addEventListener("click", () => openMenu(slowBtn, SLOW.map(([s, l]) => ({ label: l, onClick: () => { slow = s; slowBtn.querySelector("span").textContent = l; } }))));
+  let policy = ch.postPolicy || "everyone";
+  const polBtn = el("button.selbtn", { style: "width:100%;justify-content:space-between", "aria-haspopup": "menu" }, [el("span", {}, [policy === "admins" ? "Admins only" : "Everyone"]), iconEl("chev", "sm")]);
+  polBtn.addEventListener("click", () => openMenu(polBtn, [["everyone", "Everyone"], ["admins", "Admins only"]].map(([v, l]) => ({ label: l, onClick: () => { policy = v; polBtn.querySelector("span").textContent = l; } }))));
+
+  const save = Button({ label: "Save channel", variant: "primary" });
+  const cancel = Button({ label: "Cancel", variant: "ghost" });
+  const body = el("div", {}, [
+    el("label.ulab", {}, ["Channel name"]), el(".field", {}, [el("span", { style: "color:var(--muted)" }, ["#"]), name]),
+    el("label.ulab", {}, ["Topic ", el("span", { style: "font-weight:400;color:var(--muted)" }, ["optional"])]), el(".field", {}, [topic]),
+    el("label.ulab", {}, ["Slow mode"]), slowBtn,
+    el("label.ulab", {}, ["Who can post"]), polBtn,
+  ]);
+  const { close } = openModal({ title: `#${ch.name} settings`, body, footer: [cancel, save] });
+  cancel.addEventListener("click", () => close());
+  save.addEventListener("click", async () => {
+    if (save.disabled) return; save.disabled = true;
+    try {
+      await updateChannel(ch.id, { name: name.value, topic: topic.value.trim(), slowmode_sec: slow, post_policy: policy });
+      close();
+      if (isDemo()) toast({ message: "Channel updated", icon: "check" });
+      else navigate(`/s/${data.server.id}/c/${ch.id}`);
+    } catch (e) { toast({ message: e?.message || "Couldn’t update the channel" }); save.disabled = false; }
+  });
 }
 
 // Create a text channel (manage_channels): a name modal → createChannel → navigate into it

@@ -80,7 +80,7 @@ async function loadServerBundle(activeServer) {
   const [{ data: memRows }, { data: roleRows }, { data: chans }] = await Promise.all([
     supabase.from("server_members").select("user_id,color,status").eq("server_id", sid),
     supabase.from("member_roles").select("user_id, role:roles(id,name,color,permissions,is_default)").eq("server_id", sid),
-    supabase.from("channels").select("id,name,kind,position,slowmode_sec,post_policy").eq("server_id", sid).order("position"),
+    supabase.from("channels").select("id,name,kind,position,topic,slowmode_sec,post_policy").eq("server_id", sid).order("position"),
   ]);
   // profiles are fetched SEPARATELY, not embedded: server_members has no FK to
   // profiles (its user_id points at auth.users), so a PostgREST embed errors out and
@@ -127,7 +127,7 @@ async function loadServerBundle(activeServer) {
   const textCh = (chans || []).filter((c) => c.kind !== "voice");
   const voiceCh = (chans || []).filter((c) => c.kind === "voice");
   const channelGroups = [
-    textCh.length && { kind: "text", label: "Channels", channels: textCh.map((c) => ({ id: c.id, name: c.name })) },
+    textCh.length && { kind: "text", label: "Channels", channels: textCh.map((c) => ({ id: c.id, name: c.name, topic: c.topic || "", slowmode: c.slowmode_sec || 0, postPolicy: c.post_policy || "everyone" })) },
     voiceCh.length && { kind: "voice", label: "Voice", channels: voiceCh.map((c) => ({ id: c.id, name: c.name, voice: [] })) },
   ].filter(Boolean);
 
@@ -1047,6 +1047,17 @@ export async function createChannel(serverId, name, kind = "text") {
   const { data, error } = await supabase.from("channels").insert({ server_id: serverId, name: clean, kind }).select("id,name").single();
   if (error) throw new Error(/duplicate|unique|23505/i.test(error.message || "") ? "A channel with that name already exists" : (error.message || "Couldn’t create the channel"));
   return data;
+}
+
+// Update a channel's settings (name/topic/slowmode_sec/post_policy) — a direct `channels`
+// update, fenced by `ch_write` (manage_channels). Name is normalised to a handle.
+export async function updateChannel(channelId, patch) {
+  const p = { ...patch };
+  if (p.name != null) { p.name = String(p.name).trim().toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, ""); if (!p.name) throw new Error("A channel name is required"); }
+  if (isDemo()) return p;
+  const { error } = await supabase.from("channels").update(p).eq("id", channelId);
+  if (error) throw new Error(/duplicate|unique|23505/i.test(error.message || "") ? "A channel with that name already exists" : (error.message || "Couldn’t update the channel"));
+  return p;
 }
 
 // Replace a member's assignable (non-default) roles (set_member_roles RPC, manage_roles-gated).

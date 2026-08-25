@@ -117,6 +117,22 @@ const CASES = [
     if ((await p.$$(".mem .mrow")).length !== before - 1) return "confirming Kick should drop the member row";
     return null;
   }],
+  ["channel-settings", "/s/lb/c/beats?demo=1", "light", async (p) => {
+    const row = await p.$("nav.chan .crow");
+    await row.hover();
+    await p.waitForTimeout(60);
+    const gear = await p.$("nav.chan .crow .cgear");
+    if (!gear) return "channel edit gear missing for admin";
+    await gear.click();
+    await p.waitForTimeout(150);
+    if (!(await $(p, ".scrim .modal"))) return "channel settings modal should open";
+    if ((await p.$$(".scrim .modal .selbtn")).length < 2) return "slow-mode + post-policy selectors expected";
+    await p.fill('.scrim .modal input[aria-label="Channel name"]', "renamed-chan");
+    await p.click('.scrim .modal button:has-text("Save channel")');
+    await p.waitForTimeout(150);
+    if (await $(p, ".scrim .modal")) return "saving should close the modal";
+    return null;
+  }],
   ["create-channel", "/s/lb/c/beats?demo=1", "light", async (p) => {
     const add = await p.$("nav.chan .cgadd");
     if (!add) return "the channel-group + (create channel) is missing";

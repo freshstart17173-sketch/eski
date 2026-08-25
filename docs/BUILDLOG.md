@@ -1392,3 +1392,20 @@ DONE: the profile hero's POV actions were toast stubs — **Add friend** (public
 NEXT: a public/mutual-POV demo profile to exercise Add friend/Message; Posted-by → profile nav
   (needs `handle` on the who-shape); the remaining Server-settings/channel-settings surfaces;
   and the standing untestable/blocked set (Realtime, permalinks, P9 create/join RPCs).
+
+## 2026-08-24 — P8.3 Channel settings (name / topic / slowmode / post-policy)
+IN PROGRESS: (cleared)
+DONE: the channel-row **edit gear** (admin, was `toast("P8")`) opens a **Channel settings**
+  modal — rename, topic, **slow mode** (Off/5s/10s/30s/1m/5m) and **who can post**
+  (Everyone/Admins only) → `updateChannel(id, patch)` (direct `channels` update, `ch_write` =
+  manage_channels; name normalised, unique clash surfaced). The channel shape now carries
+  topic/slowmode/postPolicy (added to the `loadServerBundle` select + channelGroups). Live
+  navigates to refresh the header; demo toasts. Gear is text-channels-only now (voice is v2).
+  Verified: `verify-workspace.mjs` +`channel-settings` — the gear opens the modal (with the
+  slow-mode + post-policy selectors), renaming + Save closes it. All workspace cases GREEN both
+  themes, zero app console errors.
+NEXT: channel **reorder persistence** (`reorder_channels` RPC — the drag UI exists in the
+  gallery), the broader **Server settings** screen (general/roles editor/moderation/audit log),
+  storage/billing. Standing untestable/blocked: Realtime, permalinks, P9 create/join (new RPCs).
+  Server-management is now substantial: create channel · channel settings · member
+  timeout/kick/ban · role assignment.
