@@ -1530,3 +1530,27 @@ DONE: the server menu's **Notification settings** (was a `toast` stub) opens a r
 NEXT: channel-level notif prefs (`channel_prefs`); invite management; icon/cover/banner uploads.
   Standing: Realtime, permalinks, billing, audit log. The server menu is now fully wired
   (settings · invite · notification settings · leave/delete).
+
+## 2026-08-25 — P9.1 quick-switcher (⌘K) · P9.2 message permalinks · P9.3 invite management
+IN PROGRESS: (cleared)
+DONE (three chunks, all GREEN in demo, both themes, zero app console errors):
+  - **P9.1 quick-switcher (⌘K / Ctrl-K)** — commit `639da24`. A global capture-phase key handler
+    (main.js, gated to signed-in/demo) opens `screens/switcher.js`: an overlay filtering the four
+    standard destinations + your servers + friends; ↑/↓/Enter/Esc, a second press toggles it shut,
+    and any nav (renderRoute → closeSwitcher) closes it. `loadSwitcher()` feeds it (demo + live via
+    the rail + friendships). `.qs` CSS z-index 92. Verify: `verify-switcher.mjs`.
+  - **P9.2 message permalinks** — commit `f5bdc6a`. A message's **Copy link** builds a canonical
+    `…/c/<ch>?m=<id>` permalink and copies it; arriving there scrolls the message into view + runs a
+    one-shot background pulse (`shell.css .msg.flash`), driven by `workspaceView.focusMsg`. Also
+    consolidated the four ad-hoc `navigator.clipboard` writes onto one `ui.js copyToClipboard()`
+    (same blocked-write→toast-the-url fallback). Verify: `verify-workspace` permalink-arrival + copy-link.
+  - **P9.3 invite management** — commit `8bbbb11`. **Invite people** now opens the gallery's
+    `#inviteModal` (was a one-shot copy): lists active links (`loadInvites`, admin-only si_read),
+    each with a usage/expiry line + Copy + Revoke (`revokeInvite` → si_delete); a new link is minted
+    with expiry + max-uses (`createInvite` writes `expires_at`/`max_uses`, the columns
+    `join_via_invite` already enforces). `demoInvites` = 2 fixtures. Verify: `verify-workspace` invite
+    (list → create → revoke → close).
+NEXT: server **icon/cover** + profile **banner** uploads (R2; note the banner still has no gallery
+  panel); **audit log**; the gallery's invite-by-handle + suggested-people rows (deferred — needs a
+  friends-not-in-server query + an invite-to-user notification RPC, untestable in-sandbox). Standing:
+  **Realtime** (DM/notif/reaction/edit echo, untestable offline), **billing** (Stripe).
