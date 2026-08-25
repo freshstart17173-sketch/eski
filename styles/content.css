@@ -257,6 +257,33 @@
 .sharedview .deadshare .lead{color:var(--muted);font-size:var(--fs-sm);margin-top:var(--s2)}
 @media(max-width:760px){.sharedview .svbody{grid-template-columns:1fr}}
 
+/* ── Notifications (P7.3, CANON §C) — in-app notification list ──────────────────
+   Ported from the gallery. Unread rows carry an ink dot; per-row ✓ + "Mark all read". */
+.notif{flex:1;min-width:0;display:flex;flex-direction:column;background:var(--paper)}
+.notif .notifhd{flex:none;min-height:56px;display:flex;align-items:center;gap:var(--s4);padding:var(--s3) var(--s5);background:var(--surface);flex-wrap:wrap}
+.notif .notifhd .t{font-weight:600;font-size:var(--fs-lg)}
+.notif .ntabs{display:flex;gap:var(--s4)}
+.notif .ntab{color:var(--soft);font-size:var(--fs-sm);padding-bottom:2px;cursor:pointer}
+.notif .ntab.on{color:var(--ink);font-weight:600;box-shadow:inset 0 -2px 0 var(--ink)}
+.notif .notifhd .mark{margin-left:auto;font-size:var(--fs-xs);color:var(--muted);cursor:pointer}
+.notif .notifhd .mark:hover{color:var(--ink)}
+.notif .npanel{flex:1;overflow-y:auto;padding:var(--s3) var(--s5) var(--s5)}
+.notif .nrow{position:relative;display:flex;gap:var(--s3);padding:11px var(--s3) 11px var(--s4);border-radius:var(--r);cursor:pointer}
+.notif .nrow:hover{background:var(--surface)}
+.notif .nrow.unread::before{content:"";position:absolute;left:6px;top:50%;transform:translateY(-50%);width:7px;height:7px;border-radius:50%;background:var(--ink)}
+.notif .nrow .nic{flex:none;width:30px;height:30px;border-radius:50%;background:var(--surface);color:var(--soft);display:grid;place-items:center}
+.notif .nrow:hover .nic{background:var(--plate)}
+.notif .nrow .nbd{flex:1;min-width:0}
+.notif .nrow .ntx{font-size:var(--fs-sm);color:var(--soft)}.notif .nrow .ntx b{color:var(--ink);font-weight:600}
+.notif .nrow .nctx{font-size:var(--fs-xs);color:var(--muted);margin-top:2px}
+.notif .nrow .quote{margin-top:6px;font-size:var(--fs-xs);color:var(--soft);padding-left:10px;box-shadow:inset 2px 0 0 var(--line)}
+.notif .nrow time{font-size:var(--fs-xs);color:var(--muted);flex:none}
+.notif .nrow .nacts{position:absolute;top:7px;right:7px;display:none;gap:2px;background:var(--paper);border-radius:var(--r)}
+.notif .nrow:hover .nacts{display:flex}
+.notif .nrow .nacts button{width:26px;height:26px;display:grid;place-items:center;color:var(--muted);border-radius:var(--r);transition:background var(--t),color var(--t)}
+.notif .nrow .nacts button:hover{background:var(--surface);color:var(--ink)}
+.notif .emptystate{margin:auto}
+
 /* ── Messages + Friends (P7.1, CANON §C) — DM thread list + friends panel ──────
    Ported from the gallery. The .dmlist is a channel-width column; the right pane swaps
    between a conversation (P7.2) and the friends panel. No member hue (outside any server). */

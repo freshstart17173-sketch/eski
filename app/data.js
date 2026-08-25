@@ -8,7 +8,7 @@
 //                  realtime.js + workspace.js; this module does the initial reads.
 //  - signed out  → { needsAuth:true } so the shell shows a sign-in prompt.
 
-import { demoWorkspace, demoExplorer, demoFeed, demoProfile, demoComments, demoSharedWork, demoDMs, demoDMThread } from "./demo.js";
+import { demoWorkspace, demoExplorer, demoFeed, demoProfile, demoComments, demoSharedWork, demoDMs, demoDMThread, demoNotifications } from "./demo.js";
 import { supabase } from "./supabase.js";
 import { session } from "./supabase.js";
 
@@ -899,6 +899,63 @@ export async function sendDM(dmChannelId, body) {
   const { data, error } = await supabase.from("dm_messages").insert({ dm_channel_id: dmChannelId, user_id: user.id, body: clean }).select("id,body,created_at").single();
   if (error) throw new Error(error.message || "Couldn’t send the message");
   return { id: data.id, author: { name: user.email?.split("@")[0] || "you", initials: initials(user.email || "you"), avatar_key: null }, time: fmtTime(data.created_at), body: data.body || clean, mine: true };
+}
+
+// ── Notifications (P7.3, CANON §C — notifications) ───────────────────────────
+// In-app only (v1). Read/mark-read/delete your own (notif_read/update); inserts come from
+// the P2 triggers. Actor profiles + server names are fetched SEPARATELY (bug-#1 hazard). The
+// row text is built from `kind` + the actor; the excerpt renders as a quote. No member hue.
+const NOTIF_VERB = { mention: "mentioned you", comment: "commented on your post", join: "joined", reaction: "reacted to your message", invite: "invited you", friend: "sent you a friend request" };
+const NOTIF_ICON = { mention: "at", comment: "comment", join: "user", reaction: "smile", invite: "mail", friend: "user" };
+function shapeNotif(r, actById, srvById) {
+  const a = actById[r.actor_id];
+  const actor = a?.name || a?.handle || "someone";
+  const srv = srvById[r.server_id]?.name || null;
+  return {
+    id: r.id, kind: r.kind, actor, avatar_key: a?.avatar_key || null,
+    text: NOTIF_VERB[r.kind] || "sent you a notification",
+    icon: NOTIF_ICON[r.kind] || "bell",
+    context: srv, excerpt: r.excerpt || "",
+    time: fmtWhen(r.created_at), read: !!r.read_at,
+  };
+}
+function fmtWhen(ts) {
+  if (!ts) return "";
+  const d = new Date(ts), now = new Date();
+  const sameDay = d.toDateString() === now.toDateString();
+  if (sameDay) return fmtTime(ts);
+  const days = Math.floor((now - d) / 86400000);
+  if (days <= 1) return "Yesterday";
+  if (days < 7) return d.toLocaleDateString(undefined, { weekday: "short" });
+  return d.toLocaleDateString(undefined, { day: "numeric", month: "short" });
+}
+export async function loadNotifications() {
+  if (isDemo()) return demoNotifications();
+  const user = session();
+  if (!user) return { needsAuth: true, live: false };
+  const { servers } = await loadRail(user);
+  const me = { id: user.id, name: user.email?.split("@")[0] || "you", initials: initials(user.email || "you"), handle: user.email?.split("@")[0] || "you", colorIdx: 1 };
+  const { data: rows } = await supabase.from("notifications")
+    .select("id,kind,actor_id,server_id,excerpt,read_at,created_at").eq("user_id", user.id)
+    .order("created_at", { ascending: false }).limit(100);
+  const actorIds = [...new Set((rows || []).map((r) => r.actor_id).filter(Boolean))];
+  const serverIds = [...new Set((rows || []).map((r) => r.server_id).filter(Boolean))];
+  const actById = {}, srvById = {};
+  if (actorIds.length) { const { data } = await supabase.from("profiles").select("id,handle,name,avatar_key").in("id", actorIds); for (const p of data || []) actById[p.id] = p; }
+  if (serverIds.length) { const { data } = await supabase.from("servers").select("id,name").in("id", serverIds); for (const s of data || []) srvById[s.id] = s; }
+  const items = (rows || []).map((r) => shapeNotif(r, actById, srvById));
+  return { needsAuth: false, live: true, source: "notifications", me, servers, dmUnread: 0, server: null, items, unread: items.filter((i) => !i.read).length };
+}
+export async function markNotifRead(id) {
+  if (isDemo()) return;
+  const { error } = await supabase.from("notifications").update({ read_at: new Date().toISOString() }).eq("id", id);
+  if (error) throw new Error(error.message || "Couldn’t update");
+}
+export async function markAllNotifsRead() {
+  if (isDemo()) return;
+  const user = session();
+  if (!user) return;
+  await supabase.from("notifications").update({ read_at: new Date().toISOString() }).eq("user_id", user.id).is("read_at", null);
 }
 
 // a channel's thread (parent + replies), loaded on demand when a thread opens

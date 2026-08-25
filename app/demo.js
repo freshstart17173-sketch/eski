@@ -318,6 +318,27 @@ export function demoDMs() {
   };
 }
 
+// Notifications demo fixture (P7.3) — in-app notifications of every kind, some unread.
+export function demoNotifications() {
+  const n = (id, kind, actor, icon, text, context, excerpt, time, read) => ({ id, kind, actor, avatar_key: null, icon, text, context, excerpt, time, read });
+  const items = [
+    n("n1", "mention", "rae", "at", "mentioned you in #beats", "Late Bloom LP", "@jax can you re-cut the bridge drums before the session?", "2:31 PM", false),
+    n("n2", "comment", "mira", "comment", "left a comment on sh040_comp.mov", "Specter", "near building edge is ghosting, needs a garbage matte", "1:04 PM", false),
+    n("n3", "friend", "lin", "user", "sent you a friend request", null, "", "12:20 PM", false),
+    n("n4", "join", "nel", "user", "joined Late Bloom LP from your invite link", "Late Bloom LP", "", "Yesterday", true),
+    n("n5", "reaction", "dev", "smile", "reacted 🔥 to your message", "Late Bloom LP", "", "Tue", true),
+  ];
+  return {
+    needsAuth: false, live: false, source: "notifications", me, dmUnread: 3, server: null,
+    servers: [
+      { id: "lb", name: "Late Bloom LP", initials: "LB" },
+      { id: "sp", name: "Specter", initials: "SP", mentions: 7 },
+      { id: "bs", name: "Beat swap", initials: "BS" },
+    ],
+    items, unread: items.filter((i) => !i.read).length,
+  };
+}
+
 // A DM conversation demo fixture (P7.2). Keyed by channel id; unknown ids start empty so a
 // freshly-opened chat (e.g. from the friend Message button) shows just the composer.
 export function demoDMThread(id) {

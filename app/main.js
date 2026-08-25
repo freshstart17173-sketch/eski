@@ -8,7 +8,7 @@ import { signal, effect } from "./signals.js";
 import { start, match } from "./router.js";
 import { ready, session, onChange } from "./supabase.js";
 import { icon } from "./icons.js";
-import { loadWorkspace, loadExplorer, loadFeed, loadProfile, loadSharedWork, loadDMsScreen, clearWorkspaceCache, isDemo } from "./data.js";
+import { loadWorkspace, loadExplorer, loadFeed, loadProfile, loadSharedWork, loadDMsScreen, loadNotifications, clearWorkspaceCache, isDemo } from "./data.js";
 import { teardownRealtime } from "./realtime.js";
 import { renderRail, appFrame } from "./shell.js";
 import { renderWorkspace } from "./screens/workspace.js";
@@ -20,6 +20,7 @@ import { renderSignin } from "./screens/signin.js";
 import { renderLanding } from "./screens/landing.js";
 import { renderShared } from "./screens/shared.js";
 import { renderDMs } from "./screens/dms.js";
+import { renderNotifications } from "./screens/notifications.js";
 
 const stage = document.getElementById("stage");
 
@@ -104,6 +105,15 @@ async function renderRoute(r) {
     if (mine !== token) return;
     if (feedData.needsAuth) { swap(renderSignin()); return; }
     swap(appFrame(renderRail(feedData, r), renderFeed(feedData)));
+    return;
+  }
+
+  // Notifications (P7.3) — the in-app notification list.
+  if (r.screen === "notifications") {
+    const nData = await loadNotifications();
+    if (mine !== token) return;
+    if (nData.needsAuth) { swap(renderSignin()); return; }
+    swap(appFrame(renderRail(nData, r), renderNotifications(nData)));
     return;
   }
 

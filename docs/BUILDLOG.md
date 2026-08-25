@@ -1192,3 +1192,29 @@ NEXT (P7.2b/P7.3): DM **Realtime** (subscribe `dm_messages` on the open thread �
   **New message / group DM** flow (`create_group_dm`), then **P7.3 Notifications** (route
   `/notifications`, schema-07 + notifications table/triggers exist). Also the P5.19 markers:
   banner render + avatars-from-key on rail/comments/cards.
+
+## 2026-08-24 — P7.3 Notifications (in-app list + mark-read)
+IN PROGRESS: (cleared)
+DONE: the **Notifications screen** (route `/notifications`, was a placeholder) is real.
+  `loadNotifications()` reads the `notifications` table (notif_read = own), fetching actor
+  profiles + server names SEPARATELY (bug-#1); the row text is built from `kind` (mention/
+  comment/join/reaction/invite/friend) + the actor, with the `excerpt` as a quote and the
+  server as context. Header with **All / Mentions** tabs + **Mark all read**; each row shows a
+  kind icon, `<b>actor</b> text`, context, excerpt, time, and an **unread dot**; clicking a row
+  (or its hover ✓) marks it read (`markNotifRead` → `read_at`), Mark all read clears every
+  unread (`markAllNotifsRead`). Empty state when a tab has nothing. NO member hue. New:
+  `app/screens/notifications.js`, `demoNotifications()`, the ported `.notif/.nrow` CSS,
+  `main.js` handler, `verify-notifications.mjs`.
+  Verified: `verify-notifications.mjs` — 5 rows / 3 unread both themes; Mentions tab filters to
+  1; clicking an unread row drops the unread count; Mark all read → 0 unread. dms + gallery
+  regression GREEN, zero app console errors. Screenshotted vs the gallery.
+NEXT: DM/notification **Realtime** (subscribe inserts — not in-sandbox verifiable); the
+  notification **bell** unread badge + a bell-dropdown preview; wiring a notification row to
+  **navigate to its target** (needs target_type/target_id routing); DM row ⋯ (pin/mute/hide)
+  and **group DM** creation; the P5.19 markers (banner render, avatars-from-key on rail/
+  comments/cards). All P7 primary screens (Messages, Friends, DM conversation, Notifications)
+  are now real — the remaining P7 work is Realtime + polish. State: live app on `preview`
+  through **P7.3**; P0–P4 spine + P5 content + P7 social all shipped.
+GOTCHA AW: Playwright element handles go STALE when the surface re-renders (a tab strip that
+  `replaceChildren`s on click). Re-query by selector (`:has-text(...)`) between clicks instead
+  of holding an array of handles — "Element is not attached to the DOM" is the tell.
