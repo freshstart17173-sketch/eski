@@ -244,6 +244,14 @@ export function toast({ message, action, duration = 3200, icon: ic = "check" } =
   return t;
 }
 
+/** Copy text to the clipboard and confirm with a toast. The write can be refused
+ * (no user gesture / permissions / http), so on failure it toasts the text itself as a
+ * fallback — the user can still select it. One place so every "Copy link" behaves alike. */
+export async function copyToClipboard(text, { ok = "Copied", icon: ic = "link" } = {}) {
+  try { await navigator.clipboard?.writeText(text); toast({ message: ok, icon: ic }); return true; }
+  catch { toast({ message: text, icon: ic }); return false; }
+}
+
 // ── P3.12 Tabs ────────────────────────────────────────────────────────────────
 // items: [{id,label,count?}]. Active shows the inset underline; keyboard-navigable.
 export function Tabs({ items = [], active, onChange } = {}) {

@@ -13,7 +13,7 @@
 // Files is a channel (CANON §C.6): the server's channel column stays to the left
 // so any other channel is one click away — the browser is never a dead-end.
 
-import { el, toast, openMenu, closeMenus, openModal, VisibilitySeg, Button } from "../ui.js";
+import { el, toast, openMenu, closeMenus, openModal, VisibilitySeg, Button, copyToClipboard } from "../ui.js";
 import { iconEl } from "../icons.js";
 import { navigate } from "../router.js";
 import { createFolder, moveToFolder, trashWorks, restoreWork, purgeWork, emptyTrash, loadTrash, starWork, unstarWork, saveToFiles, renameWork, setHidden, createShareLink, shareUrl, loadShareLinks, revokeShareLink, setVisibility, visFromDb } from "../data.js";
@@ -888,9 +888,7 @@ function downloadSelected(state) {
 async function copyLink(w) {
   try {
     const token = await createShareLink(w.id);
-    const url = shareUrl(token);
-    try { await navigator.clipboard?.writeText(url); toast({ message: "Link copied — anyone with it can view", icon: "link" }); }
-    catch { toast({ message: url, icon: "link" }); }
+    await copyToClipboard(shareUrl(token), { ok: "Link copied — anyone with it can view" });
   } catch (e) { toast({ message: e?.message || "Couldn’t create the link" }); }
 }
 
@@ -917,7 +915,7 @@ function openShareDialog(w) {
     const url = shareUrl(l.token);
     return el(".sharerow2", {}, [
       el(".field", { style: "flex:1;min-width:0" }, [iconEl("link", "sm"), el("input", { readonly: true, value: url })]),
-      Button({ label: "Copy", size: "sm", icon: "copy", onClick: async () => { try { await navigator.clipboard?.writeText(url); toast({ message: "Link copied", icon: "link" }); } catch { toast({ message: url, icon: "link" }); } } }),
+      Button({ label: "Copy", size: "sm", icon: "copy", onClick: () => copyToClipboard(url, { ok: "Link copied" }) }),
       Button({ label: "Revoke", size: "sm", variant: "ghost", onClick: async () => {
         try { if (!demo) await revokeShareLink(l.token); list = list.filter((x) => x.token !== l.token); paint(); toast({ message: "Link revoked" }); }
         catch (e) { toast({ message: e?.message || "Couldn’t revoke the link" }); }

@@ -11,7 +11,7 @@
 //   loading · empty (no channels) · zero-messages · timedout/slowmode composer ·
 //   reconnecting banner · thread open · pins/files tab.
 
-import { el, Avatar, IconButton, openMenu, closeMenus, toast, openModal, Button } from "../ui.js";
+import { el, Avatar, IconButton, openMenu, closeMenus, toast, openModal, Button, copyToClipboard } from "../ui.js";
 import { iconEl } from "../icons.js";
 import { navigate } from "../router.js";
 import { avatarUrl } from "../cards.js";
@@ -110,7 +110,7 @@ function messageRow(msg, data, { onOpenThread } = {}) {
   const acts = el(".hoveracts", {}, [
     IconButton({ icon: "smile", title: "React", onClick: (e) => openMenu(e.currentTarget, REACT_EMOJI.map((em) => ({ label: em, onClick: () => rx.add(em) }))) }),
     IconButton({ icon: "reply", title: "Reply", onClick: () => onOpenThread?.(msg) }),
-    IconButton({ icon: "more", title: "More", onClick: (e) => openMsgMenu(e.currentTarget, msg, own) }),
+    IconButton({ icon: "more", title: "More", onClick: (e) => openMsgMenu(e.currentTarget, msg, own, data) }),
   ]);
 
   const bd = el(".bd", {}, [byline(msg.author, msg.time)]);
@@ -170,15 +170,25 @@ function startEdit(msg) {
   input.focus(); input.select();
 }
 
+// A message permalink is the current channel path plus ?m=<id> — arriving there scrolls to
+// and flashes the message (see flashMessage / workspaceView.focusMsg). We build it from the
+// server+channel in `data`, not location.pathname, so it's canonical even from /s/:id (no
+// channel segment) or a thread pane.
+function msgPermalink(msg, data) {
+  const chId = data.channel?.id || data.activeChannelId;
+  const base = chId ? `/s/${data.server.id}/c/${chId}` : `/s/${data.server.id}`;
+  return location.origin + base + "?m=" + msg.id;
+}
+
 // the ⋯ menu: own message adds Edit/Delete; everyone gets Pin + Copy link
-function openMsgMenu(anchor, msg, own) {
+function openMsgMenu(anchor, msg, own, data) {
   const items = [];
   if (own) items.push({ label: "Edit message", icon: "pen", onClick: () => startEdit(msg) });
   items.push({ label: "Pin to channel", icon: "pin", onClick: async () => {
     try { if (!isDemo()) await pinMessage(msg.id); toast({ message: "Pinned to the channel", icon: "pin" }); }
     catch (e) { toast({ message: e?.message || "Couldn’t pin" }); }
   } });
-  items.push({ label: "Copy link", icon: "link", onClick: () => toast({ message: "Message links land with permalinks (P4.13)" }) });
+  items.push({ label: "Copy link", icon: "link", onClick: () => copyToClipboard(msgPermalink(msg, data), { ok: "Message link copied" }) });
   if (own) {
     items.push({ sep: true });
     items.push({ label: "Delete message", icon: "trash", danger: true, onClick: async () => {
@@ -519,9 +529,7 @@ function leaveServerFlow(data) {
 async function inviteFlow(data) {
   try {
     const code = await createInvite(data.server.id);
-    const url = `${location.origin}/join/${code}`;
-    try { await navigator.clipboard?.writeText(url); toast({ message: "Invite link copied — share it to add people", icon: "link" }); }
-    catch { toast({ message: url, icon: "link" }); }
+    await copyToClipboard(`${location.origin}/join/${code}`, { ok: "Invite link copied — share it to add people" });
   } catch (e) { toast({ message: e?.message || "Couldn’t create the invite" }); }
 }
 
@@ -739,6 +747,19 @@ function switchTab(main, name) {
   main.querySelectorAll(".chpanel").forEach((p) => (p.hidden = p.dataset.chview !== name));
 }
 
+// Highlight the message a permalink points at. RAF defers to after the screen is mounted in
+// #stage (scrollIntoView needs it in the DOM); the .flash class runs a one-shot background
+// pulse (shell.css) that we then strip so a re-flash on the next arrival re-triggers.
+function flashMessage(screen, mid) {
+  requestAnimationFrame(() => {
+    const node = screen.querySelector(`.msg[data-mid="${CSS.escape(mid)}"]`);
+    if (!node) return;
+    node.scrollIntoView({ block: "center" });
+    node.classList.add("flash");
+    setTimeout(() => node.classList.remove("flash"), 1700);
+  });
+}
+
 // ── the screen ──────────────────────────────────────────────────────────────
 export function renderWorkspace(data, view = {}) {
   const screen = el(".screen", { "data-screen": "workspace" });
@@ -762,6 +783,9 @@ export function renderWorkspace(data, view = {}) {
   const main = mainPane(data, view, ctx);
   const mem = membersRail(data);
   screen.append(chan, main, mem);
+
+  // arrived via a message permalink (?m=<id>) → once mounted, scroll to it and pulse it.
+  if (view.focusMsg) flashMessage(screen, view.focusMsg);
 
   // thread open/close: opening hides the members rail, shows the thread pane. Live
   // loads the real thread (parent + replies) for the clicked message; demo uses

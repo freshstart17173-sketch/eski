@@ -62,6 +62,7 @@ function workspaceView(r) {
     composer: ws === "timedout" || ws === "slowmode" ? ws : "normal",
     tab: ws === "pins" || ws === "files" ? ws : p.get("tab") || "messages",
     forceEmpty: ws === "empty",
+    focusMsg: p.get("m"),                              // a message permalink → scroll + flash it
   };
 }
 

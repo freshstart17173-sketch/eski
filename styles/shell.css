@@ -116,6 +116,10 @@
 .day::before,.day::after{content:"";flex:1;height:1px;background:var(--line)}
 .msg{position:relative;display:flex;gap:var(--s3);padding:5px var(--s2);border-radius:var(--r)}
 .msg:hover{background:var(--surface)}
+/* permalink arrival: a brief background pulse marks the linked message, then settles —
+   background step only, no border or shadow, per the "surfaces separate by step" rule. */
+.msg.flash{animation:msgflash 1.7s ease-out}
+@keyframes msgflash{0%,25%{background:var(--plate)}100%{background:transparent}}
 .msg .bd{flex:1;min-width:0}
 .msg .by{display:flex;align-items:baseline;gap:var(--s2)}
 .msg .by time{font-size:var(--fs-mi);color:var(--muted)}

@@ -256,6 +256,23 @@ const CASES = [
     (await p.$eval("#offlineBar", (e) => e.hidden)) ? "reconnecting banner should be visible" : null],
   ["empty-server", "/s/lb?demo=1&ws=empty", "light", async (p) => has(p, ".emptystate h3", "no-channels empty state")],
   ["signed-out", "/s/lb/c/beats", "light", async (p) => has(p, ".authcard .field input", "sign-in prompt when signed out")],
+  ["permalink-arrival", "/s/lb/c/beats?demo=1&m=m3", "light", async (p) =>
+    // arriving with ?m=<id> flashes that message (the class lingers ~1.7s, past the 400ms wait)
+    has(p, '.stream .msg[data-mid="m3"].flash', "flashed permalink target")],
+  ["copy-link", "/s/lb/c/beats?demo=1", "light", async (p) => {
+    const msg = await p.$('.stream .msg[data-mid="m3"]');
+    await msg.hover();
+    await p.waitForTimeout(80);
+    await (await msg.$(".hoveracts button:last-child")).click();   // ⋯
+    await p.waitForTimeout(120);
+    for (const b of await p.$$(".menu.open button")) { if ((await b.textContent()).includes("Copy link")) { await b.click(); break; } }
+    await p.waitForTimeout(120);
+    // clipboard write may be blocked headless → the fallback toasts the URL itself; either
+    // path surfaces a toast that proves the permalink (…?m=m3) was built.
+    const toastText = await p.$eval(".toaststack", (t) => t.textContent).catch(() => "");
+    if (!/m=m3|Message link copied/.test(toastText)) return `Copy link should surface the permalink toast, got "${toastText}"`;
+    return null;
+  }],
 ];
 
 const browser = await chromium.launch({ executablePath: "/opt/pw-browsers/chromium-1194/chrome-linux/chrome" });
