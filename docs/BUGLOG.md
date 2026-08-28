@@ -20,12 +20,6 @@ Severity: **P1** breaks or badly misleads · **P2** wrong but usable · **P3** p
       placeholder (low priority — not a click path). Enhancement: an anon-readable
       `preview_invite(code)` RPC so the join card can show the server name · member count ·
       inviter (QA §20) instead of the generic copy.
-- [ ] **P2 · Profile photo + handle don't propagate** (rail/main still shows the default).
-      Two possible causes to split: (a) `[infra]` avatars need R2 serving — if the R2
-      env vars / CORS aren't set, `avatarUrl` 404s and falls back to initials (looks like
-      "still default"); (b) the shell rail may not rebuild from fresh identity after an
-      edit. **Fix:** verify the R2 path end-to-end; make identity edits reliably repaint
-      the rail without a reload.
 - [ ] **P2 · Folder upload doesn't work / isn't supported.** The upload sheet's
       Files/Folder toggle exists but folder upload isn't wired. **Fix:** implement
       `webkitdirectory` folder selection + preserve the relative folder tree on upload.
@@ -42,8 +36,35 @@ Severity: **P1** breaks or badly misleads · **P2** wrong but usable · **P3** p
       network with no caching. **Fix:** parallelise the initial reads, cache identity, and
       confirm R2/CDN latency (`cdn.eski.lol`). Partly `[infra]`.
 
+## Feature requests (from the owner)
+
+- [ ] **Required tags / post fields per channel.** A channel can require every upload to
+      carry certain tag fields before it posts — e.g. a producer server's `#samples`
+      channel requires **BPM** and **Key** on every file. Not free-text tags: named fields
+      the uploader fills quickly in the upload sheet, enforced so a post can't go up without
+      them. Scope to sketch: (1) schema — a per-channel `required_fields` list (name +
+      optional type/options, e.g. Key = a note picker); store the filled values as
+      structured tags on the work (or a `work_fields` table) so they're filterable in the
+      explorer. (2) admin — set the required fields in channel settings. (3) upload — when
+      posting to such a channel, render the fields and block Post until they're filled. (4)
+      RLS/trigger — enforce server-side so the fence isn't just the UI (a `works`/placement
+      trigger that rejects a post missing a required field). Filterable by field in the
+      explorer once stored. → tracked as a build item; not started.
+
 ## Done
 
+- [x] **P1 · Every modal sat on a GREY slab in dark mode.** The recurring "modal on a grey
+      screen" — the real, pervasive cause (distinct from the placeholder routes) was the
+      scrim: `background:var(--ink)` + a black overlay, but `--ink` is near-WHITE in dark
+      mode, so it computed to grey. The scrim is now a translucent BLACK in both themes, so
+      the page dims through it and the modal reads as lifted. Fixes the backdrop for ALL
+      modals at once (edit profile, upload, create, invite, settings, join …).
+- [x] **P1 · An uploaded image could break the layout.** Added a global `img{max-width:
+      100%;height:auto}` floor + `overflow:hidden` on `.av`, so a photo of any size clips
+      to its box / the avatar circle instead of overflowing the dialog.
+- [x] **P2 · Profile photo now shows on the rail** (was initials-only; R2 confirmed set by
+      the owner, so the photo serves). Handle propagation is driven by the same cache-clear
+      + reload path that was already in place.
 - [x] **P1 · File uploads failed silently (root cause found).** `works.blob_sha` has a
       FK to `media_blobs.sha256`, but `media_blobs` is RLS-locked with no write policy and
       nothing ever created the row — so every file upload violated the FK. (Profile photos
