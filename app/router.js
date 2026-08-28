@@ -17,6 +17,7 @@ const ROUTES = [
   { pattern: "/upload",                    screen: "upload" },      // modal route
   { pattern: "/create",                    screen: "create" },
   { pattern: "/search",                    screen: "search" },
+  { pattern: "/settings",                  screen: "usersettings" },   // USER settings (≠ /s/:id/settings)
   { pattern: "/signin",                    screen: "auth" },
   { pattern: "/join/:code",                screen: "join" },
   { pattern: "/shared/:token",             screen: "shared" },

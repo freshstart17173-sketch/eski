@@ -66,7 +66,7 @@ async function loadRail(user) {
   if (_cache.rail) return _cache.rail;
   const [{ data: myServers }, { data: myProfile }] = await Promise.all([
     supabase.from("server_members").select("color, server:servers(id,name,owner_id,icon_key,cover_key)").eq("user_id", user.id),
-    supabase.from("profiles").select("handle,name,avatar_key").eq("id", user.id).maybeSingle(),
+    supabase.from("profiles").select("handle,name,avatar_key,status_emoji,status_text,presence_state").eq("id", user.id).maybeSingle(),
   ]);
   const rows = myServers || [];
   const servers = rows.filter((r) => r.server).map((r) => ({ id: r.server.id, name: r.server.name, initials: initials(r.server.name), icon_key: r.server.icon_key || null }));
@@ -115,7 +115,8 @@ export function meFor(user, prof) {
   const emailStem = user?.email?.split("@")[0] || "you";
   const handle = (prof?.handle || emailStem);
   const name = prof?.name || handle;
-  return { id: user?.id || null, name, handle, initials: initials(name), avatar_key: prof?.avatar_key || null, colorIdx: 1 };
+  return { id: user?.id || null, name, handle, initials: initials(name), avatar_key: prof?.avatar_key || null, colorIdx: 1,
+    status_emoji: prof?.status_emoji || "", status_text: prof?.status_text || "", presence_state: prof?.presence_state || "online" };
 }
 
 const MANAGE_SERVER = 1n;   // perm_bit('manage_server')
@@ -839,6 +840,74 @@ export async function updateProfile({ name, handle, bio }) {
   if (error) throw new Error(/duplicate|unique|23505/i.test(error.message || "") ? "That handle is taken" : (error.message || "Couldn’t save your profile"));
   clearWorkspaceCache();   // rail.me caches handle/name — refresh so /u/:handle links follow the change
   return vals;
+}
+
+// Set the signed-in user's global custom status + presence (a self `profiles` write, RLS
+// self-guarded). `presence` is one of online/idle/dnd/invisible (§E.5). `clearAt` is an
+// RFC-3339 timestamp or null (never clear). Passing an empty text + emoji clears the status
+// but keeps the chosen presence. Presence is a stored preference here — the ambient online
+// dot is Realtime Presence, but the manual online/idle/dnd/invisible choice lives on the row.
+export async function setStatus({ emoji = null, text = "", presence, clearAt = null } = {}) {
+  const vals = {
+    status_emoji: (emoji || "").trim() || null,
+    status_text: (text || "").trim() || null,
+    status_expires_at: clearAt || null,
+  };
+  if (presence) vals.presence_state = presence;   // online | idle | dnd | invisible
+  if (isDemo()) return vals;
+  const user = session();
+  if (!user) throw new Error("Sign in");
+  const { error } = await supabase.from("profiles").update(vals).eq("id", user.id);
+  if (error) throw new Error(error.message || "Couldn’t update your status");
+  clearWorkspaceCache();   // the rail + members cache presence/status — refresh so it shows at once
+  return vals;
+}
+
+// Clear a blocked edge (there is no unblock RPC — block_user only sets it). Deleting the
+// `friendships` row is self-guarded by RLS (you can only delete an edge you're part of), and
+// removes the block both ways. Matches either ordering of the (a_user,b_user) pair.
+export async function unblockUser(targetId) {
+  if (isDemo()) return;
+  const user = session();
+  if (!user) throw new Error("Sign in");
+  const { error } = await supabase.from("friendships").delete()
+    .eq("status", "blocked")
+    .or(`and(a_user.eq.${user.id},b_user.eq.${targetId}),and(a_user.eq.${targetId},b_user.eq.${user.id})`);
+  if (error) throw new Error(error.message || "Couldn’t unblock this user");
+}
+
+// The User-settings screen data (§C.10): identity, account email, appearance is client-only,
+// the blocked-users list (Privacy), and the personal storage meter. Read-only aggregation —
+// each panel's writes go through their own functions (updateProfile, setStatus, unblockUser,
+// signOut, theme).
+export async function loadUserSettings() {
+  const user = session();
+  if (!user || isDemo()) {
+    const dm = { id: "me", name: "jax", handle: "jax", initials: "JX", avatar_key: null, colorIdx: 5 };
+    return { needsAuth: !isDemo(), servers: [], me: dm, email: "jax@demo.eski", profile: { handle: "jax", name: "jax", avatar_key: null, status_emoji: "🎧", status_text: "cooking beats", presence_state: "online" }, blocked: [], storage: { usedBytes: 2.1 * GB, capGb: USER_BASE_GB, capBytes: USER_BASE_GB * GB, status: "active" } };
+  }
+  const { servers, me } = await loadRail(user);
+  const [{ data: prof }, { data: meterRows }, { data: balRows }, { data: blockRows }] = await Promise.all([
+    supabase.from("profiles").select("handle,name,avatar_key,status_emoji,status_text,presence_state").eq("id", user.id).maybeSingle(),
+    supabase.from("storage_meters").select("bytes_used").eq("owner_type", "user").eq("owner_id", user.id).maybeSingle(),
+    supabase.from("storage_balance").select("purchased_gb,status").eq("owner_type", "user").eq("owner_id", user.id).maybeSingle(),
+    supabase.from("friendships").select("a_user,b_user,requested_by").eq("status", "blocked").or(`a_user.eq.${user.id},b_user.eq.${user.id}`),
+  ]);
+  // resolve the blocked users' profiles (the "other" end of each blocked edge)
+  const otherIds = (blockRows || []).map((f) => (f.a_user === user.id ? f.b_user : f.a_user));
+  let blocked = [];
+  if (otherIds.length) {
+    const { data: bp } = await supabase.from("profiles").select("id,handle,name,avatar_key").in("id", otherIds);
+    blocked = (bp || []).map((p) => ({ id: p.id, name: p.name || p.handle, handle: p.handle, avatar_key: p.avatar_key || null, initials: initials(p.name || p.handle) }));
+  }
+  const capGb = USER_BASE_GB + Number(balRows?.purchased_gb || 0);
+  return {
+    needsAuth: false, servers, me,
+    email: user.email || "",
+    profile: { handle: prof?.handle || me.handle, name: prof?.name || me.name, avatar_key: prof?.avatar_key || null, status_emoji: prof?.status_emoji || "", status_text: prof?.status_text || "", presence_state: prof?.presence_state || "online" },
+    blocked,
+    storage: { usedBytes: Number(meterRows?.bytes_used || 0), capGb, capBytes: capGb * GB, status: balRows?.status || "active" },
+  };
 }
 
 // Edit a server's identity (name + icon_key + cover_key) — a `servers` update fenced by

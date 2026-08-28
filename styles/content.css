@@ -441,3 +441,31 @@
 .filefeed .cmt .by{display:flex;align-items:baseline;gap:7px;font-size:var(--fs-xs)}
 .filefeed .cmt .by time{color:var(--muted);font-size:10px}
 .filefeed .cmt .tx{font-size:var(--fs-sm);color:var(--soft)}
+
+/* ── User settings (§C.10, screens/usersettings.js) — a left setnav + a panel. Distinct from
+   server settings. Panes separate by background step; the active nav row is plate+ink+600
+   (the selected-nav convention), never a pill. ────────────────────────────────────────── */
+/* Fills the stage like the explorer: a nav column anchored to the left on a background
+   step (--surface, so it separates from the panel with no border), the panel on --paper
+   taking the rest. Panel CONTENT is capped for readability + left-aligned — never centred
+   in a void. All spacing from --s tokens. */
+.usersettings{height:100%;display:flex;overflow:hidden}
+.usersettings .setwrap{display:flex;flex:1;min-width:0}
+.usersettings .setnav{flex:none;width:var(--chan);background:var(--surface);overflow-y:auto;padding:var(--s4) var(--s2);display:flex;flex-direction:column;gap:2px}
+.usersettings .setback{display:flex;align-items:center;gap:7px;color:var(--muted);font-size:var(--fs-xs);font-weight:600;padding:6px var(--s2);border-radius:var(--r);margin-bottom:var(--s2);transition:color var(--t),background var(--t)}
+.usersettings .setback:hover{color:var(--ink);background:var(--plate)}
+.usersettings .setback .ic{transform:rotate(180deg)}   /* arrow points back/left */
+.usersettings .setrow{display:flex;align-items:center;gap:9px;text-align:left;padding:6px var(--s2);border-radius:var(--r);color:var(--soft);font-size:var(--fs-sm);transition:background var(--t),color var(--t)}
+.usersettings .setrow .ic{color:var(--muted)}
+.usersettings .setrow:hover{background:var(--plate);color:var(--ink)}
+.usersettings .setrow.on{background:var(--plate);color:var(--ink);font-weight:600}
+.usersettings .setrow.on .ic{color:var(--ink)}
+.usersettings .setpanel{flex:1;min-width:0;overflow-y:auto;padding:var(--s5)}
+.usersettings .setpanel>div{max-width:560px}
+.usersettings .sethead{margin-bottom:var(--s4)}
+.usersettings .sethead h1{margin:0;font-size:var(--fs-xl);font-weight:600}
+.usersettings .sethead p{margin:var(--s1) 0 0;color:var(--muted);font-size:var(--fs-sm)}
+.usersettings .setcard{background:var(--surface);border-radius:var(--r);padding:var(--s4)}
+.usersettings .setcard+.setcard,.usersettings .setactions{margin-top:var(--s3)}
+.usersettings .setcard .ulab{display:block;margin-bottom:var(--s2)}
+.usersettings .setrow2:last-child{border-bottom:0 !important}

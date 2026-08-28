@@ -6,11 +6,11 @@
 // Beta is web-only (CANON §C.2): the frame fills the viewport and flexes down to
 // ~1024px. No mobile collapse — that's a dormant post-beta gallery.
 
-import { el, Avatar, openMenu, toast, openModal, Button } from "./ui.js";
+import { el, Avatar, openMenu, toast, openModal, Button, SegmentedControl, SelectPill } from "./ui.js";
 import { iconEl } from "./icons.js";
-import { navigate } from "./router.js";
+import { navigate, reload } from "./router.js";
 import { signOut } from "./supabase.js";
-import { isDemo, createServer, joinServer, updateServer } from "./data.js";
+import { isDemo, createServer, joinServer, updateServer, setStatus } from "./data.js";
 import { avatarUrl } from "./cards.js";
 import { uploadBlobs } from "./upload-r2.js";
 
@@ -56,8 +56,8 @@ export function renderRail(data, route) {
   meBtn.addEventListener("click", (e) => openMenu(e.currentTarget, [
     { header: data.me.name },
     { label: "Profile", icon: "user", onClick: () => navigate(`/u/${data.me.handle}`) },
-    { label: "Set status", icon: "smile", onClick: () => toast({ message: "Status (P7)" }) },
-    { label: "Settings", icon: "settings", onClick: () => toast({ message: "User settings (P9)" }) },
+    { label: "Set status", icon: "smile", onClick: () => openStatus(data) },
+    { label: "Settings", icon: "settings", onClick: () => navigate(withDemo("/settings")) },
     { sep: true },
     { label: "Sign out", icon: "leave", danger: true, onClick: async () => { await signOut(); navigate("/signin"); } },
   ]));
@@ -160,6 +160,64 @@ function openJoinServer() {
   join.addEventListener("click", submit);
   codeI.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); submit(); } });
   codeI.focus();
+}
+
+// Set status (§C, gallery status composer) — a global custom status (emoji + text + optional
+// auto-clear) and the manual presence choice. Writes profiles via setStatus, then reloads the
+// shell so the rail/members reflect it. `data.me` carries the current status when known.
+export function openStatus(data) {
+  const cur = data.me || {};
+  const emojiI = el("input", { value: cur.status_emoji || "", maxlength: "2", placeholder: "🎧", "aria-label": "Status emoji", style: "width:44px;text-align:center" });
+  const textI = el("input", { value: cur.status_text || "", placeholder: "What are you working on?", "aria-label": "Status", maxlength: "80" });
+  const presenceSeg = SegmentedControl({
+    value: cur.presence_state || "online",
+    options: [
+      { value: "online", label: "Online", icon: "check" },
+      { value: "idle", label: "Idle", icon: "clock" },
+      { value: "dnd", label: "Do not disturb", icon: "mute" },
+      { value: "invisible", label: "Invisible", icon: "hide" },
+    ],
+  });
+  const clearSel = SelectPill({
+    label: "Clear", value: "never",
+    options: [
+      { value: "never", label: "Don’t clear" },
+      { value: "30", label: "in 30 min" },
+      { value: "60", label: "in 1 hour" },
+      { value: "240", label: "in 4 hours" },
+      { value: "today", label: "Today" },
+    ],
+  });
+  const clearAtFor = (v) => {
+    if (v === "never") return null;
+    if (v === "today") { const d = new Date(); d.setHours(23, 59, 59, 0); return d.toISOString(); }
+    return new Date(Date.now() + Number(v) * 60000).toISOString();
+  };
+  const body = el("div", {}, [
+    el("label.ulab", {}, ["Your status"]),
+    el(".statusrow", { style: "display:flex;gap:8px;align-items:center" }, [el(".field", { style: "flex:none" }, [emojiI]), el(".field", { style: "flex:1" }, [textI])]),
+    el("label.ulab", { style: "margin-top:12px;display:block" }, ["Presence"]),
+    presenceSeg,
+    el(".statusrow", { style: "display:flex;align-items:center;justify-content:space-between;margin-top:12px" }, [el("label.ulab", { style: "margin:0" }, ["Clear status after"]), clearSel]),
+  ]);
+  const cancel = Button({ label: "Cancel", variant: "ghost" });
+  const clear = Button({ label: "Clear status", variant: "ghost" });
+  const save = Button({ label: "Save", variant: "primary" });
+  const { close } = openModal({ title: "Set a status", body, footer: [clear, cancel, save] });
+  cancel.addEventListener("click", () => close());
+  clear.addEventListener("click", async () => {
+    try { if (!isDemo()) await setStatus({ emoji: null, text: "", presence: presenceSeg.value(), clearAt: null }); close(); toast({ message: "Status cleared" }); if (!isDemo()) reload(); }
+    catch (e) { toast({ message: e?.message || "Couldn’t clear your status" }); }
+  });
+  save.addEventListener("click", async () => {
+    if (save.disabled) return; save.disabled = true;
+    try {
+      if (!isDemo()) await setStatus({ emoji: emojiI.value, text: textI.value, presence: presenceSeg.value(), clearAt: clearAtFor(clearSel.value()) });
+      close(); toast({ message: "Status set", icon: "check" });
+      if (!isDemo()) reload();
+    } catch (e) { toast({ message: e?.message || "Couldn’t set your status" }); save.disabled = false; }
+  });
+  textI.focus();
 }
 
 // ── the frame ───────────────────────────────────────────────────────────────

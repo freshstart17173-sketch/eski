@@ -8,7 +8,9 @@ import { signal, effect } from "./signals.js";
 import { start, match, navigate } from "./router.js";
 import { ready, session, onChange } from "./supabase.js";
 import { icon } from "./icons.js";
-import { loadWorkspace, loadExplorer, loadFeed, loadProfile, loadSharedWork, loadDMsScreen, loadNotifications, clearWorkspaceCache, isDemo, needsProfileSetup } from "./data.js";
+import { loadWorkspace, loadExplorer, loadFeed, loadProfile, loadSharedWork, loadDMsScreen, loadNotifications, loadUserSettings, clearWorkspaceCache, isDemo, needsProfileSetup } from "./data.js";
+import { renderUserSettings } from "./screens/usersettings.js";
+import { time } from "./perf.js";
 import { teardownRealtime } from "./realtime.js";
 import { renderRail, appFrame } from "./shell.js";
 import { renderWorkspace } from "./screens/workspace.js";
@@ -32,7 +34,7 @@ const route = signal(match(location.pathname));   // current route match
 const authed = signal(false);                     // signed in? (post-ready)
 
 // Screens that live inside the three-pane shell (the rail is persistent).
-const IN_SHELL = new Set(["feed", "dms", "notifications", "search", "workspace", "explorer", "settings", "profile"]);
+const IN_SHELL = new Set(["feed", "dms", "notifications", "search", "workspace", "explorer", "settings", "profile", "usersettings"]);
 const LABELS = {
   feed: "Feed", dms: "Messages", notifications: "Notifications", upload: "Upload",
   create: "Create server", search: "Search", auth: "Sign in", join: "Join",
@@ -111,7 +113,7 @@ async function renderRoute(r) {
     const q = new URLSearchParams(location.search);
     const folder = q.get("folder");
     const source = r.params.serverId ? "server" : "personal";   // /files = personal mount
-    const exData = await loadExplorer({ serverId: r.params.serverId, folderId: folder, source });
+    const exData = await time("explorer", loadExplorer({ serverId: r.params.serverId, folderId: folder, source }));
     if (mine !== token) return;
     if (exData.needsAuth) { swap(renderSignin()); return; }
     swap(appFrame(renderRail(exData, r), renderExplorer(exData, { folderId: folder, mode: q.get("view") })));
@@ -120,7 +122,7 @@ async function renderRoute(r) {
 
   // Home Feed (P5.1) — friends' public posts, same card grid as the explorer.
   if (r.screen === "feed") {
-    const feedData = await loadFeed();
+    const feedData = await time("feed", loadFeed());
     if (mine !== token) return;
     if (feedData.needsAuth) { swap(renderSignin()); return; }
     swap(appFrame(renderRail(feedData, r), renderFeed(feedData)));
@@ -129,7 +131,7 @@ async function renderRoute(r) {
 
   // Notifications (P7.3) — the in-app notification list.
   if (r.screen === "notifications") {
-    const nData = await loadNotifications();
+    const nData = await time("notifications", loadNotifications());
     if (mine !== token) return;
     if (nData.needsAuth) { swap(renderSignin()); return; }
     swap(appFrame(renderRail(nData, r), renderNotifications(nData)));
@@ -138,7 +140,7 @@ async function renderRoute(r) {
 
   // Messages (P7.1) — DM thread list + the Friends panel.
   if (r.screen === "dms") {
-    const dmData = await loadDMsScreen();
+    const dmData = await time("dms", loadDMsScreen());
     if (mine !== token) return;
     if (dmData.needsAuth) { swap(renderSignin()); return; }
     swap(appFrame(renderRail(dmData, r), renderDMs(dmData)));
@@ -147,14 +149,23 @@ async function renderRoute(r) {
 
   // Profile (P5.10) — a person's shelves, POV-gated.
   if (r.screen === "profile") {
-    const profData = await loadProfile(r.params.handle);
+    const profData = await time("profile", loadProfile(r.params.handle));
     if (mine !== token) return;
     if (profData.needsAuth) { swap(renderSignin()); return; }
     swap(appFrame(renderRail(profData, r), renderProfile(profData)));
     return;
   }
 
-  const data = await loadWorkspace({ serverId: r.params.serverId, channelId: r.params.channelId });
+  // User settings (§C.10) — the person's own account surface (≠ server settings).
+  if (r.screen === "usersettings") {
+    const usData = await time("usersettings", loadUserSettings());
+    if (mine !== token) return;
+    if (usData.needsAuth) { swap(renderSignin()); return; }
+    swap(appFrame(renderRail(usData, r), renderUserSettings(usData)));
+    return;
+  }
+
+  const data = await time("workspace", loadWorkspace({ serverId: r.params.serverId, channelId: r.params.channelId }));
   if (mine !== token) return;   // a newer navigation already rendered
 
   // signed out (and not the demo) → the magic-link sign-in
