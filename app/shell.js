@@ -42,7 +42,17 @@ export function renderRail(data, route) {
     { label: "Add friend", icon: "user", onClick: () => navigate(withDemo("/messages")) },
   ]) }));
 
-  const meBtn = el("button.railbtn.user" + (route.screen === "profile" ? ".on" : ""), { title: `${data.me.name}, your profile` }, [el("span.pfp", {}, [data.me.initials])]);
+  // Your own avatar on the rail: render the uploaded photo when there is one, falling back
+  // to initials on a missing/renamed object — same graceful degrade as the server badges.
+  // (Was initials-only, so a set profile photo never showed on the main shell — owner bug.)
+  const pfp = el("span.pfp", {}, [data.me.initials]);
+  const meImg = avatarUrl(data.me.avatar_key);
+  if (meImg) {
+    const im = el("img.pfpimg", { src: meImg, alt: data.me.name || "" });
+    im.addEventListener("error", () => pfp.replaceChildren(document.createTextNode(data.me.initials)), { once: true });
+    pfp.replaceChildren(im);
+  }
+  const meBtn = el("button.railbtn.user" + (route.screen === "profile" ? ".on" : ""), { title: `${data.me.name}, your profile` }, [pfp]);
   meBtn.addEventListener("click", (e) => openMenu(e.currentTarget, [
     { header: data.me.name },
     { label: "Profile", icon: "user", onClick: () => navigate(`/u/${data.me.handle}`) },

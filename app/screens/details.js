@@ -195,7 +195,13 @@ function metaRows(w, ctx) {
     rows.push(metaRow("Location", loc));
   }
 
-  if (w.who) rows.push(metaRow(ctx.isPost ? "Posted by" : "Uploaded by", el("button.metalink", { onClick: () => toast({ message: `${w.who.name}'s profile (P5.10)` }) }, [w.who.name])));
+  // The author link opens their profile (the profile screen is real). Close the details
+  // sheet first so we don't leave an overlay hanging over the navigated-to page. No handle
+  // (older shapes) → fall back to the toast rather than a dead link to /u/undefined.
+  if (w.who) rows.push(metaRow(ctx.isPost ? "Posted by" : "Uploaded by", el("button.metalink", { onClick: () => {
+    if (w.who.handle) { closeDetails(); navigate("/u/" + w.who.handle + (isDemoQS() ? "?demo=1" : "")); }
+    else toast({ message: `${w.who.name}'s profile` });
+  } }, [w.who.name])));
   if (w.channelName) rows.push(metaRow("Posted in", "#" + w.channelName));
   rows.push(metaRow("Added", fmtWhen(w.created_at)));
   if (w.file_ext) rows.push(metaRow("Format", w.file_ext.toUpperCase() + (w.kind && w.kind !== "other" ? ` · ${w.kind}` : "")));

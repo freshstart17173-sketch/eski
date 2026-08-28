@@ -275,7 +275,7 @@ function shapeWork(w, place, membersById, chanName, tags = []) {
     hidden: !!w.hidden, visibility: w.visibility || null, created_at: w.created_at, tags,
     folderId: place?.folder_id || null,
     channelName: place?.channel_id ? chanName[place.channel_id] || null : null,
-    who: a ? { name: a.name, colorIdx: a.colorIdx } : null,
+    who: a ? { name: a.name, colorIdx: a.colorIdx, handle: a.handle } : null,
   };
 }
 
@@ -523,7 +523,7 @@ export async function loadTrash({ source = "server", serverId, membersById = {} 
   return (rows || []).map((w) => ({
     id: w.id, title: w.title, name: w.title, kind: w.kind, file_ext: w.file_ext,
     blob_sha: w.blob_sha, bytes: w.bytes, created_at: w.created_at, deletedAt: w.deleted_at,
-    who: source === "personal" ? null : (membersById[w.author_id] ? { name: membersById[w.author_id].name } : null),
+    who: source === "personal" ? null : (membersById[w.author_id] ? { name: membersById[w.author_id].name, handle: membersById[w.author_id].handle } : null),
   }));
 }
 
@@ -761,7 +761,7 @@ export async function loadFeed() {
       return {
         id: w.id, title: w.title, name: w.title, kind: w.kind, file_ext: w.file_ext,
         blob_sha: w.blob_sha, bytes: w.bytes, created_at: w.created_at, tags: [],
-        who: a ? { name: a.name || a.handle } : null,   // no colorIdx — public, no hue
+        who: a ? { name: a.name || a.handle, handle: a.handle } : null,   // no colorIdx — public, no hue
       };
     });
   }
@@ -797,7 +797,7 @@ export async function loadProfile(handle) {
     .eq("author_id", prof.id).is("deleted_at", null).order("created_at", { ascending: false });
   const shelves = { public: [], server: [], private: [] };
   for (const w of workRows || []) {
-    const card = { id: w.id, title: w.title, name: w.title, kind: w.kind, file_ext: w.file_ext, blob_sha: w.blob_sha, bytes: w.bytes, created_at: w.created_at, tags: [], who: { name: prof.name || prof.handle } };
+    const card = { id: w.id, title: w.title, name: w.title, kind: w.kind, file_ext: w.file_ext, blob_sha: w.blob_sha, bytes: w.bytes, created_at: w.created_at, tags: [], who: { name: prof.name || prof.handle, handle: prof.handle } };
     (shelves[w.visibility] ||= []).push(card);
   }
 

@@ -31,7 +31,8 @@
    another server icon. */
 .railbtn.user{margin-top:auto;border-radius:50%;background:none;padding:0;overflow:hidden}
 .railbtn.user:hover{background:none}
-.railbtn.user .pfp{width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#8f8f8f,#565656);color:#fff;display:grid;place-items:center;font-weight:700;font-size:var(--fs-sm);transition:box-shadow var(--t)}
+.railbtn.user .pfp{width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#8f8f8f,#565656);color:#fff;display:grid;place-items:center;font-weight:700;font-size:var(--fs-sm);transition:box-shadow var(--t);overflow:hidden}
+.railbtn.user .pfp .pfpimg{width:100%;height:100%;object-fit:cover;border-radius:50%}
 .railbtn.user:hover .pfp{box-shadow:0 0 0 2px var(--line2)}
 .railbtn.user.on{background:none}
 .railbtn.user.on .pfp{box-shadow:0 0 0 2px var(--railbg),0 0 0 4px var(--ink)}
