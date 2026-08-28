@@ -20,15 +20,17 @@ Severity: **P1** breaks or badly misleads · **P2** wrong but usable · **P3** p
       placeholder (low priority — not a click path). Enhancement: an anon-readable
       `preview_invite(code)` RPC so the join card can show the server name · member count ·
       inviter (QA §20) instead of the generic copy.
-- [ ] **P2 · Dead / stubbed buttons on "done" screens.** Real stubs found: the details
-      pane "Uploaded by / Posted by" author link only toasts instead of opening the
-      profile (a regression — the profile screen exists); Report → "(P8)"; profile
-      Settings tab → "(P9)"; explorer storage "manage" → "(P8)". **Fix:** wire the ones
-      with real targets now (profile link); keep genuine P8/P9 as an explicit "coming"
-      signpost, and audit every screen for more silent stubs.
-- [ ] **P3 · Slow loading; avatars pop in after seconds.** Read waterfalls + per-avatar
-      network with no caching. **Fix:** parallelise the initial reads, cache identity, and
-      confirm R2/CDN latency (`cdn.eski.lol`). Partly `[infra]`.
+- [ ] **P2 · Remaining stubs are genuine features.** Details "Posted by", user settings,
+      and set-status are now real (see Done). Still stubbed because their feature isn't
+      built: **Report** (moderation reports — `reports` table exists, self-contained, the
+      easiest next), **storage "manage"** (needs Stripe/billing). These signpost "coming",
+      not broken.
+- [ ] **P3 · Slow loading; avatars pop in after seconds.** Backend is NOT the cause — the
+      perf advisor shows no slow queries (small DB); the two duplicate indexes it flagged
+      are dropped (schema-20). So this is frontend: read waterfalls + `cdn.eski.lol` image
+      latency. **Now measurable:** the perf HUD (Appearance settings → performance overlay,
+      or `?perf=1`) captures real load timings + slowest resources; send a Copy report and
+      I'll act on the numbers (parallelise reads / preconnect the CDN / size the avatars).
 
 ## Feature requests (from the owner)
 
@@ -47,6 +49,11 @@ Severity: **P1** breaks or badly misleads · **P2** wrong but usable · **P3** p
 
 ## Done
 
+- [x] **User settings + set-status built** (were stubs). `/settings` screen (Profile ·
+      Account · Appearance · Notifications · Privacy/blocked · Storage) and a status
+      composer (emoji + text + auto-clear + presence). Plus a perf HUD so load timings can
+      be measured on the live site and sent back (the sandbox can't reach it). Dropped two
+      duplicate DB indexes the advisor flagged (schema-20).
 - [x] **P2 · "Reload needed for changes to show" — the visible cases fixed.** Upload now
       reloads the explorer/workspace on done (the new file/folder appears immediately, not
       after a manual reload). Structural mutations that were missing a cache-clear now have
