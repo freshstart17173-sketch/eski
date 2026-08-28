@@ -64,11 +64,58 @@ export function clearWorkspaceCache() { _cache.rail = null; _cache.servers.clear
 
 async function loadRail(user) {
   if (_cache.rail) return _cache.rail;
-  const { data: myServers } = await supabase.from("server_members").select("color, server:servers(id,name,owner_id,icon_key,cover_key)").eq("user_id", user.id);
+  const [{ data: myServers }, { data: myProfile }] = await Promise.all([
+    supabase.from("server_members").select("color, server:servers(id,name,owner_id,icon_key,cover_key)").eq("user_id", user.id),
+    supabase.from("profiles").select("handle,name,avatar_key").eq("id", user.id).maybeSingle(),
+  ]);
   const rows = myServers || [];
   const servers = rows.filter((r) => r.server).map((r) => ({ id: r.server.id, name: r.server.name, initials: initials(r.server.name), icon_key: r.server.icon_key || null }));
-  _cache.rail = { myServers: rows, servers };
+  // The canonical signed-in identity. `handle` MUST come from the profiles row, never the
+  // email prefix — otherwise a self profile link (/u/:handle) points at the wrong handle the
+  // moment the user picks a username, and 404s. Fall back to the email prefix ONLY when no
+  // profile/handle exists yet (fresh account before onboarding). See meFor().
+  // `hasProfile` gates onboarding: a fresh account has no profiles row (no signup trigger),
+  // so the app must send it through create-profile before it can be linked to.
+  _cache.rail = { myServers: rows, servers, me: meFor(user, myProfile), hasProfile: !!(myProfile && myProfile.handle) };
   return _cache.rail;
+}
+
+// True when the signed-in user hasn't set up a profile yet (no handle). Drives the one-time
+// create-profile onboarding gate in main.js. Signed-out returns false — that's needsAuth,
+// handled separately.
+export async function needsProfileSetup() {
+  const user = session();
+  if (!user || isDemo()) return false;
+  const { hasProfile } = await loadRail(user);
+  return !hasProfile;
+}
+
+// Create the signed-in user's profile (onboarding). An UPSERT on `id` so it works whether a
+// partial row exists or none does (prof_insert / prof_update both fence to id = auth.uid()).
+// The handle is globally UNIQUE — a clash surfaces as "That username is taken".
+export async function createProfile({ handle, name }) {
+  const h = (handle || "").trim().replace(/^@/, "");
+  if (!h) throw new Error("Pick a username");
+  if (!/^[a-z0-9_]{2,20}$/i.test(h)) throw new Error("Usernames are 2–20 letters, numbers, or underscores");
+  const vals = { handle: h, name: (name || "").trim() || h };
+  if (isDemo()) return vals;
+  const user = session();
+  if (!user) throw new Error("Sign in");
+  const { error } = await supabase.from("profiles").upsert({ id: user.id, ...vals }, { onConflict: "id" });
+  if (error) throw new Error(/duplicate|unique|23505/i.test(error.message || "") ? "That username is taken" : (error.message || "Couldn’t create your profile"));
+  clearWorkspaceCache();   // rail.me + hasProfile are cached — refresh so the app sees the new identity
+  return vals;
+}
+
+// Build the canonical `me` for the signed-in user. Handle/name come from the profiles row;
+// the email prefix is a last-resort fallback for an account with no profile yet. Everything
+// that needs "who am I" (rail avatar, the Profile link, the feed You tab) reads this so a
+// username change is reflected everywhere and never leaves a stale email-prefix handle.
+export function meFor(user, prof) {
+  const emailStem = user?.email?.split("@")[0] || "you";
+  const handle = (prof?.handle || emailStem);
+  const name = prof?.name || handle;
+  return { id: user?.id || null, name, handle, initials: initials(name), avatar_key: prof?.avatar_key || null, colorIdx: 1 };
 }
 
 const MANAGE_SERVER = 1n;   // perm_bit('manage_server')
@@ -142,8 +189,7 @@ export async function loadWorkspace({ serverId, channelId } = {}) {
   const user = session();
   if (!user) return emptyWorkspace(serverId, channelId, /*needsAuth*/ true);
 
-  const { myServers, servers } = await loadRail(user);
-  const meBase = { id: user.id, name: user.email?.split("@")[0] || "you", initials: initials(user.email || "you"), handle: user.email?.split("@")[0] || "you", colorIdx: 1 };
+  const { myServers, servers, me: meBase } = await loadRail(user);
 
   const activeServer = myServers.find((r) => r.server && r.server.id === serverId)?.server
     || (!serverId ? myServers[0]?.server : null);
@@ -239,8 +285,7 @@ export async function loadExplorer({ serverId, folderId, source = "server" } = {
   if (!user) return { needsAuth: true, live: false };
   if (source === "personal") return loadPersonalExplorer(user, folderId);
 
-  const { myServers, servers } = await loadRail(user);
-  const meBase = { id: user.id, name: user.email?.split("@")[0] || "you", initials: initials(user.email || "you"), handle: user.email?.split("@")[0] || "you", colorIdx: 1 };
+  const { myServers, servers, me: meBase } = await loadRail(user);
 
   const activeServer = myServers.find((r) => r.server && r.server.id === serverId)?.server
     || (!serverId ? myServers[0]?.server : null);
@@ -318,8 +363,7 @@ export async function loadExplorer({ serverId, folderId, source = "server" } = {
 // channel column, channel/uploader filters drop away). Rail/servers still load so
 // the shell around it is intact.
 async function loadPersonalExplorer(user, folderId) {
-  const { servers } = await loadRail(user);
-  const me = { id: user.id, name: user.email?.split("@")[0] || "you", initials: initials(user.email || "you"), handle: user.email?.split("@")[0] || "you", colorIdx: 1 };
+  const { servers, me } = await loadRail(user);
 
   const [{ data: folderRows }, { data: workRows }, { data: meterRows }, { data: balRows }] = await Promise.all([
     supabase.from("save_folders").select("id,name,parent_id").eq("user_id", user.id).order("name"),
@@ -680,7 +724,8 @@ export async function postComment(workId, body) {
     .insert({ work_id: workId, user_id: user.id, body: clean })
     .select("id,body,created_at").single();
   if (error) throw new Error(error.message?.includes("row-level security") ? "Only the author and their friends can comment" : (error.message || "Couldn’t post the comment"));
-  return { id: data.id, name: user.email?.split("@")[0] || "you", text: data.body || clean, time: fmtTime(data.created_at), mine: true };
+  const { me } = await loadRail(user);   // real display name (cached), never the email stem
+  return { id: data.id, name: me.name, text: data.body || clean, time: fmtTime(data.created_at), mine: true };
 }
 
 // The home Feed (CANON §C.5) — the friends-only portfolio grid: friends' PUBLIC
@@ -693,8 +738,7 @@ export async function loadFeed() {
   const user = session();
   if (!user) return { needsAuth: true, live: false };
 
-  const { servers } = await loadRail(user);
-  const me = { id: user.id, name: user.email?.split("@")[0] || "you", initials: initials(user.email || "you"), handle: user.email?.split("@")[0] || "you", colorIdx: 1 };
+  const { servers, me } = await loadRail(user);
 
   // accepted friends (symmetric pair table: I'm a_user OR b_user)
   const { data: friRows } = await supabase.from("friendships").select("a_user,b_user,status").or(`a_user.eq.${user.id},b_user.eq.${user.id}`).eq("status", "accepted");
@@ -735,8 +779,7 @@ export async function loadProfile(handle) {
   const user = session();
   if (!user) return { needsAuth: true, live: false };
 
-  const { servers } = await loadRail(user);
-  const me = { id: user.id, name: user.email?.split("@")[0] || "you", initials: initials(user.email || "you"), handle: user.email?.split("@")[0] || "you", colorIdx: 1 };
+  const { servers, me } = await loadRail(user);
 
   const { data: prof } = await supabase.from("profiles").select("id,handle,name,bio,avatar_key,banner_key,pronouns").eq("handle", handle).maybeSingle();
   if (!prof) return { needsAuth: false, live: true, notFound: true, me, servers, dmUnread: 0, server: null };
@@ -780,6 +823,7 @@ export async function updateProfileImage(field, key) {
   if (!user) throw new Error("Sign in");
   const { error } = await supabase.from("profiles").update({ [field]: key }).eq("id", user.id);
   if (error) throw new Error(error.message || "Couldn’t update your photo");
+  clearWorkspaceCache();   // rail.me caches the avatar — refresh it so the new photo shows
   return key;
 }
 
@@ -793,6 +837,7 @@ export async function updateProfile({ name, handle, bio }) {
   if (!user) throw new Error("Sign in");
   const { error } = await supabase.from("profiles").update(vals).eq("id", user.id);
   if (error) throw new Error(/duplicate|unique|23505/i.test(error.message || "") ? "That handle is taken" : (error.message || "Couldn’t save your profile"));
+  clearWorkspaceCache();   // rail.me caches handle/name — refresh so /u/:handle links follow the change
   return vals;
 }
 
@@ -821,8 +866,7 @@ export async function loadDMsScreen() {
   if (isDemo()) return demoDMs();
   const user = session();
   if (!user) return { needsAuth: true, live: false };
-  const { servers } = await loadRail(user);
-  const me = { id: user.id, name: user.email?.split("@")[0] || "you", initials: initials(user.email || "you"), handle: user.email?.split("@")[0] || "you", colorIdx: 1 };
+  const { servers, me } = await loadRail(user);
 
   const { data: friRows } = await supabase.from("friendships")
     .select("a_user,b_user,status,requested_by").or(`a_user.eq.${user.id},b_user.eq.${user.id}`);
@@ -945,7 +989,8 @@ export async function sendDM(dmChannelId, body) {
   if (!user) throw new Error("Sign in");
   const { data, error } = await supabase.from("dm_messages").insert({ dm_channel_id: dmChannelId, user_id: user.id, body: clean }).select("id,body,created_at").single();
   if (error) throw new Error(error.message || "Couldn’t send the message");
-  return { id: data.id, author: { name: user.email?.split("@")[0] || "you", initials: initials(user.email || "you"), avatar_key: null }, time: fmtTime(data.created_at), body: data.body || clean, mine: true };
+  const { me } = await loadRail(user);   // real display name + avatar (cached), never the email stem
+  return { id: data.id, author: { name: me.name, initials: me.initials, avatar_key: me.avatar_key }, time: fmtTime(data.created_at), body: data.body || clean, mine: true };
 }
 
 // ── Notifications (P7.3, CANON §C — notifications) ───────────────────────────
@@ -993,8 +1038,7 @@ export async function loadNotifications() {
   if (isDemo()) return demoNotifications();
   const user = session();
   if (!user) return { needsAuth: true, live: false };
-  const { servers } = await loadRail(user);
-  const me = { id: user.id, name: user.email?.split("@")[0] || "you", initials: initials(user.email || "you"), handle: user.email?.split("@")[0] || "you", colorIdx: 1 };
+  const { servers, me } = await loadRail(user);
   const { data: rows } = await supabase.from("notifications")
     .select("id,kind,actor_id,server_id,excerpt,target_ref,read_at,created_at").eq("user_id", user.id)
     .order("created_at", { ascending: false }).limit(100);

@@ -8,7 +8,7 @@ import { signal, effect } from "./signals.js";
 import { start, match } from "./router.js";
 import { ready, session, onChange } from "./supabase.js";
 import { icon } from "./icons.js";
-import { loadWorkspace, loadExplorer, loadFeed, loadProfile, loadSharedWork, loadDMsScreen, loadNotifications, clearWorkspaceCache, isDemo } from "./data.js";
+import { loadWorkspace, loadExplorer, loadFeed, loadProfile, loadSharedWork, loadDMsScreen, loadNotifications, clearWorkspaceCache, isDemo, needsProfileSetup } from "./data.js";
 import { teardownRealtime } from "./realtime.js";
 import { renderRail, appFrame } from "./shell.js";
 import { renderWorkspace } from "./screens/workspace.js";
@@ -23,6 +23,7 @@ import { renderDMs } from "./screens/dms.js";
 import { renderNotifications } from "./screens/notifications.js";
 import { renderNotFound } from "./screens/notfound.js";
 import { openSwitcher, closeSwitcher } from "./screens/switcher.js";
+import { renderCreateProfile } from "./screens/onboard.js";
 
 const stage = document.getElementById("stage");
 
@@ -89,6 +90,17 @@ async function renderRoute(r) {
   // or the bare sign-in prompt — every other signed-out deep link still falls
   // through to renderSignin() below via needsAuth.
   if (r.screen === "feed" && r.path === "/" && !session() && !isDemo()) { swap(renderLanding()); return; }
+
+  // Signed in but no profile yet → the one-time create-profile step. Gates every in-app
+  // route: a fresh Google/magic-link account has no profiles row, so it has no handle and
+  // can't be linked to (/u/:handle would 404). onDone re-renders this same route once the
+  // profile exists (needsProfileSetup() then false), so the app continues in place.
+  if (session() && !isDemo()) {
+    const setup = await needsProfileSetup();
+    if (mine !== token) return;
+    if (setup) { swap(renderCreateProfile(() => renderRoute(r))); return; }
+  }
+
   if (!IN_SHELL.has(r.screen)) { swap(placeholder(r)); return; }
 
   // File explorer (P5.4) — its own read (folder tree + placed works + storage);

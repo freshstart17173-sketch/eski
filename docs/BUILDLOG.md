@@ -1669,3 +1669,40 @@ GOTCHA Q: the invitee is NOT a member when the invite notification lands, so the
   itself (`excerpt`), never resolve it from a `servers` join for an invite row. Same reason
   the invite links to `/join/<code>` (RLS-allowed join path), never `/s/<id>` (denied).
 NEXT: Realtime echo (DM/notif/reaction/edit — untestable in-sandbox); billing (Stripe).
+
+## 2026-08-28 — profile identity: real handle everywhere · create-profile onboarding · propagation
+IN PROGRESS: (cleared)
+DONE: fixed three related profile-identity bugs the owner hit.
+  1. **Changing username broke profile links.** ROOT CAUSE: `me.handle` was hardcoded to the
+     EMAIL PREFIX (`user.email.split("@")[0]`) in ~7 places, but the real handle lives in
+     `profiles`. So the avatar-menu "Profile" link + the feed "You" tab pointed at
+     `/u/<emailstem>`, which stops resolving the moment the handle differs from the email
+     stem (i.e. as soon as you set a username) → the profile 404s. FIX: `loadRail` now also
+     fetches the user's own `profiles` row and builds the canonical `me` via `meFor(user,
+     prof)` (handle/name from the row; email stem only as a last-resort fallback), cached and
+     read by every screen. Editing your handle also `history.replaceState`s the current
+     `/u/<old>` to `/u/<new>` so the page you're on stays valid (external old links still
+     break — inherent to handle URLs; the edit field says so).
+  2. **No profile-creation page.** A fresh Google/magic-link account has NO `profiles` row
+     (no signup trigger — confirmed via SQL). Added `screens/onboard.js` (create-profile:
+     username + optional display name → `createProfile` UPSERT under prof_insert/prof_update)
+     and a `needsProfileSetup()` gate in `main.js` that renders it before any in-app route
+     until a handle exists. Verify: new `docs/design/verify-onboard.mjs` (green both themes).
+  3. **Profile updates didn't propagate.** Writes now `clearWorkspaceCache()` (updateProfile,
+     updateProfileImage) so the cached rail `me` + `_cache.servers` member rows refresh, and
+     the edit-profile modal calls the new `router.reload()` on close when anything persisted —
+     rebuilding hero + rail avatar + bylines from fresh data instead of only the in-dialog
+     preview. Also fixed the optimistic comment/DM echoes that showed your name as the email
+     stem (now the cached real name). Photo/banner upload path itself was already correct
+     (uploadBlobs → avatar_key → avatarUrl); it just needs the owner's R2 CORS/env (OWNER-TODO).
+  All screen verifies green, both themes.
+GOTCHA R (DO NOT UNDO): the signed-in `me.handle`/`me.name` MUST come from the `profiles`
+  row (via `meFor`/`loadRail`), NEVER `user.email.split("@")[0]`. The email stem is a
+  fallback for a pre-onboarding account only. Reverting any `me = {…}` back to the email stem
+  re-breaks self profile links (`/u/:handle`) the instant a user picks a username. There is
+  no signup trigger, so `hasProfile` gates onboarding — keep it.
+GOTCHA S: a profile write must invalidate identity caches — call `clearWorkspaceCache()` in
+  any function that mutates `profiles` (name/handle/avatar/banner), and re-render the shell
+  (`router.reload()`) so the rail avatar/bylines follow. Updating only the in-dialog preview
+  leaves stale identity everywhere else (the "doesn't propagate" bug).
+NEXT: Realtime echo (DM/notif/reaction/edit — untestable in-sandbox); billing (Stripe).

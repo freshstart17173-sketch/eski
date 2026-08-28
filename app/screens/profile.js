@@ -6,7 +6,7 @@
 
 import { el, toast, Avatar, openModal, Button } from "../ui.js";
 import { iconEl } from "../icons.js";
-import { navigate } from "../router.js";
+import { navigate, reload } from "../router.js";
 import { workCard, avatarUrl } from "../cards.js";
 import { openDetails } from "./details.js";
 import { updateProfile, updateProfileImage, isDemo, addFriend, createDM } from "../data.js";
@@ -136,6 +136,10 @@ function setAvatarImg(avEl, src, name) {
 function openEditProfile(data, opts = {}) {
   const p = data.profile;
   const demo = isDemo();
+  // Any persisted change (photo, banner, or the text save) is marked dirty; on close we
+  // reload the current route so the change propagates to the whole shell (rail avatar, hero,
+  // bylines) from fresh, cache-cleared data — not just the in-dialog preview.
+  let dirty = false;
   const avImg = Avatar({ name: p.initials || p.name, size: "lg", src: avatarUrl(p.avatar_key) });
   const fileInput = el("input", { type: "file", accept: "image/*", style: "display:none" });
   fileInput.addEventListener("change", async () => {
@@ -144,7 +148,7 @@ function openEditProfile(data, opts = {}) {
     try {
       let src;
       if (demo) src = URL.createObjectURL(file);   // demo: local preview, never touches R2
-      else { const [{ key }] = await uploadBlobs([file]); await updateProfileImage("avatar_key", key); p.avatar_key = key; src = avatarUrl(key); }
+      else { const [{ key }] = await uploadBlobs([file]); await updateProfileImage("avatar_key", key); p.avatar_key = key; src = avatarUrl(key); dirty = true; }
       setAvatarImg(avImg, src, p.name);
       opts.onAvatar?.(src);
       toast({ message: "Photo updated", icon: "check" });
@@ -163,7 +167,7 @@ function openEditProfile(data, opts = {}) {
     try {
       let src;
       if (demo) src = URL.createObjectURL(file);
-      else { const [{ key }] = await uploadBlobs([file]); await updateProfileImage("banner_key", key); p.banner_key = key; src = avatarUrl(key); }
+      else { const [{ key }] = await uploadBlobs([file]); await updateProfileImage("banner_key", key); p.banner_key = key; src = avatarUrl(key); dirty = true; }
       setBanner(src);
       toast({ message: "Banner updated", icon: "check" });
     } catch (e) { toast({ message: e?.message || "Couldn’t update your banner" }); }
@@ -194,16 +198,24 @@ function openEditProfile(data, opts = {}) {
 
   const cancel = Button({ label: "Cancel", variant: "ghost" });
   const save = Button({ label: "Save profile", variant: "primary" });
-  const { close } = openModal({ title: "Edit profile", body, footer: [cancel, save] });
+  // On close, if anything persisted, reload the route so the whole shell reflects it (in demo
+  // there's no live shell state to refresh, so skip).
+  const { close } = openModal({ title: "Edit profile", body, footer: [cancel, save], onClose: () => { if (dirty && !demo) reload(); } });
   cancel.addEventListener("click", () => close());
   save.addEventListener("click", async () => {
     if (save.disabled) return;
     save.disabled = true;
+    const oldHandle = p.handle;
     try {
       const vals = await updateProfile({ name: nameI.value, handle: handleI.value, bio: bioI.value });
       Object.assign(p, vals, { initials: (vals.name || vals.handle).trim().slice(0, 2).toUpperCase() });
+      dirty = true;
+      // Follow the URL to the new handle BEFORE closing, so the on-close reload lands on the
+      // valid /u/<new> (a reload of the old handle would 404). Other people's old /u/<old>
+      // links still break — inherent to handle URLs, and the field note says so.
+      if (vals.handle && vals.handle !== oldHandle) history.replaceState({}, "", withDemo(`/u/${vals.handle}`));
       opts.onSaved?.();
-      close();
+      close();     // fires onClose → reload(), rebuilding hero + rail + shelves from fresh data
       toast({ message: "Profile saved", icon: "check" });
     } catch (e) { toast({ message: e?.message || "Couldn’t save your profile" }); save.disabled = false; }
   });

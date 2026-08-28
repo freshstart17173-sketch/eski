@@ -65,6 +65,12 @@ export function navigate(path, { replace = false } = {}) {
   _onRoute(match(location.pathname));
 }
 
+/** Re-render the CURRENT route from scratch (same path). Use after a mutation whose result
+ *  the whole shell must reflect (e.g. a profile edit changing the rail avatar / name) — clear
+ *  the relevant cache first, then reload() so every pane rebuilds from fresh data. `navigate`
+ *  no-ops on an unchanged path, so it can't do this. */
+export function reload() { _onRoute(match(location.pathname)); }
+
 // Intercept plain-left-click on same-origin, non-modified, non-download links so
 // internal navigation never triggers a full page load.
 function onClick(e) {
