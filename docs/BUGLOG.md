@@ -26,10 +26,6 @@ Severity: **P1** breaks or badly misleads · **P2** wrong but usable · **P3** p
       "still default"); (b) the shell rail may not rebuild from fresh identity after an
       edit. **Fix:** verify the R2 path end-to-end; make identity edits reliably repaint
       the rail without a reload.
-- [ ] **P2 · Uploads fail with no usable error.** `upload.js` surfaces `e.message`, but an
-      R2 PUT that CORS-fails or 4xxs gives an opaque message. **Fix:** surface the HTTP
-      status + a CORS/env hint from `api/sign.mjs` + the PUT; distinguish "signer failed"
-      from "R2 rejected". Partly `[infra]` (R2 env/CORS must be set — see OWNER-TODO).
 - [ ] **P2 · Folder upload doesn't work / isn't supported.** The upload sheet's
       Files/Folder toggle exists but folder upload isn't wired. **Fix:** implement
       `webkitdirectory` folder selection + preserve the relative folder tree on upload.
@@ -48,6 +44,15 @@ Severity: **P1** breaks or badly misleads · **P2** wrong but usable · **P3** p
 
 ## Done
 
+- [x] **P1 · File uploads failed silently (root cause found).** `works.blob_sha` has a
+      FK to `media_blobs.sha256`, but `media_blobs` is RLS-locked with no write policy and
+      nothing ever created the row — so every file upload violated the FK. (Profile photos
+      worked because `avatar_key` has no such FK, which matches what you saw.) Added a
+      SECURITY DEFINER `register_blob(sha, bytes)` RPC (`schema-19-register-blob.sql`),
+      called after the R2 PUT and before the works insert; verified the full path
+      (register → works insert → meter bump) end-to-end on the live DB. Also stage-labelled
+      the upload errors with the DB/HTTP code + a console.error, so a failure is now
+      greppable instead of opaque.
 - [x] **P1 · Seed data purged (owner-approved, 2026-08-28).** The live DB held "Late
       Bloom LP" seeded with BOTH real accounts + 3 fake authors (`@seed.eski.lol`), which
       read as "accounts aren't separate" — confirmed *not* a security bug (accounts are

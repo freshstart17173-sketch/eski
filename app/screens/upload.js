@@ -163,7 +163,19 @@ export async function openUpload(opts = {}) {
       prog.textContent = "Uploading…";
       await Promise.all(hashed.map((h, i) => fetch(signJson.files[i].url, {
         method: "PUT", body: h.file, headers: { "content-type": h.file.type || "application/octet-stream" },
-      }).then((r) => { if (!r.ok) throw new Error(`R2 PUT failed (${r.status}) — is the bucket CORS set?`); })));
+      }).then((r) => { if (!r.ok) throw new Error(`R2 PUT failed (${r.status}) — check the bucket CORS (r2-cors.json)`); })));
+
+      // Register each blob (sha + bytes) BEFORE inserting works: works.blob_sha has a FK to
+      // media_blobs, which is RLS-locked, so this SECURITY DEFINER RPC is the only thing that
+      // can create the row. Without it every works insert failed the FK (the upload "did
+      // nothing"). Content-addressed → a repeated sha is a no-op.
+      prog.textContent = "Finishing…";
+      const seen = new Set();
+      for (const h of hashed) {
+        if (seen.has(h.hash)) continue; seen.add(h.hash);
+        const { error: be } = await supabase.rpc("register_blob", { p_sha: h.hash, p_bytes: h.file.size });
+        if (be) throw new Error(`couldn’t register the file (${be.code || "db"}): ${be.message}`);
+      }
 
       prog.textContent = "Posting…";
       const title = titleInput.value.trim();
@@ -183,10 +195,10 @@ export async function openUpload(opts = {}) {
           bytes: h.file.size,
         };
         const { data: work, error } = await supabase.from("works").insert(row).select("id").single();
-        if (error) throw new Error(error.message);
+        if (error) throw new Error(`couldn’t save the post (${error.code || "db"}): ${error.message}`);
         if (onServer) {
           const { error: pe } = await supabase.from("placement").insert({ work_id: work.id, surface: "server", surface_id: serverId, channel_id: channelId || null, folder_id: folderId || null, placed_by: me.id });
-          if (pe) throw new Error(pe.message);
+          if (pe) throw new Error(`couldn’t place the file in the channel (${pe.code || "db"}): ${pe.message}`);
         }
         for (const t of tags) await supabase.from("content_tags").insert({ work_id: work.id, tag: t });
         for (const c of collabs) await supabase.rpc("add_collaborator", { work_id: work.id, handle: c.handle, role: c.role });
@@ -197,7 +209,9 @@ export async function openUpload(opts = {}) {
     } catch (e) {
       prog.remove();
       post.disabled = false;
-      toast({ message: "Upload failed — " + (e.message || e), icon: "clock", duration: 6000 });
+      // Log the full error so a devtools peek shows the stage + code even after the toast fades.
+      console.error("[eski upload] failed:", e);
+      toast({ message: "Upload failed — " + (e.message || e), icon: "clock", duration: 7000 });
     }
   }
 }
