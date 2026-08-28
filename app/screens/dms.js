@@ -31,7 +31,7 @@ function dmList(data, right) {
   const addInput = el("input", { placeholder: "Add by username", "aria-label": "Add by username" });
   const addField = el(".dmadd", {}, [el(".field", {}, [
     iconEl("user", "sm"), addInput,
-    el("button", { title: "Add", onClick: () => addByUsername(addInput) }, [iconEl("plus", "sm")]),
+    el("button.iconbtn", { title: "Add", onClick: () => addByUsername(addInput) }, [iconEl("plus", "sm")]),
   ])]);
   addInput.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); addByUsername(addInput); } });
 

@@ -1617,3 +1617,28 @@ OWNER: the Google provider is enabled in Supabase (owner). Still confirm, in **S
   redirect URI must point at the Supabase `/auth/v1/callback` (part of "enable Google").
 NEXT: polish pass — icon-button bounding-box / hover-target alignment (owner noticed
   slight offsets revealed on hover). Then invite by-handle; Realtime echo + billing standing.
+
+## 2026-08-28 — polish: icon-button hover boxes misaligned (global root-cause fix)
+IN PROGRESS: (cleared)
+DONE: fixed the owner-reported bug — an icon button's hover background sat ~2px off
+  its glyph. ROOT CAUSE (one global miss, not per-screen): the mandatory `button`
+  reset in base.css zeroed background/border/color/font but NOT **padding**, so every
+  button that sets no padding of its own inherited the UA default `1px 6px`. On a
+  fixed-size, grid-centred icon button (`.iconbtn`/`.cgadd`/`.cgear`/`.more2`) that
+  asymmetric padding shrank the content box and pushed the centred glyph right, so the
+  `:hover`/`:active` box no longer aligned to the icon. Added `padding:0` to the reset —
+  fixes EVERY icon button at once. Two buttons were sized ONLY by that UA padding, so
+  they got explicit boxes: `.composer .field .snd` (send) is now a real 26px grid box;
+  the DMs "Add by username" `+` became a proper `.iconbtn`. `.btn`/`.menu button`/
+  `.cbar .fbtn` etc. set their own padding, unaffected. VERIFIED by a measurement scan
+  (icon-centre vs button-centre across workspace/dms/explorer/profile/feed/notifications:
+  was 11+5+2+1 offenders → now ZERO, all |dx|,|dy| < 0.6px) plus the full verify suite
+  green in both themes (workspace/feed/explorer/dms/notifications/profile/switcher/shared
+  + primitives — its play/pause flake per GOTCHA K passes on re-run).
+GOTCHA P: the `button` reset MUST keep `padding:0`. The UA default `1px 6px` silently
+  de-centres every icon-only button (hover box drifts off the glyph) and shrinks bare
+  buttons vertically. Any icon button relies on this reset for its box; give a bespoke
+  icon button an explicit `width/height` + `display:grid;place-items:center` rather than
+  leaning on UA padding for size.
+NEXT: invite by-handle + suggested people (next self-contained feature); Realtime echo +
+  billing standing.

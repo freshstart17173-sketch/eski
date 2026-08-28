@@ -18,8 +18,12 @@ body{
 #stage{height:100%}
 
 /* Mandatory button reset: without it an unstyled button falls back to browser
-   black and vanishes on dark surfaces (eski-style §3). */
-button{background:none;border:0;color:inherit;font:inherit;cursor:pointer}
+   black and vanishes on dark surfaces (eski-style §3). `padding:0` is part of the
+   reset — the UA default is an asymmetric `1px 6px`, which on a fixed-size,
+   grid-centred icon button (.iconbtn/.cgadd/.more2/…) shrinks the content box and
+   pushes the glyph ~2px off-centre, so its hover box no longer aligns to the icon.
+   Buttons that want padding (.btn, .menu button, .cbar .fbtn, …) set their own. */
+button{background:none;border:0;padding:0;color:inherit;font:inherit;cursor:pointer}
 
 a{color:inherit;text-decoration:none}
 

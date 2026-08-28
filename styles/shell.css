@@ -188,7 +188,9 @@
 /* ── composer (P4.6) ─────────────────────────────────────────────────────── */
 .composer{flex:none;padding:0 var(--s4) var(--s4)}
 .composer .field{padding:9px var(--s3)}
-.composer .field .snd{color:var(--muted)}
+/* send button: a real 26px grid-centred icon box (it set no size of its own and
+   was previously sized only by the UA button padding we now reset away). */
+.composer .field .snd{flex:none;width:26px;height:26px;display:grid;place-items:center;border-radius:var(--r);color:var(--muted)}
 .composer .field .snd:hover{color:var(--ink)}
 .composernote{display:flex;align-items:center;gap:8px;padding:8px 12px;margin-bottom:8px;background:var(--surface);border-radius:var(--r);font-size:var(--fs-sm);color:var(--soft)}
 .composernote[hidden]{display:none}   /* a class display: rule beats UA [hidden] — restate it */
