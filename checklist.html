@@ -1,31 +1,230 @@
-# eski — launch checklist
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>eski — checklist</title>
+<!-- The owner's private launch checklist. Served directly by Vercel (the path
+     has a dot, so it bypasses the SPA rewrite in vercel.json) at
+     preview.eski.lol/checklist.html. Fully self-contained: no build step, no
+     app JS. Progress persists in localStorage per browser (this is a personal
+     tool, not shared state — so browser storage is exactly right).
+     Both lists live here verbatim as <script type="text/plain"> blocks and are
+     parsed at runtime, so the page stays in sync by copy, never by transcription.
+     Styling is the eski are.na-monochrome system (tokens ported from the
+     eski-style skill); Jost comes from the same _fonts.css the app uses. -->
+<link rel="preconnect" href="/">
+<style>
+@import url("/docs/design/_fonts.css");
 
-Every discrete action the app supports, grouped by area, with the outcome you should
-see when it works. eski is **ready to hand to real users only when every box is
-checked** and working perfectly. Tick a box once *you* have tested it on the live
-preview and it behaved exactly as described.
+/* ---- tokens: ported verbatim from the eski-style skill (§1) ---- */
+:root{
+  --paper:#FCFCFC; --surface:#EFEFEF; --plate:#E1E1E1; --paper1:#D7D7D7;
+  --ink:#131313; --soft:#363636; --muted:#5C5C5C; --line:#CFCFCF; --line2:#B0B0B0;
+  --on-ink:#FCFCFC; --tagbg:#DCDCDC; --danger:#C63A28; --railbg:#E4E4E4; --ok:#2E7D5B;
+  --fs-mi:11px; --fs-xs:12px; --fs-sm:13px; --fs:14.5px; --fs-lg:16px; --fs-xl:20px;
+  --font:'Jost','Avenir Next','Segoe UI',Arial,sans-serif;
+  --s1:4px; --s2:8px; --s3:12px; --s4:16px; --s5:24px; --r:3px; --t:120ms ease;
+  --hair-inset:14px;
+}
+:root[data-theme="dark"],
+@media (prefers-color-scheme:dark){ :root:not([data-theme="light"]){
+  --paper:#0A0A0A; --surface:#171717; --plate:#242424; --paper1:#2B2B2B;
+  --ink:#F4F4F4; --soft:#C8C8C8; --muted:#9A9A9A; --line:#303030; --line2:#484848;
+  --on-ink:#0A0A0A; --tagbg:#2C2C2C; --danger:#F07C63; --railbg:#040404; --ok:#5FBE92;
+}}
+/* the media-query form above needs its own block (some engines choke on the
+   comma-joined selector); restate it explicitly so dark always resolves */
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --paper:#0A0A0A; --surface:#171717; --plate:#242424; --paper1:#2B2B2B;
+    --ink:#F4F4F4; --soft:#C8C8C8; --muted:#9A9A9A; --line:#303030; --line2:#484848;
+    --on-ink:#0A0A0A; --tagbg:#2C2C2C; --danger:#F07C63; --railbg:#040404; --ok:#5FBE92;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#0A0A0A; --surface:#171717; --plate:#242424; --paper1:#2B2B2B;
+  --ink:#F4F4F4; --soft:#C8C8C8; --muted:#9A9A9A; --line:#303030; --line2:#484848;
+  --on-ink:#0A0A0A; --tagbg:#2C2C2C; --danger:#F07C63; --railbg:#040404; --ok:#5FBE92;
+}
 
-There is a live, self-saving version of this list on the site itself — **`/checklist.html`**
-(e.g. `preview.eski.lol/checklist.html`): tick rows as you test and the progress persists in
-your browser. That page also carries your **Setup** list (`OWNER-TODO.md`) and a read-only
-**Build** tab, so the whole todo lives in one place. It parses these two markdown docs verbatim,
-so this file stays the source of truth — edit here and the page follows on the next deploy. This
-file is the versioned copy that build sessions treat as the acceptance bar.
+*{box-sizing:border-box; scrollbar-width:none}
+*::-webkit-scrollbar{width:0;height:0;display:none}
+button{background:none;border:0;color:inherit;font:inherit;cursor:pointer}
+html,body{margin:0}
+body{
+  background:var(--paper); color:var(--ink); font-family:var(--font);
+  font-size:var(--fs); line-height:1.45; -webkit-font-smoothing:antialiased;
+}
 
-**Two tags mark rows that depend on something outside the app:**
+/* ---- shell ---- */
+.wrap{max-width:900px; margin:0 auto; padding:0 var(--s5) var(--s5)}
+header.top{
+  position:sticky; top:0; z-index:5; background:var(--paper);
+  padding:var(--s5) var(--s5) var(--s3); max-width:900px; margin:0 auto;
+}
+.brandrow{display:flex; align-items:baseline; gap:var(--s3); justify-content:space-between}
+.wordmark{font-weight:600; font-size:var(--fs-xl); letter-spacing:-.01em}
+.wordmark span{color:var(--muted); font-weight:500; font-size:var(--fs-sm); margin-left:var(--s2)}
+.sub{color:var(--muted); font-size:var(--fs-sm); margin:2px 0 0}
 
-- **`[infra]`** — needs your R2 / Stripe / SMTP setup before it can pass (uploads,
-  media playback, profile photos, billing, magic-link email). If one of these fails,
-  confirm that setup before logging a bug.
-- **`[v2]`** — deferred to v2. The *correct* behaviour today is a "being built"
-  signpost (a grayed control + a WIP toast), **not** a working feature.
+/* colour-change icon-ish toggle, boxless at rest */
+.tbtn{
+  color:var(--soft); font-size:var(--fs-xs); font-weight:500; padding:3px 10px;
+  border-radius:var(--r); background:var(--surface); transition:background var(--t),color var(--t);
+}
+.tbtn:hover{background:var(--plate); color:var(--ink)}
+.tbtn:active{background:var(--ink); color:var(--on-ink)}
 
-228 checks across 21 areas.
+/* overall meter */
+.overall{margin-top:var(--s4)}
+.meter{height:6px; border-radius:var(--r); background:var(--plate); overflow:hidden}
+.meter>i{display:block; height:100%; background:var(--ink); width:0; transition:width var(--t)}
+.mline{display:flex; justify-content:space-between; align-items:baseline; margin:0 0 var(--s1); font-size:var(--fs-sm)}
+.mline b{font-weight:600}
+.mline .pct{color:var(--muted); font-variant-numeric:tabular-nums}
 
----
+/* tabs — background-step strip, active = ink + 2px ink underline */
+.tabs{display:flex; gap:var(--s4); margin-top:var(--s4)}
+.tab{
+  position:relative; color:var(--muted); font-weight:500; font-size:var(--fs-sm);
+  padding:var(--s2) 0; transition:color var(--t);
+}
+.tab:hover{color:var(--soft)}
+.tab[aria-selected="true"]{color:var(--ink); font-weight:600}
+.tab[aria-selected="true"]::after{
+  content:""; position:absolute; left:0; right:0; bottom:0; height:2px; background:var(--ink);
+}
+.tab .n{color:var(--muted); font-weight:500; font-variant-numeric:tabular-nums; margin-left:5px}
+.tab[aria-selected="true"] .n{color:var(--soft)}
 
+/* ---- areas ---- */
+.pane{padding-top:var(--s4)}
+.pane[hidden]{display:none}
+.area{margin-bottom:var(--s5)}
+.ahd{
+  position:relative; display:flex; align-items:baseline; justify-content:space-between;
+  gap:var(--s3); padding-bottom:var(--s2); cursor:pointer;
+}
+.ahd::after{content:""; position:absolute; left:var(--hair-inset); right:var(--hair-inset); bottom:0; height:1px; background:var(--line)}
+.ahd h2{margin:0; font-size:var(--fs-lg); font-weight:600}
+.ahd .adesc{display:block; color:var(--muted); font-size:var(--fs-xs); font-weight:400; margin-top:2px}
+.acount{color:var(--muted); font-size:var(--fs-xs); font-variant-numeric:tabular-nums; white-space:nowrap; flex:none}
+.acount.full{color:var(--ok); font-weight:600}
+
+ul.items{list-style:none; margin:0; padding:var(--s2) 0 0}
+li.item{display:flex; gap:var(--s3); align-items:flex-start; padding:var(--s2) var(--hair-inset); border-radius:var(--r); transition:background var(--t)}
+li.item:hover{background:var(--surface)}
+
+/* square checkbox — the eski control (no round) */
+.cbx{
+  flex:none; width:17px; height:17px; margin-top:2px; border:1.5px solid var(--line2);
+  border-radius:var(--r); background:var(--paper); cursor:pointer; position:relative;
+  transition:background var(--t),border-color var(--t);
+}
+.cbx:hover{border-color:var(--soft)}
+.cbx[aria-checked="true"]{background:var(--ink); border-color:var(--ink)}
+.cbx[aria-checked="true"]::after{
+  content:""; position:absolute; left:4.5px; top:1.5px; width:5px; height:9px;
+  border:solid var(--on-ink); border-width:0 2px 2px 0; transform:rotate(43deg);
+}
+.cbx:focus-visible{outline:none; box-shadow:0 0 0 2px var(--paper),0 0 0 3.5px var(--soft)}
+
+.itxt{font-size:var(--fs-sm); color:var(--soft); flex:1}
+li.item.done .itxt{color:var(--muted)}
+li.item.done .itxt .lead{text-decoration:line-through}
+.itxt code{
+  font-family:'Jost',ui-monospace,Menlo,monospace; font-size:.92em; font-weight:600;
+  background:var(--tagbg); color:var(--ink); padding:0 4px; border-radius:var(--r);
+}
+.itxt strong{color:var(--ink); font-weight:600}
+.itxt .note{display:block; color:var(--muted); font-size:var(--fs-xs); margin-top:2px}
+
+/* dependency tags — coloured bold text, not pills (eski rule) */
+.tag{font-size:var(--fs-mi); font-weight:700; letter-spacing:.04em; text-transform:uppercase; margin-right:6px; vertical-align:1px}
+.tag.infra{color:var(--muted)}
+.tag.v2{color:var(--danger)}
+
+.foot{margin-top:var(--s5); padding-top:var(--s4); position:relative; color:var(--muted); font-size:var(--fs-xs)}
+.foot::before{content:""; position:absolute; left:var(--hair-inset); right:var(--hair-inset); top:0; height:1px; background:var(--line)}
+.foot a{color:var(--soft); text-decoration:none; font-weight:600}
+.foot a:hover{color:var(--ink)}
+.reset{color:var(--muted); font-size:var(--fs-mi); padding:2px 8px; border-radius:var(--r)}
+.reset:hover{color:var(--danger)}
+
+/* read-only build tab rows */
+.buildnote{color:var(--muted); font-size:var(--fs-sm); margin:0 0 var(--s4)}
+li.ro{display:flex; gap:var(--s3); align-items:flex-start; padding:var(--s2) var(--hair-inset)}
+li.ro .dot{flex:none; width:6px; height:6px; border-radius:var(--r); background:var(--line2); margin-top:7px}
+li.ro.blocked .dot{background:var(--danger)}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="brandrow">
+    <div>
+      <div class="wordmark">eski!<span>checklist</span></div>
+      <p class="sub">Your private list — setup you own, plus the launch bar. Progress saves in this browser.</p>
+    </div>
+    <button class="tbtn" id="theme" title="Toggle light / dark">theme</button>
+  </div>
+
+  <div class="overall">
+    <div class="mline"><b>Overall</b><span class="pct" id="ov-pct">0%</span></div>
+    <div class="meter"><i id="ov-bar"></i></div>
+  </div>
+
+  <div class="tabs" role="tablist">
+    <button class="tab" role="tab" data-tab="setup"  aria-selected="true">Setup <span class="n" id="n-setup"></span></button>
+    <button class="tab" role="tab" data-tab="qa"     aria-selected="false">Launch QA <span class="n" id="n-qa"></span></button>
+    <button class="tab" role="tab" data-tab="build"  aria-selected="false">Build</button>
+  </div>
+</header>
+
+<div class="wrap">
+  <section class="pane" id="pane-setup" data-pane="setup"></section>
+  <section class="pane" id="pane-qa" data-pane="qa" hidden></section>
+
+  <section class="pane" id="pane-build" data-pane="build" hidden>
+    <p class="buildnote">Read-only. What's left for Claude to build on the code side (tracked in <code>docs/BUILDLOG.md</code>) — not yours to tick, just so the whole todo lives in one place. Red = blocked on you.</p>
+    <div class="area">
+      <div class="ahd"><h2>Remaining code work</h2></div>
+      <ul class="items" id="build-list"></ul>
+    </div>
+  </section>
+
+  <div class="foot">
+    Copied verbatim from <a href="https://github.com/freshstart17173-sketch/eski/blob/preview/docs/OWNER-TODO.md">OWNER-TODO.md</a>
+    and <a href="https://github.com/freshstart17173-sketch/eski/blob/preview/docs/QA-CHECKLIST.md">QA-CHECKLIST.md</a>.
+    When those docs change, this page follows on the next deploy.
+    &nbsp;·&nbsp; <button class="reset" id="reset">reset my ticks</button>
+  </div>
+</div>
+
+<!-- ============ source docs (verbatim, parsed at runtime) ============ -->
+<script type="text/plain" id="src-setup">
+## 🔴 Do soon
+- [ ] **Confirm Vercel binds `preview.eski.lol` → the `preview` git branch** and preview deployments are on (Settings → Domains + Git). The `preview` branch carries P0–P9 core, so a deploy should be building — check `preview.eski.lol/s/lb/c/beats?demo=1` renders the workspace.
+- [x] **Cloudflare DNS — `preview` record exists** (`CNAME preview → …vercel-dns-017.com`, DNS-only / grey cloud). Already correct.
+- [ ] **DNS tidy-ups** (not breaking anything today): grey-cloud (`DNS only`) the `_domainconnect` CNAME — it's wrongly Proxied; and verify/fix the `*.eski.lol` wildcard A records (point them at your Vercel domain-card IPs `216.198.79.1` / `64.29.17.1`, or drop the wildcard — eski routes by path, so nothing needs `*.eski.lol` to resolve).
+
+## 🟠 Do before uploads / auth
+- [ ] **Vercel env vars** (Settings → Environment Variables, set for **Preview** and **Production**, then redeploy) — the server vars `api/sign.mjs` needs for R2 uploads: `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `R2_BUCKET`, `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_PUBLIC_BASE_URL` (= `https://cdn.eski.lol`).
+- [ ] **Cloudflare R2 CORS** — paste `r2-cors.json` into the `eski` bucket (R2 → bucket → Settings → CORS). It already includes `https://preview.eski.lol` in the PUT origins. Needed once upload lands.
+- [ ] **Supabase Auth → email (SMTP)** — the built-in mailer only sends a few/hour. Add a real SMTP sender (the `SMTP_*` vars) before anyone but you signs in.
+- [ ] **Supabase Auth → URL config** — add `https://preview.eski.lol` (and any `*.vercel.app` preview URL you use) to the Site URL + allowed redirect URLs, so magic-link / OAuth sign-in returns to the app.
+
+## 🟡 Nice to have / later
+- [ ] **Supabase Auth → enable "Leaked password protection"** — dashboard toggle flagged by the security advisor, one click.
+- [x] **R2 custom domain wired to `cdn.eski.lol`** — DNS record exists; the client constant + `.env.example` use it. Still confirm the `R2_PUBLIC_BASE_URL` Vercel env var = `https://cdn.eski.lol` and redeploy.
+- [ ] **Stripe** (only when billing / storage-slider ships, ~P8) — a Stripe account + the webhook that writes `invoices` / flips `storage_balance.status`.
+- [ ] **Decide `preview` → `main` promotion** — when the preview looks right, merge `preview` → `main` (main deploys to prod / eski.lol).
+</script>
+
+<script type="text/plain" id="src-qa">
 ## 1. Sign in, onboarding & sign out
-
 - [ ] Open the site signed-out → the marketing landing page renders (eski! wordmark, product copy, Sign in / Get started CTAs).
 - [ ] Click Sign in / Get started on the landing page → the sign-in screen opens (Continue with Google + magic-link fallback).
 - [ ] `[infra]` Click "Continue with Google" → redirects to Google, and returning lands you signed in.
@@ -41,7 +240,6 @@ file is the versioned copy that build sessions treat as the acceptance bar.
 - [ ] While signed out, open a deep link like `/u/someone` or `/s/…` → you get the sign-in prompt, not a broken screen.
 
 ## 2. Server rail (far left)
-
 - [ ] Click the Home button → goes to the Feed; the button shows as active (inked).
 - [ ] Click the Messages button → goes to Messages (DMs); an unread badge shows a count when you have unread DMs.
 - [ ] Click the My-files button → opens your personal file explorer (no server channel column).
@@ -56,7 +254,6 @@ file is the versioned copy that build sessions treat as the acceptance bar.
 - [ ] Confirm the avatar button is round → the profile button is a circle; server badges are squares.
 
 ## 3. Channel column
-
 - [ ] Look at the server header → it shows the server's cover banner + square icon + name.
 - [ ] Click the server header bar → the server menu dropdown opens; its chevron rotates while open.
 - [ ] Open the server menu as an admin → shows Invite people · Server settings · Notification settings · Create channel · Leave server.
@@ -73,7 +270,6 @@ file is the versioned copy that build sessions treat as the acceptance bar.
 - [ ] Right-click a text channel → a channel menu opens: Mark as read · Copy link · Invite · Notification level · Mute · (admin) Edit / Delete.
 
 ## 4. Channel header & tabs
-
 - [ ] Look at the channel header → shows the # name and the channel topic.
 - [ ] Look at the three tabs → Messages · Pins (count) · Files (count).
 - [ ] Click the Pins tab → the pinned-messages panel shows; the stream hides.
@@ -85,7 +281,6 @@ file is the versioned copy that build sessions treat as the acceptance bar.
 - [ ] Click the members icon → toggles the members rail (its pressed state flips).
 
 ## 5. Messages — list & rows
-
 - [ ] Load a channel with history → messages show newest-last, grouped by author, with the byline in that member's server colour.
 - [ ] Look for day separators → a "Today"/date divider sits between days.
 - [ ] Open a channel with unread messages → a "New messages" divider marks where you left off.
@@ -110,7 +305,6 @@ file is the versioned copy that build sessions treat as the acceptance bar.
 - [ ] Scroll up, then have a new message arrive → a "jump to present" button appears; clicking returns you to the bottom.
 
 ## 6. Composer
-
 - [ ] Type a message and press Enter → it sends and appears in the stream; the box clears.
 - [ ] Press send with an empty box → nothing happens (send is inert when empty).
 - [ ] Use the B / I / S / code / link / list / quote buttons → each inserts the right markdown around your selection.
@@ -123,14 +317,12 @@ file is the versioned copy that build sessions treat as the acceptance bar.
 - [ ] Start typing → other members in the channel see a typing indicator that clears when you stop.
 
 ## 7. Threads
-
 - [ ] Open a thread from "N replies" → the thread pane opens with the parent message + its replies.
 - [ ] Reply inside the thread → your reply posts under the parent.
 - [ ] Toggle "Also send to #channel" → the toggle flips; replying with it on also posts to the main channel.
 - [ ] Close the thread pane (✕) → the thread pane closes and the channel returns to full width.
 
 ## 8. Members rail & moderation
-
 - [ ] Toggle the members rail from the header → it shows / hides.
 - [ ] Look at the grouping → Admins and Members are grouped; names carry the member colour.
 - [ ] Look at presence → each member shows a presence dot (online / idle / dnd / offline) and a "working on" line.
@@ -145,7 +337,6 @@ file is the versioned copy that build sessions treat as the acceptance bar.
 - [ ] Manage roles for a member → toggle roles → Save → the member's roles update to the union you checked.
 
 ## 9. Server management (admin)
-
 - [ ] Server menu → Create channel → the modal opens: name · Text/Voice · category · default folder · allowed types · private → Create adds it.
 - [ ] Edit a channel (gear / menu) → name · topic · slow-mode · post-policy save correctly.
 - [ ] Create a category → a new collapsible group appears in the column.
@@ -164,9 +355,6 @@ file is the versioned copy that build sessions treat as the acceptance bar.
 - [ ] Server menu → Audit log → a read-only list of moderation actions (kick/ban/timeout) with actor, target, reason, time.
 
 ## 10. File explorer
-
-The server explorer mounts inside the shell (channel column stays); My files hides it.
-
 - [ ] Open a server's Files → the explorer opens inside the shell with the channel column still on the left, Files active.
 - [ ] Open My files from the rail → the personal explorer opens with no server channel column.
 - [ ] Look at the folder tree → nested folders show; the current folder is highlighted.
@@ -194,7 +382,6 @@ The server explorer mounts inside the shell (channel column stays); My files hid
 - [ ] Click Upload in the toolbar → the upload sheet opens.
 
 ## 11. Details pane (the file viewer)
-
 - [ ] Open any file card → a near-full-screen viewer opens over a scrim.
 - [ ] Close it via ✕ / Esc / clicking the dimmed backdrop → it closes each way.
 - [ ] Open an image → the image fills the media area.
@@ -213,7 +400,6 @@ The server explorer mounts inside the shell (channel column stays); My files hid
 - [ ] Open a share link as a non-member → a standalone read-only page shows only that item (no rail, no browsing).
 
 ## 12. Upload
-
 - [ ] Open the upload sheet → it opens from the explorer toolbar / composer attach.
 - [ ] Drop one or more files → they're recognised by type; a Files/Folder toggle swaps the target.
 - [ ] Pick a visibility (Public / Server / Private) → it's the one required choice.
@@ -223,7 +409,6 @@ The server explorer mounts inside the shell (channel column stays); My files hid
 - [ ] `[infra]` Click Post → it uploads (progress card), then a success toast; the file appears where posted.
 
 ## 13. Feed
-
 - [ ] Open the Feed → a grid of your friends' public posts shows.
 - [ ] Use search / type / sort / layout toggle → each filters or re-lays the grid (even grid ⇄ masonry).
 - [ ] Look at cards of each kind → image thumb, video play-overlay, audio type-card, text words, non-previewable type-card — all render.
@@ -232,7 +417,6 @@ The server explorer mounts inside the shell (channel column stays); My files hid
 - [ ] Confirm no member colour on the Feed → Feed names/handles carry no server hue (it's a public context).
 
 ## 14. Profile
-
 - [ ] Open a profile → round avatar, name, @handle, bio, and shelf tabs (Public / Server / Private) show.
 - [ ] Open YOUR OWN profile → you see Edit profile, all three shelves, and Settings.
 - [ ] Open a stranger's profile → you see Add friend and only the Public shelf (no Settings).
@@ -246,7 +430,6 @@ The server explorer mounts inside the shell (channel column stays); My files hid
 - [ ] On a friend's profile, click Message → a DM with them opens.
 
 ## 15. Messages (DMs)
-
 - [ ] Open Messages → the DM thread list (pinned + direct) shows with unread dots.
 - [ ] Use the add-by-handle field → entering an exact handle starts / opens a DM.
 - [ ] Use New message → pick friends → selecting one starts a 1:1; several start a group DM.
@@ -260,7 +443,6 @@ The server explorer mounts inside the shell (channel column stays); My files hid
 - [ ] Click Friends → the Friends screen opens.
 
 ## 16. Friends
-
 - [ ] Open Friends → tabs All · Pending · Blocked, each counted.
 - [ ] Add a friend by handle → a request is sent (shows under outgoing/pending).
 - [ ] Pending tab → Accept an incoming request → you become friends.
@@ -272,7 +454,6 @@ The server explorer mounts inside the shell (channel column stays); My files hid
 - [ ] View each tab with nothing in it → a per-tab empty state shows.
 
 ## 17. Notifications
-
 - [ ] Open Notifications → a list grouped by day, with tabs (All / Mentions).
 - [ ] Look at a row → actor + text + context + time, with an unread dot when unread.
 - [ ] Click a notification row → it marks read and navigates to its target.
@@ -283,7 +464,6 @@ The server explorer mounts inside the shell (channel column stays); My files hid
 - [ ] Open the header bell → a dropdown preview of recent notifications with Mark all read + See all.
 
 ## 18. Search & quick-switcher
-
 - [ ] Press ⌘K / Ctrl-K anywhere in the app → the quick-switcher overlay opens.
 - [ ] Press ⌘K / Ctrl-K again → it closes (toggles).
 - [ ] Type a query → results group into servers · channels · people · files.
@@ -291,7 +471,6 @@ The server explorer mounts inside the shell (channel column stays); My files hid
 - [ ] Search for a private channel you can't see → it does not appear (scope respects what you can view).
 
 ## 19. Storage & billing
-
 - [ ] `[infra]` Open the storage manager (footer "manage") → a modal with the usage bar + a dynamic GB slider opens.
 - [ ] Look at the personal usage bar → shows used / cap for your personal + public files.
 - [ ] `[infra]` Drag the personal storage slider → a live blended $/GB price updates as it rises.
@@ -300,7 +479,6 @@ The server explorer mounts inside the shell (channel column stays); My files hid
 - [ ] `[infra]` Export a server → a zip of every server file + metadata is produced.
 
 ## 20. Create & join servers
-
 - [ ] `[infra]` Create a server (name + icon + first channel) → it's created, you're the owner, and it appears on your rail with a starter channel.
 - [ ] New server first-run → the empty server shows a 3-step setup checklist (create channels · invite · upload).
 - [ ] Open a valid `/join/<code>` link → a preview card shows the server name, member count, inviter, and a Join button.
@@ -308,7 +486,6 @@ The server explorer mounts inside the shell (channel column stays); My files hid
 - [ ] Open an expired / revoked / full / already-member invite → a distinct dead-invite screen with the right reason + CTA (not the valid preview).
 
 ## 21. Utility & global states
-
 - [ ] Visit a bad URL → a 404 "this page doesn't exist" card with a way back (no leak of whether a private thing exists).
 - [ ] Open a private channel/server you can't see → a quiet "you don't have access" — never a 404 that leaks existence.
 - [ ] View someone you've blocked → a "You blocked @handle …" state with an Unblock CTA.
@@ -316,3 +493,216 @@ The server explorer mounts inside the shell (channel column stays); My files hid
 - [ ] Toggle your OS/browser between light and dark → the whole app renders correctly in both themes (no invisible text).
 - [ ] Resize the window from wide to ~1024px → the three panes flex and fill the width; below ~1100 the members rail tucks away. No sideways page scroll.
 - [ ] `[infra]` Drop the network / Realtime connection → a "Connection lost, reconnecting…" banner shows; the composer disables until it recovers.
+</script>
+
+<!-- read-only build todo (Claude's side). {b} marks blocked-on-owner. -->
+<script type="text/plain" id="src-build">
+- Billing / storage-slider (P8) {b} — blocked on your Stripe account + webhook.
+- Forward action — forward a message to channels / DMs with an optional note.
+- Channel-permissions modal — allow-list of roles/members on a private channel.
+- DM Report — report a conversation (Block already shipped).
+- Group-DM management — add people · rename · remove · leave from the members modal.
+- Full server-settings screen port — most actions moved to modals; decide whether to finish or retire the /s/:id/settings route.
+- Roles-editor scope decision — how deep the per-role permission matrix goes.
+- gallery.html polish gaps — the visual LAW is ~close, not 100%; remaining diffs get flagged and closed.
+</script>
+
+<script>
+(function(){
+  var STORE = "eski-checklist-v1";
+  var THEME = "eski-theme";
+  var state = load();
+
+  function load(){ try{ return JSON.parse(localStorage.getItem(STORE)) || {}; }catch(e){ return {}; } }
+  function save(){ try{ localStorage.setItem(STORE, JSON.stringify(state)); }catch(e){} }
+
+  // ---- theme toggle (matches the app: stamp data-theme on <html>) ----
+  try{ var t = localStorage.getItem(THEME); if(t) document.documentElement.setAttribute("data-theme", t); }catch(e){}
+  document.getElementById("theme").addEventListener("click", function(){
+    var cur = document.documentElement.getAttribute("data-theme");
+    var next = cur === "dark" ? "light"
+      : cur === "light" ? "dark"
+      : (matchMedia("(prefers-color-scheme:dark)").matches ? "light" : "dark");
+    document.documentElement.setAttribute("data-theme", next);
+    try{ localStorage.setItem(THEME, next); }catch(e){}
+  });
+
+  // ---- minimal, safe inline markdown ----
+  function esc(s){ return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+  function inline(s){
+    return esc(s)
+      .replace(/`([^`]+)`/g, '<code>$1</code>')
+      .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+  }
+
+  // ---- parse a text/plain doc into areas[] of {title,desc,items[]} ----
+  function parse(docId){
+    var raw = (document.getElementById(docId).textContent || "").split("\n");
+    var areas = [], cur = null, lastItem = null;
+    for(var i=0;i<raw.length;i++){
+      var line = raw[i];
+      if(/^##\s+/.test(line)){
+        cur = { title: line.replace(/^##\s+/,"").trim(), desc:"", items:[] };
+        areas.push(cur); lastItem = null; continue;
+      }
+      var m = line.match(/^-\s*\[( |x|X)\]\s*(.*)$/);
+      if(m && cur){
+        var done = m[1].toLowerCase() === "x";
+        var text = m[2];
+        var tags = [];
+        text = text.replace(/`\[(infra|v2)\]`/gi, function(_,t){ tags.push(t.toLowerCase()); return ""; }).trim();
+        lastItem = { text:text, done:done, tags:tags, note:"" };
+        cur.items.push(lastItem); continue;
+      }
+      // indented continuation → note on the last item
+      if(/^\s+\S/.test(line) && lastItem){
+        lastItem.note += (lastItem.note ? " " : "") + line.trim(); continue;
+      }
+      // loose prose right after a heading → area description
+      if(cur && !lastItem && line.trim() && !/^-\s/.test(line)){
+        cur.desc = cur.desc ? cur.desc + " " + line.trim() : line.trim();
+      }
+    }
+    return areas;
+  }
+
+  function tagHtml(tags){
+    return tags.map(function(t){
+      return '<span class="tag '+t+'">'+(t==="v2"?"v2":"infra")+'</span>';
+    }).join("");
+  }
+
+  // ---- render one doc into a pane; return {done,total} ----
+  function render(docId, paneId){
+    var areas = parse(docId);
+    var pane = document.getElementById(paneId);
+    var total = 0, done = 0;
+    areas.forEach(function(area, ai){
+      var box = document.createElement("div"); box.className = "area";
+      var hd = document.createElement("div"); hd.className = "ahd";
+      var h = document.createElement("h2"); h.textContent = area.title;
+      if(area.desc){ var d = document.createElement("span"); d.className="adesc"; d.textContent = area.desc; h.appendChild(d); }
+      var cnt = document.createElement("span"); cnt.className = "acount";
+      hd.appendChild(h); hd.appendChild(cnt); box.appendChild(hd);
+
+      var ul = document.createElement("ul"); ul.className = "items";
+      area.items.forEach(function(it, ii){
+        total++;
+        var id = docId + ":" + ai + ":" + ii;
+        var checked = (id in state) ? state[id] : it.done;
+        if(checked) done++;
+
+        var li = document.createElement("li"); li.className = "item" + (checked ? " done" : "");
+        var cb = document.createElement("button");
+        cb.className = "cbx"; cb.setAttribute("role","checkbox");
+        cb.setAttribute("aria-checked", checked ? "true" : "false");
+        cb.setAttribute("aria-label", it.text);
+
+        var tx = document.createElement("div"); tx.className = "itxt";
+        tx.innerHTML = tagHtml(it.tags) + '<span class="lead">' + inline(it.text) + '</span>'
+          + (it.note ? '<span class="note">' + inline(it.note) + '</span>' : "");
+
+        cb.addEventListener("click", function(){
+          var now = cb.getAttribute("aria-checked") !== "true";
+          cb.setAttribute("aria-checked", now ? "true" : "false");
+          li.classList.toggle("done", now);
+          state[id] = now; save();
+          recount(box, area, docId, ai);
+          overall();
+        });
+
+        li.appendChild(cb); li.appendChild(tx); ul.appendChild(li);
+      });
+      box.appendChild(ul);
+      pane.appendChild(box);
+      recount(box, area, docId, ai);
+    });
+    return { done:done, total:total };
+  }
+
+  function recount(box, area, docId, ai){
+    var d = 0;
+    area.items.forEach(function(it, ii){
+      var id = docId + ":" + ai + ":" + ii;
+      var checked = (id in state) ? state[id] : it.done;
+      if(checked) d++;
+    });
+    var el = box.querySelector(".acount");
+    var full = d === area.items.length && area.items.length > 0;
+    el.textContent = d + " / " + area.items.length;
+    el.classList.toggle("full", full);
+  }
+
+  function countDoc(docId){
+    var areas = parse(docId), d = 0, tot = 0;
+    areas.forEach(function(area, ai){
+      area.items.forEach(function(it, ii){
+        tot++;
+        var id = docId + ":" + ai + ":" + ii;
+        var c = (id in state) ? state[id] : it.done;
+        if(c) d++;
+      });
+    });
+    return { done:d, total:tot };
+  }
+
+  function overall(){
+    var s = countDoc("src-setup"), q = countDoc("src-qa");
+    document.getElementById("n-setup").textContent = s.done + "/" + s.total;
+    document.getElementById("n-qa").textContent = q.done + "/" + q.total;
+    var done = s.done + q.done, tot = s.total + q.total;
+    var pct = tot ? Math.round(done / tot * 100) : 0;
+    document.getElementById("ov-pct").textContent = done + " / " + tot + "  ·  " + pct + "%";
+    document.getElementById("ov-bar").style.width = pct + "%";
+  }
+
+  // ---- read-only build list ----
+  function buildList(){
+    var raw = (document.getElementById("src-build").textContent || "").split("\n");
+    var ul = document.getElementById("build-list");
+    raw.forEach(function(line){
+      var m = line.match(/^-\s+(.*)$/); if(!m) return;
+      var text = m[1], blocked = /\{b\}/.test(text);
+      text = text.replace(/\s*\{b\}\s*/, " ").trim();
+      var li = document.createElement("li"); li.className = "ro" + (blocked ? " blocked" : "");
+      var dot = document.createElement("span"); dot.className = "dot";
+      var tx = document.createElement("div"); tx.className = "itxt"; tx.innerHTML = inline(text);
+      li.appendChild(dot); li.appendChild(tx); ul.appendChild(li);
+    });
+  }
+
+  // ---- tabs ----
+  var tabs = [].slice.call(document.querySelectorAll(".tab"));
+  tabs.forEach(function(tab){
+    tab.addEventListener("click", function(){
+      tabs.forEach(function(t){ t.setAttribute("aria-selected", t === tab ? "true" : "false"); });
+      ["setup","qa","build"].forEach(function(name){
+        document.getElementById("pane-" + name).hidden = (name !== tab.dataset.tab);
+      });
+      try{ localStorage.setItem("eski-checklist-tab", tab.dataset.tab); }catch(e){}
+    });
+  });
+
+  document.getElementById("reset").addEventListener("click", function(){
+    if(!confirm("Clear every tick on this page? (This only affects this browser.)")) return;
+    state = {}; save();
+    document.getElementById("pane-setup").innerHTML = "";
+    document.getElementById("pane-qa").innerHTML = "";
+    render("src-setup","pane-setup");
+    render("src-qa","pane-qa");
+    overall();
+  });
+
+  // ---- boot ----
+  render("src-setup","pane-setup");
+  render("src-qa","pane-qa");
+  buildList();
+  overall();
+  try{
+    var savedTab = localStorage.getItem("eski-checklist-tab");
+    if(savedTab){ var t = document.querySelector('.tab[data-tab="'+savedTab+'"]'); if(t) t.click(); }
+  }catch(e){}
+})();
+</script>
+</body>
+</html>
