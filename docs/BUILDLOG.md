@@ -1576,3 +1576,23 @@ NEXT: **audit log** (needs a backend table/trigger — check schema first); the 
   friends-not-in-server query + invite-to-user notification RPC). Standing: **Realtime** (echo,
   untestable offline), **billing** (Stripe). Live R2 round-trips (icon/cover/banner/photo) are
   preview-verified — the sandbox browser can't egress to R2, so demo previews locally (blob URL).
+
+## 2026-08-28 — tooling: SessionStart git-freshness hook
+IN PROGRESS: (cleared)
+DONE: `.claude/hooks/session-start.sh` + `.claude/settings.json` (commit 6b3eb4f).
+  A SessionStart hook that fetches origin and **fast-forwards the checked-out branch
+  to its true remote tip** before the agent reads anything, then prints that tip so
+  it lands in context. Fixes the recurring cold-start hazard where a cloud session is
+  cloned from a STALE ref and builds on old history (this session was cloned at the
+  08-23 commit while `origin/preview` was at 08-25 `a4250d7`, and a naive push
+  collided). Fast-forward ONLY — never touches a dirty tree, unpushed commits, or a
+  diverged branch (warns instead); remote-only (`CLAUDE_CODE_REMOTE`); non-fatal
+  offline. Validated all five paths (up-to-date / behind→FF / ahead / diverged /
+  dirty / non-remote). Takes effect for any session that clones a branch carrying it
+  — it's on `preview` now; merge `preview→main` to cover sessions that start on the
+  default branch.
+DOC RECONCILE: **P9.6** (create-server optional icon/cover, `71aa073`) and **P9.7**
+  (audit-log admin modal, `a4250d7`) shipped in code but were not logged — noting here
+  so the map is honest. See those commit messages for detail.
+NEXT: unchanged from the entry above — invite by-handle + suggested people is the next
+  self-contained, offline-verifiable feature; Realtime echo + billing remain standing.
