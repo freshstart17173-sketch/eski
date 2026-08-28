@@ -19,7 +19,14 @@
 .rail{flex:none;width:var(--rail);background:var(--railbg);display:flex;flex-direction:column;align-items:center;gap:var(--s2);padding:var(--s2) 0;overflow-y:auto}
 .railbtn{position:relative;width:38px;height:38px;flex:none;display:grid;place-items:center;border-radius:var(--r);background:var(--surface);color:var(--soft);font-weight:700;font-size:var(--fs-sm);transition:background var(--t),color var(--t)}
 .railbtn:hover{background:var(--plate)}
-.railbtn.home .railogo{font-family:var(--font-wordmark);font-weight:700;font-size:18px;letter-spacing:-.02em;line-height:1}
+/* the e! logo mark. The PNG is white with ~10% internal padding, so scale it up to fill the
+   button and centre it. Base (:root = light theme) inverts it to a dark mark; dark mode keeps
+   it white — so it reads on the rail in both themes whatever the file's background. */
+.railbtn.home{background:none;overflow:hidden}
+.railbtn.home:hover{background:var(--surface)}
+.railbtn.home .railogo{width:100%;height:100%;object-fit:contain;transform:scale(1.35);filter:invert(1)}
+:root[data-theme="dark"] .railbtn.home .railogo{filter:none}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .railbtn.home .railogo{filter:none}}
 /* server icon fills the square badge (radius --r, never round — round is avatars/dots only). */
 .railbtn .railimg{width:100%;height:100%;object-fit:cover;border-radius:var(--r)}
 .railbtn.on{background:var(--ink);color:var(--on-ink)}
@@ -289,12 +296,13 @@
 .voicemini .vmwip .ic{width:11px;height:11px}
 
 /* ── empty + loading states (workspace edge states) ──────────────────────── */
-/* Empty state — compact + terse (owner: "not dense at all"). Small icon, tight rhythm,
-   short copy; the title sits close to the icon, the one-line hint close to the title. */
-.emptystate{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:var(--s4);gap:var(--s1);color:var(--muted);min-height:300px}
-.emptystate .eic{width:26px;height:26px;color:var(--line2);margin-bottom:var(--s1)}
-.emptystate h3{font-size:var(--fs);font-weight:600;color:var(--soft)}
-.emptystate p{font-size:var(--fs-sm);max-width:280px;line-height:1.4;color:var(--muted)}
+/* Empty state — compact + terse, and NOT vertically sprawling (owner: too much vertical
+   space). Content-height, top-anchored with a modest offset — no flex:1 fill / centre that
+   floats it in the middle of a tall pane. Small icon, tight rhythm, short copy. */
+.emptystate{display:flex;flex-direction:column;align-items:center;text-align:center;padding:var(--s5) var(--s4) 0;gap:var(--s1);color:var(--muted)}
+.emptystate .eic{width:24px;height:24px;color:var(--line2);margin-bottom:var(--s1)}
+.emptystate h3{font-size:var(--fs);font-weight:600;color:var(--soft);margin:0}
+.emptystate p{font-size:var(--fs-sm);max-width:280px;line-height:1.4;color:var(--muted);margin:0}
 .emptystate .btn{margin-top:var(--s3)}
 .skel{background:var(--surface);border-radius:var(--r);position:relative;overflow:hidden}
 .skel::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.35),transparent);transform:translateX(-100%);animation:shimmer 1.3s infinite}
