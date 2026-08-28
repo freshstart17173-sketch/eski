@@ -52,6 +52,20 @@ export function signInWithOtp(email) {
   });
 }
 
+/**
+ * Start the Google OAuth flow (the provider is enabled in the Supabase project).
+ * Redirects the whole page to Google; on return, detectSessionInUrl (above)
+ * completes the session. Preferred over the magic link — no email round-trip, so
+ * it dodges the built-in mailer's rate limit. Returns the supabase-js result
+ * (only meaningful on error, since success navigates away).
+ */
+export function signInWithGoogle() {
+  return supabase.auth.signInWithOAuth({
+    provider: "google",
+    options: { redirectTo: window.location.origin },
+  });
+}
+
 /** Sign out and clear local session. */
 export function signOut() { return supabase.auth.signOut(); }
 

@@ -1596,3 +1596,24 @@ DOC RECONCILE: **P9.6** (create-server optional icon/cover, `71aa073`) and **P9.
   so the map is honest. See those commit messages for detail.
 NEXT: unchanged from the entry above — invite by-handle + suggested people is the next
   self-contained, offline-verifiable feature; Realtime echo + billing remain standing.
+
+## 2026-08-28 — Sign in with Google (OAuth) + magic-link fallback
+IN PROGRESS: (cleared)
+DONE (both themes, zero app console errors): a **Continue with Google** button now
+  leads the sign-in screen, with the magic-link email demoted to a fallback under an
+  "or" divider. Google is the preferred path because it has no email round-trip, so it
+  dodges the built-in mailer's rate limit (owner hit it). `signInWithGoogle()`
+  (supabase.js) calls `supabase.auth.signInWithOAuth({provider:'google', redirectTo:
+  origin})`; `detectSessionInUrl` already completes the session on return. The brand
+  "G" is inlined as its own 4-colour SVG (NOT via the mono icon sprite) — a
+  third-party logo is the recognised tokens-only exception (cf. the one `#fff` in
+  `.btn.danger`) and it lives only on this auth screen. Styles: `.oauthbtn` + `.ordiv`
+  in shell.css. All landing CTAs already route to `/signin`, so this is the single
+  entry point.
+OWNER: the Google provider is enabled in Supabase (owner). Still confirm, in **Supabase
+  Auth → URL Configuration**, that the site URL / allowed redirect URLs include
+  `https://preview.eski.lol` (and prod) so the OAuth return lands back in the app — same
+  list the magic link needs (OWNER-TODO). The Google Cloud OAuth client's authorized
+  redirect URI must point at the Supabase `/auth/v1/callback` (part of "enable Google").
+NEXT: polish pass — icon-button bounding-box / hover-target alignment (owner noticed
+  slight offsets revealed on hover). Then invite by-handle; Realtime echo + billing standing.

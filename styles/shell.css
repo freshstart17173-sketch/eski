@@ -51,6 +51,15 @@
 .authnote{font-size:var(--fs-sm);color:var(--soft);margin:0}
 .authnote.err{color:var(--danger)}
 .authnote[hidden]{display:none}
+/* Continue with Google — a full-width outline button; the brand G keeps its own
+   colours (auth-logo exception), the label follows the theme. Slightly taller than
+   a default .btn so the primary sign-in path reads as the anchor. */
+.authcard .oauthbtn{gap:9px;padding:9px 12px;font-size:var(--fs-sm)}
+.authcard .oauthbtn .gmark{flex:none}
+/* the "or" separator between Google and the email fallback — a centred label on a
+   hairline, no box (background-step/​hairline rules, eski-style §3) */
+.ordiv{display:flex;align-items:center;gap:var(--s3);color:var(--muted);font-size:var(--fs-xs)}
+.ordiv::before,.ordiv::after{content:"";flex:1;height:1px;background:var(--line)}
 
 /* ── channel column ──────────────────────────────────────────────────────── */
 .chan{flex:none;width:var(--chan);background:var(--surface);display:flex;flex-direction:column;overflow:hidden}
