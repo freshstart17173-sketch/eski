@@ -234,7 +234,7 @@ function paint(tree, pane, data, state, rerender) {
     el("button.btn.ghost.sm", { onClick: () => { state.query = ""; rerender(); } }, ["Clear search"]),
   ]);
 
-  const viewBtn = el("button.btn", { "aria-haspopup": "menu", onClick: (e) => openMenu(e.currentTarget, Object.entries(VIEWS).map(([k, v]) => ({ label: v, onClick: () => { state.mode = k; rerender(); } }))) }, [el("span", {}, [VIEWS[state.mode]]), iconEl("chev", "sm")]);
+  const viewBtn = el("button.btn", { "aria-haspopup": "menu", onClick: (e) => openMenu(e.currentTarget, Object.entries(VIEWS).map(([k, v]) => ({ label: v, selected: state.mode === k, onClick: () => { state.mode = k; rerender(); } }))) }, [el("span", {}, [VIEWS[state.mode]]), iconEl("chev", "sm")]);
   // Show-hidden (#55): a tucked toggle — hidden/utility works are omitted from the library
   // view unless this is on. It reveals them (dimmed); it does not rebuild the toolbar.
   const hiddenBtn = el("button.iconbtn" + (state.showHidden ? ".on" : ""), { title: state.showHidden ? "Hiding hidden files" : "Show hidden files", "aria-pressed": state.showHidden ? "true" : "false", onClick: () => { state.showHidden = !state.showHidden; hiddenBtn.classList.toggle("on", state.showHidden); hiddenBtn.setAttribute("aria-pressed", state.showHidden ? "true" : "false"); hiddenBtn.setAttribute("title", state.showHidden ? "Hiding hidden files" : "Show hidden files"); repaintBody(); } }, [iconEl("hide", "sm")]);
@@ -277,11 +277,12 @@ function paint(tree, pane, data, state, rerender) {
   const chanBtn = personal ? null : multiBtn("Channel", state.channels, channelOpts);
   const uploaderBtn = personal ? null : multiBtn("Uploader", state.uploaders, uploaderOpts);
 
-  // Date + Sort are single-select (openMenu with a ✓ prefix; the button label updates)
+  // Date + Sort are single-select: the current choice is shown by an inverted (filled)
+  // menu row via `selected`, not a ✓ prefix; the button label updates on pick.
   const dateBtn = el("button.btn.exfilter" + (state.date !== "any" ? ".on" : ""), { "aria-haspopup": "menu" }, [el("span.dlbl", {}, [state.date === "any" ? "Date" : DATE_LABEL[state.date]]), iconEl("chev", "sm")]);
-  dateBtn.addEventListener("click", () => openMenu(dateBtn, DATES.map(([k, lbl]) => ({ label: (state.date === k ? "✓ " : "") + lbl, onClick: () => { state.date = k; dateBtn.querySelector(".dlbl").textContent = k === "any" ? "Date" : DATE_LABEL[k]; dateBtn.classList.toggle("on", k !== "any"); repaintBody(); } }))));
+  dateBtn.addEventListener("click", () => openMenu(dateBtn, DATES.map(([k, lbl]) => ({ label: lbl, selected: state.date === k, onClick: () => { state.date = k; dateBtn.querySelector(".dlbl").textContent = k === "any" ? "Date" : DATE_LABEL[k]; dateBtn.classList.toggle("on", k !== "any"); repaintBody(); } }))));
   const sortBtn = el("button.btn.exfilter", { "aria-haspopup": "menu" }, [el("span.slbl", {}, [SORT_LABEL[state.sort]]), iconEl("chev", "sm")]);
-  sortBtn.addEventListener("click", () => openMenu(sortBtn, SORTS.map(([k, lbl]) => ({ label: (state.sort === k ? "✓ " : "") + lbl, onClick: () => { state.sort = k; sortBtn.querySelector(".slbl").textContent = SORT_LABEL[k]; repaintBody(); } }))));
+  sortBtn.addEventListener("click", () => openMenu(sortBtn, SORTS.map(([k, lbl]) => ({ label: lbl, selected: state.sort === k, onClick: () => { state.sort = k; sortBtn.querySelector(".slbl").textContent = SORT_LABEL[k]; repaintBody(); } }))));
   const dirBtn = el("button.iconbtn", { title: state.dir === "desc" ? "Descending" : "Ascending", "aria-pressed": state.dir === "asc" ? "true" : "false", onClick: () => { state.dir = state.dir === "desc" ? "asc" : "desc"; dirBtn.setAttribute("title", state.dir === "desc" ? "Descending" : "Ascending"); dirBtn.setAttribute("aria-pressed", state.dir === "asc" ? "true" : "false"); dirBtn.firstChild.style.transform = state.dir === "asc" ? "rotate(180deg)" : ""; repaintBody(); } }, [(() => { const g = iconEl("chev", "sm"); if (state.dir === "asc") g.style.transform = "rotate(180deg)"; return g; })()]);
 
   // New folder + Upload travel together as one right-aligned unit (.tbactions), so a
@@ -521,14 +522,15 @@ function openFilterMenu(anchor, options, selected, onChange) {
   }
   for (const [key, label] of options) {
     const on = selected.has(key);
-    const mark = el("span.fcheck", {}, [on ? "✓" : ""]);
-    const row = el("button", { role: "menuitemcheckbox", "aria-checked": on ? "true" : "false" }, [mark, el("span", {}, [label])]);
+    // Selected rows are shown by inversion (.sel filled highlight), not a ✓ glyph — the
+    // same language as the single-selects and hover. The row toggles in place.
+    const row = el("button" + (on ? ".sel" : ""), { role: "menuitemcheckbox", "aria-checked": on ? "true" : "false" }, [el("span", {}, [label])]);
     row.addEventListener("click", (e) => {
       e.stopPropagation();
       const now = !selected.has(key);
       now ? selected.add(key) : selected.delete(key);
       row.setAttribute("aria-checked", now ? "true" : "false");
-      mark.textContent = now ? "✓" : "";
+      row.classList.toggle("sel", now);
       onChange();
     });
     menu.append(row);

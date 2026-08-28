@@ -72,7 +72,6 @@
    labels line up whether or not a row is ticked. */
 .btn.exfilter.on{background:var(--plate);color:var(--ink)}
 .btn.exfilter .fc{opacity:.55;margin-left:2px;font-variant-numeric:tabular-nums}
-.menu .fcheck{width:14px;flex:none;text-align:center;color:var(--ink)}
 .menu button.fclear{color:var(--muted);font-size:var(--fs-xs)}
 /* Trash smart-folder (gallery B19): a retention notice + Empty over soft-deleted rows,
    each with a days-left countdown (danger-red near expiry) and hover Restore/Delete. */

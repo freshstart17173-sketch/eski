@@ -99,6 +99,13 @@
 .menu button:hover,.menu button:focus-visible{background:var(--surface);outline:none}
 .menu button:active{background:var(--ink);color:var(--on-ink)}
 .menu button:active .ic{color:var(--on-ink)}
+/* selected row: shown by a filled highlight + weight (the selected-nav convention),
+   NOT a ✓ tick — a dropdown/multi-select marks its choice the way hover fills a row.
+   A step above the --surface hover so a selected row you're also hovering still reads. */
+.menu button.sel{background:var(--plate);color:var(--ink);font-weight:600}
+.menu button.sel .ic{color:var(--ink)}
+.menu button.sel:active{background:var(--ink);color:var(--on-ink)}
+.menu button.sel:active .ic{color:var(--on-ink)}
 .menu button.danger{color:var(--danger)}          /* --danger, not --m1 (skill §1) */
 .menu button.danger .ic{color:var(--danger)}
 .menu .sep{height:1px;background:var(--line);margin:5px var(--hair-inset)}  /* inset, never full-bleed */

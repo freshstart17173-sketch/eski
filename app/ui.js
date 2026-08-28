@@ -115,7 +115,13 @@ export function openMenu(anchor, items = []) {
   for (const it of items) {
     if (it.sep) { menu.append(el(".sep")); continue; }
     if (it.header) { menu.append(el(".mlabel", {}, [it.header])); continue; }
-    const b = el("button" + (it.danger ? ".danger" : ""), { role: "menuitem", tabindex: "-1", onClick: () => { closeMenus(); it.onClick && it.onClick(); } });
+    // `selected` marks the current choice in a single-select dropdown — rendered as a
+    // filled highlight (.sel), never a ✓ glyph (see .menu button.sel in primitives.css).
+    const b = el("button" + (it.danger ? ".danger" : "") + (it.selected ? ".sel" : ""), {
+      role: it.selected != null ? "menuitemradio" : "menuitem",
+      "aria-checked": it.selected != null ? String(!!it.selected) : null,
+      tabindex: "-1", onClick: () => { closeMenus(); it.onClick && it.onClick(); },
+    });
     if (it.icon) b.append(iconEl(it.icon));
     b.append(el("span", {}, [it.label]));
     rows.push(b); menu.append(b);
@@ -319,7 +325,7 @@ export function SelectPill({ label, options = [], value, onChange, size } = {}) 
   function labelFor() { const o = options.find((o) => o.value === cur); return (label ? label + ": " : "") + (o ? o.label : ""); }
   btn.addEventListener("click", () => {
     if (btn.getAttribute("aria-expanded") === "true") { closeMenus(); return; }
-    openMenu(btn, options.map((o) => ({ label: o.label, icon: o.icon, onClick: () => { cur = o.value; labelSpan.textContent = labelFor(); onChange && onChange(o.value); } })));
+    openMenu(btn, options.map((o) => ({ label: o.label, icon: o.icon, selected: o.value === cur, onClick: () => { cur = o.value; labelSpan.textContent = labelFor(); onChange && onChange(o.value); } })));
   });
   btn.value = () => cur;
   return btn;

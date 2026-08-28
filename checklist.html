@@ -497,6 +497,18 @@ li.ro.blocked .dot{background:var(--danger)}
 
 <!-- read-only build todo (Claude's side). {b} marks blocked-on-owner. -->
 <script type="text/plain" id="src-build">
+- **Bugs from your 2026-08-28 test pass** (detail in docs/BUGLOG.md):
+- Modals render as full grey screens — /create · /join · /upload · settings open as placeholders, not overlays.
+- Seed data pollutes testing {b} — "Late Bloom LP" holds both your accounts; purge needs your OK (destructive). Accounts ARE isolated — not a leak.
+- Profile photo + handle don't propagate to the rail — split R2-serving (infra) from a stale-cache repaint.
+- Uploads fail with no usable error — surface the HTTP status + CORS/env hint.
+- Folder upload isn't wired — add webkitdirectory + preserve the folder tree.
+- Reload needed for changes to show — mutations must repaint their view.
+- Dead / stubbed buttons on "done" screens — wire the ones with real targets (e.g. the details "Posted by" profile link).
+- Slow loading; avatars pop in late — parallelise reads, cache identity, check CDN.
+- ✓ Dropdowns/multi-selects now show selection by inversion, not a ✓ tick.
+- —
+- **Feature gaps:**
 - Billing / storage-slider (P8) {b} — blocked on your Stripe account + webhook.
 - Forward action — forward a message to channels / DMs with an optional note.
 - Channel-permissions modal — allow-list of roles/members on a private channel.
