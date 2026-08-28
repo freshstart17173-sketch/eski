@@ -929,6 +929,13 @@ export async function respondFriend(targetId, accept) {
   const { error } = await supabase.rpc("respond_friend", { target_id: targetId, accept });
   if (error) throw new Error(error.message || "Couldn’t respond to the request");
 }
+// Block a user (block_user RPC) — sets the friendship edge to 'blocked'; they can't message or
+// add you and are hidden from you. Symmetric-hide is enforced server-side by RLS.
+export async function blockUser(targetId) {
+  if (isDemo()) return;
+  const { error } = await supabase.rpc("block_user", { target_id: targetId });
+  if (error) throw new Error(error.message || "Couldn’t block this user");
+}
 // Open (or create) a 1:1 DM with a friend by handle (create_dm RPC → the dm_channels row).
 // The RPC returns the dm_channels row; we hand back its id so the caller opens the thread.
 export async function createDM(handle) {

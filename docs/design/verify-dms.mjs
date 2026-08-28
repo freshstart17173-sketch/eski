@@ -134,10 +134,10 @@ await run("dm-actions", "light", async (p) => {
   await mores[mores.length - 1].click();   // the last (unpinned) thread
   await p.waitForTimeout(120);
   const items = await p.$$eval(".menu.open button", (bs) => bs.map((b) => b.textContent.trim()));
-  for (const w of ["Pin", "Mute", "Hide conversation"]) if (!items.some((t) => t.includes(w))) return `DM menu missing "${w}" (got ${JSON.stringify(items)})`;
-  for (const b of await p.$$(".menu.open button")) { if ((await b.textContent()).includes("Hide")) { await b.click(); break; } }
+  for (const w of ["Pin", "Mute", "Close DM", "Block"]) if (!items.some((t) => t.includes(w))) return `DM menu missing "${w}" (got ${JSON.stringify(items)})`;
+  for (const b of await p.$$(".menu.open button")) { if ((await b.textContent()).includes("Close DM")) { await b.click(); break; } }
   await p.waitForTimeout(150);
-  if ((await count(p, ".dmrow")) !== before - 1) return "Hide should remove the conversation from the list";
+  if ((await count(p, ".dmrow")) !== before - 1) return "Close DM should remove the conversation from the list";
   // pin the last remaining direct row → a second pin marker appears in the list
   const pinsBefore = await p.$$eval(".dmrow .dmtrail .ic", (ns) => ns.filter((n) => (n.querySelector("use") || {}).getAttribute?.("href") === "#i-pin").length);
   const mores2 = await p.$$(".dmrow .more2");

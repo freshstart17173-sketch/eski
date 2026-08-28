@@ -7,7 +7,7 @@
 import { el, toast, Avatar, PresenceDot, openMenu, openModal, Button } from "../ui.js";
 import { iconEl } from "../icons.js";
 import { navigate } from "../router.js";
-import { addFriend, respondFriend, createDM, createGroupDM, loadDMThread, sendDM, setDMPref } from "../data.js";
+import { addFriend, respondFriend, blockUser, createDM, createGroupDM, loadDMThread, sendDM, setDMPref } from "../data.js";
 import { avatarUrl } from "../cards.js";
 import { subscribeDMMessages } from "../realtime.js";
 import { session } from "../supabase.js";
@@ -45,8 +45,19 @@ function dmList(data, right) {
     { label: d.pinned ? "Unpin" : "Pin", icon: "pin", onClick: () => setPref(d, { pinned: !d.pinned }) },
     { label: d.muted ? "Unmute" : "Mute", icon: "bell", onClick: () => setPref(d, { muted: !d.muted }) },
     { sep: true },
-    { label: "Hide conversation", icon: "hide", onClick: () => setPref(d, { hidden: true }) },
+    { label: "Close DM", icon: "hide", onClick: () => setPref(d, { hidden: true }) },
+    // Block only applies to a 1:1 (a group has several people). Blocking hides the DM.
+    ...(!d.group && d.members[0]?.id ? [{ label: "Block", icon: "leave", danger: true, onClick: () => blockDM(d) }] : []),
   ]);
+  async function blockDM(d) {
+    const other = d.members[0];
+    try {
+      if (!isDemoQS()) await blockUser(other.id);
+      data.dms = data.dms.filter((x) => x.id !== d.id);
+      paintRows();
+      toast({ message: `Blocked ${other.name}` });
+    } catch (e) { toast({ message: e?.message || "Couldn’t block" }); }
+  }
   async function setPref(d, patch) {
     try {
       if (!isDemoQS()) await setDMPref(d.id, patch);
