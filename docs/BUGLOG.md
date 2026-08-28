@@ -8,6 +8,43 @@ Severity: **P1** breaks or badly misleads · **P2** wrong but usable · **P3** p
 
 ---
 
+## Owner test pass 2026-08-28 (round 2) — full button audit in [`BUTTON-AUDIT.md`](BUTTON-AUDIT.md)
+
+Quick wins (fixing this pass):
+- [ ] **Composer toolbar removed** — the B/I/S/code/link/list/quote formatting buttons aren't
+      wired (no `/`-functions yet). Keep only **attach · @ · send**.
+- [ ] **Server rail avatar reverts to initials** — the workspace `me` drops `avatar_key`; add it.
+- [ ] **Profile "Settings" tab is dead** ("one of the settings buttons doesn't work") — it toasts
+      "(P9)"; navigate to `/settings`, which now exists.
+- [ ] **Feed nav stubs** — Notifications / You / Type / Sort / Find-friends toast placeholders;
+      wire them to the real screens/actions.
+- [ ] **Home rail button → the "e!" logo** instead of the home glyph.
+- [ ] **Empty-state copy isn't dense** (e.g. "No results / Nothing here matches …") — tighten.
+- [ ] **Members rail toggle doesn't persist** — it reopens after closing; remember the choice.
+- [ ] **Move Edit profile into Settings** — open the editor from the settings Profile panel.
+- [ ] **Modals close on a click where they opened** — ensure scrim-click closes every modal;
+      single modal instance at a time.
+
+Perf (from the HUD report — backend latency, not the app):
+- [ ] **Preconnect** to the Supabase origin + `cdn.eski.lol` in `index.html` (saves the ~160ms
+      cold connect on the first fetch).
+- [ ] **Dedupe `profiles`** — `loadUserSettings` re-fetches what `loadRail` already has; reuse it.
+- [ ] **Defer the Storage/Privacy reads** in user settings until their panel opens (the initial
+      Profile render shouldn't wait ~700ms on `storage_meters`/`storage_balance`/`friendships`).
+- [ ] Base per-fetch latency is ~350–700ms (Supabase region/free-tier). If it stays high after
+      the above, consider the project's region vs. your location — an owner/infra call.
+
+Bigger build items (added to the list, not done this pass):
+- [ ] **Global search screen** (`/search`) — currently the placeholder; build it (the ⌘K
+      quick-switcher exists but the full search screen isn't ported).
+- [ ] **Drag-and-drop everywhere** — drop files onto the explorer / a channel / the feed to
+      upload, with multi-file + inline tagging, and a **"flatten folders"** view so every file
+      across subfolders is exposed for quick bulk tagging.
+- [ ] **Verify no URL breaks on rename** — profile handle change replaceStates the current URL
+      (server/channel URLs are id-based, so they're safe); confirm + cover any gap.
+- [ ] **Pins "Unpin" + Files-tab Type/Sort filters** in the workspace are dead controls — wire
+      or remove.
+
 ## Open
 
 - [ ] **P1 · (partial) Modal routes.** `/create`, `/upload`, `/s/:id/settings` still
