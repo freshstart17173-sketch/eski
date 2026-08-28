@@ -27,6 +27,13 @@ button{background:none;border:0;padding:0;color:inherit;font:inherit;cursor:poin
 
 a{color:inherit;text-decoration:none}
 
+/* Images never blow out their container. A user-uploaded photo can be any size;
+   without this, one dropped into a spot that lacks explicit sizing renders at its
+   natural pixels and breaks the layout (owner bug 2026-08-28 — an uploaded avatar
+   overflowed the edit dialog). Components that need a specific fit (.av, .railimg,
+   media wells) still set their own width/height/object-fit on top of this floor. */
+img{max-width:100%;height:auto}
+
 /* the eski! wordmark — one class everywhere it appears (sign-in, loading, feed,
    profile). Uses the Gnomon wordmark face (falls back to the body face until the
    Gnomon subset is embedded). Always the text "eski!" to match the "e!" logo. */

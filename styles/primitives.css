@@ -66,17 +66,21 @@
 .field[aria-disabled="true"]{opacity:.5;pointer-events:none}
 
 /* ── P3.4 Modal + scrim ──────────────────────────────────────────────────── */
-/* scrim = fixed backdrop that DARKENS (ink base + dark overlay, so it reads dark
-   in both themes) and centres the modal. No drop shadow on the card. */
+/* scrim = fixed backdrop that DARKENS the page and centres the modal. No drop
+   shadow on the card.
+   IT MUST BE DARK IN BOTH THEMES. The old `background:var(--ink)` + a black overlay
+   was wrong: --ink is near-WHITE in dark mode, so ink + 55% black computed to GREY —
+   every modal sat on a grey slab in dark mode (owner bug 2026-08-28). A scrim is a
+   translucent BLACK over the page in both themes, so the page dims through it and the
+   modal always reads as lifted above a darkened backdrop — never a grey fill. */
 /* z-index 82 sits ABOVE the details .sheet (81): a modal is always spawned from
    within a surface (a Rename prompt opened from the details-pane ⋯ menu), so it is
    the newer, active interaction and must layer on top of the viewer that opened it —
    never behind it. Menus (90) and toasts (95) still float above modals. */
 .scrim{position:fixed;inset:0;z-index:82;display:grid;place-items:center;
-  padding:var(--s4);background:var(--ink)}
-.scrim::before{content:"";position:absolute;inset:0;background:rgba(0,0,0,.34)}
-:root[data-theme="dark"] .scrim::before,
-:root:not([data-theme="light"]) .scrim::before{background:rgba(0,0,0,.55)}
+  padding:var(--s4);background:rgba(0,0,0,.55)}
+:root[data-theme="dark"] .scrim,
+:root:not([data-theme="light"]) .scrim{background:rgba(0,0,0,.66)}
 .scrim>*{position:relative;z-index:1}
 .modal{width:340px;max-width:100%;background:var(--paper);border-radius:var(--r);overflow:hidden}
 .modal.wide{width:440px}
@@ -111,7 +115,7 @@
 .menu .sep{height:1px;background:var(--line);margin:5px var(--hair-inset)}  /* inset, never full-bleed */
 
 /* ── P3.6 Avatar + PresenceDot ───────────────────────────────────────────── */
-.av{flex:none;border-radius:50%;background:var(--paper1);color:var(--soft);
+.av{flex:none;border-radius:50%;background:var(--paper1);color:var(--soft);overflow:hidden;
   display:grid;place-items:center;font-weight:700;width:28px;height:28px;font-size:var(--fs-xs)}
 .av.md{width:28px;height:28px;font-size:var(--fs-xs)}   /* = default */
 .av.sm{width:20px;height:20px;font-size:10px}
