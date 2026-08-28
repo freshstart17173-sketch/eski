@@ -6,11 +6,12 @@
 
 import { el, toast, Avatar, SegmentedControl, UsageBar, Button } from "../ui.js";
 import { iconEl } from "../icons.js";
-import { navigate } from "../router.js";
+import { navigate, reload } from "../router.js";
 import { signOut } from "../supabase.js";
 import { isDemo, unblockUser } from "../data.js";
 import { avatarUrl } from "../cards.js";
 import { openStatus } from "../shell.js";
+import { openEditProfile } from "./profile.js";
 import { setPerfEnabled, isPerfEnabled, copyPerfReport } from "../perf.js";
 
 function withDemo(path) { return isDemo() ? path + "?demo=1" : path; }
@@ -71,7 +72,7 @@ function profilePanel(data) {
       ]),
     ]),
     el(".setactions", { style: "display:flex;gap:8px" }, [
-      Button({ label: "Edit profile", onClick: () => navigate(withDemo(`/u/${data.me.handle}`)) }),
+      Button({ label: "Edit profile", onClick: () => openEditProfile(data, { onSaved: () => reload() }) }),
       Button({ label: "Set a status", onClick: () => openStatus(data) }),
     ]),
   ]);

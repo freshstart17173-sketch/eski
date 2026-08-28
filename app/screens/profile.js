@@ -64,7 +64,7 @@ export function renderProfile(data) {
     ]);
     tabs.append(tab);
   }
-  if (pov === "owner") tabs.append(el("button.ptab2", { onClick: () => toast({ message: "User settings (P9)" }) }, [iconEl("settings"), "Settings"]));
+  if (pov === "owner") tabs.append(el("button.ptab2", { onClick: () => navigate(withDemo("/settings")) }, [iconEl("settings"), "Settings"]));
 
   // search — a toggle that reveals an inline filter over the VISIBLE shelf (title match);
   // it's a client-side narrow of what's already loaded, not a new query, so no backend call.
@@ -133,7 +133,7 @@ function setAvatarImg(avEl, src, name) {
 // dialog + the hero (via onAvatar). Demo previews the picked file locally (a blob URL), no R2.
 // Change banner stays a marker until a hero banner is rendered (banner_key write is ready).
 // `opts`: { onSaved, onAvatar }.
-function openEditProfile(data, opts = {}) {
+export function openEditProfile(data, opts = {}) {
   const p = data.profile;
   const demo = isDemo();
   // Any persisted change (photo, banner, or the text save) is marked dirty; on close we

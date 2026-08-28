@@ -368,44 +368,10 @@ function composer(data, view, ctx = {}) {
   ]);
   field.querySelector(".iconbtn").style.cssText = "width:26px;height:26px";
 
-  const bar = el(".cbar", {}, [
-    fbtn("B", "Bold", () => wrapSel(input, "**", "**"), "font-weight:700"),
-    fbtn("I", "Italic", () => wrapSel(input, "*", "*"), "font-style:italic"),
-    fbtn("S", "Strikethrough", () => wrapSel(input, "~~", "~~"), "text-decoration:line-through"),
-    fbtn("</>", "Code", () => wrapSel(input, "`", "`"), "font-family:monospace;font-size:12px"),
-    fbtnIcon("link", "Link", () => wrapSel(input, "[", "](url)")),
-    el("span.sep"),
-    fbtn("•", "Bulleted list", () => prefixLine(input, "- ")),
-    fbtn("”", "Quote", () => prefixLine(input, "> "), "font-weight:700"),
-    fbtnIcon("smile", "Emoji", (e) => openEmoji(e.currentTarget, input)),
-    el("span.slash", { html: 'type <b>/</b> for commands' }),
-  ]);
-
-  const wrap = el(".composer" + (disabled ? ".disabled" : ""), {}, [note, el(".richcomposer", {}, [bar, field])]);
+  // No formatting toolbar: the B/I/S/code/link/list/quote controls and the "/commands" hint
+  // were never wired (owner call 2026-08-28). The composer is just the field — attach, @, send.
+  const wrap = el(".composer" + (disabled ? ".disabled" : ""), {}, [note, el(".richcomposer", {}, [field])]);
   return wrap;
-}
-function fbtn(label, title, onClick, css) {
-  const b = el("button.fbtn", { title, onClick: (e) => onClick(e) }, [label]);
-  if (css) b.style.cssText = css;
-  return b;
-}
-function fbtnIcon(ic, title, onClick) { const b = el("button.fbtn", { title, onClick: (e) => onClick(e) }, [iconEl(ic, "sm")]); return b; }
-function wrapSel(input, before, after) {
-  const s = input.selectionStart ?? input.value.length, e = input.selectionEnd ?? input.value.length;
-  const v = input.value;
-  input.value = v.slice(0, s) + before + v.slice(s, e) + after + v.slice(e);
-  input.focus(); input.selectionStart = s + before.length; input.selectionEnd = e + before.length;
-  input.dispatchEvent(new Event("input"));
-}
-function prefixLine(input, prefix) {
-  const s = input.selectionStart ?? input.value.length;
-  const lineStart = input.value.lastIndexOf("\n", s - 1) + 1;
-  input.value = input.value.slice(0, lineStart) + prefix + input.value.slice(lineStart);
-  input.focus(); input.dispatchEvent(new Event("input"));
-}
-function openEmoji(anchor, input) {
-  // emoji-mart is the real picker (P4.6 stack); a small set stands in for now.
-  openMenu(anchor, ["🔥", "👀", "🥁", "🎧", "✅", "🙌"].map((e) => ({ label: e, onClick: () => { input.value += e; input.focus(); input.dispatchEvent(new Event("input")); } })));
 }
 async function doSend(input, send, ctx = {}) {
   const body = input.value.trim();

@@ -21,7 +21,7 @@ export function renderRail(data, route) {
   const rail = el("aside.rail");
 
   // Feed / Messages / My-files
-  rail.append(railBtn({ icon: "home", title: "Feed", on: route.screen === "feed", onClick: () => navigate(withDemo("/")) }));
+  rail.append(railBtn({ logo: true, title: "Feed", on: route.screen === "feed", onClick: () => navigate(withDemo("/")) }));
   rail.append(railBtn({ icon: "mail", title: "Messages", on: route.screen === "dms", count: data.dmUnread, onClick: () => navigate(withDemo("/messages")) }));
   const onMyFiles = route.screen === "explorer" && !route.params?.serverId;
   rail.append(railBtn({ icon: "folder", title: "My files (your personal Drive)", on: onMyFiles, onClick: () => navigate(withDemo("/files")) }));
@@ -65,9 +65,10 @@ export function renderRail(data, route) {
   return rail;
 }
 
-function railBtn({ icon, label, img, title, on, count, dot, onClick }) {
-  const b = el("button.railbtn" + (on ? ".on" : ""), { title, onClick });
-  if (icon) b.append(iconEl(icon));
+function railBtn({ icon, label, img, title, on, count, dot, onClick, logo }) {
+  const b = el("button.railbtn" + (on ? ".on" : "") + (logo ? ".home" : ""), { title, onClick });
+  if (logo) b.append(el("span.railogo", {}, ["e!"]));   // the eski "e!" mark, not a home glyph
+  else if (icon) b.append(iconEl(icon));
   else if (img) {
     // a server with an uploaded icon shows it (square, per the radius rule); a load error
     // (missing/renamed object) falls back to the initials so the badge is never blank.

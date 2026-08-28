@@ -19,6 +19,7 @@
 .rail{flex:none;width:var(--rail);background:var(--railbg);display:flex;flex-direction:column;align-items:center;gap:var(--s2);padding:var(--s2) 0;overflow-y:auto}
 .railbtn{position:relative;width:38px;height:38px;flex:none;display:grid;place-items:center;border-radius:var(--r);background:var(--surface);color:var(--soft);font-weight:700;font-size:var(--fs-sm);transition:background var(--t),color var(--t)}
 .railbtn:hover{background:var(--plate)}
+.railbtn.home .railogo{font-family:var(--font-wordmark);font-weight:700;font-size:18px;letter-spacing:-.02em;line-height:1}
 /* server icon fills the square badge (radius --r, never round — round is avatars/dots only). */
 .railbtn .railimg{width:100%;height:100%;object-fit:cover;border-radius:var(--r)}
 .railbtn.on{background:var(--ink);color:var(--on-ink)}
@@ -204,12 +205,6 @@
 .composer.disabled .richcomposer,.composer.disabled .field{opacity:.5;pointer-events:none}
 .richcomposer{border:1px solid var(--line2);border-radius:var(--r);overflow:hidden;transition:border-color var(--t)}
 .richcomposer:focus-within{border-color:var(--ink)}
-.cbar{display:flex;align-items:center;gap:2px;padding:5px 8px;background:var(--surface)}
-.cbar .fbtn{min-width:26px;height:26px;padding:0 6px;display:grid;place-items:center;border-radius:var(--r);color:var(--soft);font-size:var(--fs-sm);transition:background var(--t),color var(--t)}
-.cbar .fbtn:hover{background:var(--plate);color:var(--ink)}
-.cbar .sep{width:1px;height:16px;background:var(--line2);margin:0 5px}
-.cbar .slash{margin-left:auto;font-size:var(--fs-xs);color:var(--muted)}
-.cbar .slash b{color:var(--soft);background:var(--paper);border-radius:2px;padding:1px 5px;font-weight:600}
 .richcomposer .field{border:0;border-radius:0;background:var(--paper)}
 .typing{flex:none;height:20px;padding:0 var(--s4) 2px;font-size:var(--fs-xs);color:var(--muted);display:flex;align-items:center;gap:7px}
 .typing[hidden]{display:none}
@@ -286,10 +281,13 @@
 .voicemini .vmwip .ic{width:11px;height:11px}
 
 /* ── empty + loading states (workspace edge states) ──────────────────────── */
-.emptystate{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:var(--s5);gap:10px;color:var(--muted);min-height:420px}
-.emptystate .eic{width:42px;height:42px;color:var(--line2)}
-.emptystate h3{font-size:var(--fs-lg);font-weight:600;color:var(--soft)}
-.emptystate p{font-size:var(--fs-sm);max-width:340px;line-height:1.5}
+/* Empty state — compact + terse (owner: "not dense at all"). Small icon, tight rhythm,
+   short copy; the title sits close to the icon, the one-line hint close to the title. */
+.emptystate{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:var(--s4);gap:var(--s1);color:var(--muted);min-height:300px}
+.emptystate .eic{width:26px;height:26px;color:var(--line2);margin-bottom:var(--s1)}
+.emptystate h3{font-size:var(--fs);font-weight:600;color:var(--soft)}
+.emptystate p{font-size:var(--fs-sm);max-width:280px;line-height:1.4;color:var(--muted)}
+.emptystate .btn{margin-top:var(--s3)}
 .skel{background:var(--surface);border-radius:var(--r);position:relative;overflow:hidden}
 .skel::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.35),transparent);transform:translateX(-100%);animation:shimmer 1.3s infinite}
 :root:not([data-theme="light"]) .skel::after{background:linear-gradient(90deg,transparent,rgba(255,255,255,.06),transparent)}

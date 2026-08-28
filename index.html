@@ -7,6 +7,11 @@
 <meta name="color-scheme" content="light dark">
 <title>eski</title>
 
+<!-- Warm the TLS connection to Supabase + the media CDN so the first data read / image
+     doesn't pay the ~160ms connect on the critical path (owner perf report 2026-08-28). -->
+<link rel="preconnect" href="https://zidqagrmxeawpasurpwi.supabase.co" crossorigin>
+<link rel="preconnect" href="https://cdn.eski.lol" crossorigin>
+
 <!-- theme.js is a CLASSIC, BLOCKING script and MUST stay before the stylesheets:
      it stamps data-theme before first paint so there's no flash of the wrong theme. -->
 <script src="/app/theme.js"></script>

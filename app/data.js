@@ -202,8 +202,10 @@ export async function loadWorkspace({ serverId, channelId } = {}) {
   const bundle = await loadServerBundle(activeServer);
   const { membersById, memberGroups, channelGroups, textCh, serverRoles } = bundle;
   const meMember = membersById[user.id];
+  // Carry avatar_key from the rail identity — the members row doesn't always have it, and
+  // without it the rail profile button falls back to initials while inside a server (owner bug).
   const me = meMember
-    ? { id: user.id, name: meMember.name, initials: meMember.initials, handle: meMember.handle || meMember.name, colorIdx: meMember.colorIdx }
+    ? { id: user.id, name: meMember.name, initials: meMember.initials, handle: meMember.handle || meMember.name, colorIdx: meMember.colorIdx, avatar_key: meMember.avatar_key || meBase.avatar_key || null }
     : meBase;
 
   // voice channels are v2 — never selectable as the active (text) channel (P4-BUG#3)
@@ -310,8 +312,10 @@ export async function loadExplorer({ serverId, folderId, source = "server" } = {
   const bundle = await loadServerBundle(activeServer);
   const { membersById, channelGroups, textCh } = bundle;
   const meMember = membersById[user.id];
+  // Carry avatar_key from the rail identity — the members row doesn't always have it, and
+  // without it the rail profile button falls back to initials while inside a server (owner bug).
   const me = meMember
-    ? { id: user.id, name: meMember.name, initials: meMember.initials, handle: meMember.handle || meMember.name, colorIdx: meMember.colorIdx }
+    ? { id: user.id, name: meMember.name, initials: meMember.initials, handle: meMember.handle || meMember.name, colorIdx: meMember.colorIdx, avatar_key: meMember.avatar_key || meBase.avatar_key || null }
     : meBase;
   const chanName = {};
   for (const c of textCh) chanName[c.id] = c.name;
@@ -902,7 +906,7 @@ export async function loadUserSettings() {
   }
   const { servers, me } = await loadRail(user);
   const [{ data: prof }, { data: meterRows }, { data: balRows }, { data: blockRows }] = await Promise.all([
-    supabase.from("profiles").select("handle,name,avatar_key,status_emoji,status_text,presence_state").eq("id", user.id).maybeSingle(),
+    supabase.from("profiles").select("handle,name,bio,avatar_key,banner_key,status_emoji,status_text,presence_state").eq("id", user.id).maybeSingle(),
     supabase.from("storage_meters").select("bytes_used").eq("owner_type", "user").eq("owner_id", user.id).maybeSingle(),
     supabase.from("storage_balance").select("purchased_gb,status").eq("owner_type", "user").eq("owner_id", user.id).maybeSingle(),
     supabase.from("friendships").select("a_user,b_user,requested_by").eq("status", "blocked").or(`a_user.eq.${user.id},b_user.eq.${user.id}`),
@@ -918,7 +922,7 @@ export async function loadUserSettings() {
   return {
     needsAuth: false, servers, me,
     email: user.email || "",
-    profile: { handle: prof?.handle || me.handle, name: prof?.name || me.name, avatar_key: prof?.avatar_key || null, status_emoji: prof?.status_emoji || "", status_text: prof?.status_text || "", presence_state: prof?.presence_state || "online" },
+    profile: { handle: prof?.handle || me.handle, name: prof?.name || me.name, bio: prof?.bio || "", avatar_key: prof?.avatar_key || null, banner_key: prof?.banner_key || null, initials: me.initials, status_emoji: prof?.status_emoji || "", status_text: prof?.status_text || "", presence_state: prof?.presence_state || "online" },
     blocked,
     storage: { usedBytes: Number(meterRows?.bytes_used || 0), capGb, capBytes: capGb * GB, status: balRows?.status || "active" },
   };
