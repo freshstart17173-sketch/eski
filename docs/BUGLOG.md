@@ -20,9 +20,6 @@ Severity: **P1** breaks or badly misleads · **P2** wrong but usable · **P3** p
       placeholder (low priority — not a click path). Enhancement: an anon-readable
       `preview_invite(code)` RPC so the join card can show the server name · member count ·
       inviter (QA §20) instead of the generic copy.
-- [ ] **P2 · Folder upload doesn't work / isn't supported.** The upload sheet's
-      Files/Folder toggle exists but folder upload isn't wired. **Fix:** implement
-      `webkitdirectory` folder selection + preserve the relative folder tree on upload.
 - [ ] **P2 · Reload needed for changes to show.** Several mutations don't repaint their
       view (realtime covers only chat/DM/notifs). **Fix:** every mutation optimistically
       updates its list or calls `router.reload()`; audit each screen's actions.
@@ -53,6 +50,12 @@ Severity: **P1** breaks or badly misleads · **P2** wrong but usable · **P3** p
 
 ## Done
 
+- [x] **P2 · Folder upload — now supported, structure preserved, server + personal.** The
+      upload sheet gained an "upload a folder" picker (`webkitdirectory`). On post it
+      recreates the picked tree (`buildFolderTree`, parents-before-children) under the
+      destination and files each work into the folder its path names — server via
+      `placement.folder_id`, personal via `saved_items.folder_id`. Folder uploads keep each
+      file's own name and skip the single Tags/Collaborators fields. Tree logic unit-tested.
 - [x] **P1 · Every modal sat on a GREY slab in dark mode.** The recurring "modal on a grey
       screen" — the real, pervasive cause (distinct from the placeholder routes) was the
       scrim: `background:var(--ink)` + a black overlay, but `--ink` is near-WHITE in dark

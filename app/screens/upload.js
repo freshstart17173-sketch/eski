@@ -12,6 +12,7 @@
 import { openModal, VisibilitySeg, Button, openMenu, toast, el } from "../ui.js";
 import { iconEl } from "../icons.js";
 import { supabase, session, rawSession } from "../supabase.js";
+import { createFolder } from "../data.js";
 
 // ext → kind, and the allowlist the signer (api/sign.mjs EXT) will actually sign.
 const KIND = {
@@ -27,6 +28,38 @@ const kindOf = (ext) => KIND[ext] || "other";
 async function sha256Hex(file) {
   const digest = await crypto.subtle.digest("SHA-256", await file.arrayBuffer());
   return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+// The folder path a file sits in, from a directory pick — "Pack/drums/kick.wav" → "Pack/drums".
+// A loose file (no webkitRelativePath) has no dir. Returns "" for a file at the picked root's
+// top level only if the browser omitted the leading folder (it doesn't — webkitdirectory always
+// includes the chosen folder as the first segment), so a folder upload always has a dir.
+function relDir(file) {
+  const p = file.webkitRelativePath || "";
+  const parts = p.split("/");
+  return parts.slice(0, -1).join("/");   // drop the filename
+}
+
+// Recreate a picked folder's structure under `baseFolderId`, returning Map(dirPath → folderId).
+// Creates shallow dirs first so each child's parent already exists. Uses createFolder(), which
+// fences server folders through the create_folder RPC and writes personal ones to save_folders.
+async function buildFolderTree(files, { source, serverId, baseFolderId }) {
+  const dirs = new Set();
+  for (const f of files) {
+    const parts = relDir(f).split("/").filter(Boolean);
+    let cum = "";
+    for (const seg of parts) { cum = cum ? cum + "/" + seg : seg; dirs.add(cum); }
+  }
+  const sorted = [...dirs].sort((a, b) => a.split("/").length - b.split("/").length);
+  const map = new Map();
+  for (const dir of sorted) {
+    const segs = dir.split("/");
+    const parentPath = segs.slice(0, -1).join("/");
+    const parentId = parentPath ? map.get(parentPath) : (baseFolderId || null);
+    const folder = await createFolder({ source, serverId, parentId, name: segs[segs.length - 1] });
+    map.set(dir, folder.id);
+  }
+  return map;
 }
 
 export async function openUpload(opts = {}) {
@@ -49,13 +82,25 @@ export async function openUpload(opts = {}) {
   const body = el(".uploadbody");
 
   const picker = el("input", { type: "file", multiple: true, style: "display:none" });
+  // A whole-folder picker. webkitdirectory makes the browser hand back every file in the
+  // chosen tree, each carrying a `webkitRelativePath` ("Pack/drums/kick.wav") — that path
+  // is what lets us recreate the folder structure on upload (buildFolderTree). Kept a
+  // separate input from `picker` because a directory input can't also pick loose files.
+  const folderPicker = el("input", { type: "file", multiple: true, style: "display:none" });
+  folderPicker.setAttribute("webkitdirectory", "");
+  folderPicker.setAttribute("directory", "");
   const drop = el(".dropzone", {}, [iconEl("clip"), el("div", {}, ["Drop files here, or click to choose"])]);
-  const dropWrap = el("div", {}, [drop, picker]);
+  const dropAlt = el(".dropalt", { style: "text-align:center;font-size:var(--fs-xs);color:var(--muted);margin-top:6px" }, [
+    "or ", el("button.aslink", { type: "button", style: "color:var(--soft);font-weight:600", onClick: () => folderPicker.click() }, ["upload a folder"]),
+    el("span", { style: "color:var(--muted)" }, [" (keeps its structure)"]),
+  ]);
+  const dropWrap = el("div", {}, [drop, dropAlt, picker, folderPicker]);
   drop.addEventListener("click", () => picker.click());
-  picker.addEventListener("change", () => addFiles([...picker.files]));
+  picker.addEventListener("change", () => addFiles([...picker.files], false));
+  folderPicker.addEventListener("change", () => addFiles([...folderPicker.files], true));
   drop.addEventListener("dragover", (e) => { e.preventDefault(); drop.classList.add("over"); });
   drop.addEventListener("dragleave", () => drop.classList.remove("over"));
-  drop.addEventListener("drop", (e) => { e.preventDefault(); drop.classList.remove("over"); addFiles([...(e.dataTransfer?.files || [])]); });
+  drop.addEventListener("drop", (e) => { e.preventDefault(); drop.classList.remove("over"); addFiles([...(e.dataTransfer?.files || [])], false); });
 
   const visSeg = VisibilitySeg({ value: visibility, onChange: (v) => { visibility = v; syncVis(); } });
 
@@ -112,15 +157,32 @@ export async function openUpload(opts = {}) {
   syncVis();
 
   // ── helpers ───────────────────────────────────────────────────────────────
-  function addFiles(list) {
+  let folderMode = false;
+  function addFiles(list, asFolder) {
     const rejected = list.filter((f) => !KIND[extOf(f.name)]);
     files = list.filter((f) => KIND[extOf(f.name)]);
+    folderMode = !!asFolder && files.some((f) => f.webkitRelativePath);
     if (rejected.length) toast({ message: `Skipped ${rejected.length} unsupported file${rejected.length > 1 ? "s" : ""}` });
     if (files.length) {
-      const summary = el(".dropsummary", {}, [el("b", {}, [files[0].name]), files.length > 1 ? ` · ${files.length} files` : ""]);
-      summary.style.cursor = "pointer"; summary.title = "Choose different files";
-      summary.addEventListener("click", () => picker.click());
-      drop.replaceWith(summary); drop.classList.remove("over");
+      let summary;
+      if (folderMode) {
+        const top = (files[0].webkitRelativePath || "").split("/")[0] || "folder";
+        const subs = new Set(files.map((f) => f.webkitRelativePath.split("/").slice(1, -1).join("/")).filter(Boolean));
+        summary = el(".dropsummary", {}, [iconEl("folder", "sm"), el("b", {}, [top]),
+          ` · ${files.length} file${files.length > 1 ? "s" : ""}${subs.size ? ` in ${subs.size + 1} folders` : ""}`]);
+        summary.title = "Choose a different folder";
+        summary.addEventListener("click", () => folderPicker.click());
+      } else {
+        summary = el(".dropsummary", {}, [el("b", {}, [files[0].name]), files.length > 1 ? ` · ${files.length} files` : ""]);
+        summary.title = "Choose different files";
+        summary.addEventListener("click", () => picker.click());
+      }
+      summary.style.cursor = "pointer";
+      // Rebuild the dropzone → summary swap idempotently (a re-pick replaces the prior summary).
+      dropWrap.querySelector(".dropsummary")?.remove();
+      if (drop.parentNode) drop.replaceWith(summary); else dropAlt.before(summary);
+      dropAlt.hidden = true;
+      drop.classList.remove("over");
       titleInput.placeholder = files[0].name;
     }
     syncVis();
@@ -177,18 +239,35 @@ export async function openUpload(opts = {}) {
         if (be) throw new Error(`couldn’t register the file (${be.code || "db"}): ${be.message}`);
       }
 
+      const onServer = visibility === "server";
+      // Folder upload: recreate the picked tree first, then file each work into the folder its
+      // path names. Server folders nest under the chosen destination folder; personal ones nest
+      // at the My-files root. A loose (non-folder) upload keeps the single chosen folderId.
+      let folderMap = null;
+      if (folderMode) {
+        prog.textContent = "Creating folders…";
+        folderMap = await buildFolderTree(files, {
+          source: onServer ? "server" : "personal",
+          serverId: onServer ? serverId : null,
+          baseFolderId: onServer ? folderId : null,
+        });
+      }
+      const folderFor = (h) => folderMode ? (folderMap.get(relDir(h.file)) || folderId || null) : (folderId || null);
+
       prog.textContent = "Posting…";
       const title = titleInput.value.trim();
       const tags = tagsInput.value.split(",").map((t) => t.trim()).filter(Boolean);
+      const user = session();
       for (const h of hashed) {
-        const onServer = visibility === "server";
+        const destFolder = folderFor(h);
         const row = {
           author_id: me.id,
           owner_type: onServer ? "server" : "user",
           owner_id: onServer ? serverId : me.id,
           visibility,
           server_id: onServer ? serverId : null,
-          title: title || h.file.name,
+          // A folder upload keeps each file's own name; a loose upload can override the title.
+          title: folderMode ? h.file.name : (title || h.file.name),
           file_ext: h.ext,
           kind: kindOf(h.ext),
           blob_sha: h.hash,
@@ -197,13 +276,20 @@ export async function openUpload(opts = {}) {
         const { data: work, error } = await supabase.from("works").insert(row).select("id").single();
         if (error) throw new Error(`couldn’t save the post (${error.code || "db"}): ${error.message}`);
         if (onServer) {
-          const { error: pe } = await supabase.from("placement").insert({ work_id: work.id, surface: "server", surface_id: serverId, channel_id: channelId || null, folder_id: folderId || null, placed_by: me.id });
+          const { error: pe } = await supabase.from("placement").insert({ work_id: work.id, surface: "server", surface_id: serverId, channel_id: channelId || null, folder_id: destFolder, placed_by: me.id });
           if (pe) throw new Error(`couldn’t place the file in the channel (${pe.code || "db"}): ${pe.message}`);
+        } else if (destFolder) {
+          // Personal upload into a folder: saved_items.folder_id is how My-files filing works.
+          const { error: se } = await supabase.from("saved_items").upsert({ user_id: user.id, work_id: work.id, folder_id: destFolder }, { onConflict: "user_id,work_id" });
+          if (se) throw new Error(`couldn’t file into your folder (${se.code || "db"}): ${se.message}`);
         }
-        for (const t of tags) await supabase.from("content_tags").insert({ work_id: work.id, tag: t });
-        for (const c of collabs) await supabase.rpc("add_collaborator", { work_id: work.id, handle: c.handle, role: c.role });
+        // Folder uploads skip the single Tags/Collaborators fields (they belong to a loose post).
+        if (!folderMode) {
+          for (const t of tags) await supabase.from("content_tags").insert({ work_id: work.id, tag: t });
+          for (const c of collabs) await supabase.rpc("add_collaborator", { work_id: work.id, handle: c.handle, role: c.role });
+        }
       }
-      toast({ message: files.length > 1 ? `Posted ${files.length} files` : "Posted", icon: "check" });
+      toast({ message: folderMode ? `Uploaded ${files.length} files` : (files.length > 1 ? `Posted ${files.length} files` : "Posted"), icon: "check" });
       close();
       opts.onDone && opts.onDone();
     } catch (e) {
