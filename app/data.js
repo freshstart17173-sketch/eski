@@ -1034,6 +1034,22 @@ function fmtWhen(ts) {
   if (days < 7) return d.toLocaleDateString(undefined, { weekday: "short" });
   return d.toLocaleDateString(undefined, { day: "numeric", month: "short" });
 }
+// Shape a single realtime-inserted notification row (the caller prepends it live). Fetches the
+// actor profile (world-readable) and, for a server-scoped non-invite kind, the server name (an
+// invite carries its server name in `excerpt`, since the recipient can't read `servers` yet).
+export async function shapeIncomingNotif(row) {
+  const actById = {}, srvById = {};
+  if (row.actor_id) {
+    const { data } = await supabase.from("profiles").select("id,handle,name,avatar_key").eq("id", row.actor_id).maybeSingle();
+    if (data) actById[data.id] = data;
+  }
+  if (row.server_id && row.kind !== "invite") {
+    const { data } = await supabase.from("servers").select("id,name").eq("id", row.server_id).maybeSingle();
+    if (data) srvById[data.id] = data;
+  }
+  return shapeNotif(row, actById, srvById);
+}
+
 export async function loadNotifications() {
   if (isDemo()) return demoNotifications();
   const user = session();

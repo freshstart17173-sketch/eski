@@ -1706,3 +1706,35 @@ GOTCHA S: a profile write must invalidate identity caches — call `clearWorkspa
   (`router.reload()`) so the rail avatar/bylines follow. Updating only the in-dialog preview
   leaves stale identity everywhere else (the "doesn't propagate" bug).
 NEXT: Realtime echo (DM/notif/reaction/edit — untestable in-sandbox); billing (Stripe).
+
+## 2026-08-28 — Realtime echo: DM messages + notifications (+ DM edits)
+IN PROGRESS: (cleared)
+DONE (code complete; UNTESTABLE in-sandbox — the headless browser can't egress to Supabase
+  Realtime, so this is owner-verified on preview with two windows). The workspace already
+  echoed channel message insert/edit/tombstone + typing + presence (P4.10/P4.11); this adds
+  the missing echoes:
+  - **DM messages** (`realtime.js` `subscribeDMMessages` + `dms.js` showConvo). A DM
+    conversation now appends incoming messages from the other participant live. Dedupe: skip
+    my own `user_id` (already appended optimistically) and any id already in the stream
+    (`.msg[data-mid]`); autoscroll only when already near the bottom. Its channel is a single
+    module-tracked `dmChannel` that's REPLACED on convo switch (switching convos is in-screen,
+    no route change, so no teardownRealtime) — otherwise a stale sub keeps patching a closed
+    conversation. DM **edits** echo too (onUpdate rewrites the row's `.tx`).
+  - **Notifications** (`realtime.js` `subscribeNotifications` + `notifications.js`). A new
+    notification prepends live via `shapeIncomingNotif(row)` (fetches the actor profile; server
+    name from `excerpt` for invites, else a `servers` read). Deduped by id; a shaping failure
+    just skips the live prepend (a reload still shows it).
+  Confirmed the realtime PUBLICATION carries `dm_messages`, `notifications`, `messages`,
+  `message_reactions` (so the subs receive events). Both subs are torn down with the view
+  (main.js teardownRealtime before each render) and no-op in demo/signed-out (`session()` gate).
+  Screen verifies (dms/notifications/workspace) green — they exercise the demo path (subs
+  guarded off), confirming no boot/parse regressions.
+GOTCHA T: `message_reactions` and `dm_messages` have NO `channel_id` column, so a
+  postgres_changes filter can't scope reactions to a channel. DM messages DO have
+  `dm_channel_id` (filtered fine). Reaction echo is the one remaining piece — it needs an
+  UNFILTERED `message_reactions` subscription with a client-side filter to the visible
+  message ids (RLS still limits delivery to readable rows). Left as the next realtime item.
+OWNER: verify on preview in two windows — send a DM / trigger a mention or invite in one,
+  watch it appear live in the other. Needs Realtime on for the project (it is) and a signed-in
+  session in both.
+NEXT: reaction echo (see GOTCHA T); billing (Stripe).

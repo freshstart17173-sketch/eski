@@ -6,7 +6,8 @@
 import { el, toast } from "../ui.js";
 import { iconEl } from "../icons.js";
 import { navigate } from "../router.js";
-import { markNotifRead, markAllNotifsRead } from "../data.js";
+import { markNotifRead, markAllNotifsRead, shapeIncomingNotif } from "../data.js";
+import { subscribeNotifications } from "../realtime.js";
 
 function isDemoQS() { return new URLSearchParams(location.search).get("demo") === "1"; }
 function withDemo(path) { return isDemoQS() ? path + (path.includes("?") ? "&" : "?") + "demo=1" : path; }
@@ -53,6 +54,17 @@ export function renderNotifications(data) {
   }
 
   paintTabs(); paint();
+
+  // Realtime echo (P7.3): a new notification prepends live. Guarded to the live screen; the
+  // subscription is torn down with the view (main.js teardownRealtime before each render).
+  if (!isDemoQS() && data.me?.id) {
+    subscribeNotifications(data.me.id, async (row) => {
+      if (items.some((i) => i.id === row.id)) return;         // dedupe a re-delivered row
+      try { items.unshift(await shapeIncomingNotif(row)); paint(); }
+      catch { /* a shaping failure just skips the live prepend; a reload will show it */ }
+    });
+  }
+
   screen.append(el(".notif", {}, [
     el(".notifhd", {}, [el("span.t", {}, ["Notifications"]), tabsEl, markAll]),
     panel,

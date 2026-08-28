@@ -12,10 +12,11 @@ import { supabase, session } from "./supabase.js";
 
 let open = [];               // every RealtimeChannel we've opened this view
 let typingChannel = null;    // the one we also broadcast our own typing into
+let dmChannel = null;        // the current DM conversation's channel (replaced on convo switch)
 
 export function teardownRealtime() {
   for (const ch of open) { try { supabase.removeChannel(ch); } catch {} }
-  open = []; typingChannel = null;
+  open = []; typingChannel = null; dmChannel = null;
 }
 
 // P4.10 — live message insert / edit / tombstone for one channel.
@@ -48,6 +49,35 @@ export function subscribeServerPresence(serverId, meState, onSync) {
   const ch = supabase.channel(`server:${serverId}`, { config: { presence: { key: meState.id } } })
     .on("presence", { event: "sync" }, () => onSync?.(ch.presenceState()))
     .subscribe(async (status) => { if (status === "SUBSCRIBED") await ch.track(meState); });
+  open.push(ch);
+  return ch;
+}
+
+// P7.2 echo — live DM messages for one conversation. Only one DM conversation is open at a
+// time, and switching convos happens IN-SCREEN (no route change, so no teardownRealtime), so
+// this closes the previous conversation's channel before opening the new one — otherwise a
+// stale subscription would keep patching a conversation you've navigated away from.
+export function subscribeDMMessages(dmChannelId, { onInsert, onUpdate, onDelete } = {}) {
+  if (!session()) return null;   // demo / signed-out: nothing to subscribe to
+  if (dmChannel) { try { supabase.removeChannel(dmChannel); } catch {} open = open.filter((c) => c !== dmChannel); }
+  const flt = `dm_channel_id=eq.${dmChannelId}`;
+  const ch = supabase.channel(`dm:${dmChannelId}`)
+    .on("postgres_changes", { event: "INSERT", schema: "public", table: "dm_messages", filter: flt }, (p) => onInsert?.(p.new))
+    .on("postgres_changes", { event: "UPDATE", schema: "public", table: "dm_messages", filter: flt }, (p) => onUpdate?.(p.new))
+    .on("postgres_changes", { event: "DELETE", schema: "public", table: "dm_messages", filter: flt }, (p) => onDelete?.(p.old))
+    .subscribe();
+  dmChannel = ch; open.push(ch);
+  return ch;
+}
+
+// P7.3 echo — live notifications for the signed-in user. RLS scopes notifications to their
+// owner, so `user_id=eq.{id}` is belt-and-braces on top of that. onInsert gets the raw row;
+// the caller shapes + prepends it (and bumps any unread badge).
+export function subscribeNotifications(userId, onInsert) {
+  if (!session() || !userId) return null;
+  const ch = supabase.channel(`user:${userId}:notifs`)
+    .on("postgres_changes", { event: "INSERT", schema: "public", table: "notifications", filter: `user_id=eq.${userId}` }, (p) => onInsert?.(p.new))
+    .subscribe();
   open.push(ch);
   return ch;
 }

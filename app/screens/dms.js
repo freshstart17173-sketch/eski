@@ -9,6 +9,8 @@ import { iconEl } from "../icons.js";
 import { navigate } from "../router.js";
 import { addFriend, respondFriend, createDM, createGroupDM, loadDMThread, sendDM, setDMPref } from "../data.js";
 import { avatarUrl } from "../cards.js";
+import { subscribeDMMessages } from "../realtime.js";
+import { session } from "../supabase.js";
 
 function isDemoQS() { return new URLSearchParams(location.search).get("demo") === "1"; }
 
@@ -129,12 +131,31 @@ function showEmpty(right) {
 }
 function showConvo(right, d) {
   // real conversation (P7.2): header + message stream + composer. Messages load async; the
-  // composer inserts a dm_message and appends it (Realtime echo lands in a later pass).
+  // composer inserts a dm_message and appends it; incoming messages arrive live via
+  // subscribeDMMessages (see below).
   const stream = el(".stream");
   const scrollDown = () => { stream.scrollTop = stream.scrollHeight; };
   const paint = (messages) => { stream.replaceChildren(...(messages.length ? messages.map(dmMessageRow) : [emptyState("mail", d.name, "No messages yet — say hi.")])); scrollDown(); };
   paint([]);
   loadDMThread(d.id).then((t) => paint(t.messages || [])).catch(() => {});
+
+  // Realtime echo (P7.2): append messages from the OTHER participant(s) live. My own sends are
+  // appended optimistically below, so skip my user_id; dedupe by id in case an echo races.
+  const myId = session()?.id;
+  const memberById = {}; for (const m of d.members || []) memberById[m.id] = m;
+  const appendLive = (row) => {
+    if (row.user_id === myId) return;                                    // my own message — already shown
+    if (stream.querySelector(`.msg[data-mid="${row.id}"]`)) return;     // already appended
+    const a = memberById[row.user_id] || { name: d.name, initials: (d.name || "?").slice(0, 2).toUpperCase(), avatar_key: null };
+    const near = stream.scrollHeight - stream.scrollTop - stream.clientHeight < 80;   // only autoscroll if near the bottom
+    if (!stream.querySelector(".msg")) stream.replaceChildren();
+    stream.append(dmMessageRow({ id: row.id, author: a, time: dmTime(row.created_at), body: row.body }));
+    if (near) scrollDown();
+  };
+  subscribeDMMessages(d.id, {
+    onInsert: appendLive,
+    onUpdate: (row) => { const r = stream.querySelector(`.msg[data-mid="${row.id}"] .tx`); if (r) r.textContent = row.deleted_at ? "message deleted" : (row.body || ""); },
+  });
 
   const input = el("input", { placeholder: "Message " + d.name, "aria-label": "Message" });
   const send = async () => {
@@ -159,9 +180,13 @@ function showConvo(right, d) {
   input.focus();
 }
 
-// a lean DM message row (no member hue — DMs are outside any server)
+// short clock time for a live-echoed DM row's timestamp
+function dmTime(ts) { return ts ? new Date(ts).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }) : ""; }
+
+// a lean DM message row (no member hue — DMs are outside any server). data-mid lets the
+// realtime echo dedupe against an already-rendered message.
 function dmMessageRow(m) {
-  return el(".msg", {}, [
+  return el(".msg", { "data-mid": m.id || null }, [
     Avatar({ name: m.author.initials, size: "sm", src: avatarUrl(m.author.avatar_key) }),
     el(".bd", {}, [
       el(".by", {}, [el("span.u", {}, [m.author.name]), el("time", {}, [m.time || ""])]),
