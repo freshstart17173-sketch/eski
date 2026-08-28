@@ -333,6 +333,7 @@ export function demoNotifications() {
     n("n1", "mention", "rae", "at", "mentioned you in #beats", "Late Bloom LP", "@jax can you re-cut the bridge drums before the session?", "2:31 PM", false, "/s/lb"),
     n("n2", "comment", "mira", "comment", "left a comment on sh040_comp.mov", "Specter", "near building edge is ghosting, needs a garbage matte", "1:04 PM", false, "/s/sp"),
     n("n3", "friend", "lin", "user", "sent you a friend request", null, "", "12:20 PM", false, "/messages"),
+    n("n3b", "invite", "sol", "mail", "invited you to join", "Beat swap", "", "11:02 AM", false, "/join/demo-invite-code"),
     n("n4", "join", "nel", "user", "joined Late Bloom LP from your invite link", "Late Bloom LP", "", "Yesterday", true, "/s/lb"),
     n("n5", "reaction", "dev", "smile", "reacted 🔥 to your message", "Late Bloom LP", "", "Tue", true, "/s/lb"),
   ];
@@ -356,6 +357,13 @@ export function demoInvites() {
     { code: "lb-open-9f2", expires_at: null, max_uses: null, uses: 12, created_at: days(-9) },
     { code: "lb-crew-7ka", expires_at: days(6), max_uses: 25, uses: 4, created_at: days(-1) },
   ];
+}
+
+// Suggested people to invite (P9 invite-by-handle) — my friends who aren't in this
+// server. Shapes match loadInviteCandidates(): {id, name, handle, avatar_key, initials}.
+export function demoInviteCandidates() {
+  const c = (id, name) => ({ id, name, handle: name, avatar_key: null, initials: name.slice(0, 2).toUpperCase() });
+  return [c("u-sol", "sol"), c("u-lin", "lin"), c("u-nova", "nova")];
 }
 
 // Audit-log demo fixtures (P9.7) — shapes match loadAuditLog(): {id, action, actor, target,

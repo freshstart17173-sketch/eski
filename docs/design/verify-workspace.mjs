@@ -183,6 +183,16 @@ const CASES = [
     await p.click('.scrim .modal .sharelinks .invitem:first-child button:has-text("Revoke")');
     await p.waitForTimeout(150);
     if ((await p.$$(".scrim .modal .sharelinks .invitem")).length !== 2) return "Revoke should drop the invite row";
+    // invite-by-handle section: the @handle field + suggested friends-not-in-server
+    if (!(await $(p, '.scrim .modal input[placeholder="@handle"]'))) return "invite-by-handle field expected";
+    const sugg = await p.$$(".scrim .modal .shareppl .sharerow");
+    if (sugg.length !== 3) return `expected 3 suggested people, got ${sugg.length}`;
+    // inviting a suggested person flips the row to "Invited" and a toast confirms
+    await sugg[0].$eval('button', (b) => b.click());
+    await p.waitForTimeout(150);
+    if (!(await $(p, ".scrim .modal .shareppl .sharerow .invited"))) return "inviting a person should show an Invited state";
+    const invToast = await p.$eval(".toaststack", (t) => t.textContent).catch(() => "");
+    if (!/invited/i.test(invToast)) return `inviting should surface a toast, got "${invToast}"`;
     await p.click('.scrim .modal button:has-text("Done")');
     await p.waitForTimeout(120);
     if (await $(p, ".scrim .modal")) return "Done should close the invite modal";

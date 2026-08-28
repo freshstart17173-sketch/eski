@@ -8,7 +8,7 @@
 //                  realtime.js + workspace.js; this module does the initial reads.
 //  - signed out  → { needsAuth:true } so the shell shows a sign-in prompt.
 
-import { demoWorkspace, demoExplorer, demoFeed, demoProfile, demoComments, demoSharedWork, demoDMs, demoDMThread, demoNotifications, demoInvites, demoAudit } from "./demo.js";
+import { demoWorkspace, demoExplorer, demoFeed, demoProfile, demoComments, demoSharedWork, demoDMs, demoDMThread, demoNotifications, demoInvites, demoInviteCandidates, demoAudit } from "./demo.js";
 import { supabase } from "./supabase.js";
 import { session } from "./supabase.js";
 
@@ -952,25 +952,30 @@ export async function sendDM(dmChannelId, body) {
 // In-app only (v1). Read/mark-read/delete your own (notif_read/update); inserts come from
 // the P2 triggers. Actor profiles + server names are fetched SEPARATELY (bug-#1 hazard). The
 // row text is built from `kind` + the actor; the excerpt renders as a quote. No member hue.
-const NOTIF_VERB = { mention: "mentioned you", comment: "commented on your post", join: "joined", reaction: "reacted to your message", invite: "invited you", friend: "sent you a friend request" };
+const NOTIF_VERB = { mention: "mentioned you", comment: "commented on your post", join: "joined", reaction: "reacted to your message", invite: "invited you to join", friend: "sent you a friend request" };
 const NOTIF_ICON = { mention: "at", comment: "comment", join: "user", reaction: "smile", invite: "mail", friend: "user" };
 // Where a notification leads when clicked (best-effort v1): a friend request → Messages, any
 // server-scoped event → that server. Exact target permalinks (channel/message/post) arrive
 // with permalink routing later; null means the row just marks read without navigating.
 function notifHref(r) {
   if (r.kind === "friend") return "/messages";
+  // An invite leads to the join screen for its single-use code — the invitee isn't a
+  // member yet, so /s/:id would be RLS-denied; /join/:code is the tested join path.
+  if (r.kind === "invite") return r.target_ref ? `/join/${r.target_ref}` : null;
   if (r.server_id) return `/s/${r.server_id}`;
   return null;
 }
 function shapeNotif(r, actById, srvById) {
   const a = actById[r.actor_id];
   const actor = a?.name || a?.handle || "someone";
-  const srv = srvById[r.server_id]?.name || null;
+  // For an invite the server name rides in `excerpt` (the invitee can't read `servers`
+  // pre-join); every other kind resolves it from the joined servers.
+  const srv = r.kind === "invite" ? (r.excerpt || null) : (srvById[r.server_id]?.name || null);
   return {
     id: r.id, kind: r.kind, actor, avatar_key: a?.avatar_key || null,
     text: NOTIF_VERB[r.kind] || "sent you a notification",
     icon: NOTIF_ICON[r.kind] || "bell",
-    context: srv, excerpt: r.excerpt || "", href: notifHref(r),
+    context: srv, excerpt: r.kind === "invite" ? "" : (r.excerpt || ""), href: notifHref(r),
     time: fmtWhen(r.created_at), read: !!r.read_at,
   };
 }
@@ -991,7 +996,7 @@ export async function loadNotifications() {
   const { servers } = await loadRail(user);
   const me = { id: user.id, name: user.email?.split("@")[0] || "you", initials: initials(user.email || "you"), handle: user.email?.split("@")[0] || "you", colorIdx: 1 };
   const { data: rows } = await supabase.from("notifications")
-    .select("id,kind,actor_id,server_id,excerpt,read_at,created_at").eq("user_id", user.id)
+    .select("id,kind,actor_id,server_id,excerpt,target_ref,read_at,created_at").eq("user_id", user.id)
     .order("created_at", { ascending: false }).limit(100);
   const actorIds = [...new Set((rows || []).map((r) => r.actor_id).filter(Boolean))];
   const serverIds = [...new Set((rows || []).map((r) => r.server_id).filter(Boolean))];
@@ -1186,6 +1191,54 @@ export async function revokeInvite(code) {
   if (isDemo()) return;
   const { error } = await supabase.from("server_invites").delete().eq("code", code);
   if (error) throw new Error(error.message || "Couldn’t revoke the invite");
+}
+
+// Suggested people to invite: my accepted friends who aren't already active members of the
+// server. Pure client query — friendships (fr_read: my edges) and server_members (sm_read: a
+// member sees the roster) are both readable to me, and profiles are world-readable.
+export async function loadInviteCandidates(serverId) {
+  if (isDemo()) return demoInviteCandidates();
+  const user = session();
+  if (!user) return [];
+  const [{ data: friRows }, { data: memRows }] = await Promise.all([
+    supabase.from("friendships").select("a_user,b_user").or(`a_user.eq.${user.id},b_user.eq.${user.id}`).eq("status", "accepted"),
+    supabase.from("server_members").select("user_id").eq("server_id", serverId).eq("status", "active"),
+  ]);
+  const memberIds = new Set((memRows || []).map((m) => m.user_id));
+  const friendIds = [...new Set((friRows || []).map((f) => (f.a_user === user.id ? f.b_user : f.a_user)))].filter((id) => !memberIds.has(id));
+  if (!friendIds.length) return [];
+  const { data: profs } = await supabase.from("profiles").select("id,handle,name,avatar_key").in("id", friendIds);
+  return (profs || []).map((p) => ({ id: p.id, name: p.name || p.handle || "friend", handle: p.handle || "", avatar_key: p.avatar_key || null, initials: initials(p.name || p.handle || "?") }));
+}
+
+// Turn an invite_user_to_server error into copy a person can act on.
+function friendlyInviteErr(msg = "") {
+  if (/already a member/i.test(msg)) return "They’re already in this server";
+  if (/not permitted/i.test(msg)) return "Only admins can invite people";
+  if (/yourself/i.test(msg)) return "You can’t invite yourself";
+  if (/no such user/i.test(msg)) return "No user with that username";
+  return msg || "Couldn’t send the invite";
+}
+
+// Invite a specific user (by id) to a server — the admin-gated invite_user_to_server RPC.
+// It mints a single-use code and drops an 'invite' notification carrying it; returns the code.
+export async function inviteUserToServer(serverId, userId) {
+  if (isDemo()) return "demo-invite-code";
+  const { data, error } = await supabase.rpc("invite_user_to_server", { p_target: userId, p_server: serverId });
+  if (error) throw new Error(friendlyInviteErr(error.message));
+  return data;
+}
+
+// Invite by exact handle: resolve the handle to a user (profiles are world-readable), then
+// invite them. Returns { code, person } so the caller can confirm who was invited.
+export async function inviteByHandle(serverId, handle) {
+  const clean = (handle || "").trim().replace(/^@/, "");
+  if (!clean) throw new Error("Enter a username");
+  if (isDemo()) return { code: "demo-invite-code", person: { id: "u-" + clean, name: clean, handle: clean, avatar_key: null } };
+  const { data: prof } = await supabase.from("profiles").select("id,handle,name,avatar_key").eq("handle", clean).maybeSingle();
+  if (!prof) throw new Error("No user with that username");
+  const code = await inviteUserToServer(serverId, prof.id);
+  return { code, person: { id: prof.id, name: prof.name || prof.handle || clean, handle: prof.handle || clean, avatar_key: prof.avatar_key || null } };
 }
 
 // Join a server by an invite code or a pasted invite link (join_via_invite RPC).

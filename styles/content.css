@@ -239,6 +239,16 @@
 /* invite-management rows: the link+actions row, then a small usage/expiry line beneath it. */
 .sharelinks .invitem{display:flex;flex-direction:column;gap:3px}
 .sharelinks .invmeta{font-size:var(--fs-xs);color:var(--muted);padding-left:2px}
+/* invite-by-handle: suggested-people rows (ported from the gallery invite modal). A
+   person here is NOT a server member yet, so the name stays neutral bold — the member
+   hue is server-scoped and doesn't apply to a non-member. */
+.shareppl{display:flex;flex-direction:column;gap:2px;margin-top:6px}
+.sharerow{display:flex;align-items:center;gap:10px;padding:6px 4px}
+.sharerow .nm{flex:1;min-width:0;font-size:var(--fs-sm);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sharerow .nm b{font-weight:600}
+.sharerow .nm .acc{color:var(--muted);font-weight:400;margin-left:5px}
+.sharerow .invited{font-size:var(--fs-xs);color:var(--muted);display:inline-flex;align-items:center;gap:5px}
+.sharenone{font-size:var(--fs-sm);color:var(--muted)}
 /* server-settings icon/cover picker (ported from gallery). The cover is a wide rectangle, the
    icon a smaller ink square — both radius --r (chrome), both crop to fill. */
 .frow{margin-bottom:2px}

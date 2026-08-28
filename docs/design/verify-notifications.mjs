@@ -52,9 +52,16 @@ async function run(name, theme, fn) {
 async function listCase(theme) {
   await run(`list-${theme}`, theme, async (p) => {
     if (!(await $(p, ".notif .notifhd"))) return "the notifications header is missing";
-    if ((await count(p, ".notif .nrow")) !== 5) return "expected the 5 demo notifications";
-    if ((await count(p, ".notif .nrow.unread")) !== 3) return "expected 3 unread";
+    if ((await count(p, ".notif .nrow")) !== 6) return "expected the 6 demo notifications";
+    if ((await count(p, ".notif .nrow.unread")) !== 4) return "expected 4 unread";
     if (!(await $(p, ".notif .nrow .quote"))) return "an excerpt should render as a quote";
+    // the invite notification carries its server (context) and leads to the join screen
+    const invCtx = await p.$$eval(".notif .nrow", (rows) => {
+      const r = rows.find((n) => /invited you to join/i.test(n.textContent));
+      return r ? r.querySelector(".nctx")?.textContent || "" : null;
+    });
+    if (invCtx === null) return "an invite notification row should render";
+    if (!/beat swap/i.test(invCtx)) return `invite row should show the server name, got "${invCtx}"`;
     return null;
   });
 }

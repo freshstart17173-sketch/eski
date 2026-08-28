@@ -1642,3 +1642,30 @@ GOTCHA P: the `button` reset MUST keep `padding:0`. The UA default `1px 6px` sil
   leaning on UA padding for size.
 NEXT: invite by-handle + suggested people (next self-contained feature); Realtime echo +
   billing standing.
+
+## 2026-08-28 — P9 invite by handle + suggested people
+IN PROGRESS: (cleared)
+DONE: the invite modal now invites a specific person, not just a link — matching the
+  gallery invite modal (LAW). Backend (migration `p9_invite_user_to_server`, applied +
+  committed as `schema-18-invite-user.sql`): `alter notifications add target_ref text` +
+  a SECURITY DEFINER `invite_user_to_server(p_target,p_server)` — admin-gated, mints a
+  single-use 7-day `server_invites` code and drops an `invite` notification carrying the
+  server NAME in `excerpt` (the invitee can't read `servers` pre-join) and the CODE in
+  `target_ref`. Reuses the tested join path: the notification links to `/join/<code>` →
+  join_via_invite. Round-trip tested via the Supabase MCP (happy path + all three gate
+  rejections); security advisor clean (no rls-disabled/permit-all; the fn is the accepted
+  authenticated-executable RPC posture). Data layer (data.js): `loadInviteCandidates`
+  (my accepted friends not already in the server — pure client query over friendships +
+  server_members), `inviteUserToServer`, `inviteByHandle` (resolves a @handle via
+  profiles), and `shapeNotif`/`notifHref` route an invite to `/join/<target_ref>` with
+  the server name from `excerpt`. UI (workspace.js `inviteFlow`): an "Or invite by handle"
+  `@handle` field + a `.shareppl` list of suggested friends (avatar · neutral-bold name ·
+  @handle · Invite) — names stay NEUTRAL (member hue is server-scoped, a non-member has
+  none). New `.shareppl/.sharerow` CSS ported from the gallery. Verify: verify-workspace
+  invite case extended (field + 3 suggested + Invited flip + toast) and verify-notifications
+  (+1 invite row showing its server) — both GREEN, both themes.
+GOTCHA Q: the invitee is NOT a member when the invite notification lands, so they can't
+  read `servers` (servers_read = owner/member) — carry the server NAME on the notification
+  itself (`excerpt`), never resolve it from a `servers` join for an invite row. Same reason
+  the invite links to `/join/<code>` (RLS-allowed join path), never `/s/<id>` (denied).
+NEXT: Realtime echo (DM/notif/reaction/edit — untestable in-sandbox); billing (Stripe).

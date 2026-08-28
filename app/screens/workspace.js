@@ -16,7 +16,7 @@ import { iconEl } from "../icons.js";
 import { navigate } from "../router.js";
 import { avatarUrl } from "../cards.js";
 import { uploadBlobs } from "../upload-r2.js";
-import { isDemo, shapeMessage, loadThread, toggleReaction, deleteMessage, pinMessage, editMessage, kickMember, timeoutMember, banMember, setMemberRoles, createChannel, updateChannel, createInvite, loadInvites, revokeInvite, updateServer, loadAuditLog, leaveServer, deleteServer, loadServerPrefs, setServerPrefs } from "../data.js";
+import { isDemo, shapeMessage, loadThread, toggleReaction, deleteMessage, pinMessage, editMessage, kickMember, timeoutMember, banMember, setMemberRoles, createChannel, updateChannel, createInvite, loadInvites, revokeInvite, loadInviteCandidates, inviteByHandle, inviteUserToServer, updateServer, loadAuditLog, leaveServer, deleteServer, loadServerPrefs, setServerPrefs } from "../data.js";
 import { subscribeChannelMessages, subscribeTyping, sendTyping, subscribeServerPresence, markRead, sendMessage } from "../realtime.js";
 import { openUpload } from "./upload.js";
 
@@ -670,6 +670,56 @@ async function inviteFlow(data) {
     finally { create.disabled = false; }
   });
 
+  // ── invite a specific person: by @handle, or from suggested friends-not-in-server ──
+  // Sends a targeted 'invite' notification carrying a single-use code (invite_user_to_server).
+  const suggested = el(".shareppl");
+  const noSuggest = el(".sharenone", { hidden: true }, ["No suggestions — invite by handle above."]);
+  const invited = new Set();                 // ids invited this session, so a row can't double-send
+
+  function personRow(p) {
+    const btn = Button({ label: "Invite", size: "sm" });
+    const row = el(".sharerow", {}, [
+      Avatar({ name: p.name, size: "sm", src: avatarUrl(p.avatar_key) }),
+      el("span.nm", {}, [el("b", {}, [p.name]), p.handle ? el("span.acc", {}, ["@" + p.handle]) : null]),
+      btn,
+    ]);
+    btn.addEventListener("click", async () => {
+      btn.disabled = true;
+      try {
+        await inviteUserToServer(data.server.id, p.id);
+        invited.add(p.id);
+        row.replaceChild(el("span.invited", {}, [iconEl("check", "sm"), "Invited"]), btn);
+        toast({ message: `Invited ${p.name}`, icon: "check" });
+      } catch (e) { btn.disabled = false; toast({ message: e?.message || "Couldn’t send the invite" }); }
+    });
+    return row;
+  }
+  async function paintSuggested() {
+    let people = [];
+    try { people = await loadInviteCandidates(data.server.id); } catch { people = []; }
+    people = people.filter((p) => !invited.has(p.id));
+    suggested.replaceChildren(...people.map(personRow));
+    noSuggest.hidden = people.length > 0;
+  }
+
+  const handleInput = el("input", { placeholder: "@handle", "aria-label": "Invite by handle" });
+  const handleBtn = Button({ label: "Invite", size: "sm" });
+  async function doHandleInvite() {
+    const h = handleInput.value.trim();
+    if (!h) return;
+    handleBtn.disabled = true;
+    try {
+      const { person } = await inviteByHandle(data.server.id, h);
+      if (person.id) invited.add(person.id);
+      handleInput.value = "";
+      toast({ message: `Invited ${person.name || h.replace(/^@/, "")}`, icon: "check" });
+      paintSuggested();
+    } catch (e) { toast({ message: e?.message || "Couldn’t send the invite" }); }
+    finally { handleBtn.disabled = false; }
+  }
+  handleBtn.addEventListener("click", doHandleInvite);
+  handleInput.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); doHandleInvite(); } });
+
   const body = el("div", {}, [
     el("label.ulab", {}, ["Active invite links"]), list,
     el(".urow", { style: "margin-top:12px;gap:8px" }, [
@@ -677,8 +727,12 @@ async function inviteFlow(data) {
       el("div", { style: "flex:1" }, [el("label.ulab", {}, ["Max uses"]), useBtn]),
     ]),
     el(".invcreate", { style: "margin-top:12px" }, [create]),
+    el("label.ulab", { style: "margin-top:18px" }, ["Or invite by handle"]),
+    el(".field", {}, [iconEl("at", "sm"), handleInput, handleBtn]),
+    suggested, noSuggest,
   ]);
   paintList();
+  paintSuggested();
   const done = Button({ label: "Done", variant: "primary" });
   const { close } = openModal({ title: `Invite to ${data.server.name}`, body, footer: [done] });
   done.addEventListener("click", () => close());
