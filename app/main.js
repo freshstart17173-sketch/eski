@@ -5,7 +5,7 @@
 // frame, so the shell reads consistently as later phases fill them in.
 
 import { signal, effect } from "./signals.js";
-import { start, match } from "./router.js";
+import { start, match, navigate } from "./router.js";
 import { ready, session, onChange } from "./supabase.js";
 import { icon } from "./icons.js";
 import { loadWorkspace, loadExplorer, loadFeed, loadProfile, loadSharedWork, loadDMsScreen, loadNotifications, clearWorkspaceCache, isDemo, needsProfileSetup } from "./data.js";
@@ -22,6 +22,7 @@ import { renderShared } from "./screens/shared.js";
 import { renderDMs } from "./screens/dms.js";
 import { renderNotifications } from "./screens/notifications.js";
 import { renderNotFound } from "./screens/notfound.js";
+import { renderJoin } from "./screens/join.js";
 import { openSwitcher, closeSwitcher } from "./screens/switcher.js";
 import { renderCreateProfile } from "./screens/onboard.js";
 
@@ -77,6 +78,7 @@ async function renderRoute(r) {
 
   if (r.screen === "auth") { swap(renderSignin()); return; }   // /signin — full screen, no shell
   if (r.screen === "notfound") { swap(renderNotFound()); return; }   // 404 — full screen, no shell
+  if (r.screen === "join") { swap(renderJoin(r.params.code)); return; }   // /join/:code — invite landing, no shell
 
   // /shared/:token — the read-only shared-link viewer. A standalone page (no shell, works
   // signed-out), so it covers the rail: no way to browse the rest of the server.
@@ -194,6 +196,13 @@ onChange((sess, event) => {
   authed.value = !!session();
   if (event === "SIGNED_OUT") clearWorkspaceCache();
   if (!session() && event && event !== "SIGNED_OUT" && event !== "INITIAL_SESSION") return;
+  // Resume an invite the user opened while signed out (join.js stashed the code): once a
+  // real session lands, send them back to the invite so the link still works after sign-in.
+  if (session() && event === "SIGNED_IN") {
+    let code = null;
+    try { code = sessionStorage.getItem("eski:pending-invite"); sessionStorage.removeItem("eski:pending-invite"); } catch {}
+    if (code) { navigate(`/join/${code}`); return; }
+  }
   if (started) renderRoute(route.peek());
 });
 

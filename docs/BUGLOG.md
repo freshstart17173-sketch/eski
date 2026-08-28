@@ -10,11 +10,16 @@ Severity: **P1** breaks or badly misleads · **P2** wrong but usable · **P3** p
 
 ## Open
 
-- [ ] **P1 · Modals render as full grey screens.** `/create`, `/join`, `/upload`, and
-      `/s/:id/settings` aren't wired as overlays — they fall through to the "not yet
-      ported" placeholder (`main.js` `IN_SHELL` + the fall-through). They should open as
-      a scrim modal over the current shell, never a grey screen. **Fix:** route these to
-      the real modal (or redirect + open it), never the placeholder.
+- [ ] **P1 · (partial) Modal routes.** `/create`, `/upload`, `/s/:id/settings` still
+      render the "not yet ported" placeholder if navigated to directly — but in normal use
+      each opens as a proper modal (create/join-by-link from the ＋ menu, upload from the
+      toolbar, server settings from the server menu), so these aren't reached by clicking.
+      `/join/:code` — the one dead route users *did* hit (invite links + notifications) —
+      is now a real screen (see Done). Remaining: a follow-up so a directly-typed
+      `/create` · `/upload` · `/settings` URL opens its modal over the shell instead of the
+      placeholder (low priority — not a click path). Enhancement: an anon-readable
+      `preview_invite(code)` RPC so the join card can show the server name · member count ·
+      inviter (QA §20) instead of the generic copy.
 - [ ] **P1 · Seed/demo data pollutes real testing + looks like accounts merging.**
       *Not a security bug* — confirmed via SQL that accounts are isolated ("Test Server"
       holds only `fresh`, "test server" only `dexter`). The culprit is the **live seed**:
@@ -50,6 +55,15 @@ Severity: **P1** breaks or badly misleads · **P2** wrong but usable · **P3** p
 
 ## Done
 
+- [x] **P1 · Invite links / notifications landed on a dead grey screen.** `/join/:code`
+      now renders a real invite card on a scrim (`screens/join.js`): signed-out → "Sign in
+      to join" (the code is stashed and resumed after sign-in); signed-in → Join →
+      `join_via_invite` → land in the server; a bad/expired/revoked code → an in-place
+      dead-invite state with the reason + a way back. No more "not yet ported".
+- [x] **P2 · Own avatar never showed on the rail.** The rail profile button rendered
+      initials only; it now draws the uploaded photo with an initials fallback.
+- [x] **P2 · Details "Posted by / Uploaded by" was a dead placeholder.** Now opens the
+      author's profile (`/u/:handle`); `handle` threaded into the four `who` shapes.
 - [x] **P3 · Dropdowns + multi-selects showed a ✓ tick for the selected row.** Now the
       selected row is shown by inversion (filled highlight + bold), matching the hover/
       click language, no tick glyph. (`ui.js` `openMenu`/`SelectPill`, `explorer.js`
