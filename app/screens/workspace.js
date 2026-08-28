@@ -16,8 +16,8 @@ import { iconEl } from "../icons.js";
 import { navigate } from "../router.js";
 import { avatarUrl } from "../cards.js";
 import { uploadBlobs } from "../upload-r2.js";
-import { isDemo, shapeMessage, loadThread, toggleReaction, deleteMessage, pinMessage, editMessage, kickMember, timeoutMember, banMember, setMemberRoles, createChannel, updateChannel, createInvite, loadInvites, revokeInvite, loadInviteCandidates, inviteByHandle, inviteUserToServer, updateServer, loadAuditLog, leaveServer, deleteServer, loadServerPrefs, setServerPrefs } from "../data.js";
-import { subscribeChannelMessages, subscribeTyping, sendTyping, subscribeServerPresence, markRead, sendMessage } from "../realtime.js";
+import { isDemo, shapeMessage, loadThread, toggleReaction, loadMessageReactions, deleteMessage, pinMessage, editMessage, kickMember, timeoutMember, banMember, setMemberRoles, createChannel, updateChannel, createInvite, loadInvites, revokeInvite, loadInviteCandidates, inviteByHandle, inviteUserToServer, updateServer, loadAuditLog, leaveServer, deleteServer, loadServerPrefs, setServerPrefs } from "../data.js";
+import { subscribeChannelMessages, subscribeChannelReactions, subscribeTyping, sendTyping, subscribeServerPresence, markRead, sendMessage } from "../realtime.js";
 import { openUpload } from "./upload.js";
 
 // ── text rendering ──────────────────────────────────────────────────────────
@@ -122,7 +122,9 @@ function messageRow(msg, data, { onOpenThread } = {}) {
   bd.append(rx.bar);   // reactions (empty bar renders nothing until one is added)
   if (msg.replies) bd.append(el(".reply", { onClick: () => onOpenThread?.(msg) }, [iconEl("reply", "sm"), `${msg.replies} replies`]));
 
-  return el(".msg", { "data-mid": msg.id }, [acts, Avatar({ name: msg.author.name, size: "sm", src: avatarUrl(msg.author.avatar_key) }), bd]);
+  const node = el(".msg", { "data-mid": msg.id }, [acts, Avatar({ name: msg.author.name, size: "sm", src: avatarUrl(msg.author.avatar_key) }), bd]);
+  node._rx = rx;   // so a live reaction echo can refresh this row's chips (attachLive)
+  return node;
 }
 
 // a message's reaction chips — toggle your own (toggle_reaction), add via the smile picker.
@@ -147,8 +149,11 @@ function reactionsBar(msg) {
     paint();
     if (!isDemo()) toggleReaction(msg.id, emoji).catch(() => {});
   }
+  // Live echo: replace the chips with the server's truth for this message (P4.12 realtime).
+  // Keeps the same bar element + closures, so the smile picker and flip still work after.
+  function apply(arr) { msg.reactions = arr || []; paint(); }
   paint();
-  return { bar, add };
+  return { bar, add, apply };
 }
 
 // Inline edit (own message): swap the .tx body for an input; Enter saves (editMessage +
@@ -1031,6 +1036,15 @@ function attachLive(screen, data, ctx) {
     onInsert: (row) => liveInsert(screen, data, ctx, row),
     onUpdate: (row) => liveUpdate(screen, ctx, row),
     onDelete: (old) => screen.querySelector(`.msg[data-mid="${old.id}"]`)?.remove(),
+  });
+
+  // live reactions: another member's react refreshes that message's chips (mine are already
+  // optimistic). Table is unfiltered (no channel_id), so act only on messages on screen.
+  subscribeChannelReactions(async (row) => {
+    if (!row || row.user_id === ctx.me.id) return;
+    const node = screen.querySelector(`.msg[data-mid="${CSS.escape(row.message_id)}"]`);
+    if (!node || !node._rx) return;
+    try { node._rx.apply(await loadMessageReactions(row.message_id)); } catch { /* transient */ }
   });
 
   let typingTimer;

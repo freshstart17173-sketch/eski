@@ -1353,6 +1353,21 @@ export async function toggleReaction(messageId, emoji) {
   return data;
 }
 
+// All reactions on one message, grouped into the {emoji, n, mine} chips the row renders.
+// Used by the realtime echo to refresh a message's chips from server truth after someone
+// else reacts. RLS lets a channel member read reactions on messages they can see.
+export async function loadMessageReactions(messageId) {
+  const user = session();
+  const { data } = await supabase.from("message_reactions").select("emoji,user_id").eq("message_id", messageId);
+  const byEmoji = new Map();
+  for (const r of data || []) {
+    const e = byEmoji.get(r.emoji) || { emoji: r.emoji, n: 0, mine: false };
+    e.n++; if (user && r.user_id === user.id) e.mine = true;
+    byEmoji.set(r.emoji, e);
+  }
+  return [...byEmoji.values()];
+}
+
 // a channel's thread (parent + replies), loaded on demand when a thread opens
 export async function loadThread(parentId, membersById) {
   const { data: parent } = await supabase.from("messages").select("id,body,created_at,edited_at,user_id,channel_id").eq("id", parentId).maybeSingle();

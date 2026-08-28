@@ -1738,3 +1738,17 @@ OWNER: verify on preview in two windows — send a DM / trigger a mention or inv
   watch it appear live in the other. Needs Realtime on for the project (it is) and a signed-in
   session in both.
 NEXT: reaction echo (see GOTCHA T); billing (Stripe).
+
+## 2026-08-28 — Realtime echo: reactions (completes the echo set)
+IN PROGRESS: (cleared)
+DONE (code complete; UNTESTABLE in-sandbox — owner-verified on preview, two windows).
+  Reaction echo (GOTCHA T): `realtime.js` `subscribeChannelReactions` subscribes to the whole
+  `message_reactions` table (it has NO channel_id to filter on — RLS still limits delivery to
+  readable rows); the workspace acts only on messages currently on screen. On another member's
+  react, `loadMessageReactions(id)` refetches that message's chips and the row's stored
+  `rx.apply(arr)` repaints them in place — keeping the same bar element + closures so the smile
+  picker and flip still work. My own reactions stay optimistic (skipped by user_id). DM +
+  notification + reaction echo now all live; the only remaining realtime nicety would be live
+  read-receipts, not in scope. verify-workspace green both themes.
+NEXT: build-guide gaps found in the 2026-08-28 audit — Forward action, channel-permissions
+  modal, DM Block/Report + group management; then the roles-editor / billing scope decision.

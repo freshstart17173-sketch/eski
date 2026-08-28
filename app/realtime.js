@@ -70,6 +70,21 @@ export function subscribeDMMessages(dmChannelId, { onInsert, onUpdate, onDelete 
   return ch;
 }
 
+// P4.12 echo — live reactions. message_reactions has NO channel_id column, so it can't be
+// filtered per-channel in a postgres_changes subscription; subscribe to the whole table
+// (RLS still limits delivery to reactions on messages you can read) and let the caller filter
+// to the messages currently on screen. onChange gets the changed row (new on insert, old on
+// delete) — both carry message_id + user_id.
+export function subscribeChannelReactions(onChange) {
+  if (!session()) return null;
+  const ch = supabase.channel("reactions:live")
+    .on("postgres_changes", { event: "INSERT", schema: "public", table: "message_reactions" }, (p) => onChange?.(p.new))
+    .on("postgres_changes", { event: "DELETE", schema: "public", table: "message_reactions" }, (p) => onChange?.(p.old))
+    .subscribe();
+  open.push(ch);
+  return ch;
+}
+
 // P7.3 echo — live notifications for the signed-in user. RLS scopes notifications to their
 // owner, so `user_id=eq.{id}` is belt-and-braces on top of that. onInsert gets the raw row;
 // the caller shapes + prepends it (and bumps any unread badge).
