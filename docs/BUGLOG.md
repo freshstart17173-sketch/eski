@@ -20,13 +20,6 @@ Severity: **P1** breaks or badly misleads · **P2** wrong but usable · **P3** p
       placeholder (low priority — not a click path). Enhancement: an anon-readable
       `preview_invite(code)` RPC so the join card can show the server name · member count ·
       inviter (QA §20) instead of the generic copy.
-- [ ] **P1 · Seed/demo data pollutes real testing + looks like accounts merging.**
-      *Not a security bug* — confirmed via SQL that accounts are isolated ("Test Server"
-      holds only `fresh`, "test server" only `dexter`). The culprit is the **live seed**:
-      "Late Bloom LP" was seeded with *both* your accounts + 3 fake authors
-      (`rae/dev/tomo@seed.eski.lol`), so both accounts see it → looks merged. **Fix (needs
-      your OK — destructive):** purge Late Bloom LP + the seed authors + their works from
-      the live DB so testing starts clean.
 - [ ] **P2 · Profile photo + handle don't propagate** (rail/main still shows the default).
       Two possible causes to split: (a) `[infra]` avatars need R2 serving — if the R2
       env vars / CORS aren't set, `avatarUrl` 404s and falls back to initials (looks like
@@ -55,6 +48,13 @@ Severity: **P1** breaks or badly misleads · **P2** wrong but usable · **P3** p
 
 ## Done
 
+- [x] **P1 · Seed data purged (owner-approved, 2026-08-28).** The live DB held "Late
+      Bloom LP" seeded with BOTH real accounts + 3 fake authors (`@seed.eski.lol`), which
+      read as "accounts aren't separate" — confirmed *not* a security bug (accounts are
+      RLS-isolated). Deleted the server (cascaded channels/messages/members/roles/works)
+      and the 3 fake authors. DB now clean: only the two real accounts + their own servers
+      (`test server`, `Test Server`). `seed-late-bloom.sql` marked RETIRED so it's not
+      re-run. The `?demo=1` screenshot fixture (app/demo.js) needs no seed and is unaffected.
 - [x] **P1 · Invite links / notifications landed on a dead grey screen.** `/join/:code`
       now renders a real invite card on a scrim (`screens/join.js`): signed-out → "Sign in
       to join" (the code is stashed and resumed after sign-in); signed-in → Join →

@@ -1,5 +1,12 @@
 -- seed-late-bloom.sql — the "Late Bloom LP" demo server for the PREVIEW project.
 --
+-- ⚠️ RETIRED 2026-08-28 — DO NOT RUN. The owner purged this seed from the live DB
+-- (it seeded BOTH real accounts + 3 fake authors into one server, which read as
+-- "accounts aren't separate"). Real testing now starts from a clean DB — only the
+-- two real accounts and their own servers exist. Kept for history only; re-running
+-- it would re-pollute the database. The demo fixture for screenshots lives in
+-- app/demo.js behind ?demo=1, which needs no seed.
+--
 -- Applied to Supabase project zidqagrmxeawpasurpwi on 2026-08-23 (owner-requested)
 -- so P4 Realtime (P4.10/P4.11) can be built + tested against real data with the two
 -- real accounts. Re-runnable: it clears its own rows first (fixed UUIDs).
