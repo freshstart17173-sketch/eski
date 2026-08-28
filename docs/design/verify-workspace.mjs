@@ -81,7 +81,22 @@ const CASES = [
     const items = await p.$$eval(".menu.open button", (bs) => bs.map((b) => b.textContent.trim()));
     if (!items.some((t) => t.includes("Pin to channel"))) return "message menu missing Pin to channel";
     if (!items.some((t) => t.includes("Copy link"))) return "message menu missing Copy link";
-    // Pin fires without error (demo no-ops; the toast confirms wiring)
+    if (!items.some((t) => t.includes("Forward"))) return "message menu missing Forward";
+    // Forward → modal opens with the source quote + channel picks; pick one → Forward closes it
+    for (const b of await p.$$(".menu.open button")) { if ((await b.textContent()).trim() === "Forward") { await b.click(); break; } }
+    await p.waitForTimeout(150);
+    if (!(await p.$(".scrim .modal .fwdquote"))) return "Forward modal should show the source quote";
+    const picks = await p.$$(".scrim .modal .fwdpick");
+    if (!picks.length) return "Forward modal should list target channels";
+    await picks[0].click();
+    await p.waitForTimeout(60);
+    await p.click('.scrim .modal button:has-text("Forward")');
+    await p.waitForTimeout(150);
+    if (await p.$(".scrim .modal")) return "Forward should close the modal";
+    // re-open the ⋯ menu and Pin (demo no-ops; the toast confirms wiring)
+    await msg.hover(); await p.waitForTimeout(60);
+    const acts2 = await msg.$$(".hoveracts button"); await acts2[acts2.length - 1].click();
+    await p.waitForTimeout(120);
     for (const b of await p.$$(".menu.open button")) { if ((await b.textContent()).includes("Pin to channel")) { await b.click(); break; } }
     await p.waitForTimeout(100);
     return null;

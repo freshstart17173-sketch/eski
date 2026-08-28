@@ -213,7 +213,7 @@ export async function loadWorkspace({ serverId, channelId } = {}) {
   if (activeChannel) {
     const cid = activeChannel.id;
     const [{ data: msgRows }, { data: pinRows }] = await Promise.all([
-      supabase.from("messages").select("id,body,created_at,edited_at,parent_id,user_id,deleted_at").eq("channel_id", cid).is("deleted_at", null).order("created_at"),
+      supabase.from("messages").select("id,body,created_at,edited_at,parent_id,user_id,deleted_at,forwarded_from").eq("channel_id", cid).is("deleted_at", null).order("created_at"),
       supabase.from("message_pins").select("message_id,pinned_by,created_at, message:messages(body,user_id)").eq("channel_id", cid).order("created_at"),
     ]);
     const all = msgRows || [];
@@ -231,10 +231,24 @@ export async function loadWorkspace({ serverId, channelId } = {}) {
         if (r.user_id === user.id) rxByMsg[r.message_id][r.emoji].mine = true;
       }
     }
+    // Forward (CANON §C.4): resolve each forwarded message's source into the quote block —
+    // its author, source channel, and a snippet. Sources are looked up in a batch; only the
+    // ones the viewer can read resolve (RLS), else the forward just shows the note.
+    const fwdIds = [...new Set(all.filter((r) => r.forwarded_from).map((r) => r.forwarded_from))];
+    const srcById = {};
+    if (fwdIds.length) {
+      const { data: srcs } = await supabase.from("messages").select("id,body,user_id,channel_id,created_at").in("id", fwdIds);
+      const chanName = {}; for (const c of textCh) chanName[c.id] = c.name;
+      for (const s of srcs || []) {
+        const a = membersById[s.user_id] || { name: "someone", colorIdx: 1 };
+        srcById[s.id] = { author: { name: a.name, colorIdx: a.colorIdx }, fromChannel: chanName[s.channel_id] || "a channel", text: s.body || "", when: fmtWhen(s.created_at) };
+      }
+    }
     messages = all.filter((r) => !r.parent_id).map((r) => {
       const m = shapeMessage(r, membersById);
       m.replies = replyCount[r.id] || 0;
       m.reactions = Object.values(rxByMsg[r.id] || {});
+      if (r.forwarded_from && srcById[r.forwarded_from]) m.forward = srcById[r.forwarded_from];
       return m;
     });
     pins = (pinRows || []).map((p) => {
@@ -1197,6 +1211,20 @@ export async function editMessage(messageId, body) {
   if (isDemo()) return;
   const { error } = await supabase.from("messages").update({ body: clean, edited_at: new Date().toISOString() }).eq("id", messageId);
   if (error) throw new Error(error.message || "Couldn’t edit the message");
+}
+
+// Forward a message into one or more channels (CANON §C.4). Each target gets a new message
+// whose `forwarded_from` points at the source + an optional note; the messages RLS gates the
+// insert to channels you may post in. The source renders as a quote block on load.
+export async function forwardMessage(sourceId, channelIds, note = "") {
+  const targets = (channelIds || []).filter(Boolean);
+  if (!targets.length) throw new Error("Pick at least one channel");
+  if (isDemo()) return;
+  const user = session();
+  if (!user) throw new Error("Sign in");
+  const rows = targets.map((cid) => ({ channel_id: cid, user_id: user.id, body: (note || "").trim() || null, forwarded_from: sourceId }));
+  const { error } = await supabase.from("messages").insert(rows);
+  if (error) throw new Error(error.message || "Couldn’t forward the message");
 }
 
 // ── Moderation (P8, CANON §B — admin RPCs) ───────────────────────────────────

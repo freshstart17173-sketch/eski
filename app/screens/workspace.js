@@ -16,7 +16,7 @@ import { iconEl } from "../icons.js";
 import { navigate, reload } from "../router.js";
 import { avatarUrl } from "../cards.js";
 import { uploadBlobs } from "../upload-r2.js";
-import { isDemo, shapeMessage, loadThread, toggleReaction, loadMessageReactions, deleteMessage, pinMessage, editMessage, kickMember, timeoutMember, banMember, setMemberRoles, createChannel, updateChannel, createInvite, loadInvites, revokeInvite, loadInviteCandidates, inviteByHandle, inviteUserToServer, updateServer, loadAuditLog, leaveServer, deleteServer, loadServerPrefs, setServerPrefs } from "../data.js";
+import { isDemo, shapeMessage, loadThread, toggleReaction, loadMessageReactions, forwardMessage, deleteMessage, pinMessage, editMessage, kickMember, timeoutMember, banMember, setMemberRoles, createChannel, updateChannel, createInvite, loadInvites, revokeInvite, loadInviteCandidates, inviteByHandle, inviteUserToServer, updateServer, loadAuditLog, leaveServer, deleteServer, loadServerPrefs, setServerPrefs } from "../data.js";
 import { subscribeChannelMessages, subscribeChannelReactions, subscribeTyping, sendTyping, subscribeServerPresence, markRead, sendMessage } from "../realtime.js";
 import { openUpload } from "./upload.js";
 
@@ -195,6 +195,7 @@ function openMsgMenu(anchor, msg, own, data) {
     catch (e) { toast({ message: e?.message || "Couldn’t pin" }); }
   } });
   items.push({ label: "Copy link", icon: "link", onClick: () => copyToClipboard(msgPermalink(msg, data), { ok: "Message link copied" }) });
+  items.push({ label: "Forward", icon: "arrow", onClick: () => forwardFlow(msg, data) });
   if (own) {
     items.push({ sep: true });
     items.push({ label: "Delete message", icon: "trash", danger: true, onClick: async () => {
@@ -203,6 +204,46 @@ function openMsgMenu(anchor, msg, own, data) {
     } });
   }
   openMenu(anchor, items);
+}
+
+// Forward modal (CANON §C.4 / gallery S5): pick target text channels in this server + an
+// optional note → forwardMessage writes a message per target that quotes the source.
+function forwardFlow(msg, data) {
+  const channels = data.channelGroups.flatMap((g) => g.channels).filter((c) => c.kind !== "voice");
+  const picked = new Set();
+  const rows = channels.map((c) => {
+    const box = el("span.cbx", {}, [iconEl("check")]);
+    const row = el("label.fwdpick", { onClick: (e) => {
+      e.preventDefault();
+      if (picked.has(c.id)) { picked.delete(c.id); box.classList.remove("on"); }
+      else { picked.add(c.id); box.classList.add("on"); }
+      send.disabled = picked.size === 0;
+    } }, [box, iconEl("hash", "sm"), el("span", {}, [c.name])]);
+    return row;
+  });
+  const quote = el(".fwdquote", {}, [
+    el(".by", {}, [el("span.u", { style: `color:var(--m${msg.author.colorIdx})` }, [msg.author.name])]),
+    el(".tx", {}, [msg.body ? (msg.body.length > 140 ? msg.body.slice(0, 140) + "…" : msg.body) : (msg.attach ? "a file" : "a message")]),
+  ]);
+  const note = el("input", { placeholder: "Add a note (optional)" });
+  const send = Button({ label: "Forward", variant: "primary", disabled: true });
+  const body = el("div", {}, [
+    quote,
+    el("label.ulab", { style: "margin-top:12px" }, ["Forward to"]),
+    el(".fwdpicks", {}, rows.length ? rows : [el(".sharenone", {}, ["No channels to forward to."])]),
+    el("label.ulab", { style: "margin-top:12px" }, ["Note"]),
+    el(".field", {}, [note]),
+  ]);
+  const { close } = openModal({ title: "Forward message", body, footer: [send] });
+  send.addEventListener("click", async () => {
+    if (!picked.size) return;
+    send.disabled = true;
+    try {
+      await forwardMessage(msg.id, [...picked], note.value);
+      close();
+      toast({ message: `Forwarded to ${picked.size} channel${picked.size === 1 ? "" : "s"}`, icon: "arrow" });
+    } catch (e) { send.disabled = false; toast({ message: e?.message || "Couldn’t forward" }); }
+  });
 }
 
 // ── channel column (P4.3) ───────────────────────────────────────────────────
