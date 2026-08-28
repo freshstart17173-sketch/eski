@@ -6,3 +6,13 @@ node_modules/
 
 # gallery verify: regenerable review screenshots (baseline JSON is tracked)
 docs/design/shots/
+
+# per-screen verify (`verify-*.mjs --shots`): regenerable review screenshots
+# written straight into docs/design/ (ws-/dms-/ex-/feed-/prof-/shared- prefixes).
+# Same category as shots/ above — artifacts, not source.
+docs/design/ws-*.png
+docs/design/dms-*.png
+docs/design/ex-*.png
+docs/design/feed-*.png
+docs/design/prof-*.png
+docs/design/shared-*.png
