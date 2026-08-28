@@ -134,7 +134,7 @@ await run("dm-actions", "light", async (p) => {
   await mores[mores.length - 1].click();   // the last (unpinned) thread
   await p.waitForTimeout(120);
   const items = await p.$$eval(".menu.open button", (bs) => bs.map((b) => b.textContent.trim()));
-  for (const w of ["Pin", "Mute", "Close DM", "Block"]) if (!items.some((t) => t.includes(w))) return `DM menu missing "${w}" (got ${JSON.stringify(items)})`;
+  for (const w of ["Pin", "Mute", "Close DM", "Block", "Report"]) if (!items.some((t) => t.includes(w))) return `DM menu missing "${w}" (got ${JSON.stringify(items)})`;
   for (const b of await p.$$(".menu.open button")) { if ((await b.textContent()).includes("Close DM")) { await b.click(); break; } }
   await p.waitForTimeout(150);
   if ((await count(p, ".dmrow")) !== before - 1) return "Close DM should remove the conversation from the list";

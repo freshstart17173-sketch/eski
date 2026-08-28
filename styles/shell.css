@@ -165,6 +165,14 @@
 .fwd .src .ic{width:12px;height:12px}
 .fwd .tx,.fwdquote .tx{font-size:var(--fs-sm);color:var(--soft)}
 .fwdquote{background:var(--surface);border-radius:var(--r);padding:9px 11px 9px 12px;margin-top:0}
+/* Report modal (§C.4 S6): reason radio list. Own dot class (.repdot) — the app's .rdot is
+   the rail unread dot, a different element. */
+.repopts{display:flex;flex-direction:column;gap:6px}
+.repopt{display:flex;align-items:center;gap:10px;width:100%;text-align:left;padding:8px 12px;border-radius:var(--r);background:var(--surface);font-size:var(--fs-sm);color:var(--soft);transition:background var(--t)}
+.repopt:hover{background:var(--plate)}
+.repopt .repdot{flex:none;width:15px;height:15px;border-radius:50%;border:2px solid var(--line2);transition:border-color var(--t)}
+.repopt.on{color:var(--ink)}
+.repopt.on .repdot{border-color:var(--ink);background:radial-gradient(var(--ink) 0 4px,transparent 5px)}
 /* Forward modal: the pick-target channel list (checkbox + # + name) */
 .fwdpicks{display:flex;flex-direction:column;gap:1px;max-height:220px;overflow-y:auto;margin-top:2px}
 .fwdpick{display:flex;align-items:center;gap:9px;padding:7px 6px;border-radius:var(--r);cursor:pointer;font-size:var(--fs-sm);color:var(--soft)}

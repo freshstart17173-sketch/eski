@@ -12,6 +12,7 @@
 //   reconnecting banner · thread open · pins/files tab.
 
 import { el, Avatar, IconButton, openMenu, closeMenus, toast, openModal, Button, copyToClipboard } from "../ui.js";
+import { openReport } from "../report.js";
 import { iconEl } from "../icons.js";
 import { navigate, reload } from "../router.js";
 import { avatarUrl } from "../cards.js";
@@ -196,6 +197,7 @@ function openMsgMenu(anchor, msg, own, data) {
   } });
   items.push({ label: "Copy link", icon: "link", onClick: () => copyToClipboard(msgPermalink(msg, data), { ok: "Message link copied" }) });
   items.push({ label: "Forward", icon: "arrow", onClick: () => forwardFlow(msg, data) });
+  if (!own) items.push({ label: "Report message", icon: "flag", danger: true, onClick: () => openReport({ targetType: "message", targetId: msg.id, serverId: data.server?.id, label: "this message" }) });
   if (own) {
     items.push({ sep: true });
     items.push({ label: "Delete message", icon: "trash", danger: true, onClick: async () => {

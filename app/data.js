@@ -1024,6 +1024,18 @@ export async function blockUser(targetId) {
   const { error } = await supabase.rpc("block_user", { target_id: targetId });
   if (error) throw new Error(error.message || "Couldn’t block this user");
 }
+
+// File a report against a message / file / user / DM (CANON §C.4/§C.7/§C.11). A direct `reports`
+// insert (rep_insert = reporter is you); a moderator reads them via rep_read. targetType is a
+// free label ('message'|'work'|'user'|'dm'); serverId scopes a server-context report.
+export async function reportTarget({ targetType, targetId = null, serverId = null, reason }) {
+  if (!reason) throw new Error("Pick a reason");
+  if (isDemo()) return;
+  const user = session();
+  if (!user) throw new Error("Sign in");
+  const { error } = await supabase.from("reports").insert({ reporter_id: user.id, server_id: serverId, target_type: targetType, target_id: targetId, reason });
+  if (error) throw new Error(error.message || "Couldn’t submit the report");
+}
 // Open (or create) a 1:1 DM with a friend by handle (create_dm RPC → the dm_channels row).
 // The RPC returns the dm_channels row; we hand back its id so the caller opens the thread.
 export async function createDM(handle) {

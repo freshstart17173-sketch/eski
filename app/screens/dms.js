@@ -11,6 +11,7 @@ import { addFriend, respondFriend, blockUser, createDM, createGroupDM, loadDMThr
 import { avatarUrl } from "../cards.js";
 import { subscribeDMMessages } from "../realtime.js";
 import { session } from "../supabase.js";
+import { openReport } from "../report.js";
 
 function isDemoQS() { return new URLSearchParams(location.search).get("demo") === "1"; }
 
@@ -46,8 +47,11 @@ function dmList(data, right) {
     { label: d.muted ? "Unmute" : "Mute", icon: "bell", onClick: () => setPref(d, { muted: !d.muted }) },
     { sep: true },
     { label: "Close DM", icon: "hide", onClick: () => setPref(d, { hidden: true }) },
-    // Block only applies to a 1:1 (a group has several people). Blocking hides the DM.
-    ...(!d.group && d.members[0]?.id ? [{ label: "Block", icon: "leave", danger: true, onClick: () => blockDM(d) }] : []),
+    // Block + Report only apply to a 1:1 (a group has several people).
+    ...(!d.group && d.members[0]?.id ? [
+      { label: "Report", icon: "flag", onClick: () => openReport({ targetType: "user", targetId: d.members[0].id, label: `@${d.members[0].handle || d.members[0].name}` }) },
+      { label: "Block", icon: "leave", danger: true, onClick: () => blockDM(d) },
+    ] : []),
   ]);
   async function blockDM(d) {
     const other = d.members[0];

@@ -13,6 +13,7 @@
 // anything with no blob) shows a type card — never a fake thumbnail.
 
 import { el, toast, Tag, openMenu, Avatar } from "../ui.js";
+import { openReport } from "../report.js";
 import { iconEl } from "../icons.js";
 import { navigate } from "../router.js";
 import { MediaPlayer } from "../ui.js";
@@ -130,7 +131,7 @@ function infoRail(w, ctx, nav) {
     // ⋯ file actions (star/rename/move/hide/delete) — only for files the explorer owns;
     // a public post carries no menuItemsFor, so the button doesn't render there.
     nav.openActions ? iconBtn("more", "More actions", (e) => nav.openActions(e.currentTarget), { haspopup: true }) : null,
-    iconBtn("flag", "Report", () => toast({ message: "Report (P8)" })),
+    iconBtn("flag", "Report", () => openReport({ targetType: "work", targetId: w.id, serverId: ctx?.serverId || null, label: `“${w.title || w.name || "this file"}”` })),
     iconBtn("chev", "Previous item", () => nav.go(-1), { rotate: 90, disabled: !nav.hasPrev, cls: "sp" }),
     iconBtn("chev", "Next item", () => nav.go(1), { rotate: -90, disabled: !nav.hasNext }),
     iconBtn("x", "Close", closeDetails, { x: true }),
