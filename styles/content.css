@@ -392,6 +392,26 @@
 .rolerow{display:flex;align-items:center;gap:10px;padding:8px;border-radius:var(--r);cursor:pointer;font-size:var(--fs-sm)}
 .rolerow:hover{background:var(--surface)}
 .rolerow .rsw{width:10px;height:10px;flex:none;border-radius:var(--r)}
+/* Roles editor (§C.16): two-column modal — roles list + the selected role's editor.
+   Widen the modal only when it holds the editor (the .modal.wide default is 440px). */
+.modal:has(.roleseditor){width:min(700px,95vw)}
+.roleseditor{display:flex;gap:var(--s4);min-height:360px;max-height:min(66vh,540px)}
+.rolescol{flex:none;width:186px;display:flex;flex-direction:column;gap:8px;min-height:0}
+.rolescolhd{display:flex;align-items:center;gap:8px}
+.rolescolhd b{flex:1;font-size:var(--fs-sm);font-weight:600}
+.rolescol .rolelist{overflow-y:auto;min-height:0}
+.rolerow .rnm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rolerow .rdef{font-size:var(--fs-xs);color:var(--muted);flex:none}
+.rolerow.on{background:var(--plate);color:var(--ink);font-weight:600}
+.roleedit{flex:1;min-width:0;overflow-y:auto;padding-left:var(--s4);box-shadow:inset 1px 0 0 var(--line)}
+.swatches{display:grid;grid-template-columns:repeat(10,1fr);gap:5px;margin-top:4px}
+.swatch{width:100%;aspect-ratio:1;border-radius:var(--r);cursor:pointer;box-shadow:inset 0 0 0 1px rgba(0,0,0,.10)}
+.swatch.on{box-shadow:0 0 0 2px var(--paper),0 0 0 4px var(--ink)}
+.pgh{font-size:var(--fs-xs);color:var(--muted);font-weight:600;margin:14px 0 4px;text-transform:uppercase;letter-spacing:.03em}
+.permrow{display:flex;align-items:center;gap:10px;padding:6px 2px;cursor:pointer;font-size:var(--fs-sm);color:var(--soft)}
+.permrow .pl{flex:1}
+.permrow:hover{color:var(--ink)}
+.rhint{font-size:var(--fs-xs);color:var(--muted);margin-bottom:4px}
 /* New-message friend picker (modal) */
 .nmlist{display:flex;flex-direction:column;gap:2px;max-height:320px;overflow-y:auto}
 .nmrow{display:flex;align-items:center;gap:10px;padding:7px 8px;border-radius:var(--r);cursor:pointer}

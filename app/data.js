@@ -1465,6 +1465,59 @@ export async function setMemberRoles(serverId, targetUser, roleIds) {
   if (error) throw new Error(error.message || "Couldn’t update the member's roles");
 }
 
+// ── Roles editor (§C.16) ─────────────────────────────────────────────────────
+// Roles are edited by direct `roles` table CRUD — roles_write is FOR ALL gated by
+// has_perm(manage_roles), so no RPC is needed. permissions is a bit-OR of perm_bit() flags;
+// the whole flag set fits in a JS Number (max 131071), so no BigInt.
+export const PERM_GROUPS = [
+  { group: "Server", flags: [["manage_server", "Manage server"], ["manage_roles", "Manage roles"], ["manage_channels", "Manage channels"], ["manage_invites", "Manage invites"], ["view_audit", "View audit log"], ["manage_billing", "Manage billing"]] },
+  { group: "Members", flags: [["kick", "Kick members"], ["ban", "Ban members"], ["timeout", "Time out members"], ["create_invite", "Create invites"]] },
+  { group: "Content", flags: [["send_messages", "Send messages"], ["upload", "Upload files"], ["add_tags", "Add tags"], ["comment", "Comment"], ["pin_message", "Pin messages"], ["delete_any_message", "Delete any message"], ["view_channel", "View channels"]] },
+];
+const PERM_BIT = { manage_server: 1, manage_roles: 2, manage_channels: 4, manage_invites: 8, view_audit: 16, manage_billing: 32, kick: 64, ban: 128, timeout: 256, create_invite: 512, upload: 1024, add_tags: 2048, comment: 4096, pin_message: 8192, delete_any_message: 16384, view_channel: 32768, send_messages: 65536 };
+export function permBit(flag) { return PERM_BIT[flag] || 0; }
+
+export async function loadRoles(serverId) {
+  if (isDemo()) return [
+    { id: "r-admin", name: "producer", color: 4, permissions: 65535, is_default: false, position: 1 },
+    { id: "r-mod", name: "moderator", color: 12, permissions: 64 + 128 + 256, is_default: false, position: 2 },
+    { id: "r-everyone", name: "@everyone", color: null, permissions: 1024 + 2048 + 4096 + 8192 + 32768 + 65536, is_default: true, position: 99 },
+  ];
+  const { data, error } = await supabase.from("roles").select("id,name,color,position,permissions,is_default").eq("server_id", serverId).order("position");
+  if (error) throw new Error(error.message || "Couldn’t load the roles");
+  return (data || []).map((r) => ({ ...r, permissions: Number(r.permissions) }));
+}
+export async function createRole(serverId, name) {
+  if (isDemo()) return { id: "r-" + Date.now(), name: name || "new role", color: 20, permissions: 0, is_default: false };
+  const { data, error } = await supabase.from("roles").insert({ server_id: serverId, name: name || "new role", color: 20, permissions: 0 }).select("id,name,color,permissions,is_default").single();
+  if (error) throw new Error(error.message || "Couldn’t create the role");
+  return { ...data, permissions: Number(data.permissions) };
+}
+export async function updateRole(roleId, patch) {
+  if (isDemo()) return;
+  const { error } = await supabase.from("roles").update(patch).eq("id", roleId);
+  if (error) throw new Error(error.message || "Couldn’t save the role");
+}
+export async function deleteRole(roleId) {
+  if (isDemo()) return;
+  const { error } = await supabase.from("roles").delete().eq("id", roleId);
+  if (error) throw new Error(error.message || "Couldn’t delete the role");
+}
+
+// ── Channel permissions (§C.18) — a private channel's role allow-list ─────────
+// The beta scopes private channels by ROLE only (channel_roles); zero rows = open to all
+// members. Read the current allow-list, and replace it via set_channel_access.
+export async function loadChannelRoles(channelId) {
+  if (isDemo()) return [];
+  const { data } = await supabase.from("channel_roles").select("role_id").eq("channel_id", channelId);
+  return (data || []).map((r) => r.role_id);
+}
+export async function setChannelAccess(channelId, roleIds) {
+  if (isDemo()) return;
+  const { error } = await supabase.rpc("set_channel_access", { channel_id: channelId, role_ids: roleIds });
+  if (error) throw new Error(error.message || "Couldn’t update channel access");
+}
+
 // Toggle your reaction to a channel message (toggle_reaction RPC — adds if absent, removes if
 // present; returns true=added / false=removed). The caller flips the chip optimistically.
 export async function toggleReaction(messageId, emoji) {

@@ -231,6 +231,35 @@ const CASES = [
     if (await $(p, ".scrim .modal")) return "Done should close the audit log";
     return null;
   }],
+  ["roles-editor", "/s/lb/c/beats?demo=1", "light", async (p) => {
+    await p.click("nav.chan .srvbar");
+    await p.waitForTimeout(120);
+    const items = await p.$$eval(".menu.open button", (bs) => bs.map((b) => b.textContent.trim()));
+    if (!items.some((t) => t.includes("Roles & permissions"))) return "admin server menu missing Roles & permissions";
+    for (const b of await p.$$(".menu.open button")) { if ((await b.textContent()).includes("Roles & permissions")) { await b.click(); break; } }
+    await p.waitForTimeout(150);
+    if (!(await $(p, ".scrim .modal .roleseditor"))) return "Roles editor should open";
+    if ((await p.$$(".scrim .modal .rolelist .rolerow")).length !== 3) return "expected the 3 demo roles";
+    // the editor shows the permission matrix (grouped) + colour swatches for a custom role
+    if ((await p.$$(".scrim .modal .roleedit .pgh")).length < 3) return "permission matrix should be grouped Server/Members/Content";
+    if ((await p.$$(".scrim .modal .roleedit .swatch")).length !== 30) return "colour picker should offer the 30 member hues";
+    // toggle a permission checkbox → its box flips
+    const perm = await p.$(".scrim .modal .roleedit .permrow");
+    const before = await perm.$eval(".cbx", (e) => e.classList.contains("on"));
+    await perm.click();
+    await p.waitForTimeout(60);
+    const after = await p.$eval(".scrim .modal .roleedit .permrow .cbx", (e) => e.classList.contains("on"));
+    if (after === before) return "toggling a permission should flip its checkbox";
+    // New role → a 4th row appears + it becomes selected
+    await p.click('.scrim .modal .rolescolhd button:has-text("New role")');
+    await p.waitForTimeout(120);
+    if ((await p.$$(".scrim .modal .rolelist .rolerow")).length !== 4) return "New role should add a row";
+    // @everyone is undeletable — pick it, no Delete button
+    for (const r of await p.$$(".scrim .modal .rolelist .rolerow")) { if ((await r.textContent()).includes("@everyone")) { await r.click(); break; } }
+    await p.waitForTimeout(80);
+    if (await p.$('.scrim .modal .roleedit button:has-text("Delete role")')) return "@everyone should not be deletable";
+    return null;
+  }],
   ["server-settings", "/s/lb/c/beats?demo=1", "light", async (p) => {
     await p.click("nav.chan .srvbar");
     await p.waitForTimeout(120);

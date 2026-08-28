@@ -13,6 +13,7 @@
 
 import { el, Avatar, IconButton, openMenu, closeMenus, toast, openModal, Button, copyToClipboard } from "../ui.js";
 import { openReport } from "../report.js";
+import { openRolesEditor } from "./roles.js";
 import { iconEl } from "../icons.js";
 import { navigate, reload } from "../router.js";
 import { avatarUrl } from "../cards.js";
@@ -264,6 +265,7 @@ export function channelColumn(data, view) {
   bar.addEventListener("click", () => {
     const items = [];
     if (data.isAdmin) items.push({ label: "Server settings", icon: "settings", onClick: () => openServerSettings(data) });
+    if (data.isAdmin) items.push({ label: "Roles & permissions", icon: "users", onClick: () => openRolesEditor(data.server.id) });
     if (data.isAdmin) items.push({ label: "Audit log", icon: "flag", onClick: () => openAuditLog(data) });
     items.push({ label: "Invite people", icon: "plus", onClick: () => inviteFlow(data) });
     items.push({ label: "Notification settings", icon: "bell", onClick: () => notifSettingsFlow(data) });
