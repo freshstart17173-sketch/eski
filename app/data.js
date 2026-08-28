@@ -854,6 +854,7 @@ export async function updateServer(serverId, patch = {}) {
   if (isDemo()) return p;
   const { error } = await supabase.from("servers").update(p).eq("id", serverId);
   if (error) throw new Error(error.message || "Couldn’t save the server");
+  clearWorkspaceCache();   // rail + server bundle cache the name/icon — refresh so a rename/icon shows without a manual reload
   return p;
 }
 
@@ -1328,6 +1329,7 @@ export async function createChannel(serverId, name, kind = "text") {
   if (isDemo()) return { id: "new-" + clean, name: clean };
   const { data, error } = await supabase.from("channels").insert({ server_id: serverId, name: clean, kind }).select("id,name").single();
   if (error) throw new Error(/duplicate|unique|23505/i.test(error.message || "") ? "A channel with that name already exists" : (error.message || "Couldn’t create the channel"));
+  clearWorkspaceCache();   // the server bundle caches the channel list — refresh so the new channel shows in the sidebar
   return data;
 }
 
@@ -1339,6 +1341,7 @@ export async function updateChannel(channelId, patch) {
   if (isDemo()) return p;
   const { error } = await supabase.from("channels").update(p).eq("id", channelId);
   if (error) throw new Error(/duplicate|unique|23505/i.test(error.message || "") ? "A channel with that name already exists" : (error.message || "Couldn’t update the channel"));
+  clearWorkspaceCache();   // channel name/topic is cached in the bundle — refresh so the edit shows without a reload
   return p;
 }
 

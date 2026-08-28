@@ -20,9 +20,6 @@ Severity: **P1** breaks or badly misleads · **P2** wrong but usable · **P3** p
       placeholder (low priority — not a click path). Enhancement: an anon-readable
       `preview_invite(code)` RPC so the join card can show the server name · member count ·
       inviter (QA §20) instead of the generic copy.
-- [ ] **P2 · Reload needed for changes to show.** Several mutations don't repaint their
-      view (realtime covers only chat/DM/notifs). **Fix:** every mutation optimistically
-      updates its list or calls `router.reload()`; audit each screen's actions.
 - [ ] **P2 · Dead / stubbed buttons on "done" screens.** Real stubs found: the details
       pane "Uploaded by / Posted by" author link only toasts instead of opening the
       profile (a regression — the profile screen exists); Report → "(P8)"; profile
@@ -50,6 +47,12 @@ Severity: **P1** breaks or badly misleads · **P2** wrong but usable · **P3** p
 
 ## Done
 
+- [x] **P2 · "Reload needed for changes to show" — the visible cases fixed.** Upload now
+      reloads the explorer/workspace on done (the new file/folder appears immediately, not
+      after a manual reload). Structural mutations that were missing a cache-clear now have
+      one so a `reload()` actually shows fresh data: `updateServer` (rename/icon),
+      `createChannel` and `updateChannel` (sidebar list). (create/leave/delete/join server
+      and profile edits already cleared it.) Realtime still covers live chat/DM/notif echo.
 - [x] **P2 · Folder upload — now supported, structure preserved, server + personal.** The
       upload sheet gained an "upload a folder" picker (`webkitdirectory`). On post it
       recreates the picked tree (`buildFolderTree`, parents-before-children) under the

@@ -13,7 +13,7 @@
 
 import { el, Avatar, IconButton, openMenu, closeMenus, toast, openModal, Button, copyToClipboard } from "../ui.js";
 import { iconEl } from "../icons.js";
-import { navigate } from "../router.js";
+import { navigate, reload } from "../router.js";
 import { avatarUrl } from "../cards.js";
 import { uploadBlobs } from "../upload-r2.js";
 import { isDemo, shapeMessage, loadThread, toggleReaction, loadMessageReactions, deleteMessage, pinMessage, editMessage, kickMember, timeoutMember, banMember, setMemberRoles, createChannel, updateChannel, createInvite, loadInvites, revokeInvite, loadInviteCandidates, inviteByHandle, inviteUserToServer, updateServer, loadAuditLog, leaveServer, deleteServer, loadServerPrefs, setServerPrefs } from "../data.js";
@@ -321,7 +321,7 @@ function composer(data, view, ctx = {}) {
 
   const field = el(".field", {}, [
     IconButton({ icon: "clip", title: "Attach files", onClick: () => ctx.live
-      ? openUpload({ visibility: "server", serverId: ctx.serverId, channelId: ctx.channelId })
+      ? openUpload({ visibility: "server", serverId: ctx.serverId, channelId: ctx.channelId, onDone: () => reload() })
       : toast({ message: "Sign in to upload files" }) }),
     input, iconEl("at", "sm"), send,
   ]);
@@ -593,6 +593,9 @@ function openServerSettings(data) {
       const patch = await updateServer(s.id, { name: nameI.value });
       Object.assign(s, patch, patch.name ? { initials: patch.name.trim().slice(0, 2).toUpperCase() } : {});
       close(); toast({ message: "Server settings saved", icon: "check" });
+      // Repaint the shell so the renamed server shows on the rail badge + channel header
+      // immediately, not after a manual reload.
+      if (!isDemo()) reload();
     } catch (e) { toast({ message: e?.message || "Couldn’t save" }); save.disabled = false; }
   });
 }

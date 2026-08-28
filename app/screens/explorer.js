@@ -15,7 +15,7 @@
 
 import { el, toast, openMenu, closeMenus, openModal, VisibilitySeg, Button, copyToClipboard } from "../ui.js";
 import { iconEl } from "../icons.js";
-import { navigate } from "../router.js";
+import { navigate, reload } from "../router.js";
 import { createFolder, moveToFolder, trashWorks, restoreWork, purgeWork, emptyTrash, loadTrash, starWork, unstarWork, saveToFiles, renameWork, setHidden, createShareLink, shareUrl, loadShareLinks, revokeShareLink, setVisibility, visFromDb } from "../data.js";
 import { workCard, folderCard, mediaUrl, KIND_ICON, downloadWork } from "../cards.js";
 import { channelColumn } from "./workspace.js";
@@ -248,7 +248,12 @@ function paint(tree, pane, data, state, rerender) {
   const search = el(".field", {}, [iconEl("search", "sm"),
     el("input", { placeholder: personal ? "Search your files" : "Search this server's files", value: state.query, onInput: (e) => { state.query = e.target.value; repaintBody(); } }),
   ]);
-  const uploadOpts = personal ? { visibility: "private" } : { visibility: "server", serverId: data.server.id, folderId: state.folderId };
+  // onDone reloads the route so a just-uploaded file (or a whole uploaded folder) shows
+  // immediately — the explorer data is cached per render, so without a refetch the new work
+  // wouldn't appear until a manual reload (owner bug: "reload needed for things to update").
+  const uploadOpts = personal
+    ? { visibility: "private", onDone: () => reload() }
+    : { visibility: "server", serverId: data.server.id, folderId: state.folderId, onDone: () => reload() };
 
   // Facet options derived from ALL files (stable across folder nav, not just the folder
   // in view). Type is a fixed set; Channel/Uploader/Tag come from the data.
