@@ -2171,3 +2171,28 @@ GOTCHA O: `revoke ... from public` does NOT remove a role's DIRECT grant. Supaba
   RPC needs an explicit `revoke ... from anon` (the create_work/create_server RPCs already do
   this; register_blob's schema-19 revoked only public and leaked). Audit new definer RPCs for a
   stray anon EXECUTE: `has_function_privilege('anon', <fn>, 'EXECUTE')`.
+
+## 2026-08-29 — Backend audit round 3 (security fence + perf)
+IN PROGRESS: (cleared)
+DONE: role-sim fence + perf sweep, all rolled back.
+  SECURITY FENCE — all correct:
+  - Visibility (can_read_work) for public/server/private: stranger t/f/f, non-member t/f/f,
+    author t/t/t, member t/t (reads server work + can_post). Private is invisible to everyone
+    but the author; server work only to members.
+  - DM isolation: dm_member = t/t/f for dexter/fresh/stranger, AND a real RLS read of dm_messages
+    as the stranger returns 0 rows. create_dm correctly REQUIRES friendship (rejects a stranger DM).
+  - Moderation: a timed-out member's can_post_channel = false; ban_member flips the member inactive
+    and records a server_bans row.
+  - search_all (INVOKER) is leak-safe: author finds their private work (1 hit), stranger gets 0 —
+    RLS is the fence. NOTE valid scope is 'global' or a server-id (a bad scope casts to uuid → error).
+  REALTIME: supabase_realtime publishes 24 tables incl. messages/dm_messages/notifications/
+  message_reactions (live-echo set intact). join_requests is NOT published — nice-to-have (the
+  admin Join-requests modal isn't a live stream; no frontend subscriber), not a bug.
+  PERF FIX — schema-32 / migration p23: indexed 3 FK columns the p4/p19 migrations left unindexed
+  (messages.forwarded_from — else every message delete scans messages for forwards; join_requests
+  .user_id — jr_read filters by it and it's only the 2nd PK col; join_requests.decided_by). The
+  unindexed-FK audit now returns zero rows.
+NEXT: master-todo top items (B3, B4, P1, P2) then the round-7 density/file-browser work.
+GOTCHA P: search_all(q, scope) — scope is 'global' (default) or a server-id string; any other
+  value (e.g. 'all') hits `scope::uuid` in the body and errors 22P02. The client passes 'global'
+  or a real server id, so this only bites ad-hoc test calls.
