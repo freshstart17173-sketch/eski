@@ -1287,6 +1287,30 @@ export async function loadSwitcher() {
   return { servers, friends };
 }
 
+// The global search screen (/search, §C.18): jump across your servers, their channels, and
+// your people. (Full-text file/message search needs a search RPC over search_tsv — a follow-up;
+// this covers the navigational search the quick-switcher does, as a full screen.)
+export async function loadSearch() {
+  if (isDemo()) {
+    const sw = await loadSwitcher();
+    return { needsAuth: false, me: { handle: "jax" }, servers: sw.servers, friends: sw.friends,
+      channels: [{ id: "beats", name: "beats", serverId: "lb", serverName: "Late Bloom LP" }, { id: "mix", name: "mixing", serverId: "lb", serverName: "Late Bloom LP" }] };
+  }
+  const user = session();
+  if (!user) return { needsAuth: true };
+  const { servers, me } = await loadRail(user);
+  const [{ data: friRows }, chanRes] = await Promise.all([
+    supabase.from("friendships").select("a_user,b_user").eq("status", "accepted").or(`a_user.eq.${user.id},b_user.eq.${user.id}`),
+    servers.length ? supabase.from("channels").select("id,name,server_id,kind").in("server_id", servers.map((s) => s.id)) : Promise.resolve({ data: [] }),
+  ]);
+  const ids = (friRows || []).map((f) => (f.a_user === user.id ? f.b_user : f.a_user));
+  let friends = [];
+  if (ids.length) { const { data: profs } = await supabase.from("profiles").select("id,handle,name,avatar_key").in("id", ids); friends = (profs || []).map((p) => ({ name: p.name || p.handle, handle: p.handle, avatar_key: p.avatar_key || null, initials: initials(p.name || p.handle) })); }
+  const sName = Object.fromEntries(servers.map((s) => [s.id, s.name]));
+  const channels = (chanRes.data || []).filter((c) => c.kind !== "voice").map((c) => ({ id: c.id, name: c.name, serverId: c.server_id, serverName: sName[c.server_id] || "server" }));
+  return { needsAuth: false, me, servers, friends, channels };
+}
+
 // ── Create / join a server (P9) ──────────────────────────────────────────────
 // Create a server ENTIRELY client-side: has_perm() grants the server owner (owner_id) every
 // permission, so each insert passes its own RLS in turn — no RPC needed. Order matters:

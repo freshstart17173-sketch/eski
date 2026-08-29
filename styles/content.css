@@ -491,3 +491,17 @@
 .usersettings .setcard+.setcard,.usersettings .setactions{margin-top:var(--s3)}
 .usersettings .setcard .ulab{display:block;margin-bottom:var(--s2)}
 .usersettings .setrow2:last-child{border-bottom:0 !important}
+
+/* ── Global search screen (/search, screens/search.js) — jump across servers, channels,
+   people. Rows on background steps, active row inverts like the quick-switcher. ────────── */
+.search .searchbig{flex:1;max-width:520px}
+.search .searchbig input{font-size:var(--fs-lg)}
+.search .srchgrp{margin-bottom:var(--s4)}
+.search .srchrow{display:flex;align-items:center;gap:10px;width:100%;text-align:left;padding:8px 10px;border-radius:var(--r);color:var(--soft);transition:background var(--t),color var(--t)}
+.search .srchrow:hover{background:var(--surface);color:var(--ink)}
+.search .srchrow.on{background:var(--plate);color:var(--ink)}
+.search .srchrow .info{min-width:0;display:flex;flex-direction:column;line-height:1.25}
+.search .srchrow .info b{font-size:var(--fs-sm);font-weight:600;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.search .srchrow .info .sub{font-size:var(--fs-xs);color:var(--muted)}
+.search .qsav.sq{flex:none;width:28px;height:28px;border-radius:var(--r);background:var(--surface);color:var(--soft);display:grid;place-items:center;font-size:var(--fs-xs);font-weight:700}
+.search .qsav.sq .ic{color:var(--muted)}

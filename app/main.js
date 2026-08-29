@@ -8,8 +8,9 @@ import { signal, effect } from "./signals.js";
 import { start, match, navigate } from "./router.js";
 import { ready, session, onChange } from "./supabase.js";
 import { icon } from "./icons.js";
-import { loadWorkspace, loadExplorer, loadFeed, loadProfile, loadSharedWork, loadDMsScreen, loadNotifications, loadUserSettings, clearWorkspaceCache, isDemo, needsProfileSetup } from "./data.js";
+import { loadWorkspace, loadExplorer, loadFeed, loadProfile, loadSharedWork, loadDMsScreen, loadNotifications, loadUserSettings, loadSearch, clearWorkspaceCache, isDemo, needsProfileSetup } from "./data.js";
 import { renderUserSettings } from "./screens/usersettings.js";
+import { renderSearch } from "./screens/search.js";
 import { time } from "./perf.js";
 import { teardownRealtime } from "./realtime.js";
 import { renderRail, appFrame } from "./shell.js";
@@ -153,6 +154,15 @@ async function renderRoute(r) {
     if (mine !== token) return;
     if (profData.needsAuth) { swap(renderSignin()); return; }
     swap(appFrame(renderRail(profData, r), renderProfile(profData)));
+    return;
+  }
+
+  // Global search (§C.18) — jump across servers, channels, people.
+  if (r.screen === "search") {
+    const sData = await time("search", loadSearch());
+    if (mine !== token) return;
+    if (sData.needsAuth) { swap(renderSignin()); return; }
+    swap(appFrame(renderRail(sData, r), renderSearch(sData)));
     return;
   }
 
