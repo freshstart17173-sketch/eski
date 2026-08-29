@@ -8,7 +8,7 @@ import { signal, effect } from "./signals.js";
 import { start, match, navigate } from "./router.js";
 import { ready, session, onChange } from "./supabase.js";
 import { icon } from "./icons.js";
-import { loadWorkspace, loadExplorer, loadFeed, loadProfile, loadSharedWork, loadDMsScreen, loadNotifications, loadUserSettings, loadSearch, clearWorkspaceCache, isDemo, needsProfileSetup } from "./data.js";
+import { loadWorkspace, loadExplorer, loadFeed, loadProfile, loadSharedWork, loadSharedFolder, loadDMsScreen, loadNotifications, loadUserSettings, loadSearch, clearWorkspaceCache, isDemo, needsProfileSetup } from "./data.js";
 import { renderUserSettings } from "./screens/usersettings.js";
 import { renderSearch } from "./screens/search.js";
 import { time } from "./perf.js";
@@ -21,7 +21,7 @@ import { renderProfile } from "./screens/profile.js";
 import { closeDetails } from "./screens/details.js";
 import { renderSignin } from "./screens/signin.js";
 import { renderLanding } from "./screens/landing.js";
-import { renderShared } from "./screens/shared.js";
+import { renderShared, renderSharedFolder } from "./screens/shared.js";
 import { renderDMs } from "./screens/dms.js";
 import { renderNotifications } from "./screens/notifications.js";
 import { renderNotFound } from "./screens/notfound.js";
@@ -89,6 +89,13 @@ async function renderRoute(r) {
     const shData = await loadSharedWork(r.params.token);
     if (mine !== token) return;
     swap(renderShared(shData));
+    return;
+  }
+  // /shared/folder/:token — K9 read-only folder viewer (standalone, works signed-out).
+  if (r.screen === "sharedfolder") {
+    const fData = await loadSharedFolder(r.params.token);
+    if (mine !== token) return;
+    swap(renderSharedFolder(fData));
     return;
   }
   // "/" with no session is the marketing home, not the in-shell Feed placeholder

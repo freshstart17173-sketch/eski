@@ -245,10 +245,17 @@ IDs are stable handles (`B*` broken-UI, `K*` backend, `P*` polish, `D*` deferred
       `app/data.js`. Verified: role-sim created server + 1 owner-member + 1 @everyone role +
       channels `[general,wips,beats-room]` from `['General','wips!!','  ','beats room']`, rolled
       back; live DB unchanged.
-- [ ] **K6 · Realtime echo — DM / notification / reaction / edit.** Core but **live-only**
-      (two-session echo can't run in-sandbox — headless Chromium can't egress). *Files:* the
-      Realtime subscriptions in `app/data.js`/screens. *Hard.* *Test:* wire it, syntax-check,
-      and add a QA claim ("second window sees X without reload"); the owner verifies on preview.
+- [x] **K6 · Realtime echo — DM / notification / reaction / edit.** *Code-complete (built across
+      the 2026-08-28 sessions); live two-session QA is owner-only.* Audited this round: every echo
+      is wired and consumed — `subscribeChannelMessages` (insert/update/delete, workspace),
+      `subscribeChannelReactions` (workspace), `subscribeDMMessages` (dms), `subscribeNotifications`
+      (notifications), plus typing + presence; `teardownRealtime()` runs before each render so a
+      route switch never leaks a subscription. B5 also added live attachment resolution to the
+      channel `liveInsert`. Syntax-clean; QA claims present (§5 second-window message/edit/delete,
+      §15 DM echo, §12 B5 file-message echo). The only thing left is the owner running two windows
+      on preview — not sandbox-reachable (headless Chromium can't egress to Realtime). *Known
+      nice-to-have, not in scope:* the shell **bell/unread badge** only echoes while the
+      Notifications screen is open (no global subscription) — fold into a later pass if wanted.
 - [x] **K7 · Atomic `create_work` upload RPC — fixes the total upload 42501 (round-4).** DONE
       (`schema-23-create-work-rpc.sql`, migration `p13_create_work_rpc`, applied live +
       `upload.js doPost` rewritten). One `SECURITY DEFINER` call registers the blob, inserts the
@@ -295,19 +302,25 @@ IDs are stable handles (`B*` broken-UI, `K*` backend, `P*` polish, `D*` deferred
       reliable, but if the owner ever reports "my tag didn't save" as a collaborator, convert it too.
       **Rule going forward (unchanged):** don't trust "no error" — trust a changed row; any NEW
       load-bearing write with a COMPLEX inline-uid check gets a definer RPC, not a direct insert.
-- [ ] **K9 · Google-Drive-style folder & file sharing + "Request to join server" (round-4).**
-      Share a **folder** (and a file) to a public link, Drive-style — a read-only viewer of the
-      folder's contents reachable outside the server. Today `share_links` targets a single
-      `work_id` only (`app/data.js` shareWork/`resolve_share_link`, `screens/shared.js` viewer);
-      extend it to a **folder target** (server folder or a personal `save_folder`) with its own
-      `SECURITY DEFINER` resolver RPC + RLS, and a folder viewer screen. Add a **"Request to join
-      server"** button on the share/join surface (`screens/join.js` / the shared-folder view) that
-      files a join request the server admins can approve — needs a `join_requests` table (or reuse
-      invites) + an RPC + an admin surface. *Files:* new `schema-*-folder-share.sql` +
-      `schema-*-join-requests.sql`, `app/data.js`, `app/screens/shared.js`, `app/screens/join.js`,
-      the share dialog (`explorer.js`), server-settings (approve requests). *Hard.* *Test:* backend
-      — anon resolves a valid folder share to its file list; a revoked/expired one returns nothing;
-      a join request inserts + an admin approve adds membership; all via `SECURITY DEFINER` → reliable.
+- [x] **K9 · Google-Drive-style folder & file sharing + "Request to join server" (round-4).**
+      *Done (backend role-sim-verified + demo render).* **Folder sharing:** `share_links` extended
+      to target a FOLDER (server folder or personal `save_folder`) instead of only a work
+      (schema-29, migrations `p19`/`p20`); `create_folder_share(source, folder_id)` (fenced) mints
+      a link, `resolve_folder_share(token)` (anon) returns the folder name + server context + file
+      list. Client: right-click a folder → "Copy folder link" (`explorer.js`), and a read-only
+      folder viewer at `/shared/folder/:token` (`screens/shared.js renderSharedFolder`, no rail,
+      works signed-out) that also offers **Request to join {server}** for a server folder.
+      **Request-to-join:** new `join_requests` table (RLS: your own + admins read; writes RPC-only)
+      + `request_to_join_server` / `approve_join_request` (seats the member like `join_via_invite`)
+      / `decline_join_request`; the server menu gains an admin **Join requests** modal
+      (`workspace.js openJoinRequests`) with Approve/Decline. Verified: role-sim — anon resolves a
+      folder share to its files (bad token → nothing); a join request goes pending → an admin
+      approve seats the member (all rolled back). Demo: folder viewer renders 4 cards + the
+      request-to-join CTA; the admin modal lists 2 requests with approve/decline; 0 pageerrors. Live
+      R2 preview + a real two-account request→approve → QA-CHECKLIST. *Files:*
+      `schema-29-folder-share-join-requests.sql`, `app/data.js`, `app/demo.js`, `app/router.js`,
+      `app/main.js`, `app/screens/shared.js`, `app/screens/explorer.js`, `app/screens/workspace.js`,
+      `app/cards.js`.
 
 ### 3 · UI polish
 

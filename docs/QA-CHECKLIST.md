@@ -194,6 +194,7 @@ The server explorer mounts inside the shell (channel column stays); My files hid
 - [ ] Open a folder while it loads → a skeleton grid stands in; an empty folder shows a centred empty state.
 - [ ] Select several cards → a bulk action bar appears (download / move / delete).
 - [ ] Click Upload in the toolbar → the upload sheet opens.
+- [ ] **`[infra]` (K9 folder sharing)** Right-click a folder card → "Copy folder link" → a `/shared/folder/<token>` URL is copied. Open it (even signed-out / in another browser) → a read-only listing of that folder's files renders, with a "can't browse the rest" note; a revoked/expired token shows the dead-link state. Works for a server folder and a personal My-files folder.
 
 ## 11. Details pane (the file viewer)
 
@@ -319,6 +320,7 @@ The server explorer mounts inside the shell (channel column stays); My files hid
 - [ ] **(K1 — now wired)** Open a valid `/join/<code>` link → a preview card shows the server **name + icon**, active **member count**, and **inviter** ("{name} invited you · N members"), and a Join button. Works **signed-out too** (the `preview_invite` RPC is anon-readable) — the signed-out card also names the server.
 - [ ] Click Join on a valid invite → you become a member and land in the server.
 - [ ] Open an expired / revoked / full / already-member invite → a distinct dead-invite screen with the right reason + CTA (not the valid preview).
+- [ ] **`[infra]` (K9 request-to-join)** Open a shared **server** folder link (`/shared/folder/<token>`) → a read-only folder listing shows with a **"Request to join {server}"** button; click it → "Request sent". As an admin of that server: server menu → **Join requests** → the request shows with **Approve/Decline** → Approve seats them as a member (they appear in the roster); Decline removes it. Requesting again after decline re-queues it.
 
 ## 21. Utility & global states
 

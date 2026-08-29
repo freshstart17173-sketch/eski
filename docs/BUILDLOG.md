@@ -2042,3 +2042,34 @@ GOTCHA: the direct servers.delete "worked" in every demo/manual test because the
   owner — the 0-row no-op only bites a non-owner, who the UI never shows Delete to, so it hid. The
   RPC makes the failure loud (raise) instead of a silent success. Same lesson as the works/icon
   bugs: a matched-0-rows write is a silent lie, not a pass.
+
+## 2026-08-29 — K9 Drive-style folder sharing + request-to-join
+IN PROGRESS: (cleared)
+DONE (backend role-sim-verified + demo render, on `preview`):
+  - **Folder sharing.** `share_links` extended to target a FOLDER (server `folders` or personal
+    `save_folders`) instead of only a `work_id` — `work_id` now nullable + a `share_links_one_target`
+    check (work XOR folder) (schema-29, migration `p19`; the resolver's server-context return was
+    added by `p20`, a DROP+CREATE since the return type changed). `create_folder_share(source,
+    folder_id)` (fenced: server folder needs membership, personal must be yours) mints a link;
+    `resolve_folder_share(token)` (anon) returns the folder name + server context + file list.
+    Client: right-click a folder → "Copy folder link" (`explorer.js shareFolderMenu` +
+    `cards.js folderCard onShare`); a read-only viewer at `/shared/folder/:token`
+    (`screens/shared.js renderSharedFolder`, no rail, signed-out-safe) that reuses `workCard`.
+  - **Request-to-join.** New `join_requests` table (RLS `jr_read`: your own row or a server admin;
+    writes are RPC-only). `request_to_join_server` (idempotent; refuses a banned user),
+    `approve_join_request` (admin; seats the member with a free hue like join_via_invite),
+    `decline_join_request`. Client: the shared-server-folder viewer shows **Request to join
+    {server}**; the server menu gains an admin **Join requests** modal (`workspace.js
+    openJoinRequests`) with Approve/Decline. New `data.js`: createFolderShare, folderShareUrl,
+    loadSharedFolder, requestToJoin, loadJoinRequests, approveJoinRequest, declineJoinRequest;
+    demo fixtures demoSharedFolder/demoJoinRequests; route `/shared/folder/:token`.
+VERIFIED: role-sim (all rolled back) — anon resolves a server folder share to its 1 file, a bad
+  token → nothing; a join request goes pending → an admin approve seats the requester as an active
+  member. Demo: folder viewer renders 4 cards + the "Request to join Late Bloom LP" CTA (0
+  pageerrors); the admin Join-requests modal lists 2 requests with Approve/Decline. `node --check`
+  clean across data/demo/router/main/shared/explorer/workspace/cards.
+NEXT: the master-todo backend queue (K1–K9) is now DONE; remaining open work is UI polish (P1–P5),
+  B3 (message permalink), B4 (typed modal routes), and the live-only QA the owner runs on preview.
+GOTCHA: `resolve_folder_share`'s return type changed between p19 and p20 → needed DROP+CREATE (not
+  CREATE OR REPLACE). The folder viewer is a set-returning RPC → `data` is an array; the folder
+  name/server context repeat on every row, so read them off `data[0]`.

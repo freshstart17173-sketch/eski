@@ -113,10 +113,14 @@ export function workCard(work, { onOpen, selectable = false, actions = [], showW
 }
 
 // a folder card (grid): a folder tile that descends on click
-export function folderCard(folder, { onOpen } = {}) {
-  return el("button.card.foldercard", { onClick: () => onOpen?.(folder) }, [
+export function folderCard(folder, { onOpen, onShare } = {}) {
+  const card = el("button.card.foldercard", { onClick: () => onOpen?.(folder) }, [
     el(".media.fold", {}, [iconEl("folder")]),
     el(".title", {}, [folder.name]),
     el(".who", {}, [`${folder.count ?? 0} file${folder.count === 1 ? "" : "s"}`]),
   ]);
+  // K9: right-click a folder to share it (Drive-style). The handler opens a menu anchored on the
+  // card; the caller (explorer) wires the actual create-folder-share + copy-link flow.
+  if (onShare) card.addEventListener("contextmenu", (e) => { e.preventDefault(); onShare(folder, card); });
+  return card;
 }

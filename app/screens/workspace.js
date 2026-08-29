@@ -19,7 +19,7 @@ import { navigate, reload } from "../router.js";
 import { avatarUrl, mediaUrl } from "../cards.js";
 import { openDetails } from "./details.js";
 import { uploadBlobs } from "../upload-r2.js";
-import { isDemo, shapeMessage, loadThread, toggleReaction, loadMessageReactions, forwardMessage, deleteMessage, pinMessage, unpinMessage, editMessage, kickMember, timeoutMember, banMember, setMemberRoles, createChannel, updateChannel, createInvite, loadInvites, revokeInvite, loadInviteCandidates, inviteByHandle, inviteUserToServer, updateServer, loadAuditLog, leaveServer, deleteServer, loadServerPrefs, setServerPrefs, fetchChannelAttachment } from "../data.js";
+import { isDemo, shapeMessage, loadThread, toggleReaction, loadMessageReactions, forwardMessage, deleteMessage, pinMessage, unpinMessage, editMessage, kickMember, timeoutMember, banMember, setMemberRoles, createChannel, updateChannel, createInvite, loadInvites, revokeInvite, loadInviteCandidates, inviteByHandle, inviteUserToServer, updateServer, loadAuditLog, leaveServer, deleteServer, loadServerPrefs, setServerPrefs, fetchChannelAttachment, loadJoinRequests, approveJoinRequest, declineJoinRequest } from "../data.js";
 import { subscribeChannelMessages, subscribeChannelReactions, subscribeTyping, sendTyping, subscribeServerPresence, markRead, sendMessage } from "../realtime.js";
 import { openUpload, enableDropUpload } from "./upload.js";
 
@@ -271,6 +271,7 @@ export function channelColumn(data, view) {
     if (data.isAdmin) items.push({ label: "Server settings", icon: "settings", onClick: () => openServerSettings(data) });
     if (data.isAdmin) items.push({ label: "Roles & permissions", icon: "users", onClick: () => openRolesEditor(data.server.id) });
     if (data.isAdmin) items.push({ label: "Audit log", icon: "flag", onClick: () => openAuditLog(data) });
+    if (data.isAdmin) items.push({ label: "Join requests", icon: "users", onClick: () => openJoinRequests(data) });
     items.push({ label: "Invite people", icon: "plus", onClick: () => inviteFlow(data) });
     items.push({ label: "Notification settings", icon: "bell", onClick: () => notifSettingsFlow(data) });
     items.push({ sep: true });
@@ -653,6 +654,47 @@ function openServerSettings(data) {
       if (!isDemo()) reload();
     } catch (e) { toast({ message: e?.message || "Couldn’t save" }); save.disabled = false; }
   });
+}
+
+// Join requests (admin, K9) — the people who asked to join this server (via a shared folder or a
+// server they found without an invite). Each row: who + their note + Approve / Decline. Approve
+// seats them (approve_join_request RPC → server_members); Decline marks it declined. Empty state
+// when there's nothing pending. The jr_read RLS already limits the list to this server's admins.
+async function openJoinRequests(data) {
+  const list = el("div", { style: "min-width:340px;max-width:440px" }, [el(".lb", { style: "color:var(--muted)" }, ["Loading…"])]);
+  const done = Button({ label: "Done", variant: "ghost" });
+  const { close } = openModal({ title: "Join requests", body: list, footer: [done] });
+  done.addEventListener("click", () => close());
+
+  const paint = (rows) => {
+    list.replaceChildren();
+    if (!rows.length) { list.append(el(".emptystate", {}, [iconEl("users"), el("h3", {}, ["No pending requests"]), el("p", {}, ["When someone asks to join, they'll show up here."])])); return; }
+    for (const r of rows) {
+      const row = el(".jrrow", { style: "display:flex;align-items:center;gap:10px;padding:8px 0" }, [
+        Avatar({ name: r.name, size: "sm", src: avatarUrl(r.avatar_key) }),
+        el("div", { style: "flex:1;min-width:0" }, [
+          el("div", { style: "font-weight:600" }, [r.name]),
+          r.message ? el("div", { style: "color:var(--muted);font-size:var(--fs-xs)" }, [r.message]) : el("div", { style: "color:var(--muted);font-size:var(--fs-xs)" }, [`@${r.handle} · ${r.when}`]),
+        ]),
+      ]);
+      const approve = Button({ label: "Approve", size: "sm", variant: "primary" });
+      const decline = Button({ label: "Decline", size: "sm", variant: "ghost" });
+      approve.addEventListener("click", async () => {
+        approve.disabled = decline.disabled = true;
+        try { if (!isDemo()) await approveJoinRequest(data.server.id, r.userId); row.remove(); toast({ message: `${r.name} joined`, icon: "check" }); if (!list.querySelector(".jrrow")) paint([]); }
+        catch (e) { approve.disabled = decline.disabled = false; toast({ message: e?.message || "Couldn’t approve" }); }
+      });
+      decline.addEventListener("click", async () => {
+        approve.disabled = decline.disabled = true;
+        try { if (!isDemo()) await declineJoinRequest(data.server.id, r.userId); row.remove(); toast({ message: "Request declined" }); if (!list.querySelector(".jrrow")) paint([]); }
+        catch (e) { approve.disabled = decline.disabled = false; toast({ message: e?.message || "Couldn’t decline" }); }
+      });
+      row.append(el("div", { style: "display:flex;gap:6px" }, [decline, approve]));
+      list.append(row);
+    }
+  };
+  try { paint(await loadJoinRequests(data.server.id)); }
+  catch (e) { list.replaceChildren(el(".lb", {}, [e?.message || "Couldn’t load requests"])); }
 }
 
 // Audit log (admin) — the moderation actions the kick/ban/timeout RPCs record, newest first.

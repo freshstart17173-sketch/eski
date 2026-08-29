@@ -20,6 +20,7 @@ const ROUTES = [
   { pattern: "/settings",                  screen: "usersettings" },   // USER settings (≠ /s/:id/settings)
   { pattern: "/signin",                    screen: "auth" },
   { pattern: "/join/:code",                screen: "join" },
+  { pattern: "/shared/folder/:token",      screen: "sharedfolder" },   // K9 folder viewer (before /shared/:token)
   { pattern: "/shared/:token",             screen: "shared" },
   { pattern: "/u/:handle",                 screen: "profile" },
   { pattern: "/s/:serverId/c/:channelId",  screen: "workspace" },

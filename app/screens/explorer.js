@@ -16,7 +16,7 @@
 import { el, toast, openMenu, closeMenus, openModal, VisibilitySeg, Button, copyToClipboard } from "../ui.js";
 import { iconEl } from "../icons.js";
 import { navigate, reload } from "../router.js";
-import { createFolder, moveToFolder, trashWorks, restoreWork, purgeWork, emptyTrash, loadTrash, starWork, unstarWork, saveToFiles, renameWork, setHidden, createShareLink, shareUrl, loadShareLinks, revokeShareLink, setVisibility, visFromDb } from "../data.js";
+import { createFolder, moveToFolder, trashWorks, restoreWork, purgeWork, emptyTrash, loadTrash, starWork, unstarWork, saveToFiles, renameWork, setHidden, createShareLink, shareUrl, loadShareLinks, revokeShareLink, setVisibility, visFromDb, createFolderShare, folderShareUrl } from "../data.js";
 import { workCard, folderCard, mediaUrl, KIND_ICON, downloadWork } from "../cards.js";
 import { channelColumn } from "./workspace.js";
 import { openUpload, enableDropUpload } from "./upload.js";
@@ -438,9 +438,22 @@ function contents(data, state, rerender, sel) {
 
   const onStar = (w) => toggleStar(data, state, rerender, w);
   const onMenu = (w, anchor) => openCardMenu(data, state, rerender, w, anchor);
+  const onShareFolder = (folder, anchor) => shareFolderMenu(data, folder, anchor);
   if (state.mode === "feed") return feedView(data, state, openFile);
   if (state.mode === "list") return listView(subfolders, files, { openFile, openFolder });
-  return gridView(subfolders, files, { openFile, openFolder, onCardClick, onStar, onMenu, showWho: data.source !== "personal" });
+  return gridView(subfolders, files, { openFile, openFolder, onCardClick, onStar, onMenu, onShareFolder, showWho: data.source !== "personal" });
+}
+
+// K9 — Drive-style "share a folder": right-clicking a folder card opens this menu. Copy folder
+// link mints a public read-only link (create_folder_share RPC, fenced server-side) and copies
+// `/shared/folder/:token`. Works for a server folder or a personal My-files folder.
+function shareFolderMenu(data, folder, anchor) {
+  openMenu(anchor, [{ label: "Copy folder link", icon: "users", onClick: async () => {
+    try {
+      const token = await createFolderShare(data.source, folder.id);
+      await copyToClipboard(folderShareUrl(token), { ok: "Folder link copied — anyone with it can view this folder", icon: "users" });
+    } catch (e) { toast({ message: e?.message || "Couldn’t create the folder link" }); }
+  } }]);
 }
 
 // Feed view (§C.6): flatten the current folder's whole SUBTREE to previewable works
@@ -483,9 +496,9 @@ function feedMedia(w) {
   return el(".dtype", {}, [icon, el("span.ext", {}, [(w.file_ext || "").toUpperCase()])]);
 }
 
-function gridView(subfolders, files, { openFile, openFolder, onCardClick, onStar, onMenu, showWho }) {
+function gridView(subfolders, files, { openFile, openFolder, onCardClick, onStar, onMenu, onShareFolder, showWho }) {
   const grid = el(".masonry.even");
-  for (const f of subfolders) grid.append(folderCard(f, { onOpen: openFolder }));
+  for (const f of subfolders) grid.append(folderCard(f, { onOpen: openFolder, onShare: onShareFolder }));
   files.forEach((w, i) => {
     const actions = onMenu ? [{ act: "more", icon: "more", title: "More", onClick: (ww) => onMenu(ww, card.querySelector('.cardacts [data-act="more"]') || card) }] : [];
     const card = workCard(w, { selectable: true, showWho, starred: !!w.starred, onStar, actions });

@@ -8,7 +8,7 @@
 //                  realtime.js + workspace.js; this module does the initial reads.
 //  - signed out  → { needsAuth:true } so the shell shows a sign-in prompt.
 
-import { demoWorkspace, demoExplorer, demoFeed, demoProfile, demoComments, demoSharedWork, demoDMs, demoDMThread, demoNotifications, demoInvites, demoInviteCandidates, demoAudit } from "./demo.js";
+import { demoWorkspace, demoExplorer, demoFeed, demoProfile, demoComments, demoSharedWork, demoDMs, demoDMThread, demoNotifications, demoInvites, demoInviteCandidates, demoAudit, demoSharedFolder, demoJoinRequests } from "./demo.js";
 import { supabase } from "./supabase.js";
 import { session } from "./supabase.js";
 
@@ -749,6 +749,76 @@ export async function revokeShareLink(token) {
   if (isDemo()) return;
   const { error } = await supabase.from("share_links").update({ revoked_at: new Date().toISOString() }).eq("token", token);
   if (error) throw new Error(error.message || "Couldn’t revoke the link");
+}
+
+// ── Drive-style folder sharing (K9) ──────────────────────────────────────────
+// Share a whole FOLDER to a public read-only link (server folder or personal My-files folder).
+// `create_folder_share` is a SECURITY DEFINER RPC (fenced: a server folder needs membership, a
+// personal one must be yours); the token opens `/shared/folder/:token`. `resolve_folder_share`
+// is anon — the token is the capability.
+export function folderShareUrl(token) { return `${location.origin}/shared/folder/${token}`; }
+export async function createFolderShare(source, folderId) {
+  if (isDemo()) return "demofoldertoken";
+  const user = session();
+  if (!user) throw new Error("Sign in to share");
+  const { data, error } = await supabase.rpc("create_folder_share", { p_source: source, p_folder_id: folderId });
+  if (error) throw new Error(error.message || "Couldn’t create the folder link");
+  return data;
+}
+// Resolve a shared folder for the anon viewer → { folder, serverId, serverName, source, files[] }
+// or { dead:true } for a revoked/expired/invalid token.
+export async function loadSharedFolder(token) {
+  if (isDemo()) return demoSharedFolder(token);
+  const { data, error } = await supabase.rpc("resolve_folder_share", { p_token: token });
+  if (error || !data || !data.length) return { dead: true };
+  const first = data[0];
+  return {
+    folder: first.folder_name || "Shared folder",
+    source: first.source, serverId: first.server_id || null, serverName: first.server_name || null,
+    files: data.filter((r) => r.file_id).map((r) => ({
+      id: r.file_id, title: r.title, name: r.title, kind: r.kind, file_ext: r.file_ext,
+      blob_sha: r.blob_sha, bytes: r.bytes, who: null, tags: [],
+    })),
+  };
+}
+
+// ── Request to join a server (K9) ────────────────────────────────────────────
+// Ask to join (from a shared folder / a server you found without an invite). Idempotent — an
+// active member gets 'member', otherwise a pending request is filed for the admins to review.
+export async function requestToJoin(serverId, message = null) {
+  if (isDemo()) return "pending";
+  const user = session();
+  if (!user) throw new Error("Sign in to request to join");
+  const { data, error } = await supabase.rpc("request_to_join_server", { p_server_id: serverId, p_message: message });
+  if (error) throw new Error(/banned/i.test(error.message || "") ? "You’re banned from this server" : (error.message || "Couldn’t send your request"));
+  return data;   // 'pending' | 'member'
+}
+// Admin: the pending join requests for a server (jr_read RLS lets an admin read them), with the
+// requester's profile. Returns [] for a non-admin (RLS filters the rows out).
+export async function loadJoinRequests(serverId) {
+  if (isDemo()) return demoJoinRequests();
+  const { data: reqs } = await supabase.from("join_requests")
+    .select("user_id,message,created_at").eq("server_id", serverId).eq("status", "pending")
+    .order("created_at", { ascending: true });
+  const rows = reqs || [];
+  if (!rows.length) return [];
+  const { data: profs } = await supabase.from("profiles").select("id,handle,name,avatar_key").in("id", rows.map((r) => r.user_id));
+  const byId = {}; for (const p of profs || []) byId[p.id] = p;
+  return rows.map((r) => {
+    const p = byId[r.user_id];
+    return { userId: r.user_id, name: p?.name || p?.handle || "someone", handle: p?.handle || "", avatar_key: p?.avatar_key || null, initials: initials(p?.name || p?.handle || "?"), message: r.message || "", when: fmtTime(r.created_at) };
+  });
+}
+export async function approveJoinRequest(serverId, userId) {
+  if (isDemo()) return;
+  const { error } = await supabase.rpc("approve_join_request", { p_server_id: serverId, p_user_id: userId });
+  if (error) throw new Error(error.message || "Couldn’t approve the request");
+  clearWorkspaceCache();   // the member roster changed
+}
+export async function declineJoinRequest(serverId, userId) {
+  if (isDemo()) return;
+  const { error } = await supabase.rpc("decline_join_request", { p_server_id: serverId, p_user_id: userId });
+  if (error) throw new Error(error.message || "Couldn’t decline the request");
 }
 
 // Visibility (CANON §B.3 / #61) — the UI's Public/Server/Private maps to works.visibility

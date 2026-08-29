@@ -303,6 +303,29 @@ export function demoSharedWork(token) {
   };
 }
 
+// Shared FOLDER viewer demo fixture (K9) — a read-only public folder + a Request-to-join CTA.
+export function demoSharedFolder(token) {
+  if (token === "expired" || token === "dead") return { dead: true };
+  const F = (id, name, kind, ext, bytes) => ({ id, title: name, name, kind, file_ext: ext, blob_sha: null, bytes, who: null, tags: [] });
+  return {
+    folder: "reference-pack", source: "server", serverId: "lb", serverName: "Late Bloom LP",
+    files: [
+      F("sf-a", "ref_drums.png", "image", "png", 2_100_000),
+      F("sf-b", "break_chop.wav", "audio", "wav", 5_600_000),
+      F("sf-c", "arrangement.flp", "other", "flp", 8_400_000),
+      F("sf-d", "mix_notes.txt", "text", "txt", 4_200),
+    ],
+  };
+}
+
+// Admin join-requests demo fixture (K9) — pending requests to approve/decline.
+export function demoJoinRequests() {
+  return [
+    { userId: "u-kofi", name: "kofi", handle: "kofi", avatar_key: null, initials: "KO", message: "producer, would love to collab", when: "2:14 PM" },
+    { userId: "u-nel", name: "nel", handle: "nel", avatar_key: null, initials: "NL", message: "", when: "Mon" },
+  ];
+}
+
 // Messages + Friends demo fixture (P7.1) — DM threads + the friends panel (accepted +
 // pending, incoming & outgoing). No member hue (DMs are outside any server).
 export function demoDMs() {
