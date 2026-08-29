@@ -20,7 +20,7 @@ file is the versioned copy that build sessions treat as the acceptance bar.
 - **`[v2]`** — deferred to v2. The *correct* behaviour today is a "being built"
   signpost (a grayed control + a WIP toast), **not** a working feature.
 
-228 checks across 21 areas.
+232 checks across 21 areas.
 
 ---
 
@@ -52,6 +52,7 @@ file is the versioned copy that build sessions treat as the acceptance bar.
 - [ ] ＋ menu → Create server → opens the create-server flow.
 - [ ] ＋ menu → Join by link → opens the join-by-link flow.
 - [ ] Open the round avatar menu (foot of rail) → a menu opens: Profile · Set status · Settings · Sign out.
+- [ ] Avatar menu → Set status → the status modal renders cleanly: emoji + text on one row, all four presence options (Online / Idle / DND / Invisible) on a single line with no overflow; Save updates the rail + members list.
 - [ ] Avatar menu → Profile → opens YOUR profile at the correct @handle (even after you've changed your username).
 - [ ] Confirm the avatar button is round → the profile button is a circle; server badges are squares.
 
@@ -216,6 +217,9 @@ The server explorer mounts inside the shell (channel column stays); My files hid
 
 - [ ] Open the upload sheet → it opens from the explorer toolbar / composer attach.
 - [ ] Drop one or more files → they're recognised by type; a Files/Folder toggle swaps the target.
+- [ ] Drag files from your desktop onto the file explorer (or a channel) → the upload sheet opens pre-loaded with them, ready to post.
+- [ ] Drag a whole FOLDER from your desktop onto the explorer → the sheet opens, recognises it as a folder ("N files in M folders"), and posting recreates the folder structure.
+- [ ] On a folder upload, tick "Flatten folders — expose every file for tagging" → the tree is dropped, every file uploads loose, and the shared Tags apply to all of them.
 - [ ] Pick a visibility (Public / Server / Private) → it's the one required choice.
 - [ ] Choose Server → pick a server & folder → the target picker works; default folder is root.
 - [ ] Read the storage-impact line → it states which storage the bytes draw ("{server}" or "Your" storage · X/Y GB).
