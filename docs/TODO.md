@@ -109,7 +109,7 @@ read-wiring. Ticking one here = ticking it in its category below.
 | ~15m | **B9** | verify channel upload shows as a chat file card (B5 built it; owner QA once B7 deploys) | live-QA |
 | ~45m | **P1** | center empty-state/placeholder text in its pane (one global rule) | easy |
 | ~1h | **P2** | perf: dedupe `profiles` fetch + defer settings reads | easy-med |
-| ~1.5h | **K10** | storage tracker read-wiring (meter trigger already confirmed working) | med |
+| ~1.5h | ~~**K10**~~ | ✅ storage tracker — read path was correct; fixed the purge/empty-trash footer refresh | done |
 | ~1.5h | **B4** | typed `/create`·`/upload`·`/settings` open their modal over the shell | med |
 | ~2h | **B3** | message permalink (Copy link → scroll + flash) | med |
 | ~2h | **P4** | cut Feed + post-commenting from beta nav/routes (→ D1); mirror in CANON/CLAUDE.md | med · before P5 |
@@ -464,13 +464,25 @@ per channel, builds on P11), D6 (review canvas/kanban/versions).
       `schema-29-folder-share-join-requests.sql`, `app/data.js`, `app/demo.js`, `app/router.js`,
       `app/main.js`, `app/screens/shared.js`, `app/screens/explorer.js`, `app/screens/workspace.js`,
       `app/cards.js`.
-- [ ] **K10 · Make the storage tracker actually work (round-7).** The explorer storage footer +
-      the upload storage line read `storage_meters` / `storage_balance`. Verify the meter is
-      populated (the `works_blob_meter` trigger bumps `storage_meters` on insert/delete — K8 noted
-      it fires) and that `loadExplorer`/`loadUserSettings` read real used/cap bytes, not zeros.
-      Likely a wiring/read gap, not a trigger gap. *Files:* `app/data.js` (storage reads),
-      `schema-*` (meter trigger, if needed). *Medium.* *Test:* service-role — after an upload the
-      owner's `storage_meters.bytes_used` reflects the blob; the footer shows non-zero used.
+- [x] **K10 · Make the storage tracker actually work (round-7).** *Done (backend-verified +
+      one real wiring fix).* **Audit result:** the read path was already correct — `loadExplorer`
+      / `loadPersonalExplorer` / `loadUserSettings` read `storage_meters.bytes_used` +
+      `storage_balance.purchased_gb,status` by owner, the RLS `sm_meter_read` policy lets the owner
+      read their own/server meter, the column names match, and the footer/panel render the value.
+      The "reads zeros" symptom was **downstream of the pre-K7 upload outage** (no works existed →
+      meter was 0); with uploads fixed the meter is populated **and accurate to the byte** —
+      role-sim: the live user meter (201519104) equals the distinct-blob sum across all non-purged
+      works, and a rolled-back upload→trash→purge showed 0 → 123456 → 123456 (soft, unchanged) → 0
+      (hard purge decrements), so the `works_blob_meter` trigger is correct. **The one real bug
+      fixed:** an upload refreshes the footer via `reload()`, but **Delete-forever / Empty-trash
+      only rerendered the trash list and never refreshed `data.storage`** — a hard purge frees the
+      blob server-side, so the footer showed a stale (too-high) number until a manual reload (the
+      owner's "reload needed for things to update"). Added `refreshStorage(data)` (`data.js`) — a
+      targeted meter+balance re-read that updates `data.storage` in place — and called it from
+      `purgeRow` / `emptyNow` before rerender (the footer repaints from `data.storage`). *Files:*
+      `app/data.js` (`refreshStorage`), `app/screens/explorer.js` (purge/empty handlers). Verified:
+      both files `node --check` clean; demo explorer renders the footer with 0 pageerrors. Live
+      purge→footer-drops is session-gated → QA-CHECKLIST.
 
 ### 3 · UI polish
 

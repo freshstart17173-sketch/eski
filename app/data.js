@@ -475,6 +475,31 @@ async function loadPersonalExplorer(user, folderId) {
   };
 }
 
+// Re-read just the storage meter + balance for the currently-mounted explorer source and
+// update `data.storage` IN PLACE. Called after a hard PURGE (Delete forever / Empty trash),
+// which decrements the meter server-side (the works_blob_meter DELETE branch) — the client's
+// cached `data.storage` would otherwise stay at the pre-purge (too-high) number until a full
+// route reload (K10 "reload needed for things to update"). A soft trash keeps the blob for 30
+// days and does NOT change the meter, so it must not refresh here. Mirrors the exact meter/cap
+// math in loadServerExplorer/loadPersonalExplorer so the footer stays consistent. Never throws.
+export async function refreshStorage(data) {
+  if (!data || !data.storage || isDemo()) return;
+  const user = session();
+  if (!user) return;
+  const isServer = data.source === "server" && !!data.server?.id;
+  const ownerType = isServer ? "server" : "user";
+  const ownerId = isServer ? data.server.id : user.id;
+  try {
+    const [{ data: meterRows }, { data: balRows }] = await Promise.all([
+      supabase.from("storage_meters").select("bytes_used").eq("owner_type", ownerType).eq("owner_id", ownerId).maybeSingle(),
+      supabase.from("storage_balance").select("purchased_gb,status").eq("owner_type", ownerType).eq("owner_id", ownerId).maybeSingle(),
+    ]);
+    const usedBytes = Number(meterRows?.bytes_used || 0);
+    const capGb = (isServer ? SERVER_BASE_GB : USER_BASE_GB) + Number(balRows?.purchased_gb || 0);
+    data.storage = { usedBytes, capGb, capBytes: capGb * GB, status: balRows?.status || "active", overCap: usedBytes > capGb * GB };
+  } catch { /* leave the last-known storage in place if the re-read fails */ }
+}
+
 // Create a folder under `parentId` (null = root) in whichever explorer source is
 // mounted. Server folders go through the `create_folder` RPC — the RPC is the fence
 // (it gates on has_perm(manage_channels) and forbids cross-server parents), the UI is

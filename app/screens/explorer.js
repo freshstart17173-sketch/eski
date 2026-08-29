@@ -16,7 +16,7 @@
 import { el, toast, openMenu, closeMenus, openModal, VisibilitySeg, Button, copyToClipboard } from "../ui.js";
 import { iconEl } from "../icons.js";
 import { navigate, reload } from "../router.js";
-import { createFolder, moveToFolder, trashWorks, restoreWork, purgeWork, emptyTrash, loadTrash, starWork, unstarWork, saveToFiles, renameWork, setHidden, createShareLink, shareUrl, loadShareLinks, revokeShareLink, setVisibility, visFromDb, createFolderShare, folderShareUrl, requestToJoin } from "../data.js";
+import { createFolder, moveToFolder, trashWorks, restoreWork, purgeWork, emptyTrash, loadTrash, starWork, unstarWork, saveToFiles, renameWork, setHidden, createShareLink, shareUrl, loadShareLinks, revokeShareLink, setVisibility, visFromDb, createFolderShare, folderShareUrl, requestToJoin, refreshStorage } from "../data.js";
 import { workCard, folderCard, mediaUrl, KIND_ICON, downloadWork } from "../cards.js";
 import { channelColumn } from "./workspace.js";
 import { openUpload, enableDropUpload } from "./upload.js";
@@ -886,8 +886,10 @@ function trashThumb(w) {
 }
 
 function purgeRow(data, rerender, w) {
-  (isDemoQS() ? Promise.resolve() : purgeWork(w.id)).then(() => {
+  (isDemoQS() ? Promise.resolve() : purgeWork(w.id)).then(async () => {
     data._trash = data._trash.filter((x) => x.id !== w.id);
+    // a hard purge frees the blob's bytes server-side → refresh the footer meter (K10)
+    if (!isDemoQS()) await refreshStorage(data);
     rerender();
     toast({ message: "Deleted forever" });
   }).catch((e) => toast({ message: e?.message || "Couldn’t delete" }));
@@ -895,8 +897,10 @@ function purgeRow(data, rerender, w) {
 
 function emptyNow(data, rerender) {
   if (!data._trash.length) return;
-  (isDemoQS() ? Promise.resolve() : emptyTrash({ source: data.source, serverId: data.server?.id })).then(() => {
-    data._trash = []; rerender(); toast({ message: "Trash emptied" });
+  (isDemoQS() ? Promise.resolve() : emptyTrash({ source: data.source, serverId: data.server?.id })).then(async () => {
+    data._trash = [];
+    if (!isDemoQS()) await refreshStorage(data);   // freed bytes → refresh the footer meter (K10)
+    rerender(); toast({ message: "Trash emptied" });
   }).catch((e) => toast({ message: e?.message || "Couldn’t empty Trash" }));
 }
 

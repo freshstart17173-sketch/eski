@@ -191,6 +191,7 @@ The server explorer mounts inside the shell (channel column stays); My files hid
 - [ ] Move to… → pick a destination in the tree → Move → the file re-homes to that folder (locked folders are disabled).
 - [ ] Open the Trash smart-folder → shows the 30-day retention notice, trashed rows with a days-left countdown, Restore / Delete forever, Empty now.
 - [ ] Look at the storage footer → shows "this server's storage — X of Y GB" + a bar + a manage link.
+- [ ] **`[infra]` (K10 storage tracker)** After a real upload the footer's used-bytes + bar go **up** (not stuck at 0); the same non-zero number shows in User settings → Storage. Then **Trash a file → it stays counted** (30-day retention, number unchanged), and **Trash → Delete forever (or Empty trash) → the number drops immediately** without a page reload.
 - [ ] Open a folder while it loads → a skeleton grid stands in; an empty folder shows a centred empty state.
 - [ ] Select several cards → a bulk action bar appears (download / move / delete).
 - [ ] Click Upload in the toolbar → the upload sheet opens.

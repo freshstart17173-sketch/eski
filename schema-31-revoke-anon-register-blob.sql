@@ -1,0 +1,21 @@
+-- schema-31 — migration p22_revoke_anon_register_blob (2026-08-29)
+--
+-- SECURITY HARDENING found in the backend audit. register_blob (schema-19 / p10) is a
+-- SECURITY DEFINER write — it inserts into the RLS-locked media_blobs — and was only ever
+-- meant for a SIGNED-IN user (its own comment: "lets a signed-in user register a
+-- content-addressed blob"). But anon still held EXECUTE: Supabase grants EXECUTE on new
+-- functions to anon via a default privilege, and that direct grant SURVIVES a
+-- `revoke ... from public`, so schema-19's revoke-from-public never removed it.
+--
+-- Why it matters: the client never calls register_blob (create_work registers the blob
+-- inline), so anon has no legitimate use for it. An anon caller could pre-seed a media_blobs
+-- row for a known sha with an attacker-chosen `bytes`; because create_work uses
+-- `on conflict (sha256) do nothing`, that pre-seeded `bytes` WINS and skews the later real
+-- uploader's storage meter — evade the meter with bytes=0, or inflate someone's usage with a
+-- huge value. Low severity pre-billing, but it is an anon write into content-addressed storage.
+--
+-- Fix: remove the anon grant. authenticated (the real, gated path) keeps EXECUTE. After this,
+-- no anon-executable function writes data — the only anon RPCs are the read-only public
+-- landings (preview_invite, resolve_share_link, resolve_folder_share) + the self-relative
+-- gate helpers + pure utilities.
+revoke all on function public.register_blob(text, bigint) from anon;

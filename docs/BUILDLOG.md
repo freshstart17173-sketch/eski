@@ -2139,3 +2139,35 @@ GOTCHA N: any NEW member-creating path MUST assign the default @everyone role vi
   has_perm() does NOT implicitly grant the is_default role (owner bypasses via owner_id; everyone
   else needs the row). join_via_invite is the reference; grep `member_roles` before adding a path.
   A declared-but-unused `default_role` var is exactly how p21's bug hid in plain sight.
+
+## 2026-08-29 — K10 storage tracker + backend audit round 2
+IN PROGRESS: (cleared)
+DONE: K10 (storage tracker) + a backend-audit sweep.
+  K10: audited the whole storage path — the read side was already correct (loadExplorer/
+  loadPersonalExplorer/loadUserSettings read storage_meters.bytes_used + storage_balance by
+  owner; RLS sm_meter_read lets the owner read; columns match; footer/panel render it). The
+  "reads zeros" symptom was downstream of the pre-K7 upload outage. Proved the meter is accurate
+  to the byte (live user meter == distinct-blob sum over non-purged works) and the works_blob_meter
+  trigger is correct (rolled-back upload→trash→purge = 0→123456→123456→0). Fixed the ONE real
+  wiring bug: Delete-forever / Empty-trash freed bytes server-side but never refreshed the cached
+  data.storage, so the footer stayed too-high until a reload. Added `refreshStorage(data)`
+  (app/data.js) + called it from purgeRow/emptyNow (app/screens/explorer.js). node --check clean;
+  demo explorer renders footer, 0 pageerrors. Live purge→drop → QA-CHECKLIST §19.
+  AUDIT: (1) all 29 client rpc() calls map to existing DB functions — no missing-RPC gaps.
+  (2) SECURITY FIX — register_blob (a SECURITY DEFINER write into media_blobs) was still
+  anon-executable: Supabase's default-privilege grant to anon survives `revoke ... from public`,
+  so schema-19 never dropped it. The client never calls register_blob (create_work inlines the
+  blob insert), and an anon caller could pre-seed a media_blobs row with a chosen `bytes` for a
+  known sha → create_work's `on conflict do nothing` keeps it → skews the real uploader's meter.
+  Revoked anon (migration p22, schema-31). After this NO anon-executable function writes data —
+  the only anon RPCs left are read-only public landings (preview_invite, resolve_share_link,
+  resolve_folder_share) + self-relative gate helpers + pure utilities. (3) The 2 RLS-enabled/
+  no-policy tables (media_blobs, upload_quota) are intentional deny-all — server-managed via
+  definer RPCs/triggers, never read directly by the client. Confirmed correct, not a bug.
+NEXT: master-todo top items (B3 permalink, B4 typed modal routes, P1 empty-states, P2 perf),
+  then the round-7 density/file-browser work (P12/P13/P14/P18) under the 3-versions rule.
+GOTCHA O: `revoke ... from public` does NOT remove a role's DIRECT grant. Supabase ALTER DEFAULT
+  PRIVILEGES grants EXECUTE on new functions directly to anon/authenticated, so a definer write
+  RPC needs an explicit `revoke ... from anon` (the create_work/create_server RPCs already do
+  this; register_blob's schema-19 revoked only public and leaked). Audit new definer RPCs for a
+  stray anon EXECUTE: `has_function_privilege('anon', <fn>, 'EXECUTE')`.
