@@ -62,9 +62,17 @@ export function Field({ icon: ic, at, placeholder, value = "", onChange, onInput
 }
 
 // ── P3.4 Modal ───────────────────────────────────────────────────────────────
-// openModal({title, body, footer, size, onClose}) → { el, close }. Scrim darkens
-// the page, card has no shadow, focus is trapped, Esc + scrim-click both close.
-export function openModal({ title, body, footer, size, onClose } = {}) {
+// openModal({title, body, footer, size, onClose, nested}) → { el, close }. Scrim
+// darkens the page, card has no shadow, focus is trapped, Esc + scrim-click both close.
+//
+// Single instance: a new top-level modal first closes any open one. Two stacked scrims
+// was the "some modals don't close" bug — a backdrop click's mousedown only hits the
+// topmost scrim, leaving the earlier one behind, so the click looked ignored. `nested:
+// true` opts out for the one deliberate stack (the move-picker's New-folder prompt,
+// which must return to the picker underneath), so it neither closes nor becomes current.
+let currentModal = null;
+export function openModal({ title, body, footer, size, onClose, nested = false } = {}) {
+  if (!nested && currentModal) currentModal.close();
   const closeBtn = CloseButton();
   const card = el("." + ["modal", size === "wide" && "wide"].filter(Boolean).join("."), { role: "dialog", "aria-modal": "true", "aria-label": title || "Dialog" });
   const head = el(".uhd", {}, [el("b", {}, [title || ""]), closeBtn]);
@@ -93,6 +101,7 @@ export function openModal({ title, body, footer, size, onClose } = {}) {
     if (closed) return; closed = true;
     document.removeEventListener("keydown", onKey, true);
     scrim.remove();
+    if (currentModal === api) currentModal = null;
     if (prevFocus && prevFocus.focus) prevFocus.focus();
     onClose && onClose();
   }
@@ -101,7 +110,9 @@ export function openModal({ title, body, footer, size, onClose } = {}) {
   document.addEventListener("keydown", onKey, true);
   document.body.append(scrim);
   (focusables()[0] || card).focus?.();
-  return { el: scrim, close };
+  const api = { el: scrim, close };
+  if (!nested) currentModal = api;   // the one live top-level modal
+  return api;
 }
 
 // ── P3.5 Menu + MenuItem ─────────────────────────────────────────────────────

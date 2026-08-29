@@ -71,8 +71,14 @@ IDs are stable handles (`B*` broken-UI, `K*` backend, `P*` polish, `D*` deferred
 
 ### 1 · Fixes for broken UI
 
-- [ ] **B1 · Scrim-click closes every modal.** Clicking the dark backdrop (where you clicked to
+- [x] **B1 · Scrim-click closes every modal.** Clicking the dark backdrop (where you clicked to
       open) should dismiss any modal; today some don't. Fix once in the modal primitive.
+      *Done (renders in demo):* single modal instance enforced in `openModal` (a new top-level
+      modal closes any open one, so no stray scrim sits behind it and eats the backdrop click);
+      the one deliberate nest (move-picker → New-folder) opts out via `nested:true`. Also capped
+      `.modal` height + made its body scroll so a content-tall modal (Upload/Roles/Move) no longer
+      overflows the viewport — ✕, footer, and backdrop stay on-screen. 12/12 headless asserts pass
+      (both themes); Modal primitive verifier green.
       *Files:* `app/ui.js` (`openModal`), `styles/primitives.css`. *Easy.*
       *Test:* demo screenshot — open a modal, click the scrim, assert it's gone (`document.querySelector('.modal')===null`); repeat for upload/settings/status.
 - [ ] **B2 · No URL breaks on rename.** A profile handle change must `replaceState` to `/u/<new>`

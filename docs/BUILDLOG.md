@@ -1784,3 +1784,27 @@ GOTCHA U: two sessions built preview in parallel today. The SessionStart hook + 
   other session's schema-19/20). Always rebase-before-push here, don't assume your local tip.
 NEXT: storage/billing (Stripe); group-DM management; the remaining QA-CHECKLIST rows the
   owner is testing on preview.
+
+## 2026-08-29 — B1 scrim-click closes every modal (round-3 master-todo, item B1)
+IN PROGRESS: (cleared)
+DONE: `app/ui.js openModal` now enforces a **single top-level modal instance** — a new modal
+  closes any open one, committed on this `preview` push (+ `docs/TODO.md` master todo landed).
+  The real bug wasn't the scrim handler (it already closes on a real backdrop mousedown) but
+  **stacking**: two scrims meant a backdrop click's mousedown only hit the topmost, leaving the
+  earlier one behind, so the click read as ignored. The one deliberate nest (explorer
+  move-picker → New-folder prompt, which must return to the picker underneath) opts out via a
+  new `nested:true` flag threaded through `promptText`/`promptFolderName`.
+  Also `styles/primitives.css`: `.modal` is now a flex column with `max-height:calc(100vh -
+  var(--s4)*2)` and a scrolling `.mbody`, so a content-tall modal (Upload/Roles/Move) no longer
+  overflows off-screen — the header ✕, footer buttons, and the scrim backdrop all stay reachable.
+VERIFIED (renders in demo): headless harness, 12/12 asserts in both themes — two top-level
+  modals collapse to one scrim; a real corner backdrop click dismisses; the nested prompt stacks
+  (2) then unwinds to the parent (1→0); a 60-row modal fits the viewport with header/footer
+  visible; ✕ closes. `verify.mjs` (gallery) green; `verify-primitives.mjs` Modal check green
+  (its lone red — MediaPlayer play/pause — pre-exists on clean HEAD: headless can't decode media).
+NEXT: B2 · no URL breaks on profile-handle rename (replaceState to /u/<new> + every Profile link
+  uses the new handle; confirm id-based server/channel URLs are safe).
+GOTCHA: local `preview` had diverged from a force-pushed origin/preview at session start —
+  reset --hard to origin/preview before working. `.sheet` (details, z-81) and `.qs` (switcher)
+  are separate overlay primitives, NOT `.scrim` modals; single-instance only governs `.scrim`,
+  so a Rename modal still layers correctly over an open details sheet.

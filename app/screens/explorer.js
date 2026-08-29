@@ -591,19 +591,19 @@ function newFolder(data, state, rerender, parentId) {
   });
 }
 
-function promptFolderName(onSubmit) {
-  promptText({ title: "New folder", placeholder: "Folder name", submit: "Create", busyLabel: "Creating…", fail: "Couldn’t create the folder" }, onSubmit);
+function promptFolderName(onSubmit, nested = false) {
+  promptText({ title: "New folder", placeholder: "Folder name", submit: "Create", busyLabel: "Creating…", fail: "Couldn’t create the folder", nested }, onSubmit);
 }
 
 // The reusable single-field prompt (gallery "Prompt" dialog): a text input over the scrim,
 // the submit button disabled until it's non-empty and different from the prefill, Enter
 // submits. onSubmit(value) may be async and may throw — a throw keeps the modal open and
 // surfaces the reason as a toast so the user can retry. Used by New folder + Rename.
-function promptText({ title, placeholder = "", value = "", submit = "Save", busyLabel = "Saving…", fail = "Couldn’t save" }, onSubmit) {
+function promptText({ title, placeholder = "", value = "", submit = "Save", busyLabel = "Saving…", fail = "Couldn’t save", nested = false }, onSubmit) {
   const input = el("input", { placeholder, value });
   const go = el("button.btn.primary", { disabled: true }, [submit]);
   const cancel = el("button.btn.ghost", {}, ["Cancel"]);
-  const modal = openModal({ title, body: el(".field", {}, [input]), footer: [cancel, go] });
+  const modal = openModal({ title, body: el(".field", {}, [input]), footer: [cancel, go], nested });
   let busy = false;
   const sync = () => { const v = input.value.trim(); go.disabled = busy || !v || v === value.trim(); };
   const run = async () => {
@@ -689,6 +689,8 @@ function openMovePicker(data, state, onPick) {
   };
   renderWell();
 
+  // nested:true — this prompt stacks ON the move-picker and returns to it, so it must NOT
+  // close the picker (single-instance would otherwise detach the well we re-render below).
   newBtn.addEventListener("click", () => promptFolderName(async (name) => {
     const parent = hasSel ? dest : null;
     let folder;
@@ -698,7 +700,7 @@ function openMovePicker(data, state, onPick) {
     renderWell();
     select(folder.id);
     toast({ message: `Folder “${name}” created` });
-  }));
+  }, true));
   cancel.addEventListener("click", () => modal.close());
   go.addEventListener("click", async () => {
     if (!hasSel || busy) return;
