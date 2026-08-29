@@ -81,11 +81,17 @@ IDs are stable handles (`B*` broken-UI, `K*` backend, `P*` polish, `D*` deferred
       (both themes); Modal primitive verifier green.
       *Files:* `app/ui.js` (`openModal`), `styles/primitives.css`. *Easy.*
       *Test:* demo screenshot — open a modal, click the scrim, assert it's gone (`document.querySelector('.modal')===null`); repeat for upload/settings/status.
-- [ ] **B2 · No URL breaks on rename.** A profile handle change must `replaceState` to `/u/<new>`
+- [x] **B2 · No URL breaks on rename.** A profile handle change must `replaceState` to `/u/<new>`
       and every Profile link must use the new handle; server/channel URLs are id-based (safe) —
       confirm and cover any gap. *Files:* `app/screens/profile.js`, `app/data.js`, `app/router.js`.
-      *Easy.* *Test:* static trace + demo: after an in-page handle change, assert `location.pathname`
-      updated and no route resolves to a 404 view.
+      *Easy.* *Done (renders in demo):* the rename→`/u/<new>` `replaceState` + `updateProfile`
+      cache-clear were already in place; every self-profile link derives from `data.me.handle`
+      (refreshed on reload) and server/channel URLs are id-based (confirmed in `router.js`). The
+      **gap fixed:** the editor is now also opened from `/settings`, where the unconditional
+      `replaceState('/u/<new>')` hijacked the address bar and bounced the user onto their profile
+      on the on-close reload — now guarded to only follow the URL when actually on `/u/<oldHandle>`.
+      6/6 headless asserts pass (rename on profile follows the URL to profile; rename from settings
+      stays on settings; neither 404s).
 - [ ] **B3 · Message permalink (Copy link) works.** `⋯ → Copy link` should copy a permalink that,
       when opened, scrolls to and flashes the message. *Files:* `app/screens/workspace.js`,
       `app/router.js`, `app/data.js` (fetch-by-id). *Medium.* *Test:* backend — service-role read of

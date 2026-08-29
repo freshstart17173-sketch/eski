@@ -1808,3 +1808,21 @@ GOTCHA: local `preview` had diverged from a force-pushed origin/preview at sessi
   reset --hard to origin/preview before working. `.sheet` (details, z-81) and `.qs` (switcher)
   are separate overlay primitives, NOT `.scrim` modals; single-instance only governs `.scrim`,
   so a Rename modal still layers correctly over an open details sheet.
+
+## 2026-08-29 — B2 no URL breaks on profile rename (master-todo item B2)
+IN PROGRESS: (cleared)
+DONE: `app/screens/profile.js` — the rename→`/u/<new>` `history.replaceState` is now guarded by
+  `location.pathname === /u/<oldHandle>`. The editor was moved into `/settings` (round-2), so the
+  old unconditional replaceState hijacked the settings URL to `/u/<new>` and the on-close
+  `reload()` bounced the user onto their profile. Confirmed the rest was already correct: every
+  self-profile link is built from `data.me.handle`, and `updateProfile` (data.js) calls
+  `clearWorkspaceCache()` so the rail/settings links regenerate with the new handle on reload;
+  server/channel URLs are id-based (`/s/:serverId/c/:channelId` in router.js), so unaffected.
+VERIFIED (renders in demo): headless harness, 6/6 — rename ON the profile page follows the URL to
+  `/u/<new>` and resolves to the profile screen (not 404); rename FROM `/settings` leaves the URL
+  at `/settings` and stays on usersettings (no bounce, no 404); zero pageerrors. `verify.mjs` green.
+NEXT: B3 · message permalink (⋯ → Copy link) copies a permalink that scrolls to + flashes the
+  message; needs fetch-by-id (service-role read is the deterministic backend check) + a demo
+  assert that the permalink route scrolls the row into view and applies the flash class.
+GOTCHA: the editor is a shared primitive (`openEditProfile`) reached from BOTH the profile hero
+  and `/settings` — any URL side effect in it must be conditioned on the current route, not assumed.

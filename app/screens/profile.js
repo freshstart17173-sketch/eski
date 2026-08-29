@@ -211,9 +211,13 @@ export function openEditProfile(data, opts = {}) {
       Object.assign(p, vals, { initials: (vals.name || vals.handle).trim().slice(0, 2).toUpperCase() });
       dirty = true;
       // Follow the URL to the new handle BEFORE closing, so the on-close reload lands on the
-      // valid /u/<new> (a reload of the old handle would 404). Other people's old /u/<old>
-      // links still break — inherent to handle URLs, and the field note says so.
-      if (vals.handle && vals.handle !== oldHandle) history.replaceState({}, "", withDemo(`/u/${vals.handle}`));
+      // valid /u/<new> (a reload of the old handle would 404) — but ONLY when we're actually
+      // viewing this profile. The editor is also opened from /settings; hijacking that URL to
+      // /u/<new> would bounce the user onto their profile on the on-close reload. In-app links
+      // regenerate from the cleared rail cache regardless, so this is purely the address bar.
+      // Other people's old /u/<old> links still break — inherent to handle URLs; the field says so.
+      if (vals.handle && vals.handle !== oldHandle && location.pathname === `/u/${oldHandle}`)
+        history.replaceState({}, "", withDemo(`/u/${vals.handle}`));
       opts.onSaved?.();
       close();     // fires onClose → reload(), rebuilding hero + rail + shelves from fresh data
       toast({ message: "Profile saved", icon: "check" });
