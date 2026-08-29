@@ -1752,3 +1752,35 @@ DONE (code complete; UNTESTABLE in-sandbox — owner-verified on preview, two wi
   read-receipts, not in scope. verify-workspace green both themes.
 NEXT: build-guide gaps found in the 2026-08-28 audit — Forward action, channel-permissions
   modal, DM Block/Report + group management; then the roles-editor / billing scope decision.
+
+## 2026-08-29 — build-guide audit + the remaining approved surfaces
+IN PROGRESS: (cleared)
+AUDIT: cross-checked every P0–P9 prompt against the built app. Everything was present
+  except a handful of larger surfaces; owner picked which to build (the rest stay
+  post-beta). Built this session (all verify-green in demo; live paths owner-verify on
+  preview):
+  - **Reaction realtime echo** (GOTCHA T) — subscribeChannelReactions; completes DM +
+    notif + reaction echo.
+  - **DM Block + Report + Close-DM label** — block_user wired; "Hide" → "Close DM" (§C.11).
+  - **Forward** (§C.4, migration p4_message_forward → schema-21) — `messages.forwarded_from`
+    + forwardMessage; the ⋯ menu's Forward opens a pick-channels+note modal; the source
+    renders as a quote block on load. RLS gates the insert to channels you may post in.
+  - **Reporting** (§C.4/§C.7/§C.11) — a shared `app/report.js` reason-radio modal (incl.
+    CSAM) → a direct `reports` insert (rep_insert); wired to the message ⋯, the 1:1 DM menu,
+    and the details-pane flag (was a stub).
+  - **Roles editor** (§C.16) — server menu → Roles & permissions: a two-column modal (roles
+    list + New role + @everyone undeletable · name · 30-hue colour picker · the
+    Server/Members/Content permission matrix). Direct `roles` CRUD under roles_write
+    (has_perm manage_roles); permissions is a bit-OR that fits a JS Number.
+  - **Channel permissions** (§C.18) — channel settings → Manage access: a role-checkbox
+    modal → set_channel_access. Role-only allow-list (the beta scopes by role; zero = open).
+STILL POST-BETA (documented, not skipped silently): **storage & billing sliders + export
+  UI** (§C.19 — needs Stripe; owner didn't pick it for beta); **group-DM management**
+  (add people / rename / leave — needs backend RPCs that don't exist yet); the full-screen
+  Server-settings PANELS (§C.16–19) stay replaced by the modals above per the 08-24 call.
+GOTCHA U: two sessions built preview in parallel today. The SessionStart hook + a
+  fetch-→ff-only-→stash-pop before every push kept it clean (we touched different files);
+  schema files must be numbered against the LATEST origin (this landed schema-21 after the
+  other session's schema-19/20). Always rebase-before-push here, don't assume your local tip.
+NEXT: storage/billing (Stripe); group-DM management; the remaining QA-CHECKLIST rows the
+  owner is testing on preview.
