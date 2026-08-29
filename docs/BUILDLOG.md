@@ -2108,3 +2108,34 @@ NEXT: remaining master-todo — B3 (message permalink), B4 (typed modal routes),
 GOTCHA: `.usersettings` settings-layout CSS was broadened to `:is(.usersettings,.serversettings)`
   so the new server-settings screen reuses it. The shared-explorer mode needed every
   `data.server.id` deref guarded (server is null on a shared view).
+
+## 2026-08-29 — Backend verification pass (+ approve_join_request fix)
+IN PROGRESS: (cleared)
+DONE: full round-trip verification of the live backend (project zidqagrmxeawpasurpwi) via
+  rolled-back txns under `set local role authenticated` with real jwt claims, simulating the
+  owner (dexter 0de0…0001) and a second user (fresh 0f00…0002). All green: create_server
+  (channels + @everyone role + owner member), create_work personal (visibility='private' +
+  tags) and server (placement + the B5 auto channel-message via messages.work_id), post_comment,
+  invite_user_to_server + anon preview_invite, create_folder + create_folder_share +
+  resolve_folder_share, the join-request → approve flow, RLS denial of a non-member upload, the
+  works_blob_meter trigger (storage_meters.bytes_used bumps), and messages_fanout (mention +
+  notification rows created, correctly RLS-scoped so only the recipient sees them). Advisors
+  (security): only the accepted P1/P2 posture (definer gate helpers REST-callable) + media_blobs
+  deny-all + the owner's one-click leaked-password toggle — no rls-disabled / policy-permits-all.
+  43 tables, all RLS on. Migrations match committed schema-01..29.
+  ONE BUG FOUND + FIXED: `approve_join_request` (schema-29 / K9) declared `default_role` but
+  never used it — an approved member got a server_members row but NO @everyone member_roles row,
+  unlike join_via_invite. Because has_perm() unions only owner_id + member_roles, such a member
+  could READ unrestricted channels but could NOT send_messages/upload/comment/pin or see role-
+  gated channels. Fixed by mirroring join_via_invite (assign the is_default role, idempotent) —
+  migration `p21_approve_join_assigns_default_role`, committed as `schema-30-approve-join-default-role.sql`.
+  Re-verified: post-approve member_roles=1, has_perm(send)/has_perm(upload)=true (rolled back).
+  Also re-sorted the master TODO Work Queue into a single by-estimated-time view (docs/TODO.md
+  "Sorted by estimated completion time" section) — content unchanged, ordering added.
+NEXT: master-todo top items — B3 (message permalink), B4 (typed modal routes), P1 (center empty
+  states), P2 (perf), then the round-7 density/file-browser work. K10 (storage tracker) is a
+  FRONTEND read-wiring task — the meter trigger itself is confirmed working this pass.
+GOTCHA N: any NEW member-creating path MUST assign the default @everyone role via member_roles —
+  has_perm() does NOT implicitly grant the is_default role (owner bypasses via owner_id; everyone
+  else needs the row). join_via_invite is the reference; grep `member_roles` before adding a path.
+  A declared-but-unused `default_role` var is exactly how p21's bug hid in plain sight.

@@ -96,6 +96,41 @@ Four categories. Within each, ordered **easiest first**, and anything that depen
 item is placed **after** what it needs. Cross-category dependencies are called out inline.
 IDs are stable handles (`B*` broken-UI, `K*` backend, `P*` polish, `D*` deferred).
 
+### ⏱ Sorted by estimated completion time (open items only)
+
+The same open items as the categorized queue below, flattened and ordered **shortest job
+first** (estimates assume one focused session; a `P*`/`B*` visual item also carries the
+3-versions-then-owner-picks rule, which adds render+review time). Dependencies noted inline.
+Backend is **done + verified** (2026-08-29 pass) — everything open is frontend except K10's
+read-wiring. Ticking one here = ticking it in its category below.
+
+| Est. | ID | What | Kind |
+|---|---|---|---|
+| ~15m | **B9** | verify channel upload shows as a chat file card (B5 built it; owner QA once B7 deploys) | live-QA |
+| ~45m | **P1** | center empty-state/placeholder text in its pane (one global rule) | easy |
+| ~1h | **P2** | perf: dedupe `profiles` fetch + defer settings reads | easy-med |
+| ~1.5h | **K10** | storage tracker read-wiring (meter trigger already confirmed working) | med |
+| ~1.5h | **B4** | typed `/create`·`/upload`·`/settings` open their modal over the shell | med |
+| ~2h | **B3** | message permalink (Copy link → scroll + flash) | med |
+| ~2h | **P4** | cut Feed + post-commenting from beta nav/routes (→ D1); mirror in CANON/CLAUDE.md | med · before P5 |
+| ~2h | **P13** | flatten file-channel header + add path/breadcrumb viewer | med |
+| ~2.5h | **P18** | standardize header + panel sizes & colours app-wide | med · overlaps P12 |
+| ~2.5h | **P15** | status → profile page (text field + R/Y/G presence, denser) | med · pairs B11 |
+| ~2.5h | **P3** | shared loading/busy affordance at every async call site | med |
+| ~3h | **P12** | density pass on modals·dialogs·toasts (primitive done; rest = 3 versions) | med |
+| ~4h | **P5** | merge Friends into Messages (one surface) | med-hard · after P4 |
+| ~4h | **B12** | @mentions: composer autocomplete + real resolve/notify | med-hard |
+| ~4h | **P11** | typed, colour-coded tags + a tag-type filter facet (foundation for D5) | med-hard |
+| ~4h | **P16** | upload progress → animation + minimizable (Drive-style) | med-hard · ties P3 |
+| ~4h | **P19** | unread-message indicator on channels | med-hard |
+| ~6h | **B10** | drag-to-select (marquee) + drag-file-onto-file → make folder | hard |
+| ~6h | **P14** | file-browser view modes = real density levels (thumbnail + thin band) | hard |
+
+**Deferred — do NOT build now** (post-beta / infra-gated): D1 (feed+commenting, after P4),
+D7 (report/moderation), D2 (storage/billing, needs Stripe), D3 (audit log), D5 (required tags
+per channel, builds on P11), D6 (review canvas/kanban/versions).
+
+
 > ### 🟣 Round-7 (owner test, 2026-08-29) — DENSITY, file-browser rework + functional fixes
 > Big polish + fix pass. Overarching theme: **densify everything and standardize chrome** — the app
 > currently reads "tablet-sized". Load **`eski-style`** then **`eski-polish`** before the visual work.
