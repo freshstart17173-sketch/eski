@@ -19,7 +19,7 @@ import { navigate, reload } from "../router.js";
 import { createFolder, moveToFolder, trashWorks, restoreWork, purgeWork, emptyTrash, loadTrash, starWork, unstarWork, saveToFiles, renameWork, setHidden, createShareLink, shareUrl, loadShareLinks, revokeShareLink, setVisibility, visFromDb } from "../data.js";
 import { workCard, folderCard, mediaUrl, KIND_ICON, downloadWork } from "../cards.js";
 import { channelColumn } from "./workspace.js";
-import { openUpload } from "./upload.js";
+import { openUpload, enableDropUpload } from "./upload.js";
 import { openDetails } from "./details.js";
 
 const VIEWS = { grid: "Grid", list: "List", feed: "Feed" };
@@ -96,6 +96,11 @@ export function renderExplorer(data, view = {}) {
   const pane = el(".pane");
   const tree = el("nav.filetree", { "data-tree": personal ? "personal" : "server" });
   const layout = el(".explayout", { "data-source": personal ? "personal" : "server" }, [tree, pane]);
+  // Drag files anywhere onto the explorer → the upload sheet, targeting the current folder
+  // (getOpts reads state.folderId live). A `.dropping` overlay hints the target.
+  enableDropUpload(layout, () => (personal
+    ? { visibility: "private", onDone: () => reload() }
+    : { visibility: "server", serverId: data.server.id, folderId: state.folderId, onDone: () => reload() }));
 
   // Server mount keeps the channel column beside the browser (Files is a channel,
   // never a dead-end). The personal My-files mount hides it — its own tree is the

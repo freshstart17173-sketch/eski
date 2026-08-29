@@ -20,7 +20,7 @@ import { avatarUrl } from "../cards.js";
 import { uploadBlobs } from "../upload-r2.js";
 import { isDemo, shapeMessage, loadThread, toggleReaction, loadMessageReactions, forwardMessage, deleteMessage, pinMessage, unpinMessage, editMessage, kickMember, timeoutMember, banMember, setMemberRoles, createChannel, updateChannel, createInvite, loadInvites, revokeInvite, loadInviteCandidates, inviteByHandle, inviteUserToServer, updateServer, loadAuditLog, leaveServer, deleteServer, loadServerPrefs, setServerPrefs } from "../data.js";
 import { subscribeChannelMessages, subscribeChannelReactions, subscribeTyping, sendTyping, subscribeServerPresence, markRead, sendMessage } from "../realtime.js";
-import { openUpload } from "./upload.js";
+import { openUpload, enableDropUpload } from "./upload.js";
 
 // ── text rendering ──────────────────────────────────────────────────────────
 // A message body is HTML-escaped first, then a small inline-markdown pass turns
@@ -1055,6 +1055,8 @@ export function renderWorkspace(data, view = {}) {
   const main = mainPane(data, view, ctx);
   const mem = membersRail(data);
   screen.append(chan, main, mem);
+  // Drag files onto the channel → upload sheet targeting this server + channel (live only).
+  if (ctx.live) enableDropUpload(main, () => ({ visibility: "server", serverId: ctx.serverId, channelId: ctx.channelId, onDone: () => reload() }));
 
   // arrived via a message permalink (?m=<id>) → once mounted, scroll to it and pulse it.
   if (view.focusMsg) flashMessage(screen, view.focusMsg);

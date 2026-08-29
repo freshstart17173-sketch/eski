@@ -62,6 +62,23 @@ async function buildFolderTree(files, { source, serverId, baseFolderId }) {
   return map;
 }
 
+// Drag a file (or several) onto any surface wired with this → opens the upload sheet ready to
+// post, with the right target (getOpts supplies visibility/serverId/channelId/folderId). A
+// `.dropping` class is toggled for a drop-hint overlay. Ignores non-file drags (text, cards).
+export function enableDropUpload(target, getOpts) {
+  const hasFiles = (e) => [...(e.dataTransfer?.types || [])].includes("Files");
+  let depth = 0;
+  const clear = () => { depth = 0; target.classList.remove("dropping"); };
+  target.addEventListener("dragenter", (e) => { if (!hasFiles(e)) return; e.preventDefault(); depth++; target.classList.add("dropping"); });
+  target.addEventListener("dragover", (e) => { if (!hasFiles(e)) return; e.preventDefault(); if (e.dataTransfer) e.dataTransfer.dropEffect = "copy"; });
+  target.addEventListener("dragleave", () => { depth = Math.max(0, depth - 1); if (!depth) target.classList.remove("dropping"); });
+  target.addEventListener("drop", (e) => {
+    if (!hasFiles(e)) return; e.preventDefault(); clear();
+    const files = [...(e.dataTransfer?.files || [])];
+    if (files.length) openUpload({ ...(getOpts ? getOpts() : {}), files });
+  });
+}
+
 export async function openUpload(opts = {}) {
   const me = session();
   if (!me) { toast({ message: "Sign in to upload" }); return; }
@@ -158,6 +175,8 @@ export async function openUpload(opts = {}) {
   cancel.addEventListener("click", () => close());
   post.addEventListener("click", doPost);
   syncVis();
+  // Pre-loaded files (a drag-and-drop onto the explorer / a channel opens the sheet ready).
+  if (opts.files?.length) addFiles([...opts.files], false);
 
   // ── helpers ───────────────────────────────────────────────────────────────
   let folderMode = false;
