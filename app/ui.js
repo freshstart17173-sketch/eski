@@ -120,6 +120,10 @@ export function openModal({ title, body, footer, size, onClose, nested = false }
 // | {header:"..."}. Positions to the anchor, closes on outside-click/Esc, and is
 // arrow-key navigable. Never overflows the viewport.
 export function openMenu(anchor, items = []) {
+  // Toggle: clicking the same anchor whose menu is already open closes it instead of
+  // reopening (B8 — the folder/Root picker "wouldn't close on a second click"). The outside-
+  // click handler ignores the anchor, so without this the click just closed-and-reopened.
+  if (anchor?.getAttribute?.("aria-expanded") === "true") { closeMenus(); return; }
   closeMenus();
   const menu = el(".menu.open", { role: "menu" });
   const rows = [];

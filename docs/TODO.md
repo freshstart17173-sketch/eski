@@ -230,10 +230,12 @@ IDs are stable handles (`B*` broken-UI, `K*` backend, `P*` polish, `D*` deferred
       visually-hidden (`position:fixed;left:-9999px;opacity:0`, still in the DOM + clickable).
       *Files:* `app/screens/upload.js`. *Done (syntax-checked; upload is session-gated so it's
       live-only — owner confirms on preview).*
-- [ ] **B8 · Folder / "Root folder" picker won't close on a second click.** First click opens the
-      menu, second click should close it — today it re-opens/stays. *Files:* `app/screens/upload.js`
-      (`serverBtn`/`folderBtn` menus) — the `.selbtn` menus don't toggle on re-click; make them
-      close-on-repeat like the other dropdowns. *Easy.*
+- [x] **B8 · Folder / "Root folder" picker won't close on a second click.** *Done (demo-verified).*
+      Root cause was global, not upload-specific: `openMenu` always closed-then-reopened, and the
+      outside-click handler ignores the anchor, so a second click on the trigger just flickered the
+      menu closed+open. Added a toggle guard — if the anchor's menu is already open
+      (`aria-expanded="true"`), close and return. Fixes **every** dropdown. *Files:* `app/ui.js`
+      (`openMenu`). Verified: demo — a toolbar dropdown opens on click 1, closes on click 2, 0 pageerrors.
 - [ ] **B9 · Channel upload → clickable file message in the chat.** A file uploaded to a channel
       should show in the stream as a file card that opens the detail/expanded view. **B5 already
       builds this** (messages.work_id → attachment card → real details pane); verify it end-to-end
