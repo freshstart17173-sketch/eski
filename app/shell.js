@@ -172,11 +172,12 @@ export function openStatus(data) {
   const textI = el("input", { value: cur.status_text || "", placeholder: "What are you working on?", "aria-label": "Status", maxlength: "80" });
   const presenceSeg = SegmentedControl({
     value: cur.presence_state || "online",
+    // Short labels so the 4-way control fits one line (long "Do not disturb" wrapped/overflowed).
     options: [
-      { value: "online", label: "Online", icon: "check" },
-      { value: "idle", label: "Idle", icon: "clock" },
-      { value: "dnd", label: "Do not disturb", icon: "mute" },
-      { value: "invisible", label: "Invisible", icon: "hide" },
+      { value: "online", label: "Online" },
+      { value: "idle", label: "Idle" },
+      { value: "dnd", label: "DND" },
+      { value: "invisible", label: "Invisible" },
     ],
   });
   const clearSel = SelectPill({
@@ -196,7 +197,7 @@ export function openStatus(data) {
   };
   const body = el("div", {}, [
     el("label.ulab", {}, ["Your status"]),
-    el(".statusrow", { style: "display:flex;gap:8px;align-items:center" }, [el(".field", { style: "flex:none" }, [emojiI]), el(".field", { style: "flex:1" }, [textI])]),
+    el(".statusrow", { style: "display:flex;gap:8px;align-items:center" }, [el(".field", { style: "flex:none;width:52px" }, [emojiI]), el(".field", { style: "flex:1;min-width:0;width:auto" }, [textI])]),
     el("label.ulab", { style: "margin-top:12px;display:block" }, ["Presence"]),
     presenceSeg,
     el(".statusrow", { style: "display:flex;align-items:center;justify-content:space-between;margin-top:12px" }, [el("label.ulab", { style: "margin:0" }, ["Clear status after"]), clearSel]),
@@ -204,7 +205,7 @@ export function openStatus(data) {
   const cancel = Button({ label: "Cancel", variant: "ghost" });
   const clear = Button({ label: "Clear status", variant: "ghost" });
   const save = Button({ label: "Save", variant: "primary" });
-  const { close } = openModal({ title: "Set a status", body, footer: [clear, cancel, save] });
+  const { close } = openModal({ title: "Set a status", body, footer: [clear, cancel, save], size: "wide" });
   cancel.addEventListener("click", () => close());
   clear.addEventListener("click", async () => {
     try { if (!isDemo()) await setStatus({ emoji: null, text: "", presence: presenceSeg.value(), clearAt: null }); close(); toast({ message: "Status cleared" }); if (!isDemo()) reload(); }
