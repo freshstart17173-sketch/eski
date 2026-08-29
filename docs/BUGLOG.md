@@ -8,6 +8,47 @@ Severity: **P1** breaks or badly misleads · **P2** wrong but usable · **P3** p
 
 ---
 
+## Owner test pass 2026-08-29 (round 3)
+
+- [ ] **P1 · Beta scope cut — social features to post-beta.** Drop the **main Feed** and
+      **post commenting** from the beta. **Public posts still exist**, but are reached by
+      going to a user's page directly (the profile **Public** shelf), not through a global
+      feed. Work: remove Feed from the home/rail nav and the `feed` route; remove the public
+      comment thread from the Details pane (keep the post itself). Mirror the cut in
+      **CANON** and **CLAUDE.md** the way the 2026-08-18 canvas/kanban cut is recorded, so
+      the contract matches. (They "may return post-beta.")
+- [ ] **P1 · Server icon + cover don't update in the server, regardless of upload.**
+      Uploading a server icon or banner in Server settings doesn't persist or render on the
+      rail badge / server header. This is the known BUILDLOG gap ("NOT done: server
+      icon/cover + profile banner upload") surfacing as a live bug: wire the
+      upload → R2 (`api/sign.mjs`) → `servers.icon_key` / `servers.cover_key` → render path,
+      and the same for the **profile banner** (`profiles.banner_key`).
+- [ ] **P2 · No loading animations anywhere for async actions.** File upload (has a text
+      progress card, but nothing else), **folder upload**, **changing pfp**, **uploading a
+      server icon/banner** — none show a spinner / progress while the request runs, so it
+      looks dead. Add one consistent busy affordance (a shared button-spinner + a light
+      overlay) to every async action, applied everywhere, not case by case.
+- [ ] **P2 · Friends and Messages shouldn't be separate screens.** Today Messages and
+      Friends are two screens you swap between with the Friends button. Make them **one
+      surface** — Friends lives inside the Messages pane (a tab / section in the same view),
+      no full-screen context switch to see your friends.
+- [ ] **P2 · Empty-state / placeholder text must be centered in its own pane.** The default
+      text (channel "This is the start of #…", empty explorer, empty DM/feed, etc.) sits
+      **too high** — center it **both vertically and horizontally** within the specific pane
+      it occupies. Applies to **every** piece of text like this, globally. (Refines the
+      earlier "too much vertical space" fix — the answer is *centered in the pane*, not
+      top-anchored.)
+
+> **Round-2 reconciliation (2026-08-29):** most of the round-2 quick-wins + build items
+> below shipped — composer toolbar trimmed, rail avatar, dead Settings tab → `/settings`,
+> home "e!" logo, dense empty-state copy, members-toggle persistence, Edit-profile-in-
+> settings, perf **preconnect**, **global search** (`/search`), **drag-and-drop + flatten**
+> (folders included), Pins **Unpin** + Files filters (commits `8e37ce0` `bcca4a1` `a77976c`
+> `db85d56` `11b8318` `cb07783` `0e9dffd`). **Still open** from round 2: **modal
+> scrim-click-to-close** on every modal; **dedupe `profiles`** fetch + **defer Storage/
+> Privacy reads** in settings; **verify no URL breaks on rename**; some **Feed nav stubs**
+> (moot for the ones under the social cut above).
+
 ## Owner test pass 2026-08-28 (round 2) — full button audit in [`BUTTON-AUDIT.md`](BUTTON-AUDIT.md)
 
 Quick wins (fixing this pass):
