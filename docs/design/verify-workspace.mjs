@@ -281,6 +281,22 @@ const CASES = [
     if (await $(p, ".scrim .modal")) return "saving should close the modal";
     return null;
   }],
+  ["channel-access", "/s/lb/c/beats?demo=1", "light", async (p) => {
+    const gear = await p.$(".chan .crow .cgear");   // an admin channel edit gear
+    if (!gear) return "admin should see a per-channel edit gear";
+    await gear.click();
+    await p.waitForTimeout(150);
+    const accessBtn = await p.$('.scrim .modal button:has-text("Manage which roles")');
+    if (!accessBtn) return "channel settings should offer Manage access";
+    await accessBtn.click();
+    await p.waitForTimeout(150);
+    // the access modal lists the 2 custom demo roles (@everyone is excluded — it IS everyone)
+    if ((await p.$$(".scrim .modal .permlist .permrow")).length !== 2) return "access modal should list the custom roles";
+    await p.click('.scrim .modal .permlist .permrow');   // pick a role
+    await p.click('.scrim .modal button:has-text("Save access")');
+    await p.waitForTimeout(150);
+    return null;
+  }],
   ["delete-server", "/s/lb/c/beats?demo=1", "light", async (p) => {
     // demo jax owns Late Bloom → the menu offers Delete server (type-to-confirm)
     await p.click("nav.chan .srvbar");

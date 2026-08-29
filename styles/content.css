@@ -410,7 +410,9 @@
 .pgh{font-size:var(--fs-xs);color:var(--muted);font-weight:600;margin:14px 0 4px;text-transform:uppercase;letter-spacing:.03em}
 .permrow{display:flex;align-items:center;gap:10px;padding:6px 2px;cursor:pointer;font-size:var(--fs-sm);color:var(--soft)}
 .permrow .pl{flex:1}
+.permrow .rsw{width:10px;height:10px;flex:none;border-radius:var(--r)}
 .permrow:hover{color:var(--ink)}
+.permlist{display:flex;flex-direction:column;gap:1px;max-height:300px;overflow-y:auto}
 .rhint{font-size:var(--fs-xs);color:var(--muted);margin-bottom:4px}
 /* New-message friend picker (modal) */
 .nmlist{display:flex;flex-direction:column;gap:2px;max-height:320px;overflow-y:auto}

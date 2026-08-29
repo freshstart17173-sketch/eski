@@ -6,7 +6,7 @@
 
 import { el, openModal, Button, toast } from "../ui.js";
 import { iconEl } from "../icons.js";
-import { loadRoles, createRole, updateRole, deleteRole, permBit, PERM_GROUPS } from "../data.js";
+import { loadRoles, createRole, updateRole, deleteRole, permBit, PERM_GROUPS, loadChannelRoles, setChannelAccess } from "../data.js";
 
 export async function openRolesEditor(serverId) {
   let roles;
@@ -94,4 +94,38 @@ export async function openRolesEditor(serverId) {
   ]);
   paint();
   openModal({ title: "Roles & permissions", body, size: "wide" });
+}
+
+// Channel permissions (§C.18, gated manage_channels): a private channel's ROLE allow-list.
+// The beta scopes access by role only (channel_roles) — zero picked = open to all members.
+export async function openChannelAccess(serverId, channel) {
+  let roles, allowed;
+  try { [roles, allowed] = await Promise.all([loadRoles(serverId), loadChannelRoles(channel.id)]); }
+  catch (e) { toast({ message: e?.message || "Couldn’t load channel access" }); return; }
+  const custom = roles.filter((r) => !r.is_default);   // @everyone isn't an allow-list entry (it IS everyone)
+  const picked = new Set(allowed);
+
+  const rows = custom.map((r) => {
+    const box = el("span.cbx" + (picked.has(r.id) ? ".on" : ""), {}, [iconEl("check")]);
+    return el("label.permrow", { onClick: (e) => {
+      e.preventDefault();
+      if (picked.has(r.id)) { picked.delete(r.id); box.classList.remove("on"); }
+      else { picked.add(r.id); box.classList.add("on"); }
+    } }, [box, el("span.rsw", { style: `background:var(--m${(r.color ?? 0) + 1})` }), el("span.pl", {}, [r.name])]);
+  });
+
+  const save = Button({ label: "Save access", variant: "primary" });
+  const body = el("div", {}, [
+    el("p", { style: "font-size:var(--fs-sm);color:var(--muted);margin:0 0 12px" }, [`Pick which roles can see #${channel.name}. Leave all unchecked to keep it open to every member.`]),
+    custom.length ? el(".permlist", {}, rows) : el(".sharenone", {}, ["No custom roles yet — create one in Roles & permissions first."]),
+  ]);
+  const { close } = openModal({ title: `#${channel.name} access`, body, footer: [save] });
+  save.addEventListener("click", async () => {
+    save.disabled = true;
+    try {
+      await setChannelAccess(channel.id, [...picked]);
+      close();
+      toast({ message: picked.size ? "Channel restricted to the picked roles" : "Channel open to all members", icon: "check" });
+    } catch (e) { save.disabled = false; toast({ message: e?.message || "Couldn’t save access" }); }
+  });
 }

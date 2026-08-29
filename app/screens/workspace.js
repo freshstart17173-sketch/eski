@@ -13,7 +13,7 @@
 
 import { el, Avatar, IconButton, openMenu, closeMenus, toast, openModal, Button, copyToClipboard } from "../ui.js";
 import { openReport } from "../report.js";
-import { openRolesEditor } from "./roles.js";
+import { openRolesEditor, openChannelAccess } from "./roles.js";
 import { iconEl } from "../icons.js";
 import { navigate, reload } from "../router.js";
 import { avatarUrl } from "../cards.js";
@@ -790,6 +790,8 @@ function openChannelSettings(data, ch) {
     el("label.ulab", {}, ["Topic ", el("span", { style: "font-weight:400;color:var(--muted)" }, ["optional"])]), el(".field", {}, [topic]),
     el("label.ulab", {}, ["Slow mode"]), slowBtn,
     el("label.ulab", {}, ["Who can post"]), polBtn,
+    el("label.ulab", {}, ["Access"]),
+    (() => { const b = el("button.selbtn", { style: "width:100%;justify-content:space-between", onClick: () => openChannelAccess(data.server.id, ch) }, [el("span", {}, ["Manage which roles can see this channel"]), iconEl("lock", "sm")]); return b; })(),
   ]);
   const { close } = openModal({ title: `#${ch.name} settings`, body, footer: [cancel, save] });
   cancel.addEventListener("click", () => close());
