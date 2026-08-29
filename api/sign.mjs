@@ -17,34 +17,16 @@
    that refused, so a pasted response is enough to grep this file for the cause. */
 import { AwsClient } from 'aws4fetch';
 
-/* the extensions a key may end in. this is a security boundary, not a
-   convenience: the key is built HERE from a hash and one of these, so a caller
-   can never choose a path or an arbitrary suffix.
-
-   WIDENED FOR THE PIVOT (2026-08-15): the old set was images + audio only,
-   because the old product never took a video upload and had no "other" kind
-   at all. 'other' is explicitly "a file type the app doesn't render" as a
-   product feature now, which is in tension with an allowlist — the answer is
-   a generous bounded list, not an open one, since this is what stands between
-   a signed-in user and writing an arbitrary suffix into the bucket. Add to it
-   deliberately; don't widen it to "anything". */
-// KEEP IN SYNC WITH app/screens/upload.js KIND — the client won't offer an ext the signer
-// rejects, and the signer must not reject an ext the client offers, or the upload dies here
-// with ESK-3006 after the user already picked the file.
-const EXT = new Set([
-  'png', 'jpg', 'jpeg', 'webp', 'gif', 'avif',                          // image
-  'mp3', 'm4a', 'ogg', 'opus', 'wav', 'flac', 'aac', 'webm',            // audio (webm from the old opus transcode)
-  'aiff', 'aif',                                                         // audio — AIFF is a producer staple, was missing
-  'mp4', 'mov', 'avi', 'mkv', 'm4v',                                   // video
-  'txt', 'md',                                                          // text (text-kind posts usually need no file at
-                                                                          // all — the body column holds the prose — this
-                                                                          // is for the rare "attach the source file too")
-  'pdf', 'zip', 'cbz', 'cbr', 'epub', 'doc', 'docx', 'json', 'csv',     // other: unrendered, downloadable as-is
-  // DAW / producer project files — a folder with an exported session next to its stems must
-  // upload whole. Unrendered; stored + served back byte-for-byte.
-  'flp', 'als', 'alp', 'adg', 'adv', 'ptx', 'ptf', 'logicx', 'band',
-  'rpp', 'cpr', 'npr', 'song', 'aup3', 'mmp', 'mmpz', 'sesx', 'omf', 'aaf', 'mid', 'midi'
-]);
+/* EVERY file type is accepted (owner ask, 2026-08-29). An allowlist was the
+   wrong fence — eski stores producer sessions, stems, docs, archives, anything.
+   The boundary that actually matters is KEPT: the key is built HERE as
+   <sha>.<ext>, and the ext is validated to a SAFE SHAPE (EXT_RE: [a-z0-9], 1..16
+   chars), so a caller still cannot choose a path, add a slash/dot, or write an
+   arbitrary suffix — only a short alphanumeric ext. The client (upload.js
+   safeExt) sanitizes to the same shape and sends 'bin' for a no-extension file,
+   so the two agree. Reads are content-addressed off cdn.eski.lol — a separate
+   origin from the app — so a stored .html/.svg can't reach the app's session. */
+const EXT_RE = /^[a-z0-9]{1,16}$/;
 
 export default async function handler(req, res){
   try{
@@ -126,8 +108,8 @@ async function sign(req, res){
   for(const f of files){
     const hash = String(f.hash || '').toLowerCase();
     const ext  = String(f.ext  || '').toLowerCase();
-    if(!/^[0-9a-f]{64}$/.test(hash) || !EXT.has(ext))
-      return fail(res, 400, 'ESK-3006', 'bad hash or extension: ' +
+    if(!/^[0-9a-f]{64}$/.test(hash) || !EXT_RE.test(ext))
+      return fail(res, 400, 'ESK-3006', 'bad hash or extension (ext must be 1-16 chars a-z0-9): ' +
         JSON.stringify({ hash: hash.slice(0, 12), ext }));
   }
 

@@ -14,25 +14,24 @@ import { iconEl } from "../icons.js";
 import { supabase, session, rawSession } from "../supabase.js";
 import { createFolder } from "../data.js";
 
-// ext → kind, and the allowlist the signer (api/sign.mjs EXT) will actually sign.
-// KEEP THIS IN SYNC WITH api/sign.mjs EXT — the signer rejects (ESK-3006) any extension the
-// client accepts but it doesn't know, so a file that lists here but not there silently fails to
-// upload. `other` = a file the app doesn't render but stores + downloads as-is (project files,
-// archives, docs). Producer project files (flp/als/…) live here so a folder that contains one —
-// an exported FL/Ableton/Logic session next to its stems — uploads whole instead of dropping it.
+// ext → render kind. This is ONLY a hint for how a file previews (an image thumbnails, audio
+// gets a player, everything else is an "other" download card). It is NOT an allowlist: EVERY
+// file type uploads (owner ask, 2026-08-29). An unknown ext is kind 'other', not a rejection.
 const KIND = {
-  png: "image", jpg: "image", jpeg: "image", webp: "image", gif: "image", avif: "image",
+  png: "image", jpg: "image", jpeg: "image", webp: "image", gif: "image", avif: "image", svg: "image", bmp: "image", tiff: "image", heic: "image",
   mp3: "audio", m4a: "audio", ogg: "audio", opus: "audio", wav: "audio", flac: "audio", aac: "audio", webm: "audio", aiff: "audio", aif: "audio",
   mp4: "video", mov: "video", avi: "video", mkv: "video", m4v: "video",
   txt: "text", md: "text",
-  pdf: "other", zip: "other", cbz: "other", cbr: "other", epub: "other", doc: "other", docx: "other", json: "other", csv: "other",
-  // DAW / producer project files — unrendered, stored + downloadable as-is.
-  flp: "other", als: "other", alp: "other", adg: "other", adv: "other", ptx: "other", ptf: "other",
-  logicx: "other", band: "other", rpp: "other", cpr: "other", npr: "other", song: "other",
-  aup3: "other", mmp: "other", mmpz: "other", sesx: "other", omf: "other", aaf: "other", mid: "other", midi: "other",
 };
-const extOf = (name) => (name.split(".").pop() || "").toLowerCase();
-const kindOf = (ext) => KIND[ext] || "other";
+// The safe object-key suffix for a file. The R2 key is `<sha>.<ext>`, so the ext must never carry
+// a slash, dot, or anything that could escape the key layout — we take only the segment after the
+// last dot and strip it to [a-z0-9], capped at 16. A file with no usable extension (a bare
+// "README", or a name whose suffix is all symbols) becomes 'bin'. The signer re-validates this
+// same shape, so a bad ext can never reach R2. (kindOf still reads the RAW ext for its render hint.)
+function rawExt(name) { const p = String(name || "").split("."); return p.length > 1 ? p.pop().toLowerCase() : ""; }
+function safeExt(name) { const e = rawExt(name).replace(/[^a-z0-9]/g, "").slice(0, 16); return e || "bin"; }
+const extOf = safeExt;               // the storable object-key suffix
+const kindOf = (ext) => KIND[ext] || "other";   // ext is the (already-safe) suffix; KIND keys are clean
 
 async function sha256Hex(file) {
   const digest = await crypto.subtle.digest("SHA-256", await file.arrayBuffer());
@@ -232,10 +231,13 @@ export async function openUpload(opts = {}) {
   let folderMode = false;
   let flatten = false;   // folder drop, but "expose every file for tagging" → upload flat, shared tags
   function addFiles(list, asFolder) {
-    const rejected = list.filter((f) => !KIND[extOf(f.name)]);
-    files = list.filter((f) => KIND[extOf(f.name)]);
+    // Every file type is accepted — no allowlist. A folder that mixes stems, a DAW project, and a
+    // README uploads whole; unknown types just get the 'other' download card. (A 0-byte file is the
+    // one thing dropped — it has nothing to store and would sign an empty PUT.)
+    const rejected = list.filter((f) => f.size === 0);
+    files = list.filter((f) => f.size > 0);
     folderMode = !!asFolder && files.some((f) => relPathOf(f));
-    if (rejected.length) toast({ message: `Skipped ${rejected.length} unsupported file${rejected.length > 1 ? "s" : ""}` });
+    if (rejected.length) toast({ message: `Skipped ${rejected.length} empty file${rejected.length > 1 ? "s" : ""}` });
     if (files.length) {
       let summary;
       if (folderMode) {
