@@ -69,6 +69,37 @@ Four categories. Within each, ordered **easiest first**, and anything that depen
 item is placed **after** what it needs. Cross-category dependencies are called out inline.
 IDs are stable handles (`B*` broken-UI, `K*` backend, `P*` polish, `D*` deferred).
 
+> ### 🔴 Round-4 (owner test, 2026-08-29) — UPLOAD & FILE AREA + a backend-reliability alarm
+> The owner reported **uploads "literally don't work at all except for pfp and banners."** Root
+> cause + fixes below; this round also opened a broader mandate: **"literally every file type
+> should be accepted"**, **Google-Drive-style folder/file sharing + a request-to-join-server
+> button**, a **selection/filtering** rework, and **"look over any backend code — things that
+> look like they work then don't (server icon + banner) are incredibly annoying; catalogue every
+> non-working action here before starting, and document anything you learn so the next agent
+> doesn't fuck up."**
+>
+> **🚨 THE BACKEND-RELIABILITY FINDING (read this before touching any write path).** The upload
+> failed because **every `INSERT` into `works` returns `42501` ("new row violates RLS")** on the
+> live DB — **zero work rows had ever been created for anyone.** It is **real, consistent, and
+> specific to the `works` table**: in one authenticated session an `INSERT` into `servers`
+> (`owner_id = auth.uid()`) **succeeds** while an `INSERT` into `works` (`author_id = auth.uid()`)
+> **fails**, with the BEFORE trigger disabled, and with the `WITH CHECK` expression evaluating to
+> **TRUE** when computed by hand for the exact row (a spy trigger confirms `auth.uid()` resolves
+> and every conjunct is true). Static analysis, a service-role row-shape insert, and a spy trigger
+> **all say "allowed"** — yet it is denied. **`docs/VERIFICATION.md`'s "trap #1" (treat a works
+> 42501 as a flaky MCP artifact) is WRONG and masked a total outage** — corrected there now.
+> **Rule going forward:** a write that "looks like it works" is only proven by a **live row that
+> actually lands** (`select count(*)` on the table), never by "no error." A profile `UPDATE` that
+> matches no RLS row returns **0 rows and no error** — that is exactly why pfp/banner *looked*
+> fine. **Prefer a `SECURITY DEFINER` RPC for every load-bearing write** (the reliable path); the
+> direct-table writes in `app/data.js` are the suspect surface catalogued in **K8**.
+>
+> **Shipped this round:** upload write moved to the atomic `create_work` RPC (**K7**, fixes the
+> 42501); **every file type accepted** (allowlist → safe-shape ext check); `.flp`/DAW/AIFF
+> recognition. **New intake:** **B5** (channel Files tab always empty), **B6** (selection UX),
+> **K8** (backend write audit + catalogue), **K9** (Drive-style folder/file sharing +
+> request-to-join), and the **K2** icon/banner confirm-or-fix.
+
 ### 1 · Fixes for broken UI
 
 - [x] **B1 · Scrim-click closes every modal.** Clicking the dark backdrop (where you clicked to
@@ -99,6 +130,32 @@ IDs are stable handles (`B*` broken-UI, `K*` backend, `P*` polish, `D*` deferred
 - [ ] **B4 · Directly-typed `/create` · `/upload` · `/settings` open their modal over the shell**
       instead of the "not yet ported" placeholder (normal use opens them as modals, so low
       priority). *Files:* `app/main.js` route dispatch. *Medium.* *Test:* demo — visit each path, assert the modal mounts over the shell, not the placeholder screen.
+- [ ] **B5 · Channel Files tab is always empty + a channel upload doesn't appear in the channel.**
+      (round-4, owner: "uploaded to a channel — file didn't show in the channel, didn't show in
+      that channel's Files tab; only showed in the server Files explorer.") **Root cause found:**
+      `loadWorkspace` (`app/data.js`) hardcodes **`files: []`** and `channel.files: 0` — the
+      per-channel **Files** tab (`filesPanel`, `app/screens/workspace.js:429`) reads `data.files`,
+      so it can NEVER show anything. Wire `loadWorkspace` to fetch the works placed in the active
+      channel (`placement.surface='server' AND channel_id=<channel>` → join `works`), shape them
+      like the explorer (`shapeWork`), and set `channel.files` count. **Separately decide** whether
+      attaching a file in the composer should also post a **message** into the chat (today the
+      composer attach just opens the upload sheet → `create_work` with the `channel_id` placement;
+      it posts no message, so the file is invisible in the chat stream). *Files:* `app/data.js`
+      (`loadWorkspace`), `app/screens/workspace.js` (filesPanel + composer). *Medium.* *Test:*
+      backend — service-role read of works by channel placement; live QA — upload in a channel,
+      confirm it lands in that channel's Files tab (+ chat if we choose to post a message).
+- [ ] **B6 · Selection UX — make it Google-Drive-like (owner: current single-click-select /
+      double-click-open "sucks ass").** Concretely: (1) **selecting must NOT auto-spawn the bulk
+      options bar** — the `.selbar` pops on the first selection today; hold it back (e.g. only on a
+      real multi-select, a right-click/⋯, or make it a calmer inline affordance). (2) **Selection
+      must persist when you leave and return to the tab / navigate** — today it clears (state lives
+      in the per-render `state.selection` and is rebuilt). (3) **Clicking an empty area of the pane
+      deselects** (Drive behaviour) — today only Esc/⌘-click toggles. (4) Reconsider the whole
+      single-click-selects / double-click-opens model — the owner dislikes it; pick a model that
+      doesn't fight the above. *Files:* `app/screens/explorer.js` (selection controller ~L316–L410,
+      the `.selbar`, the card click handlers, `state.selection`). *Medium-hard.* Overlaps **P?**
+      selection/filtering; do together. *Test:* demo — click a card → selected, no bulk bar pops;
+      click empty area → deselected; navigate away + back → selection persists; multi-select still works.
 
 ### 2 · Fixes for backend
 
@@ -136,6 +193,46 @@ IDs are stable handles (`B*` broken-UI, `K*` backend, `P*` polish, `D*` deferred
       (two-session echo can't run in-sandbox — headless Chromium can't egress). *Files:* the
       Realtime subscriptions in `app/data.js`/screens. *Hard.* *Test:* wire it, syntax-check,
       and add a QA claim ("second window sees X without reload"); the owner verifies on preview.
+- [x] **K7 · Atomic `create_work` upload RPC — fixes the total upload 42501 (round-4).** DONE
+      (`schema-23-create-work-rpc.sql`, migration `p13_create_work_rpc`, applied live +
+      `upload.js doPost` rewritten). One `SECURITY DEFINER` call registers the blob, inserts the
+      work, files its placement (server) / saved_items (personal folder) and tags — atomically, as
+      the table owner, so the `works`-insert 42501 can't block it — and re-checks the fence itself
+      (author = caller; server ⇒ `member_of` + `has_perm('upload')`; channel/folder must belong to
+      the server). Also **every file type accepted** (allowlist → safe-shape ext) + `.flp`/DAW/AIFF
+      recognition. Verified via reliable role-sim (personal + tags, server + placement, non-member
+      refused). **Live R2 round-trip is owner-only → QA-CHECKLIST §12 rows.**
+- [ ] **K8 · Backend write-reliability audit + hardening (round-4 — "make sure everything actually
+      works").** The `works`-insert bug (K7) proves a **direct RLS-fenced client write can fail or
+      silently no-op live in ways static analysis, service-role checks, and spy triggers all miss.**
+      Audit every direct write in `app/data.js`/screens and convert the load-bearing ones to
+      `SECURITY DEFINER` RPCs (the reliable path). **Two failure classes:** (a) **hard-fail** —
+      inline-`auth.uid()` `INSERT` that 42501s live like `works` did; (b) **silent no-op** — an
+      `UPDATE`/`DELETE` that matches 0 RLS rows and returns **no error**, so the UI shows success
+      while nothing persisted (this is the **server icon/cover + profile banner** class — see
+      **K2**). **Suspect direct writes to verify/convert (each: does a live row actually change?):**
+      `reports` insert · `dm_messages` insert · `messages` insert/edit/delete/pin · `comments`
+      insert/delete · `share_links` insert/revoke · `content_tags` add/remove · `starred_items`
+      · `saved_items` · `save_folders` insert · `server_prefs`/`dm_members`/`notifications`
+      updates · `works` trash/restore/rename/hide/setVisibility · `channels`/`roles` insert/update/
+      delete · `servers` update (**icon/cover**, K2) + delete + leave + invite create/revoke ·
+      create-server's 4 inserts (**K5**). **Confirmed-good live:** `servers` insert (owner owns a
+      server), `profiles` upsert/update (avatar_key persisted). *Method:* for each, EITHER prove a
+      live row changes (role-sim a definer path, or check the actual table after the app runs), or
+      convert to an RPC. **Do NOT trust "no error" — trust a changed row.** *Medium-hard, ongoing.*
+- [ ] **K9 · Google-Drive-style folder & file sharing + "Request to join server" (round-4).**
+      Share a **folder** (and a file) to a public link, Drive-style — a read-only viewer of the
+      folder's contents reachable outside the server. Today `share_links` targets a single
+      `work_id` only (`app/data.js` shareWork/`resolve_share_link`, `screens/shared.js` viewer);
+      extend it to a **folder target** (server folder or a personal `save_folder`) with its own
+      `SECURITY DEFINER` resolver RPC + RLS, and a folder viewer screen. Add a **"Request to join
+      server"** button on the share/join surface (`screens/join.js` / the shared-folder view) that
+      files a join request the server admins can approve — needs a `join_requests` table (or reuse
+      invites) + an RPC + an admin surface. *Files:* new `schema-*-folder-share.sql` +
+      `schema-*-join-requests.sql`, `app/data.js`, `app/screens/shared.js`, `app/screens/join.js`,
+      the share dialog (`explorer.js`), server-settings (approve requests). *Hard.* *Test:* backend
+      — anon resolves a valid folder share to its file list; a revoked/expired one returns nothing;
+      a join request inserts + an admin approve adds membership; all via `SECURITY DEFINER` → reliable.
 
 ### 3 · UI polish
 
