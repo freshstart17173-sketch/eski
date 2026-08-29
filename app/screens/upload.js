@@ -30,14 +30,49 @@ async function sha256Hex(file) {
   return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
-// The folder path a file sits in, from a directory pick — "Pack/drums/kick.wav" → "Pack/drums".
-// A loose file (no webkitRelativePath) has no dir. Returns "" for a file at the picked root's
-// top level only if the browser omitted the leading folder (it doesn't — webkitdirectory always
-// includes the chosen folder as the first segment), so a folder upload always has a dir.
+// The structure-carrying path of a file. A directory *pick* sets webkitRelativePath; a directory
+// *drop* has no such property (the browser doesn't populate it for drag-drop), so the entry walker
+// below stamps the same "Pack/drums/kick.wav" shape onto `_relPath`. One accessor for both means
+// relDir/addFiles/the summary all treat a dropped folder exactly like a picked one.
+export function relPathOf(file) {
+  return file.webkitRelativePath || file._relPath || "";
+}
+
+// The folder path a file sits in — "Pack/drums/kick.wav" → "Pack/drums". A loose file (no relative
+// path) has no dir. webkitdirectory always includes the chosen folder as the first segment, and the
+// entry walker mirrors that, so a folder upload always has a dir.
 function relDir(file) {
-  const p = file.webkitRelativePath || "";
-  const parts = p.split("/");
+  const parts = relPathOf(file).split("/");
   return parts.slice(0, -1).join("/");   // drop the filename
+}
+
+// Read a drop's contents including folders. dataTransfer.files flattens away structure and, for a
+// folder drop, is often empty — the only way to recurse is webkitGetAsEntry() on each item. The
+// entry objects must be grabbed synchronously (the DataTransferItemList empties when the handler
+// returns), then walked async. Each nested file gets `_relPath` = its full path from the dropped
+// root (matching webkitdirectory), so buildFolderTree recreates the tree. Loose top-level files
+// get none (they upload flat). hadDir tells the caller to treat it as a folder upload.
+export async function readDropEntries(dt) {
+  const items = dt?.items ? [...dt.items] : [];
+  const entries = items.map((it) => it.webkitGetAsEntry && it.webkitGetAsEntry()).filter(Boolean);
+  if (!entries.length) return { files: [...(dt?.files || [])], hadDir: false };
+  const out = []; let hadDir = false;
+  const walk = (entry, prefix) => new Promise((resolve) => {
+    if (entry.isFile) {
+      entry.file((f) => { if (prefix) { try { f._relPath = prefix + entry.name; } catch {} } out.push(f); resolve(); }, () => resolve());
+    } else if (entry.isDirectory) {
+      hadDir = true;
+      const reader = entry.createReader(); const kids = [];
+      // readEntries yields in batches; call until it returns empty, then recurse into each child.
+      const pump = () => reader.readEntries((batch) => {
+        if (!batch.length) { Promise.all(kids.map((e) => walk(e, prefix + entry.name + "/"))).then(resolve); }
+        else { kids.push(...batch); pump(); }
+      }, () => resolve());
+      pump();
+    } else resolve();
+  });
+  await Promise.all(entries.map((e) => walk(e, "")));
+  return { files: out, hadDir };
 }
 
 // Recreate a picked folder's structure under `baseFolderId`, returning Map(dirPath → folderId).
@@ -72,10 +107,12 @@ export function enableDropUpload(target, getOpts) {
   target.addEventListener("dragenter", (e) => { if (!hasFiles(e)) return; e.preventDefault(); depth++; target.classList.add("dropping"); });
   target.addEventListener("dragover", (e) => { if (!hasFiles(e)) return; e.preventDefault(); if (e.dataTransfer) e.dataTransfer.dropEffect = "copy"; });
   target.addEventListener("dragleave", () => { depth = Math.max(0, depth - 1); if (!depth) target.classList.remove("dropping"); });
-  target.addEventListener("drop", (e) => {
+  target.addEventListener("drop", async (e) => {
     if (!hasFiles(e)) return; e.preventDefault(); clear();
-    const files = [...(e.dataTransfer?.files || [])];
-    if (files.length) openUpload({ ...(getOpts ? getOpts() : {}), files });
+    // Grab the entries synchronously (readDropEntries reads e.dataTransfer.items before the
+    // event returns), then open the sheet with the walked files + folder flag.
+    const { files, hadDir } = await readDropEntries(e.dataTransfer);
+    if (files.length) openUpload({ ...(getOpts ? getOpts() : {}), files, folderMode: hadDir });
   });
 }
 
@@ -120,7 +157,11 @@ export async function openUpload(opts = {}) {
   folderPicker.addEventListener("change", () => addFiles([...folderPicker.files], true));
   drop.addEventListener("dragover", (e) => { e.preventDefault(); drop.classList.add("over"); });
   drop.addEventListener("dragleave", () => drop.classList.remove("over"));
-  drop.addEventListener("drop", (e) => { e.preventDefault(); drop.classList.remove("over"); addFiles([...(e.dataTransfer?.files || [])], false); });
+  drop.addEventListener("drop", async (e) => {
+    e.preventDefault(); drop.classList.remove("over");
+    const { files, hadDir } = await readDropEntries(e.dataTransfer);   // folders too, structure kept
+    addFiles(files, hadDir);
+  });
 
   const visSeg = VisibilitySeg({ value: visibility, noServer, onChange: (v) => { visibility = v; syncVis(); } });
 
@@ -176,32 +217,39 @@ export async function openUpload(opts = {}) {
   post.addEventListener("click", doPost);
   syncVis();
   // Pre-loaded files (a drag-and-drop onto the explorer / a channel opens the sheet ready).
-  if (opts.files?.length) addFiles([...opts.files], false);
+  if (opts.files?.length) addFiles([...opts.files], !!opts.folderMode);
 
   // ── helpers ───────────────────────────────────────────────────────────────
   let folderMode = false;
+  let flatten = false;   // folder drop, but "expose every file for tagging" → upload flat, shared tags
   function addFiles(list, asFolder) {
     const rejected = list.filter((f) => !KIND[extOf(f.name)]);
     files = list.filter((f) => KIND[extOf(f.name)]);
-    folderMode = !!asFolder && files.some((f) => f.webkitRelativePath);
+    folderMode = !!asFolder && files.some((f) => relPathOf(f));
     if (rejected.length) toast({ message: `Skipped ${rejected.length} unsupported file${rejected.length > 1 ? "s" : ""}` });
     if (files.length) {
       let summary;
       if (folderMode) {
-        const top = (files[0].webkitRelativePath || "").split("/")[0] || "folder";
-        const subs = new Set(files.map((f) => f.webkitRelativePath.split("/").slice(1, -1).join("/")).filter(Boolean));
-        summary = el(".dropsummary", {}, [iconEl("folder", "sm"), el("b", {}, [top]),
+        const top = (relPathOf(files.find((f) => relPathOf(f))) || "").split("/")[0] || "folder";
+        const subs = new Set(files.map((f) => relPathOf(f).split("/").slice(1, -1).join("/")).filter(Boolean));
+        const head = el(".dropsummary", { style: "cursor:pointer" }, [iconEl("folder", "sm"), el("b", {}, [top]),
           ` · ${files.length} file${files.length > 1 ? "s" : ""}${subs.size ? ` in ${subs.size + 1} folders` : ""}`]);
-        summary.title = "Choose a different folder";
-        summary.addEventListener("click", () => folderPicker.click());
+        head.title = "Choose a different folder";
+        head.addEventListener("click", () => folderPicker.click());
+        // Flatten: drop the folder tree, upload every file loose so the shared Tags field applies to
+        // all of them (the ask: "expose all the files for tagging"). A structured upload skips Tags.
+        const flat = el("input", { type: "checkbox" }); flat.checked = flatten;
+        const flatRow = el("label.flatten", { style: "display:flex;align-items:center;gap:8px;font-size:var(--fs-xs);color:var(--soft);margin-top:8px;cursor:pointer" },
+          [flat, "Flatten folders — expose every file for tagging"]);
+        flat.addEventListener("change", () => { flatten = flat.checked; syncVis(); });
+        summary = el(".usummary", {}, [head, flatRow]);
       } else {
-        summary = el(".dropsummary", {}, [el("b", {}, [files[0].name]), files.length > 1 ? ` · ${files.length} files` : ""]);
+        summary = el(".usummary.dropsummary", { style: "cursor:pointer" }, [el("b", {}, [files[0].name]), files.length > 1 ? ` · ${files.length} files` : ""]);
         summary.title = "Choose different files";
         summary.addEventListener("click", () => picker.click());
       }
-      summary.style.cursor = "pointer";
       // Rebuild the dropzone → summary swap idempotently (a re-pick replaces the prior summary).
-      dropWrap.querySelector(".dropsummary")?.remove();
+      dropWrap.querySelector(".usummary")?.remove();
       if (drop.parentNode) drop.replaceWith(summary); else dropAlt.before(summary);
       dropAlt.hidden = true;
       drop.classList.remove("over");
@@ -262,11 +310,14 @@ export async function openUpload(opts = {}) {
       }
 
       const onServer = visibility === "server";
+      // "structured" = keep the dropped/picked tree. Flatten turns a folder upload into a flat one:
+      // every file lands loose (shared Tags apply), no folders recreated.
+      const structured = folderMode && !flatten;
       // Folder upload: recreate the picked tree first, then file each work into the folder its
       // path names. Server folders nest under the chosen destination folder; personal ones nest
-      // at the My-files root. A loose (non-folder) upload keeps the single chosen folderId.
+      // at the My-files root. A loose (non-folder / flattened) upload keeps the single chosen folderId.
       let folderMap = null;
-      if (folderMode) {
+      if (structured) {
         prog.textContent = "Creating folders…";
         folderMap = await buildFolderTree(files, {
           source: onServer ? "server" : "personal",
@@ -274,7 +325,7 @@ export async function openUpload(opts = {}) {
           baseFolderId: onServer ? folderId : null,
         });
       }
-      const folderFor = (h) => folderMode ? (folderMap.get(relDir(h.file)) || folderId || null) : (folderId || null);
+      const folderFor = (h) => structured ? (folderMap.get(relDir(h.file)) || folderId || null) : (folderId || null);
 
       prog.textContent = "Posting…";
       const title = titleInput.value.trim();
@@ -288,8 +339,8 @@ export async function openUpload(opts = {}) {
           owner_id: onServer ? serverId : me.id,
           visibility: visToDb(visibility),   // 'private' → 'personal' (the DB noun); raw 'private' fails the check
           server_id: onServer ? serverId : null,
-          // A folder upload keeps each file's own name; a loose upload can override the title.
-          title: folderMode ? h.file.name : (title || h.file.name),
+          // Many files → keep each file's own name; a single loose upload can override the title.
+          title: files.length > 1 ? h.file.name : (title || h.file.name),
           file_ext: h.ext,
           kind: kindOf(h.ext),
           blob_sha: h.hash,
@@ -305,13 +356,15 @@ export async function openUpload(opts = {}) {
           const { error: se } = await supabase.from("saved_items").upsert({ user_id: user.id, work_id: work.id, folder_id: destFolder }, { onConflict: "user_id,work_id" });
           if (se) throw new Error(`couldn’t file into your folder (${se.code || "db"}): ${se.message}`);
         }
-        // Folder uploads skip the single Tags/Collaborators fields (they belong to a loose post).
-        if (!folderMode) {
+        // A structured folder upload skips the single Tags/Collaborators fields (they belong to a
+        // loose post). A flattened folder upload applies the shared Tags to every file — the point
+        // of flattening. Collaborators still only make sense on a single loose post.
+        if (!structured) {
           for (const t of tags) await supabase.from("content_tags").insert({ work_id: work.id, tag: t });
-          for (const c of collabs) await supabase.rpc("add_collaborator", { work_id: work.id, handle: c.handle, role: c.role });
+          if (files.length === 1) for (const c of collabs) await supabase.rpc("add_collaborator", { work_id: work.id, handle: c.handle, role: c.role });
         }
       }
-      toast({ message: folderMode ? `Uploaded ${files.length} files` : (files.length > 1 ? `Posted ${files.length} files` : "Posted"), icon: "check" });
+      toast({ message: files.length > 1 ? `Uploaded ${files.length} files` : "Posted", icon: "check" });
       close();
       opts.onDone && opts.onDone();
     } catch (e) {
