@@ -74,6 +74,17 @@ Vercel. **The RLS policy is the fence; the UI is only the signpost.** Every
 table ships with RLS. Backend is a **true clean slate** — design the schema
 fresh for this product, don't inherit the retired one.
 
+**Before you verify anything (RLS, a write path, "does feature X work"), read
+[`docs/VERIFICATION.md`](docs/VERIFICATION.md) and use its method — literally
+always.** It exists because tests here have lied: an RLS `INSERT` whose check is
+inline `col = auth.uid()` (works, placement, content_tags, saved/starred_items,
+share_links, comments) returns `42501` on some MCP runs and succeeds on others,
+on identical input — a pooled-connection plan-cache artifact, **not** a bug.
+Never call one of those a bug from a single failed simulation; verify it the way
+the doc says (static analysis + service-role shape check + the live path).
+`SECURITY DEFINER`-gated policies and RPCs test reliably. A demo screenshot
+proves layout, not function.
+
 ## Writing style
 
 Comments explain **why**, especially why an obvious alternative is wrong — that
