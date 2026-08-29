@@ -9,7 +9,6 @@
 import { el, Avatar, openMenu, toast, openModal, Button, SegmentedControl, SelectPill } from "./ui.js";
 import { iconEl } from "./icons.js";
 import { navigate, reload } from "./router.js";
-import { signOut } from "./supabase.js";
 import { isDemo, createServer, joinServer, updateServer, setStatus } from "./data.js";
 import { avatarUrl } from "./cards.js";
 import { uploadBlobs } from "./upload-r2.js";
@@ -52,15 +51,9 @@ export function renderRail(data, route) {
     im.addEventListener("error", () => pfp.replaceChildren(document.createTextNode(data.me.initials)), { once: true });
     pfp.replaceChildren(im);
   }
-  const meBtn = el("button.railbtn.user" + (route.screen === "profile" ? ".on" : ""), { title: `${data.me.name}, your profile` }, [pfp]);
-  meBtn.addEventListener("click", (e) => openMenu(e.currentTarget, [
-    { header: data.me.name },
-    { label: "Profile", icon: "user", onClick: () => navigate(`/u/${data.me.handle}`) },
-    { label: "Set status", icon: "smile", onClick: () => openStatus(data) },
-    { label: "Settings", icon: "settings", onClick: () => navigate(withDemo("/settings")) },
-    { sep: true },
-    { label: "Sign out", icon: "leave", danger: true, onClick: async () => { await signOut(); navigate("/signin"); } },
-  ]));
+  // B11: the pfp goes STRAIGHT to your profile — no dropdown. Status now lives on the profile
+  // page (P15); Settings is the profile's Settings tab; Sign out is in User settings → Account.
+  const meBtn = el("button.railbtn.user" + (route.screen === "profile" ? ".on" : ""), { title: `${data.me.name}, your profile`, onClick: () => navigate(withDemo(`/u/${data.me.handle}`)) }, [pfp]);
   rail.append(meBtn);
   return rail;
 }

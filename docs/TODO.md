@@ -64,12 +64,29 @@ owner's live checklist in [`QA-CHECKLIST.md`](QA-CHECKLIST.md). **CANON wins** o
   frontend half, and **add/keep a concrete claim in [`QA-CHECKLIST.md`](QA-CHECKLIST.md)** for
   the owner to confirm on preview. Never present a demo screenshot as proof of a live path.
 
+## 🎨 UI-change workflow (owner rule, 2026-08-29 — MANDATORY for every visual change)
+
+**Every UI change must be produced as THREE distinct versions, batched, and shown to the owner
+to pick from — do not just ship one.** Applies to any visible change: a restyle, a new
+screen/dialog/component, a density pass, a layout rework, a card/viewer redesign. Procedure:
+
+1. Build **3 genuinely different takes** (V1/V2/V3) of the change — not three tweaks of the same
+   idea; vary the actual approach (layout, density, hierarchy, treatment).
+2. **Batch-render** all three (demo screenshots, both themes, at 1440) — e.g. behind a
+   `?v=1|2|3` switch, three sibling files/routes, or three published artifacts — so they can be
+   compared side by side.
+3. **Show the owner and let them pick.** Ship only the chosen one (then clean up the other two).
+
+Pure-backend / non-visual work (RPCs, data wiring, bug fixes with no visual delta) is exempt —
+this rule is about **look**. When in doubt whether a change is "visual," treat it as visual and
+make the three versions.
+
 ## Definition of done (per item)
 
 Verified the right way for its kind → committed to `preview` with a clear message →
 pushed → box ticked here → `BUILDLOG.md` entry appended. Honest status only: "backend-verified
 (service-role shape)", "renders in demo", or "needs live QA — claim added" — never a bare
-"works".
+"works". **For any UI change, the 3-versions-then-owner-picks rule above is part of "done".**
 
 ---
 
@@ -272,10 +289,10 @@ IDs are stable handles (`B*` broken-UI, `K*` backend, `P*` polish, `D*` deferred
       another file** should offer to **make a folder** from them (Finder/Drive). Today neither
       fires. *Files:* `app/screens/explorer.js` (grid pointer handlers, `enableDropUpload`),
       `app/data.js` (createFolder + moveToFolder to seed the new folder). *Hard.*
-- [ ] **B11 · Clicking my pfp opens a dropdown, should go to my profile (round-7).** The left-rail
-      profile button should navigate straight to `/u/<me>`; move whatever the dropdown offered
-      (status/sign-out) onto the profile page / user-settings. *Files:* `app/shell.js` (rail me
-      button). *Easy.* (Related: P15 moves Status onto the profile.)
+- [x] **B11 · Clicking my pfp opens a dropdown, should go to my profile (round-7).** *Done.* The
+      left-rail profile button now navigates straight to `/u/<me>` (no dropdown). Its old items are
+      already reachable: Profile = the destination, Settings = the profile's Settings tab, Sign out
+      = User settings → Account; Status moves to the profile in **P15**. *Files:* `app/shell.js`.
 - [ ] **B12 · @mentions don't actually work (round-7).** The composer `@` autocomplete +
       posting a real mention that resolves/notifies the person. Today it inserts text but nothing
       resolves. *Files:* `app/screens/workspace.js` (composer autocomplete + mention render),
@@ -531,12 +548,14 @@ IDs are stable handles (`B*` broken-UI, `K*` backend, `P*` polish, `D*` deferred
       `app/screens/details.js`/`cards.js` (render coloured tags), `eski-style` (tag-type colour
       tokens). *Medium-hard.* Load **`eski-style`** before styling — tags are currently "coloured
       bold text, not a pill" (CANON #26); confirm how a typed colour reads within that rule.
-- [ ] **P12 · Density pass: modals · dialogs · toasts (round-7).** Kill excess vertical space and
-      oversized headers/footers so a popup doesn't take up more of the page than it needs (reads
-      "tablet-sized" now). Tighten the modal `.uhd`/`.mfoot`/`.ufoot`, body padding, and the toast.
-      Fixes the alignment/spacing knock-on. *Files:* `styles/primitives.css` (`.modal`, `.uhd`,
-      footers, `.toast`), `app/ui.js` (openModal/toast if structural). Load **`eski-style`** +
-      **`eski-polish`** first. *Medium.*
+- [ ] **P12 · Density pass: modals · dialogs · toasts (round-7).** *Started — modal primitive +
+      toast tightened this session* (`.modal .uhd`/`.mfoot` → `--s2` vertical, `.mbody` → `--s3`
+      vertical, title → `--fs-sm`; toast padding snapped off raw `11px 13px` to `--s2 --s3`). A
+      small dialog now renders ~340×240 instead of tablet-sized. **Remaining + REDO under the new
+      3-versions rule:** this was shipped as a single version before that rule landed — the fuller
+      density pass (per-dialog bodies, the upload sheet, roles/settings panels) must be produced as
+      **3 versions for the owner to pick** (see the UI-change workflow above). *Files:*
+      `styles/primitives.css` (done), then per-surface. Load **`eski-style`** + **`eski-polish`**.
 - [ ] **P18 · Standardize header + panel sizes & colours (round-7).** Headers and panes across the
       app should use one consistent height + background-step + inset scale (workspace header, channel
       column header, explorer panehd, settings, details pane). Audit + unify against `eski-style`.
@@ -564,10 +583,10 @@ IDs are stable handles (`B*` broken-UI, `K*` backend, `P*` polish, `D*` deferred
       progress affordance, and let the upload be **minimized halfway** (Google-Drive style) so you
       keep working while it runs. *Files:* `app/screens/upload.js` (`doPost` progress), `app/ui.js`
       (a shared busy/minimizable widget), `styles/*`. *Medium-hard.* Ties into **P3** (loading states).
-- [ ] **P17 · Copy density — drop needless hints (round-7).** Remove the "(optional)" after "Add
-      details", and any **control tip that stops being useful after the first time** (make them
-      first-run-only or cut them). *Files:* `app/screens/upload.js` + a sweep of one-liner hints.
-      *Easy.*
+- [x] **P17 · Copy density — drop needless hints (round-7).** *Done (first pass).* Cut the
+      "(optional)" after "Add details", the "file name if blank" Title hint, and the "(keeps its
+      structure)" folder note in the upload sheet. *Files:* `app/screens/upload.js`. A broader
+      one-liner-hint sweep across other surfaces can follow.
 - [ ] **P19 · Unread-message indicator on channels (round-7).** A notification UI element showing a
       channel has new messages (unread dot/bold + maybe a count), driven by `channel_reads` vs the
       latest message. *Files:* `app/screens/workspace.js` (channel rows), `app/data.js`

@@ -89,12 +89,15 @@
 .modal{width:340px;max-width:100%;max-height:calc(100vh - var(--s4)*2);display:flex;flex-direction:column;
   background:var(--paper);border-radius:var(--r);overflow:hidden}
 .modal.wide{width:440px}
-.modal .uhd{flex:none;display:flex;align-items:center;justify-content:space-between;padding:var(--s3) var(--s4)}
-.modal .uhd b{font-size:var(--fs);font-weight:600}
-.modal .mbody{flex:1 1 auto;min-height:0;overflow-y:auto;padding:var(--s4)}
-.modal .mbody>p{font-size:var(--fs-sm);color:var(--soft);line-height:1.55}
+/* P12 density: header/footer carry the minimum vertical inset (--s2); the body keeps the --s4
+   horizontal inset but a tighter --s3 vertical, so a small dialog stays small instead of reading
+   tablet-sized. */
+.modal .uhd{flex:none;display:flex;align-items:center;justify-content:space-between;padding:var(--s2) var(--s4)}
+.modal .uhd b{font-size:var(--fs-sm);font-weight:600}
+.modal .mbody{flex:1 1 auto;min-height:0;overflow-y:auto;padding:var(--s3) var(--s4)}
+.modal .mbody>p{font-size:var(--fs-sm);color:var(--soft);line-height:1.5}
 .modal .field{width:100%}
-.modal .mfoot{flex:none;position:relative;display:flex;justify-content:flex-end;gap:var(--s2);padding:var(--s3) var(--s4)}
+.modal .mfoot{flex:none;position:relative;display:flex;justify-content:flex-end;gap:var(--s2);padding:var(--s2) var(--s4)}
 .modal .mfoot::after{content:"";position:absolute;left:var(--hair-inset);right:var(--hair-inset);top:0;height:1px;background:var(--line)}
 
 /* ── P3.5 Menu + MenuItem ────────────────────────────────────────────────── */
@@ -173,8 +176,8 @@
 .bar.warn i{background:var(--danger)}   /* over-cap tone */
 
 /* ── P3.11 Toast ─────────────────────────────────────────────────────────── */
-.toast{display:flex;align-items:flex-start;gap:10px;background:var(--ink);color:var(--on-ink);
-  border-radius:var(--r);padding:11px 13px;font-size:var(--fs-sm);animation:toastin .18s ease}
+.toast{display:flex;align-items:flex-start;gap:var(--s2);background:var(--ink);color:var(--on-ink);
+  border-radius:var(--r);padding:var(--s2) var(--s3);font-size:var(--fs-sm);animation:toastin .18s ease}
 .toast .ic{flex:none;margin-top:1px;color:var(--on-ink)}
 .toast .tact{margin-left:8px;color:var(--on-ink);font-weight:600;text-decoration:underline;text-underline-offset:2px}
 .toast .tclose{margin-left:auto;color:var(--on-ink);opacity:.7}

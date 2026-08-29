@@ -161,7 +161,6 @@ export async function openUpload(opts = {}) {
   const drop = el(".dropzone", {}, [iconEl("clip"), el("div", {}, ["Drop files here, or click to choose"])]);
   const dropAlt = el(".dropalt", { style: "text-align:center;font-size:var(--fs-xs);color:var(--muted);margin-top:6px" }, [
     "or ", el("button.aslink", { type: "button", style: "color:var(--soft);font-weight:600", onClick: () => folderPicker.click() }, ["upload a folder"]),
-    el("span", { style: "color:var(--muted)" }, [" (keeps its structure)"]),
   ]);
   const dropWrap = el("div", {}, [drop, dropAlt, picker, folderPicker]);
   drop.addEventListener("click", () => picker.click());
@@ -209,8 +208,8 @@ export async function openUpload(opts = {}) {
     collabInput.value = "";
   });
   const addmore = el("details.addmore", {}, [
-    el("summary", {}, [iconEl("chev", "sm"), "Add details ", el("span", { style: "color:var(--muted);font-weight:400" }, ["(optional)"])]),
-    el("label.fl", {}, ["Title ", el("span", { style: "color:var(--muted)" }, ["file name if blank"])]),
+    el("summary", {}, [iconEl("chev", "sm"), "Add details"]),
+    el("label.fl", {}, ["Title"]),
     el(".field", {}, [titleInput]),
     el("label.fl", {}, ["Tags"]),
     el(".field", {}, [tagsInput]),
