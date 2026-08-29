@@ -192,12 +192,18 @@ IDs are stable handles (`B*` broken-UI, `K*` backend, `P*` polish, `D*` deferred
 
 ### 2 · Fixes for backend
 
-- [ ] **K1 · `preview_invite(code)` anon-readable RPC.** So the join card shows server name ·
-      member count · inviter instead of generic copy. One `SECURITY DEFINER` function returning
-      those fields for a valid, unexpired, unrevoked code; wire into `screens/join.js`.
-      *Files:* new `schema-23-preview-invite.sql`, `app/screens/join.js`, `app/data.js`. *Easy.*
-      *Test (deterministic):* call the RPC via MCP as `anon` for a real code → returns the row;
-      for a bad/expired code → returns nothing. Reliable (it's `SECURITY DEFINER`).
+- [x] **K1 · `preview_invite(code)` anon-readable RPC.** *Done (anon role-sim-verified + demo
+      render).* `preview_invite(p_code)` (schema-26, migration `p16_preview_invite`) is a
+      `SECURITY DEFINER` function, granted to **anon** + authenticated, returning the server
+      name/icon, active member count, and inviter for a VALID/live/under-cap code; a
+      revoked (deleted row) / expired / at-capacity / invalid code returns **no rows** → null.
+      Same validity rules as `join_via_invite`. `data.js loadInvitePreview(code)` (never throws)
+      + `screens/join.js` now enrich the invite card (server badge · "Join {name}" · "{inviter}
+      invited you · N members") for both the signed-in and signed-out branches, and show the
+      dead-invite state proactively when the preview is null. *Files:* `schema-26-preview-invite.sql`,
+      `app/data.js`, `app/screens/join.js`. Verified: anon RPC returns the row for the real code
+      and NULL for a bad code (rolled back); demo join card renders the preview both themes, 0
+      pageerrors.
 - [x] **K2 · Server icon + cover + profile banner upload persist and render.**
       *Done (persistence verified live; render fixed + demo-verified).* **KEY CORRECTION for the
       next agent:** this was **NOT** a silent-no-op persistence bug — the writes always persisted.

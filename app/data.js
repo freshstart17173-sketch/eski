@@ -1529,6 +1529,25 @@ export async function joinServer(input) {
   return data;
 }
 
+// Anon-safe invite preview (K1) — the invite landing (screens/join.js) can't read `servers` or
+// `server_members` before joining (RLS), so it showed generic copy. `preview_invite` is a
+// SECURITY DEFINER RPC (anon-callable) returning the server name/icon, active member count, and
+// inviter for a VALID, live, under-cap code; a revoked/expired/invalid code returns nothing →
+// null here → the caller shows the dead-invite state. Never throws (a preview must not block the
+// page); a network error just yields null and the card falls back to generic copy.
+export async function loadInvitePreview(code) {
+  const clean = String(code || "").trim().split("?")[0].split("/").filter(Boolean).pop();
+  if (isDemo()) return { serverId: "lb", name: "Late Bloom LP", iconKey: null, memberCount: 6, inviter: "jax" };
+  if (!clean) return null;
+  try {
+    const { data, error } = await supabase.rpc("preview_invite", { p_code: clean });
+    if (error) return null;
+    const row = Array.isArray(data) ? data[0] : data;
+    if (!row) return null;
+    return { serverId: row.server_id, name: row.server_name, iconKey: row.icon_key || null, memberCount: row.member_count ?? 0, inviter: row.inviter_name || null };
+  } catch { return null; }
+}
+
 // Create a channel — a direct `channels` insert, fenced by `ch_write` (manage_channels). The
 // name is normalised to a handle (lowercase, dashes). Returns the new {id,name} so the caller
 // can navigate into it.

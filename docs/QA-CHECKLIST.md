@@ -316,7 +316,7 @@ The server explorer mounts inside the shell (channel column stays); My files hid
 
 - [ ] `[infra]` Create a server (name + icon + first channel) → it's created, you're the owner, and it appears on your rail with a starter channel.
 - [ ] New server first-run → the empty server shows a 3-step setup checklist (create channels · invite · upload).
-- [ ] Open a valid `/join/<code>` link → a preview card shows the server name, member count, inviter, and a Join button.
+- [ ] **(K1 — now wired)** Open a valid `/join/<code>` link → a preview card shows the server **name + icon**, active **member count**, and **inviter** ("{name} invited you · N members"), and a Join button. Works **signed-out too** (the `preview_invite` RPC is anon-readable) — the signed-out card also names the server.
 - [ ] Click Join on a valid invite → you become a member and land in the server.
 - [ ] Open an expired / revoked / full / already-member invite → a distinct dead-invite screen with the right reason + CTA (not the valid preview).
 

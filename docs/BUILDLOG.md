@@ -1978,3 +1978,24 @@ NEXT: K1 (preview_invite anon RPC), K5 (create_server RPC), K4 (delete/invite mg
 GOTCHA: `post_comment` is set-returning (`returns table(...)`) so the PostgREST result is an ARRAY
   of one row — read `data[0]`, not `data`. Comments context still defaults to 'public' (the RPC
   never sets it; the check constraint requires exactly 'public').
+
+## 2026-08-29 — K1 preview_invite anon RPC (real invite landing)
+IN PROGRESS: (cleared)
+DONE (anon role-sim-verified + demo render, on `preview`):
+  - **`preview_invite(p_code)`** (schema-26, migration `p16_preview_invite`) — a SECURITY DEFINER
+    function granted to **anon** + authenticated, returning `{server_id, server_name, icon_key,
+    member_count, inviter_name}` for a VALID/live/under-cap code and NO rows for a revoked (deleted
+    row) / expired / at-capacity / invalid one. Same validity rules as `join_via_invite`. Anon-safe
+    by design: the landing renders before sign-in, and the code is the only secret.
+  - **`data.js loadInvitePreview(code)`** — never throws (a failed preview must not block the page);
+    returns null on any error → generic/dead fallback.
+  - **`screens/join.js`** — both the signed-in and signed-out cards fetch the preview and fill in a
+    square server badge (icon or initials), "Join {name}", and "{inviter} invited you · N members";
+    a null preview shows the dead-invite state proactively. Refactored the click-time dead-invite
+    into a shared `deadInvite()` helper.
+VERIFIED: `preview_invite` as `anon` → the real code returns the row (server "test server",
+  inviter "dexter", 1 member); a bad code returns NULL (rolled back). Demo join card renders
+  "Join Late Bloom LP" · "jax invited you · 6 members" · badge, both themes, 0 pageerrors.
+NEXT: K5 (atomic create_server RPC), K4 (delete server + invite expiry/revoke), K9, K6.
+GOTCHA: `preview_invite` is set-returning → PostgREST result is an array; read `data[0]`. A revoked
+  invite is a DELETED row (data.js revokeInvite → si_delete), so "not found" already covers revoked.
