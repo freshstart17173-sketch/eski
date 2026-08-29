@@ -436,10 +436,18 @@ IDs are stable handles (`B*` broken-UI, `K*` backend, `P*` polish, `D*` deferred
       click on the trigger closes it). *Files:* `app/screens/explorer.js`. Verified: demo Type menu
       lists `.als .flp .md .png .tmp .wav .zip`, 0 pageerrors. (Also satisfies the **B6 filtering
       audit** follow-up for search; the selection-persistence part of B6 already shipped.)
-- [ ] **P9 · Shared folder/file view must match the file browser (round-5).** The K9 shared-folder
-      viewer is a bare grid ("looks empty"); it must look **identical to the explorer** — same
-      selection, filtering, search, view modes — by reusing the real explorer component in a
-      read-only mode. *Files:* `app/screens/shared.js`, reuse `app/screens/explorer.js`. *Medium-hard.*
+- [x] **P9 · Shared folder view matches the file browser (round-5).** *Done (demo-verified both
+      themes).* The shared-folder viewer now renders through the **real explorer** in a read-only
+      `shared` mode — same toolbar, search, filters (Type/Tag/Date/Sort + the P8 real-extension
+      types), view modes (Grid/List/Feed), and selection. `data.shared` gates off the rail, the
+      folder tree, the storage footer, New folder/Upload, drag-drop, and the per-card owner ⋯ menu;
+      a standalone `sharedHeader` (eski wordmark · read-only · Request-to-join for a server folder)
+      sits on top. `loadSharedFolder` now returns an explorer-shaped data object; `main.js` routes
+      `/shared/folder/:token` → `renderExplorer` (dead token → `renderSharedFolderDead`); the bespoke
+      `renderSharedFolder` is retired. Guarded every `data.server.id` deref for the null-server case.
+      *Files:* `app/screens/explorer.js`, `app/screens/shared.js`, `app/main.js`, `app/data.js`,
+      `app/demo.js`. Verified: demo shared folder renders the full browser (toolbar + 4 cards, no
+      tree/rail/upload), request-to-join CTA, dead token handled, both themes, 0 pageerrors.
 - [ ] **P10 · Server settings as its own full SCREEN (round-5, promotes D4).** Replace the server-
       menu modals with ONE full-screen settings surface containing everything: overview (name/icon/
       cover), roles & permissions, **audit log**, members/moderation, join requests, notification

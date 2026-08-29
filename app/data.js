@@ -742,19 +742,24 @@ export async function createFolderShare(source, folderId) {
   if (error) throw new Error(error.message || "Couldn’t create the folder link");
   return data;
 }
-// Resolve a shared folder for the anon viewer → { folder, serverId, serverName, source, files[] }
-// or { dead:true } for a revoked/expired/invalid token.
+// Resolve a shared folder for the anon viewer. Shaped as an EXPLORER data object (P9) so the
+// same file-browser component renders it read-only: `shared:true`, `source:"shared"`, the folder
+// name as the crumb root, an empty folder tree, and the folder's works as `files`. Returns
+// `{ dead:true }` for a revoked/expired/invalid token (main.js shows the dead-link state).
 export async function loadSharedFolder(token) {
   if (isDemo()) return demoSharedFolder(token);
   const { data, error } = await supabase.rpc("resolve_folder_share", { p_token: token });
   if (error || !data || !data.length) return { dead: true };
   const first = data[0];
   return {
-    folder: first.folder_name || "Shared folder",
-    source: first.source, serverId: first.server_id || null, serverName: first.server_name || null,
+    shared: true, source: "shared", live: true, needsAuth: false,
+    rootLabel: first.folder_name || "Shared folder",
+    serverId: first.server_id || null, serverName: first.server_name || null,
+    server: null, folders: [], currentFolderId: null, storage: null,
     files: data.filter((r) => r.file_id).map((r) => ({
       id: r.file_id, title: r.title, name: r.title, kind: r.kind, file_ext: r.file_ext,
-      blob_sha: r.blob_sha, bytes: r.bytes, who: null, tags: [],
+      blob_sha: r.blob_sha, bytes: r.bytes, created_at: null, folderId: null,
+      channelName: null, who: null, tags: [], starred: false,
     })),
   };
 }

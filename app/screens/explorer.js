@@ -16,7 +16,7 @@
 import { el, toast, openMenu, closeMenus, openModal, VisibilitySeg, Button, copyToClipboard } from "../ui.js";
 import { iconEl } from "../icons.js";
 import { navigate, reload } from "../router.js";
-import { createFolder, moveToFolder, trashWorks, restoreWork, purgeWork, emptyTrash, loadTrash, starWork, unstarWork, saveToFiles, renameWork, setHidden, createShareLink, shareUrl, loadShareLinks, revokeShareLink, setVisibility, visFromDb, createFolderShare, folderShareUrl } from "../data.js";
+import { createFolder, moveToFolder, trashWorks, restoreWork, purgeWork, emptyTrash, loadTrash, starWork, unstarWork, saveToFiles, renameWork, setHidden, createShareLink, shareUrl, loadShareLinks, revokeShareLink, setVisibility, visFromDb, createFolderShare, folderShareUrl, requestToJoin } from "../data.js";
 import { workCard, folderCard, mediaUrl, KIND_ICON, downloadWork } from "../cards.js";
 import { channelColumn } from "./workspace.js";
 import { openUpload, enableDropUpload } from "./upload.js";
@@ -102,19 +102,34 @@ export function renderExplorer(data, view = {}) {
   if (!data._trash) data._trash = (data.trash || []).slice();
 
   const personal = data.source === "personal";
+  // P9: a shared folder (K9 link) renders through this SAME explorer, read-only + standalone —
+  // same toolbar/filters/search/view-modes/selection as the real file browser, just no rail, no
+  // folder tree, no storage footer, no upload/new-folder, and no per-card owner menu. The
+  // shared:true flag (set by loadSharedFolder) gates all of that below.
+  const shared = !!data.shared;
   const pane = el(".pane");
-  const tree = el("nav.filetree", { "data-tree": personal ? "personal" : "server" });
-  const layout = el(".explayout", { "data-source": personal ? "personal" : "server" }, [tree, pane]);
+  const tree = shared ? null : el("nav.filetree", { "data-tree": personal ? "personal" : "server" });
+  const layout = el(".explayout" + (shared ? ".shared" : ""), { "data-source": shared ? "shared" : (personal ? "personal" : "server") }, shared ? [pane] : [tree, pane]);
   // Drag files anywhere onto the explorer → the upload sheet, targeting the current folder
-  // (getOpts reads state.folderId live). A `.dropping` overlay hints the target.
-  enableDropUpload(layout, () => (personal
+  // (getOpts reads state.folderId live). A `.dropping` overlay hints the target. Not on a
+  // read-only shared view.
+  if (!shared) enableDropUpload(layout, () => (personal
     ? { visibility: "private", onDone: () => reload() }
     : { visibility: "server", serverId: data.server.id, folderId: state.folderId, onDone: () => reload() }));
 
   // Server mount keeps the channel column beside the browser (Files is a channel,
   // never a dead-end). The personal My-files mount hides it — its own tree is the
-  // navigation and it carries no server chrome (CANON §C.6).
-  if (personal) screen.append(layout);
+  // navigation and it carries no server chrome (CANON §C.6). A shared view is standalone
+  // (no rail) but gets a read-only header (brand · Request-to-join for a server folder).
+  if (shared) {
+    // The screen is row-flex (rail + browser); a shared view has no rail, so stack the read-only
+    // header full-width on top and let the browser fill below.
+    screen.setAttribute("data-screen", "sharedfolder");
+    screen.style.cssText = "display:flex;flex-direction:column;height:100vh";
+    layout.style.flex = "1"; layout.style.minHeight = "0";
+    screen.append(sharedHeader(data), layout);
+  }
+  else if (personal) screen.append(layout);
   else screen.append(channelColumn(data, { filesActive: true }), layout);
 
   const rerender = () => { paint(tree, pane, data, state, rerender); };
@@ -138,10 +153,30 @@ export function renderExplorer(data, view = {}) {
   return screen;
 }
 
+// The standalone header above a shared-folder view (P9): the eski wordmark, a read-only note,
+// and — for a shared SERVER folder — a Request-to-join button (no invite needed). No rail.
+function sharedHeader(data) {
+  const acts = el(".svacts");
+  if (data.serverId) {
+    const reqBtn = Button({ label: `Request to join ${data.serverName || "server"}`, variant: "primary", icon: "plus" });
+    reqBtn.addEventListener("click", async () => {
+      reqBtn.disabled = true;
+      try {
+        const st = await requestToJoin(data.serverId);
+        if (st === "member") { toast({ message: "You're already a member", icon: "check" }); navigate(isDemoQS() ? `/s/${data.serverId}?demo=1` : `/s/${data.serverId}`); return; }
+        reqBtn.replaceChildren(iconEl("check", "sm"), document.createTextNode("Request sent"));
+        toast({ message: "Request sent — an admin will review it", icon: "check" });
+      } catch (e) { reqBtn.disabled = false; toast({ message: e?.message || "Couldn't send the request" }); }
+    });
+    acts.append(reqBtn);
+  }
+  return el("header.svhd", {}, [el(".brand", {}, ["eski"]), el(".svctx", {}, ["Shared folder · read-only"]), acts]);
+}
+
 // what the tree root / breadcrumb root reads as, and where a folder link points
-function rootLabel(data) { return data.source === "personal" ? (data.rootLabel || "My files") : data.server.name; }
+function rootLabel(data) { return data.rootLabel || (data.source === "personal" ? "My files" : data.server?.name || "Files"); }
 function filesHref(data, folderId) {
-  const base = data.source === "personal" ? "/files" : `/s/${data.server.id}/files`;
+  const base = data.source === "server" ? `/s/${data.server?.id}/files` : "/files";
   const q = new URLSearchParams();
   if (folderId) q.set("folder", folderId);
   if (isDemoQS()) q.set("demo", "1");
@@ -227,7 +262,7 @@ function storageFoot(data, storage) {
 
 // ── the pane (breadcrumb · toolbar · contents) ───────────────────────────────
 function paint(tree, pane, data, state, rerender) {
-  paintTree(tree, data, state, rerender);
+  if (tree) paintTree(tree, data, state, rerender);   // no tree/storage-footer on a shared view (P9)
 
   if (state.trash) { paintTrash(pane, data, state, rerender); return; }
 
@@ -260,14 +295,14 @@ function paint(tree, pane, data, state, rerender) {
   // toolbar — search · filters (Type/Channel/Uploader/Tag/Date/Sort) · New folder · Upload
   const personal = data.source === "personal";
   const search = el(".field", {}, [iconEl("search", "sm"),
-    el("input", { placeholder: personal ? "Search your files" : "Search this server's files", value: state.query, onInput: (e) => { state.query = e.target.value; repaintBody(); } }),
+    el("input", { placeholder: data.shared ? "Search this folder" : (personal ? "Search your files" : "Search this server's files"), value: state.query, onInput: (e) => { state.query = e.target.value; repaintBody(); } }),
   ]);
   // onDone reloads the route so a just-uploaded file (or a whole uploaded folder) shows
   // immediately — the explorer data is cached per render, so without a refetch the new work
   // wouldn't appear until a manual reload (owner bug: "reload needed for things to update").
-  const uploadOpts = personal
+  const uploadOpts = data.shared ? null : (personal
     ? { visibility: "private", onDone: () => reload() }
-    : { visibility: "server", serverId: data.server.id, folderId: state.folderId, onDone: () => reload() };
+    : { visibility: "server", serverId: data.server.id, folderId: state.folderId, onDone: () => reload() });
 
   // Facet options derived from ALL files (stable across folder nav, not just the folder
   // in view). Type is a fixed set; Channel/Uploader/Tag come from the data.
@@ -295,9 +330,10 @@ function paint(tree, pane, data, state, rerender) {
   };
   const typeBtn = multiBtn("Type", state.types, typeOpts);
   const tagBtn = multiBtn("Tag", state.tags, tagOpts);
-  // Channel + Uploader are server context only (personal files carry neither)
-  const chanBtn = personal ? null : multiBtn("Channel", state.channels, channelOpts);
-  const uploaderBtn = personal ? null : multiBtn("Uploader", state.uploaders, uploaderOpts);
+  // Channel + Uploader are server context only (personal + shared files carry neither)
+  const serverSource = data.source === "server";
+  const chanBtn = serverSource ? multiBtn("Channel", state.channels, channelOpts) : null;
+  const uploaderBtn = serverSource ? multiBtn("Uploader", state.uploaders, uploaderOpts) : null;
 
   // Date + Sort are single-select: the current choice is shown by an inverted (filled)
   // menu row via `selected`, not a ✓ prefix; the button label updates on pick.
@@ -315,11 +351,12 @@ function paint(tree, pane, data, state, rerender) {
 
   const toolbar = el(".toolbar", {}, [
     search, typeBtn, chanBtn, uploaderBtn, tagBtn, dateBtn, sortBtn, dirBtn, starFilterBtn,
-    el(".tbactions", {}, [
+    // No New folder / Upload on a read-only shared view (P9).
+    data.shared ? null : el(".tbactions", {}, [
       el("button.btn.newFolderBtn", { onClick: () => newFolder(data, state, rerender, state.folderId) }, [iconEl("plus", "sm"), "New folder"]),
       el("button.btn.primary", { onClick: () => openUpload(uploadOpts) }, [iconEl("plus", "sm"), "Upload"]),
     ]),
-  ]);
+  ].filter(Boolean));
 
   const selbar = el(".selbar");
   const body = el(".panebody");
@@ -411,7 +448,7 @@ function contents(data, state, rerender, sel) {
   // siblings = the files in view (prev/next); Location = the file's own folder path.
   const personal = data.source === "personal";
   const openFile = (w) => openDetails(w, {
-    serverId: personal ? null : data.server.id,
+    serverId: data.server?.id || null,
     serverName: rootLabel(data), personal,
     folderPath: crumbPath(data.folders, w.folderId),
     siblings: files, isPost: false,
@@ -439,7 +476,7 @@ function contents(data, state, rerender, sel) {
   };
 
   const onStar = (w) => toggleStar(data, state, rerender, w);
-  const onMenu = (w, anchor) => openCardMenu(data, state, rerender, w, anchor);
+  const onMenu = data.shared ? null : (w, anchor) => openCardMenu(data, state, rerender, w, anchor);   // read-only shared view has no per-card owner menu (P9)
   const onShareFolder = (folder, anchor) => shareFolderMenu(data, folder, anchor);
   if (state.mode === "feed") return feedView(data, state, openFile);
   if (state.mode === "list") return listView(subfolders, files, { openFile, openFolder });

@@ -21,7 +21,7 @@ import { renderProfile } from "./screens/profile.js";
 import { closeDetails } from "./screens/details.js";
 import { renderSignin } from "./screens/signin.js";
 import { renderLanding } from "./screens/landing.js";
-import { renderShared, renderSharedFolder } from "./screens/shared.js";
+import { renderShared, renderSharedFolderDead } from "./screens/shared.js";
 import { renderDMs } from "./screens/dms.js";
 import { renderNotifications } from "./screens/notifications.js";
 import { renderNotFound } from "./screens/notfound.js";
@@ -91,11 +91,12 @@ async function renderRoute(r) {
     swap(renderShared(shData));
     return;
   }
-  // /shared/folder/:token — K9 read-only folder viewer (standalone, works signed-out).
+  // /shared/folder/:token — K9/P9 read-only folder viewer. Renders through the real explorer
+  // (shared mode) so it looks identical to the file browser; a dead token shows the dead-link card.
   if (r.screen === "sharedfolder") {
     const fData = await loadSharedFolder(r.params.token);
     if (mine !== token) return;
-    swap(renderSharedFolder(fData));
+    swap(fData.dead ? renderSharedFolderDead() : renderExplorer(fData));
     return;
   }
   // "/" with no session is the marketing home, not the in-shell Feed placeholder

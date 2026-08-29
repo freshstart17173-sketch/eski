@@ -303,12 +303,14 @@ export function demoSharedWork(token) {
   };
 }
 
-// Shared FOLDER viewer demo fixture (K9) — a read-only public folder + a Request-to-join CTA.
+// Shared FOLDER viewer demo fixture (K9/P9) — explorer-shaped read-only data + Request-to-join.
 export function demoSharedFolder(token) {
   if (token === "expired" || token === "dead") return { dead: true };
-  const F = (id, name, kind, ext, bytes) => ({ id, title: name, name, kind, file_ext: ext, blob_sha: null, bytes, who: null, tags: [] });
+  const F = (id, name, kind, ext, bytes) => ({ id, title: name, name, kind, file_ext: ext, blob_sha: null, bytes, created_at: null, folderId: null, channelName: null, who: null, tags: [], starred: false });
   return {
-    folder: "reference-pack", source: "server", serverId: "lb", serverName: "Late Bloom LP",
+    shared: true, source: "shared", live: false, needsAuth: false,
+    rootLabel: "reference-pack", serverId: "lb", serverName: "Late Bloom LP",
+    server: null, folders: [], currentFolderId: null, storage: null,
     files: [
       F("sf-a", "ref_drums.png", "image", "png", 2_100_000),
       F("sf-b", "break_chop.wav", "audio", "wav", 5_600_000),

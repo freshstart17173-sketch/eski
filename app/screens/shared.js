@@ -5,12 +5,11 @@
 // so a shared file previews identically. No member hue — this is an anon / out-of-server
 // context, so the sharer's name is plain text (the server-scoped hue renders nowhere here).
 
-import { el, toast, Avatar } from "../ui.js";
+import { el, toast } from "../ui.js";
 import { iconEl } from "../icons.js";
-import { fillMedia, fmtBytes, openDetails } from "./details.js";
-import { downloadWork, workCard } from "../cards.js";
-import { saveToFiles, requestToJoin, isDemo } from "../data.js";
-import { navigate } from "../router.js";
+import { fillMedia, fmtBytes } from "./details.js";
+import { downloadWork } from "../cards.js";
+import { saveToFiles } from "../data.js";
 
 const KIND_LABEL = { audio: "Audio", image: "Image", video: "Video", text: "Text", other: "File" };
 
@@ -59,50 +58,14 @@ export function renderShared(data) {
   return screen;
 }
 
-// K9 — the shared-FOLDER viewer: a read-only public listing of a folder's files (server or
-// personal), no rail, works signed-out (the token is the capability). A shared SERVER folder
-// also offers "Request to join {server}" so a viewer can ask in without an invite. Reuses the
-// .sharedview chrome + the canonical workCard renderer (opens the details pane read-only).
-export function renderSharedFolder(data) {
+// K9/P9 — the shared-FOLDER viewer now renders through the real explorer (shared mode) in
+// main.js, so it looks identical to the file browser (selection/filter/search/view modes). Only
+// the dead-link state stays here — a revoked/expired/invalid folder token.
+export function renderSharedFolderDead() {
   const screen = el("section.screen", { "data-screen": "sharedfolder" });
   const view = el(".sharedview");
+  view.append(el("header.svhd", {}, [el(".brand", {}, ["eski"]), el(".svctx", {}, ["Shared folder"])]), deadState());
   screen.append(view);
-
-  const head = el("header.svhd", {}, [
-    el(".brand", {}, ["eski"]),
-    el(".svctx", {}, data.dead ? ["Shared folder"] : ["Shared folder · read-only"]),
-  ]);
-  if (data.dead) { view.append(head, deadState()); return screen; }
-
-  const files = data.files || [];
-  // Request-to-join lives on a server folder only (a personal folder has no server to join).
-  if (data.serverId) {
-    const reqBtn = el("button.btn.primary", {}, [iconEl("plus", "sm"), `Request to join ${data.serverName || "server"}`]);
-    reqBtn.addEventListener("click", async () => {
-      reqBtn.disabled = true;
-      try {
-        const st = await requestToJoin(data.serverId);
-        if (st === "member") { toast({ message: "You’re already a member", icon: "check" }); navigate(isDemo() ? `/s/${data.serverId}?demo=1` : `/s/${data.serverId}`); return; }
-        reqBtn.replaceChildren(iconEl("check", "sm"), document.createTextNode("Request sent"));
-        toast({ message: "Request sent — an admin will review it", icon: "check" });
-      } catch (e) { reqBtn.disabled = false; toast({ message: e?.message || "Couldn’t send the request" }); }
-    });
-    head.append(el(".svacts", {}, [reqBtn]));
-  }
-
-  const grid = el(".masonry.even");
-  for (const f of files) grid.append(workCard(f, { onOpen: () => openDetails(f, { siblings: files, isPost: false }), showWho: false, hue: false }));
-  if (!files.length) grid.append(el(".emptystate", {}, [iconEl("grid"), el("h3", {}, ["This folder is empty"])]));
-
-  const note = el(".svnote", {}, [iconEl("lock", "sm"), el("span", {}, ["You can only see this folder. You can't browse the rest of this server."])]);
-
-  view.append(head, el("main.svbody", {}, [
-    el(".svmeta", { style: "width:100%" }, [
-      el("h1", {}, [data.folder || "Shared folder"]),
-      el(".lb", { style: "color:var(--muted);margin:2px 0 16px" }, [`${files.length} file${files.length === 1 ? "" : "s"}`]),
-      grid, note,
-    ]),
-  ]));
   return screen;
 }
 
