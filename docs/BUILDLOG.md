@@ -51,12 +51,20 @@ egress):
   add/accept/decline · conversation send · pin/mute/hide · new/group DM) · notifications
   (list · mark-read · row→target nav).
 
-What's NOT done: **Realtime** (DM/notif/reaction/edit echo — can't be exercised in-sandbox);
-message **permalinks** (Copy link); **Delete server** / invite management (expiry/revoke);
-server **icon/cover** + profile **banner** upload; **storage/billing** (needs Stripe, ~P8);
-**audit log**; the full-screen Server-settings port (the `/create` + `/s/:id/settings` routes
-are now largely vestigial — most actions moved to modals). See the newest dated entries for the
-exact NEXT on each.
+What's NOT done: **storage/billing** (needs Stripe, ~P8); the full-screen Server-settings port (the
+`/create` + `/s/:id/settings` routes are now largely vestigial — most actions moved to modals); UI
+polish (P1–P5) + a couple of broken-UI items (B3 message permalink, B4 typed modal routes).
+
+**Backend queue COMPLETE (2026-08-29, round-4).** The whole master-todo backend set (K1–K9) is done
+and pushed to `preview`: B5 (channel Files tab + channel-upload chat visibility), K2 (server icon/
+cover + profile banner RENDER — persistence was never broken), K7 (create_work upload RPC), K8
+(write-reliability audit + post_comment RPC), K1 (preview_invite anon RPC), K5 (create_server RPC),
+K4 (delete_server RPC + invite mgmt), K9 (folder sharing + request-to-join), K6 (realtime echo —
+already wired, live-QA only). K3 (reports) deferred to D7 by the owner. Every write audited; the
+load-bearing/at-risk ones are now SECURITY DEFINER RPCs. Advisors: no RLS-disabled/permits-all, no
+ERROR-level; new RPCs carry only the expected `security_definer_function_executable` WARN. What's
+left is the owner's **live QA on preview** (R2 round-trips, two-session realtime, real
+request→approve) — the claims are in `docs/QA-CHECKLIST.md`.
 
 > **Explorer resume notes.** `app/cards.js` exports `mediaUrl(work)`, `workCard(work,{onOpen,selectable,actions,showWho})`, `folderCard(folder,{onOpen})` — the ONE card renderer (P5.2), graceful type-card fallback when R2 bytes are missing. `styles/content.css` already has the pane/tree/crumbs/grid/list/foldercard/selbar/cardacts CSS. Build `loadExplorer({serverId,folderId})` reusing the cached `loadServerBundle` (members+channels) + folders (`folders` table, nested via parent_id) + files (`placement` where surface='server', surface_id=serverId, folder_id=<cur> → embed `work:works(...)`; verify the placement→works FK first) + storage (`storage_meters`/`storage_balance` for owner_type='server'). Then `renderExplorer(data)` and wire `main.js` route `explorer` + the workspace `Files` crow (currently navigates to `/s/{id}/files`). `.wordmark` class → use it for the explorer/feed/profile "eski!" wordmarks too.
 
