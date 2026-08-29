@@ -695,15 +695,16 @@ export async function revokeShareLink(token) {
 // Visibility (CANON §B.3 / #61) — the UI's Public/Server/Private maps to works.visibility
 // public/server/**personal** (the DB noun for Private). A plain `works_update` write
 // (can_write_work), with a check that server-visibility needs server membership.
-const VIS_TO_DB = { public: "public", server: "server", private: "personal" };
-const VIS_FROM_DB = { public: "public", server: "server", personal: "private" };
+// Private and Personal are the SAME visibility — the UI says "Private", so that is now the one
+// canonical value in the DB too (migration p12 widened works_visibility_check to accept it, and
+// 'personal' stays accepted only as a legacy alias until a later migration drops it). So these
+// maps are now identity: no translation, one name per concept. `visFromDb` still folds the
+// legacy 'personal' → 'private' so any old row reads correctly.
+const VIS_FROM_DB = { public: "public", server: "server", personal: "private", private: "private" };
 export function visFromDb(dbVis) { return VIS_FROM_DB[dbVis] || "public"; }
-// UI visibility → the DB noun. The DB uses 'personal' for the UI's 'private'; inserting the raw
-// UI value ('private') violates the works_visibility_check constraint (owner bug: every private
-// upload failed). Every write path must map through this.
-export function visToDb(uiVis) { return VIS_TO_DB[uiVis] || "public"; }
+export function visToDb(uiVis) { return uiVis === "private" ? "private" : (uiVis === "server" ? "server" : "public"); }
 export async function setVisibility(workId, uiVis) {
-  const db = VIS_TO_DB[uiVis] || "public";
+  const db = visToDb(uiVis);
   if (isDemo()) return db;
   const { error } = await supabase.from("works").update({ visibility: db }).eq("id", workId);
   if (error) throw new Error(error.message || "Couldn’t change who can see this");
