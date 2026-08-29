@@ -198,15 +198,24 @@ IDs are stable handles (`B*` broken-UI, `K*` backend, `P*` polish, `D*` deferred
       *Files:* new `schema-23-preview-invite.sql`, `app/screens/join.js`, `app/data.js`. *Easy.*
       *Test (deterministic):* call the RPC via MCP as `anon` for a real code → returns the row;
       for a bad/expired code → returns nothing. Reliable (it's `SECURITY DEFINER`).
-- [ ] **K2 · Server icon + cover + profile banner upload persist and render.** (round-3 #2 — the
-      confirmed live bug + the known BUILDLOG gap.) Wire upload → `api/sign.mjs` R2 PUT →
-      `servers.icon_key`/`servers.cover_key` (and `profiles.banner_key`) → render on the rail
-      badge, server header, and profile hero. *Files:* `app/shell.js` / server-settings modal,
-      `app/screens/profile.js` (banner), `app/data.js` (`updateServer` already clears cache).
-      *Medium.* **Do before P3** (loading states should cover this new flow). *Test:* backend —
-      service-role + authenticated update of `servers.icon_key` as the owner succeeds under RLS
-      (`updateServer` path); render is live-only → add a QA claim. Confirm `works`-style meter
-      isn't involved (icons aren't `works`).
+- [x] **K2 · Server icon + cover + profile banner upload persist and render.**
+      *Done (persistence verified live; render fixed + demo-verified).* **KEY CORRECTION for the
+      next agent:** this was **NOT** a silent-no-op persistence bug — the writes always persisted.
+      Role-sim proved `servers.update` (icon_key) as the owner changes the row (`rows_updated=1`),
+      `profiles.update` was already catalogued PASS, and the live DB *already held* a stored
+      `servers.icon_key` and a `profiles.banner_key`. The bug was **purely render** — three gaps:
+      (1) `loadWorkspace`/`loadExplorer` returned `data.server` as only `{id,name,initials}`, so
+      the channel-column header's `srvIconEl(data.server)` always fell back to initials (icon never
+      showed). Now both carry `icon_key`/`cover_key`. (2) `.srvcover` in the channel header was a
+      hardcoded empty gradient band — `channelColumn` now paints `cover_key` into it (covers the
+      explorer too, which reuses `channelColumn`). (3) The profile hero rendered no banner (a stub);
+      now a `.pbanner` cover band renders `banner_key` when present (bannerless heroes unchanged),
+      mirrored into `gallery.html` + `styles/content.css` so the LAW stays in sync. The rail badge
+      already read `icon_key` (fine). *Files:* `app/data.js`, `app/screens/workspace.js`,
+      `app/screens/profile.js`, `styles/content.css`, `docs/design/gallery.html`. Verified:
+      role-sim `servers.update` (rolled back); demo render (CDN-intercepted 1×1 PNG) shows the
+      server icon + cover in workspace AND explorer headers and the profile banner, both themes, 0
+      pageerrors. Live R2 round-trip is owner-only → QA-CHECKLIST.
 - [ ] **K4 · Delete server + invite management (expiry / revoke).** Owner delete-server flow
       (type-the-name confirm → cascade) and invite expiry/revoke in the invite modal.
       *Files:* RPC(s) in a new schema file, `app/data.js`, server-settings + invite modals.

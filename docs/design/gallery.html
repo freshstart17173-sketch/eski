@@ -438,6 +438,8 @@ input{font:inherit;color:inherit}
 .tog i{position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:calc(var(--r) - 1px);background:var(--paper);transition:left var(--t)}
 .tog.on{background:var(--ink)}.tog.on i{left:18px}
 .phero{padding:var(--s5) var(--s5) var(--s4)}
+/* K2: uploaded profile banner — a cover band above the identity row (only when a banner is set). */
+.phero .pbanner{height:150px;margin-bottom:var(--s4);border-radius:var(--r);background:var(--paper1) center/cover no-repeat}
 .phero .top{display:flex;gap:var(--s5);align-items:flex-start}
 .phero .who h1{font-size:var(--fs-xl);font-weight:600}
 .phero .who .handle{color:var(--muted);font-size:var(--fs-sm)}
@@ -2595,7 +2597,10 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
         <!-- The owner's self-view. How the same profile reads to a stranger (public
              shelf only, Add friend) or a friend (mutuals-only posts, Message) is the
              POV rule in CANON §C.10, not an in-product toggle. -->
-        <div class="phero">
+        <div class="phero hasbanner">
+          <!-- K2: uploaded banner cover band (only shown when the profile has a banner_key);
+               a placeholder fill here stands in for the R2 image the app paints. -->
+          <div class="pbanner" style="background-image:linear-gradient(135deg,var(--plate),var(--paper1))"></div>
           <div class="top">
             <div class="av lg">RA</div>
             <div class="who"><h1>rae okonkwo</h1><div class="handle">@rae</div>

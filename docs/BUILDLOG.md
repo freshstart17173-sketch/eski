@@ -1923,3 +1923,32 @@ NEXT: K2 (server icon/cover + profile banner — the silent-no-op UPDATE class),
 GOTCHA: `messages` has no attachment column by default — a "file in a channel" needed the new
   `work_id`, resolved on read. Live-only: the R2 round-trip and the realtime attachment echo to
   OTHER clients can't be exercised in-sandbox → QA-CHECKLIST §12 rows added.
+
+## 2026-08-29 — K2 server icon/cover + profile banner RENDER (persistence was never broken)
+IN PROGRESS: (cleared)
+DONE (persistence verified live; render fixed + demo-verified, on `preview`):
+  - **The framing was wrong.** K2/BUILDLOG had this filed as a silent-no-op UPDATE (the
+    icon/banner "looked" saved but didn't persist). It's not: role-sim as the owner shows
+    `servers.update` (icon_key) changes the row (`rows_updated=1`); `profiles.update` was already
+    catalogued PASS; and the live DB ALREADY held a stored `servers.icon_key` (b9/…jpg) and a
+    `profiles.banner_key`. The writes persisted all along. The bug was **purely render.**
+  - **Server icon in the header** — `loadWorkspace`/`loadExplorer` returned `data.server` as only
+    `{id,name,initials}`, so `channelColumn`'s `srvIconEl(data.server)` always fell to initials
+    even with an icon set. Both now carry `icon_key`/`cover_key` (workspace already got it in B5).
+  - **Server cover** — `.srvcover` in the channel header was a hardcoded empty gradient band;
+    `channelColumn` now paints `cover_key` into it. The explorer reuses `channelColumn`, so its
+    header gets icon+cover too.
+  - **Profile banner** — the hero rendered no banner (a stub). Added a `.pbanner` cover band that
+    shows `banner_key` when present (bannerless heroes unchanged), mirrored into `gallery.html`
+    (LAW) + `styles/content.css` so the design source stays in sync.
+VERIFIED: role-sim `update servers set icon_key` as the owner → `rows_updated=1` (rolled back).
+  Demo render with the CDN request intercepted by a 1×1 PNG (so the img loads instead of tripping
+  srvIconEl's error→initials fallback): server icon `src` + cover background-image present in BOTH
+  the workspace and explorer headers; profile `.pbanner` present with the banner image; both
+  themes; 0 pageerrors. `node --check` clean.
+NEXT: K8 (backend write-reliability audit — now with servers.update + profiles.update confirmed
+  PASS, so the audit narrows to the remaining direct writes), then K1/K5/K4/K9/K6.
+GOTCHA: a broken image on a server icon correctly falls back to initials (srvIconEl error handler),
+  so in-sandbox (no cdn.eski.lol egress) the icon LOOKS absent — that's the fallback, not a render
+  miss; intercept the CDN in a harness (or test on preview) to see the real image. Cover/banner use
+  background-image (no error handler) so a broken URL just shows the token background.

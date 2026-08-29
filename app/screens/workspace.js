@@ -279,7 +279,11 @@ export function channelColumn(data, view) {
       : { label: "Leave server", icon: "leave", danger: true, onClick: () => leaveServerFlow(data) });
     openMenu(bar, items);
   });
-  const srvhd = el(".srvhd", {}, [el(".srvcover"), bar]);
+  // K2: the uploaded server cover renders behind the header; no cover → the .srvcover gradient
+  // fallback (styles/shell.css). Server art is square chrome, so a plain cover-fit band.
+  const coverUrl = avatarUrl(data.server?.cover_key);
+  const cover = el(".srvcover", coverUrl ? { style: `background-image:url("${coverUrl}");background-size:cover;background-position:center` } : {});
+  const srvhd = el(".srvhd", {}, [cover, bar]);
 
   const body = el(".chanbody");
   // Files is a channel entry → opens the File explorer (highlighted when we ARE

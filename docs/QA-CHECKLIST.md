@@ -160,6 +160,7 @@ file is the versioned copy that build sessions treat as the acceptance bar.
 - [ ] Channel permissions on a private channel → adding roles/members to the allow-list controls who can see it.
 - [ ] Server notification settings → level (All/@mentions/Nothing), suppress @everyone, and mute all save.
 - [ ] `[infra]` Server settings → name / icon / cover → editing the name saves; uploading an icon/cover shows on the rail badge + header.
+- [ ] **`[infra]` (K2 render fix)** After uploading a server **icon**, it shows on **both** the left-rail badge AND the channel-column header (was showing initials in the header even when an icon was set). After uploading a **cover**, it fills the band behind the channel-column server-name bar — and the same icon+cover show on the **File explorer** header too (not just the chat workspace).
 - [ ] Server menu → Leave server → confirm → you're removed from the server.
 - [ ] Settings → Delete server (owner) → type the name → Delete → the server and its channels are deleted.
 - [ ] Server menu → Audit log → a read-only list of moderation actions (kick/ban/timeout) with actor, target, reason, time.
@@ -253,6 +254,7 @@ The server explorer mounts inside the shell (channel column stays); My files hid
 - [ ] After changing your handle, reload the page → it still loads (doesn't 404).
 - [ ] `[infra]` Edit profile → Change photo → pick an image → it uploads and the avatar updates in the dialog, the hero, AND the rail.
 - [ ] `[infra]` Edit profile → Change banner → pick an image → the banner uploads and previews.
+- [ ] **`[infra]` (K2 render fix)** After uploading a banner, it shows as a cover band **on the profile hero** (above the avatar/name), not only in the edit dialog. A profile with **no** banner shows no empty band (the hero looks exactly as before).
 - [ ] On a stranger's profile, click Add friend → a friend request is sent.
 - [ ] On a friend's profile, click Message → a DM with them opens.
 

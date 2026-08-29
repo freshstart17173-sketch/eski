@@ -52,7 +52,14 @@ export function renderProfile(data) {
     try { if (!isDemo()) await createDM(p.handle); navigate(withDemo("/messages")); }
     catch (e) { toast({ message: e?.message || "Couldn’t start the conversation" }); }
   } }, [iconEl("mail", "sm"), "Message"]));
-  const hero = el(".phero", {}, [el(".top", {}, [heroAv, who, actions])]);
+  // K2: the uploaded banner renders as a cover band above the identity row. Shown ONLY when a
+  // banner exists, so a bannerless profile is unchanged (no empty band). The write (banner_key)
+  // already persisted; this is the missing render half. Public profile → no member hue (a plain
+  // cover image). Mirrored in gallery.html (.phero .pbanner) so the LAW stays in sync.
+  const bannerUrl = avatarUrl(p.banner_key);
+  const heroKids = [el(".top", {}, [heroAv, who, actions])];
+  if (bannerUrl) heroKids.unshift(el(".pbanner", { style: `background-image:url("${bannerUrl}")` }));
+  const hero = el(".phero" + (bannerUrl ? ".hasbanner" : ""), {}, heroKids);
 
   // shelf tabs (+ Settings for owner) + search
   const tabs = el(".ptabs2");

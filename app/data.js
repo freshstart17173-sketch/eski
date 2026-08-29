@@ -421,7 +421,10 @@ export async function loadExplorer({ serverId, folderId, source = "server" } = {
   return {
     needsAuth: false, live: true,
     me, isAdmin: !!membersById[user.id]?.admin, servers, dmUnread: 0,
-    server: { id: sid, name: activeServer.name, initials: initials(activeServer.name) },
+    // K2: carry icon_key/cover_key so the reused channelColumn header renders the server art
+    // in the explorer too (it read data.server, which had only id/name/initials → initials + the
+    // gradient fallback, so an uploaded icon/cover never showed on the Files screen).
+    server: { id: sid, name: activeServer.name, initials: initials(activeServer.name), icon_key: activeServer.icon_key || null, cover_key: activeServer.cover_key || null },
     channelGroups, membersById,
     folders, files,
     currentFolderId: folderId || null,
