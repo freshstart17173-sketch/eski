@@ -227,10 +227,17 @@ IDs are stable handles (`B*` broken-UI, `K*` backend, `P*` polish, `D*` deferred
       *Files:* RPC(s) in a new schema file, `app/data.js`, server-settings + invite modals.
       *Medium-hard.* *Test:* backend — owner can delete own server + cascade; a non-owner cannot;
       revoked/expired invite fails `join_via_invite`. All gate through `SECURITY DEFINER` → reliable.
-- [ ] **K5 · Harden create-server into an atomic `create_server` RPC.** Today it's 4 client
-      inserts under RLS (owner passes every `has_perm`), not atomic. *Files:* new schema RPC,
-      `app/data.js` create-server path. *Medium-hard.* *Test:* backend — the RPC creates
-      server+default-channel+owner-membership+@everyone-role in one call; partial failure rolls back.
+- [x] **K5 · Harden create-server into an atomic `create_server` RPC.** *Done (backend
+      role-sim-verified).* `create_server(p_name, p_channels[])` (schema-27, migration
+      `p17_create_server`) seats the server + owner membership (hue 1, active) + the one @everyone
+      role (perms 113664) + the starter channels in ONE `SECURITY DEFINER` transaction — atomic
+      (no half-made servers) and free of the create-time RLS chicken-and-egg. Channel names are
+      normalized to handles server-side (lowercase, non-alnum→dash, trimmed), empties skipped,
+      capped at 20, default `#general`. `data.js createServer` calls it (the 4 client inserts +
+      the now-dead `EVERYONE_PERMS` const are gone). *Files:* `schema-27-create-server-rpc.sql`,
+      `app/data.js`. Verified: role-sim created server + 1 owner-member + 1 @everyone role +
+      channels `[general,wips,beats-room]` from `['General','wips!!','  ','beats room']`, rolled
+      back; live DB unchanged.
 - [ ] **K6 · Realtime echo — DM / notification / reaction / edit.** Core but **live-only**
       (two-session echo can't run in-sandbox — headless Chromium can't egress). *Files:* the
       Realtime subscriptions in `app/data.js`/screens. *Hard.* *Test:* wire it, syntax-check,

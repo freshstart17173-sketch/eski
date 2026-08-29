@@ -40,8 +40,9 @@ egress):
 - **Servers/workspace:** create · invite (`server_invites`) · join (`join_via_invite`) · leave ·
   create channel · channel settings (name/topic/slowmode/post-policy) · chat send/receive ·
   reactions (`toggle_reaction`) · reply-threads · edit · delete · pin · moderation (timeout/
-  kick/ban) · role assignment (`set_member_roles`). Create-server is 4 client inserts under RLS
-  (owner passes every `has_perm`), NOT atomic — a future `create_server` RPC would harden it.
+  kick/ban) · role assignment (`set_member_roles`). Create-server is now the atomic
+  `create_server` RPC (K5, 2026-08-29) — server + owner membership + @everyone role + channels
+  in one SECURITY DEFINER transaction (was 4 non-atomic client inserts).
 - **Files:** explorer (server + personal) · details pane (the one viewer) · upload (sheet +
   `api/sign.mjs` R2 PUT) · download (cdn fetch→blob) · move/trash/star/rename/hide/tags · share
   dialog (visibility + `share_links` create/revoke) + the read-only `/shared/:token` viewer.
@@ -1999,3 +2000,23 @@ VERIFIED: `preview_invite` as `anon` → the real code returns the row (server "
 NEXT: K5 (atomic create_server RPC), K4 (delete server + invite expiry/revoke), K9, K6.
 GOTCHA: `preview_invite` is set-returning → PostgREST result is an array; read `data[0]`. A revoked
   invite is a DELETED row (data.js revokeInvite → si_delete), so "not found" already covers revoked.
+
+## 2026-08-29 — K5 atomic create_server RPC
+IN PROGRESS: (cleared)
+DONE (backend role-sim-verified, on `preview`):
+  - **`create_server(p_name, p_channels[])`** (schema-27, migration `p17_create_server`) — one
+    SECURITY DEFINER transaction that inserts the server (owner = caller), seats the owner's
+    membership (hue 1, active), the one @everyone role (perms 113664), and the starter channels;
+    channel names are normalized to handles server-side (lowercase, non-alnum→dash, trimmed),
+    empties skipped, capped at 20, default `#general`. Atomic — no more half-made servers — and
+    free of the create-time RLS chicken-and-egg (definer seats membership/role before any policy
+    needs them). `data.js createServer` now calls it; the 4 client inserts + the dead
+    `EVERYONE_PERMS` const are gone.
+VERIFIED: role-sim as a real user — `create_server('K5 Test', ['General','wips!!','  ','beats
+  room'])` → server + 1 active owner-member + 1 @everyone role + channels `[general,wips,beats-room]`
+  (normalized, empty skipped); rolled back. Live DB unchanged (servers 2, channels 6, roles 3).
+  `node --check` clean.
+NEXT: K4 (delete server + invite expiry/revoke), K9 (folder sharing + request-to-join), K6 (realtime).
+GOTCHA: `create_server` returns the full `servers` row (`returns servers`), so `data.js` reads
+  `srv.id`/`srv.name` straight off `data` (not an array — it's a scalar composite, unlike the
+  set-returning post_comment/preview_invite which come back as `data[0]`).

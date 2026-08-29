@@ -1378,23 +1378,20 @@ export async function loadSearch() {
 // permission, so each insert passes its own RLS in turn — no RPC needed. Order matters:
 // server → owner membership (sm_insert=is_server_admin, true for the owner) → the @everyone
 // default role (permissions = everyone_perms() = 113664, the non-admin baseline) → starter
-// channels. NOTE: these are separate inserts, not one transaction — a mid-sequence failure
-// (unlikely: only the owner's own network) would leave a partial server; a future atomic
-// create_server RPC would harden it. `everyone_perms()` is inlined as 113664 (see schema-02).
-const EVERYONE_PERMS = 113664;
+// Create a server — one atomic `create_server` SECURITY DEFINER RPC (K5). Was 4 sequential
+// client inserts (servers → server_members → @everyone role → channels) that weren't atomic: a
+// mid-way failure left a half-made, unusable server. The RPC seats the owner + role + channels in
+// one transaction as the table owner, so it can't half-succeed and dodges the create-time RLS
+// chicken-and-egg. Returns the new servers row.
 export async function createServer(name, channels = ["general"]) {
   const clean = (name || "").trim();
   if (!clean) throw new Error("A server name is required");
   if (isDemo()) return { id: "new-server", name: clean };
   const user = session();
   if (!user) throw new Error("Sign in to create a server");
-  const { data: srv, error } = await supabase.from("servers").insert({ name: clean, owner_id: user.id }).select("id,name").single();
+  const names = (channels || []).map((n) => String(n || "").trim()).filter(Boolean);
+  const { data: srv, error } = await supabase.rpc("create_server", { p_name: clean, p_channels: names.length ? names : ["general"] });
   if (error) throw new Error(error.message || "Couldn’t create the server");
-  const { error: me } = await supabase.from("server_members").insert({ server_id: srv.id, user_id: user.id, color: 1 });
-  if (me) throw new Error(me.message || "Couldn’t set up your membership");
-  await supabase.from("roles").insert({ server_id: srv.id, name: "everyone", is_default: true, permissions: EVERYONE_PERMS, position: 0 });
-  const names = (channels.length ? channels : ["general"]).map((n) => n.trim().toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "")).filter(Boolean);
-  await supabase.from("channels").insert((names.length ? names : ["general"]).map((n, i) => ({ server_id: srv.id, name: n, kind: "text", position: i })));
   clearWorkspaceCache();   // the rail must re-read to show the new server
   return srv;
 }
