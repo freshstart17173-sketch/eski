@@ -408,13 +408,16 @@ IDs are stable handles (`B*` broken-UI, `K*` backend, `P*` polish, `D*` deferred
       *Test:* demo — Messages renders with a Friends tab/section in-pane; switching stays in one view; the standalone Friends route/button is gone or folds in; no `pageerror`.
       **(Round-5: owner restated this — Messages + Friends must be ONE screen, like DMs in any
       messaging app; friends not behind a button.)**
-- [ ] **P6 · Declutter the upload sheet (round-5).** **Visibility is contextual** — only surface
-      the Public/Server/Private choice when it's meaningful; a personal upload (especially from
-      inside a server) most likely wants a folder, not a visibility toggle. Keep the Root-folder
-      default. (Already done this round: removed the "Draws X's storage" line, "Post"→"Upload".)
-      While here, delete the now-dead `filesPanel` fn + the channel-files fetch in `loadWorkspace`
-      (fed the removed Files tab; the B5 chat-attachment resolution stays). *Files:*
-      `app/screens/upload.js`, `app/screens/workspace.js`, `app/data.js`. *Medium.*
+- [x] **P6 · Declutter the upload sheet (round-5).** *Done.* Visibility is now **contextual** —
+      launched from a server (channel composer / server explorer, `opts.serverId` set) the sheet
+      hides the Public/Server/Private control entirely and shows only the server/folder target
+      (`serverContext` → `visBlock.hidden`); a personal/global upload still surfaces Visibility.
+      Root-folder default kept. Plus the earlier removals ("Draws X's storage" line, "Post"→"Upload").
+      **Dead-code cleanup:** removed the `filesPanel` fn (workspace.js) + the channel-files fetch in
+      `loadWorkspace` (both fed the removed Files tab) + the now-unused `mediaUrl` import; the B5
+      chat-attachment resolution stays. *Files:* `app/screens/upload.js`, `app/screens/workspace.js`,
+      `app/data.js`. Verified: workspace renders with only Messages/Pins tabs, 0 pageerrors; upload
+      sheet is session-gated → owner confirms the contextual hide on preview.
 - [ ] **P7 · Redesign the Share dialog → links only + reference-in-chat (round-5).** Sharing to
       **Public/Private makes no sense** in the share dialog — to "share publicly" you save to your
       files and make that copy public (visibility lives on the file, not the share). So the dialog

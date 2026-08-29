@@ -132,6 +132,10 @@ export async function openUpload(opts = {}) {
   let visibility = opts.visibility || (opts.serverId ? "server" : "public");
   let serverId = opts.serverId || null, channelId = opts.channelId || null, folderId = opts.folderId || null;
   let folderName = null;
+  // P6: Visibility is contextual. Launched from a server (channel composer / server explorer),
+  // the upload is a server-folder upload — the Public/Server/Private choice is noise, so hide it
+  // and show only the server/folder target. Only a personal/global upload surfaces Visibility.
+  const serverContext = !!opts.serverId;
   const collabs = [];   // {handle, role}
 
   // the servers this user can post into (for the Server picker)
@@ -214,7 +218,10 @@ export async function openUpload(opts = {}) {
     collabChips,
   ]);
 
-  body.append(dropWrap, el("label.fl", {}, ["Visibility ", el("span", { style: "color:var(--muted)" }, ["required"])]), visSeg, serverPick, addmore);
+  const visBlock = el("div", { hidden: serverContext }, [
+    el("label.fl", {}, ["Visibility ", el("span", { style: "color:var(--muted)" }, ["required"])]), visSeg,
+  ]);
+  body.append(dropWrap, visBlock, serverPick, addmore);
 
   // ── footer ──────────────────────────────────────────────────────────────
   const cancel = Button({ label: "Cancel", variant: "ghost" });

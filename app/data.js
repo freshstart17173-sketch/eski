@@ -276,40 +276,17 @@ export async function loadWorkspace({ serverId, channelId } = {}) {
     pinCount = pins.length;
   }
 
-  // Channel Files tab (B5): the works uploaded INTO this channel — a server work whose
-  // placement carries this channel_id (create_work files a channel upload exactly so). This
-  // was hardcoded `files: []`, so the per-channel Files tab (workspace filesPanel) could NEVER
-  // show anything and a channel upload only appeared in the server-wide explorer. We fetch the
-  // channel's placements, then the works, and shape them like the explorer (shapeWork) so the
-  // same card + details pane render. Placements are fetched separately (no embed) — the FK
-  // caution as in loadExplorer (GOTCHA U).
-  let files = [];
-  if (activeChannel) {
-    const chanName = {};
-    for (const c of textCh) chanName[c.id] = c.name;
-    const { data: plRows } = await supabase.from("placement")
-      .select("work_id,folder_id,channel_id")
-      .eq("surface", "server").eq("surface_id", sid).eq("channel_id", activeChannel.id);
-    const chFileIds = (plRows || []).map((p) => p.work_id);
-    if (chFileIds.length) {
-      const [{ data: fwRows }, { data: ftagRows }] = await Promise.all([
-        supabase.from("works").select("id,title,kind,file_ext,blob_sha,bytes,author_id,hidden,visibility,created_at")
-          .in("id", chFileIds).is("deleted_at", null).order("created_at", { ascending: false }),
-        supabase.from("content_tags").select("work_id,tag").in("work_id", chFileIds),
-      ]);
-      const plById = {}; for (const p of plRows || []) plById[p.work_id] = p;
-      const ftagsByWork = {}; for (const t of ftagRows || []) (ftagsByWork[t.work_id] ||= []).push(t.tag);
-      files = (fwRows || []).map((w) => shapeWork(w, plById[w.id], membersById, chanName, ftagsByWork[w.id] || []));
-    }
-  }
+  // NB the per-channel Files TAB was removed (round-5): channel uploads surface as file messages
+  // in the stream (resolved above via messages.work_id) + in the server File explorer, so a
+  // separate channel-scoped file fetch here is dead weight. `files` stays [] for the workspace.
 
   return {
     needsAuth: false, live: true,
     me, isAdmin: !!membersById[user.id]?.admin, isOwner: activeServer.owner_id === user.id, servers, dmUnread: 0,
     server: { id: sid, name: activeServer.name, initials: initials(activeServer.name), icon_key: activeServer.icon_key || null, cover_key: activeServer.cover_key || null },
     channelGroups,
-    channel: activeChannel ? { id: activeChannel.id, name: activeChannel.name, topic: "", pins: pinCount, files: files.length, slowmode: activeChannel.slowmode_sec, postPolicy: activeChannel.post_policy } : null,
-    messages, typing: [], pins, files, memberGroups, thread: null,
+    channel: activeChannel ? { id: activeChannel.id, name: activeChannel.name, topic: "", pins: pinCount, files: 0, slowmode: activeChannel.slowmode_sec, postPolicy: activeChannel.post_policy } : null,
+    messages, typing: [], pins, files: [], memberGroups, thread: null,
     membersById, serverRoles,
     activeServerId: sid, activeChannelId: activeChannel?.id || null,
   };

@@ -16,7 +16,7 @@ import { openReport } from "../report.js";
 import { openRolesEditor, openChannelAccess } from "./roles.js";
 import { iconEl } from "../icons.js";
 import { navigate, reload } from "../router.js";
-import { avatarUrl, mediaUrl } from "../cards.js";
+import { avatarUrl } from "../cards.js";
 import { openDetails } from "./details.js";
 import { uploadBlobs } from "../upload-r2.js";
 import { isDemo, shapeMessage, loadThread, toggleReaction, loadMessageReactions, forwardMessage, deleteMessage, pinMessage, unpinMessage, editMessage, kickMember, timeoutMember, banMember, setMemberRoles, createChannel, updateChannel, createInvite, loadInvites, revokeInvite, loadInviteCandidates, inviteByHandle, inviteUserToServer, updateServer, loadAuditLog, leaveServer, deleteServer, loadServerPrefs, setServerPrefs, fetchChannelAttachment, loadJoinRequests, approveJoinRequest, declineJoinRequest } from "../data.js";
@@ -434,48 +434,6 @@ function pinsPanel(data) {
   return panel;
 }
 
-// ── Files panel (P4.4) ──────────────────────────────────────────────────────
-function filesPanel(data) {
-  const state = { query: "", type: "all", sort: "latest" };
-  const TYPES = [["all", "All types"], ["image", "Images"], ["audio", "Audio"], ["video", "Video"], ["other", "Projects"]];
-  const SORTS = [["latest", "Latest"], ["oldest", "Oldest"], ["name", "Name"]];
-
-  const search = el(".field", {}, [iconEl("search", "sm"), el("input", { placeholder: `Search files in #${data.channel.name}`, onInput: (e) => { state.query = e.target.value; repaint(); } })]);
-  const typeBtn = el("button.btn", { "aria-haspopup": "menu" }, [el("span.tl", {}, ["Type"]), iconEl("chev", "sm")]);
-  typeBtn.addEventListener("click", () => openMenu(typeBtn, TYPES.map(([k, l]) => ({ label: l, selected: state.type === k, onClick: () => { state.type = k; typeBtn.querySelector(".tl").textContent = k === "all" ? "Type" : l; typeBtn.classList.toggle("on", k !== "all"); repaint(); } }))));
-  const sortBtn = el("button.btn", { "aria-haspopup": "menu" }, [el("span.sl", {}, ["Latest"]), iconEl("chev", "sm")]);
-  sortBtn.addEventListener("click", () => openMenu(sortBtn, SORTS.map(([k, l]) => ({ label: l, selected: state.sort === k, onClick: () => { state.sort = k; sortBtn.querySelector(".sl").textContent = l; repaint(); } }))));
-
-  const bar = el(".chfilesbar", {}, [search, typeBtn, sortBtn]);
-  const grid = el(".masonry.even");
-  const count = el(".lb");
-
-  function repaint() {
-    const q = state.query.trim().toLowerCase();
-    let files = (data.files || []);
-    if (q) files = files.filter((f) => (f.name || "").toLowerCase().includes(q));
-    if (state.type !== "all") files = files.filter((f) => (f.kind || "other") === state.type);
-    files = files.slice().sort((a, b) => state.sort === "name"
-      ? String(a.name || "").localeCompare(String(b.name || ""))
-      : (state.sort === "oldest" ? 1 : -1) * (new Date(b.created_at || 0) - new Date(a.created_at || 0)));
-    count.textContent = `${files.length} file${files.length === 1 ? "" : "s"} in #${data.channel.name}`;
-    grid.replaceChildren();
-    // shapeWork shape (B5): file_ext (not ext), who is {name,…} (not a string). A real image
-    // renders from its R2 blob (mediaUrl); the demo's shot-class placeholder is the fallback.
-    for (const f of files) {
-      let media;
-      const src = f.kind === "image" ? mediaUrl(f) : null;
-      if (f.kind === "image" && src) media = el(".media", {}, [el("img", { src, alt: "", loading: "lazy", style: "aspect-ratio:3/2;object-fit:cover;width:100%" })]);
-      else if (f.kind === "image") media = el(".media", {}, [el("div.shot" + (f.shot ? "." + f.shot : ""), { style: "aspect-ratio:3/2" })]);
-      else media = el(".media." + (f.kind === "audio" ? "audio" : "file"), {}, [iconEl(KIND_ICON[f.kind] || "file"), el("span.ext", {}, [f.file_ext || ""])]);
-      media.querySelector(".ext")?.previousElementSibling?.classList.add("fic");
-      grid.append(el("button.card", { "data-open-details": true, onClick: () => openDetails(f, { serverId: data.server?.id, serverName: data.server?.name, siblings: files }) }, [media, el(".title", {}, [f.name]), el(".who", {}, [f.who?.name || ""])]));
-    }
-    if (!files.length) grid.append(el(".emptystate", {}, [iconEl("grid"), el("h3", {}, [q || state.type !== "all" ? "No matching files" : "No files yet"]), q || state.type !== "all" ? el("p", {}, ["Try a different filter."]) : null]));
-  }
-  repaint();
-  return el(".chpanel", { "data-chview": "files", hidden: true }, [bar, count, grid]);
-}
 
 // ── members rail (P4.9) ─────────────────────────────────────────────────────
 // The rail's shown/hidden state is a per-browser preference (persisted), so closing it stays
