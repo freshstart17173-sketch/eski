@@ -1826,3 +1826,42 @@ NEXT: B3 · message permalink (⋯ → Copy link) copies a permalink that scroll
   assert that the permalink route scrolls the row into view and applies the flash class.
 GOTCHA: the editor is a shared primitive (`openEditProfile`) reached from BOTH the profile hero
   and `/settings` — any URL side effect in it must be conditioned on the current route, not assumed.
+
+## 2026-08-29 — UPLOAD FIX: atomic create_work RPC (the "uploads don't work at all" 42501)
+IN PROGRESS: (cleared)
+DONE: Owner reported every file upload failing with `couldn't save the post (42501): new row
+  violates row-level security policy for table "works"` — personal AND server — while pfp/banner
+  "worked". Root cause + fix:
+  - **Diagnosis (backend, all reliable signals).** `list_migrations`/policies read: the
+    `works_insert` WITH CHECK is correct on paper. A **spy BEFORE-INSERT trigger** on a live-style
+    insert showed `auth.uid()` resolves correctly and EVERY conjunct is TRUE for the caller's own
+    row; the **service-role row-shape check** inserts the exact frontend row (triggers/FKs/meter
+    all fire) and passes. Yet **`select count(*) from works` = 0 across all users** — no upload had
+    EVER succeeded. pfp/banner only *looked* fine because they're a profile `UPDATE`, a silent
+    0-row no-op under RLS, never an error. So the inline `author_id = auth.uid()` INSERT check is
+    unreliable **live**, not just over MCP — the VERIFICATION "trap #1" note had masked a total
+    outage (corrected there now).
+  - **Fix.** New `create_work` SECURITY DEFINER RPC (schema-23-create-work-rpc.sql, migration
+    `p13_create_work_rpc`): one atomic call registers the blob, inserts the work, files its
+    placement (server) / saved_items row (personal folder) and tags — as the table owner, so the
+    write can't be undone by the same 42501 (works RLS is not FORCEd). It re-checks the fence
+    itself (author = caller; server ⇒ `member_of` + `has_perm('upload')`; personal ⇒ owner = caller;
+    channel/folder must belong to the named server; personal folder must be the caller's), so
+    nothing is loosened. `upload.js doPost` now calls it once per file instead of 4 client
+    statements; `register_blob`/`visToDb` no longer used there.
+  - **.flp + producer files.** `.flp/.als/.logicx/.rpp/.cpr/.aiff/…` were unrecognised (KIND only
+    knew audio/video/image/text), so a folder containing a project file dropped it (or, if it was
+    the only file, uploaded nothing). Added a DAW-project set + `aiff/aif/m4v` to `KIND`
+    (upload.js) AND the signer `EXT` allowlist (api/sign.mjs) — kept in sync (a client ext the
+    signer rejects dies with ESK-3006).
+VERIFIED: `create_work` role-simulated as the real member (SECURITY DEFINER ⇒ reliable over MCP,
+  rolled back): personal work + 2 tags OK; server work to own server + placement OK; upload to a
+  server they're NOT a member of REFUSED (fence holds). Frontend: `node --check` clean; demo render
+  of `/files` + workspace = 0 pageerrors. Live round-trip (R2 PUT + real session) is owner-only →
+  QA-CHECKLIST rows added under §12.
+NEXT: the rest of the owner's file-area asks — share a FOLDER outside the server (today share_links
+  are per-work only), and a selection/filtering pass on the explorer. Then master-todo B3.
+GOTCHA: pfp/banner "working" while uploads failed is the tell of an RLS write that no-ops silently
+  (UPDATE) vs one that errors (INSERT) — when a write "does nothing," check the row count, and prefer
+  a definer RPC for any load-bearing inline-`auth.uid()` INSERT. `register_blob` is now unused by the
+  app but left in place (harmless, idempotent) — create_work does its own blob registration.

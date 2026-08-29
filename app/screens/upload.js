@@ -12,15 +12,24 @@
 import { openModal, VisibilitySeg, Button, openMenu, toast, el } from "../ui.js";
 import { iconEl } from "../icons.js";
 import { supabase, session, rawSession } from "../supabase.js";
-import { createFolder, visToDb } from "../data.js";
+import { createFolder } from "../data.js";
 
 // ext → kind, and the allowlist the signer (api/sign.mjs EXT) will actually sign.
+// KEEP THIS IN SYNC WITH api/sign.mjs EXT — the signer rejects (ESK-3006) any extension the
+// client accepts but it doesn't know, so a file that lists here but not there silently fails to
+// upload. `other` = a file the app doesn't render but stores + downloads as-is (project files,
+// archives, docs). Producer project files (flp/als/…) live here so a folder that contains one —
+// an exported FL/Ableton/Logic session next to its stems — uploads whole instead of dropping it.
 const KIND = {
   png: "image", jpg: "image", jpeg: "image", webp: "image", gif: "image", avif: "image",
-  mp3: "audio", m4a: "audio", ogg: "audio", opus: "audio", wav: "audio", flac: "audio", aac: "audio", webm: "audio",
-  mp4: "video", mov: "video", avi: "video", mkv: "video",
+  mp3: "audio", m4a: "audio", ogg: "audio", opus: "audio", wav: "audio", flac: "audio", aac: "audio", webm: "audio", aiff: "audio", aif: "audio",
+  mp4: "video", mov: "video", avi: "video", mkv: "video", m4v: "video",
   txt: "text", md: "text",
   pdf: "other", zip: "other", cbz: "other", cbr: "other", epub: "other", doc: "other", docx: "other", json: "other", csv: "other",
+  // DAW / producer project files — unrendered, stored + downloadable as-is.
+  flp: "other", als: "other", alp: "other", adg: "other", adv: "other", ptx: "other", ptf: "other",
+  logicx: "other", band: "other", rpp: "other", cpr: "other", npr: "other", song: "other",
+  aup3: "other", mmp: "other", mmpz: "other", sesx: "other", omf: "other", aaf: "other", mid: "other", midi: "other",
 };
 const extOf = (name) => (name.split(".").pop() || "").toLowerCase();
 const kindOf = (ext) => KIND[ext] || "other";
@@ -297,18 +306,6 @@ export async function openUpload(opts = {}) {
         method: "PUT", body: h.file, headers: { "content-type": h.file.type || "application/octet-stream" },
       }).then((r) => { if (!r.ok) throw new Error(`R2 PUT failed (${r.status}) — check the bucket CORS (r2-cors.json)`); })));
 
-      // Register each blob (sha + bytes) BEFORE inserting works: works.blob_sha has a FK to
-      // media_blobs, which is RLS-locked, so this SECURITY DEFINER RPC is the only thing that
-      // can create the row. Without it every works insert failed the FK (the upload "did
-      // nothing"). Content-addressed → a repeated sha is a no-op.
-      prog.textContent = "Finishing…";
-      const seen = new Set();
-      for (const h of hashed) {
-        if (seen.has(h.hash)) continue; seen.add(h.hash);
-        const { error: be } = await supabase.rpc("register_blob", { p_sha: h.hash, p_bytes: h.file.size });
-        if (be) throw new Error(`couldn’t register the file (${be.code || "db"}): ${be.message}`);
-      }
-
       const onServer = visibility === "server";
       // "structured" = keep the dropped/picked tree. Flatten turns a folder upload into a flat one:
       // every file lands loose (shared Tags apply), no folders recreated.
@@ -327,42 +324,37 @@ export async function openUpload(opts = {}) {
       }
       const folderFor = (h) => structured ? (folderMap.get(relDir(h.file)) || folderId || null) : (folderId || null);
 
+      // ONE atomic write per file: create_work (SECURITY DEFINER) registers the blob, inserts the
+      // work, files its placement (server) or saved_items row (personal folder), and its tags — as
+      // the table owner, so it can't be undone by the works-insert RLS 42501 that made the old
+      // 4-statement client write fail for real users (see schema-23-create-work-rpc.sql). The RPC
+      // re-checks the fence itself (author = caller; server needs membership + the 'upload' perm),
+      // so nothing is loosened. A structured folder upload skips the single Tags/Collaborators
+      // fields (they belong to a loose post); a flattened one shares the Tags across every file.
       prog.textContent = "Posting…";
       const title = titleInput.value.trim();
       const tags = tagsInput.value.split(",").map((t) => t.trim()).filter(Boolean);
-      const user = session();
       for (const h of hashed) {
         const destFolder = folderFor(h);
-        const row = {
-          author_id: me.id,
-          owner_type: onServer ? "server" : "user",
-          owner_id: onServer ? serverId : me.id,
-          visibility: visToDb(visibility),   // 'private' → 'personal' (the DB noun); raw 'private' fails the check
-          server_id: onServer ? serverId : null,
+        const { data: workId, error } = await supabase.rpc("create_work", {
+          p_owner_type: onServer ? "server" : "user",
+          p_owner_id: onServer ? serverId : me.id,
+          p_visibility: visibility,            // RPC normalizes (server→'server', personal→'private' unless public)
+          p_server_id: onServer ? serverId : null,
           // Many files → keep each file's own name; a single loose upload can override the title.
-          title: files.length > 1 ? h.file.name : (title || h.file.name),
-          file_ext: h.ext,
-          kind: kindOf(h.ext),
-          blob_sha: h.hash,
-          bytes: h.file.size,
-        };
-        const { data: work, error } = await supabase.from("works").insert(row).select("id").single();
+          p_title: files.length > 1 ? h.file.name : (title || h.file.name),
+          p_file_ext: h.ext,
+          p_kind: kindOf(h.ext),
+          p_blob_sha: h.hash,
+          p_bytes: h.file.size,
+          p_channel_id: onServer ? (channelId || null) : null,
+          p_folder_id: destFolder,
+          p_tags: structured ? [] : tags,     // structured folders carry no shared Tags
+        });
         if (error) throw new Error(`couldn’t save the post (${error.code || "db"}): ${error.message}`);
-        if (onServer) {
-          const { error: pe } = await supabase.from("placement").insert({ work_id: work.id, surface: "server", surface_id: serverId, channel_id: channelId || null, folder_id: destFolder, placed_by: me.id });
-          if (pe) throw new Error(`couldn’t place the file in the channel (${pe.code || "db"}): ${pe.message}`);
-        } else if (destFolder) {
-          // Personal upload into a folder: saved_items.folder_id is how My-files filing works.
-          const { error: se } = await supabase.from("saved_items").upsert({ user_id: user.id, work_id: work.id, folder_id: destFolder }, { onConflict: "user_id,work_id" });
-          if (se) throw new Error(`couldn’t file into your folder (${se.code || "db"}): ${se.message}`);
-        }
-        // A structured folder upload skips the single Tags/Collaborators fields (they belong to a
-        // loose post). A flattened folder upload applies the shared Tags to every file — the point
-        // of flattening. Collaborators still only make sense on a single loose post.
-        if (!structured) {
-          for (const t of tags) await supabase.from("content_tags").insert({ work_id: work.id, tag: t });
-          if (files.length === 1) for (const c of collabs) await supabase.rpc("add_collaborator", { work_id: work.id, handle: c.handle, role: c.role });
-        }
+        // Collaborators still only make sense on a single loose post.
+        if (!structured && files.length === 1)
+          for (const c of collabs) await supabase.rpc("add_collaborator", { work_id: workId, handle: c.handle, role: c.role });
       }
       toast({ message: files.length > 1 ? `Uploaded ${files.length} files` : "Posted", icon: "check" });
       close();

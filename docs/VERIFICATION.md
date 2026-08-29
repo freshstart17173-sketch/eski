@@ -65,6 +65,20 @@ and fails. Proven exhaustively (2026-08-29):
   in the same authenticated context (`author_id = uid` ✓, `member_of` ✓,
   `has_perm` ✓).
 
+> ### 🚨 CORRECTION (2026-08-29) — this trap masked a REAL, total upload failure
+> The "don't trust a 42501 on `works.insert`" rule above is dangerous when read as
+> "the write path is fine." It was **not** fine: on the live preview build **every**
+> `works` INSERT failed with 42501 and **zero work rows had ever been created for any
+> user** — uploads were completely broken while pfp/banner (a profile `UPDATE`, which
+> is a silent 0-row no-op under RLS, not an error) *looked* like they worked. The
+> inline `col = auth.uid()` INSERT check is unreliable **live**, not only over MCP.
+> **The lesson:** a role-sim 42501 is inconclusive, but a live 42501 **plus a
+> production row count of 0** (`select count(*) from works`) is a real, confirmed
+> bug — always check the actual table, not just the harness. **The fix:** the upload
+> write is now the atomic `SECURITY DEFINER` RPC `create_work` (schema-23), the
+> reliable path in the table below — do the same for any other load-bearing inline-uid
+> INSERT rather than trusting that it "should" pass.
+
 **What is reliable vs not:**
 
 | Policy shape | Reliable over MCP? | Why |

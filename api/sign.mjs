@@ -28,14 +28,22 @@ import { AwsClient } from 'aws4fetch';
    a generous bounded list, not an open one, since this is what stands between
    a signed-in user and writing an arbitrary suffix into the bucket. Add to it
    deliberately; don't widen it to "anything". */
+// KEEP IN SYNC WITH app/screens/upload.js KIND — the client won't offer an ext the signer
+// rejects, and the signer must not reject an ext the client offers, or the upload dies here
+// with ESK-3006 after the user already picked the file.
 const EXT = new Set([
   'png', 'jpg', 'jpeg', 'webp', 'gif', 'avif',                          // image
   'mp3', 'm4a', 'ogg', 'opus', 'wav', 'flac', 'aac', 'webm',            // audio (webm from the old opus transcode)
-  'mp4', 'mov', 'avi', 'mkv',                                          // video
+  'aiff', 'aif',                                                         // audio — AIFF is a producer staple, was missing
+  'mp4', 'mov', 'avi', 'mkv', 'm4v',                                   // video
   'txt', 'md',                                                          // text (text-kind posts usually need no file at
                                                                           // all — the body column holds the prose — this
                                                                           // is for the rare "attach the source file too")
-  'pdf', 'zip', 'cbz', 'cbr', 'epub', 'doc', 'docx', 'json', 'csv'      // other: unrendered, downloadable as-is
+  'pdf', 'zip', 'cbz', 'cbr', 'epub', 'doc', 'docx', 'json', 'csv',     // other: unrendered, downloadable as-is
+  // DAW / producer project files — a folder with an exported session next to its stems must
+  // upload whole. Unrendered; stored + served back byte-for-byte.
+  'flp', 'als', 'alp', 'adg', 'adv', 'ptx', 'ptf', 'logicx', 'band',
+  'rpp', 'cpr', 'npr', 'song', 'aup3', 'mmp', 'mmpz', 'sesx', 'omf', 'aaf', 'mid', 'midi'
 ]);
 
 export default async function handler(req, res){
