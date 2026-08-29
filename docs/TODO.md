@@ -332,6 +332,18 @@ per channel, builds on P11), D6 (review canvas/kanban/versions).
       posting a real mention that resolves/notifies the person. Today it inserts text but nothing
       resolves. *Files:* `app/screens/workspace.js` (composer autocomplete + mention render),
       `app/data.js`/RPC (mentions table + notify). *Medium-hard.*
+- [ ] **B13 · Gate write actions on the file ⋯ menu by permission (data-layer audit, 2026-08-29).**
+      The card ⋯ menu + details menu (`openCardMenu`/`detailMenuItems`) show **Rename · Delete ·
+      Hide · Change visibility** on *every* work, so a member sees them on other members' server
+      files. *The silent-no-op half is now FIXED* — the underlying writers (`trashWorks`,
+      `restoreWork`, `purgeWork`, `setHidden`, `renameWork`, `setVisibility`) now `.select()` the
+      touched rows and **throw** when RLS matched nothing, so a non-owner gets an honest "Only the
+      owner or a server admin can…" error instead of a fake success + optimistic card mutation.
+      **Remaining (UX):** don't *show* those items to someone who can't use them — add a
+      `canWrite` flag on `shapeWork` (`author_id === me.id || data.isAdmin`) and gate the four
+      items on it (hide, or disable). This is a visible menu change → 3-versions rule applies.
+      *Files:* `app/data.js` (`shapeWork` canWrite), `app/screens/explorer.js` (the two menu
+      builders). *Easy-medium.*
 
 ### 2 · Fixes for backend
 

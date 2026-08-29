@@ -2196,3 +2196,34 @@ NEXT: master-todo top items (B3, B4, P1, P2) then the round-7 density/file-brows
 GOTCHA P: search_all(q, scope) — scope is 'global' (default) or a server-id string; any other
   value (e.g. 'all') hits `scope::uuid` in the body and errors 22P02. The client passes 'global'
   or a real server id, so this only bites ad-hoc test calls.
+
+## 2026-08-29 — Frontend data-layer audit (silent-no-op writes)
+IN PROGRESS: (cleared)
+DONE: audited every write in app/data.js for the backend's "looks like it works then doesn't"
+  class (a write that RLS filters to 0 rows returns NO error → the client fakes success).
+  Classified all ~40 direct writes: most are reliable (owner-simple `user_id=auth.uid()` or
+  definer-helper-gated `can_write_work`/`can_moderate_channel`). Two real issues found + fixed:
+  1) SILENT-NO-OP WRITES (frontend): the file ⋯ menu / details menu offer Rename·Delete·Hide·
+     Change-visibility on EVERY work with no permission gate, so a member sees them on other
+     members' server files. The writers (trashWorks/restoreWork/purgeWork/setHidden/renameWork/
+     setVisibility) checked only `error`, never rowcount — a non-author's update matched 0 rows
+     (RLS), returned no error, and the handler showed a success toast + optimistically mutated
+     the card (rename/hide/delete) until reload. Fixed: each writer now `.select("id")`s the
+     touched rows and throws "Only the owner/admin can…" when empty, so the handlers' catch path
+     shows an honest error and skips the optimistic update. Role-sim confirmed a non-author's
+     rename/hide/trash = 0 rows, author = 1. (The UX half — don't SHOW the items to non-owners —
+     is logged as B13, a visible menu change under the 3-versions rule.)
+  2) FOLDER-SHARE REVOKE (backend): share_links UPDATE/DELETE policies gated only on
+     can_write_work(work_id), null for a folder share (schema-29) → a folder-share creator could
+     see but never revoke their link (resolve_folder_share honors a revoked_at nothing could
+     set). Aligned UPDATE+DELETE with the SELECT policy (created_by OR can_write_work) —
+     migration p24, schema-33. Role-sim: pre-fix revoke=0 rows, post-fix=1 and the resolver then
+     refuses the revoked share.
+  Also confirmed NOT bugs: profiles has no signup trigger, but loadRail uses maybeSingle +
+  hasProfile gates onboarding + createProfile upserts (handled); setStatus writes only columns
+  that exist (status_expires_at/presence_state present); unblockUser's friendship .or() filter
+  is correct. Demo explorer still renders 0 pageerrors after the data.js edits.
+NEXT: B13 (menu permission-gating, 3 versions) + the master-todo top items.
+GOTCHA Q: a Supabase `.update()/.delete()` that RLS filters to 0 rows returns `{data:[], error:null}`
+  — NOT an error. Any load-bearing direct write must `.select()` and check `data.length`, or it
+  will silently fake success (the K2 pfp/K4 delete_server pattern, in the data layer).

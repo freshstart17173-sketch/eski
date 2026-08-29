@@ -560,18 +560,24 @@ export async function moveToFolder({ source = "server", works = [], destFolderId
 // set to writable rows). Kept 30 days, then the purge job hard-deletes them (§E.3).
 export async function trashWorks(ids = []) {
   if (!ids.length) return;
-  const { error } = await supabase.from("works").update({ deleted_at: new Date().toISOString() }).in("id", ids);
+  // `.select()` returns the rows the write actually touched. RLS silently filters the set to
+  // writable rows, so an update that changed NOTHING (you don't own any of these) comes back
+  // with no error AND no rows — without this check the caller would show a false "deleted".
+  const { data, error } = await supabase.from("works").update({ deleted_at: new Date().toISOString() }).in("id", ids).select("id");
   if (error) throw error;
+  if (!data || !data.length) throw new Error("You can only delete files you own.");
 }
 // Restore from Trash: clear deleted_at (the row is readable by its author while trashed).
 export async function restoreWork(id) {
-  const { error } = await supabase.from("works").update({ deleted_at: null }).eq("id", id);
+  const { data, error } = await supabase.from("works").update({ deleted_at: null }).eq("id", id).select("id");
   if (error) throw error;
+  if (!data || !data.length) throw new Error("You can only restore files you own.");
 }
 // Delete forever: the hard DELETE fires works_blob_meter → blob refcount-- + meter--.
 export async function purgeWork(id) {
-  const { error } = await supabase.from("works").delete().eq("id", id);
+  const { data, error } = await supabase.from("works").delete().eq("id", id).select("id");
   if (error) throw error;
+  if (!data || !data.length) throw new Error("You can only delete files you own.");
 }
 // Empty trash: hard-delete every trashed work in scope (RLS keeps it to writable rows).
 export async function emptyTrash({ source = "server", serverId } = {}) {
@@ -611,8 +617,11 @@ export async function loadTrash({ source = "server", serverId, membersById = {} 
 // `works_update` (can_write_work). Hidden keeps a utility file out of the organised
 // explorer view (Show-hidden reveals it); it still works inline in chat.
 export async function setHidden(workId, hidden) {
-  const { error } = await supabase.from("works").update({ hidden: !!hidden }).eq("id", workId);
+  // `.select()` so a no-op (RLS filtered you out — not the author/admin) throws instead of
+  // reading as success and letting the card optimistically flip its Hide/Show state.
+  const { data, error } = await supabase.from("works").update({ hidden: !!hidden }).eq("id", workId).select("id");
   if (error) throw error;
+  if (!data || !data.length) throw new Error("Only the file's owner or a server admin can do that.");
 }
 
 // Rename a work — a plain `works.title` update, fenced by `works_update` (can_write_work:
@@ -620,8 +629,9 @@ export async function setHidden(workId, hidden) {
 export async function renameWork(workId, title) {
   const clean = (title || "").trim();
   if (!clean) throw new Error("Name is required");
-  const { error } = await supabase.from("works").update({ title: clean }).eq("id", workId);
+  const { data, error } = await supabase.from("works").update({ title: clean }).eq("id", workId).select("id");
   if (error) throw error;
+  if (!data || !data.length) throw new Error("Only the file's owner or a server admin can rename it.");
 }
 
 // ── Star (CANON §C.6 / §E.3) ─────────────────────────────────────────────────
@@ -842,8 +852,9 @@ export function visToDb(uiVis) { return uiVis === "private" ? "private" : (uiVis
 export async function setVisibility(workId, uiVis) {
   const db = visToDb(uiVis);
   if (isDemo()) return db;
-  const { error } = await supabase.from("works").update({ visibility: db }).eq("id", workId);
+  const { data, error } = await supabase.from("works").update({ visibility: db }).eq("id", workId).select("id");
   if (error) throw new Error(error.message || "Couldn’t change who can see this");
+  if (!data || !data.length) throw new Error("Only the file's owner or a server admin can change its visibility.");
   return db;
 }
 
