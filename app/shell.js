@@ -67,7 +67,7 @@ export function renderRail(data, route) {
 
 function railBtn({ icon, label, img, title, on, count, dot, onClick, logo }) {
   const b = el("button.railbtn" + (on ? ".on" : "") + (logo ? ".home" : ""), { title, onClick });
-  if (logo) b.append(el("img.railogo", { src: "/eski_logo.png", alt: "eski", draggable: "false" }));   // the real e! mark
+  if (logo) b.append(el("span.railogo", { "aria-label": "eski" }));   // the e! mark, painted in currentColor via mask
   else if (icon) b.append(iconEl(icon));
   else if (img) {
     // a server with an uploaded icon shows it (square, per the radius rule); a load error

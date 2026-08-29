@@ -22,11 +22,19 @@
 /* the e! logo mark. The PNG is white with ~10% internal padding, so scale it up to fill the
    button and centre it. Base (:root = light theme) inverts it to a dark mark; dark mode keeps
    it white — so it reads on the rail in both themes whatever the file's background. */
-.railbtn.home{background:none;overflow:hidden}
-.railbtn.home:hover{background:var(--surface)}
-.railbtn.home .railogo{width:100%;height:100%;object-fit:contain;transform:scale(1.35);filter:invert(1)}
-:root[data-theme="dark"] .railbtn.home .railogo{filter:none}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .railbtn.home .railogo{filter:none}}
+/* the e! logo mark, painted with the PNG as an alpha MASK filled by a token colour — so it
+   matches the rail like the other icons (no baked black/white tile, no invert), adapts to the
+   theme automatically, and can't be clipped. Sized a touch under the button so it has air. */
+.railbtn.home,.railbtn.home.on{background:none}   /* the logo never becomes a solid inked tile */
+.railbtn.home:hover{background:var(--surface);color:var(--ink)}
+.railbtn.home.on .railogo{background:var(--ink)}   /* active on the Feed → the mark inks, no tile */
+/* eski_mark.png is the white e! on a TRANSPARENT background (derived from eski_logo.png). Use
+   it as an alpha mask filled with `currentColor`, so the mark takes the button's own colour —
+   --soft on the rail (matching the other icons), --on-ink when the button is active/inked, and
+   --ink on hover. No tile, no invert, correct in both themes and the active state for free.
+   Sized under the button so it isn't clipped. */
+.railbtn.home .railogo{display:block;width:24px;height:24px;background:currentColor;
+  -webkit-mask:url(/eski_mark.png) center/contain no-repeat;mask:url(/eski_mark.png) center/contain no-repeat}
 /* server icon fills the square badge (radius --r, never round — round is avatars/dots only). */
 .railbtn .railimg{width:100%;height:100%;object-fit:cover;border-radius:var(--r)}
 .railbtn.on{background:var(--ink);color:var(--on-ink)}

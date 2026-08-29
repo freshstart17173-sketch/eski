@@ -231,6 +231,18 @@ document.addEventListener("keydown", (e) => {
 function loading() {
   const s = document.createElement("section");
   s.className = "screen";
-  s.innerHTML = `<div class="ph wordmark" style="color:var(--muted)">eski!</div>`;
+  const word = document.createElement("div");
+  word.className = "loadword wordmark";
+  [..."eski!"].forEach((ch, i) => {
+    const c = document.createElement("span");
+    c.className = "lc";
+    c.textContent = ch;
+    c.style.setProperty("--i", i);
+    word.append(c);
+  });
+  const ph = document.createElement("div");
+  ph.className = "ph";
+  ph.append(word);
+  s.append(ph);
   return s;
 }
