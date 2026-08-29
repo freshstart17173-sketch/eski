@@ -146,12 +146,12 @@ export async function openUpload(opts = {}) {
   // ── body ──────────────────────────────────────────────────────────────────
   const body = el(".uploadbody");
 
-  const picker = el("input", { type: "file", multiple: true, style: "display:none" });
+  const picker = el("input", { type: "file", multiple: true, style: "position:fixed;left:-9999px;top:0;width:1px;height:1px;opacity:0" });
   // A whole-folder picker. webkitdirectory makes the browser hand back every file in the
   // chosen tree, each carrying a `webkitRelativePath` ("Pack/drums/kick.wav") — that path
   // is what lets us recreate the folder structure on upload (buildFolderTree). Kept a
   // separate input from `picker` because a directory input can't also pick loose files.
-  const folderPicker = el("input", { type: "file", multiple: true, style: "display:none" });
+  const folderPicker = el("input", { type: "file", multiple: true, style: "position:fixed;left:-9999px;top:0;width:1px;height:1px;opacity:0" });
   folderPicker.setAttribute("webkitdirectory", "");
   folderPicker.setAttribute("directory", "");
   const drop = el(".dropzone", {}, [iconEl("clip"), el("div", {}, ["Drop files here, or click to choose"])]);
@@ -189,7 +189,6 @@ export async function openUpload(opts = {}) {
   });
   const serverPick = el("div", {}, [el("label.fl", {}, ["Which server / folder"]), serverBtn, folderBtn]);
 
-  const ustore = el(".ustore");
 
   const titleInput = el("input", { placeholder: "" });
   const tagsInput = el("input", { placeholder: "142bpm, bridge" });
@@ -215,11 +214,11 @@ export async function openUpload(opts = {}) {
     collabChips,
   ]);
 
-  body.append(dropWrap, el("label.fl", {}, ["Visibility ", el("span", { style: "color:var(--muted)" }, ["required"])]), visSeg, serverPick, ustore, addmore);
+  body.append(dropWrap, el("label.fl", {}, ["Visibility ", el("span", { style: "color:var(--muted)" }, ["required"])]), visSeg, serverPick, addmore);
 
   // ── footer ──────────────────────────────────────────────────────────────
   const cancel = Button({ label: "Cancel", variant: "ghost" });
-  const post = Button({ label: "Post", variant: "primary", disabled: true });
+  const post = Button({ label: "Upload", variant: "primary", disabled: true });
   const { close } = openModal({ title: "Upload", size: "wide", body, footer: [cancel, post] });
   cancel.addEventListener("click", () => close());
   post.addEventListener("click", doPost);
@@ -279,12 +278,9 @@ export async function openUpload(opts = {}) {
     if (visibility === "server") {
       serverBtn.replaceChildren(el("span", { style: "display:flex;align-items:center;gap:8px" }, [iconEl("server", "sm"), serverName(serverId)]), iconEl("chev", "sm"));
       folderBtn.replaceChildren(el("span", { style: "display:flex;align-items:center;gap:8px;color:var(--soft)" }, [iconEl("folder", "sm"), folderName || "Root folder"]), iconEl("chev", "sm"));
-      ustore.replaceChildren(iconEl("server", "sm"), "Draws ", el("b", {}, [serverName(serverId)]), "'s storage");
-    } else {
-      ustore.replaceChildren(iconEl("user", "sm"), "Draws ", el("b", {}, ["your"]), " storage");
     }
     post.disabled = !files.length || (visibility === "server" && !serverId);
-    post.textContent = files.length > 1 ? `Post ${files.length} files` : "Post";
+    post.textContent = files.length > 1 ? `Upload ${files.length} files` : "Upload";
   }
 
   async function doPost() {

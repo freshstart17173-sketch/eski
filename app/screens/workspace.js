@@ -1036,7 +1036,8 @@ function mainPane(data, view, ctx) {
   const tabs = el(".chtabs", {}, [
     chtab("messages", "hash", "Messages", null, true),
     chtab("pins", "pin", "Pins", data.channel.pins),
-    chtab("files", "grid", "Files", data.channel.files),
+    // Files tab removed (owner call 2026-08-29): redundant with the server File explorer + the
+    // channel-upload messages in the stream. A channel upload still posts a clickable file message.
   ]);
 
   // Messages view: stream + typing + composer
@@ -1052,7 +1053,7 @@ function mainPane(data, view, ctx) {
 
   const typing = el(".typing", { hidden: !data.typing?.length }, data.typing?.length ? [el("span.dots", {}, [el("i"), el("i"), el("i")]), `${data.typing.join(", ")} is typing`] : []);
 
-  main.append(hd, tabs, stream, typing, composer(data, view, ctx), pinsPanel(data), filesPanel(data));
+  main.append(hd, tabs, stream, typing, composer(data, view, ctx), pinsPanel(data));
 
   // tab switching
   tabs.querySelectorAll(".chtab").forEach((tb) => tb.addEventListener("click", () => switchTab(main, tb.dataset.chtab)));

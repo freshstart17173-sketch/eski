@@ -79,6 +79,41 @@ Four categories. Within each, ordered **easiest first**, and anything that depen
 item is placed **after** what it needs. Cross-category dependencies are called out inline.
 IDs are stable handles (`B*` broken-UI, `K*` backend, `P*` polish, `D*` deferred).
 
+> ### 🟠 Round-5 (owner test, 2026-08-29) — UPLOAD UX + share/filtering/screens rework
+> Owner feedback after round-4 shipped. **Fixed same session (small, unambiguous):** the upload
+> file-picker couldn't select files — the hidden `<input type=file>` was `display:none`, which
+> Chromium/Brave refuse selection on in some flows → now visually-hidden (**B7**); **Post → Upload**
+> button label; dropped the useless **"Draws X's storage"** line; **removed the per-channel Files
+> tab** (redundant with the server explorer + channel-upload messages — the chat-message half of B5
+> stays). Everything else is captured below, sorted:
+> - **B7** ✅ upload picker can't select (display:none input) — done.
+> - **B8** folder / "Root folder" picker: first click expands, **second click doesn't close** it.
+> - **B9** channel upload must appear **in the chat as a clickable file message** that opens the
+>   detail view — B5 already builds this; verify it live once the picker fix deploys.
+> - **P6** declutter the upload sheet: **Visibility is contextual** — a personal upload (esp. from
+>   inside a server) probably wants a folder, not a public/private choice; only surface Visibility
+>   when it's meaningful. Keep Root-folder default. (Storage line + Post label already handled.)
+> - **P7** **redesign the Share dialog** (screenshot): sharing to **Public/Private makes no sense**
+>   — to "share publicly" you save to your files and make that copy public. The dialog is just the
+>   **link** (Google-Drive style: "anyone with the link", copy). PLUS: let a link **reference an
+>   older file/folder in the channel chat** (like a reply) — an **eski file/folder link pasted in
+>   chat renders as a native file card** that opens the viewer, not a raw URL.
+> - **P8** **real file-type filtering + searchable filters.** The Type filter should offer **actual
+>   file types** (.wav/.flp/.png…), not just broad Images/Audio/Video/Text/Projects. The
+>   **Uploader / Tag / (etc.) filters need a search box** so you can find a value fast instead of
+>   scrolling a flat list.
+> - **P9** the **folder/file share view must look identical to the file browser** — same selection,
+>   filtering, search, and view modes. Today the shared-folder viewer (K9) is a bare grid; reuse the
+>   real explorer component (read-only) so it matches. Currently "looks empty".
+> - **P10** **Server settings is its own SCREEN**, not a dropdown menu — one full-screen settings
+>   surface containing all of it (overview/icon/cover, roles & permissions, **audit log**, members/
+>   moderation, join requests, notifications, delete). Reverses the current modal-per-item approach
+>   from the server menu. (Promotes/reframes the old **D4** "full-screen Server-settings port".)
+> - **P5** (already listed) covers **"Messages + Friends = one screen"** — the owner restated it:
+>   friends shouldn't be behind a button, it should be one DMs surface like any messaging app.
+> - **cleanup** the now-dead `filesPanel` fn + the channel-files fetch in `loadWorkspace` (fed the
+>   removed Files tab) — the B5 attachment-in-chat resolution stays. Do in the P6/P8 pass.
+
 > ### 🔴 Round-4 (owner test, 2026-08-29) — UPLOAD & FILE AREA + a backend-reliability alarm
 > The owner reported **uploads "literally don't work at all except for pfp and banners."** Root
 > cause + fixes below; this round also opened a broader mandate: **"literally every file type
@@ -189,6 +224,20 @@ IDs are stable handles (`B*` broken-UI, `K*` backend, `P*` polish, `D*` deferred
       the `.selbar`, the card click handlers, `state.selection`). *Medium-hard.* Overlaps **P?**
       selection/filtering; do together. *Test:* demo — click a card → selected, no bulk bar pops;
       click empty area → deselected; navigate away + back → selection persists; multi-select still works.
+- [x] **B7 · Upload file-picker couldn't select files (round-5 blocker).** The hidden
+      `<input type=file>` (picker + folderPicker) was `display:none`, which Chromium/Brave refuse
+      file selection on in some flows — the native dialog opened but a pick never registered. Now
+      visually-hidden (`position:fixed;left:-9999px;opacity:0`, still in the DOM + clickable).
+      *Files:* `app/screens/upload.js`. *Done (syntax-checked; upload is session-gated so it's
+      live-only — owner confirms on preview).*
+- [ ] **B8 · Folder / "Root folder" picker won't close on a second click.** First click opens the
+      menu, second click should close it — today it re-opens/stays. *Files:* `app/screens/upload.js`
+      (`serverBtn`/`folderBtn` menus) — the `.selbtn` menus don't toggle on re-click; make them
+      close-on-repeat like the other dropdowns. *Easy.*
+- [ ] **B9 · Channel upload → clickable file message in the chat.** A file uploaded to a channel
+      should show in the stream as a file card that opens the detail/expanded view. **B5 already
+      builds this** (messages.work_id → attachment card → real details pane); verify it end-to-end
+      once B7 lets uploads through on preview. *Live QA.*
 
 ### 2 · Fixes for backend
 
@@ -355,6 +404,40 @@ IDs are stable handles (`B*` broken-UI, `K*` backend, `P*` polish, `D*` deferred
       (a tab/section), not a separate screen reached by a Friends button. *Files:* `app/screens/dms.js`
       (or messages/friends screens), `app/main.js`, `app/shell.js` nav. *Medium-hard.* **After P4.**
       *Test:* demo — Messages renders with a Friends tab/section in-pane; switching stays in one view; the standalone Friends route/button is gone or folds in; no `pageerror`.
+      **(Round-5: owner restated this — Messages + Friends must be ONE screen, like DMs in any
+      messaging app; friends not behind a button.)**
+- [ ] **P6 · Declutter the upload sheet (round-5).** **Visibility is contextual** — only surface
+      the Public/Server/Private choice when it's meaningful; a personal upload (especially from
+      inside a server) most likely wants a folder, not a visibility toggle. Keep the Root-folder
+      default. (Already done this round: removed the "Draws X's storage" line, "Post"→"Upload".)
+      While here, delete the now-dead `filesPanel` fn + the channel-files fetch in `loadWorkspace`
+      (fed the removed Files tab; the B5 chat-attachment resolution stays). *Files:*
+      `app/screens/upload.js`, `app/screens/workspace.js`, `app/data.js`. *Medium.*
+- [ ] **P7 · Redesign the Share dialog → links only + reference-in-chat (round-5).** Sharing to
+      **Public/Private makes no sense** in the share dialog — to "share publicly" you save to your
+      files and make that copy public (visibility lives on the file, not the share). So the dialog
+      is just the **link** (Google-Drive style: "anyone with the link" · Copy · Revoke), reusing the
+      K9 folder/file share plumbing. **Plus:** allow **referencing an existing file/folder in the
+      channel chat** (like a reply) — an **eski file/folder link pasted into chat renders as a
+      native file card** (same card as an upload) that opens the viewer, not a raw URL. *Files:*
+      `app/screens/explorer.js` (share dialog), `app/screens/workspace.js` (chat link → file card),
+      `app/data.js`. *Medium-hard.*
+- [ ] **P8 · Real file-type filtering + searchable filters (round-5).** The **Type** filter should
+      offer **actual file types** (.wav / .flp / .png / …) derived from what's present, not only the
+      broad Images/Audio/Video/Text/Projects buckets. The **Uploader / Tag / Channel / Date**
+      filters need a **search box** so a value is findable fast instead of scrolling a flat menu.
+      Folds in the still-open **B6 filtering audit**. *Files:* `app/screens/explorer.js` (the filter
+      menus), `app/screens/workspace.js` if the channel filter shares code. *Medium.*
+- [ ] **P9 · Shared folder/file view must match the file browser (round-5).** The K9 shared-folder
+      viewer is a bare grid ("looks empty"); it must look **identical to the explorer** — same
+      selection, filtering, search, view modes — by reusing the real explorer component in a
+      read-only mode. *Files:* `app/screens/shared.js`, reuse `app/screens/explorer.js`. *Medium-hard.*
+- [ ] **P10 · Server settings as its own full SCREEN (round-5, promotes D4).** Replace the server-
+      menu modals with ONE full-screen settings surface containing everything: overview (name/icon/
+      cover), roles & permissions, **audit log**, members/moderation, join requests, notification
+      settings, delete. Reverses the current modal-per-item approach. *Files:* `app/screens/settings.js`
+      (the `/s/:id/settings` route is currently vestigial), `app/screens/workspace.js` (server menu →
+      route to the screen), `app/screens/roles.js`. *Hard.* Was **D4** (post-beta) — promoted.
 
 ### 4 · Deferred (post-beta / infra-gated — do NOT build now)
 
@@ -367,7 +450,8 @@ The correct behaviour today is an explicit signpost (grayed control + WIP toast)
 - [ ] **D2 · Storage / billing** — usage slider, blended $/GB, single-payer server storage, export.
       Needs Stripe. *(`[infra]`, ~P8)*
 - [ ] **D3 · Audit log** — read-only moderation history (actor/target/reason/time). *(post-beta)*
-- [ ] **D4 · Full-screen Server-settings port** — largely vestigial; actions moved to modals. *(post-beta)*
+- [ ] ~~**D4 · Full-screen Server-settings port**~~ — **promoted to P10** (round-5): owner wants
+      server settings as its own screen, not the dropdown modals. See P10.
 - [ ] **D5 · Required tags / fields per channel** (BPM/Key on `#samples`) — schema
       (`required_fields` + structured `work_fields`) + channel-settings admin + upload enforcement
       + an RLS/trigger fence. Owner-requested; substantial. Promote out of Deferred only if beta needs it. *(post-beta unless prioritized)*
