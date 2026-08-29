@@ -144,8 +144,16 @@ IDs are stable handles (`B*` broken-UI, `K*` backend, `P*` polish, `D*` deferred
       (`loadWorkspace`), `app/screens/workspace.js` (filesPanel + composer). *Medium.* *Test:*
       backend — service-role read of works by channel placement; live QA — upload in a channel,
       confirm it lands in that channel's Files tab (+ chat if we choose to post a message).
-- [ ] **B6 · Selection UX — make it Google-Drive-like (owner: current single-click-select /
-      double-click-open "sucks ass").** Concretely: (1) **selecting must NOT auto-spawn the bulk
+- [x] **B6 · Selection UX — Drive-like (owner: single-click-select / double-open "sucks ass").**
+      *Done (demo-verified, 4/4 + persistence):* (1) the bulk bar now opens **only on multi-select
+      (2+)** — a plain click selects quietly, no options bar; (2) selection **persists across leaving
+      + returning** (a module-level store keyed by source+server, restored on re-mount — verified via
+      real client-side nav; a hard browser refresh still clears, which is fine); (3) **clicking an
+      empty area of the pane clears** the selection; and repaintBody no longer wipes selection on
+      filter/search/folder-nav (only prunes deleted ids). Single-select's actions live on the card ⋯
+      + the details pane. *Files:* `app/screens/explorer.js`. **Filtering audit (Type/Channel/
+      Uploader/Tag/Date/Sort/Starred) is still open — fold into a follow-up.** Original ask kept below:
+      (1) **selecting must NOT auto-spawn the bulk
       options bar** — the `.selbar` pops on the first selection today; hold it back (e.g. only on a
       real multi-select, a right-click/⋯, or make it a calmer inline affordance). (2) **Selection
       must persist when you leave and return to the tab / navigate** — today it clears (state lives

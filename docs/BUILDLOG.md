@@ -1865,3 +1865,32 @@ GOTCHA: pfp/banner "working" while uploads failed is the tell of an RLS write th
   (UPDATE) vs one that errors (INSERT) — when a write "does nothing," check the row count, and prefer
   a definer RPC for any load-bearing inline-`auth.uid()` INSERT. `register_blob` is now unused by the
   app but left in place (harmless, idempotent) — create_work does its own blob registration.
+
+## 2026-08-29 — B6 Drive-like selection + accept-every-file-type + round-4 catalogue
+IN PROGRESS: (cleared)
+DONE (this session, on `preview`):
+  - **Every file type accepted** (e969a0a): allowlist → safe-shape ext (`EXT_RE` in api/sign.mjs,
+    `safeExt` in upload.js). KIND is now only a render hint. Empty files are the only thing skipped.
+  - **B6 selection UX** (explorer.js): bulk bar only on multi-select (2+) so a plain click stays
+    quiet; selection persists across route re-entry via a module-level store keyed by source+server
+    (survives client-side nav; a hard reload clears — acceptable); empty-area click clears; repaint
+    no longer wipes selection (prunes deleted ids only). Demo-verified 4/4 + persistence via real
+    client-side nav; 0 pageerrors.
+  - **Master TODO round-4 block** (docs/TODO.md): catalogued everything from the owner's file-area
+    pass — the works-insert 42501 finding + reliable-write rule, K7 (create_work, done), B5 (channel
+    Files tab always empty — `loadWorkspace` returns `files:[]`), K8 (backend write audit + suspect
+    list), K9 (Drive folder/file sharing + request-to-join). Corrected VERIFICATION trap #1.
+  - **docs/DEAD-CODE.md** created — tracks `register_blob` (now unused; kept), upload.js's inline
+    sign/PUT duplicating `uploadBlobs` (fold once live-confirmed), the KIND repurpose, visToDb.
+BACKEND FACT for the next agent: `INSERT into works` fails live with 42501 while an identical-shape
+  `INSERT into servers` succeeds in the SAME authenticated connection, with the BEFORE trigger
+  disabled and the WITH CHECK evaluating TRUE — real, works-specific, root mechanism unexplained.
+  Route all work-creation through `create_work` (or a new SECURITY DEFINER RPC); never a direct
+  client insert into works. A profile UPDATE that matches no RLS row returns 0 rows + NO error, so
+  "no error" ≠ "it worked" — verify a live row actually changed (that's why icon/banner "looked" ok).
+NEXT (still open, in docs/TODO.md): B5 (channel Files tab — fetch channel-placed works in
+  loadWorkspace), K2 (server icon/cover + banner persist/render — silent-no-op class), K8 (convert
+  suspect direct writes to RPCs), K9 (folder/file sharing + request-to-join), explorer filtering audit.
+GOTCHA: demo harnesses that use `p.goto` between routes do a FULL page reload, which wipes
+  module-level state (like the new selection store) — to test client-side persistence you must click
+  the app's own nav (the router intercepts real clicks), not `p.goto`.

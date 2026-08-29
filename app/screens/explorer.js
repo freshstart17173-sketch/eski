@@ -60,6 +60,16 @@ function crumbPath(folders, folderId) {
   return path;
 }
 
+// Selection survives re-renders AND route re-entry (owner: "shouldn't unselect when I leave the
+// tab") — it lives here, keyed by source+server, not in the per-render state. My-files and each
+// server keep their own selection. A plain card click or an empty-area click still resets it.
+const _selectionStore = new Map();
+function persistentSelection(data) {
+  const k = `${data.source}:${data.server?.id || "me"}`;
+  if (!_selectionStore.has(k)) _selectionStore.set(k, new Set());
+  return _selectionStore.get(k);
+}
+
 export function renderExplorer(data, view = {}) {
   const screen = el("section.screen", { "data-screen": "explorer" });
 
@@ -75,7 +85,7 @@ export function renderExplorer(data, view = {}) {
     mode: VIEWS[view.mode] ? view.mode : "grid",
     query: "",
     collapsed: new Set(),   // folder ids whose children are hidden in the tree
-    selection: new Set(),   // selected work ids (Google-Drive model, §C.6)
+    selection: persistentSelection(data),   // selected work ids — persists across nav (§C.6, B6)
     lastIdx: -1,            // anchor for Shift-click range
     types: new Set(),       // kind filter — empty = all (image/audio/video/text/other)
     channels: new Set(),    // by placement channel name (server only)
@@ -313,6 +323,13 @@ function paint(tree, pane, data, state, rerender) {
   const body = el(".panebody");
   pane.replaceChildren(panehd, toolbar, selbar, body);
 
+  // B6: clicking an empty area of the pane (not a card, not the bulk bar) clears the selection —
+  // the Google-Drive gesture. A card's own click handler stops here (closest('.card')).
+  body.addEventListener("click", (e) => {
+    if (e.target.closest(".card") || e.target.closest(".selbar")) return;
+    if (state.selection.size) { state.selection.clear(); state.lastIdx = -1; refreshSel(); }
+  });
+
   // selection controller (Google-Drive model): refreshSel repaints the .sel outlines
   // and the bulk bar off state.selection, without rebuilding the grid.
   const sel = { state, refresh: refreshSel };
@@ -320,8 +337,11 @@ function paint(tree, pane, data, state, rerender) {
   function refreshSel() {
     body.querySelectorAll(".card[data-id]").forEach((c) => c.classList.toggle("sel", state.selection.has(c.dataset.id)));
     const n = state.selection.size;
-    selbar.classList.toggle("open", n > 0);
-    if (n > 0) selbar.replaceChildren(
+    // B6: a single selection stays quiet — its actions are on the card ⋯ and the details pane.
+    // The bulk bar only appears once you deliberately multi-select (2+), so a plain click never
+    // spawns an options bar. Clear is always reachable via an empty-area click / Esc / plain click.
+    selbar.classList.toggle("open", n > 1);
+    if (n > 1) selbar.replaceChildren(
       el("span.n", {}, [el("span", {}, [String(n)]), " selected"]),
       selAct("download", "Download", () => downloadSelected(state)),
       selAct("move", "Move to folder", () => moveSelected(data, state, rerender)),
@@ -340,7 +360,12 @@ function paint(tree, pane, data, state, rerender) {
     if (isSearch !== (panehd.firstChild === crumbs ? false : true)) {
       panehd.replaceChild(isSearch ? searchState : crumbs, panehd.firstChild);
     }
-    state.selection.clear(); state.lastIdx = -1;   // a new file set clears the selection
+    // B6: DON'T wipe selection on every repaint (filter / search / folder nav) — it persists.
+    // Only drop ids whose work no longer exists (trashed/removed) so a stale id can't ride along
+    // in a bulk action. A plain card click or empty-area click is what resets a live selection.
+    const live = new Set((data.files || []).map((f) => f.id));
+    for (const id of [...state.selection]) if (!live.has(id)) state.selection.delete(id);
+    state.lastIdx = -1;
     body.replaceChildren(contents(data, state, rerender, sel));
     refreshSel();
   }
