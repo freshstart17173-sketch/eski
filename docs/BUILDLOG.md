@@ -2020,3 +2020,25 @@ NEXT: K4 (delete server + invite expiry/revoke), K9 (folder sharing + request-to
 GOTCHA: `create_server` returns the full `servers` row (`returns servers`), so `data.js` reads
   `srv.id`/`srv.name` straight off `data` (not an array — it's a scalar composite, unlike the
   set-returning post_comment/preview_invite which come back as `data[0]`).
+
+## 2026-08-29 — K4 delete_server RPC (silent-no-op hardening) + invite mgmt verified
+IN PROGRESS: (cleared)
+DONE (backend role-sim-verified, on `preview`):
+  - **Invite expiry/revoke** — already built (P9.3); verified reliable. `si_insert`/`si_delete`
+    gate on `is_server_admin` (definer): role-sim confirmed an admin creates + revokes an invite
+    (1 row each). A revoked invite is a deleted row, so join_via_invite/preview_invite see nothing.
+    Left as direct writes (definer-gated = reliable).
+  - **Delete-server hardened.** Was a direct `servers.delete` (servers_delete = owner_id). Role-sim
+    exposed the silent-no-op: a NON-owner's delete matched **0 rows with NO error** — "success"
+    deleting nothing (the K8 class). New `delete_server(p_server_id)` SECURITY DEFINER RPC
+    (schema-28, migration `p18_delete_server`) RAISES for a non-owner / missing server; the owner's
+    call deletes the row + FK cascade (members/channels/works/invites/roles). `data.js deleteServer`
+    calls it.
+VERIFIED: role-sim — a non-owner's `delete_server` RAISES (was a silent 0-row no-op via direct
+  delete); the owner's deletes the server (count→0); invite insert+delete as admin = 1 row each;
+  all rolled back, live DB intact (servers 2, invites 1). `node --check` clean.
+NEXT: K9 (Drive folder/file sharing + request-to-join), K6 (realtime echo, live-only).
+GOTCHA: the direct servers.delete "worked" in every demo/manual test because the tester was the
+  owner — the 0-row no-op only bites a non-owner, who the UI never shows Delete to, so it hid. The
+  RPC makes the failure loud (raise) instead of a silent success. Same lesson as the works/icon
+  bugs: a matched-0-rows write is a silent lie, not a pass.

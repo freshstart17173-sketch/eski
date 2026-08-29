@@ -1413,12 +1413,16 @@ export async function setServerPrefs(serverId, patch) {
   if (error) throw new Error(error.message || "Couldn’t save your notification settings");
 }
 
-// Delete a server (owner only, servers_delete = owner_id). FK cascades remove its members,
-// channels, works, invites, etc. Irreversible — the UI gates it behind a type-to-confirm.
+// Delete a server (owner only) via the `delete_server` SECURITY DEFINER RPC (K4). FK cascades
+// remove its members, channels, works, invites, roles. Was a direct `servers.delete` — but a
+// destructive delete that matches no RLS row is a silent 0-row no-op (K8), so a non-owner would
+// see "success" having deleted nothing. The RPC RAISES for a non-owner (or a missing server)
+// instead, so the outcome is never a silent lie. Irreversible — the UI gates it behind a
+// type-the-name confirm.
 export async function deleteServer(serverId) {
   if (isDemo()) return;
-  const { error } = await supabase.from("servers").delete().eq("id", serverId);
-  if (error) throw new Error(error.message || "Couldn’t delete the server");
+  const { error } = await supabase.rpc("delete_server", { p_server_id: serverId });
+  if (error) throw new Error(/owner/i.test(error.message || "") ? "Only the owner can delete this server" : (error.message || "Couldn’t delete the server"));
   clearWorkspaceCache();
 }
 

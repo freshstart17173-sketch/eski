@@ -222,11 +222,18 @@ IDs are stable handles (`B*` broken-UI, `K*` backend, `P*` polish, `D*` deferred
       role-sim `servers.update` (rolled back); demo render (CDN-intercepted 1×1 PNG) shows the
       server icon + cover in workspace AND explorer headers and the profile banner, both themes, 0
       pageerrors. Live R2 round-trip is owner-only → QA-CHECKLIST.
-- [ ] **K4 · Delete server + invite management (expiry / revoke).** Owner delete-server flow
-      (type-the-name confirm → cascade) and invite expiry/revoke in the invite modal.
-      *Files:* RPC(s) in a new schema file, `app/data.js`, server-settings + invite modals.
-      *Medium-hard.* *Test:* backend — owner can delete own server + cascade; a non-owner cannot;
-      revoked/expired invite fails `join_via_invite`. All gate through `SECURITY DEFINER` → reliable.
+- [x] **K4 · Delete server + invite management (expiry / revoke).** *Done (backend
+      role-sim-verified).* The invite modal's create-with-expiry/max-uses + revoke were already
+      built (P9.3) and verified reliable — `si_insert`/`si_delete` gate on `is_server_admin`
+      (definer): role-sim confirmed an admin creates + revokes an invite (1 row each), and a
+      revoked invite is a deleted row so `join_via_invite`/`preview_invite` see nothing. The
+      delete-server flow (type-the-name confirm → cascade) was a **direct `servers.delete`** —
+      which role-sim exposed as the silent-no-op hazard: a non-owner's delete matched **0 rows
+      with NO error** ("success" having deleted nothing). Hardened into the `delete_server`
+      `SECURITY DEFINER` RPC (schema-28, migration `p18_delete_server`) that **raises** on a
+      non-owner / missing server; the owner's delete removes the row + FK cascade. `data.js
+      deleteServer` calls it. Verified: role-sim — non-owner raises, owner deletes (server gone),
+      rolled back; live DB intact. *Files:* `schema-28-delete-server-rpc.sql`, `app/data.js`.
 - [x] **K5 · Harden create-server into an atomic `create_server` RPC.** *Done (backend
       role-sim-verified).* `create_server(p_name, p_channels[])` (schema-27, migration
       `p17_create_server`) seats the server + owner membership (hue 1, active) + the one @everyone
