@@ -468,6 +468,22 @@ IDs are stable handles (`B*` broken-UI, `K*` backend, `P*` polish, `D*` deferred
       `app/main.js` (route dispatch), `app/screens/workspace.js` (menu → route; dead-code removal),
       `styles/content.css`. Verified: demo settings screen renders all 7 nav panels, switches
       panels, danger zone has the type-to-confirm delete, in the shell with the rail, 0 pageerrors.
+- [ ] **P11 · Typed, colour-coded tags + a tag-type filter facet (round-6, owner).** Tags gain a
+      **type** (e.g. `bpm`, `key`, `genre`) and each **type has a fixed colour** — a `bpm` tag is
+      always blue, a `key` tag always green, etc. — so the same kind of tag reads the same across
+      every file. The tag TYPES then show up as their **own facet in the explorer filters** (filter
+      by BPM, by Key), alongside the free-tag filter. **Design/data decisions to settle first:**
+      (a) how a type is attached — a reserved `type:value` convention on the existing
+      `content_tags.tag` (e.g. `bpm:142`) vs. a real `tag_types` table + a `type` column; (b) the
+      colour source — a small **type→colour map** (NOT the member hue, which is server-scoped
+      identity; these need their own token set, e.g. `--tagtype-bpm`, `--tagtype-key`, added to
+      `eski-style`); (c) how the filter facet derives the types present. This is the **foundation
+      for D5** (required tags per channel): once a tag has a type, a channel can require certain
+      types on upload. *Files:* `content_tags` schema/convention, `app/data.js` (tag shape +
+      derive types), `app/screens/explorer.js` (colour the tag, add the type filter facet),
+      `app/screens/details.js`/`cards.js` (render coloured tags), `eski-style` (tag-type colour
+      tokens). *Medium-hard.* Load **`eski-style`** before styling — tags are currently "coloured
+      bold text, not a pill" (CANON #26); confirm how a typed colour reads within that rule.
 
 ### 4 · Deferred (post-beta / infra-gated — do NOT build now)
 
@@ -482,9 +498,11 @@ The correct behaviour today is an explicit signpost (grayed control + WIP toast)
 - [ ] **D3 · Audit log** — read-only moderation history (actor/target/reason/time). *(post-beta)*
 - [ ] ~~**D4 · Full-screen Server-settings port**~~ — **promoted to P10** (round-5): owner wants
       server settings as its own screen, not the dropdown modals. See P10.
-- [ ] **D5 · Required tags / fields per channel** (BPM/Key on `#samples`) — schema
-      (`required_fields` + structured `work_fields`) + channel-settings admin + upload enforcement
-      + an RLS/trigger fence. Owner-requested; substantial. Promote out of Deferred only if beta needs it. *(post-beta unless prioritized)*
+- [ ] **D5 · Required tags / fields per channel** (BPM/Key on `#samples`) — **builds on P11**
+      (typed tags): once a tag has a type, a channel names the tag **types** it requires; upload
+      enforces them. Schema (`required_fields` on the channel + the typed-tag data from P11) +
+      channel-settings admin + upload enforcement + an RLS/trigger fence. Owner-requested;
+      substantial. Promote out of Deferred only if beta needs it. *(post-beta unless prioritized)*
 - [ ] **D6 · Review canvas · kanban boards · numbered versions** — cut 2026-08-18 to keep the
       mental model simple; may return post-beta. *(post-beta)*
 
