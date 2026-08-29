@@ -453,12 +453,21 @@ IDs are stable handles (`B*` broken-UI, `K*` backend, `P*` polish, `D*` deferred
       *Files:* `app/screens/explorer.js`, `app/screens/shared.js`, `app/main.js`, `app/data.js`,
       `app/demo.js`. Verified: demo shared folder renders the full browser (toolbar + 4 cards, no
       tree/rail/upload), request-to-join CTA, dead token handled, both themes, 0 pageerrors.
-- [ ] **P10 · Server settings as its own full SCREEN (round-5, promotes D4).** Replace the server-
-      menu modals with ONE full-screen settings surface containing everything: overview (name/icon/
-      cover), roles & permissions, **audit log**, members/moderation, join requests, notification
-      settings, delete. Reverses the current modal-per-item approach. *Files:* `app/screens/settings.js`
-      (the `/s/:id/settings` route is currently vestigial), `app/screens/workspace.js` (server menu →
-      route to the screen), `app/screens/roles.js`. *Hard.* Was **D4** (post-beta) — promoted.
+- [x] **P10 · Server settings as its own full SCREEN (round-5, promotes D4).** *Done (demo-verified
+      both themes).* New `app/screens/settings.js` `renderServerSettings` — a real full-screen
+      surface (left setnav + panels), mounted in the shell at `/s/:id/settings` (was a placeholder).
+      Panels: **Overview** (name/icon/cover, inline), **Roles & permissions** (opens the roles
+      editor), **Invites** (list · create · revoke), **Join requests** (approve/decline),
+      **Notifications** (level + suppress-@everyone; the one panel a non-admin also sees for their
+      own prefs), **Audit log**, **Danger zone** (owner: type-to-confirm delete; member: leave).
+      The server menu is now just quick actions — **Server settings** routes to the screen, plus
+      Invite / Notification prefs / (non-owner) Leave. Removed the four superseded modal functions
+      (`openServerSettings`/`openAuditLog`/`openJoinRequests`/`deleteServerFlow` + `auditRow`/
+      `escapeHtml`) and their now-dead imports from `workspace.js`. Reuses the `.usersettings`
+      layout CSS (broadened to `.serversettings`). *Files:* `app/screens/settings.js` (new),
+      `app/main.js` (route dispatch), `app/screens/workspace.js` (menu → route; dead-code removal),
+      `styles/content.css`. Verified: demo settings screen renders all 7 nav panels, switches
+      panels, danger zone has the type-to-confirm delete, in the shell with the rail, 0 pageerrors.
 
 ### 4 · Deferred (post-beta / infra-gated — do NOT build now)
 

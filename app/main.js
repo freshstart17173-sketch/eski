@@ -10,6 +10,7 @@ import { ready, session, onChange } from "./supabase.js";
 import { icon } from "./icons.js";
 import { loadWorkspace, loadExplorer, loadFeed, loadProfile, loadSharedWork, loadSharedFolder, loadDMsScreen, loadNotifications, loadUserSettings, loadSearch, clearWorkspaceCache, isDemo, needsProfileSetup } from "./data.js";
 import { renderUserSettings } from "./screens/usersettings.js";
+import { renderServerSettings } from "./screens/settings.js";
 import { renderSearch } from "./screens/search.js";
 import { time } from "./perf.js";
 import { teardownRealtime } from "./realtime.js";
@@ -126,6 +127,17 @@ async function renderRoute(r) {
     if (mine !== token) return;
     if (exData.needsAuth) { swap(renderSignin()); return; }
     swap(appFrame(renderRail(exData, r), renderExplorer(exData, { folderId: folder, mode: q.get("view") })));
+    return;
+  }
+
+  // Server settings (P10, /s/:id/settings) — one full screen with all server admin panels
+  // (overview/roles/invites/requests/notifications/audit/danger). Loads the workspace bundle for
+  // server + isAdmin/isOwner + membersById + roles, mounts in the shell with the rail.
+  if (r.screen === "settings") {
+    const stData = await time("settings", loadWorkspace({ serverId: r.params.serverId }));
+    if (mine !== token) return;
+    if (stData.needsAuth) { swap(renderSignin()); return; }
+    swap(appFrame(renderRail(stData, r), renderServerSettings(stData)));
     return;
   }
 

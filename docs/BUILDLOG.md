@@ -2081,3 +2081,30 @@ NEXT: the master-todo backend queue (K1–K9) is now DONE; remaining open work i
 GOTCHA: `resolve_folder_share`'s return type changed between p19 and p20 → needed DROP+CREATE (not
   CREATE OR REPLACE). The folder viewer is a set-returning RPC → `data` is an array; the folder
   name/server context repeat on every row, so read them off `data[0]`.
+
+## 2026-08-29 — Round-5 UX sweep (B7/B8, P6/P7/P8/P9/P10)
+IN PROGRESS: (cleared)
+DONE (owner round-5 feedback; each demo-verified, on `preview`):
+  - **B7** upload picker couldn't select — the hidden `<input type=file>` was `display:none`
+    (Chromium/Brave refuse selection); now visually-hidden. **B8** every dropdown now toggles
+    closed on a second trigger click (openMenu + openFilterMenu guard on `aria-expanded`).
+  - **P6** upload sheet: Visibility is contextual (hidden in a server context), "Post"→"Upload",
+    storage line gone; removed the dead Files-tab code (filesPanel + loadWorkspace channel fetch).
+  - **P8** the Type filter lists real file extensions (.wav/.flp/…); every multi-select facet gets
+    a search box past 8 options.
+  - **P7** the Share dialog is links-only (Drive-style); visibility moved to a "Change visibility…"
+    item on the card/detail menus; an eski `/shared/…` link pasted in chat renders as a native
+    file/folder card (`eskiRefCards`).
+  - **P9** the shared-folder viewer now renders through the REAL explorer in a read-only `shared`
+    mode (same toolbar/filters/search/views/selection); gated off the rail/tree/footer/upload/menu.
+  - **P10** server settings is its own screen (`screens/settings.js`, `/s/:id/settings`): setnav +
+    panels (overview/roles/invites/requests/notifications/audit/danger); the server menu routes to
+    it; the four superseded modal fns were removed from `workspace.js`.
+VERIFIED: demo render for each (0 pageerrors); B7/upload contextual bits are session-gated → owner
+  QA on preview. Backend untouched this round except reusing existing RPCs.
+NEXT: remaining master-todo — B3 (message permalink), B4 (typed modal routes), P1 (center empty
+  states), P2 (perf), P3 (loading states), P4/P5 (cut social · merge Messages+Friends), and the
+  P7 follow-up (a composer "reference a file" picker).
+GOTCHA: `.usersettings` settings-layout CSS was broadened to `:is(.usersettings,.serversettings)`
+  so the new server-settings screen reuses it. The shared-explorer mode needed every
+  `data.server.id` deref guarded (server is null on a shared view).

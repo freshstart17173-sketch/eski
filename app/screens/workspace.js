@@ -13,13 +13,12 @@
 
 import { el, Avatar, IconButton, openMenu, closeMenus, toast, openModal, Button, copyToClipboard } from "../ui.js";
 import { openReport } from "../report.js";
-import { openRolesEditor, openChannelAccess } from "./roles.js";
+import { openChannelAccess } from "./roles.js";
 import { iconEl } from "../icons.js";
 import { navigate, reload } from "../router.js";
 import { avatarUrl } from "../cards.js";
 import { openDetails } from "./details.js";
-import { uploadBlobs } from "../upload-r2.js";
-import { isDemo, shapeMessage, loadThread, toggleReaction, loadMessageReactions, forwardMessage, deleteMessage, pinMessage, unpinMessage, editMessage, kickMember, timeoutMember, banMember, setMemberRoles, createChannel, updateChannel, createInvite, loadInvites, revokeInvite, loadInviteCandidates, inviteByHandle, inviteUserToServer, updateServer, loadAuditLog, leaveServer, deleteServer, loadServerPrefs, setServerPrefs, fetchChannelAttachment, loadJoinRequests, approveJoinRequest, declineJoinRequest } from "../data.js";
+import { isDemo, shapeMessage, loadThread, toggleReaction, loadMessageReactions, forwardMessage, deleteMessage, pinMessage, unpinMessage, editMessage, kickMember, timeoutMember, banMember, setMemberRoles, createChannel, updateChannel, createInvite, loadInvites, revokeInvite, loadInviteCandidates, inviteByHandle, inviteUserToServer, leaveServer, loadServerPrefs, setServerPrefs, fetchChannelAttachment, declineJoinRequest } from "../data.js";
 import { subscribeChannelMessages, subscribeChannelReactions, subscribeTyping, sendTyping, subscribeServerPresence, markRead, sendMessage } from "../realtime.js";
 import { openUpload, enableDropUpload } from "./upload.js";
 
@@ -289,16 +288,13 @@ export function channelColumn(data, view) {
   bar.querySelector(".ic")?.classList.add("srvchev");
   bar.addEventListener("click", () => {
     const items = [];
-    if (data.isAdmin) items.push({ label: "Server settings", icon: "settings", onClick: () => openServerSettings(data) });
-    if (data.isAdmin) items.push({ label: "Roles & permissions", icon: "users", onClick: () => openRolesEditor(data.server.id) });
-    if (data.isAdmin) items.push({ label: "Audit log", icon: "flag", onClick: () => openAuditLog(data) });
-    if (data.isAdmin) items.push({ label: "Join requests", icon: "users", onClick: () => openJoinRequests(data) });
+    // P10: server admin now lives on its own screen (/s/:id/settings) — roles, audit, join
+    // requests, notifications, and delete are panels there, not menu items. The menu keeps only
+    // the quick actions: open settings, invite, notif prefs, and (non-owner) leave.
+    if (data.isAdmin) items.push({ label: "Server settings", icon: "settings", onClick: () => navigate(withDemo(`/s/${data.server.id}/settings`)) });
     items.push({ label: "Invite people", icon: "plus", onClick: () => inviteFlow(data) });
     items.push({ label: "Notification settings", icon: "bell", onClick: () => notifSettingsFlow(data) });
-    items.push({ sep: true });
-    items.push(data.isOwner
-      ? { label: "Delete server", icon: "trash", danger: true, onClick: () => deleteServerFlow(data) }
-      : { label: "Leave server", icon: "leave", danger: true, onClick: () => leaveServerFlow(data) });
+    if (!data.isOwner) { items.push({ sep: true }); items.push({ label: "Leave server", icon: "leave", danger: true, onClick: () => leaveServerFlow(data) }); }
     openMenu(bar, items);
   });
   // K2: the uploaded server cover renders behind the header; no cover → the .srvcover gradient
@@ -529,27 +525,6 @@ async function notifSettingsFlow(data) {
   });
 }
 
-// Delete server (owner) — a type-to-confirm (type the exact name) → deleteServer → Feed. FK
-// cascades wipe everything; irreversible, hence the name gate.
-function deleteServerFlow(data) {
-  const input = el("input", { placeholder: data.server.name, "aria-label": "Type the server name" });
-  const del = Button({ label: "Delete server", variant: "danger", disabled: true });
-  const cancel = Button({ label: "Cancel", variant: "ghost" });
-  input.addEventListener("input", () => { del.disabled = input.value.trim() !== data.server.name; });
-  const body = el("div", {}, [
-    el("p", { style: "color:var(--soft);font-size:var(--fs-sm);line-height:1.5" }, [`This permanently deletes ${data.server.name} and everything in it — channels, files, and messages. It can't be undone.`]),
-    el("label.ulab", {}, ["Type ", el("b", {}, [data.server.name]), " to confirm"]),
-    el(".field", {}, [input]),
-  ]);
-  const { close } = openModal({ title: `Delete ${data.server.name}?`, body, footer: [cancel, del] });
-  cancel.addEventListener("click", () => close());
-  del.addEventListener("click", async () => {
-    if (del.disabled) return; del.disabled = true;
-    try { if (!isDemo()) await deleteServer(data.server.id); close(); if (isDemo()) toast({ message: "Server deleted" }); else navigate(withDemo("/")); }
-    catch (e) { toast({ message: e?.message || "Couldn’t delete the server" }); del.disabled = false; }
-  });
-}
-
 // Leave server — a confirm, then delete your own membership → back to the Feed. Owners are
 // steered to Server settings (leaving would orphan a server they own).
 function leaveServerFlow(data) {
@@ -579,128 +554,6 @@ function srvIconEl(server) {
   return span;
 }
 
-// Server settings (admin) — gallery Server-settings → Overview: the server name + a square icon
-// and a wide cover, both R2 uploads (uploadBlobs → updateServer(icon_key/cover_key)). Only the
-// changed keys are written. Demo previews the picked image locally (a blob URL), never R2. The
-// rail + header repaint on the NEXT navigation (they read the cached bundle we mutate here).
-function openServerSettings(data) {
-  const demo = isDemo();
-  const s = data.server;
-
-  const iconPrev = el(".cv.icon", {}, [avatarUrl(s.icon_key) ? el("img", { src: avatarUrl(s.icon_key), alt: "" }) : document.createTextNode(s.initials)]);
-  const coverPrev = el(".cv", {}, [avatarUrl(s.cover_key) ? el("img", { src: avatarUrl(s.cover_key), alt: "" }) : iconEl("image")]);
-
-  const pick = (field, prev) => {
-    const input = el("input", { type: "file", accept: "image/*", style: "display:none" });
-    input.addEventListener("change", async () => {
-      const file = input.files?.[0]; input.value = "";
-      if (!file) return;
-      try {
-        let src;
-        if (demo) src = URL.createObjectURL(file);
-        else { const [{ key }] = await uploadBlobs([file]); await updateServer(s.id, { [field]: key }); s[field] = key; src = avatarUrl(key); }
-        prev.replaceChildren(el("img", { src, alt: "" }));
-        toast({ message: field === "icon_key" ? "Server icon updated" : "Server cover updated", icon: "check" });
-      } catch (e) { toast({ message: e?.message || "Couldn’t upload the image" }); }
-    });
-    return input;
-  };
-  const iconInput = pick("icon_key", iconPrev);
-  const coverInput = pick("cover_key", coverPrev);
-
-  const nameI = el("input", { value: s.name || "", "aria-label": "Server name" });
-  const body = el("div", {}, [
-    el("label.ulab", {}, ["Server name"]), el(".field", {}, [nameI]),
-    el(".frow", { style: "margin-top:12px" }, [el("label.ulab", {}, ["Server icon"]), el(".coverpick", {}, [
-      iconPrev, iconInput, Button({ label: "Upload", size: "sm", icon: "image", onClick: () => iconInput.click() }),
-    ])]),
-    el(".frow", { style: "margin-top:12px" }, [el("label.ulab", {}, ["Cover"]), el(".coverpick", {}, [
-      coverPrev, coverInput, Button({ label: "Upload", size: "sm", icon: "image", onClick: () => coverInput.click() }),
-    ])]),
-  ]);
-  const cancel = Button({ label: "Cancel", variant: "ghost" });
-  const save = Button({ label: "Save", variant: "primary" });
-  const { close } = openModal({ title: "Server settings", body, footer: [cancel, save] });
-  cancel.addEventListener("click", () => close());
-  save.addEventListener("click", async () => {
-    if (save.disabled) return; save.disabled = true;
-    try {
-      const patch = await updateServer(s.id, { name: nameI.value });
-      Object.assign(s, patch, patch.name ? { initials: patch.name.trim().slice(0, 2).toUpperCase() } : {});
-      close(); toast({ message: "Server settings saved", icon: "check" });
-      // Repaint the shell so the renamed server shows on the rail badge + channel header
-      // immediately, not after a manual reload.
-      if (!isDemo()) reload();
-    } catch (e) { toast({ message: e?.message || "Couldn’t save" }); save.disabled = false; }
-  });
-}
-
-// Join requests (admin, K9) — the people who asked to join this server (via a shared folder or a
-// server they found without an invite). Each row: who + their note + Approve / Decline. Approve
-// seats them (approve_join_request RPC → server_members); Decline marks it declined. Empty state
-// when there's nothing pending. The jr_read RLS already limits the list to this server's admins.
-async function openJoinRequests(data) {
-  const list = el("div", { style: "min-width:340px;max-width:440px" }, [el(".lb", { style: "color:var(--muted)" }, ["Loading…"])]);
-  const done = Button({ label: "Done", variant: "ghost" });
-  const { close } = openModal({ title: "Join requests", body: list, footer: [done] });
-  done.addEventListener("click", () => close());
-
-  const paint = (rows) => {
-    list.replaceChildren();
-    if (!rows.length) { list.append(el(".emptystate", {}, [iconEl("users"), el("h3", {}, ["No pending requests"]), el("p", {}, ["When someone asks to join, they'll show up here."])])); return; }
-    for (const r of rows) {
-      const row = el(".jrrow", { style: "display:flex;align-items:center;gap:10px;padding:8px 0" }, [
-        Avatar({ name: r.name, size: "sm", src: avatarUrl(r.avatar_key) }),
-        el("div", { style: "flex:1;min-width:0" }, [
-          el("div", { style: "font-weight:600" }, [r.name]),
-          r.message ? el("div", { style: "color:var(--muted);font-size:var(--fs-xs)" }, [r.message]) : el("div", { style: "color:var(--muted);font-size:var(--fs-xs)" }, [`@${r.handle} · ${r.when}`]),
-        ]),
-      ]);
-      const approve = Button({ label: "Approve", size: "sm", variant: "primary" });
-      const decline = Button({ label: "Decline", size: "sm", variant: "ghost" });
-      approve.addEventListener("click", async () => {
-        approve.disabled = decline.disabled = true;
-        try { if (!isDemo()) await approveJoinRequest(data.server.id, r.userId); row.remove(); toast({ message: `${r.name} joined`, icon: "check" }); if (!list.querySelector(".jrrow")) paint([]); }
-        catch (e) { approve.disabled = decline.disabled = false; toast({ message: e?.message || "Couldn’t approve" }); }
-      });
-      decline.addEventListener("click", async () => {
-        approve.disabled = decline.disabled = true;
-        try { if (!isDemo()) await declineJoinRequest(data.server.id, r.userId); row.remove(); toast({ message: "Request declined" }); if (!list.querySelector(".jrrow")) paint([]); }
-        catch (e) { approve.disabled = decline.disabled = false; toast({ message: e?.message || "Couldn’t decline" }); }
-      });
-      row.append(el("div", { style: "display:flex;gap:6px" }, [decline, approve]));
-      list.append(row);
-    }
-  };
-  try { paint(await loadJoinRequests(data.server.id)); }
-  catch (e) { list.replaceChildren(el(".lb", {}, [e?.message || "Couldn’t load requests"])); }
-}
-
-// Audit log (admin) — the moderation actions the kick/ban/timeout RPCs record, newest first.
-// Read-only; a name gate isn't needed (audit_read fences it server-side). Each row reads
-// "<actor> <verb> <target>" with an optional reason and the time.
-const AUDIT_VERB = { ban: ["banned", "lock"], timeout: ["timed out", "clock"], kick: ["kicked", "leave"] };
-async function openAuditLog(data) {
-  const list = el(".auditlist", {}, [el(".sharenone", {}, ["Loading…"])]);
-  const done = Button({ label: "Done", variant: "primary" });
-  const { close } = openModal({ title: `${data.server.name} — audit log`, body: el("div", {}, [list]), footer: [done] });
-  done.addEventListener("click", () => close());
-  let rows = [];
-  try { rows = await loadAuditLog(data.server.id); } catch (e) { list.replaceChildren(el(".sharenone", {}, [e?.message || "Couldn’t load the audit log"])); return; }
-  list.replaceChildren(...(rows.length ? rows.map(auditRow) : [el(".sharenone", {}, ["No moderation actions yet."])]));
-}
-function auditRow(r) {
-  const [verb, ic] = AUDIT_VERB[r.action] || [r.action, "flag"];
-  return el(".arow", {}, [
-    el(".aic", {}, [iconEl(ic, "sm")]),
-    el(".abd", {}, [
-      el("span.atx", { html: `<b>${escapeHtml(r.actor)}</b> ${verb}${r.target ? ` <b>${escapeHtml(r.target)}</b>` : ""}` }),
-      r.reason ? el("span.asub", {}, [`“${r.reason}”`]) : null,
-    ]),
-    el("time.atime", {}, [r.time]),
-  ]);
-}
-function escapeHtml(s) { return String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c])); }
 
 // Invite people (gallery #inviteModal) — create a link with an expiry + max-uses, copy it, and
 // manage the active links (list + revoke). Every link is consumed by join_via_invite, which
