@@ -88,6 +88,8 @@ export function demoWorkspace() {
         channelMentions: ["mixing"], edited: true,
         attach: { kind: "audio", name: "bridge_scratch_rae.wav", ext: "WAV", tags: ["acapella"] } },
       { id: "divider", newDivider: true },
+      { id: "m3b", author: P.rae, time: "2:33 PM",
+        body: "here's the whole reference pack: /shared/folder/demofolderlink0001 — grab what you need" },
       { id: "m4", author: P.mira, time: "2:38 PM",
         forward: { fromChannel: "references",
           author: { name: "nel", colorIdx: 6 }, when: "yesterday",

@@ -418,15 +418,20 @@ IDs are stable handles (`B*` broken-UI, `K*` backend, `P*` polish, `D*` deferred
       chat-attachment resolution stays. *Files:* `app/screens/upload.js`, `app/screens/workspace.js`,
       `app/data.js`. Verified: workspace renders with only Messages/Pins tabs, 0 pageerrors; upload
       sheet is session-gated → owner confirms the contextual hide on preview.
-- [ ] **P7 · Redesign the Share dialog → links only + reference-in-chat (round-5).** Sharing to
-      **Public/Private makes no sense** in the share dialog — to "share publicly" you save to your
-      files and make that copy public (visibility lives on the file, not the share). So the dialog
-      is just the **link** (Google-Drive style: "anyone with the link" · Copy · Revoke), reusing the
-      K9 folder/file share plumbing. **Plus:** allow **referencing an existing file/folder in the
-      channel chat** (like a reply) — an **eski file/folder link pasted into chat renders as a
-      native file card** (same card as an upload) that opens the viewer, not a raw URL. *Files:*
-      `app/screens/explorer.js` (share dialog), `app/screens/workspace.js` (chat link → file card),
-      `app/data.js`. *Medium-hard.*
+- [x] **P7 · Share dialog → links only + reference-in-chat (round-5).** *Done (demo-verified).*
+      The **Share dialog is now links only** (Drive-style): the Public/Server/Private segment is
+      gone — it just mints/copies/revokes a read-only "anyone with the link" link, with copy that
+      says publishing = save to your files + make that copy public. **Visibility moved to the file**:
+      a new **"Change visibility…"** item on the card ⋯ menu AND the details-pane menu opens a small
+      Public/Server/Private picker (`openVisibilityDialog`, reuses `VisibilitySeg`/`setVisibility`).
+      **Reference-in-chat:** an **eski file/folder link pasted into a message renders as a native
+      file/folder card** (`eskiRefCards` in `renderBody`/`messageRow`) — matches `/shared/folder/…`
+      and `/shared/…`, opens the viewer natively instead of showing a raw URL. *Files:*
+      `app/screens/explorer.js`, `app/screens/workspace.js`, `app/demo.js`. Verified: demo — share
+      dialog has no visibility seg (links only), card menu has "Change visibility…", a chat message
+      with a `/shared/folder/…` link renders a "Shared folder · opens the viewer" card, 0 pageerrors.
+      *Follow-up (small):* a composer **"reference a file" picker** (choose an existing server file →
+      insert its link) would complement the link-paste path — noted, not built.
 - [x] **P8 · Real file-type filtering + searchable filters (round-5).** *Done (demo-verified).*
       The **Type** filter now offers the **actual file extensions present** (.wav / .flp / .png /
       .als / .zip …), derived from the files in view, filtering on `w.file_ext` (was the broad

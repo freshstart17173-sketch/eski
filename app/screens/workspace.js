@@ -54,6 +54,26 @@ function renderBody(msg) {
   return tx;
 }
 
+// P7: reference a file/folder in chat — an eski share link pasted into a message renders as a
+// native file/folder card that opens the viewer, not a raw URL ("display like any other file and
+// open up natively"). Matches /shared/folder/<token> and /shared/<token>; de-duped per message.
+function eskiRefCards(body) {
+  if (!body) return [];
+  const re = /\/shared\/(folder\/)?([A-Za-z0-9]{16,})/g;
+  const cards = []; const seen = new Set(); let m;
+  while ((m = re.exec(body))) {
+    const isFolder = !!m[1], token = m[2];
+    const path = (isFolder ? `/shared/folder/${token}` : `/shared/${token}`) + (isDemo() ? "?demo=1" : "");
+    if (seen.has(path)) continue; seen.add(path);
+    const card = el("button.filecard.eskiref", { "data-open-details": true, style: "max-width:360px", onClick: (e) => { e.stopPropagation(); navigate(path); } }, [
+      el(".fcwave", {}, [iconEl(isFolder ? "folder" : "file", "sm")]),
+      el(".fbody", {}, [el(".fname", {}, [isFolder ? "Shared folder" : "Shared file"]), el("div", { style: "font-size:11px;color:var(--muted);margin-top:3px" }, ["eski link · opens the viewer"])]),
+    ]);
+    cards.push(el(".filecardwrap", {}, [card]));
+  }
+  return cards;
+}
+
 // a byline: username in member hue (the one server-scoped colour) + timestamp
 function byline(person, time) {
   const u = el("span.u", {}, [person.name]);
@@ -125,6 +145,7 @@ function messageRow(msg, data, { onOpenThread } = {}) {
   if (msg.body) bd.append(renderBody(msg));
   if (msg.attach) bd.append(fileCard(msg.attach));
   if (msg.clump) bd.append(fileClump(msg.clump, msg.clumpMore));
+  for (const c of eskiRefCards(msg.body)) bd.append(c);   // P7: eski links → native file/folder cards
   bd.append(rx.bar);   // reactions (empty bar renders nothing until one is added)
   if (msg.replies) bd.append(el(".reply", { onClick: () => onOpenThread?.(msg) }, [iconEl("reply", "sm"), `${msg.replies} replies`]));
 

@@ -932,6 +932,7 @@ function openCardMenu(data, state, rerender, w, anchor) {
     ...(personal ? [] : [{ label: "Save to my files", icon: "save", onClick: () => saveOne(w) }]),
     { label: "Share…", icon: "users", onClick: () => openShareDialog(w) },
     { label: "Copy link", icon: "link", onClick: () => copyLink(w) },
+    { label: "Change visibility…", icon: "globe", onClick: () => openVisibilityDialog(w) },
     { label: "Rename", icon: "pen", onClick: () => renameFile(data, state, rerender, w) },
     { label: "Move to…", icon: "folder", onClick: () => moveIds(data, state, rerender, [w.id]) },
     { label: w.hidden ? "Show in library" : "Hide from library", icon: "hide", onClick: () => toggleHidden(data, state, rerender, w) },
@@ -953,6 +954,7 @@ export function detailMenuItems(data, state, rerender, w, { repaint, close }) {
     ...(personal ? [] : [{ label: "Save to my files", icon: "save", onClick: () => saveOne(w) }]),
     { label: "Share…", icon: "users", onClick: () => openShareDialog(w) },
     { label: "Copy link", icon: "link", onClick: () => copyLink(w) },
+    { label: "Change visibility…", icon: "globe", onClick: () => openVisibilityDialog(w) },
     { label: "Rename", icon: "pen", onClick: () => renameFile(data, state, rerender, w, repaint) },
     { label: "Move to…", icon: "folder", onClick: () => { close(); moveIds(data, state, rerender, [w.id]); } },
     { label: w.hidden ? "Show in library" : "Hide from library", icon: "hide", onClick: () => toggleHidden(data, state, rerender, w, repaint) },
@@ -1002,7 +1004,10 @@ async function copyLink(w) {
 // Share dialog (CANON §39/#61) — set visibility (Public/Server/Private → works.visibility)
 // and manage the "anyone with the link" tokens: list active links, copy or revoke each,
 // create a new one. All writes are RLS-fenced; demo mutates the in-dialog list optimistically.
-function openShareDialog(w) {
+// P7: visibility is a property of the FILE, set here (not in the share dialog). A small picker
+// reusing the Public/Server/Private segmented control. To publish a file on your profile you
+// make it Public here (typically on a personal copy saved to My files).
+function openVisibilityDialog(w) {
   const demo = isDemoQS();
   const seg = VisibilitySeg({
     value: visFromDb(w.visibility || "public"),
@@ -1011,7 +1016,17 @@ function openShareDialog(w) {
       catch (e) { toast({ message: e?.message || "Couldn’t update who can see this" }); }
     },
   });
+  const done = Button({ label: "Done", variant: "primary" });
+  const { close } = openModal({ title: `Who can see “${w.title || w.name || "file"}”`, body: el("div", { style: "min-width:320px" }, [seg]), footer: [done] });
+  done.addEventListener("click", () => close());
+}
 
+function openShareDialog(w) {
+  // P7: the Share dialog is LINKS ONLY (Google-Drive style). Visibility used to live here, but
+  // "share to Public/Private" made no sense in a share dialog — visibility is a property of the
+  // file (set from the card ⋯ menu), and to publish you save a copy to your files and make that
+  // public. So this dialog just mints/copies/revokes a read-only "anyone with the link" link.
+  const demo = isDemoQS();
   const links = el(".sharelinks");
   let list = [];
   const paint = () => links.replaceChildren(
@@ -1035,10 +1050,9 @@ function openShareDialog(w) {
   }
   paint();
 
-  const body = el("div", {}, [
-    el("label.ulab", {}, ["Visibility ", el("span", { style: "font-weight:400;color:var(--muted)" }, ["who can see this"])]),
-    seg,
+  const body = el("div", { style: "min-width:340px" }, [
     el("label.ulab", {}, ["Anyone with the link"]),
+    el("p", { style: "color:var(--muted);font-size:var(--fs-xs);margin:2px 0 10px" }, ["Anyone with the link can view this file — no account needed. To publish it on your profile, save it to your files and set that copy public."]),
     links,
   ]);
   const done = Button({ label: "Done", variant: "primary" });
