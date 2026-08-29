@@ -150,6 +150,7 @@ checks + static analysis of the inline policies):
 | `pin_message()` / `toggle_reaction()` | live authenticated rpc | ✅ PASS |
 | `mark_channel_read()` | live authenticated rpc | ✅ PASS |
 | `create_folder()` | live authenticated rpc | ✅ PASS (returns a `folders` row — call with `perform`, not `:= uuid`) |
+| `post_comment()` (K8) | live authenticated rpc | ✅ PASS — author of a readable work may comment; a non-member/non-friend is refused. Replaces the direct `comments` insert (its `cmt_insert` check is a complex inline-uid friend/author gate, the works-class risk). |
 | `profiles.update` (own) | live authenticated | ✅ PASS |
 | `save_folders` insert | live authenticated | ✅ PASS |
 | `works_blob_meter` trigger | service-role side-effect | ✅ storage_meters bumped (user & server) on insert |

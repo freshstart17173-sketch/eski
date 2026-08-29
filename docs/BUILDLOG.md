@@ -1952,3 +1952,29 @@ GOTCHA: a broken image on a server icon correctly falls back to initials (srvIco
   so in-sandbox (no cdn.eski.lol egress) the icon LOOKS absent — that's the fallback, not a render
   miss; intercept the CDN in a harness (or test on preview) to see the real image. Cover/banner use
   background-image (no error handler) so a broken URL just shows the token background.
+
+## 2026-08-29 — K8 write-reliability audit + post_comment RPC (the works-class risk, narrowed)
+IN PROGRESS: (cleared)
+DONE (audit + catalogue + one conversion, backend role-sim-verified, on `preview`):
+  - **Root-cause insight that makes K8 tractable.** The broken `works_insert` had a COMPLEX
+    inline-`auth.uid()` check (CASE owner_type + member_of + has_perm + subqueries). The SIMPLE
+    shape `col = (select auth.uid())` WORKS — `servers_insert` succeeds live (owner owns a server),
+    and K2 proved `servers.update` + `profiles.update` change rows. So the risk is only in COMPLEX
+    inline-uid checks. Full write catalogue (RPC / definer-gated / simple-owner / converted) is in
+    docs/TODO.md K8 — every write in app/ classified.
+  - **Converted the one remaining COMPLEX inline-uid content write:** `comments` insert. Its
+    `cmt_insert` fence (`can_read_work AND (author OR is_friend(author))`) is structurally like the
+    works one that broke, so a direct client insert is the suspect path. New `post_comment` RPC
+    (schema-25, migration `p15_post_comment_rpc`) re-checks the same fence as the table owner;
+    `data.js postComment` now calls it (set-returning → array of one row).
+  - Left the SIMPLE owner-only writes (saved_items, starred_items, server_prefs, notifications,
+    dm_members, reports, unblock, unpin) as direct writes — they match the working servers_insert
+    shape; converting them is churn without cause. dm_messages/content_tags/share_links/works-update
+    stay direct because a DEFINER helper (dm_member/can_write_work) already gates them.
+VERIFIED: `post_comment` role-simulated (SECURITY DEFINER ⇒ reliable over MCP, rolled back): the
+  work's author may comment (row returned); a non-member/non-friend is refused (can_read_work +
+  friend gate). Live DB re-checked clean (comments still 0). `node --check` clean.
+NEXT: K1 (preview_invite anon RPC), K5 (create_server RPC), K4 (delete/invite mgmt), K9, K6.
+GOTCHA: `post_comment` is set-returning (`returns table(...)`) so the PostgREST result is an ARRAY
+  of one row — read `data[0]`, not `data`. Comments context still defaults to 'public' (the RPC
+  never sets it; the check constraint requires exactly 'public').

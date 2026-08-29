@@ -793,22 +793,24 @@ export async function loadSharedWork(token) {
   };
 }
 
-// Post a comment on a public post. RLS (`cmt_insert`) is the fence: only the author or a
-// friend of the author may insert — a stranger's write is rejected by Postgres, surfaced
-// here as a thrown error the caller turns into a toast (UI is only the signpost). Returns
-// the shaped comment so the thread appends it without a refetch.
+// Post a comment on a public post. Routed through the `post_comment` SECURITY DEFINER RPC
+// (K8): the `cmt_insert` fence is a COMPLEX inline-`auth.uid()` check (can_read_work + author/
+// friend-of-author subqueries) — the exact shape that failed live for `works` — so a direct
+// client insert is the suspect path. The RPC re-checks the same fence (author or a friend of
+// the author, and readable) as the table owner, so it can't be silently denied. A rejected
+// write throws for the caller to toast (UI is only the signpost). Returns the shaped comment
+// so the thread appends it without a refetch.
 export async function postComment(workId, body) {
   const clean = (body || "").trim();
   if (!clean) throw new Error("Write something first");
   if (isDemo()) return { id: "local-" + Date.now(), name: "jax", text: clean, time: "now", mine: true };
   const user = session();
   if (!user) throw new Error("Sign in to comment");
-  const { data, error } = await supabase.from("comments")
-    .insert({ work_id: workId, user_id: user.id, body: clean })
-    .select("id,body,created_at").single();
-  if (error) throw new Error(error.message?.includes("row-level security") ? "Only the author and their friends can comment" : (error.message || "Couldn’t post the comment"));
+  const { data, error } = await supabase.rpc("post_comment", { p_work_id: workId, p_body: clean });
+  if (error) throw new Error(/friends|42501|row-level/i.test(error.message || "") ? "Only the author and their friends can comment" : (error.message || "Couldn’t post the comment"));
+  const row = Array.isArray(data) ? data[0] : data;   // set-returning RPC → array of one row
   const { me } = await loadRail(user);   // real display name (cached), never the email stem
-  return { id: data.id, name: me.name, text: data.body || clean, time: fmtTime(data.created_at), mine: true };
+  return { id: row?.id, name: me.name, text: clean, time: fmtTime(row?.created_at), mine: true };
 }
 
 // The home Feed (CANON §C.5) — the friends-only portfolio grid: friends' PUBLIC

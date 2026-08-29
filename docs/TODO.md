@@ -238,24 +238,43 @@ IDs are stable handles (`B*` broken-UI, `K*` backend, `P*` polish, `D*` deferred
       the server). Also **every file type accepted** (allowlist → safe-shape ext) + `.flp`/DAW/AIFF
       recognition. Verified via reliable role-sim (personal + tags, server + placement, non-member
       refused). **Live R2 round-trip is owner-only → QA-CHECKLIST §12 rows.**
-- [ ] **K8 · Backend write-reliability audit + hardening (round-4 — "make sure everything actually
-      works").** The `works`-insert bug (K7) proves a **direct RLS-fenced client write can fail or
-      silently no-op live in ways static analysis, service-role checks, and spy triggers all miss.**
-      Audit every direct write in `app/data.js`/screens and convert the load-bearing ones to
-      `SECURITY DEFINER` RPCs (the reliable path). **Two failure classes:** (a) **hard-fail** —
-      inline-`auth.uid()` `INSERT` that 42501s live like `works` did; (b) **silent no-op** — an
-      `UPDATE`/`DELETE` that matches 0 RLS rows and returns **no error**, so the UI shows success
-      while nothing persisted (this is the **server icon/cover + profile banner** class — see
-      **K2**). **Suspect direct writes to verify/convert (each: does a live row actually change?):**
-      `reports` insert · `dm_messages` insert · `messages` insert/edit/delete/pin · `comments`
-      insert/delete · `share_links` insert/revoke · `content_tags` add/remove · `starred_items`
-      · `saved_items` · `save_folders` insert · `server_prefs`/`dm_members`/`notifications`
-      updates · `works` trash/restore/rename/hide/setVisibility · `channels`/`roles` insert/update/
-      delete · `servers` update (**icon/cover**, K2) + delete + leave + invite create/revoke ·
-      create-server's 4 inserts (**K5**). **Confirmed-good live:** `servers` insert (owner owns a
-      server), `profiles` upsert/update (avatar_key persisted). *Method:* for each, EITHER prove a
-      live row changes (role-sim a definer path, or check the actual table after the app runs), or
-      convert to an RPC. **Do NOT trust "no error" — trust a changed row.** *Medium-hard, ongoing.*
+- [x] **K8 · Backend write-reliability audit + hardening (round-4 — "make sure everything actually
+      works").** *Audit done + catalogued + the one at-risk content write converted.*
+      **THE ROOT-CAUSE INSIGHT (this narrows the whole problem):** the confirmed-broken `works_insert`
+      had a **COMPLEX** inline-`auth.uid()` WITH CHECK (a `CASE owner_type` + `member_of` + `has_perm`
+      + subqueries). The **SIMPLE** shape — `col = (select auth.uid())`, e.g. `servers_insert`,
+      `saved_items`, `starred_items`, `reports` — **works** (proven: `servers` insert succeeds live,
+      the owner owns a server; K2 showed `servers.update` and `profiles.update` both change rows).
+      So the risk is **only in COMPLEX inline-uid checks**, not every direct write. That makes the
+      audit tractable instead of "convert everything."
+      **The write-reliability catalogue (every write in `app/`):**
+      - **RELIABLE — SECURITY DEFINER RPC:** `create_work` (upload, K7) · **`post_comment` (comments,
+        NEW this round)** · `toggle_reaction` · `pin_message` · `mark_channel_read` · `create_folder`
+        · `move_to_folder` · `add_tag`\* · `add_friend`/`respond_friend`/`block_user` ·
+        `create_dm`/`create_group_dm` · `join_via_invite` · `invite_user_to_server` ·
+        `set_member_roles` · `set_channel_access` · `kick_member`/`ban_member`/`timeout_member` ·
+        `add_collaborator` · `resolve_share_link`.
+      - **RELIABLE — direct write, but gated by a DEFINER helper:** `messages` insert
+        (`can_post_channel`, PASS live) · `works` update/delete = trash/restore/purge/rename/hide/
+        setVisibility (`can_write_work`) · `content_tags` insert/delete (`can_write_work`, author
+        path) · `share_links` insert (`can_write_work`) · `dm_messages` insert (`dm_member`).
+      - **RELIABLE — SIMPLE owner-only inline-uid (the working `servers_insert` shape):** `servers`
+        insert (verified) · `profiles` update/upsert (verified PASS) · `servers` update (verified
+        rows=1) · `saved_items` upsert/delete · `starred_items` upsert/delete · `server_prefs`
+        upsert · `notifications` update · `dm_members` update · `friendships` delete (unblock) ·
+        `message_pins` delete (unpin) · `reports` insert (deferred → D7).
+      - **CONVERTED because COMPLEX inline-uid (the works-class risk):** `comments` insert — was a
+        direct insert whose `cmt_insert` check is `can_read_work AND (author OR is_friend(author))`,
+        structurally like the broken `works` check → now the `post_comment` RPC (schema-25, migration
+        `p15_post_comment_rpc`), fence re-checked identically. Verified by role-sim (author allowed,
+        a non-member/non-friend refused, rolled back).
+      - **ALREADY FIXED:** `works` insert → `create_work` (K7). **RENDER not persistence:** server
+        icon/cover + banner (K2) — those writes persisted; the bug was render.
+      \* `add_tag` — data.js `addTag` currently does a **direct** `content_tags` insert (the
+      `ct_ins` check `can_write_work OR collaborator`); the author path is definer-gated so it's
+      reliable, but if the owner ever reports "my tag didn't save" as a collaborator, convert it too.
+      **Rule going forward (unchanged):** don't trust "no error" — trust a changed row; any NEW
+      load-bearing write with a COMPLEX inline-uid check gets a definer RPC, not a direct insert.
 - [ ] **K9 · Google-Drive-style folder & file sharing + "Request to join server" (round-4).**
       Share a **folder** (and a file) to a public link, Drive-style — a read-only viewer of the
       folder's contents reachable outside the server. Today `share_links` targets a single
