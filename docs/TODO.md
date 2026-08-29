@@ -79,6 +79,33 @@ Four categories. Within each, ordered **easiest first**, and anything that depen
 item is placed **after** what it needs. Cross-category dependencies are called out inline.
 IDs are stable handles (`B*` broken-UI, `K*` backend, `P*` polish, `D*` deferred).
 
+> ### 🟣 Round-7 (owner test, 2026-08-29) — DENSITY, file-browser rework + functional fixes
+> Big polish + fix pass. Overarching theme: **densify everything and standardize chrome** — the app
+> currently reads "tablet-sized". Load **`eski-style`** then **`eski-polish`** before the visual work.
+> Sorted below:
+> - **P12** Global **density** pass on **modals · dialogs · toasts** — kill excess vertical space,
+>   oversized headers/footers; a popup shouldn't eat the page. Fixes alignment/spacing too.
+> - **P18** **Standardize header + panel sizes & colours** app-wide (consistency; ties into P12).
+> - **P13** File-channel **header flattening** — the bar above the filters (breadcrumb/`.panehd`)
+>   shouldn't sit on its own row; move it down into the toolbar and **drop the server-name label**
+>   (adds nothing). ALSO ensure a **path/breadcrumb viewer up top** (currently "missing").
+> - **B10** **Drag-to-select** (marquee) AND **drag-and-drop still don't work** — dragging a file
+>   onto another file should **create a folder** from them (Finder/Drive gesture).
+> - **P14** **File-browser view modes = real density levels.** Traditional file-browser densities;
+>   at larger sizes a **content thumbnail** replaces the icon, but keep a **thin (THIN) bottom band**
+>   with the kind icon (audio/video/image/folder/zip/other) + filename (+ info if room) — like the
+>   **landing-page cards** (screenshot `docs/design/…` / the landing if needed).
+> - **B11** Clicking **my pfp** should go **straight to my profile**, not open a dropdown.
+> - **P15** **Status moves to the profile page**: a **text field only** (drop the emoji+text combo)
+>   + the **red/yellow/green presence** picker tied to presence levels, made **denser**.
+> - **B12** **@mentions don't actually work** — autocomplete + real mention resolution/notify.
+> - **P16** **Upload progress → loading animations** (not "Hashing…"/"Posting…" text), and the
+>   upload should be **minimizable halfway** (Google-Drive style) so you keep working.
+> - **P17** **Copy density**: drop the "(optional)" after "Add details"; **remove any control tip
+>   that stops being useful after the first time** (first-run hints only).
+> - **K10** **Make the storage tracker actually work** (the meter — real used/cap bytes).
+> - **P19** **Unread-message indicator** on a channel (a notification UI element showing new msgs).
+>
 > ### 🟠 Round-5 (owner test, 2026-08-29) — UPLOAD UX + share/filtering/screens rework
 > Owner feedback after round-4 shipped. **Fixed same session (small, unambiguous):** the upload
 > file-picker couldn't select files — the hidden `<input type=file>` was `display:none`, which
@@ -240,6 +267,19 @@ IDs are stable handles (`B*` broken-UI, `K*` backend, `P*` polish, `D*` deferred
       should show in the stream as a file card that opens the detail/expanded view. **B5 already
       builds this** (messages.work_id → attachment card → real details pane); verify it end-to-end
       once B7 lets uploads through on preview. *Live QA.*
+- [ ] **B10 · Drag-to-select + drag-and-drop don't work (round-7).** In the file browser: (a) a
+      **marquee drag** on empty space should rubber-band-select cards; (b) **dragging a file onto
+      another file** should offer to **make a folder** from them (Finder/Drive). Today neither
+      fires. *Files:* `app/screens/explorer.js` (grid pointer handlers, `enableDropUpload`),
+      `app/data.js` (createFolder + moveToFolder to seed the new folder). *Hard.*
+- [ ] **B11 · Clicking my pfp opens a dropdown, should go to my profile (round-7).** The left-rail
+      profile button should navigate straight to `/u/<me>`; move whatever the dropdown offered
+      (status/sign-out) onto the profile page / user-settings. *Files:* `app/shell.js` (rail me
+      button). *Easy.* (Related: P15 moves Status onto the profile.)
+- [ ] **B12 · @mentions don't actually work (round-7).** The composer `@` autocomplete +
+      posting a real mention that resolves/notifies the person. Today it inserts text but nothing
+      resolves. *Files:* `app/screens/workspace.js` (composer autocomplete + mention render),
+      `app/data.js`/RPC (mentions table + notify). *Medium-hard.*
 
 ### 2 · Fixes for backend
 
@@ -372,6 +412,13 @@ IDs are stable handles (`B*` broken-UI, `K*` backend, `P*` polish, `D*` deferred
       `schema-29-folder-share-join-requests.sql`, `app/data.js`, `app/demo.js`, `app/router.js`,
       `app/main.js`, `app/screens/shared.js`, `app/screens/explorer.js`, `app/screens/workspace.js`,
       `app/cards.js`.
+- [ ] **K10 · Make the storage tracker actually work (round-7).** The explorer storage footer +
+      the upload storage line read `storage_meters` / `storage_balance`. Verify the meter is
+      populated (the `works_blob_meter` trigger bumps `storage_meters` on insert/delete — K8 noted
+      it fires) and that `loadExplorer`/`loadUserSettings` read real used/cap bytes, not zeros.
+      Likely a wiring/read gap, not a trigger gap. *Files:* `app/data.js` (storage reads),
+      `schema-*` (meter trigger, if needed). *Medium.* *Test:* service-role — after an upload the
+      owner's `storage_meters.bytes_used` reflects the blob; the footer shows non-zero used.
 
 ### 3 · UI polish
 
@@ -484,6 +531,47 @@ IDs are stable handles (`B*` broken-UI, `K*` backend, `P*` polish, `D*` deferred
       `app/screens/details.js`/`cards.js` (render coloured tags), `eski-style` (tag-type colour
       tokens). *Medium-hard.* Load **`eski-style`** before styling — tags are currently "coloured
       bold text, not a pill" (CANON #26); confirm how a typed colour reads within that rule.
+- [ ] **P12 · Density pass: modals · dialogs · toasts (round-7).** Kill excess vertical space and
+      oversized headers/footers so a popup doesn't take up more of the page than it needs (reads
+      "tablet-sized" now). Tighten the modal `.uhd`/`.mfoot`/`.ufoot`, body padding, and the toast.
+      Fixes the alignment/spacing knock-on. *Files:* `styles/primitives.css` (`.modal`, `.uhd`,
+      footers, `.toast`), `app/ui.js` (openModal/toast if structural). Load **`eski-style`** +
+      **`eski-polish`** first. *Medium.*
+- [ ] **P18 · Standardize header + panel sizes & colours (round-7).** Headers and panes across the
+      app should use one consistent height + background-step + inset scale (workspace header, channel
+      column header, explorer panehd, settings, details pane). Audit + unify against `eski-style`.
+      *Files:* `styles/shell.css`, `styles/content.css`, `styles/primitives.css`. *Medium.* Overlaps
+      P12.
+- [ ] **P13 · Flatten the file-channel header + path viewer (round-7).** The `.panehd` bar above the
+      filters (breadcrumb + view controls) shouldn't sit on its own row; fold it into the toolbar
+      row and **remove the server-name crumb root label** (adds nothing). Keep/ensure a clear
+      **path/breadcrumb viewer up top** (owner: "missing a path viewer"). *Files:*
+      `app/screens/explorer.js` (`paint` panehd/toolbar), `styles/content.css`. *Medium.*
+- [ ] **P14 · File-browser view modes = real density levels (round-7).** Rework the explorer view
+      modes into traditional file-browser densities (e.g. compact list → comfortable → large). At
+      the larger sizes a **content thumbnail** replaces the kind icon, but every card keeps a **thin
+      bottom band**: the kind icon (audio/video/image/folder/zip/other) + filename (+ extra info if
+      room) — modelled on the **landing-page cards** (screenshot the landing / `docs/design/` if
+      needed). *Files:* `app/cards.js` (`workCard`/`folderCard`), `app/screens/explorer.js` (VIEWS +
+      grid/list), `styles/content.css`. *Hard.* Load **`eski-style`**.
+- [ ] **P15 · Status lives on the profile page (round-7).** Move the status composer off the rail
+      dropdown onto the **profile page**: a **plain text field** (drop the emoji+text combo) plus a
+      **presence picker** — red/yellow/green tied to the presence levels — made **denser**. *Files:*
+      `app/screens/profile.js`, `app/shell.js` (remove the status popover), `app/data.js` (`setStatus`).
+      *Medium.* Pairs with **B11** (pfp → profile).
+- [ ] **P16 · Upload progress = animations + minimizable (round-7).** Replace the text stages
+      ("Hashing…", "Getting URLs…", "Uploading…", "Posting…") with a real **loading animation** /
+      progress affordance, and let the upload be **minimized halfway** (Google-Drive style) so you
+      keep working while it runs. *Files:* `app/screens/upload.js` (`doPost` progress), `app/ui.js`
+      (a shared busy/minimizable widget), `styles/*`. *Medium-hard.* Ties into **P3** (loading states).
+- [ ] **P17 · Copy density — drop needless hints (round-7).** Remove the "(optional)" after "Add
+      details", and any **control tip that stops being useful after the first time** (make them
+      first-run-only or cut them). *Files:* `app/screens/upload.js` + a sweep of one-liner hints.
+      *Easy.*
+- [ ] **P19 · Unread-message indicator on channels (round-7).** A notification UI element showing a
+      channel has new messages (unread dot/bold + maybe a count), driven by `channel_reads` vs the
+      latest message. *Files:* `app/screens/workspace.js` (channel rows), `app/data.js`
+      (`loadServerBundle` unread compute), realtime bump on new msg. *Medium-hard.*
 
 ### 4 · Deferred (post-beta / infra-gated — do NOT build now)
 
