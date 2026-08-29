@@ -26,9 +26,8 @@ const VIEWS = { grid: "Grid", list: "List", feed: "Feed" };
 const PREVIEWABLE = new Set(["image", "video", "audio"]);
 // Filters (CANON §C.6): Type/Channel/Uploader/Tag are multi-select (an empty set = no
 // filter, the union within a facet, the intersection across facets); Date and Sort are
-// single-select. Type maps to works.kind ("other" = Projects/archives). Channel/Uploader/
-// Tag options are derived from the data. Sort keys drive the comparator in sortFiles().
-const TYPES = [["image", "Images"], ["audio", "Audio"], ["video", "Video"], ["text", "Text"], ["other", "Projects"]];
+// single-select. Type/Channel/Uploader/Tag options are all derived from the files in view
+// (Type = the actual file extensions present, P8). Sort keys drive the comparator in sortFiles().
 const SORTS = [["latest", "Latest"], ["oldest", "Oldest"], ["name", "Name"], ["size", "Size"]];
 const SORT_LABEL = Object.fromEntries(SORTS);
 // Date windows measured back from now; "today" is since local midnight, the rest are
@@ -276,6 +275,9 @@ function paint(tree, pane, data, state, rerender) {
   const channelOpts = uniq(data.files.map((w) => w.channelName)).map((c) => [c, c]);
   const uploaderOpts = uniq(data.files.map((w) => w.who?.name)).map((u) => [u, u]);
   const tagOpts = uniq(data.files.flatMap((w) => w.tags || [])).map((t) => [t, t]);
+  // P8: Type filters by ACTUAL file extension present (.wav / .flp / .png …), derived from the
+  // files in view — not the broad Images/Audio/Video buckets. The value is the lowercased ext.
+  const typeOpts = uniq(data.files.map((w) => (w.file_ext || "").toLowerCase())).map((e) => [e, "." + e]);
 
   // a multi-select filter button: filled + counted when it has selections, disabled when
   // its facet has no options. The menu toggles in place; refreshBtn keeps the count live
@@ -291,7 +293,7 @@ function paint(tree, pane, data, state, rerender) {
     b.addEventListener("click", () => openFilterMenu(b, options, set, () => { refreshBtn(); repaintBody(); }));
     return b;
   };
-  const typeBtn = multiBtn("Type", state.types, TYPES);
+  const typeBtn = multiBtn("Type", state.types, typeOpts);
   const tagBtn = multiBtn("Tag", state.tags, tagOpts);
   // Channel + Uploader are server context only (personal files carry neither)
   const chanBtn = personal ? null : multiBtn("Channel", state.channels, channelOpts);
@@ -397,7 +399,7 @@ function contents(data, state, rerender, sel) {
   if (!state.showHidden) files = files.filter((w) => !w.hidden);
   // Facet filters, then sort (all apply to files only; subfolders always lead the grid).
   // Within a facet the selected values union; across facets they intersect (§C.6).
-  if (state.types.size) files = files.filter((w) => state.types.has(w.kind));
+  if (state.types.size) files = files.filter((w) => state.types.has((w.file_ext || "").toLowerCase()));
   if (state.channels.size) files = files.filter((w) => state.channels.has(w.channelName));
   if (state.uploaders.size) files = files.filter((w) => state.uploaders.has(w.who?.name));
   if (state.tags.size) files = files.filter((w) => (w.tags || []).some((t) => state.tags.has(t)));
@@ -561,12 +563,27 @@ function dateCutoff(key) {
 // and outside-click / Esc to dismiss. `selected` is the live Set the button reads;
 // `onChange` refreshes the button + repaints the contents after each toggle.
 function openFilterMenu(anchor, options, selected, onChange) {
+  // Toggle: a second click on an open filter's trigger closes it (same fix as openMenu, B8).
+  if (anchor?.getAttribute?.("aria-expanded") === "true") { closeMenus(); return; }
   closeMenus();
   const menu = el(".menu.open", { role: "menu" });
   if (selected.size) {
     const clear = el("button.fclear", { role: "menuitem" }, ["Clear"]);
     clear.addEventListener("click", (e) => { e.stopPropagation(); selected.clear(); closeMenus(); onChange(); });
     menu.append(clear, el(".sep"));
+  }
+  // P8: searchable — a long facet (Uploader / Tag / many file-types) gets a search box so you can
+  // find a value fast instead of scrolling. Rows below filter live by label substring.
+  const rowsWrap = el("div", { style: "max-height:280px;overflow:auto" });
+  if (options.length > 8) {
+    const search = el("input.fsearch", { placeholder: "Search…", style: "width:100%;box-sizing:border-box;margin:2px 0 6px;padding:5px 8px;background:var(--surface);border:1px solid var(--line2);border-radius:var(--r);color:var(--ink);font:inherit;font-size:var(--fs-xs)" });
+    search.addEventListener("click", (e) => e.stopPropagation());
+    search.addEventListener("input", () => {
+      const q = search.value.trim().toLowerCase();
+      rowsWrap.querySelectorAll("button").forEach((r) => { r.hidden = q && !r.textContent.toLowerCase().includes(q); });
+    });
+    menu.append(search);
+    setTimeout(() => search.focus(), 0);
   }
   for (const [key, label] of options) {
     const on = selected.has(key);
@@ -581,8 +598,9 @@ function openFilterMenu(anchor, options, selected, onChange) {
       row.classList.toggle("sel", now);
       onChange();
     });
-    menu.append(row);
+    rowsWrap.append(row);
   }
+  menu.append(rowsWrap);
   document.body.append(menu);
   const r = anchor.getBoundingClientRect();
   const mw = menu.offsetWidth, mh = menu.offsetHeight;

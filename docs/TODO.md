@@ -427,12 +427,15 @@ IDs are stable handles (`B*` broken-UI, `K*` backend, `P*` polish, `D*` deferred
       native file card** (same card as an upload) that opens the viewer, not a raw URL. *Files:*
       `app/screens/explorer.js` (share dialog), `app/screens/workspace.js` (chat link → file card),
       `app/data.js`. *Medium-hard.*
-- [ ] **P8 · Real file-type filtering + searchable filters (round-5).** The **Type** filter should
-      offer **actual file types** (.wav / .flp / .png / …) derived from what's present, not only the
-      broad Images/Audio/Video/Text/Projects buckets. The **Uploader / Tag / Channel / Date**
-      filters need a **search box** so a value is findable fast instead of scrolling a flat menu.
-      Folds in the still-open **B6 filtering audit**. *Files:* `app/screens/explorer.js` (the filter
-      menus), `app/screens/workspace.js` if the channel filter shares code. *Medium.*
+- [x] **P8 · Real file-type filtering + searchable filters (round-5).** *Done (demo-verified).*
+      The **Type** filter now offers the **actual file extensions present** (.wav / .flp / .png /
+      .als / .zip …), derived from the files in view, filtering on `w.file_ext` (was the broad
+      Images/Audio/Video kind buckets; the `TYPES` const is gone). Every multi-select facet
+      (**Type / Tag / Channel / Uploader**) gets a **live search box** when it has >8 options, so a
+      value is findable fast; and `openFilterMenu` picked up the same B8 toggle guard (a second
+      click on the trigger closes it). *Files:* `app/screens/explorer.js`. Verified: demo Type menu
+      lists `.als .flp .md .png .tmp .wav .zip`, 0 pageerrors. (Also satisfies the **B6 filtering
+      audit** follow-up for search; the selection-persistence part of B6 already shipped.)
 - [ ] **P9 · Shared folder/file view must match the file browser (round-5).** The K9 shared-folder
       viewer is a bare grid ("looks empty"); it must look **identical to the explorer** — same
       selection, filtering, search, view modes — by reusing the real explorer component in a
