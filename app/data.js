@@ -256,7 +256,7 @@ export async function loadWorkspace({ serverId, channelId } = {}) {
     pins = (pinRows || []).map((p) => {
       const auth = membersById[p.message?.user_id] || { name: "unknown", colorIdx: 1 };
       const byName = membersById[p.pinned_by]?.name || "someone";
-      return { by: byName, author: { name: auth.name, initials: initials(auth.name), colorIdx: auth.colorIdx }, time: fmtTime(p.created_at), text: p.message?.body || "" };
+      return { id: p.message_id, by: byName, author: { name: auth.name, initials: initials(auth.name), colorIdx: auth.colorIdx }, time: fmtTime(p.created_at), text: p.message?.body || "" };
     });
     pinCount = pins.length;
   }
@@ -698,6 +698,10 @@ export async function revokeShareLink(token) {
 const VIS_TO_DB = { public: "public", server: "server", private: "personal" };
 const VIS_FROM_DB = { public: "public", server: "server", personal: "private" };
 export function visFromDb(dbVis) { return VIS_FROM_DB[dbVis] || "public"; }
+// UI visibility → the DB noun. The DB uses 'personal' for the UI's 'private'; inserting the raw
+// UI value ('private') violates the works_visibility_check constraint (owner bug: every private
+// upload failed). Every write path must map through this.
+export function visToDb(uiVis) { return VIS_TO_DB[uiVis] || "public"; }
 export async function setVisibility(workId, uiVis) {
   const db = VIS_TO_DB[uiVis] || "public";
   if (isDemo()) return db;
@@ -1219,6 +1223,12 @@ export async function pinMessage(messageId) {
   if (isDemo()) return;
   const { error } = await supabase.rpc("pin_message", { message_id: messageId });
   if (error) throw new Error(error.message || "Couldn’t pin the message");
+}
+// Unpin — a direct delete from message_pins (RLS `pin_delete` gates it to the pinner/admins).
+export async function unpinMessage(messageId) {
+  if (isDemo()) return;
+  const { error } = await supabase.from("message_pins").delete().eq("message_id", messageId);
+  if (error) throw new Error(error.message || "Couldn’t unpin the message");
 }
 // Edit your own channel message — a `messages` body update + edited_at stamp (msg_update = own).
 export async function editMessage(messageId, body) {

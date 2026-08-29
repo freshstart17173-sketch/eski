@@ -12,7 +12,7 @@
 import { openModal, VisibilitySeg, Button, openMenu, toast, el } from "../ui.js";
 import { iconEl } from "../icons.js";
 import { supabase, session, rawSession } from "../supabase.js";
-import { createFolder } from "../data.js";
+import { createFolder, visToDb } from "../data.js";
 
 // ext → kind, and the allowlist the signer (api/sign.mjs EXT) will actually sign.
 const KIND = {
@@ -76,6 +76,9 @@ export async function openUpload(opts = {}) {
   const { data: sm } = await supabase.from("server_members").select("server:servers(id,name)").eq("user_id", me.id);
   const myServers = (sm || []).filter((r) => r.server).map((r) => r.server);
   if (visibility === "server" && !serverId) serverId = myServers[0]?.id || null;
+  // In no servers → Server visibility is impossible; disable it and fall back to Public.
+  const noServer = myServers.length === 0;
+  if (noServer && visibility === "server") visibility = "public";
   const serverName = (id) => myServers.find((s) => s.id === id)?.name || "server";
 
   // ── body ──────────────────────────────────────────────────────────────────
@@ -102,7 +105,7 @@ export async function openUpload(opts = {}) {
   drop.addEventListener("dragleave", () => drop.classList.remove("over"));
   drop.addEventListener("drop", (e) => { e.preventDefault(); drop.classList.remove("over"); addFiles([...(e.dataTransfer?.files || [])], false); });
 
-  const visSeg = VisibilitySeg({ value: visibility, onChange: (v) => { visibility = v; syncVis(); } });
+  const visSeg = VisibilitySeg({ value: visibility, noServer, onChange: (v) => { visibility = v; syncVis(); } });
 
   const serverBtn = el("button.selbtn", { style: "width:100%;justify-content:space-between" });
   serverBtn.addEventListener("click", () => openMenu(serverBtn, [
@@ -264,7 +267,7 @@ export async function openUpload(opts = {}) {
           author_id: me.id,
           owner_type: onServer ? "server" : "user",
           owner_id: onServer ? serverId : me.id,
-          visibility,
+          visibility: visToDb(visibility),   // 'private' → 'personal' (the DB noun); raw 'private' fails the check
           server_id: onServer ? serverId : null,
           // A folder upload keeps each file's own name; a loose upload can override the title.
           title: folderMode ? h.file.name : (title || h.file.name),

@@ -201,6 +201,8 @@
 .seg .o:hover{background:var(--plate)}
 .seg .o.on{background:var(--ink);color:var(--on-ink)}
 .seg .o.on .ic{color:var(--on-ink)}
+.seg .o.disabled{opacity:.4;cursor:not-allowed}
+.seg .o.disabled:hover{background:none}
 
 /* ── P3.14 SelectPill / Dropdown ─────────────────────────────────────────── */
 /* a colour-change button with a trailing chevron that rotates 180° while open.

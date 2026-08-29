@@ -291,9 +291,13 @@ export function Tabs({ items = [], active, onChange } = {}) {
 // passes Public(globe)/Server(server — NOT users)/Private(lock).
 export function SegmentedControl({ options = [], value, onChange } = {}) {
   const seg = el(".seg", { role: "radiogroup" });
-  let cur = value ?? options[0]?.value;
+  let cur = value ?? options.find((o) => !o.disabled)?.value ?? options[0]?.value;
   const cells = options.map((o) => {
-    const c = el(".o" + (o.value === cur ? ".on" : ""), { role: "radio", tabindex: "0", "aria-checked": String(o.value === cur), onClick: () => select(o.value) });
+    const c = el(".o" + (o.value === cur ? ".on" : "") + (o.disabled ? ".disabled" : ""), {
+      role: "radio", tabindex: o.disabled ? "-1" : "0", "aria-checked": String(o.value === cur),
+      "aria-disabled": o.disabled ? "true" : null, title: o.disabledTitle || null,
+      onClick: () => { if (!o.disabled) select(o.value); },
+    });
     if (o.icon) c.append(iconEl(o.icon));
     c.append(el("span", {}, [o.label]));
     return c;
@@ -307,10 +311,14 @@ export function SegmentedControl({ options = [], value, onChange } = {}) {
   seg.select = select; seg.value = () => cur;
   return seg;
 }
-export function VisibilitySeg({ value = "public", onChange } = {}) {
+export function VisibilitySeg({ value = "public", onChange, noServer } = {}) {
   return SegmentedControl({
     value, onChange,
-    options: [{ value: "public", label: "Public", icon: "globe" }, { value: "server", label: "Server", icon: "server" }, { value: "private", label: "Private", icon: "lock" }],
+    options: [
+      { value: "public", label: "Public", icon: "globe" },
+      { value: "server", label: "Server", icon: "server", disabled: !!noServer, disabledTitle: noServer ? "Join a server to post to one" : null },
+      { value: "private", label: "Private", icon: "lock" },
+    ],
   });
 }
 
