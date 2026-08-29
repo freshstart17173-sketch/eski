@@ -18,7 +18,7 @@ import { iconEl } from "../icons.js";
 import { navigate, reload } from "../router.js";
 import { avatarUrl } from "../cards.js";
 import { uploadBlobs } from "../upload-r2.js";
-import { isDemo, shapeMessage, loadThread, toggleReaction, loadMessageReactions, forwardMessage, deleteMessage, pinMessage, editMessage, kickMember, timeoutMember, banMember, setMemberRoles, createChannel, updateChannel, createInvite, loadInvites, revokeInvite, loadInviteCandidates, inviteByHandle, inviteUserToServer, updateServer, loadAuditLog, leaveServer, deleteServer, loadServerPrefs, setServerPrefs } from "../data.js";
+import { isDemo, shapeMessage, loadThread, toggleReaction, loadMessageReactions, forwardMessage, deleteMessage, pinMessage, unpinMessage, editMessage, kickMember, timeoutMember, banMember, setMemberRoles, createChannel, updateChannel, createInvite, loadInvites, revokeInvite, loadInviteCandidates, inviteByHandle, inviteUserToServer, updateServer, loadAuditLog, leaveServer, deleteServer, loadServerPrefs, setServerPrefs } from "../data.js";
 import { subscribeChannelMessages, subscribeChannelReactions, subscribeTyping, sendTyping, subscribeServerPresence, markRead, sendMessage } from "../realtime.js";
 import { openUpload } from "./upload.js";
 
@@ -415,7 +415,11 @@ function pinsPanel(data) {
       byline(p.author, p.time), el(".tx", {}, [p.text]),
     ]);
     if (p.attach) bd.append(el(".filecard", { style: "max-width:360px" }, [el(".fbody", {}, [el(".fname", {}, [p.attach.name])])]));
-    const unpin = el("button.unpin", { title: "Unpin", onClick: (e) => { e.currentTarget.closest(".pinrow").remove(); toast({ message: "Unpinned" }); } }, [iconEl("x", "sm")]);
+    const unpin = el("button.unpin", { title: "Unpin", onClick: async (e) => {
+      const row = e.currentTarget.closest(".pinrow");
+      try { if (!isDemo()) await unpinMessage(p.id); row.remove(); toast({ message: "Unpinned" }); }
+      catch (err) { toast({ message: err?.message || "Couldn’t unpin" }); }
+    } }, [iconEl("x", "sm")]);
     panel.append(el(".pinrow", {}, [Avatar({ name: p.author.name, size: "sm" }), bd, unpin]));
   }
   return panel;
@@ -423,25 +427,53 @@ function pinsPanel(data) {
 
 // ── Files panel (P4.4) ──────────────────────────────────────────────────────
 function filesPanel(data) {
-  const bar = el(".chfilesbar", {}, [
-    (() => { const f = el(".field", {}, [iconEl("search", "sm"), el("input", { placeholder: `Search files in #${data.channel.name}` })]); return f; })(),
-    el("button.btn", { onClick: (e) => openMenu(e.currentTarget, [{ label: "All types" }, { label: "Audio" }, { label: "Images" }, { label: "Projects" }]) }, ["Type", iconEl("chev", "sm")]),
-    el("button.btn", { onClick: (e) => openMenu(e.currentTarget, [{ label: "Latest" }, { label: "Oldest" }, { label: "Name" }]) }, ["Latest", iconEl("chev", "sm")]),
-  ]);
+  const state = { query: "", type: "all", sort: "latest" };
+  const TYPES = [["all", "All types"], ["image", "Images"], ["audio", "Audio"], ["video", "Video"], ["other", "Projects"]];
+  const SORTS = [["latest", "Latest"], ["oldest", "Oldest"], ["name", "Name"]];
+
+  const search = el(".field", {}, [iconEl("search", "sm"), el("input", { placeholder: `Search files in #${data.channel.name}`, onInput: (e) => { state.query = e.target.value; repaint(); } })]);
+  const typeBtn = el("button.btn", { "aria-haspopup": "menu" }, [el("span.tl", {}, ["Type"]), iconEl("chev", "sm")]);
+  typeBtn.addEventListener("click", () => openMenu(typeBtn, TYPES.map(([k, l]) => ({ label: l, selected: state.type === k, onClick: () => { state.type = k; typeBtn.querySelector(".tl").textContent = k === "all" ? "Type" : l; typeBtn.classList.toggle("on", k !== "all"); repaint(); } }))));
+  const sortBtn = el("button.btn", { "aria-haspopup": "menu" }, [el("span.sl", {}, ["Latest"]), iconEl("chev", "sm")]);
+  sortBtn.addEventListener("click", () => openMenu(sortBtn, SORTS.map(([k, l]) => ({ label: l, selected: state.sort === k, onClick: () => { state.sort = k; sortBtn.querySelector(".sl").textContent = l; repaint(); } }))));
+
+  const bar = el(".chfilesbar", {}, [search, typeBtn, sortBtn]);
   const grid = el(".masonry.even");
-  for (const f of data.files) {
-    let media;
-    if (f.kind === "image") media = el(".media", {}, [el("div.shot" + (f.shot ? "." + f.shot : ""), { style: "aspect-ratio:3/2" })]);
-    else media = el(".media." + (f.kind === "audio" ? "audio" : "file"), {}, [iconEl(KIND_ICON[f.kind] || "file"), el("span.ext", {}, [f.ext])]);
-    media.querySelector(".ext")?.previousElementSibling?.classList.add("fic");
-    grid.append(el("button.card", { "data-open-details": true, onClick: () => openDetails(f) }, [media, el(".title", {}, [f.name]), el(".who", {}, [f.who])]));
+  const count = el(".lb");
+
+  function repaint() {
+    const q = state.query.trim().toLowerCase();
+    let files = (data.files || []);
+    if (q) files = files.filter((f) => (f.name || "").toLowerCase().includes(q));
+    if (state.type !== "all") files = files.filter((f) => (f.kind || "other") === state.type);
+    files = files.slice().sort((a, b) => state.sort === "name"
+      ? String(a.name || "").localeCompare(String(b.name || ""))
+      : (state.sort === "oldest" ? 1 : -1) * (new Date(b.created_at || 0) - new Date(a.created_at || 0)));
+    count.textContent = `${files.length} file${files.length === 1 ? "" : "s"} in #${data.channel.name}`;
+    grid.replaceChildren();
+    for (const f of files) {
+      let media;
+      if (f.kind === "image") media = el(".media", {}, [el("div.shot" + (f.shot ? "." + f.shot : ""), { style: "aspect-ratio:3/2" })]);
+      else media = el(".media." + (f.kind === "audio" ? "audio" : "file"), {}, [iconEl(KIND_ICON[f.kind] || "file"), el("span.ext", {}, [f.ext])]);
+      media.querySelector(".ext")?.previousElementSibling?.classList.add("fic");
+      grid.append(el("button.card", { "data-open-details": true, onClick: () => openDetails(f) }, [media, el(".title", {}, [f.name]), el(".who", {}, [f.who])]));
+    }
+    if (!files.length) grid.append(el(".emptystate", {}, [iconEl("grid"), el("h3", {}, [q || state.type !== "all" ? "No matching files" : "No files yet"]), q || state.type !== "all" ? el("p", {}, ["Try a different filter."]) : null]));
   }
-  return el(".chpanel", { "data-chview": "files", hidden: true }, [bar, el(".lb", {}, [`${data.channel.files} files in #${data.channel.name}`]), grid]);
+  repaint();
+  return el(".chpanel", { "data-chview": "files", hidden: true }, [bar, count, grid]);
 }
 
 // ── members rail (P4.9) ─────────────────────────────────────────────────────
+// The rail's shown/hidden state is a per-browser preference (persisted), so closing it stays
+// closed across channel switches and reloads instead of reopening on every re-render.
+const MEM_KEY = "eski:members-hidden";
+function membersHidden() { try { return localStorage.getItem(MEM_KEY) === "1"; } catch { return false; } }
+function setMembersHidden(v) { try { v ? localStorage.setItem(MEM_KEY, "1") : localStorage.removeItem(MEM_KEY); } catch {} }
+
 function membersRail(data) {
   const rail = el("aside.mem", { id: "wsMem" });
+  if (membersHidden()) rail.setAttribute("hidden", "");   // start collapsed if that's the saved choice
   for (const g of data.memberGroups) {
     const grp = el(".memg", {}, [el(".lb", {}, [`${g.label}, ${g.members.length}`])]);
     for (const p of g.members) {
@@ -926,12 +958,13 @@ function mainPane(data, view, ctx) {
 
   // channel header
   const memToggle = IconButton({ icon: "users", title: "Toggle members" });
-  memToggle.setAttribute("aria-pressed", "true");
+  memToggle.setAttribute("aria-pressed", String(!membersHidden()));   // reflect the saved choice
   memToggle.addEventListener("click", () => {
     const mem = main.closest(".screen").querySelector(".mem");
-    const hidden = mem.hasAttribute("hidden");
-    mem.toggleAttribute("hidden", !hidden);
-    memToggle.setAttribute("aria-pressed", String(hidden));
+    const nowHidden = !mem.hasAttribute("hidden");
+    mem.toggleAttribute("hidden", nowHidden);
+    memToggle.setAttribute("aria-pressed", String(!nowHidden));
+    setMembersHidden(nowHidden);   // persist so it stays closed across channel switches / reloads
   });
   const hd = el(".mainhd", {}, [
     iconEl("hash"), el("span.t", {}, [data.channel.name]),
