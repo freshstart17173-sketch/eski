@@ -215,7 +215,7 @@ export async function loadWorkspace({ serverId, channelId } = {}) {
   if (activeChannel) {
     const cid = activeChannel.id;
     const [{ data: msgRows }, { data: pinRows }] = await Promise.all([
-      supabase.from("messages").select("id,body,created_at,edited_at,parent_id,user_id,deleted_at,forwarded_from").eq("channel_id", cid).is("deleted_at", null).order("created_at"),
+      supabase.from("messages").select("id,body,created_at,edited_at,parent_id,user_id,deleted_at,forwarded_from,work_id").eq("channel_id", cid).is("deleted_at", null).order("created_at"),
       supabase.from("message_pins").select("message_id,pinned_by,created_at, message:messages(body,user_id)").eq("channel_id", cid).order("created_at"),
     ]);
     const all = msgRows || [];
@@ -246,11 +246,26 @@ export async function loadWorkspace({ serverId, channelId } = {}) {
         srcById[s.id] = { author: { name: a.name, colorIdx: a.colorIdx }, fromChannel: chanName[s.channel_id] || "a channel", text: s.body || "", when: fmtWhen(s.created_at) };
       }
     }
+    // Attachment messages (B5): a channel upload posts a message whose work_id points at the
+    // uploaded work. Resolve those works (+ their tags) into the message's `attach` card so the
+    // file shows in the chat stream, not only the Files tab. Batch-fetched like the forwards.
+    const attachIds = [...new Set(all.filter((r) => r.work_id).map((r) => r.work_id))];
+    const attachById = {};
+    if (attachIds.length) {
+      const cName = {}; for (const c of textCh) cName[c.id] = c.name;
+      const [{ data: aworks }, { data: atags }] = await Promise.all([
+        supabase.from("works").select("id,title,kind,file_ext,blob_sha,bytes,author_id,hidden,visibility,created_at").in("id", attachIds).is("deleted_at", null),
+        supabase.from("content_tags").select("work_id,tag").in("work_id", attachIds),
+      ]);
+      const atagsByWork = {}; for (const t of atags || []) (atagsByWork[t.work_id] ||= []).push(t.tag);
+      for (const w of aworks || []) attachById[w.id] = shapeWork(w, null, membersById, cName, atagsByWork[w.id] || []);
+    }
     messages = all.filter((r) => !r.parent_id).map((r) => {
       const m = shapeMessage(r, membersById);
       m.replies = replyCount[r.id] || 0;
       m.reactions = Object.values(rxByMsg[r.id] || {});
       if (r.forwarded_from && srcById[r.forwarded_from]) m.forward = srcById[r.forwarded_from];
+      if (r.work_id && attachById[r.work_id]) m.attach = attachById[r.work_id];
       return m;
     });
     pins = (pinRows || []).map((p) => {
@@ -261,13 +276,40 @@ export async function loadWorkspace({ serverId, channelId } = {}) {
     pinCount = pins.length;
   }
 
+  // Channel Files tab (B5): the works uploaded INTO this channel — a server work whose
+  // placement carries this channel_id (create_work files a channel upload exactly so). This
+  // was hardcoded `files: []`, so the per-channel Files tab (workspace filesPanel) could NEVER
+  // show anything and a channel upload only appeared in the server-wide explorer. We fetch the
+  // channel's placements, then the works, and shape them like the explorer (shapeWork) so the
+  // same card + details pane render. Placements are fetched separately (no embed) — the FK
+  // caution as in loadExplorer (GOTCHA U).
+  let files = [];
+  if (activeChannel) {
+    const chanName = {};
+    for (const c of textCh) chanName[c.id] = c.name;
+    const { data: plRows } = await supabase.from("placement")
+      .select("work_id,folder_id,channel_id")
+      .eq("surface", "server").eq("surface_id", sid).eq("channel_id", activeChannel.id);
+    const chFileIds = (plRows || []).map((p) => p.work_id);
+    if (chFileIds.length) {
+      const [{ data: fwRows }, { data: ftagRows }] = await Promise.all([
+        supabase.from("works").select("id,title,kind,file_ext,blob_sha,bytes,author_id,hidden,visibility,created_at")
+          .in("id", chFileIds).is("deleted_at", null).order("created_at", { ascending: false }),
+        supabase.from("content_tags").select("work_id,tag").in("work_id", chFileIds),
+      ]);
+      const plById = {}; for (const p of plRows || []) plById[p.work_id] = p;
+      const ftagsByWork = {}; for (const t of ftagRows || []) (ftagsByWork[t.work_id] ||= []).push(t.tag);
+      files = (fwRows || []).map((w) => shapeWork(w, plById[w.id], membersById, chanName, ftagsByWork[w.id] || []));
+    }
+  }
+
   return {
     needsAuth: false, live: true,
     me, isAdmin: !!membersById[user.id]?.admin, isOwner: activeServer.owner_id === user.id, servers, dmUnread: 0,
-    server: { id: sid, name: activeServer.name, initials: initials(activeServer.name) },
+    server: { id: sid, name: activeServer.name, initials: initials(activeServer.name), icon_key: activeServer.icon_key || null, cover_key: activeServer.cover_key || null },
     channelGroups,
-    channel: activeChannel ? { id: activeChannel.id, name: activeChannel.name, topic: "", pins: pinCount, files: 0, slowmode: activeChannel.slowmode_sec, postPolicy: activeChannel.post_policy } : null,
-    messages, typing: [], pins, files: [], memberGroups, thread: null,
+    channel: activeChannel ? { id: activeChannel.id, name: activeChannel.name, topic: "", pins: pinCount, files: files.length, slowmode: activeChannel.slowmode_sec, postPolicy: activeChannel.post_policy } : null,
+    messages, typing: [], pins, files, memberGroups, thread: null,
     membersById, serverRoles,
     activeServerId: sid, activeChannelId: activeChannel?.id || null,
   };
@@ -294,6 +336,20 @@ function shapeWork(w, place, membersById, chanName, tags = []) {
     channelName: place?.channel_id ? chanName[place.channel_id] || null : null,
     who: a ? { name: a.name, colorIdx: a.colorIdx, handle: a.handle } : null,
   };
+}
+
+// Resolve one work into the attachment-card shape (shapeWork) for a live channel-upload echo
+// (B5): the realtime message row carries only work_id, so when it lands we fetch the work + its
+// tags and shape it with the caller's already-loaded membersById. Returns null if it can't read
+// the work (RLS) or it was deleted — the message then just renders without an attachment.
+export async function fetchChannelAttachment(workId, membersById = {}, chanName = {}) {
+  if (!workId || isDemo()) return null;
+  const [{ data: w }, { data: tags }] = await Promise.all([
+    supabase.from("works").select("id,title,kind,file_ext,blob_sha,bytes,author_id,hidden,visibility,created_at").eq("id", workId).is("deleted_at", null).maybeSingle(),
+    supabase.from("content_tags").select("tag").eq("work_id", workId),
+  ]);
+  if (!w) return null;
+  return shapeWork(w, null, membersById, chanName, (tags || []).map((t) => t.tag));
 }
 
 export async function loadExplorer({ serverId, folderId, source = "server" } = {}) {

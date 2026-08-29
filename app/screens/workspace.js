@@ -16,9 +16,10 @@ import { openReport } from "../report.js";
 import { openRolesEditor, openChannelAccess } from "./roles.js";
 import { iconEl } from "../icons.js";
 import { navigate, reload } from "../router.js";
-import { avatarUrl } from "../cards.js";
+import { avatarUrl, mediaUrl } from "../cards.js";
+import { openDetails } from "./details.js";
 import { uploadBlobs } from "../upload-r2.js";
-import { isDemo, shapeMessage, loadThread, toggleReaction, loadMessageReactions, forwardMessage, deleteMessage, pinMessage, unpinMessage, editMessage, kickMember, timeoutMember, banMember, setMemberRoles, createChannel, updateChannel, createInvite, loadInvites, revokeInvite, loadInviteCandidates, inviteByHandle, inviteUserToServer, updateServer, loadAuditLog, leaveServer, deleteServer, loadServerPrefs, setServerPrefs } from "../data.js";
+import { isDemo, shapeMessage, loadThread, toggleReaction, loadMessageReactions, forwardMessage, deleteMessage, pinMessage, unpinMessage, editMessage, kickMember, timeoutMember, banMember, setMemberRoles, createChannel, updateChannel, createInvite, loadInvites, revokeInvite, loadInviteCandidates, inviteByHandle, inviteUserToServer, updateServer, loadAuditLog, leaveServer, deleteServer, loadServerPrefs, setServerPrefs, fetchChannelAttachment } from "../data.js";
 import { subscribeChannelMessages, subscribeChannelReactions, subscribeTyping, sendTyping, subscribeServerPresence, markRead, sendMessage } from "../realtime.js";
 import { openUpload, enableDropUpload } from "./upload.js";
 
@@ -65,10 +66,11 @@ const KIND_ICON = { audio: "music", image: "image", video: "video", file: "file"
 
 // single attachment card — the file NAME leads (CANON), kind-aware icon/ext
 function fileCard(a, { compact } = {}) {
+  const ext = a.file_ext || a.ext || "";   // shapeWork uses file_ext; demo fixtures use ext
   const inner = el("button.filecard", { "data-open-details": true, onClick: (e) => { e.stopPropagation(); openDetails(a); } });
-  inner.append(el(".fcwave", {}, [iconEl(KIND_ICON[a.kind] || "file", "sm"), a.ext ? el("span.ext", {}, [a.ext]) : null]));
+  inner.append(el(".fcwave", {}, [iconEl(KIND_ICON[a.kind] || "file", "sm"), ext ? el("span.ext", {}, [ext]) : null]));
   const body = el(".fbody", {}, [el(".fname", {}, [a.name])]);
-  if (a.size) body.append(el("div", { style: "font-size:11px;color:var(--muted);margin-top:3px" }, [`${a.size} · ${a.ext || ""}`.trim()]));
+  if (a.size) body.append(el("div", { style: "font-size:11px;color:var(--muted);margin-top:3px" }, [`${a.size} · ${ext}`.trim()]));
   if (a.tags?.length) body.append(el(".ftags", {}, a.tags.map((t) => el("span.tag", {}, [t]))));
   inner.append(body);
 
@@ -101,8 +103,10 @@ function forwardBlock(fwd) {
   return el(".fwd", {}, [src, el(".tx", {}, [fwd.text])]);
 }
 
-// Details pane is P5.7 — until then, acknowledge the intent so the click isn't dead.
-function openDetails(a) { toast({ message: `Details: ${a.name} (viewer lands in P5)`, icon: "file" }); }
+// Details pane: the ONE real viewer (screens/details.js), imported above. The old local
+// stub here just toasted "viewer lands in P5" and was never replaced when P5 shipped — so
+// every workspace file card (chat attachments AND the channel Files tab) opened a dead toast
+// instead of the viewer the explorer already used. Now they all open the real pane.
 
 // ── message row (P4.5) ──────────────────────────────────────────────────────
 function messageRow(msg, data, { onOpenThread } = {}) {
@@ -451,12 +455,16 @@ function filesPanel(data) {
       : (state.sort === "oldest" ? 1 : -1) * (new Date(b.created_at || 0) - new Date(a.created_at || 0)));
     count.textContent = `${files.length} file${files.length === 1 ? "" : "s"} in #${data.channel.name}`;
     grid.replaceChildren();
+    // shapeWork shape (B5): file_ext (not ext), who is {name,…} (not a string). A real image
+    // renders from its R2 blob (mediaUrl); the demo's shot-class placeholder is the fallback.
     for (const f of files) {
       let media;
-      if (f.kind === "image") media = el(".media", {}, [el("div.shot" + (f.shot ? "." + f.shot : ""), { style: "aspect-ratio:3/2" })]);
-      else media = el(".media." + (f.kind === "audio" ? "audio" : "file"), {}, [iconEl(KIND_ICON[f.kind] || "file"), el("span.ext", {}, [f.ext])]);
+      const src = f.kind === "image" ? mediaUrl(f) : null;
+      if (f.kind === "image" && src) media = el(".media", {}, [el("img", { src, alt: "", loading: "lazy", style: "aspect-ratio:3/2;object-fit:cover;width:100%" })]);
+      else if (f.kind === "image") media = el(".media", {}, [el("div.shot" + (f.shot ? "." + f.shot : ""), { style: "aspect-ratio:3/2" })]);
+      else media = el(".media." + (f.kind === "audio" ? "audio" : "file"), {}, [iconEl(KIND_ICON[f.kind] || "file"), el("span.ext", {}, [f.file_ext || ""])]);
       media.querySelector(".ext")?.previousElementSibling?.classList.add("fic");
-      grid.append(el("button.card", { "data-open-details": true, onClick: () => openDetails(f) }, [media, el(".title", {}, [f.name]), el(".who", {}, [f.who])]));
+      grid.append(el("button.card", { "data-open-details": true, onClick: () => openDetails(f, { serverId: data.server?.id, serverName: data.server?.name, siblings: files }) }, [media, el(".title", {}, [f.name]), el(".who", {}, [f.who?.name || ""])]));
     }
     if (!files.length) grid.append(el(".emptystate", {}, [iconEl("grid"), el("h3", {}, [q || state.type !== "all" ? "No matching files" : "No files yet"]), q || state.type !== "all" ? el("p", {}, ["Try a different filter."]) : null]));
   }
@@ -1128,9 +1136,23 @@ function liveInsert(screen, data, ctx, row) {
   if (!stream || stream.querySelector(`.msg[data-mid="${row.id}"]`)) return;   // dedupe our own echo
   stream.querySelector(".emptystate")?.remove();
   if (!stream.querySelector(".day")) stream.append(el(".day", {}, [el("span", {}, ["Today"])]));
-  stream.append(messageRow(shapeMessage(row, ctx.membersById), data, { onOpenThread: ctx.openThread }));
+  const shaped = shapeMessage(row, ctx.membersById);
+  const node = messageRow(shaped, data, { onOpenThread: ctx.openThread });
+  stream.append(node);
   stream.scrollTop = stream.scrollHeight;
   if (row.user_id !== ctx.me.id) markRead(ctx.channelId);   // seen while viewing → stay read
+  // B5: a channel-upload message carries only work_id live — resolve the work and slot its
+  // attachment card in once it arrives (the message renders immediately; the card fills in).
+  if (row.work_id) {
+    const cName = {}; for (const g of (data.channelGroups || [])) for (const c of (g.channels || [])) cName[c.id] = c.name;
+    fetchChannelAttachment(row.work_id, ctx.membersById, cName).then((att) => {
+      if (!att || !node.isConnected) return;
+      const bd = node.querySelector(".bd"); if (!bd) return;
+      const card = fileCard(att);
+      const anchor = bd.querySelector(".reactbar, .reply");   // sit above reactions/replies
+      anchor ? bd.insertBefore(card, anchor) : bd.append(card);
+    }).catch(() => {});
+  }
 }
 
 function bumpReplies(parent, ctx) {

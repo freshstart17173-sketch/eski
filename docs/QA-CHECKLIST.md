@@ -229,6 +229,9 @@ The server explorer mounts inside the shell (channel column stays); My files hid
 - [ ] **`[infra]` (upload-fix)** Post a file into a **channel** (composer attach) and into a **specific folder** → it lands in that channel's Files / that folder, not just root.
 - [ ] **`[infra]` (upload-fix)** Upload a **folder that contains a `.flp`** (or `.als` / `.logicx` / `.aiff`) next to some `.wav`s → the project file is recognised (no "Skipped 1 unsupported file") and uploads with the rest.
 - [ ] **`[infra]` (upload-fix)** Confirm a member who is **not** in a server still **can't** post to it (the RPC keeps the fence: needs active membership + the upload permission).
+- [ ] **`[infra]` (B5 — channel Files tab + chat visibility)** Upload a file into a channel (composer attach) → it now appears in **three** places: that channel's **Files tab** (was always empty before), the **server File explorer**, AND as a **message in the channel chat** carrying the file card. Before B5 it only showed in the server explorer.
+- [ ] **`[infra]` (B5)** In a channel with a file, open the **Files tab** → the uploaded files list; click one → the **real details/viewer pane opens** (previously a workspace file card only flashed a "viewer lands in P5" toast).
+- [ ] **`[infra]` (B5 realtime)** With two windows on the same channel, upload a file in one → the other window sees the new **file message appear live** (the attachment card resolves in) without a reload.
 
 ## 13. Feed
 

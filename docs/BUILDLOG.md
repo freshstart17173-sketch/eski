@@ -1894,3 +1894,32 @@ NEXT (still open, in docs/TODO.md): B5 (channel Files tab — fetch channel-plac
 GOTCHA: demo harnesses that use `p.goto` between routes do a FULL page reload, which wipes
   module-level state (like the new selection store) — to test client-side persistence you must click
   the app's own nav (the router intercepts real clicks), not `p.goto`.
+
+## 2026-08-29 — B5 channel Files tab + channel-upload chat visibility (round-4)
+IN PROGRESS: (cleared)
+DONE (backend role-sim-verified + demo render, on `preview`):
+  - **Channel Files tab** — `loadWorkspace` (app/data.js) hardcoded `files: []` and
+    `channel.files: 0`, so the per-channel Files tab (`filesPanel`) could NEVER show anything;
+    a channel upload only surfaced in the server-wide explorer (the owner's exact complaint). Now
+    it fetches the works whose `placement.channel_id` = the active channel, shapes them via
+    `shapeWork`, and sets `data.files` + the tab count. `filesPanel` updated to the canonical
+    shape (`file_ext`, `who:{name}`) + real image thumbs via `mediaUrl`.
+  - **Channel upload shows in chat** — `messages` gains `work_id` (schema-24, migration
+    `p14_channel_upload_message`, `on delete set null` like `forwarded_from`); `create_work`
+    (schema-23) now atomically posts a message carrying the work when a file is uploaded into a
+    channel. loadWorkspace resolves `work_id` → the attachment card; the realtime `liveInsert`
+    resolves it live via a new `fetchChannelAttachment(workId, membersById, chanName)`.
+  - **Dead stub fixed** — `workspace.js` still had a local `openDetails` that only toasted
+    "viewer lands in P5"; it shadowed nothing (no import) so EVERY workspace file card (chat
+    attachments + the Files tab) opened a dead toast instead of the real viewer the explorer used.
+    Replaced with the real `screens/details.js` `openDetails`.
+VERIFIED: role-sim as the server owner (SECURITY DEFINER `create_work` ⇒ reliable, rolled back):
+  a channel-placed work is readable (1 row) and a `create_work` into the channel lands the work +
+  exactly 1 message with `work_id`. Live DB re-checked clean afterwards (1 work, 0 attach msgs).
+  Demo: Files tab renders 4 cards both themes, count line correct, clicking a card opens the real
+  `.sheet` details pane; 0 pageerrors. `node --check` clean (data.js, workspace.js, demo.js).
+NEXT: K2 (server icon/cover + profile banner — the silent-no-op UPDATE class), then the rest of
+  the backend queue (K1 preview_invite, K5 create_server RPC, K4 delete/invite mgmt, K9, K6).
+GOTCHA: `messages` has no attachment column by default — a "file in a channel" needed the new
+  `work_id`, resolved on read. Live-only: the R2 round-trip and the realtime attachment echo to
+  OTHER clients can't be exercised in-sandbox → QA-CHECKLIST §12 rows added.

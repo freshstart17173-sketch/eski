@@ -93,6 +93,15 @@ begin
   if p_owner_type = 'server' then
     insert into placement (work_id, surface, surface_id, channel_id, folder_id, placed_by)
       values (wid, 'server', p_server_id, p_channel_id, p_folder_id, uid);
+    -- B5: a file uploaded straight into a CHANNEL also posts a message carrying it, so it shows
+    -- up in the chat stream (not only the Files tab / server explorer) — the owner's "uploaded
+    -- to a channel, it didn't show in the channel" complaint. The message's work_id points at
+    -- the new work; loadWorkspace/realtime resolve it into the attachment card. Atomic with the
+    -- work + placement (one definer call), and only for a real channel upload.
+    if p_channel_id is not null then
+      insert into messages (channel_id, user_id, body, work_id)
+        values (p_channel_id, uid, null, wid);
+    end if;
   elsif p_folder_id is not null then
     -- filing a personal work into a My-files folder is a saved_items row.
     insert into saved_items (user_id, work_id, folder_id)

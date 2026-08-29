@@ -11,10 +11,20 @@ owner's live checklist in [`QA-CHECKLIST.md`](QA-CHECKLIST.md). **CANON wins** o
 
 ## Start here (every session — do this first)
 
-1. **Branch.** Develop on **`preview`** and push there — it deploys to `preview.eski.lol`.
+1. **Branch + get on the true tip (do this before reading anything).** Develop on **`preview`**
+   and push there — it deploys to `preview.eski.lol`. **Always start by syncing to origin's tip,
+   including when it was force-updated.** The SessionStart hook fast-forwards a strictly-behind
+   clone, but a **forced update** rewrites origin so the clone *diverges* — the hook only warns,
+   it will not reset. So run this every session:
    ```
-   git fetch origin preview && git checkout preview && git pull origin preview
+   git fetch --all --prune
+   git checkout preview
+   # clean tree + fresh remote clone → adopt origin's tip even on a forced update:
+   git reset --hard origin/preview
    ```
+   (`reset --hard` is safe here because a cloud session is a throwaway clone with no
+   human-authored local-only commits; if you *have* made unpushed commits this session, rebase
+   them onto `origin/preview` instead of discarding them.)
    If `preview`'s PR was already merged, restart it from the default branch (same name) per
    the repo's branch rules — never stack new work on merged history.
 2. **Cold-start ritual.** Read [`BUILDLOG.md`](BUILDLOG.md) (Current state + the newest dated
@@ -130,7 +140,22 @@ IDs are stable handles (`B*` broken-UI, `K*` backend, `P*` polish, `D*` deferred
 - [ ] **B4 · Directly-typed `/create` · `/upload` · `/settings` open their modal over the shell**
       instead of the "not yet ported" placeholder (normal use opens them as modals, so low
       priority). *Files:* `app/main.js` route dispatch. *Medium.* *Test:* demo — visit each path, assert the modal mounts over the shell, not the placeholder screen.
-- [ ] **B5 · Channel Files tab is always empty + a channel upload doesn't appear in the channel.**
+- [x] **B5 · Channel Files tab is always empty + a channel upload doesn't appear in the channel.**
+      *Done (backend role-sim-verified + demo render).* (1) `loadWorkspace` now fetches the works
+      whose placement carries the active channel_id, shapes them via `shapeWork`, and sets
+      `data.files` + `channel.files` — the per-channel Files tab shows them (was hardcoded
+      `files:[]`). (2) A channel upload now **also posts a message** carrying the file:
+      `messages.work_id` added (schema-24, migration `p14_channel_upload_message`), `create_work`
+      inserts that message atomically when a file is uploaded into a channel, and loadWorkspace +
+      the realtime `liveInsert` resolve `work_id` → the attachment card, so it shows in the chat
+      stream too. (3) Fixed a latent bug found on the way: `workspace.js` still had a **stub**
+      `openDetails` that toasted "viewer lands in P5" — every workspace file card (chat attachments
+      AND the Files tab) opened a dead toast instead of the real details pane the explorer already
+      used; now wired to the real `screens/details.js` viewer. Verified: role-sim as the owner —
+      channel-placed work is readable (1 row) and `create_work` into a channel lands work + 1
+      message with work_id (both rolled back); demo renders the Files tab (4 cards, both themes) and
+      a card click opens the real `.sheet` details pane; 0 pageerrors. Live R2 round-trip + the
+      realtime attachment echo to *other* clients are live-only → QA-CHECKLIST.
       (round-4, owner: "uploaded to a channel — file didn't show in the channel, didn't show in
       that channel's Files tab; only showed in the server Files explorer.") **Root cause found:**
       `loadWorkspace` (`app/data.js`) hardcodes **`files: []`** and `channel.files: 0` — the
@@ -182,12 +207,6 @@ IDs are stable handles (`B*` broken-UI, `K*` backend, `P*` polish, `D*` deferred
       service-role + authenticated update of `servers.icon_key` as the owner succeeds under RLS
       (`updateServer` path); render is live-only → add a QA claim. Confirm `works`-style meter
       isn't involved (icons aren't `works`).
-- [ ] **K3 · Report (moderation).** The `reports` table exists and is self-contained — the
-      easiest real feature. Add an insert path (RLS or a small RPC) + wire the existing Report
-      stubs (§C.4/§C.7/§C.11). *Files:* maybe `schema-24-reports.sql` (policy/RPC),
-      `app/ui.js`/report modal, `app/data.js`. *Medium.* *Test:* backend — as an authenticated
-      non-admin, inserting a report row is accepted; reading others' reports is denied. Use the
-      reliable role-sim (gate via a `SECURITY DEFINER` check if the policy is inline-uid).
 - [ ] **K4 · Delete server + invite management (expiry / revoke).** Owner delete-server flow
       (type-the-name confirm → cascade) and invite expiry/revoke in the invite modal.
       *Files:* RPC(s) in a new schema file, `app/data.js`, server-settings + invite modals.
@@ -281,6 +300,9 @@ IDs are stable handles (`B*` broken-UI, `K*` backend, `P*` polish, `D*` deferred
 The correct behaviour today is an explicit signpost (grayed control + WIP toast), not a fake.
 
 - [ ] **D1 · Feed + post commenting** — deferred by P4. Public posts remain (via profile). *(post-beta)*
+- [ ] **D7 · Report (moderation)** — was K3; deferred by owner (2026-08-29). The `reports` table
+      exists and is self-contained; add an insert path (RLS or small RPC) + wire the Report stubs
+      (§C.4/§C.7/§C.11) when moderation is prioritized. *(post-beta)*
 - [ ] **D2 · Storage / billing** — usage slider, blended $/GB, single-payer server storage, export.
       Needs Stripe. *(`[infra]`, ~P8)*
 - [ ] **D3 · Audit log** — read-only moderation history (actor/target/reason/time). *(post-beta)*
