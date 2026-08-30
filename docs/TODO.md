@@ -99,19 +99,39 @@ IDs are stable handles (`B*` broken-UI, `K*` backend, `P*` polish, `D*` deferred
 
 ### ⏱ Sorted by estimated completion time (open items only)
 
-The open items, ordered **shortest job first**. **As of 2026-08-30 the whole quick/medium queue is
-done** — every easy/med `P*`/`B*` item (P1–P3, P11–P13, P15–P19, P25/P26, B3/B4, B10, B15–B29),
-plus the round-9/10 scale work (K11 streaming upload, P22 per-file tag/rename, B14 media keep-alive,
-the explorer URL state, P24 real search + P21/B19) has shipped. **Nothing "quick UI" remains** — the
-only buildable items left are the two below, and neither is quick. Ticking one here = ticking it in
-its category below.
+The open items, ordered **shortest job first**. Rounds 1–10 shipped (K11 streaming upload, P22
+per-file tag/rename, B14 media keep-alive, explorer URL state, P24 real search + P21/B19, P14
+densities, the wordmark fix). **Round-11 (2026-08-30) is the current backlog** — a search/filter
+model overhaul, a density slider, a profile rework, a perf pass, and interaction/polish fixes; full
+detail in the Round-11 section below. Ticking one here = ticking it in its category below.
 
 | Est. | ID | What | Kind |
 |---|---|---|---|
-| ~15m | **B9** | verify a channel upload shows as a chat file card (built; needs owner QA on preview) | live-QA (owner) |
-| — | **B12** | @mentions: composer autocomplete + real resolve/notify | med-hard · **owner-skipped** |
-| ~4h | **P23** | tag folders (no inheritance) — folder-tags store + RLS/RPC + folder card/details + upload subfolder rows | med-hard · schema |
-| ~6h | **P14** | file-browser view modes = real density levels (thumbnail + thin band) | hard · **visual → 3 versions** |
+| ~30m | **B36** | path bar shows a black separator bar (dark mode) | easy |
+| ~30m | **B34** | "Load earlier messages" appears when there are none | easy |
+| ~1.5h | **B32** | selection action bar shifts the layout down → overlay it | easy-med |
+| ~2h | **B35** | server file search doesn't work at all — diagnose + fix | med · **do early** |
+| ~2h | **B31** | selection highlights text; drag image should be mini icons | med |
+| ~2.5h | **B30** | expanded media viewer closes on tab refocus | med |
+| ~3h | **B33** | star: consistent top-left click-toggle in every density | med |
+| ~3h | **P28** | more right-click menus in the file browser, spawned at the cursor | med |
+| ~3h | **P33** | explorer filters → only Hidden+Starred; add Group-by & Sort-by | med-hard |
+| ~4h | **P23** | tag folders (no inheritance) — schema + folder card/details + upload rows | med-hard · schema |
+| ~4h | **P31** | one modifier-based search everywhere (channel msg ↔ server file) | med-hard |
+| ~4h | **P35** | loading animations everywhere; replace the spinning search icon | med |
+| ~4h | **P36** | crop/zoom modal for pfp/banner/icon uploads | med-hard |
+| ~5h | **P34** | real modifier system + UI hints | med-hard |
+| ~5h | **P29** | profile rework (drop visibility tabs · Settings button · presence/status→settings w/ save · modifier search bar) | hard |
+| ~6h | **P32** | real density SLIDER (continuous, eased stages) — supersedes discrete P14 | hard |
+| ~6h | **P27** | filtering (folder-scoped) ≠ searching (deep, Reddit-style folder modifier) | hard · refines P24/P26 |
+| ~6h | **P30** | perf pass — search/message-send/context-switch slow; two-phase logo boot | hard |
+| ~6h | **K12** | search indexing (metadata-inclusive) so search is fast | hard · pairs P30 |
+| ~15m | **B9** | verify a channel upload shows as a chat file card | live-QA (owner) |
+| — | **B12** | @mentions: composer autocomplete + resolve/notify | med-hard · **owner-skipped** |
+
+**Round-11 clusters:** search/filter (**B35 → P27 · P31 · P34 · K12**, with **P33** filters + **P32**
+slider on the explorer) · media/messages (**B30 · B34**) · selection (**B31 · B32 · B33 · P28**) ·
+profile (**P29**) · perf (**P30**) · polish (**P35 · P36 · B36**).
 
 **Deferred — do NOT build now** (post-beta / infra-gated): D1 (feed+commenting, after P4),
 D7 (report/moderation), D2 (storage/billing, needs Stripe), D3 (audit log), D5 (required tags
@@ -560,6 +580,116 @@ per channel, builds on P11), D6 (review canvas/kanban/versions).
       both menus). Verified: predicate unit-checked (admin/own/other/personal); demo menu unchanged
       (full set, demo=admin), 0 pageerrors; the hidden-state needs a real non-admin member → QA claim
       added (§10).
+
+> ### 🟣 Round-11 (owner test, 2026-08-30) — search/filter model, density slider, perf, profile, polish
+> Big conceptual pass after P24 (search) + P14 (densities) shipped. **Not yet built.** Two themes:
+> (1) a proper **filter-vs-search split** with a real modifier system + indexing, and (2) a **file-
+> explorer-grade** density slider + grouping, plus a profile rework, a perf pass, and a batch of
+> interaction/polish fixes. Several items **supersede/refine** the just-shipped P24/P14 — noted inline.
+> Sorted roughly easy→hard within each cluster.
+>
+> **— Search & filter overhaul (the big one) —**
+- [ ] **P27 · Filtering ≠ searching (the model split).** **Filtering is screen-local:** it only
+      touches what's on THIS screen/folder — folders are NOT dug into (a folder's contents stay
+      hidden; folders are just for arranging/removing). This **reverses** the current P26 behaviour
+      where a facet flattens the whole tree. **Searching digs deep, Reddit-style — context matters:**
+      searching *from* a folder adds a **folder modifier** (a removable token scoping to that folder);
+      delete the modifier and it searches the **entire server / personal drive**, every level,
+      exposing **files AND folders** (grouping — P33 — makes the mixed results legible). *Files:*
+      `app/screens/explorer.js` (separate the facet filter (folder-scoped) from the search path
+      (deep); folder-scope modifier token), `app/data.js`/`search_files` (return folders too when
+      searching deep). *Hard.* **Refines P24 + P26.**
+- [ ] **P31 · One modifier-based search everywhere (channel msg ↔ server file).** Every search bar
+      uses the SAME modifier system, so a search inside a channel (for a message) can turn into a
+      server-wide search (for a file) by editing the modifiers (e.g. drop the channel scope). *Files:*
+      the channel/message search + `app/screens/explorer.js` + a shared search-parse module. *Med-hard.*
+      Ties **P27/P34**.
+- [ ] **B35 · Server search doesn't work at all.** The owner reports server (file) search returns
+      nothing. Diagnose end-to-end (the P24 `search_files` RPC verified in role-sim, so suspect the
+      client wiring / args / the `useSrv` gate). *Files:* `app/screens/explorer.js` (`runServerSearch`,
+      `useSrv`), `app/data.js` (`searchFiles`). *Med.* **Do early — it blocks trusting P24 live.**
+- [ ] **P34 · A real modifier system + UI hints.** Build out the modifier grammar (from P21:
+      `bpm:120`/`hastag:`/`sortby:`, plus the P27 folder scope + P33 group/sort) as a first-class,
+      extensible parser, and add **UI hints** (a hint row / chips / autocomplete) so a user discovers
+      them. *Files:* a `search-modifiers` module, `app/screens/explorer.js`, the message search. *Med-hard.*
+- [ ] **K12 · Search indexing (metadata-inclusive) so search is fast.** Add proper indexing so search
+      isn't slow at scale, and make **every reasonable part of a file searchable — including
+      metadata** (bpm/key/duration/dimensions/codec/… not just filename + tags). *Files:* schema
+      (a metadata store or columns + GIN/tsvector over them), `search_files`. *Hard.* Pairs **P30**
+      (perf) — see also "search is disgustingly slow" there.
+>
+> **— File explorer (continuing the P14 inspiration) —**
+- [ ] **P32 · A real density SLIDER (not 3 discrete modes).** Replace the Large/Small/List switch with
+      a **continuous density slider** like a desktop file explorer — multiple intermediate stages where
+      spacing eases between densities (list → small → … → large thumbnails). *Files:*
+      `app/screens/explorer.js` (VIEWS → a density scale), `styles/content.css`/`shell.css` (density
+      steps). *Hard.* **Supersedes the discrete P14 modes** (keep list/small/large as slider anchors).
+- [ ] **P33 · Filter rework: only Hidden + Starred; add Group-by & Sort-by.** Remove ALL the explorer
+      filters **except Hidden and Starred** (Type/Channel/Uploader/Tag/Date go — search modifiers (P27/
+      P34) replace them). Keep sorting. Add a **Group by** dropdown AND a **Sort by** dropdown, each
+      with **extensive options** (name/date/size/type/uploader/tag-value/…; group by folder/type/
+      uploader/date/tag). *Files:* `app/screens/explorer.js` (toolbar: drop facets, add group/sort),
+      `styles/content.css`. *Med-hard.* **Removes the P8 Type / P11 Tag facets.**
+>
+> **— Media / messages —**
+- [ ] **B30 · Expanded media view closes on tab refocus.** Media keeps playing when the tab loses focus
+      (good), but returning to the tab **closes the expanded (details) viewer** while audio keeps going
+      (bad). Keep the viewer open on refocus. *Files:* `app/screens/details.js` / `app/player.js` /
+      whatever visibility/focus handler closes it (a `visibilitychange`/`blur` path, or a re-render on
+      focus). *Med.* Follows **B14**.
+- [ ] **B34 · "Load earlier messages" shows when there are none.** The scroll-up sentinel / button
+      should not appear (or no-op) when `hasMore` is false. *Files:* `app/screens/workspace.js`
+      (`wireStreamPaging`). *Easy.*
+>
+> **— Selection / interaction —**
+- [ ] **B31 · Selection is finicky + highlights text; drag image should be mini icons.** Selecting
+      often selects TEXT instead (add `user-select:none` on the browsing surface during select/drag).
+      And **drag-and-drop must show miniaturized icons every time, not thumbnails** (set a small
+      icon drag image, not the card thumbnail). *Files:* `app/screens/explorer.js` (dragstart
+      `setDragImage`; user-select), `styles/content.css`. *Med.*
+- [ ] **B32 · Selection action bar shifts the layout down.** The `.selbar` pushes all the content down
+      when it opens (very annoying). Make it an **overlay** (float over the grid / absolute) so it
+      doesn't reflow the pane. *Files:* `styles/content.css` (`.selbar`), maybe `app/screens/explorer.js`.
+      *Easy-med.*
+- [ ] **B33 · Star: consistent, top-left, click-to-toggle across all densities.** Stars aren't visible
+      in **list** or **small-icon** modes; in **large** the star INDICATOR and the star SELECTOR are in
+      different spots, so on hover they swap positions (very annoying). Put ONE star at the **top-left of
+      the thumbnail/row** in every density — **click to star, click again to unstar** (no hunting).
+      *Files:* `app/cards.js` (merge `.cardstar` + the star action into one top-left toggle),
+      `app/screens/explorer.js` (list/small star), `styles/content.css`. *Med.* **Refines B16/#43.**
+- [ ] **P28 · More right-click menus in the file browser, spawned at the cursor.** Add context menus to
+      more of the file-browser UI, and make them **spawn where the mouse is** (like a native context
+      menu) rather than anchored to a button. *Files:* `app/ui.js` (`openMenu` — accept an x/y / event
+      anchor), `app/screens/explorer.js` (wire more `contextmenu` handlers). *Med.*
+>
+> **— Profile rework —**
+- [ ] **P29 · Profile page serious rework.** (a) **Remove the Public/Server/Private tabs** — everything
+      on a profile is public. (b) **Settings becomes a button** (next to Edit profile), not a tab. (c)
+      **Presence + status need a clear editing state** — today changing them shows no "editing"/"saved"
+      signal; **move them into settings** and make **all settings apply only on Save** (an explicit
+      save model). (d) Keep a **search bar**, but **styled like every other search bar** — no filter/
+      sort chrome, **just search (with modifiers)**. *Files:* `app/screens/profile.js`,
+      `app/screens/usersettings.js`, `styles/content.css`. *Hard.* Revisits **P15/B11**.
+>
+> **— Performance —**
+- [ ] **P30 · Perf pass — everything feels slow.** Search is **disgustingly slow** (→ K12 indexing);
+      **sending messages**, **opening servers/channels**, and **switching contexts** are slow; on
+      reload the **eski logo takes a while to appear**, so boot feels like **two separate loading
+      phases**. Profile the read/render waterfalls, parallelise/caches, and fix the two-phase boot
+      (paint the logo/shell immediately). *Files:* `app/main.js`, `app/data.js` (loaders/caching),
+      `index.html` (boot/logo), realtime send path. *Hard.* Uses the perf HUD (`?perf=1`).
+>
+> **— Uploads / polish —**
+- [ ] **P35 · Loading animations EVERYWHERE.** Every async action needs a progress bar, spinner, or
+      rising-ellipsis — literally everywhere. And **replace the spinning search icon** (P24's
+      `.searchloading`) — it "sucks". *Files:* `app/ui.js` (a shared spinner/ellipsis + progress),
+      `styles/*`, every async call site. *Med.* Extends **P3/P16**.
+- [ ] **P36 · Crop/zoom modal for image uploads.** Uploading a **server icon/cover** or a **profile
+      pfp/banner** needs a UI element/modal to **adjust crop + zoom** before saving. *Files:* a new
+      crop modal (`app/ui.js`/a screen), `app/screens/profile.js`, `app/screens/settings.js`. *Med-hard.*
+- [ ] **B36 · Path bar has a black separator bar (dark mode).** The file-path line up top (`.expath`)
+      shows a small **black bar** separating it from the rest of the pane in dark mode — a visual bug
+      (a stray border/background step). *Files:* `styles/content.css` (`.expath`). *Easy.*
 
 ### 2 · Fixes for backend
 
