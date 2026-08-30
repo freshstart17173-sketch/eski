@@ -552,12 +552,17 @@ per channel, builds on P11), D6 (review canvas/kanban/versions).
       `app/main.js`, `app/screens/feed.js` (retire route), Details pane comment section, `docs/CANON.md`,
       `CLAUDE.md`. *Medium.* **Do before P5** (both touch the home nav; fewer items first). *Test:*
       demo — Feed is gone from nav and `/feed` no longer resolves; a profile Public shelf still opens a post; the Details pane shows no comment thread; no `pageerror`.
-- [ ] **P5 · Merge Friends into Messages (one surface).** Friends lives inside the Messages pane
-      (a tab/section), not a separate screen reached by a Friends button. *Files:* `app/screens/dms.js`
-      (or messages/friends screens), `app/main.js`, `app/shell.js` nav. *Medium-hard.* **After P4.**
-      *Test:* demo — Messages renders with a Friends tab/section in-pane; switching stays in one view; the standalone Friends route/button is gone or folds in; no `pageerror`.
-      **(Round-5: owner restated this — Messages + Friends must be ONE screen, like DMs in any
-      messaging app; friends not behind a button.)**
+- [x] **P5 · Merge Friends into Messages (one surface).** *Done (demo-verified both themes) — owner
+      asked for it directly (didn't need P4 first).* Removed the `.dmfriends` button and the
+      `showFriends()` right-pane swap; friends now live **inline in the `.dmlist` column** as sections:
+      **Requests** (incoming with accept/decline, outgoing "pending") · **Pinned** · **Direct
+      messages** · **Friends** (accepted friends without an active 1:1 DM → click to open/start one,
+      no duplicate of open DMs). Add-by-username stays at the top and now actually adds a friend
+      (fixed a **dangling `addByUsername` ref** that would have thrown). Removed the dead Friends-panel
+      CSS (`.dmfriends`/`.friends`/`.frhd`/`.frtabs`/`.frrow`…); `.rbtn` kept for accept/decline. DM
+      list header aligned to P18 (46px). *Files:* `app/screens/dms.js`, `styles/content.css`. Verified:
+      Messages renders all four sections inline (no Friends button); clicking a friend opens a
+      conversation; accept runs; 0 pageerrors.
 - [x] **P6 · Declutter the upload sheet (round-5).** *Done.* Visibility is now **contextual** —
       launched from a server (channel composer / server explorer, `opts.serverId` set) the sheet
       hides the Public/Server/Private control entirely and shows only the server/folder target

@@ -24,22 +24,52 @@ export function renderDMs(data) {
   return screen;
 }
 
-// ── left: the thread list + Friends toggle + add-by-username ──────────────────
+// ── left: ONE surface — requests + conversations + friends, no Friends button ─
+// P5: Friends are not behind a button anymore; they live in this same column as sections
+// (Requests · Pinned · Direct messages · Friends). Clicking a friend opens/starts their DM in
+// the right pane. The old showFriends() right-pane swap is gone.
 function dmList(data, right) {
-  const pendingN = (data.friends?.incoming?.length || 0);
-  const friendsBtn = el("button.dmfriends", { onClick: () => showFriends(right, data, friendsBtn) }, [
-    iconEl("users", "sm"), "Friends", pendingN ? el("span.ct", {}, [String(pendingN)]) : null,
-  ]);
+  const fr = data.friends || { accepted: [], incoming: [], outgoing: [] };
 
-  const addInput = el("input", { placeholder: "Add by username", "aria-label": "Add by username" });
+  // Add a friend by exact username (previously a dangling addByUsername ref — now wired). On
+  // success they land in Outgoing pending until they accept.
+  const addInput = el("input", { placeholder: "Add a friend by username", "aria-label": "Add a friend by username" });
+  async function addByUsername() {
+    const h = addInput.value.trim().replace(/^@/, "");
+    if (!h) return;
+    try {
+      if (!isDemoQS()) await addFriend(h);
+      if (!fr.outgoing.some((u) => u.handle === h) && !fr.accepted.some((u) => u.handle === h))
+        fr.outgoing.push({ id: "new-" + h, name: h, handle: h, initials: h.slice(0, 2).toUpperCase(), presence: "offline" });
+      addInput.value = ""; paintRows();
+      toast({ message: "Friend request sent", icon: "check" });
+    } catch (e) { toast({ message: e?.message || "Couldn’t send the request" }); }
+  }
   const addField = el(".dmadd", {}, [el(".field", {}, [
     iconEl("user", "sm"), addInput,
-    el("button.iconbtn", { title: "Add", onClick: () => addByUsername(addInput) }, [iconEl("plus", "sm")]),
+    el("button.iconbtn", { title: "Add friend", onClick: addByUsername }, [iconEl("plus", "sm")]),
   ])]);
-  addInput.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); addByUsername(addInput); } });
+  addInput.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); addByUsername(); } });
 
   const rows = el(".dmrows");
   const openConvo = (d) => { showConvo(right, d); };
+
+  // answer an incoming request / start a DM with a friend — both repaint the column in place.
+  async function answer(u, accept) {
+    try {
+      if (!isDemoQS()) await respondFriend(u.id, accept);
+      fr.incoming = fr.incoming.filter((x) => x.id !== u.id);
+      if (accept) fr.accepted.push(u);
+      paintRows();
+      toast({ message: accept ? `You’re now friends with ${u.name}` : "Request declined" });
+    } catch (e) { toast({ message: e?.message || "Couldn’t respond" }); }
+  }
+  async function messageFriend(u) {
+    try {
+      const chId = isDemoQS() ? "dm-" + u.id : await createDM(u.handle);
+      showConvo(right, { id: chId || ("dm-" + u.id), name: u.name, members: [u], group: false });
+    } catch (e) { toast({ message: e?.message || "Couldn’t start the conversation" }); }
+  }
   // pin/mute/hide mutate data.dms in place; the list repaints (hidden threads drop out,
   // pinned ones jump to the Pinned section). RLS is the fence via setDMPref.
   const rowMenu = (d, anchor) => openMenu(anchor, [
@@ -73,18 +103,56 @@ function dmList(data, right) {
   }
   function paintRows() {
     rows.replaceChildren();
+    // Requests first — incoming ones need an answer, so they lead.
+    if (fr.incoming.length || fr.outgoing.length) {
+      rows.append(el(".dmsec", {}, ["Requests"]));
+      for (const u of fr.incoming) rows.append(requestRow(u, true, answer));
+      for (const u of fr.outgoing) rows.append(requestRow(u, false, answer));
+    }
     const pinned = (data.dms || []).filter((d) => d.pinned);
     const rest = (data.dms || []).filter((d) => !d.pinned);
     if (pinned.length) { rows.append(el(".dmsec", {}, ["Pinned"])); for (const d of pinned) rows.append(dmRow(d, openConvo, rowMenu)); }
     if (rest.length) { rows.append(el(".dmsec", {}, ["Direct messages"])); for (const d of rest) rows.append(dmRow(d, openConvo, rowMenu)); }
-    if (!pinned.length && !rest.length) rows.append(el(".dmnone", {}, ["No conversations yet."]));
+    // Friends without an active 1:1 conversation → click to start one (no duplicate of open DMs).
+    const dmIds = new Set((data.dms || []).filter((d) => !d.group && d.members[0]).map((d) => d.members[0].id));
+    const friendsNoDm = (fr.accepted || []).filter((u) => !dmIds.has(u.id));
+    if (friendsNoDm.length) { rows.append(el(".dmsec", {}, ["Friends"])); for (const u of friendsNoDm) rows.append(friendConvoRow(u, messageFriend)); }
+    if (!fr.incoming.length && !fr.outgoing.length && !pinned.length && !rest.length && !friendsNoDm.length)
+      rows.append(el(".dmnone", {}, ["No conversations or friends yet — add someone by username above."]));
   }
   paintRows();
 
   return el(".dmlist", {}, [
     el(".hd", {}, ["Messages", el("button.iconbtn.sm", { style: "margin-left:auto", title: "New message", onClick: () => openNewMessage(data, right) }, [iconEl("pen", "sm")])]),
-    friendsBtn, addField, rows,
+    addField, rows,
   ]);
+}
+
+// A friend row in the list column — click anywhere (or the mail icon) to open/start their DM.
+function friendConvoRow(u, onMessage) {
+  const row = el(".dmrow.dmconvo", { onClick: () => onMessage(u) });
+  const av = Avatar({ name: u.initials, size: "sm", src: avatarUrl(u.avatar_key) });
+  av.style.position = "relative";
+  av.append(PresenceDot({ state: u.presence || "offline", ring: "var(--surface)" }));
+  row.append(av, el("span.nm", {}, [u.name]),
+    el(".dmtrail", {}, [el("button.more2", { title: "Message", onClick: (e) => { e.stopPropagation(); onMessage(u); } }, [iconEl("mail", "sm")])]));
+  return row;
+}
+
+// An incoming/outgoing friend request row — incoming gets accept/decline, outgoing shows "pending".
+function requestRow(u, incoming, answer) {
+  const row = el(".dmrow");
+  const av = Avatar({ name: u.initials, size: "sm", src: avatarUrl(u.avatar_key) });
+  av.style.position = "relative";
+  av.append(PresenceDot({ state: u.presence || "offline", ring: "var(--surface)" }));
+  const acts = incoming
+    ? el(".dmtrail", {}, [
+        el("button.rbtn.ok", { title: "Accept", onClick: () => answer(u, true) }, [iconEl("check", "sm")]),
+        el("button.rbtn.no", { title: "Decline", onClick: () => answer(u, false) }, [iconEl("x", "sm")]),
+      ])
+    : el("span.pendlbl", {}, ["pending"]);
+  row.append(av, el("span.nm", {}, [u.name]), acts);
+  return row;
 }
 
 function dmRow(d, openConvo, rowMenu) {
@@ -142,7 +210,7 @@ function openNewMessage(data, right) {
 
 // ── right: conversation placeholder (P7.2) / empty inbox ──────────────────────
 function showEmpty(right) {
-  right.replaceChildren(el("main.dmmain", {}, [emptyState("mail", "Your messages", "Pick a conversation, or open Friends to start one.")]));
+  right.replaceChildren(el("main.dmmain", {}, [emptyState("mail", "Your messages", "Pick a conversation, or add a friend to start one.")]));
 }
 function showConvo(right, d) {
   // real conversation (P7.2): header + message stream + composer. Messages load async; the
@@ -208,99 +276,6 @@ function dmMessageRow(m) {
       el(".tx", {}, [m.body || ""]),
     ]),
   ]);
-}
-
-// ── right: the Friends panel ──────────────────────────────────────────────────
-function showFriends(right, data, friendsBtn) {
-  friendsBtn.classList.add("on");
-  const state = { tab: "all" };
-  const body = el(".frbody");
-  const tabs = el(".frtabs");
-  const mkTab = (key, label, count) => {
-    const t = el("a.frtab" + (state.tab === key ? ".on" : ""), { onClick: () => { state.tab = key; paintTabs(); paint(); } }, [label, count ? el("span.ct", {}, [String(count)]) : null]);
-    return t;
-  };
-  function paintTabs() {
-    tabs.replaceChildren(
-      mkTab("all", "All", data.friends.accepted.length),
-      mkTab("pending", "Pending", data.friends.incoming.length + data.friends.outgoing.length),
-    );
-  }
-  paintTabs();
-
-  const addInput = el("input", { placeholder: "Add a friend by their exact username", "aria-label": "Add a friend" });
-  const add = el(".fradd", {}, [el(".field", {}, [iconEl("user", "sm"), addInput]),
-    el("button.btn.primary", { onClick: () => sendReq() }, ["Send request"])]);
-  addInput.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); sendReq(); } });
-  async function sendReq() {
-    const h = addInput.value.trim().replace(/^@/, "");
-    if (!h) return;
-    try {
-      if (!isDemoQS()) await addFriend(h);
-      if (!data.friends.outgoing.some((u) => u.handle === h) && !data.friends.accepted.some((u) => u.handle === h)) {
-        data.friends.outgoing.push({ id: "new-" + h, name: h, handle: h, initials: h.slice(0, 2).toUpperCase(), presence: "offline" });
-      }
-      addInput.value = ""; paintTabs(); paint();
-      toast({ message: "Friend request sent", icon: "check" });
-    } catch (e) { toast({ message: e?.message || "Couldn’t send the request" }); }
-  }
-
-  function paint() {
-    body.replaceChildren(add);
-    if (state.tab === "all") {
-      if (!data.friends.accepted.length) { body.append(emptyState("users", "No friends yet", "Add someone by their exact username to get started.")); return; }
-      body.append(el(".frsec", {}, [`Friends, ${data.friends.accepted.length}`]));
-      for (const u of data.friends.accepted) body.append(friendRow(u));
-    } else {
-      const { incoming, outgoing } = data.friends;
-      if (!incoming.length && !outgoing.length) { body.append(emptyState("users", "No pending requests", "Requests you send or receive show up here.")); return; }
-      if (incoming.length) { body.append(el(".frsec", {}, [`Incoming, ${incoming.length}`])); for (const u of incoming) body.append(pendingRow(u, true)); }
-      if (outgoing.length) { body.append(el(".frsec", {}, [`Outgoing, ${outgoing.length}`])); for (const u of outgoing) body.append(pendingRow(u, false)); }
-    }
-  }
-
-  function friendRow(u) {
-    return el(".frrow", {}, [
-      avatarWithPresence(u),
-      el(".info", {}, [el("b", {}, [u.name]), el("small", {}, ["@" + u.handle])]),
-      el(".fracts", {}, [el("button.rbtn", { title: "Message", onClick: () => messageFriend(u) }, [iconEl("mail", "sm")])]),
-    ]);
-  }
-  function pendingRow(u, incoming) {
-    const acts = incoming
-      ? el(".fracts", {}, [
-        el("button.rbtn.ok", { title: "Accept", onClick: () => answer(u, true) }, [iconEl("check", "sm")]),
-        el("button.rbtn.no", { title: "Decline", onClick: () => answer(u, false) }, [iconEl("x", "sm")]),
-      ])
-      : el("span.pendlbl", {}, ["pending"]);
-    return el(".frrow", {}, [
-      avatarWithPresence(u),
-      el(".info", {}, [el("b", {}, [u.name]), el("small", {}, [incoming ? "incoming friend request" : "outgoing request"])]),
-      acts,
-    ]);
-  }
-  async function answer(u, accept) {
-    try {
-      if (!isDemoQS()) await respondFriend(u.id, accept);
-      data.friends.incoming = data.friends.incoming.filter((x) => x.id !== u.id);
-      if (accept) data.friends.accepted.push(u);
-      paintTabs(); paint();
-      toast({ message: accept ? `You’re now friends with ${u.name}` : "Request declined" });
-    } catch (e) { toast({ message: e?.message || "Couldn’t respond" }); }
-  }
-  async function messageFriend(u) {
-    try {
-      const chId = isDemoQS() ? "dm-" + u.id : await createDM(u.handle);
-      friendsBtn.classList.remove("on");
-      showConvo(right, { id: chId || ("dm-" + u.id), name: u.name, members: [u], group: false });
-    } catch (e) { toast({ message: e?.message || "Couldn’t start the conversation" }); }
-  }
-
-  paint();
-  right.replaceChildren(el(".friends", {}, [
-    el(".frhd", {}, [iconEl("users"), el("span.t", {}, ["Friends"]), tabs]),
-    body,
-  ]));
 }
 
 function avatarWithPresence(u) {

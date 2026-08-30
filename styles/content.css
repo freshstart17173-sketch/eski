@@ -332,9 +332,10 @@
    between a conversation (P7.2) and the friends panel. No member hue (outside any server). */
 .screen[data-screen="dms"]{display:flex;flex:1;min-height:0;overflow:hidden}
 .dmlist{flex:none;width:var(--chan);background:var(--surface);display:flex;flex-direction:column;overflow:hidden}
-.dmlist .hd{height:48px;flex:none;display:flex;align-items:center;padding:0 var(--s3);background:var(--plate);font-weight:600;font-size:var(--fs-sm)}
+.dmlist .hd{height:46px;flex:none;display:flex;align-items:center;padding:0 var(--s4);background:var(--plate);font-weight:600;font-size:var(--fs-sm)}   /* P18: 46px */
 .dmadd{padding:var(--s3)}
 .dmrows{flex:1;overflow-y:auto;padding:0 var(--s2)}
+.dmrow .pendlbl{margin-left:auto;color:var(--muted);font-size:var(--fs-xs)}   /* P5: outgoing request label */
 .dmrow{display:flex;align-items:center;gap:var(--s2);padding:7px var(--s2);border-radius:var(--r);cursor:pointer;transition:background var(--t)}
 .dmrow:hover,.dmrow.on{background:var(--plate)}
 .dmrow .nm{font-size:var(--fs-sm);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -348,34 +349,13 @@
 .dmrow.group .gav .av:first-child{margin-left:0}
 .dmsec{padding:8px 14px 4px;color:var(--muted);font-size:var(--fs-xs);font-weight:600}
 .dmnone{padding:14px;color:var(--muted);font-size:var(--fs-sm)}
-.dmfriends{display:flex;align-items:center;gap:9px;width:calc(100% - 16px);margin:8px;padding:8px 10px;border-radius:var(--r);color:var(--soft);font-size:var(--fs-sm);font-weight:600;transition:background var(--t)}
-.dmfriends:hover,.dmfriends.on{background:var(--plate)}
-.dmfriends .ic{color:var(--muted)}
-.dmfriends .ct{margin-left:auto;background:var(--m1);color:#fff;border-radius:var(--r);font-size:10px;font-weight:700;min-width:16px;height:16px;display:grid;place-items:center;padding:0 4px}
 .dmright{flex:1;min-width:0;display:flex}
 .dmmain{flex:1;min-width:0;display:flex;flex-direction:column;background:var(--paper)}
 .dmmain .mainhd{flex:none;height:46px;display:flex;align-items:center;gap:var(--s3);padding:0 var(--s4);background:var(--surface)}   /* P18: unified header */
 .dmmain .mainhd .t{font-weight:600}.dmmain .mainhd .sub{color:var(--muted);font-size:var(--fs-sm)}
 /* P1: .emptystate now centers globally (shell.css) — the per-pane margin:auto patch is gone. */
-/* friends panel */
-.friends{flex:1;min-width:0;display:flex;flex-direction:column;background:var(--paper)}
-.friends .frhd{flex:none;height:52px;display:flex;align-items:center;gap:12px;padding:0 var(--s5);background:var(--surface)}
-.friends .frhd>.ic{color:var(--muted)}.friends .frhd .t{font-weight:600}
-.friends .frtabs{display:flex;gap:var(--s4);margin-left:8px}
-.friends .frtab{color:var(--soft);font-size:var(--fs-sm);padding-bottom:2px;cursor:pointer}
-.friends .frtab.on{color:var(--ink);font-weight:600;box-shadow:inset 0 -2px 0 var(--ink)}
-.friends .frtab .ct{margin-left:5px;background:var(--m1);color:#fff;border-radius:var(--r);font-size:10px;padding:1px 5px}
-.friends .frbody{flex:1;overflow-y:auto;padding:var(--s5)}
-.friends .fradd{display:flex;gap:8px;max-width:560px;margin-bottom:var(--s5)}
-.friends .fradd .field{flex:1}
-.friends .frsec{color:var(--muted);font-size:var(--fs-xs);font-weight:600;margin:var(--s4) 0 8px;text-transform:uppercase;letter-spacing:.07em}
-.friends .frrow{display:flex;align-items:center;gap:var(--s3);padding:10px 12px;border-radius:var(--r);max-width:660px}
-.friends .frrow:hover{background:var(--surface)}
-.friends .frrow .info{flex:1;min-width:0}
-.friends .frrow .info b{font-size:var(--fs-sm);font-weight:600}
-.friends .frrow .info small{display:block;color:var(--muted);font-size:var(--fs-xs)}
-.friends .frrow .fracts{display:flex;gap:6px}
-.friends .frrow .pendlbl{color:var(--muted);font-size:var(--fs-xs)}
+/* P5: the standalone Friends panel (.friends/.frhd/.frtabs/.frrow…) was removed — friends now
+   live inline in the .dmlist column. Its CSS is gone with it; .rbtn (accept/decline) stays. */
 .rbtn{width:26px;height:26px;display:grid;place-items:center;border-radius:var(--r);background:var(--surface);color:var(--soft);transition:background var(--t),color var(--t)}
 .rbtn:hover{background:var(--plate);color:var(--ink)}
 .rbtn.ok:hover{color:var(--m3)}.rbtn.no:hover{color:var(--m1)}

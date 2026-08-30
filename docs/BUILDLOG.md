@@ -2383,3 +2383,19 @@ NEXT: P12 (density: modals/dialogs/toasts — 3-version batch), then P15 (status
 GOTCHA Y: .chanhd is dead CSS (no app JS renders it) — the workspace channel-column header is .srvbar
   over a .srvcover banner (100px, gradient scrim), a deliberately distinct cover header, NOT part of
   the 46px flat-header unification. Don't "fix" .srvbar to 46px.
+
+## 2026-08-30 — P5 done — Friends folded into the Messages column (one surface)
+IN PROGRESS: (cleared)
+DONE: removed the .dmfriends button + showFriends() right-pane swap; friends now render inline in the
+  .dmlist column as sections: Requests (incoming accept/decline + outgoing pending) · Pinned · Direct
+  messages · Friends (accepted friends without an active 1:1 DM → click to message; no dup of open
+  DMs). Add-by-username at the top now wires to addFriend (fixed a dangling addByUsername ref that
+  would throw on use). Removed the dead Friends-panel CSS (.dmfriends/.friends/.frhd/.frtabs/.frrow…);
+  kept .rbtn. DM list header → 46px (P18). Files: app/screens/dms.js, styles/content.css. Verified:
+  all four sections render inline (no Friends button), friend-click opens a conversation, accept
+  runs, 0 pageerrors both themes. Committed 039236c. (gallery.html mirror skipped per owner.)
+NEXT: back to P12 (density: modals/dialogs/toasts — 3-version batch), then P15 (status→profile,
+  presence kept simple).
+GOTCHA Z: dms.js had a live latent bug — addByUsername() was called (list add field) but never
+  defined; now defined + wired to addFriend. Watch for other dangling refs when a screen is
+  refactored in halves.
