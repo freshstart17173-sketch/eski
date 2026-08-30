@@ -43,8 +43,12 @@ img{max-width:100%;height:auto}
 
 /* the eski! wordmark — one class everywhere it appears (sign-in, loading, feed,
    profile). Uses the Gnomon wordmark face (falls back to the body face until the
-   Gnomon subset is embedded). Always the text "eski!" to match the "e!" logo. */
-.wordmark{font-family:var(--font-wordmark);font-weight:700;letter-spacing:-.01em}
+   Gnomon subset is embedded). Always the text "eski!" to match the "e!" logo.
+   `.wm` (the header/card sized variant) and `.brand` (the shared-view header) render
+   the same wordmark, so they get the Gnomon face here too — the Feed's `.wm` used only
+   its size rule and was rendering in the body font (owner: "the main wordmark isn't gnomon"). */
+.wordmark,.wm,.brand{font-family:var(--font-wordmark)}
+.wordmark{font-weight:700;letter-spacing:-.01em}
 
 /* Loading: spell out "eski!" one character at a time on a ~2s loop. Each letter fades/rises
    in on a small stagger (--i), holds, then clears so the cycle repeats smoothly and cleanly. */

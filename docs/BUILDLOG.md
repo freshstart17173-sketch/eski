@@ -2619,3 +2619,12 @@ NEXT: owner review of the three densities (tweak sizes/columns if wanted). Remai
 GOTCHA: baseName is imported from cards.js (a missing import threw "baseName is not defined" the
   first run — caught in demo). List rows/small cells aren't .card, so anything keying off .card must
   use [data-id]/[data-folder-id] (done for selection/marquee/drag/empty-click).
+
+## 2026-08-30 — wordmark font fix (main "eski!" wasn't Gnomon)
+IN PROGRESS: (cleared)
+DONE: the Feed (home) pane header rendered its "eski!" wordmark with class `.wm` alone, which only
+  carried the size/weight rule — not the Gnomon face (sign-in/onboard use `.wm wordmark`, feed did
+  not). `.brand` (shared-view header) had the same gap. Made `.wm` and `.brand` use
+  var(--font-wordmark) alongside `.wordmark` in base.css, so every eski wordmark renders in Gnomon.
+  Verified: document.fonts shows Gnomon loaded, the feed `.wm` computes to "Gnomon, Jost, …", and it
+  renders in the display face; 0 pageerrors. Commit <sha>.
