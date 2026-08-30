@@ -2254,3 +2254,17 @@ NEXT: B13 (menu permission-gating, 3 versions), then the master-todo top items.
 GOTCHA R: this codebase deliberately does NOT embed author profiles via PostgREST (user_id columns
   point at auth.users, which has no FK to public.profiles) — every loader fetches profiles into a
   byId map by hand. Keep that pattern for any new read; an embed will silently return nothing.
+
+## 2026-08-30 — P2 settings perf (dedupe profiles + defer storage/privacy)
+IN PROGRESS: (cleared)
+DONE: loadRail now selects bio,banner_key and caches the raw profile row (_cache.rail.profile);
+  loadUserSettings reuses it — the second identical from("profiles") read is gone. Storage +
+  Privacy reads are deferred: loadUserSettings returns storage:null/blocked:null, and the two
+  panels lazy-load via new loadUserStorage()/loadUserBlocked() on open (result cached back onto
+  `data`). Profile panel (first render) no longer blocks on storage_meters/storage_balance/
+  friendships. Files: app/data.js, app/screens/usersettings.js. Verified: node --check clean;
+  demo /settings 0 pageerrors both themes; Storage + Privacy panels populate on click. Committed dcce6ca.
+NEXT: B4 (typed /create·/upload·/settings open their modal over the shell).
+GOTCHA S: the demo branch of loadUserSettings still returns storage/blocked INLINE (no session
+  for lazy loaders), so demo screenshots render immediately; only the live path defers. The panels
+  branch on `data.storage`/`data.blocked` being truthy → render now, else show Loading… + fetch.

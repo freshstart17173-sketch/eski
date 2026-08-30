@@ -8,7 +8,7 @@ import { el, toast, Avatar, SegmentedControl, UsageBar, Button } from "../ui.js"
 import { iconEl } from "../icons.js";
 import { navigate, reload } from "../router.js";
 import { signOut } from "../supabase.js";
-import { isDemo, unblockUser } from "../data.js";
+import { isDemo, unblockUser, loadUserStorage, loadUserBlocked } from "../data.js";
 import { avatarUrl } from "../cards.js";
 import { openStatus } from "../shell.js";
 import { openEditProfile } from "./profile.js";
@@ -125,41 +125,53 @@ function notificationsPanel() {
   ]);
 }
 
+// P2: the blocked list is lazy-loaded (data.blocked is null until this panel opens). Render the
+// card immediately with a loading line, then fill it — and cache the result back onto `data` so
+// re-opening the panel doesn't refetch.
 function privacyPanel(data) {
-  const wrap = el("div", {}, [head("Privacy & safety", "People you've blocked.")]);
   const list = el(".setcard");
-  const blocked = data.blocked || [];
-  if (!blocked.length) list.append(el("p", { style: "color:var(--muted);font-size:var(--fs-sm);margin:0" }, ["You haven't blocked anyone."]));
-  else for (const u of blocked) {
-    const row = el(".blockrow", { style: "display:flex;align-items:center;gap:10px;padding:6px 0" });
-    const un = Button({ label: "Unblock", size: "sm" });
-    un.addEventListener("click", async () => {
-      un.disabled = true;
-      try { if (!isDemo()) await unblockUser(u.id); row.remove(); toast({ message: `Unblocked ${u.name}` }); if (!list.querySelector(".blockrow")) list.append(el("p", { style: "color:var(--muted);font-size:var(--fs-sm);margin:0" }, ["You haven't blocked anyone."])); }
-      catch (e) { un.disabled = false; toast({ message: e?.message || "Couldn’t unblock" }); }
-    });
-    row.append(Avatar({ name: u.initials, size: "sm", src: avatarUrl(u.avatar_key) }), el("div", { style: "flex:1" }, [el("b", {}, [u.name]), el("span", { style: "color:var(--muted);margin-left:6px;font-size:var(--fs-xs)" }, ["@" + u.handle])]), un);
-    list.append(row);
-  }
-  wrap.append(list);
+  const wrap = el("div", {}, [head("Privacy & safety", "People you've blocked."), list]);
+  const paint = (blocked) => {
+    list.replaceChildren();
+    if (!blocked.length) { list.append(el("p", { style: "color:var(--muted);font-size:var(--fs-sm);margin:0" }, ["You haven't blocked anyone."])); return; }
+    for (const u of blocked) {
+      const row = el(".blockrow", { style: "display:flex;align-items:center;gap:10px;padding:6px 0" });
+      const un = Button({ label: "Unblock", size: "sm" });
+      un.addEventListener("click", async () => {
+        un.disabled = true;
+        try { if (!isDemo()) await unblockUser(u.id); row.remove(); data.blocked = (data.blocked || []).filter((b) => b.id !== u.id); toast({ message: `Unblocked ${u.name}` }); if (!list.querySelector(".blockrow")) list.append(el("p", { style: "color:var(--muted);font-size:var(--fs-sm);margin:0" }, ["You haven't blocked anyone."])); }
+        catch (e) { un.disabled = false; toast({ message: e?.message || "Couldn’t unblock" }); }
+      });
+      row.append(Avatar({ name: u.initials, size: "sm", src: avatarUrl(u.avatar_key) }), el("div", { style: "flex:1" }, [el("b", {}, [u.name]), el("span", { style: "color:var(--muted);margin-left:6px;font-size:var(--fs-xs)" }, ["@" + u.handle])]), un);
+      list.append(row);
+    }
+  };
+  if (data.blocked) paint(data.blocked);
+  else { list.append(el("p", { style: "color:var(--muted);font-size:var(--fs-sm);margin:0" }, ["Loading…"])); loadUserBlocked().then((b) => { data.blocked = b; paint(b); }).catch(() => paint([])); }
   return wrap;
 }
 
+// P2: storage figures are lazy-loaded (data.storage is null until this panel opens). Same
+// pattern — render the card immediately, then fill the numbers.
 function storagePanel(data) {
-  const s = data.storage || { usedBytes: 0, capBytes: 10 * 1024 ** 3, capGb: 10 };
-  const pct = s.capBytes ? Math.min(100, (s.usedBytes / s.capBytes) * 100) : 0;
+  const card = el(".setcard");
+  const wrap = el("div", {}, [head("Storage", "Your personal files (public + private)."), card]);
   const gb = (b) => (b / 1024 ** 3).toFixed(b < 1024 ** 3 ? 2 : 1);
-  return el("div", {}, [
-    head("Storage", "Your personal files (public + private)."),
-    el(".setcard", {}, [
+  const paint = (s) => {
+    const pct = s.capBytes ? Math.min(100, (s.usedBytes / s.capBytes) * 100) : 0;
+    card.replaceChildren(
       el("div", { style: "display:flex;justify-content:space-between;font-size:var(--fs-sm);margin-bottom:6px" }, [
         el("b", {}, [`${gb(s.usedBytes)} GB used`]), el("span", { style: "color:var(--muted)" }, [`of ${s.capGb} GB`]),
       ]),
       UsageBar({ pct, tone: pct > 90 ? "warn" : "" }),
       el("p", { style: "color:var(--muted);font-size:var(--fs-xs);margin-top:10px" }, ["Buying more storage arrives with billing. Server files draw the server's storage, not yours."]),
-    ]),
-  ]);
+    );
+  };
+  if (data.storage) paint(data.storage);
+  else { card.append(el("p", { style: "color:var(--muted);font-size:var(--fs-sm);margin:0" }, ["Loading…"])); loadUserStorage().then((s) => { data.storage = s; paint(s); }).catch(() => paint({ usedBytes: 0, capBytes: USER_GB, capGb: 0 })); }
+  return wrap;
 }
+const USER_GB = 1024 ** 3;
 
 const PANEL_FNS = {
   profile: profilePanel, account: accountPanel, appearance: appearancePanel,

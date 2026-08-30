@@ -506,12 +506,17 @@ per channel, builds on P11), D6 (review canvas/kanban/versions).
       *Files:* `styles/*` (the `.emptystate` and equivalents), audit each pane that renders one.
       *Easy.* *Test:* demo screenshot each empty surface (empty channel, empty explorer, empty DM,
       no-friends) in both themes; assert the text block is centered in its pane and legible.
-- [ ] **P2 · Perf: dedupe `profiles` + defer settings reads.** `loadUserSettings` re-fetches what
-      `loadRail` already has — reuse it; defer Storage/Privacy reads until their panel opens (the
-      Profile panel shouldn't wait ~700ms on `storage_meters`/`storage_balance`/`friendships`).
-      *Files:* `app/data.js`, `app/screens/usersettings.js`. *Easy-medium.* *Test:* static — assert
-      the settings render path makes no duplicate `from("profiles")` call and no storage/friend
-      fetch before its panel opens (grep + trace); demo — settings still renders.
+- [x] **P2 · Perf: dedupe `profiles` + defer settings reads.** *Done (static + demo-verified).*
+      `loadRail` now also selects `bio,banner_key` and caches the raw profile row (`_cache.rail.profile`);
+      `loadUserSettings` reuses it instead of firing a second identical `from("profiles")` read.
+      Storage + Privacy are no longer fetched on settings load — `loadUserSettings` returns
+      `storage:null`/`blocked:null` and the Storage/Privacy panels lazy-load (new `loadUserStorage`
+      / `loadUserBlocked`) when opened, caching the result back onto `data` so re-open doesn't
+      refetch. Net: the Profile panel (first render) no longer waits on `storage_meters`/
+      `storage_balance`/`friendships`, and the duplicate profile read is gone. *Files:* `app/data.js`
+      (`loadRail`, `loadUserSettings`, `loadUserStorage`, `loadUserBlocked`), `app/screens/usersettings.js`
+      (privacy/storage panels lazy). Verified: no `from("profiles")` in the settings render path;
+      demo /settings renders + Storage/Privacy panels populate on click, 0 pageerrors both themes.
 - [ ] **P3 · Loading animations for every async action.** File upload (has text progress only),
       **folder upload**, **changing pfp**, **server icon/banner upload** — add one shared busy
       affordance (a button-spinner + a light overlay) and apply it at every async call site.

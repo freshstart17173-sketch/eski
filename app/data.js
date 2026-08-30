@@ -66,7 +66,10 @@ async function loadRail(user) {
   if (_cache.rail) return _cache.rail;
   const [{ data: myServers }, { data: myProfile }] = await Promise.all([
     supabase.from("server_members").select("color, server:servers(id,name,owner_id,icon_key,cover_key)").eq("user_id", user.id),
-    supabase.from("profiles").select("handle,name,avatar_key,status_emoji,status_text,presence_state").eq("id", user.id).maybeSingle(),
+    // Also pull bio + banner_key here so loadUserSettings can reuse this cached row instead of
+    // firing a second identical `profiles` read (P2 — the settings Profile panel was re-fetching
+    // what the rail already had). The extra two columns are free on a row we already select.
+    supabase.from("profiles").select("handle,name,avatar_key,banner_key,bio,status_emoji,status_text,presence_state").eq("id", user.id).maybeSingle(),
   ]);
   const rows = myServers || [];
   const servers = rows.filter((r) => r.server).map((r) => ({ id: r.server.id, name: r.server.name, initials: initials(r.server.name), icon_key: r.server.icon_key || null }));
@@ -76,7 +79,7 @@ async function loadRail(user) {
   // profile/handle exists yet (fresh account before onboarding). See meFor().
   // `hasProfile` gates onboarding: a fresh account has no profiles row (no signup trigger),
   // so the app must send it through create-profile before it can be linked to.
-  _cache.rail = { myServers: rows, servers, me: meFor(user, myProfile), hasProfile: !!(myProfile && myProfile.handle) };
+  _cache.rail = { myServers: rows, servers, me: meFor(user, myProfile), profile: myProfile || null, hasProfile: !!(myProfile && myProfile.handle) };
   return _cache.rail;
 }
 
@@ -1058,28 +1061,41 @@ export async function loadUserSettings() {
     const dm = { id: "me", name: "jax", handle: "jax", initials: "JX", avatar_key: null, colorIdx: 5 };
     return { needsAuth: !isDemo(), servers: [], me: dm, email: "jax@demo.eski", profile: { handle: "jax", name: "jax", avatar_key: null, status_emoji: "🎧", status_text: "cooking beats", presence_state: "online" }, blocked: [], storage: { usedBytes: 2.1 * GB, capGb: USER_BASE_GB, capBytes: USER_BASE_GB * GB, status: "active" } };
   }
-  const { servers, me } = await loadRail(user);
-  const [{ data: prof }, { data: meterRows }, { data: balRows }, { data: blockRows }] = await Promise.all([
-    supabase.from("profiles").select("handle,name,bio,avatar_key,banner_key,status_emoji,status_text,presence_state").eq("id", user.id).maybeSingle(),
-    supabase.from("storage_meters").select("bytes_used").eq("owner_type", "user").eq("owner_id", user.id).maybeSingle(),
-    supabase.from("storage_balance").select("purchased_gb,status").eq("owner_type", "user").eq("owner_id", user.id).maybeSingle(),
-    supabase.from("friendships").select("a_user,b_user,requested_by").eq("status", "blocked").or(`a_user.eq.${user.id},b_user.eq.${user.id}`),
-  ]);
-  // resolve the blocked users' profiles (the "other" end of each blocked edge)
-  const otherIds = (blockRows || []).map((f) => (f.a_user === user.id ? f.b_user : f.a_user));
-  let blocked = [];
-  if (otherIds.length) {
-    const { data: bp } = await supabase.from("profiles").select("id,handle,name,avatar_key").in("id", otherIds);
-    blocked = (bp || []).map((p) => ({ id: p.id, name: p.name || p.handle, handle: p.handle, avatar_key: p.avatar_key || null, initials: initials(p.name || p.handle) }));
-  }
-  const capGb = USER_BASE_GB + Number(balRows?.purchased_gb || 0);
+  // P2: reuse the profile row loadRail already fetched (it now carries bio + banner_key) instead
+  // of a second identical `profiles` read; and DON'T fetch storage/blocked here — the Profile
+  // panel is what renders first, and it shouldn't wait on storage_meters/storage_balance/
+  // friendships. Those are lazy-loaded by their own panels (loadUserStorage / loadUserBlocked).
+  const { servers, me, profile: prof } = await loadRail(user);
   return {
     needsAuth: false, servers, me,
     email: user.email || "",
     profile: { handle: prof?.handle || me.handle, name: prof?.name || me.name, bio: prof?.bio || "", avatar_key: prof?.avatar_key || null, banner_key: prof?.banner_key || null, initials: me.initials, status_emoji: prof?.status_emoji || "", status_text: prof?.status_text || "", presence_state: prof?.presence_state || "online" },
-    blocked,
-    storage: { usedBytes: Number(meterRows?.bytes_used || 0), capGb, capBytes: capGb * GB, status: balRows?.status || "active" },
+    blocked: null,   // lazy — loadUserBlocked() on the Privacy panel
+    storage: null,   // lazy — loadUserStorage() on the Storage panel
   };
+}
+
+// P2: the Storage panel's data, fetched only when that panel opens (not on every settings load).
+export async function loadUserStorage() {
+  const user = session();
+  if (!user || isDemo()) return { usedBytes: 2.1 * GB, capGb: USER_BASE_GB, capBytes: USER_BASE_GB * GB, status: "active" };
+  const [{ data: meterRows }, { data: balRows }] = await Promise.all([
+    supabase.from("storage_meters").select("bytes_used").eq("owner_type", "user").eq("owner_id", user.id).maybeSingle(),
+    supabase.from("storage_balance").select("purchased_gb,status").eq("owner_type", "user").eq("owner_id", user.id).maybeSingle(),
+  ]);
+  const capGb = USER_BASE_GB + Number(balRows?.purchased_gb || 0);
+  return { usedBytes: Number(meterRows?.bytes_used || 0), capGb, capBytes: capGb * GB, status: balRows?.status || "active" };
+}
+
+// P2: the Privacy panel's blocked list, fetched only when that panel opens.
+export async function loadUserBlocked() {
+  const user = session();
+  if (!user || isDemo()) return [];
+  const { data: blockRows } = await supabase.from("friendships").select("a_user,b_user,requested_by").eq("status", "blocked").or(`a_user.eq.${user.id},b_user.eq.${user.id}`);
+  const otherIds = (blockRows || []).map((f) => (f.a_user === user.id ? f.b_user : f.a_user));
+  if (!otherIds.length) return [];
+  const { data: bp } = await supabase.from("profiles").select("id,handle,name,avatar_key").in("id", otherIds);
+  return (bp || []).map((p) => ({ id: p.id, name: p.name || p.handle, handle: p.handle, avatar_key: p.avatar_key || null, initials: initials(p.name || p.handle) }));
 }
 
 // Edit a server's identity (name + icon_key + cover_key) — a `servers` update fenced by
