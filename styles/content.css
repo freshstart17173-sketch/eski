@@ -9,8 +9,23 @@
 /* drop area — real dropzone (click to pick, drag to drop); once files are chosen
    it collapses to the compact "name · N files" summary the gallery shows. */
 .dropzone{background:var(--surface);border:1px dashed var(--line2);border-radius:var(--r);padding:16px 14px;text-align:center;font-size:var(--fs-sm);color:var(--muted);cursor:pointer;transition:border-color var(--t),background var(--t)}   /* P12: 22→16 vertical */
-.dropzone:hover,.dropzone.over{border-color:var(--ink);background:var(--plate)}
+.dropzone:hover,.dropwrap.over .dropzone{border-color:var(--ink);background:var(--plate)}
 .dropzone .ic{width:22px;height:22px;color:var(--soft);margin-bottom:6px}
+/* the whole dropwrap accepts a drop (so it registers before AND after files are chosen); it
+   flashes a ring while a drag is over it */
+.dropwrap{border-radius:var(--r)}
+.dropwrap.over .dropchosen{outline:1px dashed var(--ink);outline-offset:2px}
+/* chosen-files state (renderChosen) — a header row + a scrollable file list + flatten toggle */
+.dropchosen{background:var(--surface);border-radius:var(--r);padding:12px 14px;display:flex;flex-direction:column;gap:8px}
+.chosenhd{display:flex;align-items:center;gap:8px;font-size:var(--fs-sm);color:var(--soft)}
+.chosenhd b{color:var(--ink);font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chosenhd .ic{color:var(--muted);flex:none}
+.chosenlist{max-height:168px;overflow-y:auto;display:flex;flex-direction:column;gap:2px}
+.chosenrow{display:flex;align-items:baseline;gap:10px;font-size:var(--fs-xs);color:var(--soft);padding:3px 0}
+.chosenrow .cn{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chosenrow .cs{flex:none;color:var(--muted);font-variant-numeric:tabular-nums}
+.chosenmore{font-size:var(--fs-mi);color:var(--muted);padding-top:2px}
+.dropchosen .flatten{display:flex;align-items:center;gap:8px;font-size:var(--fs-xs);color:var(--soft);cursor:pointer;margin-top:2px}
 .dropsummary{background:var(--surface);border-radius:var(--r);padding:14px;font-size:12px;color:var(--muted);text-align:center}
 .dropsummary b{color:var(--soft);font-weight:600}
 /* "Add details" disclosure — fast post keeps it collapsed */

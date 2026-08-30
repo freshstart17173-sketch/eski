@@ -138,6 +138,14 @@ export async function openUpload(opts = {}) {
   // and show only the server/folder target. Only a personal/global upload surfaces Visibility.
   const serverContext = !!opts.serverId;
   const collabs = [];   // {handle, role}
+  // Closure state declared UP HERE (was below the seed call → a TDZ ReferenceError swallowed the
+  // pre-loaded drag-drop seed, leaving the sheet blank). folderMode/flatten drive the folder UI;
+  // uploading/prog let a modal-exit during an in-flight upload float the progress chip instead of
+  // dropping it.
+  let folderMode = false;
+  let flatten = false;   // folder drop, but "expose every file for tagging" → upload flat, shared tags
+  let uploading = false;
+  let prog = null;
 
   // the servers this user can post into (for the Server picker)
   const { data: sm } = await supabase.from("server_members").select("server:servers(id,name)").eq("user_id", me.id);
@@ -163,14 +171,23 @@ export async function openUpload(opts = {}) {
   const dropAlt = el(".dropalt", { style: "text-align:center;font-size:var(--fs-xs);color:var(--muted);margin-top:6px" }, [
     "or ", el("button.aslink", { type: "button", style: "color:var(--soft);font-weight:600", onClick: () => folderPicker.click() }, ["upload a folder"]),
   ]);
-  const dropWrap = el("div", {}, [drop, dropAlt, picker, folderPicker]);
+  // A persistent host for the "files chosen" summary — rendered by renderChosen(), so the swap is
+  // idempotent and never depends on whether `drop` is still in the DOM (the old in-place replace
+  // broke on the 2nd pick / a pre-seeded open). drop + dropAlt hide once files are chosen.
+  const summaryHost = el(".dropchosen", { hidden: true });
+  const dropWrap = el(".dropwrap", {}, [drop, dropAlt, summaryHost, picker, folderPicker]);
   drop.addEventListener("click", () => picker.click());
   picker.addEventListener("change", () => addFiles([...picker.files], false));
   folderPicker.addEventListener("change", () => addFiles([...folderPicker.files], true));
-  drop.addEventListener("dragover", (e) => { e.preventDefault(); drop.classList.add("over"); });
-  drop.addEventListener("dragleave", () => drop.classList.remove("over"));
-  drop.addEventListener("drop", async (e) => {
-    e.preventDefault(); drop.classList.remove("over");
+  // DnD lives on the whole dropWrap (not the `drop` box, which hides once files are chosen) so a
+  // drop registers before AND after a selection, and a folder/file dropped onto the explorer that
+  // pre-seeds this sheet works too. Counter guards nested dragenter/leave flicker.
+  let dragDepth = 0;
+  dropWrap.addEventListener("dragenter", (e) => { e.preventDefault(); dragDepth++; dropWrap.classList.add("over"); });
+  dropWrap.addEventListener("dragover", (e) => { e.preventDefault(); });
+  dropWrap.addEventListener("dragleave", () => { if (--dragDepth <= 0) { dragDepth = 0; dropWrap.classList.remove("over"); } });
+  dropWrap.addEventListener("drop", async (e) => {
+    e.preventDefault(); dragDepth = 0; dropWrap.classList.remove("over");
     const { files, hadDir } = await readDropEntries(e.dataTransfer);   // folders too, structure kept
     addFiles(files, hadDir);
   });
@@ -228,7 +245,11 @@ export async function openUpload(opts = {}) {
   // ── footer ──────────────────────────────────────────────────────────────
   const cancel = Button({ label: "Cancel", variant: "ghost" });
   const post = Button({ label: "Upload", variant: "primary", disabled: true });
-  const { close } = openModal({ title: "Upload", size: "wide", body, footer: [cancel, post] });
+  const { close } = openModal({ title: "Upload", size: "wide", body, footer: [cancel, post],
+    // Closing the sheet (scrim / ✕ / Cancel) while an upload is in flight must NOT drop it —
+    // float the progress chip so it finishes in the background (owner call 2026-08-30).
+    onClose: () => { if (uploading && prog) prog.minimize(); },
+  });
   cancel.addEventListener("click", () => close());
   post.addEventListener("click", doPost);
   syncVis();
@@ -236,8 +257,6 @@ export async function openUpload(opts = {}) {
   if (opts.files?.length) addFiles([...opts.files], !!opts.folderMode);
 
   // ── helpers ───────────────────────────────────────────────────────────────
-  let folderMode = false;
-  let flatten = false;   // folder drop, but "expose every file for tagging" → upload flat, shared tags
   function addFiles(list, asFolder) {
     // Every file type is accepted — no allowlist. A folder that mixes stems, a DAW project, and a
     // README uploads whole; unknown types just get the 'other' download card. (A 0-byte file is the
@@ -247,35 +266,38 @@ export async function openUpload(opts = {}) {
     folderMode = !!asFolder && files.some((f) => relPathOf(f));
     if (rejected.length) toast({ message: `Skipped ${rejected.length} empty file${rejected.length > 1 ? "s" : ""}` });
     if (files.length) {
-      let summary;
-      if (folderMode) {
-        const top = (relPathOf(files.find((f) => relPathOf(f))) || "").split("/")[0] || "folder";
-        const subs = new Set(files.map((f) => relPathOf(f).split("/").slice(1, -1).join("/")).filter(Boolean));
-        const head = el(".dropsummary", { style: "cursor:pointer" }, [iconEl("folder", "sm"), el("b", {}, [top]),
-          ` · ${files.length} file${files.length > 1 ? "s" : ""}${subs.size ? ` in ${subs.size + 1} folders` : ""}`]);
-        head.title = "Choose a different folder";
-        head.addEventListener("click", () => folderPicker.click());
-        // Flatten: drop the folder tree, upload every file loose so the shared Tags field applies to
-        // all of them (the ask: "expose all the files for tagging"). A structured upload skips Tags.
-        const flat = el("input", { type: "checkbox" }); flat.checked = flatten;
-        const flatRow = el("label.flatten", { style: "display:flex;align-items:center;gap:8px;font-size:var(--fs-xs);color:var(--soft);margin-top:8px;cursor:pointer" },
-          [flat, "Flatten folders — expose every file for tagging"]);
-        flat.addEventListener("change", () => { flatten = flat.checked; syncVis(); });
-        summary = el(".usummary", {}, [head, flatRow]);
-      } else {
-        summary = el(".usummary.dropsummary", { style: "cursor:pointer" }, [el("b", {}, [files[0].name]), files.length > 1 ? ` · ${files.length} files` : ""]);
-        summary.title = "Choose different files";
-        summary.addEventListener("click", () => picker.click());
-      }
-      // Rebuild the dropzone → summary swap idempotently (a re-pick replaces the prior summary).
-      dropWrap.querySelector(".usummary")?.remove();
-      if (drop.parentNode) drop.replaceWith(summary); else dropAlt.before(summary);
-      dropAlt.hidden = true;
-      drop.classList.remove("over");
+      renderChosen();
       titleInput.placeholder = files[0].name;
     }
     syncVis();
   }
+  // Render the "files chosen" state into summaryHost (hides the empty dropzone). A file list + a
+  // Change link + (for a folder) the Flatten toggle. Idempotent — rebuilt on every add.
+  function renderChosen() {
+    summaryHost.replaceChildren();
+    if (!files.length) { summaryHost.hidden = true; drop.hidden = false; dropAlt.hidden = false; return; }
+    drop.hidden = true; dropAlt.hidden = true; summaryHost.hidden = false;
+    let title;
+    if (folderMode) {
+      const top = (relPathOf(files.find((f) => relPathOf(f))) || "").split("/")[0] || "folder";
+      const subs = new Set(files.map((f) => relPathOf(f).split("/").slice(1, -1).join("/")).filter(Boolean));
+      title = `${top} · ${files.length} file${files.length > 1 ? "s" : ""}${subs.size ? ` in ${subs.size + 1} folders` : ""}`;
+    } else title = files.length > 1 ? `${files.length} files` : files[0].name;
+    const change = el("button.aslink", { type: "button", title: "Choose different files", style: "margin-left:auto;color:var(--soft);font-weight:600" }, ["Change"]);
+    change.addEventListener("click", () => (folderMode ? folderPicker : picker).click());
+    summaryHost.append(el(".chosenhd", {}, [iconEl(folderMode ? "folder" : "clip", "sm"), el("b", {}, [title]), change]));
+    // file list (cap the DOM for a huge folder; note the remainder)
+    const list = el(".chosenlist");
+    for (const f of files.slice(0, 60)) list.append(el(".chosenrow", {}, [el("span.cn", {}, [relPathOf(f) || f.name]), el("span.cs", {}, [fmtSize(f.size)])]));
+    if (files.length > 60) list.append(el(".chosenmore", {}, [`+ ${files.length - 60} more`]));
+    summaryHost.append(list);
+    if (folderMode) {
+      const flat = el("input", { type: "checkbox" }); flat.checked = flatten;
+      flat.addEventListener("change", () => { flatten = flat.checked; syncVis(); });
+      summaryHost.append(el("label.flatten", {}, [flat, "Flatten folders — expose every file for tagging"]));
+    }
+  }
+  function fmtSize(b) { return b >= 1e9 ? (b / 1e9).toFixed(1) + " GB" : b >= 1e6 ? (b / 1e6).toFixed(1) + " MB" : b >= 1e3 ? Math.round(b / 1e3) + " KB" : b + " B"; }
   async function loadFolders() { /* prime cache; menu loads on open */ }
   async function serverFolders(sid) {
     if (!sid) return [];
@@ -294,17 +316,16 @@ export async function openUpload(opts = {}) {
 
   async function doPost() {
     post.disabled = true;
-    // P16: a real progress bar (byte-accurate on the R2 PUT) + a Drive-style minimize that
-    // floats a chip and closes the sheet so you can keep working while the upload finishes.
-    const prog = uploadProgress({
-      title: files.length > 1 ? `Uploading ${files.length} files` : "Uploading",
-      onMinimize: () => close(),
-    });
+    uploading = true;
+    // P16: a real progress bar (byte-accurate on the R2 PUT). No stage-text tips, no minimize
+    // button — clicking off the sheet floats the chip (the modal onClose) and the upload finishes
+    // in the background. `prog` is the closure-level ref so onClose can float it.
+    prog = uploadProgress({ title: files.length > 1 ? `Uploading ${files.length} files` : "Uploading" });
     body.append(prog.node);
     try {
-      prog.indeterminate("Hashing…");
+      prog.indeterminate();
       const hashed = await Promise.all(files.map(async (f) => ({ file: f, hash: await sha256Hex(f), ext: extOf(f.name) })));
-      prog.set(0.15, "Getting upload URLs…");
+      prog.set(0.15);
       const token = rawSession()?.access_token;
       const signRes = await fetch("/api/sign", {
         method: "POST",
@@ -315,14 +336,14 @@ export async function openUpload(opts = {}) {
       if (!signRes.ok) throw new Error(signJson.error || `signer said ${signRes.status}`);
 
       // Real transfer progress: aggregate bytes across every file → the 20–80% band of the bar.
-      prog.set(0.20, "Uploading…");
+      prog.set(0.20);
       const totalBytes = hashed.reduce((s, h) => s + (h.file.size || 0), 0) || 1;
       const sent = new Array(hashed.length).fill(0);
       await Promise.all(hashed.map((h, i) => putWithProgress(signJson.files[i].url, h.file, {
         headers: { "content-type": h.file.type || "application/octet-stream" },
-        onProgress: (loaded) => { sent[i] = loaded; prog.set(0.20 + 0.60 * (sent.reduce((a, b) => a + b, 0) / totalBytes), "Uploading…"); },
+        onProgress: (loaded) => { sent[i] = loaded; prog.set(0.20 + 0.60 * (sent.reduce((a, b) => a + b, 0) / totalBytes)); },
       })));
-      prog.set(0.80, "Uploading…");
+      prog.set(0.80);
 
       const onServer = visibility === "server";
       // "structured" = keep the dropped/picked tree. Flatten turns a folder upload into a flat one:
@@ -333,7 +354,7 @@ export async function openUpload(opts = {}) {
       // at the My-files root. A loose (non-folder / flattened) upload keeps the single chosen folderId.
       let folderMap = null;
       if (structured) {
-        prog.set(0.82, "Creating folders…");
+        prog.set(0.82);
         folderMap = await buildFolderTree(files, {
           source: onServer ? "server" : "personal",
           serverId: onServer ? serverId : null,
@@ -349,7 +370,7 @@ export async function openUpload(opts = {}) {
       // re-checks the fence itself (author = caller; server needs membership + the 'upload' perm),
       // so nothing is loosened. A structured folder upload skips the single Tags/Collaborators
       // fields (they belong to a loose post); a flattened one shares the Tags across every file.
-      prog.set(0.88, "Saving…");
+      prog.set(0.88);
       const title = titleInput.value.trim();
       const tags = tagsEd.getTags();
       let saved = 0;
@@ -374,14 +395,16 @@ export async function openUpload(opts = {}) {
         // Collaborators still only make sense on a single loose post.
         if (!structured && files.length === 1)
           for (const c of collabs) await supabase.rpc("add_collaborator", { work_id: workId, handle: c.handle, role: c.role });
-        prog.set(0.88 + 0.12 * (++saved / hashed.length), "Saving…");
+        prog.set(0.88 + 0.12 * (++saved / hashed.length));
       }
-      prog.done(files.length > 1 ? `Uploaded ${files.length} files` : "Uploaded");
+      uploading = false;
+      prog.done();
       toast({ message: files.length > 1 ? `Uploaded ${files.length} files` : "Posted", icon: "check" });
-      if (!prog.minimized()) close();   // if minimized the sheet's already gone; the chip shows "complete"
+      if (!prog.minimized()) close();   // if it was minimized the sheet's already gone; the chip shows "complete"
       opts.onDone && opts.onDone();
     } catch (e) {
-      prog.fail("Upload failed — " + (e.message || e));
+      uploading = false;
+      prog.fail();
       post.disabled = false;
       // Log the full error so a devtools peek shows the stage + code even after the toast fades.
       console.error("[eski upload] failed:", e);

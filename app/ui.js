@@ -301,18 +301,19 @@ export async function withBusy(btn, fn) {
 //   .minimized()     — whether it's been floated
 // onMinimize is called once when the user minimizes, so the caller can close the host modal;
 // the upload itself is unaffected because the controller owns its own DOM + state.
-export function uploadProgress({ title = "Uploading", onMinimize } = {}) {
-  let frac = 0, label = "Preparing…", state = "run", indet = true;
+export function uploadProgress({ title = "Uploading" } = {}) {
+  let frac = 0, state = "run", indet = true;
   const fillOf = (root) => root.querySelector(".uplfill");
-  const mini = el("button.iconbtn", { title: "Minimize — keep uploading in the background", "aria-label": "Minimize upload" }, [iconEl("chev", "sm")]);
-  mini.querySelector(".ic").style.transform = "rotate(-90deg)";   // point down = tuck away
   const pct = el("span.uplpct", {}, ["0%"]);
-  const lbl = el(".upllabel", {}, [label]);
+  // No minimize button and no text stage tips (owner call 2026-08-30) — just the title, the
+  // animated bar, and %. Minimizing happens by clicking OFF the modal (the host floats the chip
+  // via minimize() in its onClose), so the upload keeps running in the background.
   const node = el(".uplwidget", {}, [
-    el(".uplhd", {}, [el("b", {}, [title]), pct, mini]),
+    el(".uplhd", {}, [el("b", {}, [title]), pct]),
     el(".uplbar", {}, [el(".uplfill")]),
-    lbl,
   ]);
+  // state word for the chip only (a status, not a per-stage tip)
+  const word = () => state === "done" ? "Upload complete" : state === "fail" ? "Upload failed" : title;
   let chip = null;
   function paint() {
     const p = Math.round(frac * 100);
@@ -321,36 +322,35 @@ export function uploadProgress({ title = "Uploading", onMinimize } = {}) {
     node.classList.toggle("done", state === "done");
     node.classList.toggle("fail", state === "fail");
     fillOf(node).style.width = indet && state === "run" ? "" : p + "%";
-    lbl.textContent = label;
     if (chip) {
       chip.classList.toggle("indet", indet && state === "run");
       chip.classList.toggle("done", state === "done");
       chip.classList.toggle("fail", state === "fail");
       fillOf(chip).style.width = indet && state === "run" ? "" : p + "%";
-      chip.querySelector(".uplchip-lbl").textContent = state === "done" ? "Upload complete" : state === "fail" ? "Upload failed" : label;
+      chip.querySelector(".uplchip-lbl").textContent = word();
       chip.querySelector(".uplchip-pct").textContent = state === "run" && !indet ? p + "%" : "";
     }
   }
+  // Float the compact chip bottom-right (idempotent). Does NOT close any host modal — the caller
+  // decides that (the minimize button also closes; an auto-float on modal-exit does not re-close).
   function minimize() {
     if (chip) return;
     const cx = el("button.iconbtn", { title: "Dismiss", "aria-label": "Dismiss" }, [iconEl("x", "sm")]);
     cx.addEventListener("click", () => chip?.remove());
     chip = el(".uplchip", {}, [
-      el(".uplchip-top", {}, [el("span.uplchip-lbl", {}, [label]), el("span.uplchip-pct", {}, [Math.round(frac * 100) + "%"]), cx]),
+      el(".uplchip-top", {}, [el("span.uplchip-lbl", {}, [word()]), el("span.uplchip-pct", {}, [Math.round(frac * 100) + "%"]), cx]),
       el(".uplbar", {}, [el(".uplfill")]),
     ]);
     document.body.appendChild(chip);
     paint();
-    onMinimize && onMinimize();
   }
-  mini.addEventListener("click", minimize);
   paint();
   return {
     node,
-    set(f, l) { indet = false; frac = Math.max(frac, Math.min(1, f)); if (l != null) label = l; paint(); },
-    indeterminate(l) { indet = true; if (l != null) label = l; paint(); },
-    done(l = "Done") { state = "done"; indet = false; frac = 1; label = l; paint(); if (chip) setTimeout(() => chip.remove(), 2600); },
-    fail(l = "Upload failed") { state = "fail"; indet = false; label = l; paint(); if (chip) setTimeout(() => chip.remove(), 6000); },
+    set(f) { indet = false; frac = Math.max(frac, Math.min(1, f)); paint(); },
+    indeterminate() { indet = true; paint(); },
+    done() { state = "done"; indet = false; frac = 1; paint(); if (chip) setTimeout(() => chip.remove(), 2600); },
+    fail() { state = "fail"; indet = false; paint(); if (chip) setTimeout(() => chip.remove(), 6000); },
     minimize,
     minimized: () => !!chip,
   };
