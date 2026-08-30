@@ -277,6 +277,8 @@ export async function openUpload(opts = {}) {
     summaryHost.replaceChildren();
     if (!files.length) { summaryHost.hidden = true; drop.hidden = false; dropAlt.hidden = false; return; }
     drop.hidden = true; dropAlt.hidden = true; summaryHost.hidden = false;
+    // P25: the combined size of everything (owner: "show the total size of uploads, not per-file")
+    const total = fmtSize(files.reduce((s, f) => s + (f.size || 0), 0));
     let title;
     if (folderMode) {
       const top = (relPathOf(files.find((f) => relPathOf(f))) || "").split("/")[0] || "folder";
@@ -285,7 +287,7 @@ export async function openUpload(opts = {}) {
     } else title = files.length > 1 ? `${files.length} files` : files[0].name;
     const change = el("button.aslink", { type: "button", title: "Choose different files", style: "margin-left:auto;color:var(--soft);font-weight:600" }, ["Change"]);
     change.addEventListener("click", () => (folderMode ? folderPicker : picker).click());
-    summaryHost.append(el(".chosenhd", {}, [iconEl(folderMode ? "folder" : "clip", "sm"), el("b", {}, [title]), change]));
+    summaryHost.append(el(".chosenhd", {}, [iconEl(folderMode ? "folder" : "clip", "sm"), el("b", {}, [title]), el("span.chosentot", {}, [total]), change]));
     // file list (cap the DOM for a huge folder; note the remainder)
     const list = el(".chosenlist");
     for (const f of files.slice(0, 60)) list.append(el(".chosenrow", {}, [el("span.cn", {}, [relPathOf(f) || f.name]), el("span.cs", {}, [fmtSize(f.size)])]));

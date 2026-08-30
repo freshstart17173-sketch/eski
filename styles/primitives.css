@@ -67,15 +67,22 @@
 /* indeterminate phase (hashing/signing) — a sliding sliver instead of a fixed width */
 .uplwidget.indet .uplfill,.uplchip.indet .uplfill{width:34%;animation:uplslide 1.05s ease-in-out infinite}
 @keyframes uplslide{0%{transform:translateX(-110%)}100%{transform:translateX(320%)}}
-/* the floating Drive-style chip */
-.uplchip{position:fixed;right:20px;bottom:20px;z-index:60;width:288px;padding:var(--s3);
-  background:var(--paper);border-radius:var(--r);box-shadow:0 6px 24px rgba(0,0,0,.22);
-  display:flex;flex-direction:column;gap:8px;animation:uplchipin .2s ease}
+/* the floating Drive-style chip (B20): INVERSE colour (ink ground / paper text) so it reads as a
+   distinct system element; right-edge aligned with the explorer's New-folder/Upload cluster
+   (.exfab is inset --s5 from the pane's right, which ≈ the viewport right here) and lifted ABOVE
+   it (bottom clears the ~44px button row) so it never covers those buttons. */
+.uplchip{position:fixed;right:var(--s5);bottom:56px;z-index:60;width:288px;max-width:calc(100vw - 2*var(--s5));
+  padding:var(--s3);background:var(--ink);color:var(--on-ink);border-radius:var(--r);
+  box-shadow:0 6px 24px rgba(0,0,0,.28);display:flex;flex-direction:column;gap:8px;animation:uplchipin .2s ease}
 @keyframes uplchipin{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.uplchip .uplbar{background:color-mix(in srgb,var(--on-ink) 24%,transparent)}
+.uplchip .uplfill{background:var(--on-ink)}
+.uplchip.done .uplfill{background:var(--on-ink)}
 .uplchip-top{display:flex;align-items:center;gap:8px;font-size:var(--fs-sm)}
 .uplchip-lbl{font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.uplchip-pct{margin-left:auto;color:var(--muted);font-size:var(--fs-xs);font-variant-numeric:tabular-nums;flex:none}
-.uplchip .iconbtn{width:20px;height:20px;flex:none}
+.uplchip-pct{margin-left:auto;color:color-mix(in srgb,var(--on-ink) 70%,transparent);font-size:var(--fs-xs);font-variant-numeric:tabular-nums;flex:none}
+.uplchip .iconbtn{width:20px;height:20px;flex:none;color:var(--on-ink)}
+.uplchip .iconbtn:hover{background:color-mix(in srgb,var(--on-ink) 16%,transparent);color:var(--on-ink)}
 
 /* ── P3.2 IconButton + CloseButton ───────────────────────────────────────── */
 .iconbtn{display:grid;place-items:center;width:26px;height:26px;border-radius:var(--r);

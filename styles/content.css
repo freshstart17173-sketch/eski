@@ -20,6 +20,7 @@
 .chosenhd{display:flex;align-items:center;gap:8px;font-size:var(--fs-sm);color:var(--soft)}
 .chosenhd b{color:var(--ink);font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .chosenhd .ic{color:var(--muted);flex:none}
+.chosenhd .chosentot{color:var(--muted);font-size:var(--fs-xs);font-variant-numeric:tabular-nums;flex:none}
 .chosenlist{max-height:168px;overflow-y:auto;display:flex;flex-direction:column;gap:2px}
 .chosenrow{display:flex;align-items:baseline;gap:10px;font-size:var(--fs-xs);color:var(--soft);padding:3px 0}
 .chosenrow .cn{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}

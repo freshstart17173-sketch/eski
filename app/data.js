@@ -64,14 +64,14 @@ export function clearWorkspaceCache() { _cache.rail = null; _cache.servers.clear
 
 async function loadRail(user) {
   if (_cache.rail) return _cache.rail;
-  const [{ data: myServers }, { data: myProfile }] = await Promise.all([
+  const [smRes, profRes] = await Promise.all([
     supabase.from("server_members").select("color, server:servers(id,name,owner_id,icon_key,cover_key)").eq("user_id", user.id),
     // Also pull bio + banner_key here so loadUserSettings can reuse this cached row instead of
     // firing a second identical `profiles` read (P2 — the settings Profile panel was re-fetching
     // what the rail already had). The extra two columns are free on a row we already select.
     supabase.from("profiles").select("handle,name,avatar_key,banner_key,bio,status_emoji,status_text,presence_state").eq("id", user.id).maybeSingle(),
   ]);
-  const rows = myServers || [];
+  const rows = smRes.data || [];
   const servers = rows.filter((r) => r.server).map((r) => ({ id: r.server.id, name: r.server.name, initials: initials(r.server.name), icon_key: r.server.icon_key || null }));
   // The canonical signed-in identity. `handle` MUST come from the profiles row, never the
   // email prefix — otherwise a self profile link (/u/:handle) points at the wrong handle the
@@ -79,8 +79,13 @@ async function loadRail(user) {
   // profile/handle exists yet (fresh account before onboarding). See meFor().
   // `hasProfile` gates onboarding: a fresh account has no profiles row (no signup trigger),
   // so the app must send it through create-profile before it can be linked to.
-  _cache.rail = { myServers: rows, servers, me: meFor(user, myProfile), profile: myProfile || null, hasProfile: !!(myProfile && myProfile.handle) };
-  return _cache.rail;
+  const result = { myServers: rows, servers, me: meFor(user, profRes.data), profile: profRes.data || null, hasProfile: !!(profRes.data && profRes.data.handle) };
+  // B21: only CACHE when the reads actually SUCCEEDED. A transient error returns null data → an
+  // empty rail (no servers); caching THAT stranded the user with a serverless rail until a manual
+  // reload (owner: "sometimes my server isn't there, I reload to get it back"). On any error, skip
+  // the cache so the next render retries the fetch instead of serving a bad empty snapshot.
+  if (!smRes.error && !profRes.error) _cache.rail = result;
+  return result;
 }
 
 // True when the signed-in user hasn't set up a profile yet (no handle). Drives the one-time

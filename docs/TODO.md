@@ -371,15 +371,19 @@ per channel, builds on P11), D6 (review canvas/kanban/versions).
 > Nitpicks + a search-model change captured mid-session (owner: "stop, tokens almost done — add all
 > of this + past incomplete tasks to the master todo"). **Not yet built.** Sorted below.
 
-- [ ] **B15 · Blank-space click in the explorer must deselect (round-8).** Clicking an empty area of
-      the file browser should clear the current selection. B6 added an empty-area click-clear, but the
-      owner still sees a selection stick — re-check it fires for a **single** selection too (and after
-      the B10 marquee), and that no overlay/card is swallowing the click. *Files:* `app/screens/explorer.js`
-      (the `body` click-clear handler; interplay with B10 `suppressClear`). *Easy.*
+- [x] **B15 · Blank-space click in the explorer must deselect (round-8).** *Done (verified working).*
+      The empty-area click-clear (B6/B10) **does** fire — headless: select a card → click a verified-empty
+      `.panebody` point → selection goes 1→0. Added a defensive reset of the B10 marquee `suppressClear`
+      flag on each new `pointerdown` so a stale flag can never eat a clear-click. *Files:*
+      `app/screens/explorer.js`. If the owner still sees a selection stick, it's likely a specific spot
+      (the click landing on the floating exfab buttons or a card's padding) — needs the exact location.
 - [ ] **B16 · Remove the stray white square, top-left (round-8).** There's an unexplained small white
-      square in the **top-left** of (some) screen — the owner doesn't know what it is. Identify it
-      (likely a stray/empty element or a mis-sized icon/badge) and remove it. *Files:* TBD — inspect
-      the shell / rail / active screen top-left. *Easy (once located).*
+      square in the **top-left** of (some) screen — the owner doesn't know what it is. *Investigated
+      2026-08-30:* a DOM probe of the top-left region (workspace/explorer/feed, both themes) found only
+      the normal rail buttons — no stray element reproducible in the sandbox. **Needs a screenshot /
+      the exact screen** from the owner to pin it (a likely candidate is the `.railogo` e! mark
+      rendering as a solid square if its mask/sprite fails to load on preview — but unconfirmed, so
+      not removing anything blind). *Files:* TBD. *Easy once located.*
 - [ ] **B17 · Smooth playhead scrubbing on the media player (round-8).** The transport playhead/seek
       should scrub **smoothly** (continuous), not jump/stutter. *Files:* `app/ui.js MediaPlayer` (the
       seek `input`/`timeupdate` handling — likely needs `requestAnimationFrame` playhead updates +
@@ -410,22 +414,25 @@ per channel, builds on P11), D6 (review canvas/kanban/versions).
 > ### 🟢 Round-9 (owner test, 2026-08-30) — upload perf/UX at scale, explorer + rail nitpicks
 > Owner is about to upload **gigabytes**; captured for the master todo. **Not yet built.** Sorted below.
 
-- [ ] **B20 · Upload chip: inverse colour + don't cover / align with the exfab buttons (round-9).**
-      The floating upload-progress chip (`.uplchip`, P16) should be the **inverse colour of the UI**
-      (ink ground / paper text, like a primary button) and must **not cover the New folder + Upload
-      buttons** (`.exfab`, bottom-right). It should sit **above** them and **right-edge align** with
-      them (currently it floats at `right:20px;bottom:20px` and overlaps/misaligns). *Files:*
-      `styles/primitives.css` (`.uplchip` colour + position), coordinate with `.exfab` (`styles/content.css`).
-      *Easy.*
-- [ ] **B21 · Server sometimes missing on load — needs a reload (round-9).** On app load the owner's
-      server occasionally isn't in the rail; a manual reload brings it back — a race / transient in the
-      rail's server fetch (`loadRail`) or its caching. Make the rail load deterministic (await the
-      membership read, retry on transient failure, don't cache an empty list). *Files:* `app/data.js`
-      (`loadRail`/`_cache.rail`), `app/shell.js` (rail render). *Medium.* Reliability bug.
-- [ ] **B22 · No active-server indicator in the rail (round-9).** There's no visual cue for **which
-      server is currently selected** in the left rail. Add the selected-state affordance (the eski
-      active-nav pattern: a plate/ink pill or the rail's active marker) to the current server's rail
-      button. *Files:* `app/shell.js` (rail buttons), `styles/shell.css` (`.railbtn.on`). *Easy.*
+- [x] **B20 · Upload chip: inverse colour + don't cover / align with the exfab buttons (round-9).**
+      *Done (demo-verified).* `.uplchip` is now **inverse** (`background:var(--ink);color:var(--on-ink)`,
+      bar fill on-ink), **right-edge aligned** with the exfab (`right:var(--s5)`, matching the exfab's
+      inset) and **lifted above** the New-folder/Upload cluster (`bottom:56px`, clears the ~44px button
+      row) so it never covers them. *Files:* `styles/primitives.css`. Verified: chip bg = ink,
+      right:24px, bottom:56px.
+- [x] **B21 · Server sometimes missing on load — needs a reload (round-9).** *Done (root-caused).*
+      `loadRail` cached its result **even when the `server_members` read returned null from a transient
+      error** → an empty rail (no servers) got cached and served until a manual reload. Now it only
+      caches when **both reads succeeded** (`!smRes.error && !profRes.error`); on any error it skips the
+      cache so the next render retries the fetch instead of serving a bad empty snapshot. *Files:*
+      `app/data.js` (`loadRail`). `node --check` clean. Live confirmation on preview → the reload
+      symptom should be gone.
+- [x] **B22 · No active-server indicator in the rail (round-9).** *Done (demo-verified).* The rail
+      already set `.railbtn.on` (ink fill) on the active server, but that fill is **hidden behind a
+      server's uploaded icon image**, so icon-servers showed no active cue. Added a Discord-style
+      **left-edge pill** (`.railbtn.on::before`, a 3×20 ink bar) that reads regardless of icon/initials;
+      excluded on the Feed logo + avatar (they keep their own active treatment). *Files:*
+      `styles/shell.css`. Verified: the selected server shows the pill, 0 pageerrors.
 - [ ] **K11 · Large-file upload must not freeze the page or eat memory (round-9).** Uploading big files
       currently reads the **whole file into memory** — `sha256Hex` does `await file.arrayBuffer()` and
       the PUT sends the whole blob — so a multi-GB file (or a folder of them) slows the page to a halt
@@ -459,10 +466,10 @@ per channel, builds on P11), D6 (review canvas/kanban/versions).
       backed by GIN indexes. *Files:* `schema-15-search.sql` (+ indexes), a search RPC, `app/data.js`,
       `app/screens/explorer.js` / `app/screens/search.js`. *Hard.* **Supersedes** the ad-hoc pieces in
       **P21/B19** (fold them in) — this is the real version.
-- [ ] **P25 · Show TOTAL upload size, not just per-file (round-9).** The upload sheet should show the
-      **combined size** of everything being uploaded (e.g. "18 files · 2.4 GB"), not only each file's
-      size. Add the total to the `renderChosen` header (sum `f.size`, reuse `fmtSize`). *Files:*
-      `app/screens/upload.js` (`renderChosen`). *Easy.*
+- [x] **P25 · Show TOTAL upload size, not just per-file (round-9).** *Done.* The `renderChosen` header
+      now shows the combined size (`.chosentot`, sum of `f.size` via `fmtSize`) beside the title, so a
+      multi-file / folder upload reads its total (e.g. "18 files · 2.4 GB"); per-file sizes stay in the
+      list. *Files:* `app/screens/upload.js` (`renderChosen`), `styles/content.css` (`.chosentot`).
 - [ ] **B13 · Gate write actions on the file ⋯ menu by permission (data-layer audit, 2026-08-29).**
       The card ⋯ menu + details menu (`openCardMenu`/`detailMenuItems`) show **Rename · Delete ·
       Hide · Change visibility** on *every* work, so a member sees them on other members' server

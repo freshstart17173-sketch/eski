@@ -402,6 +402,7 @@ function paint(tree, pane, data, state, rerender) {
   if (!data.shared) {
     body.addEventListener("pointerdown", (e) => {
       if (e.button !== 0 || e.target.closest(".card") || e.target.closest(".selbar") || e.target.closest(".exfab")) return;
+      suppressClear = false;   // B15: never let a stale marquee flag eat this gesture's clear-click
       const start = { x: e.clientX, y: e.clientY };
       const base = (e.shiftKey || e.metaKey || e.ctrlKey) ? new Set(state.selection) : new Set();
       const rects = [...body.querySelectorAll(".card[data-id]")].map((c) => ({ id: c.dataset.id, r: c.getBoundingClientRect() }));
