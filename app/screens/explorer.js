@@ -86,6 +86,7 @@ export function renderExplorer(data, view = {}) {
     query: "",
     collapsed: new Set(),   // folder ids whose children are hidden in the tree
     selection: persistentSelection(data),   // selected work ids — persists across nav (§C.6, B6)
+    selFolder: null,        // B26: a single-click-selected FOLDER id (double-click opens it)
     lastIdx: -1,            // anchor for Shift-click range
     types: new Set(),       // kind filter — empty = all (image/audio/video/text/other)
     channels: new Set(),    // by placement channel name (server only)
@@ -144,7 +145,7 @@ export function renderExplorer(data, view = {}) {
     if (document.querySelector(".sheet")) return;   // the details overlay owns keys while open
     const tag = document.activeElement?.tagName;
     if (tag === "INPUT" || tag === "TEXTAREA") return;
-    if (e.key === "Escape" && state.selection.size) { state.selection.clear(); state.lastIdx = -1; state._refresh?.(); }
+    if (e.key === "Escape" && (state.selection.size || state.selFolder)) { state.selection.clear(); state.selFolder = null; state.lastIdx = -1; state._refresh?.(); }
     else if ((e.metaKey || e.ctrlKey) && (e.key === "a" || e.key === "A") && state.mode === "grid") {
       e.preventDefault();
       for (const w of state._files || []) state.selection.add(w.id);
@@ -391,7 +392,7 @@ function paint(tree, pane, data, state, rerender) {
   body.addEventListener("click", (e) => {
     if (suppressClear) { suppressClear = false; return; }
     if (e.target.closest(".card") || e.target.closest(".selbar")) return;
-    if (state.selection.size) { state.selection.clear(); state.lastIdx = -1; refreshSel(); }
+    if (state.selection.size || state.selFolder) { state.selection.clear(); state.selFolder = null; state.lastIdx = -1; refreshSel(); }
   });
 
   // ── B10 · drag-to-select (marquee) + drag-a-file-onto-another → make a folder ──────────────
@@ -415,7 +416,7 @@ function paint(tree, pane, data, state, rerender) {
         const br = body.getBoundingClientRect();
         box.style.cssText = `left:${x - br.left + body.scrollLeft}px;top:${y - br.top + body.scrollTop}px;width:${w}px;height:${h}px`;
         const sel2 = { left: x, top: y, right: x + w, bottom: y + h };
-        state.selection.clear(); base.forEach((id) => state.selection.add(id));
+        state.selection.clear(); state.selFolder = null; base.forEach((id) => state.selection.add(id));
         for (const { id, r } of rects) if (!(r.right < sel2.left || r.left > sel2.right || r.bottom < sel2.top || r.top > sel2.bottom)) state.selection.add(id);
         refreshSel();
       };
@@ -458,13 +459,14 @@ function paint(tree, pane, data, state, rerender) {
   state._refresh = refreshSel;   // for the screen-level key handler (Esc / ⌘A)
   function refreshSel() {
     body.querySelectorAll(".card[data-id]").forEach((c) => c.classList.toggle("sel", state.selection.has(c.dataset.id)));
+    body.querySelectorAll(".foldercard[data-folder-id]").forEach((c) => c.classList.toggle("sel", c.dataset.folderId === state.selFolder));   // B26
     const n = state.selection.size;
     // B6: a single selection stays quiet — its actions are on the card ⋯ and the details pane.
     // The bulk bar only appears once you deliberately multi-select (2+), so a plain click never
     // spawns an options bar. Clear is always reachable via an empty-area click / Esc / plain click.
     selbar.classList.toggle("open", n > 1);
     if (n > 1) selbar.replaceChildren(
-      el("span.n", {}, [el("span", {}, [String(n)]), " selected"]),
+      el("span.n", {}, [el("span.nn", {}, [String(n)]), " selected"]),
       selAct("download", "Download", () => downloadSelected(state)),
       selAct("move", "Move to folder", () => moveSelected(data, state, rerender)),
       selAct("trash", "Delete", () => trashSelected(data, state, rerender)),
@@ -551,6 +553,7 @@ function contents(data, state, rerender, sel) {
   // toggles, Shift-click ranges; a double-click opens. List view keeps click-to-open.
   const onCardClick = (w, i, e) => {
     const s = state.selection;
+    state.selFolder = null;   // B26: selecting a file drops any folder selection
     if (e.metaKey || e.ctrlKey) { s.has(w.id) ? s.delete(w.id) : s.add(w.id); state.lastIdx = i; }
     else if (e.shiftKey && state.lastIdx >= 0) {
       const [a, b] = [state.lastIdx, i].sort((x, y) => x - y);
@@ -558,13 +561,15 @@ function contents(data, state, rerender, sel) {
     } else { s.clear(); s.add(w.id); state.lastIdx = i; }
     sel.refresh();
   };
+  // B26: single-click a folder selects it (clears the file selection); double-click opens it.
+  const onFolderClick = (f) => { state.selection.clear(); state.selFolder = f.id; state.lastIdx = -1; sel.refresh(); };
 
   const onStar = (w) => toggleStar(data, state, rerender, w);
   const onMenu = data.shared ? null : (w, anchor) => openCardMenu(data, state, rerender, w, anchor);   // read-only shared view has no per-card owner menu (P9)
   const onShareFolder = (folder, anchor) => shareFolderMenu(data, folder, anchor);
   if (state.mode === "feed") return feedView(data, state, openFile);
   if (state.mode === "list") return listView(subfolders, files, { openFile, openFolder });
-  return gridView(subfolders, files, { openFile, openFolder, onCardClick, onStar, onMenu, onShareFolder, showWho: data.source !== "personal" });
+  return gridView(subfolders, files, { openFile, openFolder, onFolderClick, onCardClick, onStar, onMenu, onShareFolder, showWho: data.source !== "personal" });
 }
 
 // K9 — Drive-style "share a folder": right-clicking a folder card opens this menu. Copy folder
@@ -614,11 +619,15 @@ function feedMedia(w) {
   return el(".dtype", {}, [icon, el("span.ext", {}, [(w.file_ext || "").toUpperCase()])]);
 }
 
-function gridView(subfolders, files, { openFile, openFolder, onCardClick, onStar, onMenu, onShareFolder, showWho }) {
+function gridView(subfolders, files, { openFile, openFolder, onFolderClick, onCardClick, onStar, onMenu, onShareFolder, showWho }) {
   const grid = el(".masonry.even");
   for (const f of subfolders) {
-    const fc = folderCard(f, { onOpen: openFolder, onShare: onShareFolder });
+    const fc = folderCard(f, { onShare: onShareFolder });
     fc.dataset.folderId = f.id;   // B10: a drag-drop target (drop files here to move them in)
+    // B26: single click SELECTS the folder, double click OPENS it (like files).
+    fc.addEventListener("click", (e) => onFolderClick(f, e));
+    fc.addEventListener("dblclick", (e) => { e.preventDefault(); openFolder(f); });
+    fc.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); openFolder(f); } });
     grid.append(fc);
   }
   files.forEach((w, i) => {

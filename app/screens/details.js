@@ -18,7 +18,7 @@ import { openReport } from "../report.js";
 import { iconEl } from "../icons.js";
 import { navigate } from "../router.js";
 import { MediaPlayer } from "../ui.js";
-import { mediaUrl, KIND_ICON, downloadWork } from "../cards.js";
+import { mediaUrl, KIND_ICON, downloadWork, baseName } from "../cards.js";
 import { saveToFiles, unsaveWork, isWorkSaved, addTag, removeTag } from "../data.js";
 
 let openSheet = null;   // the single live overlay (only one details pane at a time)
@@ -128,7 +128,7 @@ export function typeCard(w) {
 // ── info rail ─────────────────────────────────────────────────────────────────
 function infoRail(w, ctx, nav) {
   const top = el(".dtop", {}, [
-    el("span.dfilename", {}, [w.title || w.name || "untitled"]),
+    el("span.dfilename", {}, [baseName(w)]),
     // ⋯ file actions (star/rename/move/hide/delete) — only for files the explorer owns;
     // a public post carries no menuItemsFor, so the button doesn't render there.
     nav.openActions ? iconBtn("more", "More actions", (e) => nav.openActions(e.currentTarget), { haspopup: true }) : null,
@@ -139,7 +139,7 @@ function infoRail(w, ctx, nav) {
   ]);
 
   const scroll = el(".scroll", {}, [
-    el("h2", {}, [w.title || w.name || "untitled"]),
+    el("h2", {}, [baseName(w)]),
     metaRows(w, ctx),
     // tags: shown when the work carries any, OR when it's editable (an explorer file, which
     // is the same signal that gives it the ⋯ edit menu) so the first tag can be added.

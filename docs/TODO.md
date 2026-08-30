@@ -377,13 +377,14 @@ per channel, builds on P11), D6 (review canvas/kanban/versions).
       flag on each new `pointerdown` so a stale flag can never eat a clear-click. *Files:*
       `app/screens/explorer.js`. If the owner still sees a selection stick, it's likely a specific spot
       (the click landing on the floating exfab buttons or a card's padding) — needs the exact location.
-- [ ] **B16 · Remove the stray white square, top-left (round-8).** There's an unexplained small white
-      square in the **top-left** of (some) screen — the owner doesn't know what it is. *Investigated
-      2026-08-30:* a DOM probe of the top-left region (workspace/explorer/feed, both themes) found only
-      the normal rail buttons — no stray element reproducible in the sandbox. **Needs a screenshot /
-      the exact screen** from the owner to pin it (a likely candidate is the `.railogo` e! mark
-      rendering as a solid square if its mask/sprite fails to load on preview — but unconfirmed, so
-      not removing anything blind). *Files:* TBD. *Easy once located.*
+- [ ] **B16 · The "weird white square top-left" = the file-card SELECTION CHECKBOX (round-8/10).**
+      *IDENTIFIED (owner screenshot, round-10):* it's `.cardsel`, the selection checkbox at a card's
+      top-left. It only shows when the card is **selected** (`.card.sel`); a single click selects, so
+      the box appeared and read as a mystery white square (in dark mode `--ink` is near-white).
+      **Fix (in progress):** drop the checkbox square — a selected card is already shown by the
+      `.card.sel .media` ink outline, so selection stays visible without the confusing square.
+      *Files:* `app/cards.js` (drop `.cardsel`), `styles/content.css`. *Easy.* (Also see **B26** —
+      making folder-open double-click reduces accidental single-click selects.)
 - [x] **B17 · Smooth playhead scrubbing on the media player (round-8).** *Done.* The playhead was
       driven only by `timeupdate` (~4×/s → visible jumps). Now a **`requestAnimationFrame` loop**
       updates the fill/knob while playing (reading `media.currentTime`, which advances continuously),
@@ -472,7 +473,47 @@ per channel, builds on P11), D6 (review canvas/kanban/versions).
       now shows the combined size (`.chosentot`, sum of `f.size` via `fmtSize`) beside the title, so a
       multi-file / folder upload reads its total (e.g. "18 files · 2.4 GB"); per-file sizes stay in the
       list. *Files:* `app/screens/upload.js` (`renderChosen`), `styles/content.css` (`.chosentot`).
-- [ ] **B13 · Gate write actions on the file ⋯ menu by permission (data-layer audit, 2026-08-29).**
+
+> ### 🟢 Round-10 (owner test, 2026-08-30) — file-card, folder-interaction + tag nitpicks (with screenshots)
+> A batch of explorer/card/tag nitpicks the owner sent with screenshots. Sorted; some being fixed
+> the same session (marked). B16 is now IDENTIFIED (the selection checkbox).
+
+- [ ] **B23 · Filename must NOT show the file extension (round-10).** Card titles + the details-pane
+      title should display the name **without** its extension (e.g. "Drums - WIZKID - OJUELEGBA -
+      100bpm - Cmaj", not "…Cmaj.mp3") — the ext already shows in the Format meta row. *Files:*
+      `app/cards.js` (`baseName` helper + card title), `app/screens/details.js` (title). *Easy.*
+- [ ] **B24 · File cards tile unevenly when the filename overflows (round-10).** In the folder grid,
+      a long filename wraps to 2–3 lines and pushes cards to different heights, breaking the row
+      alignment (screenshot). Clamp the card `.title` to a fixed line count (e.g. 2 lines, ellipsis)
+      so every card is the same height. *Files:* `styles/content.css` (`.card .title`). *Easy.*
+- [ ] **B25 · Open-folder has no persistence — returns to root on tab switch (round-10).** Leaving the
+      explorer tab and coming back always resets to the root folder; the **current folder should
+      persist**. Put the open `folderId` in the URL (or session) so a return restores it (relates to
+      B21/state). *Files:* `app/screens/explorer.js` (folder state ↔ route), `app/router.js`. *Medium.*
+- [ ] **B26 · Folder open should be DOUBLE-click, not single (round-10).** Single-click a folder should
+      **select** it (like a file); **double-click opens** it — consistent with files (Drive/Finder).
+      Today a folder opens on single click. *Files:* `app/cards.js` (`folderCard`), `app/screens/explorer.js`
+      (folder click handlers, selection). *Easy-med.*
+- [ ] **B27 · Selection counter shifts the action-bar icons (round-10).** In the bulk action bar, the
+      "N selected" count changes width as N grows/shrinks, so the icons jump left/right. Give the count
+      a **fixed min-width + tabular-nums** (or a stable layout) so the icons don't move. *Files:*
+      `app/screens/explorer.js` (`.selbar` count), `styles/content.css`. *Easy.*
+- [ ] **B28 · The left navigation (folder-tree) pane should be draggable/resizable (round-10).** Add a
+      drag handle on the folder-tree column's right edge to resize its width (persist the choice).
+      *Files:* `app/screens/explorer.js` (tree column + a resizer), `styles/content.css`. *Medium.*
+- [ ] **B29 · Details-pane metadata wraps badly for long filenames (round-10).** The Location / value
+      rows in the details pane wrap awkwardly for long names (screenshot). Fix the metadata value
+      wrapping (allow it to wrap cleanly / break long tokens, keep the key aligned). *Files:*
+      `styles/content.css` (`.sheet .meta .row .v` / `.loccrumb`), maybe `app/screens/details.js`. *Easy.*
+- [ ] **P26 · Tag chip: hover-x overlay + click-to-search (round-10, owner).** The current typed-tag
+      chip (P11) reserves width on the right for the delete ✕, making tags too long — **wrong
+      approach.** Instead: the ✕ appears on **hover** on the **right side of a normal-width tag**,
+      **partly occluding** the tag's right edge (an overlay, not extra width) so the ✕ reads clearly.
+      The **majority of the tag stays clickable** and a click **starts a search** for every file with
+      that tag — or, for a typed tag, every file with that exact `type:value` (ties into P21/P24 search
+      modifiers). *Files:* `app/tags.js` (`tagChip` — x as an absolute hover overlay + onClick→search),
+      `app/screens/explorer.js` / `app/screens/details.js` (wire the tag-click to set the search),
+      `styles/primitives.css` (`.tchip .x` overlay + occlusion gradient). *Medium.* Pairs with **P21**.
       The card ⋯ menu + details menu (`openCardMenu`/`detailMenuItems`) show **Rename · Delete ·
       Hide · Change visibility** on *every* work, so a member sees them on other members' server
       files. *The silent-no-op half is now FIXED* — the underlying writers (`trashWorks`,

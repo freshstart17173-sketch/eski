@@ -82,9 +82,20 @@ function mediaCell(work) {
 // `hue` (default true) applies the server member colour to the uploader chip. The
 // Feed and public profile pass hue:false — member colour is server-scoped and must
 // render nowhere public (CANON design rule) — so the author shows as plain text.
+// Display name WITHOUT the file extension (owner: the extension is noise on the card + title —
+// it lives in the Format meta row instead). Strips only the KNOWN ext (work.file_ext), so a name
+// with incidental dots and no recognised suffix is left intact.
+export function baseName(work) {
+  const n = work.title || work.name || "untitled";
+  const ext = (work.file_ext || "").toLowerCase();
+  return (ext && n.toLowerCase().endsWith("." + ext)) ? n.slice(0, -(ext.length + 1)) : n;
+}
+
 export function workCard(work, { onOpen, selectable = false, actions = [], showWho = true, hue = true, starred = false, onStar } = {}) {
   const media = mediaCell(work);
-  if (selectable) media.prepend(el("span.cardsel", {}, [iconEl("check")]));
+  // B16: no selection-checkbox square — a selected card is shown by the .card.sel media outline
+  // (the white checkbox in dark mode read as a "weird white square"). Selection still works via
+  // click / ⌘-click / shift / marquee; the outline is the cue.
   // starred: a persistent gold badge (CSS shows it via .card.starred) + a star hover
   // action that toggles it. onStar is the real writer; without it neither renders.
   if (onStar) media.prepend(el("span.cardstar", { title: "Starred" }, [iconEl("star")]));
@@ -96,7 +107,7 @@ export function workCard(work, { onOpen, selectable = false, actions = [], showW
       el("button" + (a.cls ? "." + a.cls : ""), { title: a.title, "data-act": a.act, onClick: (e) => { e.stopPropagation(); a.onClick?.(work); } }, [iconEl(a.icon)])));
     media.append(bar);
   }
-  const card = el("button.card" + (starred ? ".starred" : ""), { "data-open-details": true, onClick: () => onOpen?.(work) }, [media, el(".title", {}, [work.title || work.name || "untitled"])]);
+  const card = el("button.card" + (starred ? ".starred" : ""), { "data-open-details": true, onClick: () => onOpen?.(work) }, [media, el(".title", { title: work.title || work.name || "" }, [baseName(work)])]);
   if (showWho && work.who) {
     const who = el(".who");
     if (hue) {
@@ -112,11 +123,13 @@ export function workCard(work, { onOpen, selectable = false, actions = [], showW
   return card;
 }
 
-// a folder card (grid): a folder tile that descends on click
-export function folderCard(folder, { onOpen, onShare } = {}) {
-  const card = el("button.card.foldercard", { onClick: () => onOpen?.(folder) }, [
+// a folder card (grid). B26: it no longer opens on a single click — the explorer wires
+// single-click = select, DOUBLE-click = open (consistent with files, Finder/Drive). Kept a
+// button for keyboard focus; Enter-to-open is wired by the caller.
+export function folderCard(folder, { onShare } = {}) {
+  const card = el("button.card.foldercard", {}, [
     el(".media.fold", {}, [iconEl("folder")]),
-    el(".title", {}, [folder.name]),
+    el(".title", { title: folder.name }, [folder.name]),
     el(".who", {}, [`${folder.count ?? 0} file${folder.count === 1 ? "" : "s"}`]),
   ]);
   // K9: right-click a folder to share it (Drive-style). The handler opens a menu anchored on the
