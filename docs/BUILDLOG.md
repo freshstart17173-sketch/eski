@@ -2339,3 +2339,22 @@ IN PROGRESS: P13 file-channel header — 3 versions built as a comparison (docs/
   picks, wire the chosen layout into explorer.js `paint()` (mind repaintBody + the crumbs/searchState
   swap) + move its CSS into content.css, then delete the comparison file.
 NEXT: implement the picked P13 variant.
+
+## 2026-08-30 — P13 done (V2 + owner tweaks) — file-channel header flattened
+IN PROGRESS: (cleared)
+DONE: implemented the owner-picked V2 header + tweaks. Old two-row .panehd gone → a slim .expath path
+  line (breadcrumb only; server-name root dropped to a folder glyph on the server source, "My files"
+  kept for personal). Toolbar: search left, filters + view/hidden controls grouped right (.tbfilters).
+  New folder + Upload float bottom-right (.exfab) as bare square buttons (no backing box, per owner
+  follow-up); .pane is position:relative, .panebody gets bottom padding via .pane.hasfab. Fixed a
+  latent search-term staleness bug (searchQ live ref updated in repaintBody). Mirrored into
+  gallery.html (LAW) + its CSS; removed dead .toolbar .tbactions CSS; deleted the p13-headers.html
+  comparison scaffold. Files: app/screens/explorer.js, styles/content.css, docs/design/gallery.html.
+  Verified: server + personal explorer both themes, breadcrumb fills on descend, search state live,
+  0 pageerrors. Committed 5efde4d.
+NEXT: remaining round-7 visual items as 3-version batches (P12 density, P18 standardize headers, P14
+  view modes, P15 status→profile), or the decision-laden P4/P5, P11 (need owner input). P20 pagination
+  (non-visual) also outstanding.
+GOTCHA X: gallery.html screens are display-toggled by .ptab buttons, so scrollIntoView on a hidden
+  screen's element no-ops in a headless shot — verify a gallery screen by clicking its tab first (or
+  trust the structural + 0-pageerror check when the CSS is byte-identical to the app's).

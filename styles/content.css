@@ -27,18 +27,29 @@
 .uprogress{margin-top:10px;font-size:var(--fs-xs);color:var(--muted)}
 
 /* ── Feed / explorer shared pane (P5.1/P5.4) ─────────────────────────────── */
-.pane{flex:1;min-width:0;display:flex;flex-direction:column;background:var(--paper);overflow:hidden}
+.pane{flex:1;min-width:0;display:flex;flex-direction:column;background:var(--paper);overflow:hidden;position:relative}
 .panehd{flex:none;min-height:56px;display:flex;align-items:center;gap:var(--s4);padding:var(--s3) var(--s5);background:var(--surface);flex-wrap:wrap}
 .panehd .wm{font-weight:700;font-size:var(--fs-xl)}
 .panehd .title{font-weight:600;font-size:var(--fs-lg)}
 .panehd nav{margin-left:auto;display:flex;gap:var(--s4)}
 .toolbar{flex:none;display:flex;align-items:center;gap:var(--s2);padding:var(--s3) var(--s5);background:var(--paper);flex-wrap:wrap}
 .toolbar .field{flex:1;min-width:170px;max-width:340px}
-/* New folder + Upload as one right-aligned unit: fits on the filter row when there's
-   room, wraps to a second row as a pair (right-aligned) when the pane is narrow. */
-.toolbar .tbactions{display:flex;gap:var(--s2);margin-left:auto}
 .panebody{flex:1;overflow-y:auto;padding:var(--s4) var(--s5) var(--s5)}
 .seclabel{color:var(--muted);font-size:var(--fs-xs);font-weight:600;margin:0 0 var(--s3)}
+
+/* ── P13: file-channel header (V2 + owner tweaks) ─────────────────────────────
+   A slim dedicated path line (breadcrumb only), the filter set + view/hidden controls grouped
+   to the right of the search in the toolbar, and New folder + Upload floated bottom-right. */
+.expath{flex:none;display:flex;align-items:center;min-height:30px;padding:var(--s2) var(--s5);background:var(--surface)}
+.expath .crumbs{flex-wrap:nowrap;overflow:hidden}
+.crumbs .crumbroot.home{display:inline-flex;align-items:center;color:var(--soft);padding:0}
+.crumbs .crumbroot.home:hover{color:var(--ink)}
+.toolbar .tbfilters{display:flex;align-items:center;gap:var(--s2);margin-left:auto;flex-wrap:wrap;justify-content:flex-end}
+.toolbar .tbfilters .hdctl{margin-left:2px}
+/* bottom-right floating action cluster — the bare square eski buttons (plain New folder +
+   primary Upload), no backing box; each button carries its own fill so it reads over the grid. */
+.exfab{position:absolute;right:var(--s5);bottom:var(--s4);display:flex;gap:var(--s2);z-index:5}
+.pane.hasfab .panebody{padding-bottom:52px}
 
 /* ── File explorer (P5.4): nested tree + views ───────────────────────────── */
 .explayout{flex:1;min-width:0;display:flex;overflow:hidden}

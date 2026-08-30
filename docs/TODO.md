@@ -647,11 +647,20 @@ per channel, builds on P11), D6 (review canvas/kanban/versions).
       column header, explorer panehd, settings, details pane). Audit + unify against `eski-style`.
       *Files:* `styles/shell.css`, `styles/content.css`, `styles/primitives.css`. *Medium.* Overlaps
       P12.
-- [ ] **P13 · Flatten the file-channel header + path viewer (round-7).** The `.panehd` bar above the
-      filters (breadcrumb + view controls) shouldn't sit on its own row; fold it into the toolbar
-      row and **remove the server-name crumb root label** (adds nothing). Keep/ensure a clear
-      **path/breadcrumb viewer up top** (owner: "missing a path viewer"). *Files:*
-      `app/screens/explorer.js` (`paint` panehd/toolbar), `styles/content.css`. *Medium.*
+- [x] **P13 · Flatten the file-channel header + path viewer (round-7).** *Done (V2 + owner tweaks;
+      demo-verified both themes).* Owner picked V2 from a 3-version batch, then asked to push the
+      filters right, move New folder + Upload to the bottom-right, and (follow-up) drop the box around
+      them. Result: the old two-row `.panehd` is gone; a slim dedicated **`.expath` path line** up top
+      holds only the breadcrumb (the "path viewer"), with the **server-name crumb root dropped to a
+      folder glyph** (server source only — personal keeps "My files"). The toolbar keeps **search on
+      the left** and groups the **filters + view/hidden controls to the right** (`.tbfilters`). **New
+      folder + Upload float bottom-right** (`.exfab`, bare square buttons, no backing) over the grid
+      (`.pane` position:relative; body gets bottom padding). Also fixed a latent bug surfaced here: the
+      search-results term (`Search results for X`) was captured at paint time and read empty on
+      keystroke — now a live ref updated in `repaintBody`. Mirrored into **gallery.html** (LAW) + the
+      P13 CSS added there. Removed dead `.toolbar .tbactions` CSS. *Files:* `app/screens/explorer.js`,
+      `styles/content.css`, `docs/design/gallery.html`. Verified: server + personal explorer render
+      both themes, breadcrumb fills on descend (`📁 / beats / drums`), search state live, 0 pageerrors.
 - [ ] **P14 · File-browser view modes = real density levels (round-7).** Rework the explorer view
       modes into traditional file-browser densities (e.g. compact list → comfortable → large). At
       the larger sizes a **content thumbnail** replaces the kind icon, but every card keeps a **thin

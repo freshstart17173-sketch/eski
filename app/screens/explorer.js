@@ -271,15 +271,23 @@ function paint(tree, pane, data, state, rerender) {
   // breadcrumb (browsing) OR a search-results indicator (searching)
   const crumbs = el(".crumbs", { id: "exCrumbs" });
   const path = crumbPath(data.folders, state.folderId);
-  crumbs.append(el("button.crumbroot", { onClick: () => { state.folderId = null; rerender(); } }, [rootLabel(data)]));
+  // P13: the crumb root. On a SERVER file browser the server name is redundant (the channel column
+  // already names the server) → drop it to a folder glyph (still clicks to root). Personal/shared
+  // keep the text root ("My files" / the shared folder name) — it's the meaningful identity there.
+  crumbs.append(data.source === "server"
+    ? el("button.crumbroot.home", { title: rootLabel(data), "aria-label": rootLabel(data), onClick: () => { state.folderId = null; rerender(); } }, [iconEl("folder", "sm")])
+    : el("button.crumbroot", { onClick: () => { state.folderId = null; rerender(); } }, [rootLabel(data)]));
   path.forEach((f, i) => {
     crumbs.append(el("span.sl", {}, ["/"]));
     if (i === path.length - 1) crumbs.append(el("b", {}, [f.name]));
     else crumbs.append(el("button", { onClick: () => { state.folderId = f.id; rerender(); } }, [f.name]));
   });
+  // The query term is a live ref: repaintBody() (search-as-you-type) updates it, since the
+  // searchState node is built once here but shown on every keystroke (else it read stale/empty).
+  const searchQ = el("b", {}, [state.query]);
   const searchState = el(".crumbs.exsearchstate", {}, [
     (() => { const s = iconEl("search", "sm"); s.style.color = "var(--muted)"; return s; })(),
-    el("span", {}, ["Search results for ", el("b", {}, [state.query])]),
+    el("span", {}, ["Search results for ", searchQ]),
     el("button.btn.ghost.sm", { onClick: () => { state.query = ""; rerender(); } }, ["Clear search"]),
   ]);
 
@@ -287,10 +295,10 @@ function paint(tree, pane, data, state, rerender) {
   // Show-hidden (#55): a tucked toggle — hidden/utility works are omitted from the library
   // view unless this is on. It reveals them (dimmed); it does not rebuild the toolbar.
   const hiddenBtn = el("button.iconbtn" + (state.showHidden ? ".on" : ""), { title: state.showHidden ? "Hiding hidden files" : "Show hidden files", "aria-pressed": state.showHidden ? "true" : "false", onClick: () => { state.showHidden = !state.showHidden; hiddenBtn.classList.toggle("on", state.showHidden); hiddenBtn.setAttribute("aria-pressed", state.showHidden ? "true" : "false"); hiddenBtn.setAttribute("title", state.showHidden ? "Hiding hidden files" : "Show hidden files"); repaintBody(); } }, [iconEl("hide", "sm")]);
-  const panehd = el(".panehd", {}, [
-    searching ? searchState : crumbs,
-    el(".hdctl", {}, [hiddenBtn, viewBtn]),
-  ]);
+  // P13 (V2 + owner tweaks): a slim dedicated path line up top (the clear "path viewer"). The
+  // view/hidden controls move DOWN into the toolbar (below), so nothing but the breadcrumb lives
+  // on this row.
+  const pathline = el(".expath", {}, [searching ? searchState : crumbs]);
 
   // toolbar — search · filters (Type/Channel/Uploader/Tag/Date/Sort) · New folder · Upload
   const personal = data.source === "personal";
@@ -343,24 +351,33 @@ function paint(tree, pane, data, state, rerender) {
   sortBtn.addEventListener("click", () => openMenu(sortBtn, SORTS.map(([k, lbl]) => ({ label: lbl, selected: state.sort === k, onClick: () => { state.sort = k; sortBtn.querySelector(".slbl").textContent = SORT_LABEL[k]; repaintBody(); } }))));
   const dirBtn = el("button.iconbtn", { title: state.dir === "desc" ? "Descending" : "Ascending", "aria-pressed": state.dir === "asc" ? "true" : "false", onClick: () => { state.dir = state.dir === "desc" ? "asc" : "desc"; dirBtn.setAttribute("title", state.dir === "desc" ? "Descending" : "Ascending"); dirBtn.setAttribute("aria-pressed", state.dir === "asc" ? "true" : "false"); dirBtn.firstChild.style.transform = state.dir === "asc" ? "rotate(180deg)" : ""; repaintBody(); } }, [(() => { const g = iconEl("chev", "sm"); if (state.dir === "asc") g.style.transform = "rotate(180deg)"; return g; })()]);
 
-  // New folder + Upload travel together as one right-aligned unit (.tbactions), so a
-  // narrow pane wraps them as a pair to a second row instead of orphaning Upload.
   // Starred quick-filter: a plain star toggle in line with the filters. When on, the pane
   // shows a flat grid of every starred work (like a smart-folder), gold when active.
   const starFilterBtn = el("button.iconbtn.exstar" + (state.starred ? ".on" : ""), { title: "Starred", "aria-pressed": state.starred ? "true" : "false", onClick: () => { state.starred = !state.starred; starFilterBtn.classList.toggle("on", state.starred); starFilterBtn.setAttribute("aria-pressed", state.starred ? "true" : "false"); repaintBody(); } }, [iconEl("star", "sm")]);
 
+  // P13 (owner tweak): search stays LEFT; the filter set + the view/hidden controls are grouped
+  // to the RIGHT (`.tbfilters` margin-left:auto). New folder / Upload are NOT in the toolbar — they
+  // move to a bottom-right action cluster over the grid (below).
   const toolbar = el(".toolbar", {}, [
-    search, typeBtn, chanBtn, uploaderBtn, tagBtn, dateBtn, sortBtn, dirBtn, starFilterBtn,
-    // No New folder / Upload on a read-only shared view (P9).
-    data.shared ? null : el(".tbactions", {}, [
-      el("button.btn.newFolderBtn", { onClick: () => newFolder(data, state, rerender, state.folderId) }, [iconEl("plus", "sm"), "New folder"]),
-      el("button.btn.primary", { onClick: () => openUpload(uploadOpts) }, [iconEl("plus", "sm"), "Upload"]),
-    ]),
-  ].filter(Boolean));
+    search,
+    el(".tbfilters", {}, [
+      typeBtn, chanBtn, uploaderBtn, tagBtn, dateBtn, sortBtn, dirBtn, starFilterBtn,
+      el(".hdctl", {}, [hiddenBtn, viewBtn]),
+    ].filter(Boolean)),
+  ]);
 
   const selbar = el(".selbar");
   const body = el(".panebody");
-  pane.replaceChildren(panehd, toolbar, selbar, body);
+  // P13 (owner tweak): New folder + Upload live at the pane's bottom-right (Drive-style), floating
+  // over the grid — not on a read-only shared view (P9). Square eski buttons: plain New folder +
+  // primary Upload. The pane is position:relative so this anchors to its bottom-right corner and
+  // stays put while the body scrolls; the body gets bottom padding so the last row clears it.
+  const fab = data.shared ? null : el(".exfab", {}, [
+    el("button.btn.newFolderBtn", { onClick: () => newFolder(data, state, rerender, state.folderId) }, [iconEl("plus", "sm"), "New folder"]),
+    el("button.btn.primary", { onClick: () => openUpload(uploadOpts) }, [iconEl("plus", "sm"), "Upload"]),
+  ]);
+  pane.classList.toggle("hasfab", !!fab);
+  pane.replaceChildren(...[pathline, toolbar, selbar, body, fab].filter(Boolean));
 
   // B6: clicking an empty area of the pane (not a card, not the bulk bar) clears the selection —
   // the Google-Drive gesture. A card's own click handler stops here (closest('.card')).
@@ -394,11 +411,11 @@ function paint(tree, pane, data, state, rerender) {
 
   // re-render only the contents (search-as-you-type) without rebuilding the tree/toolbar
   function repaintBody() {
-    // keep the header in sync with the browsing/searching swap
+    // keep the path line in sync with the browsing/searching swap
     const isSearch = state.query.trim().length > 0;
-    if (isSearch !== (panehd.firstChild === crumbs ? false : true)) {
-      panehd.replaceChild(isSearch ? searchState : crumbs, panehd.firstChild);
-    }
+    if (isSearch) searchQ.textContent = state.query;   // keep the "results for X" term live
+    const want = isSearch ? searchState : crumbs;
+    if (pathline.firstChild !== want) pathline.replaceChild(want, pathline.firstChild);
     // B6: DON'T wipe selection on every repaint (filter / search / folder nav) — it persists.
     // Only drop ids whose work no longer exists (trashed/removed) so a stale id can't ride along
     // in a bulk action. A plain card click or empty-area click is what resets a live selection.

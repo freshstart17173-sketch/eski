@@ -281,8 +281,17 @@ input{font:inherit;color:inherit}
 .mrow.off{opacity:.55}
 
 /* feed / explorer */
-.pane{flex:1;min-width:0;display:flex;flex-direction:column;background:var(--paper);overflow:hidden}
+.pane{flex:1;min-width:0;display:flex;flex-direction:column;background:var(--paper);overflow:hidden;position:relative}
 .panehd{flex:none;min-height:56px;display:flex;align-items:center;gap:var(--s4);padding:var(--s3) var(--s5);background:var(--surface);flex-wrap:wrap}
+/* P13: file-channel header (V2 + owner tweaks) — slim path line, filters right, bottom-right actions */
+.expath{flex:none;display:flex;align-items:center;min-height:30px;padding:var(--s2) var(--s5);background:var(--surface)}
+.expath .crumbs{flex-wrap:nowrap;overflow:hidden}
+.crumbs .crumbroot.home{display:inline-flex;align-items:center;color:var(--soft);padding:0}
+.crumbs .crumbroot.home:hover{color:var(--ink)}
+.toolbar .tbfilters{display:flex;align-items:center;gap:var(--s2);margin-left:auto;flex-wrap:wrap;justify-content:flex-end}
+.toolbar .tbfilters .hdctl{margin-left:2px}
+.exfab{position:absolute;right:var(--s5);bottom:var(--s4);display:flex;gap:var(--s2);z-index:5}
+.pane.hasfab .panebody{padding-bottom:52px}
 .panehd .wm{font-weight:700;font-size:var(--fs-xl)}
 .panehd .title{font-weight:600;font-size:var(--fs-lg)}
 .panehd nav{margin-left:auto;display:flex;gap:var(--s4)}
@@ -2431,38 +2440,47 @@ h3.subh{font-size:var(--fs);font-weight:600;margin:24px 0 12px;color:var(--soft)
             <div class="ftfoot"><svg class="ic sm" style="vertical-align:-2px;color:var(--muted)"><use href="#i-user"/></svg> Your storage<div class="bar"><i style="width:44%"></i></div>22 of 50 GB used · <button class="manageStorageLink" id="manageStorage2" style="color:var(--soft);text-decoration:underline">manage</button></div>
           </div>
         </nav>
-        <div class="pane">
+        <div class="pane hasfab">
           <!-- #46 read-only over-cap banner (shown when storage is over cap / lapsed) -->
           <div class="capbanner" id="capBanner" hidden><svg class="ic sm"><use href="#i-lock"/></svg><span><b>Storage is over its cap.</b> Files are <b>read-only</b>, nothing is deleted, until you free space or upgrade.</span><button class="btn sm" id="capUpgrade">Upgrade</button></div>
           <!-- #58 locked-folder read-only notice, forced by #explorer/locked -->
           <div class="capbanner" id="lockNote" hidden style="background:var(--surface);color:var(--soft)"><svg class="ic sm" style="color:var(--muted)"><use href="#i-lock"/></svg><span><b>stems and sessions</b> is locked. Its files are <b>read-only</b>, you can open and download, but not move, rename or delete without permission.</span></div>
-          <div class="panehd">
-            <!-- Browsing vs searching: the breadcrumb shows where you ARE (browsing);
-                 typing in search swaps it for a results indicator (owner 2026-08-22). -->
-            <div class="crumbs" id="exCrumbs"><button class="crumbroot">Late Bloom LP</button><span class="sl">/</span><b>beats</b></div>
+          <!-- P13 (V2 + owner tweaks): a slim dedicated PATH LINE up top (breadcrumb only — the
+               "path viewer"); the server-name crumb root is dropped to a folder glyph (the channel
+               column already names the server). Browsing vs searching swaps the crumb for a results
+               indicator (owner 2026-08-22). -->
+          <div class="expath">
+            <div class="crumbs" id="exCrumbs"><button class="crumbroot home" title="Late Bloom LP" aria-label="Late Bloom LP"><svg class="ic sm"><use href="#i-folder"/></svg></button><span class="sl">/</span><b>beats</b></div>
             <div class="crumbs exsearchstate" id="exSearchState" hidden><svg class="ic sm" style="color:var(--muted)"><use href="#i-search"/></svg><span>Search results for <b id="exSearchTerm"></b></span><button class="btn ghost sm" id="exSearchClear">Clear search</button></div>
-            <div class="hdctl">
-              <!-- #55 show-hidden tucked away small (rare toggle, not a labelled slot) -->
-              <button class="iconbtn" id="exHidden" title="Show hidden files"><svg class="ic sm"><use href="#i-hide"/></svg></button>
-              <!-- view mode = a compact text dropdown (grid / list / feed), not a switcher -->
-              <button class="btn" id="exViewBtn" aria-haspopup="menu" aria-expanded="false"><span id="exViewLbl">Grid</span><svg class="ic sm"><use href="#i-chev"/></svg></button>
-            </div>
           </div>
+          <!-- P13: search stays LEFT; the filter set + view/hidden controls group to the RIGHT
+               (.tbfilters). New folder + Upload move OUT of the toolbar → the bottom-right .exfab. -->
           <div class="toolbar">
             <div class="field"><svg class="ic sm"><use href="#i-search"/></svg><input id="exSearch" placeholder="Search this server's files"></div>
-            <!-- filter dropdowns follow the one button system: .btn + chevron, no leading
-                 icon. Type/Channel/Uploader/Tag are multi-select; Date/Sort single. -->
-            <button class="btn exfilter" data-fmenu="typeMenu" data-fmulti="1" aria-haspopup="menu" aria-expanded="false" id="exchType">Type<svg class="ic sm"><use href="#i-chev"/></svg></button>
-            <button class="btn exfilter exserveronly" data-fmenu="chanMenu" data-fmulti="1" aria-haspopup="menu" aria-expanded="false">Channel<svg class="ic sm"><use href="#i-chev"/></svg></button>
-            <button class="btn exfilter exserveronly" data-fmenu="uploaderMenu" data-fmulti="1" aria-haspopup="menu" aria-expanded="false">Uploader<svg class="ic sm"><use href="#i-chev"/></svg></button>
-            <button class="btn exfilter" data-fmenu="tagMenu" data-fmulti="1" aria-haspopup="menu" aria-expanded="false">Tag<svg class="ic sm"><use href="#i-chev"/></svg></button>
-            <button class="btn exfilter" data-fmenu="dateMenu" aria-haspopup="menu" aria-expanded="false" id="exchDate">Anytime<svg class="ic sm"><use href="#i-chev"/></svg></button>
-            <button class="btn exfilter" data-fmenu="sortMenu" aria-haspopup="menu" aria-expanded="false" id="exchSort">Latest<svg class="ic sm"><use href="#i-chev"/></svg></button>
-            <!-- ascending / descending direction for the sort field -->
-            <button class="iconbtn" id="exSortDir" title="Descending (newest first)" aria-pressed="false"><svg class="ic sm sortdirchev"><use href="#i-chev"/></svg></button>
-            <!-- Starred: a plain monochrome star toggle in line with the filters -->
-            <button class="iconbtn" id="fchipStarred" title="Starred" aria-pressed="false"><svg class="ic sm"><use href="#i-star"/></svg></button>
-            <span style="flex:1"></span>
+            <div class="tbfilters">
+              <!-- filter dropdowns follow the one button system: .btn + chevron, no leading
+                   icon. Type/Channel/Uploader/Tag are multi-select; Date/Sort single. -->
+              <button class="btn exfilter" data-fmenu="typeMenu" data-fmulti="1" aria-haspopup="menu" aria-expanded="false" id="exchType">Type<svg class="ic sm"><use href="#i-chev"/></svg></button>
+              <button class="btn exfilter exserveronly" data-fmenu="chanMenu" data-fmulti="1" aria-haspopup="menu" aria-expanded="false">Channel<svg class="ic sm"><use href="#i-chev"/></svg></button>
+              <button class="btn exfilter exserveronly" data-fmenu="uploaderMenu" data-fmulti="1" aria-haspopup="menu" aria-expanded="false">Uploader<svg class="ic sm"><use href="#i-chev"/></svg></button>
+              <button class="btn exfilter" data-fmenu="tagMenu" data-fmulti="1" aria-haspopup="menu" aria-expanded="false">Tag<svg class="ic sm"><use href="#i-chev"/></svg></button>
+              <button class="btn exfilter" data-fmenu="dateMenu" aria-haspopup="menu" aria-expanded="false" id="exchDate">Anytime<svg class="ic sm"><use href="#i-chev"/></svg></button>
+              <button class="btn exfilter" data-fmenu="sortMenu" aria-haspopup="menu" aria-expanded="false" id="exchSort">Latest<svg class="ic sm"><use href="#i-chev"/></svg></button>
+              <!-- ascending / descending direction for the sort field -->
+              <button class="iconbtn" id="exSortDir" title="Descending (newest first)" aria-pressed="false"><svg class="ic sm sortdirchev"><use href="#i-chev"/></svg></button>
+              <!-- Starred: a plain monochrome star toggle in line with the filters -->
+              <button class="iconbtn" id="fchipStarred" title="Starred" aria-pressed="false"><svg class="ic sm"><use href="#i-star"/></svg></button>
+              <div class="hdctl">
+                <!-- #55 show-hidden tucked away small (rare toggle, not a labelled slot) -->
+                <button class="iconbtn" id="exHidden" title="Show hidden files"><svg class="ic sm"><use href="#i-hide"/></svg></button>
+                <!-- view mode = a compact text dropdown (grid / list / feed), not a switcher -->
+                <button class="btn" id="exViewBtn" aria-haspopup="menu" aria-expanded="false"><span id="exViewLbl">Grid</span><svg class="ic sm"><use href="#i-chev"/></svg></button>
+              </div>
+            </div>
+          </div>
+          <!-- P13: New folder + Upload as a bottom-right floating cluster (Drive-style), square
+               eski buttons on a paper backing. -->
+          <div class="exfab">
             <button class="btn newFolderBtn"><svg class="ic sm"><use href="#i-plus"/></svg>New folder</button>
             <!-- #47 the real upload entry point -->
             <button class="btn primary" id="showUpload4"><svg class="ic sm"><use href="#i-plus"/></svg>Upload</button>
