@@ -11,6 +11,7 @@
 
 import { openModal, VisibilitySeg, Button, openMenu, toast, el, uploadProgress, putWithProgress } from "../ui.js";
 import { iconEl } from "../icons.js";
+import { tagEditor } from "../tags.js";
 import { supabase, session, rawSession } from "../supabase.js";
 import { createFolder } from "../data.js";
 
@@ -194,7 +195,9 @@ export async function openUpload(opts = {}) {
 
 
   const titleInput = el("input", { placeholder: "" });
-  const tagsInput = el("input", { placeholder: "142bpm, bridge" });
+  // P11 — typed, colour-coded tags. Free tags typed as "type:value" (bpm:142) are recognised +
+  // coloured; a channel's required types (D5) would pre-seed slots — none exist yet, so [].
+  const tagsEd = tagEditor({ placeholder: "add a tag… (bpm:142)" });
   const collabInput = el("input", { placeholder: "@handle, role — Enter to add" });
   const collabChips = el(".field.collabs", {}, [collabInput]);
   collabInput.addEventListener("keydown", (e) => {
@@ -212,7 +215,7 @@ export async function openUpload(opts = {}) {
     el("label.fl", {}, ["Title"]),
     el(".field", {}, [titleInput]),
     el("label.fl", {}, ["Tags"]),
-    el(".field", {}, [tagsInput]),
+    tagsEd.node,
     el("label.fl", {}, ["Collaborators ", el("span", { style: "color:var(--muted)" }, ["@handle + role"])]),
     collabChips,
   ]);
@@ -348,7 +351,7 @@ export async function openUpload(opts = {}) {
       // fields (they belong to a loose post); a flattened one shares the Tags across every file.
       prog.set(0.88, "Saving…");
       const title = titleInput.value.trim();
-      const tags = tagsInput.value.split(",").map((t) => t.trim()).filter(Boolean);
+      const tags = tagsEd.getTags();
       let saved = 0;
       for (const h of hashed) {
         const destFolder = folderFor(h);

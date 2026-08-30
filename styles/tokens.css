@@ -27,6 +27,13 @@
   --m19:#2083BE; --m20:#407EC4; --m21:#5779C6; --m22:#6A73C5; --m23:#7A6DC1; --m24:#8968BA;
   --m25:#9564B0; --m26:#A060A4; --m27:#AA5C97; --m28:#B15A87; --m29:#B65977; --m30:#B95966;
 
+  /* Tag-type hues (P11) — a typed tag (bpm:142, key:F-min…) reads in its type's fixed colour,
+     the same across every file. Generated with the SAME OKLCH method as the member hues
+     (light L=0.585 C=0.125) so they harmonise with the mono system instead of fighting it.
+     These are NOT member identity — they're content metadata, and unlike the member hue they
+     may appear anywhere (explorer, feed, details). Theme-swapped below. */
+  --tt-bpm:#467dc4; --tt-key:#359055; --tt-genre:#9a62ab; --tt-mood:#ae6916; --tt-instrument:#009194;
+
   /* type scale */
   --fs-mi:11px; --fs-xs:12px; --fs-sm:13px; --fs:14.5px; --fs-lg:16px; --fs-xl:20px;
   --font:'Jost','Avenir Next','Segoe UI',Arial,sans-serif;
@@ -57,6 +64,8 @@
     --m13:#68D2AE; --m14:#59D2BF; --m15:#50D1CE; --m16:#4FCFDD; --m17:#57CCE9; --m18:#64C8F4;
     --m19:#74C4FC; --m20:#86BFFF; --m21:#97B9FF; --m22:#A8B4FF; --m23:#B8AFFE; --m24:#C7AAF7;
     --m25:#D4A5EE; --m26:#DFA1E2; --m27:#E99ED5; --m28:#F19DC6; --m29:#F69CB6; --m30:#F99CA6;
+    /* dark tag-type hues: same generator, dark L=0.79 C=0.112 */
+    --tt-bpm:#8abdff; --tt-key:#81cf97; --tt-genre:#d9a4e9; --tt-mood:#edab6b; --tt-instrument:#4fd1d2;
   }
 }
 :root[data-theme="dark"]{
@@ -70,4 +79,6 @@
   --m13:#68D2AE; --m14:#59D2BF; --m15:#50D1CE; --m16:#4FCFDD; --m17:#57CCE9; --m18:#64C8F4;
   --m19:#74C4FC; --m20:#86BFFF; --m21:#97B9FF; --m22:#A8B4FF; --m23:#B8AFFE; --m24:#C7AAF7;
   --m25:#D4A5EE; --m26:#DFA1E2; --m27:#E99ED5; --m28:#F19DC6; --m29:#F69CB6; --m30:#F99CA6;
+  /* dark tag-type hues: same generator, dark L=0.79 C=0.112 */
+  --tt-bpm:#8abdff; --tt-key:#81cf97; --tt-genre:#d9a4e9; --tt-mood:#edab6b; --tt-instrument:#4fd1d2;
 }

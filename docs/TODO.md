@@ -634,7 +634,25 @@ per channel, builds on P11), D6 (review canvas/kanban/versions).
       `app/main.js` (route dispatch), `app/screens/workspace.js` (menu → route; dead-code removal),
       `styles/content.css`. Verified: demo settings screen renders all 7 nav panels, switches
       panels, danger zone has the type-to-confirm delete, in the shell with the rail, 0 pageerrors.
-- [ ] **P11 · Typed, colour-coded tags + a tag-type filter facet (round-6, owner).** Tags gain a
+- [x] **P11 · Typed, colour-coded tags + a tag-type filter facet (round-6, owner).** *Done — owner
+      picked the **V2 soft-chip** treatment from a 3-version review artifact (2026-08-30), now wired
+      in.* Decisions settled: (a) a typed tag is stored in `content_tags.tag` as **`type:value`**
+      (`bpm:142`) — **no schema change**, the type is the prefix before the first colon and must be a
+      known type; (b) colour is a client-side **`--tt-<type>`** token set (bpm/key/genre/mood/
+      instrument) added to `tokens.css` both themes, generated with the **same OKLCH method as the
+      member hues** so they harmonise (these are content metadata, not member identity, so they may
+      render anywhere); (c) the facet derives types from the tags in view. New **`app/tags.js`**:
+      `parseTag`/`makeTag`, `tagChip` (the V2 soft chip — tinted box, type affix + value), and
+      `tagEditor` (colon-aware input: typing `bpm:142` recognises + colours the type, Enter commits;
+      `required` types pre-seed fill-in-place slots for **D5**). Wired into the **upload sheet** (Tags
+      field → `tagEditor`) and the **details pane** (`tagsSection` renders `tagChip`, add normalises via
+      `parseTag`). Explorer gains a **"Tag type"** filter facet (`state.tagTypes`) alongside the exact
+      "Tag" facet. *Files:* `app/tags.js` (new), `styles/tokens.css` (`--tt-*`), `styles/primitives.css`
+      (`.tchip`/`.tageditor`), `app/screens/upload.js`, `app/screens/details.js`, `app/screens/explorer.js`,
+      `app/demo.js` (typed-tag fixtures). Verified: components render the 5 type colours correctly both
+      themes, editor commits `type:value` + required-slot fill (getTags correct), "Tag type" facet shows
+      in the toolbar, 0 pageerrors. **Foundation for D5** (required tags per channel — the `required`
+      slot UI is built, awaiting the channel-required-types data). *Original spec:* Tags gain a
       **type** (e.g. `bpm`, `key`, `genre`) and each **type has a fixed colour** — a `bpm` tag is
       always blue, a `key` tag always green, etc. — so the same kind of tag reads the same across
       every file. The tag TYPES then show up as their **own facet in the explorer filters** (filter

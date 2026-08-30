@@ -104,6 +104,27 @@
 .field.searchbar{padding:6px 9px}
 .field.searchbar input{font-size:var(--fs-sm)}
 
+/* P11 — typed-tag soft chip (tags.js tagChip). Owner-picked V2: a compact --r box washed with
+   the type hue for a typed tag; neutral --tagbg for an untyped one. The value carries; the type
+   is a small dimmed affix. This is the ONE place a tag renders as a box (the plain-text .tag rule
+   still holds elsewhere) — a deliberate owner call so a bpm/key reads at a glance. */
+.tchip{display:inline-flex;align-items:center;gap:5px;border-radius:var(--r);padding:2px 7px;
+  font-weight:600;font-size:var(--fs-xs);line-height:1.4;background:var(--tagbg);color:var(--soft)}
+.tchip .ty{font-size:var(--fs-mi);opacity:.72;font-weight:600}
+.tchip .x{cursor:pointer;opacity:0;font-size:10px;transition:opacity var(--t);margin-left:1px}
+.tchip:hover .x{opacity:.55}
+.tchip .x:hover{opacity:1}
+/* the typed-tag editor (tags.js tagEditor) — chips row + a colon-aware input */
+.tageditor{display:flex;flex-direction:column;gap:8px}
+.tchips{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.tchips:empty{display:none}
+.tchip.chipslot input{background:none;border:0;font:inherit;font-weight:600;font-size:var(--fs-xs);
+  color:inherit;width:4.5ch;padding:0;min-width:2ch}
+.tchip.chipslot input:focus{outline:none}
+.tchip.chipslot input::placeholder{color:currentColor;opacity:.62;font-weight:500}
+.taghint{font-size:var(--fs-mi);color:var(--muted);min-height:14px}
+.tagin input{font-size:var(--fs-sm)}
+
 /* ── P3.4 Modal + scrim ──────────────────────────────────────────────────── */
 /* scrim = fixed backdrop that DARKENS the page and centres the modal. No drop
    shadow on the card.

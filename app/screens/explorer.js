@@ -15,6 +15,7 @@
 
 import { el, toast, openMenu, closeMenus, openModal, VisibilitySeg, Button, copyToClipboard } from "../ui.js";
 import { iconEl } from "../icons.js";
+import { parseTag } from "../tags.js";
 import { navigate, reload } from "../router.js";
 import { createFolder, moveToFolder, trashWorks, restoreWork, purgeWork, emptyTrash, loadTrash, starWork, unstarWork, saveToFiles, renameWork, setHidden, createShareLink, shareUrl, loadShareLinks, revokeShareLink, setVisibility, visFromDb, createFolderShare, folderShareUrl, requestToJoin, refreshStorage } from "../data.js";
 import { workCard, folderCard, mediaUrl, KIND_ICON, downloadWork } from "../cards.js";
@@ -89,7 +90,8 @@ export function renderExplorer(data, view = {}) {
     types: new Set(),       // kind filter — empty = all (image/audio/video/text/other)
     channels: new Set(),    // by placement channel name (server only)
     uploaders: new Set(),   // by author name (server only)
-    tags: new Set(),        // by content tag
+    tags: new Set(),        // by content tag (exact value, incl. typed "type:value")
+    tagTypes: new Set(),    // P11: by tag TYPE (bpm/key/genre…) — a file with any tag of that type
     date: "any",            // any/today/week/month/year
     sort: "latest",        // latest/oldest/name/size
     dir: "desc",           // sort direction
@@ -317,7 +319,9 @@ function paint(tree, pane, data, state, rerender) {
   const uniq = (arr) => [...new Set(arr.filter(Boolean))].sort();
   const channelOpts = uniq(data.files.map((w) => w.channelName)).map((c) => [c, c]);
   const uploaderOpts = uniq(data.files.map((w) => w.who?.name)).map((u) => [u, u]);
-  const tagOpts = uniq(data.files.flatMap((w) => w.tags || [])).map((t) => [t, t]);
+  const tagOpts = uniq(data.files.flatMap((w) => w.tags || [])).map((t) => { const p = parseTag(t); return [t, p.typed ? `${p.type} ${p.value}` : p.value]; });
+  // P11: the distinct tag TYPES present → their own facet (filter by bpm / key / genre …)
+  const tagTypeOpts = uniq(data.files.flatMap((w) => (w.tags || []).map((t) => parseTag(t).type).filter(Boolean))).map((t) => [t, t]);
   // P8: Type filters by ACTUAL file extension present (.wav / .flp / .png …), derived from the
   // files in view — not the broad Images/Audio/Video buckets. The value is the lowercased ext.
   const typeOpts = uniq(data.files.map((w) => (w.file_ext || "").toLowerCase())).map((e) => [e, "." + e]);
@@ -338,6 +342,7 @@ function paint(tree, pane, data, state, rerender) {
   };
   const typeBtn = multiBtn("Type", state.types, typeOpts);
   const tagBtn = multiBtn("Tag", state.tags, tagOpts);
+  const tagTypeBtn = multiBtn("Tag type", state.tagTypes, tagTypeOpts);
   // Channel + Uploader are server context only (personal + shared files carry neither)
   const serverSource = data.source === "server";
   const chanBtn = serverSource ? multiBtn("Channel", state.channels, channelOpts) : null;
@@ -361,7 +366,7 @@ function paint(tree, pane, data, state, rerender) {
   const toolbar = el(".toolbar", {}, [
     search,
     el(".tbfilters", {}, [
-      typeBtn, chanBtn, uploaderBtn, tagBtn, dateBtn, sortBtn, dirBtn, starFilterBtn,
+      typeBtn, chanBtn, uploaderBtn, tagBtn, tagTypeBtn, dateBtn, sortBtn, dirBtn, starFilterBtn,
       el(".hdctl", {}, [hiddenBtn, viewBtn]),
     ].filter(Boolean)),
   ]);
@@ -457,6 +462,7 @@ function contents(data, state, rerender, sel) {
   if (state.channels.size) files = files.filter((w) => state.channels.has(w.channelName));
   if (state.uploaders.size) files = files.filter((w) => state.uploaders.has(w.who?.name));
   if (state.tags.size) files = files.filter((w) => (w.tags || []).some((t) => state.tags.has(t)));
+  if (state.tagTypes.size) files = files.filter((w) => (w.tags || []).some((t) => state.tagTypes.has(parseTag(t).type)));
   if (state.date !== "any") { const cut = dateCutoff(state.date); files = files.filter((w) => new Date(w.created_at || 0) >= cut); }
   files = sortFiles(files, state.sort, state.dir);
   state._files = files;   // the current in-view set, for ⌘A select-all

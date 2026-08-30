@@ -12,7 +12,8 @@
 // transport) when bytes exist; non-previewable (and, until a real R2 upload exists,
 // anything with no blob) shows a type card — never a fake thumbnail.
 
-import { el, toast, Tag, openMenu } from "../ui.js";
+import { el, toast, openMenu } from "../ui.js";
+import { tagChip, parseTag } from "../tags.js";
 import { openReport } from "../report.js";
 import { iconEl } from "../icons.js";
 import { navigate } from "../router.js";
@@ -225,7 +226,9 @@ function tagsSection(w, ctx = {}) {
   const chips = el(".chips");
 
   async function add(raw) {
-    const clean = (raw || "").trim().replace(/^#/, "").toLowerCase();
+    // P11 — normalize via parseTag so a typed "bpm:142" is stored as type:value (type lowercased,
+    // value kept as typed); an untyped tag keeps its text. Strips a leading # if present.
+    const clean = parseTag((raw || "").replace(/^#/, "")).raw;
     if (!clean) return;
     if (w.tags.includes(clean)) { toast({ message: "Already tagged" }); paint(); return; }
     try { if (!isDemoQS()) await addTag(w.id, clean); w.tags.push(clean); paint(); }
@@ -236,7 +239,7 @@ function tagsSection(w, ctx = {}) {
     catch (e) { toast({ message: e?.message || "Couldn’t remove the tag" }); }
   }
   function openInput() {
-    const input = el("input", { placeholder: "tag", "aria-label": "New tag" });
+    const input = el("input", { placeholder: "tag or bpm:142", "aria-label": "New tag" });
     const holder = el(".field", { style: "max-width:130px;height:26px" }, [input]);
     // `closed` guards the double-fire: committing on Enter repaints (detaching the input),
     // which fires blur — without the guard that would re-add the same value.
@@ -250,7 +253,7 @@ function tagsSection(w, ctx = {}) {
     });
     input.addEventListener("blur", () => done(input.value));
   }
-  function chip(t) { return Tag({ label: t, removable: editable, onRemove: () => remove(t) }); }
+  function chip(t) { return tagChip(t, { removable: editable, onRemove: () => remove(t) }); }
   function paint() {
     chips.replaceChildren(...w.tags.map(chip));
     if (editable) chips.append(el("button.addtag", { title: "Add tag", "aria-label": "Add tag", onClick: openInput }, [iconEl("plus", "sm")]));

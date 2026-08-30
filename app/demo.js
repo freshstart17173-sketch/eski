@@ -112,9 +112,9 @@ export function demoWorkspace() {
     // shapeWork shape (B5): name/title, file_ext, kind, who:{name}, created_at — same as the
     // live channel-Files feed loadWorkspace now builds, so filesPanel renders both identically.
     files: [
-      { id: "cf1", name: "late_bloom_beat.flp",   title: "late_bloom_beat.flp",   kind: "file",  file_ext: "flp", blob_sha: null, bytes: 3.2e6, tags: [], who: { name: "dev", colorIdx: 3 }, created_at: new Date(Date.now() - 3 * 3600e3).toISOString() },
-      { id: "cf2", name: "bridge_scratch_rae.wav", title: "bridge_scratch_rae.wav", kind: "audio", file_ext: "wav", blob_sha: null, bytes: 18e6,  tags: ["acapella"], who: { name: "rae", colorIdx: 2 }, created_at: new Date(Date.now() - 5 * 3600e3).toISOString() },
-      { id: "cf3", name: "ref_drums.png",          title: "ref_drums.png",          kind: "image", file_ext: "png", blob_sha: null, bytes: 2.1e6, shot: "c", tags: ["reference"], who: { name: "rae", colorIdx: 2 }, created_at: new Date(Date.now() - 26 * 3600e3).toISOString() },
+      { id: "cf1", name: "late_bloom_beat.flp",   title: "late_bloom_beat.flp",   kind: "file",  file_ext: "flp", blob_sha: null, bytes: 3.2e6, tags: ["bpm:142", "key:F min", "drums"], who: { name: "dev", colorIdx: 3 }, created_at: new Date(Date.now() - 3 * 3600e3).toISOString() },
+      { id: "cf2", name: "bridge_scratch_rae.wav", title: "bridge_scratch_rae.wav", kind: "audio", file_ext: "wav", blob_sha: null, bytes: 18e6,  tags: ["acapella", "mood:hazy", "bpm:142"], who: { name: "rae", colorIdx: 2 }, created_at: new Date(Date.now() - 5 * 3600e3).toISOString() },
+      { id: "cf3", name: "ref_drums.png",          title: "ref_drums.png",          kind: "image", file_ext: "png", blob_sha: null, bytes: 2.1e6, shot: "c", tags: ["reference", "genre:lofi"], who: { name: "rae", colorIdx: 2 }, created_at: new Date(Date.now() - 26 * 3600e3).toISOString() },
       { id: "cf4", name: "bounce_warm.wav",        title: "bounce_warm.wav",        kind: "audio", file_ext: "wav", blob_sha: null, bytes: 14e6,  tags: [], who: { name: "dev", colorIdx: 3 }, created_at: new Date(Date.now() - 30 * 3600e3).toISOString() },
     ],
 
