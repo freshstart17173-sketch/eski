@@ -248,10 +248,15 @@ per channel, builds on P11), D6 (review canvas/kanban/versions).
       on the on-close reload — now guarded to only follow the URL when actually on `/u/<oldHandle>`.
       6/6 headless asserts pass (rename on profile follows the URL to profile; rename from settings
       stays on settings; neither 404s).
-- [ ] **B3 · Message permalink (Copy link) works.** `⋯ → Copy link` should copy a permalink that,
-      when opened, scrolls to and flashes the message. *Files:* `app/screens/workspace.js`,
-      `app/router.js`, `app/data.js` (fetch-by-id). *Medium.* *Test:* backend — service-role read of
-      one message by id succeeds; demo — open the permalink route, assert the row scrolls into view + gets the flash class.
+- [x] **B3 · Message permalink (Copy link) works.** *Done (demo-verified) — found already built by a
+      prior session and confirmed end-to-end this pass.* `⋯ → Copy link` builds `msgPermalink` (the
+      canonical `/s/:id/c/:ch?m=<id>`, from `data.server`/`data.channel` not `location`), `workspaceView`
+      parses `?m=` into `focusMsg`, and `flashMessage` (RAF-deferred) scrolls the row into view + adds
+      the one-shot `.flash` pulse (`styles/shell.css` `@keyframes msgflash`). Verified: arriving at
+      `/s/lb/c/beats?m=m3` finds the row, adds `.flash`, and scrolls it into view (inView:true), 0
+      pageerrors. *Files:* `app/screens/workspace.js`. **Caveat:** works while channel messages load
+      unbounded (they're all present); a permalink to an older message becomes unreachable once **P20**
+      paginates the stream — P20 must add the load-earlier / fetch-by-id path to keep permalinks whole.
 - [x] **B4 · Directly-typed `/create` · `/upload` · `/settings` open their modal over the shell.**
       *Done (demo-verified both themes).* `/settings` already resolved to the User-settings screen;
       the gap was `/create` and `/upload`, which weren't in `IN_SHELL` so they hit the "not yet
@@ -671,6 +676,9 @@ per channel, builds on P11), D6 (review canvas/kanban/versions).
       realtime append + the pins/reactions/forwards/attachments resolution working on the windowed
       set. *Files:* `app/data.js` (`loadWorkspace` messages query + shape), `app/screens/workspace.js`
       (scroll-up loader). *Medium.* Not a correctness bug — the rest of the read layer audited clean.
+      **Must preserve B3 message permalinks:** once the stream is windowed, a `?m=<id>` link to a
+      message outside the window has to fetch-by-id (or load-earlier until found) then scroll+flash it,
+      or the permalink silently no-ops. Wire that into the scroll-up loader / `flashMessage` fallback.
 
 ### 4 · Deferred (post-beta / infra-gated — do NOT build now)
 

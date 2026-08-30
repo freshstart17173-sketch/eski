@@ -2285,3 +2285,15 @@ GOTCHA T: openUpload() early-returns with a "Sign in to upload" toast when there
   in demo the /upload route shows the Feed backdrop + toast, not the sheet — that's correct (upload
   is live-only). openCreateServer() has no such gate (createServer previews in demo), so /create
   opens fully in demo.
+
+## 2026-08-30 — B3 message permalink (verified, was already built)
+IN PROGRESS: (cleared)
+DONE: B3 was fully implemented by a prior session but left unticked — verified end-to-end this pass
+  and ticked. ⋯→Copy link builds msgPermalink (/s/:id/c/:ch?m=<id>, canonical from data not location);
+  workspaceView parses ?m= → focusMsg; flashMessage (RAF) scrolls the row into view + adds the
+  one-shot .flash pulse (shell.css @keyframes msgflash). Verified: arriving at /s/lb/c/beats?m=m3
+  finds the row, adds .flash, scrolls it into view, 0 pageerrors. No code change (docs only).
+NEXT: B13 (menu permission-gating — visible menu change, 3 versions) OR the easy visual items.
+GOTCHA U: B3 permalinks only resolve while channel messages load unbounded (P20 not yet done). When
+  P20 paginates the stream, a ?m=<id> to a message outside the loaded window will no-op unless P20
+  adds fetch-by-id / load-earlier-until-found into flashMessage — noted on the P20 item.
