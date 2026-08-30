@@ -2436,3 +2436,14 @@ DONE: the status editor now lives inline on the owner's profile hero — a dense
 NEXT: density sweep beyond dialogs (owner asked re toasts/screens/other elements) — verify toasts,
   sweep .menu rows + shared list/screen elements. Then remaining round-7 (P11 typed tags, P14 view
   modes, P16 upload progress, P19 unread) + P3/P20.
+
+## 2026-08-30 — density sweep beyond dialogs (toasts/menus verified, upload sheet tightened)
+IN PROGRESS: (cleared)
+DONE: audited the shared floating elements for the owner's "toasts/screens/other elements" question —
+  toasts (.toast padding --s2/--s3 = 8/12) and menu rows (.menu button padding 6px 10px) are ALREADY
+  at the tight/dense spec (no change). Tightened the upload sheet to match the V1 dialog density it
+  had drifted from: .fl label margin 14→8 (var(--s2)), .dropzone vertical padding 22→16, .addmore
+  16→12. Upload is session-gated (can't open in demo) → QA-CHECKLIST note. content.css verified intact
+  (explorer renders 0 pageerrors). Files: styles/content.css. Committed fe0d394.
+NEXT: remaining round-7 — P11 (typed tags, needs a schema decision), P14 (view modes = density
+  levels), P16 (upload progress), P19 (unread indicator); plus P3 (loading affordance), P20 (paginate).
