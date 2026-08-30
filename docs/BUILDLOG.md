@@ -2599,3 +2599,23 @@ GOTCHA: search_files is only routed to for a text/modifier search with no Channe
   (those aren't in the RPC yet) — otherwise the client path runs (correct, since the explorer still
   preloads all works). If loadExplorer ever stops preloading, extend the RPC with p_channels +
   uploader-by-name and make it the sole engine.
+
+## 2026-08-30 — P14 explorer view densities (list / small / large), Windows-Explorer model
+IN PROGRESS: (cleared)
+DONE: reworked the explorer view modes into three densities the owner specified (reference: Windows
+  File Explorer): Large (big content thumbnails — image/video frame fills the cell, other kinds show
+  the kind icon; filename + uploader below; spacing for 2-line titles), Small icons (dense grid of
+  compact [kind icon · name] cells), List (Details table — Name · Type · Size · Uploader · Added,
+  tabular sizes, folders as rows). One shared select/open wiring (wireFileEl/wireFolderEl): single
+  click selects, double click opens; selection outline, marquee, bulk bar, drag-to-make-folder/move,
+  ⌘A and star/⋯ menus now work in EVERY density (broadened the selection/marquee/drag/empty-click
+  selectors from .card to [data-id]/[data-folder-id]). Old grid/feed modes migrate to large; the
+  Feed/media-wall was removed (its .ff* CSS too) — may return as its own surface post-beta. ?view=
+  small|list drives + restores the density. Verified: demo renders all three in `beats` (4 files +
+  folders), selection + double-open + columns correct, 0 pageerrors; boot both themes clean.
+  Screenshotted all three for the owner. Commit <sha>.
+NEXT: owner review of the three densities (tweak sizes/columns if wanted). Remaining master-TODO:
+  P23 (folder tags), B9 (live-QA), B12 (owner-skipped).
+GOTCHA: baseName is imported from cards.js (a missing import threw "baseName is not defined" the
+  first run — caught in demo). List rows/small cells aren't .card, so anything keying off .card must
+  use [data-id]/[data-folder-id] (done for selection/marquee/drag/empty-click).

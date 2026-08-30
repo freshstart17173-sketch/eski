@@ -18,13 +18,19 @@ import { iconEl } from "../icons.js";
 import { parseTag, TAG_TYPES } from "../tags.js";
 import { navigate, reload } from "../router.js";
 import { createFolder, moveToFolder, trashWorks, restoreWork, purgeWork, emptyTrash, loadTrash, starWork, unstarWork, saveToFiles, renameWork, setHidden, createShareLink, shareUrl, loadShareLinks, revokeShareLink, setVisibility, visFromDb, createFolderShare, folderShareUrl, requestToJoin, refreshStorage, searchFiles } from "../data.js";
-import { workCard, folderCard, mediaUrl, KIND_ICON, downloadWork } from "../cards.js";
+import { workCard, folderCard, mediaUrl, KIND_ICON, downloadWork, baseName } from "../cards.js";
 import { channelColumn } from "./workspace.js";
 import { openUpload, enableDropUpload } from "./upload.js";
 import { openDetails, closeDetails } from "./details.js";
 
-const VIEWS = { grid: "Grid", list: "List", feed: "Feed" };
-const PREVIEWABLE = new Set(["image", "video", "audio"]);
+// P14: three file-browser DENSITIES, modelled on Windows Explorer (owner spec 2026-08-30):
+//   large — big content thumbnails (a photo/video frame fills the cell; other kinds show the
+//           kind icon), filename + uploader below; spacing tuned for 2-line titles.
+//   small — a dense grid of compact [kind icon · filename] rows (Explorer "small icons").
+//   list  — the "Details" table: a column per field (Name · Type · Size · Uploader · Added).
+// Old modes migrate: grid/feed → large. Default is large.
+const VIEWS = { large: "Large", small: "Small icons", list: "List" };
+const VIEW_ALIAS = { grid: "large", feed: "large" };   // migrate old ?view= values / saved modes
 // Filters (CANON §C.6): Type/Channel/Uploader/Tag are multi-select (an empty set = no
 // filter, the union within a facet, the intersection across facets); Date and Sort are
 // single-select. Type/Channel/Uploader/Tag options are all derived from the files in view
@@ -88,7 +94,7 @@ export function renderExplorer(data, view = {}) {
   const _restored = view.folderId ?? data.currentFolderId ?? null;
   const state = {
     folderId: (_restored && (data.folders || []).some((f) => f.id === _restored)) ? _restored : null,
-    mode: VIEWS[view.mode] ? view.mode : "grid",
+    mode: (VIEWS[VIEW_ALIAS[view.mode] || view.mode]) ? (VIEW_ALIAS[view.mode] || view.mode) : "large",
     query: "",
     collapsed: new Set(),   // folder ids whose children are hidden in the tree
     selection: persistentSelection(data),   // selected work ids — persists across nav (§C.6, B6)
@@ -220,7 +226,7 @@ export function renderExplorer(data, view = {}) {
     const tag = document.activeElement?.tagName;
     if (tag === "INPUT" || tag === "TEXTAREA") return;
     if (e.key === "Escape" && (state.selection.size || state.selFolder)) { state.selection.clear(); state.selFolder = null; state.lastIdx = -1; state._refresh?.(); }
-    else if ((e.metaKey || e.ctrlKey) && (e.key === "a" || e.key === "A") && state.mode === "grid") {
+    else if ((e.metaKey || e.ctrlKey) && (e.key === "a" || e.key === "A")) {   // P14: ⌘A in any density
       e.preventDefault();
       for (const w of state._files || []) state.selection.add(w.id);
       state._refresh?.();
@@ -261,7 +267,7 @@ function explorerUrl(data, { folderId, fileId, mode } = {}) {
   const q = new URLSearchParams();
   if (folderId) q.set("folder", folderId);
   if (fileId) q.set("file", fileId);
-  if (mode && mode !== "grid") q.set("view", mode);
+  if (mode && mode !== "large") q.set("view", mode);
   if (isDemoQS()) q.set("demo", "1");
   const s = q.toString();
   return explorerBase(data) + (s ? `?${s}` : "");
@@ -511,7 +517,7 @@ function paint(tree, pane, data, state, rerender) {
   let suppressClear = false;
   body.addEventListener("click", (e) => {
     if (suppressClear) { suppressClear = false; return; }
-    if (e.target.closest(".card") || e.target.closest(".selbar")) return;
+    if (e.target.closest("[data-id]") || e.target.closest("[data-folder-id]") || e.target.closest(".selbar")) return;
     if (state.selection.size || state.selFolder) { state.selection.clear(); state.selFolder = null; state.lastIdx = -1; refreshSel(); }
   });
 
@@ -522,11 +528,11 @@ function paint(tree, pane, data, state, rerender) {
   let dragIds = [];
   if (!data.shared) {
     body.addEventListener("pointerdown", (e) => {
-      if (e.button !== 0 || e.target.closest(".card") || e.target.closest(".selbar") || e.target.closest(".exfab")) return;
+      if (e.button !== 0 || e.target.closest("[data-id]") || e.target.closest("[data-folder-id]") || e.target.closest(".selbar") || e.target.closest(".exfab")) return;
       suppressClear = false;   // B15: never let a stale marquee flag eat this gesture's clear-click
       const start = { x: e.clientX, y: e.clientY };
       const base = (e.shiftKey || e.metaKey || e.ctrlKey) ? new Set(state.selection) : new Set();
-      const rects = [...body.querySelectorAll(".card[data-id]")].map((c) => ({ id: c.dataset.id, r: c.getBoundingClientRect() }));
+      const rects = [...body.querySelectorAll("[data-id]")].map((c) => ({ id: c.dataset.id, r: c.getBoundingClientRect() }));
       const box = el(".marquee"); let moved = false;
       const move = (ev) => {
         const x = Math.min(ev.clientX, start.x), y = Math.min(ev.clientY, start.y);
@@ -550,7 +556,7 @@ function paint(tree, pane, data, state, rerender) {
     // Native drag: a file card dropped onto another FILE makes a folder from them; onto a FOLDER
     // moves them in. Multi-drag when the grabbed card is part of a 2+ selection.
     body.addEventListener("dragstart", (e) => {
-      const card = e.target.closest(".card[data-id]");
+      const card = e.target.closest("[data-id]");   // P14: a file element in any density
       if (!card) { dragIds = []; return; }
       const id = card.dataset.id;
       dragIds = (state.selection.has(id) && state.selection.size > 1) ? [...state.selection] : [id];
@@ -558,18 +564,18 @@ function paint(tree, pane, data, state, rerender) {
       try { e.dataTransfer.setData("text/plain", dragIds.join(",")); } catch { /* Safari */ }
     });
     body.addEventListener("dragover", (e) => {
-      const t = e.target.closest(".card[data-id], .foldercard");
+      const t = e.target.closest("[data-id], [data-folder-id]");
       if (t && dragIds.length && !dragIds.includes(t.dataset.id)) { e.preventDefault(); t.classList.add("droptarget"); }
     });
-    body.addEventListener("dragleave", (e) => { e.target.closest(".card")?.classList.remove("droptarget"); });
+    body.addEventListener("dragleave", (e) => { e.target.closest("[data-id], [data-folder-id]")?.classList.remove("droptarget"); });
     body.addEventListener("drop", (e) => {
-      const t = e.target.closest(".card[data-id], .foldercard");
+      const t = e.target.closest("[data-id], [data-folder-id]");
       if (!t || !dragIds.length) return;
       e.preventDefault(); t.classList.remove("droptarget");
       const ids = dragIds.filter((x) => x !== t.dataset.id); dragIds = [];
       if (!ids.length) return;
-      if (t.classList.contains("foldercard")) moveInto(data, state, rerender, ids, t.dataset.folderId || null);
-      else makeFolderFrom(data, state, rerender, [...ids, t.dataset.id]);
+      if (t.dataset.folderId != null) moveInto(data, state, rerender, ids, t.dataset.folderId || null);   // dropped on a folder
+      else makeFolderFrom(data, state, rerender, [...ids, t.dataset.id]);                                   // dropped on a file
     });
   }
 
@@ -578,8 +584,9 @@ function paint(tree, pane, data, state, rerender) {
   const sel = { state, refresh: refreshSel };
   state._refresh = refreshSel;   // for the screen-level key handler (Esc / ⌘A)
   function refreshSel() {
-    body.querySelectorAll(".card[data-id]").forEach((c) => c.classList.toggle("sel", state.selection.has(c.dataset.id)));
-    body.querySelectorAll(".foldercard[data-folder-id]").forEach((c) => c.classList.toggle("sel", c.dataset.folderId === state.selFolder));   // B26
+    // P14: select by [data-id]/[data-folder-id] so ALL densities participate (card, list row, small cell)
+    body.querySelectorAll("[data-id]").forEach((c) => c.classList.toggle("sel", state.selection.has(c.dataset.id)));
+    body.querySelectorAll("[data-folder-id]").forEach((c) => c.classList.toggle("sel", c.dataset.folderId === state.selFolder));   // B26
     const n = state.selection.size;
     // B6: a single selection stays quiet — its actions are on the card ⋯ and the details pane.
     // The bulk bar only appears once you deliberately multi-select (2+), so a plain click never
@@ -748,9 +755,11 @@ function contents(data, state, rerender, sel) {
   const onStar = (w) => toggleStar(data, state, rerender, w);
   const onMenu = data.shared ? null : (w, anchor) => openCardMenu(data, state, rerender, w, anchor);   // read-only shared view has no per-card owner menu (P9)
   const onShareFolder = (folder, anchor) => shareFolderMenu(data, folder, anchor);
-  const view = state.mode === "feed" ? feedView(data, state, openFile)
-    : state.mode === "list" ? listView(subfolders, files, { openFile, openFolder })
-    : gridView(subfolders, files, { openFile, openFolder, onFolderClick, onCardClick, onStar, onMenu, onShareFolder, showWho: data.source !== "personal" });
+  // P14: all three densities share the same select/open wiring + hooks; only the layout differs.
+  const hooks = { openFile, openFolder, onFolderClick, onCardClick, onStar, onMenu, onShareFolder, showWho: data.source !== "personal", personal };
+  const view = state.mode === "list" ? listView(subfolders, files, hooks)
+    : state.mode === "small" ? smallView(subfolders, files, hooks)
+    : largeView(subfolders, files, hooks);
   // P24: a paged server search that has more rows gets a "Load more" footer (client-side folder
   // browsing loads the whole tree at once, so it never needs one).
   if (serverPaged && serverPaged.shown < serverPaged.total) {
@@ -774,88 +783,91 @@ function shareFolderMenu(data, folder, anchor) {
   } }]);
 }
 
-// Feed view (§C.6): flatten the current folder's whole SUBTREE to previewable works
-// (image/video/audio) newest-first — an Instagram-style server media preview wall.
-// Project files (.flp/.zip) are hidden here (grid/list show them).
-function feedView(data, state, openFile) {
-  // collect the current folder + all descendants
-  const wantIds = new Set();
-  (function walk(fid) { wantIds.add(fid); for (const f of data.folders) if ((f.parentId || null) === fid) walk(f.id); })(state.folderId);
-  let items = data.files.filter((w) => PREVIEWABLE.has(w.kind) && wantIds.has(w.folderId || null));
-  items = sortFiles(items, "latest", "desc");
+// ── P14 view densities (list / small / large) ────────────────────────────────
+const KIND_LIST_ICON = { audio: "voice", image: "image", video: "video", text: "type", other: "file" };
 
-  const here = state.folderId ? (data.folders.find((f) => f.id === state.folderId)?.name || "this folder") : rootLabel(data);
-  const note = el(".ffnote", {}, [iconEl("home", "sm"), `Everything previewable in ${here} and its subfolders, newest first. Project files are hidden here — switch to grid or list for those.`]);
-
-  if (!items.length) return el(".exview.filefeed", { "data-exview": "feed" }, [note, emptyState("image", "Nothing to preview", "This folder has no images, audio, or video yet.")]);
-
-  const feed = el(".filefeed", {}, [note]);
-  for (const w of items) {
-    const folderName = w.folderId ? (data.folders.find((f) => f.id === w.folderId)?.name || "") : rootLabel(data);
-    const media = el(".ffmedia", { onClick: () => openFile(w) }, [feedMedia(w)]);
-    const meta = el(".ffmeta", {}, [el("b", {}, [w.title || "untitled"]), el("span.who", {}, [`${w.who?.name || ""}${folderName ? " · " + folderName : ""}`])]);
-    // Commenting was cut from the beta (P4, 2026-08-30): the media-preview Feed view keeps
-    // the image/meta, the inline comment thread is gone. Clicking the media opens the file.
-    feed.append(el(".ffitem", {}, [media, meta]));
-  }
-  return el(".exview.filefeed", { "data-exview": "feed" }, [feed]);
+// Shared select/open wiring so every density behaves identically (B26 Drive/Explorer model):
+// single click selects, double click opens; a file drags (make-folder / move), a folder is a drop
+// target; ⋯ / right-click opens the owner menu. Any element that carries data-id / data-folder-id
+// participates in the selection outline, the marquee, and the bulk bar (refreshSel/marquee below
+// select by [data-id], not only .card). `i` is the file's index for Shift-range selection.
+function wireFileEl(node, w, i, { onCardClick, openFile, onMenu }) {
+  node.dataset.id = w.id;
+  if (onMenu) node.draggable = true;   // B10: drag a file onto another → make a folder
+  node.addEventListener("click", (e) => onCardClick(w, i, e));
+  node.addEventListener("dblclick", (e) => { e.preventDefault(); openFile(w); });
+  node.addEventListener("contextmenu", (e) => { e.preventDefault(); onMenu?.(w, node); });
+  return node;
+}
+function wireFolderEl(node, f, { onFolderClick, openFolder, onShareFolder }) {
+  node.dataset.folderId = f.id;   // B10: a drop target
+  node.addEventListener("click", (e) => onFolderClick(f, e));
+  node.addEventListener("dblclick", (e) => { e.preventDefault(); openFolder(f); });
+  node.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); openFolder(f); } });
+  if (onShareFolder) node.addEventListener("contextmenu", (e) => { e.preventDefault(); onShareFolder(f, node); });
+  return node;
 }
 
-function feedMedia(w) {
-  const url = mediaUrl(w);
-  if (w.kind === "image" && url) { const img = el("img", { src: url, alt: w.title || "", loading: "lazy" }); return img; }
-  if (w.kind === "video" && url) return el("video", { src: url, muted: true, preload: "metadata", playsinline: true });
-  const icon = iconEl(KIND_ICON[w.kind] || "file");   // image/video with no bytes yet
-  return el(".dtype", {}, [icon, el("span.ext", {}, [(w.file_ext || "").toUpperCase()])]);
-}
-
-function gridView(subfolders, files, { openFile, openFolder, onFolderClick, onCardClick, onStar, onMenu, onShareFolder, showWho }) {
-  const grid = el(".masonry.even");
-  for (const f of subfolders) {
-    const fc = folderCard(f, { onShare: onShareFolder });
-    fc.dataset.folderId = f.id;   // B10: a drag-drop target (drop files here to move them in)
-    // B26: single click SELECTS the folder, double click OPENS it (like files).
-    fc.addEventListener("click", (e) => onFolderClick(f, e));
-    fc.addEventListener("dblclick", (e) => { e.preventDefault(); openFolder(f); });
-    fc.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); openFolder(f); } });
-    grid.append(fc);
-  }
+// LARGE — big content thumbnails (the current card), spacing tuned for 2-line titles.
+function largeView(subfolders, files, hooks) {
+  const { openFolder, onFolderClick, onStar, onMenu, onShareFolder, showWho } = hooks;
+  const grid = el(".masonry.even.exlarge");
+  for (const f of subfolders) grid.append(wireFolderEl(folderCard(f, { onShare: onShareFolder }), f, hooks));
   files.forEach((w, i) => {
     const actions = onMenu ? [{ act: "more", icon: "more", title: "More", onClick: (ww) => onMenu(ww, card.querySelector('.cardacts [data-act="more"]') || card) }] : [];
     const card = workCard(w, { selectable: true, showWho, starred: !!w.starred, onStar, actions });
     if (w.hidden) card.classList.add("ishidden");
-    card.dataset.id = w.id;
-    if (onMenu) card.draggable = true;   // B10: drag a file onto another file → make a folder (owner-only view)
-    card.addEventListener("click", (e) => onCardClick(w, i, e));
-    card.addEventListener("dblclick", (e) => { e.preventDefault(); openFile(w); });
-    card.addEventListener("contextmenu", (e) => { e.preventDefault(); onMenu?.(w, card); });
+    wireFileEl(card, w, i, hooks);
     grid.append(card);
   });
-  return el(".exview", { "data-exview": "grid" }, [grid]);
+  return el(".exview", { "data-exview": "large" }, [grid]);
 }
 
-function listView(subfolders, files, { openFile, openFolder }) {
-  const rows = [el(".flrow.flhd", {}, [el("span", {}, ["Name"]), el("span", {}, ["Type"]), el("span", {}, ["Size"]), el("span", {}, ["Uploader"]), el("span", {}, ["Added"])])];
+// SMALL — a dense grid of compact [kind icon · filename] cells (Explorer "small icons").
+function smallView(subfolders, files, hooks) {
+  const { onShareFolder } = hooks;
+  const grid = el(".exsmall");
   for (const f of subfolders) {
-    rows.push(el(".flrow", { onClick: () => openFolder(f) }, [
+    const chip = el("button.smallcard.foldercard", {}, [iconEl("folder", "sm"), el("span.snm", { title: f.name }, [f.name])]);
+    grid.append(wireFolderEl(chip, f, hooks));
+  }
+  files.forEach((w, i) => {
+    const cell = el("button.smallcard" + (w.hidden ? ".ishidden" : ""), { title: w.title || "" },
+      [iconEl(KIND_LIST_ICON[w.kind] || "file", "sm"), el("span.snm", {}, [baseName(w)])]);
+    grid.append(wireFileEl(cell, w, i, hooks));
+  });
+  return el(".exview", { "data-exview": "small" }, [grid]);
+}
+
+// LIST — the "Details" table: a column per field. Rows select/open like the other densities and
+// carry data-id so selection / marquee / the bulk bar all work here too.
+function listView(subfolders, files, hooks) {
+  const { showWho } = hooks;
+  const table = el(".exlist" + (showWho ? "" : ".nowho"), { "data-exview": "list" });
+  const cols = showWho ? ["Name", "Type", "Size", "Uploader", "Added"] : ["Name", "Type", "Size", "Added"];
+  table.append(el(".flrow.flhd", {}, cols.map((c) => el("span", {}, [c]))));
+  for (const f of subfolders) {
+    const cells = [
       el("span.flnm", {}, [iconEl("folder", "sm"), f.name]),
       el("span", {}, ["folder"]), el("span", {}, ["—"]),
-      el("span", {}, ["—"]), el("span", {}, [`${f.count} file${f.count === 1 ? "" : "s"}`]),
-    ]));
+      ...(showWho ? [el("span", {}, ["—"])] : []),
+      el("span", {}, [`${f.count} file${f.count === 1 ? "" : "s"}`]),
+    ];
+    table.append(wireFolderEl(el(".flrow", {}, cells), f, hooks));
   }
-  for (const w of files) {
-    rows.push(el(".flrow", { onClick: () => openFile(w) }, [
-      el("span.flnm", {}, [iconEl(KIND_LIST_ICON[w.kind] || "file", "sm"), w.title || "untitled"]),
+  files.forEach((w, i) => {
+    const cells = [
+      el("span.flnm", {}, [iconEl(KIND_LIST_ICON[w.kind] || "file", "sm"), baseName(w)]),
       el("span", {}, [(w.file_ext || "").toLowerCase() || "—"]),
       el("span", {}, [fmtBytes(w.bytes)]),
-      el("span", {}, [w.who?.name || "—"]),
+      ...(showWho ? [el("span", {}, [w.who?.name || "—"])] : []),
       el("span", {}, [w.created_at ? fmtDate(w.created_at) : "—"]),
-    ]));
-  }
-  return el(".exview", { "data-exview": "list" }, rows);
+    ];
+    const row = el(".flrow" + (w.hidden ? ".ishidden" : ""), {}, cells);
+    table.append(wireFileEl(row, w, i, hooks));
+  });
+  return table;
 }
-
-const KIND_LIST_ICON = { audio: "voice", image: "image", video: "video", text: "type", other: "file" };
 
 // sort a file list by the chosen key + direction. Name is A→Z at asc; the others are
 // natural (latest/largest first) at the default desc.

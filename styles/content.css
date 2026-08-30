@@ -145,12 +145,32 @@
 .foldercard .media.fold{display:grid;place-items:center;background:var(--surface);color:var(--muted)}
 .foldercard .media.fold .ic{width:34px;height:34px}
 /* list view */
-.flrow{display:grid;grid-template-columns:minmax(200px,1.4fr) 90px 90px 110px 90px;gap:14px;align-items:center;padding:9px 12px;font-size:var(--fs-sm);color:var(--soft);border-radius:var(--r);cursor:pointer}
+/* P14 · LIST density (Windows "Details"): a column per field. .nowho drops the Uploader column
+   (personal files have no uploader). Rows select on click / open on double-click like the other
+   densities; a selected row is a background step (rows aren't cards, so no outline). */
+.flrow{display:grid;grid-template-columns:minmax(200px,1.6fr) 84px 88px 120px 96px;gap:14px;align-items:center;padding:8px 12px;font-size:var(--fs-sm);color:var(--soft);border-radius:var(--r);cursor:pointer}
+.exlist.nowho .flrow{grid-template-columns:minmax(200px,1.8fr) 84px 88px 96px}
+.flrow span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-variant-numeric:tabular-nums}
 .flrow+.flrow{box-shadow:inset 0 1px 0 var(--line)}
 .flrow:hover:not(.flhd){background:var(--surface)}
-.flhd{font-size:var(--fs-xs);color:var(--muted);font-weight:600;cursor:default}
+.flrow.sel{background:var(--plate)}
+.flrow.sel:hover{background:var(--plate)}
+.flrow.droptarget{outline:2px solid var(--ink);outline-offset:-2px}
+.flrow.ishidden{opacity:.55}.flrow.ishidden:hover{opacity:1}
+.flhd{font-size:var(--fs-xs);color:var(--muted);font-weight:600;cursor:default;letter-spacing:.02em}
 .flnm{display:inline-flex;align-items:center;gap:8px;font-weight:500;color:var(--ink);min-width:0}
 .flnm .ic{color:var(--muted);flex:none}
+
+/* P14 · SMALL density (Windows "small icons"): a dense grid of compact [icon · name] cells. */
+.exsmall{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:2px 10px}
+.smallcard{display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:var(--r);cursor:pointer;text-align:left;color:var(--ink);min-width:0;background:none}
+.smallcard .ic{flex:none;color:var(--muted);width:16px;height:16px}
+.smallcard .snm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:var(--fs-sm)}
+.smallcard:hover{background:var(--surface)}
+.smallcard.sel{background:var(--plate)}
+.smallcard.foldercard .ic{color:var(--soft)}
+.smallcard.droptarget{outline:2px solid var(--ink);outline-offset:-2px}
+.smallcard.ishidden{opacity:.55}.smallcard.ishidden:hover{opacity:1}
 /* over-cap / locked banner */
 .capbanner{display:flex;align-items:center;gap:10px;padding:9px var(--s5);background:var(--m1);color:#fff;font-size:var(--fs-sm)}
 .capbanner[hidden]{display:none}
@@ -472,18 +492,9 @@
 /* ── Explorer Feed view (P5.8) — flattened previewable subtree, Instagram-style server
    media preview wall (CANON §C.6). The inline comment thread was cut with post-commenting
    (P4, 2026-08-30); the media + meta stay. */
-.filefeed{max-width:620px;margin:0 auto}
-.ffnote{display:flex;gap:8px;font-size:var(--fs-xs);color:var(--muted);background:var(--surface);border-radius:var(--r);padding:9px 11px;margin-bottom:var(--s4)}
-.ffnote .ic{color:var(--soft);flex:none}
-.ffitem{margin-bottom:var(--s5)}
-.ffmedia{position:relative;background:var(--paper1);border-radius:var(--r);overflow:hidden;margin-bottom:8px;display:grid;place-items:center}
-.ffmedia img,.ffmedia video{width:100%;display:block}
-.ffmedia .dtype{position:static;padding:34px 0;display:flex;flex-direction:column;align-items:center;gap:8px;color:var(--muted)}
-.ffmedia .dtype .ic{width:34px;height:34px}
-.ffmedia .dtype .ext{font-size:var(--fs);font-weight:700;letter-spacing:.04em;color:var(--soft)}
-.ffmeta{display:flex;align-items:baseline;gap:10px;margin-bottom:8px}
-.ffmeta b{font-size:var(--fs-sm)}
-.ffmeta .who{font-size:var(--fs-xs);color:var(--muted)}
+/* (P14: the old Feed/media-wall view mode was removed — its .filefeed/.ff* styles with it —
+   in favour of the three densities (list/small/large). The media-preview wall may return as a
+   separate surface post-beta.) */
 
 /* ── User settings (§C.10, screens/usersettings.js) — a left setnav + a panel. Distinct from
    server settings. Panes separate by background step; the active nav row is plate+ink+600

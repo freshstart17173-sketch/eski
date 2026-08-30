@@ -900,13 +900,26 @@ per channel, builds on P11), D6 (review canvas/kanban/versions).
       P13 CSS added there. Removed dead `.toolbar .tbactions` CSS. *Files:* `app/screens/explorer.js`,
       `styles/content.css`, `docs/design/gallery.html`. Verified: server + personal explorer render
       both themes, breadcrumb fills on descend (`📁 / beats / drums`), search state live, 0 pageerrors.
-- [ ] **P14 · File-browser view modes = real density levels (round-7).** Rework the explorer view
-      modes into traditional file-browser densities (e.g. compact list → comfortable → large). At
-      the larger sizes a **content thumbnail** replaces the kind icon, but every card keeps a **thin
-      bottom band**: the kind icon (audio/video/image/folder/zip/other) + filename (+ extra info if
-      room) — modelled on the **landing-page cards** (screenshot the landing / `docs/design/` if
-      needed). *Files:* `app/cards.js` (`workCard`/`folderCard`), `app/screens/explorer.js` (VIEWS +
-      grid/list), `styles/content.css`. *Hard.* Load **`eski-style`**.
+- [x] **P14 · File-browser view modes = real density levels (round-7; owner spec 2026-08-30).**
+      *Done (all three densities demo-verified + screenshotted; owner picks/tweaks).* Reworked the
+      explorer view modes into **three Windows-Explorer densities** (owner: "a list, small icon, and
+      large thumbnail density; reference Windows File Explorer"): **Large** (big content thumbnails —
+      a photo/video frame fills the cell, other kinds show the kind icon — filename + uploader below,
+      spacing tuned for 2-line titles), **Small icons** (a dense grid of compact `[kind icon · name]`
+      cells), **List** (the "Details" table — a column per field: Name · Type · Size · Uploader ·
+      Added, tabular sizes, folders as their own rows). All three share ONE select/open wiring
+      (`wireFileEl`/`wireFolderEl`): single-click selects, double-click opens; selection outline,
+      **marquee, bulk bar, drag-to-make-folder/move, ⌘A, and star/⋯ menus work in every density**
+      (selectors broadened from `.card` to `[data-id]`/`[data-folder-id]`). Old `grid`/`feed` modes
+      migrate to `large`; the Feed/media-wall was removed (may return as its own surface post-beta).
+      `?view=small|list` drives + restores the density (URL state). *Files:* `app/screens/explorer.js`
+      (VIEWS + `largeView`/`smallView`/`listView` + shared wiring; broadened selection/marquee/drag),
+      `styles/content.css` (`.exsmall`/`.smallcard`, `.exlist`/`.flrow` columns + selection),
+      `styles/shell.css` (`.masonry.even.exlarge`), `app/cards.js` (`baseName` reused). Verified:
+      demo — each density renders in `beats` (4 files + folders), selection + double-open + columns
+      correct, 0 pageerrors. Real content thumbnails in Large need live bytes → owner sees on preview.
+      (Original ask: traditional densities compact→comfortable→large with a content thumbnail + thin
+      band — realised as the three Windows-Explorer densities above.)
 - [x] **P15 · Status lives on the profile page (round-7).** *Done (demo-verified both themes).* The
       status editor now lives inline on the **owner's profile hero** — a dense row: a **plain text
       field** (emoji dropped), a **simple presence picker** (`SelectPill`: Online/Idle/DND/Invisible),

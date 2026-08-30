@@ -346,6 +346,8 @@
    selection/marquee/lightbox interaction is added by P5's explorer. ───────── */
 .masonry{column-width:230px;column-gap:var(--s5)}
 .masonry.even{column-width:auto;column-gap:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(184px,1fr));gap:var(--s4)}
+/* P14 · LARGE density: bigger content thumbnails, a touch more gap to breathe with 2-line titles */
+.masonry.even.exlarge{grid-template-columns:repeat(auto-fill,minmax(232px,1fr));gap:var(--s5) var(--s4)}
 .masonry.even .card{margin-bottom:0}
 .masonry.even .media{aspect-ratio:1;overflow:hidden;display:grid}
 .masonry.even .media>.shot{width:100%!important;height:100%!important;aspect-ratio:auto!important}
