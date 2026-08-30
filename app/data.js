@@ -187,6 +187,81 @@ async function loadServerBundle(activeServer) {
   return bundle;
 }
 
+// P20 — the channel stream is windowed to the newest N top-level messages (was an unbounded
+// fetch of the whole history on every channel open). `loadEarlierMessages` pages older ones in
+// on scroll-up. B3 permalinks to a message outside the window are handled by the scroll-up loader
+// (workspace.js fetches earlier until the ?m=<id> row is found, then flashes it).
+const CHANNEL_PAGE = 50;
+
+// Resolve a set of TOP-LEVEL message rows into the shaped messages the stream renders — reply
+// counts, grouped reactions, forward quote-blocks (§C.4), and attachment cards (B5). Shared by
+// the initial windowed load and the scroll-up load-earlier so both stay identical. `chanNameById`
+// maps channel_id → name (for forwards' "from #channel" + attachment placement labels).
+async function resolveTopMessages(top, membersById, chanNameById, userId) {
+  if (!top || !top.length) return [];
+  const topIds = top.map((r) => r.id);
+  // reply counts: one grouped read over the parents in this window (replies aren't rendered
+  // inline in the stream, only counted → the thread view fetches the bodies on open).
+  const replyCount = {};
+  const { data: reps } = await supabase.from("messages").select("parent_id").in("parent_id", topIds).is("deleted_at", null);
+  for (const r of reps || []) replyCount[r.parent_id] = (replyCount[r.parent_id] || 0) + 1;
+  // reactions grouped for the windowed messages
+  const rxByMsg = {};
+  const { data: rxAll } = await supabase.from("message_reactions").select("message_id,emoji,user_id").in("message_id", topIds);
+  for (const r of rxAll || []) {
+    (rxByMsg[r.message_id] ||= {});
+    (rxByMsg[r.message_id][r.emoji] ||= { emoji: r.emoji, n: 0, mine: false });
+    rxByMsg[r.message_id][r.emoji].n++;
+    if (r.user_id === userId) rxByMsg[r.message_id][r.emoji].mine = true;
+  }
+  // forwards → resolve each source into its quote block (only sources the viewer can read, RLS)
+  const fwdIds = [...new Set(top.filter((r) => r.forwarded_from).map((r) => r.forwarded_from))];
+  const srcById = {};
+  if (fwdIds.length) {
+    const { data: srcs } = await supabase.from("messages").select("id,body,user_id,channel_id,created_at").in("id", fwdIds);
+    for (const s of srcs || []) {
+      const a = membersById[s.user_id] || { name: "someone", colorIdx: 1 };
+      srcById[s.id] = { author: { name: a.name, colorIdx: a.colorIdx }, fromChannel: chanNameById[s.channel_id] || "a channel", text: s.body || "", when: fmtWhen(s.created_at) };
+    }
+  }
+  // attachment messages (B5): work_id → the attachment card in the stream
+  const attachIds = [...new Set(top.filter((r) => r.work_id).map((r) => r.work_id))];
+  const attachById = {};
+  if (attachIds.length) {
+    const [{ data: aworks }, { data: atags }] = await Promise.all([
+      supabase.from("works").select("id,title,kind,file_ext,blob_sha,bytes,author_id,hidden,visibility,created_at").in("id", attachIds).is("deleted_at", null),
+      supabase.from("content_tags").select("work_id,tag").in("work_id", attachIds),
+    ]);
+    const atagsByWork = {}; for (const t of atags || []) (atagsByWork[t.work_id] ||= []).push(t.tag);
+    for (const w of aworks || []) attachById[w.id] = shapeWork(w, null, membersById, chanNameById, atagsByWork[w.id] || []);
+  }
+  return top.map((r) => {
+    const m = shapeMessage(r, membersById);
+    m.replies = replyCount[r.id] || 0;
+    m.reactions = Object.values(rxByMsg[r.id] || {});
+    if (r.forwarded_from && srcById[r.forwarded_from]) m.forward = srcById[r.forwarded_from];
+    if (r.work_id && attachById[r.work_id]) m.attach = attachById[r.work_id];
+    return m;
+  });
+}
+
+// P20 — page older top-level messages in on scroll-up. `beforeIso` is the created_at of the
+// oldest message currently loaded; returns the next-older window (ascending) + whether more
+// remain + the new oldest cursor. Reuses `data` for membersById + the channel-name map.
+export async function loadEarlierMessages(channelId, beforeIso, data) {
+  if (isDemo() || !channelId || !beforeIso) return { messages: [], hasMore: false, oldestAt: beforeIso };
+  const user = session();
+  const chanNameById = {};
+  for (const g of data.channelGroups || []) for (const c of g.channels || []) chanNameById[c.id] = c.name;
+  const { data: topRows } = await supabase.from("messages")
+    .select("id,body,created_at,edited_at,parent_id,user_id,deleted_at,forwarded_from,work_id")
+    .eq("channel_id", channelId).is("parent_id", null).is("deleted_at", null)
+    .lt("created_at", beforeIso).order("created_at", { ascending: false }).limit(CHANNEL_PAGE);
+  const top = (topRows || []).slice().reverse();   // fetched newest-first → ascending for the stream
+  const messages = await resolveTopMessages(top, data.membersById, chanNameById, user?.id);
+  return { messages, hasMore: (topRows || []).length === CHANNEL_PAGE, oldestAt: top.length ? top[0].created_at : beforeIso };
+}
+
 // ── the live read (P4.10) ───────────────────────────────────────────────────
 export async function loadWorkspace({ serverId, channelId } = {}) {
   if (isDemo()) return demoWorkspace();
@@ -214,63 +289,21 @@ export async function loadWorkspace({ serverId, channelId } = {}) {
   // voice channels are v2 — never selectable as the active (text) channel (P4-BUG#3)
   const activeChannel = textCh.find((c) => c.id === channelId) || textCh[0] || null;
 
-  let messages = [], pins = [], pinCount = 0;
+  let messages = [], pins = [], pinCount = 0, hasMoreMessages = false, oldestMsgAt = null;
   if (activeChannel) {
     const cid = activeChannel.id;
-    const [{ data: msgRows }, { data: pinRows }] = await Promise.all([
-      supabase.from("messages").select("id,body,created_at,edited_at,parent_id,user_id,deleted_at,forwarded_from,work_id").eq("channel_id", cid).is("deleted_at", null).order("created_at"),
+    const chanNameById = {}; for (const c of textCh) chanNameById[c.id] = c.name;
+    // P20: window to the newest CHANNEL_PAGE top-level messages (fetch newest-first, reverse to
+    // ascending for the stream) instead of the whole channel history. `hasMore` = we hit the
+    // page limit, so a scroll-up load-earlier is offered.
+    const [{ data: topRows }, { data: pinRows }] = await Promise.all([
+      supabase.from("messages").select("id,body,created_at,edited_at,parent_id,user_id,deleted_at,forwarded_from,work_id").eq("channel_id", cid).is("parent_id", null).is("deleted_at", null).order("created_at", { ascending: false }).limit(CHANNEL_PAGE),
       supabase.from("message_pins").select("message_id,pinned_by,created_at, message:messages(body,user_id)").eq("channel_id", cid).order("created_at"),
     ]);
-    const all = msgRows || [];
-    const replyCount = {};
-    for (const r of all) if (r.parent_id) replyCount[r.parent_id] = (replyCount[r.parent_id] || 0) + 1;
-    // reactions grouped for the visible top-level messages
-    const topIds = all.filter((r) => !r.parent_id).map((r) => r.id);
-    const rxByMsg = {};
-    if (topIds.length) {
-      const { data: rxAll } = await supabase.from("message_reactions").select("message_id,emoji,user_id").in("message_id", topIds);
-      for (const r of rxAll || []) {
-        (rxByMsg[r.message_id] ||= {});
-        (rxByMsg[r.message_id][r.emoji] ||= { emoji: r.emoji, n: 0, mine: false });
-        rxByMsg[r.message_id][r.emoji].n++;
-        if (r.user_id === user.id) rxByMsg[r.message_id][r.emoji].mine = true;
-      }
-    }
-    // Forward (CANON §C.4): resolve each forwarded message's source into the quote block —
-    // its author, source channel, and a snippet. Sources are looked up in a batch; only the
-    // ones the viewer can read resolve (RLS), else the forward just shows the note.
-    const fwdIds = [...new Set(all.filter((r) => r.forwarded_from).map((r) => r.forwarded_from))];
-    const srcById = {};
-    if (fwdIds.length) {
-      const { data: srcs } = await supabase.from("messages").select("id,body,user_id,channel_id,created_at").in("id", fwdIds);
-      const chanName = {}; for (const c of textCh) chanName[c.id] = c.name;
-      for (const s of srcs || []) {
-        const a = membersById[s.user_id] || { name: "someone", colorIdx: 1 };
-        srcById[s.id] = { author: { name: a.name, colorIdx: a.colorIdx }, fromChannel: chanName[s.channel_id] || "a channel", text: s.body || "", when: fmtWhen(s.created_at) };
-      }
-    }
-    // Attachment messages (B5): a channel upload posts a message whose work_id points at the
-    // uploaded work. Resolve those works (+ their tags) into the message's `attach` card so the
-    // file shows in the chat stream, not only the Files tab. Batch-fetched like the forwards.
-    const attachIds = [...new Set(all.filter((r) => r.work_id).map((r) => r.work_id))];
-    const attachById = {};
-    if (attachIds.length) {
-      const cName = {}; for (const c of textCh) cName[c.id] = c.name;
-      const [{ data: aworks }, { data: atags }] = await Promise.all([
-        supabase.from("works").select("id,title,kind,file_ext,blob_sha,bytes,author_id,hidden,visibility,created_at").in("id", attachIds).is("deleted_at", null),
-        supabase.from("content_tags").select("work_id,tag").in("work_id", attachIds),
-      ]);
-      const atagsByWork = {}; for (const t of atags || []) (atagsByWork[t.work_id] ||= []).push(t.tag);
-      for (const w of aworks || []) attachById[w.id] = shapeWork(w, null, membersById, cName, atagsByWork[w.id] || []);
-    }
-    messages = all.filter((r) => !r.parent_id).map((r) => {
-      const m = shapeMessage(r, membersById);
-      m.replies = replyCount[r.id] || 0;
-      m.reactions = Object.values(rxByMsg[r.id] || {});
-      if (r.forwarded_from && srcById[r.forwarded_from]) m.forward = srcById[r.forwarded_from];
-      if (r.work_id && attachById[r.work_id]) m.attach = attachById[r.work_id];
-      return m;
-    });
+    const top = (topRows || []).slice().reverse();
+    hasMoreMessages = (topRows || []).length === CHANNEL_PAGE;
+    oldestMsgAt = top.length ? top[0].created_at : null;
+    messages = await resolveTopMessages(top, membersById, chanNameById, user.id);
     pins = (pinRows || []).map((p) => {
       const auth = membersById[p.message?.user_id] || { name: "unknown", colorIdx: 1 };
       const byName = membersById[p.pinned_by]?.name || "someone";
@@ -288,7 +321,7 @@ export async function loadWorkspace({ serverId, channelId } = {}) {
     me, isAdmin: !!membersById[user.id]?.admin, isOwner: activeServer.owner_id === user.id, servers, dmUnread: 0,
     server: { id: sid, name: activeServer.name, initials: initials(activeServer.name), icon_key: activeServer.icon_key || null, cover_key: activeServer.cover_key || null },
     channelGroups,
-    channel: activeChannel ? { id: activeChannel.id, name: activeChannel.name, topic: "", pins: pinCount, files: 0, slowmode: activeChannel.slowmode_sec, postPolicy: activeChannel.post_policy } : null,
+    channel: activeChannel ? { id: activeChannel.id, name: activeChannel.name, topic: "", pins: pinCount, files: 0, slowmode: activeChannel.slowmode_sec, postPolicy: activeChannel.post_policy, hasMore: hasMoreMessages, oldestAt: oldestMsgAt } : null,
     messages, typing: [], pins, files: [], memberGroups, thread: null,
     membersById, serverRoles,
     activeServerId: sid, activeChannelId: activeChannel?.id || null,

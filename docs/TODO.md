@@ -716,17 +716,25 @@ per channel, builds on P11), D6 (review canvas/kanban/versions).
       channel has new messages (unread dot/bold + maybe a count), driven by `channel_reads` vs the
       latest message. *Files:* `app/screens/workspace.js` (channel rows), `app/data.js`
       (`loadServerBundle` unread compute), realtime bump on new msg. *Medium-hard.*
-- [ ] **P20 · Paginate channel message loading (read-path audit, 2026-08-29).** `loadWorkspace`
-      (`app/data.js:218`) reads a channel's messages with **no `.limit()`** — it fetches the ENTIRE
-      history on every channel open (comments cap at 200, DMs at 300, feed at 120; channel messages
-      are unbounded). Fine at beta size, a real perf/scroll landmine as a channel grows. Load the
-      last ~50 newest and lazy-load older on scroll-up (a "load earlier" affordance), keeping the
-      realtime append + the pins/reactions/forwards/attachments resolution working on the windowed
-      set. *Files:* `app/data.js` (`loadWorkspace` messages query + shape), `app/screens/workspace.js`
-      (scroll-up loader). *Medium.* Not a correctness bug — the rest of the read layer audited clean.
-      **Must preserve B3 message permalinks:** once the stream is windowed, a `?m=<id>` link to a
-      message outside the window has to fetch-by-id (or load-earlier until found) then scroll+flash it,
-      or the permalink silently no-ops. Wire that into the scroll-up loader / `flashMessage` fallback.
+- [x] **P20 · Paginate channel message loading (read-path audit, 2026-08-29).** *Done (demo-render +
+      live-DB query verify).* `loadWorkspace` now windows the stream to the newest **`CHANNEL_PAGE`
+      (50)** top-level messages (fetch newest-first + reverse to ascending; was an unbounded whole-
+      history fetch). Extracted the reactions/forwards/attachments/reply-count resolution into a
+      shared `resolveTopMessages(top, membersById, chanNameById, userId)` so the initial load and the
+      new `loadEarlierMessages(channelId, beforeIso, data)` (scroll-up page, `created_at <` cursor)
+      stay identical. `data.channel` carries `hasMore` + `oldestAt`. Workspace: `wireStreamPaging`
+      adds a top **"Load earlier messages"** sentinel + a scroll-to-top auto-loader that prepends the
+      older window preserving scroll position (anchors on the height delta), and anchors the fresh
+      mount at the newest message (deferred RAF so the bottom-scroll doesn't self-trigger the loader).
+      **B3 permalink preserved:** `focusPermalink` flashes the `?m=<id>` row if present, else pages
+      earlier (bounded 40 pages) until it appears then flashes. Realtime append (`liveInsert`) still
+      appends at the bottom, unaffected by the top sentinel. *Files:* `app/data.js` (`CHANNEL_PAGE`,
+      `resolveTopMessages`, `loadEarlierMessages`, windowed `loadWorkspace`), `app/screens/workspace.js`
+      (`wireStreamPaging`, `focusPermalink`), `styles/shell.css` (`.loadearlier`). Verified: `node
+      --check` clean; demo workspace renders 0 pageerrors; live-DB query check confirms the window
+      returns the newest N and the `<`-cursor earlier page is strictly-older + contiguous (distinct
+      rows). Live scroll-up paging + a permalink to a message outside the window are session-gated →
+      QA-CHECKLIST.
 
 ### 4 · Deferred (post-beta / infra-gated — do NOT build now)
 

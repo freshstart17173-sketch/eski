@@ -88,6 +88,9 @@ file is the versioned copy that build sessions treat as the acceptance bar.
 ## 5. Messages — list & rows
 
 - [ ] Load a channel with history → messages show newest-last, grouped by author, with the byline in that member's server colour.
+- [ ] `[P20]` Open a channel with **>50 messages** → only the newest ~50 load, the stream starts at the bottom (newest visible), and a **"Load earlier messages"** button sits at the very top.
+- [ ] `[P20]` Scroll to the top (or click "Load earlier messages") → the next-older ~50 prepend, the view stays put (no jump), and the button hides once the channel start is reached.
+- [ ] `[P20]` Copy a permalink to an **old** message (older than the loaded window), open it in a new tab → the stream pages earlier until that message is found, then scrolls to & flashes it.
 - [ ] Look for day separators → a "Today"/date divider sits between days.
 - [ ] Open a channel with unread messages → a "New messages" divider marks where you left off.
 - [ ] Open a brand-new empty channel → a welcome / empty state shows instead of a blank pane.

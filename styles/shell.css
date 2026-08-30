@@ -141,6 +141,8 @@
 .mainhd .sub{color:var(--muted);font-size:var(--fs-sm);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .mainhd .acts{margin-left:auto;display:flex;gap:var(--s1)}
 .stream{flex:1;overflow-y:auto;padding:var(--s4)}
+/* P20 — "Load earlier messages" sentinel at the top of the windowed stream */
+.loadearlier{display:flex;justify-content:center;padding:var(--s2) 0 var(--s3)}
 .day{display:flex;align-items:center;gap:var(--s3);margin:var(--s3) 0;color:var(--muted);font-size:var(--fs-xs)}
 .day::before,.day::after{content:"";flex:1;height:1px;background:var(--line)}
 .msg{position:relative;display:flex;gap:var(--s3);padding:5px var(--s2);border-radius:var(--r)}

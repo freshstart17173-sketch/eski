@@ -18,7 +18,7 @@ import { iconEl } from "../icons.js";
 import { navigate, reload } from "../router.js";
 import { avatarUrl } from "../cards.js";
 import { openDetails } from "./details.js";
-import { isDemo, shapeMessage, loadThread, toggleReaction, loadMessageReactions, forwardMessage, deleteMessage, pinMessage, unpinMessage, editMessage, kickMember, timeoutMember, banMember, setMemberRoles, createChannel, updateChannel, createInvite, loadInvites, revokeInvite, loadInviteCandidates, inviteByHandle, inviteUserToServer, leaveServer, loadServerPrefs, setServerPrefs, fetchChannelAttachment, declineJoinRequest } from "../data.js";
+import { isDemo, shapeMessage, loadThread, toggleReaction, loadMessageReactions, forwardMessage, deleteMessage, pinMessage, unpinMessage, editMessage, kickMember, timeoutMember, banMember, setMemberRoles, createChannel, updateChannel, createInvite, loadInvites, revokeInvite, loadInviteCandidates, inviteByHandle, inviteUserToServer, leaveServer, loadServerPrefs, setServerPrefs, fetchChannelAttachment, declineJoinRequest, loadEarlierMessages } from "../data.js";
 import { subscribeChannelMessages, subscribeChannelReactions, subscribeTyping, sendTyping, subscribeServerPresence, markRead, sendMessage } from "../realtime.js";
 import { openUpload, enableDropUpload } from "./upload.js";
 
@@ -919,6 +919,72 @@ function flashMessage(screen, mid) {
   });
 }
 
+// P20 — page older top-level messages in when the user scrolls to the top of the stream, and
+// offer an explicit "Load earlier" button (the top sentinel) as the affordance. A prepend
+// preserves the scroll position (anchor on the height delta) so the view doesn't jump. State
+// (hasMore / oldestAt / a re-entrancy guard) lives on data.channel, shared with focusPermalink.
+function wireStreamPaging(screen, data, ctx) {
+  const stream = screen.querySelector(".stream");
+  if (!stream || !data.channel) return;
+  const sentinel = el(".loadearlier", { hidden: !data.channel.hasMore }, [
+    Button({ label: "Load earlier messages", size: "sm", variant: "ghost", onClick: () => loadOlder() }),
+  ]);
+  stream.prepend(sentinel);
+
+  async function loadOlder() {
+    if (data.channel._loadingOlder || !data.channel.hasMore) return null;
+    data.channel._loadingOlder = true;
+    sentinel.querySelector("button")?.classList.add("loading");
+    let batch = null;
+    try {
+      batch = await loadEarlierMessages(ctx.channelId, data.channel.oldestAt, data);
+    } catch { batch = null; }
+    if (batch && batch.messages.length) {
+      const prevH = stream.scrollHeight, prevTop = stream.scrollTop;
+      // insert oldest→newest right after the sentinel, above the existing rows
+      let anchor = sentinel;
+      for (const m of batch.messages) { const row = messageRow(m, data, { onOpenThread: ctx.openThread }); anchor.after(row); anchor = row; }
+      data.channel.oldestAt = batch.oldestAt;
+      data.channel.hasMore = batch.hasMore;
+      stream.scrollTop = prevTop + (stream.scrollHeight - prevH);   // keep the same message under the cursor
+    } else if (batch) {
+      data.channel.hasMore = false;
+    }
+    sentinel.hidden = !data.channel.hasMore;
+    sentinel.querySelector("button")?.classList.remove("loading");
+    data.channel._loadingOlder = false;
+    return batch;
+  }
+
+  // stash the loader on the stream node so focusPermalink can drive it
+  stream._loadOlder = loadOlder;
+
+  // Anchor at the newest message on mount, THEN attach the scroll-up trigger (deferred two RAFs
+  // so the programmatic bottom-scroll doesn't itself fire loadOlder on a fresh, bottom-anchored
+  // mount). Threshold fires just before the very top.
+  const onScroll = () => { if (stream.scrollTop < 60) loadOlder(); };
+  requestAnimationFrame(() => {
+    stream.scrollTop = stream.scrollHeight;
+    requestAnimationFrame(() => stream.addEventListener("scroll", onScroll));
+  });
+}
+
+// P20 — resolve a ?m=<id> permalink even when the message is older than the initial window:
+// flash it if present, otherwise page earlier (bounded) until the row appears, then flash.
+async function focusPermalink(screen, data, ctx, mid) {
+  const present = () => screen.querySelector(`.msg[data-mid="${CSS.escape(mid)}"]`);
+  if (present()) { flashMessage(screen, mid); return; }
+  const stream = screen.querySelector(".stream");
+  const loadOlder = stream?._loadOlder;
+  if (!loadOlder) { flashMessage(screen, mid); return; }   // demo / no paging → best effort
+  // bound the walk so a bad id can't loop forever (CHANNEL_PAGE=50 → 40 pages = 2000 messages)
+  for (let i = 0; i < 40 && data.channel?.hasMore && !present(); i++) {
+    const batch = await loadOlder();
+    if (!batch || !batch.messages.length) break;
+  }
+  flashMessage(screen, mid);
+}
+
 // ── the screen ──────────────────────────────────────────────────────────────
 export function renderWorkspace(data, view = {}) {
   const screen = el(".screen", { "data-screen": "workspace" });
@@ -945,8 +1011,12 @@ export function renderWorkspace(data, view = {}) {
   // Drag files onto the channel → upload sheet targeting this server + channel (live only).
   if (ctx.live) enableDropUpload(main, () => ({ visibility: "server", serverId: ctx.serverId, channelId: ctx.channelId, onDone: () => reload() }));
 
-  // arrived via a message permalink (?m=<id>) → once mounted, scroll to it and pulse it.
-  if (view.focusMsg) flashMessage(screen, view.focusMsg);
+  // P20: window the stream + page older messages in on scroll-up (live only — demo loads whole).
+  if (ctx.live) wireStreamPaging(screen, data, ctx);
+
+  // arrived via a message permalink (?m=<id>) → once mounted, scroll to it and pulse it. If the
+  // target is older than the loaded window (P20), page earlier until it's found, then flash.
+  if (view.focusMsg) focusPermalink(screen, data, ctx, view.focusMsg);
 
   // thread open/close: opening hides the members rail, shows the thread pane. Live
   // loads the real thread (parent + replies) for the clicked message; demo uses
