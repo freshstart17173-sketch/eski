@@ -2407,3 +2407,17 @@ IN PROGRESS: P12 density (modals/dialogs/toasts) — the frame is already tight;
   owner's pick, then move the hardcoded inline margin-top:12px row spacing into ONE tunable class and
   apply the chosen density to .mbody/.field/.frow so every dialog matches. gallery mirror per owner.
 NEXT: implement the picked P12 density; then P15 (status→profile, presence simple).
+
+## 2026-08-30 — P12 done (owner: V1 Tight) — dialog body density
+IN PROGRESS: (cleared)
+DONE: applied V1 Tight dialog-body density. CSS (primitives.css, scoped to .modal so app-wide fields
+  aren't touched): .modal .mbody padding → 10px 14px, .modal .field → 6px 10px. Row rhythm: the
+  hardcoded inline margin-top:12px/14px on modal-body labels/rows dropped to var(--s2) (8px) at its
+  source in shell.js (create/status), report.js, roles.js, workspace.js (forward/invite/notifications).
+  Files: styles/primitives.css, app/shell.js, app/report.js, app/screens/roles.js,
+  app/screens/workspace.js. Verified: /create dialog renders visibly tighter both themes, 0 pageerrors;
+  deleted the p12-density.html scaffold. gallery mirror skipped per owner. Committed 0e33b0e.
+NEXT: P15 (status → profile page; presence kept SIMPLE per owner — no forced yellow).
+GOTCHA AA: inline styles beat class rules, so a CSS density rule can't override an inline
+  margin-top:12px — the row gaps had to be changed at their JS source. Left settings/usersettings
+  screen spacing (they're screens, not modals) alone.

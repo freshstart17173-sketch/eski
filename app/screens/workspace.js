@@ -256,9 +256,9 @@ function forwardFlow(msg, data) {
   const send = Button({ label: "Forward", variant: "primary", disabled: true });
   const body = el("div", {}, [
     quote,
-    el("label.ulab", { style: "margin-top:12px" }, ["Forward to"]),
+    el("label.ulab", { style: "margin-top:var(--s2)" }, ["Forward to"]),
     el(".fwdpicks", {}, rows.length ? rows : [el(".sharenone", {}, ["No channels to forward to."])]),
-    el("label.ulab", { style: "margin-top:12px" }, ["Note"]),
+    el("label.ulab", { style: "margin-top:var(--s2)" }, ["Note"]),
     el(".field", {}, [note]),
   ]);
   const { close } = openModal({ title: "Forward message", body, footer: [send] });
@@ -514,7 +514,7 @@ async function notifSettingsFlow(data) {
   const cancel = Button({ label: "Cancel", variant: "ghost" });
   const body = el("div", {}, [
     el("label.ulab", {}, ["Notify me about"]), levelBtn,
-    el("label.setrow2", { style: "display:flex;align-items:center;gap:10px;margin-top:14px;cursor:pointer;font-size:var(--fs-sm)" }, [supCb, el("span", {}, ["Suppress @everyone and @here"])]),
+    el("label.setrow2", { style: "display:flex;align-items:center;gap:10px;margin-top:var(--s2);cursor:pointer;font-size:var(--fs-sm)" }, [supCb, el("span", {}, ["Suppress @everyone and @here"])]),
   ]);
   const { close } = openModal({ title: `${data.server.name} notifications`, body, footer: [cancel, save] });
   cancel.addEventListener("click", () => close());
@@ -659,11 +659,11 @@ async function inviteFlow(data) {
 
   const body = el("div", {}, [
     el("label.ulab", {}, ["Active invite links"]), list,
-    el(".urow", { style: "margin-top:12px;gap:8px" }, [
+    el(".urow", { style: "margin-top:var(--s2);gap:8px" }, [
       el("div", { style: "flex:1" }, [el("label.ulab", {}, ["New link expires"]), expBtn]),
       el("div", { style: "flex:1" }, [el("label.ulab", {}, ["Max uses"]), useBtn]),
     ]),
-    el(".invcreate", { style: "margin-top:12px" }, [create]),
+    el(".invcreate", { style: "margin-top:var(--s2)" }, [create]),
     el("label.ulab", { style: "margin-top:18px" }, ["Or invite by handle"]),
     el(".field", {}, [iconEl("at", "sm"), handleInput, handleBtn]),
     suggested, noSuggest,

@@ -31,7 +31,7 @@ export function openReport({ targetType, targetId = null, serverId = null, label
   const body = el("div", {}, [
     el("p", { style: "font-size:var(--fs-sm);color:var(--muted);margin:0 0 12px" }, [`Report ${label}. A moderator reviews every report; the reported party isn’t told who reported them.`]),
     opts,
-    el("label.ulab", { style: "margin-top:14px" }, ["Details"]),
+    el("label.ulab", { style: "margin-top:var(--s2)" }, ["Details"]),
     el(".field", {}, [details]),
   ]);
   const { close } = openModal({ title: "Report", body, footer: [submit] });

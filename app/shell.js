@@ -102,9 +102,9 @@ export function openCreateServer() {
   const optional = () => el("span", { style: "font-weight:400;color:var(--muted)" }, ["optional"]);
   const body = el("div", {}, [
     el("label.ulab", {}, ["Server name"]), el(".field", {}, [nameI]),
-    el(".frow", { style: "margin-top:12px" }, [el("label.ulab", {}, ["Server icon ", optional()]), iconPick.node]),
-    el(".frow", { style: "margin-top:12px" }, [el("label.ulab", {}, ["Cover ", optional()]), coverPick.node]),
-    el("label.ulab", { style: "margin-top:12px;display:block" }, ["Starter channels ", el("span", { style: "font-weight:400;color:var(--muted)" }, ["comma-separated"])]), el(".field", {}, [chansI]),
+    el(".frow", { style: "margin-top:var(--s2)" }, [el("label.ulab", {}, ["Server icon ", optional()]), iconPick.node]),
+    el(".frow", { style: "margin-top:var(--s2)" }, [el("label.ulab", {}, ["Cover ", optional()]), coverPick.node]),
+    el("label.ulab", { style: "margin-top:var(--s2);display:block" }, ["Starter channels ", el("span", { style: "font-weight:400;color:var(--muted)" }, ["comma-separated"])]), el(".field", {}, [chansI]),
     el(".svnote", {}, [iconEl("check", "sm"), el("span", {}, ["A private studio — you invite people with a link, there's no public listing."])]),
   ]);
   const { close } = openModal({ title: "New server", body, footer: [cancel, create] });
@@ -191,9 +191,9 @@ export function openStatus(data) {
   const body = el("div", {}, [
     el("label.ulab", {}, ["Your status"]),
     el(".statusrow", { style: "display:flex;gap:8px;align-items:center" }, [el(".field", { style: "flex:none;width:52px" }, [emojiI]), el(".field", { style: "flex:1;min-width:0;width:auto" }, [textI])]),
-    el("label.ulab", { style: "margin-top:12px;display:block" }, ["Presence"]),
+    el("label.ulab", { style: "margin-top:var(--s2);display:block" }, ["Presence"]),
     presenceSeg,
-    el(".statusrow", { style: "display:flex;align-items:center;justify-content:space-between;margin-top:12px" }, [el("label.ulab", { style: "margin:0" }, ["Clear status after"]), clearSel]),
+    el(".statusrow", { style: "display:flex;align-items:center;justify-content:space-between;margin-top:var(--s2)" }, [el("label.ulab", { style: "margin:0" }, ["Clear status after"]), clearSel]),
   ]);
   const cancel = Button({ label: "Cancel", variant: "ghost" });
   const clear = Button({ label: "Clear status", variant: "ghost" });

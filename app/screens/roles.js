@@ -46,10 +46,10 @@ export async function openRolesEditor(serverId) {
           try { await updateRole(sel.id, { color: i }); } catch (e) { toast({ message: e?.message || "Couldn’t set the colour" }); }
         } }));
       }
-      editor.append(el("label.ulab", { style: "margin-top:12px" }, ["Colour"]), sw);
+      editor.append(el("label.ulab", { style: "margin-top:var(--s2)" }, ["Colour"]), sw);
     }
 
-    editor.append(el("label.ulab", { style: "margin-top:14px" }, ["Permissions"]));
+    editor.append(el("label.ulab", { style: "margin-top:var(--s2)" }, ["Permissions"]));
     if (sel.is_default) editor.append(el(".rhint", {}, ["@everyone is the baseline every member holds. Admin/manage flags stay off."]));
     for (const g of PERM_GROUPS) {
       editor.append(el(".pgh", {}, [g.group]));

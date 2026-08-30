@@ -639,14 +639,16 @@ per channel, builds on P11), D6 (review canvas/kanban/versions).
       `app/screens/details.js`/`cards.js` (render coloured tags), `eski-style` (tag-type colour
       tokens). *Medium-hard.* Load **`eski-style`** before styling — tags are currently "coloured
       bold text, not a pill" (CANON #26); confirm how a typed colour reads within that rule.
-- [ ] **P12 · Density pass: modals · dialogs · toasts (round-7).** *Started — modal primitive +
-      toast tightened this session* (`.modal .uhd`/`.mfoot` → `--s2` vertical, `.mbody` → `--s3`
-      vertical, title → `--fs-sm`; toast padding snapped off raw `11px 13px` to `--s2 --s3`). A
-      small dialog now renders ~340×240 instead of tablet-sized. **Remaining + REDO under the new
-      3-versions rule:** this was shipped as a single version before that rule landed — the fuller
-      density pass (per-dialog bodies, the upload sheet, roles/settings panels) must be produced as
-      **3 versions for the owner to pick** (see the UI-change workflow above). *Files:*
-      `styles/primitives.css` (done), then per-surface. Load **`eski-style`** + **`eski-polish`**.
+- [x] **P12 · Density pass: modals · dialogs · toasts (round-7).** *Done (owner picked V1 Tight from a
+      3-density batch; demo-verified).* Frame + toast were already tightened; this pass took the dialog
+      **body** to V1: `.modal .mbody` padding → 10/14, `.modal .field` → 6/10 (both scoped to `.modal`
+      so app-wide fields/pane bodies are untouched), and the per-row vertical rhythm dropped from the
+      hardcoded inline `margin-top:12px/14px` to **`--s2` (8px)** at its source across every modal
+      builder (`shell.js` create/status, `report.js`, `roles.js`, `workspace.js` forward/invite/
+      notifications). The New-server dialog now renders noticeably shorter — "doesn't eat the page."
+      *Files:* `styles/primitives.css`, `app/shell.js`, `app/report.js`, `app/screens/roles.js`,
+      `app/screens/workspace.js`. Verified: /create dialog renders tight both themes, 0 pageerrors.
+      (gallery mirror skipped per owner.)
 - [x] **P18 · Standardize header + panel sizes & colours (round-7).** *Done (owner picked V1 Compact
       46px from a 3-density batch; demo-verified).* Audited the inconsistency (heights 48/48/52/56;
       the only `--plate` header, `.chanhd`, is dead CSS — the real workspace server header is the
