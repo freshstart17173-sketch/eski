@@ -366,6 +366,46 @@ per channel, builds on P11), D6 (review canvas/kanban/versions).
       to it — the playback state isn't preserved. Wants a persistent / mini player so returning shows
       the still-playing media where it left off. *Files:* the media player (`app/ui.js MediaPlayer` /
       the details pane) + a persistent player host outside the per-route `#stage`. *Medium-hard.*
+
+> ### 🟢 Round-8 (owner test, 2026-08-30) — media-player, explorer nitpicks + tag/metadata search
+> Nitpicks + a search-model change captured mid-session (owner: "stop, tokens almost done — add all
+> of this + past incomplete tasks to the master todo"). **Not yet built.** Sorted below.
+
+- [ ] **B15 · Blank-space click in the explorer must deselect (round-8).** Clicking an empty area of
+      the file browser should clear the current selection. B6 added an empty-area click-clear, but the
+      owner still sees a selection stick — re-check it fires for a **single** selection too (and after
+      the B10 marquee), and that no overlay/card is swallowing the click. *Files:* `app/screens/explorer.js`
+      (the `body` click-clear handler; interplay with B10 `suppressClear`). *Easy.*
+- [ ] **B16 · Remove the stray white square, top-left (round-8).** There's an unexplained small white
+      square in the **top-left** of (some) screen — the owner doesn't know what it is. Identify it
+      (likely a stray/empty element or a mis-sized icon/badge) and remove it. *Files:* TBD — inspect
+      the shell / rail / active screen top-left. *Easy (once located).*
+- [ ] **B17 · Smooth playhead scrubbing on the media player (round-8).** The transport playhead/seek
+      should scrub **smoothly** (continuous), not jump/stutter. *Files:* `app/ui.js MediaPlayer` (the
+      seek `input`/`timeupdate` handling — likely needs `requestAnimationFrame` playhead updates +
+      smooth drag). *Medium.*
+- [ ] **B18 · Skip buttons grouped on the right (round-8).** Put the skip-back / skip-forward buttons
+      **next to each other on the right-hand side** of the transport (not split across the bar).
+      *Files:* `app/ui.js MediaPlayer` transport layout. *Easy.*
+- [ ] **P21 · Tag/metadata SEARCH MODIFIERS — replaces the P11 Tag-type filter facet (round-8, owner).**
+      **Remove the "Tag type" filter facet** added in P11 (the dropdown). Instead let the user type
+      modifiers **straight in the explorer search bar**:
+      - **`bpm:120`** — a typed-tag search; once confirmed it **turns the type's colour** in the field
+        (like the tagEditor's colon recognition) and filters to files carrying that tag.
+      - **`hastag:bpm`** — filter to files that have any tag of that type.
+      - **`sortby:bpm_descending`** (and `_ascending`) — sort by a tag/metadata value.
+      - General **advanced filtering & sorting by tag or metadata** via such modifiers (extensible set).
+      Parse modifiers out of the query (reuse the `from:/in:/has:` pattern in `schema-15-search.sql`),
+      colour a recognised typed-tag token in the field, apply the filter/sort to the explorer view.
+      Keeps the typed-tag **colours + `type:value` storage** from P11 (only the *facet dropdown* is
+      removed). *Files:* `app/screens/explorer.js` (search parse + apply; remove `tagTypeBtn`/
+      `state.tagTypes`), `app/tags.js` (modifier helpers), maybe `app/data.js`. *Medium-hard.*
+      **Supersedes the P11 Tag-type facet.**
+- [ ] **B19 · Free-text search must include TAGS (round-8).** A bare search term (no modifier) should
+      match a file whose **tags** contain it, not just the filename — today tags aren't searched unless
+      specified. Fold the tag text into the explorer's client-side search filter (and the `search_tsv`
+      / search RPC if server-side search is in play). *Files:* `app/screens/explorer.js` (the search
+      filter predicate), possibly `schema-15-search.sql`. *Easy-med.* Pairs with **P21**.
 - [ ] **B13 · Gate write actions on the file ⋯ menu by permission (data-layer audit, 2026-08-29).**
       The card ⋯ menu + details menu (`openCardMenu`/`detailMenuItems`) show **Rename · Delete ·
       Hide · Change visibility** on *every* work, so a member sees them on other members' server
