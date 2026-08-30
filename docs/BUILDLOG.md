@@ -2557,3 +2557,25 @@ GOTCHA: the URL must be authoritative — do NOT reintroduce an in-memory folder
   it. syncUrl guards on location.pathname===explorerBase so a nav-away close doesn't rewrite the new
   route. openFile sets state.openFileId AFTER openDetails so the prior pane's onClose (which clears it)
   runs first.
+
+## 2026-08-30 — P24 (backend) real file search RPC: search_files (migration p26)
+IN PROGRESS: P24 frontend (modifier parsing + call the RPC) — backend landed + verified.
+DONE: schema-35-search-files.sql applied live as migration p26_search_files. New search_files()
+  (SECURITY INVOKER — RLS = can_read_work fences visibility) does server-side matching built for
+  scale: full-text over the filename (works.search_tsv, GIN) UNIONed with tag-contains (B19), plus
+  P21 structured modifiers — exact tags (p_tags, ALL must match), has-a-tag-type (p_hastypes,
+  "hastag:"), extension facet (p_exts), uploader, date-since — sorted (latest/oldest/name/size/
+  tag-value for "sortby:bpm_desc") and paginated (limit/offset, total count returned per row).
+  Returns the card fields + aggregated tags + author handle/name + folder_id + channel_name. Enabled
+  pg_trgm (extensions schema) + a trigram GIN on content_tags(tag) for ILIKE tag matching at scale.
+  Verified via role-sim against the REAL live data (owner has 195 personal works; VERIFICATION.md's
+  "0 works" is stale — it's 202 now): personal_total=195, page cap 60, text "willow"→4 (FTS), wav
+  ext filter=3=direct count, name sort asc/desc correct, pagination distinct, server scope=1, exact
+  tag "dumb"=1, and a NON-MEMBER sees 0 of the server's works (RLS fence). Security advisors: no new
+  issue (search_files is INVOKER; not in the definer-executable list). Commit <sha>.
+NEXT: P24 frontend — parse "bpm:120 / hastag:bpm / sortby:bpm_desc" in the explorer search bar,
+  colour a recognised typed token, include tags in free text, REMOVE the P21 Tag-type facet, and
+  call search_files in live mode (client-side fallback in demo) with a "load more" pager.
+GOTCHA: search_files is SECURITY INVOKER — do NOT switch it to DEFINER (RLS is the fence). The
+  p_source/p_server predicate only SCOPES; RLS still filters. tag-value sort strips non-numerics from
+  the value then casts (nulls last), so "sortby:bpm_desc" orders by the numeric bpm.
