@@ -59,7 +59,12 @@
 .panehd nav{margin-left:auto;display:flex;gap:var(--s4)}
 .toolbar{flex:none;display:flex;align-items:center;gap:var(--s2);padding:var(--s3) var(--s4);background:var(--paper);flex-wrap:wrap}
 .toolbar .field{flex:1;min-width:170px;max-width:340px}
-.panebody{flex:1;overflow-y:auto;padding:var(--s4);position:relative}
+.panebody{flex:1;overflow-y:auto;padding:var(--s4);position:relative;user-select:none}   /* B31: a file browser isn't text — marquee/drag must not highlight filenames (Finder/Drive) */
+.panebody input,.panebody textarea,.panebody [contenteditable]{user-select:text}   /* but a real field (inline rename) stays selectable */
+/* B31: the drag token — a small kind icon (not the card thumbnail). Rendered off-screen so
+   setDragImage can snapshot it; square badge for the count (round is avatars/dots only). */
+.dragghost{position:fixed;top:-1000px;left:-1000px;display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;background:var(--paper);border:1px solid var(--line2);border-radius:var(--r);color:var(--ink)}
+.dragghost .dgcount{position:absolute;top:-6px;right:-6px;min-width:16px;height:16px;padding:0 3px;box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;background:var(--ink);color:var(--on-ink);font-size:10px;font-weight:600;border-radius:var(--r)}
 /* B10 — marquee (rubber-band) select rectangle + a drop target while dragging a file onto a card */
 .marquee{position:absolute;z-index:4;background:color-mix(in srgb,var(--ink) 8%,transparent);border:1px solid var(--line2);border-radius:2px;pointer-events:none}
 .card.droptarget{outline:2px solid var(--ink);outline-offset:1px}

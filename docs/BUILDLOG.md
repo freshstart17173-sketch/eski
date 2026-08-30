@@ -2770,3 +2770,18 @@ GOTCHA: the empty-pane contextmenu is on .panebody and bubbles up from cards —
   e.target.closest("[data-id]/[data-folder-id]/.selbar/.exfab") so a right-click on a card shows only the
   card menu (the card's own handler ran first in the target phase), never both. openMenu(null, …) needs
   every anchor.* call guarded — don't remove the ?. on anchor.
+
+## 2026-08-30 — B31 no text-highlight on select/drag + mini-icon drag ghost
+IN PROGRESS: (cleared)
+DONE: (1) .panebody{user-select:none} so a marquee/drag no longer highlights filenames as text (a file
+  browser isn't a text doc — Finder/Drive behave the same), with .panebody input/textarea/[contenteditable]
+  {user-select:text} so a real inline field stays selectable. (2) A drag shows a small kind-icon token, not
+  the card thumbnail (owner: "miniaturized icons every time"): the dragstart handler builds a .dragghost
+  (34px square chip + the file's kind icon; a SQUARE count badge for multi-drag — round is avatars/dots
+  only) and setDragImage()s it off-screen. Demo-verified: .panebody computes user-select:none; ghost 34x34
+  at --r, badge square + inked; 0 pageerrors. Live drag-image swap isn't sandbox-simulable → QA. Commit <sha>.
+NEXT: remaining selection/filter items are visual (B32 selbar overlay, B33 star consistency, P33 filters,
+  P32 slider) → owner 3-version pick. Non-visual: P23 backend (folder tags), K12 metadata indexing.
+GOTCHA: the drag ghost MUST be in the document when setDragImage snapshots it — append to body, then remove
+  on setTimeout(…,0). user-select:none on .panebody would also block selecting text in a future inline field
+  — the input/textarea/[contenteditable] override keeps those selectable.

@@ -111,7 +111,7 @@ detail in the Round-11 section below. Ticking one here = ticking it in its categ
 | ~~30m~~ | ~~**B34**~~ | ✅ `.loadearlier{display:flex}` beat the UA `[hidden]` — restated the rule | done |
 | ~1.5h | **B32** | selection action bar shifts the layout down → overlay it | easy-med |
 | ~~2h~~ | ~~**B35**~~ | ✅ file/server search — was FTS-whole-word-only; added filename substring (p27) | done |
-| ~2h | **B31** | selection highlights text; drag image should be mini icons | med |
+| ~~2h~~ | ~~**B31**~~ | ✅ .panebody user-select:none + mini kind-icon drag ghost | done |
 | ~~2.5h~~ | ~~**B30**~~ | ✅ viewer stayed-open on refocus — auth re-emit was forcing a full re-render | done |
 | ~3h | **B33** | star: consistent top-left click-toggle in every density | med |
 | ~~3h~~ | ~~**P28**~~ | ✅ openMenu gained an at:{x,y} cursor spawn; file/folder/empty-pane menus | done |
@@ -664,11 +664,16 @@ per channel, builds on P11), D6 (review canvas/kanban/versions).
       (`wireStreamPaging`). *Easy.*
 >
 > **— Selection / interaction —**
-- [ ] **B31 · Selection is finicky + highlights text; drag image should be mini icons.** Selecting
-      often selects TEXT instead (add `user-select:none` on the browsing surface during select/drag).
-      And **drag-and-drop must show miniaturized icons every time, not thumbnails** (set a small
-      icon drag image, not the card thumbnail). *Files:* `app/screens/explorer.js` (dragstart
-      `setDragImage`; user-select), `styles/content.css`. *Med.*
+- [x] **B31 · Selection is finicky + highlights text; drag image should be mini icons.** *Done (demo-
+      verified; live drag-image → QA).* (1) The browsing surface no longer highlights text during a
+      marquee/drag — `.panebody{user-select:none}` (a file browser isn't a text document; Finder/Drive
+      do the same), with `.panebody input,textarea,[contenteditable]{user-select:text}` so a real field
+      stays selectable. (2) A drag now shows a **small kind-icon token, not the card thumbnail** — the
+      dragstart handler builds a `.dragghost` (a 34px square chip with the file's kind icon; a **square**
+      count badge for a multi-drag, since round is avatars/dots only) and `setDragImage`s it. Verified:
+      `.panebody` computes `user-select:none`; the ghost is 34×34 at `--r`, badge square + inked; 0
+      pageerrors. The live drag-image swap isn't sandbox-simulable → QA-CHECKLIST. *Files:*
+      `app/screens/explorer.js` (dragstart), `styles/content.css`.
 - [ ] **B32 · Selection action bar shifts the layout down.** The `.selbar` pushes all the content down
       when it opens (very annoying). Make it an **overlay** (float over the grid / absolute) so it
       doesn't reflow the pane. *Files:* `styles/content.css` (`.selbar`), maybe `app/screens/explorer.js`.

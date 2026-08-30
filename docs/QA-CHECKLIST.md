@@ -256,6 +256,7 @@ The server explorer mounts inside the shell (channel column stays); My files hid
 ## 13. Feed
 
 - [ ] Open the Feed → a grid of your friends' public posts shows.
+- [ ] `[B31]` Drag a file (or a multi-selection) in the explorer → the drag image is a small kind ICON (with a count for multi), not the full card thumbnail; and marquee-selecting or dragging across the grid does NOT highlight/select the filenames as text.
 - [ ] Use search / type / sort / layout toggle → each filters or re-lays the grid (even grid ⇄ masonry).
 - [ ] Look at cards of each kind → image thumb, video play-overlay, audio type-card, text words, non-previewable type-card — all render.
 - [ ] Click a card → the Details pane opens.

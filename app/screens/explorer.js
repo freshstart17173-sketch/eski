@@ -574,6 +574,17 @@ function paint(tree, pane, data, state, rerender) {
       dragIds = (state.selection.has(id) && state.selection.size > 1) ? [...state.selection] : [id];
       e.dataTransfer.effectAllowed = "move";
       try { e.dataTransfer.setData("text/plain", dragIds.join(",")); } catch { /* Safari */ }
+      // B31: drag a small kind-icon token, NOT the full card thumbnail (owner: "miniaturized icons
+      // every time"). Multi-drag shows the count. The ghost must be in the DOM when setDragImage
+      // snapshots it, then it's removed on the next tick.
+      try {
+        const w = (data.files || []).find((f) => f.id === id);
+        const ghost = el(".dragghost", {}, [iconEl(KIND_LIST_ICON[w?.kind] || "file", "sm")]);
+        if (dragIds.length > 1) ghost.append(el(".dgcount", {}, [String(dragIds.length)]));
+        document.body.appendChild(ghost);
+        e.dataTransfer.setDragImage(ghost, 17, 17);
+        setTimeout(() => ghost.remove(), 0);
+      } catch { /* setDragImage unsupported → default ghost */ }
     });
     body.addEventListener("dragover", (e) => {
       const t = e.target.closest("[data-id], [data-folder-id]");
