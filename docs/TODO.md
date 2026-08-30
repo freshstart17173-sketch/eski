@@ -406,6 +406,63 @@ per channel, builds on P11), D6 (review canvas/kanban/versions).
       specified. Fold the tag text into the explorer's client-side search filter (and the `search_tsv`
       / search RPC if server-side search is in play). *Files:* `app/screens/explorer.js` (the search
       filter predicate), possibly `schema-15-search.sql`. *Easy-med.* Pairs with **P21**.
+
+> ### 🟢 Round-9 (owner test, 2026-08-30) — upload perf/UX at scale, explorer + rail nitpicks
+> Owner is about to upload **gigabytes**; captured for the master todo. **Not yet built.** Sorted below.
+
+- [ ] **B20 · Upload chip: inverse colour + don't cover / align with the exfab buttons (round-9).**
+      The floating upload-progress chip (`.uplchip`, P16) should be the **inverse colour of the UI**
+      (ink ground / paper text, like a primary button) and must **not cover the New folder + Upload
+      buttons** (`.exfab`, bottom-right). It should sit **above** them and **right-edge align** with
+      them (currently it floats at `right:20px;bottom:20px` and overlaps/misaligns). *Files:*
+      `styles/primitives.css` (`.uplchip` colour + position), coordinate with `.exfab` (`styles/content.css`).
+      *Easy.*
+- [ ] **B21 · Server sometimes missing on load — needs a reload (round-9).** On app load the owner's
+      server occasionally isn't in the rail; a manual reload brings it back — a race / transient in the
+      rail's server fetch (`loadRail`) or its caching. Make the rail load deterministic (await the
+      membership read, retry on transient failure, don't cache an empty list). *Files:* `app/data.js`
+      (`loadRail`/`_cache.rail`), `app/shell.js` (rail render). *Medium.* Reliability bug.
+- [ ] **B22 · No active-server indicator in the rail (round-9).** There's no visual cue for **which
+      server is currently selected** in the left rail. Add the selected-state affordance (the eski
+      active-nav pattern: a plate/ink pill or the rail's active marker) to the current server's rail
+      button. *Files:* `app/shell.js` (rail buttons), `styles/shell.css` (`.railbtn.on`). *Easy.*
+- [ ] **K11 · Large-file upload must not freeze the page or eat memory (round-9).** Uploading big files
+      currently reads the **whole file into memory** — `sha256Hex` does `await file.arrayBuffer()` and
+      the PUT sends the whole blob — so a multi-GB file (or a folder of them) slows the page to a halt
+      and balloons memory. Move to a **streaming / chunked** approach: hash via a streamed digest
+      (read the file in chunks, incremental SHA-256 — WebCrypto has no streaming digest, so use a
+      chunked JS SHA-256 or hash-on-the-fly), keep the PUT streaming (it already uses XHR — ensure the
+      body isn't buffered extra), cap concurrency (upload N at a time, not all at once via
+      `Promise.all`), and release references so the GC can reclaim each file after its PUT. *Files:*
+      `app/screens/upload.js` (`sha256Hex`, the `Promise.all` PUT loop → a concurrency-limited queue),
+      maybe a small streaming-hash helper. *Hard.* **Do before real GB uploads.**
+- [ ] **P22 · Per-file tag + rename list in the upload sheet (multi-file / folder) (round-9).** Today
+      a single upload can set Title + Tags, but a **multi-file or folder** upload can't tag/rename each
+      file. **Replace the "Add details" pane with a list of the files + subfolders** (the P16
+      `renderChosen` list, extended): each row gets an inline **rename** and its own **tag editor**
+      (the P11 `tagEditor`), so you tag/rename everything before posting. `create_work` is already
+      per-file, so pass each file's own title + tags. *Files:* `app/screens/upload.js` (`renderChosen`
+      → editable rows; `doPost` reads per-file title/tags), `app/tags.js` (`tagEditor` per row). *Hard.*
+      Pairs with **P23**.
+- [ ] **P23 · Tag folders (no inheritance) (round-9).** A **folder** should be taggable too (its own
+      `content_tags`-equivalent on the folder), but a folder's tags are **NOT** inherited by the files
+      inside it (explicitly no propagation). Needs: a folder-tags store (folders have no `content_tags`
+      row today — add one, or a `folder_tags` table + RLS), the folder card / details showing + editing
+      its tags (reuse `tagChip`/`tagEditor`), and the P22 upload list letting you tag a subfolder row.
+      *Files:* schema (folder tags + RLS/RPC), `app/data.js`, `app/screens/explorer.js` (folder card +
+      details), `app/screens/upload.js` (subfolder rows). *Medium-hard.* Pairs with **P22**.
+- [ ] **P24 · A real, in-depth search built for scale (round-9).** With gigabytes of files coming, the
+      explorer's client-side substring filter won't hold. Build a **real server-side search**:
+      full-text over filename + tags + metadata (the `search_tsv` / `schema-15-search.sql` groundwork),
+      the **modifiers from P21** (`bpm:120`, `hastag:`, `sortby:…`), tag inclusion (**B19**), paginated
+      results, and fast enough on a large library. Likely a `search_files(server, query, filters)` RPC
+      backed by GIN indexes. *Files:* `schema-15-search.sql` (+ indexes), a search RPC, `app/data.js`,
+      `app/screens/explorer.js` / `app/screens/search.js`. *Hard.* **Supersedes** the ad-hoc pieces in
+      **P21/B19** (fold them in) — this is the real version.
+- [ ] **P25 · Show TOTAL upload size, not just per-file (round-9).** The upload sheet should show the
+      **combined size** of everything being uploaded (e.g. "18 files · 2.4 GB"), not only each file's
+      size. Add the total to the `renderChosen` header (sum `f.size`, reuse `fmtSize`). *Files:*
+      `app/screens/upload.js` (`renderChosen`). *Easy.*
 - [ ] **B13 · Gate write actions on the file ⋯ menu by permission (data-layer audit, 2026-08-29).**
       The card ⋯ menu + details menu (`openCardMenu`/`detailMenuItems`) show **Rename · Delete ·
       Hide · Change visibility** on *every* work, so a member sees them on other members' server
