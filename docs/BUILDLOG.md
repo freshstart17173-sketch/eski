@@ -2652,3 +2652,23 @@ GOTCHA: search_files is SECURITY INVOKER — do NOT switch to DEFINER (RLS is th
   substring is only another way to MATCH within the caller's visible set, never to widen it. Keep the
   `qtext is null` guard (not `tsq is null`): a non-empty all-stopword query ("the") yields an empty (not
   null) tsquery, and the ILIKE must still run for it.
+
+## 2026-08-30 — P30 (partial) perf: parallelize the channel-switch read waterfall
+IN PROGRESS: (cleared) — P30 is multi-part; this is the hot-path round-trip slice only.
+DONE: cut serial round-trips on the "opening a server/channel is slow" path (data.js). (1) loadWorkspace
+  fired the per-channel unread-counts RPC and THEN the messages+pins fetch in series though they're
+  independent — now one Promise.all (unreadP ‖ chanP), so a channel switch pays max(unread, messages)
+  latency, not their sum. (2) resolveTopMessages awaited reply-counts → reactions → forwards →
+  attachments one at a time (up to 4 sequential round-trips per stream load) — all four depend only on
+  the already-fetched `top` window, so they now run in a single Promise.all; post-processing unchanged.
+  No data or shape change — identical queries, only concurrent scheduling. node --check clean;
+  verify-workspace unchanged (the 5 FAILs are pre-existing stale cases — old server-settings modal +
+  removed Files tab — and demo short-circuits loadWorkspace via demoWorkspace, so this code isn't even
+  on the demo path). The latency win is real only under live network (sandbox can't measure it) → the
+  owner feels it on preview. Commit <sha>.
+NEXT: remaining P30 parts — message-send latency, the two-phase boot (paint rail/logo before content),
+  and search speed (K12 indexing; the filename-trigram half shipped with B35/p27). Then the search
+  model (P27/P31/P34) + density slider (P32, visual → 3-version rule).
+GOTCHA: unreadP resolves to r.data||[] (the array), NOT {data} — it's destructured as a bare `uc`.
+  The attach branch resolves to a [{data},{data}] pair (or Promise.resolve of one when no attachments),
+  matching the nested destructure. Don't reorder the Promise.all elements without moving the destructure.

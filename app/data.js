@@ -205,41 +205,53 @@ const CHANNEL_PAGE = 50;
 async function resolveTopMessages(top, membersById, chanNameById, userId) {
   if (!top || !top.length) return [];
   const topIds = top.map((r) => r.id);
-  // reply counts: one grouped read over the parents in this window (replies aren't rendered
-  // inline in the stream, only counted → the thread view fetches the bodies on open).
+  const fwdIds = [...new Set(top.filter((r) => r.forwarded_from).map((r) => r.forwarded_from))];
+  const attachIds = [...new Set(top.filter((r) => r.work_id).map((r) => r.work_id))];
+
+  // Perf (P30): these four grouped reads only depend on `top` (already in hand), never on each
+  // other — so fire them CONCURRENTLY instead of awaiting one at a time. On a channel switch this
+  // was reply-counts → reactions → forwards → attachments in series (up to 4 sequential round-trips);
+  // one Promise.all collapses them to a single round-trip's latency. Post-processing is unchanged.
+  const [{ data: reps }, { data: rxAll }, { data: srcs }, [{ data: aworks }, { data: atags }]] = await Promise.all([
+    // reply counts: replies aren't rendered inline in the stream, only counted (the thread view
+    // fetches the bodies on open).
+    supabase.from("messages").select("parent_id").in("parent_id", topIds).is("deleted_at", null),
+    // reactions grouped for the windowed messages
+    supabase.from("message_reactions").select("message_id,emoji,user_id").in("message_id", topIds),
+    // forwards → each source's quote block (only sources the viewer can read, RLS fences it)
+    fwdIds.length
+      ? supabase.from("messages").select("id,body,user_id,channel_id,created_at").in("id", fwdIds)
+      : Promise.resolve({ data: [] }),
+    // attachment messages (B5): work_id → the attachment card in the stream (+ its tags)
+    attachIds.length
+      ? Promise.all([
+          supabase.from("works").select("id,title,kind,file_ext,blob_sha,bytes,author_id,hidden,visibility,created_at").in("id", attachIds).is("deleted_at", null),
+          supabase.from("content_tags").select("work_id,tag").in("work_id", attachIds),
+        ])
+      : Promise.resolve([{ data: [] }, { data: [] }]),
+  ]);
+
   const replyCount = {};
-  const { data: reps } = await supabase.from("messages").select("parent_id").in("parent_id", topIds).is("deleted_at", null);
   for (const r of reps || []) replyCount[r.parent_id] = (replyCount[r.parent_id] || 0) + 1;
-  // reactions grouped for the windowed messages
+
   const rxByMsg = {};
-  const { data: rxAll } = await supabase.from("message_reactions").select("message_id,emoji,user_id").in("message_id", topIds);
   for (const r of rxAll || []) {
     (rxByMsg[r.message_id] ||= {});
     (rxByMsg[r.message_id][r.emoji] ||= { emoji: r.emoji, n: 0, mine: false });
     rxByMsg[r.message_id][r.emoji].n++;
     if (r.user_id === userId) rxByMsg[r.message_id][r.emoji].mine = true;
   }
-  // forwards → resolve each source into its quote block (only sources the viewer can read, RLS)
-  const fwdIds = [...new Set(top.filter((r) => r.forwarded_from).map((r) => r.forwarded_from))];
+
   const srcById = {};
-  if (fwdIds.length) {
-    const { data: srcs } = await supabase.from("messages").select("id,body,user_id,channel_id,created_at").in("id", fwdIds);
-    for (const s of srcs || []) {
-      const a = membersById[s.user_id] || { name: "someone", colorIdx: 1 };
-      srcById[s.id] = { author: { name: a.name, colorIdx: a.colorIdx }, fromChannel: chanNameById[s.channel_id] || "a channel", text: s.body || "", when: fmtWhen(s.created_at) };
-    }
+  for (const s of srcs || []) {
+    const a = membersById[s.user_id] || { name: "someone", colorIdx: 1 };
+    srcById[s.id] = { author: { name: a.name, colorIdx: a.colorIdx }, fromChannel: chanNameById[s.channel_id] || "a channel", text: s.body || "", when: fmtWhen(s.created_at) };
   }
-  // attachment messages (B5): work_id → the attachment card in the stream
-  const attachIds = [...new Set(top.filter((r) => r.work_id).map((r) => r.work_id))];
+
   const attachById = {};
-  if (attachIds.length) {
-    const [{ data: aworks }, { data: atags }] = await Promise.all([
-      supabase.from("works").select("id,title,kind,file_ext,blob_sha,bytes,author_id,hidden,visibility,created_at").in("id", attachIds).is("deleted_at", null),
-      supabase.from("content_tags").select("work_id,tag").in("work_id", attachIds),
-    ]);
-    const atagsByWork = {}; for (const t of atags || []) (atagsByWork[t.work_id] ||= []).push(t.tag);
-    for (const w of aworks || []) attachById[w.id] = shapeWork(w, null, membersById, chanNameById, atagsByWork[w.id] || []);
-  }
+  const atagsByWork = {}; for (const t of atags || []) (atagsByWork[t.work_id] ||= []).push(t.tag);
+  for (const w of aworks || []) attachById[w.id] = shapeWork(w, null, membersById, chanNameById, atagsByWork[w.id] || []);
+
   return top.map((r) => {
     const m = shapeMessage(r, membersById);
     m.replies = replyCount[r.id] || 0;
@@ -294,14 +306,27 @@ export async function loadWorkspace({ serverId, channelId } = {}) {
   // voice channels are v2 — never selectable as the active (text) channel (P4-BUG#3)
   const activeChannel = textCh.find((c) => c.id === channelId) || textCh[0] || null;
 
-  // P19 — per-channel unread counts (one RPC round-trip; membership-gated server-side). The
-  // channel we're opening now reads as 0 regardless (attachLive marks it read on mount). Annotate
-  // a FRESH channelGroups so the per-server cached bundle isn't mutated across channel switches.
-  let unreadById = {};
-  try {
-    const { data: uc } = await supabase.rpc("channel_unread_counts", { p_server: sid });
-    for (const r of uc || []) unreadById[r.channel_id] = r.unread;
-  } catch { unreadById = {}; }
+  // Perf (P30): the per-channel unread counts (P19, one membership-gated RPC) and the active
+  // channel's messages+pins are independent reads — fire them CONCURRENTLY instead of awaiting the
+  // unread RPC first and the messages after it (two serial round-trips on every channel switch).
+  const cid = activeChannel?.id || null;
+  const unreadP = supabase.rpc("channel_unread_counts", { p_server: sid })
+    .then((r) => r.data || []).catch(() => []);
+  // P20: window to the newest CHANNEL_PAGE top-level messages (fetch newest-first, reverse to
+  // ascending for the stream) instead of the whole channel history. `hasMore` = we hit the page
+  // limit, so a scroll-up load-earlier is offered.
+  const chanP = activeChannel
+    ? Promise.all([
+        supabase.from("messages").select("id,body,created_at,edited_at,parent_id,user_id,deleted_at,forwarded_from,work_id").eq("channel_id", cid).is("parent_id", null).is("deleted_at", null).order("created_at", { ascending: false }).limit(CHANNEL_PAGE),
+        supabase.from("message_pins").select("message_id,pinned_by,created_at, message:messages(body,user_id)").eq("channel_id", cid).order("created_at"),
+      ])
+    : Promise.resolve([{ data: [] }, { data: [] }]);
+  const [uc, [{ data: topRows }, { data: pinRows }]] = await Promise.all([unreadP, chanP]);
+
+  // Annotate a FRESH channelGroups (never the per-server cached bundle) with the unread counts.
+  // The channel we're opening reads as 0 regardless (attachLive marks it read on mount).
+  const unreadById = {};
+  for (const r of uc || []) unreadById[r.channel_id] = r.unread;
   const channelGroupsUnread = channelGroups.map((g) => ({
     ...g,
     channels: g.channels.map((c) => {
@@ -312,15 +337,7 @@ export async function loadWorkspace({ serverId, channelId } = {}) {
 
   let messages = [], pins = [], pinCount = 0, hasMoreMessages = false, oldestMsgAt = null;
   if (activeChannel) {
-    const cid = activeChannel.id;
     const chanNameById = {}; for (const c of textCh) chanNameById[c.id] = c.name;
-    // P20: window to the newest CHANNEL_PAGE top-level messages (fetch newest-first, reverse to
-    // ascending for the stream) instead of the whole channel history. `hasMore` = we hit the
-    // page limit, so a scroll-up load-earlier is offered.
-    const [{ data: topRows }, { data: pinRows }] = await Promise.all([
-      supabase.from("messages").select("id,body,created_at,edited_at,parent_id,user_id,deleted_at,forwarded_from,work_id").eq("channel_id", cid).is("parent_id", null).is("deleted_at", null).order("created_at", { ascending: false }).limit(CHANNEL_PAGE),
-      supabase.from("message_pins").select("message_id,pinned_by,created_at, message:messages(body,user_id)").eq("channel_id", cid).order("created_at"),
-    ]);
     const top = (topRows || []).slice().reverse();
     hasMoreMessages = (topRows || []).length === CHANNEL_PAGE;
     oldestMsgAt = top.length ? top[0].created_at : null;
