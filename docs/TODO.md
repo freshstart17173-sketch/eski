@@ -120,6 +120,7 @@ detail in the Round-11 section below. Ticking one here = ticking it in its categ
 | ~4h | **P31** | one modifier-based search everywhere (channel msg ↔ server file) | med-hard |
 | ~4h | **P35** | loading animations everywhere; replace the spinning search icon | med |
 | ~4h | **P36** | crop/zoom modal for pfp/banner/icon uploads | med-hard |
+| ~5h | **P37** | multi-file download → preserve folders + zip into one archive | med-hard |
 | ~5h | **P34** | real modifier system + UI hints | med-hard |
 | ~5h | **P29** | profile rework (drop visibility tabs · Settings button · presence/status→settings w/ save · modifier search bar) | hard |
 | ~6h | **P32** | real density SLIDER (continuous, eased stages) — supersedes discrete P14 | hard |
@@ -131,7 +132,7 @@ detail in the Round-11 section below. Ticking one here = ticking it in its categ
 
 **Round-11 clusters:** search/filter (**B35 → P27 · P31 · P34 · K12**, with **P33** filters + **P32**
 slider on the explorer) · media/messages (**B30 · B34**) · selection (**B31 · B32 · B33 · P28**) ·
-profile (**P29**) · perf (**P30**) · polish (**P35 · P36 · B36**).
+profile (**P29**) · perf (**P30**) · polish (**P35 · P36 · B36**) · downloads (**P37** — multi-file zip).
 
 **Deferred — do NOT build now** (post-beta / infra-gated): D1 (feed+commenting, after P4),
 D7 (report/moderation), D2 (storage/billing, needs Stripe), D3 (audit log), D5 (required tags
@@ -738,6 +739,20 @@ per channel, builds on P11), D6 (review canvas/kanban/versions).
       P18 comment even said it should "align with the toolbar + body below"). Fix: `.expath` background →
       `var(--paper)`, so the path line reads as one surface with the toolbar + body. Verified: `.expath`
       computes rgb(10,10,10) in dark; the bar is gone, light mode unaffected. *Files:* `styles/content.css`.
+- [ ] **P37 · Multi-file download → preserve folders + zip into one archive (round-11, owner 2026-08-30).**
+      Downloading more than one file currently fires **N separate browser downloads** (`downloadSelected`
+      → one `downloadWork` per file; the code even notes "a true zip-as-one-file is a later enhancement").
+      The owner wants a real archive: a bulk / folder download should **rebuild the folder structure**
+      (each file at its `placement.folder_id` path, nested subfolders preserved) and **zip it into a single
+      download**. Also applies to **Download a folder** (whole-folder / selection, incl. the shared-folder
+      viewer's Save & Download). **Approach to settle:** client-side streaming zip (e.g. a no-dep streaming
+      zipper — the app is build-stepless, so it must be CDN/ESM-friendly and **stream** so a multi-GB
+      selection doesn't buffer in memory) **vs.** an **edge function that streams a zip from R2** (fetches
+      each blob by `<sha>.<ext>`, writes it into the archive at its folder path, streams the zip back) —
+      the edge/R2 path scales better for the GB uploads the owner does and keeps signing server-side.
+      Preserve real filenames (title + ext) and dedupe name collisions within a folder. *Files:*
+      `app/screens/explorer.js` (`downloadSelected` + folder download), a new `api/zip.mjs` edge function
+      (if server-side), `api/sign.mjs` (blob reads). *Med-hard.* Pairs with the folder-download work (K9/P9).
 
 ### 2 · Fixes for backend
 
