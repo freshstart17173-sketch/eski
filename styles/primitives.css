@@ -115,12 +115,19 @@
    the type hue for a typed tag; neutral --tagbg for an untyped one. The value carries; the type
    is a small dimmed affix. This is the ONE place a tag renders as a box (the plain-text .tag rule
    still holds elsewhere) — a deliberate owner call so a bpm/key reads at a glance. */
-.tchip{display:inline-flex;align-items:center;gap:5px;border-radius:var(--r);padding:2px 7px;
+.tchip{position:relative;display:inline-flex;align-items:center;gap:5px;border-radius:var(--r);padding:2px 7px;
   font-weight:600;font-size:var(--fs-xs);line-height:1.4;background:var(--tagbg);color:var(--soft)}
+.tchip.clickable{cursor:pointer}
+.tchip.clickable:hover{filter:brightness(1.06)}
 .tchip .ty{font-size:var(--fs-mi);opacity:.72;font-weight:600}
-.tchip .x{cursor:pointer;opacity:0;font-size:10px;transition:opacity var(--t);margin-left:1px}
-.tchip:hover .x{opacity:.55}
-.tchip .x:hover{opacity:1}
+/* P26: the ✕ is a HOVER OVERLAY on the right edge — absolute so it adds no chip width; it partly
+   occludes the tag's right side (background:inherit = the chip's own fill) so the ✕ reads clearly,
+   with a soft left fade. The rest of the chip stays clickable (→ search by this tag). */
+.tchip .x{position:absolute;top:0;right:0;bottom:0;width:19px;display:none;align-items:center;justify-content:center;
+  border-radius:0 var(--r) var(--r) 0;background:inherit;color:inherit;cursor:pointer;font-size:10px;font-weight:600;
+  box-shadow:-5px 0 5px -3px var(--tagbg)}
+.tchip:hover .x{display:flex}
+.tchip .x:hover{filter:brightness(1.15)}
 /* the typed-tag editor (tags.js tagEditor) — chips row + a colon-aware input */
 .tageditor{display:flex;flex-direction:column;gap:8px}
 .tchips{display:flex;flex-wrap:wrap;gap:6px;align-items:center}

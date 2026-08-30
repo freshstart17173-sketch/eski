@@ -75,6 +75,10 @@
 .explayout .pane{flex:1;min-width:0}
 .explayout .panehd{justify-content:space-between}
 .filetree{flex:none;width:212px;background:var(--surface);overflow-y:auto;padding:8px 6px;display:flex;flex-direction:column}
+/* B28: drag handle to resize the folder-tree column */
+.exresizer{flex:none;width:6px;cursor:col-resize;position:relative;background:transparent;touch-action:none}
+.exresizer::before{content:"";position:absolute;top:0;bottom:0;left:2px;width:1px;background:var(--line);opacity:0;transition:opacity var(--t)}
+.exresizer:hover::before,.exresizer.drag::before{opacity:1;width:2px;background:var(--ink)}
 .ftbottom{margin-top:auto}
 .fthd{display:flex;align-items:center;justify-content:space-between;font-size:var(--fs-xs);color:var(--muted);font-weight:600;padding:4px 8px 8px}
 .ftrow{display:flex;align-items:center;gap:6px;width:100%;text-align:left;padding:6px 8px;border-radius:var(--r);font-size:var(--fs-sm);color:var(--soft);cursor:pointer}

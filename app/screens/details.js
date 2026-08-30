@@ -253,7 +253,9 @@ function tagsSection(w, ctx = {}) {
     });
     input.addEventListener("blur", () => done(input.value));
   }
-  function chip(t) { return tagChip(t, { removable: editable, onRemove: () => remove(t) }); }
+  // P26: clicking a tag (not the ✕) starts a search for every file carrying it (ctx.onTagSearch,
+  // wired by the explorer). Removable ✕ stays for editable files.
+  function chip(t) { return tagChip(t, { removable: editable, onRemove: () => remove(t), onSearch: ctx.onTagSearch }); }
   function paint() {
     chips.replaceChildren(...w.tags.map(chip));
     if (editable) chips.append(el("button.addtag", { title: "Add tag", "aria-label": "Add tag", onClick: openInput }, [iconEl("plus", "sm")]));

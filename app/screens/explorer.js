@@ -21,7 +21,7 @@ import { createFolder, moveToFolder, trashWorks, restoreWork, purgeWork, emptyTr
 import { workCard, folderCard, mediaUrl, KIND_ICON, downloadWork } from "../cards.js";
 import { channelColumn } from "./workspace.js";
 import { openUpload, enableDropUpload } from "./upload.js";
-import { openDetails } from "./details.js";
+import { openDetails, closeDetails } from "./details.js";
 
 const VIEWS = { grid: "Grid", list: "List", feed: "Feed" };
 const PREVIEWABLE = new Set(["image", "video", "audio"]);
@@ -69,6 +69,11 @@ function persistentSelection(data) {
   if (!_selectionStore.has(k)) _selectionStore.set(k, new Set());
   return _selectionStore.get(k);
 }
+// B25: remember the OPEN folder per source+server so leaving the explorer tab and coming back
+// restores it instead of snapping to root. Persisted on every rerender (folder change), read
+// back on a fresh mount; a stale id (folder since deleted) falls back to root.
+const _folderStore = new Map();
+const folderKey = (data) => `${data.source}:${data.server?.id || "me"}`;
 
 export function renderExplorer(data, view = {}) {
   const screen = el("section.screen", { "data-screen": "explorer" });
@@ -80,8 +85,10 @@ export function renderExplorer(data, view = {}) {
   }
 
   // local navigation state — one fetch already holds the whole tree + all works
+  // B25: restore the last open folder (view param wins, then the per-server store, then root).
+  const _restored = view.folderId ?? _folderStore.get(folderKey(data)) ?? data.currentFolderId ?? null;
   const state = {
-    folderId: view.folderId ?? data.currentFolderId ?? null,
+    folderId: (_restored && (data.folders || []).some((f) => f.id === _restored)) ? _restored : null,
     mode: VIEWS[view.mode] ? view.mode : "grid",
     query: "",
     collapsed: new Set(),   // folder ids whose children are hidden in the tree
@@ -112,7 +119,24 @@ export function renderExplorer(data, view = {}) {
   const shared = !!data.shared;
   const pane = el(".pane");
   const tree = shared ? null : el("nav.filetree", { "data-tree": personal ? "personal" : "server" });
-  const layout = el(".explayout" + (shared ? ".shared" : ""), { "data-source": shared ? "shared" : (personal ? "personal" : "server") }, shared ? [pane] : [tree, pane]);
+  // B28: the folder-tree column is resizable — a drag handle between it and the pane; the width
+  // is remembered in localStorage across mounts/reloads.
+  if (tree) { let w = 0; try { w = parseInt(localStorage.getItem("eski-treew") || "", 10); } catch { /* private mode */ } if (w >= 150 && w <= 460) tree.style.width = w + "px"; }
+  const resizer = tree ? el(".exresizer", { "aria-hidden": "true", title: "Drag to resize" }) : null;
+  const layout = el(".explayout" + (shared ? ".shared" : ""), { "data-source": shared ? "shared" : (personal ? "personal" : "server") }, shared ? [pane] : [tree, resizer, pane]);
+  if (tree && resizer) {
+    resizer.addEventListener("pointerdown", (e) => {
+      e.preventDefault(); resizer.setPointerCapture?.(e.pointerId); resizer.classList.add("drag");
+      const left = tree.getBoundingClientRect().left;
+      const move = (ev) => { tree.style.width = Math.max(150, Math.min(460, ev.clientX - left)) + "px"; };
+      const up = (ev) => {
+        resizer.releasePointerCapture?.(ev.pointerId); resizer.classList.remove("drag");
+        window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up);
+        try { localStorage.setItem("eski-treew", String(parseInt(tree.style.width, 10) || 212)); } catch { /* private mode */ }
+      };
+      window.addEventListener("pointermove", move); window.addEventListener("pointerup", up);
+    });
+  }
   // Drag files anywhere onto the explorer → the upload sheet, targeting the current folder
   // (getOpts reads state.folderId live). A `.dropping` overlay hints the target. Not on a
   // read-only shared view.
@@ -135,7 +159,7 @@ export function renderExplorer(data, view = {}) {
   else if (personal) screen.append(layout);
   else screen.append(channelColumn(data, { filesActive: true }), layout);
 
-  const rerender = () => { paint(tree, pane, data, state, rerender); };
+  const rerender = () => { _folderStore.set(folderKey(data), state.folderId); paint(tree, pane, data, state, rerender); };
   rerender();
 
   // Esc clears the selection; ⌘/Ctrl-A selects everything in view. A single document
@@ -506,6 +530,9 @@ function contents(data, state, rerender, sel) {
 
   const openFolder = (f) => { state.folderId = f.id; state.query = ""; rerender(); };
 
+  // P26: a facet filter (tag / type / channel / uploader / date) searches the WHOLE tree, not
+  // just the current folder — so clicking a tag finds every file with it, wherever it lives.
+  const anyFacet = state.types.size || state.channels.size || state.uploaders.size || state.tags.size || state.tagTypes.size || state.date !== "any";
   let subfolders, files;
   if (state.starred) {
     subfolders = [];   // Starred is a flat grid of every starred work (no folders)
@@ -513,6 +540,9 @@ function contents(data, state, rerender, sel) {
   } else if (searching) {
     subfolders = [];   // search flattens the whole tree to matching files
     files = data.files.filter((w) => (w.title || "").toLowerCase().includes(q));
+  } else if (anyFacet) {
+    subfolders = [];   // a facet filter flattens the tree (global filter, not folder-scoped)
+    files = data.files.slice();
   } else {
     subfolders = data.folders.filter((f) => (f.parentId || null) === state.folderId);
     files = data.files.filter((w) => (w.folderId || null) === state.folderId);
@@ -540,6 +570,9 @@ function contents(data, state, rerender, sel) {
     siblings: files, isPost: false,
     // the viewer's ⋯ menu = the card menu (P5.9d): star/rename/move/hide/delete from the pane
     menuItemsFor: (ww, hooks) => detailMenuItems(data, state, rerender, ww, hooks),
+    // P26: click a tag in the viewer → filter the whole library to that exact tag (the P11 tag
+    // filter). Jumps to root so it searches every folder, closes the viewer, shows the results.
+    onTagSearch: (raw) => { state.selection.clear(); state.selFolder = null; state.folderId = null; state.query = ""; state.tags = new Set([raw]); closeDetails(); rerender(); },
   });
 
   if (!subfolders.length && !files.length) {

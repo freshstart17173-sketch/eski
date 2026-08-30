@@ -37,16 +37,24 @@ export const tagColor = (type) => (type && TAG_TYPES.includes(type)) ? `var(--tt
 const wash = (type) => `color-mix(in srgb, var(--tt-${type}) 15%, var(--surface))`;
 
 // render one tag as the V2 soft chip: typed = tinted by its type + a small type affix; untyped =
-// a neutral --tagbg chip. `removable` adds a hover ✕ that calls onRemove(raw).
-export function tagChip(raw, { removable = false, onRemove } = {}) {
+// a neutral --tagbg chip. P26: the majority of the chip is CLICKABLE — a click calls onSearch(raw)
+// to find every file with that tag (or, for a typed tag, that exact type:value). `removable` adds
+// a ✕ that appears ON HOVER as an OVERLAY on the right edge (absolute, no extra chip width — it
+// partly occludes the tag's right side so the ✕ reads clearly), calling onRemove(raw).
+export function tagChip(raw, { removable = false, onRemove, onSearch } = {}) {
   const t = parseTag(raw);
-  const chip = el(".tchip" + (t.typed ? ".typed" : ""));
+  const chip = el(".tchip" + (t.typed ? ".typed" : "") + (onSearch ? ".clickable" : ""));
   if (t.typed) {
     chip.style.background = wash(t.type);
     chip.style.color = tagColor(t.type);
     chip.append(el("span.ty", {}, [t.type]), el("span", {}, [t.value]));
   } else {
     chip.append(el("span", {}, [t.value]));
+  }
+  if (onSearch) {
+    chip.setAttribute("role", "button");
+    chip.title = `Show files tagged ${t.raw}`;
+    chip.addEventListener("click", (e) => { if (e.target.closest(".x")) return; onSearch(t.raw); });
   }
   if (removable) chip.append(el("span.x", { title: "Remove tag", "aria-label": "Remove tag", onClick: (e) => { e.stopPropagation(); onRemove && onRemove(t.raw); } }, ["✕"]));
   return chip;
