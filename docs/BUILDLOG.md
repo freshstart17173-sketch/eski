@@ -2227,3 +2227,30 @@ NEXT: B13 (menu permission-gating, 3 versions) + the master-todo top items.
 GOTCHA Q: a Supabase `.update()/.delete()` that RLS filters to 0 rows returns `{data:[], error:null}`
   — NOT an error. Any load-bearing direct write must `.select()` and check `data.length`, or it
   will silently fake success (the K2 pfp/K4 delete_server pattern, in the data layer).
+
+## 2026-08-30 — Frontend read-path audit
+IN PROGRESS: (cleared)
+DONE: audited every read in app/data.js for wrong filters / FK-embed hazards / missing deleted_at
+  guards / 0-row throws / visibility leaks. RESULT: the read layer is clean — no correctness bugs.
+  - deleted_at is filtered everywhere it matters (channel messages, DM thread, comments, all works
+    reads, work-by-id); tombstoned rows never surface.
+  - author profiles are fetched SEPARATELY into a byId map everywhere (server_members/comments/
+    dm_messages/notifications user_id → auth.users, no FK to profiles), so the PostgREST-embed
+    hazard behind the old "empty members rail / unknown authors" bug (#1) is consistently avoided.
+  - visibility is safe: loadFeed filters visibility='public' + friend authors; loadProfile lets RLS
+    gate then groups the returned works by visibility into shelves (owner sees all, stranger only
+    public) — no leak. can_read_work is the real fence and reads honor it.
+  - every single-row read uses maybeSingle (no 0-row throw); loadDMs excludes hidden DMs and routes
+    blocked edges out of the friend lists.
+  - roster (loadWorkspace) does not filter server_members.status, but that is benign: ban/kick
+    DELETE the row (ban also writes server_bans), leave deletes, join/approve/create set 'active';
+    there is no check constraint and zero non-active rows exist, so nothing to filter.
+  - pins/forwards that point at a soft-deleted message are safe: msg_edit_tombstone nulls the body
+    on delete, so the embed returns an empty quote, never stale/leaked text.
+  ONE non-correctness finding logged as P20: channel messages (data.js:218) load with NO .limit()
+  — the whole history every open (comments 200 / DMs 300 / feed 120 are capped; channel messages
+  are not). Fine at beta size, a perf/scroll landmine at scale → paginate (last ~50 + load-earlier).
+NEXT: B13 (menu permission-gating, 3 versions), then the master-todo top items.
+GOTCHA R: this codebase deliberately does NOT embed author profiles via PostgREST (user_id columns
+  point at auth.users, which has no FK to public.profiles) — every loader fetches profiles into a
+  byId map by hand. Keep that pattern for any new read; an embed will silently return nothing.

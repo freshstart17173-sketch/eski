@@ -650,6 +650,14 @@ per channel, builds on P11), D6 (review canvas/kanban/versions).
       channel has new messages (unread dot/bold + maybe a count), driven by `channel_reads` vs the
       latest message. *Files:* `app/screens/workspace.js` (channel rows), `app/data.js`
       (`loadServerBundle` unread compute), realtime bump on new msg. *Medium-hard.*
+- [ ] **P20 · Paginate channel message loading (read-path audit, 2026-08-29).** `loadWorkspace`
+      (`app/data.js:218`) reads a channel's messages with **no `.limit()`** — it fetches the ENTIRE
+      history on every channel open (comments cap at 200, DMs at 300, feed at 120; channel messages
+      are unbounded). Fine at beta size, a real perf/scroll landmine as a channel grows. Load the
+      last ~50 newest and lazy-load older on scroll-up (a "load earlier" affordance), keeping the
+      realtime append + the pins/reactions/forwards/attachments resolution working on the windowed
+      set. *Files:* `app/data.js` (`loadWorkspace` messages query + shape), `app/screens/workspace.js`
+      (scroll-up loader). *Medium.* Not a correctness bug — the rest of the read layer audited clean.
 
 ### 4 · Deferred (post-beta / infra-gated — do NOT build now)
 
