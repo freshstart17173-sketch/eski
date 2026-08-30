@@ -224,3 +224,80 @@ These are *good* — extend them, don't undo them:
 10. **Virtualize the message stream + explorer grid; thumbnails** (1.8/1.9, with P14). *Hard.*
 
 Measure with `perf.js` before #1 and after each — keep only what moves the number.
+
+---
+
+## 7. External references (free, mostly pre-2023, still current)
+
+Curated to the techniques above. All are free to read and implementable at no cost. Read the
+one next to the item you're about to do.
+
+### Measuring first (§0, §2)
+- **web.dev — Web Vitals / LCP** (Google, ongoing): <https://web.dev/articles/vitals> ·
+  <https://web.dev/articles/lcp>. The user-centric metrics to target — LCP < 2.5 s. Pair with
+  the **RAIL model** (<https://web.dev/rail/>) for a budget per interaction. *eski:* wire
+  `perf.js` marks to these names so the HUD speaks Core-Web-Vitals.
+- **Addy Osmani — The Cost of JavaScript** (2018/2019):
+  <https://medium.com/@addyosmani/the-cost-of-javascript-in-2018-7d8950fbb5d4>. Why shipping
+  *less JS* beats micro-tuning — parse/exec on a mid phone dwarfs transfer. *eski:* the case for
+  §1.1/§1.2/§1.4 (data.js 107 KB + supabase 212 KB + demo 25 KB is the whole budget).
+
+### Fonts (§1.3)
+- **Zach Leatherman — A Comprehensive Guide to Font Loading Strategies**:
+  <https://www.zachleat.com/web/comprehensive-webfonts/> + live recipes
+  <https://github.com/zachleat/web-font-loading-recipes>. The definitive reference — woff2,
+  preload, `font-display`, subsetting, the FOUT/FOIT trade-offs. *eski:* replaces the 39 KB
+  base64 `@import` with preload + `font-display:swap` + a subset.
+
+### CSS delivery (§1.5)
+- **web.dev — Defer non-critical CSS**: <https://web.dev/articles/defer-non-critical-css>. The
+  critical-vs-deferred split and the `rel=preload`→`onload` swap (loadCSS). *eski:* keep
+  tokens/base/shell/primitives blocking; defer `content.css` (40 KB) and `landing.css` per route.
+
+### JS splitting & delivery (§1.1, §1.6)
+- **patterns.dev — Route-Based Splitting** (Osmani/Hallie, free book):
+  <https://www.patterns.dev/vanilla/route-based-splitting/>. Framework-agnostic `import()` per
+  route — exactly eski's model. The whole `patterns.dev` "vanilla" set is worth a read for a
+  no-framework app.
+
+### Caching & fingerprinting (§1.1 — needs hashed filenames)
+- **Jake Archibald — Caching best practices & max-age gotchas** (2016):
+  <https://jakearchibald.com/2016/caching-best-practices/>. Immutable hashed assets vs. a
+  short-lived HTML shell — the pattern a build step unlocks.
+- **Harry Roberts — Cache-Control for Civilians** (2019):
+  <https://csswizardry.com/2019/03/cache-control-for-civilians/>. The practical header recipes.
+  *eski:* once esbuild emits `app.[hash].js`, serve it `immutable, max-age=31536000`; keep
+  `index.html` on revalidation so new HTML ships instantly.
+
+### Resource hints (§5 — already partly done)
+- **CSS-Tricks — Prefetching, preloading, prebrowsing**:
+  <https://css-tricks.com/prefetching-preloading-prebrowsing/> and **Harry Roberts — Correctly
+  Configure (Pre)Connections**: <https://csswizardry.com/2023/12/correctly-configure-preconnections/>.
+  *eski:* the `preconnect` to supabase + cdn is already right; use `crossorigin` on font
+  preconnects, and don't over-hint (a handful of origins max).
+
+### Long lists (§1.8)
+- **patterns.dev — List Virtualization (vanilla)**: <https://www.patterns.dev/vanilla/virtual-lists/>
+  and **web.dev — Virtualize large lists**: <https://web.dev/articles/virtualize-long-lists-react-window>
+  (React, but the windowing idea is framework-free). *eski:* windowing the message stream +
+  explorer grid once a channel/folder exceeds ~500 items (start hand-rolled; reach for
+  `@tanstack/virtual-core` only if needed — it's framework-agnostic).
+
+### Images/media (§1.9)
+- **web.dev — Browser-level image lazy loading**:
+  <https://web.dev/articles/browser-level-image-lazy-loading> and **Responsive images**:
+  <https://web.dev/learn/design/responsive-images>. *eski:* universal `loading="lazy"` +
+  explicit `width/height` on grid/feed media; `srcset` thumbnails when P14 lands. Above-the-fold
+  media stays `eager` (lazy on an LCP image hurts LCP).
+
+### Database / RLS (§1.7, §2, and the schema work)
+- **Use The Index, Luke!** (Markus Winand): <https://use-the-index-luke.com/>. Vendor-agnostic,
+  Postgres-covered, the reference for *why* an unindexed FK or a non-SARGable predicate is slow.
+  *eski:* the model behind schema-09/32's FK indexing and the `body_tsv`/`search_tsv` GIN indexes.
+- **Supabase — RLS Performance and Best Practices**:
+  <https://supabase.com/docs/guides/troubleshooting/rls-performance-and-best-practices-Z5Jjwv>.
+  Wrap `auth.uid()` as `(select auth.uid())` so the optimizer runs it once (initPlan), index the
+  columns policies filter on, and prefer `col in (select … where user_id = auth.uid())` over a
+  correlated `auth.uid() in (select …)`. *eski:* the codebase **already** did the wrap
+  (migration `rls_wrap_auth_uid_perf`; every policy reads `(SELECT auth.uid())`) and the FK
+  indexing — this doc is why; keep both invariants when writing new policies.
