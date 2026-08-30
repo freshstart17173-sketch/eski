@@ -28,19 +28,19 @@
 
 /* ── Feed / explorer shared pane (P5.1/P5.4) ─────────────────────────────── */
 .pane{flex:1;min-width:0;display:flex;flex-direction:column;background:var(--paper);overflow:hidden;position:relative}
-.panehd{flex:none;min-height:56px;display:flex;align-items:center;gap:var(--s4);padding:var(--s3) var(--s5);background:var(--surface);flex-wrap:wrap}
+.panehd{flex:none;height:46px;display:flex;align-items:center;gap:var(--s4);padding:0 var(--s4);background:var(--surface)}   /* P18: unified header height 46 + --s4 inset */
 .panehd .wm{font-weight:700;font-size:var(--fs-xl)}
 .panehd .title{font-weight:600;font-size:var(--fs-lg)}
 .panehd nav{margin-left:auto;display:flex;gap:var(--s4)}
-.toolbar{flex:none;display:flex;align-items:center;gap:var(--s2);padding:var(--s3) var(--s5);background:var(--paper);flex-wrap:wrap}
+.toolbar{flex:none;display:flex;align-items:center;gap:var(--s2);padding:var(--s3) var(--s4);background:var(--paper);flex-wrap:wrap}
 .toolbar .field{flex:1;min-width:170px;max-width:340px}
-.panebody{flex:1;overflow-y:auto;padding:var(--s4) var(--s5) var(--s5)}
+.panebody{flex:1;overflow-y:auto;padding:var(--s4)}
 .seclabel{color:var(--muted);font-size:var(--fs-xs);font-weight:600;margin:0 0 var(--s3)}
 
 /* ── P13: file-channel header (V2 + owner tweaks) ─────────────────────────────
    A slim dedicated path line (breadcrumb only), the filter set + view/hidden controls grouped
    to the right of the search in the toolbar, and New folder + Upload floated bottom-right. */
-.expath{flex:none;display:flex;align-items:center;min-height:30px;padding:var(--s2) var(--s5);background:var(--surface)}
+.expath{flex:none;display:flex;align-items:center;min-height:30px;padding:var(--s2) var(--s4);background:var(--surface)}   /* P18: --s4 inset to align with the toolbar + body below */
 .expath .crumbs{flex-wrap:nowrap;overflow:hidden}
 .crumbs .crumbroot.home{display:inline-flex;align-items:center;color:var(--soft);padding:0}
 .crumbs .crumbroot.home:hover{color:var(--ink)}
@@ -281,7 +281,7 @@
 .auditlist .atime{flex:none;font-size:var(--fs-xs);color:var(--muted)}
 
 .sharedview{position:fixed;inset:0;z-index:70;display:flex;flex-direction:column;background:var(--paper);overflow-y:auto}
-.sharedview .svhd{flex:none;display:flex;align-items:center;gap:var(--s3);padding:0 var(--s5);height:56px;background:var(--surface)}
+.sharedview .svhd{flex:none;display:flex;align-items:center;gap:var(--s3);padding:0 var(--s4);height:46px;background:var(--surface)}   /* P18: unified header */
 .sharedview .svhd .brand{font-weight:700;font-size:var(--fs-lg);letter-spacing:.02em}
 .sharedview .svhd .svctx{font-size:var(--fs-sm);color:var(--muted)}
 .sharedview .svhd .svacts{margin-left:auto;display:flex;gap:var(--s2)}
@@ -354,7 +354,7 @@
 .dmfriends .ct{margin-left:auto;background:var(--m1);color:#fff;border-radius:var(--r);font-size:10px;font-weight:700;min-width:16px;height:16px;display:grid;place-items:center;padding:0 4px}
 .dmright{flex:1;min-width:0;display:flex}
 .dmmain{flex:1;min-width:0;display:flex;flex-direction:column;background:var(--paper)}
-.dmmain .mainhd{flex:none;height:52px;display:flex;align-items:center;gap:10px;padding:0 var(--s5);background:var(--surface)}
+.dmmain .mainhd{flex:none;height:46px;display:flex;align-items:center;gap:var(--s3);padding:0 var(--s4);background:var(--surface)}   /* P18: unified header */
 .dmmain .mainhd .t{font-weight:600}.dmmain .mainhd .sub{color:var(--muted);font-size:var(--fs-sm)}
 /* P1: .emptystate now centers globally (shell.css) — the per-pane margin:auto patch is gone. */
 /* friends panel */

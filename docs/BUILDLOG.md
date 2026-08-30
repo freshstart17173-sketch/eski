@@ -2367,3 +2367,19 @@ IN PROGRESS: P18 standardize headers — audited the inconsistency (heights 48/4
   pick, then rewire the real headers (shell.css .chanhd/.mainhd; content.css .panehd/.dmmain .mainhd/
   .svhd) to the chosen height + --surface + --s4, mirror into gallery.html, verify each screen.
 NEXT: implement the picked P18 density; then P12, then P15.
+
+## 2026-08-30 — P18 done (owner: V1 Compact 46px) — standardized headers + insets
+IN PROGRESS: (cleared)
+DONE: unified the primary headers to height 46px + --s4 (16px) inset (backgrounds were already
+  --surface; the only --plate header, .chanhd, is dead CSS — the real workspace server header is the
+  .srvbar cover). Changed .mainhd (shell.css), .panehd/.dmmain .mainhd/.svhd (content.css), and
+  brought .panebody/.toolbar/.expath to the same 16px inset so headers align with their bodies
+  (fixes "insets jump 12/16/24"). Mirrored into gallery.html; deleted the p18-headers.html scaffold.
+  Files: styles/shell.css, styles/content.css, docs/design/gallery.html. Verified: workspace/feed/
+  DMs/notifications/explorer render 46px headers + aligned 16px insets, both themes, 0 pageerrors.
+  Committed 05c213a.
+NEXT: P12 (density: modals/dialogs/toasts — 3-version batch), then P15 (status→profile; presence kept
+  SIMPLE per owner — no forced yellow).
+GOTCHA Y: .chanhd is dead CSS (no app JS renders it) — the workspace channel-column header is .srvbar
+  over a .srvcover banner (100px, gradient scrim), a deliberately distinct cover header, NOT part of
+  the 46px flat-header unification. Don't "fix" .srvbar to 46px.

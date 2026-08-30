@@ -642,11 +642,17 @@ per channel, builds on P11), D6 (review canvas/kanban/versions).
       density pass (per-dialog bodies, the upload sheet, roles/settings panels) must be produced as
       **3 versions for the owner to pick** (see the UI-change workflow above). *Files:*
       `styles/primitives.css` (done), then per-surface. Load **`eski-style`** + **`eski-polish`**.
-- [ ] **P18 · Standardize header + panel sizes & colours (round-7).** Headers and panes across the
-      app should use one consistent height + background-step + inset scale (workspace header, channel
-      column header, explorer panehd, settings, details pane). Audit + unify against `eski-style`.
-      *Files:* `styles/shell.css`, `styles/content.css`, `styles/primitives.css`. *Medium.* Overlaps
-      P12.
+- [x] **P18 · Standardize header + panel sizes & colours (round-7).** *Done (owner picked V1 Compact
+      46px from a 3-density batch; demo-verified).* Audited the inconsistency (heights 48/48/52/56;
+      the only `--plate` header, `.chanhd`, is dead CSS — the real workspace server header is the
+      `.srvbar` cover, its own thing; all four real primary headers were already `--surface`). Unified
+      **`.mainhd` · `.panehd` · `.dmmain .mainhd` · `.svhd` to height 46px + `--s4` (16px) inset**, and
+      brought the pane bodies/toolbar/path line (`.panebody` · `.toolbar` · `.expath`) to the **same
+      16px inset** so headers align with their content (fixes the owner's "insets jump 12/16/24"). The
+      slim P13 explorer path line stays 30px (deliberate). Mirrored into `gallery.html`. *Files:*
+      `styles/shell.css`, `styles/content.css`, `docs/design/gallery.html`. Verified: workspace, feed,
+      DMs, notifications, explorer render both-theme-clean with 46px headers and aligned 16px insets,
+      0 pageerrors.
 - [x] **P13 · Flatten the file-channel header + path viewer (round-7).** *Done (V2 + owner tweaks;
       demo-verified both themes).* Owner picked V2 from a 3-version batch, then asked to push the
       filters right, move New folder + Upload to the bottom-right, and (follow-up) drop the box around
