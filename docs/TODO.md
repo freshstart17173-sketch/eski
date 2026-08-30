@@ -112,7 +112,7 @@ detail in the Round-11 section below. Ticking one here = ticking it in its categ
 | ~1.5h | **B32** | selection action bar shifts the layout down → overlay it | easy-med |
 | ~~2h~~ | ~~**B35**~~ | ✅ file/server search — was FTS-whole-word-only; added filename substring (p27) | done |
 | ~2h | **B31** | selection highlights text; drag image should be mini icons | med |
-| ~2.5h | **B30** | expanded media viewer closes on tab refocus | med |
+| ~~2.5h~~ | ~~**B30**~~ | ✅ viewer stayed-open on refocus — auth re-emit was forcing a full re-render | done |
 | ~3h | **B33** | star: consistent top-left click-toggle in every density | med |
 | ~3h | **P28** | more right-click menus in the file browser, spawned at the cursor | med |
 | ~3h | **P33** | explorer filters → only Hidden+Starred; add Group-by & Sort-by | med-hard |
@@ -641,11 +641,18 @@ per channel, builds on P11), D6 (review canvas/kanban/versions).
       `styles/content.css`. *Med-hard.* **Removes the P8 Type / P11 Tag facets.**
 >
 > **— Media / messages —**
-- [ ] **B30 · Expanded media view closes on tab refocus.** Media keeps playing when the tab loses focus
-      (good), but returning to the tab **closes the expanded (details) viewer** while audio keeps going
-      (bad). Keep the viewer open on refocus. *Files:* `app/screens/details.js` / `app/player.js` /
-      whatever visibility/focus handler closes it (a `visibilitychange`/`blur` path, or a re-render on
-      focus). *Med.* Follows **B14**.
+- [x] **B30 · Expanded media view closes on tab refocus.** *Done (root-caused + fixed; live-QA claim
+      added).* There was **no** visibility/blur handler closing it — the closer was indirect: supabase-js
+      re-emits `SIGNED_IN` / `TOKEN_REFRESHED` for the SAME user on every tab refocus (and on the periodic
+      token refresh), and `main.js`'s `onChange` called `renderRoute()` on it — whose first act is
+      `closeDetails()`, then a full screen + realtime rebuild. So refocusing the tab shut the expanded
+      viewer (while B14 keep-alive audio played on) and needlessly reloaded everything. Fix: `onChange`
+      now tracks the rendered user (`lastUid`) and **only re-renders on a real identity change** — a
+      same-user refresh/refocus event is a no-op. Genuine sign-in (null→uid), sign-out, and account
+      switch still re-render; the pending-invite resume still fires. Bonus: kills the whole-screen reload
+      that fired on every tab focus (a P30-adjacent perf win). *Files:* `app/main.js`. node --check clean;
+      boot cases unaffected (the closer path is auth-driven, not on the demo path). Live confirm on
+      preview → QA-CHECKLIST. *Followed B14.*
 - [ ] **B34 · "Load earlier messages" shows when there are none.** The scroll-up sentinel / button
       should not appear (or no-op) when `hasMore` is false. *Files:* `app/screens/workspace.js`
       (`wireStreamPaging`). *Easy.*

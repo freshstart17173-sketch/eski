@@ -215,6 +215,7 @@ The server explorer mounts inside the shell (channel column stays); My files hid
 - [ ] `[infra]` Open a video or audio file → a big centred play button + a transport (seek, time, volume) show.
 - [ ] `[infra]` Play / pause, seek, mute, and press ←/→ → playback toggles, the scrubber follows, mute swaps the icon, ←/→ skips 5s.
 - [ ] Open a non-previewable file (.zip / .flp) → a type card fills the well — no broken player.
+- [ ] `[B14/B30]` Play an audio/video file in the expanded viewer, switch to another browser tab for a few seconds, then come back → the audio kept playing the whole time AND the expanded viewer is **still open** on return (it no longer closes on refocus; the tab no longer does a full reload when you come back).
 - [ ] Read the metadata → size, a clickable Location breadcrumb, posted-in channel (server files), dates, dimensions/format per kind.
 - [ ] Click a Location breadcrumb segment → opens the File explorer at that folder.
 - [ ] Use the prev / next arrows in the rail top bar → you move between adjacent items on the same level.

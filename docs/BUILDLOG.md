@@ -2672,3 +2672,24 @@ NEXT: remaining P30 parts — message-send latency, the two-phase boot (paint ra
 GOTCHA: unreadP resolves to r.data||[] (the array), NOT {data} — it's destructured as a bare `uc`.
   The attach branch resolves to a [{data},{data}] pair (or Promise.resolve of one when no attachments),
   matching the nested destructure. Don't reorder the Promise.all elements without moving the destructure.
+
+## 2026-08-30 — B30 expanded media viewer no longer closes on tab refocus
+IN PROGRESS: (cleared)
+DONE: root-caused + fixed. There was NO visibility/blur handler closing the viewer — the closer was
+  indirect. supabase-js re-emits SIGNED_IN / TOKEN_REFRESHED for the SAME user on every tab refocus (and
+  on the periodic token refresh); main.js onChange called renderRoute() on it, whose first act is
+  closeDetails() followed by a full screen + realtime rebuild. So refocusing the tab shut the expanded
+  viewer (while B14 keep-alive audio kept playing) and needlessly reloaded the whole screen. Fix: onChange
+  now tracks lastUid (seeded in ready.then) and only re-renders on a REAL identity change — a same-user
+  refresh/refocus event is a no-op. Genuine sign-in (null→uid), SIGNED_OUT (clears cache + re-renders),
+  account switch, and the pending-invite resume all still fire. Bonus: eliminates the whole-screen reload
+  that fired on every tab focus — a P30-adjacent perf win (no more teardown/rebuild of the view + realtime
+  on refocus). node --check clean; the closer path is auth-driven so it's not on the demo path (verify
+  boot cases unaffected; the pre-existing verify-explorer detailsCase timeout reproduces on clean HEAD).
+  Live confirm on preview → QA-CHECKLIST (media section). Commit <sha>.
+NEXT: B34 ("Load earlier messages" shows when there are none — easy), then the search model (P27/P31/P34)
+  and the visual items (P32 slider, P33 filters, P29 profile) which need the owner's 3-version pick.
+GOTCHA: session() returns the USER object (_session?.user), so the uid is session()?.id (NOT
+  session()?.user?.id). Do NOT re-render on TOKEN_REFRESHED for the same user — that reintroduces B30.
+  Realtime intentionally stays subscribed across a refocus now (it auto-reconnects); the app relies on
+  the live subscription, not a focus-reload, to stay current.

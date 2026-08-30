@@ -241,8 +241,10 @@ start((m) => { route.value = m; });
 // the gap. After ready, an effect re-renders on every route change.
 stage.replaceChildren(loading());
 let started = false;
+let lastUid = null;   // the signed-in user the current view was rendered for (B30 refocus guard)
 ready.then(() => {
   authed.value = !!session();
+  lastUid = session()?.id || null;   // seed so the first focus re-emit is a no-op, not a rebuild
   started = true;
   effect(() => { renderRoute(route.value); });
 });
@@ -252,16 +254,24 @@ ready.then(() => {
 // can briefly report no session — so a signed-in view doesn't flicker to the sign-in
 // screen (P4-BUG#5). Clear the per-server cache on sign-out so accounts don't bleed.
 onChange((sess, event) => {
-  authed.value = !!session();
-  if (event === "SIGNED_OUT") clearWorkspaceCache();
-  if (!session() && event && event !== "SIGNED_OUT" && event !== "INITIAL_SESSION") return;
+  const uid = session()?.id || null;
+  authed.value = !!uid;
+  if (event === "SIGNED_OUT") { clearWorkspaceCache(); lastUid = null; if (started) renderRoute(route.peek()); return; }
+  if (!uid && event && event !== "INITIAL_SESSION") return;
   // Resume an invite the user opened while signed out (join.js stashed the code): once a
   // real session lands, send them back to the invite so the link still works after sign-in.
-  if (session() && event === "SIGNED_IN") {
+  if (uid && event === "SIGNED_IN") {
     let code = null;
     try { code = sessionStorage.getItem("eski:pending-invite"); sessionStorage.removeItem("eski:pending-invite"); } catch {}
-    if (code) { navigate(`/join/${code}`); return; }
+    if (code) { lastUid = uid; navigate(`/join/${code}`); return; }
   }
+  // B30: supabase-js re-emits SIGNED_IN / TOKEN_REFRESHED for the SAME user on every tab refocus
+  // (and on the periodic token refresh). renderRoute() tears the view down — closeDetails() shuts
+  // an open media/details viewer, and the whole screen + realtime rebuild — so refocusing the tab
+  // was closing the expanded viewer (while B14 keep-alive audio played on) and needlessly reloading
+  // everything. Only re-render on a REAL identity change; a same-user event is a no-op.
+  if (uid && uid === lastUid && started) return;
+  lastUid = uid;
   if (started) renderRoute(route.peek());
 });
 
