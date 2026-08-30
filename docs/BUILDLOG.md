@@ -2514,3 +2514,25 @@ NEXT: P23 (folder tags — a folder gets its own tags, NO inheritance to childre
   then P24 (real server-side search). B14 (media-player state) also open.
 GOTCHA: renderChosen rebuilds on every addFiles, resetting per-file edits — intended (the file set
   changed). syncVis toggles the collaborators pane; it must run after addFiles (it does).
+
+## 2026-08-30 — B14 media keeps playing across navigation (no dock, owner-clarified)
+IN PROGRESS: (cleared)
+DONE: media no longer resets when you leave a screen and return. New app/player.js owns the single
+  live MediaPlayer wrap OUTSIDE #stage. The details viewer plays THROUGH playInto(); closeDetails
+  (nav/✕/Esc) calls onViewerClosing(), which — if still playing — moves the SAME wrap into a hidden
+  off-screen host (.playerkeep) that stays IN the document so the browser keeps it playing (a removed
+  media element is force-paused per the HTML spec, so detaching would stop it — this was the trap;
+  the fix is to keep it attached but hidden). Reopening the file re-adopts the live wrap inline at its
+  current position (resyncHead restarts the head loop). A paused/ended file stops on close. Owner
+  clarified they do NOT want a visible mini-dock — the dock UI is written but PARKED behind
+  DOCK_ENABLED=false ("save the code for later"). Full audio, not muted (muting was test-only).
+  Verified headless: plays -> switch away -> currentTime keeps advancing off-screen (still playing)
+  -> reopen re-adopts same element, position preserved, still playing; paused-close stops; boot both
+  themes 0 pageerrors. Commit <sha>.
+NEXT: URL-addressable view state (owner ask): opening a FOLDER and opening a FILE must change the URL
+  so returning/reloading restores the view (fixes "leave an open folder, come back to root") AND
+  links to a folder/file work. Then P24 (real search), P23 (folder tags), P14 (view densities).
+GOTCHA: keep-alive REQUIRES the element stay connected to the document — do NOT "optimise" it by
+  detaching the wrap; the browser pauses a disconnected media element. .playerkeep is off-screen, not
+  display:none-removed. resyncHead must run after every reparent or the playhead freezes while audio
+  plays.

@@ -84,6 +84,30 @@
 .uplchip .iconbtn{width:20px;height:20px;flex:none;color:var(--on-ink)}
 .uplchip .iconbtn:hover{background:color-mix(in srgb,var(--on-ink) 16%,transparent);color:var(--on-ink)}
 
+/* B14: off-screen keep-alive host — a backgrounded player parks here so it stays in the document
+   and keeps playing (a removed media element is force-paused by the browser). Never visible. */
+.playerkeep{position:fixed;left:-99999px;top:0;width:1px;height:1px;overflow:hidden;pointer-events:none}
+
+/* Parked (DOCK_ENABLED=false): the opt-in mini media dock — a persistent player that survives
+   navigation (bottom-left so it never collides with the bottom-right upload chip / explorer exfab).
+   Floating chrome, so it carries the same soft shadow as .uplchip (the no-shadow rule is for modals
+   on a scrim, not floating chips). Kept for a future opt-in; nothing renders it today. */
+.pdock{position:fixed;left:var(--s5);bottom:var(--s5);z-index:60;width:320px;max-width:calc(100vw - 2*var(--s5));
+  padding:var(--s3);background:var(--surface);border-radius:var(--r);
+  box-shadow:0 6px 24px rgba(0,0,0,.28);display:flex;flex-direction:column;gap:8px;animation:uplchipin .2s ease}
+.pdock-hd{display:flex;align-items:center;gap:8px}
+.pdock-play{flex:none}
+.pdock-title{flex:1;min-width:0;text-align:left;background:none;border:0;padding:0;color:var(--ink);
+  font-size:var(--fs-sm);font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer}
+.pdock-title:disabled{cursor:default}
+.pdock-title:hover:not(:disabled){color:var(--soft)}
+/* the docked wrap sheds its big media area (audio) / caps the video; only the seek transport flows */
+.pdock .dmplayer.docked{background:none;border-radius:0;overflow:visible}
+.pdock .dmplayer.docked[data-kind="audio"] .dmmedia{display:none}
+.pdock .dmplayer.docked[data-kind="video"] .dmmedia{min-height:0}
+.pdock .dmplayer.docked[data-kind="video"] video{max-height:120px;border-radius:var(--r)}
+.pdock .dmplayer.docked .dmtransport{position:static;background:none;padding:0;gap:8px}
+
 /* ── P3.2 IconButton + CloseButton ───────────────────────────────────────── */
 .iconbtn{display:grid;place-items:center;width:26px;height:26px;border-radius:var(--r);
   background:none;color:var(--soft);cursor:pointer;

@@ -537,5 +537,10 @@ export function MediaPlayer({ src, kind = "audio", poster } = {}) {
 
   setPlayIcon(true); setVolIcon();
   wrap.media = media;
+  // B14: the persistent player reparents this exact wrap between the details viewer and the mini
+  // dock. Moving a node in the DOM never stops playback, but the rAF head-loop bails on a transient
+  // disconnect — so after a move the host calls resyncHead() to repaint + restart the loop if it's
+  // still playing (the loop self-guards on paused/ended/removed).
+  wrap.resyncHead = () => { paintHead(); if (!media.paused && !media.ended) startLoop(); };
   return wrap;
 }

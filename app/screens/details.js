@@ -17,7 +17,7 @@ import { tagChip, parseTag } from "../tags.js";
 import { openReport } from "../report.js";
 import { iconEl } from "../icons.js";
 import { navigate } from "../router.js";
-import { MediaPlayer } from "../ui.js";
+import { playInto, onViewerClosing } from "../player.js";
 import { mediaUrl, KIND_ICON, downloadWork, baseName } from "../cards.js";
 import { saveToFiles, unsaveWork, isWorkSaved, addTag, removeTag } from "../data.js";
 
@@ -39,8 +39,11 @@ function fmtWhen(ts) {
   return `${date}, ${h}:${String(m).padStart(2, "0")} ${ap}`;
 }
 
-// close whatever pane is open (Esc / ✕ / backdrop)
+// close whatever pane is open (Esc / ✕ / backdrop / a nav). B14: tell the persistent player the
+// viewer is closing FIRST — a still-playing stream docks to the mini player instead of dying with
+// the sheet; a paused one stops. Runs even with no sheet open (a no-op unless something's playing).
 export function closeDetails() {
+  onViewerClosing();
   if (!openSheet) return;
   openSheet.remove();
   document.removeEventListener("keydown", openSheet._onKey);
@@ -65,7 +68,8 @@ export function openDetails(work, ctx = {}) {
     // file actions (⋯) — supplied by the explorer; a public post (feed/profile) omits them.
     // repaint re-renders the pane in place after an in-viewer star/rename/hide.
     if (ctx.menuItemsFor) nav.openActions = (anchor) => openMenu(anchor, ctx.menuItemsFor(w, { repaint: () => paint(w), close: closeDetails }));
-    card.replaceChildren(mediaArea(w), infoRail(w, ctx, nav));
+    // onReopen lets the mini dock's title reopen THIS work's viewer with the same context (B14).
+    card.replaceChildren(mediaArea(w, { onReopen: () => openDetails(w, ctx) }), infoRail(w, ctx, nav));
   }
   paint(work);
 
@@ -90,9 +94,9 @@ function isMediaFocused() {
 }
 
 // ── media well ───────────────────────────────────────────────────────────────
-function mediaArea(w) {
+function mediaArea(w, opts) {
   const well = el(".dmedia");
-  fillMedia(well, w);
+  fillMedia(well, w, opts);
   return well;
 }
 
@@ -100,7 +104,7 @@ function mediaArea(w) {
 // so there's ONE place that decides image-vs-player-vs-typecard: fills `mount` with the
 // right node for the kind, adding `.bare` when real bytes render (no padding around the
 // media) and falling back to a type card when the bytes are missing/broken.
-export function fillMedia(mount, w) {
+export function fillMedia(mount, w, opts = {}) {
   const url = mediaUrl(w);
   if (w.kind === "image" && url) {
     mount.classList.add("bare");
@@ -111,7 +115,9 @@ export function fillMedia(mount, w) {
   }
   if ((w.kind === "audio" || w.kind === "video") && url) {
     mount.classList.add("bare");
-    mount.replaceChildren(MediaPlayer({ src: url, kind: w.kind }));
+    // B14: play THROUGH the persistent player so navigating away docks the live stream instead of
+    // resetting it. Reopening the same file adopts the still-playing wrap back inline.
+    playInto(mount, w, url, { title: w.title || baseName(w) || "Now playing", reopen: opts.onReopen });
     return;
   }
   mount.replaceChildren(typeCard(w));   // non-previewable, or no bytes yet

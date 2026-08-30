@@ -361,11 +361,23 @@ per channel, builds on P11), D6 (review canvas/kanban/versions).
       @handle"; optionally hue the rendered `@handle` by looking the member up by handle. The
       `mentions` table + notify trigger already work. *Files:* `app/screens/workspace.js`
       (`maybeAutocomplete`, `mdToHtml`). *Medium-hard.*
-- [ ] **B14 · Media player closes on return (round-8, owner 2026-08-30).** Playing audio/video keeps
-      playing when you navigate away (background), but the player **closes/resets when you come back**
-      to it — the playback state isn't preserved. Wants a persistent / mini player so returning shows
-      the still-playing media where it left off. *Files:* the media player (`app/ui.js MediaPlayer` /
-      the details pane) + a persistent player host outside the per-route `#stage`. *Medium-hard.*
+- [x] **B14 · Media keeps playing across navigation (round-8; owner clarified 2026-08-30 — NO dock).**
+      *Done (lifecycle headless-verified: keeps playing off-screen, re-adopts on reopen at position,
+      paused-close stops; 0 pageerrors).* Owner clarified they do **not** want a persistent mini-player
+      dock — they want media to **keep playing (full audio) when you switch app sections and resume
+      where it left off** when you come back. Root cause: the details viewer built a fresh player each
+      open, and a nav (`renderRoute`→`closeDetails`) tore it down → reopening restarted at 0:00. New
+      **`app/player.js`** owns the single live player OUTSIDE `#stage`: the viewer plays THROUGH
+      `playInto`; on close-while-playing the SAME wrap is parked in a hidden, **off-screen but still-
+      in-document** host (`.playerkeep`) so the browser keeps it playing (a *removed* media element is
+      force-paused per the HTML spec — so it must stay attached, not be detached); reopening the file
+      **re-adopts** the live wrap inline at its current time. A paused/ended file just stops on close.
+      The visible **mini-dock UI is written but PARKED behind `DOCK_ENABLED=false`** ("save the code
+      for later"). `MediaPlayer` got a `resyncHead()` hook (restart the rAF head loop after a reparent).
+      *Files:* `app/player.js` (new), `app/ui.js` (`resyncHead`), `app/screens/details.js` (`fillMedia`
+      plays via `playInto`; `closeDetails`→`onViewerClosing`), `styles/primitives.css` (`.playerkeep` +
+      parked `.pdock`). **Note:** auto-reopening the file's viewer on return rides on the URL-state work
+      (open file/folder in the URL) — see B25/link work; keep-alive already makes the audio continuous.
 
 > ### 🟢 Round-8 (owner test, 2026-08-30) — media-player, explorer nitpicks + tag/metadata search
 > Nitpicks + a search-model change captured mid-session (owner: "stop, tokens almost done — add all
