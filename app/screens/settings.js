@@ -6,7 +6,7 @@
 // — only where it lives. Admin-gated by the caller (main.js loads the workspace bundle, which
 // carries isAdmin/isOwner); a non-admin sees a read-only-ish subset (no Save/Delete).
 
-import { el, toast, Avatar, Button, openModal } from "../ui.js";
+import { el, toast, Avatar, Button, openModal, busyOverlay, withBusy } from "../ui.js";
 import { iconEl } from "../icons.js";
 import { navigate, reload } from "../router.js";
 import { isDemo, updateServer, loadServerPrefs, setServerPrefs, loadAuditLog, loadJoinRequests, approveJoinRequest, declineJoinRequest, deleteServer, leaveServer, createInvite, loadInvites, revokeInvite } from "../data.js";
@@ -65,6 +65,7 @@ function overviewPanel(data) {
     const input = el("input", { type: "file", accept: "image/*", style: "position:fixed;left:-9999px;opacity:0" });
     input.addEventListener("change", async () => {
       const file = input.files?.[0]; input.value = ""; if (!file) return;
+      const stop = busyOverlay(prev);   // P3: spinner over the icon/cover preview during the round-trip
       try {
         let src;
         if (demo) src = URL.createObjectURL(file);
@@ -72,6 +73,7 @@ function overviewPanel(data) {
         prev.replaceChildren(el("img", { src, alt: "", style: "width:100%;height:100%;object-fit:cover" }));
         toast({ message: field === "icon_key" ? "Server icon updated" : "Server cover updated", icon: "check" });
       } catch (e) { toast({ message: e?.message || "Couldn't upload the image" }); }
+      finally { stop(); }
     });
     return input;
   };
@@ -79,14 +81,13 @@ function overviewPanel(data) {
 
   const nameI = el("input", { value: s.name || "", "aria-label": "Server name" });
   const save = Button({ label: "Save name", variant: "primary" });
-  save.addEventListener("click", async () => {
-    if (save.disabled) return; save.disabled = true;
+  save.addEventListener("click", () => withBusy(save, async () => {   // P3: button spinner while saving
     try {
       const patch = demo ? { name: nameI.value.trim() } : await updateServer(s.id, { name: nameI.value });
       Object.assign(s, patch, patch.name ? { initials: patch.name.trim().slice(0, 2).toUpperCase() } : {});
       toast({ message: "Saved", icon: "check" }); if (!demo) reload();
-    } catch (e) { toast({ message: e?.message || "Couldn't save" }); save.disabled = false; }
-  });
+    } catch (e) { toast({ message: e?.message || "Couldn't save" }); }
+  }));
 
   wrap.append(el(".setcard", {}, [
     el("label.ulab", {}, ["Server name"]), el(".field", {}, [nameI]),

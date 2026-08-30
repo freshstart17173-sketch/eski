@@ -538,12 +538,18 @@ per channel, builds on P11), D6 (review canvas/kanban/versions).
       (`loadRail`, `loadUserSettings`, `loadUserStorage`, `loadUserBlocked`), `app/screens/usersettings.js`
       (privacy/storage panels lazy). Verified: no `from("profiles")` in the settings render path;
       demo /settings renders + Storage/Privacy panels populate on click, 0 pageerrors both themes.
-- [ ] **P3 · Loading animations for every async action.** File upload (has text progress only),
-      **folder upload**, **changing pfp**, **server icon/banner upload** — add one shared busy
-      affordance (a button-spinner + a light overlay) and apply it at every async call site.
-      *Files:* a small helper in `app/ui.js`, then the upload/pfp/icon/banner call sites.
-      *Medium.* **Do after K2** so the new icon/banner flow gets covered too. *Test:* demo — trigger
-      an async action, assert the busy class/overlay appears while pending and clears after; syntax-check.
+- [x] **P3 · Loading animations for every async action.** *Done (demo-verified).* Added ONE shared
+      busy affordance to `app/ui.js`: `busyOverlay(host)` — a light scrim + centred spinner over a
+      host box (reuses `@keyframes spin`, `border-radius:inherit` so it follows a round avatar/well),
+      returns a `stop()` for a `finally`; and `withBusy(btn, fn)` — runs an async fn with the button
+      in the existing `.btn.loading` spinner state. CSS `.busyov`/`.busyov-sp` in `primitives.css`
+      beside `.btn.loading`. Applied at the image/async call sites: **profile pfp** + **banner**
+      (overlay over the avatar / banner well during the R2 round-trip, `profile.js`), **server icon**
+      + **cover** (overlay over the preview, `settings.js`), and the server **Save name** button
+      (`withBusy`). (Upload-sheet progress is P16's dedicated rework; folder-upload rides the same
+      upload path.) *Files:* `app/ui.js`, `styles/primitives.css`, `app/screens/profile.js`,
+      `app/screens/settings.js`. Verified: `node --check` clean; demo asserts the overlay mounts with
+      an animating spinner and clears on stop(), 0 pageerrors.
 - [x] **P4 · Cut post commenting from the beta (KEEP the Feed — owner override 2026-08-30).**
       *Done (demo-verified).* Owner amended the original ask: **keep the Feed** (nav + `/feed` route
       + the portfolio grid all stay), cut **only public-post commenting**. Removed the Details-pane

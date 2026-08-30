@@ -265,6 +265,31 @@ export function toast({ message, action, duration = 3200, icon: ic = "check" } =
   return t;
 }
 
+// ── P3 · shared async-busy affordance ──────────────────────────────────────────
+// One canonical way to signal "this async action is running" so a click never looks dead.
+// Two pieces, used together or apart:
+//   busyOverlay(host) — a light scrim + centred spinner over a host box (an avatar well, a
+//     server-icon preview, a card). Returns stop(); call it in a finally. If the host is
+//     statically positioned we temporarily make it relative so the overlay can inset to it.
+//   withBusy(btn, fn) — run fn() with the button in its `.loading` spinner state (the same
+//     primitive Button({loading}) uses), restored afterward. Returns fn's result.
+// Prefer these over ad-hoc disabled flags at every image-upload / long-async call site.
+export function busyOverlay(host) {
+  if (!host) return () => {};
+  const prevInline = host.style.position;
+  if (getComputedStyle(host).position === "static") host.style.position = "relative";
+  const ov = el(".busyov", { "aria-hidden": "true" }, [el(".busyov-sp")]);
+  host.appendChild(ov);
+  return () => { ov.remove(); host.style.position = prevInline; };
+}
+export async function withBusy(btn, fn) {
+  if (!btn) return fn();
+  const already = btn.classList.contains("loading");
+  btn.classList.add("loading"); btn.setAttribute("aria-busy", "true");
+  try { return await fn(); }
+  finally { if (!already) { btn.classList.remove("loading"); btn.removeAttribute("aria-busy"); } }
+}
+
 /** Copy text to the clipboard and confirm with a toast. The write can be refused
  * (no user gesture / permissions / http), so on failure it toasts the text itself as a
  * fallback — the user can still select it. One place so every "Copy link" behaves alike. */

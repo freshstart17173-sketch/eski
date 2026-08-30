@@ -43,6 +43,14 @@
   color:var(--ink);animation:spin .6s linear infinite}
 .btn.primary.loading::after{color:var(--on-ink)}
 
+/* P3 — shared async-busy overlay (ui.js busyOverlay): a light scrim + spinner over a host box
+   while an async action runs. Same spinner geometry as .btn.loading, sized up for a surface.
+   Inherits the host's radius so it doesn't square off a rounded well. */
+.busyov{position:absolute;inset:0;z-index:5;display:grid;place-items:center;border-radius:inherit;
+  background:color-mix(in srgb,var(--paper) 62%,transparent)}
+.busyov-sp{width:20px;height:20px;border-radius:50%;border:2px solid var(--line2);
+  border-top-color:var(--ink);animation:spin .6s linear infinite}
+
 /* ── P3.2 IconButton + CloseButton ───────────────────────────────────────── */
 .iconbtn{display:grid;place-items:center;width:26px;height:26px;border-radius:var(--r);
   background:none;color:var(--soft);cursor:pointer;

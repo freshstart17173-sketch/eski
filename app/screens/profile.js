@@ -4,7 +4,7 @@
 // friend; a friend sees Public + Server + Message. Same card renderer as the Feed,
 // NO member colour (a public profile is never server-scoped).
 
-import { el, toast, Avatar, PresenceDot, SelectPill, openModal, Button } from "../ui.js";
+import { el, toast, Avatar, PresenceDot, SelectPill, openModal, Button, busyOverlay } from "../ui.js";
 import { iconEl } from "../icons.js";
 import { navigate, reload } from "../router.js";
 import { workCard, avatarUrl } from "../cards.js";
@@ -189,6 +189,7 @@ export function openEditProfile(data, opts = {}) {
   fileInput.addEventListener("change", async () => {
     const file = fileInput.files?.[0]; fileInput.value = "";
     if (!file) return;
+    const stop = busyOverlay(avImg);   // P3: spinner over the avatar during the R2 round-trip
     try {
       let src;
       if (demo) src = URL.createObjectURL(file);   // demo: local preview, never touches R2
@@ -197,6 +198,7 @@ export function openEditProfile(data, opts = {}) {
       opts.onAvatar?.(src);
       toast({ message: "Photo updated", icon: "check" });
     } catch (e) { toast({ message: e?.message || "Couldn’t update your photo" }); }
+    finally { stop(); }
   });
   // Banner well (gallery .epbanner) — shows the current banner and a real upload. banner_key is
   // stored (updateProfileImage) and previewed here; the gallery renders no banner on the profile
@@ -208,6 +210,7 @@ export function openEditProfile(data, opts = {}) {
   bannerInput.addEventListener("change", async () => {
     const file = bannerInput.files?.[0]; bannerInput.value = "";
     if (!file) return;
+    const stop = busyOverlay(bannerWell);   // P3: spinner over the banner well during the round-trip
     try {
       let src;
       if (demo) src = URL.createObjectURL(file);
@@ -215,6 +218,7 @@ export function openEditProfile(data, opts = {}) {
       setBanner(src);
       toast({ message: "Banner updated", icon: "check" });
     } catch (e) { toast({ message: e?.message || "Couldn’t update your banner" }); }
+    finally { stop(); }
   });
   bannerWell.append(bannerInput, Button({ label: "Change banner", size: "sm", icon: "pen", onClick: () => bannerInput.click() }));
 
