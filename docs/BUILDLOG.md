@@ -2477,3 +2477,21 @@ NEXT: the remaining bigger clusters (still open in TODO): upload-at-scale (K11 s
   hashing+PUT, P22 per-file tag/rename list, P23 folder tags), real in-depth search (P24, folds in
   P21 modifiers + B19 tag-inclusion), P14 view densities, B14 media-player state persistence. B12
   (@mentions) skipped by owner; B9 live-QA. B16's root cause was the checkbox — done.
+
+## 2026-08-30 — K11 large-file upload (streaming/chunked hashing + capped concurrency)
+IN PROGRESS: (cleared)
+DONE: uploads no longer read the whole file into memory. New app/hash.js carries a chunked
+  incremental SHA-256 (sha256File) — reads the file in 8 MB file.slice() windows, updates a pure-JS
+  SHA-256, drops each window → live memory ~one chunk, not the whole file (WebCrypto has no streaming
+  digest, so crypto.subtle can't do this). Digest is byte-identical to crypto.subtle (verified vs the
+  FIPS "abc" vector, the empty digest, and random buffers across every chunk/block boundary — both in
+  node and in-browser), so a blob still dedups by the same <sha>.<ext> R2 key. Added mapLimit and
+  capped hashing + the PUT loop at 3 concurrent (was Promise.all over the whole folder → one socket
+  per file + every file on the heap); blob refs drop as each PUT settles. Hashing now drives the
+  0–15% progress band by real bytes. app/screens/upload.js doPost rewired; old whole-file sha256Hex
+  removed. node --check clean; demo load 0 pageerrors; hash cross-check green. Commit <sha>.
+NEXT: P22 (per-file tag/rename list in the upload sheet), then P24 (real server-side search, folds in
+  P21 modifiers + B19 tag-inclusion), P23 (folder tags), B14 (media-player state), P14 (view densities).
+GOTCHA: sha256File's hex() writes the SHA padding, so it's single-use per Sha256 instance — call it
+  once. mapLimit preserves result order via fn(item, i); the sign response indexes must stay aligned
+  with `hashed` order (they do — hashing keeps input order).

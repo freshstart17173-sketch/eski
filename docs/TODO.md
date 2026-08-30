@@ -436,16 +436,22 @@ per channel, builds on P11), D6 (review canvas/kanban/versions).
       **left-edge pill** (`.railbtn.on::before`, a 3×20 ink bar) that reads regardless of icon/initials;
       excluded on the Feed logo + avatar (they keep their own active treatment). *Files:*
       `styles/shell.css`. Verified: the selected server shows the pill, 0 pageerrors.
-- [ ] **K11 · Large-file upload must not freeze the page or eat memory (round-9).** Uploading big files
-      currently reads the **whole file into memory** — `sha256Hex` does `await file.arrayBuffer()` and
-      the PUT sends the whole blob — so a multi-GB file (or a folder of them) slows the page to a halt
-      and balloons memory. Move to a **streaming / chunked** approach: hash via a streamed digest
-      (read the file in chunks, incremental SHA-256 — WebCrypto has no streaming digest, so use a
-      chunked JS SHA-256 or hash-on-the-fly), keep the PUT streaming (it already uses XHR — ensure the
-      body isn't buffered extra), cap concurrency (upload N at a time, not all at once via
-      `Promise.all`), and release references so the GC can reclaim each file after its PUT. *Files:*
-      `app/screens/upload.js` (`sha256Hex`, the `Promise.all` PUT loop → a concurrency-limited queue),
-      maybe a small streaming-hash helper. *Hard.* **Do before real GB uploads.**
+- [x] **K11 · Large-file upload must not freeze the page or eat memory (round-9).** *Done
+      (hash cross-verified against crypto.subtle + demo load, 0 pageerrors; live GB round-trip →
+      QA).* Root fix: hashing no longer reads the whole file. New **`app/hash.js`** carries a
+      **chunked incremental SHA-256** (`sha256File`) — reads the file in **8 MB `file.slice()`
+      windows**, updates a pure-JS SHA-256 state, drops each window, so live memory is ~one chunk
+      not the whole file (WebCrypto has no streaming digest, so `crypto.subtle` can't do this).
+      The digest is **byte-identical** to `crypto.subtle`'s SHA-256 (verified against the FIPS
+      "abc" vector, the empty digest, and random buffers across every chunk/block boundary), so a
+      blob still dedups by the same `<sha>.<ext>` R2 key. Also added **`mapLimit`** and capped both
+      **hashing** and the **PUT** loop at **3 concurrent** (was `Promise.all` over the whole folder —
+      one socket per file + every file on the heap at once); each blob ref is dropped when its PUT
+      settles. Hashing now drives the **0–15%** progress band by real bytes so a multi-GB file
+      doesn't sit at 0% through its whole hash. *Files:* `app/hash.js` (new — `sha256File`,
+      `mapLimit`), `app/screens/upload.js` (`doPost` hash + PUT phases; removed the old
+      whole-file `sha256Hex`). Live multi-GB upload (no freeze, bounded memory) is session-gated →
+      QA-CHECKLIST.
 - [ ] **P22 · Per-file tag + rename list in the upload sheet (multi-file / folder) (round-9).** Today
       a single upload can set Title + Tags, but a **multi-file or folder** upload can't tag/rename each
       file. **Replace the "Add details" pane with a list of the files + subfolders** (the P16

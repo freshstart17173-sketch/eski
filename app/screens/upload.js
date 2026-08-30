@@ -14,6 +14,13 @@ import { iconEl } from "../icons.js";
 import { tagEditor } from "../tags.js";
 import { supabase, session, rawSession } from "../supabase.js";
 import { createFolder } from "../data.js";
+import { sha256File, mapLimit } from "../hash.js";
+
+// K11: how many files hash / PUT at once. Unbounded Promise.all over a folder would start every
+// file simultaneously — a hundred open connections and, with the old whole-file hashing, a hundred
+// files on the heap. A small cap keeps memory + sockets bounded while still overlapping work.
+const HASH_CONCURRENCY = 3;
+const PUT_CONCURRENCY = 3;
 
 // ext → render kind. This is ONLY a hint for how a file previews (an image thumbnails, audio
 // gets a player, everything else is an "other" download card). It is NOT an allowlist: EVERY
@@ -34,10 +41,8 @@ function safeExt(name) { const e = rawExt(name).replace(/[^a-z0-9]/g, "").slice(
 const extOf = safeExt;               // the storable object-key suffix
 const kindOf = (ext) => KIND[ext] || "other";   // ext is the (already-safe) suffix; KIND keys are clean
 
-async function sha256Hex(file) {
-  const digest = await crypto.subtle.digest("SHA-256", await file.arrayBuffer());
-  return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, "0")).join("");
-}
+// File hashing lives in ../hash.js (sha256File) — a chunked, incremental SHA-256 that never
+// holds the whole file in memory. See K11 / that file's header for why crypto.subtle can't do this.
 
 // The structure-carrying path of a file. A directory *pick* sets webkitRelativePath; a directory
 // *drop* has no such property (the browser doesn't populate it for drag-drop), so the entry walker
@@ -325,8 +330,21 @@ export async function openUpload(opts = {}) {
     prog = uploadProgress({ title: files.length > 1 ? `Uploading ${files.length} files` : "Uploading" });
     body.append(prog.node);
     try {
-      prog.indeterminate();
-      const hashed = await Promise.all(files.map(async (f) => ({ file: f, hash: await sha256Hex(f), ext: extOf(f.name) })));
+      // Total bytes drive both the hashing band (0–15%) and the PUT band (20–80%) so the bar
+      // reflects real work, and a multi-GB file doesn't sit at 0% through its whole hash.
+      const totalBytes = files.reduce((s, f) => s + (f.size || 0), 0) || 1;
+      // ── hash (chunked, concurrency-capped) ──────────────────────────────────
+      // K11: sha256File reads each file in 8 MB slices — never the whole file — so a multi-GB
+      // upload stays off the heap; mapLimit caps how many hash at once. Per-file byte progress
+      // is summed across the in-flight files into the 0–15% band.
+      const hashedBytes = new Array(files.length).fill(0);
+      const hashed = await mapLimit(files, HASH_CONCURRENCY, async (f, i) => {
+        const hash = await sha256File(f, (loaded) => {
+          hashedBytes[i] = loaded;
+          prog.set(0.15 * (hashedBytes.reduce((a, b) => a + b, 0) / totalBytes));
+        });
+        return { file: f, hash, ext: extOf(f.name) };
+      });
       prog.set(0.15);
       const token = rawSession()?.access_token;
       const signRes = await fetch("/api/sign", {
@@ -338,13 +356,15 @@ export async function openUpload(opts = {}) {
       if (!signRes.ok) throw new Error(signJson.error || `signer said ${signRes.status}`);
 
       // Real transfer progress: aggregate bytes across every file → the 20–80% band of the bar.
+      // K11: PUT_CONCURRENCY caps simultaneous uploads (Promise.all would open one socket per
+      // file). XHR streams each File straight from disk, so only the in-flight files transfer at
+      // once; each file's blob reference is dropped when its PUT settles.
       prog.set(0.20);
-      const totalBytes = hashed.reduce((s, h) => s + (h.file.size || 0), 0) || 1;
       const sent = new Array(hashed.length).fill(0);
-      await Promise.all(hashed.map((h, i) => putWithProgress(signJson.files[i].url, h.file, {
+      await mapLimit(hashed, PUT_CONCURRENCY, (h, i) => putWithProgress(signJson.files[i].url, h.file, {
         headers: { "content-type": h.file.type || "application/octet-stream" },
         onProgress: (loaded) => { sent[i] = loaded; prog.set(0.20 + 0.60 * (sent.reduce((a, b) => a + b, 0) / totalBytes)); },
-      })));
+      }));
       prog.set(0.80);
 
       const onServer = visibility === "server";
