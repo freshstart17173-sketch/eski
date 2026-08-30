@@ -5,7 +5,8 @@ do the **Start here** ritual, take the **top unchecked item** in the Work Queue,
 **test it the deterministic way below**, commit + push to `preview`, tick the box, and append
 a `BUILDLOG.md` entry. Detail lives in [`BUGLOG.md`](BUGLOG.md) (triage), history in
 [`BUILDLOG.md`](BUILDLOG.md), the test method in [`VERIFICATION.md`](VERIFICATION.md), the
-owner's live checklist in [`QA-CHECKLIST.md`](QA-CHECKLIST.md). **CANON wins** on any conflict.
+owner's live checklist in [`QA-CHECKLIST.md`](QA-CHECKLIST.md), and the perf/correctness/simplicity
+playbook in [`OPTIMIZATION.md`](OPTIMIZATION.md). **CANON wins** on any conflict.
 
 ---
 
