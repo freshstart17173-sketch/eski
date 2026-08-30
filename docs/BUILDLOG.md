@@ -2310,3 +2310,21 @@ NEXT: B13 (gate file ⋯ menu write items by permission — ship single per owne
 GOTCHA V: min-height:100% only centers when the host has a definite height; every empty-state host
   here does (flex:1 scrollers / flex columns). Where a host is indefinite, min-height:100% resolves
   to auto → natural height, no break (graceful). Don't add margin:auto back — it fought this rule.
+
+## 2026-08-30 — B13 gate file ⋯ menu write items by ownership (UX half)
+IN PROGRESS: (cleared)
+DONE: shapeWork now exposes authorId; a shared writeMenuItems(data,state,rerender,w,hooks) helper
+  (explorer.js) is spread into BOTH the card ⋯ menu (openCardMenu) and the details-pane menu
+  (detailMenuItems) only when canWriteWork = isAdmin || authorId==null(personal) || authorId===me.id.
+  A non-writer's menu is Star · Save · Share… · Copy link; a writer/admin keeps Change visibility ·
+  Rename · Move to… · Hide · Delete. Shipped single (owner "ship small" — a menu-inventory gate, not
+  a redesign). Extended one item past the ticket's four to include Move to… (same can_write_work
+  class). Files: app/data.js, app/screens/explorer.js. Verified: predicate unit-checked
+  (admin/own/other/personal → true/true/false/true); demo card menu unchanged (full set, demo=admin),
+  0 pageerrors; hidden-state is live-only (demo is admin) → QA-CHECKLIST §10 claim added. Committed a7e7df7.
+NEXT: the big visual redesigns as 3-version batches (owner picks): start P13 (flatten file-channel
+  header + path viewer) or the P12/P18 density+standardize cluster. P20 pagination (non-visual) also
+  outstanding.
+GOTCHA W: demo always runs as an admin (demoExplorer isAdmin:true, demoWorkspace isOwner:true), so
+  ownership-gated UI can't show its RESTRICTED state in demo — only its full state. Verify the
+  restricted branch by unit-checking the predicate + a QA claim for a real member on preview.

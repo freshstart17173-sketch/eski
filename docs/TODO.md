@@ -352,11 +352,17 @@ per channel, builds on P11), D6 (review canvas/kanban/versions).
       `restoreWork`, `purgeWork`, `setHidden`, `renameWork`, `setVisibility`) now `.select()` the
       touched rows and **throw** when RLS matched nothing, so a non-owner gets an honest "Only the
       owner or a server admin can…" error instead of a fake success + optimistic card mutation.
-      **Remaining (UX):** don't *show* those items to someone who can't use them — add a
-      `canWrite` flag on `shapeWork` (`author_id === me.id || data.isAdmin`) and gate the four
-      items on it (hide, or disable). This is a visible menu change → 3-versions rule applies.
-      *Files:* `app/data.js` (`shapeWork` canWrite), `app/screens/explorer.js` (the two menu
-      builders). *Easy-medium.*
+      **Remaining (UX): DONE (ship-single per owner call — a menu-inventory gate, not a redesign).**
+      `shapeWork` now exposes `authorId`; a shared `writeMenuItems(data,state,rerender,w,hooks)` helper
+      (explorer.js) is included in **both** the card ⋯ menu and the details-pane menu ONLY when
+      `canWriteWork` = `isAdmin || authorId==null(personal) || authorId===me.id`. So a non-writer's
+      menu is just Star · Save · Share… · Copy link; a writer/admin still gets Change visibility ·
+      Rename · Move to… · Hide · Delete. (Extended one item past the ticket's four to include **Move
+      to…** — same `can_write_work` class, inconsistent to leave it while hiding Rename.) *Files:*
+      `app/data.js` (`shapeWork.authorId`), `app/screens/explorer.js` (`canWriteWork` + `writeMenuItems`,
+      both menus). Verified: predicate unit-checked (admin/own/other/personal); demo menu unchanged
+      (full set, demo=admin), 0 pageerrors; the hidden-state needs a real non-admin member → QA claim
+      added (§10).
 
 ### 2 · Fixes for backend
 

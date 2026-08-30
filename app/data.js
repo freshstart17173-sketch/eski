@@ -310,6 +310,7 @@ function shapeWork(w, place, membersById, chanName, tags = []) {
   const a = membersById[w.author_id];
   return {
     id: w.id, title: w.title, name: w.title,
+    authorId: w.author_id || null,   // B13: lets the card/detail menus gate write items by ownership
     kind: w.kind, file_ext: w.file_ext, blob_sha: w.blob_sha, bytes: w.bytes,
     hidden: !!w.hidden, visibility: w.visibility || null, created_at: w.created_at, tags,
     folderId: place?.folder_id || null,

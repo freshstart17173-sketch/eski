@@ -936,13 +936,30 @@ function openCardMenu(data, state, rerender, w, anchor) {
     ...(personal ? [] : [{ label: "Save to my files", icon: "save", onClick: () => saveOne(w) }]),
     { label: "Share…", icon: "users", onClick: () => openShareDialog(w) },
     { label: "Copy link", icon: "link", onClick: () => copyLink(w) },
-    { label: "Change visibility…", icon: "globe", onClick: () => openVisibilityDialog(w) },
-    { label: "Rename", icon: "pen", onClick: () => renameFile(data, state, rerender, w) },
-    { label: "Move to…", icon: "folder", onClick: () => moveIds(data, state, rerender, [w.id]) },
-    { label: w.hidden ? "Show in library" : "Hide from library", icon: "hide", onClick: () => toggleHidden(data, state, rerender, w) },
-    { sep: true },
-    { label: "Delete", icon: "trash", danger: true, onClick: () => trashIds(data, state, rerender, [w.id]) },
+    ...writeMenuItems(data, state, rerender, w),
   ]);
+}
+
+// B13: the work-mutating menu items — shown ONLY to someone who can actually write the work
+// (its author, or a server admin). A member seeing Rename/Delete/Hide/Change-visibility/Move on
+// another member's file was a dead affordance (the writers now throw on a non-owner, K8/B13 —
+// this stops offering the action at all). Personal files (no authorId in that shape) and demo
+// (isAdmin) are always writable. The reader actions (Star/Save/Share/Copy link) stay ungated.
+// Ships as one version (a menu-inventory gate, not a redesign — per owner's "ship small").
+function canWriteWork(data, w) {
+  return !!data.isAdmin || w.authorId == null || w.authorId === data.me?.id;
+}
+function writeMenuItems(data, state, rerender, w, hooks) {
+  if (!canWriteWork(data, w)) return [];
+  const repaint = hooks?.repaint, close = hooks?.close;
+  return [
+    { label: "Change visibility…", icon: "globe", onClick: () => openVisibilityDialog(w) },
+    { label: "Rename", icon: "pen", onClick: () => renameFile(data, state, rerender, w, repaint) },
+    { label: "Move to…", icon: "folder", onClick: () => { close?.(); moveIds(data, state, rerender, [w.id]); } },
+    { label: w.hidden ? "Show in library" : "Hide from library", icon: "hide", onClick: () => toggleHidden(data, state, rerender, w, repaint) },
+    { sep: true },
+    { label: "Delete", icon: "trash", danger: true, onClick: () => { close?.(); trashIds(data, state, rerender, [w.id]); } },
+  ];
 }
 
 // The SAME actions the card ⋯ menu offers, handed to the open Details pane (P5.9d parity)
@@ -958,12 +975,7 @@ export function detailMenuItems(data, state, rerender, w, { repaint, close }) {
     ...(personal ? [] : [{ label: "Save to my files", icon: "save", onClick: () => saveOne(w) }]),
     { label: "Share…", icon: "users", onClick: () => openShareDialog(w) },
     { label: "Copy link", icon: "link", onClick: () => copyLink(w) },
-    { label: "Change visibility…", icon: "globe", onClick: () => openVisibilityDialog(w) },
-    { label: "Rename", icon: "pen", onClick: () => renameFile(data, state, rerender, w, repaint) },
-    { label: "Move to…", icon: "folder", onClick: () => { close(); moveIds(data, state, rerender, [w.id]); } },
-    { label: w.hidden ? "Show in library" : "Hide from library", icon: "hide", onClick: () => toggleHidden(data, state, rerender, w, repaint) },
-    { sep: true },
-    { label: "Delete", icon: "trash", danger: true, onClick: () => { close(); trashIds(data, state, rerender, [w.id]); } },
+    ...writeMenuItems(data, state, rerender, w, { repaint, close }),   // B13: gated by ownership
   ];
 }
 
