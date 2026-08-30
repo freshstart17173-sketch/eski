@@ -99,33 +99,19 @@ IDs are stable handles (`B*` broken-UI, `K*` backend, `P*` polish, `D*` deferred
 
 ### ⏱ Sorted by estimated completion time (open items only)
 
-The same open items as the categorized queue below, flattened and ordered **shortest job
-first** (estimates assume one focused session; a `P*`/`B*` visual item also carries the
-3-versions-then-owner-picks rule, which adds render+review time). Dependencies noted inline.
-Backend is **done + verified** (2026-08-29 pass) — everything open is frontend except K10's
-read-wiring. Ticking one here = ticking it in its category below.
+The open items, ordered **shortest job first**. **As of 2026-08-30 the whole quick/medium queue is
+done** — every easy/med `P*`/`B*` item (P1–P3, P11–P13, P15–P19, P25/P26, B3/B4, B10, B15–B29),
+plus the round-9/10 scale work (K11 streaming upload, P22 per-file tag/rename, B14 media keep-alive,
+the explorer URL state, P24 real search + P21/B19) has shipped. **Nothing "quick UI" remains** — the
+only buildable items left are the two below, and neither is quick. Ticking one here = ticking it in
+its category below.
 
 | Est. | ID | What | Kind |
 |---|---|---|---|
-| ~15m | **B9** | verify channel upload shows as a chat file card (B5 built it; owner QA once B7 deploys) | live-QA |
-| ~45m | **P1** | center empty-state/placeholder text in its pane (one global rule) | easy |
-| ~1h | **P2** | perf: dedupe `profiles` fetch + defer settings reads | easy-med |
-| ~1.5h | ~~**K10**~~ | ✅ storage tracker — read path was correct; fixed the purge/empty-trash footer refresh | done |
-| ~1.5h | **B4** | typed `/create`·`/upload`·`/settings` open their modal over the shell | med |
-| ~2h | **B3** | message permalink (Copy link → scroll + flash) | med |
-| ~2h | **P4** | cut Feed + post-commenting from beta nav/routes (→ D1); mirror in CANON/CLAUDE.md | med · before P5 |
-| ~2h | **P13** | flatten file-channel header + add path/breadcrumb viewer | med |
-| ~2.5h | **P18** | standardize header + panel sizes & colours app-wide | med · overlaps P12 |
-| ~2.5h | **P15** | status → profile page (text field + R/Y/G presence, denser) | med · pairs B11 |
-| ~2.5h | **P3** | shared loading/busy affordance at every async call site | med |
-| ~3h | **P12** | density pass on modals·dialogs·toasts (primitive done; rest = 3 versions) | med |
-| ~4h | **P5** | merge Friends into Messages (one surface) | med-hard · after P4 |
-| ~4h | **B12** | @mentions: composer autocomplete + real resolve/notify | med-hard |
-| ~4h | **P11** | typed, colour-coded tags + a tag-type filter facet (foundation for D5) | med-hard |
-| ~4h | **P16** | upload progress → animation + minimizable (Drive-style) | med-hard · ties P3 |
-| ~4h | **P19** | unread-message indicator on channels | med-hard |
-| ~6h | **B10** | drag-to-select (marquee) + drag-file-onto-file → make folder | hard |
-| ~6h | **P14** | file-browser view modes = real density levels (thumbnail + thin band) | hard |
+| ~15m | **B9** | verify a channel upload shows as a chat file card (built; needs owner QA on preview) | live-QA (owner) |
+| — | **B12** | @mentions: composer autocomplete + real resolve/notify | med-hard · **owner-skipped** |
+| ~4h | **P23** | tag folders (no inheritance) — folder-tags store + RLS/RPC + folder card/details + upload subfolder rows | med-hard · schema |
+| ~6h | **P14** | file-browser view modes = real density levels (thumbnail + thin band) | hard · **visual → 3 versions** |
 
 **Deferred — do NOT build now** (post-beta / infra-gated): D1 (feed+commenting, after P4),
 D7 (report/moderation), D2 (storage/billing, needs Stripe), D3 (audit log), D5 (required tags
