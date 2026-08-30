@@ -332,11 +332,21 @@ per channel, builds on P11), D6 (review canvas/kanban/versions).
       should show in the stream as a file card that opens the detail/expanded view. **B5 already
       builds this** (messages.work_id → attachment card → real details pane); verify it end-to-end
       once B7 lets uploads through on preview. *Live QA.*
-- [ ] **B10 · Drag-to-select + drag-and-drop don't work (round-7).** In the file browser: (a) a
-      **marquee drag** on empty space should rubber-band-select cards; (b) **dragging a file onto
-      another file** should offer to **make a folder** from them (Finder/Drive). Today neither
-      fires. *Files:* `app/screens/explorer.js` (grid pointer handlers, `enableDropUpload`),
-      `app/data.js` (createFolder + moveToFolder to seed the new folder). *Hard.*
+- [x] **B10 · Drag-to-select + drag-and-drop don't work (round-7).** *Done (demo-verified both
+      gestures).* (a) **Marquee**: a pointer drag starting on empty pane space rubber-band-selects the
+      cards it covers (Shift/⌘ adds to the current selection); the trailing click is suppressed so the
+      selection survives, and 2+ opens the bulk bar. (b) **Drag-a-file-onto-another → make a folder**:
+      file cards are `draggable`; dropping one onto another **file** opens the New-folder prompt and
+      (on submit) creates the folder + moves both in (`makeFolderFrom` → `createFolder` +
+      `moveToFolder`); dropping onto a **folder** card **moves** the dragged files into it
+      (`moveInto`). Multi-drag when the grabbed card is part of a 2+ selection. Both handlers live on
+      the persistent `.panebody` (survive a repaint); read-only shared views are exempt. *Files:*
+      `app/screens/explorer.js` (marquee + native-drag handlers, `makeFolderFrom`/`moveInto`, gridView
+      `draggable` + folder `data-folder-id`), `styles/content.css` (`.marquee`/`.card.droptarget`,
+      `.panebody` position:relative). Verified: headless — a marquee over 4 cards selects 3 + persists +
+      opens the bulk bar; dragging f1 onto f2 opens the prompt and creates a "Drums pack" folder from
+      both; 0 pageerrors. Live move persistence (moveToFolder) is the same RPC used by the bulk
+      Move-to-folder → already covered; the drag path just calls it.
 - [x] **B11 · Clicking my pfp opens a dropdown, should go to my profile (round-7).** *Done.* The
       left-rail profile button now navigates straight to `/u/<me>` (no dropdown). Its old items are
       already reachable: Profile = the destination, Settings = the profile's Settings tab, Sign out

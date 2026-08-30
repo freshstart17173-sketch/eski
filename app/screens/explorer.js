@@ -385,11 +385,71 @@ function paint(tree, pane, data, state, rerender) {
   pane.replaceChildren(...[pathline, toolbar, selbar, body, fab].filter(Boolean));
 
   // B6: clicking an empty area of the pane (not a card, not the bulk bar) clears the selection —
-  // the Google-Drive gesture. A card's own click handler stops here (closest('.card')).
+  // the Google-Drive gesture. A card's own click handler stops here (closest('.card')). B10: a
+  // marquee drag ends in a click on empty space too — `suppressClear` skips that one clear.
+  let suppressClear = false;
   body.addEventListener("click", (e) => {
+    if (suppressClear) { suppressClear = false; return; }
     if (e.target.closest(".card") || e.target.closest(".selbar")) return;
     if (state.selection.size) { state.selection.clear(); state.lastIdx = -1; refreshSel(); }
   });
+
+  // ── B10 · drag-to-select (marquee) + drag-a-file-onto-another → make a folder ──────────────
+  // Marquee: a pointer drag starting on EMPTY pane space rubber-band-selects the cards it covers
+  // (Shift/⌘ adds to the current selection). Native card drag is separate (starts on a card), so
+  // the two don't fight. Both handlers live on the persistent `body` (survives a repaint).
+  let dragIds = [];
+  if (!data.shared) {
+    body.addEventListener("pointerdown", (e) => {
+      if (e.button !== 0 || e.target.closest(".card") || e.target.closest(".selbar") || e.target.closest(".exfab")) return;
+      const start = { x: e.clientX, y: e.clientY };
+      const base = (e.shiftKey || e.metaKey || e.ctrlKey) ? new Set(state.selection) : new Set();
+      const rects = [...body.querySelectorAll(".card[data-id]")].map((c) => ({ id: c.dataset.id, r: c.getBoundingClientRect() }));
+      const box = el(".marquee"); let moved = false;
+      const move = (ev) => {
+        const x = Math.min(ev.clientX, start.x), y = Math.min(ev.clientY, start.y);
+        const w = Math.abs(ev.clientX - start.x), h = Math.abs(ev.clientY - start.y);
+        if (!moved && w + h > 5) { moved = true; body.appendChild(box); }
+        if (!moved) return;
+        const br = body.getBoundingClientRect();
+        box.style.cssText = `left:${x - br.left + body.scrollLeft}px;top:${y - br.top + body.scrollTop}px;width:${w}px;height:${h}px`;
+        const sel2 = { left: x, top: y, right: x + w, bottom: y + h };
+        state.selection.clear(); base.forEach((id) => state.selection.add(id));
+        for (const { id, r } of rects) if (!(r.right < sel2.left || r.left > sel2.right || r.bottom < sel2.top || r.top > sel2.bottom)) state.selection.add(id);
+        refreshSel();
+      };
+      const up = () => {
+        window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up);
+        box.remove(); if (moved) suppressClear = true;   // don't let the trailing click wipe the marquee selection
+      };
+      window.addEventListener("pointermove", move); window.addEventListener("pointerup", up);
+    });
+
+    // Native drag: a file card dropped onto another FILE makes a folder from them; onto a FOLDER
+    // moves them in. Multi-drag when the grabbed card is part of a 2+ selection.
+    body.addEventListener("dragstart", (e) => {
+      const card = e.target.closest(".card[data-id]");
+      if (!card) { dragIds = []; return; }
+      const id = card.dataset.id;
+      dragIds = (state.selection.has(id) && state.selection.size > 1) ? [...state.selection] : [id];
+      e.dataTransfer.effectAllowed = "move";
+      try { e.dataTransfer.setData("text/plain", dragIds.join(",")); } catch { /* Safari */ }
+    });
+    body.addEventListener("dragover", (e) => {
+      const t = e.target.closest(".card[data-id], .foldercard");
+      if (t && dragIds.length && !dragIds.includes(t.dataset.id)) { e.preventDefault(); t.classList.add("droptarget"); }
+    });
+    body.addEventListener("dragleave", (e) => { e.target.closest(".card")?.classList.remove("droptarget"); });
+    body.addEventListener("drop", (e) => {
+      const t = e.target.closest(".card[data-id], .foldercard");
+      if (!t || !dragIds.length) return;
+      e.preventDefault(); t.classList.remove("droptarget");
+      const ids = dragIds.filter((x) => x !== t.dataset.id); dragIds = [];
+      if (!ids.length) return;
+      if (t.classList.contains("foldercard")) moveInto(data, state, rerender, ids, t.dataset.folderId || null);
+      else makeFolderFrom(data, state, rerender, [...ids, t.dataset.id]);
+    });
+  }
 
   // selection controller (Google-Drive model): refreshSel repaints the .sel outlines
   // and the bulk bar off state.selection, without rebuilding the grid.
@@ -555,12 +615,17 @@ function feedMedia(w) {
 
 function gridView(subfolders, files, { openFile, openFolder, onCardClick, onStar, onMenu, onShareFolder, showWho }) {
   const grid = el(".masonry.even");
-  for (const f of subfolders) grid.append(folderCard(f, { onOpen: openFolder, onShare: onShareFolder }));
+  for (const f of subfolders) {
+    const fc = folderCard(f, { onOpen: openFolder, onShare: onShareFolder });
+    fc.dataset.folderId = f.id;   // B10: a drag-drop target (drop files here to move them in)
+    grid.append(fc);
+  }
   files.forEach((w, i) => {
     const actions = onMenu ? [{ act: "more", icon: "more", title: "More", onClick: (ww) => onMenu(ww, card.querySelector('.cardacts [data-act="more"]') || card) }] : [];
     const card = workCard(w, { selectable: true, showWho, starred: !!w.starred, onStar, actions });
     if (w.hidden) card.classList.add("ishidden");
     card.dataset.id = w.id;
+    if (onMenu) card.draggable = true;   // B10: drag a file onto another file → make a folder (owner-only view)
     card.addEventListener("click", (e) => onCardClick(w, i, e));
     card.addEventListener("dblclick", (e) => { e.preventDefault(); openFile(w); });
     card.addEventListener("contextmenu", (e) => { e.preventDefault(); onMenu?.(w, card); });
@@ -700,6 +765,40 @@ function newFolder(data, state, rerender, parentId) {
     rerender();
     toast({ message: `Folder “${name}” created` });
   });
+}
+
+// B10 — make a folder from a set of works (drag-a-file-onto-another): prompt a name, create the
+// folder at the current level, then move the works into it. The works leave the current view
+// (they're now inside the new subfolder), matching Finder/Drive.
+function makeFolderFrom(data, state, rerender, ids) {
+  if (!ids?.length) return;
+  promptFolderName(async (name) => {
+    let folder;
+    if (isDemoQS()) folder = { id: "f-new-" + Date.now(), name, parentId: state.folderId ?? null, archived: false, locked: false, count: ids.length };
+    else {
+      folder = await createFolder({ source: data.source, serverId: data.server?.id, parentId: state.folderId ?? null, name });
+      await moveToFolder({ source: data.source, works: ids, destFolderId: folder.id });
+    }
+    data.folders.push(folder);
+    for (const w of data.files) if (ids.includes(w.id)) w.folderId = folder.id;
+    state.selection.clear(); state.lastIdx = -1;
+    if (state.folderId != null) state.collapsed?.delete?.(state.folderId);
+    state.collapsed?.delete?.("__root__");
+    rerender();
+    toast({ message: `Made “${name}” from ${ids.length} file${ids.length > 1 ? "s" : ""}` });
+  });
+}
+
+// B10 — move works into an existing folder (drag onto a folder card).
+async function moveInto(data, state, rerender, ids, folderId) {
+  try {
+    if (!isDemoQS()) await moveToFolder({ source: data.source, works: ids, destFolderId: folderId || null });
+    for (const w of data.files) if (ids.includes(w.id)) w.folderId = folderId || null;
+    state.selection.clear(); state.lastIdx = -1;
+    rerender();
+    const dest = data.folders.find((f) => f.id === folderId)?.name;
+    toast({ message: `Moved ${ids.length} file${ids.length > 1 ? "s" : ""}${dest ? ` to “${dest}”` : ""}` });
+  } catch (e) { toast({ message: e?.message || "Couldn’t move the files" }); }
 }
 
 function promptFolderName(onSubmit, nested = false) {
