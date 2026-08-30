@@ -93,6 +93,8 @@ file is the versioned copy that build sessions treat as the acceptance bar.
 - [ ] `[P20]` Copy a permalink to an **old** message (older than the loaded window), open it in a new tab → the stream pages earlier until that message is found, then scrolls to & flashes it.
 - [ ] Look for day separators → a "Today"/date divider sits between days.
 - [ ] Open a channel with unread messages → a "New messages" divider marks where you left off.
+- [ ] `[P19]` A channel with messages you haven't seen shows a **bold name + an unread dot**; opening it clears the dot; a channel with @mentions shows the **count** instead.
+- [ ] `[P19 known-gap]` While sitting in one channel, a message posted to a **different** channel does NOT bold it until you navigate (live cross-channel bump is deferred with the global bell) — confirm it bolds after switching channels.
 - [ ] Open a brand-new empty channel → a welcome / empty state shows instead of a blank pane.
 - [ ] Hover a message (desktop) → reaction · reply · ⋯ actions appear at the top-right of the row.
 - [ ] Look at a message with reactions → reaction chips show emoji + count; yours reads as active.

@@ -325,11 +325,14 @@ export function channelColumn(data, view) {
       const on = ch.id === activeId && !voice;
       // voice is v2 — a voice channel never opens a text view, it just notes it's coming
       const onClick = voice ? () => toast({ message: "Voice channels ship in v2" }) : () => openChannel(data, ch, row);
-      const row = el("button.crow" + (on ? ".on" : ""), { onClick }, [
+      const row = el("button.crow" + (on ? ".on" : "") + (ch.unread ? ".unread" : ""), { onClick }, [
         iconEl(voice ? "voice" : "hash"),
         el("span.nm", { style: ch.unread ? "font-weight:600;color:var(--ink)" : null }, [ch.name]),
       ]);
+      // P19 — a @mention shows the count (stronger signal); a plain unread shows a small dot.
+      // The bold name (above) is the primary cue; the dot/count sits at the row's right edge.
       if (ch.mentions) row.append(el("span.ct", {}, [String(ch.mentions)]));
+      else if (ch.unread) row.append(el("span.unreaddot", { title: ch.unreadCount ? `${ch.unreadCount} new` : "New messages", "aria-label": "Unread messages" }));
       if (data.isAdmin && !voice) row.append(el("span.cgear", { title: "Edit channel", onClick: (e) => { e.stopPropagation(); openChannelSettings(data, ch); } }, [iconEl("settings", "sm")]));
       group.append(row);
       // voice channels list who's in them

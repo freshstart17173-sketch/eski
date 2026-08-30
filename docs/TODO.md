@@ -712,10 +712,25 @@ per channel, builds on P11), D6 (review canvas/kanban/versions).
       "(optional)" after "Add details", the "file name if blank" Title hint, and the "(keeps its
       structure)" folder note in the upload sheet. *Files:* `app/screens/upload.js`. A broader
       one-liner-hint sweep across other surfaces can follow.
-- [ ] **P19 · Unread-message indicator on channels (round-7).** A notification UI element showing a
-      channel has new messages (unread dot/bold + maybe a count), driven by `channel_reads` vs the
-      latest message. *Files:* `app/screens/workspace.js` (channel rows), `app/data.js`
-      (`loadServerBundle` unread compute), realtime bump on new msg. *Medium-hard.*
+- [x] **P19 · Unread-message indicator on channels (round-7).** *Done (demo-render + live-DB RPC
+      verify).* New read-only RPC **`channel_unread_counts(p_server)`** (schema-34, migration
+      `p25_channel_unread_counts`): per-channel count of top-level, non-deleted messages **not by me**
+      newer than my `channel_reads.last_read_at` (or all if never opened), membership-gated by
+      `can_view_channel` (safe to grant `authenticated`). `loadWorkspace` calls it once per load and
+      annotates a **fresh** `channelGroups` (`unread` bool + `unreadCount`) so the per-server cached
+      bundle isn't mutated; the channel being opened reads as 0 (attachLive marks it read on mount).
+      Render (`channelColumn`): an unread channel gets the **bold name** (existing) + a small **unread
+      dot** (`.unreaddot`, presence-dot family — the only round chrome allowed); a channel with
+      **@mentions** shows the count instead (stronger signal, B12 populates it). *Files:*
+      `schema-34-channel-unread-counts.sql`, `app/data.js` (`loadWorkspace` unread fetch + annotate),
+      `app/screens/workspace.js` (`channelColumn` row), `styles/shell.css` (`.unreaddot`),
+      `app/demo.js` (fixture: `mixing` unread). Verified: role-sim as the owner returns the 3 gated
+      channels; a foreign message injected into a channel bumps the owner's unread 0→1 (delta=1, rolled
+      back); a non-member is correctly gated to 0 rows; demo renders the dot on `mixing` + the "4"
+      mention count on `verses`, 0 pageerrors both themes. **Known gap (K6 family):** the bump is
+      computed on each navigation/load — a *live* cross-channel bump (a message landing in a channel
+      you're not viewing) needs a server-wide Realtime subscription (only the active channel is
+      subscribed today); folded into the same later pass as the global bell/unread badge → QA-CHECKLIST.
 - [x] **P20 · Paginate channel message loading (read-path audit, 2026-08-29).** *Done (demo-render +
       live-DB query verify).* `loadWorkspace` now windows the stream to the newest **`CHANNEL_PAGE`
       (50)** top-level messages (fetch newest-first + reverse to ascending; was an unbounded whole-

@@ -120,6 +120,9 @@
 .crow .ic{color:var(--muted);width:15px;height:15px}
 .crow .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:var(--fs-sm)}
 .crow .ct{color:var(--muted);font-size:var(--fs-xs)}
+/* P19 — unread dot (same family as presence dots; the only round chrome allowed). The bold
+   name is the primary unread cue; this reinforces it at the row's right edge. */
+.crow .unreaddot{flex:none;width:7px;height:7px;border-radius:50%;background:var(--ink)}
 .vpeople{padding:2px 0 4px 30px;display:flex;flex-direction:column;gap:4px}
 .vp{display:flex;align-items:center;gap:7px;font-size:var(--fs-xs)}
 .vp .live{width:6px;height:6px;border-radius:50%;background:currentColor;flex:none}

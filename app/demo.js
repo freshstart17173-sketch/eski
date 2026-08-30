@@ -49,7 +49,7 @@ export function demoWorkspace() {
         { id: "announcements", name: "announcements" },
         { id: "beats",   name: "beats", active: true },
         { id: "verses",  name: "verses", mentions: 4 },
-        { id: "mixing",  name: "mixing" },
+        { id: "mixing",  name: "mixing", unread: true, unreadCount: 3 },
         { id: "references", name: "references" },
         { id: "stems", name: "stems and sessions" },
       ] },

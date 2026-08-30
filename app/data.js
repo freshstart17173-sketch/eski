@@ -289,6 +289,22 @@ export async function loadWorkspace({ serverId, channelId } = {}) {
   // voice channels are v2 — never selectable as the active (text) channel (P4-BUG#3)
   const activeChannel = textCh.find((c) => c.id === channelId) || textCh[0] || null;
 
+  // P19 — per-channel unread counts (one RPC round-trip; membership-gated server-side). The
+  // channel we're opening now reads as 0 regardless (attachLive marks it read on mount). Annotate
+  // a FRESH channelGroups so the per-server cached bundle isn't mutated across channel switches.
+  let unreadById = {};
+  try {
+    const { data: uc } = await supabase.rpc("channel_unread_counts", { p_server: sid });
+    for (const r of uc || []) unreadById[r.channel_id] = r.unread;
+  } catch { unreadById = {}; }
+  const channelGroupsUnread = channelGroups.map((g) => ({
+    ...g,
+    channels: g.channels.map((c) => {
+      const n = c.id === activeChannel?.id ? 0 : (unreadById[c.id] || 0);
+      return { ...c, unread: n > 0, unreadCount: n };
+    }),
+  }));
+
   let messages = [], pins = [], pinCount = 0, hasMoreMessages = false, oldestMsgAt = null;
   if (activeChannel) {
     const cid = activeChannel.id;
@@ -320,7 +336,7 @@ export async function loadWorkspace({ serverId, channelId } = {}) {
     needsAuth: false, live: true,
     me, isAdmin: !!membersById[user.id]?.admin, isOwner: activeServer.owner_id === user.id, servers, dmUnread: 0,
     server: { id: sid, name: activeServer.name, initials: initials(activeServer.name), icon_key: activeServer.icon_key || null, cover_key: activeServer.cover_key || null },
-    channelGroups,
+    channelGroups: channelGroupsUnread,
     channel: activeChannel ? { id: activeChannel.id, name: activeChannel.name, topic: "", pins: pinCount, files: 0, slowmode: activeChannel.slowmode_sec, postPolicy: activeChannel.post_policy, hasMore: hasMoreMessages, oldestAt: oldestMsgAt } : null,
     messages, typing: [], pins, files: [], memberGroups, thread: null,
     membersById, serverRoles,
