@@ -107,7 +107,7 @@ detail in the Round-11 section below. Ticking one here = ticking it in its categ
 
 | Est. | ID | What | Kind |
 |---|---|---|---|
-| ~30m | **B36** | path bar shows a black separator bar (dark mode) | easy |
+| ~~30m~~ | ~~**B36**~~ | ✅ `.expath` was `--surface` on `--paper` chrome — a stray lighter bar in dark | done |
 | ~~30m~~ | ~~**B34**~~ | ✅ `.loadearlier{display:flex}` beat the UA `[hidden]` — restated the rule | done |
 | ~1.5h | **B32** | selection action bar shifts the layout down → overlay it | easy-med |
 | ~~2h~~ | ~~**B35**~~ | ✅ file/server search — was FTS-whole-word-only; added filename substring (p27) | done |
@@ -709,9 +709,13 @@ per channel, builds on P11), D6 (review canvas/kanban/versions).
 - [ ] **P36 · Crop/zoom modal for image uploads.** Uploading a **server icon/cover** or a **profile
       pfp/banner** needs a UI element/modal to **adjust crop + zoom** before saving. *Files:* a new
       crop modal (`app/ui.js`/a screen), `app/screens/profile.js`, `app/screens/settings.js`. *Med-hard.*
-- [ ] **B36 · Path bar has a black separator bar (dark mode).** The file-path line up top (`.expath`)
-      shows a small **black bar** separating it from the rest of the pane in dark mode — a visual bug
-      (a stray border/background step). *Files:* `styles/content.css` (`.expath`). *Easy.*
+- [x] **B36 · Path bar has a black separator bar (dark mode).** *Done (dark-mode screenshot-verified).*
+      Root cause was a background step: `.expath` (the path line) was `background:var(--surface)` while the
+      `.toolbar` directly below and the `.pane` are both `--paper`. In dark mode `--surface` (#171717) on
+      `--paper` (#0A0A0A) chrome rendered as a stray lighter bar across the top of the content pane (the
+      P18 comment even said it should "align with the toolbar + body below"). Fix: `.expath` background →
+      `var(--paper)`, so the path line reads as one surface with the toolbar + body. Verified: `.expath`
+      computes rgb(10,10,10) in dark; the bar is gone, light mode unaffected. *Files:* `styles/content.css`.
 
 ### 2 · Fixes for backend
 

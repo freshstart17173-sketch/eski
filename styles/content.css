@@ -68,7 +68,7 @@
 /* ── P13: file-channel header (V2 + owner tweaks) ─────────────────────────────
    A slim dedicated path line (breadcrumb only), the filter set + view/hidden controls grouped
    to the right of the search in the toolbar, and New folder + Upload floated bottom-right. */
-.expath{flex:none;display:flex;align-items:center;min-height:30px;padding:var(--s2) var(--s4);background:var(--surface)}   /* P18: --s4 inset to align with the toolbar + body below */
+.expath{flex:none;display:flex;align-items:center;min-height:30px;padding:var(--s2) var(--s4);background:var(--paper)}   /* P18: --s4 inset to align with the toolbar + body below. B36: --paper (not --surface) so the path line reads as one surface with the toolbar + body — a --surface step here showed as a stray lighter bar across the top in dark mode (--surface #171717 on --paper #0A0A0A chrome). */
 .expath .crumbs{flex-wrap:nowrap;overflow:hidden}
 .crumbs .crumbroot.home{display:inline-flex;align-items:center;color:var(--soft);padding:0}
 .crumbs .crumbroot.home:hover{color:var(--ink)}

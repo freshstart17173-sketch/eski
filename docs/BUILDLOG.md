@@ -2734,3 +2734,20 @@ GOTCHA: reconcile the optimistic row by BODY only because there's no client nonc
   no BEFORE-INSERT body transform. If a future migration adds one (trim/normalise/rewrite on insert), the
   body match breaks and you'll get a duplicate — switch to a real client-nonce column then. Keep the
   id-dedupe (`querySelector('.msg[data-mid=…]')`) — it catches the insert-first ordering.
+
+## 2026-08-30 — B36 path bar stray bar in dark mode (background step)
+IN PROGRESS: (cleared)
+DONE: the explorer path line (.expath) was background:var(--surface) while the .toolbar directly below
+  and the .pane are both --paper. In dark mode that step (--surface #171717 on --paper #0A0A0A chrome)
+  rendered as a stray lighter bar across the top of the content pane — the owner's "black bar separating
+  it from the rest of the pane". The P18 comment already said the path line should "align with the toolbar
+  + body below", so --surface was simply wrong. Fix: .expath background → var(--paper), so the path line +
+  toolbar read as one continuous header surface. Dark-mode screenshot-verified (.expath computes
+  rgb(10,10,10); the bar is gone); light mode unaffected (it just matches the toolbar's near-white).
+  Commit <sha>.
+NEXT: the remaining visual items (B32 selbar overlay, B31 drag/selection, B33 star consistency, P33
+  filters, P32 slider, P29 profile, P35 loaders, P36 crop) mostly involve real design choices → owner's
+  3-version pick. Non-visual left: P28 (context menus at cursor), P23 backend (folder tags), K12 indexing.
+GOTCHA: "surfaces separate by background step, not borders" (CANON) means a step is INTENTIONAL between a
+  surface and its neighbour — but the path line is part of the pane HEADER with the toolbar, not a separate
+  surface, so it must share --paper with it. A step there reads as a stray bar, worst in dark mode.
