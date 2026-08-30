@@ -843,6 +843,26 @@ export async function removeTag(workId, tag) {
   if (error) throw new Error(error.message || "Couldn’t remove the tag");
 }
 
+// P23 — folder tags (a folder's own tags; NO inheritance to its files). One of folderId (server
+// folder) / saveFolderId (personal folder) is set, never both. Writes go through the DEFINER RPCs
+// (add_folder_tag / remove_folder_tag, schema-37) which re-check the same fence as editing the
+// folder (server → manage_channels, personal → owner). Same "type:value or bare" tag convention as
+// content_tags, so the coloured tagChip renders folder tags too.
+export async function addFolderTag({ folderId = null, saveFolderId = null }, tag) {
+  const clean = (tag || "").trim().replace(/^#/, "").toLowerCase();
+  if (!clean) throw new Error("A tag can’t be empty");
+  if (clean.length > 120) throw new Error("That tag is too long");
+  if (isDemo()) return clean;
+  const { error } = await supabase.rpc("add_folder_tag", { p_folder: folderId, p_save_folder: saveFolderId, p_tag: clean });
+  if (error) throw new Error(error.message || "Couldn’t add the tag");
+  return clean;
+}
+export async function removeFolderTag({ folderId = null, saveFolderId = null }, tag) {
+  if (isDemo()) return;
+  const { error } = await supabase.rpc("remove_folder_tag", { p_folder: folderId, p_save_folder: saveFolderId, p_tag: tag });
+  if (error) throw new Error(error.message || "Couldn’t remove the tag");
+}
+
 // ── Share links (CANON §E.10 / #39-40, share_links + resolve_share_link) ──────
 // "Anyone with the link" — a `share_links` row (token PK). `share_write` RLS fences
 // creation to who can write the work, so this is a plain client insert. The token is

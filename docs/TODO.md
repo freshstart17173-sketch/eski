@@ -116,7 +116,7 @@ detail in the Round-11 section below. Ticking one here = ticking it in its categ
 | ~3h | **B33** | star: consistent top-left click-toggle in every density | med |
 | ~~3h~~ | ~~**P28**~~ | ✅ openMenu gained an at:{x,y} cursor spawn; file/folder/empty-pane menus | done |
 | ~3h | **P33** | explorer filters → only Hidden+Starred; add Group-by & Sort-by | med-hard |
-| ~4h | **P23** | tag folders (no inheritance) — schema + folder card/details + upload rows | med-hard · schema |
+| ~2h | **P23** | 🟡 BACKEND DONE (folder_tags + RLS + RPCs, p28); UI half (visual) remains | backend done |
 | ~4h | **P31** | one modifier-based search everywhere (channel msg ↔ server file) | med-hard |
 | ~4h | **P35** | loading animations everywhere; replace the spinning search icon | med |
 | ~4h | **P36** | crop/zoom modal for pfp/banner/icon uploads | med-hard |
@@ -480,13 +480,22 @@ per channel, builds on P11), D6 (review canvas/kanban/versions).
       `syncVis` toggles the collaborators pane), `styles/content.css` (`.chosenrow` column layout +
       `.chosenname` + per-row tag-editor compaction). Live per-file tag/rename on a real upload →
       QA-CHECKLIST. Pairs with **P23** (folder rows get their own tags next).
-- [ ] **P23 · Tag folders (no inheritance) (round-9).** A **folder** should be taggable too (its own
-      `content_tags`-equivalent on the folder), but a folder's tags are **NOT** inherited by the files
-      inside it (explicitly no propagation). Needs: a folder-tags store (folders have no `content_tags`
-      row today — add one, or a `folder_tags` table + RLS), the folder card / details showing + editing
-      its tags (reuse `tagChip`/`tagEditor`), and the P22 upload list letting you tag a subfolder row.
-      *Files:* schema (folder tags + RLS/RPC), `app/data.js`, `app/screens/explorer.js` (folder card +
-      details), `app/screens/upload.js` (subfolder rows). *Medium-hard.* Pairs with **P22**.
+- [ ] **P23 · Tag folders (no inheritance) (round-9).** **BACKEND DONE (role-sim-verified, migration
+      p28); UI half remaining (visual → owner 3-version pick).** A **folder** carries its own tags with
+      **no propagation** to its files. Backend (`schema-37-folder-tags.sql`): a `folder_tags` table with a
+      nullable FK to **both** folder kinds (server `folders` + personal `save_folders`) and a check that
+      exactly one is set (one row cascades when its folder is deleted); DEFINER-helper-gated RLS
+      (`folder_tag_readable`/`folder_tag_writable` mirror the folders' own fences — server = member/
+      manage_channels, personal = owner); `add_folder_tag`/`remove_folder_tag` DEFINER RPCs (idempotent
+      add, fence re-checked). `data.js addFolderTag/removeFolderTag` wrap them (same type:value tag
+      convention → the coloured tagChip renders folder tags too). Verified via role-sim on real data:
+      owner tags a server folder (idempotent =1) + a personal folder; both-targets rejected; remove →0;
+      a **non-member's write is refused** and a stranger **reads 0** of the owner's personal folder tags
+      (RLS); 0 leftover rows, 0 ERROR advisors. **Remaining (UI, visual):** the folder card / details
+      showing + editing its tags (reuse `tagChip`/`tagEditor`), the P22 upload list letting you tag a
+      subfolder row, and `loadExplorer` reading `folder_tags` into `folder.tags`. *Files (done):*
+      `schema-37-folder-tags.sql`, `app/data.js`. *Files (todo):* `app/screens/explorer.js` (folder card +
+      details), `app/screens/upload.js` (subfolder rows), `app/data.js` (`loadExplorer` folder-tag read).
 - [x] **P24 · A real, in-depth search built for scale (round-9).** *Done (backend role-sim-verified
       against the real 202-work DB; frontend demo-verified + shape-contract verified; live e2e →
       QA).* New **`search_files` RPC** (schema-35, migration **p26**) does the matching in Postgres so

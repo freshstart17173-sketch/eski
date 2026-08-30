@@ -2785,3 +2785,30 @@ NEXT: remaining selection/filter items are visual (B32 selbar overlay, B33 star 
 GOTCHA: the drag ghost MUST be in the document when setDragImage snapshots it — append to body, then remove
   on setTimeout(…,0). user-select:none on .panebody would also block selecting text in a future inline field
   — the input/textarea/[contenteditable] override keeps those selectable.
+
+## 2026-08-30 — P23 (backend) folder tags — folder_tags + RLS + RPCs (migration p28)
+IN PROGRESS: (cleared) — backend landed + verified; the folder-tag UI (visual, 3-version rule) is the
+  remaining half.
+DONE: schema-37-folder-tags.sql applied live as migration p28_folder_tags. A folder is now taggable with
+  NO inheritance to its files (owner ask). New folder_tags table carries a nullable FK to BOTH folder
+  kinds — server `folders` + personal `save_folders` — with a check that exactly one target is set (each
+  row ON DELETE CASCADEs with its folder); partial unique indexes per kind. RLS is DEFINER-helper-gated
+  (reliable): folder_tag_readable / folder_tag_writable mirror the folders' OWN fences exactly (server =
+  member_of read / has_perm(manage_channels) write; personal = owner). Writes go through DEFINER RPCs
+  add_folder_tag (idempotent — on conflict returns the existing row, like add_tag) / remove_folder_tag,
+  both re-checking the fence. Grants: select/insert/delete on the table to authenticated (reads go direct,
+  RLS-fenced); execute on the RPCs to authenticated only (anon/public revoked, p22/p31 hygiene). data.js
+  addFolderTag/removeFolderTag wrap the RPCs (same type:value convention → the coloured tagChip renders
+  folder tags). Verified via role-sim on real data (all rolled back): owner tags a server folder
+  (idempotent =1) + a personal folder (=1); both-targets-set rejected; remove →0; a NON-member's write is
+  refused (42501) and a stranger READS 0 of the owner's personal folder tags (RLS). 0 leftover rows after
+  rollback; security advisors: 0 ERROR, folder_tags has no RLS warning, the 4 functions carry only the
+  standard expected security_definer WARN. Commit <sha>.
+NEXT: the P23 UI (visual → owner 3-version pick): folder card + details showing/editing tags (reuse
+  tagChip/tagEditor), the P22 upload list tagging a subfolder row, and loadExplorer reading folder_tags
+  into folder.tags. Backend-wise the search cluster's P27 (search returns folders + folder scope) is the
+  next role-sim-verifiable step.
+GOTCHA: folder_tags has TWO nullable FK targets (folder_id / save_folder_id) — always pass exactly one;
+  the check constraint + the RPC guard both enforce it. Tags DO NOT inherit to files by design — never
+  join folder_tags into a work's tags. The RPCs must stay SECURITY DEFINER (the fence helpers read
+  auth.uid() at call time — the reliable path; a direct inline-uid insert would hit trap #1).
