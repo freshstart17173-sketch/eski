@@ -2812,3 +2812,25 @@ GOTCHA: folder_tags has TWO nullable FK targets (folder_id / save_folder_id) —
   the check constraint + the RPC guard both enforce it. Tags DO NOT inherit to files by design — never
   join folder_tags into a work's tags. The RPCs must stay SECURITY DEFINER (the fence helpers read
   auth.uid() at call time — the reliable path; a direct inline-uid insert would hit trap #1).
+
+## 2026-08-30 — P23 (UI) folder-tag interface — 3 versions behind ?ftui= (owner pick pending)
+IN PROGRESS: owner to pick V1/V2/V3; ship the chosen one + delete the other two.
+DONE: built the P23 folder-tag UI in THREE genuinely different placements (mandatory 3-version rule),
+  all on the same backend (p28) + write flow, switchable via ?ftui=1|2|3 (default 1). Shared wiring:
+  loadExplorer (server + personal) now reads folder_tags into folder.tags; demo folders seeded with
+  tags; data.js addFolderTag/removeFolderTag drive live add/remove (idempotent, fence re-checked
+  server-side); tags reuse the P11 tagChip (soft coloured chip) so folder tags read like file tags, and
+  clicking one searches the library (P26). The three takes (large "cards" density):
+  - V1 inline — chips live on the card face under "N files", add/remove in place (+tag → inline input).
+  - V2 compact — a small flag+count trigger on the card opens a focused editor POPOVER; cards stay clean.
+  - V3 sheet — an ⓘ on the card + a "N tags" line; opens a right-side folder-info SHEET (name · Files ·
+    a Tags section with chips + add input), mirroring the file details pane.
+  Verified: all 3 render in demo, BOTH themes at 1440, 0 pageerrors + 0 icon warnings; typed-tag hues
+  harmonise light+dark; writer-gated (canWriteFolder: server=isAdmin, personal=owner, shared=read-only).
+  Screenshots captured for the owner. Commit <sha>.
+NEXT: owner picks one → keep it, delete the other two decorators + the ?ftui switch, wire the small/list
+  densities' lighter treatment (count/inline), tick P23, add the QA claim. Then P22 upload subfolder rows
+  can tag a folder on upload (the last P23 sub-item).
+GOTCHA: the tag row/trigger/info button all stopPropagation on click+dblclick so they don't select/open
+  the folder. folderTagInput persists each add immediately (RPC), unlike tagEditor's batch getTags — a
+  folder tag must survive a repaint, so it can't wait for a form submit.

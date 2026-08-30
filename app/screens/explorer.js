@@ -15,7 +15,8 @@
 
 import { el, toast, openMenu, closeMenus, openModal, VisibilitySeg, Button, copyToClipboard } from "../ui.js";
 import { iconEl } from "../icons.js";
-import { parseTag, TAG_TYPES } from "../tags.js";
+import { parseTag, TAG_TYPES, tagChip, tagEditor } from "../tags.js";
+import { addFolderTag, removeFolderTag } from "../data.js";
 import { navigate, reload } from "../router.js";
 import { createFolder, moveToFolder, trashWorks, restoreWork, purgeWork, emptyTrash, loadTrash, starWork, unstarWork, saveToFiles, renameWork, setHidden, createShareLink, shareUrl, loadShareLinks, revokeShareLink, setVisibility, visFromDb, createFolderShare, folderShareUrl, requestToJoin, refreshStorage, searchFiles } from "../data.js";
 import { workCard, folderCard, mediaUrl, KIND_ICON, downloadWork, baseName } from "../cards.js";
@@ -779,7 +780,8 @@ function contents(data, state, rerender, sel) {
   const onMenu = data.shared ? null : (w, anchor, at) => openCardMenu(data, state, rerender, w, anchor, at);   // read-only shared view has no per-card owner menu (P9)
   const onShareFolder = (folder, anchor, at) => shareFolderMenu(data, state, rerender, folder, anchor, at);
   // P14: all three densities share the same select/open wiring + hooks; only the layout differs.
-  const hooks = { openFile, openFolder, onFolderClick, onCardClick, onStar, onMenu, onShareFolder, showWho: data.source !== "personal", personal };
+  // P23: ftctx carries data/state/rerender so a folder card can render + edit its own tags.
+  const hooks = { openFile, openFolder, onFolderClick, onCardClick, onStar, onMenu, onShareFolder, showWho: data.source !== "personal", personal, ftctx: { data, state, rerender } };
   const view = state.mode === "list" ? listView(subfolders, files, hooks)
     : state.mode === "small" ? smallView(subfolders, files, hooks)
     : largeView(subfolders, files, hooks);
@@ -808,6 +810,174 @@ function shareFolderMenu(data, state, rerender, folder, anchor, at) {
       } catch (e) { toast({ message: e?.message || "Couldn’t create the folder link" }); }
     } },
   ], { at });
+}
+
+// ── P23 folder tags (3-version comparison behind ?ftui=1|2|3 — owner picks one) ───────────────
+// A folder carries its own tags (no inheritance to files, backend p28). Reuses the P11 tagChip
+// (soft coloured chip) so folder tags read like file tags. Three placements of the SAME data +
+// write flow, so the owner can pick the interaction, not just the pixels:
+//   V1 — inline on the card face: chips always visible, add/remove right on the card.
+//   V2 — compact card + popover: a small tag trigger opens a focused editor popover.
+//   V3 — folder info sheet: an ⓘ opens a right-side details sheet with a Tags section.
+function ftuiVersion() {
+  const v = parseInt(new URLSearchParams(location.search).get("ftui"), 10);
+  return (v === 2 || v === 3) ? v : 1;
+}
+// server folder → manage_channels (≈ isAdmin here; server-side is the real fence); personal → owner
+// (always); a read-only shared view never edits.
+function canWriteFolder(data) { return !data.shared && (data.source === "personal" || !!data.isAdmin); }
+function folderTagTarget(data, folder) { return data.source === "personal" ? { saveFolderId: folder.id } : { folderId: folder.id }; }
+// click a folder tag → search the library for it (same as a file tag, P26)
+function searchFolderTag(state, rerender, raw) {
+  state.selection.clear(); state.selFolder = null; state.folderId = null; state.query = ""; state.tags = new Set([raw]); rerender();
+}
+async function addFolderTagUI(data, state, rerender, folder, raw, after) {
+  const clean = (raw || "").trim(); if (!clean) return;
+  try {
+    const stored = await addFolderTag(folderTagTarget(data, folder), clean);
+    if (!(folder.tags || []).includes(stored)) (folder.tags ||= []).push(stored);
+    (after || rerender)();
+  } catch (e) { toast({ message: e?.message || "Couldn’t add the tag" }); }
+}
+async function removeFolderTagUI(data, state, rerender, folder, raw, after) {
+  try {
+    await removeFolderTag(folderTagTarget(data, folder), raw);
+    folder.tags = (folder.tags || []).filter((t) => t !== raw);
+    (after || rerender)();
+  } catch (e) { toast({ message: e?.message || "Couldn’t remove the tag" }); }
+}
+
+// a colon-aware add input (mirrors the tagEditor's live type colouring), commits on Enter
+function folderTagInput(data, state, rerender, folder, { onDone } = {}) {
+  const input = el("input", { placeholder: "add a tag… (bpm:142)" });
+  const field = el(".field.searchbar.tagin.ftaddfield", {}, [input]);
+  const recolor = () => {
+    const a = (input.value.split(":")[0] || "").trim().toLowerCase();
+    if (input.value.includes(":") && TAG_TYPES.includes(a)) { input.style.color = `var(--tt-${a})`; input.style.fontWeight = "600"; }
+    else { input.style.color = ""; input.style.fontWeight = ""; }
+  };
+  input.addEventListener("input", recolor);
+  input.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && input.value.trim()) { e.preventDefault(); const v = input.value; input.value = ""; recolor(); addFolderTagUI(data, state, rerender, folder, v, onDone); }
+    else if (e.key === "Escape") { e.preventDefault(); onDone && onDone(); }
+  });
+  setTimeout(() => input.focus(), 0);
+  return field;
+}
+
+// V1 — chips inline on the card, editable in place
+function ftDecorateCardV1(card, folder, ctx) {
+  const { data, state, rerender } = ctx;
+  const canW = canWriteFolder(data);
+  const tags = folder.tags || [];
+  if (!tags.length && !canW) return;
+  const row = el(".ftags");
+  for (const raw of tags) row.append(tagChip(raw, { removable: canW, onRemove: (r) => removeFolderTagUI(data, state, rerender, folder, r), onSearch: (r) => searchFolderTag(state, rerender, r) }));
+  if (canW) {
+    const add = el("button.ftadd", { title: "Add a tag" }, ["+ tag"]);
+    add.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const fld = folderTagInput(data, state, rerender, folder, { onDone: () => rerender() });
+      add.replaceWith(fld);
+    });
+    row.append(add);
+  }
+  // clicks inside the tag row must not open/select the folder
+  row.addEventListener("click", (e) => e.stopPropagation());
+  row.addEventListener("dblclick", (e) => e.stopPropagation());
+  card.append(row);
+}
+
+// V2 — a compact tag trigger on the card; the editor lives in an anchored popover
+function ftDecorateCardV2(card, folder, ctx) {
+  const { data, state, rerender } = ctx;
+  const canW = canWriteFolder(data);
+  const tags = folder.tags || [];
+  if (!tags.length && !canW) return;
+  const trigger = el("button.fttrigger", { title: canW ? "Tags" : "Tags", "aria-haspopup": "dialog" }, [
+    iconEl("flag", "sm"), el("span", {}, [tags.length ? String(tags.length) : "tag"]),
+  ]);
+  trigger.addEventListener("click", (e) => { e.stopPropagation(); openFolderTagPopover(trigger, folder, ctx); });
+  trigger.addEventListener("dblclick", (e) => e.stopPropagation());
+  const row = el(".ftags.ftcompact", {}, [trigger]);
+  card.append(row);
+}
+
+// V2 popover — chips + add input in a small floating card anchored on the trigger
+function openFolderTagPopover(anchor, folder, ctx) {
+  const { data, state, rerender } = ctx;
+  const canW = canWriteFolder(data);
+  closeMenus();
+  const pop = el(".menu.open.ftpop", { role: "dialog" });
+  const paint = () => {
+    pop.replaceChildren();
+    pop.append(el(".ftpophd", {}, [`Tags · ${folder.name}`]));
+    const chips = el(".ftags");
+    for (const raw of (folder.tags || [])) chips.append(tagChip(raw, { removable: canW, onRemove: (r) => removeFolderTagUI(data, state, rerender, folder, r, paint), onSearch: (r) => { closeMenus(); searchFolderTag(state, rerender, r); } }));
+    if (!(folder.tags || []).length) chips.append(el(".ftempty", {}, ["No tags yet."]));
+    pop.append(chips);
+    if (canW) pop.append(folderTagInput(data, state, rerender, folder, { onDone: paint }));
+  };
+  paint();
+  document.body.append(pop);
+  const r = anchor.getBoundingClientRect();
+  const pw = pop.offsetWidth, ph = pop.offsetHeight;
+  pop.style.left = Math.max(8, Math.min(r.left, window.innerWidth - pw - 8)) + "px";
+  pop.style.top = (r.bottom + ph > window.innerHeight - 8 ? Math.max(8, r.top - ph - 4) : r.bottom + 4) + "px";
+  const onDoc = (e) => { if (!pop.contains(e.target) && e.target !== anchor && !anchor.contains(e.target)) closeMenus(); };
+  pop._cleanup = () => document.removeEventListener("mousedown", onDoc, true);
+  setTimeout(() => document.addEventListener("mousedown", onDoc, true));
+}
+
+// V3 — a subtle count on the card; an ⓘ opens the folder info sheet (tags live there)
+function ftDecorateCardV3(card, folder, ctx) {
+  const { data, state, rerender } = ctx;
+  const tags = folder.tags || [];
+  const info = el("button.iconbtn.ftinfo", { title: "Folder info & tags", "aria-label": "Folder info" }, [iconEl("comment", "sm")]);
+  info.addEventListener("click", (e) => { e.stopPropagation(); openFolderInfoSheet(folder, ctx); });
+  info.addEventListener("dblclick", (e) => e.stopPropagation());
+  card.append(info);
+  if (tags.length) {
+    const line = el(".ftcount", {}, [iconEl("flag", "sm"), el("span", {}, [`${tags.length} tag${tags.length === 1 ? "" : "s"}`])]);
+    card.append(line);
+  }
+}
+
+// V3 sheet — a right-side folder details panel (name · file count · Tags section)
+function openFolderInfoSheet(folder, ctx) {
+  const { data, state, rerender } = ctx;
+  const canW = canWriteFolder(data);
+  document.querySelector(".ftsheetwrap")?.remove();
+  const wrap = el(".ftsheetwrap");
+  const sheet = el(".ftsheet");
+  const close = () => wrap.remove();
+  const paintTags = (host) => {
+    host.replaceChildren();
+    const chips = el(".ftags");
+    for (const raw of (folder.tags || [])) chips.append(tagChip(raw, { removable: canW, onRemove: (r) => removeFolderTagUI(data, state, rerender, folder, r, () => paintTags(host)), onSearch: (r) => { close(); searchFolderTag(state, rerender, r); } }));
+    if (!(folder.tags || []).length) chips.append(el(".ftempty", {}, ["No tags yet."]));
+    host.append(chips);
+    if (canW) host.append(folderTagInput(data, state, rerender, folder, { onDone: () => paintTags(host) }));
+  };
+  const tagHost = el(".ftsheettags");
+  paintTags(tagHost);
+  sheet.append(
+    el(".ftsheettop", {}, [el(".ftsheetname", {}, [iconEl("folder", "sm"), folder.name]), el("button.iconbtn", { title: "Close", onClick: close }, [iconEl("x", "sm")])]),
+    el(".ftsheetmeta", {}, [el("span.k", {}, ["Files"]), el("span.v", {}, [`${folder.count ?? 0}`])]),
+    el(".ftsheetsec", {}, [el(".ftseclabel", {}, ["Tags"]), tagHost]),
+  );
+  wrap.append(sheet);
+  wrap.addEventListener("mousedown", (e) => { if (e.target === wrap) close(); });
+  document.addEventListener("keydown", function esc(e) { if (e.key === "Escape") { close(); document.removeEventListener("keydown", esc); } });
+  document.body.append(wrap);
+}
+
+function decorateFolderTags(card, folder, ctx) {
+  if (!ctx) return;
+  const v = ftuiVersion();
+  if (v === 2) ftDecorateCardV2(card, folder, ctx);
+  else if (v === 3) ftDecorateCardV3(card, folder, ctx);
+  else ftDecorateCardV1(card, folder, ctx);
 }
 
 // ── P14 view densities (list / small / large) ────────────────────────────────
@@ -839,7 +1009,11 @@ function wireFolderEl(node, f, { onFolderClick, openFolder, onShareFolder }) {
 function largeView(subfolders, files, hooks) {
   const { openFolder, onFolderClick, onStar, onMenu, onShareFolder, showWho } = hooks;
   const grid = el(".masonry.even.exlarge");
-  for (const f of subfolders) grid.append(wireFolderEl(folderCard(f, { onShare: onShareFolder }), f, hooks));
+  for (const f of subfolders) {
+    const fcard = wireFolderEl(folderCard(f, { onShare: onShareFolder }), f, hooks);
+    decorateFolderTags(fcard, f, hooks.ftctx);   // P23: the folder's own tags (version behind ?ftui=)
+    grid.append(fcard);
+  }
   files.forEach((w, i) => {
     const actions = onMenu ? [{ act: "more", icon: "more", title: "More", onClick: (ww) => onMenu(ww, card.querySelector('.cardacts [data-act="more"]') || card) }] : [];
     const card = workCard(w, { selectable: true, showWho, starred: !!w.starred, onStar, actions });

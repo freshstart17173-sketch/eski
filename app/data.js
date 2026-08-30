@@ -500,8 +500,14 @@ export async function loadExplorer({ serverId, folderId, source = "server" } = {
   }
   const folders = (folderRows || []).map((f) => ({
     id: f.id, name: f.name, parentId: f.parent_id, archived: !!f.archived, locked: !!f.locked,
-    count: countByFolder[f.id] || 0,
+    count: countByFolder[f.id] || 0, tags: [],
   }));
+  // P23: each folder's own tags (no inheritance to files). One indexed read over the folders in view.
+  if (folders.length) {
+    const { data: ftRows } = await supabase.from("folder_tags").select("folder_id,tag").in("folder_id", folders.map((f) => f.id));
+    const byFolder = {}; for (const r of ftRows || []) (byFolder[r.folder_id] ||= []).push(r.tag);
+    for (const f of folders) f.tags = byFolder[f.id] || [];
+  }
 
   const files = works.map((w) => { const f = shapeWork(w, placeById[w.id], membersById, chanName, tagsByWork[w.id] || []); f.starred = starred.has(w.id); return f; });
 
@@ -563,8 +569,14 @@ async function loadPersonalExplorer(user, folderId) {
   }
   const folders = (folderRows || []).map((f) => ({
     id: f.id, name: f.name, parentId: f.parent_id, archived: false, locked: false,
-    count: countByFolder[f.id] || 0,
+    count: countByFolder[f.id] || 0, tags: [],
   }));
+  // P23: personal folder tags (keyed by save_folder_id; no inheritance to files).
+  if (folders.length) {
+    const { data: ftRows } = await supabase.from("folder_tags").select("save_folder_id,tag").in("save_folder_id", folders.map((f) => f.id));
+    const byFolder = {}; for (const r of ftRows || []) (byFolder[r.save_folder_id] ||= []).push(r.tag);
+    for (const f of folders) f.tags = byFolder[f.id] || [];
+  }
 
   const files = works.map((w) => ({
     id: w.id, title: w.title, name: w.title,

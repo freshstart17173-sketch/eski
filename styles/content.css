@@ -149,6 +149,45 @@
 .loadmorewrap{display:flex;justify-content:center;padding:var(--s4) 0 var(--s5)}
 .foldercard .media.fold{display:grid;place-items:center;background:var(--surface);color:var(--muted)}
 .foldercard .media.fold .ic{width:34px;height:34px}
+
+/* ── P23 folder tags (3-version comparison behind ?ftui=1|2|3) ─────────────────
+   Reuses the P11 .tchip soft chip so folder tags read like file tags. */
+.foldercard{position:relative}
+.foldercard .ftags{display:flex;flex-wrap:wrap;gap:5px;align-items:center;margin-top:7px}
+.foldercard .ftags .tchip{font-size:var(--fs-mi);padding:1px 6px}
+/* V1 inline add: a small ghost chip that becomes an input in place */
+.ftadd{font-size:var(--fs-mi);font-weight:600;color:var(--muted);padding:2px 7px;border-radius:var(--r);background:var(--surface)}
+.ftadd:hover{background:var(--plate);color:var(--ink)}
+.ftaddfield{max-width:160px;padding:2px 8px}
+.ftaddfield input{font-size:var(--fs-xs)}
+/* V2 compact trigger on the card */
+.foldercard .ftcompact{margin-top:7px}
+.fttrigger{display:inline-flex;align-items:center;gap:5px;font-size:var(--fs-mi);font-weight:600;color:var(--muted);padding:2px 7px;border-radius:var(--r);background:var(--surface)}
+.fttrigger:hover{background:var(--plate);color:var(--ink)}
+.fttrigger .ic{width:12px;height:12px}
+/* V2 popover — a floating card (a .menu variant, so it inherits the float shadow) */
+.ftpop{padding:10px 12px;min-width:210px;max-width:270px}
+.ftpophd{font-size:var(--fs-xs);font-weight:600;color:var(--muted);margin-bottom:8px}
+.ftpop .ftags{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:9px}
+.ftempty{font-size:var(--fs-xs);color:var(--muted)}
+/* V3 info button (top-right of the folder card) + a subtle tag count line */
+.ftinfo{position:absolute;top:6px;right:6px;z-index:3;background:rgba(20,20,20,.55);color:#fff}
+.ftinfo:hover{background:rgba(20,20,20,.85)}
+.ftcount{display:flex;align-items:center;gap:5px;color:var(--muted);font-size:var(--fs-xs);margin-top:5px}
+.ftcount .ic{width:12px;height:12px}
+/* V3 folder info sheet — a right-side panel on a scrim (matches the .sheet backdrop) */
+.ftsheetwrap{position:fixed;inset:0;z-index:81;display:flex;justify-content:flex-end;background:rgba(0,0,0,.55)}
+:root:not([data-theme="light"]) .ftsheetwrap,
+:root[data-theme="dark"] .ftsheetwrap{background:rgba(0,0,0,.66)}
+.ftsheet{width:min(380px,92vw);height:100%;background:var(--paper);display:flex;flex-direction:column;padding:var(--s4);gap:var(--s4);overflow:auto}
+.ftsheettop{position:relative;display:flex;align-items:center;justify-content:space-between;padding-bottom:var(--s3)}
+.ftsheettop::after{content:"";position:absolute;left:var(--hair-inset);right:var(--hair-inset);bottom:0;height:1px;background:var(--line)}
+.ftsheetname{display:flex;align-items:center;gap:7px;font-weight:600;color:var(--ink);font-size:var(--fs-lg)}
+.ftsheetmeta{display:flex;align-items:center;justify-content:space-between;color:var(--muted);font-size:var(--fs-sm)}
+.ftsheetmeta .v{color:var(--ink)}
+.ftsheetsec{display:flex;flex-direction:column;gap:9px}
+.ftseclabel{font-size:var(--fs-xs);font-weight:600;color:var(--muted)}
+.ftsheettags .ftags{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:9px}
 /* list view */
 /* P14 · LIST density (Windows "Details"): a column per field. .nowho drops the Uploader column
    (personal files have no uploader). Rows select on click / open on double-click like the other

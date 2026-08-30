@@ -180,12 +180,12 @@ export function demoExplorer(source = "server") {
     ],
     membersById: {},
     folders: [
-      { id: "beats", name: "beats", parentId: null, archived: false, locked: false, count: 4 },
-      { id: "drums", name: "drums", parentId: "beats", archived: false, locked: false, count: 0 },
-      { id: "verses", name: "verses", parentId: null, archived: false, locked: false, count: 0 },
-      { id: "mixing", name: "mixing", parentId: null, archived: false, locked: false, count: 0 },
-      { id: "references", name: "references", parentId: null, archived: false, locked: false, count: 1 },
-      { id: "stems", name: "stems and sessions", parentId: null, archived: false, locked: true, count: 1 },
+      { id: "beats", name: "beats", parentId: null, archived: false, locked: false, count: 4, tags: ["genre:trap", "bpm:140", "wip"] },
+      { id: "drums", name: "drums", parentId: "beats", archived: false, locked: false, count: 0, tags: [] },
+      { id: "verses", name: "verses", parentId: null, archived: false, locked: false, count: 0, tags: ["mood:dark"] },
+      { id: "mixing", name: "mixing", parentId: null, archived: false, locked: false, count: 0, tags: [] },
+      { id: "references", name: "references", parentId: null, archived: false, locked: false, count: 1, tags: ["genre:rnb", "key:F min"] },
+      { id: "stems", name: "stems and sessions", parentId: null, archived: false, locked: true, count: 1, tags: ["final"] },
     ],
     files: [
       W("f1", "late_bloom_beat.flp", "other", "flp", 8.4e6, "dev", "beats", "beats", ["drums", "142bpm", "bridge"]),
