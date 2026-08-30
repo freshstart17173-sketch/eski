@@ -2328,3 +2328,14 @@ NEXT: the big visual redesigns as 3-version batches (owner picks): start P13 (fl
 GOTCHA W: demo always runs as an admin (demoExplorer isAdmin:true, demoWorkspace isOwner:true), so
   ownership-gated UI can't show its RESTRICTED state in demo — only its full state. Verify the
   restricted branch by unit-checking the predicate + a QA claim for a real member on preview.
+
+## 2026-08-30 — P13 (in progress) — 3-version header batch built, awaiting owner pick
+IN PROGRESS: P13 file-channel header — 3 versions built as a comparison (docs/design/p13-headers.html)
+  using the real tokens/CSS; screenshotted both themes for the owner to pick. NOT yet wired into
+  explorer.js (won't ship an unpicked visual). Variants: V1 one unified bar (path far-left, panehd
+  folded fully into the toolbar); V2 slim path line up top + view/hidden controls moved down into the
+  toolbar; V3 path as the search field's leading context, view+actions grouped right. All drop the
+  server-name crumb root → a folder glyph (channel column already names the server). Once the owner
+  picks, wire the chosen layout into explorer.js `paint()` (mind repaintBody + the crumbs/searchState
+  swap) + move its CSS into content.css, then delete the comparison file.
+NEXT: implement the picked P13 variant.
