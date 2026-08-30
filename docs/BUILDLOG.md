@@ -2447,3 +2447,33 @@ DONE: audited the shared floating elements for the owner's "toasts/screens/other
   (explorer renders 0 pageerrors). Files: styles/content.css. Committed fe0d394.
 NEXT: remaining round-7 — P11 (typed tags, needs a schema decision), P14 (view modes = density
   levels), P16 (upload progress), P19 (unread indicator); plus P3 (loading affordance), P20 (paginate).
+
+## 2026-08-30 — round-8/9/10 owner nitpick sweep (large batch, all on preview)
+IN PROGRESS: (cleared)
+DONE: worked the master-todo frontend queue + three rounds of owner nitpicks, each verified the
+  deterministic way (node --check + headless demo asserts; live-only paths → QA-CHECKLIST).
+  - Queue items: P4 (cut post-commenting, KEEP Feed — owner override), P3 (busyOverlay/withBusy),
+    P20 (channel message pagination + load-earlier, preserves B3 permalinks), P19 (unread indicator
+    + channel_unread_counts RPC, schema-34/migration p25), P11 (typed colour-coded tags, owner picked
+    the V2 soft-chip from a 3-version review artifact; --tt-* tokens; app/tags.js), P16 (real upload
+    progress bar). Commits 8dc7afd·50b8bb3·40404f6·ec7abec·285e639·40f918e.
+  - Search-bar density: one dense .field.searchbar height app-wide (bb58d48).
+  - Upload flow rebuild: fixed a TDZ ReferenceError (addFiles/fmtSize used before their let/const
+    init) that blanked the pre-seeded dropzone; renderChosen now shows a real file-list UI; DnD moved
+    to the whole .dropwrap; progress has no minimize button/no text tips; clicking off the sheet
+    floats the chip (onClose) so the upload finishes in the background. (aef77fe)
+  - Round-9: B22 rail active pill (visible for icon-servers), B21 loadRail only caches on read success
+    (was caching transient-empty rails → reload needed), B20 upload chip inverse + right-aligned above
+    the exfab, P25 total upload size, B15 deselect hardening (01cae8f); B17 rAF smooth playhead + B18
+    skip buttons grouped right (f1333a4).
+  - Round-10: B16 removed the .cardsel white square (selection = media outline), B23 baseName() strips
+    the extension on titles, B24 card title reserves 2 lines so the grid tiles evenly, B26 folder
+    single-click selects / double-click opens (state.selFolder), B27 fixed-width tabular selection
+    counter, B29 details metadata wraps cleanly (85de22c); B25 _folderStore persists the open folder
+    across re-mount, B28 draggable/persisted tree resizer, P26 tag ✕ hover-overlay + click-a-tag →
+    filter the whole library to that tag (facet filters now flatten the tree) (d6415c5).
+  Backend touched: schema-34 channel_unread_counts (migration p25, applied + role-sim verified).
+NEXT: the remaining bigger clusters (still open in TODO): upload-at-scale (K11 streaming/chunked
+  hashing+PUT, P22 per-file tag/rename list, P23 folder tags), real in-depth search (P24, folds in
+  P21 modifiers + B19 tag-inclusion), P14 view densities, B14 media-player state persistence. B12
+  (@mentions) skipped by owner; B9 live-QA. B16's root cause was the checkbox — done.
