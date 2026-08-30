@@ -228,11 +228,12 @@ The server explorer mounts inside the shell (channel column stays); My files hid
 - [ ] Drop one or more files → they're recognised by type; a Files/Folder toggle swaps the target.
 - [ ] Drag files from your desktop onto the file explorer (or a channel) → the upload sheet opens pre-loaded with them, ready to post.
 - [ ] Drag a whole FOLDER from your desktop onto the explorer → the sheet opens, recognises it as a folder ("N files in M folders"), and posting recreates the folder structure.
-- [ ] On a folder upload, tick "Flatten folders — expose every file for tagging" → the tree is dropped, every file uploads loose, and the shared Tags apply to all of them.
+- [ ] On a folder upload, tick "Flatten folders — one flat set instead of the tree" → the tree is dropped and every file uploads loose (each still keeps its own row tags/name).
+- [ ] **`[infra]` (P22 — per-file tag + rename)** Choose several files (or a folder) → each file gets its **own row** with a **rename box** (defaults to the filename) and its **own tag editor**. Rename one file and tag two files differently → after posting, each work has the **name you typed** and only **its own tags** (not shared across files). A folder upload keeps its **tree** even after renaming a file (rename changes the title, not the folder path). Typing `bpm:120` in a row's tag box recolours it as a typed tag.
 - [ ] Pick a visibility (Public / Server / Private) → it's the one required choice.
 - [ ] Choose Server → pick a server & folder → the target picker works; default folder is root.
 - [ ] Read the storage-impact line → it states which storage the bytes draw ("{server}" or "Your" storage · X/Y GB).
-- [ ] Expand "Add details" → tags + collaborators fields appear (optional).
+- [ ] **(P22)** "Add details" now holds **Collaborators only**, and it only appears for a **single** file upload (a multi-file / folder upload hides it — collaborators attach to one work).
 - [ ] `[infra]` Click Post → it uploads (progress card), then a success toast; the file appears where posted.
 - [ ] `[P16]` During a real upload the progress bar advances with the actual bytes sent (not just stage text); a big file visibly fills the bar.
 - [ ] **`[infra]` (K11 — large-file / GB uploads)** Upload a **multi-GB file** (or a folder totalling several GB) → the page **stays responsive** (no freeze/beachball) and memory doesn't balloon (watch the tab's memory in the task manager — it should stay bounded, not climb to the file size). The bar advances during **hashing** (0–15%) then the **transfer** (20–80%), and at most ~3 files hash/upload at once. The uploaded blob still **dedups** — re-uploading the exact same file is fast and doesn't double your storage (proves the chunked hash matches the old digest).

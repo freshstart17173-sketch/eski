@@ -2495,3 +2495,22 @@ NEXT: P22 (per-file tag/rename list in the upload sheet), then P24 (real server-
 GOTCHA: sha256File's hex() writes the SHA padding, so it's single-use per Sha256 instance — call it
   once. mapLimit preserves result order via fn(item, i); the sign response indexes must stay aligned
   with `hashed` order (they do — hashing keeps input order).
+
+## 2026-08-30 — P22 per-file tag + rename in the upload sheet
+IN PROGRESS: (cleared)
+DONE: renderChosen now renders EVERY chosen file as an editable row — an inline rename input (edits
+  the work title only, never the folder path, so a folder upload keeps its tree) + its own P11
+  tagEditor. Per-row live state is captured in fileMeta[i] (getTitle/getTags), aligned to `files`.
+  doPost reads each file's own title + tags (was one shared Title + Tags; a structured folder used to
+  carry NO tags — now each file carries its own). Removed the shared Title/Tags fields from "Add
+  details"; that pane is now Collaborators only and shows only for a single loose post. List DOM
+  capped at 60 rows; files past the cap upload with their name + no tags (noted in-row). CSS:
+  .chosenrow is a column (name line + tags), .chosenname is a small field, per-row tag hint hidden.
+  Verified: upload.js module graph loads 0 pageerrors; 3 tag editors seeded with different tags return
+  independent getTags() (bpm:120|lofi / key:F min / genre:house|warm|dark). Live per-file tag/rename
+  on a real upload → QA-CHECKLIST §12. Commit <sha>.
+NEXT: P23 (folder tags — a folder gets its own tags, NO inheritance to children; needs a folder-tags
+  store + RLS/RPC, folder card/details editing, and taggable subfolder rows in this upload list),
+  then P24 (real server-side search). B14 (media-player state) also open.
+GOTCHA: renderChosen rebuilds on every addFiles, resetting per-file edits — intended (the file set
+  changed). syncVis toggles the collaborators pane; it must run after addFiles (it does).

@@ -216,10 +216,12 @@ export async function openUpload(opts = {}) {
   const serverPick = el("div", {}, [el("label.fl", {}, ["Which server / folder"]), serverBtn, folderBtn]);
 
 
-  const titleInput = el("input", { placeholder: "" });
-  // P11 — typed, colour-coded tags. Free tags typed as "type:value" (bpm:142) are recognised +
-  // coloured; a channel's required types (D5) would pre-seed slots — none exist yet, so [].
-  const tagsEd = tagEditor({ placeholder: "add a tag… (bpm:142)" });
+  // P22: title + tags are now PER FILE, edited inline in the chosen-files list (renderChosen) —
+  // `fileMeta[i]` (aligned to `files`) exposes getTitle()/getTags() for each rendered row. The old
+  // single shared Title + Tags fields are gone; the row's rename input IS the title, the row's tag
+  // editor IS the tags. Collaborators stay behind "Add details" and only apply to a single loose
+  // post (a folder / multi upload has no single owner to attach a collaborator to).
+  let fileMeta = [];
   const collabInput = el("input", { placeholder: "@handle, role — Enter to add" });
   const collabChips = el(".field.collabs", {}, [collabInput]);
   collabInput.addEventListener("keydown", (e) => {
@@ -233,11 +235,7 @@ export async function openUpload(opts = {}) {
     collabInput.value = "";
   });
   const addmore = el("details.addmore", {}, [
-    el("summary", {}, [iconEl("chev", "sm"), "Add details"]),
-    el("label.fl", {}, ["Title"]),
-    el(".field", {}, [titleInput]),
-    el("label.fl", {}, ["Tags"]),
-    tagsEd.node,
+    el("summary", {}, [iconEl("chev", "sm"), "Collaborators"]),
     el("label.fl", {}, ["Collaborators ", el("span", { style: "color:var(--muted)" }, ["@handle + role"])]),
     collabChips,
   ]);
@@ -270,16 +268,19 @@ export async function openUpload(opts = {}) {
     files = list.filter((f) => f.size > 0);
     folderMode = !!asFolder && files.some((f) => relPathOf(f));
     if (rejected.length) toast({ message: `Skipped ${rejected.length} empty file${rejected.length > 1 ? "s" : ""}` });
-    if (files.length) {
-      renderChosen();
-      titleInput.placeholder = files[0].name;
-    }
+    if (files.length) renderChosen();
     syncVis();
   }
-  // Render the "files chosen" state into summaryHost (hides the empty dropzone). A file list + a
-  // Change link + (for a folder) the Flatten toggle. Idempotent — rebuilt on every add.
+  // Render the "files chosen" state into summaryHost (hides the empty dropzone). A header + a
+  // scrollable list where EVERY row is editable (P22): an inline rename input + its own tag editor,
+  // so a multi-file / folder upload tags & renames each file before posting. `fileMeta[i]` (aligned
+  // to `files`) captures each row's live getTitle()/getTags(). Idempotent — rebuilt on every add,
+  // which resets per-file edits (the file set changed, so old edits no longer apply). DOM-capped for
+  // a huge folder; files past the cap upload with their own name + no tags (documented in the row).
+  const ROW_CAP = 60;
   function renderChosen() {
     summaryHost.replaceChildren();
+    fileMeta = [];
     if (!files.length) { summaryHost.hidden = true; drop.hidden = false; dropAlt.hidden = false; return; }
     drop.hidden = true; dropAlt.hidden = true; summaryHost.hidden = false;
     // P25: the combined size of everything (owner: "show the total size of uploads, not per-file")
@@ -293,15 +294,31 @@ export async function openUpload(opts = {}) {
     const change = el("button.aslink", { type: "button", title: "Choose different files", style: "margin-left:auto;color:var(--soft);font-weight:600" }, ["Change"]);
     change.addEventListener("click", () => (folderMode ? folderPicker : picker).click());
     summaryHost.append(el(".chosenhd", {}, [iconEl(folderMode ? "folder" : "clip", "sm"), el("b", {}, [title]), el("span.chosentot", {}, [total]), change]));
-    // file list (cap the DOM for a huge folder; note the remainder)
+    // editable file list (cap the DOM for a huge folder; note the remainder)
     const list = el(".chosenlist");
-    for (const f of files.slice(0, 60)) list.append(el(".chosenrow", {}, [el("span.cn", {}, [relPathOf(f) || f.name]), el("span.cs", {}, [fmtSize(f.size)])]));
-    if (files.length > 60) list.append(el(".chosenmore", {}, [`+ ${files.length - 60} more`]));
+    files.forEach((f, i) => {
+      if (i >= ROW_CAP) return;
+      const dir = folderMode ? relDir(f) : "";
+      // Rename edits the work TITLE only (p_title) — it never touches relDir/placement, so a folder
+      // upload keeps its tree while each file can be retitled. Defaults to the file's own name.
+      const nameInput = el("input.chosenname", { value: f.name, spellcheck: "false", "aria-label": "File name" });
+      const ed = tagEditor({ placeholder: "tag… (bpm:142)" });
+      fileMeta[i] = { getTitle: () => nameInput.value.trim() || f.name, getTags: () => ed.getTags() };
+      list.append(el(".chosenrow", {}, [
+        el(".cnhead", {}, [
+          dir ? el("span.cndir", { title: dir }, [dir + "/"]) : null,
+          nameInput,
+          el("span.cs", {}, [fmtSize(f.size)]),
+        ].filter(Boolean)),
+        el(".cntags", {}, [ed.node]),
+      ]));
+    });
+    if (files.length > ROW_CAP) list.append(el(".chosenmore", {}, [`+ ${files.length - ROW_CAP} more — uploaded with their own names, no tags`]));
     summaryHost.append(list);
     if (folderMode) {
       const flat = el("input", { type: "checkbox" }); flat.checked = flatten;
       flat.addEventListener("change", () => { flatten = flat.checked; syncVis(); });
-      summaryHost.append(el("label.flatten", {}, [flat, "Flatten folders — expose every file for tagging"]));
+      summaryHost.append(el("label.flatten", {}, [flat, "Flatten folders — one flat set instead of the tree"]));
     }
   }
   function fmtSize(b) { return b >= 1e9 ? (b / 1e9).toFixed(1) + " GB" : b >= 1e6 ? (b / 1e6).toFixed(1) + " MB" : b >= 1e3 ? Math.round(b / 1e3) + " KB" : b + " B"; }
@@ -319,6 +336,8 @@ export async function openUpload(opts = {}) {
     }
     post.disabled = !files.length || (visibility === "server" && !serverId);
     post.textContent = files.length > 1 ? `Upload ${files.length} files` : "Upload";
+    // Collaborators apply only to a single loose post (doPost gates on !structured && one file).
+    addmore.hidden = !(files.length === 1 && !folderMode);
   }
 
   async function doPost() {
@@ -390,28 +409,27 @@ export async function openUpload(opts = {}) {
       // the table owner, so it can't be undone by the works-insert RLS 42501 that made the old
       // 4-statement client write fail for real users (see schema-23-create-work-rpc.sql). The RPC
       // re-checks the fence itself (author = caller; server needs membership + the 'upload' perm),
-      // so nothing is loosened. A structured folder upload skips the single Tags/Collaborators
-      // fields (they belong to a loose post); a flattened one shares the Tags across every file.
+      // so nothing is loosened. P22: title + tags come from each file's OWN row (fileMeta[i]) — a
+      // folder upload carries per-file tags too (was []); a file past the row cap uses its name + [].
       prog.set(0.88);
-      const title = titleInput.value.trim();
-      const tags = tagsEd.getTags();
       let saved = 0;
-      for (const h of hashed) {
+      for (let i = 0; i < hashed.length; i++) {
+        const h = hashed[i];
+        const meta = fileMeta[i];
         const destFolder = folderFor(h);
         const { data: workId, error } = await supabase.rpc("create_work", {
           p_owner_type: onServer ? "server" : "user",
           p_owner_id: onServer ? serverId : me.id,
           p_visibility: visibility,            // RPC normalizes (server→'server', personal→'private' unless public)
           p_server_id: onServer ? serverId : null,
-          // Many files → keep each file's own name; a single loose upload can override the title.
-          p_title: files.length > 1 ? h.file.name : (title || h.file.name),
+          p_title: (meta?.getTitle?.() || h.file.name),
           p_file_ext: h.ext,
           p_kind: kindOf(h.ext),
           p_blob_sha: h.hash,
           p_bytes: h.file.size,
           p_channel_id: onServer ? (channelId || null) : null,
           p_folder_id: destFolder,
-          p_tags: structured ? [] : tags,     // structured folders carry no shared Tags
+          p_tags: (meta?.getTags?.() || []),
         });
         if (error) throw new Error(`couldn’t save the post (${error.code || "db"}): ${error.message}`);
         // Collaborators still only make sense on a single loose post.

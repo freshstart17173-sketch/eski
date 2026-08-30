@@ -452,14 +452,20 @@ per channel, builds on P11), D6 (review canvas/kanban/versions).
       `mapLimit`), `app/screens/upload.js` (`doPost` hash + PUT phases; removed the old
       whole-file `sha256Hex`). Live multi-GB upload (no freeze, bounded memory) is session-gated →
       QA-CHECKLIST.
-- [ ] **P22 · Per-file tag + rename list in the upload sheet (multi-file / folder) (round-9).** Today
-      a single upload can set Title + Tags, but a **multi-file or folder** upload can't tag/rename each
-      file. **Replace the "Add details" pane with a list of the files + subfolders** (the P16
-      `renderChosen` list, extended): each row gets an inline **rename** and its own **tag editor**
-      (the P11 `tagEditor`), so you tag/rename everything before posting. `create_work` is already
-      per-file, so pass each file's own title + tags. *Files:* `app/screens/upload.js` (`renderChosen`
-      → editable rows; `doPost` reads per-file title/tags), `app/tags.js` (`tagEditor` per row). *Hard.*
-      Pairs with **P23**.
+- [x] **P22 · Per-file tag + rename list in the upload sheet (multi-file / folder) (round-9).** *Done
+      (per-row editors verified independent + demo load 0 pageerrors; live upload → QA).* `renderChosen`
+      now renders **every file as an editable row**: an inline **rename** input (edits the work title
+      only — never the folder path, so a folder upload keeps its tree) + its **own `tagEditor`** (P11),
+      captured per-index in `fileMeta[i]` (`getTitle()`/`getTags()`). `doPost` reads each file's own
+      title + tags from `fileMeta` (was one shared Title + Tags; a structured folder used to carry no
+      tags at all — now each file carries its own). The old single Title/Tags fields are **removed**
+      from "Add details"; that pane is now just **Collaborators** and only shows for a single loose
+      post (where a collaborator has one work to attach to). List DOM is capped at 60 rows for a huge
+      folder — files past the cap upload with their own name + no tags (noted in the row). *Files:*
+      `app/screens/upload.js` (`renderChosen` editable rows + `fileMeta`; `doPost` per-file title/tags;
+      `syncVis` toggles the collaborators pane), `styles/content.css` (`.chosenrow` column layout +
+      `.chosenname` + per-row tag-editor compaction). Live per-file tag/rename on a real upload →
+      QA-CHECKLIST. Pairs with **P23** (folder rows get their own tags next).
 - [ ] **P23 · Tag folders (no inheritance) (round-9).** A **folder** should be taggable too (its own
       `content_tags`-equivalent on the folder), but a folder's tags are **NOT** inherited by the files
       inside it (explicitly no propagation). Needs: a folder-tags store (folders have no `content_tags`

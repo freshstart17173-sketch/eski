@@ -21,10 +21,19 @@
 .chosenhd b{color:var(--ink);font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .chosenhd .ic{color:var(--muted);flex:none}
 .chosenhd .chosentot{color:var(--muted);font-size:var(--fs-xs);font-variant-numeric:tabular-nums;flex:none}
-.chosenlist{max-height:168px;overflow-y:auto;display:flex;flex-direction:column;gap:2px}
-.chosenrow{display:flex;align-items:baseline;gap:10px;font-size:var(--fs-xs);color:var(--soft);padding:3px 0}
-.chosenrow .cn{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* P22: each row is editable — an inline rename input + a per-file tag editor. Taller list; a row
+   is a column (name line + tags). Affordance comes from the field borders, not row dividers. */
+.chosenlist{max-height:300px;overflow-y:auto;display:flex;flex-direction:column;gap:10px}
+.chosenrow{display:flex;flex-direction:column;gap:6px;font-size:var(--fs-xs);color:var(--soft)}
+.chosenrow .cnhead{display:flex;align-items:center;gap:8px;min-width:0}
+.chosenrow .cndir{flex:none;max-width:38%;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;direction:rtl;text-align:left}
+.chosenrow .chosenname{flex:1;min-width:0;background:var(--bg);border:1px solid var(--line2);border-radius:var(--r);padding:4px 8px;font-size:var(--fs-xs);color:var(--ink)}
+.chosenrow .chosenname:focus{outline:none;border-color:var(--ink)}
 .chosenrow .cs{flex:none;color:var(--muted);font-variant-numeric:tabular-nums}
+/* the per-row tag editor sits under the name; hide its multi-line hint to keep rows compact
+   (typing still recolours a recognised type in the input — that affordance stays) */
+.chosenrow .cntags .tageditor{gap:6px}
+.chosenrow .cntags .taghint{display:none}
 .chosenmore{font-size:var(--fs-mi);color:var(--muted);padding-top:2px}
 .dropchosen .flatten{display:flex;align-items:center;gap:8px;font-size:var(--fs-xs);color:var(--soft);cursor:pointer;margin-top:2px}
 .dropsummary{background:var(--surface);border-radius:var(--r);padding:14px;font-size:12px;color:var(--muted);text-align:center}
