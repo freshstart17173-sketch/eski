@@ -2399,3 +2399,11 @@ NEXT: back to P12 (density: modals/dialogs/toasts — 3-version batch), then P15
 GOTCHA Z: dms.js had a live latent bug — addByUsername() was called (list add field) but never
   defined; now defined + wired to addFriend. Watch for other dangling refs when a screen is
   refactored in halves.
+
+## 2026-08-30 — P12 (in progress) — dialog density batch built, awaiting pick
+IN PROGRESS: P12 density (modals/dialogs/toasts) — the frame is already tight; built a 3-density body
+  comparison (docs/design/p12-density.html): the New-server dialog + a confirm at V1 Tight (row gap 8,
+  field 6/10, body 10/14) / V2 Balanced (10, 7/11, 12/14) / V3 Current (12, 8/11, 12/16). Awaiting the
+  owner's pick, then move the hardcoded inline margin-top:12px row spacing into ONE tunable class and
+  apply the chosen density to .mbody/.field/.frow so every dialog matches. gallery mirror per owner.
+NEXT: implement the picked P12 density; then P15 (status→profile, presence simple).
