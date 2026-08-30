@@ -119,11 +119,15 @@ export function openModal({ title, body, footer, size, onClose, nested = false }
 // openMenu(anchor, items) — items: {label, icon?, danger?, onClick} | {sep:true}
 // | {header:"..."}. Positions to the anchor, closes on outside-click/Esc, and is
 // arrow-key navigable. Never overflows the viewport.
-export function openMenu(anchor, items = []) {
+export function openMenu(anchor, items = [], opts = {}) {
+  // P28: `opts.at = {x, y}` spawns the menu AT the cursor (a native-style context menu) instead of
+  // under the anchor's rect. The anchor is still used for aria-expanded + focus return (may be null).
+  const at = opts.at || null;
   // Toggle: clicking the same anchor whose menu is already open closes it instead of
   // reopening (B8 — the folder/Root picker "wouldn't close on a second click"). The outside-
-  // click handler ignores the anchor, so without this the click just closed-and-reopened.
-  if (anchor?.getAttribute?.("aria-expanded") === "true") { closeMenus(); return; }
+  // click handler ignores the anchor, so without this the click just closed-and-reopened. A
+  // cursor-spawned menu never toggles — a right-click always re-opens at the new point.
+  if (!at && anchor?.getAttribute?.("aria-expanded") === "true") { closeMenus(); return; }
   closeMenus();
   const menu = el(".menu.open", { role: "menu" });
   const rows = [];
@@ -142,15 +146,21 @@ export function openMenu(anchor, items = []) {
     rows.push(b); menu.append(b);
   }
   document.body.append(menu);
-  // position under the anchor, clamped to the viewport
-  const r = anchor.getBoundingClientRect();
+  // position at the cursor (opts.at) or under the anchor, clamped to the viewport
   const mw = menu.offsetWidth, mh = menu.offsetHeight;
-  let left = Math.min(r.left, window.innerWidth - mw - 8);
-  let top = r.bottom + 4;
-  if (top + mh > window.innerHeight - 8) top = Math.max(8, r.top - mh - 4);
+  let left, top;
+  if (at) {
+    left = Math.min(at.x, window.innerWidth - mw - 8);
+    top = at.y + mh > window.innerHeight - 8 ? Math.max(8, at.y - mh) : at.y;
+  } else {
+    const r = anchor.getBoundingClientRect();
+    left = Math.min(r.left, window.innerWidth - mw - 8);
+    top = r.bottom + 4;
+    if (top + mh > window.innerHeight - 8) top = Math.max(8, r.top - mh - 4);
+  }
   menu.style.left = Math.max(8, left) + "px";
-  menu.style.top = top + "px";
-  anchor.setAttribute("aria-expanded", "true");
+  menu.style.top = Math.max(8, top) + "px";
+  anchor?.setAttribute("aria-expanded", "true");
 
   let idx = -1;
   function move(d) { idx = (idx + d + rows.length) % rows.length; rows[idx]?.focus(); }
@@ -162,7 +172,7 @@ export function openMenu(anchor, items = []) {
     else if (e.key === "ArrowUp") { e.preventDefault(); move(-1); }
   }
   menu.addEventListener("keydown", onKey);
-  menu._cleanup = () => { anchor.setAttribute("aria-expanded", "false"); document.removeEventListener("mousedown", onDoc, true); };
+  menu._cleanup = () => { anchor?.setAttribute("aria-expanded", "false"); document.removeEventListener("mousedown", onDoc, true); };
   function onDoc(e) { if (!menu.contains(e.target) && e.target !== anchor) closeMenus(); }
   setTimeout(() => document.addEventListener("mousedown", onDoc, true));
   rows[0]?.focus();

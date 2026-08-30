@@ -114,7 +114,7 @@ detail in the Round-11 section below. Ticking one here = ticking it in its categ
 | ~2h | **B31** | selection highlights text; drag image should be mini icons | med |
 | ~~2.5h~~ | ~~**B30**~~ | ✅ viewer stayed-open on refocus — auth re-emit was forcing a full re-render | done |
 | ~3h | **B33** | star: consistent top-left click-toggle in every density | med |
-| ~3h | **P28** | more right-click menus in the file browser, spawned at the cursor | med |
+| ~~3h~~ | ~~**P28**~~ | ✅ openMenu gained an at:{x,y} cursor spawn; file/folder/empty-pane menus | done |
 | ~3h | **P33** | explorer filters → only Hidden+Starred; add Group-by & Sort-by | med-hard |
 | ~4h | **P23** | tag folders (no inheritance) — schema + folder card/details + upload rows | med-hard · schema |
 | ~4h | **P31** | one modifier-based search everywhere (channel msg ↔ server file) | med-hard |
@@ -679,10 +679,18 @@ per channel, builds on P11), D6 (review canvas/kanban/versions).
       the thumbnail/row** in every density — **click to star, click again to unstar** (no hunting).
       *Files:* `app/cards.js` (merge `.cardstar` + the star action into one top-left toggle),
       `app/screens/explorer.js` (list/small star), `styles/content.css`. *Med.* **Refines B16/#43.**
-- [ ] **P28 · More right-click menus in the file browser, spawned at the cursor.** Add context menus to
-      more of the file-browser UI, and make them **spawn where the mouse is** (like a native context
-      menu) rather than anchored to a button. *Files:* `app/ui.js` (`openMenu` — accept an x/y / event
-      anchor), `app/screens/explorer.js` (wire more `contextmenu` handlers). *Med.*
+- [x] **P28 · More right-click menus in the file browser, spawned at the cursor.** *Done (headless-
+      verified in demo).* `openMenu(anchor, items, {at:{x,y}})` gained a cursor-position option — when
+      `at` is set the menu spawns at the pointer (clamped to the viewport) and never toggle-closes (a
+      right-click always re-opens at the new point); anchor is now optional (guarded) so a menu can spawn
+      with no button. Wired the pointer coords through: **file card** right-click → the card menu **at the
+      cursor**, now led by **Open**; **folder card** right-click → **Open + Copy folder link** at the
+      cursor (was share-only, anchored); **empty pane** right-click → a new **New folder · Upload** menu at
+      the cursor. The anchored ⋯ button path is unchanged (no `at`). Verified: file right-click opens at
+      the cursor (menu within 40px of the point) with the full menu; empty-space right-click shows New
+      folder/Upload; 0 pageerrors, no icon warnings. *Files:* `app/ui.js` (`openMenu` `at`),
+      `app/screens/explorer.js` (`openCardMenu`/`shareFolderMenu` take `at`; file/folder/empty-pane
+      `contextmenu` handlers pass the cursor point).
 >
 > **— Profile rework —**
 - [ ] **P29 · Profile page serious rework.** (a) **Remove the Public/Server/Private tabs** — everything

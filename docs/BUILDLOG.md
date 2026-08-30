@@ -2751,3 +2751,22 @@ NEXT: the remaining visual items (B32 selbar overlay, B31 drag/selection, B33 st
 GOTCHA: "surfaces separate by background step, not borders" (CANON) means a step is INTENTIONAL between a
   surface and its neighbour — but the path line is part of the pane HEADER with the toolbar, not a separate
   surface, so it must share --paper with it. A step there reads as a stray bar, worst in dark mode.
+
+## 2026-08-30 — P28 cursor-spawned context menus in the file browser
+IN PROGRESS: (cleared)
+DONE: openMenu(anchor, items, {at:{x,y}}) gained a cursor-position option — with `at` set the menu spawns
+  at the pointer (viewport-clamped) and never toggle-closes (a right-click always re-opens at the new
+  point); anchor is now optional (all anchor uses guarded with ?.) so a menu can spawn with no button.
+  Wired the pointer coords through the explorer: a FILE card right-click opens the card menu AT the cursor,
+  now led by "Open"; a FOLDER card right-click opens "Open + Copy folder link" at the cursor (was
+  share-only + anchored); and EMPTY pane space right-click opens a new "New folder · Upload" menu at the
+  cursor. The anchored ⋯ button path is unchanged (calls openMenu with no `at`). Headless-verified in demo:
+  file right-click menu lands within 40px of the click and carries the full item set; empty-space
+  right-click shows New folder/Upload; 0 pageerrors, no icon warnings. Commit <sha>.
+NEXT: the remaining file-browser items are visual/design (B31 drag ghost + user-select, B32 selbar overlay,
+  B33 star consistency, P33 filter rework, P32 density slider) → owner's 3-version pick. Non-visual left:
+  P23 backend (folder tags), K12 metadata indexing.
+GOTCHA: the empty-pane contextmenu is on .panebody and bubbles up from cards — it early-returns when
+  e.target.closest("[data-id]/[data-folder-id]/.selbar/.exfab") so a right-click on a card shows only the
+  card menu (the card's own handler ran first in the target phase), never both. openMenu(null, …) needs
+  every anchor.* call guarded — don't remove the ?. on anchor.

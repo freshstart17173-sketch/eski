@@ -521,6 +521,18 @@ function paint(tree, pane, data, state, rerender) {
     if (state.selection.size || state.selFolder) { state.selection.clear(); state.selFolder = null; state.lastIdx = -1; refreshSel(); }
   });
 
+  // P28: right-clicking EMPTY pane space opens a "New folder / Upload" menu at the cursor (the
+  // card/folder contextmenus handle their own targets; this is the fallback for the background).
+  // Read-only shared views (P9) get no menu.
+  if (!data.shared) body.addEventListener("contextmenu", (e) => {
+    if (e.target.closest("[data-id]") || e.target.closest("[data-folder-id]") || e.target.closest(".selbar") || e.target.closest(".exfab")) return;
+    e.preventDefault();
+    openMenu(null, [
+      { label: "New folder", icon: "plus", onClick: () => newFolder(data, state, rerender, state.folderId) },
+      { label: "Upload", icon: "download", onClick: () => openUpload(uploadOpts) },
+    ], { at: { x: e.clientX, y: e.clientY } });
+  });
+
   // ── B10 · drag-to-select (marquee) + drag-a-file-onto-another → make a folder ──────────────
   // Marquee: a pointer drag starting on EMPTY pane space rubber-band-selects the cards it covers
   // (Shift/⌘ adds to the current selection). Native card drag is separate (starts on a card), so
@@ -753,8 +765,8 @@ function contents(data, state, rerender, sel) {
   const onFolderClick = (f) => { state.selection.clear(); state.selFolder = f.id; state.lastIdx = -1; sel.refresh(); };
 
   const onStar = (w) => toggleStar(data, state, rerender, w);
-  const onMenu = data.shared ? null : (w, anchor) => openCardMenu(data, state, rerender, w, anchor);   // read-only shared view has no per-card owner menu (P9)
-  const onShareFolder = (folder, anchor) => shareFolderMenu(data, folder, anchor);
+  const onMenu = data.shared ? null : (w, anchor, at) => openCardMenu(data, state, rerender, w, anchor, at);   // read-only shared view has no per-card owner menu (P9)
+  const onShareFolder = (folder, anchor, at) => shareFolderMenu(data, state, rerender, folder, anchor, at);
   // P14: all three densities share the same select/open wiring + hooks; only the layout differs.
   const hooks = { openFile, openFolder, onFolderClick, onCardClick, onStar, onMenu, onShareFolder, showWho: data.source !== "personal", personal };
   const view = state.mode === "list" ? listView(subfolders, files, hooks)
@@ -774,13 +786,17 @@ function contents(data, state, rerender, sel) {
 // K9 — Drive-style "share a folder": right-clicking a folder card opens this menu. Copy folder
 // link mints a public read-only link (create_folder_share RPC, fenced server-side) and copies
 // `/shared/folder/:token`. Works for a server folder or a personal My-files folder.
-function shareFolderMenu(data, folder, anchor) {
-  openMenu(anchor, [{ label: "Copy folder link", icon: "users", onClick: async () => {
-    try {
-      const token = await createFolderShare(data.source, folder.id);
-      await copyToClipboard(folderShareUrl(token), { ok: "Folder link copied — anyone with it can view this folder", icon: "users" });
-    } catch (e) { toast({ message: e?.message || "Couldn’t create the folder link" }); }
-  } }]);
+function shareFolderMenu(data, state, rerender, folder, anchor, at) {
+  openMenu(anchor, [
+    // P28: right-click a folder → Open (leads, like a native context menu) + share
+    { label: "Open", icon: "folder", onClick: () => { state.folderId = folder.id; state.query = ""; rerender(); } },
+    { label: "Copy folder link", icon: "users", onClick: async () => {
+      try {
+        const token = await createFolderShare(data.source, folder.id);
+        await copyToClipboard(folderShareUrl(token), { ok: "Folder link copied — anyone with it can view this folder", icon: "users" });
+      } catch (e) { toast({ message: e?.message || "Couldn’t create the folder link" }); }
+    } },
+  ], { at });
 }
 
 // ── P14 view densities (list / small / large) ────────────────────────────────
@@ -796,7 +812,7 @@ function wireFileEl(node, w, i, { onCardClick, openFile, onMenu }) {
   if (onMenu) node.draggable = true;   // B10: drag a file onto another → make a folder
   node.addEventListener("click", (e) => onCardClick(w, i, e));
   node.addEventListener("dblclick", (e) => { e.preventDefault(); openFile(w); });
-  node.addEventListener("contextmenu", (e) => { e.preventDefault(); onMenu?.(w, node); });
+  node.addEventListener("contextmenu", (e) => { e.preventDefault(); onMenu?.(w, node, { x: e.clientX, y: e.clientY }); });   // P28: spawn at the cursor
   return node;
 }
 function wireFolderEl(node, f, { onFolderClick, openFolder, onShareFolder }) {
@@ -804,7 +820,7 @@ function wireFolderEl(node, f, { onFolderClick, openFolder, onShareFolder }) {
   node.addEventListener("click", (e) => onFolderClick(f, e));
   node.addEventListener("dblclick", (e) => { e.preventDefault(); openFolder(f); });
   node.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); openFolder(f); } });
-  if (onShareFolder) node.addEventListener("contextmenu", (e) => { e.preventDefault(); onShareFolder(f, node); });
+  if (onShareFolder) node.addEventListener("contextmenu", (e) => { e.preventDefault(); onShareFolder(f, node, { x: e.clientX, y: e.clientY }); });   // P28: spawn at the cursor
   return node;
 }
 
@@ -1268,15 +1284,17 @@ function cssEscape(s) { return (window.CSS && CSS.escape) ? CSS.escape(s) : Stri
 // Delete. No stubs: Download waits on the R2 read env, Copy link on share_links, Hide from
 // library on the Show-hidden filter (each returns as its backend lands). Save is omitted on
 // a personal file (already yours). Anchored to the ⋯ button (or the card, for right-click).
-function openCardMenu(data, state, rerender, w, anchor) {
+function openCardMenu(data, state, rerender, w, anchor, at) {
   const personal = data.source === "personal";
   openMenu(anchor, [
+    // P28: Open is the first item on the right-click menu (a native context menu leads with it)
+    { label: "Open", icon: "expand", onClick: () => state._openFile?.(w) },
     { label: w.starred ? "Unstar" : "Star", icon: "star", onClick: () => toggleStar(data, state, rerender, w) },
     ...(personal ? [] : [{ label: "Save to my files", icon: "save", onClick: () => saveOne(w) }]),
     { label: "Share…", icon: "users", onClick: () => openShareDialog(w) },
     { label: "Copy link", icon: "link", onClick: () => copyLink(w) },
     ...writeMenuItems(data, state, rerender, w),
-  ]);
+  ], { at });
 }
 
 // B13: the work-mutating menu items — shown ONLY to someone who can actually write the work
