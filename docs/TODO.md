@@ -341,10 +341,21 @@ per channel, builds on P11), D6 (review canvas/kanban/versions).
       left-rail profile button now navigates straight to `/u/<me>` (no dropdown). Its old items are
       already reachable: Profile = the destination, Settings = the profile's Settings tab, Sign out
       = User settings → Account; Status moves to the profile in **P15**. *Files:* `app/shell.js`.
-- [ ] **B12 · @mentions don't actually work (round-7).** The composer `@` autocomplete +
-      posting a real mention that resolves/notifies the person. Today it inserts text but nothing
-      resolves. *Files:* `app/screens/workspace.js` (composer autocomplete + mention render),
-      `app/data.js`/RPC (mentions table + notify). *Medium-hard.*
+- [ ] **B12 · @mentions don't actually work (round-7).** *SKIPPED by owner 2026-08-30 (do later).*
+      The composer `@` autocomplete + posting a real mention that resolves/notifies the person.
+      **Root cause FOUND (not yet fixed):** the DB trigger `messages_fanout` (schema-14) resolves
+      **`@handle`** (looks up `profiles.handle`), but the composer autocomplete (`maybeAutocomplete`,
+      `workspace.js`) inserts **`@` + the display name** (`p.name`) and filters by name only — so a
+      display name with spaces/casing never matches a handle → no `mentions`/`notifications` row.
+      **Fix when resumed:** insert `@` + `p.handle`, filter by name OR handle, label as "name ·
+      @handle"; optionally hue the rendered `@handle` by looking the member up by handle. The
+      `mentions` table + notify trigger already work. *Files:* `app/screens/workspace.js`
+      (`maybeAutocomplete`, `mdToHtml`). *Medium-hard.*
+- [ ] **B14 · Media player closes on return (round-8, owner 2026-08-30).** Playing audio/video keeps
+      playing when you navigate away (background), but the player **closes/resets when you come back**
+      to it — the playback state isn't preserved. Wants a persistent / mini player so returning shows
+      the still-playing media where it left off. *Files:* the media player (`app/ui.js MediaPlayer` /
+      the details pane) + a persistent player host outside the per-route `#stage`. *Medium-hard.*
 - [ ] **B13 · Gate write actions on the file ⋯ menu by permission (data-layer audit, 2026-08-29).**
       The card ⋯ menu + details menu (`openCardMenu`/`detailMenuItems`) show **Rename · Delete ·
       Hide · Change visibility** on *every* work, so a member sees them on other members' server
@@ -737,6 +748,17 @@ per channel, builds on P11), D6 (review canvas/kanban/versions).
       `set()` drives the fill width, `minimize()` floats the chip + fires onMinimize, `done()` flips
       the chip to "Upload complete", 0 pageerrors; dark-mode screenshot of the bar + chip reads clean.
       Ties into **P3**. Live upload progress + the minimized-background-finish → QA-CHECKLIST.
+      **Refined per owner 2026-08-30:** removed the **minimize button** and **all text stage tips**
+      ("Hashing…"/"Getting URLs…"/…) — the widget is just the animated bar + %. Minimizing now happens
+      by **clicking off the sheet** (the modal `onClose` floats the chip when an upload is in flight),
+      so an exit never drops the upload. **Also fixed the upload sheet itself (round-8, owner):** the
+      pre-seeded drag-drop (folder onto the explorer) left the dropzone blank — two **TDZ bugs**
+      (`addFiles`/`fmtSize` used before their `let`/`const` init) swallowed the seed; declarations
+      hoisted/moved up. The dropzone now renders a real **chosen-files UI** (`renderChosen`: header +
+      Change + file list + Flatten toggle) via a persistent `summaryHost`, and **DnD moved to the
+      whole `.dropwrap`** so a drop registers before AND after files are chosen. Verified with a
+      session-stubbed harness: `openUpload({files, folderMode})` renders 4 rows + "Pack · 4 files in 2
+      folders" + Flatten + "Upload 4 files", dropzone hidden, tag editor present, 0 pageerrors.
 - [x] **P17 · Copy density — drop needless hints (round-7).** *Done (first pass).* Cut the
       "(optional)" after "Add details", the "file name if blank" Title hint, and the "(keeps its
       structure)" folder note in the upload sheet. *Files:* `app/screens/upload.js`. A broader
