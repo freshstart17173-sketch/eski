@@ -10,7 +10,6 @@ import { navigate, reload } from "../router.js";
 import { signOut } from "../supabase.js";
 import { isDemo, unblockUser, loadUserStorage, loadUserBlocked } from "../data.js";
 import { avatarUrl } from "../cards.js";
-import { openStatus } from "../shell.js";
 import { openEditProfile } from "./profile.js";
 import { setPerfEnabled, isPerfEnabled, copyPerfReport } from "../perf.js";
 
@@ -73,7 +72,8 @@ function profilePanel(data) {
     ]),
     el(".setactions", { style: "display:flex;gap:8px" }, [
       Button({ label: "Edit profile", onClick: () => openEditProfile(data, { onSaved: () => reload() }) }),
-      Button({ label: "Set a status", onClick: () => openStatus(data) }),
+      // P15: status now lives on the profile page (a text field + presence picker), not a modal.
+      Button({ label: "Set a status", onClick: () => navigate(withDemo(`/u/${data.me.handle}`)) }),
     ]),
   ]);
 }

@@ -681,11 +681,17 @@ per channel, builds on P11), D6 (review canvas/kanban/versions).
       room) — modelled on the **landing-page cards** (screenshot the landing / `docs/design/` if
       needed). *Files:* `app/cards.js` (`workCard`/`folderCard`), `app/screens/explorer.js` (VIEWS +
       grid/list), `styles/content.css`. *Hard.* Load **`eski-style`**.
-- [ ] **P15 · Status lives on the profile page (round-7).** Move the status composer off the rail
-      dropdown onto the **profile page**: a **plain text field** (drop the emoji+text combo) plus a
-      **presence picker** — red/yellow/green tied to the presence levels — made **denser**. *Files:*
-      `app/screens/profile.js`, `app/shell.js` (remove the status popover), `app/data.js` (`setStatus`).
-      *Medium.* Pairs with **B11** (pfp → profile).
+- [x] **P15 · Status lives on the profile page (round-7).** *Done (demo-verified both themes).* The
+      status editor now lives inline on the **owner's profile hero** — a dense row: a **plain text
+      field** (emoji dropped), a **simple presence picker** (`SelectPill`: Online/Idle/DND/Invisible),
+      and Save (writes via `setStatus`, emoji:null, no auto-clear). Presence dots stay **monochrome**
+      (`--ink`/`--muted`/`--danger` for DND) — no new colours (owner: keep it simple, no forced
+      yellow). Viewers see the status as a read-only line (presence dot + text) in the identity block.
+      Removed the old rail/modal `openStatus` composer entirely (emoji + auto-clear) and its now-unused
+      imports; the User-settings "Set a status" button routes to the profile. `loadProfile` now selects
+      `status_text`/`presence_state`. *Files:* `app/screens/profile.js`, `app/data.js`,
+      `app/screens/usersettings.js`, `app/shell.js` (removed openStatus), `styles/content.css`.
+      Verified: owner profile shows `[Presence ▾][text][Save]`, 0 pageerrors. Pairs with **B11**.
 - [ ] **P16 · Upload progress = animations + minimizable (round-7).** Replace the text stages
       ("Hashing…", "Getting URLs…", "Uploading…", "Posting…") with a real **loading animation** /
       progress affordance, and let the upload be **minimized halfway** (Google-Drive style) so you

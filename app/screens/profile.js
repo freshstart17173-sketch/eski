@@ -4,12 +4,12 @@
 // friend; a friend sees Public + Server + Message. Same card renderer as the Feed,
 // NO member colour (a public profile is never server-scoped).
 
-import { el, toast, Avatar, openModal, Button } from "../ui.js";
+import { el, toast, Avatar, PresenceDot, SelectPill, openModal, Button } from "../ui.js";
 import { iconEl } from "../icons.js";
 import { navigate, reload } from "../router.js";
 import { workCard, avatarUrl } from "../cards.js";
 import { openDetails } from "./details.js";
-import { updateProfile, updateProfileImage, isDemo, addFriend, createDM } from "../data.js";
+import { updateProfile, updateProfileImage, isDemo, addFriend, createDM, setStatus } from "../data.js";
 import { uploadBlobs } from "../upload-r2.js";
 
 function withDemo(path) { return isDemo() ? path + (path.includes("?") ? "&" : "?") + "demo=1" : path; }
@@ -58,6 +58,11 @@ export function renderProfile(data) {
   // cover image). Mirrored in gallery.html (.phero .pbanner) so the LAW stays in sync.
   const bannerUrl = avatarUrl(p.banner_key);
   const heroKids = [el(".top", {}, [heroAv, who, actions])];
+  // P15: the status lives here on the profile now (off the rail popover). The owner gets a dense
+  // inline editor — a plain text field + a simple presence picker (no emoji); everyone else sees
+  // the status as a read-only line in the identity block (whoKids). Presence dots stay monochrome
+  // (--ink online / --muted otherwise) — no new colours (owner: keep it simple).
+  if (pov === "owner") heroKids.push(statusEditor(data.me || p));
   if (bannerUrl) heroKids.unshift(el(".pbanner", { style: `background-image:url("${bannerUrl}")` }));
   const hero = el(".phero" + (bannerUrl ? ".hasbanner" : ""), {}, heroKids);
 
@@ -118,11 +123,43 @@ export function renderProfile(data) {
 // the hero identity block — extracted so Edit-profile can repaint it in place after a save
 // (the bio row only exists when there's a bio, so replaceChildren rebuilds cleanly).
 function whoKids(p) {
+  // P15: viewers see the status as a read-only line (presence dot + text) when one is set.
+  const statusLine = p.status_text
+    ? el(".pstat", {}, [PresenceDot({ state: p.presence_state || "online", ring: "var(--paper)" }), el("span", {}, [p.status_text])])
+    : null;
   return [
     el("h1", {}, [p.name]),
     el(".handle", {}, ["@" + p.handle]),
     p.bio ? el(".bio", {}, [p.bio]) : null,
+    statusLine,
   ];
+}
+
+// P15: the owner's inline status editor on their own profile — a plain text field + a simple
+// presence picker (Online/Idle/DND/Invisible) + Save. No emoji, no auto-clear (dropped for
+// simplicity). Writes via setStatus (emoji:null); a reload refreshes the rail/members presence.
+const PRESENCE_OPTS = [
+  { value: "online", label: "Online" },
+  { value: "idle", label: "Idle" },
+  { value: "dnd", label: "Do not disturb" },
+  { value: "invisible", label: "Invisible" },
+];
+function statusEditor(me) {
+  const cur = me || {};
+  let presence = cur.presence_state || "online";
+  const textI = el("input", { value: cur.status_text || "", placeholder: "What are you working on?", maxlength: "80", "aria-label": "Status" });
+  const picker = SelectPill({ label: "Presence", value: presence, size: "sm", options: PRESENCE_OPTS, onChange: (v) => { presence = v; } });
+  const save = Button({ label: "Save", variant: "primary", size: "sm" });
+  save.addEventListener("click", async () => {
+    if (save.disabled) return; save.disabled = true;
+    try {
+      if (!isDemo()) await setStatus({ emoji: null, text: textI.value, presence, clearAt: null });
+      toast({ message: "Status saved", icon: "check" });
+      if (!isDemo()) reload();   // rail + members cache presence/status
+    } catch (e) { toast({ message: e?.message || "Couldn’t save your status" }); save.disabled = false; }
+  });
+  textI.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); save.click(); } });
+  return el(".pstatusedit", {}, [picker, el(".field", {}, [textI]), save]);
 }
 
 // replace an avatar element's content with a photo (initials fallback on load error)

@@ -424,6 +424,10 @@
 .phero .who .handle{color:var(--muted);font-size:var(--fs-sm)}
 .phero .who .bio{margin-top:var(--s2);max-width:520px;color:var(--soft);font-size:var(--fs-sm)}
 .phero .actions{margin-left:auto;display:flex;gap:var(--s2)}
+/* P15: viewer status line (presence dot + text) + the owner's inline status editor */
+.phero .who .pstat{display:flex;align-items:center;gap:6px;margin-top:var(--s2);color:var(--soft);font-size:var(--fs-sm)}
+.pstatusedit{display:flex;align-items:center;gap:var(--s2);margin-top:var(--s3);max-width:520px}
+.pstatusedit .field{flex:1;min-width:0}
 .ptabs2{display:flex;gap:var(--s5);padding:0 var(--s5);background:var(--surface)}
 .ptab2{display:flex;align-items:center;gap:7px;padding:13px 0;color:var(--soft);position:relative;cursor:pointer}
 .ptab2:hover{color:var(--ink)}

@@ -2421,3 +2421,18 @@ NEXT: P15 (status → profile page; presence kept SIMPLE per owner — no forced
 GOTCHA AA: inline styles beat class rules, so a CSS density rule can't override an inline
   margin-top:12px — the row gaps had to be changed at their JS source. Left settings/usersettings
   screen spacing (they're screens, not modals) alone.
+
+## 2026-08-30 — P15 done — status moved to the profile page (simple)
+IN PROGRESS: (cleared)
+DONE: the status editor now lives inline on the owner's profile hero — a dense row: plain text field
+  (emoji dropped) + a simple presence SelectPill (Online/Idle/DND/Invisible) + Save (setStatus,
+  emoji:null, no auto-clear). Presence dots stay monochrome (--ink/--muted/--danger), no new colours
+  per owner. Viewers see a read-only status line (dot + text) via whoKids. Removed the old rail/modal
+  openStatus composer (emoji + auto-clear) + its unused SegmentedControl/SelectPill/setStatus imports
+  in shell.js; usersettings "Set a status" now routes to the profile. loadProfile selects
+  status_text/presence_state. Files: app/screens/profile.js, app/data.js, app/screens/usersettings.js,
+  app/shell.js, styles/content.css. Verified: owner profile shows [Presence ▾][text][Save], 0
+  pageerrors both themes. Committed 4397ab0.
+NEXT: density sweep beyond dialogs (owner asked re toasts/screens/other elements) — verify toasts,
+  sweep .menu rows + shared list/screen elements. Then remaining round-7 (P11 typed tags, P14 view
+  modes, P16 upload progress, P19 unread) + P3/P20.
