@@ -45,9 +45,11 @@ function fmtWhen(ts) {
 export function closeDetails() {
   onViewerClosing();
   if (!openSheet) return;
-  openSheet.remove();
-  document.removeEventListener("keydown", openSheet._onKey);
-  openSheet = null;
+  const sheet = openSheet;
+  openSheet = null;                       // clear FIRST so an onClose that re-opens can't recurse
+  sheet.remove();
+  document.removeEventListener("keydown", sheet._onKey);
+  sheet._onClose?.();                     // e.g. the explorer drops ?file= from the URL
 }
 
 // openDetails(work, ctx) — ctx: { serverId, serverName, folderPath:[{id,name}],
@@ -79,6 +81,7 @@ export function openDetails(work, ctx = {}) {
     else if (e.key === "ArrowRight" && !isMediaFocused()) go(1);
   };
   sheet._onKey = onKey;
+  sheet._onClose = ctx.onClose || null;   // caller hook fired when this pane closes (URL cleanup, etc.)
   document.addEventListener("keydown", onKey);
   document.body.append(sheet);
   openSheet = sheet;

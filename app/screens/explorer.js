@@ -69,11 +69,10 @@ function persistentSelection(data) {
   if (!_selectionStore.has(k)) _selectionStore.set(k, new Set());
   return _selectionStore.get(k);
 }
-// B25: remember the OPEN folder per source+server so leaving the explorer tab and coming back
-// restores it instead of snapping to root. Persisted on every rerender (folder change), read
-// back on a fresh mount; a stale id (folder since deleted) falls back to root.
-const _folderStore = new Map();
-const folderKey = (data) => `${data.source}:${data.server?.id || "me"}`;
+// B25 is now served by the URL itself (?folder=): opening a folder writes it to the address bar
+// (syncUrl below), and a fresh mount / reload / back-forward reads it back (main.js → view.folderId).
+// The old in-memory _folderStore was removed — it overrode the URL (e.g. it defeated Back-to-root by
+// re-restoring the last folder), and the URL is the single source of truth now (and makes links work).
 
 export function renderExplorer(data, view = {}) {
   const screen = el("section.screen", { "data-screen": "explorer" });
@@ -86,7 +85,7 @@ export function renderExplorer(data, view = {}) {
 
   // local navigation state — one fetch already holds the whole tree + all works
   // B25: restore the last open folder (view param wins, then the per-server store, then root).
-  const _restored = view.folderId ?? _folderStore.get(folderKey(data)) ?? data.currentFolderId ?? null;
+  const _restored = view.folderId ?? data.currentFolderId ?? null;
   const state = {
     folderId: (_restored && (data.folders || []).some((f) => f.id === _restored)) ? _restored : null,
     mode: VIEWS[view.mode] ? view.mode : "grid",
@@ -106,6 +105,9 @@ export function renderExplorer(data, view = {}) {
     trash: false,           // the Trash smart-folder is open
     starred: false,         // the Starred quick-filter is on (flat grid of starred works)
     showHidden: false,      // reveal hidden/utility works in the library view (#55)
+    // the file whose details viewer is open — mirrored into the URL (?file=) so a reload / link
+    // restores the open file; set only if the id actually exists in this bundle.
+    openFileId: (view.fileId && (data.files || []).some((w) => w.id === view.fileId)) ? view.fileId : null,
   };
   // trashed rows shown in the Trash view: seeded from the demo fixture, refreshed from
   // the DB on entering Trash in live mode, and kept in sync by the row actions.
@@ -159,8 +161,28 @@ export function renderExplorer(data, view = {}) {
   else if (personal) screen.append(layout);
   else screen.append(channelColumn(data, { filesActive: true }), layout);
 
-  const rerender = () => { _folderStore.set(folderKey(data), state.folderId); paint(tree, pane, data, state, rerender); };
+  // Keep the URL in step with the view (folder · open file · view-mode). A FOLDER change pushes a
+  // history entry (Back walks up the folder path, the expected file-browser gesture); everything
+  // else (open/close a file, switch view mode) replaces in place. Bails when we've navigated off the
+  // explorer, so a close-on-nav can't clobber the new route's URL. `shared` views keep their token
+  // URL untouched.
+  let lastFolder = state.folderId;
+  function syncUrl() {
+    if (shared) return;
+    if (location.pathname !== explorerBase(data)) return;
+    const desired = explorerUrl(data, { folderId: state.folderId, fileId: state.openFileId, mode: state.mode });
+    if (desired === location.pathname + location.search) return;
+    const push = state.folderId !== lastFolder;
+    history[push ? "pushState" : "replaceState"]({}, "", desired);
+    lastFolder = state.folderId;
+  }
+  state._syncUrl = syncUrl;
+  const rerender = () => { paint(tree, pane, data, state, rerender); syncUrl(); };
   rerender();
+  // Restore an open file from the URL (?file=) on a deep link / reload / back-forward. openFile is
+  // built inside contents() during paint and exposed as state._openFile, so it's ready after the
+  // first rerender(); it re-opens the details viewer (and, via B14, adopts still-playing media).
+  if (state.openFileId) { const w = (data.files || []).find((x) => x.id === state.openFileId); if (w) state._openFile?.(w); }
 
   // Esc clears the selection; ⌘/Ctrl-A selects everything in view. A single document
   // listener, self-cleaning once this screen leaves the DOM (a nav swaps #stage).
@@ -202,13 +224,19 @@ function sharedHeader(data) {
 
 // what the tree root / breadcrumb root reads as, and where a folder link points
 function rootLabel(data) { return data.rootLabel || (data.source === "personal" ? "My files" : data.server?.name || "Files"); }
-function filesHref(data, folderId) {
-  const base = data.source === "server" ? `/s/${data.server?.id}/files` : "/files";
+// The explorer route's own base path (server files vs personal My-files).
+function explorerBase(data) { return data.source === "server" ? `/s/${data.server?.id}/files` : "/files"; }
+// The URL for a given explorer VIEW STATE. Folder + open file + view-mode live in the query so the
+// address bar reflects where you are — reload / back-forward restore it (main.js reads these back)
+// and a copied link opens the same folder/file. `demo=1` is carried through when present.
+function explorerUrl(data, { folderId, fileId, mode } = {}) {
   const q = new URLSearchParams();
   if (folderId) q.set("folder", folderId);
+  if (fileId) q.set("file", fileId);
+  if (mode && mode !== "grid") q.set("view", mode);
   if (isDemoQS()) q.set("demo", "1");
   const s = q.toString();
-  return base + (s ? `?${s}` : "");
+  return explorerBase(data) + (s ? `?${s}` : "");
 }
 function isDemoQS() { return new URLSearchParams(location.search).get("demo") === "1"; }
 
@@ -563,17 +591,25 @@ function contents(data, state, rerender, sel) {
   // a card opens the Details pane (§C.7): server files carry tags but no comments;
   // siblings = the files in view (prev/next); Location = the file's own folder path.
   const personal = data.source === "personal";
-  const openFile = (w) => openDetails(w, {
-    serverId: data.server?.id || null,
-    serverName: rootLabel(data), personal,
-    folderPath: crumbPath(data.folders, w.folderId),
-    siblings: files, isPost: false,
-    // the viewer's ⋯ menu = the card menu (P5.9d): star/rename/move/hide/delete from the pane
-    menuItemsFor: (ww, hooks) => detailMenuItems(data, state, rerender, ww, hooks),
-    // P26: click a tag in the viewer → filter the whole library to that exact tag (the P11 tag
-    // filter). Jumps to root so it searches every folder, closes the viewer, shows the results.
-    onTagSearch: (raw) => { state.selection.clear(); state.selFolder = null; state.folderId = null; state.query = ""; state.tags = new Set([raw]); closeDetails(); rerender(); },
-  });
+  const openFile = (w) => {
+    openDetails(w, {
+      serverId: data.server?.id || null,
+      serverName: rootLabel(data), personal,
+      folderPath: crumbPath(data.folders, w.folderId),
+      siblings: files, isPost: false,
+      // the viewer's ⋯ menu = the card menu (P5.9d): star/rename/move/hide/delete from the pane
+      menuItemsFor: (ww, hooks) => detailMenuItems(data, state, rerender, ww, hooks),
+      // P26: click a tag in the viewer → filter the whole library to that exact tag (the P11 tag
+      // filter). Jumps to root so it searches every folder, closes the viewer, shows the results.
+      onTagSearch: (raw) => { state.selection.clear(); state.selFolder = null; state.folderId = null; state.query = ""; state.tags = new Set([raw]); closeDetails(); rerender(); },
+      // closing the viewer (✕ / Esc / backdrop / nav) drops ?file= from the URL
+      onClose: () => { state.openFileId = null; state._syncUrl?.(); },
+    });
+    // reflect the open file in the URL (set AFTER openDetails so its closeDetails-of-any-prior
+    // pane's onClose — which clears openFileId — runs first, then we set the new one).
+    state.openFileId = w.id; state._syncUrl?.();
+  };
+  state._openFile = openFile;   // for URL restore (renderExplorer reopens ?file= after paint)
 
   if (!subfolders.length && !files.length) {
     if (state.starred) return emptyState("star", "No starred files", "Star a file (the ★ on its card) to keep it here.");

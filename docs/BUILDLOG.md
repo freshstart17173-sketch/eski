@@ -2536,3 +2536,24 @@ GOTCHA: keep-alive REQUIRES the element stay connected to the document — do NO
   detaching the wrap; the browser pauses a disconnected media element. .playerkeep is off-screen, not
   display:none-removed. resyncHead must run after every reparent or the playhead freezes while audio
   plays.
+
+## 2026-08-30 — explorer view state in the URL (folder + open file) — owner ask
+IN PROGRESS: (cleared)
+DONE: the explorer's folder + open file now live in the URL, so a reload / deep link / back-forward
+  restores the view and links actually work (owner: "i want the URL to change when i'm in a folder /
+  have opened a file"). Opening a folder writes ?folder=<id> (pushState → Back walks up the path);
+  opening a file writes ?file=<id> and closing removes it; view-mode writes ?view=. main.js reads
+  ?file= → view.fileId; renderExplorer restores the open folder from the URL and reopens the ?file=
+  viewer after paint (which, via B14, adopts still-playing media). Repurposed the dead filesHref into
+  explorerUrl/explorerBase; added syncUrl (bails when navigated off the explorer so a close-on-nav
+  can't clobber the next route). details.js gained an onClose ctx hook (the viewer close clears
+  ?file=). REMOVED the in-memory _folderStore (B25's first mechanism) — it lost state on reload and
+  overrode the URL (it defeated Back-to-root by re-restoring the last folder); the URL is the single
+  source of truth now. Verified headless: open folder→?folder=, open file→?file=+sheet, close→cleared,
+  reload→both restored, Back→root; boot both themes 0 pageerrors. Commit <sha>.
+NEXT: same URL treatment could extend to a file opened from the Feed/Profile (details onClose hook is
+  already generic) — not wired yet. Then P24 (real search), P23 (folder tags), P14 (view densities).
+GOTCHA: the URL must be authoritative — do NOT reintroduce an in-memory folder cache that overrides
+  it. syncUrl guards on location.pathname===explorerBase so a nav-away close doesn't rewrite the new
+  route. openFile sets state.openFileId AFTER openDetails so the prior pane's onClose (which clears it)
+  runs first.

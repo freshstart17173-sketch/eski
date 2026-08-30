@@ -179,6 +179,7 @@ The server explorer mounts inside the shell (channel column stays); My files hid
 - [ ] Look at the folder tree → nested folders show; the current folder is highlighted.
 - [ ] Click a folder → you descend into it; the breadcrumb updates.
 - [ ] Click a breadcrumb segment → you jump back up to that folder.
+- [ ] **(B25 / URL state)** Descend into a folder → the **address bar changes** (`?folder=…`). Reload the page → you land **back in that same folder**, not root. Open a file → the URL gains `?file=…` and the viewer opens; reload → the **file viewer reopens** on that file. Close the viewer → `?file=` drops from the URL. Press the browser **Back** button → you go **up** the folder path (and Back from an open file closes it). **Copy the URL and open it in a new tab** → it lands on the exact same folder / open file (this is what makes shareable links work).
 - [ ] Switch the view: Grid / List / Feed → Grid & list show the current folder; Feed flattens the subtree to previewable items + inline comments.
 - [ ] Search files → searches the whole tree, not just the current folder.
 - [ ] Use the filter dropdowns (Channel / Type / Uploader / Tag / Date / Sort) → each narrows the view; Type/Channel/Uploader/Tag are multi-select.

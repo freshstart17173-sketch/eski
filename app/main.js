@@ -143,7 +143,8 @@ async function renderRoute(r) {
     const exData = await time("explorer", loadExplorer({ serverId: r.params.serverId, folderId: folder, source }));
     if (mine !== token) return;
     if (exData.needsAuth) { swap(renderSignin()); return; }
-    swap(appFrame(renderRail(exData, r), renderExplorer(exData, { folderId: folder, mode: q.get("view") })));
+    // folder · open file · view-mode all come from the URL so a reload / link restores the view.
+    swap(appFrame(renderRail(exData, r), renderExplorer(exData, { folderId: folder, fileId: q.get("file"), mode: q.get("view") })));
     return;
   }
 

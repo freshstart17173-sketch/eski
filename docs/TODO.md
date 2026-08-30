@@ -514,6 +514,18 @@ per channel, builds on P11), D6 (review canvas/kanban/versions).
       explorer tab and coming back always resets to the root folder; the **current folder should
       persist**. Put the open `folderId` in the URL (or session) so a return restores it (relates to
       B21/state). *Files:* `app/screens/explorer.js` (folder state ↔ route), `app/router.js`. *Medium.*
+      **REDONE properly 2026-08-30 (owner: "i want the URL to change when i'm in a folder / have opened
+      a file — expected behaviour, and makes saving links work").** The first pass used an in-memory
+      `_folderStore` (lost on reload, and it defeated Back-to-root by re-restoring the last folder).
+      Now the **URL is the single source of truth**: opening a folder writes `?folder=<id>` (pushState,
+      so Back walks up the path), opening a file writes `?file=<id>` (and closing removes it), view-mode
+      writes `?view=`; a reload / deep link / back-forward restores the open folder AND reopens the file
+      viewer (which, via B14, adopts still-playing media). A copied link now opens the same folder/file.
+      `_folderStore` removed. *Files:* `app/screens/explorer.js` (`explorerUrl`/`explorerBase`, `syncUrl`,
+      `state.openFileId`, URL restore of `?file=`), `app/screens/details.js` (an `onClose` ctx hook so
+      the viewer close clears `?file=`), `app/main.js` (reads `?file=` → `view.fileId`). Verified headless:
+      open folder→`?folder=`, open file→`?file=`+sheet, close→sheet gone+param cleared, reload→both
+      restored, Back→root; 0 pageerrors both themes.
 - [x] **B26 · Folder open should be DOUBLE-click, not single (round-10).** Single-click a folder should
       **select** it (like a file); **double-click opens** it — consistent with files (Drive/Finder).
       Today a folder opens on single click. *Files:* `app/cards.js` (`folderCard`), `app/screens/explorer.js`
