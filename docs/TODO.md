@@ -110,7 +110,7 @@ detail in the Round-11 section below. Ticking one here = ticking it in its categ
 | ~30m | **B36** | path bar shows a black separator bar (dark mode) | easy |
 | ~30m | **B34** | "Load earlier messages" appears when there are none | easy |
 | ~1.5h | **B32** | selection action bar shifts the layout down → overlay it | easy-med |
-| ~2h | **B35** | server file search doesn't work at all — diagnose + fix | med · **do early** |
+| ~~2h~~ | ~~**B35**~~ | ✅ file/server search — was FTS-whole-word-only; added filename substring (p27) | done |
 | ~2h | **B31** | selection highlights text; drag image should be mini icons | med |
 | ~2.5h | **B30** | expanded media viewer closes on tab refocus | med |
 | ~3h | **B33** | star: consistent top-left click-toggle in every density | med |
@@ -604,10 +604,19 @@ per channel, builds on P11), D6 (review canvas/kanban/versions).
       server-wide search (for a file) by editing the modifiers (e.g. drop the channel scope). *Files:*
       the channel/message search + `app/screens/explorer.js` + a shared search-parse module. *Med-hard.*
       Ties **P27/P34**.
-- [ ] **B35 · Server search doesn't work at all.** The owner reports server (file) search returns
-      nothing. Diagnose end-to-end (the P24 `search_files` RPC verified in role-sim, so suspect the
-      client wiring / args / the `useSrv` gate). *Files:* `app/screens/explorer.js` (`runServerSearch`,
-      `useSrv`), `app/data.js` (`searchFiles`). *Med.* **Do early — it blocks trusting P24 live.**
+- [x] **B35 · Server search doesn't work at all.** *Done (backend role-sim-verified on real data;
+      migration p27).* **Root cause was NOT the client wiring** — the RPC signature, `data.searchFiles`
+      args, and the `useSrv` gate were all correct. `search_files` (P24) matched the filename only via
+      full-text (`works.search_tsv`), i.e. whole lexemes: role-sim proved "willow"=4 / "drum"=48 worked
+      but every PARTIAL term returned 0 ("wil"=0, "idyll"=0, "158bpm"=0, "b.d.y"=0) — and a fragment is
+      exactly what you type into a file browser, so from the owner's seat search returned nothing. Fix
+      (`schema-36-search-files-substring.sql`): the free-text clause now also matches `title ILIKE
+      '%term%'` (plain substring) alongside the kept filename FTS + the B19 tag-contains; a trigram GIN
+      on `works.title` keeps it fast at GB scale (the filename half of K12). Only the free-text predicate
+      changed — scope/facets/sort/pagination/grants + the SECURITY INVOKER RLS fence are byte-identical.
+      Verified: wil 0→8, idyll 0→4, 158bpm 0→4, b.d.y 0→4; willow still 4, drum still 48, browse still 60,
+      ext facet intact, non-member still sees 0 (RLS). Advisors: 0 ERROR, search_files unflagged. Live
+      RPC round-trip on preview → QA-CHECKLIST. *Files:* `schema-36-search-files-substring.sql`.
 - [ ] **P34 · A real modifier system + UI hints.** Build out the modifier grammar (from P21:
       `bpm:120`/`hastag:`/`sortby:`, plus the P27 folder scope + P33 group/sort) as a first-class,
       extensible parser, and add **UI hints** (a hint row / chips / autocomplete) so a user discovers

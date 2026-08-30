@@ -2628,3 +2628,27 @@ DONE: the Feed (home) pane header rendered its "eski!" wordmark with class `.wm`
   var(--font-wordmark) alongside `.wordmark` in base.css, so every eski wordmark renders in Gnomon.
   Verified: document.fonts shows Gnomon loaded, the feed `.wm` computes to "Gnomon, Jost, …", and it
   renders in the display face; 0 pageerrors. Commit <sha>.
+
+## 2026-08-30 — B35 file/server search fix: filename SUBSTRING matching (migration p27)
+IN PROGRESS: (cleared)
+DONE: schema-36-search-files-substring.sql applied live as migration p27_search_files_substring.
+  ROOT CAUSE of "server search doesn't work at all": search_files (P24) matched the filename only
+  through full-text (works.search_tsv) — whole lexemes. Role-sim against the REAL DB proved it:
+  "willow"=4 and "drum"=48 (whole words) worked, but "wil"=0, "idyll"=0, "158bpm"=0, "b.d.y"=0 — every
+  PARTIAL/fragment term, which is exactly how a file browser is searched. The RPC signature, its args,
+  and the client wiring (data.searchFiles + explorer runServerSearch/useSrv) were ALL correct — the
+  matcher was just too strict. Fix: the free-text clause now ALSO matches `title ILIKE '%term%'` (plain
+  substring) alongside the kept filename FTS (stemming/real words) and the B19 tag-contains; added a
+  trigram GIN on works.title (idx_works_title_trgm) so the ILIKE stays fast at GB scale (the filename
+  half of K12). Only the free-text predicate changed — scope, facets, sort, pagination, grants, and the
+  SECURITY INVOKER RLS fence are byte-identical to p26. Verified via role-sim on real data: wil 0→8,
+  idyll 0→4, 158bpm 0→4, b.d.y 0→4; willow still 4 (FTS), drum still 48, browse still 60, ext facet
+  (drum+mp3=48) intact, and a NON-MEMBER still sees 0 of the test server (RLS fence). Security advisors:
+  0 ERROR-level, search_files not flagged (INVOKER). Commit <sha>.
+NEXT: search cluster continues — the model split (P27 filter-vs-search + folder-scope modifier), one
+  shared modifier parser everywhere (P31/P34) with discoverable UI hints, K12 metadata indexing. The
+  live RPC round-trip on preview is the one remaining owner-QA line (backend is proven).
+GOTCHA: search_files is SECURITY INVOKER — do NOT switch to DEFINER (RLS is the fence). The title
+  substring is only another way to MATCH within the caller's visible set, never to widen it. Keep the
+  `qtext is null` guard (not `tsq is null`): a non-empty all-stopword query ("the") yields an empty (not
+  null) tsquery, and the ILIKE must still run for it.
