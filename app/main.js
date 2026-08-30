@@ -14,7 +14,8 @@ import { renderServerSettings } from "./screens/settings.js";
 import { renderSearch } from "./screens/search.js";
 import { time } from "./perf.js";
 import { teardownRealtime } from "./realtime.js";
-import { renderRail, appFrame } from "./shell.js";
+import { renderRail, appFrame, openCreateServer } from "./shell.js";
+import { openUpload } from "./screens/upload.js";
 import { renderWorkspace } from "./screens/workspace.js";
 import { renderExplorer } from "./screens/explorer.js";
 import { renderFeed } from "./screens/feed.js";
@@ -113,6 +114,22 @@ async function renderRoute(r) {
     const setup = await needsProfileSetup();
     if (mine !== token) return;
     if (setup) { swap(renderCreateProfile(() => renderRoute(r))); return; }
+  }
+
+  // B4: /create and /upload are modal routes — typing them directly should open the modal OVER
+  // the shell, not show the "not yet ported" placeholder (the plus-menu / composer normally open
+  // them as modals). Render the Feed as the backdrop, then open the modal; the route itself is
+  // ephemeral so we replaceState to "/" (the backdrop's own path). openModal enforces a single
+  // instance (B1), so a stray re-render of this route just re-shows the same modal — safe.
+  if (r.screen === "create" || r.screen === "upload") {
+    const feedData = await time("feed", loadFeed());
+    if (mine !== token) return;
+    if (feedData.needsAuth) { swap(renderSignin()); return; }
+    swap(appFrame(renderRail(feedData, match("/")), renderFeed(feedData)));
+    history.replaceState({}, "", isDemo() ? "/?demo=1" : "/");
+    if (r.screen === "create") openCreateServer();
+    else openUpload({});
+    return;
   }
 
   if (!IN_SHELL.has(r.screen)) { swap(placeholder(r)); return; }

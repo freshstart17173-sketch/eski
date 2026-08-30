@@ -92,7 +92,7 @@ function coverPicker({ square, label } = {}) {
 // Create server (P9) — name + optional icon/cover + comma-separated starter channels →
 // createServer (client-side, RLS-fenced) → attach the art (uploadBlobs → updateServer) → land in
 // the new server. Demo just previews + toasts (its server set is fixed).
-function openCreateServer() {
+export function openCreateServer() {
   const nameI = el("input", { placeholder: "e.g. Late Bloom LP", "aria-label": "Server name" });
   const chansI = el("input", { value: "general, wips, references", "aria-label": "Starter channels" });
   const iconPick = coverPicker({ square: true });

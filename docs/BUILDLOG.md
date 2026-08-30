@@ -2268,3 +2268,20 @@ NEXT: B4 (typed /create·/upload·/settings open their modal over the shell).
 GOTCHA S: the demo branch of loadUserSettings still returns storage/blocked INLINE (no session
   for lazy loaders), so demo screenshots render immediately; only the live path defers. The panels
   branch on `data.storage`/`data.blocked` being truthy → render now, else show Loading… + fetch.
+
+## 2026-08-30 — B4 typed modal routes (/create, /upload) open over the shell
+IN PROGRESS: (cleared)
+DONE: /create and /upload were not in IN_SHELL → they rendered the "not yet ported" placeholder
+  when typed directly. Added a renderRoute branch (before the placeholder fallthrough): render the
+  Feed as the backdrop shell, then open the modal (openCreateServer / openUpload); exported
+  openCreateServer from shell.js. The route is ephemeral so it replaceStates to "/" (demo: /?demo=1).
+  openModal's single-instance guard (B1) makes a stray re-render just re-show the same modal.
+  /settings already resolved to the User-settings screen (no change). Files: app/main.js, app/shell.js.
+  Verified: demo /create mounts the New-server modal over the Feed + scrim; /upload renders the Feed
+  backdrop (upload sheet is session-gated, opens on preview); node --check clean; 0 pageerrors both
+  themes. Committed 7f8e0e1.
+NEXT: B3 (message permalink: Copy link → scroll + flash).
+GOTCHA T: openUpload() early-returns with a "Sign in to upload" toast when there's no session, so
+  in demo the /upload route shows the Feed backdrop + toast, not the sheet — that's correct (upload
+  is live-only). openCreateServer() has no such gate (createServer previews in demo), so /create
+  opens fully in demo.

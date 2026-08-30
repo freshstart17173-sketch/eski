@@ -252,9 +252,16 @@ per channel, builds on P11), D6 (review canvas/kanban/versions).
       when opened, scrolls to and flashes the message. *Files:* `app/screens/workspace.js`,
       `app/router.js`, `app/data.js` (fetch-by-id). *Medium.* *Test:* backend — service-role read of
       one message by id succeeds; demo — open the permalink route, assert the row scrolls into view + gets the flash class.
-- [ ] **B4 · Directly-typed `/create` · `/upload` · `/settings` open their modal over the shell**
-      instead of the "not yet ported" placeholder (normal use opens them as modals, so low
-      priority). *Files:* `app/main.js` route dispatch. *Medium.* *Test:* demo — visit each path, assert the modal mounts over the shell, not the placeholder screen.
+- [x] **B4 · Directly-typed `/create` · `/upload` · `/settings` open their modal over the shell.**
+      *Done (demo-verified both themes).* `/settings` already resolved to the User-settings screen;
+      the gap was `/create` and `/upload`, which weren't in `IN_SHELL` so they hit the "not yet
+      ported" placeholder. Added a branch in `renderRoute` (before the placeholder fallthrough) that
+      renders the **Feed as the backdrop shell** then opens the modal (`openCreateServer` / `openUpload`),
+      exported `openCreateServer` from `shell.js`. The modal route is ephemeral so it `replaceState`s
+      to `/` (the backdrop's own path); `openModal`'s single-instance guard (B1) makes a stray
+      re-render just re-show the same modal. *Files:* `app/main.js`, `app/shell.js`. Verified: demo
+      `/create` mounts the New-server modal over the Feed with the scrim; `/upload` renders the Feed
+      backdrop (upload sheet is session-gated → opens on preview); 0 pageerrors both themes.
 - [x] **B5 · Channel Files tab is always empty + a channel upload doesn't appear in the channel.**
       *Done (backend role-sim-verified + demo render).* (1) `loadWorkspace` now fetches the works
       whose placement carries the active channel_id, shapes them via `shapeWork`, and sets
