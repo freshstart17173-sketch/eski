@@ -384,13 +384,15 @@ per channel, builds on P11), D6 (review canvas/kanban/versions).
       the exact screen** from the owner to pin it (a likely candidate is the `.railogo` e! mark
       rendering as a solid square if its mask/sprite fails to load on preview — but unconfirmed, so
       not removing anything blind). *Files:* TBD. *Easy once located.*
-- [ ] **B17 · Smooth playhead scrubbing on the media player (round-8).** The transport playhead/seek
-      should scrub **smoothly** (continuous), not jump/stutter. *Files:* `app/ui.js MediaPlayer` (the
-      seek `input`/`timeupdate` handling — likely needs `requestAnimationFrame` playhead updates +
-      smooth drag). *Medium.*
-- [ ] **B18 · Skip buttons grouped on the right (round-8).** Put the skip-back / skip-forward buttons
-      **next to each other on the right-hand side** of the transport (not split across the bar).
-      *Files:* `app/ui.js MediaPlayer` transport layout. *Easy.*
+- [x] **B17 · Smooth playhead scrubbing on the media player (round-8).** *Done.* The playhead was
+      driven only by `timeupdate` (~4×/s → visible jumps). Now a **`requestAnimationFrame` loop**
+      updates the fill/knob while playing (reading `media.currentTime`, which advances continuously),
+      for 60fps motion; the loop self-stops on pause/ended/removal (`wrap.isConnected`), and
+      `timeupdate` still paints seeks-while-paused. *Files:* `app/ui.js` (`MediaPlayer`). 0 pageerrors.
+- [x] **B18 · Skip buttons grouped on the right (round-8).** *Done (unit-verified).* Transport
+      reordered to **`[cur · seek · tot · (skip-back skip-forward) · mute · fullscreen]`** — the two
+      skip buttons now sit together on the right in a `.dmskips` group (was rew on the far left, ff
+      after the track). *Files:* `app/ui.js` (`MediaPlayer`), `styles/primitives.css` (`.dmskips`).
 - [ ] **P21 · Tag/metadata SEARCH MODIFIERS — replaces the P11 Tag-type filter facet (round-8, owner).**
       **Remove the "Tag type" filter facet** added in P11 (the dropdown). Instead let the user type
       modifiers **straight in the explorer search bar**:

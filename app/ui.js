@@ -473,7 +473,10 @@ export function MediaPlayer({ src, kind = "audio", poster } = {}) {
   const rew = el("button.tbtn", { "aria-label": "Back 10 seconds" }, [iconEl("rewind")]);
   const ff = el("button.tbtn", { "aria-label": "Forward 10 seconds" }, [iconEl("ff")]);
   const vol = el("button.tbtn", { "aria-label": "Mute" }, [volIcon]);
-  const transport = el(".dmtransport", {}, [rew, cur, track, tot, ff, vol]);
+  // B18: the two skip buttons sit together on the RIGHT (after the time/track), not split across
+  // the bar. Order: time · seek · time · [skip-back skip-forward] · mute · (fullscreen).
+  const skips = el(".dmskips", {}, [rew, ff]);
+  const transport = el(".dmtransport", {}, [cur, track, tot, skips, vol]);
   let fs;
   if (kind === "video") { fs = el("button.tbtn", { "aria-label": "Fullscreen" }, [iconEl("expand")]); transport.append(fs); }
   const wrap = el(".dmplayer", { "data-kind": kind, tabindex: "0" }, [el(".dmmedia", {}, [media, big]), transport]);
@@ -497,14 +500,27 @@ export function MediaPlayer({ src, kind = "audio", poster } = {}) {
   vol.addEventListener("click", () => { media.muted = !media.muted; setVolIcon(); });
   fs && fs.addEventListener("click", () => { if (document.fullscreenElement) document.exitFullscreen(); else wrap.requestFullscreen?.(); });
 
-  media.addEventListener("play", () => setPlayIcon(false));
-  media.addEventListener("pause", () => setPlayIcon(true));
-  media.addEventListener("loadedmetadata", () => { tot.textContent = fmt(media.duration); });
-  media.addEventListener("timeupdate", () => {
+  // B17: smooth playhead. `timeupdate` only fires ~4×/s, so the head jumped; instead drive the
+  // fill/knob from a requestAnimationFrame loop while playing (media.currentTime advances in real
+  // time between events), for 60fps motion. timeupdate stays as the paint for seeks-while-paused.
+  let raf = 0;
+  function paintHead() {
     const d = media.duration || 0, ratio = d ? media.currentTime / d : 0;
     fill.style.width = (ratio * 100) + "%"; knob.style.left = (ratio * 100) + "%";
     cur.textContent = fmt(media.currentTime);
-  });
+  }
+  function loop() {
+    if (!wrap.isConnected) { raf = 0; return; }   // player removed (details closed) → stop the loop
+    if (media.paused || media.ended) { raf = 0; return; }
+    paintHead();
+    raf = requestAnimationFrame(loop);
+  }
+  const startLoop = () => { if (!raf) raf = requestAnimationFrame(loop); };
+  media.addEventListener("play", () => { setPlayIcon(false); startLoop(); });
+  media.addEventListener("pause", () => { setPlayIcon(true); cancelAnimationFrame(raf); raf = 0; paintHead(); });
+  media.addEventListener("ended", () => { cancelAnimationFrame(raf); raf = 0; paintHead(); });
+  media.addEventListener("loadedmetadata", () => { tot.textContent = fmt(media.duration); });
+  media.addEventListener("timeupdate", () => { if (media.paused) paintHead(); });
 
   // click + drag the track to scrub
   let dragging = false;
