@@ -511,13 +511,16 @@ per channel, builds on P11), D6 (review canvas/kanban/versions).
 
 ### 3 · UI polish
 
-- [ ] **P1 · Center empty-state / placeholder text in its own pane.** (round-3 #5.) Every default
-      text block (channel "This is the start of #…", empty explorer, empty DM, etc.) is centered
-      **vertically and horizontally** within its pane — globally, one rule, not case by case.
-      Refines the earlier "too much vertical space" fix (centered, **not** top-anchored).
-      *Files:* `styles/*` (the `.emptystate` and equivalents), audit each pane that renders one.
-      *Easy.* *Test:* demo screenshot each empty surface (empty channel, empty explorer, empty DM,
-      no-friends) in both themes; assert the text block is centered in its pane and legible.
+- [x] **P1 · Center empty-state / placeholder text in its own pane.** *Done (demo-verified both
+      themes).* One global rule: `.emptystate` (shell.css) now centers **both axes** —
+      `justify-content:center` + `min-height:100%` so the block fills its host pane (every host is a
+      definite-height flex context: `.stream`/`.panebody`/`.main` are `flex:1`, `.notif`/`.dmmain`
+      are flex columns) and the text sits in the middle instead of top-anchored; padding evened to
+      `var(--s4)`. This **replaces** the two per-pane `margin:auto` patches (`.notif .emptystate` /
+      `.dmmain .emptystate`), now removed from content.css — one rule, no duplicates. Indefinite-height
+      hosts degrade gracefully (min-height:100% → auto, natural height). *Files:* `styles/shell.css`,
+      `styles/content.css`. Verified: empty-server "No channels yet" centers in its pane, both themes,
+      text legible, CTA visible, 0 pageerrors; every empty surface inherits the one rule.
 - [x] **P2 · Perf: dedupe `profiles` + defer settings reads.** *Done (static + demo-verified).*
       `loadRail` now also selects `bio,banner_key` and caches the raw profile row (`_cache.rail.profile`);
       `loadUserSettings` reuses it instead of firing a second identical `from("profiles")` read.

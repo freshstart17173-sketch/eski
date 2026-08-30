@@ -307,7 +307,11 @@
 /* Empty state — compact + terse, and NOT vertically sprawling (owner: too much vertical
    space). Content-height, top-anchored with a modest offset — no flex:1 fill / centre that
    floats it in the middle of a tall pane. Small icon, tight rhythm, short copy. */
-.emptystate{display:flex;flex-direction:column;align-items:center;text-align:center;padding:var(--s5) var(--s4) 0;gap:var(--s1);color:var(--muted)}
+/* P1: an empty-state block centers BOTH axes within its pane, not top-anchored. min-height:100%
+   fills the host pane (every host is a definite-height flex context — .stream/.panebody/.main are
+   flex:1, .notif/.dmmain are flex columns) so justify-content:center has room to work; this one
+   global rule replaces the per-pane `margin:auto` patches (removed from content.css). */
+.emptystate{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;min-height:100%;padding:var(--s4);gap:var(--s1);color:var(--muted)}
 .emptystate .eic{width:24px;height:24px;color:var(--line2);margin-bottom:var(--s1)}
 .emptystate h3{font-size:var(--fs);font-weight:600;color:var(--soft);margin:0}
 .emptystate p{font-size:var(--fs-sm);max-width:280px;line-height:1.4;color:var(--muted);margin:0}

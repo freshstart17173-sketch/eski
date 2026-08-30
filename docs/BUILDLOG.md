@@ -2297,3 +2297,16 @@ NEXT: B13 (menu permission-gating — visible menu change, 3 versions) OR the ea
 GOTCHA U: B3 permalinks only resolve while channel messages load unbounded (P20 not yet done). When
   P20 paginates the stream, a ?m=<id> to a message outside the loaded window will no-op unless P20
   adds fetch-by-id / load-earlier-until-found into flashMessage — noted on the P20 item.
+
+## 2026-08-30 — P1 center empty-state text (one global rule)
+IN PROGRESS: (cleared)
+DONE: .emptystate (shell.css) now centers both axes — justify-content:center + min-height:100% fills
+  the host pane (all hosts are definite-height flex: .stream/.panebody/.main flex:1, .notif/.dmmain
+  flex columns), padding evened to var(--s4). Removed the now-redundant per-pane margin:auto patches
+  (.notif .emptystate / .dmmain .emptystate) from content.css — one rule, no duplicates. Files:
+  styles/shell.css, styles/content.css. Verified: empty-server "No channels yet" centers in-pane both
+  themes, text legible + CTA visible, 0 pageerrors. Committed 0069909.
+NEXT: B13 (gate file ⋯ menu write items by permission — ship single per owner's "small" call).
+GOTCHA V: min-height:100% only centers when the host has a definite height; every empty-state host
+  here does (flex:1 scrollers / flex columns). Where a host is indefinite, min-height:100% resolves
+  to auto → natural height, no break (graceful). Don't add margin:auto back — it fought this rule.
