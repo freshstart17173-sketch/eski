@@ -12,13 +12,13 @@
 // transport) when bytes exist; non-previewable (and, until a real R2 upload exists,
 // anything with no blob) shows a type card — never a fake thumbnail.
 
-import { el, toast, Tag, openMenu, Avatar } from "../ui.js";
+import { el, toast, Tag, openMenu } from "../ui.js";
 import { openReport } from "../report.js";
 import { iconEl } from "../icons.js";
 import { navigate } from "../router.js";
 import { MediaPlayer } from "../ui.js";
-import { mediaUrl, KIND_ICON, downloadWork, avatarUrl } from "../cards.js";
-import { saveToFiles, unsaveWork, isWorkSaved, loadComments, postComment, deleteComment, addTag, removeTag } from "../data.js";
+import { mediaUrl, KIND_ICON, downloadWork } from "../cards.js";
+import { saveToFiles, unsaveWork, isWorkSaved, addTag, removeTag } from "../data.js";
 
 let openSheet = null;   // the single live overlay (only one details pane at a time)
 
@@ -143,8 +143,9 @@ function infoRail(w, ctx, nav) {
     // tags: shown when the work carries any, OR when it's editable (an explorer file, which
     // is the same signal that gives it the ⋯ edit menu) so the first tag can be added.
     (ctx.menuItemsFor || (w.tags && w.tags.length)) ? tagsSection(w, ctx) : null,
-    // server file = NO discussion section (chat handles replies); post = comments
-    ctx.isPost ? commentsSection(ctx, w) : null,
+    // No discussion thread anywhere: server files use channel chat for replies, and
+    // public-post commenting was cut from the beta (P4, 2026-08-30) → the post itself
+    // stays (reached from a profile's Public shelf), the comment thread is gone.
   ]);
 
   const foot = el(".foot", {}, [
@@ -258,58 +259,10 @@ function tagsSection(w, ctx = {}) {
   return el(".dsec", {}, [el(".lb", {}, ["Tags"]), chips]);
 }
 
-// Public-post comment thread (CANON §E.8.5) — read + post, wired to `comments`. Public
-// context, so NEVER the member hue: author names stay neutral (no colorIdx). The thread
-// loads async on open; the input posts (Enter), appending optimistically. RLS is the real
-// fence on who may comment (author + friends) — a rejection surfaces as a toast.
-function commentsSection(ctx, w) {
-  let comments = [];
-  const list = el(".cmtlist");
-  // remove one of your own comments — a tombstone (data.js), optimistic on success
-  const onDelete = async (c) => {
-    try { await deleteComment(c.id); comments = comments.filter((x) => x.id !== c.id); paint(); toast({ message: "Comment deleted" }); }
-    catch (e) { toast({ message: e?.message || "Couldn’t delete the comment" }); }
-  };
-  const paint = () => list.replaceChildren(
-    ...(comments.length ? comments.map((c) => commentRow(c, onDelete)) : [el(".cmtempty", {}, ["Be the first to comment."])])
-  );
-  paint();
-  // demo returns its fixture synchronously; live reads the table. Keep any optimistic
-  // local- rows if the fetch resolves after a quick first post.
-  loadComments(w.id).then((cs) => { comments = (cs || []).concat(comments.filter((c) => String(c.id).startsWith("local-"))); paint(); }).catch(() => {});
-
-  const input = el("input", { placeholder: "Add a comment", "aria-label": "Add a comment" });
-  const send = async () => {
-    const body = input.value.trim();
-    if (!body || input.disabled) return;
-    input.disabled = true;
-    try {
-      const c = await postComment(w.id, body);
-      comments.push(c); paint();
-      input.value = "";
-    } catch (e) { toast({ message: e?.message || "Couldn’t post the comment" }); }
-    input.disabled = false; input.focus();
-  };
-  input.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); send(); } });
-  const field = el(".field", { style: "margin-top:8px" }, [input]);
-  return el(".dsec", {}, [el(".lb", {}, ["Comments"]), list, field]);
-}
-
-function commentRow(c, onDelete) {
-  const kids = [
-    Avatar({ name: c.name || "?", size: "sm", src: avatarUrl(c.avatar_key) }),   // no hue — public context
-    el(".bd", {}, [
-      el(".by", {}, [el("span.u", {}, [c.name]), el("time", {}, [c.time || ""])]),
-      el(".tx", {}, [c.text || ""]),
-    ]),
-  ];
-  // your own comment gets a delete affordance (appears on row hover). RLS is the real fence.
-  if (c.mine && onDelete) {
-    const del = el("button.iconbtn.cdel", { title: "Delete comment", "aria-label": "Delete comment", onClick: () => onDelete(c) }, [iconEl("trash", "sm")]);
-    kids.push(del);
-  }
-  return el(".cmt", {}, kids);
-}
+// Public-post commenting was cut from the beta (P4, 2026-08-30): the post itself stays
+// (reached from a profile's Public shelf), but the comment thread — commentsSection /
+// commentRow, wired to the `comments` table — is gone. The `comments` table + the
+// post_comment RPC remain in the schema, dormant, for a post-beta return (D1).
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 function iconBtn(ic, title, onClick, { rotate, disabled, cls, x, haspopup } = {}) {

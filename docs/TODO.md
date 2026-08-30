@@ -544,14 +544,19 @@ per channel, builds on P11), D6 (review canvas/kanban/versions).
       *Files:* a small helper in `app/ui.js`, then the upload/pfp/icon/banner call sites.
       *Medium.* **Do after K2** so the new icon/banner flow gets covered too. *Test:* demo — trigger
       an async action, assert the busy class/overlay appears while pending and clears after; syntax-check.
-- [ ] **P4 · Cut social (Feed + post commenting) from the beta nav/routes.** (round-3 #1.) Remove
-      Feed from the home/rail nav and the `feed` route; remove the public comment thread from the
-      Details pane (**keep the post itself** — public posts stay, reached via a user's profile
-      Public shelf). Mirror the cut in **CANON** and **CLAUDE.md** exactly like the 2026-08-18
-      canvas/kanban cut, so the contract matches. Moves the features to **D1**. *Files:* `app/shell.js`,
-      `app/main.js`, `app/screens/feed.js` (retire route), Details pane comment section, `docs/CANON.md`,
-      `CLAUDE.md`. *Medium.* **Do before P5** (both touch the home nav; fewer items first). *Test:*
-      demo — Feed is gone from nav and `/feed` no longer resolves; a profile Public shelf still opens a post; the Details pane shows no comment thread; no `pageerror`.
+- [x] **P4 · Cut post commenting from the beta (KEEP the Feed — owner override 2026-08-30).**
+      *Done (demo-verified).* Owner amended the original ask: **keep the Feed** (nav + `/feed` route
+      + the portfolio grid all stay), cut **only public-post commenting**. Removed the Details-pane
+      comment thread (`commentsSection`/`commentRow` + the `loadComments`/`postComment`/`deleteComment`
+      imports, `Avatar`/`avatarUrl` no longer needed) and the inline comment stub in the Explorer
+      **Feed view** (`.ffcmts`) — the post view + media wall stay. Dead CSS removed (`.sheet .cmt*`,
+      `.filefeed .cmt*`, `.ffcmts`). The `comments` table + `post_comment` RPC + comment→notification
+      trigger stay **dormant** in the schema for D1. Mirrored the cut in **CANON** (§A beta-cut note +
+      the §C.6 Feed-item and §C.7 Discussion rows marked "commenting cut — D1") and **CLAUDE.md**.
+      *Files:* `app/screens/details.js`, `app/screens/explorer.js`, `app/screens/feed.js`,
+      `styles/content.css`, `docs/CANON.md`, `CLAUDE.md`. Verified: `node --check` clean on all three
+      screens; demo `/feed` renders (empty friends-feed state), no `.cmt*` UI code remains, 0 pageerrors.
+      Gallery mirror skipped per owner (2026-08-30: stop maintaining gallery for UI changes).
 - [x] **P5 · Merge Friends into Messages (one surface).** *Done (demo-verified both themes) — owner
       asked for it directly (didn't need P4 first).* Removed the `.dmfriends` button and the
       `showFriends()` right-pane swap; friends now live **inline in the `.dmlist` column** as sections:

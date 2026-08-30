@@ -116,6 +116,15 @@ different thing** (private bookmark folders) and keep their name.
 > mechanics and prompts are removed. Section numbers §A.5/§A.6 are retired (left as
 > a gap) rather than renumbered, to keep cross-references stable.
 
+> **Cut for beta (2026-08-30, P4):** **public-post commenting is removed** — the
+> **comment thread** on a post (Details pane) and the inline comment thread in the
+> Explorer **Feed** view are gone. The **post itself stays** (a public work, reached
+> from a user's profile Public shelf; the Feed grid stays too). The `comments` table,
+> the `post_comment` RPC, and the comment→notification trigger **stay in the schema,
+> dormant**, for a post-beta return (TODO **D1**). Below, rows that describe a comment
+> thread are marked **(commenting cut — D1)**; their schema lines stay as the dormant
+> contract.
+
 ### A.7 People & relationships
 
 | Canonical | Means | DB |
@@ -590,7 +599,7 @@ old bare "lightbox / uploaded view" is retired. The **Sort** control carries an
 | **Trash view** (Trash smart-folder open) | A **retention notice** ("items are permanently deleted **30 days** after they're trashed", §D.2) + **Empty trash now**, over a list of trashed rows: name · who/when trashed · a **days-left countdown** that turns danger-red near expiry · hover **Restore** / **Delete forever** (gallery B19). Soft-delete only — nothing hard-deletes before 30 days except via *Delete forever* / *Empty now*; **Empty now** clears to the empty state above. Backed by `works.deleted_at` + the 30-day purge job + the trash writers in §E.3. | R trashed `works` (`deleted_at not null`); W `restore_work` · `purge_work` · `empty_trash` | List with row actions | List; actions in ⋯/long-press |
 | Folder row / card | A subfolder in the current folder — stacked-icon cover + item count; click → descend. | R `folders` (children) | In grid/list with files | 2-col / row |
 | File card / row | Grid: same card renderer as Feed; List: a dense row. Leads with **file name**; uploader chip (server colour) + channel tag. **Hover actions** (star, download, copy-link, ⋯) + a **selection checkbox** (multi-select → the selection toolbar). **Right-click / ⋯ → context menu** (gallery #19): Open · Star · Update visibility… (#61) · Save to my files · Download · Copy link · **Crosspost to server…** · Rename · Move to… · Hide from library (#55) · Delete. On touch the ⋯ / long-press stands in for right-click. | R `works` (in this folder via `placement.folder_id`); writes gated by role | Grid/List | 2-col / row |
-| **Feed item** | *(feed view only)* a previewable work at natural aspect + its **comment thread** inline, newest-first across the subtree. | R `works` (previewable) + `comments(context=server)` | Column | Full-width |
+| **Feed item** | *(feed view only)* a previewable work at natural aspect, newest-first across the subtree. **(commenting cut — D1)** — the inline comment thread was removed; media + meta stay. | R `works` (previewable) | Column | Full-width |
 | Grid select + bulk bar | Multi-select → action bar (download / **move to folder** / delete). | — / RPCs | Hover checkbox | Long-press |
 | **Move-to-folder picker** | The destination surface behind **Move to…** (card ⋯), the bulk bar's **Move to folder**, and the details-pane location row: a **scrollable folder tree** of this server, one destination selected, **New folder** inline, **Move here**. A move re-places the file (`placement.folder_id`) — it changes **where the file lives, not who can see it**; **locked** folders (§C.6 archived/locked, gallery #58) are shown disabled and can't receive files. | W `move_to_folder(work, folder)` → `placement.folder_id`; gated by folder write-perm | Modal on scrim | Sheet |
 | Lightbox | Full media viewer + "shared in" strip. | R `works` | Overlay | Full-screen |
@@ -631,7 +640,7 @@ storage the bytes draw:
 | ~~Storage×visibility badge~~ | **Removed (gallery #3).** The "Personal · Private / Personal · Public / Server" badge no longer renders in the details pane — visibility is set/seen via the Share dialog and the Location breadcrumb, not a metadata badge. Crosspost provenance stays **not shown**. | `works.owner_type` + `visibility` | — | — |
 | Title / collaborators / tags | Title (or file name); collaborator chips (server colour); user tags + ＋. **Both** posts and server files have tags. | `works.title/collaborators` · `content_tags` | Rail | Rail |
 | Actions | Download (get-as formats); **"Save to my files"** → menu into a personal folder, with a note that it **copies into your storage** (dedup-cheap, survives the server deleting theirs). **Folder** pane: **Save** and **Download** each offer **whole folder or just a selection** (gallery #17/#18); "Download all" is relabelled just **Download**. | transcode · `saved_items` (owner copy) | Rail foot | Rail foot |
-| **Discussion** | **Post** → a public **comment thread** (`comments`, context=public) with an add-comment field. **Server file** → **no discussion section at all** (removed the "Replies happen in #channel →" link, gallery #5); chat lives in the channel. | `comments` (posts) / channel chat (server files) | Rail list (post only) | Rail |
+| **Discussion** | **(commenting cut — D1, 2026-08-30)** — a post **no longer** carries a comment thread; the Details pane shows meta + tags only, for a post and a server file alike. (Server files always used channel chat for replies; posts now have no discussion surface until D1 restores it.) | *(dormant `comments`)* / channel chat (server files) | — | — |
 | Mobile | Card goes full-screen, **column**: media on top (~42vh), the rail below. | — | — | Full-screen column |
 
 **Share dialog (gallery #39 / #61).** A Google-Drive-style modal opened from a

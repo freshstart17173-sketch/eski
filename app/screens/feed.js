@@ -3,7 +3,8 @@
 // member colour (public context — the hue is server-scoped and renders nowhere
 // public). A wordmark + Feed/Notifications/You nav, a search + Type/Sort/layout
 // toolbar, an even-square grid ⇄ masonry toggle (default even), and the "quiet
-// feed" empty state. Cards open the Details pane as a public post (comment thread).
+// feed" empty state. Cards open the Details pane as a public post (no comment thread —
+// commenting was cut from the beta, P4 2026-08-30; the post view itself stays).
 
 import { el, toast, openMenu } from "../ui.js";
 import { iconEl } from "../icons.js";
@@ -62,8 +63,8 @@ export function renderFeed(data) {
       body.replaceChildren(q ? emptyState("search", "No results", `Nothing in your feed matches “${state.query.trim()}”.`) : feedEmpty());
       return;
     }
-    // open a post in the Details pane — public post (comment thread), siblings = feed
-    const openPost = (w) => openDetails(w, { serverName: null, personal: false, isPost: true, comments: [], siblings: posts });
+    // open a post in the Details pane — public post (no comment thread; P4), siblings = feed
+    const openPost = (w) => openDetails(w, { serverName: null, personal: false, isPost: true, siblings: posts });
     const grid = el(".masonry" + (state.even ? ".even" : ""));
     for (const p of posts) grid.append(workCard(p, { onOpen: openPost, hue: false }));
     body.replaceChildren(grid);

@@ -513,8 +513,8 @@ function shareFolderMenu(data, folder, anchor) {
 }
 
 // Feed view (§C.6): flatten the current folder's whole SUBTREE to previewable works
-// (image/video/audio) newest-first, each with its comments inline — an Instagram-style
-// server media feed. Project files (.flp/.zip) are hidden here (grid/list show them).
+// (image/video/audio) newest-first — an Instagram-style server media preview wall.
+// Project files (.flp/.zip) are hidden here (grid/list show them).
 function feedView(data, state, openFile) {
   // collect the current folder + all descendants
   const wantIds = new Set();
@@ -532,14 +532,9 @@ function feedView(data, state, openFile) {
     const folderName = w.folderId ? (data.folders.find((f) => f.id === w.folderId)?.name || "") : rootLabel(data);
     const media = el(".ffmedia", { onClick: () => openFile(w) }, [feedMedia(w)]);
     const meta = el(".ffmeta", {}, [el("b", {}, [w.title || "untitled"]), el("span.who", {}, [`${w.who?.name || ""}${folderName ? " · " + folderName : ""}`])]);
-    const cmts = el(".ffcmts", {}, [
-      ...(w.comments || []).map((c) => el(".cmt", {}, [
-        el(".av.sm", { style: c.colorIdx != null ? `color:var(--m${c.colorIdx})` : null }, [(c.name || "?").slice(0, 2).toUpperCase()]),
-        el(".bd", {}, [el(".by", {}, [el("span.u", {}, [c.name]), el("time", {}, [c.time || ""])]), el(".tx", {}, [c.text || ""])]),
-      ])),
-      el(".field", { style: "margin-top:6px" }, [el("input", { placeholder: "Comment" })]),
-    ]);
-    feed.append(el(".ffitem", {}, [media, meta, cmts]));
+    // Commenting was cut from the beta (P4, 2026-08-30): the media-preview Feed view keeps
+    // the image/meta, the inline comment thread is gone. Clicking the media opens the file.
+    feed.append(el(".ffitem", {}, [media, meta]));
   }
   return el(".exview.filefeed", { "data-exview": "feed" }, [feed]);
 }

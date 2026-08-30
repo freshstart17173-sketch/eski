@@ -6,9 +6,10 @@ tracked in `docs/CANON.md`, and in conversation, not GitHub Issues.
 
 eski is mid-**rebuild** into a collaboration app — "Discord for creatives":
 **servers** (studios you're invited into), user-created channels, persistent
-chat, a shared media library (File explorer), post comments, friends/DMs, and
+chat, a shared media library (File explorer), public posts, friends/DMs, and
 three visibility layers (public / server / private). Think **Discord + Google
-Drive**. The old single-page "pivot" product is **retired and its code removed
+Drive**. (Public-post **commenting** was cut from the beta on 2026-08-30 — the
+posts stay, the comment thread is deferred to post-beta; see CANON TODO D1.) The old single-page "pivot" product is **retired and its code removed
 from the repo.** **Nothing is live yet — this is the planning-and-design
 phase**, producing the contract a code-generation model will build against.
 (The review canvas, kanban boards, and numbered versions were cut from the beta

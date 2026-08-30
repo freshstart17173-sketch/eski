@@ -210,17 +210,7 @@
 .sheet .addtag{width:22px;height:22px;display:grid;place-items:center;border-radius:var(--r);color:var(--muted);cursor:pointer}
 .sheet .addtag:hover{background:var(--surface);color:var(--ink)}
 .sheet .addtag .ic{width:13px;height:13px}
-/* comments (post only) */
-.sheet .cmt{display:flex;gap:9px;margin-bottom:var(--s3)}
-.sheet .cmt .bd{min-width:0}
-.sheet .cmt .by{display:flex;align-items:baseline;gap:7px;font-size:var(--fs-xs)}
-.sheet .cmt .by time{color:var(--muted);font-size:10px}
-.sheet .cmt .tx{font-size:var(--fs-sm);color:var(--soft)}
-/* delete-own-comment: pushed to the row's right edge, revealed on hover (keyboard-focus
-   too, so it isn't mouse-only). Reuses the square .iconbtn — no new button style. */
-.sheet .cmt .cdel{margin-left:auto;flex:none;opacity:0;transition:opacity .12s}
-.sheet .cmt:hover .cdel,.sheet .cmt .cdel:focus-visible{opacity:1}
-.sheet .cmtempty{font-size:var(--fs-sm);color:var(--muted);margin-bottom:var(--s3)}
+/* comment styles removed with post-commenting (P4, 2026-08-30) */
 /* footer actions — inset hairline on top, buttons share width */
 .sheet .foot{position:relative;flex:none;padding:var(--s3) var(--s4);display:flex;gap:var(--s2)}
 .sheet .foot::after{content:"";position:absolute;left:var(--hair-inset);right:var(--hair-inset);top:0;height:1px;background:var(--line)}
@@ -439,10 +429,9 @@
 .ptab2:focus-visible{outline:none;box-shadow:inset 0 -2px 0 var(--ink)}
 .pbody{padding:var(--s5)}
 
-/* ── Explorer Feed view (P5.8) — flattened previewable subtree + inline comments ──
-   Instagram-style server media feed (CANON §C.6). Ported from the gallery; the
-   comment rows reuse the details pane's scoped .cmt (under .sheet) so here we scope
-   the feed's own comment bits under .filefeed. */
+/* ── Explorer Feed view (P5.8) — flattened previewable subtree, Instagram-style server
+   media preview wall (CANON §C.6). The inline comment thread was cut with post-commenting
+   (P4, 2026-08-30); the media + meta stay. */
 .filefeed{max-width:620px;margin:0 auto}
 .ffnote{display:flex;gap:8px;font-size:var(--fs-xs);color:var(--muted);background:var(--surface);border-radius:var(--r);padding:9px 11px;margin-bottom:var(--s4)}
 .ffnote .ic{color:var(--soft);flex:none}
@@ -455,12 +444,6 @@
 .ffmeta{display:flex;align-items:baseline;gap:10px;margin-bottom:8px}
 .ffmeta b{font-size:var(--fs-sm)}
 .ffmeta .who{font-size:var(--fs-xs);color:var(--muted)}
-.ffcmts{padding-left:2px}
-.filefeed .cmt{display:flex;gap:9px;margin-bottom:var(--s3)}
-.filefeed .cmt .bd{min-width:0}
-.filefeed .cmt .by{display:flex;align-items:baseline;gap:7px;font-size:var(--fs-xs)}
-.filefeed .cmt .by time{color:var(--muted);font-size:10px}
-.filefeed .cmt .tx{font-size:var(--fs-sm);color:var(--soft)}
 
 /* ── User settings (§C.10, screens/usersettings.js) — a left setnav + a panel. Distinct from
    server settings. Panes separate by background step; the active nav row is plate+ink+600
