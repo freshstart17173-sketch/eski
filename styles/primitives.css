@@ -98,6 +98,11 @@
 .field.req{border-color:var(--soft)}
 .field.err{border-color:var(--danger)}
 .field[aria-disabled="true"]{opacity:.5;pointer-events:none}
+/* searchbar — the one dense height for every search field app-wide (owner call 2026-08-30:
+   match the compact density of the typed-tags prototype input). Applied to the explorer, feed,
+   search screen and quick-switcher search fields; overrides any larger per-screen font. */
+.field.searchbar{padding:6px 9px}
+.field.searchbar input{font-size:var(--fs-sm)}
 
 /* ── P3.4 Modal + scrim ──────────────────────────────────────────────────── */
 /* scrim = fixed backdrop that DARKENS the page and centres the modal. No drop

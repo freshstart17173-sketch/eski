@@ -19,7 +19,7 @@ export function renderSearch(data) {
 
   const state = { q: "" };
   const input = el("input", { placeholder: "Search servers, channels, people…", "aria-label": "Search", value: "", onInput: (e) => { state.q = e.target.value; paint(); } });
-  const field = el(".field.searchbig", {}, [iconEl("search", "sm"), input]);
+  const field = el(".field.searchbig.searchbar", {}, [iconEl("search", "sm"), input]);
   const panehd = el(".panehd", {}, [el(".title", {}, ["Search"])]);
   const body = el(".panebody");
   pane.replaceChildren(panehd, el(".toolbar", {}, [field]), body);

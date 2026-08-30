@@ -35,7 +35,7 @@ export function renderFeed(data) {
   const TYPES = [["all", "All"], ["image", "Images"], ["audio", "Audio"], ["video", "Video"]];
   const SORTS = [["latest", "Latest"], ["oldest", "Oldest"]];
   const layoutBtn = el("button.iconbtn", { title: "Grid / masonry", onClick: () => { state.even = !state.even; repaint(); } }, [iconEl("grid", "sm")]);
-  const search = el(".field", {}, [iconEl("search", "sm"),
+  const search = el(".field.searchbar", {}, [iconEl("search", "sm"),
     el("input", { placeholder: "Search your friends", value: state.query, onInput: (e) => { state.query = e.target.value; repaint(); } }),
   ]);
   const typeBtn = el("button.btn" + (state.type !== "all" ? ".on" : ""), { "aria-haspopup": "menu" }, [el("span.tlbl", {}, ["Type"]), iconEl("chev", "sm")]);

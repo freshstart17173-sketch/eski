@@ -302,7 +302,7 @@ function paint(tree, pane, data, state, rerender) {
 
   // toolbar — search · filters (Type/Channel/Uploader/Tag/Date/Sort) · New folder · Upload
   const personal = data.source === "personal";
-  const search = el(".field", {}, [iconEl("search", "sm"),
+  const search = el(".field.searchbar", {}, [iconEl("search", "sm"),
     el("input", { placeholder: data.shared ? "Search this folder" : (personal ? "Search your files" : "Search this server's files"), value: state.query, onInput: (e) => { state.query = e.target.value; repaintBody(); } }),
   ]);
   // onDone reloads the route so a just-uploaded file (or a whole uploaded folder) shows

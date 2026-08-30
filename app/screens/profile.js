@@ -81,7 +81,7 @@ export function renderProfile(data) {
   // search — a toggle that reveals an inline filter over the VISIBLE shelf (title match);
   // it's a client-side narrow of what's already loaded, not a new query, so no backend call.
   const searchInput = el("input", { placeholder: "Search this profile", "aria-label": "Search this profile" });
-  const searchField = el(".field.psearch", { style: "margin-left:auto;max-width:240px;display:none" }, [searchInput]);
+  const searchField = el(".field.psearch.searchbar", { style: "margin-left:auto;max-width:240px;display:none" }, [searchInput]);
   const searchBtn = el("button.iconbtn", { style: "margin-left:auto", title: "Search this profile", "aria-label": "Search this profile", onClick: () => toggleSearch() });
   searchBtn.append(iconEl("search"));
   searchInput.addEventListener("input", () => { state.query = searchInput.value.trim(); paint(); });
