@@ -180,7 +180,7 @@ export function demoExplorer(source = "server") {
     ],
     membersById: {},
     folders: [
-      { id: "beats", name: "beats", parentId: null, archived: false, locked: false, count: 4, tags: ["genre:trap", "bpm:140", "wip"] },
+      { id: "beats", name: "beats", parentId: null, archived: false, locked: false, count: 4, tags: ["genre:trap", "bpm:140", "wip", "key:G min", "hard"] },
       { id: "drums", name: "drums", parentId: "beats", archived: false, locked: false, count: 0, tags: [] },
       { id: "verses", name: "verses", parentId: null, archived: false, locked: false, count: 0, tags: ["mood:dark"] },
       { id: "mixing", name: "mixing", parentId: null, archived: false, locked: false, count: 0, tags: [] },

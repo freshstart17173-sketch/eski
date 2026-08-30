@@ -803,6 +803,8 @@ function shareFolderMenu(data, state, rerender, folder, anchor, at) {
   openMenu(anchor, [
     // P28: right-click a folder → Open (leads, like a native context menu) + share
     { label: "Open", icon: "folder", onClick: () => { state.folderId = folder.id; state.query = ""; rerender(); } },
+    // P23: Properties opens the show-all / edit-all folder-tags popover (anchored on the folder card)
+    { label: "Properties", icon: "flag", onClick: () => openFolderProperties(anchor, folder, { data, state, rerender }) },
     { label: "Copy folder link", icon: "users", onClick: async () => {
       try {
         const token = await createFolderShare(data.source, folder.id);
@@ -812,19 +814,15 @@ function shareFolderMenu(data, state, rerender, folder, anchor, at) {
   ], { at });
 }
 
-// ── P23 folder tags (3-version comparison behind ?ftui=1|2|3 — owner picks one) ───────────────
-// A folder carries its own tags (no inheritance to files, backend p28). Reuses the P11 tagChip
-// (soft coloured chip) so folder tags read like file tags. Three placements of the SAME data +
-// write flow, so the owner can pick the interaction, not just the pixels:
-//   V1 — inline on the card face: chips always visible, add/remove right on the card.
-//   V2 — compact card + popover: a small tag trigger opens a focused editor popover.
-//   V3 — folder info sheet: an ⓘ opens a right-side details sheet with a Tags section.
-function ftuiVersion() {
-  const v = parseInt(new URLSearchParams(location.search).get("ftui"), 10);
-  return (v === 2 || v === 3) ? v : 1;
-}
-// server folder → manage_channels (≈ isAdmin here; server-side is the real fence); personal → owner
-// (always); a read-only shared view never edits.
+// ── P23 folder tags ───────────────────────────────────────────────────────────
+// A folder carries its own tags (no inheritance to files, backend p28). Reuses the P11 tagChip:
+// an untyped tag reads as a GREY chip, a typed "type:value" tag (bpm/key/genre/mood/instrument) in
+// its own COLOUR. The card shows the FIRST FEW inline (read-only, click to search); a "+N" chip and
+// the folder's right-click "Properties" open the popover that shows/edits ALL tags. Small (icon)
+// view stays tag-free; list shows a few inline. Writer-gated: server folder → manage_channels
+// (≈ isAdmin here; server-side is the real fence), personal → owner, a read-only shared view never edits.
+const FOLDER_TAGS_ON_CARD = 3;   // how many tags the card face + a list row show before "+N"
+
 function canWriteFolder(data) { return !data.shared && (data.source === "personal" || !!data.isAdmin); }
 function folderTagTarget(data, folder) { return data.source === "personal" ? { saveFolderId: folder.id } : { folderId: folder.id }; }
 // click a folder tag → search the library for it (same as a file tag, P26)
@@ -865,58 +863,61 @@ function folderTagInput(data, state, rerender, folder, { onDone } = {}) {
   return field;
 }
 
-// V1 — chips inline on the card, editable in place
-function ftDecorateCardV1(card, folder, ctx) {
-  const { data, state, rerender } = ctx;
-  const canW = canWriteFolder(data);
+// the first-few read-only chips shown on a card / list row (click a chip → search). Kept to ONE
+// line so every folder card is the same height (B24-style even tiling); "+N" opens Properties.
+function folderTagPreview(folder, ctx, { max = FOLDER_TAGS_ON_CARD } = {}) {
+  const { state, rerender } = ctx;
   const tags = folder.tags || [];
-  if (!tags.length && !canW) return;
+  if (!tags.length) return null;
   const row = el(".ftags");
-  for (const raw of tags) row.append(tagChip(raw, { removable: canW, onRemove: (r) => removeFolderTagUI(data, state, rerender, folder, r), onSearch: (r) => searchFolderTag(state, rerender, r) }));
-  if (canW) {
-    const add = el("button.ftadd", { title: "Add a tag" }, ["+ tag"]);
-    add.addEventListener("click", (e) => {
-      e.stopPropagation();
-      const fld = folderTagInput(data, state, rerender, folder, { onDone: () => rerender() });
-      add.replaceWith(fld);
-    });
-    row.append(add);
+  for (const raw of tags.slice(0, max)) row.append(tagChip(raw, { onSearch: (r) => searchFolderTag(state, rerender, r) }));
+  if (tags.length > max) {
+    const more = el("button.ftmore", { title: "Show all tags" }, [`+${tags.length - max}`]);
+    more.addEventListener("click", (e) => { e.stopPropagation(); openFolderProperties(more, folder, ctx); });
+    row.append(more);
   }
-  // clicks inside the tag row must not open/select the folder
+  // a click inside the tag row must not select/open the folder
   row.addEventListener("click", (e) => e.stopPropagation());
   row.addEventListener("dblclick", (e) => e.stopPropagation());
-  card.append(row);
+  return row;
 }
 
-// V2 — a compact tag trigger on the card; the editor lives in an anchored popover
-function ftDecorateCardV2(card, folder, ctx) {
-  const { data, state, rerender } = ctx;
-  const canW = canWriteFolder(data);
-  const tags = folder.tags || [];
-  if (!tags.length && !canW) return;
-  const trigger = el("button.fttrigger", { title: canW ? "Tags" : "Tags", "aria-haspopup": "dialog" }, [
-    iconEl("flag", "sm"), el("span", {}, [tags.length ? String(tags.length) : "tag"]),
-  ]);
-  trigger.addEventListener("click", (e) => { e.stopPropagation(); openFolderTagPopover(trigger, folder, ctx); });
-  trigger.addEventListener("dblclick", (e) => e.stopPropagation());
-  const row = el(".ftags.ftcompact", {}, [trigger]);
-  card.append(row);
+// live re-decorate one folder card's tag row after an edit (Properties mutates folder.tags in place)
+function repaintFolderCardTags(folder, ctx) {
+  const card = document.querySelector(`.foldercard[data-folder-id="${folder.id}"]`);
+  if (!card) return;
+  card.querySelector(".ftags")?.remove();
+  const row = folderTagPreview(folder, ctx);
+  if (row) card.append(row);
 }
 
-// V2 popover — chips + add input in a small floating card anchored on the trigger
-function openFolderTagPopover(anchor, folder, ctx) {
+// the card decorator: the first-few preview (large view). Empty folders show nothing here — tags
+// are added via the right-click Properties popover, which is always available to a writer.
+function decorateFolderTags(card, folder, ctx) {
+  if (!ctx) return;
+  const row = folderTagPreview(folder, ctx);
+  if (row) card.append(row);
+}
+
+// Properties — the show-all / edit-all popover (opened from the folder right-click menu + a "+N"
+// chip). File count + every tag (removable for a writer) + a colon-aware add input.
+function openFolderProperties(anchor, folder, ctx) {
   const { data, state, rerender } = ctx;
   const canW = canWriteFolder(data);
   closeMenus();
   const pop = el(".menu.open.ftpop", { role: "dialog" });
   const paint = () => {
     pop.replaceChildren();
-    pop.append(el(".ftpophd", {}, [`Tags · ${folder.name}`]));
+    pop.append(el(".ftpophd", {}, [
+      el("span.ftpopname", {}, [`Properties · ${folder.name}`]),
+      el("span.ftpopcount", {}, [`${folder.count ?? 0} file${folder.count === 1 ? "" : "s"}`]),
+    ]));
+    pop.append(el(".ftseclabel", {}, ["Tags"]));
     const chips = el(".ftags");
-    for (const raw of (folder.tags || [])) chips.append(tagChip(raw, { removable: canW, onRemove: (r) => removeFolderTagUI(data, state, rerender, folder, r, paint), onSearch: (r) => { closeMenus(); searchFolderTag(state, rerender, r); } }));
+    for (const raw of (folder.tags || [])) chips.append(tagChip(raw, { removable: canW, onRemove: (r) => removeFolderTagUI(data, state, rerender, folder, r, () => { paint(); repaintFolderCardTags(folder, ctx); }), onSearch: (r) => { closeMenus(); searchFolderTag(state, rerender, r); } }));
     if (!(folder.tags || []).length) chips.append(el(".ftempty", {}, ["No tags yet."]));
     pop.append(chips);
-    if (canW) pop.append(folderTagInput(data, state, rerender, folder, { onDone: paint }));
+    if (canW) pop.append(folderTagInput(data, state, rerender, folder, { onDone: () => { paint(); repaintFolderCardTags(folder, ctx); } }));
   };
   paint();
   document.body.append(pop);
@@ -927,57 +928,6 @@ function openFolderTagPopover(anchor, folder, ctx) {
   const onDoc = (e) => { if (!pop.contains(e.target) && e.target !== anchor && !anchor.contains(e.target)) closeMenus(); };
   pop._cleanup = () => document.removeEventListener("mousedown", onDoc, true);
   setTimeout(() => document.addEventListener("mousedown", onDoc, true));
-}
-
-// V3 — a subtle count on the card; an ⓘ opens the folder info sheet (tags live there)
-function ftDecorateCardV3(card, folder, ctx) {
-  const { data, state, rerender } = ctx;
-  const tags = folder.tags || [];
-  const info = el("button.iconbtn.ftinfo", { title: "Folder info & tags", "aria-label": "Folder info" }, [iconEl("comment", "sm")]);
-  info.addEventListener("click", (e) => { e.stopPropagation(); openFolderInfoSheet(folder, ctx); });
-  info.addEventListener("dblclick", (e) => e.stopPropagation());
-  card.append(info);
-  if (tags.length) {
-    const line = el(".ftcount", {}, [iconEl("flag", "sm"), el("span", {}, [`${tags.length} tag${tags.length === 1 ? "" : "s"}`])]);
-    card.append(line);
-  }
-}
-
-// V3 sheet — a right-side folder details panel (name · file count · Tags section)
-function openFolderInfoSheet(folder, ctx) {
-  const { data, state, rerender } = ctx;
-  const canW = canWriteFolder(data);
-  document.querySelector(".ftsheetwrap")?.remove();
-  const wrap = el(".ftsheetwrap");
-  const sheet = el(".ftsheet");
-  const close = () => wrap.remove();
-  const paintTags = (host) => {
-    host.replaceChildren();
-    const chips = el(".ftags");
-    for (const raw of (folder.tags || [])) chips.append(tagChip(raw, { removable: canW, onRemove: (r) => removeFolderTagUI(data, state, rerender, folder, r, () => paintTags(host)), onSearch: (r) => { close(); searchFolderTag(state, rerender, r); } }));
-    if (!(folder.tags || []).length) chips.append(el(".ftempty", {}, ["No tags yet."]));
-    host.append(chips);
-    if (canW) host.append(folderTagInput(data, state, rerender, folder, { onDone: () => paintTags(host) }));
-  };
-  const tagHost = el(".ftsheettags");
-  paintTags(tagHost);
-  sheet.append(
-    el(".ftsheettop", {}, [el(".ftsheetname", {}, [iconEl("folder", "sm"), folder.name]), el("button.iconbtn", { title: "Close", onClick: close }, [iconEl("x", "sm")])]),
-    el(".ftsheetmeta", {}, [el("span.k", {}, ["Files"]), el("span.v", {}, [`${folder.count ?? 0}`])]),
-    el(".ftsheetsec", {}, [el(".ftseclabel", {}, ["Tags"]), tagHost]),
-  );
-  wrap.append(sheet);
-  wrap.addEventListener("mousedown", (e) => { if (e.target === wrap) close(); });
-  document.addEventListener("keydown", function esc(e) { if (e.key === "Escape") { close(); document.removeEventListener("keydown", esc); } });
-  document.body.append(wrap);
-}
-
-function decorateFolderTags(card, folder, ctx) {
-  if (!ctx) return;
-  const v = ftuiVersion();
-  if (v === 2) ftDecorateCardV2(card, folder, ctx);
-  else if (v === 3) ftDecorateCardV3(card, folder, ctx);
-  else ftDecorateCardV1(card, folder, ctx);
 }
 
 // ── P14 view densities (list / small / large) ────────────────────────────────
@@ -1011,7 +961,7 @@ function largeView(subfolders, files, hooks) {
   const grid = el(".masonry.even.exlarge");
   for (const f of subfolders) {
     const fcard = wireFolderEl(folderCard(f, { onShare: onShareFolder }), f, hooks);
-    decorateFolderTags(fcard, f, hooks.ftctx);   // P23: the folder's own tags (version behind ?ftui=)
+    decorateFolderTags(fcard, f, hooks.ftctx);   // P23: the folder's first-few tags (Properties shows all)
     grid.append(fcard);
   }
   files.forEach((w, i) => {
@@ -1048,8 +998,12 @@ function listView(subfolders, files, hooks) {
   const cols = showWho ? ["Name", "Type", "Size", "Uploader", "Added"] : ["Name", "Type", "Size", "Added"];
   table.append(el(".flrow.flhd", {}, cols.map((c) => el("span", {}, [c]))));
   for (const f of subfolders) {
+    // P23: a list row can carry a few of the folder's tags inline after the name (icon view can't).
+    const nameCell = el("span.flnm", {}, [iconEl("folder", "sm"), el("span.flnmtxt", {}, [f.name])]);
+    const tagPrev = hooks.ftctx ? folderTagPreview(f, hooks.ftctx) : null;
+    if (tagPrev) { tagPrev.classList.add("flntags"); nameCell.append(tagPrev); }
     const cells = [
-      el("span.flnm", {}, [iconEl("folder", "sm"), f.name]),
+      nameCell,
       el("span", {}, ["folder"]), el("span", {}, ["—"]),
       ...(showWho ? [el("span", {}, ["—"])] : []),
       el("span", {}, [`${f.count} file${f.count === 1 ? "" : "s"}`]),

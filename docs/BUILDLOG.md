@@ -2834,3 +2834,42 @@ NEXT: owner picks one → keep it, delete the other two decorators + the ?ftui s
 GOTCHA: the tag row/trigger/info button all stopPropagation on click+dblclick so they don't select/open
   the folder. folderTagInput persists each add immediately (RPC), unlike tagEditor's batch getTags — a
   folder tag must survive a repaint, so it can't wait for a form submit.
+
+## 2026-08-30 — P23 (UI) DONE — owner picked V1 (inline) + refinements
+IN PROGRESS: (cleared)
+DONE: shipped the folder-tag UI. The owner picked **V1 (inline chips on the card)** from the 3-version
+  batch and asked for refinements — all applied:
+  - Card shows the **first 3 tags on ONE line** + a **"+N"** chip; "+N" and the folder right-click
+    **Properties** item open a popover (`openFolderProperties`) listing/editing ALL tags (file count +
+    removable chips + colon-aware add input). Editing there mutates folder.tags in place and live-repaints
+    the card row (`repaintFolderCardTags`). No inline add on the card anymore — Properties is the editor.
+  - **Untyped tag = grey chip, typed (`type:value`) = its colour** — this is just P11 `tagChip`, reused.
+  - **List view** shows a few tags inline after the folder name (`.flntags`); **small/icon view: none**.
+  - **Card heights fixed** ("wonky"): `.masonry.even.exlarge .card{display:flex;flex-direction:column;
+    height:100%}` so a row's cards all take the tallest card's height; the card tag row is single-line
+    (`flex-wrap:nowrap;overflow:hidden`) so tags never grow a card. With B24's 2-line title clamp the grid
+    tiles evenly now.
+  - Removed the V2/V3 decorators + the `?ftui` switch + their CSS (kept only V1 + the Properties popover).
+  - `loadExplorer` (server + personal) reads `folder_tags` → `folder.tags`; demo folders seeded with tags.
+  Verified: large + list + Properties, both themes at 1440, 0 pageerrors / 0 icon warnings; grey/coloured
+  distinction correct; writer-gated (server=isAdmin, personal=owner, shared read-only). Commit <sha>.
+NEXT (pick up here):
+  1. **P23 last sub-item (pairs P22):** the **upload sheet** should let you tag a **subfolder row** on
+     upload — `app/screens/upload.js renderChosen` already renders per-file rows with a tagEditor (P22);
+     add the same for any subfolder in a structured folder upload, writing via `addFolderTag` after the
+     folder is created. That's the only unfinished piece of P23.
+  2. **Live QA (owner, preview):** real add/remove of a folder tag persists across reload; a non-admin
+     member sees a server folder's tags read-only (no add box / ✕). Claim added to QA-CHECKLIST.
+  3. **Bigger open items** (all need the owner's 3-version pick unless noted): search model P27/P31/P34,
+     density slider P32, filter rework P33, profile P29, loaders P35, crop modal P36, selection B32/B33.
+     New intake **P37** (multi-file download → preserve folders + zip) is captured with two approaches.
+  4. **This session's shipped set** (all on preview): B35 (search substring, migration p27), P30 x2
+     (channel-switch read parallelization + optimistic message send), B30 (viewer stays open on refocus),
+     B34 (Load-earlier hidden when none), B36 (dark-mode path bar), P28 (cursor context menus), B31
+     (no-text-select drag + mini-icon ghost), P23 (folder tags, migration p28 + UI). Migrations applied
+     live: **p27_search_files_substring**, **p28_folder_tags**. DB security + performance advisors both
+     clean (only the standard security_definer WARN + benign unused-index INFO on a zero-traffic DB).
+GOTCHA: folder-tag edits happen in the Properties popover and call `repaintFolderCardTags(folder, ctx)` to
+  update the card behind WITHOUT a full rerender (a rerender would close the popover). The card is found by
+  `.foldercard[data-folder-id="<id>"]`. Keep the card tag row single-line — the equal-height fix depends on
+  it. Do NOT reintroduce an inline card add input (it broke the single-line/height rule); use Properties.
