@@ -15,9 +15,9 @@
 
 import { el, toast, openMenu, closeMenus, openModal, VisibilitySeg, Button, copyToClipboard } from "../ui.js";
 import { iconEl } from "../icons.js";
-import { parseTag } from "../tags.js";
+import { parseTag, TAG_TYPES } from "../tags.js";
 import { navigate, reload } from "../router.js";
-import { createFolder, moveToFolder, trashWorks, restoreWork, purgeWork, emptyTrash, loadTrash, starWork, unstarWork, saveToFiles, renameWork, setHidden, createShareLink, shareUrl, loadShareLinks, revokeShareLink, setVisibility, visFromDb, createFolderShare, folderShareUrl, requestToJoin, refreshStorage } from "../data.js";
+import { createFolder, moveToFolder, trashWorks, restoreWork, purgeWork, emptyTrash, loadTrash, starWork, unstarWork, saveToFiles, renameWork, setHidden, createShareLink, shareUrl, loadShareLinks, revokeShareLink, setVisibility, visFromDb, createFolderShare, folderShareUrl, requestToJoin, refreshStorage, searchFiles } from "../data.js";
 import { workCard, folderCard, mediaUrl, KIND_ICON, downloadWork } from "../cards.js";
 import { channelColumn } from "./workspace.js";
 import { openUpload, enableDropUpload } from "./upload.js";
@@ -98,7 +98,7 @@ export function renderExplorer(data, view = {}) {
     channels: new Set(),    // by placement channel name (server only)
     uploaders: new Set(),   // by author name (server only)
     tags: new Set(),        // by content tag (exact value, incl. typed "type:value")
-    tagTypes: new Set(),    // P11: by tag TYPE (bpm/key/genre…) — a file with any tag of that type
+    // (the P11 "Tag type" facet was removed in P24 — use the `hastag:bpm` search modifier instead)
     date: "any",            // any/today/week/month/year
     sort: "latest",        // latest/oldest/name/size
     dir: "desc",           // sort direction
@@ -108,6 +108,9 @@ export function renderExplorer(data, view = {}) {
     // the file whose details viewer is open — mirrored into the URL (?file=) so a reload / link
     // restores the open file; set only if the id actually exists in this bundle.
     openFileId: (view.fileId && (data.files || []).some((w) => w.id === view.fileId)) ? view.fileId : null,
+    // P24: cache of the last server-side search (search_files) — { sig, items, total, offset,
+    // loading, error }. Only used live for a text/modifier search; browse + demo stay client-side.
+    srv: null,
   };
   // trashed rows shown in the Trash view: seeded from the demo fixture, refreshed from
   // the DB on entering Trash in live mode, and kept in sync by the row actions.
@@ -177,6 +180,31 @@ export function renderExplorer(data, view = {}) {
     lastFolder = state.folderId;
   }
   state._syncUrl = syncUrl;
+
+  // P24: run a server-side search (search_files) for `sig`/`args`, caching onto state.srv; a stale
+  // result (superseded by a newer query) is discarded via the token. `append` pages more in. On
+  // error, items=null → contents() falls back to the client-side filter over the loaded works.
+  let srvToken = 0;
+  async function runServerSearch(sig, args, append) {
+    const my = ++srvToken;
+    const prevItems = (append && state.srv?.sig === sig) ? (state.srv.items || []) : [];
+    const offset = append ? prevItems.length : 0;
+    state.srv = { sig, args, items: prevItems, total: state.srv?.total || 0, offset, loading: true, error: false };
+    if (!append) repaintBody();   // show the loading state immediately for a fresh query
+    try {
+      const starredIds = new Set((data.files || []).filter((f) => f.starred).map((f) => f.id));
+      const { total, items } = await searchFiles({ ...args, membersById: data.membersById || {}, starredIds, limit: 60, offset });
+      if (my !== srvToken) return;   // a newer search superseded this one
+      state.srv = { sig, args, items: [...prevItems, ...items], total, offset: prevItems.length + items.length, loading: false, error: false };
+    } catch (e) {
+      if (my !== srvToken) return;
+      console.error("[eski search] server search failed, falling back to client:", e);
+      state.srv = { sig, args, items: null, total: 0, offset: 0, loading: false, error: true };
+    }
+    repaintBody();
+  }
+  state._runServerSearch = runServerSearch;
+
   const rerender = () => { paint(tree, pane, data, state, rerender); syncUrl(); };
   rerender();
   // Restore an open file from the URL (?file=) on a deep link / reload / back-forward. openFile is
@@ -239,6 +267,45 @@ function explorerUrl(data, { folderId, fileId, mode } = {}) {
   return explorerBase(data) + (s ? `?${s}` : "");
 }
 function isDemoQS() { return new URLSearchParams(location.search).get("demo") === "1"; }
+
+// P21 search modifiers — parse the explorer search box into structured filters, replacing the old
+// "Tag type" facet dropdown with typed-in modifiers:
+//   bpm:120     a known tag TYPE before the colon → an exact typed tag  → tags:['bpm:120']
+//   hastag:bpm  → hastypes:['bpm'] (files carrying any tag of that type)
+//   sortby:bpm_desc | bpm_descending | name_asc | size_desc | latest | oldest → sort
+//   anything else → free text, which (B19) also matches a file's tags, not just its name.
+// Everything here also becomes the args for the server-side search_files RPC (data.searchFiles).
+function parseQuery(raw) {
+  const tags = [], hastypes = [], words = [];
+  let sort = null;
+  for (const tok of String(raw || "").trim().split(/\s+/).filter(Boolean)) {
+    const ci = tok.indexOf(":");
+    if (ci > 0) {
+      const key = tok.slice(0, ci).toLowerCase();
+      const val = tok.slice(ci + 1);
+      if (key === "hastag" && val) { hastypes.push(val.toLowerCase()); continue; }
+      if (key === "sortby" && val) { const s = parseSortBy(val); if (s) { sort = s; continue; } }
+      if (TAG_TYPES.includes(key) && val) { tags.push(`${key}:${val}`); continue; }
+    }
+    words.push(tok);
+  }
+  return { text: words.join(" "), tags, hastypes, sort };
+}
+function parseSortBy(v) {
+  const m = String(v).toLowerCase().match(/^(.*?)(?:_(asc|ascending|desc|descending))?$/);
+  const by = m[1], dir = (m[2] && m[2].startsWith("asc")) ? "asc" : "desc";
+  if (by === "latest") return { by: "latest", dir: "desc" };
+  if (by === "oldest") return { by: "oldest", dir: "asc" };
+  if (by === "name" || by === "size") return { by, tag: null, dir };
+  if (TAG_TYPES.includes(by)) return { by: "tag", tag: by, dir };
+  return null;
+}
+// Is any part of the query text a recognised modifier (typed tag / hastag / sortby)? Used to tint
+// the search field so the user sees the modifier was understood (like the tagEditor's colon cue).
+function queryHasModifier(raw) {
+  const pq = parseQuery(raw);
+  return pq.tags.length > 0 || pq.hastypes.length > 0 || !!pq.sort;
+}
 
 // ── the folder tree (left) ───────────────────────────────────────────────────
 function paintTree(tree, data, state, rerender) {
@@ -357,8 +424,12 @@ function paint(tree, pane, data, state, rerender) {
 
   // toolbar — search · filters (Type/Channel/Uploader/Tag/Date/Sort) · New folder · Upload
   const personal = data.source === "personal";
-  const search = el(".field.searchbar", {}, [iconEl("search", "sm"),
-    el("input", { placeholder: data.shared ? "Search this folder" : (personal ? "Search your files" : "Search this server's files"), value: state.query, onInput: (e) => { state.query = e.target.value; repaintBody(); } }),
+  // Placeholder hints the modifiers now that the Tag-type facet is gone (P21). The field tints
+  // (`.hasmod`) when a recognised modifier (bpm:120 / hastag:bpm / sortby:…) is present, so the
+  // user sees it was understood — like the tagEditor's colon cue.
+  const search = el(".field.searchbar" + (queryHasModifier(state.query) ? ".hasmod" : ""), {}, [iconEl("search", "sm"),
+    el("input", { placeholder: data.shared ? "Search this folder" : (personal ? "Search files · bpm:120 · hastag:key" : "Search this server · bpm:120 · hastag:key"), value: state.query,
+      onInput: (e) => { state.query = e.target.value; search.classList.toggle("hasmod", queryHasModifier(state.query)); repaintBody(); } }),
   ]);
   // onDone reloads the route so a just-uploaded file (or a whole uploaded folder) shows
   // immediately — the explorer data is cached per render, so without a refetch the new work
@@ -373,8 +444,6 @@ function paint(tree, pane, data, state, rerender) {
   const channelOpts = uniq(data.files.map((w) => w.channelName)).map((c) => [c, c]);
   const uploaderOpts = uniq(data.files.map((w) => w.who?.name)).map((u) => [u, u]);
   const tagOpts = uniq(data.files.flatMap((w) => w.tags || [])).map((t) => { const p = parseTag(t); return [t, p.typed ? `${p.type} ${p.value}` : p.value]; });
-  // P11: the distinct tag TYPES present → their own facet (filter by bpm / key / genre …)
-  const tagTypeOpts = uniq(data.files.flatMap((w) => (w.tags || []).map((t) => parseTag(t).type).filter(Boolean))).map((t) => [t, t]);
   // P8: Type filters by ACTUAL file extension present (.wav / .flp / .png …), derived from the
   // files in view — not the broad Images/Audio/Video buckets. The value is the lowercased ext.
   const typeOpts = uniq(data.files.map((w) => (w.file_ext || "").toLowerCase())).map((e) => [e, "." + e]);
@@ -395,7 +464,6 @@ function paint(tree, pane, data, state, rerender) {
   };
   const typeBtn = multiBtn("Type", state.types, typeOpts);
   const tagBtn = multiBtn("Tag", state.tags, tagOpts);
-  const tagTypeBtn = multiBtn("Tag type", state.tagTypes, tagTypeOpts);
   // Channel + Uploader are server context only (personal + shared files carry neither)
   const serverSource = data.source === "server";
   const chanBtn = serverSource ? multiBtn("Channel", state.channels, channelOpts) : null;
@@ -419,7 +487,7 @@ function paint(tree, pane, data, state, rerender) {
   const toolbar = el(".toolbar", {}, [
     search,
     el(".tbfilters", {}, [
-      typeBtn, chanBtn, uploaderBtn, tagBtn, tagTypeBtn, dateBtn, sortBtn, dirBtn, starFilterBtn,
+      typeBtn, chanBtn, uploaderBtn, tagBtn, dateBtn, sortBtn, dirBtn, starFilterBtn,
       el(".hdctl", {}, [hiddenBtn, viewBtn]),
     ].filter(Boolean)),
   ]);
@@ -553,40 +621,84 @@ function selAct(icon, label, onClick) {
 
 // the current folder's subfolders + files, as grid or list; or search results
 function contents(data, state, rerender, sel) {
+  const pq = parseQuery(state.query);          // P21: bpm:120 / hastag:bpm / sortby:… + free text
   const searching = state.query.trim().length > 0;
-  const q = state.query.trim().toLowerCase();
+  const qtext = pq.text.toLowerCase();
 
   const openFolder = (f) => { state.folderId = f.id; state.query = ""; rerender(); };
 
   // P26: a facet filter (tag / type / channel / uploader / date) searches the WHOLE tree, not
   // just the current folder — so clicking a tag finds every file with it, wherever it lives.
-  const anyFacet = state.types.size || state.channels.size || state.uploaders.size || state.tags.size || state.tagTypes.size || state.date !== "any";
-  let subfolders, files;
-  if (state.starred) {
-    subfolders = [];   // Starred is a flat grid of every starred work (no folders)
-    files = data.files.filter((w) => w.starred);
-  } else if (searching) {
-    subfolders = [];   // search flattens the whole tree to matching files
-    files = data.files.filter((w) => (w.title || "").toLowerCase().includes(q));
-  } else if (anyFacet) {
-    subfolders = [];   // a facet filter flattens the tree (global filter, not folder-scoped)
-    files = data.files.slice();
-  } else {
-    subfolders = data.folders.filter((f) => (f.parentId || null) === state.folderId);
-    files = data.files.filter((w) => (w.folderId || null) === state.folderId);
+  const anyFacet = state.types.size || state.channels.size || state.uploaders.size || state.tags.size || state.date !== "any";
+  let subfolders, files, serverPaged = null;
+
+  // ── P24 server-side search ──────────────────────────────────────────────────
+  // Live, when the query carries real search intent (free text / typed tags / hastag / tag-sort),
+  // ask Postgres (search_files) instead of filtering the loaded set — so it scales past what the
+  // client holds. Channel/Uploader facets aren't in the RPC, so a query using them stays client-
+  // side (all facets correct). Demo, browse, starred, and RPC errors all fall back to client.
+  const hasSearchIntent = !!(pq.text || pq.tags.length || pq.hastypes.length || (pq.sort && pq.sort.by === "tag"));
+  const useSrv = !isDemoQS() && !data.shared && !state.starred && hasSearchIntent
+    && !state.channels.size && !state.uploaders.size && (data.source === "server" || data.source === "personal");
+  if (useSrv) {
+    const args = {
+      source: data.source, serverId: data.server?.id || null,
+      text: pq.text || null,
+      tags: [...state.tags, ...pq.tags],
+      hastypes: pq.hastypes,
+      exts: [...state.types],
+      since: state.date !== "any" ? dateCutoff(state.date).toISOString() : null,
+      sort: pq.sort ? pq.sort.by : state.sort,
+      sortTag: pq.sort?.tag || null,
+      dir: pq.sort ? pq.sort.dir : state.dir,
+    };
+    const sig = JSON.stringify(args);
+    if (!state.srv || state.srv.sig !== sig) { state._runServerSearch(sig, args, false); }   // fires async → repaintBody
+    if (!state.srv || state.srv.sig !== sig || (state.srv.loading && !(state.srv.items && state.srv.items.length))) {
+      return el(".exview", { "data-exview": "grid" }, [el(".searchloading", {}, [iconEl("search"), el("span", {}, ["Searching…"])])]);
+    }
+    if (state.srv.items) {   // success (possibly empty) — the server already applied text/tags/exts/date/sort
+      subfolders = [];
+      files = state.srv.items.slice();
+      if (!state.showHidden) files = files.filter((w) => !w.hidden);
+      serverPaged = { total: state.srv.total, shown: files.length, loading: state.srv.loading };
+      state._files = files;
+    }
+    // else state.srv.error (items===null) → fall through to the client-side filter below
   }
-  // Hidden/utility works (#55) are omitted from the library view unless Show-hidden is on.
-  if (!state.showHidden) files = files.filter((w) => !w.hidden);
-  // Facet filters, then sort (all apply to files only; subfolders always lead the grid).
-  // Within a facet the selected values union; across facets they intersect (§C.6).
-  if (state.types.size) files = files.filter((w) => state.types.has((w.file_ext || "").toLowerCase()));
-  if (state.channels.size) files = files.filter((w) => state.channels.has(w.channelName));
-  if (state.uploaders.size) files = files.filter((w) => state.uploaders.has(w.who?.name));
-  if (state.tags.size) files = files.filter((w) => (w.tags || []).some((t) => state.tags.has(t)));
-  if (state.tagTypes.size) files = files.filter((w) => (w.tags || []).some((t) => state.tagTypes.has(parseTag(t).type)));
-  if (state.date !== "any") { const cut = dateCutoff(state.date); files = files.filter((w) => new Date(w.created_at || 0) >= cut); }
-  files = sortFiles(files, state.sort, state.dir);
-  state._files = files;   // the current in-view set, for ⌘A select-all
+
+  if (!serverPaged) {
+    if (state.starred) {
+      subfolders = [];   // Starred is a flat grid of every starred work (no folders)
+      files = data.files.filter((w) => w.starred);
+    } else if (searching || anyFacet) {
+      subfolders = [];   // a search / facet flattens the whole tree to matching files
+      files = data.files.slice();
+      // B19: a bare term matches the filename OR any of the file's tags (was filename only).
+      if (qtext) files = files.filter((w) => (w.title || "").toLowerCase().includes(qtext) || (w.tags || []).some((t) => t.toLowerCase().includes(qtext)));
+      // P21: exact typed tags (bpm:120) — every one must be present.
+      if (pq.tags.length) files = files.filter((w) => pq.tags.every((t) => (w.tags || []).includes(t)));
+      // P21: hastag:bpm — the file must carry a tag of each named type.
+      if (pq.hastypes.length) files = files.filter((w) => pq.hastypes.every((ty) => (w.tags || []).some((t) => parseTag(t).type === ty)));
+    } else {
+      subfolders = data.folders.filter((f) => (f.parentId || null) === state.folderId);
+      files = data.files.filter((w) => (w.folderId || null) === state.folderId);
+    }
+    // Hidden/utility works (#55) are omitted from the library view unless Show-hidden is on.
+    if (!state.showHidden) files = files.filter((w) => !w.hidden);
+    // Facet filters, then sort (all apply to files only; subfolders always lead the grid).
+    // Within a facet the selected values union; across facets they intersect (§C.6).
+    if (state.types.size) files = files.filter((w) => state.types.has((w.file_ext || "").toLowerCase()));
+    if (state.channels.size) files = files.filter((w) => state.channels.has(w.channelName));
+    if (state.uploaders.size) files = files.filter((w) => state.uploaders.has(w.who?.name));
+    if (state.tags.size) files = files.filter((w) => (w.tags || []).some((t) => state.tags.has(t)));
+    if (state.date !== "any") { const cut = dateCutoff(state.date); files = files.filter((w) => new Date(w.created_at || 0) >= cut); }
+    // Sort: a sortby: modifier (incl. tag-value sort) overrides the Sort/dir buttons when present.
+    const sortBy = pq.sort ? pq.sort.by : state.sort;
+    const sortDir = pq.sort ? pq.sort.dir : state.dir;
+    files = sortFiles(files, sortBy, sortDir, pq.sort?.tag || null);
+    state._files = files;   // the current in-view set, for ⌘A select-all
+  }
 
   // a card opens the Details pane (§C.7): server files carry tags but no comments;
   // siblings = the files in view (prev/next); Location = the file's own folder path.
@@ -636,9 +748,18 @@ function contents(data, state, rerender, sel) {
   const onStar = (w) => toggleStar(data, state, rerender, w);
   const onMenu = data.shared ? null : (w, anchor) => openCardMenu(data, state, rerender, w, anchor);   // read-only shared view has no per-card owner menu (P9)
   const onShareFolder = (folder, anchor) => shareFolderMenu(data, folder, anchor);
-  if (state.mode === "feed") return feedView(data, state, openFile);
-  if (state.mode === "list") return listView(subfolders, files, { openFile, openFolder });
-  return gridView(subfolders, files, { openFile, openFolder, onFolderClick, onCardClick, onStar, onMenu, onShareFolder, showWho: data.source !== "personal" });
+  const view = state.mode === "feed" ? feedView(data, state, openFile)
+    : state.mode === "list" ? listView(subfolders, files, { openFile, openFolder })
+    : gridView(subfolders, files, { openFile, openFolder, onFolderClick, onCardClick, onStar, onMenu, onShareFolder, showWho: data.source !== "personal" });
+  // P24: a paged server search that has more rows gets a "Load more" footer (client-side folder
+  // browsing loads the whole tree at once, so it never needs one).
+  if (serverPaged && serverPaged.shown < serverPaged.total) {
+    const more = el("button.btn.loadmorefiles", { disabled: !!serverPaged.loading },
+      [serverPaged.loading ? "Loading…" : `Load more (${serverPaged.shown} of ${serverPaged.total})`]);
+    more.addEventListener("click", () => { if (state.srv?.args) state._runServerSearch(state.srv.sig, state.srv.args, true); });
+    return el("div", { style: "display:flex;flex-direction:column;min-height:0;flex:1" }, [view, el(".loadmorewrap", {}, [more])]);
+  }
+  return view;
 }
 
 // K9 — Drive-style "share a folder": right-clicking a folder card opens this menu. Copy folder
@@ -738,8 +859,18 @@ const KIND_LIST_ICON = { audio: "voice", image: "image", video: "video", text: "
 
 // sort a file list by the chosen key + direction. Name is A→Z at asc; the others are
 // natural (latest/largest first) at the default desc.
-function sortFiles(files, sort, dir) {
+function sortFiles(files, sort, dir, sortTag) {
   const out = files.slice();
+  // P21 sortby:bpm_desc — order by the numeric part of the file's tag of that type (nulls last,
+  // both directions); handled up front so the outer reverse can't float the nulls to the top.
+  if (sort === "tag") {
+    const num = (w) => {
+      for (const t of (w.tags || [])) { const p = parseTag(t); if (p.type === sortTag) { const n = parseFloat(String(p.value).replace(/[^0-9.]/g, "")); if (!isNaN(n)) return n; } }
+      return null;
+    };
+    out.sort((a, b) => { const x = num(a), y = num(b); if (x == null && y == null) return 0; if (x == null) return 1; if (y == null) return -1; return dir === "asc" ? x - y : y - x; });
+    return out;
+  }
   const cmp = {
     latest: (a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0),
     oldest: (a, b) => new Date(a.created_at || 0) - new Date(b.created_at || 0),

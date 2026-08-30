@@ -406,25 +406,21 @@ per channel, builds on P11), D6 (review canvas/kanban/versions).
       reordered to **`[cur · seek · tot · (skip-back skip-forward) · mute · fullscreen]`** — the two
       skip buttons now sit together on the right in a `.dmskips` group (was rew on the far left, ff
       after the track). *Files:* `app/ui.js` (`MediaPlayer`), `styles/primitives.css` (`.dmskips`).
-- [ ] **P21 · Tag/metadata SEARCH MODIFIERS — replaces the P11 Tag-type filter facet (round-8, owner).**
-      **Remove the "Tag type" filter facet** added in P11 (the dropdown). Instead let the user type
-      modifiers **straight in the explorer search bar**:
-      - **`bpm:120`** — a typed-tag search; once confirmed it **turns the type's colour** in the field
-        (like the tagEditor's colon recognition) and filters to files carrying that tag.
-      - **`hastag:bpm`** — filter to files that have any tag of that type.
-      - **`sortby:bpm_descending`** (and `_ascending`) — sort by a tag/metadata value.
-      - General **advanced filtering & sorting by tag or metadata** via such modifiers (extensible set).
-      Parse modifiers out of the query (reuse the `from:/in:/has:` pattern in `schema-15-search.sql`),
-      colour a recognised typed-tag token in the field, apply the filter/sort to the explorer view.
-      Keeps the typed-tag **colours + `type:value` storage** from P11 (only the *facet dropdown* is
-      removed). *Files:* `app/screens/explorer.js` (search parse + apply; remove `tagTypeBtn`/
-      `state.tagTypes`), `app/tags.js` (modifier helpers), maybe `app/data.js`. *Medium-hard.*
-      **Supersedes the P11 Tag-type facet.**
-- [ ] **B19 · Free-text search must include TAGS (round-8).** A bare search term (no modifier) should
-      match a file whose **tags** contain it, not just the filename — today tags aren't searched unless
-      specified. Fold the tag text into the explorer's client-side search filter (and the `search_tsv`
-      / search RPC if server-side search is in play). *Files:* `app/screens/explorer.js` (the search
-      filter predicate), possibly `schema-15-search.sql`. *Easy-med.* Pairs with **P21**.
+- [x] **P21 · Tag/metadata SEARCH MODIFIERS — replaces the P11 Tag-type filter facet (round-8).**
+      *Done (folded into P24; demo-verified + backend role-sim).* The **"Tag type" facet dropdown is
+      removed** (`state.tagTypes` gone). Modifiers are typed straight in the explorer search bar,
+      parsed by `parseQuery()`: **`bpm:120`** (a known tag TYPE before the colon → an exact typed-tag
+      filter), **`hastag:bpm`** (files carrying any tag of that type), **`sortby:bpm_desc` /
+      `_descending` / `name_asc` / `size_desc` / `latest` / `oldest`** (sort, incl. tag-value sort).
+      A recognised modifier **tints the search field** (`.hasmod`). Applied both client-side (the
+      loaded set) and server-side (search_files args). *Files:* `app/screens/explorer.js`
+      (`parseQuery`/`parseSortBy`, facet removal, `sortFiles` tag-value sort), `styles/primitives.css`
+      (`.searchbar.hasmod`). **Supersedes the P11 Tag-type facet.**
+- [x] **B19 · Free-text search must include TAGS (round-8).** *Done (demo-verified — "drums" matches a
+      file tagged drums with no "drums" in its name).* A bare term now matches the filename OR any of
+      the file's tags, client-side (`(w.tags||[]).some(t => t.includes(term))`) and server-side
+      (search_files unions the filename FTS with a `content_tags` ILIKE). *Files:*
+      `app/screens/explorer.js`, `schema-35-search-files.sql`. Folded into P24.
 
 > ### 🟢 Round-9 (owner test, 2026-08-30) — upload perf/UX at scale, explorer + rail nitpicks
 > Owner is about to upload **gigabytes**; captured for the master todo. **Not yet built.** Sorted below.
@@ -485,14 +481,25 @@ per channel, builds on P11), D6 (review canvas/kanban/versions).
       its tags (reuse `tagChip`/`tagEditor`), and the P22 upload list letting you tag a subfolder row.
       *Files:* schema (folder tags + RLS/RPC), `app/data.js`, `app/screens/explorer.js` (folder card +
       details), `app/screens/upload.js` (subfolder rows). *Medium-hard.* Pairs with **P22**.
-- [ ] **P24 · A real, in-depth search built for scale (round-9).** With gigabytes of files coming, the
-      explorer's client-side substring filter won't hold. Build a **real server-side search**:
-      full-text over filename + tags + metadata (the `search_tsv` / `schema-15-search.sql` groundwork),
-      the **modifiers from P21** (`bpm:120`, `hastag:`, `sortby:…`), tag inclusion (**B19**), paginated
-      results, and fast enough on a large library. Likely a `search_files(server, query, filters)` RPC
-      backed by GIN indexes. *Files:* `schema-15-search.sql` (+ indexes), a search RPC, `app/data.js`,
-      `app/screens/explorer.js` / `app/screens/search.js`. *Hard.* **Supersedes** the ad-hoc pieces in
-      **P21/B19** (fold them in) — this is the real version.
+- [x] **P24 · A real, in-depth search built for scale (round-9).** *Done (backend role-sim-verified
+      against the real 202-work DB; frontend demo-verified + shape-contract verified; live e2e →
+      QA).* New **`search_files` RPC** (schema-35, migration **p26**) does the matching in Postgres so
+      it scales past the client filter: full-text over the filename (`works.search_tsv`, GIN) UNIONed
+      with tag-contains (**B19**), the **P21 modifiers** as structured args (exact tags, hastag types,
+      extension/date facets, `sortby` incl. numeric tag-value sort), paginated with a total count,
+      returning the card fields + aggregated tags + author + folder + channel. SECURITY INVOKER, so
+      the `works_read` RLS (`can_read_work`) fences visibility — role-sim proved a **non-member sees 0**
+      of a server's works. Enabled `pg_trgm` + a trigram GIN on `content_tags(tag)`. **Frontend**:
+      `data.searchFiles` wraps the RPC; the explorer routes a **text/modifier search** to it live
+      (`state.srv` cache, a "Load more" pager, a stale-token guard, and a **client-side fallback** on
+      RPC error / when a Channel-or-Uploader facet is active / in demo). The client-side path also
+      got the P21 modifiers + B19 + the Tag-type-facet removal, so search improves in demo too.
+      *Files:* `schema-35-search-files.sql`, `app/data.js` (`searchFiles`), `app/screens/explorer.js`
+      (`parseQuery`, `runServerSearch`, server branch + Load-more), `styles/content.css`,
+      `styles/primitives.css`. Live search on preview (real RPC round-trip, paging) → QA-CHECKLIST.
+      **Superseded/folded in P21 + B19.** *Remaining follow-up (not blocking):* the explorer still
+      preloads the whole work set for browsing — once that's paginated too, `search_files` becomes the
+      sole engine; Channel/Uploader could then move into the RPC (add `p_channels` + uploader-by-name).
 - [x] **P25 · Show TOTAL upload size, not just per-file (round-9).** *Done.* The `renderChosen` header
       now shows the combined size (`.chosentot`, sum of `f.size` via `fmtSize`) beside the title, so a
       multi-file / folder upload reads its total (e.g. "18 files · 2.4 GB"); per-file sizes stay in the

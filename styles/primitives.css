@@ -134,6 +134,10 @@
    search screen and quick-switcher search fields; overrides any larger per-screen font. */
 .field.searchbar{padding:6px 9px}
 .field.searchbar input{font-size:var(--fs-sm)}
+/* P21: a recognised search modifier (bpm:120 / hastag:bpm / sortby:…) tints the field + its icon so
+   the user sees it was understood — the field is the affordance, so it steps its own border to --ink. */
+.field.searchbar.hasmod{border-color:var(--ink)}
+.field.searchbar.hasmod>.ic{color:var(--ink)}
 
 /* P11 — typed-tag soft chip (tags.js tagChip). Owner-picked V2: a compact --r box washed with
    the type hue for a typed tag; neutral --tagbg for an untyped one. The value carries; the type

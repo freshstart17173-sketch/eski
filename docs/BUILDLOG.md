@@ -2579,3 +2579,23 @@ NEXT: P24 frontend — parse "bpm:120 / hastag:bpm / sortby:bpm_desc" in the exp
 GOTCHA: search_files is SECURITY INVOKER — do NOT switch it to DEFINER (RLS is the fence). The
   p_source/p_server predicate only SCOPES; RLS still filters. tag-value sort strips non-numerics from
   the value then casts (nulls last), so "sortby:bpm_desc" orders by the numeric bpm.
+
+## 2026-08-30 — P24 (frontend) real search wired + P21 modifiers + B19 (folds both in)
+IN PROGRESS: (cleared)
+DONE: the explorer search bar is now a real search. parseQuery() parses P21 modifiers — bpm:120
+  (exact typed tag), hastag:bpm (has a tag of that type), sortby:bpm_desc/name_asc/… (sort, incl.
+  numeric tag-value sort) — and a recognised modifier tints the field (.hasmod). Free text now
+  matches tags too (B19), client- and server-side. Removed the P11 "Tag type" facet (state.tagTypes
+  gone) — hastag: replaces it. data.searchFiles wraps the verified search_files RPC; the explorer
+  routes a text/modifier search to it LIVE (state.srv cache + "Load more" pager + stale-token guard),
+  with a client-side fallback on RPC error / when a Channel-or-Uploader facet is active / in demo, so
+  browsing and demo are untouched. sortFiles gained a tag-value sort. Verified: demo — facet removed,
+  B19 "drums" matches a tag-only file, modifier tint toggles, 0 pageerrors; a synthetic search row
+  renders as a card without error (shape→render contract); boot both themes clean; URL test still
+  green. Live RPC round-trip + paging on preview → QA-CHECKLIST §10. Commits <backend p26> + <this>.
+NEXT: owner asked to knock out the quick UI todos. Remaining open: P23 (folder tags — schema),
+  P14 (view densities — visual, 3-version rule), B9 (live QA), B12 (owner-skipped).
+GOTCHA: search_files is only routed to for a text/modifier search with no Channel/Uploader facet
+  (those aren't in the RPC yet) — otherwise the client path runs (correct, since the explorer still
+  preloads all works). If loadExplorer ever stops preloading, extend the RPC with p_channels +
+  uploader-by-name and make it the sole engine.

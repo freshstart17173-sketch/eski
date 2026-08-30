@@ -387,6 +387,44 @@ export async function fetchChannelAttachment(workId, membersById = {}, chanName 
   return shapeWork(w, null, membersById, chanName, (tags || []).map((t) => t.tag));
 }
 
+// P24: server-side file search (the search_files RPC — schema-35). Does the heavy matching in
+// Postgres so it scales past the client-side substring filter: full-text over the filename +
+// tag-contains (B19), the P21 modifiers (exact tags, hastag types, sortby), plus Type(ext)/Date
+// facets, paginated. Returns { total, items } with items shaped exactly like data.files (so the
+// same explorer cards/handlers render them). `membersById` gives the member hue; `starredIds` sets
+// the star state from what the explorer already knows. Throws on RPC error (the caller falls back
+// to the client-side filter over the already-loaded works).
+export async function searchFiles(opts = {}) {
+  const {
+    source = "server", serverId = null, text = null, tags = [], hastypes = [], exts = [],
+    uploader = null, since = null, sort = "latest", sortTag = null, dir = "desc",
+    limit = 60, offset = 0, membersById = {}, starredIds = null,
+  } = opts;
+  const { data, error } = await supabase.rpc("search_files", {
+    p_source: source, p_server: serverId, p_text: text || null,
+    p_tags: tags || [], p_hastypes: hastypes || [], p_exts: exts || [],
+    p_uploader: uploader || null, p_since: since || null,
+    p_sort: sort || "latest", p_sort_tag: sortTag || null, p_dir: dir || "desc",
+    p_limit: limit, p_offset: offset,
+  });
+  if (error) throw error;
+  const rows = data || [];
+  const total = rows.length ? Number(rows[0].total || rows.length) : 0;
+  const items = rows.map((r) => {
+    const m = membersById[r.author_id];
+    return {
+      id: r.id, title: r.title, name: r.title, authorId: r.author_id || null,
+      kind: r.kind, file_ext: r.file_ext, blob_sha: r.blob_sha, bytes: r.bytes,
+      hidden: !!r.hidden, created_at: r.created_at, tags: r.tags || [],
+      folderId: r.folder_id || null, channelName: r.channel_name || null,
+      who: m ? { name: m.name, colorIdx: m.colorIdx, handle: m.handle }
+             : ((r.author_name || r.author_handle) ? { name: r.author_name || r.author_handle, handle: r.author_handle } : null),
+      starred: starredIds ? starredIds.has(r.id) : false,
+    };
+  });
+  return { total, items };
+}
+
 export async function loadExplorer({ serverId, folderId, source = "server" } = {}) {
   if (isDemo()) return demoExplorer(source);
   const user = session();

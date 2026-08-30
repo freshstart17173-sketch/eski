@@ -138,6 +138,10 @@
 .crumbs b{color:var(--ink)}.crumbs .sl{color:var(--line2)}
 .hdctl{margin-left:auto;display:flex;align-items:center;gap:var(--s2)}
 .exview[hidden]{display:none}
+/* P24 server search: the transient "Searching…" state + the paged "Load more" footer */
+.searchloading{display:flex;align-items:center;justify-content:center;gap:var(--s2);padding:var(--s6) 0;color:var(--muted);font-size:var(--fs-sm)}
+.searchloading .ic{color:var(--muted);animation:spin 1s linear infinite}
+.loadmorewrap{display:flex;justify-content:center;padding:var(--s4) 0 var(--s5)}
 .foldercard .media.fold{display:grid;place-items:center;background:var(--surface);color:var(--muted)}
 .foldercard .media.fold .ic{width:34px;height:34px}
 /* list view */
