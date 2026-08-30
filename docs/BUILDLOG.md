@@ -2358,3 +2358,12 @@ NEXT: remaining round-7 visual items as 3-version batches (P12 density, P18 stan
 GOTCHA X: gallery.html screens are display-toggled by .ptab buttons, so scrollIntoView on a hidden
   screen's element no-ops in a headless shot — verify a gallery screen by clicking its tab first (or
   trust the structural + 0-pageerror check when the CSS is byte-identical to the app's).
+
+## 2026-08-30 — P18 (in progress) — standardized-header density batch built, awaiting pick
+IN PROGRESS: P18 standardize headers — audited the inconsistency (heights 48/48/52/56; .chanhd on
+  --plate vs --surface elsewhere; insets s3/s4/s5). Built a 3-density comparison
+  (docs/design/p18-headers.html) of the unified header set (channel-column · workspace main · DM ·
+  feed/notif/search) all on --surface + --s4 inset, at 46 / 50 / 56px. Awaiting the owner's density
+  pick, then rewire the real headers (shell.css .chanhd/.mainhd; content.css .panehd/.dmmain .mainhd/
+  .svhd) to the chosen height + --surface + --s4, mirror into gallery.html, verify each screen.
+NEXT: implement the picked P18 density; then P12, then P15.
