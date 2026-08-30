@@ -108,7 +108,7 @@ detail in the Round-11 section below. Ticking one here = ticking it in its categ
 | Est. | ID | What | Kind |
 |---|---|---|---|
 | ~30m | **B36** | path bar shows a black separator bar (dark mode) | easy |
-| ~30m | **B34** | "Load earlier messages" appears when there are none | easy |
+| ~~30m~~ | ~~**B34**~~ | ✅ `.loadearlier{display:flex}` beat the UA `[hidden]` — restated the rule | done |
 | ~1.5h | **B32** | selection action bar shifts the layout down → overlay it | easy-med |
 | ~~2h~~ | ~~**B35**~~ | ✅ file/server search — was FTS-whole-word-only; added filename substring (p27) | done |
 | ~2h | **B31** | selection highlights text; drag image should be mini icons | med |
@@ -653,7 +653,13 @@ per channel, builds on P11), D6 (review canvas/kanban/versions).
       that fired on every tab focus (a P30-adjacent perf win). *Files:* `app/main.js`. node --check clean;
       boot cases unaffected (the closer path is auth-driven, not on the demo path). Live confirm on
       preview → QA-CHECKLIST. *Followed B14.*
-- [ ] **B34 · "Load earlier messages" shows when there are none.** The scroll-up sentinel / button
+- [x] **B34 · "Load earlier messages" shows when there are none.** *Done (headless-verified).* The
+      logic was already right — the sentinel is created `hidden` when `hasMore` is false and re-hidden
+      after a load returns nothing. The bug was CSS: `.loadearlier{display:flex}` (shell.css) **overrode
+      the UA `[hidden]{display:none}`** (author beats UA), so the `hidden` attribute did nothing and the
+      button always showed. Fix: restated `.loadearlier[hidden]{display:none}` — the exact pattern this
+      file already uses 9× (`.offlinebar[hidden]`, `.composernote[hidden]`, …). Verified: `.loadearlier`
+      computes `flex` when shown, `none` when `hidden`. *Files:* `styles/shell.css`. The scroll-up sentinel / button
       should not appear (or no-op) when `hasMore` is false. *Files:* `app/screens/workspace.js`
       (`wireStreamPaging`). *Easy.*
 >

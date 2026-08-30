@@ -2693,3 +2693,20 @@ GOTCHA: session() returns the USER object (_session?.user), so the uid is sessio
   session()?.user?.id). Do NOT re-render on TOKEN_REFRESHED for the same user — that reintroduces B30.
   Realtime intentionally stays subscribed across a refocus now (it auto-reconnects); the app relies on
   the live subscription, not a focus-reload, to stay current.
+
+## 2026-08-30 — B34 "Load earlier messages" no longer shows when there are none
+IN PROGRESS: (cleared)
+DONE: the paging logic was already correct — wireStreamPaging builds the sentinel `hidden` when
+  data.channel.hasMore is false and re-hides it after a load returns nothing. The bug was CSS:
+  `.loadearlier{display:flex}` (shell.css) OVERRODE the UA `[hidden]{display:none}` (an author display
+  rule beats the UA sheet), so the `hidden` attribute was inert and the button always showed. Fix:
+  restated `.loadearlier[hidden]{display:none}` — the exact convention this file already uses 9× (see
+  `.offlinebar[hidden]`, `.composernote[hidden]`, `.typing[hidden]`, …; each carries the "a class
+  display: rule beats UA [hidden] — restate it" comment). Headless-verified: `.loadearlier` computes
+  `flex` when shown and `none` when hidden (was `flex` both ways). The sentinel is live-only (gated on
+  ctx.live), so it's not on the demo workspace path — verified the CSS rule directly instead. Commit <sha>.
+NEXT: search model (P27/P31/P34), density slider (P32) + filter rework (P33), profile (P29) — the visual
+  ones need the owner's 3-version pick. Non-visual remaining: K12 indexing, more P30 perf.
+GOTCHA: this repo deliberately has NO global `[hidden]{display:none}` reset — it restates per class next
+  to each `display:` rule. When you add a class with `display:` to an element that gets toggled via the
+  `hidden` attribute, add the matching `.cls[hidden]{display:none}` or the toggle silently breaks.
