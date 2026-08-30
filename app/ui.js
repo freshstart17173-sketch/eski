@@ -290,6 +290,87 @@ export async function withBusy(btn, fn) {
   finally { if (!already) { btn.classList.remove("loading"); btn.removeAttribute("aria-busy"); } }
 }
 
+// ── P16 · determinate upload progress with a Drive-style minimize ────────────────
+// Replaces the old text-only "Hashing…/Uploading…/Posting…" line: an animated bar + %,
+// and a minimize that detaches a compact chip to the bottom-right so the upload keeps
+// running while you keep working. Controller:
+//   .node            — the inline widget (append into the modal body)
+//   .set(frac, label)— 0..1 progress + a stage label (monotonic; never goes backward)
+//   .indeterminate(label) — an unknown-length phase (shimmer bar) e.g. hashing
+//   .done(label)/.fail(label) — terminal states (the floating chip auto-dismisses)
+//   .minimized()     — whether it's been floated
+// onMinimize is called once when the user minimizes, so the caller can close the host modal;
+// the upload itself is unaffected because the controller owns its own DOM + state.
+export function uploadProgress({ title = "Uploading", onMinimize } = {}) {
+  let frac = 0, label = "Preparing…", state = "run", indet = true;
+  const fillOf = (root) => root.querySelector(".uplfill");
+  const mini = el("button.iconbtn", { title: "Minimize — keep uploading in the background", "aria-label": "Minimize upload" }, [iconEl("chev", "sm")]);
+  mini.querySelector(".ic").style.transform = "rotate(-90deg)";   // point down = tuck away
+  const pct = el("span.uplpct", {}, ["0%"]);
+  const lbl = el(".upllabel", {}, [label]);
+  const node = el(".uplwidget", {}, [
+    el(".uplhd", {}, [el("b", {}, [title]), pct, mini]),
+    el(".uplbar", {}, [el(".uplfill")]),
+    lbl,
+  ]);
+  let chip = null;
+  function paint() {
+    const p = Math.round(frac * 100);
+    pct.textContent = state === "run" ? p + "%" : "";
+    node.classList.toggle("indet", indet && state === "run");
+    node.classList.toggle("done", state === "done");
+    node.classList.toggle("fail", state === "fail");
+    fillOf(node).style.width = indet && state === "run" ? "" : p + "%";
+    lbl.textContent = label;
+    if (chip) {
+      chip.classList.toggle("indet", indet && state === "run");
+      chip.classList.toggle("done", state === "done");
+      chip.classList.toggle("fail", state === "fail");
+      fillOf(chip).style.width = indet && state === "run" ? "" : p + "%";
+      chip.querySelector(".uplchip-lbl").textContent = state === "done" ? "Upload complete" : state === "fail" ? "Upload failed" : label;
+      chip.querySelector(".uplchip-pct").textContent = state === "run" && !indet ? p + "%" : "";
+    }
+  }
+  function minimize() {
+    if (chip) return;
+    const cx = el("button.iconbtn", { title: "Dismiss", "aria-label": "Dismiss" }, [iconEl("x", "sm")]);
+    cx.addEventListener("click", () => chip?.remove());
+    chip = el(".uplchip", {}, [
+      el(".uplchip-top", {}, [el("span.uplchip-lbl", {}, [label]), el("span.uplchip-pct", {}, [Math.round(frac * 100) + "%"]), cx]),
+      el(".uplbar", {}, [el(".uplfill")]),
+    ]);
+    document.body.appendChild(chip);
+    paint();
+    onMinimize && onMinimize();
+  }
+  mini.addEventListener("click", minimize);
+  paint();
+  return {
+    node,
+    set(f, l) { indet = false; frac = Math.max(frac, Math.min(1, f)); if (l != null) label = l; paint(); },
+    indeterminate(l) { indet = true; if (l != null) label = l; paint(); },
+    done(l = "Done") { state = "done"; indet = false; frac = 1; label = l; paint(); if (chip) setTimeout(() => chip.remove(), 2600); },
+    fail(l = "Upload failed") { state = "fail"; indet = false; label = l; paint(); if (chip) setTimeout(() => chip.remove(), 6000); },
+    minimize,
+    minimized: () => !!chip,
+  };
+}
+
+// PUT a blob with real byte-level progress (fetch has no upload progress; XHR does). Resolves
+// on 2xx, rejects otherwise. onProgress(loaded, total) fires as bytes go out. Used by the upload
+// sheet so the bar tracks the actual R2 transfer, not just a stage label.
+export function putWithProgress(url, blob, { onProgress, headers = {} } = {}) {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open("PUT", url);
+    for (const [k, v] of Object.entries(headers)) xhr.setRequestHeader(k, v);
+    if (xhr.upload && onProgress) xhr.upload.onprogress = (e) => { if (e.lengthComputable) onProgress(e.loaded, e.total); };
+    xhr.onload = () => (xhr.status >= 200 && xhr.status < 300) ? resolve() : reject(new Error(`R2 PUT failed (${xhr.status}) — check the bucket CORS (r2-cors.json)`));
+    xhr.onerror = () => reject(new Error("R2 PUT failed (network) — check the bucket CORS (r2-cors.json)"));
+    xhr.send(blob);
+  });
+}
+
 /** Copy text to the clipboard and confirm with a toast. The write can be refused
  * (no user gesture / permissions / http), so on failure it toasts the text itself as a
  * fallback — the user can still select it. One place so every "Copy link" behaves alike. */

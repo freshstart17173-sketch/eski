@@ -9,7 +9,7 @@
 // also writes a `placement` (surface='server', folder_id) → each collaborator via
 // add_collaborator. There is no client-chosen key: sign.mjs derives it from the hash.
 
-import { openModal, VisibilitySeg, Button, openMenu, toast, el } from "../ui.js";
+import { openModal, VisibilitySeg, Button, openMenu, toast, el, uploadProgress, putWithProgress } from "../ui.js";
 import { iconEl } from "../icons.js";
 import { supabase, session, rawSession } from "../supabase.js";
 import { createFolder } from "../data.js";
@@ -291,11 +291,17 @@ export async function openUpload(opts = {}) {
 
   async function doPost() {
     post.disabled = true;
-    const prog = el(".uprogress", {}, ["Hashing…"]);
-    body.append(prog);
+    // P16: a real progress bar (byte-accurate on the R2 PUT) + a Drive-style minimize that
+    // floats a chip and closes the sheet so you can keep working while the upload finishes.
+    const prog = uploadProgress({
+      title: files.length > 1 ? `Uploading ${files.length} files` : "Uploading",
+      onMinimize: () => close(),
+    });
+    body.append(prog.node);
     try {
+      prog.indeterminate("Hashing…");
       const hashed = await Promise.all(files.map(async (f) => ({ file: f, hash: await sha256Hex(f), ext: extOf(f.name) })));
-      prog.textContent = "Getting upload URLs…";
+      prog.set(0.15, "Getting upload URLs…");
       const token = rawSession()?.access_token;
       const signRes = await fetch("/api/sign", {
         method: "POST",
@@ -305,10 +311,15 @@ export async function openUpload(opts = {}) {
       const signJson = await signRes.json().catch(() => ({}));
       if (!signRes.ok) throw new Error(signJson.error || `signer said ${signRes.status}`);
 
-      prog.textContent = "Uploading…";
-      await Promise.all(hashed.map((h, i) => fetch(signJson.files[i].url, {
-        method: "PUT", body: h.file, headers: { "content-type": h.file.type || "application/octet-stream" },
-      }).then((r) => { if (!r.ok) throw new Error(`R2 PUT failed (${r.status}) — check the bucket CORS (r2-cors.json)`); })));
+      // Real transfer progress: aggregate bytes across every file → the 20–80% band of the bar.
+      prog.set(0.20, "Uploading…");
+      const totalBytes = hashed.reduce((s, h) => s + (h.file.size || 0), 0) || 1;
+      const sent = new Array(hashed.length).fill(0);
+      await Promise.all(hashed.map((h, i) => putWithProgress(signJson.files[i].url, h.file, {
+        headers: { "content-type": h.file.type || "application/octet-stream" },
+        onProgress: (loaded) => { sent[i] = loaded; prog.set(0.20 + 0.60 * (sent.reduce((a, b) => a + b, 0) / totalBytes), "Uploading…"); },
+      })));
+      prog.set(0.80, "Uploading…");
 
       const onServer = visibility === "server";
       // "structured" = keep the dropped/picked tree. Flatten turns a folder upload into a flat one:
@@ -319,7 +330,7 @@ export async function openUpload(opts = {}) {
       // at the My-files root. A loose (non-folder / flattened) upload keeps the single chosen folderId.
       let folderMap = null;
       if (structured) {
-        prog.textContent = "Creating folders…";
+        prog.set(0.82, "Creating folders…");
         folderMap = await buildFolderTree(files, {
           source: onServer ? "server" : "personal",
           serverId: onServer ? serverId : null,
@@ -335,9 +346,10 @@ export async function openUpload(opts = {}) {
       // re-checks the fence itself (author = caller; server needs membership + the 'upload' perm),
       // so nothing is loosened. A structured folder upload skips the single Tags/Collaborators
       // fields (they belong to a loose post); a flattened one shares the Tags across every file.
-      prog.textContent = "Posting…";
+      prog.set(0.88, "Saving…");
       const title = titleInput.value.trim();
       const tags = tagsInput.value.split(",").map((t) => t.trim()).filter(Boolean);
+      let saved = 0;
       for (const h of hashed) {
         const destFolder = folderFor(h);
         const { data: workId, error } = await supabase.rpc("create_work", {
@@ -359,12 +371,14 @@ export async function openUpload(opts = {}) {
         // Collaborators still only make sense on a single loose post.
         if (!structured && files.length === 1)
           for (const c of collabs) await supabase.rpc("add_collaborator", { work_id: workId, handle: c.handle, role: c.role });
+        prog.set(0.88 + 0.12 * (++saved / hashed.length), "Saving…");
       }
+      prog.done(files.length > 1 ? `Uploaded ${files.length} files` : "Uploaded");
       toast({ message: files.length > 1 ? `Uploaded ${files.length} files` : "Posted", icon: "check" });
-      close();
+      if (!prog.minimized()) close();   // if minimized the sheet's already gone; the chip shows "complete"
       opts.onDone && opts.onDone();
     } catch (e) {
-      prog.remove();
+      prog.fail("Upload failed — " + (e.message || e));
       post.disabled = false;
       // Log the full error so a devtools peek shows the stage + code even after the toast fades.
       console.error("[eski upload] failed:", e);

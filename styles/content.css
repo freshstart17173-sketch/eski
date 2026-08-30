@@ -24,7 +24,7 @@
    Storage row + the tree footer) */
 .ustore{display:flex;align-items:center;gap:7px;font-size:var(--fs-xs);color:var(--muted);background:var(--surface);border-radius:var(--r);padding:8px 10px;margin-top:8px}
 .ustore .ic{color:var(--soft);flex:none}.ustore b{color:var(--soft);font-weight:600}
-.uprogress{margin-top:10px;font-size:var(--fs-xs);color:var(--muted)}
+/* .uprogress removed — upload progress is now the P16 .uplwidget bar (primitives.css) */
 
 /* ── Feed / explorer shared pane (P5.1/P5.4) ─────────────────────────────── */
 .pane{flex:1;min-width:0;display:flex;flex-direction:column;background:var(--paper);overflow:hidden;position:relative}

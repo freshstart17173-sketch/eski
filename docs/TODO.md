@@ -703,11 +703,22 @@ per channel, builds on P11), D6 (review canvas/kanban/versions).
       `status_text`/`presence_state`. *Files:* `app/screens/profile.js`, `app/data.js`,
       `app/screens/usersettings.js`, `app/shell.js` (removed openStatus), `styles/content.css`.
       Verified: owner profile shows `[Presence ▾][text][Save]`, 0 pageerrors. Pairs with **B11**.
-- [ ] **P16 · Upload progress = animations + minimizable (round-7).** Replace the text stages
-      ("Hashing…", "Getting URLs…", "Uploading…", "Posting…") with a real **loading animation** /
-      progress affordance, and let the upload be **minimized halfway** (Google-Drive style) so you
-      keep working while it runs. *Files:* `app/screens/upload.js` (`doPost` progress), `app/ui.js`
-      (a shared busy/minimizable widget), `styles/*`. *Medium-hard.* Ties into **P3** (loading states).
+- [x] **P16 · Upload progress = animations + minimizable (round-7).** *Done (controller unit-verified
+      + demo render; live R2 round-trip session-gated → QA).* New shared **`uploadProgress()`**
+      controller in `app/ui.js`: an animated determinate **bar + %** (`.uplwidget`, `primitives.css`)
+      with an **indeterminate shimmer** for the unknown-length hashing/sign phase, plus a **minimize**
+      that detaches a compact **Drive-style chip** to the bottom-right (`.uplchip`) and closes the
+      sheet so you keep working while it finishes — the controller owns its own DOM+state so the
+      upload is unaffected. `done()`/`fail()` terminal states; the chip auto-dismisses on complete.
+      Added **`putWithProgress()`** (XHR, since `fetch` has no upload progress) so the bar tracks the
+      **real R2 byte transfer** aggregated across all files (the 20–80% band); hashing/sign/folders/
+      save map to the rest. `upload.js doPost` rewired off the old `.uprogress` text line (removed).
+      *Files:* `app/ui.js` (`uploadProgress`, `putWithProgress`), `styles/primitives.css`
+      (`.uplwidget`/`.uplbar`/`.uplchip`), `app/screens/upload.js` (`doPost`), `styles/content.css`
+      (dead `.uprogress` removed). Verified: `node --check` clean; headless asserts the widget mounts,
+      `set()` drives the fill width, `minimize()` floats the chip + fires onMinimize, `done()` flips
+      the chip to "Upload complete", 0 pageerrors; dark-mode screenshot of the bar + chip reads clean.
+      Ties into **P3**. Live upload progress + the minimized-background-finish → QA-CHECKLIST.
 - [x] **P17 · Copy density — drop needless hints (round-7).** *Done (first pass).* Cut the
       "(optional)" after "Add details", the "file name if blank" Title hint, and the "(keeps its
       structure)" folder note in the upload sheet. *Files:* `app/screens/upload.js`. A broader

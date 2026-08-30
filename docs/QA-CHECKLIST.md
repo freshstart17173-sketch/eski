@@ -234,6 +234,8 @@ The server explorer mounts inside the shell (channel column stays); My files hid
 - [ ] Read the storage-impact line → it states which storage the bytes draw ("{server}" or "Your" storage · X/Y GB).
 - [ ] Expand "Add details" → tags + collaborators fields appear (optional).
 - [ ] `[infra]` Click Post → it uploads (progress card), then a success toast; the file appears where posted.
+- [ ] `[P16]` During a real upload the progress bar advances with the actual bytes sent (not just stage text); a big file visibly fills the bar.
+- [ ] `[P16]` Click the minimize (▾) on the progress card → the sheet closes and a small progress chip floats bottom-right; you can keep working; it flips to "Upload complete" and auto-dismisses when done (or "Upload failed" on error).
 - [ ] **`[infra]` (2026-08-29 upload-fix — was the "uploads don't work at all" 42501)** Post a single file to your **own server** → success, no "couldn't save the post (42501)"; it shows in that server's Files. Repeat to **My files (personal, Private)** → success and it shows in My files. This was failing for every file before the `create_work` RPC landed.
 - [ ] **`[infra]` (upload-fix)** Post a file into a **channel** (composer attach) and into a **specific folder** → it lands in that channel's Files / that folder, not just root.
 - [ ] **`[infra]` (upload-fix)** Upload a **folder that contains a `.flp`** (or `.als` / `.logicx` / `.aiff`) next to some `.wav`s → the project file is recognised (no "Skipped 1 unsupported file") and uploads with the rest.
