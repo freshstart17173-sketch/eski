@@ -408,10 +408,26 @@ function composer(data, view, ctx = {}) {
 }
 async function doSend(input, send, ctx = {}) {
   const body = input.value.trim();
-  input.value = ""; send.disabled = true;
+  if (!body) return;
+  input.value = "";
   if (ctx.live && ctx.channelId) {
-    const { error } = await sendMessage(ctx.channelId, body);   // realtime echo appends it
-    if (error) { toast({ message: "Couldn't send — " + error.message, icon: "clock" }); input.value = body; send.disabled = false; }
+    // P30 optimistic send: show the message INSTANTLY (a pending row) instead of waiting for the
+    // insert + realtime-echo round-trip. attachLive stashes _sendOptimistic on the stream (it has
+    // data + ctx in scope to render the row exactly like a live one). The composer stays enabled so
+    // you can keep typing. On success we stamp the row with the real id (so the echo dedupes it);
+    // on error we remove it and put the text back if you haven't started a new message.
+    const stream = input.closest(".screen")?.querySelector(".stream");
+    const node = stream?._sendOptimistic?.(body) || null;
+    const { data: real, error } = await sendMessage(ctx.channelId, body);
+    if (error) {
+      node?.remove();
+      if (!input.value.trim()) input.value = body;
+      toast({ message: "Couldn't send — " + error.message, icon: "clock" });
+    } else if (real && node && node.isConnected && node.dataset.pending) {
+      // stamp the real id so the row is fully functional (edit/delete/react) even if the realtime
+      // echo never lands; if the echo already adopted this row (data-pending cleared), this no-ops.
+      node.dataset.mid = real.id; delete node.dataset.pending; node._body = null;
+    }
   } else {
     toast({ message: "Message sent (demo)", icon: "send" });
   }
@@ -1043,6 +1059,21 @@ export function renderWorkspace(data, view = {}) {
 function attachLive(screen, data, ctx) {
   markRead(ctx.channelId);
 
+  // P30 optimistic send: the composer (doSend) appends the just-typed message immediately through
+  // this helper, which renders it exactly like a live row (data + ctx are in scope here). The row
+  // is marked pending; doSend / the realtime echo (liveInsert) reconcile it to the real id.
+  const streamEl = screen.querySelector(".stream");
+  if (streamEl) streamEl._sendOptimistic = (body) => {
+    const tempId = "opt-" + Date.now() + "-" + Math.random().toString(36).slice(2, 7);
+    const shaped = shapeMessage({ id: tempId, user_id: ctx.me.id, body, created_at: new Date().toISOString() }, ctx.membersById);
+    const node = messageRow(shaped, data, { onOpenThread: ctx.openThread });
+    node.dataset.pending = "1"; node._body = body;
+    streamEl.querySelector(".emptystate")?.remove();
+    if (!streamEl.querySelector(".day")) streamEl.append(el(".day", {}, [el("span", {}, ["Today"])]));
+    streamEl.append(node); streamEl.scrollTop = streamEl.scrollHeight;
+    return node;
+  };
+
   subscribeChannelMessages(ctx.channelId, {
     onInsert: (row) => liveInsert(screen, data, ctx, row),
     onUpdate: (row) => liveUpdate(screen, ctx, row),
@@ -1085,7 +1116,15 @@ function liveInsert(screen, data, ctx, row) {
     return;
   }
   const stream = screen.querySelector(".stream");
-  if (!stream || stream.querySelector(`.msg[data-mid="${row.id}"]`)) return;   // dedupe our own echo
+  if (!stream) return;
+  // P30: adopt my own optimistic pending row instead of appending a duplicate — covers the race
+  // where the realtime echo arrives before the insert's own reconcile in doSend. Match by body
+  // (no BEFORE-INSERT trigger mutates messages.body, so it's identical to what was sent).
+  if (row.user_id === ctx.me.id) {
+    const pend = [...stream.querySelectorAll(".msg[data-pending]")].find((n) => n._body === row.body);
+    if (pend) { pend.dataset.mid = row.id; delete pend.dataset.pending; pend._body = null; return; }
+  }
+  if (stream.querySelector(`.msg[data-mid="${row.id}"]`)) return;   // dedupe our own echo (already reconciled)
   stream.querySelector(".emptystate")?.remove();
   if (!stream.querySelector(".day")) stream.append(el(".day", {}, [el("span", {}, ["Today"])]));
   const shaped = shapeMessage(row, ctx.membersById);

@@ -105,8 +105,11 @@ export function markRead(channelId) {
 // send a message (direct RLS-gated insert; there is no send_message RPC). user_id
 // is NOT NULL with no default, so it's set explicitly — the RLS with-check gates
 // it to auth.uid() regardless, this just satisfies the column.
+// Returns the inserted row (`.select().single()`) so an optimistic composer can reconcile its
+// placeholder to the real id immediately (P30) — the caller can always read its own just-inserted
+// message (can_view_channel), so the returning SELECT is never RLS-blocked.
 export function sendMessage(channelId, body, { parentId = null, alsoToChannel = false } = {}) {
   const row = { channel_id: channelId, body, user_id: session()?.id };
   if (parentId) { row.parent_id = parentId; row.also_to_channel = alsoToChannel; }
-  return supabase.from("messages").insert(row);
+  return supabase.from("messages").insert(row).select().single();
 }

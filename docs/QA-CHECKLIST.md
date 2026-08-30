@@ -118,6 +118,8 @@ file is the versioned copy that build sessions treat as the acceptance bar.
 ## 6. Composer
 
 - [ ] Type a message and press Enter → it sends and appears in the stream; the box clears.
+- [ ] `[P30 optimistic]` The message appears in the stream **instantly** on Enter (no wait for a server round-trip), and you can immediately type/send the next one. It should NOT appear twice (once optimistically, once from the realtime echo) — exactly one row. If a send fails, the row disappears and the text returns to the box with an error toast.
+- [ ] `[P30 optimistic]` Have a second window send too → both windows still show each message exactly once (your own optimistic row reconciles with its echo; the other window sees it via the echo).
 - [ ] Press send with an empty box → nothing happens (send is inert when empty).
 - [ ] Use the B / I / S / code / link / list / quote buttons → each inserts the right markdown around your selection.
 - [ ] `[infra]` Click the emoji button → an emoji picker opens.

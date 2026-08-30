@@ -2710,3 +2710,27 @@ NEXT: search model (P27/P31/P34), density slider (P32) + filter rework (P33), pr
 GOTCHA: this repo deliberately has NO global `[hidden]{display:none}` reset — it restates per class next
   to each `display:` rule. When you add a class with `display:` to an element that gets toggled via the
   `hidden` attribute, add the matching `.cls[hidden]{display:none}` or the toggle silently breaks.
+
+## 2026-08-30 — P30 (partial) optimistic message send (instant, race-safe)
+IN PROGRESS: (cleared) — another P30 slice (message-send latency).
+DONE: sending a message no longer waits for the insert + realtime-echo round-trip before it appears
+  ("sending messages is slow"). doSend now appends the message INSTANTLY via a new stream._sendOptimistic
+  helper (stashed in attachLive, where data+ctx are in scope so the row renders identically to a live
+  one), marks it data-pending + stashes its body, and keeps the composer enabled. Reconciliation is
+  race-safe both ways: (a) insert resolves first → doSend stamps the real id (echo then dedupes by id);
+  (b) realtime echo arrives first → liveInsert ADOPTS the pending row by body match (no BEFORE-INSERT
+  trigger mutates messages.body — verified: only a BEFORE-UPDATE tombstone/edit trigger exists — so the
+  echoed body is byte-identical to what was sent) and stamps the real id; the later doSend reconcile
+  no-ops. If realtime never echoes, doSend's stamp still makes the row fully functional. On send error the
+  optimistic row is removed and the text restored (unless a new message was already typed). realtime.js
+  sendMessage now `.insert(row).select().single()` to return the real id — both callers only read {error},
+  so it's compatible; the sender can always read its own just-inserted message so the returning SELECT is
+  never RLS-blocked. node --check clean; verify-workspace unchanged (5 pre-existing stale FAILs; the
+  optimistic path is live-gated (ctx.live) so it's off the demo path — all message cases pass). Live
+  round-trip + the no-duplicate/second-window checks → QA-CHECKLIST §5/§6. Commit <sha>.
+NEXT: remaining P30 — the two-phase boot (paint rail before content; deferred, cross-cutting + only
+  measurable live). Then the search model (P27/P31/P34) + the visual items (P32/P33/P29 → 3-version pick).
+GOTCHA: reconcile the optimistic row by BODY only because there's no client nonce column on messages and
+  no BEFORE-INSERT body transform. If a future migration adds one (trim/normalise/rewrite on insert), the
+  body match breaks and you'll get a duplicate — switch to a real client-nonce column then. Keep the
+  id-dedupe (`querySelector('.msg[data-mid=…]')`) — it catches the insert-first ordering.
