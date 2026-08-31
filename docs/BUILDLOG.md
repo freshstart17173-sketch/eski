@@ -3052,3 +3052,28 @@ NEXT: C1/C2/C3/C4/C5/C7/C10/C11/C13/C14/C15 remain (explorer + chat conventions)
 GOTCHA: this dead-thread bug means NO thread-pane QA claim in QA-CHECKLIST before this fix was ever
   actually testable live — if a prior claim there says threads "work," it was unverified. Worth a
   live re-check now that the wiring is real.
+
+## 2026-08-31 — fix: closing the details viewer left media playing (B14 correction)
+IN PROGRESS: (cleared)
+DONE: committed <sha>. Owner: "media keeps playing even when the detailed view is closed (wrong
+  behaviour)." B14 (round-8) had wired ONE closeDetails() to every close path — ✕, Esc, backdrop,
+  AND main.js's app-navigation teardown — so an explicit dismiss parked the still-playing media
+  exactly like leaving the app section did. Split it:
+  - `closeDetails()` (details.js) — ✕ / Esc / backdrop / any in-pane action that closes the viewer
+    (tag click, a "posted by" link, a Location crumb) — now calls `player.stop()`, a hard stop.
+  - `closeDetailsForNav()` (new, exported) — called ONLY from `main.js`'s route-render teardown —
+    keeps calling `onViewerClosing()`, the original park-in-`.playerkeep`-and-resume behaviour, so
+    switching servers/channels/screens still doesn't cut a playing stream (that's the part of B14
+    the owner explicitly wanted kept).
+  - `openDetails()`'s own internal "clear a stale sheet before building a fresh one" step no longer
+    touches the player (new private `closeSheetDom()`) — `playInto`, called moments later via the
+    same open, already owns adopt-the-same-work-vs-stop-and-restart-a-different-one; calling stop()
+    there first would have killed the resume-on-reopen case the nav path depends on.
+  Verified two ways: (1) module-level, with a real playable 2s silent WAV served via network
+  intercept (Chromium autoplay blocks a synthetic empty WAV, so a real one was needed) — nav-close
+  keeps the element playing + connected + reopening adopts the SAME element (unchanged); explicit
+  close pauses + disconnects it (the fix, previously it stayed playing+connected too). (2) a full-UI
+  smoke test — open a card, close via ✕/Esc/backdrop, each closes the sheet, 0 pageerrors. Explorer +
+  workspace regression suites re-run clean.
+NEXT: folder context menu (owner: folders currently have no ⋯/move/copy — next task, this session).
+GOTCHA: none — this was a pure behavior split, no schema/RPC involved.

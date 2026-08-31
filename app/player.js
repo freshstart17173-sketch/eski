@@ -57,10 +57,12 @@ export function playInto(mount, w, url, { title, reopen } = {}) {
   return wrap;
 }
 
-// Called when the details viewer is closing (nav, ✕, Esc, or a reopen). Keep a PLAYING stream alive
-// (detached but still playing, so audio continues while you're away — reopening re-adopts it); stop
-// a paused/ended one (closing a preview you only glanced at shouldn't keep sound going). Safe to
-// call when nothing is active or already parked.
+// Called ONLY when the viewer is torn down for an app NAVIGATION (switching servers/channels/
+// screens elsewhere) — never for an explicit user dismiss, see closeDetails' split in details.js
+// (owner 2026-08-31: closing the viewer must stop the media; only leaving the app section it's in
+// should let it keep playing). Keep a PLAYING stream alive (detached but still playing, so audio
+// continues while you're away — reopening re-adopts it); stop a paused/ended one (closing a preview
+// you only glanced at shouldn't keep sound going). Safe to call when nothing is active or already parked.
 export function onViewerClosing() {
   if (!cur || dock) return;
   const m = cur.media;

@@ -456,6 +456,20 @@ optimistic send (P30), viewer ←/→ + Esc. These are the baseline the C-items 
       plays via `playInto`; `closeDetails`→`onViewerClosing`), `styles/primitives.css` (`.playerkeep` +
       parked `.pdock`). **Note:** auto-reopening the file's viewer on return rides on the URL-state work
       (open file/folder in the URL) — see B25/link work; keep-alive already makes the audio continuous.
+      **Corrected 2026-08-31 (owner: "media keeps playing even when the detailed view is closed —
+      wrong behaviour").** The single `closeDetails()` had been wired to EVERY close path — ✕, Esc,
+      backdrop, AND the app-navigation teardown in `main.js` — so an explicit dismiss parked/kept-
+      playing the media exactly like a nav did, which reads as "it won't stop." Split it: `closeDetails()`
+      (✕/Esc/backdrop/any in-pane action that closes the viewer) now calls `player.stop()` — a hard
+      stop; a new `closeDetailsForNav()` (main.js's route teardown ONLY) keeps calling `onViewerClosing()`
+      — the original park-and-resume behaviour, preserved for real navigation. `openDetails()`'s own
+      internal "clear any stale sheet" step no longer touches the player at all (a new `closeSheetDom()`)
+      since `playInto`, called moments later in the same open, already owns the adopt-vs-restart
+      decision — calling `stop()` there first would have killed the "reopen the same file, resume where
+      you left off" case navigation relies on. *Files:* `app/player.js`, `app/screens/details.js`,
+      `app/main.js`. Verified (module-level, a real playable WAV via network intercept): nav-close keeps
+      it playing + connected + adopts on reopen (unchanged); explicit close pauses + disconnects it
+      (the fix); a full-UI smoke test confirms ✕/Esc/backdrop all still close the sheet, 0 pageerrors.
 
 > ### 🟢 Round-8 (owner test, 2026-08-30) — media-player, explorer nitpicks + tag/metadata search
 > Nitpicks + a search-model change captured mid-session (owner: "stop, tokens almost done — add all

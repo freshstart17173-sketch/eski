@@ -17,7 +17,7 @@ import { tagChip, parseTag } from "../tags.js";
 import { openReport } from "../report.js";
 import { iconEl } from "../icons.js";
 import { navigate } from "../router.js";
-import { playInto, onViewerClosing } from "../player.js";
+import { playInto, onViewerClosing, stop as stopPlayer } from "../player.js";
 import { mediaUrl, KIND_ICON, downloadWork, baseName } from "../cards.js";
 import { saveToFiles, unsaveWork, isWorkSaved, addTag, removeTag } from "../data.js";
 
@@ -39,11 +39,12 @@ function fmtWhen(ts) {
   return `${date}, ${h}:${String(m).padStart(2, "0")} ${ap}`;
 }
 
-// close whatever pane is open (Esc / ✕ / backdrop / a nav). B14: tell the persistent player the
-// viewer is closing FIRST — a still-playing stream docks to the mini player instead of dying with
-// the sheet; a paused one stops. Runs even with no sheet open (a no-op unless something's playing).
-export function closeDetails() {
-  onViewerClosing();
+// Tear down the sheet's DOM/listeners only — never touches the player. Used (a) inside openDetails
+// to clear a stale sheet before building a fresh one (playInto, called moments later by the same
+// call, decides the player transition itself: adopt if it's the same work, stop-and-restart if it's
+// a different one) and (b) by the two exported closers below, which decide the player question
+// first and then just need the DOM cleaned up. A no-op if nothing is open.
+function closeSheetDom() {
   if (!openSheet) return;
   const sheet = openSheet;
   openSheet = null;                       // clear FIRST so an onClose that re-opens can't recurse
@@ -52,10 +53,28 @@ export function closeDetails() {
   sheet._onClose?.();                     // e.g. the explorer drops ?file= from the URL
 }
 
+// Explicit dismiss — ✕, Esc, a backdrop click, or any in-pane action (a tag click, a "posted by"
+// link, a Location crumb) that closes the viewer as part of what it does. Owner 2026-08-31: closing
+// the viewer must STOP any playing media — it must not keep going in the background just because you
+// clicked away from it. Use closeDetailsForNav (below) for an app-level navigation instead, which is
+// the one case media should keep playing (B14 — switching servers/channels shouldn't cut the audio).
+export function closeDetails() {
+  stopPlayer();
+  closeSheetDom();
+}
+
+// App-navigation teardown ONLY (main.js, before rendering a new route). A still-playing stream is
+// parked off-screen instead of stopped, so switching to another part of the app doesn't cut it —
+// reopening the same file later re-adopts it at its live position (B14).
+export function closeDetailsForNav() {
+  onViewerClosing();
+  closeSheetDom();
+}
+
 // openDetails(work, ctx) — ctx: { serverId, serverName, folderPath:[{id,name}],
 // siblings:[work], onSibling?, isPost? }
 export function openDetails(work, ctx = {}) {
-  closeDetails();
+  closeSheetDom();   // clear a stale sheet only — playInto (via paint below) owns the player transition
   const sheet = el(".sheet", { onClick: (e) => { if (e.target === sheet) closeDetails(); } });
   const card = el(".card2");
   sheet.append(card);
