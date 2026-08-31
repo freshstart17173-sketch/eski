@@ -125,7 +125,7 @@ detail in the Round-11 section below. Ticking one here = ticking it in its categ
 | ~5h | **P34** | real modifier system + UI hints | med-hard |
 | ~4h | **P38** | click-a-tag-to-filter (retire the filter facet UI) · two click surfaces on typed tags · tag ✕ only in details | med-hard · tag-session |
 | ~5h | **P29** | profile rework (drop visibility tabs · Settings button · presence/status→settings w/ save · modifier search bar) | hard |
-| ~6h | **P32** | real density SLIDER (continuous, eased stages) — supersedes discrete P14 | hard |
+| ~~6h~~ | ~~**P32**~~ | ✅ density SLIDER — list + 5 grid stages, `--tile`-driven re-column, eased card chrome | done |
 | ~6h | **P27** | filtering (folder-scoped) ≠ searching (deep, Reddit-style folder modifier) | hard · refines P24/P26 |
 | ~6h | **P30** | perf pass — search/message-send/context-switch slow; two-phase logo boot | hard |
 | ~6h | **K12** | search indexing (metadata-inclusive) so search is fast | hard · pairs P30 |
@@ -770,18 +770,23 @@ optimistic send (P30), viewer ←/→ + Esc. These are the baseline the C-items 
       (perf) — see also "search is disgustingly slow" there.
 >
 > **— File explorer (continuing the P14 inspiration) —**
-- [ ] **P32 · A real density SLIDER (not 3 discrete modes).** Replace the Large/Small/List switch with
-      a **continuous density slider** like a desktop file explorer — multiple intermediate stages where
-      spacing eases between densities (list → small → … → large thumbnails). **Owner note (2026-08-31,
-      carried forward for whoever builds this):** "I like the density of the thumbnails used in the
-      mockup — when doing the slider, I should be able to get the same density — as well as the
-      vertical spacing between the title and the tags." I.e. the mockup's thumbnail-to-tile ratio and
-      its title→tags gap are the TARGET the slider should be able to reproduce as one of its stages
-      (likely a denser anchor than the current default grid), not just a generic "smaller thumbnails"
-      slider — check `docs/design/gallery.html`'s file-explorer mockup for the reference density/
-      spacing before building. *Files:* `app/screens/explorer.js` (VIEWS → a density scale),
-      `styles/content.css`/`shell.css` (density steps). *Hard.* **Supersedes the discrete P14 modes**
-      (keep list/small/large as slider anchors).
+- [x] **P32 · A real density SLIDER (not 3 discrete modes).** *Done (demo-verified across all stages,
+      0 pageerrors; no mockups per owner 2026-08-31).* The Grid/List dropdown is replaced by a **density
+      slider** in the toolbar: **position 0 = the List table**, **positions 1–5 = grid stages** whose
+      thumbnail min-width steps **132 → 160 → 192 → 232 → 288 px**, driving the grid's
+      `minmax(var(--tile),1fr)` so it **re-columns continuously** (6→5→4→3→2 columns at 1440). Stage 4
+      (232) is the historical default so existing links don't shift; **stage 2 (160) is the denser
+      "mockup" anchor** the owner liked. The stages **ease**: `[data-density]` on the `.exview` wrap
+      tightens card padding, the title font, and the **title→tags gap** at dense stages and loosens
+      them at the large stage (the owner's "thumbnail density + title-to-tags gap" ask). The slider
+      thumb is a **square** `--r` ink handle (not a native round one — the no-new-round-elements rule
+      holds), flanked by a small + large grid glyph for direction. Density round-trips through the URL
+      (`?view=list` / `d1`–`d5`, default grid omitted) so reload/back-forward and copied links restore
+      it; `parseView`/`viewParam` also migrate the legacy `grid`/`feed`/`small` values. *Files:*
+      `app/screens/explorer.js` (`DENSITY_TILE`/`parseView`/`viewParam`, the slider control, `largeView`
+      `--tile`), `styles/shell.css` (`--tile` grid + `[data-density]` easing), `styles/content.css`
+      (`.densityctl`/`.densityrange` square thumb). **Supersedes the discrete P14 modes** — list/small/
+      large remain reachable as the slider's own anchors (0 / 2 / 5).
 - [x] **P33 · Filter rework: only Hidden + Starred; add Group-by & Sort-by.** *Done (demo-verified,
       light+dark, 0 pageerrors, owner 2026-08-31 — no mockups).* Dropped ALL the explorer facet
       dropdowns (Type/Channel/Uploader/Tag/Date + the old Sort/dir buttons); only **Hidden** + **Starred**

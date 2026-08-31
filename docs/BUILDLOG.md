@@ -3342,3 +3342,23 @@ GOTCHA: the repo's docs/design/verify-explorer.mjs harness is drifted — grid-r
       regression signal right now; confirm against a stash-baseline before blaming a change. Its own
       SPA-fallback server is the right pattern for driving routed demo screens (plain http.server 404s
       on /s/lb/files and boots nothing).
+
+## 2026-08-31 — P32 density slider
+IN PROGRESS: (cleared)
+DONE: committed <sha>. Replaced the explorer's Grid/List dropdown with a **density slider**: position 0
+      = List table, positions 1–5 = grid stages (thumbnail min-width 132/160/192/232/288 px) driving
+      `minmax(var(--tile),1fr)` so the grid re-columns continuously (6→5→4→3→2 cols at 1440). Stage 4
+      (232) is the historical default so links don't shift; stage 2 (160) is the denser "mockup" anchor.
+      Stages ease: `[data-density]` on the .exview wrap tightens card padding/title-font/title→tags gap
+      at dense stages, loosens at large. Slider thumb is a SQUARE --r ink handle (no new round element),
+      flanked by small+large grid glyphs. Density round-trips the URL (`?view=list`/`d1`–`d5`, default
+      grid omitted) via parseView/viewParam (also migrates legacy grid/feed/small). state.density lives on
+      the persisted state object (rerender reuses it), URL just mirrors. Verified headless: slider 1→132px/
+      6col, 2→160/5, 3→192/4, 4→232/3, 5→288/2, 0→list table; dense + large screenshots clean; 0 pageerrors.
+NEXT: continue file-browser items — C2 (type-ahead), C18 (select-all/invert + click-through), C30
+      (breadcrumb overflow menu), C31 (skeleton grid + empty-folder drop zone), C33 (Quick Look), or
+      P37 (multi-file zip download).
+GOTCHA: only a `grid` icon is mounted (no list/rows glyph), so the slider is flanked by a small + large
+      `grid` icon to imply compact→large rather than guessing a missing name (icon() warns loudly on an
+      unmounted name in dev). A native range thumb is round by default — had to custom-style
+      ::-webkit-slider-thumb/::-moz-range-thumb to a square --r handle to honour the durable round rule.

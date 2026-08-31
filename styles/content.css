@@ -208,6 +208,20 @@
 .crumbs button{color:var(--soft)}.crumbs button:hover{color:var(--ink)}
 .crumbs b{color:var(--ink)}.crumbs .sl{color:var(--line2)}
 .hdctl{margin-left:auto;display:flex;align-items:center;gap:var(--s2)}
+/* P32 · density slider (replaces the Grid/List dropdown). A compact range flanked by a rows icon
+   (dense/list end) and a grid icon (large end). The thumb is a SQUARE (--r) ink handle, not a native
+   round one — the "round is avatars/presence-dots only" rule holds. */
+.densityctl{display:flex;align-items:center;gap:7px;color:var(--muted)}
+.densityctl .dic{display:inline-flex}
+.densityctl .dsm .ic{width:11px;height:11px}
+.densityctl .dlg .ic{width:16px;height:16px}
+.densityrange{-webkit-appearance:none;appearance:none;width:92px;height:16px;background:transparent;cursor:pointer;margin:0}
+.densityrange::-webkit-slider-runnable-track{height:3px;background:var(--line2);border-radius:var(--r)}
+.densityrange::-moz-range-track{height:3px;background:var(--line2);border-radius:var(--r)}
+.densityrange::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:10px;height:14px;border-radius:var(--r);background:var(--ink);margin-top:-6px}
+.densityrange::-moz-range-thumb{width:10px;height:14px;border:none;border-radius:var(--r);background:var(--ink)}
+.densityrange:hover::-webkit-slider-runnable-track{background:var(--soft)}
+.densityrange:hover::-moz-range-track{background:var(--soft)}
 .exview[hidden]{display:none}
 /* P24 server search: the transient "Searching…" state + the paged "Load more" footer.
    P35: the spinning search icon is retired — a slim indeterminate bar + a rising-ellipsis

@@ -347,8 +347,22 @@
    selection/marquee/lightbox interaction is added by P5's explorer. ───────── */
 .masonry{column-width:230px;column-gap:var(--s5)}
 .masonry.even{column-width:auto;column-gap:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(184px,1fr));gap:var(--s4)}
-/* P14 · LARGE density: bigger content thumbnails, a touch more gap to breathe with 2-line titles */
-.masonry.even.exlarge{grid-template-columns:repeat(auto-fill,minmax(232px,1fr));gap:var(--s5) var(--s4)}
+/* P14 · LARGE density: bigger content thumbnails, a touch more gap to breathe with 2-line titles.
+   P32: the thumbnail min-width is now driven by --tile (set per density stage on the .exview wrap),
+   so the grid re-columns as the density slider moves. 232px stays the default when --tile is unset. */
+.masonry.even.exlarge{grid-template-columns:repeat(auto-fill,minmax(var(--tile,232px),1fr));gap:var(--s5) var(--s4)}
+/* P32 · density easing — dense stages tighten gap + card chrome + the title→tags spacing (the owner's
+   "mockup density + title-to-tags gap"); the large stage breathes more. Stages 3/4 keep the default. */
+.exview[data-density="1"] .masonry.even.exlarge,
+.exview[data-density="2"] .masonry.even.exlarge{gap:var(--s3)}
+.exview[data-density="5"] .masonry.even.exlarge{gap:var(--s5)}
+.exview[data-density="1"] .cardfoot,
+.exview[data-density="2"] .cardfoot{gap:3px;padding:6px 8px}
+.exview[data-density="1"] .cardfoot .fname,
+.exview[data-density="2"] .cardfoot .fname{font-size:var(--fs-xs)}
+.exview[data-density="1"] .cardfoot .ftags,
+.exview[data-density="2"] .cardfoot .ftags{gap:4px;margin-top:0}
+.exview[data-density="5"] .cardfoot{gap:8px;padding:10px 12px}
 .masonry.even .card{margin-bottom:0}
 .masonry.even .media{aspect-ratio:1;overflow:hidden;display:grid}
 .masonry.even .media>.shot{width:100%!important;height:100%!important;aspect-ratio:auto!important}

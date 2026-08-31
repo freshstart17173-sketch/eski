@@ -35,6 +35,30 @@ import { parseModifierToken, modifierRaw, modifierLabel, sameModifier, splitModi
 // table). The old "Small icons" density was cut — small/grid/feed all migrate to large ("Grid").
 const VIEWS = { large: "Grid", list: "List" };
 const VIEW_ALIAS = { grid: "large", feed: "large", small: "large" };   // migrate old ?view= values / saved modes
+
+// P32 · density slider. One continuous-feeling control spanning List → dense grid → large thumbnails,
+// replacing the discrete Grid/List dropdown (owner 2026-08-31). Position 0 is the List table; 1..5 are
+// grid stages, each a thumbnail min-width (px) the grid's `minmax(var(--tile),1fr)` reads. Stage 4 is
+// the historical default (232) so nothing shifts for existing links; stage 2 (~160) is the denser
+// "mockup" anchor the owner liked. The steps ease (font/gap tighten via [data-density] in CSS) so the
+// slider reads as smooth density change, not a hard mode flip. list/small/large stay reachable AS the
+// slider's own anchors (0 / 2 / 5), which is what the owner asked for.
+const DENSITY_TILE = { 1: 132, 2: 160, 3: 192, 4: 232, 5: 288 };   // grid thumbnail min-width per stage
+const DENSITY_DEFAULT = 4;
+// Parse a ?view= value into {mode, density}. "list" → the table; "d1".."d5" → a grid stage; anything
+// else (absent, or a legacy grid/feed/small alias) → the default grid stage.
+function parseView(v) {
+  if (v === "list") return { mode: "list", density: 0 };
+  const m = /^d([1-5])$/.exec(v || "");
+  if (m) return { mode: "large", density: +m[1] };
+  return { mode: "large", density: DENSITY_DEFAULT };
+}
+// The ?view= value for a state — omitted (null) for the default grid so a plain link stays clean.
+function viewParam(mode, density) {
+  if (mode === "list") return "list";
+  if (density && density !== DENSITY_DEFAULT) return "d" + density;
+  return null;
+}
 // Filters (CANON §C.6): Type/Channel/Uploader/Tag are multi-select (an empty set = no
 // filter, the union within a facet, the intersection across facets); Date and Sort are
 // single-select. Type/Channel/Uploader/Tag options are all derived from the files in view
@@ -93,7 +117,8 @@ export function renderExplorer(data, view = {}) {
   const _restored = view.folderId ?? data.currentFolderId ?? null;
   const state = {
     folderId: (_restored && (data.folders || []).some((f) => f.id === _restored)) ? _restored : null,
-    mode: (VIEWS[VIEW_ALIAS[view.mode] || view.mode]) ? (VIEW_ALIAS[view.mode] || view.mode) : "large",
+    mode: parseView(VIEW_ALIAS[view.mode] || view.mode).mode,
+    density: parseView(VIEW_ALIAS[view.mode] || view.mode).density,   // P32: 0 = list, 1..5 = grid stages
     query: "",
     collapsed: new Set(),   // folder ids whose children are hidden in the tree
     selection: persistentSelection(data),   // selected work ids — persists across nav (§C.6, B6)
@@ -195,7 +220,7 @@ export function renderExplorer(data, view = {}) {
   function syncUrl() {
     if (shared) return;
     if (location.pathname !== explorerBase(data)) return;
-    const desired = explorerUrl(data, { folderId: state.folderId, fileId: state.openFileId, mode: state.mode });
+    const desired = explorerUrl(data, { folderId: state.folderId, fileId: state.openFileId, mode: state.mode, density: state.density });
     if (desired === location.pathname + location.search) return;
     const push = state.folderId !== lastFolder;
     history[push ? "pushState" : "replaceState"]({}, "", desired);
@@ -371,11 +396,12 @@ function explorerBase(data) { return data.source === "server" ? `/s/${data.serve
 // The URL for a given explorer VIEW STATE. Folder + open file + view-mode live in the query so the
 // address bar reflects where you are — reload / back-forward restore it (main.js reads these back)
 // and a copied link opens the same folder/file. `demo=1` is carried through when present.
-function explorerUrl(data, { folderId, fileId, mode } = {}) {
+function explorerUrl(data, { folderId, fileId, mode, density } = {}) {
   const q = new URLSearchParams();
   if (folderId) q.set("folder", folderId);
   if (fileId) q.set("file", fileId);
-  if (mode && mode !== "large") q.set("view", mode);
+  const vp = viewParam(mode, density);   // P32: list | d1..d5 (default grid omitted)
+  if (vp) q.set("view", vp);
   if (isDemoQS()) q.set("demo", "1");
   const s = q.toString();
   return explorerBase(data) + (s ? `?${s}` : "");
@@ -516,7 +542,27 @@ function paint(tree, pane, data, state, rerender) {
     el("button.btn.ghost.sm", { onClick: () => { state.query = ""; rerender(); } }, ["Clear search"]),
   ]);
 
-  const viewBtn = el("button.btn", { "aria-haspopup": "menu", onClick: (e) => openMenu(e.currentTarget, Object.entries(VIEWS).map(([k, v]) => ({ label: v, selected: state.mode === k, onClick: () => { state.mode = k; rerender(); } }))) }, [el("span", {}, [VIEWS[state.mode]]), iconEl("chev", "sm")]);
+  // P32: the density slider replaces the Grid/List dropdown. Position 0 = List; 1..5 = grid stages
+  // (small→large). It flanks a rows-icon (dense) and a grid-icon (large) so the direction reads. A
+  // change to/from 0 flips the layout (list↔grid) so it needs a full rerender; a grid-stage change
+  // only needs to re-lay the grid, but rerender is cheap here (client-side, one held dataset) and
+  // keeps the URL/sort/group state in sync, so we rerender throughout.
+  const densityPos = () => (state.mode === "list" ? 0 : state.density);
+  const densityInput = el("input.densityrange", {
+    type: "range", min: "0", max: "5", step: "1", value: String(densityPos()),
+    "aria-label": "View density", title: "View density",
+    onInput: (e) => {
+      const v = +e.target.value;
+      if (v === 0) state.mode = "list";
+      else { state.mode = "large"; state.density = v; }
+      rerender();
+    },
+  });
+  const viewBtn = el(".densityctl", { title: "View density" }, [
+    el("span.dic.dsm", { "aria-hidden": "true", title: "Compact / list" }, [iconEl("grid", "sm")]),
+    densityInput,
+    el("span.dic.dlg", { "aria-hidden": "true", title: "Large thumbnails" }, [iconEl("grid", "sm")]),
+  ]);
   // Show-hidden (#55): a tucked toggle — hidden/utility works are omitted from the library
   // view unless this is on. It reveals them (dimmed); it does not rebuild the toolbar.
   const hiddenBtn = el("button.iconbtn" + (state.showHidden ? ".on" : ""), { title: state.showHidden ? "Hiding hidden files" : "Show hidden files", "aria-pressed": state.showHidden ? "true" : "false", onClick: () => { state.showHidden = !state.showHidden; hiddenBtn.classList.toggle("on", state.showHidden); hiddenBtn.setAttribute("aria-pressed", state.showHidden ? "true" : "false"); hiddenBtn.setAttribute("title", state.showHidden ? "Hiding hidden files" : "Show hidden files"); repaintBody(); } }, [iconEl("hide", "sm")]);
@@ -1153,7 +1199,7 @@ function contents(data, state, rerender, sel) {
   // P23: ftctx carries data/state/rerender so a folder card can render + edit its own tags.
   const hooks = { openFile, openFolder, onFolderClick, onCardClick, onStar, onMenu, onShareFolder,
     showWho: data.source !== "personal", personal, ftctx: { data, state, rerender },
-    group: state.group, onSortCol, sortActive: activeSort, dir: effDir };
+    group: state.group, onSortCol, sortActive: activeSort, dir: effDir, density: state.density };
   const view = state.mode === "list" ? listView(subfolders, files, hooks)
     : largeView(subfolders, files, hooks);
   // P24: a paged server search that has more rows gets a "Load more" footer (client-side folder
@@ -1474,6 +1520,11 @@ function largeFolderCard(f, i, hooks) {
 // the files under headers (Kind/Type/Uploader/Date).
 function largeView(subfolders, files, hooks) {
   const wrap = el(".exview", { "data-exview": "large" });
+  // P32: drive the grid's thumbnail min-width + per-stage spacing/type from the density stage. --tile
+  // feeds `minmax(var(--tile),1fr)`; [data-density] lets CSS ease card padding/gap/meta at dense stages.
+  const dstage = DENSITY_TILE[hooks.density] ? hooks.density : DENSITY_DEFAULT;
+  wrap.style.setProperty("--tile", DENSITY_TILE[dstage] + "px");
+  wrap.dataset.density = String(dstage);
   const groups = groupFiles(files, hooks.group);
   const idxOf = new Map(files.map((w, i) => [w.id, i]));   // keep each card's real index for Shift-range
   const folderIdx = new Map(subfolders.map((f, i) => [f.id, i]));
