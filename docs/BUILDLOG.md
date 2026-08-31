@@ -2902,3 +2902,24 @@ DONE: added the missing table-stakes keys to the file explorer's screen-level ha
   "Up a folder" is already Backspace/Back via the folder pushState (B25), so it's not rebound. Verified
   headless in demo: Enter on a selected file opens the viewer; Delete drops the in-view file count 4→3;
   0 pageerrors. Commit <sha>. (Part of the "expected-behaviour" pass — see the new CONVENTIONS audit.)
+
+## 2026-08-31 — CONVENTIONS audit (table-stakes interactions) → docs/CONVENTIONS.md + C* backlog
+IN PROGRESS: (cleared)
+DONE: per the owner ("basic expected-behaviour things are missing — double-click-to-open, drag-to-select
+  shouldn't have to be asked for; nothing should feel unfamiliar"), audited eski against the three mental
+  models it borrows — Discord (chat/servers), Google Drive (file library), OS file explorer (Finder/
+  Windows). New docs/CONVENTIONS.md: a have/partial/missing table per surface, code-verified (grepped the
+  actual handlers) and grounded in the published shortcut references (Drive/Discord/Microsoft links inline).
+  The missing/partial rows are now C-items (C1–C15) in TODO.md's new "Conventions backlog", loudest-first:
+  C1 arrow-key grid nav, C7 right-click a message, C5 undo a file op, C3 inline rename, C2 type-ahead,
+  C8 ↑-edits-last-message, C10 in-channel ⌘F, C4 cut/copy/paste files, C6 list-header sort, C11 channel
+  nav keys, C13 jump-to-present, C14 a shortcuts sheet, C9 Esc closes thread/reply, C12 ⌘⇧N new server,
+  C15 tooltip/focus-ring a11y. TODO id legend updated to include C*. No code in this entry beyond the
+  Enter/Delete keys already shipped above (which closed part of the explorer-keyboard gap).
+NEXT: work the C-items as bugs-against-the-mental-model (ahead of net-new features). C1 (roving arrow-key
+  focus) + C7 (message right-click) are the loudest daily gaps and both demo-verifiable; C5 (undo) is the
+  biggest trust gap. Most are non-visual/logic (no 3-version gate) — good autonomous candidates. The
+  visual tier (P32 slider, P27/P31/P34 search model, P29 profile, P33 filters) still awaits the owner's pick.
+GOTCHA: don't invent behaviour for a C-item — match the reference (links in CONVENTIONS.md) so it feels
+  familiar. Guard every new global key handler against a focused input/textarea/contenteditable and an open
+  menu/modal/sheet (the explorer onKey already shows the pattern), or typing/searching will trigger it.

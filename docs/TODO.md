@@ -95,7 +95,8 @@ pushed → box ticked here → `BUILDLOG.md` entry appended. Honest status only:
 
 Four categories. Within each, ordered **easiest first**, and anything that depends on another
 item is placed **after** what it needs. Cross-category dependencies are called out inline.
-IDs are stable handles (`B*` broken-UI, `K*` backend, `P*` polish, `D*` deferred).
+IDs are stable handles (`B*` broken-UI, `K*` backend, `P*` polish, `D*` deferred, `C*` conventions —
+the table-stakes interactions audited in [`CONVENTIONS.md`](CONVENTIONS.md)).
 
 ### ⏱ Sorted by estimated completion time (open items only)
 
@@ -137,6 +138,36 @@ profile (**P29**) · perf (**P30**) · polish (**P35 · P36 · B36**) · downloa
 **Deferred — do NOT build now** (post-beta / infra-gated): D1 (feed+commenting, after P4),
 D7 (report/moderation), D2 (storage/billing, needs Stripe), D3 (audit log), D5 (required tags
 per channel, builds on P11), D6 (review canvas/kanban/versions).
+
+### 🧭 Conventions backlog (C*) — table-stakes interactions users already expect
+
+Owner (2026-08-31): the site is missing **basic expected-behaviour** things (like double-click-to-open
+and drag-to-select, which had to be asked for). eski borrows Discord + Google Drive + the OS file
+explorer mental models, so every interaction a user knows from those must Just Work, unprompted. Full
+audit (have / partial / missing, with code pointers + reference links) in
+[`CONVENTIONS.md`](CONVENTIONS.md). Open items, loudest-first:
+
+| ID | Convention (missing/partial) | Surface |
+|---|---|---|
+| **C1** | Arrow-key navigation of the file grid (↑↓←→ roving focus; Shift+arrow extends) | explorer |
+| **C7** | Right-click a message → the same ⋯ menu (actions are hover-only today) | chat |
+| **C5** | Undo the last file op (⌘Z) — move/trash/delete have no undo (trust gap) | explorer |
+| **C3** | Inline rename (F2 / Enter on the name), not only the ⋯→dialog | explorer |
+| **C2** | Type-ahead: start typing a name → jump/select it (Drive/Finder) | explorer |
+| **C8** | ↑ in an empty composer edits your last message (Discord reflex) | chat |
+| **C10** | ⌘/Ctrl-F search within the current channel | chat |
+| **C4** | Cut/Copy/Paste files (⌘X/⌘C/⌘V) between folders; duplicate | explorer |
+| **C6** | Click a list-view column header to sort by it (toggle asc/desc) | explorer |
+| **C11** | Alt+↑/↓ prev/next channel; Alt+Shift+↑/↓ next unread | chat |
+| **C13** | "Jump to present" affordance when scrolled up in a channel | chat |
+| **C14** | A discoverable keyboard-shortcuts sheet (`?` or ⌘/) — also makes C1–C13 discoverable | shell |
+| **C9** | Esc also closes the thread pane / clears a reply target (edit-Esc already works) | chat |
+| **C12** | ⌘/Ctrl-Shift-N create/join a server (minor) | shell |
+| **C15** | Tooltip + focus-ring audit on icon-only controls (a11y) | cross-cutting |
+
+*(Already closed while auditing: double-click-open (B26), drag-to-select/marquee + drag-to-move (B10),
+right-click menus at the cursor (P28), ⌘A / Esc / **Enter-opens** / **Delete-trashes** (2026-08-31),
+optimistic send (P30), viewer ←/→ + Esc. These are the baseline the C-items build on.)*
 
 
 > ### 🟣 Round-7 (owner test, 2026-08-29) — DENSITY, file-browser rework + functional fixes
