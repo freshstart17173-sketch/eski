@@ -39,13 +39,17 @@
      JS dark-mode detection needed. */
   --tt-l:0.585; --tt-c:0.125;
 
-  /* Search-modifier colour (P27/P34, 2026-08-31) — a search modifier (in:/hastag:/by:/…) needs its
-     OWN colour so it reads as neither a grey untyped tag nor a coloured typed tag when it sits next
-     to either in the search rail. Same OKLCH generator as the tag/member hues (so it's "generated,"
-     not hand-picked); H=338° was chosen by maximising RGB distance from all 5 --tt- hues (nearest is
-     genre at ~124 apart) — a rose/magenta, distinct from bpm-blue/key-green/genre-purple/mood-orange/
-     instrument-teal. Never used on a tag; a tag stays --tt-<type> or --soft. Theme-swapped below. */
-  --mod:#aa5c95;
+  /* Search-modifier colour (P27/P34, 2026-08-31; muted 2026-08-31 — owner: "magenta for tags is a
+     bit confusing") — a search modifier (in:/hastag:/by:/…) needs its OWN colour so it reads as
+     neither a grey untyped tag nor a coloured typed tag when it sits next to either in the search
+     rail. Same OKLCH hue as the first pass (H=338°, still the hue that maximises RGB distance from
+     all 5 --tt- hues) but at HALF the tag chroma (C=0.07 vs 0.125) — full-chroma magenta read as
+     just another vivid tag colour, defeating the point; desaturating it differentiates by KIND (a
+     muted dusty mauve reads as UI chrome) rather than only by hue, which a 6th saturated colour next
+     to 5 others never fully achieves. Never used on a tag; a tag stays --tt-<type> or --soft. C is
+     NOT --tt-c (that token is specifically for tags, incl. custom hashed ones) — --mod carries its
+     own lower chroma inline. Theme-swapped below. */
+  --mod:#976c8a;
 
   /* type scale */
   --fs-mi:11px; --fs-xs:12px; --fs-sm:13px; --fs:14.5px; --fs-lg:16px; --fs-xl:20px;
@@ -78,7 +82,7 @@
     --m19:#74C4FC; --m20:#86BFFF; --m21:#97B9FF; --m22:#A8B4FF; --m23:#B8AFFE; --m24:#C7AAF7;
     --m25:#D4A5EE; --m26:#DFA1E2; --m27:#E99ED5; --m28:#F19DC6; --m29:#F69CB6; --m30:#F99CA6;
     /* dark tag-type hues: same generator, dark L=0.79 C=0.112 */
-    --tt-bpm:#8abdff; --tt-key:#81cf97; --tt-genre:#d9a4e9; --tt-mood:#edab6b; --tt-instrument:#4fd1d2; --mod:#ea9ed4; --tt-l:0.79; --tt-c:0.112;
+    --tt-bpm:#8abdff; --tt-key:#81cf97; --tt-genre:#d9a4e9; --tt-mood:#edab6b; --tt-instrument:#4fd1d2; --mod:#d6acc9; --tt-l:0.79; --tt-c:0.112;
   }
 }
 :root[data-theme="dark"]{
@@ -93,5 +97,5 @@
   --m19:#74C4FC; --m20:#86BFFF; --m21:#97B9FF; --m22:#A8B4FF; --m23:#B8AFFE; --m24:#C7AAF7;
   --m25:#D4A5EE; --m26:#DFA1E2; --m27:#E99ED5; --m28:#F19DC6; --m29:#F69CB6; --m30:#F99CA6;
   /* dark tag-type hues: same generator, dark L=0.79 C=0.112 */
-  --tt-bpm:#8abdff; --tt-key:#81cf97; --tt-genre:#d9a4e9; --tt-mood:#edab6b; --tt-instrument:#4fd1d2; --mod:#ea9ed4; --tt-l:0.79; --tt-c:0.112;
+  --tt-bpm:#8abdff; --tt-key:#81cf97; --tt-genre:#d9a4e9; --tt-mood:#edab6b; --tt-instrument:#4fd1d2; --mod:#d6acc9; --tt-l:0.79; --tt-c:0.112;
 }

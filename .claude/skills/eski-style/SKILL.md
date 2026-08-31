@@ -117,8 +117,11 @@ typed, coloured by a **hashed** hue through the same generator instead of a fixe
 **Search-modifier colour — `--mod`.** A search modifier (`in:`/`hastag:`/`by:`/…, P27/
 P34) needs its own colour so it's never confused with a grey untyped tag or a coloured
 typed tag sitting next to it in the search rail. Same generator, `H=338°` (chosen to
-maximise RGB distance from all five `--tt-` hues): light `#aa5c95`, dark `#ea9ed4` — a
-rose/magenta, distinct from every tag hue above. Never used on a tag.
+maximise RGB distance from all five `--tt-` hues) but at **half the tag chroma**
+(`C=0.07` vs `--tt-c`'s `0.125`, dark `C≈0.063` vs `0.112`): light `#976c8a`, dark
+`#d6acc9` — a muted dusty mauve, not a vivid magenta (a first pass at full chroma read
+as just another saturated tag colour — muting it differentiates by *kind*, not only
+hue). Never used on a tag; a tag's chroma stays `--tt-c` even for a custom hashed hue.
 
 **Token roles (what each surface is for):**
 `--paper` page/pane ground · `--surface` first raised step (headers, chips,

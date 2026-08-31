@@ -3455,3 +3455,43 @@ NEXT: file-browser — C19 (hover affordances on list/small rows), C21 (spring-l
       rename), C5 (undo), or P37 (multi-file zip download).
 GOTCHA: the sprite has no archive/zip glyph, so a .zip stays the generic "file" kind icon — the ext label
       ("ZIP") in the media cell is what identifies it; don't invent a kind that has no icon to render.
+
+## 2026-08-31 — P27/P34 follow-up: mute the --mod colour, name the search scope explicitly
+IN PROGRESS: (cleared)
+DONE: committed <sha>. Owner, right after the P27/P34/P38 commit landed: "kinda nitpicky but magenta
+  for tags is a bit confusing. please fix that. also tree flattening could be fine idk. do some
+  research on what other search implementations do."
+  - **`--mod` desaturated, not rehued.** The full-chroma magenta (`H=338° C=0.125`, same chroma as
+    the tags) read as just another vivid tag colour sitting in the rail — the hue-distance math from
+    the first pass was already correct (338° is genuinely the furthest point from all 5 `--tt-`
+    hues), but distance-by-hue alone wasn't enough: a 6th saturated colour next to 5 others still
+    reads as "one more tag," not "a different kind of chip." Halved the chroma instead (`C=0.07` vs
+    `--tt-c`'s `0.125`, dark `C≈0.063` vs `0.112`, same hue): light `#aa5c95`→`#976c8a`, dark
+    `#ea9ed4`→`#d6acc9` — a muted dusty mauve. Differentiates by *kind* (saturated=content metadata,
+    muted=UI chrome) rather than only by position on the wheel. Verified: `getComputedStyle` on a
+    `.mchip` returns the exact new hex in both themes; screenshot confirms the rail chips now read
+    clearly apart from the vivid `genre`/`bpm`/`mood` tag chips on the same cards, light + dark.
+  - **P27 tree-flattening: researched, not changed.** Looked at how Finder, Google Drive, and search-
+    within-scope UIs generally handle this. Finding: **every one of them broadens scope on free-text
+    search too** — Finder's Search field defaults to "This Mac" but shows an explicit scope pill;
+    Drive's global search bar is always-global by default, with folder-scoping done via an explicit
+    `location:`/"search this folder" chip rather than being implicit. So the underlying behaviour
+    (free text digs deep, a bare modifier stays folder-scoped) matches real precedent — what those
+    apps do differently is make the *scope itself visible*, not leave it as a silent mode-switch.
+    eski already had a `.exsearchstate` banner that replaces the breadcrumb the instant you start
+    typing free text (pre-existing, not new this pass) — that's the visible signal Finder/Drive also
+    rely on. Closed the rest of the gap by naming the scope in its own text instead of just "Search
+    results for X": now **"Search results for X — across all of \<server/drive name\>"**, borrowing
+    `rootLabel(data)` (already used for the crumb root). No new interactive scope toggle added this
+    pass — the existing banner-swap + the explicit wording judged sufficient given the research; a
+    Finder-style clickable scope pill (override deep search back to folder-only) stays a candidate if
+    the owner wants literal Finder parity later, logged here rather than built speculatively.
+  Verified headless (0 pageerrors): P27 folder-scope/deep-search regression pair (h22/h23) still
+  green after both changes; P38 two-surface tag click-through (h24) still green; custom tag hashing
+  (h25) still green; new banner text renders correctly mid-search.
+NEXT: no new open items from this follow-up. The Finder-style clickable scope-pill idea (noted above)
+  is a candidate, not a commitment — only build it if the owner asks for it explicitly.
+GOTCHA: none new — a color that's mathematically maximally-distant by hue can still fail to read as
+  "different" if every neighbour it's being distinguished from is at the same chroma; distance in ONE
+  channel (hue) isn't the whole story when the other channel (chroma/saturation) is held constant
+  across a whole family. Worth remembering for any future "pick a hue that stands out" token work.

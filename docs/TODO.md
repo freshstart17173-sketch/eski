@@ -713,13 +713,15 @@ optimistic send (P30), viewer ←/→ + Esc. These are the baseline the C-items 
       directions: a modifier-only filter inside a folder narrows to matching files in that folder
       only and returns EMPTY for the same modifier from root (proves non-recursion); free text typed
       from inside a folder finds a match that lives elsewhere in the tree (proves it digs deep).
-      *Open follow-up (owner flagged 2026-08-31, "tree flattening could be fine idk, research other
-      apps"):* the current rule is a fixed, invisible mode switch (typing ANY free text silently
-      broadens scope) — worth revisiting for a visible scope affordance (à la Finder's "This Mac /
-      This Folder" toggle, or Drive's explicit "search this folder" option) rather than an implicit
-      rule the user can't see or override. Also still open: `search_files` (server RPC) doesn't
-      return folders when searching deep — today a deep search only surfaces files, not the
-      folders containing them (P33's grouping would make mixed results legible once this lands).
+      **Researched 2026-08-31** (owner: "tree flattening could be fine idk, research other apps"):
+      Finder and Google Drive both broaden scope on free-text search the same way eski now does —
+      what they do differently is make the scope *visible* rather than silent. eski's existing
+      `.exsearchstate` banner (swaps in for the breadcrumb the instant you type free text) already is
+      that signal; it now also names the scope explicitly ("Search results for X — across all of
+      \<name\>", was just "Search results for X"). No Finder-style clickable scope-pill override
+      added — logged as a candidate, only build if the owner asks. Still open: `search_files` (server
+      RPC) doesn't return folders when searching deep — today a deep search only surfaces files, not
+      the folders containing them (P33's grouping would make mixed results legible once this lands).
       *Files:* `app/screens/explorer.js` (`contents()`'s `searching` branch vs. the no-free-text
       branch). **Refines P24 + P26.**
 - [ ] **P31 · One modifier-based search everywhere (channel msg ↔ server file).** Every search bar

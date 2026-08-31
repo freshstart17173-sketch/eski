@@ -578,9 +578,14 @@ function paint(tree, pane, data, state, rerender) {
   // The query term is a live ref: repaintBody() (search-as-you-type) updates it, since the
   // searchState node is built once here but shown on every keystroke (else it read stale/empty).
   const searchQ = el("b", {}, [state.query]);
+  // P27 follow-up (owner 2026-08-31): free text silently broadens scope from "this folder" to
+  // "everywhere" — Finder/Drive do the same thing, but both surface it (a visible "This Mac" scope
+  // pill, a location chip) instead of leaving it implicit. This banner already swaps in for the
+  // breadcrumb the moment you search, which is the signal; naming the scope explicitly closes the
+  // rest of the gap without adding a new interactive control this pass.
   const searchState = el(".crumbs.exsearchstate", {}, [
     (() => { const s = iconEl("search", "sm"); s.style.color = "var(--muted)"; return s; })(),
-    el("span", {}, ["Search results for ", searchQ]),
+    el("span", {}, ["Search results for ", searchQ, " — across all of ", rootLabel(data)]),
     el("button.btn.ghost.sm", { onClick: () => { state.query = ""; rerender(); } }, ["Clear search"]),
   ]);
 
