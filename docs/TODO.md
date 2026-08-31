@@ -190,12 +190,12 @@ drag, whitespace" ask). These are look-and-feel/interaction, so most carry the *
 | **C17** | No status bar — add "N items · M selected · total size" (Finder/Windows/Drive) | D1/D8 |
 | **C18** | Multi-select click-through (don't collapse a multi-selection on mousedown so you can drag it) + Select all / none / invert affordances | D1 |
 | **C19** | Hover affordances thin/uneven — whole row/tile is the hover target; reveal actions + checkbox + a name/size tooltip on all densities | D2 |
-| **C20** | Drag/marquee **edge auto-scroll** (can't reach off-screen targets/items) | D3 |
+| ~~**C20**~~ | ✅ marquee now auto-scrolls near the pane edge too (native drag already did) | D3 |
 | **C21** | **Spring-loaded folders** — hover a dragged item over a folder ~0.7s → it opens | D3 |
 | **C22** | Drop model too silent — strong "drops into this folder" tint, explicit make-folder hint, drag-count badge, legal/illegal drop cursor (`dropEffect`) | D3 |
 | **C23** | Drop OS files onto a **specific folder** (and a crumb / tree row), not only the pane | D3 |
 | **C24** | Background (whitespace) right-click menu thin — add Paste · Select all · Sort by ▸ · Group by ▸ · View ▸ · Refresh; ensure enough dead space to invoke it | D4 |
-| **C25** | Folder/file menus incomplete & asymmetric — folder needs Rename/Move/Delete/Download/Share; make the two parallel + add Properties | D4 |
+| ~~**C25**~~ | ✅ folder menu gained Rename/Move to…/Delete (Share + Properties already existed); Download still missing — folded into **P37** (needs the zip infra to download a folder meaningfully) | D4 |
 | **C26** | Context menus on the breadcrumb, tree rows, and list column headers | D4/D6 |
 | **C27** | Inline rename (F2/Enter/slow-click, basename pre-selected) + inline "untitled folder" in rename mode — not modal dialogs | D5 |
 | **C28** | List headers inert — click-sort (+caret), drag-resize, drag-reorder, choose columns | D6 |
@@ -1013,6 +1013,20 @@ optimistic send (P30), viewer ←/→ + Esc. These are the baseline the C-items 
       `app/data.js` (`refreshStorage`), `app/screens/explorer.js` (purge/empty handlers). Verified:
       both files `node --check` clean; demo explorer renders the footer with 0 pageerrors. Live
       purge→footer-drops is session-gated → QA-CHECKLIST.
+- [ ] **K13 · `folders` RLS: `locked` is enforced by `folders_write` (schema-03) but BYPASSED by
+      `folders_upd`/`folders_del` (schema-09) — found while building the folder menu (2026-08-31),
+      not fixed.** `schema-03-works.sql` defines `folders_write` (an ALL policy) with `using
+      (has_perm(...) and not locked)`; `schema-09-indexes-policies.sql` separately defines
+      `folders_ins`/`folders_upd`/`folders_del` with `has_perm(...)` ONLY — no `locked` check. RLS
+      policies for the same command are OR'd (permissive), so the LESS restrictive one wins: an admin
+      can currently rename/move/delete a `locked` folder at the DB level even though `folders_write`
+      says they shouldn't be able to. The client UI still respects `locked` (the new Rename/Move/
+      Delete actions hide on a locked folder), so this isn't reachable from the app today — it's a
+      fence gap behind a signpost that happens to agree with it, not a live exploit path — but it
+      should be closed properly (fold `folders_upd`/`folders_del`'s definitions to match `folders_write`,
+      or drop the schema-09 duplicates) rather than left to two files disagreeing. *Files:*
+      `schema-03-works.sql`, `schema-09-indexes-policies.sql`. Needs the full `VERIFICATION.md`
+      protocol (service-role shape check + a live role-sim) before touching live RLS — not a quick fix.
 
 ### 3 · UI polish
 

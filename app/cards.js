@@ -170,11 +170,18 @@ export function folderCard(folder, { onShare } = {}) {
   // the name. The file-count "who" was dropped (owner 2026-08-31: it unbalanced the thumbnail) — the
   // count still lives in list view + the Properties popover. Tag chips are injected into .frow by
   // decorateFolderTags (explorer) after this builds, so the frow starts empty.
+  const media = el(".media.fold", {}, [iconEl("folder")]);
+  // owner 2026-08-31: "folders have no selection menu" — a hover ⋯ button gives touch/no-right-click
+  // users the SAME menu (rename/move/copy-link/properties/delete) the right-click opens, matching the
+  // file card's .cardacts "more" button one-to-one.
+  if (onShare) {
+    const bar = el(".cardacts", {}, [
+      el("button", { title: "More", "data-act": "more", onClick: (e) => { e.stopPropagation(); onShare(folder, e.currentTarget); } }, [iconEl("more")]),
+    ]);
+    media.append(bar);
+  }
   const foot = el(".cardfoot", {}, [bandName(folder.name), el(".frow", {})]);
-  const card = el("button.card.foldercard", {}, [el(".media.fold", {}, [iconEl("folder")]), foot]);
+  const card = el("button.card.foldercard", {}, [media, foot]);
   wireNameScroll(card, foot.querySelector(".fname"));
-  // K9: right-click a folder to share it (Drive-style). The handler opens a menu anchored on the
-  // card; the caller (explorer) wires the actual create-folder-share + copy-link flow.
-  if (onShare) card.addEventListener("contextmenu", (e) => { e.preventDefault(); onShare(folder, card); });
   return card;
 }

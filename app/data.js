@@ -477,7 +477,7 @@ export async function loadExplorer({ serverId, folderId, source = "server" } = {
   // the storage meter. Placements are fetched separately (no embed) — the same FK
   // caution as the workspace reads (GOTCHA U).
   const [{ data: folderRows }, { data: workRows }, { data: meterRows }, { data: balRows }] = await Promise.all([
-    supabase.from("folders").select("id,name,parent_id,archived,locked").eq("server_id", sid).order("name"),
+    supabase.from("folders").select("id,name,parent_id,archived,locked,created_at").eq("server_id", sid).order("name"),
     supabase.from("works").select("id,title,kind,file_ext,blob_sha,bytes,author_id,hidden,visibility,created_at").eq("server_id", sid).is("deleted_at", null).order("created_at", { ascending: false }),
     supabase.from("storage_meters").select("bytes_used").eq("owner_type", "server").eq("owner_id", sid).maybeSingle(),
     supabase.from("storage_balance").select("purchased_gb,status").eq("owner_type", "server").eq("owner_id", sid).maybeSingle(),
@@ -507,7 +507,7 @@ export async function loadExplorer({ serverId, folderId, source = "server" } = {
   }
   const folders = (folderRows || []).map((f) => ({
     id: f.id, name: f.name, parentId: f.parent_id, archived: !!f.archived, locked: !!f.locked,
-    count: countByFolder[f.id] || 0, tags: [],
+    count: countByFolder[f.id] || 0, tags: [], createdAt: f.created_at,
   }));
   // P23: each folder's own tags (no inheritance to files). One indexed read over the folders in view.
   if (folders.length) {
@@ -547,7 +547,7 @@ async function loadPersonalExplorer(user, folderId) {
   const { servers, me } = await loadRail(user);
 
   const [{ data: folderRows }, { data: workRows }, { data: meterRows }, { data: balRows }] = await Promise.all([
-    supabase.from("save_folders").select("id,name,parent_id").eq("user_id", user.id).order("name"),
+    supabase.from("save_folders").select("id,name,parent_id,created_at").eq("user_id", user.id).order("name"),
     supabase.from("works").select("id,title,kind,file_ext,blob_sha,bytes,author_id,hidden,visibility,created_at").eq("owner_type", "user").eq("owner_id", user.id).is("deleted_at", null).order("created_at", { ascending: false }),
     supabase.from("storage_meters").select("bytes_used").eq("owner_type", "user").eq("owner_id", user.id).maybeSingle(),
     supabase.from("storage_balance").select("purchased_gb,status").eq("owner_type", "user").eq("owner_id", user.id).maybeSingle(),
@@ -576,7 +576,7 @@ async function loadPersonalExplorer(user, folderId) {
   }
   const folders = (folderRows || []).map((f) => ({
     id: f.id, name: f.name, parentId: f.parent_id, archived: false, locked: false,
-    count: countByFolder[f.id] || 0, tags: [],
+    count: countByFolder[f.id] || 0, tags: [], createdAt: f.created_at,
   }));
   // P23: personal folder tags (keyed by save_folder_id; no inheritance to files).
   if (folders.length) {
@@ -648,13 +648,13 @@ export async function createFolder({ source = "server", serverId, parentId = nul
     if (!user) throw new Error("Sign in to create folders");
     const { data: row, error } = await supabase.from("save_folders")
       .insert({ user_id: user.id, parent_id: parentId, name: clean })
-      .select("id,name,parent_id").single();
+      .select("id,name,parent_id,created_at").single();
     if (error) throw error;
-    return { id: row.id, name: row.name, parentId: row.parent_id, archived: false, locked: false, count: 0 };
+    return { id: row.id, name: row.name, parentId: row.parent_id, archived: false, locked: false, count: 0, createdAt: row.created_at };
   }
   const { data: row, error } = await supabase.rpc("create_folder", { server_id: serverId, parent_id: parentId, name: clean });
   if (error) throw error;
-  return { id: row.id, name: row.name, parentId: row.parent_id, archived: !!row.archived, locked: !!row.locked, count: 0 };
+  return { id: row.id, name: row.name, parentId: row.parent_id, archived: !!row.archived, locked: !!row.locked, count: 0, createdAt: row.created_at };
 }
 
 // Re-file the given works into `destFolderId` (null = root) in the mounted source. On
@@ -690,12 +690,39 @@ export async function moveFolderTo(source, folderId, destFolderId = null) {
   if (source === "personal") {
     const user = session();
     if (!user) throw new Error("Sign in to move folders");
-    const { error } = await supabase.from("save_folders").update({ parent_id: destFolderId }).eq("id", folderId).eq("user_id", user.id);
+    const { data, error } = await supabase.from("save_folders").update({ parent_id: destFolderId }).eq("id", folderId).eq("user_id", user.id).select("id");
     if (error) throw error;
+    if (!data || !data.length) throw new Error("Only the folder's owner can move it.");
     return;
   }
   const { error } = await supabase.rpc("move_to_folder", { target: folderId, folder_id: destFolderId });
   if (error) throw error;
+}
+
+// Rename a folder — server `folders.name` (admin/`manage_channels`-gated RLS), personal
+// `save_folders.name` (owner-only RLS). Both are the SIMPLE/helper-gated classes (K8's reliable
+// tier: `folders_upd` calls `has_perm(...)`, `sf_all` is a plain `user_id = auth.uid()`), so a
+// direct update is correct — no RPC needed. `.select()` + a throw-on-zero-rows catches the
+// silent-no-op hazard (an RLS mismatch returns 0 rows with NO error, which reads as a fake success).
+export async function renameFolder(source, folderId, name) {
+  const clean = (name || "").trim();
+  if (!clean) throw new Error("Folder name is required");
+  const table = source === "personal" ? "save_folders" : "folders";
+  const { data, error } = await supabase.from(table).update({ name: clean }).eq("id", folderId).select("id");
+  if (error) throw error;
+  if (!data || !data.length) throw new Error(source === "personal" ? "Only the folder's owner can rename it." : "Only a server admin can rename this folder.");
+  return clean;
+}
+
+// Delete a folder. Subfolders cascade (parent_id is ON DELETE CASCADE on both folders and
+// save_folders); any file placed in it or a descendant is un-filed to root, NEVER deleted
+// (placement.folder_id / saved_items.folder_id are ON DELETE SET NULL) — a folder delete only
+// removes the folder tree, it can't take a file down with it.
+export async function deleteFolder(source, folderId) {
+  const table = source === "personal" ? "save_folders" : "folders";
+  const { data, error } = await supabase.from(table).delete().eq("id", folderId).select("id");
+  if (error) throw error;
+  if (!data || !data.length) throw new Error(source === "personal" ? "Only the folder's owner can delete it." : "Only a server admin can delete this folder.");
 }
 
 // ── Trash (CANON §C.6 / §E.3) ────────────────────────────────────────────────

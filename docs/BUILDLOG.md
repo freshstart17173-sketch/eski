@@ -3077,3 +3077,93 @@ DONE: committed <sha>. Owner: "media keeps playing even when the detailed view i
   workspace regression suites re-run clean.
 NEXT: folder context menu (owner: folders currently have no ⋯/move/copy — next task, this session).
 GOTCHA: none — this was a pure behavior split, no schema/RPC involved.
+
+## 2026-08-31 — folders get a real selection menu (rename/move/delete/copy-link)
+IN PROGRESS: (cleared)
+DONE: committed <sha>. Owner: "folders have no selection menu. I can't put them in another folder,
+  or copy, or anything." Folders had only Open/Properties/Copy-link (right-click only, no visible
+  affordance, no bulk actions) — no rename, no move, no delete, and selecting one showed nothing.
+  - **Backend** (`app/data.js`): `renameFolder(source, folderId, name)` and `deleteFolder(source,
+    folderId)` — server = a direct `folders` write (admin/`manage_channels`-gated RLS), personal =
+    a direct `save_folders` write (owner-only RLS). Both are the SIMPLE/helper-gated RLS classes
+    (K8's reliable tier), so a direct client write is correct — no RPC needed. Both `.select()` the
+    touched row and throw on zero rows (the K8 silent-no-op guard), and `moveFolderTo`'s personal
+    branch got the same guard retrofitted (was missing it).
+  - **Menu** (`shareFolderMenu`, explorer.js): gained Rename, Move to…, and Delete (danger), gated
+    by `canWriteFolder(data) && !folder.locked` — closes **C25**. Reachable two ways now: the
+    existing right-click, AND a new hover **⋯ button** on the folder card face (`cards.js`
+    `folderCard`, matching the file card's `.cardacts` "more" button one-to-one) for touch/no-
+    right-click discovery. Along the way, found `folderCard()` had its OWN redundant `contextmenu`
+    listener duplicating `wireFolderEl`'s (explorer.js) — both fired on every right-click, the
+    second silently winning via `openMenu`'s toggle-close logic; removed the dead one.
+  - **Bulk selection bar**: previously only ever showed for a 2+ FILE selection — a folder selection
+    (1 or more) showed NOTHING. Now the bar also pops for 1+ selected folders (Move to folder /
+    Delete / Clear) and for a MIXED files+folders marquee selection (a combined "N selected · X
+    files, Y folders" label, Move + Delete acting on both halves in one action — folders hard-
+    delete, files still go through the normal undoable Trash).
+  - **Move picker** (new `openFolderMovePicker` + `openMixedMovePicker`, mirroring the existing
+    file `openMovePicker`): the destination tree excludes each folder being moved AND its own
+    subtree (`folderInSubtree`, the same cycle guard the drag-to-move path added last session) —
+    you can't move a folder into itself or a descendant.
+  - **Delete confirm** (new `deleteFoldersFlow`): names the subfolder cascade count and explicitly
+    states files inside move to root rather than being deleted (matches the FK: `parent_id` cascades,
+    `placement.folder_id`/`saved_items.folder_id` are `ON DELETE SET NULL`) — cleans up
+    `data.folders`/`data.files`/`state.selFolders`/`state.folderId` locally to match.
+  Verified headless end to end: ⋯ button → full menu (Open/Rename/Move to…/Properties/Copy folder
+  link/Delete) on both server + personal; rename persists in the grid; single-folder select pops the
+  bar; folder-only move picker correctly excludes the moved folder + its child from the destination
+  list; delete removes the folder AND its nested child, and the file that was inside it reappears at
+  root (not deleted); a true mixed marquee selection (1 file + 5 folders) moves and deletes both
+  halves correctly with one confirm. 0 pageerrors throughout. Full explorer/workspace/details
+  regression suites re-run clean.
+NEXT: same open items as before (C1–C4/C7/C10/C11/C13–C15, P27/P34 search modifiers, P32 density
+  slider, tag session) — plus the new **K13** RLS-duplication finding below (not fixed, logged).
+GOTCHA: **K13** — `folders_upd`/`folders_del` (schema-09) don't carry the `not locked` check that
+  `folders_write` (schema-03) does; RLS OR's same-command policies, so the less restrictive one wins
+  — a `locked` folder's write protection is currently DB-level leaky (client UI still respects
+  `locked` correctly, so not reachable from the app today). Logged as K13, not fixed — needs the
+  full VERIFICATION.md protocol before touching live RLS.
+
+## 2026-08-31 — folder Shift-range, marquee auto-scroll, a real Shift-click bug, folder date-grouping
+IN PROGRESS: (cleared)
+DONE: committed <sha>. Owner tested the LIVE preview site while the folder-menu commit above was
+  still local/unpushed — several reports below turned out to be "not deployed yet"; the ones that
+  were real bugs are fixed:
+  - **Real bug found + fixed**: Shift-click range-select was ADDITIVE-ONLY for both files and
+    folders — extending a range (0→2, selecting 3) then Shift-clicking a NEARER item (back to 0)
+    only ever unioned in more ids, never shrank back to a smaller range (selection stuck at 3
+    instead of collapsing to 1). Real OS file managers replace the range on every Shift-click from
+    the same anchor. Fixed in both `onCardClick` (files) and `onFolderClick` (folders): `s.clear()`
+    before rebuilding the range. Verified: Shift 0→2 selects 3, Shift back to 0 now correctly
+    selects 1 (was still 3 before the fix) — for both files and folders.
+  - **Folders gained Shift-range select** — they only had click + ⌘-click before. `wireFolderEl` /
+    `largeFolderCard` / the list-view folder loop now thread each folder's index through (mirroring
+    how files already did it) so `onFolderClick(f, i, e)` can range-select against `subfolders[]`,
+    with its OWN anchor (`state.lastFolderIdx`) since folders and files are separate ordered lists.
+  - **C20 marquee auto-scroll** — the native drag-to-move path already auto-scrolled near the pane
+    edge; the marquee (rubber-band select) never did, so a long list was unreachable by dragging.
+    Added the same `autoScroll(y)` call to the marquee's pointermove handler. Since the marquee's
+    hit-test rects are captured ONCE at drag start (viewport coordinates), a scroll mid-drag would
+    have silently desynced them from the now-scrolled cards — fixed by tracking the scroll delta
+    since drag start and shifting the stale rects by it each tick, rather than re-measuring the
+    whole grid on every pointermove.
+  - **Folder Group-by: Date added** now genuinely groups folders (owner: "grouping works for files
+    but not folders") — folders gained a `createdAt` field (added `created_at` to the `folders` /
+    `save_folders` SELECT + the shape mapping in `loadExplorer`/`loadPersonalExplorer`, and to
+    `createFolder`'s return + the demo-mode optimistic inserts) and now interleave into the SAME
+    date-bucketed sections as files (folders-then-files per section) when grouping by date. Kind/
+    Type/Uploader still can't apply to a folder (no file-kind, no extension, no uploader column on
+    `folders` at all) — those keep folders in one leading "Folders" section, which is a real
+    modeling limit, not a bug, so it's left as-is and explained in the code comment.
+  Verified headless: folder Shift-range 0→2→0 (3 then correctly 1, was stuck at 3); file Shift-range
+  same fix confirmed inside a folder with 4 siblings; marquee auto-scroll moves `scrollTop` from 0 to
+  97 while held near the bottom edge; Group-by Date added spreads folders across Today/Yesterday/
+  This week/This month/Earlier (was one "Folders" bucket); Group-by Kind still correctly keeps one
+  "Folders" bucket. 0 pageerrors throughout. Full explorer/workspace/details/folder-menu regression
+  suites re-run clean.
+NEXT: same open items as before — C1–C4/C7/C10/C11/C13–C15, P27/P34 search modifiers, P32 density
+  slider, tag session, K13 (the RLS `locked`-bypass finding, still logged not fixed).
+GOTCHA: none new. The folder-menu commit two entries back genuinely wasn't live yet when the owner
+  tested "right-click doesn't work" — worth remembering that a burst of "nothing works" feedback
+  right after a local (uncommitted) change is often exactly that, not a new bug — but it's also
+  exactly how the real Shift-click bug above got found, so always verify rather than assuming.

@@ -18,7 +18,7 @@ import { iconEl } from "../icons.js";
 import { parseTag, TAG_TYPES, tagChip, tagEditor } from "../tags.js";
 import { addFolderTag, removeFolderTag } from "../data.js";
 import { navigate, reload } from "../router.js";
-import { createFolder, moveToFolder, moveFolderTo, trashWorks, restoreWork, purgeWork, emptyTrash, loadTrash, starWork, unstarWork, saveToFiles, renameWork, setHidden, createShareLink, shareUrl, loadShareLinks, revokeShareLink, setVisibility, visFromDb, createFolderShare, folderShareUrl, requestToJoin, refreshStorage, searchFiles } from "../data.js";
+import { createFolder, moveToFolder, moveFolderTo, renameFolder, deleteFolder, trashWorks, restoreWork, purgeWork, emptyTrash, loadTrash, starWork, unstarWork, saveToFiles, renameWork, setHidden, createShareLink, shareUrl, loadShareLinks, revokeShareLink, setVisibility, visFromDb, createFolderShare, folderShareUrl, requestToJoin, refreshStorage, searchFiles } from "../data.js";
 import { workCard, folderCard, mediaUrl, KIND_ICON, downloadWork, baseName } from "../cards.js";
 import { channelColumn } from "./workspace.js";
 import { openUpload, enableDropUpload } from "./upload.js";
@@ -101,8 +101,9 @@ export function renderExplorer(data, view = {}) {
     query: "",
     collapsed: new Set(),   // folder ids whose children are hidden in the tree
     selection: persistentSelection(data),   // selected work ids — persists across nav (§C.6, B6)
-    selFolders: new Set(),  // selected FOLDER ids (single-click / ⌘-click / marquee); double-click opens
-    lastIdx: -1,            // anchor for Shift-click range
+    selFolders: new Set(),  // selected FOLDER ids (single-click / ⌘-click / Shift-range / marquee); double-click opens
+    lastIdx: -1,            // anchor for Shift-click range (files)
+    lastFolderIdx: -1,      // anchor for Shift-click range (folders — its own list, own order)
     types: new Set(),       // kind filter — set only by a tag/type click now (facet dropdowns retired)
     channels: new Set(),    // by placement channel name (server only)
     uploaders: new Set(),   // by author name (server only)
@@ -245,7 +246,7 @@ export function renderExplorer(data, view = {}) {
     if (document.querySelector(".menu.open, .modal")) return;   // a menu/dialog owns keys while open
     const tag = document.activeElement?.tagName;
     if (tag === "INPUT" || tag === "TEXTAREA" || document.activeElement?.isContentEditable) return;
-    if (e.key === "Escape" && (state.selection.size || state.selFolders.size)) { state.selection.clear(); state.selFolders.clear(); state.lastIdx = -1; state._refresh?.(); }
+    if (e.key === "Escape" && (state.selection.size || state.selFolders.size)) { state.selection.clear(); state.selFolders.clear(); state.lastIdx = -1; state.lastFolderIdx = -1; state._refresh?.(); }
     else if ((e.metaKey || e.ctrlKey) && (e.key === "a" || e.key === "A")) {   // ⌘A in any density
       e.preventDefault();
       for (const w of state._files || []) state.selection.add(w.id);
@@ -561,7 +562,7 @@ function paint(tree, pane, data, state, rerender) {
   body.addEventListener("click", (e) => {
     if (suppressClear) { suppressClear = false; return; }
     if (e.target.closest("[data-id]") || e.target.closest("[data-folder-id]") || e.target.closest(".selbar")) return;
-    if (state.selection.size || state.selFolders.size) { state.selection.clear(); state.selFolders.clear(); state.lastIdx = -1; refreshSel(); }
+    if (state.selection.size || state.selFolders.size) { state.selection.clear(); state.selFolders.clear(); state.lastIdx = -1; state.lastFolderIdx = -1; refreshSel(); }
   });
 
   // P28: right-clicking EMPTY pane space opens a "New folder / Upload" menu at the cursor (the
@@ -598,6 +599,7 @@ function paint(tree, pane, data, state, rerender) {
       if (e.button !== 0 || e.target.closest("[data-id]") || e.target.closest("[data-folder-id]") || e.target.closest(".selbar") || e.target.closest(".exfab")) return;
       suppressClear = false;   // B15: never let a stale marquee flag eat this gesture's clear-click
       const start = { x: e.clientX, y: e.clientY };
+      const startScrollTop = body.scrollTop;   // C20: rects are captured once, in THIS scroll position
       const additive = (e.shiftKey || e.metaKey || e.ctrlKey);
       const base = additive ? new Set(state.selection) : new Set();
       const baseFolders = additive ? new Set(state.selFolders) : new Set();
@@ -610,13 +612,18 @@ function paint(tree, pane, data, state, rerender) {
         const w = Math.abs(ev.clientX - start.x), h = Math.abs(ev.clientY - start.y);
         if (!moved && w + h > 5) { moved = true; body.appendChild(box); }
         if (!moved) return;
+        autoScroll(ev.clientY);   // C20: the pane auto-scrolls near its top/bottom edge, same as a native drag
+        // rects were measured in viewport space at drag start; a since-then scroll moves every card by
+        // the same delta, so shift the stale rects rather than re-measuring the whole grid every tick.
+        const dy = body.scrollTop - startScrollTop;
         const br = body.getBoundingClientRect();
         box.style.cssText = `left:${x - br.left + body.scrollLeft}px;top:${y - br.top + body.scrollTop}px;width:${w}px;height:${h}px`;
         const sel2 = { left: x, top: y, right: x + w, bottom: y + h };
         state.selection.clear(); state.selFolders.clear();
         base.forEach((id) => state.selection.add(id)); baseFolders.forEach((id) => state.selFolders.add(id));
         for (const { id, fid, r } of rects) {
-          if (r.right < sel2.left || r.left > sel2.right || r.bottom < sel2.top || r.top > sel2.bottom) continue;
+          const top = r.top - dy, bottom = r.bottom - dy;
+          if (r.right < sel2.left || r.left > sel2.right || bottom < sel2.top || top > sel2.bottom) continue;
           if (fid != null) state.selFolders.add(fid); else state.selection.add(id);
         }
         refreshSel();
@@ -738,19 +745,27 @@ function paint(tree, pane, data, state, rerender) {
     // select by [data-id]/[data-folder-id] so both files and folders show the selection outline
     body.querySelectorAll("[data-id]").forEach((c) => c.classList.toggle("sel", state.selection.has(c.dataset.id)));
     body.querySelectorAll("[data-folder-id]").forEach((c) => c.classList.toggle("sel", state.selFolders.has(c.dataset.folderId)));
-    const n = state.selection.size;
-    // B6: a single selection stays quiet — its actions are on the card ⋯ and the details pane.
-    // The bulk bar only appears once you deliberately multi-select (2+), so a plain click never
-    // spawns an options bar. Clear is always reachable via an empty-area click / Esc / plain click.
-    selbar.classList.toggle("open", n > 1);
-    if (n > 1) selbar.replaceChildren(
-      el("span.n", {}, [el("span.nn", {}, [String(n)]), " selected"]),
-      selAct("download", "Download", () => downloadSelected(state)),
-      selAct("move", "Move to folder", () => moveSelected(data, state, rerender)),
-      selAct("trash", "Delete", () => trashSelected(data, state, rerender)),
-      el("span.sp"),
-      selAct("x", "Clear", () => { state.selection.clear(); state.lastIdx = -1; refreshSel(); }),
-    );
+    const nFiles = state.selection.size;
+    const nFolders = state.selFolders.size;
+    // B6: a single FILE selection stays quiet — its actions are on the card ⋯ and the details pane.
+    // A FOLDER selection pops the bar starting at ONE (owner 2026-08-31: "folders have no selection
+    // menu") — a folder card has no details-pane equivalent to fall back on, so 1 is its only
+    // reachable multi-action surface besides the card's own ⋯. Clear is always reachable via an
+    // empty-area click / Esc / plain click.
+    const showBar = nFiles > 1 || nFolders >= 1;
+    selbar.classList.toggle("open", showBar);
+    if (showBar) {
+      const total = nFiles + nFolders;
+      const kind = nFiles && nFolders ? `${nFiles} file${nFiles === 1 ? "" : "s"}, ${nFolders} folder${nFolders === 1 ? "" : "s"}` : null;
+      selbar.replaceChildren(
+        el("span.n", {}, [el("span.nn", {}, [String(total)]), " selected", kind ? el("span.selkind", {}, [" · " + kind]) : ""]),
+        ...(nFiles && !nFolders ? [selAct("download", "Download", () => downloadSelected(state))] : []),
+        selAct("move", "Move to folder", () => moveMixedSelected(data, state, rerender)),
+        selAct("trash", "Delete", () => deleteMixedSelected(data, state, rerender)),
+        el("span.sp"),
+        selAct("x", "Clear", () => { state.selection.clear(); state.selFolders.clear(); state.lastIdx = -1; state.lastFolderIdx = -1; refreshSel(); }),
+      );
+    }
     state._updateStatus?.();   // C17: keep the status strip's count/size/sort live
     state._updateInfo?.();      // C29: keep the docked info panel live to the selection
   }
@@ -927,17 +942,27 @@ function contents(data, state, rerender, sel) {
     state.selFolders.clear();   // selecting a file drops any folder selection
     if (e.metaKey || e.ctrlKey) { s.has(w.id) ? s.delete(w.id) : s.add(w.id); state.lastIdx = i; }
     else if (e.shiftKey && state.lastIdx >= 0) {
+      // Shift-click always selects EXACTLY [anchor, i] (Explorer/Finder) — replace, not union, so a
+      // second Shift-click on a nearer item shrinks the range instead of only ever growing it.
+      s.clear();
       const [a, b] = [state.lastIdx, i].sort((x, y) => x - y);
       for (let k = a; k <= b; k++) s.add(files[k].id);
     } else { s.clear(); s.add(w.id); state.lastIdx = i; }
     sel.refresh();
   };
   // B26: single-click a folder selects it (clears the file selection), ⌘/Ctrl-click toggles it into a
-  // multi-folder selection; double-click opens it. Folders join the marquee box too (refreshSel above).
-  const onFolderClick = (f, e) => {
-    state.selection.clear();
-    if (e && (e.metaKey || e.ctrlKey)) { state.selFolders.has(f.id) ? state.selFolders.delete(f.id) : state.selFolders.add(f.id); }
-    else { state.selFolders.clear(); state.selFolders.add(f.id); }
+  // multi-folder selection, Shift-click ranges over the folders in view (its own anchor —
+  // lastFolderIdx — since folders and files are separate lists); double-click opens it. Folders join
+  // the marquee box too (refreshSel above).
+  const onFolderClick = (f, i, e) => {
+    const s = state.selFolders;
+    state.selection.clear();   // selecting a folder drops any file selection
+    if (e && (e.metaKey || e.ctrlKey)) { s.has(f.id) ? s.delete(f.id) : s.add(f.id); state.lastFolderIdx = i; }
+    else if (e && e.shiftKey && state.lastFolderIdx >= 0) {
+      s.clear();   // replace, not union — a second Shift-click shrinks the range too, not just grows it
+      const [a, b] = [state.lastFolderIdx, i].sort((x, y) => x - y);
+      for (let k = a; k <= b; k++) s.add(subfolders[k].id);
+    } else { s.clear(); s.add(f.id); state.lastFolderIdx = i; }
     state.lastIdx = -1; sel.refresh();
   };
 
@@ -975,10 +1000,19 @@ function contents(data, state, rerender, sel) {
 // K9 — Drive-style "share a folder": right-clicking a folder card opens this menu. Copy folder
 // link mints a public read-only link (create_folder_share RPC, fenced server-side) and copies
 // `/shared/folder/:token`. Works for a server folder or a personal My-files folder.
+// owner 2026-08-31: "folders have no selection menu — I can't put them in another folder, or copy,
+// or anything." This menu (right-click AND the card's own hover ⋯ button, cards.js) was Open/
+// Properties/Copy-link only — no move, rename, or delete. `canW` gates the write rows the same way
+// the Properties popover already does (server = admin/manage_channels, personal = owner), and a
+// `locked` server folder additionally hides them (the UI signpost — the RLS fence for `locked` is a
+// separate, pre-existing gap, see the K13 note in BUILDLOG).
 function shareFolderMenu(data, state, rerender, folder, anchor, at) {
+  const canW = canWriteFolder(data) && !folder.locked;
   openMenu(anchor, [
     // P28: right-click a folder → Open (leads, like a native context menu) + share
     { label: "Open", icon: "folder", onClick: () => { state.folderId = folder.id; state.query = ""; rerender(); } },
+    ...(canW ? [{ label: "Rename", icon: "pen", onClick: () => renameFolderFlow(data, state, rerender, folder) }] : []),
+    ...(canW ? [{ label: "Move to…", icon: "move", onClick: () => openFolderMovePicker(data, state, rerender, [folder.id]) }] : []),
     // P23: Properties opens the show-all / edit-all folder-tags popover (anchored on the folder card)
     { label: "Properties", icon: "info", onClick: () => openFolderProperties(anchor, folder, { data, state, rerender }) },
     { label: "Copy folder link", icon: "users", onClick: async () => {
@@ -987,7 +1021,115 @@ function shareFolderMenu(data, state, rerender, folder, anchor, at) {
         await copyToClipboard(folderShareUrl(token), { ok: "Folder link copied — anyone with it can view this folder", icon: "users" });
       } catch (e) { toast({ message: e?.message || "Couldn’t create the folder link" }); }
     } },
+    ...(canW ? [{ sep: true }, { label: "Delete", icon: "trash", danger: true, onClick: () => deleteFoldersFlow(data, state, rerender, [folder.id]) }] : []),
   ], { at });
+}
+
+// Rename a folder (owner 2026-08-31 — folders had no rename UI). Mirrors renameWork's prompt.
+function renameFolderFlow(data, state, rerender, folder) {
+  promptText({ title: "Rename folder", value: folder.name, submit: "Save", busyLabel: "Saving…", fail: "Couldn’t rename the folder" }, async (name) => {
+    if (!isDemoQS()) await renameFolder(data.source, folder.id, name);
+    folder.name = name.trim();
+    rerender();   // a full repaint rebuilds the card (and the tree row) with the new name
+    toast({ message: "Folder renamed" });
+  });
+}
+
+// every descendant folder id under `id` (not including `id` itself) — used by the cycle guard's
+// "exclude the moved folder's own subtree from the destination tree" and by the delete confirm's
+// "N nested" count / cascade-aware local cleanup.
+function descendantFolderIds(folders, id) {
+  const out = [];
+  for (const k of folders.filter((f) => (f.parentId || null) === id)) { out.push(k.id); out.push(...descendantFolderIds(folders, k.id)); }
+  return out;
+}
+
+// Destination picker for moving one or more FOLDERS (owner 2026-08-31). Mirrors the file
+// openMovePicker's shape, but excludes each moved folder AND its own subtree from the tree
+// (folderInSubtree — the same guard the drag path uses) since a folder can't become its own
+// descendant; a locked folder still can't receive anything.
+function openFolderMovePicker(data, state, rerender, folderIds) {
+  const well = el(".movetree");
+  const body = el("div", {}, [el(".ulab", {}, ["Destination in ", el("b", {}, [rootLabel(data)])]), well]);
+  const cancel = el("button.btn", {}, ["Cancel"]);
+  const go = el("button.btn.primary", { disabled: true }, ["Move here"]);
+  const modal = openModal({ title: `Move ${folderIds.length} folder${folderIds.length > 1 ? "s" : ""}`, body, footer: [cancel, go], size: "wide" });
+
+  let dest, hasSel = false, busy = false;
+  const rowById = new Map();
+  const select = (id) => {
+    well.querySelectorAll(".ftrow.on").forEach((r) => r.classList.remove("on"));
+    rowById.get(id ?? "__root__")?.classList.add("on");
+    dest = id; hasSel = true; go.disabled = busy;
+  };
+  const pickRow = (id, label, depth, locked) => {
+    const row = el(`button.ftrow.lvl${Math.min(depth, 3)}` + (locked ? ".archived" : ""), { disabled: !!locked });
+    row.append(el("span.tw"));
+    const ic = iconEl(locked ? "lock" : "folder", "sm"); ic.classList.add("fic");
+    row.append(ic, el("span.fn", {}, [label]));
+    if (locked) { const l = iconEl("lock", "sm"); l.classList.add("ftlock"); row.append(l); }
+    if (!locked) row.addEventListener("click", () => select(id));
+    rowById.set(id ?? "__root__", row);
+    return row;
+  };
+  const renderWell = () => {
+    rowById.clear();
+    const rows = [pickRow(null, rootLabel(data), 0, false)];
+    (function walk(pid, depth) {
+      for (const f of data.folders.filter((x) => (x.parentId || null) === pid).sort((a, b) => a.name.localeCompare(b.name))) {
+        if (folderIds.includes(f.id) || folderIds.some((id) => folderInSubtree(data.folders, id, f.id))) continue;
+        rows.push(pickRow(f.id, f.name, depth, f.locked));
+        walk(f.id, depth + 1);
+      }
+    })(null, 1);
+    well.replaceChildren(...rows);
+  };
+  renderWell();
+
+  cancel.addEventListener("click", () => modal.close());
+  go.addEventListener("click", async () => {
+    if (!hasSel || busy) return;
+    busy = true; go.disabled = true; go.textContent = "Moving…";
+    await moveFoldersInto(data, state, rerender, folderIds, dest);
+    modal.close();
+  });
+}
+
+// Delete one or more folders (owner 2026-08-31 — folders had no delete UI at all). Subfolders
+// cascade with their parent; any file placed in a doomed folder is un-filed to root, NEVER deleted
+// (deleteFolder in data.js — the FK is ON DELETE SET NULL) — the confirm names that so it doesn't
+// read as "delete everything inside". `alsoTrashFileIds` lets the bulk bar fold a mixed file+folder
+// selection into ONE confirm; the files still go through the normal (undoable) Trash path.
+function deleteFoldersFlow(data, state, rerender, folderIds, alsoTrashFileIds = []) {
+  const doomed = new Set(folderIds.flatMap((id) => [id, ...descendantFolderIds(data.folders, id)]));
+  const nested = doomed.size - folderIds.length;
+  const body = el("div", {}, [
+    el("p", {}, [
+      `Delete ${folderIds.length} folder${folderIds.length === 1 ? "" : "s"}`,
+      nested > 0 ? ` (${nested} nested)` : "",
+      alsoTrashFileIds.length ? ` and move ${alsoTrashFileIds.length} file${alsoTrashFileIds.length === 1 ? "" : "s"} to Trash` : "",
+      "?",
+    ]),
+    el("p", { style: "color:var(--muted);font-size:var(--fs-xs);margin-top:6px" }, ["Files inside move to the root — they aren’t deleted."]),
+  ]);
+  const cancel = el("button.btn", {}, ["Cancel"]);
+  const go = el("button.btn.danger", {}, ["Delete"]);
+  const modal = openModal({ title: `Delete folder${folderIds.length > 1 ? "s" : ""}`, body, footer: [cancel, go] });
+  cancel.addEventListener("click", () => modal.close());
+  go.addEventListener("click", async () => {
+    go.disabled = true; go.textContent = "Deleting…";
+    try {
+      if (!isDemoQS()) { for (const id of folderIds) await deleteFolder(data.source, id); }
+      data.folders = data.folders.filter((f) => !doomed.has(f.id));
+      for (const w of data.files) if (doomed.has(w.folderId)) w.folderId = null;
+      for (const id of doomed) state.selFolders.delete(id);
+      if (state.folderId && doomed.has(state.folderId)) state.folderId = null;   // was inside the deleted tree
+      modal.close();
+      rerender();
+      toast({ message: `Deleted ${folderIds.length} folder${folderIds.length === 1 ? "" : "s"}` });
+      if (alsoTrashFileIds.length) trashIds(data, state, rerender, alsoTrashFileIds);   // its own (undoable) toast
+    } catch (e) { go.disabled = false; go.textContent = "Delete"; toast({ message: e?.message || "Couldn’t delete the folder" }); }
+  });
 }
 
 // ── P23 folder tags ───────────────────────────────────────────────────────────
@@ -1123,10 +1265,10 @@ function wireFileEl(node, w, i, { onCardClick, openFile, onMenu }) {
   node.addEventListener("contextmenu", (e) => { e.preventDefault(); onMenu?.(w, node, { x: e.clientX, y: e.clientY }); });   // P28: spawn at the cursor
   return node;
 }
-function wireFolderEl(node, f, { onFolderClick, openFolder, onShareFolder }) {
+function wireFolderEl(node, f, i, { onFolderClick, openFolder, onShareFolder }) {
   node.dataset.folderId = f.id;   // B10: a drop target
   if (onShareFolder) node.draggable = true;   // onShareFolder is only wired on a real (non-shared) mount — drag a folder to reparent it
-  node.addEventListener("click", (e) => onFolderClick(f, e));
+  node.addEventListener("click", (e) => onFolderClick(f, i, e));
   node.addEventListener("dblclick", (e) => { e.preventDefault(); openFolder(f); });
   node.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); openFolder(f); } });
   if (onShareFolder) node.addEventListener("contextmenu", (e) => { e.preventDefault(); onShareFolder(f, node, { x: e.clientX, y: e.clientY }); });   // P28: spawn at the cursor
@@ -1142,20 +1284,22 @@ function largeFileCard(w, i, hooks) {
   wireFileEl(card, w, i, hooks);
   return card;   // B33: the star (top-left, click-toggle) lives inside workCard now — no corner check
 }
-function largeFolderCard(f, hooks) {
-  const fcard = wireFolderEl(folderCard(f, { onShare: hooks.onShareFolder }), f, hooks);
+function largeFolderCard(f, i, hooks) {
+  const fcard = wireFolderEl(folderCard(f, { onShare: hooks.onShareFolder }), f, i, hooks);
   decorateFolderTags(fcard, f, hooks.ftctx);   // P23: the folder's first-few tags (Properties shows all)
   return fcard;
 }
 
 // GRID — big content thumbnails. Optionally GROUPED (owner 2026-08-31): a Group-by dropdown buckets
-// the files under headers (Kind/Type/Uploader/Date); folders always lead in their own section.
+// the files under headers (Kind/Type/Uploader/Date).
 function largeView(subfolders, files, hooks) {
   const wrap = el(".exview", { "data-exview": "large" });
   const groups = groupFiles(files, hooks.group);
+  const idxOf = new Map(files.map((w, i) => [w.id, i]));   // keep each card's real index for Shift-range
+  const folderIdx = new Map(subfolders.map((f, i) => [f.id, i]));
   if (!groups) {
     const grid = el(".masonry.even.exlarge");
-    for (const f of subfolders) grid.append(largeFolderCard(f, hooks));
+    subfolders.forEach((f, i) => grid.append(largeFolderCard(f, i, hooks)));
     files.forEach((w, i) => grid.append(largeFileCard(w, i, hooks)));
     wrap.append(grid);
     return wrap;
@@ -1165,8 +1309,27 @@ function largeView(subfolders, files, hooks) {
     nodes.forEach((n) => g.append(n));
     return el(".exgroup", {}, [el(".exgrouphd", {}, [el("span.egn", {}, [label]), el("span.egc", {}, [String(count)])]), g]);
   };
-  if (subfolders.length) wrap.append(groupSection("Folders", subfolders.length, subfolders.map((f) => largeFolderCard(f, hooks))));
-  const idxOf = new Map(files.map((w, i) => [w.id, i]));   // keep each card's real index for Shift-range
+  // Date added genuinely applies to a folder too (owner 2026-08-31: "grouping works for files but
+  // not folders") — bucket folders into the SAME date sections as files, each section folders-then-
+  // files. Kind/Type/Uploader don't apply to a folder (no file-kind, no extension, no uploader), so
+  // for those it stays a single leading "Folders" section, same as before.
+  if (hooks.group === "date") {
+    const folderBuckets = new Map();
+    for (const f of subfolders) { const { rank, label } = dateBucket(f.createdAt); if (!folderBuckets.has(label)) folderBuckets.set(label, { rank, items: [] }); folderBuckets.get(label).items.push(f); }
+    const labels = new Set([...groups.map((g) => g.label), ...folderBuckets.keys()]);
+    const merged = [...labels].map((label) => {
+      const g = groups.find((x) => x.label === label);
+      const fb = folderBuckets.get(label);
+      return { label, rank: (g || fb).rank, folders: fb ? fb.items : [], files: g ? g.items : [] };
+    });
+    merged.sort((a, b) => (a.rank - b.rank) || a.label.localeCompare(b.label));
+    for (const { label, folders: gf, files: gw } of merged) {
+      const nodes = [...gf.map((f) => largeFolderCard(f, folderIdx.get(f.id), hooks)), ...gw.map((w) => largeFileCard(w, idxOf.get(w.id), hooks))];
+      wrap.append(groupSection(label, gf.length + gw.length, nodes));
+    }
+    return wrap;
+  }
+  if (subfolders.length) wrap.append(groupSection("Folders", subfolders.length, subfolders.map((f, i) => largeFolderCard(f, i, hooks))));
   for (const { label, items } of groups) wrap.append(groupSection(label, items.length, items.map((w) => largeFileCard(w, idxOf.get(w.id), hooks))));
   return wrap;
 }
@@ -1187,7 +1350,7 @@ function listView(subfolders, files, hooks) {
     return cell;
   }));
   table.append(hd);
-  for (const f of subfolders) {
+  subfolders.forEach((f, i) => {
     // P23: a list row can carry a few of the folder's tags inline after the name. The empty .flstar
     // spacer keeps the folder icon aligned with file rows (which lead with a star toggle).
     const nameCell = el("span.flnm", {}, [el("span.flstar.spacer"), iconEl("folder", "sm"), el("span.flnmtxt", {}, [f.name])]);
@@ -1199,8 +1362,8 @@ function listView(subfolders, files, hooks) {
       ...(showWho ? [el("span", {}, ["—"])] : []),
       el("span", {}, [`${f.count} file${f.count === 1 ? "" : "s"}`]),
     ];
-    table.append(wireFolderEl(el(".flrow", {}, cells), f, hooks));
-  }
+    table.append(wireFolderEl(el(".flrow", {}, cells), f, i, hooks));
+  });
   files.forEach((w, i) => {
     const star = el("button.flstar" + (w.starred ? ".on" : ""), { title: w.starred ? "Unstar" : "Star", onClick: (e) => { e.stopPropagation(); hooks.onStar(w); } }, [iconEl("star", "sm")]);
     const cells = [
@@ -1358,7 +1521,7 @@ function newFolder(data, state, rerender, parentId) {
   promptFolderName(async (name) => {
     let folder;
     if (isDemoQS()) {
-      folder = { id: "f-new-" + Date.now(), name, parentId: parentId ?? null, archived: false, locked: false, count: 0 };
+      folder = { id: "f-new-" + Date.now(), name, parentId: parentId ?? null, archived: false, locked: false, count: 0, createdAt: new Date().toISOString() };
     } else {
       folder = await createFolder({ source: data.source, serverId: data.server?.id, parentId: parentId ?? null, name });
     }
@@ -1378,7 +1541,7 @@ function makeFolderFrom(data, state, rerender, ids) {
   if (!ids?.length) return;
   promptFolderName(async (name) => {
     let folder;
-    if (isDemoQS()) folder = { id: "f-new-" + Date.now(), name, parentId: state.folderId ?? null, archived: false, locked: false, count: ids.length };
+    if (isDemoQS()) folder = { id: "f-new-" + Date.now(), name, parentId: state.folderId ?? null, archived: false, locked: false, count: ids.length, createdAt: new Date().toISOString() };
     else {
       folder = await createFolder({ source: data.source, serverId: data.server?.id, parentId: state.folderId ?? null, name });
       await moveToFolder({ source: data.source, works: ids, destFolderId: folder.id });
@@ -1480,6 +1643,92 @@ function moveIds(data, state, rerender, ids) {
   });
 }
 
+// The bulk bar's Move-to-folder / Delete: route to the file-only or folder-only path unchanged when
+// the selection is pure, and to a combined flow when a marquee has picked up BOTH (owner 2026-08-31
+// — folders previously had no bulk actions at all).
+function moveMixedSelected(data, state, rerender) {
+  const fileIds = [...state.selection], folderIds = [...state.selFolders];
+  if (folderIds.length && fileIds.length) openMixedMovePicker(data, state, rerender, fileIds, folderIds);
+  else if (folderIds.length) openFolderMovePicker(data, state, rerender, folderIds);
+  else moveIds(data, state, rerender, fileIds);
+}
+function deleteMixedSelected(data, state, rerender) {
+  const fileIds = [...state.selection], folderIds = [...state.selFolders];
+  if (folderIds.length) deleteFoldersFlow(data, state, rerender, folderIds, fileIds);   // one confirm covers both halves
+  else trashSelected(data, state, rerender);
+}
+
+// A mixed files+folders selection needs its own destination picker: files carry no restriction,
+// but a folder can't move into itself or its own subtree (folderInSubtree, same guard the drag path
+// and the folder-only picker use). Writes both halves inline rather than delegating to
+// moveIds/openFolderMovePicker, which each open their own picker and would double up the UI.
+function openMixedMovePicker(data, state, rerender, fileIds, folderIds) {
+  const well = el(".movetree");
+  const hasLocked = data.folders.some((f) => f.locked);
+  const n = fileIds.length + folderIds.length;
+  const body = el("div", {}, [
+    el(".ulab", {}, ["Destination in ", el("b", {}, [rootLabel(data)])]),
+    well,
+    ...(hasLocked ? [el(".svnote", {}, [iconEl("move", "sm"), el("span", {}, ["Locked folders can’t receive files."])])] : []),
+  ]);
+  const cancel = el("button.btn", {}, ["Cancel"]);
+  const go = el("button.btn.primary", { disabled: true }, ["Move here"]);
+  const modal = openModal({ title: `Move ${n} item${n === 1 ? "" : "s"}`, body, footer: [cancel, go], size: "wide" });
+
+  let dest, hasSel = false, busy = false;
+  const rowById = new Map();
+  const select = (id) => {
+    well.querySelectorAll(".ftrow.on").forEach((r) => r.classList.remove("on"));
+    rowById.get(id ?? "__root__")?.classList.add("on");
+    dest = id; hasSel = true; go.disabled = busy;
+  };
+  const pickRow = (id, label, depth, locked) => {
+    const row = el(`button.ftrow.lvl${Math.min(depth, 3)}` + (locked ? ".archived" : ""), { disabled: !!locked });
+    row.append(el("span.tw"));
+    const ic = iconEl(locked ? "lock" : "folder", "sm"); ic.classList.add("fic");
+    row.append(ic, el("span.fn", {}, [label]));
+    if (locked) { const l = iconEl("lock", "sm"); l.classList.add("ftlock"); row.append(l); }
+    if (!locked) row.addEventListener("click", () => select(id));
+    rowById.set(id ?? "__root__", row);
+    return row;
+  };
+  const renderWell = () => {
+    rowById.clear();
+    const rows = [pickRow(null, rootLabel(data), 0, false)];
+    (function walk(pid, depth) {
+      for (const f of data.folders.filter((x) => (x.parentId || null) === pid).sort((a, b) => a.name.localeCompare(b.name))) {
+        if (folderIds.includes(f.id) || folderIds.some((id) => folderInSubtree(data.folders, id, f.id))) continue;
+        rows.push(pickRow(f.id, f.name, depth, f.locked));
+        walk(f.id, depth + 1);
+      }
+    })(null, 1);
+    well.replaceChildren(...rows);
+  };
+  renderWell();
+
+  cancel.addEventListener("click", () => modal.close());
+  go.addEventListener("click", async () => {
+    if (!hasSel || busy) return;
+    busy = true; go.disabled = true; go.textContent = "Moving…";
+    try {
+      if (!isDemoQS()) {
+        if (fileIds.length) await moveToFolder({ source: data.source, works: fileIds, destFolderId: dest });
+        for (const id of folderIds) await moveFolderTo(data.source, id, dest ?? null);
+      }
+      const fset = new Set(fileIds);
+      for (const w of data.files) if (fset.has(w.id)) w.folderId = dest ?? null;
+      for (const f of data.folders) if (folderIds.includes(f.id)) f.parentId = dest ?? null;
+      state.selection.clear(); state.selFolders.clear(); state.lastIdx = -1; state.lastFolderIdx = -1;
+      modal.close();
+      rerender();
+      toast({ message: `Moved ${n} item${n === 1 ? "" : "s"}` });
+    } catch (e) {
+      busy = false; go.disabled = false; go.textContent = "Move here";
+      toast({ message: e?.message || "Couldn’t move the selection" });
+    }
+  });
+}
+
 // The destination picker (gallery "Move to folder" modal): the folder tree in a scroll
 // well (reuses .ftrow), a locked server folder can't receive files (disabled row), and a
 // New-folder shortcut creates a destination under the current highlight without leaving
@@ -1534,7 +1783,7 @@ function openMovePicker(data, state, onPick) {
   newBtn.addEventListener("click", () => promptFolderName(async (name) => {
     const parent = hasSel ? dest : null;
     let folder;
-    if (isDemoQS()) folder = { id: "f-new-" + Date.now(), name, parentId: parent ?? null, archived: false, locked: false, count: 0 };
+    if (isDemoQS()) folder = { id: "f-new-" + Date.now(), name, parentId: parent ?? null, archived: false, locked: false, count: 0, createdAt: new Date().toISOString() };
     else folder = await createFolder({ source: data.source, serverId: data.server?.id, parentId: parent ?? null, name });
     data.folders.push(folder);
     renderWell();

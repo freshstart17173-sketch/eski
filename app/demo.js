@@ -179,13 +179,15 @@ export function demoExplorer(source = "server") {
       ] },
     ],
     membersById: {},
+    // createdAt spans a few date buckets (today / this week / this month) so Group-by: Date added
+    // has something real to show for folders too, not just files.
     folders: [
-      { id: "beats", name: "beats", parentId: null, archived: false, locked: false, count: 4, tags: ["genre:trap", "bpm:140", "wip", "key:G min", "hard"] },
-      { id: "drums", name: "drums", parentId: "beats", archived: false, locked: false, count: 0, tags: [] },
-      { id: "verses", name: "verses", parentId: null, archived: false, locked: false, count: 0, tags: ["mood:dark"] },
-      { id: "mixing", name: "mixing", parentId: null, archived: false, locked: false, count: 0, tags: [] },
-      { id: "references", name: "references", parentId: null, archived: false, locked: false, count: 1, tags: ["genre:rnb", "key:F min"] },
-      { id: "stems", name: "stems and sessions", parentId: null, archived: false, locked: true, count: 1, tags: ["final"] },
+      { id: "beats", name: "beats", parentId: null, archived: false, locked: false, count: 4, tags: ["genre:trap", "bpm:140", "wip", "key:G min", "hard"], createdAt: new Date(Date.now() - 2 * 3600e3).toISOString() },
+      { id: "drums", name: "drums", parentId: "beats", archived: false, locked: false, count: 0, tags: [], createdAt: new Date(Date.now() - 1 * 3600e3).toISOString() },
+      { id: "verses", name: "verses", parentId: null, archived: false, locked: false, count: 0, tags: ["mood:dark"], createdAt: new Date(Date.now() - 26 * 3600e3).toISOString() },
+      { id: "mixing", name: "mixing", parentId: null, archived: false, locked: false, count: 0, tags: [], createdAt: new Date(Date.now() - 4 * 86400e3).toISOString() },
+      { id: "references", name: "references", parentId: null, archived: false, locked: false, count: 1, tags: ["genre:rnb", "key:F min"], createdAt: new Date(Date.now() - 20 * 86400e3).toISOString() },
+      { id: "stems", name: "stems and sessions", parentId: null, archived: false, locked: true, count: 1, tags: ["final"], createdAt: new Date(Date.now() - 60 * 86400e3).toISOString() },
     ],
     files: [
       W("f1", "late_bloom_beat.flp", "other", "flp", 8.4e6, "dev", "beats", "beats", ["drums", "142bpm", "bridge"]),
@@ -442,10 +444,10 @@ function demoPersonalExplorer() {
     server: null, channelGroups: [], membersById: {},
     rootLabel: "My files", storageLabel: "Your storage",
     folders: [
-      { id: "saved", name: "Saved from servers", parentId: null, archived: false, locked: false, count: 2 },
-      { id: "uploads", name: "Uploads", parentId: null, archived: false, locked: false, count: 1 },
-      { id: "bounces", name: "Bounces", parentId: null, archived: false, locked: false, count: 1 },
-      { id: "screens", name: "Screenshots", parentId: null, archived: false, locked: false, count: 0 },
+      { id: "saved", name: "Saved from servers", parentId: null, archived: false, locked: false, count: 2, createdAt: new Date(Date.now() - 3 * 3600e3).toISOString() },
+      { id: "uploads", name: "Uploads", parentId: null, archived: false, locked: false, count: 1, createdAt: new Date(Date.now() - 10 * 86400e3).toISOString() },
+      { id: "bounces", name: "Bounces", parentId: null, archived: false, locked: false, count: 1, createdAt: new Date(Date.now() - 15 * 86400e3).toISOString() },
+      { id: "screens", name: "Screenshots", parentId: null, archived: false, locked: false, count: 0, createdAt: new Date(Date.now() - 45 * 86400e3).toISOString() },
     ],
     files: [
       F("p1", "late_bloom_master.wav", "audio", "wav", 32e6, "bounces", ["master", "bloom"]),

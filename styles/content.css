@@ -269,6 +269,9 @@
 /* B27: the count reserves a fixed slot (tabular, min-width) so a 1→2→3 digit change doesn't
    shift the action icons left/right. */
 .selbar .n .nn{display:inline-block;min-width:1.5em;text-align:right;font-variant-numeric:tabular-nums}
+/* a mixed files+folders selection spells out the split (e.g. "3 selected · 2 files, 1 folder") —
+   quieter than the count so the number stays the primary read */
+.selbar .n .selkind{font-weight:400;opacity:.7}
 .selbar .sp{flex:1}
 .selbar button{display:inline-flex;align-items:center;gap:6px;color:var(--on-ink);font-size:var(--fs-sm);padding:6px 10px;border-radius:var(--r)}
 .selbar button:hover{background:rgba(255,255,255,.14)}
