@@ -177,7 +177,7 @@ audit (have / partial / missing, with code pointers + reference links) in
 
 | ID | Convention (missing/partial) | Surface |
 |---|---|---|
-| **C1** | Arrow-key navigation of the file grid (↑↓←→ roving focus; Shift+arrow extends) | explorer |
+| ~~**C1**~~ | ✅ arrow-key roving nav of the grid/list (↑↓←→ geometry-based; Shift+arrow extends a range) — 2026-08-31 | explorer |
 | **C7** | Right-click a message → the same ⋯ menu (actions are hover-only today) | chat |
 | **C5** | Undo the last file op (⌘Z) — move/trash/delete have no undo (trust gap) | explorer |
 | **C3** | Inline rename (F2 / Enter on the name), not only the ⋯→dialog | explorer |
@@ -198,20 +198,20 @@ drag, whitespace" ask). These are look-and-feel/interaction, so most carry the *
 
 | ID | Gap (file browser) | § |
 |---|---|---|
-| **C16** | Selection is weak/inconsistent — grid = thin media outline only, list/small = filled block; unify one strong tile-selected state + a hover-reveal corner checkbox (modifier-free multi-select) | D1 |
-| **C17** | No status bar — add "N items · M selected · total size" (Finder/Windows/Drive) | D1/D8 |
+| ~~**C16**~~ | ✅ selected card is now the WHOLE tile (`--plate` fill + 2px ink ring), consistent across densities (`.card.sel`, content.css) — reconciled 2026-08-31 (was already built) | D1 |
+| ~~**C17**~~ | ✅ quiet status strip at the pane foot — "N items" / "N selected · size" + current sort (`.exstatus`/`updateStatus`) — reconciled 2026-08-31 (was already built) | D1/D8 |
 | **C18** | Multi-select click-through (don't collapse a multi-selection on mousedown so you can drag it) + Select all / none / invert affordances | D1 |
 | **C19** | Hover affordances thin/uneven — whole row/tile is the hover target; reveal actions + checkbox + a name/size tooltip on all densities | D2 |
 | ~~**C20**~~ | ✅ marquee now auto-scrolls near the pane edge too (native drag already did) | D3 |
 | **C21** | **Spring-loaded folders** — hover a dragged item over a folder ~0.7s → it opens | D3 |
-| **C22** | Drop model too silent — strong "drops into this folder" tint, explicit make-folder hint, drag-count badge, legal/illegal drop cursor (`dropEffect`) | D3 |
+| ~~**C22**~~ | ✅ drop signal — target fills+rings with a pill ("Move N here" / "New folder") and a move cursor (`.droptarget`, explorer.js drag handlers) — reconciled 2026-08-31 (was already built) | D3 |
 | **C23** | Drop OS files onto a **specific folder** (and a crumb / tree row), not only the pane | D3 |
-| **C24** | Background (whitespace) right-click menu thin — add Paste · Select all · Sort by ▸ · Group by ▸ · View ▸ · Refresh; ensure enough dead space to invoke it | D4 |
+| ~~**C24**~~ | ✅ desktop-style background right-click menu (New folder · Upload · Select all · Sort by ▸ · Group by ▸ · View ▸) at the cursor — reconciled 2026-08-31 (was already built; Paste pends C4) | D4 |
 | ~~**C25**~~ | ✅ folder menu gained Rename/Move to…/Delete (Share + Properties already existed); Download still missing — folded into **P37** (needs the zip infra to download a folder meaningfully) | D4 |
 | **C26** | Context menus on the breadcrumb, tree rows, and list column headers | D4/D6 |
 | **C27** | Inline rename (F2/Enter/slow-click, basename pre-selected) + inline "untitled folder" in rename mode — not modal dialogs | D5 |
 | **C28** | List headers inert — click-sort (+caret), drag-resize, drag-reorder, choose columns | D6 |
-| **C29** | No docked info/details panel on **select** (Drive "i" sidebar / Finder inspector) — big viewer stays for open | D7 |
+| ~~**C29**~~ | ✅ docked info panel on select (right column, `i` toggles; reuses details.js metaRows) — the big viewer still opens files — reconciled 2026-08-31 (was already built) | D7 |
 | **C30** | Breadcrumb overflow collapses to a "…" menu (deep paths clip today); self-describing view (count/sort near path) | D8 |
 | **C31** | Loading **skeleton** grid + empty folder as a real **drop zone** (not just text) | D9 |
 | **C32** | Consistent corner **badges** (shared/hidden/locked/has-tags) + folder content-preview hint + correct per-kind icons | D10 |

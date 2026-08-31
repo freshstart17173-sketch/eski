@@ -3318,3 +3318,27 @@ NEXT: pivot to file-browser work (owner redirect 2026-08-31) — the explorer C1
 GOTCHA: the crop output must carry a filename + type (wrap the canvas Blob in a File) so the existing
       hash/uploadBlobs path treats it like any picked file; a bare Blob would lose the extension the
       R2 key derives from.
+
+## 2026-08-31 — C1 arrow-key nav + C-table reconcile
+IN PROGRESS: (cleared)
+DONE: committed <sha>. **C1 · arrow-key roving navigation** of the file grid/list (owner's loudest
+      file-browser keyboard gap). Added to explorer.js's document keydown handler: ↑↓←→ move the
+      selection across the live card DOM order; Left/Right are flat prev/next, Up/Down use geometry
+      (getBoundingClientRect — nearest row in the direction, closest horizontal centre) so it works in
+      a responsive multi-column grid, grouped sections, and degrades to prev/next in the single-column
+      list. A plain arrow selects one item (Drive/Finder); Shift+arrow extends a range from the anchor
+      (mixed folder+file, which the selection model already supports via state.selection+state.selFolders).
+      New state.cursor/state.anchor hold roving focus + range anchor; Esc clears them. Composes with the
+      already-built C16 tile-ring, C17 status strip, C29 info panel. Verified headless in the beats
+      folder (SPA-fallback server): click→folder, →→ walk files, ↓/↑ change rows, ← moves, Shift→ builds
+      a 2-item range; status strip shows "2 selected · 25 MB"; 0 pageerrors.
+      **C-table reconcile:** the CONVENTIONS C-table was stale — C16, C17, C22, C24, C29 were already
+      implemented at the tip but still listed open. Verified each in code (and C16/C17 in the C1
+      screenshot) and marked them done in docs/TODO.md so the next pass doesn't rebuild them.
+NEXT: P32 · real density SLIDER (owner asked for it next) — replace the discrete Grid/List switch with
+      a continuous eased density scale; match the mockup thumbnail density + title→tags gap as one stage.
+GOTCHA: the repo's docs/design/verify-explorer.mjs harness is drifted — grid-root/list-view/feed-view
+      fail on the CLEAN tip too (demo dataset + P33 view changes outran it), so a red run there is NOT a
+      regression signal right now; confirm against a stash-baseline before blaming a change. Its own
+      SPA-fallback server is the right pattern for driving routed demo screens (plain http.server 404s
+      on /s/lb/files and boots nothing).

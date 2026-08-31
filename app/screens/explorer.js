@@ -238,13 +238,92 @@ export function renderExplorer(data, view = {}) {
   // selects all in view, Enter opens the selection (folder → into it, file → the viewer), Delete
   // trashes the selected files. "Up a folder" is already Backspace/Back via the folder pushState
   // (B25), so it isn't rebound here. A single self-cleaning document listener.
+  // C1 · arrow-key roving navigation of the grid/list. Operates on the live DOM order of the
+  // selectable cards (folders-then-files, groups included), using geometry (getBoundingClientRect)
+  // so Up/Down find the visually-above/below tile in a responsive multi-column grid and degrade to
+  // prev/next in the single-column list. Left/Right are flat prev/next. A plain arrow moves the
+  // selection to one item (Drive/Finder); Shift+arrow extends a range from the anchor (mixed
+  // folder+file, which the selection model already supports). state.cursor/state.anchor hold the
+  // roving focus + range anchor as {kind,id}.
+  const navNodes = () => {
+    const b = document.querySelector(".panebody"); if (!b) return [];
+    return [...b.querySelectorAll("[data-id],[data-folder-id]")].map((node) => ({
+      node, id: node.dataset.id || node.dataset.folderId, kind: node.dataset.folderId ? "folder" : "file",
+    }));
+  };
+  const cursorIndex = (nodes) => {
+    if (state.cursor) { const i = nodes.findIndex((n) => n.kind === state.cursor.kind && n.id === state.cursor.id); if (i >= 0) return i; }
+    // fall back to the first currently-selected item, else the first item
+    const i = nodes.findIndex((n) => (n.kind === "file" ? state.selection : state.selFolders).has(n.id));
+    return i >= 0 ? i : (nodes.length ? 0 : -1);
+  };
+  const rowTarget = (nodes, cur, dir) => {
+    // dir: -1 up, +1 down. Find the nearest row in that direction, then the tile whose horizontal
+    // centre is closest to the current tile's centre. Threshold guards against same-row jitter.
+    const cr = nodes[cur].node.getBoundingClientRect();
+    const cx = cr.left + cr.width / 2, cy = cr.top + cr.height / 2;
+    let best = -1, bestTop = null, bestDx = Infinity;
+    for (let i = 0; i < nodes.length; i++) {
+      if (i === cur) continue;
+      const r = nodes[i].node.getBoundingClientRect();
+      const ry = r.top + r.height / 2;
+      if (dir < 0 ? ry >= cy - 4 : ry <= cy + 4) continue;      // must be in the target direction
+      const rowKey = Math.round(r.top);
+      if (bestTop === null) bestTop = rowKey;                    // first candidate row seen defines the nearest row
+      else if (dir < 0 ? rowKey > bestTop : rowKey < bestTop) bestTop = rowKey;
+    }
+    if (bestTop === null) return -1;
+    for (let i = 0; i < nodes.length; i++) {
+      if (i === cur) continue;
+      const r = nodes[i].node.getBoundingClientRect();
+      if (Math.round(r.top) !== bestTop) continue;
+      const dx = Math.abs((r.left + r.width / 2) - cx);
+      if (dx < bestDx) { bestDx = dx; best = i; }
+    }
+    return best;
+  };
+  const arrowNav = (e, dir, axis) => {
+    const nodes = navNodes(); if (!nodes.length) return;
+    e.preventDefault();
+    let cur = cursorIndex(nodes);
+    if (cur < 0) return;
+    // if nothing is focused yet, the first arrow just adopts the current cursor item (don't jump past it)
+    const hadCursor = state.cursor && nodes.some((n) => n.kind === state.cursor.kind && n.id === state.cursor.id);
+    let target = cur;
+    if (hadCursor || state.selection.size || state.selFolders.size) {
+      target = axis === "x" ? Math.min(nodes.length - 1, Math.max(0, cur + dir)) : rowTarget(nodes, cur, dir);
+      if (target < 0) target = cur;   // no row above/below → stay
+    }
+    const t = nodes[target];
+    state.cursor = { kind: t.kind, id: t.id };
+    if (e.shiftKey) {
+      // extend from the anchor; if the selection was started by a click (no arrow anchor yet), the
+      // pre-move focus is the anchor.
+      if (!state.anchor) state.anchor = { kind: nodes[cur].kind, id: nodes[cur].id };
+      const ai = nodes.findIndex((n) => n.kind === state.anchor.kind && n.id === state.anchor.id);
+      const [lo, hi] = ai <= target ? [ai, target] : [target, ai];
+      state.selection.clear(); state.selFolders.clear();
+      for (let i = Math.max(0, lo); i <= hi; i++) (nodes[i].kind === "file" ? state.selection : state.selFolders).add(nodes[i].id);
+    } else {
+      state.selection.clear(); state.selFolders.clear();
+      (t.kind === "file" ? state.selection : state.selFolders).add(t.id);
+      state.anchor = { kind: t.kind, id: t.id };
+    }
+    state._refresh?.();
+    t.node.scrollIntoView({ block: "nearest", inline: "nearest" });
+  };
+
   const onKey = (e) => {
     if (!screen.isConnected) { document.removeEventListener("keydown", onKey); return; }
     if (document.querySelector(".sheet")) return;   // the details overlay owns keys while open
     if (document.querySelector(".menu.open, .modal")) return;   // a menu/dialog owns keys while open
     const tag = document.activeElement?.tagName;
     if (tag === "INPUT" || tag === "TEXTAREA" || document.activeElement?.isContentEditable) return;
-    if (e.key === "Escape" && (state.selection.size || state.selFolders.size)) { state.selection.clear(); state.selFolders.clear(); state.lastIdx = -1; state.lastFolderIdx = -1; state._refresh?.(); }
+    if (e.key === "ArrowLeft") { arrowNav(e, -1, "x"); }
+    else if (e.key === "ArrowRight") { arrowNav(e, 1, "x"); }
+    else if (e.key === "ArrowUp") { arrowNav(e, -1, "y"); }
+    else if (e.key === "ArrowDown") { arrowNav(e, 1, "y"); }
+    else if (e.key === "Escape" && (state.selection.size || state.selFolders.size)) { state.selection.clear(); state.selFolders.clear(); state.lastIdx = -1; state.lastFolderIdx = -1; state.cursor = null; state.anchor = null; state._refresh?.(); }
     else if ((e.metaKey || e.ctrlKey) && (e.key === "a" || e.key === "A")) {   // ⌘A in any density
       e.preventDefault();
       for (const w of state._files || []) state.selection.add(w.id);
