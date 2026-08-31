@@ -3281,3 +3281,22 @@ NEXT: K13 (folders RLS — `locked` enforced by `folders_write` but bypassed on 
 GOTCHA: the loading ellipsis had to use TEXT dots, not styled round `<i>` spans — a circular
       loading dot would violate the durable "round is avatars/presence-dots ONLY" rule. Animated
       period glyphs give the rising-ellipsis motion the owner asked for without a new circle.
+
+## 2026-08-31 — K13 folders `locked` RLS fence restored
+IN PROGRESS: (cleared)
+DONE: migration **p29_folders_locked_rls** applied + committed <sha> (schema-38-folders-locked-rls.sql).
+      Live pg_policy showed folders_upd/folders_del gated by `has_perm(manage_channels)` ONLY —
+      schema-09 had DROPPED schema-03's `folders_write` ALL policy (which carried `and not locked`)
+      and split it into per-command policies without the locked guard, so a `locked` server folder
+      was fully rename/move/deletable at the DB level. Restored `and not locked` in the USING clause
+      of folders_upd + folders_del (INSERT stays has_perm-only); patched the schema-09 source too so a
+      fresh replay matches the live DB. Verified per VERIFICATION.md (one rolled-back `do $$` as the
+      server owner under `set local role authenticated`): locked folder upd=0/del=0 (blocked), open
+      folder upd=1/del=1 (still writable); prod left at 0 folders, 0 ERROR security advisors, nothing
+      folders-specific flagged. No behavioural change (no lock/unlock UI exists; 0 locked folders in
+      prod) — a fence tightening behind an already-correct client signpost.
+NEXT: continue shortest-job-first through the open non-tag queue — P36 (crop/zoom modal for image
+      uploads) or P31 (one modifier-based search across channel messages ↔ server files).
+GOTCHA: the first role-sim swallowed its own RESULTS via an `exception when others ... raise notice`
+      handler (MCP execute_sql doesn't surface notices) — use the VERIFICATION.md pattern of letting
+      `raise exception E'RESULTS:%'` propagate as the error (it both rolls back AND returns the string).

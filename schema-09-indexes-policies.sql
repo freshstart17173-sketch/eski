@@ -50,11 +50,14 @@ drop policy if exists sb_write on storage_balance;
 create policy sb_ins on storage_balance for insert with check ((owner_type='user' and owner_id=(select auth.uid())) or (owner_type='server' and has_perm(owner_id, perm_bit('manage_billing'))));
 create policy sb_upd on storage_balance for update using ((owner_type='user' and owner_id=(select auth.uid())) or (owner_type='server' and has_perm(owner_id, perm_bit('manage_billing')))) with check ((owner_type='user' and owner_id=(select auth.uid())) or (owner_type='server' and has_perm(owner_id, perm_bit('manage_billing'))));
 create policy sb_del on storage_balance for delete using ((owner_type='user' and owner_id=(select auth.uid())) or (owner_type='server' and has_perm(owner_id, perm_bit('manage_billing'))));
--- folders (write = manage_channels; the locked/archived nuance is enforced on placement)
+-- folders (write = manage_channels; a `locked` folder is read-only — see schema-38 / K13).
+-- INSERT is has_perm-only (no prior row to protect); UPDATE/DELETE also require NOT locked so a
+-- locked folder can't be renamed/moved/deleted at the DB level, matching schema-03's original
+-- folders_write intent that this split accidentally dropped (restored 2026-08-31 in schema-38).
 drop policy if exists folders_write on folders;
 create policy folders_ins on folders for insert with check (has_perm(server_id, perm_bit('manage_channels')));
-create policy folders_upd on folders for update using (has_perm(server_id, perm_bit('manage_channels'))) with check (has_perm(server_id, perm_bit('manage_channels')));
-create policy folders_del on folders for delete using (has_perm(server_id, perm_bit('manage_channels')));
+create policy folders_upd on folders for update using (has_perm(server_id, perm_bit('manage_channels')) and not locked) with check (has_perm(server_id, perm_bit('manage_channels')));
+create policy folders_del on folders for delete using (has_perm(server_id, perm_bit('manage_channels')) and not locked);
 -- content_tags (author/admin or accepted collaborator)
 drop policy if exists ct_write on content_tags;
 create policy ct_ins on content_tags for insert with check (can_write_work(work_id) or exists (select 1 from work_collaborators c where c.work_id=content_tags.work_id and c.user_id=(select auth.uid()) and c.status='accepted'));
