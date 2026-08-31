@@ -200,7 +200,7 @@ drag, whitespace" ask). These are look-and-feel/interaction, so most carry the *
 |---|---|---|
 | ~~**C16**~~ | ✅ selected card is now the WHOLE tile (`--plate` fill + 2px ink ring), consistent across densities (`.card.sel`, content.css) — reconciled 2026-08-31 (was already built) | D1 |
 | ~~**C17**~~ | ✅ quiet status strip at the pane foot — "N items" / "N selected · size" + current sort (`.exstatus`/`updateStatus`) — reconciled 2026-08-31 (was already built) | D1/D8 |
-| **C18** | Multi-select click-through (don't collapse a multi-selection on mousedown so you can drag it) + Select all / none / invert affordances | D1 |
+| ~~**C18**~~ | ✅ Select all / Deselect all / Invert in the background menu (over files + folders); ⌘A now includes folders. Click-through already held — selection is on click (mouseup) and native drag suppresses it, so a multi-drag from a member survives (B10/B31). — 2026-08-31 | D1 |
 | **C19** | Hover affordances thin/uneven — whole row/tile is the hover target; reveal actions + checkbox + a name/size tooltip on all densities | D2 |
 | ~~**C20**~~ | ✅ marquee now auto-scrolls near the pane edge too (native drag already did) | D3 |
 | **C21** | **Spring-loaded folders** — hover a dragged item over a folder ~0.7s → it opens | D3 |

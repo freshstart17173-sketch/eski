@@ -375,9 +375,10 @@ export function renderExplorer(data, view = {}) {
     else if (e.key === "ArrowUp") { arrowNav(e, -1, "y"); }
     else if (e.key === "ArrowDown") { arrowNav(e, 1, "y"); }
     else if (e.key === "Escape" && (state.selection.size || state.selFolders.size)) { state.selection.clear(); state.selFolders.clear(); state.lastIdx = -1; state.lastFolderIdx = -1; state.cursor = null; state.anchor = null; state._refresh?.(); }
-    else if ((e.metaKey || e.ctrlKey) && (e.key === "a" || e.key === "A")) {   // ⌘A in any density
+    else if ((e.metaKey || e.ctrlKey) && (e.key === "a" || e.key === "A")) {   // ⌘A — select every item (files + folders), C18
       e.preventDefault();
       for (const w of state._files || []) state.selection.add(w.id);
+      document.querySelectorAll(".panebody [data-folder-id]").forEach((n) => state.selFolders.add(n.dataset.folderId));
       state._refresh?.();
     }
     else if (e.key === "Enter") {   // open the selection: a folder walks in, a file opens the viewer
@@ -733,7 +734,20 @@ function paint(tree, pane, data, state, rerender) {
     if (e.target.closest("[data-id]") || e.target.closest("[data-folder-id]") || e.target.closest(".selbar") || e.target.closest(".exfab")) return;
     e.preventDefault();
     const at = { x: e.clientX, y: e.clientY };
-    const selectAll = () => { for (const w of state._files || []) state.selection.add(w.id); state._refresh?.(); };
+    // C18: select-all / deselect-all / invert affordances, over BOTH files and folders (the DOM holds
+    // the current folder's folder cards; state._files holds its files). Invert flips membership of every
+    // visible item. Deselect only appears when something is selected.
+    const allFolderIds = () => [...body.querySelectorAll("[data-folder-id]")].map((n) => n.dataset.folderId);
+    const selectAll = () => { for (const w of state._files || []) state.selection.add(w.id); for (const id of allFolderIds()) state.selFolders.add(id); state._refresh?.(); };
+    const deselectAll = () => { state.selection.clear(); state.selFolders.clear(); state._refresh?.(); };
+    const invertSel = () => {
+      const f = new Set(state.selection), fo = new Set(state.selFolders);
+      state.selection.clear(); state.selFolders.clear();
+      for (const w of state._files || []) if (!f.has(w.id)) state.selection.add(w.id);
+      for (const id of allFolderIds()) if (!fo.has(id)) state.selFolders.add(id);
+      state._refresh?.();
+    };
+    const hasSel = state.selection.size || state.selFolders.size;
     // C24: the desktop-style background menu (was just New folder + Upload). Sort/View open the same
     // option lists as the toolbar dropdowns, at the cursor. (Paste → with C4 cut/copy/paste; Group by
     // → with P33 — omitted until those land so no row is a dead control.)
@@ -742,6 +756,9 @@ function paint(tree, pane, data, state, rerender) {
       { label: "Upload…", icon: "download", onClick: () => openUpload(uploadOpts) },
       { sep: true },
       { label: "Select all", icon: "check", onClick: selectAll },
+      ...(hasSel ? [{ label: "Deselect all", icon: "x", onClick: deselectAll }] : []),
+      { label: "Invert selection", icon: "square", onClick: invertSel },
+      { sep: true },
       { label: "Sort by", icon: "sort", chev: true, onClick: () => openMenu(null, SORTS.map(([k, lbl]) => ({ label: lbl, selected: state.sort === k, onClick: () => { state.sort = k; repaintBody(); } })), { at }) },
       { label: "View", icon: "grid", chev: true, onClick: () => openMenu(null, Object.entries(VIEWS).map(([k, v]) => ({ label: v, selected: state.mode === k, onClick: () => { state.mode = k; rerender(); } })), { at }) },
       { sep: true },

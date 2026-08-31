@@ -3406,3 +3406,19 @@ NEXT: more file-browser conventions — C18 (select-all/invert + mousedown click
 GOTCHA: the demo's deepest path was only 2 folders, so the collapse had nothing to exercise — added a
       real 4-deep branch to the fixture rather than special-casing a test, which also makes the demo a
       better showcase of nesting.
+
+## 2026-08-31 — C18 select-all/deselect/invert affordances
+IN PROGRESS: (cleared)
+DONE: committed <sha>. The explorer background right-click menu gained **Deselect all** (shown only when
+      something is selected) and **Invert selection**, and **Select all** + **⌘A** now cover FOLDERS as
+      well as files (was files-only). Invert flips membership of every visible item (files + folders).
+      Verified headless: ⌘A → 5/5 selected (incl. the folder), background menu lists New folder · Upload ·
+      Select all · Deselect all · Invert selection · Sort by · View · Refresh, Invert turns 1 selected into
+      4; 0 pageerrors. The OTHER half of C18 (mousedown click-through) already held — selection commits on
+      click (mouseup) and native drag suppresses the click, so a multi-drag from a selected member survives
+      (proven by B10/B31); no change needed there.
+NEXT: file-browser — C31 (skeleton grid + empty-folder drop zone), C32 (corner badges + per-kind icons),
+      C19 (hover affordances on list/small), C21 (spring-loaded folders), or P37 (multi-file zip download).
+GOTCHA: "Select all" that grabbed only files (state._files) silently ignored folders — a real
+      inconsistency once folders became selectable (P33). Both ⌘A and the menu now query the DOM for
+      [data-folder-id] so they stay correct regardless of how the folder set is stored.
