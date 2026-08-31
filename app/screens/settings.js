@@ -6,7 +6,7 @@
 // — only where it lives. Admin-gated by the caller (main.js loads the workspace bundle, which
 // carries isAdmin/isOwner); a non-admin sees a read-only-ish subset (no Save/Delete).
 
-import { el, toast, Avatar, Button, openModal, busyOverlay, withBusy } from "../ui.js";
+import { el, toast, Avatar, Button, openModal, busyOverlay, withBusy, loadingLabel } from "../ui.js";
 import { iconEl } from "../icons.js";
 import { navigate, reload } from "../router.js";
 import { isDemo, updateServer, loadServerPrefs, setServerPrefs, loadAuditLog, loadJoinRequests, approveJoinRequest, declineJoinRequest, deleteServer, leaveServer, createInvite, loadInvites, revokeInvite } from "../data.js";
@@ -116,7 +116,7 @@ function rolesPanel(data) {
 // ── Invites: list · create · revoke ──────────────────────────────────────────
 function invitesPanel(data) {
   const wrap = el("div", {}, [head("Invites", "Share a link so people can join.")]);
-  const list = el(".setcard", {}, [el(".lb", { style: "color:var(--muted)" }, ["Loading…"])]);
+  const list = el(".setcard", {}, [el(".lb", { style: "color:var(--muted)" }, [loadingLabel("Loading")])]);
   wrap.append(list);
   const paint = (rows) => {
     list.replaceChildren();
@@ -142,7 +142,7 @@ function invitesPanel(data) {
 // ── Join requests: approve / decline ─────────────────────────────────────────
 function requestsPanel(data) {
   const wrap = el("div", {}, [head("Join requests", "People asking to join via a shared folder or link.")]);
-  const list = el(".setcard", {}, [el(".lb", { style: "color:var(--muted)" }, ["Loading…"])]);
+  const list = el(".setcard", {}, [el(".lb", { style: "color:var(--muted)" }, [loadingLabel("Loading")])]);
   wrap.append(list);
   const paint = (rows) => {
     list.replaceChildren();
@@ -168,7 +168,7 @@ function requestsPanel(data) {
 // ── Notifications: level + suppress @everyone ────────────────────────────────
 function notificationsPanel(data) {
   const wrap = el("div", {}, [head("Notifications", "How this server pings you.")]);
-  const card = el(".setcard", {}, [el(".lb", { style: "color:var(--muted)" }, ["Loading…"])]);
+  const card = el(".setcard", {}, [el(".lb", { style: "color:var(--muted)" }, [loadingLabel("Loading")])]);
   wrap.append(card);
   const LEVELS = [["all", "All messages"], ["mentions", "Only @mentions"], ["none", "Nothing"]];
   loadServerPrefs(data.server.id).then((prefs) => {
@@ -190,7 +190,7 @@ function notificationsPanel(data) {
 // ── Audit log ────────────────────────────────────────────────────────────────
 function auditPanel(data) {
   const wrap = el("div", {}, [head("Audit log", "Moderation actions on this server.")]);
-  const list = el(".setcard", {}, [el(".lb", { style: "color:var(--muted)" }, ["Loading…"])]);
+  const list = el(".setcard", {}, [el(".lb", { style: "color:var(--muted)" }, [loadingLabel("Loading")])]);
   wrap.append(list);
   loadAuditLog(data.server.id).then((rows) => {
     list.replaceChildren();

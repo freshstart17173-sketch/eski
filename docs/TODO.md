@@ -836,10 +836,11 @@ optimistic send (P30), viewer ←/→ + Esc. These are the baseline the C-items 
       `.panebody` computes `user-select:none`; the ghost is 34×34 at `--r`, badge square + inked; 0
       pageerrors. The live drag-image swap isn't sandbox-simulable → QA-CHECKLIST. *Files:*
       `app/screens/explorer.js` (dragstart), `styles/content.css`.
-- [ ] **B32 · Selection action bar shifts the layout down.** The `.selbar` pushes all the content down
-      when it opens (very annoying). Make it an **overlay** (float over the grid / absolute) so it
-      doesn't reflow the pane. *Files:* `styles/content.css` (`.selbar`), maybe `app/screens/explorer.js`.
-      *Easy-med.*
+- [x] **B32 · Selection action bar shifts the layout down.** *Done (already shipped; body box was
+      lagging the sorted-table row).* The `.selbar` is a `position:absolute;inset:0;z-index:2` child of
+      the toolbar (`.toolbar{position:relative}` anchors it), so it **overlays** the toolbar instead of
+      inserting a row — zero grid shift on select. Verified in `styles/content.css:294` + the anchoring
+      comment on `.toolbar` (`:64`). *Files:* `styles/content.css` (`.selbar`, `.toolbar`).
 - [x] **B33 · Star: consistent, top-left, click-to-toggle across all densities.** *Done (demo-verified
       light+dark; star opacity 1 on hover, gold+filled when starred).* Merged the star INDICATOR and the
       star SELECTOR into ONE control: `workCard` renders a single `.cardstar` at the thumbnail top-left
@@ -880,10 +881,21 @@ optimistic send (P30), viewer ←/→ + Esc. These are the baseline the C-items 
       `index.html` (boot/logo), realtime send path. *Hard.* Uses the perf HUD (`?perf=1`).
 >
 > **— Uploads / polish —**
-- [ ] **P35 · Loading animations EVERYWHERE.** Every async action needs a progress bar, spinner, or
-      rising-ellipsis — literally everywhere. And **replace the spinning search icon** (P24's
-      `.searchloading`) — it "sucks". *Files:* `app/ui.js` (a shared spinner/ellipsis + progress),
-      `styles/*`, every async call site. *Med.* Extends **P3/P16**.
+- [x] **P35 · Loading animations EVERYWHERE.** *Done — shared vocabulary landed + spinning search icon
+      retired (demo screenshot-verified both themes, 0 pageerrors; no mockups per owner 2026-08-31).*
+      Two shared inline affordances in `app/ui.js`: **`loadingLabel(text)`** — a status word trailed
+      by an animated **rising ellipsis** (TEXT-glyph dots, `@keyframes dotpulse`, so the
+      no-new-round-elements rule holds — no circles) — and **`indetBar()`** — a slim **indeterminate
+      progress bar** (a sliding sliver reusing the upload widget's `uplslide` motion, so the app has
+      ONE indeterminate animation, not a second spinner). The **spinning search icon** (`.searchloading
+      .ic{animation:spin}`) is **replaced** by `indetBar()` + `loadingLabel("Searching")`. Wired the
+      shared label into the previously-static text placeholders: settings.js ×4, usersettings.js ×2
+      (blocked/storage), and the explorer "Load more" loading state. These sit alongside the existing
+      determinate affordances (P3 `busyOverlay`/`withBusy`, P16 `uploadProgress`), which already cover
+      button/overlay/upload waits — P35 fills the "static text while loading" gaps with motion. *Files:*
+      `app/ui.js` (`loadingLabel`, `indetBar`), `styles/primitives.css` (`.dots`/`dotpulse`,
+      `.indetbar`/`.indetfill`), `styles/content.css` (`.searchloading`), `app/screens/explorer.js`,
+      `app/screens/settings.js`, `app/screens/usersettings.js`. Extends **P3/P16**.
 - [ ] **P36 · Crop/zoom modal for image uploads.** Uploading a **server icon/cover** or a **profile
       pfp/banner** needs a UI element/modal to **adjust crop + zoom** before saving. *Files:* a new
       crop modal (`app/ui.js`/a screen), `app/screens/profile.js`, `app/screens/settings.js`. *Med-hard.*

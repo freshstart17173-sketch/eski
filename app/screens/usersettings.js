@@ -4,7 +4,7 @@
 // Account, Appearance, Notifications, Privacy & safety, Storage. Each panel's writes go through
 // their own data functions; this screen only reads + routes.
 
-import { el, toast, Avatar, SegmentedControl, UsageBar, Button } from "../ui.js";
+import { el, toast, Avatar, SegmentedControl, UsageBar, Button, loadingLabel } from "../ui.js";
 import { iconEl } from "../icons.js";
 import { navigate, reload } from "../router.js";
 import { signOut } from "../supabase.js";
@@ -147,7 +147,7 @@ function privacyPanel(data) {
     }
   };
   if (data.blocked) paint(data.blocked);
-  else { list.append(el("p", { style: "color:var(--muted);font-size:var(--fs-sm);margin:0" }, ["Loading…"])); loadUserBlocked().then((b) => { data.blocked = b; paint(b); }).catch(() => paint([])); }
+  else { list.append(el("p", { style: "color:var(--muted);font-size:var(--fs-sm);margin:0" }, [loadingLabel("Loading")])); loadUserBlocked().then((b) => { data.blocked = b; paint(b); }).catch(() => paint([])); }
   return wrap;
 }
 
@@ -168,7 +168,7 @@ function storagePanel(data) {
     );
   };
   if (data.storage) paint(data.storage);
-  else { card.append(el("p", { style: "color:var(--muted);font-size:var(--fs-sm);margin:0" }, ["Loading…"])); loadUserStorage().then((s) => { data.storage = s; paint(s); }).catch(() => paint({ usedBytes: 0, capBytes: USER_GB, capGb: 0 })); }
+  else { card.append(el("p", { style: "color:var(--muted);font-size:var(--fs-sm);margin:0" }, [loadingLabel("Loading")])); loadUserStorage().then((s) => { data.storage = s; paint(s); }).catch(() => paint({ usedBytes: 0, capBytes: USER_GB, capGb: 0 })); }
   return wrap;
 }
 const USER_GB = 1024 ** 3;

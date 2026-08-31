@@ -3257,3 +3257,27 @@ NEXT: owner flagged the `--mod` magenta reading as confusable, and asked for res
 GOTCHA: caught my own P27 branching bug before it shipped (see above) — a reminder that "port the
   old logic forward, adjust incrementally" is exactly how a spec inversion sneaks through when the
   new spec REVERSES the old default instead of refining it.
+
+## 2026-08-31 — P35 loading affordances + B32 doc reconcile
+IN PROGRESS: (cleared)
+DONE: committed <sha>. **P35 (loading animations + retire the spinning search icon).** Added two
+      shared inline affordances to `app/ui.js`: `loadingLabel(text)` (a status word + an animated
+      rising ellipsis — TEXT-glyph dots via `@keyframes dotpulse`, no circles, so the
+      no-new-round-elements rule holds) and `indetBar()` (a slim indeterminate progress bar reusing
+      the upload widget's `uplslide` motion, so the app keeps ONE indeterminate animation instead of
+      a second spinner). Replaced the spinning `.searchloading .ic` with `indetBar()` +
+      `loadingLabel("Searching")`. Wired the shared label into the static text placeholders that had
+      no motion: settings.js ×4, usersettings.js ×2 (blocked/storage), explorer "Load more" loading.
+      CSS: `styles/primitives.css` (`.dots`/`dotpulse`, `.indetbar`/`.indetfill`), `styles/content.css`
+      (`.searchloading` → column + bar). Verified: standalone harness screenshot both themes (light +
+      dark, saved to the session scratchpad), 0 pageerrors; `?demo=1` full app still boots 0 pageerrors
+      after the explorer import change; `node --check` clean on all four JS files.
+      **B32:** already shipped (the `.selbar` is a `position:absolute;inset:0` child of the
+      `position:relative` toolbar — overlays, no reflow); only the TODO body checkbox was lagging the
+      sorted-table row, now reconciled.
+NEXT: K13 (folders RLS — `locked` enforced by `folders_write` but bypassed on the move/rename path),
+      then continue shortest-job-first through the open non-tag queue (P36 crop/zoom, P31 unified
+      search, P37 zip download).
+GOTCHA: the loading ellipsis had to use TEXT dots, not styled round `<i>` spans — a circular
+      loading dot would violate the durable "round is avatars/presence-dots ONLY" rule. Animated
+      period glyphs give the rising-ellipsis motion the owner asked for without a new circle.

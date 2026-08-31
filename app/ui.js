@@ -301,6 +301,23 @@ export async function withBusy(btn, fn) {
   finally { if (!already) { btn.classList.remove("loading"); btn.removeAttribute("aria-busy"); } }
 }
 
+// ── P35 · shared loading affordances ────────────────────────────────────────────
+// One motion vocabulary for "content is loading" so no async wait ever shows dead static
+// text (the owner's "loading animations EVERYWHERE"). Two inline pieces:
+//   loadingLabel(text) — a status word trailed by an animated rising ellipsis. Use where a
+//     word already reads ("Loading", "Searching", "Saving"). The dots are TEXT glyphs, not
+//     circles, so this obeys the no-new-round-elements rule (round = avatars/presence only).
+//   indetBar() — a slim indeterminate progress bar (a sliding sliver) for a block-level wait
+//     where a bar reads better than a word. Reuses the upload widget's `uplslide` motion so the
+//     app has ONE indeterminate animation, not a second spinner. This replaces the old spinning
+//     search icon (owner: it "sucks").
+export function loadingLabel(text = "Loading") {
+  return el("span.loadlbl", {}, [text, el("span.dots", { "aria-hidden": "true" }, [el("i", {}, ["."]), el("i", {}, ["."]), el("i", {}, ["."])])]);
+}
+export function indetBar() {
+  return el(".indetbar", { role: "progressbar", "aria-label": "Loading" }, [el(".indetfill")]);
+}
+
 // ── P16 · determinate upload progress with a Drive-style minimize ────────────────
 // Replaces the old text-only "Hashing…/Uploading…/Posting…" line: an animated bar + %,
 // and a minimize that detaches a compact chip to the bottom-right so the upload keeps

@@ -13,7 +13,7 @@
 // Files is a channel (CANON §C.6): the server's channel column stays to the left
 // so any other channel is one click away — the browser is never a dead-end.
 
-import { el, toast, openMenu, closeMenus, openModal, VisibilitySeg, Button, copyToClipboard } from "../ui.js";
+import { el, toast, openMenu, closeMenus, openModal, VisibilitySeg, Button, copyToClipboard, loadingLabel, indetBar } from "../ui.js";
 import { iconEl } from "../icons.js";
 import { parseTag, TAG_TYPES, tagChip, tagEditor, tagColor } from "../tags.js";
 import { addFolderTag, removeFolderTag } from "../data.js";
@@ -952,7 +952,7 @@ function contents(data, state, rerender, sel) {
     const sig = JSON.stringify(args);
     if (!state.srv || state.srv.sig !== sig) { state._runServerSearch(sig, args, false); }   // fires async → repaintBody
     if (!state.srv || state.srv.sig !== sig || (state.srv.loading && !(state.srv.items && state.srv.items.length))) {
-      return el(".exview", { "data-exview": "grid" }, [el(".searchloading", {}, [iconEl("search"), el("span", {}, ["Searching…"])])]);
+      return el(".exview", { "data-exview": "grid" }, [el(".searchloading", {}, [indetBar(), loadingLabel("Searching")])]);
     }
     if (state.srv.items) {   // success (possibly empty) — the server already applied text/tags/exts/sort
       subfolders = [];
@@ -1081,7 +1081,7 @@ function contents(data, state, rerender, sel) {
   // browsing loads the whole tree at once, so it never needs one).
   if (serverPaged && serverPaged.shown < serverPaged.total) {
     const more = el("button.btn.loadmorefiles", { disabled: !!serverPaged.loading },
-      [serverPaged.loading ? "Loading…" : `Load more (${serverPaged.shown} of ${serverPaged.total})`]);
+      [serverPaged.loading ? loadingLabel("Loading") : `Load more (${serverPaged.shown} of ${serverPaged.total})`]);
     more.addEventListener("click", () => { if (state.srv?.args) state._runServerSearch(state.srv.sig, state.srv.args, true); });
     return el("div", { style: "display:flex;flex-direction:column;min-height:0;flex:1" }, [view, el(".loadmorewrap", {}, [more])]);
   }
