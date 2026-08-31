@@ -123,6 +123,7 @@ detail in the Round-11 section below. Ticking one here = ticking it in its categ
 | ~4h | **P36** | crop/zoom modal for pfp/banner/icon uploads | med-hard |
 | ~5h | **P37** | multi-file download → preserve folders + zip into one archive | med-hard |
 | ~5h | **P34** | real modifier system + UI hints | med-hard |
+| ~4h | **P38** | click-a-tag-to-filter (retire the filter facet UI) · two click surfaces on typed tags · tag ✕ only in details | med-hard · tag-session |
 | ~5h | **P29** | profile rework (drop visibility tabs · Settings button · presence/status→settings w/ save · modifier search bar) | hard |
 | ~6h | **P32** | real density SLIDER (continuous, eased stages) — supersedes discrete P14 | hard |
 | ~6h | **P27** | filtering (folder-scoped) ≠ searching (deep, Reddit-style folder modifier) | hard · refines P24/P26 |
@@ -134,6 +135,21 @@ detail in the Round-11 section below. Ticking one here = ticking it in its categ
 **Round-11 clusters:** search/filter (**B35 → P27 · P31 · P34 · K12**, with **P33** filters + **P32**
 slider on the explorer) · media/messages (**B30 · B34**) · selection (**B31 · B32 · B33 · P28**) ·
 profile (**P29**) · perf (**P30**) · polish (**P35 · P36 · B36**) · downloads (**P37** — multi-file zip).
+
+**Tag session (deferred — owner 2026-08-31: "leave anything tag related for a different session"):**
+the whole tag surface reworks together, not piecemeal —
+- **P38 · Click-a-tag-to-filter.** A tag isn't just a label — clicking it starts a **search in the
+  current context** (whatever folder level you're on) with the tag acting as a **filter modifier**
+  (it narrows, it doesn't jump you elsewhere). This **retires the separate filter facet UI** ("getting
+  rid of the filters bit") — the tags themselves are the filter affordance. Refines P27/P33/P34.
+- **Two click surfaces on a typed tag.** The **type** portion (e.g. `bpm`) and the **value** portion
+  are independently clickable: clicking the type filters **all items carrying that type** (any `bpm:*`);
+  clicking the value filters the **exact `type:value`** (e.g. `bpm:120`). Grey single tags have one surface.
+- **Tag removal moves to detailed view only.** You can no longer delete a tag (the ✕ on a chip) from a
+  card/folder in grid or list — the ✕ appears **only in the details pane**. Everywhere else a tag is
+  read-only / click-to-filter.
+- **Custom tag types** (task #5, backed out this session) — any `type:value` self-defines a colored
+  typed tag (hashed hue → `oklch(var(--tt-l) var(--tt-c) hue)`, theme-swapped L/C). Build alongside P38.
 
 **Deferred — do NOT build now** (post-beta / infra-gated): D1 (feed+commenting, after P4),
 D7 (report/moderation), D2 (storage/billing, needs Stripe), D3 (audit log), D5 (required tags
