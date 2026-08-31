@@ -3374,3 +3374,19 @@ NEXT: more file-browser conventions — C2 (type-ahead), C18 (select-all/invert 
       C30 (breadcrumb overflow "…" menu), C31 (skeleton grid + empty-folder drop zone), or P37 (zip download).
 GOTCHA: the explorer keydown handler already bails while `.sheet` is open, so open (explorer) vs close
       (viewer) Space handlers never collide — the open path is guaranteed to run only when no viewer is up.
+
+## 2026-08-31 — C2 type-ahead (jump to name)
+IN PROGRESS: (cleared)
+DONE: committed <sha>. Typing a name in the explorer (body focus, no modifier) selects + scrolls to the
+      first item whose visible name starts with the typed buffer; an 800ms pause resets the buffer;
+      typing the SAME letter repeatedly cycles through items with that initial (Finder). Reads the name
+      off each card (.fname grid / .flnm list) so it works in every density, across folders + files.
+      Because plain letters now drive type-ahead, the bare-`i` info-panel keyboard shortcut was removed
+      (it would have swallowed any "i…" name) — the info panel still toggles from its ⓘ toolbar button.
+      Verified headless: m→mixing, r→references, s→stems, v→verses (paused jumps); s,s cycles
+      stems→session_notes; 0 pageerrors.
+NEXT: more file-browser conventions — C18 (select-all/invert + mousedown click-through), C30 (breadcrumb
+      overflow "…" menu), C31 (skeleton grid + empty-folder drop zone), C32 (badges), or P37 (zip download).
+GOTCHA: type-ahead and single-letter shortcuts can't coexist in a file pane — the letter is data, not a
+      command. Removed the only bare-letter shortcut (`i`) rather than have it randomly steal keystrokes;
+      any future pane shortcut must use a modifier or a non-letter key.

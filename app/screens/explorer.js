@@ -338,6 +338,32 @@ export function renderExplorer(data, view = {}) {
     t.node.scrollIntoView({ block: "nearest", inline: "nearest" });
   };
 
+  // C2 · type-ahead — start typing a name and the matching item is selected + scrolled to (Drive/
+  // Finder). A short buffer collects consecutive keystrokes (reset ~800ms after the last); typing the
+  // SAME letter repeatedly cycles through items with that initial. Reads the visible name off each
+  // card (.fname in grid, .flnm in list) so it works in every density. Because letters drive this,
+  // the file browser has no other bare-letter shortcut (the info panel toggles from its ⓘ button).
+  let taBuf = "", taTimer = null;
+  const typeahead = (ch) => {
+    const nodes = navNodes(); if (!nodes.length) return;
+    clearTimeout(taTimer); taTimer = setTimeout(() => { taBuf = ""; }, 800);
+    taBuf += ch.toLowerCase();
+    const nameOf = (n) => (n.node.querySelector(".fname,.flnm")?.textContent || "").trim().toLowerCase();
+    let idx = nodes.findIndex((n) => nameOf(n).startsWith(taBuf));
+    if (idx < 0 && taBuf.length > 1 && [...taBuf].every((c) => c === taBuf[0])) {   // repeated letter → cycle
+      taBuf = taBuf[0];
+      const cur = Math.max(0, cursorIndex(nodes));
+      for (let k = 1; k <= nodes.length; k++) { const j = (cur + k) % nodes.length; if (nameOf(nodes[j]).startsWith(taBuf)) { idx = j; break; } }
+    }
+    if (idx < 0) return;
+    const t = nodes[idx];
+    state.cursor = { kind: t.kind, id: t.id }; state.anchor = { kind: t.kind, id: t.id };
+    state.selection.clear(); state.selFolders.clear();
+    (t.kind === "file" ? state.selection : state.selFolders).add(t.id);
+    state._refresh?.();
+    t.node.scrollIntoView({ block: "nearest", inline: "nearest" });
+  };
+
   const onKey = (e) => {
     if (!screen.isConnected) { document.removeEventListener("keydown", onKey); return; }
     if (document.querySelector(".sheet")) return;   // the details overlay owns keys while open
@@ -361,12 +387,12 @@ export function renderExplorer(data, view = {}) {
     else if ((e.key === "Delete" || (e.key === "Backspace" && (e.metaKey || e.ctrlKey))) && state.selection.size && !data.shared) {   // Delete / ⌘⌫ → trash the selected files
       e.preventDefault(); trashSelected(data, state, rerender);
     }
-    else if ((e.key === "i" || e.key === "I") && !e.metaKey && !e.ctrlKey && !data.shared) {   // C29: toggle the info panel
-      e.preventDefault(); state._toggleInfo?.();
-    }
     else if (e.key === " " && document.activeElement === document.body) {   // C33: Quick Look — Space previews the selected file
       const sel = (state._files || []).filter((w) => state.selection.has(w.id));
       if (sel.length === 1 && !state.selFolders.size) { e.preventDefault(); state._openFile?.(sel[0]); }
+    }
+    else if (e.key.length === 1 && e.key !== " " && !e.metaKey && !e.ctrlKey && !e.altKey && document.activeElement === document.body) {   // C2: type-ahead
+      typeahead(e.key);
     }
   };
   document.addEventListener("keydown", onKey);

@@ -181,7 +181,7 @@ audit (have / partial / missing, with code pointers + reference links) in
 | **C7** | Right-click a message → the same ⋯ menu (actions are hover-only today) | chat |
 | **C5** | Undo the last file op (⌘Z) — move/trash/delete have no undo (trust gap) | explorer |
 | **C3** | Inline rename (F2 / Enter on the name), not only the ⋯→dialog | explorer |
-| **C2** | Type-ahead: start typing a name → jump/select it (Drive/Finder) | explorer |
+| ~~**C2**~~ | ✅ type-ahead — typing a name selects+scrolls to it; repeated letter cycles that initial (800ms buffer) — 2026-08-31 | explorer |
 | ~~**C8**~~ | ✅ ↑ in an empty composer edits your last message (Discord reflex) | chat |
 | **C10** | ⌘/Ctrl-F search within the current channel | chat |
 | **C4** | Cut/Copy/Paste files (⌘X/⌘C/⌘V) between folders; duplicate | explorer |
