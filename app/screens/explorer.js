@@ -22,7 +22,7 @@ import { createFolder, moveToFolder, trashWorks, restoreWork, purgeWork, emptyTr
 import { workCard, folderCard, mediaUrl, KIND_ICON, downloadWork, baseName } from "../cards.js";
 import { channelColumn } from "./workspace.js";
 import { openUpload, enableDropUpload } from "./upload.js";
-import { openDetails, closeDetails } from "./details.js";
+import { openDetails, closeDetails, metaRows } from "./details.js";
 
 // P14: three file-browser DENSITIES, modelled on Windows Explorer (owner spec 2026-08-30):
 //   large — big content thumbnails (a photo/video frame fills the cell; other kinds show the
@@ -135,7 +135,19 @@ export function renderExplorer(data, view = {}) {
   // is remembered in localStorage across mounts/reloads.
   if (tree) { let w = 0; try { w = parseInt(localStorage.getItem("eski-treew") || "", 10); } catch { /* private mode */ } if (w >= 150 && w <= 460) tree.style.width = w + "px"; }
   const resizer = tree ? el(".exresizer", { "aria-hidden": "true", title: "Drag to resize" }) : null;
-  const layout = el(".explayout" + (shared ? ".shared" : ""), { "data-source": shared ? "shared" : (personal ? "personal" : "server") }, shared ? [pane] : [tree, resizer, pane]);
+  // C29: the docked info panel — a right column, always mounted (not on a shared view) but hidden
+  // until the toolbar ⓘ / the `i` key toggles `.hasinfo` on the layout. Toggling doesn't rebuild the
+  // layout (rerender only repaints the pane), so the toggle flips a class + repaints the panel in place.
+  const infopanel = shared ? null : el(".exinfo");
+  const layout = el(".explayout" + (shared ? ".shared" : "") + (infopanel && state.infoOpen ? " hasinfo" : ""), { "data-source": shared ? "shared" : (personal ? "personal" : "server") }, (shared ? [pane] : [tree, resizer, pane, infopanel]).filter(Boolean));
+  state._infopanel = infopanel;
+  state._toggleInfo = () => {
+    if (!infopanel) return;
+    state.infoOpen = !state.infoOpen;
+    layout.classList.toggle("hasinfo", state.infoOpen);
+    if (state.infoOpen) state._updateInfo?.();
+    document.querySelectorAll(".hdctl .infobtn").forEach((b) => { b.classList.toggle("on", state.infoOpen); b.title = state.infoOpen ? "Hide details" : "Show details"; });
+  };
   if (tree && resizer) {
     resizer.addEventListener("pointerdown", (e) => {
       e.preventDefault(); resizer.setPointerCapture?.(e.pointerId); resizer.classList.add("drag");
@@ -241,6 +253,9 @@ export function renderExplorer(data, view = {}) {
     }
     else if ((e.key === "Delete" || (e.key === "Backspace" && (e.metaKey || e.ctrlKey))) && state.selection.size && !data.shared) {   // Delete / ⌘⌫ → trash the selected files
       e.preventDefault(); trashSelected(data, state, rerender);
+    }
+    else if ((e.key === "i" || e.key === "I") && !e.metaKey && !e.ctrlKey && !data.shared) {   // C29: toggle the info panel
+      e.preventDefault(); state._toggleInfo?.();
     }
   };
   document.addEventListener("keydown", onKey);
@@ -501,11 +516,15 @@ function paint(tree, pane, data, state, rerender) {
   // P13 (owner tweak): search stays LEFT; the filter set + the view/hidden controls are grouped
   // to the RIGHT (`.tbfilters` margin-left:auto). New folder / Upload are NOT in the toolbar — they
   // move to a bottom-right action cluster over the grid (below).
+  // C29: the info-panel toggle (an ⓘ). Reads state.infoOpen; a rerender rebuilds the layout with/
+  // without the docked panel. Not on a read-only shared view.
+  const infoBtn = data.shared ? null : el("button.iconbtn.infobtn" + (state.infoOpen ? ".on" : ""),
+    { title: state.infoOpen ? "Hide details" : "Show details", "aria-pressed": state.infoOpen ? "true" : "false", onClick: () => state._toggleInfo?.() }, [iconEl("info", "sm")]);
   const toolbar = el(".toolbar", {}, [
     search,
     el(".tbfilters", {}, [
       typeBtn, chanBtn, uploaderBtn, tagBtn, dateBtn, sortBtn, dirBtn, starFilterBtn,
-      el(".hdctl", {}, [hiddenBtn, viewBtn]),
+      el(".hdctl", {}, [infoBtn, hiddenBtn, viewBtn].filter(Boolean)),
     ].filter(Boolean)),
   ]);
 
@@ -538,6 +557,9 @@ function paint(tree, pane, data, state, rerender) {
     statusbar.replaceChildren(left, el("span.sp"), el("span.stsort", {}, [iconEl("sort", "sm"), SORT_LABEL[state.sort] || "Latest"]));
   }
   state._updateStatus = updateStatus;
+  // C29: repaint the docked info panel from the live selection.
+  function updateInfo() { const p = state._infopanel; if (p && state.infoOpen) p.replaceChildren(...buildInfoPanel(data, state, rerender)); }
+  state._updateInfo = updateInfo;
 
   // B6: clicking an empty area of the pane (not a card, not the bulk bar) clears the selection —
   // the Google-Drive gesture. A card's own click handler stops here (closest('.card')). B10: a
@@ -682,6 +704,7 @@ function paint(tree, pane, data, state, rerender) {
       selAct("x", "Clear", () => { state.selection.clear(); state.lastIdx = -1; refreshSel(); }),
     );
     state._updateStatus?.();   // C17: keep the status strip's count/size/sort live
+    state._updateInfo?.();      // C29: keep the docked info panel live to the selection
   }
 
   repaintBody();
@@ -706,6 +729,36 @@ function paint(tree, pane, data, state, rerender) {
 
 function selAct(icon, label, onClick) {
   return el("button", { title: label, onClick }, [iconEl(icon, "sm"), label]);
+}
+
+// C29: the docked info-panel contents for the current selection. Reuses details.js metaRows() so the
+// metadata is IDENTICAL to the full viewer (Location · Uploaded by · Posted in · Added · Format · Size).
+function buildInfoPanel(data, state, rerender) {
+  const head = el(".exihead", {}, [el("span.exititle", {}, ["Details"]),
+    el("button.iconbtn", { title: "Hide details", onClick: () => { state.infoOpen = false; rerender(); } }, [iconEl("x", "sm")])]);
+  const ids = [...state.selection];
+  if (ids.length > 1) {
+    const bytes = (state._files || []).filter((w) => state.selection.has(w.id)).reduce((s, w) => s + (w.bytes || 0), 0);
+    return [head, el(".exiempty", {}, [el("div", { style: "font-weight:600;color:var(--ink)" }, [`${ids.length} files selected`]), el("div", {}, [fmtBytes(bytes)])])];
+  }
+  const w = ids.length === 1 ? (data.files || []).find((x) => x.id === ids[0]) : null;
+  if (!w) return [head, el(".exiempty", {}, ["Select a file to see its details."])];
+  const ctx = { serverId: data.server?.id || null, serverName: rootLabel(data), personal: data.source === "personal", folderPath: crumbPath(data.folders, w.folderId), isPost: false };
+  const url = mediaUrl(w);
+  const prev = (w.kind === "image" && url)
+    ? el(".exiprev", {}, [el("img.shot", { src: url, alt: "" })])
+    : el(".exiprev.exipico", {}, [iconEl(KIND_ICON[w.kind] || "file")]);
+  const tagsSec = (w.tags && w.tags.length) ? el(".exisec", {}, [
+    el(".exilabel", {}, ["Tags"]),
+    el(".ftags", { style: "flex-wrap:wrap;overflow:visible;margin:0" }, (w.tags || []).map((raw) => tagChip(raw, {
+      onSearch: (r) => { state.selection.clear(); state.selFolder = null; state.folderId = null; state.query = ""; state.tags = new Set([r]); rerender(); } }))),
+  ]) : null;
+  const foot = el(".exifoot", {}, [
+    el("button.btn.primary", { onClick: () => downloadWork(w) }, [iconEl("download", "sm"), "Download"]),
+    ...(data.shared ? [] : [el("button.btn", { onClick: () => openShareDialog(w) }, [iconEl("users", "sm"), "Share"])]),
+  ]);
+  const scroll = el(".exiscroll", {}, [prev, el(".exiname", { title: w.title || "" }, [baseName(w)]), metaRows(w, ctx), tagsSec].filter(Boolean));
+  return [head, scroll, foot];
 }
 
 // the current folder's subfolders + files, as grid or list; or search results

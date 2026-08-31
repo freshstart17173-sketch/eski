@@ -103,6 +103,25 @@
 /* ── File explorer (P5.4): nested tree + views ───────────────────────────── */
 .explayout{flex:1;min-width:0;display:flex;overflow:hidden}
 .explayout .pane{flex:1;min-width:0}
+/* C29 docked info panel — a right column (Drive's "i" sidebar); reuses the .meta rows from the
+   details viewer so the fields are identical. Separates from the pane by a hairline. */
+.exinfo{display:none}
+.explayout.hasinfo .exinfo{flex:none;width:300px;min-width:0;background:var(--paper);box-shadow:-1px 0 0 var(--line);display:flex;flex-direction:column;min-height:0}
+.exihead{flex:none;display:flex;align-items:center;justify-content:space-between;padding:var(--s3) var(--s4);position:relative}
+.exihead::after{content:"";position:absolute;left:var(--hair-inset);right:var(--hair-inset);bottom:0;height:1px;background:var(--line)}
+.exititle{font-size:var(--fs-sm);font-weight:600;color:var(--ink)}
+.exiscroll{flex:1;min-height:0;overflow-y:auto;padding:var(--s4)}
+.exiprev{aspect-ratio:16/11;border-radius:var(--r);overflow:hidden;background:var(--surface);display:grid;place-items:center;margin-bottom:var(--s4)}
+.exiprev.exipico{color:var(--muted)} .exiprev.exipico .ic{width:40px;height:40px}
+.exiprev img{width:100%;height:100%;object-fit:cover}
+.exiname{font-size:var(--fs);font-weight:600;color:var(--ink);line-height:1.3;margin-bottom:var(--s3);overflow-wrap:anywhere}
+.exisec{margin-top:var(--s3)}
+.exilabel{font-size:var(--fs-mi);text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600;margin-bottom:7px}
+.exifoot{flex:none;display:flex;gap:7px;padding:var(--s3) var(--s4);position:relative}
+.exifoot::before{content:"";position:absolute;left:var(--hair-inset);right:var(--hair-inset);top:0;height:1px;background:var(--line)}
+.exifoot .btn{flex:1}
+.exiempty{padding:var(--s5) var(--s4);color:var(--muted);font-size:var(--fs-sm);text-align:center;display:flex;flex-direction:column;gap:5px}
+@media(max-width:900px){.exinfo{width:250px}}
 .explayout .panehd{justify-content:space-between}
 .filetree{flex:none;width:212px;background:var(--surface);overflow-y:auto;padding:8px 6px;display:flex;flex-direction:column}
 /* B28: drag handle to resize the folder-tree column */
@@ -315,7 +334,7 @@
 /* dense are.na metadata: key left (muted), value right (ink) */
 /* meta/tags rows are shared by the details pane (.sheet) and the shared-link viewer
    (.sharedview) — one definition, two scopes, so the two can't drift apart. */
-.sheet .meta,.sharedview .meta{display:flex;flex-direction:column;gap:var(--s1);margin:0 0 var(--s3);font-size:var(--fs-sm)}
+.sheet .meta,.sharedview .meta,.exinfo .meta{display:flex;flex-direction:column;gap:var(--s1);margin:0 0 var(--s3);font-size:var(--fs-sm)}
 /* B29: align the key to the TOP so a long value can wrap cleanly beside it (was center + a
    nowrap/ellipsis value that truncated long filenames). */
 .sheet .meta .row,.sharedview .meta .row{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;min-height:22px}

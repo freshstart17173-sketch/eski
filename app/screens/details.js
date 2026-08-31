@@ -193,7 +193,9 @@ function saveButton(w) {
   return btn;
 }
 
-function metaRows(w, ctx) {
+// exported (C29) so the explorer's docked info panel shows the IDENTICAL metadata rows as this
+// viewer — same fields, order, formatting, and Location-crumb navigation.
+export function metaRows(w, ctx) {
   const rows = [];
   // Location — root › folder path, each segment opens the explorer there. Shown
   // for server/personal files (which live in a tree); a public post reached from
