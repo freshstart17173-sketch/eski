@@ -213,6 +213,7 @@
 .menu button{display:flex;align-items:center;gap:9px;width:100%;text-align:left;
   padding:6px 10px;border-radius:var(--r);font-size:var(--fs-sm);color:var(--ink)}
 .menu button .ic{color:var(--muted)}
+.menu button .mgrow{flex:1}   /* pushes a trailing submenu chevron to the right edge */
 .menu button:hover,.menu button:focus-visible{background:var(--surface);outline:none}
 .menu button:active{background:var(--ink);color:var(--on-ink)}
 .menu button:active .ic{color:var(--on-ink)}

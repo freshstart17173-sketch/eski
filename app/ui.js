@@ -143,6 +143,7 @@ export function openMenu(anchor, items = [], opts = {}) {
     });
     if (it.icon) b.append(iconEl(it.icon));
     b.append(el("span", {}, [it.label]));
+    if (it.chev) { b.append(el("span.mgrow", {}, [])); b.append(iconEl("chev", "sm")); }   // trailing ▸ = opens a submenu
     rows.push(b); menu.append(b);
   }
   document.body.append(menu);

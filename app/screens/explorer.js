@@ -538,10 +538,21 @@ function paint(tree, pane, data, state, rerender) {
   if (!data.shared) body.addEventListener("contextmenu", (e) => {
     if (e.target.closest("[data-id]") || e.target.closest("[data-folder-id]") || e.target.closest(".selbar") || e.target.closest(".exfab")) return;
     e.preventDefault();
+    const at = { x: e.clientX, y: e.clientY };
+    const selectAll = () => { for (const w of state._files || []) state.selection.add(w.id); state._refresh?.(); };
+    // C24: the desktop-style background menu (was just New folder + Upload). Sort/View open the same
+    // option lists as the toolbar dropdowns, at the cursor. (Paste → with C4 cut/copy/paste; Group by
+    // → with P33 — omitted until those land so no row is a dead control.)
     openMenu(null, [
       { label: "New folder", icon: "plus", onClick: () => newFolder(data, state, rerender, state.folderId) },
-      { label: "Upload", icon: "download", onClick: () => openUpload(uploadOpts) },
-    ], { at: { x: e.clientX, y: e.clientY } });
+      { label: "Upload…", icon: "download", onClick: () => openUpload(uploadOpts) },
+      { sep: true },
+      { label: "Select all", icon: "check", onClick: selectAll },
+      { label: "Sort by", icon: "sort", chev: true, onClick: () => openMenu(null, SORTS.map(([k, lbl]) => ({ label: lbl, selected: state.sort === k, onClick: () => { state.sort = k; repaintBody(); } })), { at }) },
+      { label: "View", icon: "grid", chev: true, onClick: () => openMenu(null, Object.entries(VIEWS).map(([k, v]) => ({ label: v, selected: state.mode === k, onClick: () => { state.mode = k; rerender(); } })), { at }) },
+      { sep: true },
+      { label: "Refresh", icon: "refresh", onClick: () => reload() },
+    ], { at });
   });
 
   // ── B10 · drag-to-select (marquee) + drag-a-file-onto-another → make a folder ──────────────
@@ -590,7 +601,7 @@ function paint(tree, pane, data, state, rerender) {
       // snapshots it, then it's removed on the next tick.
       try {
         const w = (data.files || []).find((f) => f.id === id);
-        const ghost = el(".dragghost", {}, [iconEl(KIND_LIST_ICON[w?.kind] || "file", "sm")]);
+        const ghost = el(".dragghost", {}, [iconEl(KIND_ICON[w?.kind] || "file", "sm")]);
         if (dragIds.length > 1) ghost.append(el(".dgcount", {}, [String(dragIds.length)]));
         document.body.appendChild(ghost);
         e.dataTransfer.setDragImage(ghost, 17, 17);
@@ -814,7 +825,7 @@ function shareFolderMenu(data, state, rerender, folder, anchor, at) {
     // P28: right-click a folder → Open (leads, like a native context menu) + share
     { label: "Open", icon: "folder", onClick: () => { state.folderId = folder.id; state.query = ""; rerender(); } },
     // P23: Properties opens the show-all / edit-all folder-tags popover (anchored on the folder card)
-    { label: "Properties", icon: "flag", onClick: () => openFolderProperties(anchor, folder, { data, state, rerender }) },
+    { label: "Properties", icon: "info", onClick: () => openFolderProperties(anchor, folder, { data, state, rerender }) },
     { label: "Copy folder link", icon: "users", onClick: async () => {
       try {
         const token = await createFolderShare(data.source, folder.id);
@@ -941,7 +952,6 @@ function openFolderProperties(anchor, folder, ctx) {
 }
 
 // ── P14 view densities (list / small / large) ────────────────────────────────
-const KIND_LIST_ICON = { audio: "voice", image: "image", video: "video", text: "type", other: "file" };
 
 // Shared select/open wiring so every density behaves identically (B26 Drive/Explorer model):
 // single click selects, double click opens; a file drags (make-folder / move), a folder is a drop
@@ -994,7 +1004,7 @@ function smallView(subfolders, files, hooks) {
   }
   files.forEach((w, i) => {
     const cell = el("button.smallcard" + (w.hidden ? ".ishidden" : ""), { title: w.title || "" },
-      [iconEl(KIND_LIST_ICON[w.kind] || "file", "sm"), el("span.snm", {}, [baseName(w)])]);
+      [iconEl(KIND_ICON[w.kind] || "file", "sm"), el("span.snm", {}, [baseName(w)])]);
     grid.append(wireFileEl(cell, w, i, hooks));
   });
   return el(".exview", { "data-exview": "small" }, [grid]);
@@ -1022,7 +1032,7 @@ function listView(subfolders, files, hooks) {
   }
   files.forEach((w, i) => {
     const cells = [
-      el("span.flnm", {}, [iconEl(KIND_LIST_ICON[w.kind] || "file", "sm"), baseName(w)]),
+      el("span.flnm", {}, [iconEl(KIND_ICON[w.kind] || "file", "sm"), baseName(w)]),
       el("span", {}, [(w.file_ext || "").toLowerCase() || "—"]),
       el("span", {}, [fmtBytes(w.bytes)]),
       ...(showWho ? [el("span", {}, [w.who?.name || "—"])] : []),
@@ -1386,7 +1396,7 @@ function trashRow(w, data, rerender) {
 function trashThumb(w) {
   const url = mediaUrl(w);
   if (w.kind === "image" && url) return el("img", { src: url, alt: "", loading: "lazy" });
-  return iconEl(KIND_LIST_ICON[w.kind] || "file", "sm");
+  return iconEl(KIND_ICON[w.kind] || "file", "sm");
 }
 
 function purgeRow(data, rerender, w) {
