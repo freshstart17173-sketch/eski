@@ -156,6 +156,13 @@ export function workCard(work, { onOpen, selectable = false, actions = [], showW
     if (hue && work.who.colorIdx != null) name.style.color = `var(--m${work.who.colorIdx})`;
     whoCell.append(av, name);
   }
+  // C32: always-on status badges, bottom-right of the thumbnail (top-left is the star, top-right the
+  // hover ⋯ cluster). Hidden + Public are the meaningful states on a file; tags already show as chips
+  // in the footer, so there's no redundant "has-tags" badge here.
+  const badges = [];
+  if (work.hidden) badges.push(["hide", "Hidden"]);
+  if (work.visibility === "public") badges.push(["globe", "Public"]);
+  if (badges.length) media.append(el(".cardbadges", {}, badges.map(([ic, t]) => el("span.cbadge", { title: t, "aria-label": t }, [iconEl(ic, "sm")]))));
   const foot = el(".cardfoot", {}, [bandName(baseName(work)), bandRow(work.tags, whoCell)]);
   const card = el("button.card", { "data-open-details": true, onClick: () => onOpen?.(work) }, [media, foot]);
   wireNameScroll(card, foot.querySelector(".fname"));
@@ -171,6 +178,9 @@ export function folderCard(folder, { onShare } = {}) {
   // count still lives in list view + the Properties popover. Tag chips are injected into .frow by
   // decorateFolderTags (explorer) after this builds, so the frow starts empty.
   const media = el(".media.fold", {}, [iconEl("folder")]);
+  // C32: a locked folder carries a lock badge (matches the tree lock glyph) so the read-only state
+  // reads on the card too.
+  if (folder.locked) media.append(el(".cardbadges", {}, [el("span.cbadge", { title: "Locked", "aria-label": "Locked" }, [iconEl("lock", "sm")])]));
   // owner 2026-08-31: "folders have no selection menu" — a hover ⋯ button gives touch/no-right-click
   // users the SAME menu (rename/move/copy-link/properties/delete) the right-click opens, matching the
   // file card's .cardacts "more" button one-to-one.

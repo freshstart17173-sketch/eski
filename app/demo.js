@@ -198,7 +198,7 @@ export function demoExplorer(source = "server") {
       W("f4", "bloom_master.als", "other", "als", 36e6, "jax", "beats", "beats", ["ableton", "master"]),
       { ...W("f5", "moodboard.png", "image", "png", 3.3e6, "nel", "references", "references", ["cover", "wip"]), starred: true },
       W("f6", "stems_sh040.zip", "other", "zip", 48e6, "tomo", "stems", "stems and sessions", ["stems"]),
-      W("f7", "session_notes.md", "text", "md", 4200, "jax", null, null, []),
+      { ...W("f7", "session_notes.md", "text", "md", 4200, "jax", null, null, []), visibility: "public" },
       { ...W("f8", "system_cache.tmp", "other", "tmp", 1e5, "dev", null, null, []), hidden: true },   // #55 utility file, hidden by default
     ],
     currentFolderId: null,

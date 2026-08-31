@@ -3440,3 +3440,18 @@ NEXT: file-browser — C32 (corner badges shared/hidden/locked/has-tags + per-ki
 GOTCHA: don't build a loading skeleton for a browser that never waits — this explorer holds the whole
       tree client-side, so a per-folder skeleton would be permanently-dead code; the only real async
       (server search) already has its own affordance.
+
+## 2026-08-31 — C32 corner status badges
+IN PROGRESS: (cleared)
+DONE: committed <sha>. File cards now carry always-on status badges bottom-right of the thumbnail (clear
+      of the top-left star + top-right hover ⋯): **Hidden** (when a hidden work is shown) and **Public**
+      (visibility==='public'); folder cards carry a **Locked** badge (matches the tree lock glyph). A quiet
+      square --r chip. has-tags is deliberately omitted — tag chips already show in the card footer, so a
+      badge would duplicate; per-kind icons were already correct (KIND_ICON + the ext label WAV/PNG/ALS/ZIP).
+      Set one demo file public (f7) to showcase the badge. Verified headless at the lb root: stems→Locked,
+      session_notes→Public, and with Hidden shown system_cache→Hidden; 0 pageerrors.
+NEXT: file-browser — C19 (hover affordances on list/small rows), C21 (spring-loaded folders), C23 (drop
+      onto a specific folder/crumb/tree row), C26 (context menus on crumb/tree/headers), C3/C27 (inline
+      rename), C5 (undo), or P37 (multi-file zip download).
+GOTCHA: the sprite has no archive/zip glyph, so a .zip stays the generic "file" kind icon — the ext label
+      ("ZIP") in the media cell is what identifies it; don't invent a kind that has no icon to render.

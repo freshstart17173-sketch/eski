@@ -214,7 +214,7 @@ drag, whitespace" ask). These are look-and-feel/interaction, so most carry the *
 | ~~**C29**~~ | ✅ docked info panel on select (right column, `i` toggles; reuses details.js metaRows) — the big viewer still opens files — reconciled 2026-08-31 (was already built) | D7 |
 | ~~**C30**~~ | ✅ deep breadcrumb collapses the middle to a "…" menu (root › … › parent › current); last 2 crumbs stay — 2026-08-31. (Count/sort near the path already live in the C17 status strip.) | D8 |
 | ~~**C31**~~ | ✅ empty folder is a dashed **drop zone** ("Drag files here to upload") — 2026-08-31. Skeleton grid is N/A by architecture (one bundle load, instant client-side folder nav; server search shows the P35 indeterminate bar). | D9 |
-| **C32** | Consistent corner **badges** (shared/hidden/locked/has-tags) + folder content-preview hint + correct per-kind icons | D10 |
+| ~~**C32**~~ | ✅ corner status badges — Hidden + Public on files, Locked on folders (bottom-right, clear of star/⋯) — 2026-08-31. has-tags is redundant (tag chips already show in the footer); per-kind icons already correct + the ext label (WAV/PNG/ALS/ZIP). | D10 |
 | ~~**C33**~~ | ✅ Quick Look — Space on a selected file opens the viewer, Space/Esc closes, ←/→ arrow through — 2026-08-31 | D11 |
 
 *(Already closed while auditing: double-click-open (B26), drag-to-select/marquee + drag-to-move (B10),

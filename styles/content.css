@@ -346,6 +346,12 @@
   background:color-mix(in srgb,var(--paper) 60%,transparent);color:var(--muted);cursor:pointer;
   opacity:0;transition:opacity var(--t),color var(--t),background var(--t)}
 .cardstar .ic{width:16px;height:16px}
+/* C32: always-on status badges (hidden/public on files, locked on folders), bottom-right of the
+   thumbnail — clear of the star (top-left) and the hover ⋯ (top-right). A quiet chip, square at --r. */
+.card .media .cardbadges{position:absolute;right:6px;bottom:6px;z-index:2;display:flex;gap:4px}
+.card .media .cbadge{display:grid;place-items:center;width:19px;height:19px;border-radius:var(--r);
+  background:color-mix(in srgb,var(--paper) 82%,transparent);color:var(--soft)}
+.card .media .cbadge .ic{width:12px;height:12px}
 .card:hover .cardstar{opacity:1}
 .cardstar:hover{color:var(--star);background:color-mix(in srgb,var(--paper) 82%,transparent)}
 .cardstar.on{opacity:1;color:var(--star)}
