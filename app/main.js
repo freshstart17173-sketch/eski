@@ -286,6 +286,16 @@ document.addEventListener("keydown", (e) => {
   }
 }, true);
 
+// C12: ⌘/Ctrl-Shift-N opens the create/join-server modal (Discord's shortcut), same gate + capture
+// phase as ⌘K above so a focused field can't swallow it.
+document.addEventListener("keydown", (e) => {
+  if ((e.metaKey || e.ctrlKey) && e.shiftKey && (e.key === "n" || e.key === "N")) {
+    if (!authed.value && !isDemo()) return;
+    e.preventDefault();
+    openCreateServer();
+  }
+}, true);
+
 function loading() {
   const s = document.createElement("section");
   s.className = "screen";

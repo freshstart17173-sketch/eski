@@ -3026,3 +3026,29 @@ DONE: committed <sha>. Demo-verified (headless DnD simulation — dragstart/drag
 NEXT: same as the prior entry (P27/P34 search-modifier system, P32 density slider, tag session).
 GOTCHA: dragging a MULTI-folder selection moves them one RPC call at a time (a simple loop, not
   batched) — fine at the sizes a folder tree realistically has; revisit only if that's ever a problem.
+
+## 2026-08-31 — C8/C9/C12 conventions + a real dead-thread bug found and fixed
+IN PROGRESS: (cleared)
+DONE: committed <sha>. Demo-verified (headless, 0 pageerrors).
+  - **C12** — ⌘/Ctrl-Shift-N opens Create/join server, mirroring the existing ⌘K quick-switcher
+    handler (same auth gate, same capture-phase listener). `app/main.js`.
+  - **C8** — ↑ in an EMPTY composer edits your last message (Discord reflex); never hijacks ↑ while
+    there's a draft. `app/screens/workspace.js` (`composer`).
+  - **C9** — Esc closes the open thread pane; defers to a menu/modal/viewer or an in-progress inline
+    edit (which already owns its own Esc). Self-cleaning document listener, same pattern as the
+    explorer's screen-level key handler. `app/screens/workspace.js` (`renderWorkspace`).
+  - **Found + fixed a real bug while verifying C9**: the thread pane was COMPLETELY DEAD — every
+    Reply button and "N replies" affordance silently no-op'd, live and in demo alike. Root cause:
+    `mainPane(data, view, ctx)` runs at the top of `renderWorkspace` and builds every message row
+    with `onOpenThread: ctx.openThread` — but `ctx.openThread` isn't assigned until ~120 lines later
+    in the same function, so every row captured `undefined` at build time (plain value capture, not a
+    live binding to `ctx`). Fixed by passing a stable indirection everywhere instead:
+    `onOpenThread: (msg) => ctx.openThread?.(msg)` (4 call sites — the two that already ran after the
+    assignment were harmless to change too, for consistency). Verified: clicking a message's hover
+    Reply button now opens `.threadpane` + hides the members rail (was 0, now 1); C9's Esc-close then
+    confirmed on top of the real fix.
+NEXT: C1/C2/C3/C4/C5/C7/C10/C11/C13/C14/C15 remain (explorer + chat conventions); the P27/P34
+  search-modifier system; P32 density slider; tag session.
+GOTCHA: this dead-thread bug means NO thread-pane QA claim in QA-CHECKLIST before this fix was ever
+  actually testable live — if a prior claim there says threads "work," it was unverified. Worth a
+  live re-check now that the wiring is real.

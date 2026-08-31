@@ -136,6 +136,8 @@ file is the versioned copy that build sessions treat as the acceptance bar.
 - [ ] Reply inside the thread → your reply posts under the parent.
 - [ ] Toggle "Also send to #channel" → the toggle flips; replying with it on also posts to the main channel.
 - [ ] Close the thread pane (✕) → the thread pane closes and the channel returns to full width.
+- [ ] Press Esc with the thread pane open (and no menu/modal/editing box active) → it closes the
+      same as ✕ (C9, 2026-08-31 — fixes a bug where the pane never opened at all; live-confirm now).
 
 ## 8. Members rail & moderation
 

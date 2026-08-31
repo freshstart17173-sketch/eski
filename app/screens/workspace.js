@@ -390,7 +390,16 @@ function composer(data, view, ctx = {}) {
   const input = el("input", { placeholder: `Message #${data.channel?.name || ""}` });
   const send = el("button.snd", { title: "Send", disabled: true }, [iconEl("send", "sm")]);
   input.addEventListener("input", () => { send.disabled = !input.value.trim(); maybeAutocomplete(input, data); if (ctx.live && input.value.trim()) sendTyping(ctx.me); });
-  input.addEventListener("keydown", (e) => { if (e.key === "Enter" && input.value.trim()) { e.preventDefault(); doSend(input, send, ctx); } });
+  input.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && input.value.trim()) { e.preventDefault(); doSend(input, send, ctx); }
+    // C8: ↑ in an EMPTY composer edits your last message (Discord reflex) — never hijacks ↑ while
+    // there's a draft (that's for later history-recall, not this).
+    else if (e.key === "ArrowUp" && !input.value) {
+      const mine = (data.messages || []).filter((m) => m.author?.name === data.me?.name);
+      const last = mine[mine.length - 1];
+      if (last) { e.preventDefault(); startEdit(last); }
+    }
+  });
   send.addEventListener("click", () => input.value.trim() && doSend(input, send, ctx));
 
   const field = el(".field", {}, [
@@ -899,7 +908,7 @@ function mainPane(data, view, ctx) {
     stream.append(el(".emptystate", {}, [iconEl("hash"), el("h3", {}, ["This is the start of #" + data.channel.name]), el("p", {}, ["No messages yet. Say hello, or drop the first file — everything shared here shows up in the Files tab."])]));
   } else {
     stream.append(el(".day", {}, [el("span", {}, ["Today"])]));
-    for (const msg of data.messages) stream.append(messageRow(msg, data, { onOpenThread: ctx.openThread }));
+    for (const msg of data.messages) stream.append(messageRow(msg, data, { onOpenThread: (msg) => ctx.openThread?.(msg) }));
   }
 
   const typing = el(".typing", { hidden: !data.typing?.length }, data.typing?.length ? [el("span.dots", {}, [el("i"), el("i"), el("i")]), `${data.typing.join(", ")} is typing`] : []);
@@ -962,7 +971,7 @@ function wireStreamPaging(screen, data, ctx) {
       const prevH = stream.scrollHeight, prevTop = stream.scrollTop;
       // insert oldest→newest right after the sentinel, above the existing rows
       let anchor = sentinel;
-      for (const m of batch.messages) { const row = messageRow(m, data, { onOpenThread: ctx.openThread }); anchor.after(row); anchor = row; }
+      for (const m of batch.messages) { const row = messageRow(m, data, { onOpenThread: (msg) => ctx.openThread?.(msg) }); anchor.after(row); anchor = row; }
       data.channel.oldestAt = batch.oldestAt;
       data.channel.hasMore = batch.hasMore;
       stream.scrollTop = prevTop + (stream.scrollHeight - prevH);   // keep the same message under the cursor
@@ -1051,6 +1060,22 @@ export function renderWorkspace(data, view = {}) {
   };
   if (view.thread && data.thread) ctx.openThread({ id: data.thread.parent?.id || null });
 
+  // C9: Esc closes the open thread pane (edit-Esc already restores the inline edit box — that
+  // input owns its own Escape and this defers to it). Self-cleaning document listener, same
+  // pattern as the explorer's screen-level key handler.
+  const onEscKey = (e) => {
+    if (!screen.isConnected) { document.removeEventListener("keydown", onEscKey); return; }
+    if (e.key !== "Escape") return;
+    if (document.querySelector(".menu.open, .modal, .sheet")) return;   // a menu/dialog/viewer owns Escape while open
+    if (document.activeElement?.classList?.contains("editinput")) return;   // inline message edit owns its own Esc
+    const tp = screen.querySelector(".threadpane");
+    if (!tp) return;
+    e.preventDefault();
+    tp.remove();
+    mem.removeAttribute("hidden");
+  };
+  document.addEventListener("keydown", onEscKey);
+
   if (ctx.live && data.channel) attachLive(screen, data, ctx);
   return screen;
 }
@@ -1066,7 +1091,7 @@ function attachLive(screen, data, ctx) {
   if (streamEl) streamEl._sendOptimistic = (body) => {
     const tempId = "opt-" + Date.now() + "-" + Math.random().toString(36).slice(2, 7);
     const shaped = shapeMessage({ id: tempId, user_id: ctx.me.id, body, created_at: new Date().toISOString() }, ctx.membersById);
-    const node = messageRow(shaped, data, { onOpenThread: ctx.openThread });
+    const node = messageRow(shaped, data, { onOpenThread: (msg) => ctx.openThread?.(msg) });
     node.dataset.pending = "1"; node._body = body;
     streamEl.querySelector(".emptystate")?.remove();
     if (!streamEl.querySelector(".day")) streamEl.append(el(".day", {}, [el("span", {}, ["Today"])]));
@@ -1128,7 +1153,7 @@ function liveInsert(screen, data, ctx, row) {
   stream.querySelector(".emptystate")?.remove();
   if (!stream.querySelector(".day")) stream.append(el(".day", {}, [el("span", {}, ["Today"])]));
   const shaped = shapeMessage(row, ctx.membersById);
-  const node = messageRow(shaped, data, { onOpenThread: ctx.openThread });
+  const node = messageRow(shaped, data, { onOpenThread: (msg) => ctx.openThread?.(msg) });
   stream.append(node);
   stream.scrollTop = stream.scrollHeight;
   if (row.user_id !== ctx.me.id) markRead(ctx.channelId);   // seen while viewing → stay read

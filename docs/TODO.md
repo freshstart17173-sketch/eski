@@ -170,15 +170,15 @@ audit (have / partial / missing, with code pointers + reference links) in
 | **C5** | Undo the last file op (⌘Z) — move/trash/delete have no undo (trust gap) | explorer |
 | **C3** | Inline rename (F2 / Enter on the name), not only the ⋯→dialog | explorer |
 | **C2** | Type-ahead: start typing a name → jump/select it (Drive/Finder) | explorer |
-| **C8** | ↑ in an empty composer edits your last message (Discord reflex) | chat |
+| ~~**C8**~~ | ✅ ↑ in an empty composer edits your last message (Discord reflex) | chat |
 | **C10** | ⌘/Ctrl-F search within the current channel | chat |
 | **C4** | Cut/Copy/Paste files (⌘X/⌘C/⌘V) between folders; duplicate | explorer |
-| **C6** | Click a list-view column header to sort by it (toggle asc/desc) | explorer |
+| ~~**C6**~~ | ✅ click a list column header to sort (closed by P33) | explorer |
 | **C11** | Alt+↑/↓ prev/next channel; Alt+Shift+↑/↓ next unread | chat |
 | **C13** | "Jump to present" affordance when scrolled up in a channel | chat |
 | **C14** | A discoverable keyboard-shortcuts sheet (`?` or ⌘/) — also makes C1–C13 discoverable | shell |
-| **C9** | Esc also closes the thread pane / clears a reply target (edit-Esc already works) | chat |
-| **C12** | ⌘/Ctrl-Shift-N create/join a server (minor) | shell |
+| ~~**C9**~~ | ✅ Esc closes the thread pane (edit-Esc already worked) | chat |
+| ~~**C12**~~ | ✅ ⌘/Ctrl-Shift-N create/join a server | shell |
 | **C15** | Tooltip + focus-ring audit on icon-only controls (a11y) | cross-cutting |
 
 **File-browser deep-UX gaps** (see [`CONVENTIONS.md`](CONVENTIONS.md) §D — the owner's "layouts, selection,
