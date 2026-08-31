@@ -165,6 +165,30 @@ audit (have / partial / missing, with code pointers + reference links) in
 | **C12** | ⌘/Ctrl-Shift-N create/join a server (minor) | shell |
 | **C15** | Tooltip + focus-ring audit on icon-only controls (a11y) | cross-cutting |
 
+**File-browser deep-UX gaps** (see [`CONVENTIONS.md`](CONVENTIONS.md) §D — the owner's "layouts, selection,
+drag, whitespace" ask). These are look-and-feel/interaction, so most carry the **3-version-pick** rule:
+
+| ID | Gap (file browser) | § |
+|---|---|---|
+| **C16** | Selection is weak/inconsistent — grid = thin media outline only, list/small = filled block; unify one strong tile-selected state + a hover-reveal corner checkbox (modifier-free multi-select) | D1 |
+| **C17** | No status bar — add "N items · M selected · total size" (Finder/Windows/Drive) | D1/D8 |
+| **C18** | Multi-select click-through (don't collapse a multi-selection on mousedown so you can drag it) + Select all / none / invert affordances | D1 |
+| **C19** | Hover affordances thin/uneven — whole row/tile is the hover target; reveal actions + checkbox + a name/size tooltip on all densities | D2 |
+| **C20** | Drag/marquee **edge auto-scroll** (can't reach off-screen targets/items) | D3 |
+| **C21** | **Spring-loaded folders** — hover a dragged item over a folder ~0.7s → it opens | D3 |
+| **C22** | Drop model too silent — strong "drops into this folder" tint, explicit make-folder hint, drag-count badge, legal/illegal drop cursor (`dropEffect`) | D3 |
+| **C23** | Drop OS files onto a **specific folder** (and a crumb / tree row), not only the pane | D3 |
+| **C24** | Background (whitespace) right-click menu thin — add Paste · Select all · Sort by ▸ · Group by ▸ · View ▸ · Refresh; ensure enough dead space to invoke it | D4 |
+| **C25** | Folder/file menus incomplete & asymmetric — folder needs Rename/Move/Delete/Download/Share; make the two parallel + add Properties | D4 |
+| **C26** | Context menus on the breadcrumb, tree rows, and list column headers | D4/D6 |
+| **C27** | Inline rename (F2/Enter/slow-click, basename pre-selected) + inline "untitled folder" in rename mode — not modal dialogs | D5 |
+| **C28** | List headers inert — click-sort (+caret), drag-resize, drag-reorder, choose columns | D6 |
+| **C29** | No docked info/details panel on **select** (Drive "i" sidebar / Finder inspector) — big viewer stays for open | D7 |
+| **C30** | Breadcrumb overflow collapses to a "…" menu (deep paths clip today); self-describing view (count/sort near path) | D8 |
+| **C31** | Loading **skeleton** grid + empty folder as a real **drop zone** (not just text) | D9 |
+| **C32** | Consistent corner **badges** (shared/hidden/locked/has-tags) + folder content-preview hint + correct per-kind icons | D10 |
+| **C33** | **Quick Look** — Spacebar on a selection = fast dismissable preview, arrow through, Esc/Space closes | D11 |
+
 *(Already closed while auditing: double-click-open (B26), drag-to-select/marquee + drag-to-move (B10),
 right-click menus at the cursor (P28), ⌘A / Esc / **Enter-opens** / **Delete-trashes** (2026-08-31),
 optimistic send (P30), viewer ←/→ + Esc. These are the baseline the C-items build on.)*

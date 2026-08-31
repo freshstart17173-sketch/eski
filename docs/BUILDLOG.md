@@ -2923,3 +2923,25 @@ NEXT: work the C-items as bugs-against-the-mental-model (ahead of net-new featur
 GOTCHA: don't invent behaviour for a C-item — match the reference (links in CONVENTIONS.md) so it feels
   familiar. Guard every new global key handler against a focused input/textarea/contenteditable and an open
   menu/modal/sheet (the explorer onKey already shows the pattern), or typing/searching will trigger it.
+
+## 2026-08-31 — CONVENTIONS §D: file-browser deep-UX audit (owner: layouts/selection/drag/whitespace)
+IN PROGRESS: (cleared)
+DONE: the owner clarified the conventions ask is NOT just keyboard shortcuts — it's UI layouts + UX:
+  what happens on select, on drag, how much whitespace for background right-clicks, etc. Added
+  CONVENTIONS.md §D — a no-holds-barred, code-verified walk of the whole file browser vs Finder/Windows/
+  Drive, dimension by dimension (D1 selection visual language · D2 hover · D3 the full drag&drop mechanic
+  · D4 right-click zones + whitespace · D5 inline rename/new-folder · D6 list-view headers · D7 docked
+  info panel vs modal · D8 chrome/breadcrumb overflow · D9 empty/loading/drop-zone · D10 badges/icons ·
+  D11 Quick Look). 18 new gaps C16–C33 added to the TODO Conventions backlog. Grounded each in the real
+  code (grepped selection CSS, drag handlers, footer, details modal, breadcrumb clip) so nothing is
+  guessed. Loudest: C16 (a legible selected state — grid is only a 2px media outline today), C29 (an info
+  panel on SELECT — eski gives nothing until you open the full-screen viewer), and the drag mechanics
+  C20–C23 (no edge auto-scroll, no spring-loaded folders, silent drop model, can't drop onto a folder).
+NEXT: work §D top-to-bottom — it's where the owner's frustration lives. The §D items are look-and-feel, so
+  most carry the 3-version-pick rule; the keyboard C1–C13 are mostly non-visual (shippable now). Good first
+  non-visual wins: C18 (don't collapse a multi-selection on mousedown), C20 (drag edge auto-scroll), C26
+  (context menus on breadcrumb/tree/headers), C28 (list-header click-sort). C16/C29/C24 are visual → batch
+  3 versions for the owner.
+GOTCHA: verify each gap against the live code before building (the audit is a snapshot) — e.g. B31 already
+  added a multi-drag count badge, so C22's badge is "verify it shows", not "build". Ground new behaviour in
+  the references (CONVENTIONS.md top links), don't freestyle — the whole point is familiarity.
