@@ -2945,3 +2945,37 @@ NEXT: work §D top-to-bottom — it's where the owner's frustration lives. The �
 GOTCHA: verify each gap against the live code before building (the audit is a snapshot) — e.g. B31 already
   added a multi-drag count badge, so C22's badge is "verify it shows", not "build". Ground new behaviour in
   the references (CONVENTIONS.md top links), don't freestyle — the whole point is familiarity.
+
+## 2026-08-31 — thumbnail redesign + B32 selection-bar overlay
+IN PROGRESS: (cleared)
+DONE: two owner asks from the round-11 polish pass.
+  1) **Tile redesign** (owner: "make the thumbnails look like the landing page"). workCard + folderCard
+     now build the landing-page tile: a media plane (--paper1, one step off the band) over a distinct
+     --surface **band** (.cardfoot) carrying the filename on top and a row of a couple read-only tag
+     chips (left) + the uploader **pfp (Avatar) + name** (right). Long names **scroll on hover**
+     (wireNameScroll measures overflow on first hover, translates the inner .fnt; a fade mask hints
+     "more" at rest). File + folder cards share the same band (folder "who" = file count; folder tags
+     inject into .frow via decorateFolderTags). Media rounds top corners, band rounds bottom → one --r
+     tile; the C16 selection halo (inset:-6px, r=9) still wraps the whole tile, concentric. data.js
+     explorer `who` now carries avatar_key + initials for the pfp. Read-only tag chips only — click-to-
+     filter + removal is the deferred tag session (P38). *Files:* app/cards.js, app/data.js,
+     app/screens/explorer.js (folder-tag decorators → band), styles/shell.css (.cardfoot + even-grid
+     media plane), styles/content.css (.foldercard band). Verified headless (demo, dark+light): 6/6
+     cards banded, uniform heights, uploader avatars + tags render, 0 pageerrors.
+  2) **B32** — the bulk-action `.selbar` OVERLAYS the toolbar instead of taking its own row (owner:
+     "selection bar pops in and shifts the layout of all the icons, extremely annoying"). It's now an
+     absolute inset:0 child of the position:relative .toolbar, so opening/closing it never reflows the
+     grid. Verified: on 2-select the body top is unchanged (163→163), selbar covers the toolbar exactly,
+     0 pageerrors. *Files:* app/screens/explorer.js, styles/content.css.
+  Also: deferred ALL tag-interaction work to a dedicated session per owner ("leave anything tag related
+  for a different session") — recorded as P38 in TODO.md (click-a-tag-to-filter in the current folder
+  context retiring the filter facet UI · two click surfaces on a typed tag: type filters type:*, value
+  filters type:value · tag ✕ removal only in details view · custom self-defining tag types). The custom-
+  type token groundwork (--tt-l/--tt-c) was backed out to avoid leaving it half-built.
+NEXT: the two remaining round-11 owner asks — the returning-sign-in→account-creation redirect bug's
+  second half (flesh out the too-sparse create-profile page into full account creation; the redirect-
+  robustness half already shipped in ac5db8c) and then batch-2 conventions mockups. Tag work waits for
+  its own session (P38).
+GOTCHA: workCard is shared by explorer/feed/profile — the band renders everywhere it's used. Feed uses
+  post cards (not workCard) so it's unaffected; profile shelves pass hue:false → pfp shows initials, no
+  member colour (correct: hue is server-scoped). Small/list densities use flrow/smallcard, NOT the band.

@@ -61,7 +61,7 @@
 .panehd .wm{font-weight:700;font-size:var(--fs-xl)}
 .panehd .title{font-weight:600;font-size:var(--fs-lg)}
 .panehd nav{margin-left:auto;display:flex;gap:var(--s4)}
-.toolbar{flex:none;display:flex;align-items:center;gap:var(--s2);padding:var(--s3) var(--s4);background:var(--paper);flex-wrap:wrap}
+.toolbar{position:relative;flex:none;display:flex;align-items:center;gap:var(--s2);padding:var(--s3) var(--s4);background:var(--paper);flex-wrap:wrap}   /* position:relative anchors the .selbar overlay (B32) */
 .toolbar .field{flex:1;min-width:170px;max-width:340px}
 .panebody{flex:1;overflow-y:auto;padding:var(--s4);position:relative;user-select:none}   /* B31: a file browser isn't text — marquee/drag must not highlight filenames (Finder/Drive) */
 .panebody input,.panebody textarea,.panebody [contenteditable]{user-select:text}   /* but a real field (inline rename) stays selectable */
@@ -182,7 +182,7 @@
 .searchloading{display:flex;align-items:center;justify-content:center;gap:var(--s2);padding:var(--s6) 0;color:var(--muted);font-size:var(--fs-sm)}
 .searchloading .ic{color:var(--muted);animation:spin 1s linear infinite}
 .loadmorewrap{display:flex;justify-content:center;padding:var(--s4) 0 var(--s5)}
-.foldercard .media.fold{display:grid;place-items:center;background:var(--surface);color:var(--muted)}
+.foldercard .media.fold{display:grid;place-items:center;background:var(--paper1);color:var(--muted)}   /* one step off the --surface band, like file tiles */
 .foldercard .media.fold .ic{width:34px;height:34px}
 
 /* ── P23 folder tags ───────────────────────────────────────────────────────────
@@ -190,10 +190,10 @@
    ONE line (first few + "+N") so every folder card is the same height; the full set + editing live
    in the Properties popover. */
 .foldercard{position:relative}
-/* single-line preview on the card — nowrap + clip keeps every card the same height (with B24's
-   2-line title clamp, folder cards tile evenly). */
-.foldercard .ftags{display:flex;flex-wrap:nowrap;gap:5px;align-items:center;margin-top:7px;overflow:hidden}
-.foldercard .ftags .tchip{font-size:var(--fs-mi);padding:1px 6px;flex:none}
+/* single-line preview inside the band's .frow (tags left, file-count right) — nowrap + clip keeps
+   every card the same height. No top margin: it's a row cell now, not stacked under the name. */
+.foldercard .cardfoot .ftags{display:flex;flex-wrap:nowrap;gap:5px;align-items:center;overflow:hidden;min-width:0}
+.foldercard .cardfoot .ftags .tchip{font-size:var(--fs-mi);padding:1px 6px;flex:none}
 /* "+N more" → opens Properties */
 .ftmore{font-size:var(--fs-mi);font-weight:600;color:var(--muted);padding:1px 6px;border-radius:var(--r);background:var(--surface);flex:none}
 .ftmore:hover{background:var(--plate);color:var(--ink)}
@@ -248,8 +248,10 @@
 .capbanner .ic{flex:none;color:#fff}
 .capbanner .btn{margin-left:auto;background:rgba(255,255,255,.16);color:#fff}
 .capbanner .btn:hover{background:rgba(255,255,255,.28)}
-/* selection toolbar (bulk actions) */
-.selbar{display:none;align-items:center;gap:var(--s2);padding:9px var(--s5);background:var(--ink);color:var(--on-ink)}
+/* selection toolbar (bulk actions) — B32: OVERLAYS the toolbar (absolute, inset:0) instead of
+   claiming its own row, so turning multi-select on/off never reflows the grid. It's a child of
+   the position:relative .toolbar; the solid --ink fill fully occludes the filters underneath. */
+.selbar{position:absolute;inset:0;z-index:2;display:none;align-items:center;gap:var(--s2);padding:0 var(--s4);background:var(--ink);color:var(--on-ink)}
 .selbar.open{display:flex}
 .selbar .n{font-size:var(--fs-sm);font-weight:600;margin-right:var(--s2)}
 /* B27: the count reserves a fixed slot (tabular, min-width) so a 1→2→3 digit change doesn't

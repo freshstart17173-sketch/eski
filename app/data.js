@@ -439,8 +439,10 @@ export async function searchFiles(opts = {}) {
       kind: r.kind, file_ext: r.file_ext, blob_sha: r.blob_sha, bytes: r.bytes,
       hidden: !!r.hidden, created_at: r.created_at, tags: r.tags || [],
       folderId: r.folder_id || null, channelName: r.channel_name || null,
-      who: m ? { name: m.name, colorIdx: m.colorIdx, handle: m.handle }
-             : ((r.author_name || r.author_handle) ? { name: r.author_name || r.author_handle, handle: r.author_handle } : null),
+      // avatar_key + initials feed the uploader pfp in the card band (tile redesign); membersById
+      // carries the key, the flat author_* fallback (out-of-server author) has no pfp → initials.
+      who: m ? { name: m.name, colorIdx: m.colorIdx, handle: m.handle, avatar_key: m.avatar_key || null, initials: m.initials || initials(m.name) }
+             : ((r.author_name || r.author_handle) ? { name: r.author_name || r.author_handle, handle: r.author_handle, initials: initials(r.author_name || r.author_handle) } : null),
       starred: starredIds ? starredIds.has(r.id) : false,
     };
   });

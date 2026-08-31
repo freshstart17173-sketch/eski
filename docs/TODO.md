@@ -110,7 +110,7 @@ detail in the Round-11 section below. Ticking one here = ticking it in its categ
 |---|---|---|---|
 | ~~30m~~ | ~~**B36**~~ | ✅ `.expath` was `--surface` on `--paper` chrome — a stray lighter bar in dark | done |
 | ~~30m~~ | ~~**B34**~~ | ✅ `.loadearlier{display:flex}` beat the UA `[hidden]` — restated the rule | done |
-| ~1.5h | **B32** | selection action bar shifts the layout down → overlay it | easy-med |
+| ~~1.5h~~ | ~~**B32**~~ | ✅ bulk-action bar now OVERLAYS the toolbar (absolute inset:0 child) — zero grid shift on select | done |
 | ~~2h~~ | ~~**B35**~~ | ✅ file/server search — was FTS-whole-word-only; added filename substring (p27) | done |
 | ~~2h~~ | ~~**B31**~~ | ✅ .panebody user-select:none + mini kind-icon drag ghost | done |
 | ~~2.5h~~ | ~~**B30**~~ | ✅ viewer stayed-open on refocus — auth re-emit was forcing a full re-render | done |

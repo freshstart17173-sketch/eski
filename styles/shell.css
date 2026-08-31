@@ -357,15 +357,31 @@
 /* a previewable thumbnail's square container is TRANSPARENT (image/video fills
    it); only non-previewable tiles (.media.file, .media.audio) keep a surface tile. */
 .card .media{position:relative;width:100%;overflow:hidden;background:transparent}
-.media.file,.media.audio{background:var(--surface);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;color:var(--muted)}
+/* a non-previewable tile's media plane sits one step off the --surface band beneath it (--paper1),
+   so the tile reads as two planes (media + band) instead of one flat block (thumbnail redesign). */
+.media.file,.media.audio{background:var(--paper1);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;color:var(--muted)}
 .media.file .fic,.media.audio .fic{width:30px;height:30px;color:var(--muted)}
 .media.file .ext,.media.audio .ext{font-size:12px;font-weight:700;color:var(--soft);letter-spacing:.5px}
 .shot{width:100%;display:block;background:linear-gradient(150deg,#9a9a9a,#4d4d4d)}
 .shot.b{background:linear-gradient(150deg,#8a8a8a,#3a3a3a)}
 .shot.c{background:linear-gradient(150deg,#a7a7a7,#606060)}
 .playover{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:46px;height:46px;border-radius:50%;background:rgba(0,0,0,.42);color:#fff;display:grid;place-items:center}
-/* B24: reserve exactly 2 lines (min-height) so a 1-line and a 2-line name make the SAME card
-   height → the grid rows stay even (was: variable title height tiled the cards unevenly). Long
-   unbroken names wrap instead of overflowing. */
-.card .title{font-size:var(--fs-sm);line-height:1.35;color:var(--ink);font-weight:600;margin-top:8px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:calc(1.35em * 2);overflow-wrap:anywhere}
-.card .who{display:flex;align-items:center;gap:6px;color:var(--muted);font-size:var(--fs-xs);margin-top:5px}
+/* Tile band (thumbnail redesign, owner 2026-08-31) — replaces the loose .title/.who that floated
+   under the media on the pane background (a "square with text"). A single-line name (scrolls on
+   hover for long names, see wireNameScroll) + a row of a couple tags (left) and the uploader pfp
+   (right), on a --surface plane. A fixed one-line name + one-row layout means every card is the
+   same height without the old 2-line clamp, so grid rows stay even. */
+.cardfoot{display:flex;flex-direction:column;gap:6px;padding:8px 10px;background:var(--surface);border-radius:0 0 var(--r) var(--r)}
+.cardfoot .fname{position:relative;overflow:hidden;white-space:nowrap;font-size:var(--fs-sm);line-height:1.3;color:var(--ink);font-weight:600}
+.cardfoot .fname .fnt{display:inline-block;white-space:nowrap;transform:translateX(0);transition:transform 0s linear;will-change:transform}
+/* the mask only appears once JS confirms the name overflows — short names stay crisp to the edge */
+.cardfoot .fname.scrolls{-webkit-mask-image:linear-gradient(90deg,#000 84%,transparent);mask-image:linear-gradient(90deg,#000 84%,transparent)}
+.cardfoot .frow{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:20px}
+.cardfoot .ftags{display:flex;flex-wrap:nowrap;gap:4px;overflow:hidden;min-width:0}
+.cardfoot .ftags .tchip{flex:none;font-size:var(--fs-mi);padding:1px 6px}
+.cardfoot .who{flex:none;display:flex;align-items:center;gap:6px;color:var(--muted);font-size:var(--fs-xs);min-width:0;max-width:64%}
+.cardfoot .who .uname{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* the media plane rounds its TOP corners only; the band rounds the bottom — together a --r tile */
+.masonry.even .card{background:var(--surface);border-radius:var(--r)}
+.masonry.even .card .media{border-radius:var(--r) var(--r) 0 0}
+.masonry.even .card .media:not(.file):not(.audio):not(.fold){background:var(--paper1)}

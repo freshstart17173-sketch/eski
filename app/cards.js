@@ -8,9 +8,10 @@
 // file_ext); the public URL is `${R2_PUBLIC_BASE_URL}/${sha0:2}/${sha}.${ext}`.
 // Until a real upload exists the bytes 404 — image/video fall back to a type card.
 
-import { el, toast } from "./ui.js";
+import { el, toast, Avatar } from "./ui.js";
 import { iconEl } from "./icons.js";
 import { R2_PUBLIC_BASE_URL } from "./env.js";
+import { tagChip } from "./tags.js";
 
 export const KIND_ICON = { audio: "music", image: "image", video: "video", text: "type", other: "file" };
 
@@ -91,6 +92,41 @@ export function baseName(work) {
   return (ext && n.toLowerCase().endsWith("." + ext)) ? n.slice(0, -(ext.length + 1)) : n;
 }
 
+// ── the tile band (thumbnail redesign, owner 2026-08-31) ──────────────────────
+// A card is a media plane + a distinct --surface band beneath it, landing-page style: name on top,
+// then a row of a couple tags (left) and the uploader pfp + name (right). It stops a tile reading as
+// "a square with loose text" and gives the grid contrast. Two shared helpers so file + folder cards
+// build the SAME band (one definition, no drift).
+
+// name element whose long value SCROLLS on hover (marquee). We can't know the overflow until it's in
+// the DOM, so wireNameScroll() measures on first hover and drives an inner-span translate; a fade
+// mask (.scrolls) hints "there's more" at rest. Short names never get the mask or the animation.
+function bandName(full) {
+  return el(".fname", { title: full }, [el("span.fnt", {}, [full])]);
+}
+function wireNameScroll(card, fname) {
+  const inner = fname.querySelector(".fnt");
+  let measured = false;
+  card.addEventListener("mouseenter", () => {
+    const over = inner.scrollWidth - fname.clientWidth;
+    if (over <= 3) return;                       // fits — nothing to scroll
+    if (!measured) { fname.classList.add("scrolls"); measured = true; }
+    inner.style.transitionDuration = Math.min(Math.max(over / 45, 0.5), 3) + "s";
+    inner.style.transform = `translateX(${-over}px)`;
+  });
+  card.addEventListener("mouseleave", () => { inner.style.transform = ""; });
+}
+// the second band row: a couple read-only tag chips (left) + a who cell (right). `tags` is an array
+// of raw tag strings; only the first two show (the details view carries them all). Chips are
+// read-only here — clicking a tag to filter, and removing tags, is the deferred tag session (P38).
+function bandRow(tags, whoCell) {
+  const row = el(".frow");
+  const shown = (tags || []).slice(0, 2);
+  if (shown.length) row.append(el(".ftags", {}, shown.map((raw) => tagChip(raw))));
+  if (whoCell) row.append(whoCell);
+  return row;
+}
+
 export function workCard(work, { onOpen, selectable = false, actions = [], showWho = true, hue = true, starred = false, onStar } = {}) {
   const media = mediaCell(work);
   // B16: no selection-checkbox square — a selected card is shown by the .card.sel media outline
@@ -107,19 +143,19 @@ export function workCard(work, { onOpen, selectable = false, actions = [], showW
       el("button" + (a.cls ? "." + a.cls : ""), { title: a.title, "data-act": a.act, onClick: (e) => { e.stopPropagation(); a.onClick?.(work); } }, [iconEl(a.icon)])));
     media.append(bar);
   }
-  const card = el("button.card" + (starred ? ".starred" : ""), { "data-open-details": true, onClick: () => onOpen?.(work) }, [media, el(".title", { title: work.title || work.name || "" }, [baseName(work)])]);
+  // the uploader cell: a small pfp + name (server hue on the pfp/name only where allowed). A public
+  // surface (feed / public profile) passes hue:false → no member colour, and the pfp still shows.
+  let whoCell = null;
   if (showWho && work.who) {
-    const who = el(".who");
-    if (hue) {
-      const chip = el("span.uchip", {}, [el("span.dot"), work.who.name]);
-      if (work.who.colorIdx != null) chip.style.setProperty("--pc", `var(--m${work.who.colorIdx})`);
-      who.append(chip);
-    } else {
-      who.append(work.who.name);   // public context — plain author, no member hue
-    }
-    if (work.channelName) who.append(document.createTextNode(" · #" + work.channelName));
-    card.append(who);
+    whoCell = el(".who");
+    const av = Avatar({ name: work.who.name, src: avatarUrl(work.who.avatar_key), size: "sm", colorIdx: hue ? work.who.colorIdx : null });
+    const name = el("span.uname", {}, [work.who.name + (work.channelName ? " · #" + work.channelName : "")]);
+    if (hue && work.who.colorIdx != null) name.style.color = `var(--m${work.who.colorIdx})`;
+    whoCell.append(av, name);
   }
+  const foot = el(".cardfoot", {}, [bandName(baseName(work)), bandRow(work.tags, whoCell)]);
+  const card = el("button.card" + (starred ? ".starred" : ""), { "data-open-details": true, onClick: () => onOpen?.(work) }, [media, foot]);
+  wireNameScroll(card, foot.querySelector(".fname"));
   return card;
 }
 
@@ -127,11 +163,13 @@ export function workCard(work, { onOpen, selectable = false, actions = [], showW
 // single-click = select, DOUBLE-click = open (consistent with files, Finder/Drive). Kept a
 // button for keyboard focus; Enter-to-open is wired by the caller.
 export function folderCard(folder, { onShare } = {}) {
-  const card = el("button.card.foldercard", {}, [
-    el(".media.fold", {}, [iconEl("folder")]),
-    el(".title", { title: folder.name }, [folder.name]),
-    el(".who", {}, [`${folder.count ?? 0} file${folder.count === 1 ? "" : "s"}`]),
-  ]);
+  // same tile band as file cards, so the grid is uniform: folder glyph plane + a --surface band with
+  // the name and the file count as the "who". Tag chips are injected into .frow by decorateFolderTags
+  // (explorer) after this builds, so the frow starts with just the count.
+  const who = el(".who", {}, [`${folder.count ?? 0} file${folder.count === 1 ? "" : "s"}`]);
+  const foot = el(".cardfoot", {}, [bandName(folder.name), el(".frow", {}, [who])]);
+  const card = el("button.card.foldercard", {}, [el(".media.fold", {}, [iconEl("folder")]), foot]);
+  wireNameScroll(card, foot.querySelector(".fname"));
   // K9: right-click a folder to share it (Drive-style). The handler opens a menu anchored on the
   // card; the caller (explorer) wires the actual create-folder-share + copy-link flow.
   if (onShare) card.addEventListener("contextmenu", (e) => { e.preventDefault(); onShare(folder, card); });

@@ -528,7 +528,12 @@ function paint(tree, pane, data, state, rerender) {
     ].filter(Boolean)),
   ]);
 
+  // B32: the bulk-action bar OVERLAYS the toolbar instead of taking its own row — a bar that pushed
+  // the body (and every icon) down the moment a second item was picked read as the whole grid
+  // "jumping." Nested as an absolutely-positioned child of the (position:relative) toolbar, it covers
+  // the filters edge-to-edge while selecting and costs zero layout. Drive does the same.
   const selbar = el(".selbar");
+  toolbar.append(selbar);
   const body = el(".panebody");
   // P13 (owner tweak): New folder + Upload live at the pane's bottom-right (Drive-style), floating
   // over the grid — not on a read-only shared view (P9). Square eski buttons: plain New folder +
@@ -543,7 +548,7 @@ function paint(tree, pane, data, state, rerender) {
   // and the current sort on the right. Updated by updateStatus() from refreshSel (fires on selection
   // change and after every repaintBody). Lives between the body and the floating fab.
   const statusbar = el(".exstatus");
-  pane.replaceChildren(...[pathline, toolbar, selbar, body, statusbar, fab].filter(Boolean));
+  pane.replaceChildren(...[pathline, toolbar, body, statusbar, fab].filter(Boolean));
   function updateStatus() {
     const items = body.querySelectorAll("[data-id], [data-folder-id]").length;
     const n = state.selection.size;
@@ -997,9 +1002,10 @@ function folderTagPreview(folder, ctx, { max = FOLDER_TAGS_ON_CARD } = {}) {
 function repaintFolderCardTags(folder, ctx) {
   const card = document.querySelector(`.foldercard[data-folder-id="${folder.id}"]`);
   if (!card) return;
-  card.querySelector(".ftags")?.remove();
+  card.querySelector(".cardfoot .ftags")?.remove();
   const row = folderTagPreview(folder, ctx);
-  if (row) card.append(row);
+  const frow = card.querySelector(".cardfoot .frow");
+  if (row && frow) frow.prepend(row);   // tags left, file-count (who) right — same band as file cards
 }
 
 // the card decorator: the first-few preview (large view). Empty folders show nothing here — tags
@@ -1007,7 +1013,8 @@ function repaintFolderCardTags(folder, ctx) {
 function decorateFolderTags(card, folder, ctx) {
   if (!ctx) return;
   const row = folderTagPreview(folder, ctx);
-  if (row) card.append(row);
+  const frow = card.querySelector(".cardfoot .frow");
+  if (row && frow) frow.prepend(row);   // into the band's row (tags left, file-count right)
 }
 
 // Properties — the show-all / edit-all popover (opened from the folder right-click menu + a "+N"
