@@ -219,18 +219,28 @@ export function renderExplorer(data, view = {}) {
   // first rerender(); it re-opens the details viewer (and, via B14, adopts still-playing media).
   if (state.openFileId) { const w = (data.files || []).find((x) => x.id === state.openFileId); if (w) state._openFile?.(w); }
 
-  // Esc clears the selection; ⌘/Ctrl-A selects everything in view. A single document
-  // listener, self-cleaning once this screen leaves the DOM (a nav swaps #stage).
+  // Table-stakes file-explorer keys (Finder/Drive/Windows): Esc clears the selection, ⌘/Ctrl-A
+  // selects all in view, Enter opens the selection (folder → into it, file → the viewer), Delete
+  // trashes the selected files. "Up a folder" is already Backspace/Back via the folder pushState
+  // (B25), so it isn't rebound here. A single self-cleaning document listener.
   const onKey = (e) => {
     if (!screen.isConnected) { document.removeEventListener("keydown", onKey); return; }
     if (document.querySelector(".sheet")) return;   // the details overlay owns keys while open
+    if (document.querySelector(".menu.open, .modal")) return;   // a menu/dialog owns keys while open
     const tag = document.activeElement?.tagName;
-    if (tag === "INPUT" || tag === "TEXTAREA") return;
+    if (tag === "INPUT" || tag === "TEXTAREA" || document.activeElement?.isContentEditable) return;
     if (e.key === "Escape" && (state.selection.size || state.selFolder)) { state.selection.clear(); state.selFolder = null; state.lastIdx = -1; state._refresh?.(); }
-    else if ((e.metaKey || e.ctrlKey) && (e.key === "a" || e.key === "A")) {   // P14: ⌘A in any density
+    else if ((e.metaKey || e.ctrlKey) && (e.key === "a" || e.key === "A")) {   // ⌘A in any density
       e.preventDefault();
       for (const w of state._files || []) state.selection.add(w.id);
       state._refresh?.();
+    }
+    else if (e.key === "Enter") {   // open the selection: a folder walks in, a file opens the viewer
+      if (state.selFolder) { e.preventDefault(); state.folderId = state.selFolder; state.selFolder = null; state.query = ""; rerender(); }
+      else { const sel = (state._files || []).filter((w) => state.selection.has(w.id)); if (sel.length) { e.preventDefault(); state._openFile?.(sel[0]); } }
+    }
+    else if ((e.key === "Delete" || (e.key === "Backspace" && (e.metaKey || e.ctrlKey))) && state.selection.size && !data.shared) {   // Delete / ⌘⌫ → trash the selected files
+      e.preventDefault(); trashSelected(data, state, rerender);
     }
   };
   document.addEventListener("keydown", onKey);

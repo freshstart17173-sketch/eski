@@ -2892,3 +2892,13 @@ NEXT: **P23 is fully done** — only live QA on preview remains (add/remove fold
 GOTCHA: folderTagMeta stores the tagEditor's getTags FUNCTION (read at post time), keyed by the SAME dir
   string buildFolderTree uses (relDir cumulative path) so folderMap.get(dir) resolves — don't change one
   path convention without the other. Folder tags apply ONLY when structured (not flattened).
+
+## 2026-08-31 — explorer keyboard conventions: Enter opens, Delete trashes
+IN PROGRESS: (cleared)
+DONE: added the missing table-stakes keys to the file explorer's screen-level handler (it had only Esc +
+  ⌘A). Enter opens the selection (a selected folder walks into it, a selected file opens the viewer);
+  Delete / ⌘⌫ trashes the selected files (mirrors the bulk-bar Delete, writable views only). Guards
+  extended: a menu/dialog open, or a focused input/textarea/contenteditable, suppresses the shortcuts.
+  "Up a folder" is already Backspace/Back via the folder pushState (B25), so it's not rebound. Verified
+  headless in demo: Enter on a selected file opens the viewer; Delete drops the in-view file count 4→3;
+  0 pageerrors. Commit <sha>. (Part of the "expected-behaviour" pass — see the new CONVENTIONS audit.)
