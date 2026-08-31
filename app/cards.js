@@ -114,7 +114,9 @@ function wireNameScroll(card, fname) {
     inner.style.transitionDuration = Math.min(Math.max(over / 45, 0.5), 3) + "s";
     inner.style.transform = `translateX(${-over}px)`;
   });
-  card.addEventListener("mouseleave", () => { inner.style.transform = ""; });
+  // Snap back INSTANTLY on leave (owner: the slow scroll-back is annoying) — kill the transition
+  // for the reset so it jumps home, then the next enter re-arms its own duration.
+  card.addEventListener("mouseleave", () => { inner.style.transitionDuration = "0s"; inner.style.transform = ""; });
 }
 // the second band row: a couple read-only tag chips (left) + a who cell (right). `tags` is an array
 // of raw tag strings; only the first two show (the details view carries them all). Chips are
@@ -129,15 +131,16 @@ function bandRow(tags, whoCell) {
 
 export function workCard(work, { onOpen, selectable = false, actions = [], showWho = true, hue = true, starred = false, onStar } = {}) {
   const media = mediaCell(work);
-  // B16: no selection-checkbox square — a selected card is shown by the .card.sel media outline
-  // (the white checkbox in dark mode read as a "weird white square"). Selection still works via
-  // click / ⌘-click / shift / marquee; the outline is the cue.
-  // starred: a persistent gold badge (CSS shows it via .card.starred) + a star hover
-  // action that toggles it. onStar is the real writer; without it neither renders.
-  if (onStar) media.prepend(el("span.cardstar", { title: "Starred" }, [iconEl("star")]));
-  const acts = onStar
-    ? [{ act: "star", icon: "star", title: starred ? "Unstar" : "Star", cls: starred ? "starred" : "", onClick: onStar }, ...actions]
-    : actions;
+  // B16: no selection-checkbox square — a selected card is shown by the .card.sel outline.
+  // B33 (owner 2026-08-31): ONE star, top-left, click-to-toggle — the indicator and the toggle are
+  // the same element in the same spot (they used to be an indicator top-left + a separate hover
+  // action top-right that swapped places). Gold + filled when starred; a ghost star appears on
+  // card hover so you can star. The star is NOT in the hover ⋯ cluster any more.
+  if (onStar) {
+    media.prepend(el("button.cardstar" + (starred ? ".on" : ""), { title: starred ? "Unstar" : "Star",
+      onClick: (e) => { e.stopPropagation(); onStar(work); } }, [iconEl("star")]));
+  }
+  const acts = actions;
   if (acts.length) {
     const bar = el(".cardacts", {}, acts.map((a) =>
       el("button" + (a.cls ? "." + a.cls : ""), { title: a.title, "data-act": a.act, onClick: (e) => { e.stopPropagation(); a.onClick?.(work); } }, [iconEl(a.icon)])));
@@ -154,7 +157,7 @@ export function workCard(work, { onOpen, selectable = false, actions = [], showW
     whoCell.append(av, name);
   }
   const foot = el(".cardfoot", {}, [bandName(baseName(work)), bandRow(work.tags, whoCell)]);
-  const card = el("button.card" + (starred ? ".starred" : ""), { "data-open-details": true, onClick: () => onOpen?.(work) }, [media, foot]);
+  const card = el("button.card", { "data-open-details": true, onClick: () => onOpen?.(work) }, [media, foot]);
   wireNameScroll(card, foot.querySelector(".fname"));
   return card;
 }
@@ -164,10 +167,10 @@ export function workCard(work, { onOpen, selectable = false, actions = [], showW
 // button for keyboard focus; Enter-to-open is wired by the caller.
 export function folderCard(folder, { onShare } = {}) {
   // same tile band as file cards, so the grid is uniform: folder glyph plane + a --surface band with
-  // the name and the file count as the "who". Tag chips are injected into .frow by decorateFolderTags
-  // (explorer) after this builds, so the frow starts with just the count.
-  const who = el(".who", {}, [`${folder.count ?? 0} file${folder.count === 1 ? "" : "s"}`]);
-  const foot = el(".cardfoot", {}, [bandName(folder.name), el(".frow", {}, [who])]);
+  // the name. The file-count "who" was dropped (owner 2026-08-31: it unbalanced the thumbnail) — the
+  // count still lives in list view + the Properties popover. Tag chips are injected into .frow by
+  // decorateFolderTags (explorer) after this builds, so the frow starts empty.
+  const foot = el(".cardfoot", {}, [bandName(folder.name), el(".frow", {})]);
   const card = el("button.card.foldercard", {}, [el(".media.fold", {}, [iconEl("folder")]), foot]);
   wireNameScroll(card, foot.querySelector(".fname"));
   // K9: right-click a folder to share it (Drive-style). The handler opens a menu anchored on the

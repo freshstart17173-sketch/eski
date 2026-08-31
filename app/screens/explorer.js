@@ -30,8 +30,10 @@ import { openDetails, closeDetails, metaRows } from "./details.js";
 //   small — a dense grid of compact [kind icon · filename] rows (Explorer "small icons").
 //   list  — the "Details" table: a column per field (Name · Type · Size · Uploader · Added).
 // Old modes migrate: grid/feed → large. Default is large.
-const VIEWS = { large: "Large", small: "Small icons", list: "List" };
-const VIEW_ALIAS = { grid: "large", feed: "large" };   // migrate old ?view= values / saved modes
+// Two view modes only (owner 2026-08-31): Grid (big content thumbnails) + List (the "Details"
+// table). The old "Small icons" density was cut — small/grid/feed all migrate to large ("Grid").
+const VIEWS = { large: "Grid", list: "List" };
+const VIEW_ALIAS = { grid: "large", feed: "large", small: "large" };   // migrate old ?view= values / saved modes
 // Filters (CANON §C.6): Type/Channel/Uploader/Tag are multi-select (an empty set = no
 // filter, the union within a facet, the intersection across facets); Date and Sort are
 // single-select. Type/Channel/Uploader/Tag options are all derived from the files in view
@@ -99,16 +101,18 @@ export function renderExplorer(data, view = {}) {
     query: "",
     collapsed: new Set(),   // folder ids whose children are hidden in the tree
     selection: persistentSelection(data),   // selected work ids — persists across nav (§C.6, B6)
-    selFolder: null,        // B26: a single-click-selected FOLDER id (double-click opens it)
+    selFolders: new Set(),  // selected FOLDER ids (single-click / ⌘-click / marquee); double-click opens
     lastIdx: -1,            // anchor for Shift-click range
-    types: new Set(),       // kind filter — empty = all (image/audio/video/text/other)
+    types: new Set(),       // kind filter — set only by a tag/type click now (facet dropdowns retired)
     channels: new Set(),    // by placement channel name (server only)
     uploaders: new Set(),   // by author name (server only)
-    tags: new Set(),        // by content tag (exact value, incl. typed "type:value")
-    // (the P11 "Tag type" facet was removed in P24 — use the `hastag:bpm` search modifier instead)
+    tags: new Set(),        // by content tag (exact value, incl. typed "type:value") — set by tag-click
+    // (the Type/Channel/Uploader/Tag/Date filter dropdowns were retired 2026-08-31 — filtering moves
+    //  to the search bar's modifiers; sorting moves to a Sort-by dropdown (grid) / column click (list))
     date: "any",            // any/today/week/month/year
-    sort: "latest",        // latest/oldest/name/size
+    sort: "latest",        // latest/oldest/name/size/type/uploader/date
     dir: "desc",           // sort direction
+    group: "none",          // grid grouping: none/kind/type/uploader/date
     trash: false,           // the Trash smart-folder is open
     starred: false,         // the Starred quick-filter is on (flat grid of starred works)
     showHidden: false,      // reveal hidden/utility works in the library view (#55)
@@ -241,14 +245,14 @@ export function renderExplorer(data, view = {}) {
     if (document.querySelector(".menu.open, .modal")) return;   // a menu/dialog owns keys while open
     const tag = document.activeElement?.tagName;
     if (tag === "INPUT" || tag === "TEXTAREA" || document.activeElement?.isContentEditable) return;
-    if (e.key === "Escape" && (state.selection.size || state.selFolder)) { state.selection.clear(); state.selFolder = null; state.lastIdx = -1; state._refresh?.(); }
+    if (e.key === "Escape" && (state.selection.size || state.selFolders.size)) { state.selection.clear(); state.selFolders.clear(); state.lastIdx = -1; state._refresh?.(); }
     else if ((e.metaKey || e.ctrlKey) && (e.key === "a" || e.key === "A")) {   // ⌘A in any density
       e.preventDefault();
       for (const w of state._files || []) state.selection.add(w.id);
       state._refresh?.();
     }
     else if (e.key === "Enter") {   // open the selection: a folder walks in, a file opens the viewer
-      if (state.selFolder) { e.preventDefault(); state.folderId = state.selFolder; state.selFolder = null; state.query = ""; rerender(); }
+      if (state.selFolders.size === 1) { e.preventDefault(); state.folderId = [...state.selFolders][0]; state.selFolders.clear(); state.query = ""; rerender(); }
       else { const sel = (state._files || []).filter((w) => state.selection.has(w.id)); if (sel.length) { e.preventDefault(); state._openFile?.(sel[0]); } }
     }
     else if ((e.key === "Delete" || (e.key === "Backspace" && (e.metaKey || e.ctrlKey))) && state.selection.size && !data.shared) {   // Delete / ⌘⌫ → trash the selected files
@@ -470,60 +474,43 @@ function paint(tree, pane, data, state, rerender) {
     ? { visibility: "private", onDone: () => reload() }
     : { visibility: "server", serverId: data.server.id, folderId: state.folderId, onDone: () => reload() });
 
-  // Facet options derived from ALL files (stable across folder nav, not just the folder
-  // in view). Type is a fixed set; Channel/Uploader/Tag come from the data.
-  const uniq = (arr) => [...new Set(arr.filter(Boolean))].sort();
-  const channelOpts = uniq(data.files.map((w) => w.channelName)).map((c) => [c, c]);
-  const uploaderOpts = uniq(data.files.map((w) => w.who?.name)).map((u) => [u, u]);
-  const tagOpts = uniq(data.files.flatMap((w) => w.tags || [])).map((t) => { const p = parseTag(t); return [t, p.typed ? `${p.type} ${p.value}` : p.value]; });
-  // P8: Type filters by ACTUAL file extension present (.wav / .flp / .png …), derived from the
-  // files in view — not the broad Images/Audio/Video buckets. The value is the lowercased ext.
-  const typeOpts = uniq(data.files.map((w) => (w.file_ext || "").toLowerCase())).map((e) => [e, "." + e]);
-
-  // a multi-select filter button: filled + counted when it has selections, disabled when
-  // its facet has no options. The menu toggles in place; refreshBtn keeps the count live
-  // (repaintBody rebuilds only the body, never the toolbar, so the button self-updates).
-  const multiBtn = (label, set, options) => {
-    const b = el("button.btn.exfilter", { "aria-haspopup": "menu", disabled: options.length === 0 });
-    const refreshBtn = () => {
-      const n = set.size;
-      b.replaceChildren(label, ...(n ? [el("span.fc", {}, [String(n)])] : []), iconEl("chev", "sm"));
-      b.classList.toggle("on", n > 0);
-    };
-    refreshBtn();
-    b.addEventListener("click", () => openFilterMenu(b, options, set, () => { refreshBtn(); repaintBody(); }));
-    return b;
-  };
-  const typeBtn = multiBtn("Type", state.types, typeOpts);
-  const tagBtn = multiBtn("Tag", state.tags, tagOpts);
-  // Channel + Uploader are server context only (personal + shared files carry neither)
   const serverSource = data.source === "server";
-  const chanBtn = serverSource ? multiBtn("Channel", state.channels, channelOpts) : null;
-  const uploaderBtn = serverSource ? multiBtn("Uploader", state.uploaders, uploaderOpts) : null;
 
-  // Date + Sort are single-select: the current choice is shown by an inverted (filled)
-  // menu row via `selected`, not a ✓ prefix; the button label updates on pick.
-  const dateBtn = el("button.btn.exfilter" + (state.date !== "any" ? ".on" : ""), { "aria-haspopup": "menu" }, [el("span.dlbl", {}, [state.date === "any" ? "Date" : DATE_LABEL[state.date]]), iconEl("chev", "sm")]);
-  dateBtn.addEventListener("click", () => openMenu(dateBtn, DATES.map(([k, lbl]) => ({ label: lbl, selected: state.date === k, onClick: () => { state.date = k; dateBtn.querySelector(".dlbl").textContent = k === "any" ? "Date" : DATE_LABEL[k]; dateBtn.classList.toggle("on", k !== "any"); repaintBody(); } }))));
-  const sortBtn = el("button.btn.exfilter", { "aria-haspopup": "menu" }, [el("span.slbl", {}, [SORT_LABEL[state.sort]]), iconEl("chev", "sm")]);
-  sortBtn.addEventListener("click", () => openMenu(sortBtn, SORTS.map(([k, lbl]) => ({ label: lbl, selected: state.sort === k, onClick: () => { state.sort = k; sortBtn.querySelector(".slbl").textContent = SORT_LABEL[k]; repaintBody(); } }))));
-  const dirBtn = el("button.iconbtn", { title: state.dir === "desc" ? "Descending" : "Ascending", "aria-pressed": state.dir === "asc" ? "true" : "false", onClick: () => { state.dir = state.dir === "desc" ? "asc" : "desc"; dirBtn.setAttribute("title", state.dir === "desc" ? "Descending" : "Ascending"); dirBtn.setAttribute("aria-pressed", state.dir === "asc" ? "true" : "false"); dirBtn.firstChild.style.transform = state.dir === "asc" ? "rotate(180deg)" : ""; repaintBody(); } }, [(() => { const g = iconEl("chev", "sm"); if (state.dir === "asc") g.style.transform = "rotate(180deg)"; return g; })()]);
+  // Sort + Group (owner 2026-08-31). The Type/Channel/Uploader/Tag/Date filter dropdowns are RETIRED
+  // — filtering moves to the search bar's modifiers (bpm:120 / hastag:key / …). Sorting is a single
+  // Sort-by dropdown in GRID view (in LIST view you click a column header instead, so it drops away),
+  // and a Group-by dropdown buckets the grid under headers.
+  const SORT_OPTS = [
+    ["latest", "desc", "Newest"], ["oldest", "asc", "Oldest"],
+    ["name", "asc", "Name (A–Z)"], ["name", "desc", "Name (Z–A)"],
+    ["size", "desc", "Largest"], ["size", "asc", "Smallest"],
+    ["type", "asc", "File type"],
+    ...(serverSource ? [["uploader", "asc", "Uploader"]] : []),
+  ];
+  const sortLbl = () => (SORT_OPTS.find(([s, d]) => s === state.sort && d === state.dir) || [, , "Sort"])[2];
+  const sortByBtn = el("button.btn", { "aria-haspopup": "menu" }, [iconEl("sort", "sm"), el("span.slbl", {}, [sortLbl()]), iconEl("chev", "sm")]);
+  sortByBtn.addEventListener("click", () => openMenu(sortByBtn, SORT_OPTS.map(([s, d, lbl]) => ({ label: lbl, selected: state.sort === s && state.dir === d, onClick: () => { state.sort = s; state.dir = d; sortByBtn.querySelector(".slbl").textContent = lbl; repaintBody(); } }))));
 
-  // Starred quick-filter: a plain star toggle in line with the filters. When on, the pane
-  // shows a flat grid of every starred work (like a smart-folder), gold when active.
+  const GROUP_OPTS = [["none", "No grouping"], ["kind", "Kind"], ["type", "File type"], ...(serverSource ? [["uploader", "Uploader"]] : []), ["date", "Date added"]];
+  const GROUP_LBL = Object.fromEntries(GROUP_OPTS);
+  const groupByBtn = el("button.btn" + (state.group !== "none" ? ".on" : ""), { "aria-haspopup": "menu" }, [iconEl("grid", "sm"), el("span.glbl", {}, [state.group === "none" ? "Group" : GROUP_LBL[state.group]]), iconEl("chev", "sm")]);
+  groupByBtn.addEventListener("click", () => openMenu(groupByBtn, GROUP_OPTS.map(([g, lbl]) => ({ label: lbl, selected: state.group === g, onClick: () => { state.group = g; groupByBtn.querySelector(".glbl").textContent = g === "none" ? "Group" : lbl; groupByBtn.classList.toggle("on", g !== "none"); repaintBody(); } }))));
+
+  // Starred quick-filter: a plain star toggle in line with the controls; gold when active. When on,
+  // the pane shows a flat grid of every starred work (like a smart-folder).
   const starFilterBtn = el("button.iconbtn.exstar" + (state.starred ? ".on" : ""), { title: "Starred", "aria-pressed": state.starred ? "true" : "false", onClick: () => { state.starred = !state.starred; starFilterBtn.classList.toggle("on", state.starred); starFilterBtn.setAttribute("aria-pressed", state.starred ? "true" : "false"); repaintBody(); } }, [iconEl("star", "sm")]);
 
-  // P13 (owner tweak): search stays LEFT; the filter set + the view/hidden controls are grouped
-  // to the RIGHT (`.tbfilters` margin-left:auto). New folder / Upload are NOT in the toolbar — they
-  // move to a bottom-right action cluster over the grid (below).
   // C29: the info-panel toggle (an ⓘ). Reads state.infoOpen; a rerender rebuilds the layout with/
   // without the docked panel. Not on a read-only shared view.
   const infoBtn = data.shared ? null : el("button.iconbtn.infobtn" + (state.infoOpen ? ".on" : ""),
     { title: state.infoOpen ? "Hide details" : "Show details", "aria-pressed": state.infoOpen ? "true" : "false", onClick: () => state._toggleInfo?.() }, [iconEl("info", "sm")]);
+  // Grid shows Sort/Group dropdowns; list has neither (its column headers sort). Search stays LEFT;
+  // controls group to the RIGHT (`.tbfilters` margin-left:auto).
+  const gridControls = state.mode === "list" ? [] : [sortByBtn, groupByBtn];
   const toolbar = el(".toolbar", {}, [
     search,
     el(".tbfilters", {}, [
-      typeBtn, chanBtn, uploaderBtn, tagBtn, dateBtn, sortBtn, dirBtn, starFilterBtn,
+      ...gridControls, starFilterBtn,
       el(".hdctl", {}, [infoBtn, hiddenBtn, viewBtn].filter(Boolean)),
     ].filter(Boolean)),
   ]);
@@ -559,7 +546,8 @@ function paint(tree, pane, data, state, rerender) {
     } else {
       left = el("span", {}, [`${items} item${items === 1 ? "" : "s"}`]);
     }
-    statusbar.replaceChildren(left, el("span.sp"), el("span.stsort", {}, [iconEl("sort", "sm"), SORT_LABEL[state.sort] || "Latest"]));
+    const sortName = { latest: "Newest", oldest: "Oldest", name: "Name", size: "Size", type: "Type", uploader: "Uploader", date: "Date" }[state.sort] || "Newest";
+    statusbar.replaceChildren(left, el("span.sp"), el("span.stsort", {}, [iconEl("sort", "sm"), sortName]));
   }
   state._updateStatus = updateStatus;
   // C29: repaint the docked info panel from the live selection.
@@ -573,7 +561,7 @@ function paint(tree, pane, data, state, rerender) {
   body.addEventListener("click", (e) => {
     if (suppressClear) { suppressClear = false; return; }
     if (e.target.closest("[data-id]") || e.target.closest("[data-folder-id]") || e.target.closest(".selbar")) return;
-    if (state.selection.size || state.selFolder) { state.selection.clear(); state.selFolder = null; state.lastIdx = -1; refreshSel(); }
+    if (state.selection.size || state.selFolders.size) { state.selection.clear(); state.selFolders.clear(); state.lastIdx = -1; refreshSel(); }
   });
 
   // P28: right-clicking EMPTY pane space opens a "New folder / Upload" menu at the cursor (the
@@ -609,8 +597,12 @@ function paint(tree, pane, data, state, rerender) {
       if (e.button !== 0 || e.target.closest("[data-id]") || e.target.closest("[data-folder-id]") || e.target.closest(".selbar") || e.target.closest(".exfab")) return;
       suppressClear = false;   // B15: never let a stale marquee flag eat this gesture's clear-click
       const start = { x: e.clientX, y: e.clientY };
-      const base = (e.shiftKey || e.metaKey || e.ctrlKey) ? new Set(state.selection) : new Set();
-      const rects = [...body.querySelectorAll("[data-id]")].map((c) => ({ id: c.dataset.id, r: c.getBoundingClientRect() }));
+      const additive = (e.shiftKey || e.metaKey || e.ctrlKey);
+      const base = additive ? new Set(state.selection) : new Set();
+      const baseFolders = additive ? new Set(state.selFolders) : new Set();
+      // Owner 2026-08-31: the box must catch FOLDERS too, not just files — capture both, route each
+      // rect by whether it's a folder ([data-folder-id]) or a file ([data-id]).
+      const rects = [...body.querySelectorAll("[data-id],[data-folder-id]")].map((c) => ({ id: c.dataset.id, fid: c.dataset.folderId, r: c.getBoundingClientRect() }));
       const box = el(".marquee"); let moved = false;
       const move = (ev) => {
         const x = Math.min(ev.clientX, start.x), y = Math.min(ev.clientY, start.y);
@@ -620,8 +612,12 @@ function paint(tree, pane, data, state, rerender) {
         const br = body.getBoundingClientRect();
         box.style.cssText = `left:${x - br.left + body.scrollLeft}px;top:${y - br.top + body.scrollTop}px;width:${w}px;height:${h}px`;
         const sel2 = { left: x, top: y, right: x + w, bottom: y + h };
-        state.selection.clear(); state.selFolder = null; base.forEach((id) => state.selection.add(id));
-        for (const { id, r } of rects) if (!(r.right < sel2.left || r.left > sel2.right || r.bottom < sel2.top || r.top > sel2.bottom)) state.selection.add(id);
+        state.selection.clear(); state.selFolders.clear();
+        base.forEach((id) => state.selection.add(id)); baseFolders.forEach((id) => state.selFolders.add(id));
+        for (const { id, fid, r } of rects) {
+          if (r.right < sel2.left || r.left > sel2.right || r.bottom < sel2.top || r.top > sel2.bottom) continue;
+          if (fid != null) state.selFolders.add(fid); else state.selection.add(id);
+        }
         refreshSel();
       };
       const up = () => {
@@ -691,10 +687,11 @@ function paint(tree, pane, data, state, rerender) {
   // and the bulk bar off state.selection, without rebuilding the grid.
   const sel = { state, refresh: refreshSel };
   state._refresh = refreshSel;   // for the screen-level key handler (Esc / ⌘A)
+  state._repaint = repaintBody;  // list column-sort / grid sort+group dropdowns re-run the body only
   function refreshSel() {
-    // P14: select by [data-id]/[data-folder-id] so ALL densities participate (card, list row, small cell)
+    // select by [data-id]/[data-folder-id] so both files and folders show the selection outline
     body.querySelectorAll("[data-id]").forEach((c) => c.classList.toggle("sel", state.selection.has(c.dataset.id)));
-    body.querySelectorAll("[data-folder-id]").forEach((c) => c.classList.toggle("sel", c.dataset.folderId === state.selFolder));   // B26
+    body.querySelectorAll("[data-folder-id]").forEach((c) => c.classList.toggle("sel", state.selFolders.has(c.dataset.folderId)));
     const n = state.selection.size;
     // B6: a single selection stays quiet — its actions are on the card ⋯ and the details pane.
     // The bulk bar only appears once you deliberately multi-select (2+), so a plain click never
@@ -756,7 +753,7 @@ function buildInfoPanel(data, state, rerender) {
   const tagsSec = (w.tags && w.tags.length) ? el(".exisec", {}, [
     el(".exilabel", {}, ["Tags"]),
     el(".ftags", { style: "flex-wrap:wrap;overflow:visible;margin:0" }, (w.tags || []).map((raw) => tagChip(raw, {
-      onSearch: (r) => { state.selection.clear(); state.selFolder = null; state.folderId = null; state.query = ""; state.tags = new Set([r]); rerender(); } }))),
+      onSearch: (r) => { state.selection.clear(); state.selFolders.clear(); state.folderId = null; state.query = ""; state.tags = new Set([r]); rerender(); } }))),
   ]) : null;
   const foot = el(".exifoot", {}, [
     el("button.btn.primary", { onClick: () => downloadWork(w) }, [iconEl("download", "sm"), "Download"]),
@@ -860,7 +857,7 @@ function contents(data, state, rerender, sel) {
       menuItemsFor: (ww, hooks) => detailMenuItems(data, state, rerender, ww, hooks),
       // P26: click a tag in the viewer → filter the whole library to that exact tag (the P11 tag
       // filter). Jumps to root so it searches every folder, closes the viewer, shows the results.
-      onTagSearch: (raw) => { state.selection.clear(); state.selFolder = null; state.folderId = null; state.query = ""; state.tags = new Set([raw]); closeDetails(); rerender(); },
+      onTagSearch: (raw) => { state.selection.clear(); state.selFolders.clear(); state.folderId = null; state.query = ""; state.tags = new Set([raw]); closeDetails(); rerender(); },
       // closing the viewer (✕ / Esc / backdrop / nav) drops ?file= from the URL
       onClose: () => { state.openFileId = null; state._syncUrl?.(); },
     });
@@ -881,7 +878,7 @@ function contents(data, state, rerender, sel) {
   // toggles, Shift-click ranges; a double-click opens. List view keeps click-to-open.
   const onCardClick = (w, i, e) => {
     const s = state.selection;
-    state.selFolder = null;   // B26: selecting a file drops any folder selection
+    state.selFolders.clear();   // selecting a file drops any folder selection
     if (e.metaKey || e.ctrlKey) { s.has(w.id) ? s.delete(w.id) : s.add(w.id); state.lastIdx = i; }
     else if (e.shiftKey && state.lastIdx >= 0) {
       const [a, b] = [state.lastIdx, i].sort((x, y) => x - y);
@@ -889,17 +886,34 @@ function contents(data, state, rerender, sel) {
     } else { s.clear(); s.add(w.id); state.lastIdx = i; }
     sel.refresh();
   };
-  // B26: single-click a folder selects it (clears the file selection); double-click opens it.
-  const onFolderClick = (f) => { state.selection.clear(); state.selFolder = f.id; state.lastIdx = -1; sel.refresh(); };
+  // B26: single-click a folder selects it (clears the file selection), ⌘/Ctrl-click toggles it into a
+  // multi-folder selection; double-click opens it. Folders join the marquee box too (refreshSel above).
+  const onFolderClick = (f, e) => {
+    state.selection.clear();
+    if (e && (e.metaKey || e.ctrlKey)) { state.selFolders.has(f.id) ? state.selFolders.delete(f.id) : state.selFolders.add(f.id); }
+    else { state.selFolders.clear(); state.selFolders.add(f.id); }
+    state.lastIdx = -1; sel.refresh();
+  };
 
   const onStar = (w) => toggleStar(data, state, rerender, w);
   const onMenu = data.shared ? null : (w, anchor, at) => openCardMenu(data, state, rerender, w, anchor, at);   // read-only shared view has no per-card owner menu (P9)
   const onShareFolder = (folder, anchor, at) => shareFolderMenu(data, state, rerender, folder, anchor, at);
-  // P14: all three densities share the same select/open wiring + hooks; only the layout differs.
+  // List column-header sort: which key is currently active (latest/oldest collapse to the "date"
+  // column) + the effective direction, and the handler a header click calls (toggle dir if it's the
+  // active column, else switch to it with a sensible default). Repaints the body only.
+  const activeSort = (state.sort === "latest" || state.sort === "oldest") ? "date" : state.sort;
+  const effDir = state.sort === "latest" ? "desc" : state.sort === "oldest" ? "asc" : state.dir;
+  const onSortCol = (key) => {
+    if (activeSort === key) { state.dir = effDir === "asc" ? "desc" : "asc"; if (state.sort === "latest" || state.sort === "oldest") state.sort = "date"; }
+    else { state.sort = key; state.dir = (key === "name" || key === "type" || key === "uploader") ? "asc" : "desc"; }
+    (state._repaint || rerender)();
+  };
+  // Both densities share the same select/open wiring + hooks; only the layout differs.
   // P23: ftctx carries data/state/rerender so a folder card can render + edit its own tags.
-  const hooks = { openFile, openFolder, onFolderClick, onCardClick, onStar, onMenu, onShareFolder, showWho: data.source !== "personal", personal, ftctx: { data, state, rerender } };
+  const hooks = { openFile, openFolder, onFolderClick, onCardClick, onStar, onMenu, onShareFolder,
+    showWho: data.source !== "personal", personal, ftctx: { data, state, rerender },
+    group: state.group, onSortCol, sortActive: activeSort, dir: effDir };
   const view = state.mode === "list" ? listView(subfolders, files, hooks)
-    : state.mode === "small" ? smallView(subfolders, files, hooks)
     : largeView(subfolders, files, hooks);
   // P24: a paged server search that has more rows gets a "Load more" footer (client-side folder
   // browsing loads the whole tree at once, so it never needs one).
@@ -943,7 +957,7 @@ function canWriteFolder(data) { return !data.shared && (data.source === "persona
 function folderTagTarget(data, folder) { return data.source === "personal" ? { saveFolderId: folder.id } : { folderId: folder.id }; }
 // click a folder tag → search the library for it (same as a file tag, P26)
 function searchFolderTag(state, rerender, raw) {
-  state.selection.clear(); state.selFolder = null; state.folderId = null; state.query = ""; state.tags = new Set([raw]); rerender();
+  state.selection.clear(); state.selFolders.clear(); state.folderId = null; state.query = ""; state.tags = new Set([raw]); rerender();
 }
 async function addFolderTagUI(data, state, rerender, folder, raw, after) {
   const clean = (raw || "").trim(); if (!clean) return;
@@ -1072,55 +1086,64 @@ function wireFolderEl(node, f, { onFolderClick, openFolder, onShareFolder }) {
   return node;
 }
 
-// LARGE — big content thumbnails (the current card), spacing tuned for 2-line titles.
+// one file card (the grid tile). Kept as a factory so grouped + ungrouped grids share it verbatim.
+function largeFileCard(w, i, hooks) {
+  let card;
+  const actions = hooks.onMenu ? [{ act: "more", icon: "more", title: "More", onClick: (ww) => hooks.onMenu(ww, card.querySelector('.cardacts [data-act="more"]') || card) }] : [];
+  card = workCard(w, { selectable: true, showWho: hooks.showWho, starred: !!w.starred, onStar: hooks.onStar, actions });
+  if (w.hidden) card.classList.add("ishidden");
+  wireFileEl(card, w, i, hooks);
+  return card;   // B33: the star (top-left, click-toggle) lives inside workCard now — no corner check
+}
+function largeFolderCard(f, hooks) {
+  const fcard = wireFolderEl(folderCard(f, { onShare: hooks.onShareFolder }), f, hooks);
+  decorateFolderTags(fcard, f, hooks.ftctx);   // P23: the folder's first-few tags (Properties shows all)
+  return fcard;
+}
+
+// GRID — big content thumbnails. Optionally GROUPED (owner 2026-08-31): a Group-by dropdown buckets
+// the files under headers (Kind/Type/Uploader/Date); folders always lead in their own section.
 function largeView(subfolders, files, hooks) {
-  const { openFolder, onFolderClick, onStar, onMenu, onShareFolder, showWho } = hooks;
-  const grid = el(".masonry.even.exlarge");
-  for (const f of subfolders) {
-    const fcard = wireFolderEl(folderCard(f, { onShare: onShareFolder }), f, hooks);
-    decorateFolderTags(fcard, f, hooks.ftctx);   // P23: the folder's first-few tags (Properties shows all)
-    grid.append(fcard);
+  const wrap = el(".exview", { "data-exview": "large" });
+  const groups = groupFiles(files, hooks.group);
+  if (!groups) {
+    const grid = el(".masonry.even.exlarge");
+    for (const f of subfolders) grid.append(largeFolderCard(f, hooks));
+    files.forEach((w, i) => grid.append(largeFileCard(w, i, hooks)));
+    wrap.append(grid);
+    return wrap;
   }
-  files.forEach((w, i) => {
-    const actions = onMenu ? [{ act: "more", icon: "more", title: "More", onClick: (ww) => onMenu(ww, card.querySelector('.cardacts [data-act="more"]') || card) }] : [];
-    const card = workCard(w, { selectable: true, showWho, starred: !!w.starred, onStar, actions });
-    if (w.hidden) card.classList.add("ishidden");
-    wireFileEl(card, w, i, hooks);
-    // C16: the corner select check — click toggles this card into/out of the selection with no
-    // modifier (a plain click builds a multi-selection, Drive-style). Stops the card's open/select.
-    const chk = el(".cardsel", { title: "Select", role: "checkbox", onClick: (e) => { e.stopPropagation(); e.preventDefault(); hooks.onCardClick(w, i, { metaKey: true }); } }, [iconEl("check", "sm")]);
-    card.append(chk);
-    grid.append(card);
-  });
-  return el(".exview", { "data-exview": "large" }, [grid]);
+  const groupSection = (label, count, nodes) => {
+    const g = el(".masonry.even.exlarge");
+    nodes.forEach((n) => g.append(n));
+    return el(".exgroup", {}, [el(".exgrouphd", {}, [el("span.egn", {}, [label]), el("span.egc", {}, [String(count)])]), g]);
+  };
+  if (subfolders.length) wrap.append(groupSection("Folders", subfolders.length, subfolders.map((f) => largeFolderCard(f, hooks))));
+  const idxOf = new Map(files.map((w, i) => [w.id, i]));   // keep each card's real index for Shift-range
+  for (const { label, items } of groups) wrap.append(groupSection(label, items.length, items.map((w) => largeFileCard(w, idxOf.get(w.id), hooks))));
+  return wrap;
 }
 
-// SMALL — a dense grid of compact [kind icon · filename] cells (Explorer "small icons").
-function smallView(subfolders, files, hooks) {
-  const { onShareFolder } = hooks;
-  const grid = el(".exsmall");
-  for (const f of subfolders) {
-    const chip = el("button.smallcard.foldercard", {}, [iconEl("folder", "sm"), el("span.snm", { title: f.name }, [f.name])]);
-    grid.append(wireFolderEl(chip, f, hooks));
-  }
-  files.forEach((w, i) => {
-    const cell = el("button.smallcard" + (w.hidden ? ".ishidden" : ""), { title: w.title || "" },
-      [iconEl(KIND_ICON[w.kind] || "file", "sm"), el("span.snm", {}, [baseName(w)])]);
-    grid.append(wireFileEl(cell, w, i, hooks));
-  });
-  return el(".exview", { "data-exview": "small" }, [grid]);
-}
-
-// LIST — the "Details" table: a column per field. Rows select/open like the other densities and
-// carry data-id so selection / marquee / the bulk bar all work here too.
+// LIST — the "Details" table: a column per field. Rows select/open like the grid and carry data-id
+// so selection / marquee / the bulk bar all work here too. Column headers are click-to-sort (C6),
+// and each file row leads with the same star toggle as the grid (B33).
 function listView(subfolders, files, hooks) {
   const { showWho } = hooks;
   const table = el(".exlist" + (showWho ? "" : ".nowho"), { "data-exview": "list" });
-  const cols = showWho ? ["Name", "Type", "Size", "Uploader", "Added"] : ["Name", "Type", "Size", "Added"];
-  table.append(el(".flrow.flhd", {}, cols.map((c) => el("span", {}, [c]))));
+  const colDefs = showWho
+    ? [["Name", "name"], ["Type", "type"], ["Size", "size"], ["Uploader", "uploader"], ["Added", "date"]]
+    : [["Name", "name"], ["Type", "type"], ["Size", "size"], ["Added", "date"]];
+  const hd = el(".flrow.flhd", {}, colDefs.map(([label, key]) => {
+    const on = hooks.sortActive === key;
+    const cell = el("span" + (on ? ".on" : ""), { role: "button", onClick: () => hooks.onSortCol(key) }, [label]);
+    if (on) { const car = iconEl("chev", "sm"); car.classList.add("sortcar"); if (hooks.dir === "asc") car.style.transform = "rotate(180deg)"; cell.append(car); }
+    return cell;
+  }));
+  table.append(hd);
   for (const f of subfolders) {
-    // P23: a list row can carry a few of the folder's tags inline after the name (icon view can't).
-    const nameCell = el("span.flnm", {}, [iconEl("folder", "sm"), el("span.flnmtxt", {}, [f.name])]);
+    // P23: a list row can carry a few of the folder's tags inline after the name. The empty .flstar
+    // spacer keeps the folder icon aligned with file rows (which lead with a star toggle).
+    const nameCell = el("span.flnm", {}, [el("span.flstar.spacer"), iconEl("folder", "sm"), el("span.flnmtxt", {}, [f.name])]);
     const tagPrev = hooks.ftctx ? folderTagPreview(f, hooks.ftctx) : null;
     if (tagPrev) { tagPrev.classList.add("flntags"); nameCell.append(tagPrev); }
     const cells = [
@@ -1132,8 +1155,9 @@ function listView(subfolders, files, hooks) {
     table.append(wireFolderEl(el(".flrow", {}, cells), f, hooks));
   }
   files.forEach((w, i) => {
+    const star = el("button.flstar" + (w.starred ? ".on" : ""), { title: w.starred ? "Unstar" : "Star", onClick: (e) => { e.stopPropagation(); hooks.onStar(w); } }, [iconEl("star", "sm")]);
     const cells = [
-      el("span.flnm", {}, [iconEl(KIND_ICON[w.kind] || "file", "sm"), baseName(w)]),
+      el("span.flnm", {}, [star, iconEl(KIND_ICON[w.kind] || "file", "sm"), baseName(w)]),
       el("span", {}, [(w.file_ext || "").toLowerCase() || "—"]),
       el("span", {}, [fmtBytes(w.bytes)]),
       ...(showWho ? [el("span", {}, [w.who?.name || "—"])] : []),
@@ -1145,8 +1169,39 @@ function listView(subfolders, files, hooks) {
   return table;
 }
 
-// sort a file list by the chosen key + direction. Name is A→Z at asc; the others are
-// natural (latest/largest first) at the default desc.
+// ── grouping (grid) ───────────────────────────────────────────────────────────
+const KIND_LABEL = { audio: "Audio", image: "Images", video: "Video", text: "Text", other: "Other" };
+function dateBucket(ts) {
+  if (!ts) return { rank: 5, label: "No date" };
+  const d = new Date(ts), now = new Date();
+  const day = 86400000, midnight = new Date(now); midnight.setHours(0, 0, 0, 0);
+  if (d >= midnight) return { rank: 0, label: "Today" };
+  if (d >= new Date(midnight - day)) return { rank: 1, label: "Yesterday" };
+  if (d >= new Date(now - 7 * day)) return { rank: 2, label: "This week" };
+  if (d >= new Date(now - 30 * day)) return { rank: 3, label: "This month" };
+  return { rank: 4, label: "Earlier" };
+}
+// Partition the already-sorted file list into [{label, items}] for the chosen grouping (or null when
+// grouping is off). Files keep their sorted order within a group; the groups themselves order
+// sensibly (date by recency, the rest alphabetically).
+function groupFiles(files, group) {
+  if (!group || group === "none") return null;
+  const keyOf = {
+    kind: (w) => ({ rank: 0, label: KIND_LABEL[w.kind] || "Other" }),
+    type: (w) => { const e = (w.file_ext || "").toUpperCase(); return { rank: 0, label: e || "No type" }; },
+    uploader: (w) => ({ rank: 0, label: w.who?.name || "Unknown" }),
+    date: (w) => dateBucket(w.created_at),
+  }[group];
+  if (!keyOf) return null;
+  const map = new Map();
+  for (const w of files) { const { rank, label } = keyOf(w); if (!map.has(label)) map.set(label, { rank, items: [] }); map.get(label).items.push(w); }
+  const entries = [...map.entries()].map(([label, v]) => ({ label, rank: v.rank, items: v.items }));
+  entries.sort((a, b) => (a.rank - b.rank) || a.label.localeCompare(b.label));
+  return entries;
+}
+
+// sort a file list by key + direction. Comparators are defined ASCENDING (name A→Z, size small→large,
+// date old→new, …); `desc` reverses. latest/oldest are the date column pre-directed.
 function sortFiles(files, sort, dir, sortTag) {
   const out = files.slice();
   // P21 sortby:bpm_desc — order by the numeric part of the file's tag of that type (nulls last,
@@ -1159,14 +1214,18 @@ function sortFiles(files, sort, dir, sortTag) {
     out.sort((a, b) => { const x = num(a), y = num(b); if (x == null && y == null) return 0; if (x == null) return 1; if (y == null) return -1; return dir === "asc" ? x - y : y - x; });
     return out;
   }
-  const cmp = {
-    latest: (a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0),
-    oldest: (a, b) => new Date(a.created_at || 0) - new Date(b.created_at || 0),
+  const asc = {
     name: (a, b) => (a.title || "").localeCompare(b.title || ""),
-    size: (a, b) => Number(b.bytes || 0) - Number(a.bytes || 0),
-  }[sort] || (() => 0);
-  out.sort(cmp);
-  if (dir === "asc") out.reverse();
+    size: (a, b) => Number(a.bytes || 0) - Number(b.bytes || 0),
+    date: (a, b) => new Date(a.created_at || 0) - new Date(b.created_at || 0),
+    type: (a, b) => (a.file_ext || "").toLowerCase().localeCompare((b.file_ext || "").toLowerCase()),
+    uploader: (a, b) => (a.who?.name || "").localeCompare(b.who?.name || ""),
+  };
+  let key = sort, d = dir;
+  if (sort === "latest") { key = "date"; d = "desc"; }
+  else if (sort === "oldest") { key = "date"; d = "asc"; }
+  out.sort(asc[key] || asc.date);
+  if (d === "desc") out.reverse();
   return out;
 }
 

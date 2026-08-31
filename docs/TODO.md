@@ -114,9 +114,9 @@ detail in the Round-11 section below. Ticking one here = ticking it in its categ
 | ~~2h~~ | ~~**B35**~~ | ✅ file/server search — was FTS-whole-word-only; added filename substring (p27) | done |
 | ~~2h~~ | ~~**B31**~~ | ✅ .panebody user-select:none + mini kind-icon drag ghost | done |
 | ~~2.5h~~ | ~~**B30**~~ | ✅ viewer stayed-open on refocus — auth re-emit was forcing a full re-render | done |
-| ~3h | **B33** | star: consistent top-left click-toggle in every density | med |
+| ~~3h~~ | ~~**B33**~~ | ✅ one top-left click-toggle star (grid + list); killed the colliding corner check | done |
 | ~~3h~~ | ~~**P28**~~ | ✅ openMenu gained an at:{x,y} cursor spawn; file/folder/empty-pane menus | done |
-| ~3h | **P33** | explorer filters → only Hidden+Starred; add Group-by & Sort-by | med-hard |
+| ~~3h~~ | ~~**P33**~~ | ✅ facet dropdowns removed; grid Sort-by + Group-by; list column-click sort; small view cut | done |
 | ~~2h~~ | ~~**P23**~~ | ✅ folder tags (p28) + UI (owner picked V1); one follow-up: upload subfolder rows (P22) | done |
 | ~4h | **P31** | one modifier-based search everywhere (channel msg ↔ server file) | med-hard |
 | ~4h | **P35** | loading animations everywhere; replace the spinning search icon | med |
@@ -722,12 +722,22 @@ optimistic send (P30), viewer ←/→ + Esc. These are the baseline the C-items 
       spacing eases between densities (list → small → … → large thumbnails). *Files:*
       `app/screens/explorer.js` (VIEWS → a density scale), `styles/content.css`/`shell.css` (density
       steps). *Hard.* **Supersedes the discrete P14 modes** (keep list/small/large as slider anchors).
-- [ ] **P33 · Filter rework: only Hidden + Starred; add Group-by & Sort-by.** Remove ALL the explorer
-      filters **except Hidden and Starred** (Type/Channel/Uploader/Tag/Date go — search modifiers (P27/
-      P34) replace them). Keep sorting. Add a **Group by** dropdown AND a **Sort by** dropdown, each
-      with **extensive options** (name/date/size/type/uploader/tag-value/…; group by folder/type/
-      uploader/date/tag). *Files:* `app/screens/explorer.js` (toolbar: drop facets, add group/sort),
-      `styles/content.css`. *Med-hard.* **Removes the P8 Type / P11 Tag facets.**
+- [x] **P33 · Filter rework: only Hidden + Starred; add Group-by & Sort-by.** *Done (demo-verified,
+      light+dark, 0 pageerrors, owner 2026-08-31 — no mockups).* Dropped ALL the explorer facet
+      dropdowns (Type/Channel/Uploader/Tag/Date + the old Sort/dir buttons); only **Hidden** + **Starred**
+      remain. **Grid** view gains a single **Sort-by** dropdown (Newest/Oldest · Name A–Z/Z–A · Largest/
+      Smallest · File type · Uploader) + a **Group-by** dropdown (Kind/File type/Uploader/Date added →
+      section headers, folders lead their own "Folders" group). **List** view has neither — its **column
+      headers are click-to-sort** (asc/desc caret; Name/Type/Size/Uploader/Added), which also closes
+      **C6/C28**. `sortFiles` rebuilt with canonical-ascending comparators (+ type/uploader/date keys).
+      Tag-click-to-filter (P26) still populates `state.tags` — the deferred tag session owns the rest.
+      *Files:* `app/screens/explorer.js`, `styles/content.css`. **Also in this pass** (owner extras):
+      the **Small-icons view was cut** (Grid + List only); the **folder file-count** was removed from grid
+      tiles; **folders are now selectable** by click/⌘-click/marquee (`selFolder`→`selFolders` Set); the
+      **star** is one top-left click-toggle in both densities (see B33); the hover **name-scroll snaps
+      back instantly**; and a **hairline separates the toolbar from the pane**. *Remaining:* the search-
+      modifier replacement for the removed facets is the P27/P34 + tag-session work; folder **drag-to-
+      reparent** needs a backend move RPC (deferred — no `move_to_folder` for folders yet).
 >
 > **— Media / messages —**
 - [x] **B30 · Expanded media view closes on tab refocus.** *Done (root-caused + fixed; live-QA claim
@@ -767,12 +777,15 @@ optimistic send (P30), viewer ←/→ + Esc. These are the baseline the C-items 
       when it opens (very annoying). Make it an **overlay** (float over the grid / absolute) so it
       doesn't reflow the pane. *Files:* `styles/content.css` (`.selbar`), maybe `app/screens/explorer.js`.
       *Easy-med.*
-- [ ] **B33 · Star: consistent, top-left, click-to-toggle across all densities.** Stars aren't visible
-      in **list** or **small-icon** modes; in **large** the star INDICATOR and the star SELECTOR are in
-      different spots, so on hover they swap positions (very annoying). Put ONE star at the **top-left of
-      the thumbnail/row** in every density — **click to star, click again to unstar** (no hunting).
-      *Files:* `app/cards.js` (merge `.cardstar` + the star action into one top-left toggle),
-      `app/screens/explorer.js` (list/small star), `styles/content.css`. *Med.* **Refines B16/#43.**
+- [x] **B33 · Star: consistent, top-left, click-to-toggle across all densities.** *Done (demo-verified
+      light+dark; star opacity 1 on hover, gold+filled when starred).* Merged the star INDICATOR and the
+      star SELECTOR into ONE control: `workCard` renders a single `.cardstar` at the thumbnail top-left
+      that is the toggle — a ghost star fades in on card hover so you can star, a starred card keeps it
+      visible + gold-filled; it's no longer in the top-right ⋯ hover cluster, so nothing swaps. Grid +
+      List both carry it (List rows lead with a `.flstar`; folder rows get an aligning spacer). The
+      colliding corner select-checkbox (`.cardsel`, the old "weird white square" B16) was removed — the
+      star owns top-left and selection shows via the `.card.sel` ring. *Files:* `app/cards.js`,
+      `app/screens/explorer.js`, `styles/content.css`. **Closes B16/#43.**
 - [x] **P28 · More right-click menus in the file browser, spawned at the cursor.** *Done (headless-
       verified in demo).* `openMenu(anchor, items, {at:{x,y}})` gained a cursor-position option — when
       `at` is set the menu spawns at the pointer (clamped to the viewport) and never toggle-closes (a

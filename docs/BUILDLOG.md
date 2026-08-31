@@ -2979,3 +2979,29 @@ NEXT: the two remaining round-11 owner asks — the returning-sign-in→account-
 GOTCHA: workCard is shared by explorer/feed/profile — the band renders everywhere it's used. Feed uses
   post cards (not workCard) so it's unaffected; profile shelves pass hue:false → pfp shows initials, no
   member colour (correct: hue is server-scoped). Small/list densities use flrow/smallcard, NOT the band.
+
+## 2026-08-31 — explorer filter/sort/group rework + folder selection + star (P33, B33 + owner extras)
+IN PROGRESS: (cleared)
+DONE: committed <sha>. Demo-verified (headless Chromium, light + dark, 0 pageerrors) — server + personal
+  explorer, grid + list, grouped. Owner asked to "knock out the easiest, no mockups" + a batch of extras.
+  Explorer (`app/screens/explorer.js`, `app/cards.js`, `styles/content.css`):
+  - **P33** — removed EVERY facet dropdown (Type/Channel/Uploader/Tag/Date + the old Sort/dir buttons);
+    only **Hidden + Starred** toggles remain. **Grid** gets a single **Sort-by** dropdown + a **Group-by**
+    dropdown (Kind/File type/Uploader/Date → section headers, folders lead a "Folders" group). **List**
+    sorts by **clicking a column header** (asc/desc caret) — closes C6/C28. `sortFiles` rebuilt with
+    canonical-ascending comparators + new type/uploader/date keys; `groupFiles`/`dateBucket` added.
+  - **Small-icons view cut** — VIEWS is now just Grid + List (old small/grid/feed alias → large).
+  - **B33 star** — one `.cardstar` top-left is both indicator + toggle (ghost on hover, gold+filled when
+    starred); removed from the ⋯ cluster so nothing swaps; list rows lead with a `.flstar`. Removed the
+    colliding corner select-checkbox `.cardsel` (the B16 "white square") — selection shows via `.card.sel`.
+  - **Folders selectable** — `state.selFolder` (single) → `state.selFolders` (Set); marquee + click +
+    ⌘-click select folders, Esc/empty-click clears (verified: click=1, ⌘-click=2, marquee=3, Esc=0).
+  - **Folder file-count removed** from grid tiles (kept in list + Properties).
+  - **Name-scroll snaps back instantly** on mouseleave (kill the transition for the reset).
+  - **Toolbar↔pane hairline** (`.panebody` inset top line) so the selectable area reads distinctly.
+NEXT: the search-modifier system that replaces the removed facets (P27 filter/search split, P34 modifier
+  grammar + hints, K12 indexing); P32 density slider. Tag session (P38 + custom types) stays deferred.
+GOTCHA: no `move_to_folder` RPC exists for FOLDERS (only per-work) — so folder **drag-to-reparent** was
+  left out of this pass (folders are drop *targets* + selectable, but not draggable yet). Add a folder-
+  reparent RPC before wiring folder drag. `openFilterMenu`/`multiBtn`/`SORT_LABEL`/`DATES` are now unused
+  in explorer.js (left in place, harmless) — remove if a later pass touches that region.
