@@ -85,8 +85,14 @@
 .toolbar .tbfilters .hdctl{margin-left:2px}
 /* bottom-right floating action cluster — the bare square eski buttons (plain New folder +
    primary Upload), no backing box; each button carries its own fill so it reads over the grid. */
-.exfab{position:absolute;right:var(--s5);bottom:var(--s4);display:flex;gap:var(--s2);z-index:5}
+.exfab{position:absolute;right:var(--s5);bottom:calc(30px + var(--s3));display:flex;gap:var(--s2);z-index:5}   /* C17: lifted above the status strip */
 .pane.hasfab .panebody{padding-bottom:52px}
+/* C17 status strip — a --surface step at the pane foot; item count / selection tally / current sort */
+.exstatus{flex:none;height:30px;display:flex;align-items:center;gap:var(--s3);padding:0 var(--s4);background:var(--surface);color:var(--muted);font-size:var(--fs-xs);font-variant-numeric:tabular-nums}
+.exstatus .stsel{color:var(--ink);font-weight:600}
+.exstatus .sp{flex:1}
+.exstatus .stsort{display:inline-flex;align-items:center;gap:6px}
+.exstatus .stsort .ic{width:13px;height:13px}
 
 /* ── File explorer (P5.4): nested tree + views ───────────────────────────── */
 .explayout{flex:1;min-width:0;display:flex;overflow:hidden}

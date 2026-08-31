@@ -520,7 +520,24 @@ function paint(tree, pane, data, state, rerender) {
     el("button.btn.primary", { onClick: () => openUpload(uploadOpts) }, [iconEl("plus", "sm"), "Upload"]),
   ]);
   pane.classList.toggle("hasfab", !!fab);
-  pane.replaceChildren(...[pathline, toolbar, selbar, body, fab].filter(Boolean));
+  // C17: a quiet status strip at the pane foot — item count at rest, "N selected · size" on select,
+  // and the current sort on the right. Updated by updateStatus() from refreshSel (fires on selection
+  // change and after every repaintBody). Lives between the body and the floating fab.
+  const statusbar = el(".exstatus");
+  pane.replaceChildren(...[pathline, toolbar, selbar, body, statusbar, fab].filter(Boolean));
+  function updateStatus() {
+    const items = body.querySelectorAll("[data-id], [data-folder-id]").length;
+    const n = state.selection.size;
+    let left;
+    if (n) {
+      const bytes = (state._files || []).filter((w) => state.selection.has(w.id)).reduce((s, w) => s + (w.bytes || 0), 0);
+      left = el("span.stsel", {}, [`${n} selected${bytes ? " · " + fmtBytes(bytes) : ""}`]);
+    } else {
+      left = el("span", {}, [`${items} item${items === 1 ? "" : "s"}`]);
+    }
+    statusbar.replaceChildren(left, el("span.sp"), el("span.stsort", {}, [iconEl("sort", "sm"), SORT_LABEL[state.sort] || "Latest"]));
+  }
+  state._updateStatus = updateStatus;
 
   // B6: clicking an empty area of the pane (not a card, not the bulk bar) clears the selection —
   // the Google-Drive gesture. A card's own click handler stops here (closest('.card')). B10: a
@@ -645,6 +662,7 @@ function paint(tree, pane, data, state, rerender) {
       el("span.sp"),
       selAct("x", "Clear", () => { state.selection.clear(); state.lastIdx = -1; refreshSel(); }),
     );
+    state._updateStatus?.();   // C17: keep the status strip's count/size/sort live
   }
 
   repaintBody();
