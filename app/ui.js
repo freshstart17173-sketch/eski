@@ -318,6 +318,79 @@ export function indetBar() {
   return el(".indetbar", { role: "progressbar", "aria-label": "Loading" }, [el(".indetfill")]);
 }
 
+// ── P36 · crop/zoom modal for image uploads ─────────────────────────────────────
+// One modal for adjusting a picked image (pan + zoom) before it's uploaded — used by the
+// profile pfp/banner and the server icon/cover flows, which previously PUT the raw file.
+// cropImage(file, opts) → Promise<Blob|null> (null = cancelled). Insert it between the file
+// pick and uploadBlobs():  const out = await cropImage(file, {aspect:1, round:true}); if(!out) return;
+// Options: aspect (w/h of the crop frame, default 1), round (circular mask — avatars only, the
+// one place round is allowed), outW (output width px; height derives from aspect), title, apply.
+// The output is a re-encoded JPEG at the target size, so it also normalises huge source images.
+export function cropImage(file, { aspect = 1, round = false, outW = 512, title = "Adjust image", apply = "Apply" } = {}) {
+  return new Promise((resolve) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    // Viewport: a fixed on-screen crop frame. Square frames get a comfortable box; wide frames
+    // (banners/covers) get a fixed width and derive height from the aspect so the frame IS the ratio.
+    const Wv = aspect >= 1 ? 300 : 260, Hv = Math.round(Wv / aspect);
+    const stage = el(".cropstage", { style: `width:${Wv}px;height:${Hv}px` });
+    const imgEl = el("img.cropimg", { src: url, alt: "", draggable: "false" });
+    stage.append(imgEl);
+    if (round) stage.classList.add("round");
+    const zoom = el("input.cropzoom", { type: "range", min: "1", max: "3", step: "0.01", value: "1", "aria-label": "Zoom" });
+
+    let base = 1, z = 1, ox = 0, oy = 0, natW = 0, natH = 0;
+    const dw = () => natW * base * z, dh = () => natH * base * z;
+    function clamp() {                 // keep the image covering the frame (no empty gaps)
+      ox = Math.min(0, Math.max(Wv - dw(), ox));
+      oy = Math.min(0, Math.max(Hv - dh(), oy));
+    }
+    function paint() { clamp(); imgEl.style.width = dw() + "px"; imgEl.style.height = dh() + "px"; imgEl.style.transform = `translate(${ox}px,${oy}px)`; }
+    function setZoom(nz) { const cx = Wv / 2, cy = Hv / 2; const k = nz / z; ox = cx - (cx - ox) * k; oy = cy - (cy - oy) * k; z = nz; paint(); }  // zoom about the frame centre
+
+    let done = false;
+    const modal = openModal({
+      title,
+      body: el(".cropwrap", {}, [stage, el(".croprow", {}, [iconEl("image", "sm"), zoom])]),
+      footer: [
+        Button({ label: "Cancel", onClick: () => modal.close() }),
+        Button({ label: apply, variant: "primary", onClick: finish }),
+      ],
+      onClose: () => { URL.revokeObjectURL(url); if (!done) resolve(null); },   // close/Esc/scrim = cancel
+    });
+
+    imgEl.addEventListener("load", () => {
+      natW = img.naturalWidth || imgEl.naturalWidth; natH = img.naturalHeight || imgEl.naturalHeight;
+      base = Math.max(Wv / natW, Hv / natH);   // cover-fit at zoom 1
+      ox = (Wv - dw()) / 2; oy = (Hv - dh()) / 2; paint();
+    });
+    img.src = url;   // decode natural dims off-DOM (imgEl load also fires)
+
+    // Drag to pan (pointer capture so a fast drag doesn't drop outside the frame).
+    let dragging = false, px = 0, py = 0;
+    stage.addEventListener("pointerdown", (e) => { dragging = true; px = e.clientX; py = e.clientY; stage.setPointerCapture(e.pointerId); });
+    stage.addEventListener("pointermove", (e) => { if (!dragging) return; ox += e.clientX - px; oy += e.clientY - py; px = e.clientX; py = e.clientY; paint(); });
+    const endDrag = () => { dragging = false; };
+    stage.addEventListener("pointerup", endDrag); stage.addEventListener("pointercancel", endDrag);
+    zoom.addEventListener("input", () => setZoom(parseFloat(zoom.value)));
+
+    function finish() {
+      const outH = Math.round(outW / aspect);
+      const cv = el("canvas"); cv.width = outW; cv.height = outH;
+      const ctx = cv.getContext("2d");
+      const k = outW / Wv;   // frame→output scale; the on-screen transform maps 1:1 into the canvas
+      ctx.imageSmoothingQuality = "high";
+      ctx.drawImage(imgEl, ox * k, oy * k, dw() * k, dh() * k);
+      cv.toBlob((blob) => {
+        if (!blob) { toast({ message: "Couldn’t process the image" }); return; }
+        // carry a filename + type so uploadBlobs/hashing treat it like any picked file
+        const out = new File([blob], (file.name || "image").replace(/\.\w+$/, "") + ".jpg", { type: "image/jpeg" });
+        done = true; resolve(out); modal.close();
+      }, "image/jpeg", 0.9);
+    }
+  });
+}
+
 // ── P16 · determinate upload progress with a Drive-style minimize ────────────────
 // Replaces the old text-only "Hashing…/Uploading…/Posting…" line: an animated bar + %,
 // and a minimize that detaches a compact chip to the bottom-right so the upload keeps

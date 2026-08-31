@@ -3300,3 +3300,21 @@ NEXT: continue shortest-job-first through the open non-tag queue — P36 (crop/z
 GOTCHA: the first role-sim swallowed its own RESULTS via an `exception when others ... raise notice`
       handler (MCP execute_sql doesn't surface notices) — use the VERIFICATION.md pattern of letting
       `raise exception E'RESULTS:%'` propagate as the error (it both rolls back AND returns the string).
+
+## 2026-08-31 — P36 crop/zoom modal for image uploads
+IN PROGRESS: (cleared)
+DONE: committed <sha>. Shared `cropImage(file, {aspect, round, outW, title, apply})` in `app/ui.js`
+      returns a Promise<File|null>: a fixed-aspect crop frame the picked image pans (drag) + zooms
+      (slider 1–3×, about the frame centre) inside, clamped to always cover the frame; Apply draws the
+      on-screen transform 1:1 into a <canvas> and re-encodes JPEG @0.9 (also normalises oversized
+      sources). Wired between file-pick and uploadBlobs() in all 4 image flows: profile pfp (1:1 round
+      mask), profile banner (3:1), server icon (1:1 square --r), server cover (3:1). Cancel/Esc/scrim →
+      null (no upload). CSS `.cropstage/.cropimg/.cropzoom` in primitives.css (round variant masks a
+      circle — the one allowed round element). Verified in demo via the real module: round + wide
+      modals render 0 pageerrors; clicking Apply on the wide variant resolves a real File
+      (wide.jpg, image/jpeg, 3573 bytes). Live R2 round-trip is session-gated → QA-CHECKLIST.
+NEXT: pivot to file-browser work (owner redirect 2026-08-31) — the explorer C16–C33 conventions gaps
+      + P37 (multi-file zip download) / P32 (density slider) / P27 deep-search-returns-folders.
+GOTCHA: the crop output must carry a filename + type (wrap the canvas Blob in a File) so the existing
+      hash/uploadBlobs path treats it like any picked file; a bare Blob would lose the extension the
+      R2 key derives from.

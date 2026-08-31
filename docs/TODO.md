@@ -896,9 +896,17 @@ optimistic send (P30), viewer ←/→ + Esc. These are the baseline the C-items 
       `app/ui.js` (`loadingLabel`, `indetBar`), `styles/primitives.css` (`.dots`/`dotpulse`,
       `.indetbar`/`.indetfill`), `styles/content.css` (`.searchloading`), `app/screens/explorer.js`,
       `app/screens/settings.js`, `app/screens/usersettings.js`. Extends **P3/P16**.
-- [ ] **P36 · Crop/zoom modal for image uploads.** Uploading a **server icon/cover** or a **profile
-      pfp/banner** needs a UI element/modal to **adjust crop + zoom** before saving. *Files:* a new
-      crop modal (`app/ui.js`/a screen), `app/screens/profile.js`, `app/screens/settings.js`. *Med-hard.*
+- [x] **P36 · Crop/zoom modal for image uploads.** *Done (demo-verified: round + wide variants render
+      0 pageerrors, Apply resolves a real cropped `image/jpeg` File; live R2 upload session-gated → QA).*
+      New shared **`cropImage(file, {aspect, round, outW, title, apply}) → Promise<Blob|null>`** in
+      `app/ui.js`: a fixed-aspect crop frame the picked image **pans (drag) + zooms (slider, 1–3×,
+      about the frame centre)** inside, clamped to always cover the frame; Apply draws the on-screen
+      transform 1:1 into an output `<canvas>` and re-encodes JPEG @0.9 (also normalises huge sources).
+      Inserted between the file-pick and `uploadBlobs()` in all four flows: profile **pfp** (1:1, round
+      mask — the one place round is allowed), profile **banner** (3:1), server **icon** (1:1, `--r`
+      square), server **cover** (3:1). Cancel/Esc/scrim resolves null (no upload). *Files:* `app/ui.js`
+      (`cropImage`), `styles/primitives.css` (`.cropstage`/`.cropimg`/`.cropzoom`, round variant),
+      `app/screens/profile.js`, `app/screens/settings.js`. *Med-hard.*
 - [x] **B36 · Path bar has a black separator bar (dark mode).** *Done (dark-mode screenshot-verified).*
       Root cause was a background step: `.expath` (the path line) was `background:var(--surface)` while the
       `.toolbar` directly below and the `.pane` are both `--paper`. In dark mode `--surface` (#171717) on

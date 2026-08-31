@@ -63,6 +63,18 @@
 .indetfill{position:absolute;top:0;left:0;height:100%;width:34%;background:var(--ink);
   border-radius:inherit;animation:uplslide 1.05s ease-in-out infinite}
 
+/* P36 — crop/zoom modal (ui.js cropImage). A fixed-aspect crop frame the picked image pans/zooms
+   inside, above a zoom slider. The frame is the ratio; a round variant masks a circle for avatars
+   (the one place round is allowed). Chrome radius --r on square frames; media itself stays square. */
+.cropwrap{display:flex;flex-direction:column;gap:var(--s3);align-items:center}
+.cropstage{position:relative;overflow:hidden;border-radius:var(--r);background:var(--paper1);
+  cursor:grab;touch-action:none;user-select:none}
+.cropstage:active{cursor:grabbing}
+.cropstage.round{border-radius:50%}
+.cropimg{position:absolute;top:0;left:0;max-width:none;pointer-events:none;transform-origin:0 0}
+.croprow{display:flex;align-items:center;gap:var(--s2);width:100%;color:var(--muted)}
+.cropzoom{flex:1;accent-color:var(--ink)}
+
 /* P16 — upload progress (ui.js uploadProgress): an animated determinate bar + %, inline in the
    modal; minimize floats a compact chip bottom-right that keeps tracking while you work. */
 .uplwidget{display:flex;flex-direction:column;gap:8px;margin-top:var(--s3);padding:var(--s3);

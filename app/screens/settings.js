@@ -6,7 +6,7 @@
 // — only where it lives. Admin-gated by the caller (main.js loads the workspace bundle, which
 // carries isAdmin/isOwner); a non-admin sees a read-only-ish subset (no Save/Delete).
 
-import { el, toast, Avatar, Button, openModal, busyOverlay, withBusy, loadingLabel } from "../ui.js";
+import { el, toast, Avatar, Button, openModal, busyOverlay, withBusy, loadingLabel, cropImage } from "../ui.js";
 import { iconEl } from "../icons.js";
 import { navigate, reload } from "../router.js";
 import { isDemo, updateServer, loadServerPrefs, setServerPrefs, loadAuditLog, loadJoinRequests, approveJoinRequest, declineJoinRequest, deleteServer, leaveServer, createInvite, loadInvites, revokeInvite } from "../data.js";
@@ -62,9 +62,13 @@ function overviewPanel(data) {
   const coverPrev = el(".cv", { style: "height:96px;border-radius:var(--r);background:var(--paper1) center/cover no-repeat;display:grid;place-items:center;overflow:hidden" },
     [avatarUrl(s.cover_key) ? el("img", { src: avatarUrl(s.cover_key), alt: "", style: "width:100%;height:100%;object-fit:cover" }) : iconEl("image")]);
   const pick = (field, prev, round) => {
+    const isIcon = field === "icon_key";
     const input = el("input", { type: "file", accept: "image/*", style: "position:fixed;left:-9999px;opacity:0" });
     input.addEventListener("change", async () => {
-      const file = input.files?.[0]; input.value = ""; if (!file) return;
+      const picked = input.files?.[0]; input.value = ""; if (!picked) return;
+      // P36: crop/zoom before upload — icon is a square (--r) tile, cover is a wide 3:1 banner.
+      const file = await cropImage(picked, isIcon ? { aspect: 1, title: "Adjust icon", apply: "Set icon" } : { aspect: 3, outW: 1200, title: "Adjust cover", apply: "Set cover" });
+      if (!file) return;   // cancelled
       const stop = busyOverlay(prev);   // P3: spinner over the icon/cover preview during the round-trip
       try {
         let src;

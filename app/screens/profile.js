@@ -4,7 +4,7 @@
 // friend; a friend sees Public + Server + Message. Same card renderer as the Feed,
 // NO member colour (a public profile is never server-scoped).
 
-import { el, toast, Avatar, PresenceDot, SelectPill, openModal, Button, busyOverlay } from "../ui.js";
+import { el, toast, Avatar, PresenceDot, SelectPill, openModal, Button, busyOverlay, cropImage } from "../ui.js";
 import { iconEl } from "../icons.js";
 import { navigate, reload } from "../router.js";
 import { workCard, avatarUrl } from "../cards.js";
@@ -208,8 +208,10 @@ export function openEditProfile(data, opts = {}) {
   setBanner(avatarUrl(p.banner_key));
   const bannerInput = el("input", { type: "file", accept: "image/*", style: "display:none" });
   bannerInput.addEventListener("change", async () => {
-    const file = bannerInput.files?.[0]; bannerInput.value = "";
-    if (!file) return;
+    const picked = bannerInput.files?.[0]; bannerInput.value = "";
+    if (!picked) return;
+    const file = await cropImage(picked, { aspect: 3, outW: 1200, title: "Adjust banner", apply: "Set banner" });   // P36: wide crop before upload
+    if (!file) return;   // cancelled
     const stop = busyOverlay(bannerWell);   // P3: spinner over the banner well during the round-trip
     try {
       let src;
