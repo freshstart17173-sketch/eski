@@ -212,7 +212,7 @@ drag, whitespace" ask). These are look-and-feel/interaction, so most carry the *
 | **C27** | Inline rename (F2/Enter/slow-click, basename pre-selected) + inline "untitled folder" in rename mode — not modal dialogs | D5 |
 | **C28** | List headers inert — click-sort (+caret), drag-resize, drag-reorder, choose columns | D6 |
 | ~~**C29**~~ | ✅ docked info panel on select (right column, `i` toggles; reuses details.js metaRows) — the big viewer still opens files — reconciled 2026-08-31 (was already built) | D7 |
-| **C30** | Breadcrumb overflow collapses to a "…" menu (deep paths clip today); self-describing view (count/sort near path) | D8 |
+| ~~**C30**~~ | ✅ deep breadcrumb collapses the middle to a "…" menu (root › … › parent › current); last 2 crumbs stay — 2026-08-31. (Count/sort near the path already live in the C17 status strip.) | D8 |
 | **C31** | Loading **skeleton** grid + empty folder as a real **drop zone** (not just text) | D9 |
 | **C32** | Consistent corner **badges** (shared/hidden/locked/has-tags) + folder content-preview hint + correct per-kind icons | D10 |
 | ~~**C33**~~ | ✅ Quick Look — Space on a selected file opens the viewer, Space/Esc closes, ←/→ arrow through — 2026-08-31 | D11 |

@@ -184,6 +184,8 @@ export function demoExplorer(source = "server") {
     folders: [
       { id: "beats", name: "beats", parentId: null, archived: false, locked: false, count: 4, tags: ["genre:trap", "bpm:140", "wip", "key:G min", "hard"], createdAt: new Date(Date.now() - 2 * 3600e3).toISOString() },
       { id: "drums", name: "drums", parentId: "beats", archived: false, locked: false, count: 0, tags: [], createdAt: new Date(Date.now() - 1 * 3600e3).toISOString() },
+      { id: "kicks", name: "kicks", parentId: "drums", archived: false, locked: false, count: 0, tags: [], createdAt: new Date(Date.now() - 1 * 3600e3).toISOString() },
+      { id: "k808s", name: "808s", parentId: "kicks", archived: false, locked: false, count: 0, tags: [], createdAt: new Date(Date.now() - 1 * 3600e3).toISOString() },
       { id: "verses", name: "verses", parentId: null, archived: false, locked: false, count: 0, tags: ["mood:dark"], createdAt: new Date(Date.now() - 26 * 3600e3).toISOString() },
       { id: "mixing", name: "mixing", parentId: null, archived: false, locked: false, count: 0, tags: [], createdAt: new Date(Date.now() - 4 * 86400e3).toISOString() },
       { id: "references", name: "references", parentId: null, archived: false, locked: false, count: 1, tags: ["genre:rnb", "key:F min"], createdAt: new Date(Date.now() - 20 * 86400e3).toISOString() },

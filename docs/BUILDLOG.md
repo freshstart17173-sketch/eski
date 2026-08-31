@@ -3390,3 +3390,19 @@ NEXT: more file-browser conventions — C18 (select-all/invert + mousedown click
 GOTCHA: type-ahead and single-letter shortcuts can't coexist in a file pane — the letter is data, not a
       command. Removed the only bare-letter shortcut (`i`) rather than have it randomly steal keystrokes;
       any future pane shortcut must use a modifier or a non-letter key.
+
+## 2026-08-31 — C30 breadcrumb overflow menu
+IN PROGRESS: (cleared)
+DONE: committed <sha>. A deep folder path now collapses its MIDDLE crumbs into a "…" overflow button
+      (root › … › parent › current, Windows/Drive) instead of wrapping/clipping — the last 2 folders
+      always show; everything between root and them lists in a menu off the "…". Paths ≤3 deep render
+      in full. Also enriched the demo fixture with a 4-deep branch (beats>drums>kicks>808s) so the
+      collapse is demoable/showcased. Verified headless: at 808s the crumbs read "📁 / … / kicks / 808s",
+      the "…" menu lists [beats, drums], a shallow path (beats) shows no overflow; screenshot saved; 0
+      pageerrors. *Files:* app/screens/explorer.js (crumb build), styles/content.css (.crumbmore),
+      app/demo.js (nested folders).
+NEXT: more file-browser conventions — C18 (select-all/invert + mousedown click-through), C31 (skeleton
+      grid + empty-folder drop zone), C32 (badges), or P37 (multi-file zip download).
+GOTCHA: the demo's deepest path was only 2 folders, so the collapse had nothing to exercise — added a
+      real 4-deep branch to the fixture rather than special-casing a test, which also makes the demo a
+      better showcase of nesting.

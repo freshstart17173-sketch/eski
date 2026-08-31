@@ -558,11 +558,22 @@ function paint(tree, pane, data, state, rerender) {
   crumbs.append(data.source === "server"
     ? el("button.crumbroot.home", { title: rootLabel(data), "aria-label": rootLabel(data), onClick: () => { state.folderId = null; rerender(); } }, [iconEl("folder", "sm")])
     : el("button.crumbroot", { onClick: () => { state.folderId = null; rerender(); } }, [rootLabel(data)]));
-  path.forEach((f, i) => {
-    crumbs.append(el("span.sl", {}, ["/"]));
-    if (i === path.length - 1) crumbs.append(el("b", {}, [f.name]));
-    else crumbs.append(el("button", { onClick: () => { state.folderId = f.id; rerender(); } }, [f.name]));
-  });
+  // C30: a deep path collapses its MIDDLE crumbs into a "…" menu so it never wraps/clips — root › … ›
+  // parent › current (Windows/Drive). The last two folders always stay visible; everything between
+  // root and them goes behind the overflow button. Shallow paths render in full.
+  const sep = () => crumbs.append(el("span.sl", {}, ["/"]));
+  const crumbBtn = (f) => crumbs.append(el("button", { onClick: () => { state.folderId = f.id; rerender(); } }, [f.name]));
+  const crumbCur = (f) => crumbs.append(el("b", {}, [f.name]));
+  const MAXCRUMB = 3;   // trailing folders shown before the path collapses
+  if (path.length <= MAXCRUMB) {
+    path.forEach((f, i) => { sep(); (i === path.length - 1 ? crumbCur : crumbBtn)(f); });
+  } else {
+    const hidden = path.slice(0, -2), tail = path.slice(-2);
+    sep();
+    crumbs.append(el("button.crumbmore", { title: "Show path", "aria-label": "Show hidden folders", onClick: (e) =>
+      openMenu(e.currentTarget, hidden.map((f) => ({ label: f.name, icon: "folder", onClick: () => { state.folderId = f.id; rerender(); } }))) }, ["…"]));
+    tail.forEach((f, i) => { sep(); (i === tail.length - 1 ? crumbCur : crumbBtn)(f); });
+  }
   // The query term is a live ref: repaintBody() (search-as-you-type) updates it, since the
   // searchState node is built once here but shown on every keystroke (else it read stale/empty).
   const searchQ = el("b", {}, [state.query]);

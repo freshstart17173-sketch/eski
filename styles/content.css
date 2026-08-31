@@ -207,6 +207,7 @@
 .crumbs{display:flex;align-items:center;gap:7px;font-size:var(--fs-sm);color:var(--muted);min-width:0;flex-wrap:wrap}
 .crumbs button{color:var(--soft)}.crumbs button:hover{color:var(--ink)}
 .crumbs b{color:var(--ink)}.crumbs .sl{color:var(--line2)}
+.crumbs .crumbmore{padding:0 3px;font-weight:700;letter-spacing:1px;line-height:1}   /* C30: overflow "…" opener */
 .hdctl{margin-left:auto;display:flex;align-items:center;gap:var(--s2)}
 /* P32 · density slider (replaces the Grid/List dropdown). A compact range flanked by a rows icon
    (dense/list end) and a grid icon (large end). The thumb is a SQUARE (--r) ink handle, not a native
