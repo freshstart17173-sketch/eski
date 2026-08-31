@@ -18,7 +18,7 @@ import { iconEl } from "../icons.js";
 import { parseTag, TAG_TYPES, tagChip, tagEditor } from "../tags.js";
 import { addFolderTag, removeFolderTag } from "../data.js";
 import { navigate, reload } from "../router.js";
-import { createFolder, moveToFolder, trashWorks, restoreWork, purgeWork, emptyTrash, loadTrash, starWork, unstarWork, saveToFiles, renameWork, setHidden, createShareLink, shareUrl, loadShareLinks, revokeShareLink, setVisibility, visFromDb, createFolderShare, folderShareUrl, requestToJoin, refreshStorage, searchFiles } from "../data.js";
+import { createFolder, moveToFolder, moveFolderTo, trashWorks, restoreWork, purgeWork, emptyTrash, loadTrash, starWork, unstarWork, saveToFiles, renameWork, setHidden, createShareLink, shareUrl, loadShareLinks, revokeShareLink, setVisibility, visFromDb, createFolderShare, folderShareUrl, requestToJoin, refreshStorage, searchFiles } from "../data.js";
 import { workCard, folderCard, mediaUrl, KIND_ICON, downloadWork, baseName } from "../cards.js";
 import { channelColumn } from "./workspace.js";
 import { openUpload, enableDropUpload } from "./upload.js";
@@ -592,6 +592,7 @@ function paint(tree, pane, data, state, rerender) {
   // (Shift/⌘ adds to the current selection). Native card drag is separate (starts on a card), so
   // the two don't fight. Both handlers live on the persistent `body` (survives a repaint).
   let dragIds = [];
+  let dragFolderIds = [];   // folder(s) being dragged — separate from dragIds (files)
   if (!data.shared) {
     body.addEventListener("pointerdown", (e) => {
       if (e.button !== 0 || e.target.closest("[data-id]") || e.target.closest("[data-folder-id]") || e.target.closest(".selbar") || e.target.closest(".exfab")) return;
@@ -627,13 +628,32 @@ function paint(tree, pane, data, state, rerender) {
       window.addEventListener("pointermove", move); window.addEventListener("pointerup", up);
     });
 
-    // Native drag: a file card dropped onto another FILE makes a folder from them; onto a FOLDER
-    // moves them in. Multi-drag when the grabbed card is part of a 2+ selection.
+    // Native drag: a FILE card dropped onto another FILE makes a folder from them; onto a FOLDER
+    // moves them in. A FOLDER card dropped onto another FOLDER reparents it (owner 2026-08-31); a
+    // folder drag ignores a file target (no action there). Multi-drag when the grabbed card is part
+    // of a 2+ selection (files → state.selection, folders → state.selFolders).
     body.addEventListener("dragstart", (e) => {
+      const fcard = e.target.closest("[data-folder-id]");
+      if (fcard) {
+        const id = fcard.dataset.folderId;
+        dragFolderIds = (state.selFolders.has(id) && state.selFolders.size > 1) ? [...state.selFolders] : [id];
+        dragIds = [];
+        e.dataTransfer.effectAllowed = "move";
+        try { e.dataTransfer.setData("text/plain", dragFolderIds.join(",")); } catch { /* Safari */ }
+        try {
+          const ghost = el(".dragghost", {}, [iconEl("folder", "sm")]);
+          if (dragFolderIds.length > 1) ghost.append(el(".dgcount", {}, [String(dragFolderIds.length)]));
+          document.body.appendChild(ghost);
+          e.dataTransfer.setDragImage(ghost, 17, 17);
+          setTimeout(() => ghost.remove(), 0);
+        } catch { /* setDragImage unsupported → default ghost */ }
+        return;
+      }
       const card = e.target.closest("[data-id]");   // P14: a file element in any density
       if (!card) { dragIds = []; return; }
       const id = card.dataset.id;
       dragIds = (state.selection.has(id) && state.selection.size > 1) ? [...state.selection] : [id];
+      dragFolderIds = [];
       e.dataTransfer.effectAllowed = "move";
       try { e.dataTransfer.setData("text/plain", dragIds.join(",")); } catch { /* Safari */ }
       // B31: drag a small kind-icon token, NOT the full card thumbnail (owner: "miniaturized icons
@@ -655,10 +675,27 @@ function paint(tree, pane, data, state, rerender) {
     const clearDrop = () => { if (curDrop) { curDrop.classList.remove("droptarget", "dropfolder", "dropfile"); curDrop.querySelector(".droppill")?.remove(); curDrop = null; } };
     const autoScroll = (y) => { const r = body.getBoundingClientRect(), m = 52; if (y < r.top + m) body.scrollTop -= 16; else if (y > r.bottom - m) body.scrollTop += 16; };
     body.addEventListener("dragover", (e) => {
-      if (!dragIds.length) return;   // only our own file drags (OS-file uploads are handled elsewhere)
+      const draggingFolder = dragFolderIds.length > 0;
+      if (!dragIds.length && !draggingFolder) return;   // only our own drags (OS-file uploads are handled elsewhere)
       autoScroll(e.clientY);
       const t = e.target.closest("[data-id], [data-folder-id]");
-      if (!t || dragIds.includes(t.dataset.id)) { if (t !== curDrop) clearDrop(); return; }
+      if (!t) { clearDrop(); return; }
+      if (draggingFolder) {
+        // a folder drag only accepts a FOLDER target — never a file, never itself, never its own
+        // descendant (a client-side check; the server RPC re-checks the cycle for a server folder,
+        // but a personal-folder move has no RPC gate, so this guard is load-bearing there).
+        const tid = t.dataset.folderId;
+        const invalid = tid == null || dragFolderIds.includes(tid) || dragFolderIds.some((id) => folderInSubtree(data.folders, id, tid));
+        if (invalid) { if (t !== curDrop) clearDrop(); return; }
+        e.preventDefault();
+        try { e.dataTransfer.dropEffect = "move"; } catch { /* Safari */ }
+        if (t === curDrop) return;
+        clearDrop(); curDrop = t;
+        t.classList.add("droptarget", "dropfolder");
+        (t.querySelector(".media") || t).appendChild(el(".droppill", {}, [iconEl("move", "sm"), `Move ${dragFolderIds.length} here`]));
+        return;
+      }
+      if (dragIds.includes(t.dataset.id)) { if (t !== curDrop) clearDrop(); return; }
       e.preventDefault();
       try { e.dataTransfer.dropEffect = "move"; } catch { /* Safari */ }
       if (t === curDrop) return;
@@ -674,6 +711,15 @@ function paint(tree, pane, data, state, rerender) {
     body.addEventListener("drop", (e) => {
       const t = e.target.closest("[data-id], [data-folder-id]");
       clearDrop();
+      if (dragFolderIds.length) {
+        const ids = dragFolderIds; dragFolderIds = [];
+        if (!t || t.dataset.folderId == null) return;
+        const tid = t.dataset.folderId;
+        if (ids.includes(tid) || ids.some((id) => folderInSubtree(data.folders, id, tid))) return;
+        e.preventDefault();
+        moveFoldersInto(data, state, rerender, ids, tid);
+        return;
+      }
       if (!t || !dragIds.length) return;
       e.preventDefault();
       const ids = dragIds.filter((x) => x !== t.dataset.id); dragIds = [];
@@ -1079,6 +1125,7 @@ function wireFileEl(node, w, i, { onCardClick, openFile, onMenu }) {
 }
 function wireFolderEl(node, f, { onFolderClick, openFolder, onShareFolder }) {
   node.dataset.folderId = f.id;   // B10: a drop target
+  if (onShareFolder) node.draggable = true;   // onShareFolder is only wired on a real (non-shared) mount — drag a folder to reparent it
   node.addEventListener("click", (e) => onFolderClick(f, e));
   node.addEventListener("dblclick", (e) => { e.preventDefault(); openFolder(f); });
   node.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); openFolder(f); } });
@@ -1344,6 +1391,32 @@ function makeFolderFrom(data, state, rerender, ids) {
     rerender();
     toast({ message: `Made “${name}” from ${ids.length} file${ids.length > 1 ? "s" : ""}` });
   });
+}
+
+// true if `folderId` IS `maybeAncestor` or lies in its subtree — dropping `maybeAncestor` there
+// would create a cycle. null folderId (root) never cycles.
+function folderInSubtree(folders, maybeAncestor, folderId) {
+  if (folderId == null) return false;
+  let cur = folders.find((f) => f.id === folderId);
+  while (cur) {
+    if (cur.id === maybeAncestor) return true;
+    cur = cur.parentId ? folders.find((f) => f.id === cur.parentId) : null;
+  }
+  return false;
+}
+
+// owner 2026-08-31 — drag a folder card onto another folder to reparent it. Server folders reuse
+// move_to_folder (cycle-checked server-side too); personal folders are a direct save_folders update
+// (folderInSubtree above is the only cycle guard there — see moveFolderTo in data.js).
+async function moveFoldersInto(data, state, rerender, folderIds, destFolderId) {
+  try {
+    if (!isDemoQS()) { for (const id of folderIds) await moveFolderTo(data.source, id, destFolderId || null); }
+    for (const f of data.folders) if (folderIds.includes(f.id)) f.parentId = destFolderId || null;
+    state.selFolders.clear();
+    rerender();
+    const dest = data.folders.find((f) => f.id === destFolderId)?.name || rootLabel(data);
+    toast({ message: `Moved ${folderIds.length} folder${folderIds.length > 1 ? "s" : ""} to “${dest}”` });
+  } catch (e) { toast({ message: e?.message || "Couldn’t move the folder" }); }
 }
 
 // B10 — move works into an existing folder (drag onto a folder card).

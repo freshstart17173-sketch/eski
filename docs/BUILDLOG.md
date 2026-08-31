@@ -3001,7 +3001,28 @@ DONE: committed <sha>. Demo-verified (headless Chromium, light + dark, 0 pageerr
   - **Toolbar↔pane hairline** (`.panebody` inset top line) so the selectable area reads distinctly.
 NEXT: the search-modifier system that replaces the removed facets (P27 filter/search split, P34 modifier
   grammar + hints, K12 indexing); P32 density slider. Tag session (P38 + custom types) stays deferred.
-GOTCHA: no `move_to_folder` RPC exists for FOLDERS (only per-work) — so folder **drag-to-reparent** was
-  left out of this pass (folders are drop *targets* + selectable, but not draggable yet). Add a folder-
-  reparent RPC before wiring folder drag. `openFilterMenu`/`multiBtn`/`SORT_LABEL`/`DATES` are now unused
-  in explorer.js (left in place, harmless) — remove if a later pass touches that region.
+GOTCHA: `openFilterMenu`/`multiBtn`/`SORT_LABEL`/`DATES` are now unused in explorer.js (left in place,
+  harmless) — remove if a later pass touches that region. **Correction (same day, next session):** the
+  "folder drag-to-reparent needs a backend RPC" note above was WRONG — `move_to_folder(target, folder_id)`
+  (schema-12) already detects a folder `target` and reparents it (cycle-checked server-side); only the
+  client wiring was missing. See the entry below — it's built now.
+
+## 2026-08-31 — folder drag-to-move (closes the deferred half of P33/B10)
+IN PROGRESS: (cleared)
+DONE: committed <sha>. Demo-verified (headless DnD simulation — dragstart/dragover/drop dispatched
+  directly since Playwright's mouse API can't drive native HTML5 DnD reliably): dragging a folder card
+  onto another folder card nests it (tree + grid both update, a toast confirms), 0 pageerrors; the
+  cycle-guard (`folderInSubtree`) unit-tested in isolation (ancestor→descendant rejected, onto-self
+  rejected, onto-root always fine, moving a folder UP to its own ancestor is correctly allowed).
+  - `moveFolderTo(source, folderId, destFolderId)` (`app/data.js`) — server reuses the existing
+    `move_to_folder` RPC (it already reparents a folder `target`, cycle-checked server-side); personal
+    is a direct `save_folders.parent_id` update (the SIMPLE owner-only RLS class, K8's reliable tier).
+  - `app/screens/explorer.js`: `wireFolderEl` sets `draggable=true` (gated same as the owner menu —
+    never on a shared read-only view); `dragstart`/`dragover`/`drop` now branch on folder-vs-file drags
+    (`dragFolderIds` alongside the existing `dragIds`); a folder drag only accepts a FOLDER drop target,
+    never itself or its own descendant (`folderInSubtree`, client-side — load-bearing for the personal
+    case since `save_folders` has no server-side cycle check); `moveFoldersInto` does the write + the
+    optimistic `data.folders` patch + toast, mirroring `moveInto`'s pattern for files.
+NEXT: same as the prior entry (P27/P34 search-modifier system, P32 density slider, tag session).
+GOTCHA: dragging a MULTI-folder selection moves them one RPC call at a time (a simple loop, not
+  batched) — fine at the sizes a folder tree realistically has; revisit only if that's ever a problem.

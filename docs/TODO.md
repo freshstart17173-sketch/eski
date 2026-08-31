@@ -735,9 +735,12 @@ optimistic send (P30), viewer ←/→ + Esc. These are the baseline the C-items 
       the **Small-icons view was cut** (Grid + List only); the **folder file-count** was removed from grid
       tiles; **folders are now selectable** by click/⌘-click/marquee (`selFolder`→`selFolders` Set); the
       **star** is one top-left click-toggle in both densities (see B33); the hover **name-scroll snaps
-      back instantly**; and a **hairline separates the toolbar from the pane**. *Remaining:* the search-
-      modifier replacement for the removed facets is the P27/P34 + tag-session work; folder **drag-to-
-      reparent** needs a backend move RPC (deferred — no `move_to_folder` for folders yet).
+      back instantly**; a **hairline separates the toolbar from the pane**; and **folders can be dragged
+      onto another folder to reparent them** — `move_to_folder` already handled a folder `target`
+      server-side, so this only needed the client drag wiring + a client-side cycle guard for the
+      personal (`save_folders`) case, which has no server-side check (`moveFolderTo` in `app/data.js`).
+      *Remaining:* the search-modifier replacement for the removed facets is the P27/P34 + tag-session
+      work.
 >
 > **— Media / messages —**
 - [x] **B30 · Expanded media view closes on tab refocus.** *Done (root-caused + fixed; live-QA claim

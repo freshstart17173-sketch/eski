@@ -680,6 +680,24 @@ export async function moveToFolder({ source = "server", works = [], destFolderId
   }
 }
 
+// Reparent a FOLDER itself (not its contents) — server folders reuse the SAME `move_to_folder` RPC
+// as a file move: it detects the target is a folder row and reparents it, rejecting a cross-server
+// move and a cycle (moving a folder into its own subtree) server-side. Personal folders have no such
+// RPC — `save_folders` RLS is the simple owner-only class (K8: `user_id = auth.uid()`, reliable), so
+// a direct update is correct here; the caller (explorer.js) runs its own client-side cycle check
+// before calling this, since nothing server-side guards it for the personal case.
+export async function moveFolderTo(source, folderId, destFolderId = null) {
+  if (source === "personal") {
+    const user = session();
+    if (!user) throw new Error("Sign in to move folders");
+    const { error } = await supabase.from("save_folders").update({ parent_id: destFolderId }).eq("id", folderId).eq("user_id", user.id);
+    if (error) throw error;
+    return;
+  }
+  const { error } = await supabase.rpc("move_to_folder", { target: folderId, folder_id: destFolderId });
+  if (error) throw error;
+}
+
 // ── Trash (CANON §C.6 / §E.3) ────────────────────────────────────────────────
 // Soft-delete, restore, and hard-purge are plain client writes, not RPCs: the `works`
 // RLS already gates update/delete on `can_write_work` (author or server admin), a soft-
