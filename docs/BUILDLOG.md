@@ -3422,3 +3422,21 @@ NEXT: file-browser — C31 (skeleton grid + empty-folder drop zone), C32 (corner
 GOTCHA: "Select all" that grabbed only files (state._files) silently ignored folders — a real
       inconsistency once folders became selectable (P33). Both ⌘A and the menu now query the DOM for
       [data-folder-id] so they stay correct regardless of how the folder set is stored.
+
+## 2026-08-31 — C31 empty-folder drop zone
+IN PROGRESS: (cleared)
+DONE: committed <sha>. An empty (non-shared, non-search) folder now renders as a dashed DROP ZONE panel
+      ("This folder is empty · Drag files here to upload, or use New folder below.") instead of a bare
+      line of text — the pane's enableDropUpload already accepts an OS-file drop anywhere, so this is the
+      resting affordance for it (the `.dropping` overlay in base.css is still the drag-over feedback).
+      emptyState() gained a {dropzone} flag; shared empty folders keep a plain read-only message.
+      Verified: empty folder (verses) shows .emptystate.dropzone both themes, 0 pageerrors; screenshot saved.
+      The skeleton-grid half of C31 is N/A by architecture — loadExplorer returns the whole tree in one
+      bundle so folder nav is instant (no per-folder fetch to skeleton), and a server text search already
+      shows the P35 indeterminate bar. Noted in the C-table.
+NEXT: file-browser — C32 (corner badges shared/hidden/locked/has-tags + per-kind icons), C19 (hover
+      affordances on list/small rows), C21 (spring-loaded folders), C23 (drop onto a specific folder), or
+      P37 (multi-file zip download).
+GOTCHA: don't build a loading skeleton for a browser that never waits — this explorer holds the whole
+      tree client-side, so a per-folder skeleton would be permanently-dead code; the only real async
+      (server search) already has its own affordance.

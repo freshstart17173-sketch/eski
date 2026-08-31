@@ -328,6 +328,10 @@
 .emptystate h3{font-size:var(--fs);font-weight:600;color:var(--soft);margin:0}
 .emptystate p{font-size:var(--fs-sm);max-width:280px;line-height:1.4;color:var(--muted);margin:0}
 .emptystate .btn{margin-top:var(--s3)}
+/* C31: an empty folder reads as a real DROP ZONE — a dashed panel inset from the pane edges, not a
+   bare line of text. The actual drag-over feedback is the pane's `.dropping` overlay (base.css); this
+   is the resting affordance that says "you can drop here". Square corners at --r (media stays square). */
+.emptystate.dropzone{margin:var(--s4);border:2px dashed var(--line2);border-radius:var(--r);min-height:calc(100% - 2*var(--s4))}
 .skel{background:var(--surface);border-radius:var(--r);position:relative;overflow:hidden}
 .skel::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.35),transparent);transform:translateX(-100%);animation:shimmer 1.3s infinite}
 :root:not([data-theme="light"]) .skel::after{background:linear-gradient(90deg,transparent,rgba(255,255,255,.06),transparent)}

@@ -1206,7 +1206,9 @@ function contents(data, state, rerender, sel) {
     if (state.starred) return emptyState("star", "No starred files", "Star a file (the ★ on its card) to keep it here.");
     return searching
       ? emptyState("search", "No results", `Nothing here matches “${state.query.trim()}”.`)
-      : emptyState("folder", "This folder is empty", "Upload files or create a subfolder to fill it.");
+      : data.shared
+        ? emptyState("folder", "This folder is empty", "Nothing has been shared here yet.")
+        : emptyState("folder", "This folder is empty", "Drag files here to upload, or use New folder below.", { dropzone: true });
   }
 
   // Google-Drive selection (§C.6): single click selects (clears others), ⌘/Ctrl-click
@@ -1787,9 +1789,12 @@ function openFilterMenu(anchor, options, selected, onChange) {
 }
 
 // ── shared empty state (CANON §C.6 reusable pattern) ─────────────────────────
-function emptyState(icon, title, sub) {
+// C31: an empty FOLDER passes {dropzone:true} to read as a real drop target (a dashed panel) rather
+// than a bare line of text — the pane's enableDropUpload already accepts an OS-file drop anywhere, so
+// this is the visual affordance for it. Other empty states (search/starred/trash) stay plain.
+function emptyState(icon, title, sub, { dropzone = false } = {}) {
   const eic = iconEl(icon); eic.classList.add("eic");
-  return el(".emptystate", {}, [eic, el("h3", {}, [title]), el("p", {}, [sub])]);
+  return el(".emptystate" + (dropzone ? ".dropzone" : ""), {}, [eic, el("h3", {}, [title]), el("p", {}, [sub])]);
 }
 
 function toggle(set, id) { set.has(id) ? set.delete(id) : set.add(id); }
