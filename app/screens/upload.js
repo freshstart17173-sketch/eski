@@ -13,7 +13,7 @@ import { openModal, VisibilitySeg, Button, openMenu, toast, el, uploadProgress, 
 import { iconEl } from "../icons.js";
 import { tagEditor } from "../tags.js";
 import { supabase, session, rawSession } from "../supabase.js";
-import { createFolder } from "../data.js";
+import { createFolder, addFolderTag } from "../data.js";
 import { sha256File, mapLimit } from "../hash.js";
 
 // K11: how many files hash / PUT at once. Unbounded Promise.all over a folder would start every
@@ -222,6 +222,10 @@ export async function openUpload(opts = {}) {
   // editor IS the tags. Collaborators stay behind "Add details" and only apply to a single loose
   // post (a folder / multi upload has no single owner to attach a collaborator to).
   let fileMeta = [];
+  // P23: a folder upload can also tag each SUBFOLDER (its own tags; no inheritance to the files
+  // inside). folderTagMeta maps a directory path → getTags(); doPost applies them after the tree is
+  // recreated (buildFolderTree gives dir → folderId), via addFolderTag. Rebuilt by renderChosen.
+  let folderTagMeta = new Map();
   const collabInput = el("input", { placeholder: "@handle, role — Enter to add" });
   const collabChips = el(".field.collabs", {}, [collabInput]);
   collabInput.addEventListener("keydown", (e) => {
@@ -281,6 +285,7 @@ export async function openUpload(opts = {}) {
   function renderChosen() {
     summaryHost.replaceChildren();
     fileMeta = [];
+    folderTagMeta = new Map();
     if (!files.length) { summaryHost.hidden = true; drop.hidden = false; dropAlt.hidden = false; return; }
     drop.hidden = true; dropAlt.hidden = true; summaryHost.hidden = false;
     // P25: the combined size of everything (owner: "show the total size of uploads, not per-file")
@@ -316,9 +321,28 @@ export async function openUpload(opts = {}) {
     if (files.length > ROW_CAP) list.append(el(".chosenmore", {}, [`+ ${files.length - ROW_CAP} more — uploaded with their own names, no tags`]));
     summaryHost.append(list);
     if (folderMode) {
+      // P23: one tag-editor row per subfolder in the tree (each folder's OWN tags, applied on post
+      // via addFolderTag — no inheritance to files). Same row pattern as the per-file list above.
+      const allDirs = new Set();
+      for (const f of files) { const parts = relDir(f).split("/").filter(Boolean); let cum = ""; for (const seg of parts) { cum = cum ? cum + "/" + seg : seg; allDirs.add(cum); } }
+      const dirs = [...allDirs].sort((a, b) => a.split("/").length - b.split("/").length || a.localeCompare(b));
+      if (dirs.length) {
+        const flist = el(".chosenlist.chosenfolders");
+        flist.append(el(".chosensec", {}, ["Folder tags — each folder’s own tags (not inherited by its files)"]));
+        dirs.forEach((dir, i) => {
+          if (i >= ROW_CAP) return;
+          const ed = tagEditor({ placeholder: "tag… (bpm:142)" });
+          folderTagMeta.set(dir, ed.getTags);
+          flist.append(el(".chosenrow", {}, [
+            el(".cnhead", {}, [iconEl("folder", "sm"), el("span.cndir", { title: dir }, [dir])]),
+            el(".cntags", {}, [ed.node]),
+          ]));
+        });
+        summaryHost.append(flist);
+      }
       const flat = el("input", { type: "checkbox" }); flat.checked = flatten;
       flat.addEventListener("change", () => { flatten = flat.checked; syncVis(); });
-      summaryHost.append(el("label.flatten", {}, [flat, "Flatten folders — one flat set instead of the tree"]));
+      summaryHost.append(el("label.flatten", {}, [flat, "Flatten folders — one flat set instead of the tree (drops folder tags)"]));
     }
   }
   function fmtSize(b) { return b >= 1e9 ? (b / 1e9).toFixed(1) + " GB" : b >= 1e6 ? (b / 1e6).toFixed(1) + " MB" : b >= 1e3 ? Math.round(b / 1e3) + " KB" : b + " B"; }
@@ -401,6 +425,14 @@ export async function openUpload(opts = {}) {
           serverId: onServer ? serverId : null,
           baseFolderId: onServer ? folderId : null,
         });
+        // P23: apply each subfolder's own tags to the folder just created (no inheritance to files).
+        // Best-effort — a folder-tag failure must never abort the upload of the files themselves.
+        for (const [dir, getTags] of folderTagMeta) {
+          const fid = folderMap.get(dir); if (!fid) continue;
+          for (const t of (getTags() || [])) {
+            try { await addFolderTag(onServer ? { folderId: fid } : { saveFolderId: fid }, t); } catch { /* skip a bad tag */ }
+          }
+        }
       }
       const folderFor = (h) => structured ? (folderMap.get(relDir(h.file)) || folderId || null) : (folderId || null);
 

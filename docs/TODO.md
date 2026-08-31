@@ -498,9 +498,13 @@ per channel, builds on P11), D6 (review canvas/kanban/versions).
       `display:flex;height:100%` so a row's cards are all the tallest card's height (fixes the "wonky"
       tiling), and the card tag line is single-line so tags never grow a card. Clicking a tag searches the
       library (P26). Writer-gated (server=isAdmin, personal=owner, shared read-only). Verified: large + list
-      + Properties, both themes at 1440, 0 pageerrors / 0 icon warnings. *Files:* `schema-37-folder-tags.sql`,
-      `app/data.js`, `app/screens/explorer.js`, `styles/content.css`, `app/demo.js`. **One follow-up (pairs
-      P22):** the upload sheet letting you tag a **subfolder row** on upload — not yet wired.
+      + Properties, both themes at 1440, 0 pageerrors / 0 icon warnings. **Upload (pairs P22):** a folder
+      upload's sheet now shows a **tag-editor row per subfolder** ("Folder tags" section, same row pattern
+      as the per-file list); on post, after the tree is recreated (`buildFolderTree` → dir→folderId) each
+      subfolder's tags are applied via `addFolderTag` (best-effort — a folder-tag failure never aborts the
+      file uploads; Flatten drops folder tags since no folders are made). Live-gated → QA. *Files:*
+      `schema-37-folder-tags.sql`, `app/data.js`, `app/screens/explorer.js`, `app/screens/upload.js`,
+      `styles/content.css`, `app/demo.js`. **P23 fully wired — remaining is live QA on preview only.**
 - [x] **P24 · A real, in-depth search built for scale (round-9).** *Done (backend role-sim-verified
       against the real 202-work DB; frontend demo-verified + shape-contract verified; live e2e →
       QA).* New **`search_files` RPC** (schema-35, migration **p26**) does the matching in Postgres so

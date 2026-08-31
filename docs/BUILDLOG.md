@@ -2873,3 +2873,22 @@ GOTCHA: folder-tag edits happen in the Properties popover and call `repaintFolde
   update the card behind WITHOUT a full rerender (a rerender would close the popover). The card is found by
   `.foldercard[data-folder-id="<id>"]`. Keep the card tag row single-line — the equal-height fix depends on
   it. Do NOT reintroduce an inline card add input (it broke the single-line/height rule); use Properties.
+
+## 2026-08-31 — P23 finished: tag a subfolder on upload (the last sub-item)
+IN PROGRESS: (cleared)
+DONE: the folder-upload sheet now lets you tag each SUBFOLDER (its own tags, no inheritance to files) —
+  the last open piece of P23. renderChosen (upload.js), when folderMode, renders a "Folder tags" section
+  with one tag-editor row per directory in the picked tree (cumulative dirs, same row pattern + ROW_CAP as
+  the per-file list); folderTagMeta maps dir→getTags(). doPost, after buildFolderTree recreates the tree
+  (dir→folderId), applies each subfolder's tags via addFolderTag(onServer?{folderId}:{saveFolderId}, tag) —
+  best-effort (a folder-tag error never aborts the file uploads). Flatten (no folders created) skips them,
+  and its label now says so. CSS: .chosenfolders/.chosensec reuse the existing .chosenrow look. node --check
+  clean; demo module graph loads 0 pageerrors (upload itself is session-gated → the folder path is live-only,
+  QA claim added). Commit <sha>.
+NEXT: **P23 is fully done** — only live QA on preview remains (add/remove folder tags persist; upload a
+  folder with subfolder tags; non-admin sees server folder tags read-only). Then the owner's next 3-version
+  pick among P32 (density slider) / P27+P31+P34 (search model) / P29 (profile) / P33 (filters), or the
+  non-visual P37 (multi-file download → zip). Migrations live this session: p27, p28. Advisors clean.
+GOTCHA: folderTagMeta stores the tagEditor's getTags FUNCTION (read at post time), keyed by the SAME dir
+  string buildFolderTree uses (relDir cumulative path) so folderMap.get(dir) resolves — don't change one
+  path convention without the other. Folder tags apply ONLY when structured (not flattened).

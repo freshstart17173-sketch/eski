@@ -35,6 +35,10 @@
 .chosenrow .cntags .tageditor{gap:6px}
 .chosenrow .cntags .taghint{display:none}
 .chosenmore{font-size:var(--fs-mi);color:var(--muted);padding-top:2px}
+/* P23: the subfolder-tags section in a folder upload — same rows as the file list, a labelled group */
+.chosenfolders{margin-top:var(--s3)}
+.chosensec{font-size:var(--fs-mi);font-weight:600;color:var(--muted)}
+.chosenfolders .cndir{max-width:none;direction:ltr}
 .dropchosen .flatten{display:flex;align-items:center;gap:8px;font-size:var(--fs-xs);color:var(--soft);cursor:pointer;margin-top:2px}
 .dropsummary{background:var(--surface);border-radius:var(--r);padding:14px;font-size:12px;color:var(--muted);text-align:center}
 .dropsummary b{color:var(--soft);font-weight:600}
