@@ -229,10 +229,23 @@
 .selbar button:hover{background:rgba(255,255,255,.14)}
 .selbar button .ic{color:var(--on-ink)}
 /* card selection + hover actions (grid) */
-.card .media{position:relative}
-/* B16: the .cardsel checkbox square was removed (read as a "weird white square" in dark mode);
-   a selected card is shown by the media outline below. */
-.card.sel .media{outline:2px solid var(--ink);outline-offset:-2px}
+.card{position:relative;z-index:0}
+.card .media{position:relative;border-radius:var(--r)}   /* C16: media rounds to the chrome radius */
+/* C16 (owner-approved "new cards"): a selected card is the WHOLE tile — a --plate fill + a 2px ink
+   ring drawn BEHIND the content (::before, so the media/title never shift), with CONCENTRIC corner
+   radii for balance: media = --r (3px); the selection halo sits 6px outside, so its radius = --r + 6
+   = 9px (concentric, curves stay parallel); the corner check is --r chrome. */
+.card.sel::before{content:"";position:absolute;inset:-6px;z-index:-1;background:var(--plate);border-radius:9px;box-shadow:inset 0 0 0 2px var(--ink)}
+/* corner select check — SQUARE (round is avatars/dots only): an outline on hover (click to add,
+   modifier-free), a filled ink box when selected. Replaces the old media-only outline. */
+.cardsel{position:absolute;top:6px;left:6px;z-index:3;width:18px;height:18px;border-radius:var(--r);display:grid;place-items:center;
+  background:color-mix(in srgb,var(--paper) 70%,transparent);border:1.5px solid var(--line2);color:transparent;
+  opacity:0;transition:opacity var(--t),background var(--t),border-color var(--t);cursor:pointer}
+.card:hover .cardsel{opacity:1}
+.card.sel .cardsel{opacity:1;background:var(--ink);border-color:var(--ink);color:var(--on-ink)}
+.cardsel .ic{width:12px;height:12px}
+/* the gold star indicator yields the top-left corner to the check on hover/select */
+.card:hover .cardstar,.card.sel .cardstar{display:none}
 .cardacts{position:absolute;top:6px;right:6px;z-index:3;display:none;gap:3px}
 .card:hover .cardacts{display:flex}
 .cardacts button{width:26px;height:26px;display:grid;place-items:center;border-radius:var(--r);background:rgba(20,20,20,.55);color:#fff;cursor:pointer;transition:background var(--t),color var(--t)}

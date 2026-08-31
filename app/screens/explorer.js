@@ -989,6 +989,10 @@ function largeView(subfolders, files, hooks) {
     const card = workCard(w, { selectable: true, showWho, starred: !!w.starred, onStar, actions });
     if (w.hidden) card.classList.add("ishidden");
     wireFileEl(card, w, i, hooks);
+    // C16: the corner select check — click toggles this card into/out of the selection with no
+    // modifier (a plain click builds a multi-selection, Drive-style). Stops the card's open/select.
+    const chk = el(".cardsel", { title: "Select", role: "checkbox", onClick: (e) => { e.stopPropagation(); e.preventDefault(); hooks.onCardClick(w, i, { metaKey: true }); } }, [iconEl("check", "sm")]);
+    card.append(chk);
     grid.append(card);
   });
   return el(".exview", { "data-exview": "large" }, [grid]);
