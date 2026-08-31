@@ -266,14 +266,14 @@
    ring drawn BEHIND the content (::before, so the media/title never shift), with CONCENTRIC corner
    radii for balance: media = --r (3px); the selection halo sits 6px outside, so its radius = --r + 6
    = 9px (concentric, curves stay parallel); the corner check is --r chrome. */
-.card.sel::before{content:"";position:absolute;inset:-6px;z-index:-1;background:var(--plate);border-radius:9px;box-shadow:inset 0 0 0 2px var(--ink)}
+.card.sel::before{content:"";position:absolute;inset:-6px;z-index:-1;background:var(--plate);border-radius:9px;box-shadow:inset 0 0 0 2px var(--ink);pointer-events:none}   /* decorative — must NOT catch the marquee: its -6px halo would otherwise block starting a rubber-band in the gap next to a selected card */
 /* corner select check — SQUARE (round is avatars/dots only): an outline on hover (click to add,
    modifier-free), a filled ink box when selected. Replaces the old media-only outline. */
 .cardsel{position:absolute;top:6px;left:6px;z-index:3;width:18px;height:18px;border-radius:var(--r);display:grid;place-items:center;
   background:color-mix(in srgb,var(--paper) 70%,transparent);border:1.5px solid var(--line2);color:transparent;
-  opacity:0;transition:opacity var(--t),background var(--t),border-color var(--t);cursor:pointer}
-.card:hover .cardsel{opacity:1}
-.card.sel .cardsel{opacity:1;background:var(--ink);border-color:var(--ink);color:var(--on-ink)}
+  opacity:0;transition:opacity var(--t),background var(--t),border-color var(--t);cursor:pointer;pointer-events:none}
+.card:hover .cardsel{opacity:1;pointer-events:auto}   /* only clickable once visible — an invisible box must not eat corner clicks */
+.card.sel .cardsel{opacity:1;pointer-events:auto;background:var(--ink);border-color:var(--ink);color:var(--on-ink)}
 .cardsel .ic{width:12px;height:12px}
 /* the gold star indicator yields the top-left corner to the check on hover/select */
 .card:hover .cardstar,.card.sel .cardstar{display:none}

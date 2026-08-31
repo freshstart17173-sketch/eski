@@ -79,7 +79,7 @@ async function loadRail(user) {
   // profile/handle exists yet (fresh account before onboarding). See meFor().
   // `hasProfile` gates onboarding: a fresh account has no profiles row (no signup trigger),
   // so the app must send it through create-profile before it can be linked to.
-  const result = { myServers: rows, servers, me: meFor(user, profRes.data), profile: profRes.data || null, hasProfile: !!(profRes.data && profRes.data.handle) };
+  const result = { myServers: rows, servers, me: meFor(user, profRes.data), profile: profRes.data || null, hasProfile: !!(profRes.data && profRes.data.handle), profileErr: !!profRes.error };
   // B21: only CACHE when the reads actually SUCCEEDED. A transient error returns null data → an
   // empty rail (no servers); caching THAT stranded the user with a serverless rail until a manual
   // reload (owner: "sometimes my server isn't there, I reload to get it back"). On any error, skip
@@ -94,8 +94,13 @@ async function loadRail(user) {
 export async function needsProfileSetup() {
   const user = session();
   if (!user || isDemo()) return false;
-  const { hasProfile } = await loadRail(user);
-  return !hasProfile;
+  let { hasProfile, profileErr } = await loadRail(user);
+  // A returning user MUST NOT be dumped into onboarding because a profiles read hiccuped on a fresh
+  // device (owner: signed in on another PC → sent to account creation, though the profile exists).
+  // prof_read is `true`, so a real profile is always readable — a null-with-error is a transient
+  // failure, not "no account". Retry once (uncached), then only onboard when we CONFIRMED no profile.
+  if (profileErr) { clearWorkspaceCache(); ({ hasProfile, profileErr } = await loadRail(user)); }
+  return !hasProfile && !profileErr;
 }
 
 // Create the signed-in user's profile (onboarding). An UPSERT on `id` so it works whether a
