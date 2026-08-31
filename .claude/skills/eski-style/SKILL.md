@@ -105,6 +105,21 @@ Notes: the ramp was **deepened** from the old values so adjacent planes read as
 distinct (the old ramp blended). `--muted` is intentionally legible (not faint).
 The red is punched up from the old `#B0503F/#D98A7A`.
 
+**Tag-type hues — `--tt-bpm`/`--tt-key`/`--tt-genre`/`--tt-mood`/`--tt-instrument`.** A
+typed tag (`bpm:142`) reads in its type's fixed colour, same generator as the member
+hues (`L=0.585 C=0.125` light / `L=0.79 C=0.112` dark) but hand-picked hues (not the
+even 12°-step wheel) so each reads clearly apart: light `#467dc4 #359055 #9a62ab
+#ae6916 #009194`, dark `#8abdff #81cf97 #d9a4e9 #edab6b #4fd1d2`. Content metadata, not
+member identity — unlike the member hue it may render anywhere (explorer, feed,
+details). A **custom** tag type (any `type:value` not in this fixed set) still renders
+typed, coloured by a **hashed** hue through the same generator instead of a fixed one.
+
+**Search-modifier colour — `--mod`.** A search modifier (`in:`/`hastag:`/`by:`/…, P27/
+P34) needs its own colour so it's never confused with a grey untyped tag or a coloured
+typed tag sitting next to it in the search rail. Same generator, `H=338°` (chosen to
+maximise RGB distance from all five `--tt-` hues): light `#aa5c95`, dark `#ea9ed4` — a
+rose/magenta, distinct from every tag hue above. Never used on a tag.
+
 **Token roles (what each surface is for):**
 `--paper` page/pane ground · `--surface` first raised step (headers, chips,
 resting cards-in-chat, rail buttons) · `--plate` second step (selected rows,

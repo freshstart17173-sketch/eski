@@ -136,20 +136,32 @@ detail in the Round-11 section below. Ticking one here = ticking it in its categ
 slider on the explorer) · media/messages (**B30 · B34**) · selection (**B31 · B32 · B33 · P28**) ·
 profile (**P29**) · perf (**P30**) · polish (**P35 · P36 · B36**) · downloads (**P37** — multi-file zip).
 
-**Tag session (deferred — owner 2026-08-31: "leave anything tag related for a different session"):**
-the whole tag surface reworks together, not piecemeal —
-- **P38 · Click-a-tag-to-filter.** A tag isn't just a label — clicking it starts a **search in the
-  current context** (whatever folder level you're on) with the tag acting as a **filter modifier**
-  (it narrows, it doesn't jump you elsewhere). This **retires the separate filter facet UI** ("getting
-  rid of the filters bit") — the tags themselves are the filter affordance. Refines P27/P33/P34.
-- **Two click surfaces on a typed tag.** The **type** portion (e.g. `bpm`) and the **value** portion
-  are independently clickable: clicking the type filters **all items carrying that type** (any `bpm:*`);
-  clicking the value filters the **exact `type:value`** (e.g. `bpm:120`). Grey single tags have one surface.
-- **Tag removal moves to detailed view only.** You can no longer delete a tag (the ✕ on a chip) from a
-  card/folder in grid or list — the ✕ appears **only in the details pane**. Everywhere else a tag is
-  read-only / click-to-filter.
-- **Custom tag types** (task #5, backed out this session) — any `type:value` self-defines a colored
-  typed tag (hashed hue → `oklch(var(--tt-l) var(--tt-c) hue)`, theme-swapped L/C). Build alongside P38.
+**Tag session — the click-to-filter/colour half was pulled forward and folded into the P27/P34 pass
+above (owner 2026-08-31: "fold this in with p38 too"); the rest (bulk tag editing, tag management UI)
+stays deferred —**
+- [x] **P38 · Click-a-tag-to-filter — done.** Clicking a tag chip commits a modifier to the search
+      rail (`commitModifier`) instead of jumping anywhere — narrows the current context. **Retires
+      the separate filter facet UI** (P33 already dropped the dropdowns; this is the replacement
+      affordance). 4 call sites wired: docked info panel, `openDetails`, `folderTagPreview`,
+      `openFolderProperties`. Refines P27/P33/P34.
+- [x] **Two click surfaces on a typed tag — done.** `tagChip()` in `app/tags.js`: the `.ty` (type)
+      span commits `hastag:<type>` (matches ANY value of that type); the value span commits the
+      exact `type:value`. An untyped grey tag has one surface, committing `tag:<value>`. New
+      `clickableSpan()` helper gives each surface `role="button" tabindex="0"` + click/Enter/Space.
+- [x] **Custom tag types — done.** `parseTag`/`makeTag` no longer gate on the curated `TAG_TYPES`
+      list — ANY `word:value` is now a typed tag. `tagColor(type)` returns the curated `--tt-*` var
+      for the 5 curated types, else a deterministic hashed hue: `hashHue(str)` (`h=(h*31+charCode)
+      >>>0; h%360`) feeding `oklch(var(--tt-l) var(--tt-c) <hash>deg)` — same L/C tokens as the
+      curated set (theme-swap handles light/dark for free, no JS dark-mode branch). Verified
+      deterministic (same string → same hue across two calls) and that curated types still resolve
+      to their fixed `--tt-*` var rather than being hashed.
+- [ ] **Tag removal moves to detailed view only — mostly already true, one open case.** Audited: the
+      ✕-to-remove affordance was already details-pane-only everywhere EXCEPT the folder Properties
+      popover, which still lets you remove a tag inline. Judgment call made this pass: left as-is —
+      the Properties popover functions as the folder's own "detail view" (a folder has no separate
+      details-pane concept the way a file does), so this doesn't read as a violation of the rule.
+      Flagged here in case the owner disagrees on a future pass.
+- [ ] Bulk tag editing / a tag-management screen — still fully deferred, not started.
 
 **Deferred — do NOT build now** (post-beta / infra-gated): D1 (feed+commenting, after P4),
 D7 (report/moderation), D2 (storage/billing, needs Stripe), D3 (audit log), D5 (required tags
@@ -692,16 +704,24 @@ optimistic send (P30), viewer ←/→ + Esc. These are the baseline the C-items 
 > Sorted roughly easy→hard within each cluster.
 >
 > **— Search & filter overhaul (the big one) —**
-- [ ] **P27 · Filtering ≠ searching (the model split).** **Filtering is screen-local:** it only
-      touches what's on THIS screen/folder — folders are NOT dug into (a folder's contents stay
-      hidden; folders are just for arranging/removing). This **reverses** the current P26 behaviour
-      where a facet flattens the whole tree. **Searching digs deep, Reddit-style — context matters:**
-      searching *from* a folder adds a **folder modifier** (a removable token scoping to that folder);
-      delete the modifier and it searches the **entire server / personal drive**, every level,
-      exposing **files AND folders** (grouping — P33 — makes the mixed results legible). *Files:*
-      `app/screens/explorer.js` (separate the facet filter (folder-scoped) from the search path
-      (deep); folder-scope modifier token), `app/data.js`/`search_files` (return folders too when
-      searching deep). *Hard.* **Refines P24 + P26.**
+- [x] **P27 · Filtering ≠ searching (the model split).** *Done for the client-side split (demo-
+      verified, 0 pageerrors) — the server-side deep-search-returns-folders half is still open, see
+      below.* **Filtering is screen-local:** a modifier typed with NO free text narrows only what's
+      already in the current folder — subfolders stay visible untouched, nothing outside the folder
+      is touched. **Searching digs deep:** free TEXT (with or without modifiers alongside it)
+      flattens the whole tree and searches everywhere, current folder or not. Verified both
+      directions: a modifier-only filter inside a folder narrows to matching files in that folder
+      only and returns EMPTY for the same modifier from root (proves non-recursion); free text typed
+      from inside a folder finds a match that lives elsewhere in the tree (proves it digs deep).
+      *Open follow-up (owner flagged 2026-08-31, "tree flattening could be fine idk, research other
+      apps"):* the current rule is a fixed, invisible mode switch (typing ANY free text silently
+      broadens scope) — worth revisiting for a visible scope affordance (à la Finder's "This Mac /
+      This Folder" toggle, or Drive's explicit "search this folder" option) rather than an implicit
+      rule the user can't see or override. Also still open: `search_files` (server RPC) doesn't
+      return folders when searching deep — today a deep search only surfaces files, not the
+      folders containing them (P33's grouping would make mixed results legible once this lands).
+      *Files:* `app/screens/explorer.js` (`contents()`'s `searching` branch vs. the no-free-text
+      branch). **Refines P24 + P26.**
 - [ ] **P31 · One modifier-based search everywhere (channel msg ↔ server file).** Every search bar
       uses the SAME modifier system, so a search inside a channel (for a message) can turn into a
       server-wide search (for a file) by editing the modifiers (e.g. drop the channel scope). *Files:*
@@ -720,10 +740,29 @@ optimistic send (P30), viewer ←/→ + Esc. These are the baseline the C-items 
       Verified: wil 0→8, idyll 0→4, 158bpm 0→4, b.d.y 0→4; willow still 4, drum still 48, browse still 60,
       ext facet intact, non-member still sees 0 (RLS). Advisors: 0 ERROR, search_files unflagged. Live
       RPC round-trip on preview → QA-CHECKLIST. *Files:* `schema-36-search-files-substring.sql`.
-- [ ] **P34 · A real modifier system + UI hints.** Build out the modifier grammar (from P21:
-      `bpm:120`/`hastag:`/`sortby:`, plus the P27 folder scope + P33 group/sort) as a first-class,
-      extensible parser, and add **UI hints** (a hint row / chips / autocomplete) so a user discovers
-      them. *Files:* a `search-modifiers` module, `app/screens/explorer.js`, the message search. *Med-hard.*
+- [x] **P34 · A real modifier system + UI hints.** *Done for the file explorer (demo-verified,
+      light+dark, 0 pageerrors, owner 2026-08-31 — no mockups, built straight from spec).* New
+      `app/search-modifiers.js` — the shared grammar module: `parseModifierToken` (`key:value` →
+      `{kind:"reserved"|"tag", ...}`, `"quoted:value"` forces a literal tag read even if `key`
+      collides with a reserved word), `RESERVED_KEYS` (`in/ext/by/channel/hastag/tag/before/after`),
+      `splitModifiers` (buckets a modifier list into the shape `contents()` filters with),
+      `modChip`/`modifierLabel` (the rail chip). **Autocomplete → rail, not inline** (owner: "should
+      autocomplete like v3 but when Enter is pressed it moves to the rail so it's easy to remove and
+      the separation between filtering and search is clear"): typing opens a popover suggesting
+      reserved keys + every tag type actually in use, `Tab` accepts a suggestion, `Enter` promotes
+      EVERY complete `key:value` token currently in the field to a removable chip in a new modifier
+      rail below the toolbar (`.exmods`) and leaves any incomplete trailing text as free search text.
+      Clicking a tag chip's type or value surface (P38, see below) also commits straight to the rail.
+      **Sort-by/Group-by deliberately left as the existing P33 dropdowns** (owner: "leave groupby and
+      sortby out for now as they are still pretty robust as dropdowns") — NOT folded into the
+      modifier grammar this pass. **Scope note:** `by:`/`channel:`/`before:`/`after:`/`in:` are
+      applied CLIENT-SIDE only this pass (`applyClientOnlyModifiers` in explorer.js) — never sent to
+      the `search_files` RPC — to avoid a schema/RPC migration in this pass; `tag:`/`hastag:`/`ext:`
+      DO go server-side when a live deep search fires. Moving the client-only modifiers server-side
+      is the natural extension of **K12** (search indexing) once that lands. *Files:*
+      `app/search-modifiers.js` (new), `app/screens/explorer.js` (`searchWidget()`, `commitModifier`,
+      `applyClientOnlyModifiers`, the `.exmods` rail), `styles/content.css` (`.searchcombo`/`.pop`/
+      `.exmods`/`.mchip`).
 - [ ] **K12 · Search indexing (metadata-inclusive) so search is fast.** Add proper indexing so search
       isn't slow at scale, and make **every reasonable part of a file searchable — including
       metadata** (bpm/key/duration/dimensions/codec/… not just filename + tags). *Files:* schema
@@ -733,9 +772,16 @@ optimistic send (P30), viewer ←/→ + Esc. These are the baseline the C-items 
 > **— File explorer (continuing the P14 inspiration) —**
 - [ ] **P32 · A real density SLIDER (not 3 discrete modes).** Replace the Large/Small/List switch with
       a **continuous density slider** like a desktop file explorer — multiple intermediate stages where
-      spacing eases between densities (list → small → … → large thumbnails). *Files:*
-      `app/screens/explorer.js` (VIEWS → a density scale), `styles/content.css`/`shell.css` (density
-      steps). *Hard.* **Supersedes the discrete P14 modes** (keep list/small/large as slider anchors).
+      spacing eases between densities (list → small → … → large thumbnails). **Owner note (2026-08-31,
+      carried forward for whoever builds this):** "I like the density of the thumbnails used in the
+      mockup — when doing the slider, I should be able to get the same density — as well as the
+      vertical spacing between the title and the tags." I.e. the mockup's thumbnail-to-tile ratio and
+      its title→tags gap are the TARGET the slider should be able to reproduce as one of its stages
+      (likely a denser anchor than the current default grid), not just a generic "smaller thumbnails"
+      slider — check `docs/design/gallery.html`'s file-explorer mockup for the reference density/
+      spacing before building. *Files:* `app/screens/explorer.js` (VIEWS → a density scale),
+      `styles/content.css`/`shell.css` (density steps). *Hard.* **Supersedes the discrete P14 modes**
+      (keep list/small/large as slider anchors).
 - [x] **P33 · Filter rework: only Hidden + Starred; add Group-by & Sort-by.** *Done (demo-verified,
       light+dark, 0 pageerrors, owner 2026-08-31 — no mockups).* Dropped ALL the explorer facet
       dropdowns (Type/Channel/Uploader/Tag/Date + the old Sort/dir buttons); only **Hidden** + **Starred**

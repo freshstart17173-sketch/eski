@@ -63,6 +63,34 @@
 .panehd nav{margin-left:auto;display:flex;gap:var(--s4)}
 .toolbar{position:relative;flex:none;display:flex;align-items:center;gap:var(--s2);padding:var(--s3) var(--s4);background:var(--paper);flex-wrap:wrap}   /* position:relative anchors the .selbar overlay (B32) */
 .toolbar .field{flex:1;min-width:170px;max-width:340px}
+/* P27/P34/P38 (2026-08-31) — the search field's autocomplete helper wraps the field so the popover
+   can anchor under it; the wrapper (not the inner field) is the toolbar's actual flex item now. */
+.searchcombo{position:relative;flex:1;min-width:170px;max-width:340px}
+.searchcombo .field.searchbar{max-width:none}
+.searchcombo .pop{position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:12;width:auto;
+  background:var(--paper);border-radius:var(--r);box-shadow:0 8px 24px rgba(0,0,0,.16),0 0 0 1px var(--line);overflow:hidden;padding:4px 0}
+.searchcombo .poprow{display:flex;align-items:center;gap:8px;width:100%;text-align:left;padding:6px 10px;font-size:var(--fs-sm);color:var(--soft);cursor:default}
+.searchcombo .poprow b{color:var(--ink);font-weight:600}
+.searchcombo .poprow .hl{margin-left:auto;color:var(--muted);font-size:var(--fs-mi)}
+.searchcombo .poprow:hover,.searchcombo .poprow.hi{background:var(--surface)}
+.searchcombo .poprow:hover b,.searchcombo .poprow.hi b{color:var(--ink)}
+.searchcombo .exacsw{width:8px;height:8px;border-radius:2px;flex:none}
+/* the filter rail (P27/P34/P38) — one --mod chip per committed modifier; the row itself costs zero
+   height when empty ([hidden] wins over the flex display below). Sits between the toolbar and the
+   body, its own thin row so it never competes with the toolbar's Sort/Group/view controls. */
+.exmods{flex:none;display:flex;flex-wrap:wrap;gap:6px;padding:0 var(--s4) var(--s3)}
+.exmods[hidden]{display:none}
+.mchip{display:inline-flex;align-items:center;gap:5px;background:color-mix(in srgb,var(--mod) 15%,var(--surface));
+  color:var(--mod);border-radius:var(--r);padding:3px 4px 3px 8px;font-size:var(--fs-xs);font-weight:600;white-space:nowrap}
+.mchip .k{opacity:.72;font-weight:600}
+.mchip .x{display:grid;place-items:center;width:18px;height:18px;border-radius:2px;color:inherit;opacity:.75}
+.mchip .x:hover{background:color-mix(in srgb,var(--mod) 25%,var(--surface));opacity:1}
+.mchip .x .ic{width:11px;height:11px}
+/* owner 2026-08-31: the explorer toolbar search field reads too tall next to its own row — the
+   toolbar's buttons/iconbtns are all ~26px, the field stuck up past them. Thin it to match (scoped
+   to the toolbar, not the shared .searchbar class other screens use — "the file explorer gets away
+   with it", not necessarily the standalone /search screen or the quick-switcher). */
+.toolbar .field.searchbar{padding:4px 9px}
 /* owner 2026-08-31: a hairline under the toolbar so it's obvious where the selectable pane begins
    (vs the chrome above, where a drag just highlights). B31: a file browser isn't text — marquee/drag
    must not highlight filenames (Finder/Drive). */

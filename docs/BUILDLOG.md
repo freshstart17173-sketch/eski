@@ -3167,3 +3167,93 @@ GOTCHA: none new. The folder-menu commit two entries back genuinely wasn't live 
   tested "right-click doesn't work" — worth remembering that a burst of "nothing works" feedback
   right after a local (uncommitted) change is often exactly that, not a new bug — but it's also
   exactly how the real Shift-click bug above got found, so always verify rather than assuming.
+
+## 2026-08-31 — P27/P34/P38: search modifiers, autocomplete-to-rail, tag click-through, custom tag types
+IN PROGRESS: (cleared)
+DONE: committed <sha>. Owner: "p27/34. Need a robust but accessible filter and sort system that
+  won't collide with tags... Need a little helper that spawns when you start searching that allows
+  you to pick some premade modifiers. Fold this in with p38 too." Then, after a plan-only pass:
+  "modifiers should have their own color in search... Should autocomplete like v3 but when enter is
+  pressed it moves to the rail so it's easy to remove and the separation between filtering and
+  search is clear. Leave groupby and sortby out for now... Also the search bar needs to be way
+  thinner vertically."
+  - **New `app/search-modifiers.js`** — the shared grammar module (P34): `parseModifierToken`
+    (`key:value` → `{kind:"reserved",key,value}` for the 8 reserved keys `in/ext/by/channel/hastag/
+    tag/before/after`, else `{kind:"tag",type,value}`; a `"quoted:value"` token forces a literal tag
+    read even when `key` collides with a reserved word — the "protected modifiers, collision-safe
+    with tags" ask), `splitModifiers` (buckets into `{exts,hastypes,tags,by,channel,before,after,
+    inFolder}` for `contents()` to filter with), `modChip`/`modifierLabel` (the rail chip),
+    `sameModifier` (dedup key). Sort/Group deliberately excluded — see below.
+  - **The model split (P27), actually correct this time.** `state.modifiers = []` replaces the old
+    `state.types/channels/uploaders/tags` Sets + `state.date` string. `contents()`'s branching:
+    free TEXT present → flattens the whole tree, deep search, modifiers apply on top. NO free text
+    (modifier-only, or nothing) → **folder-scoped, non-recursive** — narrows only files already in
+    the current folder, subfolders stay visible untouched. Caught my own bug mid-build: I'd first
+    ported the OLD "any facet → flatten" branching forward, which directly inverted the P27 spec.
+    Fixed by splitting the branch on `searching` (free text) vs. not, and verified both directions:
+    a modifier-only filter inside a folder narrows correctly + returns EMPTY for the same modifier
+    from root (proves non-recursion, not just "happens to look right"); free text from inside a
+    folder still finds a match that lives elsewhere in the tree (proves deep search still works).
+  - **Autocomplete → rail (P34 UI hints + the "v3-style but promotes to a rail" ask).** New
+    `searchWidget()` in explorer.js: typing opens a popover (`.pop`) suggesting the 8 reserved keys
+    plus every tag type actually present in `data.files` (computed live, not hardcoded) filtered
+    against the token being typed; `Tab` accepts the highlighted suggestion (completes the key +
+    trailing `:`); `Enter` calls `promoteComplete()` — scans the WHOLE input for every complete
+    `key:value` token via `parseModifierToken`, pushes each to `state.modifiers` (deduped via
+    `sameModifier`), and leaves any incomplete trailing text as free search text. Modifiers render
+    as removable chips in a new rail (`.exmods`, between the toolbar and the pane body) — visually
+    and structurally separate from the search field, which is the "easy to remove, clear separation
+    between filtering and search" ask.
+  - **Modifiers get their own colour (new `--mod` token).** A modifier chip in the rail needs to
+    read as neither a grey untyped tag nor a coloured typed tag when sitting next to either. Picked
+    via the SAME OKLCH generator as the member/tag hues (not hand-picked): searched for the hue that
+    maximises RGB distance from all 5 existing `--tt-*` hues, landing on H=338° (light `#aa5c95`,
+    dark `#ea9ed4` — a rose/magenta). *(Owner flagged 2026-08-31, next turn: "magenta for tags is a
+    bit confusing" — logged here, not yet fixed at the time of this commit; see the follow-up entry
+    below/next for the resolution.)* Documented in both `tokens.css` and the `eski-style` skill
+    (which had a pre-existing gap: it never documented the `--tt-*` tag-type tokens at all — fixed
+    alongside `--mod`).
+  - **P38 folded in, as asked.** `app/tags.js`: `parseTag`/`makeTag` no longer gate on the curated
+    `TAG_TYPES` list — any `word:value` is now typed (custom types). New `hashHue(str)` (`h=(h*31+
+    charCode)>>>0; h%360`) + `tagColor(type)` (curated types → their fixed `--tt-*` var; anything
+    else → `oklch(var(--tt-l) var(--tt-c) <hash>deg)`, using the SAME L/C tokens so light/dark just
+    falls out of the browser's own theme swap — no JS dark-mode branch needed). New
+    `clickableSpan()` helper gives a tag chip's type-span and value-span independent `role="button"
+    tabindex="0"` click/Enter/Space surfaces: clicking the TYPE commits `hastag:<type>` (any value
+    of that type); clicking the VALUE commits the exact `type:value`. An untyped tag has one surface
+    → `tag:<value>`. All 4 tag-chip call sites (docked info panel, `openDetails`, `folderTagPreview`,
+    `openFolderProperties`) rewired from the old `state.tags = new Set([raw])` pattern to
+    `commitModifier(data, state, rerender, mod)`. Audited "tag removal is details-pane-only": true
+    everywhere except the folder Properties popover, which still allows inline removal — left as-is
+    (judged as the folder's own equivalent of a details pane; flagged in TODO.md in case the owner
+    disagrees later).
+  - **Search bar thinned** (toolbar-scoped `.field.searchbar{padding:4px 9px}` in `content.css`) —
+    "the search bar needs to be way thinner vertically, file explorer gets away with it."
+  - **Not built this pass, by explicit owner scope:** Sort-by/Group-by stay the existing P33
+    dropdowns, NOT folded into the modifier grammar ("leave groupby and sortby out for now as they
+    are still pretty robust as dropdowns"). `by:`/`channel:`/`before:`/`after:`/`in:` modifiers are
+    applied CLIENT-SIDE only (`applyClientOnlyModifiers`) — never sent to the `search_files` RPC —
+    to avoid a schema/RPC migration this pass; `tag:`/`hastag:`/`ext:` DO go server-side on a live
+    deep search. The client-only modifiers are the natural next scope for **K12** (search indexing)
+    once that lands. **Owner note for P32 (density slider, not built this pass):** "I like the
+    density of the thumbnails used in the mockup — when doing the slider I should be able to get the
+    same density — as well as the vertical spacing between the title and the tags." Carried forward
+    into the P32 TODO entry as an explicit target, pointing at `docs/design/gallery.html`'s explorer
+    mockup as the reference.
+  Verified headless throughout (0 pageerrors every scenario): autocomplete open/Tab-accept/Enter-
+  promote with mixed free text + trailing incomplete token; modifier-only filtering stays folder-
+  scoped both directions (in-folder narrows + empty-from-root); free-text search still digs deep
+  from inside a folder; chip removal; both tag-chip click surfaces commit the right modifier shape
+  (type→`hastag:`, value→exact); custom tag type colour hashing is deterministic across two calls
+  and curated types still resolve to their fixed var, not a hash. Full regression suite re-run clean
+  after the refactor (baseline explorer grid/list/personal, folder drag-to-move, folder menu rename/
+  move/delete, delete cascade + mixed selection, C8/C9/C12 workspace, B14 media-stop-on-close,
+  details-sheet open/close, folder + file Shift-range, marquee auto-scroll) — 0 pageerrors across
+  all 10 scripts, no regressions from replacing `state.types/channels/uploaders/tags/date` with the
+  unified `state.modifiers` array.
+NEXT: owner flagged the `--mod` magenta reading as confusable, and asked for research into how other
+  apps handle the filter/search tree-flattening split before treating P27's current rule as final —
+  addressing both next.
+GOTCHA: caught my own P27 branching bug before it shipped (see above) — a reminder that "port the
+  old logic forward, adjust incrementally" is exactly how a spec inversion sneaks through when the
+  new spec REVERSES the old default instead of refining it.

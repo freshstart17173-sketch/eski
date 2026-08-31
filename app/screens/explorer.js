@@ -15,7 +15,7 @@
 
 import { el, toast, openMenu, closeMenus, openModal, VisibilitySeg, Button, copyToClipboard } from "../ui.js";
 import { iconEl } from "../icons.js";
-import { parseTag, TAG_TYPES, tagChip, tagEditor } from "../tags.js";
+import { parseTag, TAG_TYPES, tagChip, tagEditor, tagColor } from "../tags.js";
 import { addFolderTag, removeFolderTag } from "../data.js";
 import { navigate, reload } from "../router.js";
 import { createFolder, moveToFolder, moveFolderTo, renameFolder, deleteFolder, trashWorks, restoreWork, purgeWork, emptyTrash, loadTrash, starWork, unstarWork, saveToFiles, renameWork, setHidden, createShareLink, shareUrl, loadShareLinks, revokeShareLink, setVisibility, visFromDb, createFolderShare, folderShareUrl, requestToJoin, refreshStorage, searchFiles } from "../data.js";
@@ -23,6 +23,7 @@ import { workCard, folderCard, mediaUrl, KIND_ICON, downloadWork, baseName } fro
 import { channelColumn } from "./workspace.js";
 import { openUpload, enableDropUpload } from "./upload.js";
 import { openDetails, closeDetails, metaRows } from "./details.js";
+import { parseModifierToken, modifierRaw, modifierLabel, sameModifier, splitModifiers, modChip, RESERVED_KEYS, RESERVED_HINT } from "../search-modifiers.js";
 
 // P14: three file-browser DENSITIES, modelled on Windows Explorer (owner spec 2026-08-30):
 //   large — big content thumbnails (a photo/video frame fills the cell; other kinds show the
@@ -40,11 +41,6 @@ const VIEW_ALIAS = { grid: "large", feed: "large", small: "large" };   // migrat
 // (Type = the actual file extensions present, P8). Sort keys drive the comparator in sortFiles().
 const SORTS = [["latest", "Latest"], ["oldest", "Oldest"], ["name", "Name"], ["size", "Size"]];
 const SORT_LABEL = Object.fromEntries(SORTS);
-// Date windows measured back from now; "today" is since local midnight, the rest are
-// rolling N-day windows. "any" is the no-filter default.
-const DATES = [["any", "Anytime"], ["today", "Today"], ["week", "This week"], ["month", "This month"], ["year", "This year"]];
-const DATE_LABEL = Object.fromEntries(DATES);
-const DATE_DAYS = { week: 7, month: 30, year: 365 };
 
 function fmtBytes(n) {
   n = Number(n || 0);
@@ -104,13 +100,15 @@ export function renderExplorer(data, view = {}) {
     selFolders: new Set(),  // selected FOLDER ids (single-click / ⌘-click / Shift-range / marquee); double-click opens
     lastIdx: -1,            // anchor for Shift-click range (files)
     lastFolderIdx: -1,      // anchor for Shift-click range (folders — its own list, own order)
-    types: new Set(),       // kind filter — set only by a tag/type click now (facet dropdowns retired)
-    channels: new Set(),    // by placement channel name (server only)
-    uploaders: new Set(),   // by author name (server only)
-    tags: new Set(),        // by content tag (exact value, incl. typed "type:value") — set by tag-click
-    // (the Type/Channel/Uploader/Tag/Date filter dropdowns were retired 2026-08-31 — filtering moves
-    //  to the search bar's modifiers; sorting moves to a Sort-by dropdown (grid) / column click (list))
-    date: "any",            // any/today/week/month/year
+    // P27/P34/P38 (2026-08-31): the retired Type/Channel/Uploader/Tag/Date facet dropdowns are
+    // replaced by ONE modifier rail — search-modifiers.js shapes ({kind:'reserved',key,value} or
+    // {kind:'tag',type,value}), committed by typing ext:/by:/channel:/hastag:/tag:/before:/after:/
+    // in: + Enter, by accepting an autocomplete suggestion, or by clicking a tag (P38's two click
+    // surfaces). A modifier alone filters the CURRENT folder only (client-side, non-recursive); free
+    // TEXT in the field searches deep (server-side, whole drive) — the rail vs. the field IS the
+    // filter/search split now, not a hidden behavioural rule. Sort/Group stay as dropdowns (below) —
+    // explicitly left out of the modifier grammar for now, still solid as-is.
+    modifiers: [],
     sort: "latest",        // latest/oldest/name/size/type/uploader/date
     dir: "desc",           // sort direction
     group: "none",          // grid grouping: none/kind/type/uploader/date
@@ -305,43 +303,32 @@ function explorerUrl(data, { folderId, fileId, mode } = {}) {
 }
 function isDemoQS() { return new URLSearchParams(location.search).get("demo") === "1"; }
 
-// P21 search modifiers — parse the explorer search box into structured filters, replacing the old
-// "Tag type" facet dropdown with typed-in modifiers:
-//   bpm:120     a known tag TYPE before the colon → an exact typed tag  → tags:['bpm:120']
-//   hastag:bpm  → hastypes:['bpm'] (files carrying any tag of that type)
-//   sortby:bpm_desc | bpm_descending | name_asc | size_desc | latest | oldest → sort
-//   anything else → free text, which (B19) also matches a file's tags, not just its name.
-// Everything here also becomes the args for the server-side search_files RPC (data.searchFiles).
-function parseQuery(raw) {
-  const tags = [], hastypes = [], words = [];
-  let sort = null;
-  for (const tok of String(raw || "").trim().split(/\s+/).filter(Boolean)) {
-    const ci = tok.indexOf(":");
-    if (ci > 0) {
-      const key = tok.slice(0, ci).toLowerCase();
-      const val = tok.slice(ci + 1);
-      if (key === "hastag" && val) { hastypes.push(val.toLowerCase()); continue; }
-      if (key === "sortby" && val) { const s = parseSortBy(val); if (s) { sort = s; continue; } }
-      if (TAG_TYPES.includes(key) && val) { tags.push(`${key}:${val}`); continue; }
+// A small date parser for the before:/after: modifiers — a relative "7d"/"30d" (days back from
+// now) or an absolute date the Date constructor understands (2026-08-01). Returns null when it
+// can't parse, so a bad value quietly filters nothing rather than throwing.
+function parseModDate(v) {
+  const rel = String(v).trim().match(/^(\d+)\s*d(ays?)?$/i);
+  if (rel) return new Date(Date.now() - Number(rel[1]) * 86400000);
+  const d = new Date(v);
+  return isNaN(d.getTime()) ? null : d;
+}
+// by:/channel:/before:/after:/in: are always a CLIENT-SIDE post-filter, whether `files` came from
+// search_files or the loaded fallback — search_files carries no params for them yet (K12 is the
+// place to move them server-side at scale; not this pass, see the TODO note left for it).
+function applyClientOnlyModifiers(files, mods, data) {
+  let out = files;
+  if (mods.by) out = out.filter((w) => (w.who?.name || "").toLowerCase() === mods.by.toLowerCase());
+  if (mods.channel) out = out.filter((w) => (w.channelName || "").toLowerCase() === mods.channel.toLowerCase());
+  if (mods.before) { const cut = parseModDate(mods.before); if (cut) out = out.filter((w) => new Date(w.created_at || 0) < cut); }
+  if (mods.after) { const cut = parseModDate(mods.after); if (cut) out = out.filter((w) => new Date(w.created_at || 0) >= cut); }
+  if (mods.inFolder) {
+    const target = (data.folders || []).find((f) => f.name.toLowerCase() === mods.inFolder.toLowerCase());
+    if (target) {
+      const scope = new Set([target.id, ...descendantFolderIds(data.folders, target.id)]);
+      out = out.filter((w) => scope.has(w.folderId));
     }
-    words.push(tok);
   }
-  return { text: words.join(" "), tags, hastypes, sort };
-}
-function parseSortBy(v) {
-  const m = String(v).toLowerCase().match(/^(.*?)(?:_(asc|ascending|desc|descending))?$/);
-  const by = m[1], dir = (m[2] && m[2].startsWith("asc")) ? "asc" : "desc";
-  if (by === "latest") return { by: "latest", dir: "desc" };
-  if (by === "oldest") return { by: "oldest", dir: "asc" };
-  if (by === "name" || by === "size") return { by, tag: null, dir };
-  if (TAG_TYPES.includes(by)) return { by: "tag", tag: by, dir };
-  return null;
-}
-// Is any part of the query text a recognised modifier (typed tag / hastag / sortby)? Used to tint
-// the search field so the user sees the modifier was understood (like the tagEditor's colon cue).
-function queryHasModifier(raw) {
-  const pq = parseQuery(raw);
-  return pq.tags.length > 0 || pq.hastypes.length > 0 || !!pq.sort;
+  return out;
 }
 
 // ── the folder tree (left) ───────────────────────────────────────────────────
@@ -459,15 +446,9 @@ function paint(tree, pane, data, state, rerender) {
   // on this row.
   const pathline = el(".expath", {}, [searching ? searchState : crumbs]);
 
-  // toolbar — search · filters (Type/Channel/Uploader/Tag/Date/Sort) · New folder · Upload
+  // toolbar — search (+ its autocomplete helper + the filter rail below) · Sort/Group · New folder · Upload
   const personal = data.source === "personal";
-  // Placeholder hints the modifiers now that the Tag-type facet is gone (P21). The field tints
-  // (`.hasmod`) when a recognised modifier (bpm:120 / hastag:bpm / sortby:…) is present, so the
-  // user sees it was understood — like the tagEditor's colon cue.
-  const search = el(".field.searchbar" + (queryHasModifier(state.query) ? ".hasmod" : ""), {}, [iconEl("search", "sm"),
-    el("input", { placeholder: data.shared ? "Search this folder" : (personal ? "Search files · bpm:120 · hastag:key" : "Search this server · bpm:120 · hastag:key"), value: state.query,
-      onInput: (e) => { state.query = e.target.value; search.classList.toggle("hasmod", queryHasModifier(state.query)); repaintBody(); } }),
-  ]);
+  const { wrap: search } = searchWidget(data, state, () => repaintBody());
   // onDone reloads the route so a just-uploaded file (or a whole uploaded folder) shows
   // immediately — the explorer data is cached per render, so without a refetch the new work
   // wouldn't appear until a manual reload (owner bug: "reload needed for things to update").
@@ -536,7 +517,21 @@ function paint(tree, pane, data, state, rerender) {
   // and the current sort on the right. Updated by updateStatus() from refreshSel (fires on selection
   // change and after every repaintBody). Lives between the body and the floating fab.
   const statusbar = el(".exstatus");
-  pane.replaceChildren(...[pathline, toolbar, body, statusbar, fab].filter(Boolean));
+  // P27/P34/P38: the filter rail — one chip per committed modifier, in --mod colour, only present
+  // once you have 1+ (no chip = no extra row, same "costs zero layout at rest" principle as the
+  // status strip). This is what makes the filter/search split VISIBLE: chip = filter, whatever's
+  // still typed in the field = search text.
+  const modrail = el(".exmods");
+  function updateMods() {
+    if (!state.modifiers.length) { modrail.replaceChildren(); modrail.hidden = true; return; }
+    modrail.hidden = false;
+    modrail.replaceChildren(...state.modifiers.map((mod) => modChip(mod, {
+      onRemove: (m) => { state.modifiers = state.modifiers.filter((x) => !sameModifier(x, m)); repaintBody(); },
+    })));
+  }
+  state._updateMods = updateMods;
+  updateMods();
+  pane.replaceChildren(...[pathline, toolbar, modrail, body, statusbar, fab].filter(Boolean));
   function updateStatus() {
     const items = body.querySelectorAll("[data-id], [data-folder-id]").length;
     const n = state.selection.size;
@@ -787,6 +782,7 @@ function paint(tree, pane, data, state, rerender) {
     state.lastIdx = -1;
     body.replaceChildren(contents(data, state, rerender, sel));
     refreshSel();
+    state._updateMods?.();   // the filter rail — a modifier can change here (Enter-promote, ✕-remove)
   }
 }
 
@@ -814,7 +810,7 @@ function buildInfoPanel(data, state, rerender) {
   const tagsSec = (w.tags && w.tags.length) ? el(".exisec", {}, [
     el(".exilabel", {}, ["Tags"]),
     el(".ftags", { style: "flex-wrap:wrap;overflow:visible;margin:0" }, (w.tags || []).map((raw) => tagChip(raw, {
-      onSearch: (r) => { state.selection.clear(); state.selFolders.clear(); state.folderId = null; state.query = ""; state.tags = new Set([r]); rerender(); } }))),
+      onSearch: (mod) => commitModifier(data, state, rerender, mod) }))),
   ]) : null;
   const foot = el(".exifoot", {}, [
     el("button.btn.primary", { onClick: () => downloadWork(w) }, [iconEl("download", "sm"), "Download"]),
@@ -825,47 +821,144 @@ function buildInfoPanel(data, state, rerender) {
 }
 
 // the current folder's subfolders + files, as grid or list; or search results
+// P27/P34/P38 (owner 2026-08-31): the search field's helper — MINIMAL, type-to-trigger autocomplete
+// (picked over a full command palette or an always-visible chip rail). At rest it's identical to a
+// plain search field. Typing the start of a recognised key — a RESERVED_KEYS word, or a tag type
+// (curated, or one actually used in this library — P38 custom types) — opens a slim completion list
+// below it. Accepting a suggestion (click, Tab, or Enter on the highlighted row) completes just the
+// key (leaves a trailing ":" so the value is typed next). Pressing Enter promotes every COMPLETE
+// key:value token in the field straight to the filter rail (see updateMods in paint()) and strips it
+// out of the field — the field only ever holds free search text once you're done filtering. This is
+// what makes P27's split visible: a rail chip is a filter (screen-local), text left in the field is
+// a search (goes deep).
+function searchWidget(data, state, repaintBody) {
+  // every tag TYPE worth suggesting: the curated set + whatever's actually used in this library
+  const usedTypes = new Set();
+  for (const w of data.files || []) for (const raw of (w.tags || [])) { const t = parseTag(raw); if (t.typed) usedTypes.add(t.type); }
+  const allTypes = [...new Set([...TAG_TYPES, ...usedTypes])];
+
+  const input = el("input", {
+    value: state.query,
+    placeholder: data.shared ? "Search this folder" : (data.source === "personal" ? "Search files…" : "Search this server…"),
+    role: "combobox", "aria-autocomplete": "list", "aria-expanded": "false", "aria-controls": "exacpop",
+  });
+  const search = el(".field.searchbar", {}, [iconEl("search", "sm"), input]);
+  const pop = el(".pop.exacpop", { id: "exacpop", role: "listbox", "aria-label": "Search modifier suggestions" });
+  pop.hidden = true;
+  const wrap = el(".searchcombo", {}, [search, pop]);
+
+  let suggestions = [], hi = -1;
+
+  function computeSuggestions() {
+    const tokens = input.value.split(/\s+/);
+    const frag = (tokens[tokens.length - 1] || "").toLowerCase();
+    if (!frag || frag.includes(":")) return [];   // nothing typed yet, or this token's already key:value
+    const keys = RESERVED_KEYS.filter((k) => k.startsWith(frag)).map((k) => ({ key: k }));
+    const types = allTypes.filter((t) => t.startsWith(frag) && !RESERVED_KEYS.includes(t)).map((t) => ({ type: t }));
+    return [...keys, ...types].slice(0, 8);
+  }
+  function renderPop() {
+    if (!suggestions.length) { pop.hidden = true; input.setAttribute("aria-expanded", "false"); input.removeAttribute("aria-activedescendant"); return; }
+    pop.hidden = false; input.setAttribute("aria-expanded", "true");
+    pop.replaceChildren(...suggestions.map((s, i) => {
+      const key = s.key || s.type;
+      const row = el(".poprow" + (i === hi ? ".hi" : ""), { id: `exacopt-${i}`, role: "option", "aria-selected": i === hi ? "true" : "false" });
+      if (s.type) row.append(el("span.exacsw", { style: `background:${tagColor(key)}` }));
+      row.append(el("b", {}, [key + ":"]), el("span.hl", {}, [s.type ? "tag" : (RESERVED_HINT[key] || "")]));
+      row.addEventListener("mousedown", (e) => { e.preventDefault(); accept(s); });   // mousedown, so it fires before the input's blur
+      return row;
+    }));
+    if (hi >= 0) input.setAttribute("aria-activedescendant", `exacopt-${hi}`); else input.removeAttribute("aria-activedescendant");
+  }
+  function updateSuggestions() { suggestions = computeSuggestions(); hi = suggestions.length ? 0 : -1; renderPop(); }
+  function closePop() { suggestions = []; hi = -1; renderPop(); }
+  function accept(s) {
+    const key = s.key || s.type;
+    const tokens = input.value.split(/\s+/);
+    tokens[tokens.length - 1] = key + ":";
+    input.value = tokens.join(" ");
+    state.query = input.value;
+    closePop();
+    input.focus();
+  }
+  // scan every token for a complete key:value modifier, push each to the rail (deduped), and leave
+  // whatever's left (free words, or an incomplete key: with no value yet) in the field.
+  function promoteComplete() {
+    const tokens = input.value.split(/\s+/).filter(Boolean);
+    const remaining = []; let changed = false;
+    for (const tok of tokens) {
+      const parsed = parseModifierToken(tok);
+      if (parsed) { if (!state.modifiers.some((m) => sameModifier(m, parsed))) state.modifiers.push(parsed); changed = true; }
+      else remaining.push(tok);
+    }
+    input.value = remaining.join(" ");
+    state.query = input.value;
+    closePop();
+    return changed;
+  }
+
+  input.addEventListener("input", () => { state.query = input.value; updateSuggestions(); repaintBody(); });
+  input.addEventListener("keydown", (e) => {
+    if (e.key === "ArrowDown" && suggestions.length) { e.preventDefault(); hi = (hi + 1) % suggestions.length; renderPop(); return; }
+    if (e.key === "ArrowUp" && suggestions.length) { e.preventDefault(); hi = (hi - 1 + suggestions.length) % suggestions.length; renderPop(); return; }
+    if (e.key === "Escape" && suggestions.length) { e.preventDefault(); closePop(); return; }
+    if (e.key === "Tab" && hi >= 0 && suggestions[hi]) { e.preventDefault(); accept(suggestions[hi]); return; }
+    if (e.key === "Enter") {
+      e.preventDefault();
+      const tokens = input.value.split(/\s+/);
+      const lastComplete = parseModifierToken(tokens[tokens.length - 1] || "");
+      if (hi >= 0 && suggestions[hi] && !lastComplete) { accept(suggestions[hi]); return; }   // still typing the key — complete it, don't promote
+      const changed = promoteComplete();
+      repaintBody();
+      if (!changed) input.focus();
+    }
+  });
+  input.addEventListener("blur", () => setTimeout(closePop, 120));   // let a suggestion's mousedown land first
+
+  return { wrap };
+}
+
 function contents(data, state, rerender, sel) {
-  const pq = parseQuery(state.query);          // P21: bpm:120 / hastag:bpm / sortby:… + free text
-  const searching = state.query.trim().length > 0;
-  const qtext = pq.text.toLowerCase();
+  const searching = state.query.trim().length > 0;   // FREE TEXT only now — modifiers live in the rail
+  const qtext = state.query.trim().toLowerCase();
+  const mods = splitModifiers(state.modifiers);       // {exts,hastypes,tags,by,channel,before,after,inFolder}
 
   const openFolder = (f) => { state.folderId = f.id; state.query = ""; rerender(); };
 
-  // P26: a facet filter (tag / type / channel / uploader / date) searches the WHOLE tree, not
-  // just the current folder — so clicking a tag finds every file with it, wherever it lives.
-  const anyFacet = state.types.size || state.channels.size || state.uploaders.size || state.tags.size || state.date !== "any";
+  // P27: a MODIFIER alone filters the CURRENT folder only (screen-local, non-recursive — folders
+  // are not dug into); free TEXT searches deep (server-side when possible, the whole drive)
+  // regardless of which modifiers ride along.
   let subfolders, files, serverPaged = null;
 
   // ── P24 server-side search ──────────────────────────────────────────────────
-  // Live, when the query carries real search intent (free text / typed tags / hastag / tag-sort),
-  // ask Postgres (search_files) instead of filtering the loaded set — so it scales past what the
-  // client holds. Channel/Uploader facets aren't in the RPC, so a query using them stays client-
-  // side (all facets correct). Demo, browse, starred, and RPC errors all fall back to client.
-  const hasSearchIntent = !!(pq.text || pq.tags.length || pq.hastypes.length || (pq.sort && pq.sort.by === "tag"));
-  const useSrv = !isDemoQS() && !data.shared && !state.starred && hasSearchIntent
-    && !state.channels.size && !state.uploaders.size && (data.source === "server" || data.source === "personal");
+  // Live, on free text, ask Postgres (search_files) instead of filtering the loaded set — so it
+  // scales past what the client holds. by:/channel:/before:/in: aren't in the RPC yet (K12 follow-
+  // up), so they're applied client-side on the result either way (applyClientOnlyModifiers below).
+  // Demo, browse, starred, and RPC errors all fall back to client.
+  const useSrv = !isDemoQS() && !data.shared && !state.starred && qtext
+    && (data.source === "server" || data.source === "personal");
   if (useSrv) {
     const args = {
       source: data.source, serverId: data.server?.id || null,
-      text: pq.text || null,
-      tags: [...state.tags, ...pq.tags],
-      hastypes: pq.hastypes,
-      exts: [...state.types],
-      since: state.date !== "any" ? dateCutoff(state.date).toISOString() : null,
-      sort: pq.sort ? pq.sort.by : state.sort,
-      sortTag: pq.sort?.tag || null,
-      dir: pq.sort ? pq.sort.dir : state.dir,
+      text: qtext,
+      tags: mods.tags,
+      hastypes: mods.hastypes,
+      exts: mods.exts,
+      since: null,
+      sort: state.sort,
+      sortTag: null,
+      dir: state.dir,
     };
     const sig = JSON.stringify(args);
     if (!state.srv || state.srv.sig !== sig) { state._runServerSearch(sig, args, false); }   // fires async → repaintBody
     if (!state.srv || state.srv.sig !== sig || (state.srv.loading && !(state.srv.items && state.srv.items.length))) {
       return el(".exview", { "data-exview": "grid" }, [el(".searchloading", {}, [iconEl("search"), el("span", {}, ["Searching…"])])]);
     }
-    if (state.srv.items) {   // success (possibly empty) — the server already applied text/tags/exts/date/sort
+    if (state.srv.items) {   // success (possibly empty) — the server already applied text/tags/exts/sort
       subfolders = [];
       files = state.srv.items.slice();
       if (!state.showHidden) files = files.filter((w) => !w.hidden);
+      files = applyClientOnlyModifiers(files, mods, data);
       serverPaged = { total: state.srv.total, shown: files.length, loading: state.srv.loading };
       state._files = files;
     }
@@ -876,32 +969,30 @@ function contents(data, state, rerender, sel) {
     if (state.starred) {
       subfolders = [];   // Starred is a flat grid of every starred work (no folders)
       files = data.files.filter((w) => w.starred);
-    } else if (searching || anyFacet) {
-      subfolders = [];   // a search / facet flattens the whole tree to matching files
+    } else if (searching) {
+      // P27: free TEXT digs deep — flattens the whole tree to matching files, wherever they live.
+      subfolders = [];
       files = data.files.slice();
       // B19: a bare term matches the filename OR any of the file's tags (was filename only).
-      if (qtext) files = files.filter((w) => (w.title || "").toLowerCase().includes(qtext) || (w.tags || []).some((t) => t.toLowerCase().includes(qtext)));
-      // P21: exact typed tags (bpm:120) — every one must be present.
-      if (pq.tags.length) files = files.filter((w) => pq.tags.every((t) => (w.tags || []).includes(t)));
-      // P21: hastag:bpm — the file must carry a tag of each named type.
-      if (pq.hastypes.length) files = files.filter((w) => pq.hastypes.every((ty) => (w.tags || []).some((t) => parseTag(t).type === ty)));
+      files = files.filter((w) => (w.title || "").toLowerCase().includes(qtext) || (w.tags || []).some((t) => t.toLowerCase().includes(qtext)));
+      if (mods.tags.length) files = files.filter((w) => mods.tags.every((t) => (w.tags || []).includes(t)));         // exact type:value / tag:value
+      if (mods.hastypes.length) files = files.filter((w) => mods.hastypes.every((ty) => (w.tags || []).some((t) => parseTag(t).type === ty)));   // hastag:type
+      if (mods.exts.length) files = files.filter((w) => mods.exts.includes((w.file_ext || "").toLowerCase()));       // ext:
     } else {
+      // P27: NO free text — browsing this folder. A modifier alone is FILTERING (screen-local, non-
+      // recursive): it narrows the files ALREADY in this folder; it does not dig into subfolders,
+      // and subfolders themselves stay visible untouched (they're for arranging/removing, not a
+      // filter target).
       subfolders = data.folders.filter((f) => (f.parentId || null) === state.folderId);
       files = data.files.filter((w) => (w.folderId || null) === state.folderId);
+      if (mods.tags.length) files = files.filter((w) => mods.tags.every((t) => (w.tags || []).includes(t)));
+      if (mods.hastypes.length) files = files.filter((w) => mods.hastypes.every((ty) => (w.tags || []).some((t) => parseTag(t).type === ty)));
+      if (mods.exts.length) files = files.filter((w) => mods.exts.includes((w.file_ext || "").toLowerCase()));
     }
     // Hidden/utility works (#55) are omitted from the library view unless Show-hidden is on.
     if (!state.showHidden) files = files.filter((w) => !w.hidden);
-    // Facet filters, then sort (all apply to files only; subfolders always lead the grid).
-    // Within a facet the selected values union; across facets they intersect (§C.6).
-    if (state.types.size) files = files.filter((w) => state.types.has((w.file_ext || "").toLowerCase()));
-    if (state.channels.size) files = files.filter((w) => state.channels.has(w.channelName));
-    if (state.uploaders.size) files = files.filter((w) => state.uploaders.has(w.who?.name));
-    if (state.tags.size) files = files.filter((w) => (w.tags || []).some((t) => state.tags.has(t)));
-    if (state.date !== "any") { const cut = dateCutoff(state.date); files = files.filter((w) => new Date(w.created_at || 0) >= cut); }
-    // Sort: a sortby: modifier (incl. tag-value sort) overrides the Sort/dir buttons when present.
-    const sortBy = pq.sort ? pq.sort.by : state.sort;
-    const sortDir = pq.sort ? pq.sort.dir : state.dir;
-    files = sortFiles(files, sortBy, sortDir, pq.sort?.tag || null);
+    files = applyClientOnlyModifiers(files, mods, data);   // by:/channel:/before:/after:/in:
+    files = sortFiles(files, state.sort, state.dir, null);
     state._files = files;   // the current in-view set, for ⌘A select-all
   }
 
@@ -918,7 +1009,7 @@ function contents(data, state, rerender, sel) {
       menuItemsFor: (ww, hooks) => detailMenuItems(data, state, rerender, ww, hooks),
       // P26: click a tag in the viewer → filter the whole library to that exact tag (the P11 tag
       // filter). Jumps to root so it searches every folder, closes the viewer, shows the results.
-      onTagSearch: (raw) => { state.selection.clear(); state.selFolders.clear(); state.folderId = null; state.query = ""; state.tags = new Set([raw]); closeDetails(); rerender(); },
+      onTagSearch: (mod) => { closeDetails(); commitModifier(data, state, rerender, mod); },
       // closing the viewer (✕ / Esc / backdrop / nav) drops ?file= from the URL
       onClose: () => { state.openFileId = null; state._syncUrl?.(); },
     });
@@ -1143,9 +1234,18 @@ const FOLDER_TAGS_ON_CARD = 3;   // how many tags the card face + a list row sho
 
 function canWriteFolder(data) { return !data.shared && (data.source === "personal" || !!data.isAdmin); }
 function folderTagTarget(data, folder) { return data.source === "personal" ? { saveFolderId: folder.id } : { folderId: folder.id }; }
-// click a folder tag → search the library for it (same as a file tag, P26)
-function searchFolderTag(state, rerender, raw) {
-  state.selection.clear(); state.selFolders.clear(); state.folderId = null; state.query = ""; state.tags = new Set([raw]); rerender();
+// click a folder tag → filter the library by it (same as a file tag, P26/P38)
+function searchFolderTag(data, state, rerender, mod) { commitModifier(data, state, rerender, mod); }
+
+// Click-to-filter (P26/P38): committing a modifier from a tag click (docked info panel, the details
+// viewer, a folder's tags) jumps to root — so the filter surfaces results from anywhere the item
+// lives, not just the current folder — and ADDS the modifier to the rail, composing with whatever's
+// already filtering rather than replacing it. A duplicate click on an already-active modifier is a
+// no-op (sameModifier dedup), not a second copy.
+function commitModifier(data, state, rerender, mod) {
+  state.selection.clear(); state.selFolders.clear(); state.folderId = null; state.query = "";
+  if (!state.modifiers.some((m) => sameModifier(m, mod))) state.modifiers.push(mod);
+  rerender();
 }
 async function addFolderTagUI(data, state, rerender, folder, raw, after) {
   const clean = (raw || "").trim(); if (!clean) return;
@@ -1169,7 +1269,8 @@ function folderTagInput(data, state, rerender, folder, { onDone } = {}) {
   const field = el(".field.searchbar.tagin.ftaddfield", {}, [input]);
   const recolor = () => {
     const a = (input.value.split(":")[0] || "").trim().toLowerCase();
-    if (input.value.includes(":") && TAG_TYPES.includes(a)) { input.style.color = `var(--tt-${a})`; input.style.fontWeight = "600"; }
+    // P38: ANY colon-prefixed type colours live now (curated or custom), not just TAG_TYPES.
+    if (input.value.includes(":") && a && input.value.slice(input.value.indexOf(":") + 1).trim()) { input.style.color = tagColor(a); input.style.fontWeight = "600"; }
     else { input.style.color = ""; input.style.fontWeight = ""; }
   };
   input.addEventListener("input", recolor);
@@ -1184,11 +1285,11 @@ function folderTagInput(data, state, rerender, folder, { onDone } = {}) {
 // the first-few read-only chips shown on a card / list row (click a chip → search). Kept to ONE
 // line so every folder card is the same height (B24-style even tiling); "+N" opens Properties.
 function folderTagPreview(folder, ctx, { max = FOLDER_TAGS_ON_CARD } = {}) {
-  const { state, rerender } = ctx;
+  const { data, state, rerender } = ctx;
   const tags = folder.tags || [];
   if (!tags.length) return null;
   const row = el(".ftags");
-  for (const raw of tags.slice(0, max)) row.append(tagChip(raw, { onSearch: (r) => searchFolderTag(state, rerender, r) }));
+  for (const raw of tags.slice(0, max)) row.append(tagChip(raw, { onSearch: (mod) => searchFolderTag(data, state, rerender, mod) }));
   if (tags.length > max) {
     const more = el("button.ftmore", { title: "Show all tags" }, [`+${tags.length - max}`]);
     more.addEventListener("click", (e) => { e.stopPropagation(); openFolderProperties(more, folder, ctx); });
@@ -1234,7 +1335,7 @@ function openFolderProperties(anchor, folder, ctx) {
     ]));
     pop.append(el(".ftseclabel", {}, ["Tags"]));
     const chips = el(".ftags");
-    for (const raw of (folder.tags || [])) chips.append(tagChip(raw, { removable: canW, onRemove: (r) => removeFolderTagUI(data, state, rerender, folder, r, () => { paint(); repaintFolderCardTags(folder, ctx); }), onSearch: (r) => { closeMenus(); searchFolderTag(state, rerender, r); } }));
+    for (const raw of (folder.tags || [])) chips.append(tagChip(raw, { removable: canW, onRemove: (r) => removeFolderTagUI(data, state, rerender, folder, r, () => { paint(); repaintFolderCardTags(folder, ctx); }), onSearch: (mod) => { closeMenus(); searchFolderTag(data, state, rerender, mod); } }));
     if (!(folder.tags || []).length) chips.append(el(".ftempty", {}, ["No tags yet."]));
     pop.append(chips);
     if (canW) pop.append(folderTagInput(data, state, rerender, folder, { onDone: () => { paint(); repaintFolderCardTags(folder, ctx); } }));
@@ -1437,12 +1538,6 @@ function sortFiles(files, sort, dir, sortTag) {
   out.sort(asc[key] || asc.date);
   if (d === "desc") out.reverse();
   return out;
-}
-
-function dateCutoff(key) {
-  const now = new Date();
-  if (key === "today") { const d = new Date(now); d.setHours(0, 0, 0, 0); return d; }
-  return new Date(now.getTime() - (DATE_DAYS[key] || 0) * 86400000);
 }
 
 // A multi-select filter menu (CANON §C.6): checkable rows that toggle IN PLACE without

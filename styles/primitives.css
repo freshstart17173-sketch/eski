@@ -134,10 +134,6 @@
    search screen and quick-switcher search fields; overrides any larger per-screen font. */
 .field.searchbar{padding:6px 9px}
 .field.searchbar input{font-size:var(--fs-sm)}
-/* P21: a recognised search modifier (bpm:120 / hastag:bpm / sortby:…) tints the field + its icon so
-   the user sees it was understood — the field is the affordance, so it steps its own border to --ink. */
-.field.searchbar.hasmod{border-color:var(--ink)}
-.field.searchbar.hasmod>.ic{color:var(--ink)}
 
 /* P11 — typed-tag soft chip (tags.js tagChip). Owner-picked V2: a compact --r box washed with
    the type hue for a typed tag; neutral --tagbg for an untyped one. The value carries; the type
@@ -147,6 +143,13 @@
   font-weight:600;font-size:var(--fs-xs);line-height:1.4;background:var(--tagbg);color:var(--soft)}
 .tchip.clickable{cursor:pointer}
 .tchip.clickable:hover{filter:brightness(1.06)}
+/* P38: a typed chip has TWO independent click surfaces (the type affix -> hastag:<type>, the value
+   -> the exact type:value) — each its own keyboard target (role=button tabindex=0, tags.js
+   clickableSpan). The whole-chip brightness above still cues "this is interactive"; the underline +
+   focus ring on hover/focus pinpoint WHICH half is about to fire. */
+.tchip.clickable [role="button"]{cursor:pointer}
+.tchip.clickable [role="button"]:hover{text-decoration:underline}
+.tchip.clickable [role="button"]:focus-visible{outline:1.5px solid currentColor;outline-offset:1px;border-radius:2px}
 .tchip .ty{font-size:var(--fs-mi);opacity:.72;font-weight:600}
 /* P26: the ✕ is a HOVER OVERLAY on the right edge — absolute so it adds no chip width; it partly
    occludes the tag's right side (background:inherit = the chip's own fill) so the ✕ reads clearly,
