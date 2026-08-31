@@ -625,15 +625,34 @@ function paint(tree, pane, data, state, rerender) {
         setTimeout(() => ghost.remove(), 0);
       } catch { /* setDragImage unsupported → default ghost */ }
     });
+    // C22: signal the drop clearly — the target fills + rings and shows a pill saying exactly what
+    // the drop will do (folder → "Move N here", file → "New folder"), with a move cursor. C20: the
+    // pane auto-scrolls when a drag nears its top/bottom edge so off-screen targets are reachable.
+    let curDrop = null;
+    const clearDrop = () => { if (curDrop) { curDrop.classList.remove("droptarget", "dropfolder", "dropfile"); curDrop.querySelector(".droppill")?.remove(); curDrop = null; } };
+    const autoScroll = (y) => { const r = body.getBoundingClientRect(), m = 52; if (y < r.top + m) body.scrollTop -= 16; else if (y > r.bottom - m) body.scrollTop += 16; };
     body.addEventListener("dragover", (e) => {
+      if (!dragIds.length) return;   // only our own file drags (OS-file uploads are handled elsewhere)
+      autoScroll(e.clientY);
       const t = e.target.closest("[data-id], [data-folder-id]");
-      if (t && dragIds.length && !dragIds.includes(t.dataset.id)) { e.preventDefault(); t.classList.add("droptarget"); }
+      if (!t || dragIds.includes(t.dataset.id)) { if (t !== curDrop) clearDrop(); return; }
+      e.preventDefault();
+      try { e.dataTransfer.dropEffect = "move"; } catch { /* Safari */ }
+      if (t === curDrop) return;
+      clearDrop();
+      curDrop = t;
+      const isFolder = t.dataset.folderId != null;
+      t.classList.add("droptarget", isFolder ? "dropfolder" : "dropfile");
+      (t.querySelector(".media") || t).appendChild(
+        el(".droppill", {}, [iconEl(isFolder ? "move" : "plus", "sm"), isFolder ? `Move ${dragIds.length} here` : "New folder"]));
     });
-    body.addEventListener("dragleave", (e) => { e.target.closest("[data-id], [data-folder-id]")?.classList.remove("droptarget"); });
+    body.addEventListener("dragleave", (e) => { const t = e.target.closest("[data-id], [data-folder-id]"); if (t && t === curDrop && !t.contains(e.relatedTarget)) clearDrop(); });
+    body.addEventListener("dragend", clearDrop);
     body.addEventListener("drop", (e) => {
       const t = e.target.closest("[data-id], [data-folder-id]");
+      clearDrop();
       if (!t || !dragIds.length) return;
-      e.preventDefault(); t.classList.remove("droptarget");
+      e.preventDefault();
       const ids = dragIds.filter((x) => x !== t.dataset.id); dragIds = [];
       if (!ids.length) return;
       if (t.dataset.folderId != null) moveInto(data, state, rerender, ids, t.dataset.folderId || null);   // dropped on a folder

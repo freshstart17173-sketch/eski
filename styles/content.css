@@ -71,7 +71,13 @@
 .dragghost .dgcount{position:absolute;top:-6px;right:-6px;min-width:16px;height:16px;padding:0 3px;box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;background:var(--ink);color:var(--on-ink);font-size:10px;font-weight:600;border-radius:var(--r)}
 /* B10 — marquee (rubber-band) select rectangle + a drop target while dragging a file onto a card */
 .marquee{position:absolute;z-index:4;background:color-mix(in srgb,var(--ink) 8%,transparent);border:1px solid var(--line2);border-radius:2px;pointer-events:none}
-.card.droptarget{outline:2px solid var(--ink);outline-offset:1px}
+/* C22: a drop target fills + rings its media (a confident "this will receive"), and a pill overlay
+   names the action. Folder = "Move N here", file = "New folder". */
+.card.droptarget .media{position:relative;background:color-mix(in srgb,var(--ink) 12%,var(--surface));box-shadow:inset 0 0 0 2px var(--ink)}
+.card.droptarget .media > *{opacity:.35}
+.droppill{position:absolute;left:50%;bottom:10px;transform:translateX(-50%);z-index:4;opacity:1!important;display:inline-flex;align-items:center;gap:5px;
+  background:var(--ink);color:var(--on-ink);font-size:var(--fs-mi);font-weight:600;padding:3px 9px;border-radius:var(--r);white-space:nowrap;pointer-events:none}
+.droppill .ic{width:12px;height:12px;color:var(--on-ink)}
 .seclabel{color:var(--muted);font-size:var(--fs-xs);font-weight:600;margin:0 0 var(--s3)}
 
 /* ── P13: file-channel header (V2 + owner tweaks) ─────────────────────────────
