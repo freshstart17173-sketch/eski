@@ -364,6 +364,10 @@ export function renderExplorer(data, view = {}) {
     else if ((e.key === "i" || e.key === "I") && !e.metaKey && !e.ctrlKey && !data.shared) {   // C29: toggle the info panel
       e.preventDefault(); state._toggleInfo?.();
     }
+    else if (e.key === " " && document.activeElement === document.body) {   // C33: Quick Look — Space previews the selected file
+      const sel = (state._files || []).filter((w) => state.selection.has(w.id));
+      if (sel.length === 1 && !state.selFolders.size) { e.preventDefault(); state._openFile?.(sel[0]); }
+    }
   };
   document.addEventListener("keydown", onKey);
   return screen;

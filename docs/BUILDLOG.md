@@ -3362,3 +3362,15 @@ GOTCHA: only a `grid` icon is mounted (no list/rows glyph), so the slider is fla
       `grid` icon to imply compact→large rather than guessing a missing name (icon() warns loudly on an
       unmounted name in dev). A native range thumb is round by default — had to custom-style
       ::-webkit-slider-thumb/::-moz-range-thumb to a square --r handle to honour the durable round rule.
+
+## 2026-08-31 — C33 Quick Look (Spacebar preview)
+IN PROGRESS: (cleared)
+DONE: committed <sha>. Space on a single selected file opens the details viewer as a fast preview
+      (explorer keydown, gated to document.body focus so it never eats a button's Space); Space again
+      (or Esc) closes it (details.js onKey, skipped when a media element is focused so Space still
+      play/pauses the player). ←/→ arrow-through + Esc already existed in the viewer. Verified headless:
+      select file → Space opens (.sheet present) → Space closes; 0 pageerrors.
+NEXT: more file-browser conventions — C2 (type-ahead), C18 (select-all/invert + mousedown click-through),
+      C30 (breadcrumb overflow "…" menu), C31 (skeleton grid + empty-folder drop zone), or P37 (zip download).
+GOTCHA: the explorer keydown handler already bails while `.sheet` is open, so open (explorer) vs close
+      (viewer) Space handlers never collide — the open path is guaranteed to run only when no viewer is up.

@@ -96,6 +96,9 @@ export function openDetails(work, ctx = {}) {
 
   const onKey = (e) => {
     if (e.key === "Escape") { e.preventDefault(); closeDetails(); }
+    // C33 · Quick Look: Space toggles the preview shut again (the explorer opens it with Space). Skip
+    // when a media element is focused so Space still play/pauses the player, and when typing in a field.
+    else if (e.key === " " && !isMediaFocused() && !/^(INPUT|TEXTAREA)$/.test(document.activeElement?.tagName) && !document.activeElement?.isContentEditable) { e.preventDefault(); closeDetails(); }
     else if (e.key === "ArrowLeft" && !isMediaFocused()) go(-1);
     else if (e.key === "ArrowRight" && !isMediaFocused()) go(1);
   };

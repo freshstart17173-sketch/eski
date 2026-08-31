@@ -215,7 +215,7 @@ drag, whitespace" ask). These are look-and-feel/interaction, so most carry the *
 | **C30** | Breadcrumb overflow collapses to a "…" menu (deep paths clip today); self-describing view (count/sort near path) | D8 |
 | **C31** | Loading **skeleton** grid + empty folder as a real **drop zone** (not just text) | D9 |
 | **C32** | Consistent corner **badges** (shared/hidden/locked/has-tags) + folder content-preview hint + correct per-kind icons | D10 |
-| **C33** | **Quick Look** — Spacebar on a selection = fast dismissable preview, arrow through, Esc/Space closes | D11 |
+| ~~**C33**~~ | ✅ Quick Look — Space on a selected file opens the viewer, Space/Esc closes, ←/→ arrow through — 2026-08-31 | D11 |
 
 *(Already closed while auditing: double-click-open (B26), drag-to-select/marquee + drag-to-move (B10),
 right-click menus at the cursor (P28), ⌘A / Esc / **Enter-opens** / **Delete-trashes** (2026-08-31),
