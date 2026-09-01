@@ -1541,7 +1541,7 @@ function repaintFolderCardTags(folder, ctx) {
   card.querySelector(".cardfoot .ftags")?.remove();
   const row = folderTagPreview(folder, ctx);
   const frow = card.querySelector(".cardfoot .frow");
-  if (row && frow) frow.prepend(row);   // tags left, file-count (who) right — same band as file cards
+  if (row && frow) { frow.prepend(row); requestAnimationFrame(() => fitFolderTags(row, folder, ctx)); }
 }
 
 // the card decorator: the first-few preview (large view).
@@ -1549,7 +1549,29 @@ function decorateFolderTags(card, folder, ctx) {
   if (!ctx) return;
   const row = folderTagPreview(folder, ctx);
   const frow = card.querySelector(".cardfoot .frow");
-  if (row && frow) frow.prepend(row);   // into the band's row (tags left, file-count right)
+  if (row && frow) { frow.prepend(row); requestAnimationFrame(() => fitFolderTags(row, folder, ctx)); }
+}
+
+// owner 2026-09-01: "the tags are too cramped, I can't even see the +1" — CSS alone can't guarantee
+// the "+N" chip survives without either shrinking a tag down to one unreadable letter or clipping "+N"
+// itself off entirely (both were tried and both failed, see the .ftags CSS comment). Once the row is
+// actually IN the DOM (real measured widths available), drop WHOLE tags from the end — never a
+// partial one — bumping "+N"'s count each time, until it fits. Every tag left visible is always fully
+// legible; "+N" is always visible and always correct. Deferred to requestAnimationFrame: at the time
+// decorateFolderTags/repaintFolderCardTags call this, the card can still be part of a DETACHED tree
+// being assembled (largeView builds the whole grid off-document before one `body.replaceChildren`
+// attaches it) — clientWidth/scrollWidth on a not-yet-connected element both read 0, so measuring
+// synchronously silently no-ops. By the next frame the tree is guaranteed attached and laid out.
+function fitFolderTags(row, folder, ctx) {
+  const tags = folder.tags || [];
+  if (!tags.length || !row.isConnected) return;   // "+ tag" case is already minimal; nothing to shrink
+  let max = Math.min(FOLDER_TAGS_ON_CARD, tags.length);
+  while (max > 0 && row.scrollWidth > row.clientWidth + 1) {
+    max--;
+    const next = folderTagPreview(folder, ctx, { max });
+    row.replaceWith(next);
+    row = next;
+  }
 }
 
 // The tags popover (opened by hovering/clicking the card's "+N"/"+ tag" chip). Folder name + file
