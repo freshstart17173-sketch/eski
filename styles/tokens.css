@@ -2,8 +2,13 @@
    Values here are ported verbatim from that skill (§1). Do not invent tokens;
    if a value is wrong, fix it in the skill and re-port so the two never drift. */
 
-/* Jost faces, base64-embedded (single source: docs/design/_fonts.css). */
-@import "../docs/design/_fonts.css";
+/* Jost (variable, weights 100-900) as a real binary woff2 — NOT the base64 @import this used to
+   be (docs/design/_fonts.css, still the source for the design docs/gallery, which don't ship to
+   users and stay on the base64 copy). @import serialized the request behind tokens.css's own
+   download before the font was even discovered, and base64 runs ~33% larger than the binary on
+   the wire; OPTIMIZATION.md §1.3. index.html preloads this same file, and font-display:swap here
+   means the fallback font paints immediately and swaps in once Jost lands — never invisible text. */
+@font-face{font-family:'Jost';src:url('fonts/jost-variable.woff2') format('woff2');font-weight:100 900;font-style:normal;font-display:swap}
 
 /* --- LIGHT (the complete palette lives on bare :root) --------------------- */
 :root{

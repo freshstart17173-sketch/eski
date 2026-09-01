@@ -102,6 +102,43 @@ export function markRead(channelId) {
   return supabase.rpc("mark_channel_read", { channel_id: channelId });
 }
 
+// P-RT (2026-09-01): live File explorer — the explorer never subscribed to anything, so a tag
+// applied or a file moved in another tab (or a collaborator's) only ever showed up after a manual
+// reload. One channel per mount, filtered as tightly as postgres_changes allows (a single equality
+// filter per `.on()` — RLS still re-checks delivery on top, so an unfiltered `content_tags`/
+// `folder_tags` listener is safe, just noisier; the caller narrows by checking the changed
+// work/folder is one it already knows about before touching the DOM). `source`/`scopeId` pick the
+// works/placement-vs-saved_items/folders-vs-save_folders filter for a server mount vs. the personal
+// "My files" mount. See schema-39 for the publication + REPLICA IDENTITY this depends on.
+export function subscribeExplorer({ source, serverId, userId }, handlers = {}) {
+  if (!session()) return null;
+  const isServer = source === "server";
+  const scopeCol = isServer ? "server_id" : "owner_id";
+  const scopeVal = isServer ? serverId : userId;
+  if (!scopeVal) return null;
+  const worksFlt = `${scopeCol}=eq.${scopeVal}`;
+  const placeTable = isServer ? "placement" : "saved_items";
+  const folderTable = isServer ? "folders" : "save_folders";
+  const folderFlt = isServer ? `server_id=eq.${serverId}` : `user_id=eq.${userId}`;
+  const ch = supabase.channel(`explorer:${source}:${scopeVal}`)
+    .on("postgres_changes", { event: "INSERT", schema: "public", table: "works", filter: worksFlt }, (p) => handlers.onWorkInsert?.(p.new))
+    .on("postgres_changes", { event: "UPDATE", schema: "public", table: "works", filter: worksFlt }, (p) => handlers.onWorkUpdate?.(p.new))
+    .on("postgres_changes", { event: "DELETE", schema: "public", table: "works", filter: worksFlt }, (p) => handlers.onWorkDelete?.(p.old))
+    .on("postgres_changes", { event: "INSERT", schema: "public", table: placeTable }, (p) => handlers.onPlaceInsert?.(p.new))
+    .on("postgres_changes", { event: "UPDATE", schema: "public", table: placeTable }, (p) => handlers.onPlaceUpdate?.(p.new))
+    .on("postgres_changes", { event: "DELETE", schema: "public", table: placeTable }, (p) => handlers.onPlaceDelete?.(p.old))
+    .on("postgres_changes", { event: "INSERT", schema: "public", table: "content_tags" }, (p) => handlers.onTagInsert?.(p.new))
+    .on("postgres_changes", { event: "DELETE", schema: "public", table: "content_tags" }, (p) => handlers.onTagDelete?.(p.old))
+    .on("postgres_changes", { event: "INSERT", schema: "public", table: "folder_tags" }, (p) => handlers.onFolderTagInsert?.(p.new))
+    .on("postgres_changes", { event: "DELETE", schema: "public", table: "folder_tags" }, (p) => handlers.onFolderTagDelete?.(p.old))
+    .on("postgres_changes", { event: "INSERT", schema: "public", table: folderTable, filter: folderFlt }, (p) => handlers.onFolderInsert?.(p.new))
+    .on("postgres_changes", { event: "UPDATE", schema: "public", table: folderTable, filter: folderFlt }, (p) => handlers.onFolderUpdate?.(p.new))
+    .on("postgres_changes", { event: "DELETE", schema: "public", table: folderTable, filter: folderFlt }, (p) => handlers.onFolderDelete?.(p.old))
+    .subscribe();
+  open.push(ch);
+  return ch;
+}
+
 // send a message (direct RLS-gated insert; there is no send_message RPC). user_id
 // is NOT NULL with no default, so it's set explicitly — the RLS with-check gates
 // it to auth.uid() regardless, this just satisfies the column.

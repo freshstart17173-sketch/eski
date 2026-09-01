@@ -7,7 +7,8 @@
 import { signal, effect } from "./signals.js";
 import { start, match, navigate } from "./router.js";
 import { ready, session, onChange } from "./supabase.js";
-import { icon } from "./icons.js";
+import { icon, iconEl } from "./icons.js";
+import { el, Button } from "./ui.js";
 import { loadWorkspace, loadExplorer, loadProfile, loadSharedWork, loadSharedFolder, loadDMsScreen, loadNotifications, loadUserSettings, loadSearch, clearWorkspaceCache, isDemo, needsProfileSetup } from "./data.js";
 import { renderUserSettings } from "./screens/usersettings.js";
 import { renderServerSettings } from "./screens/settings.js";
@@ -74,8 +75,25 @@ function workspaceView(r) {
 
 let token = 0;   // guards against a stale async render landing after a newer nav
 
+// Outer wrapper: renderRoute is fired fire-and-forget from an effect() (signals.js has no async
+// awaiting), so an uncaught rejection anywhere in the loader chain used to vanish into the void —
+// the boot loading() placeholder (or whatever the previous screen was) just sat there forever with
+// no error, no retry, nothing in the UI. (Reported: upload a file, reload, stuck on the eski!
+// loading screen — the underlying throw, whatever it was, had nowhere to go.) Every route render
+// now goes through this try/catch so a failure always ends in an actionable error screen instead
+// of a silent hang.
 async function renderRoute(r) {
   const mine = ++token;
+  try {
+    await renderRouteInner(r, mine);
+  } catch (e) {
+    if (mine !== token) return;   // a newer nav already superseded this one
+    console.error("[eski] route render failed:", r.path, e);
+    swap(errorScreen(e, () => renderRoute(r)));
+  }
+}
+
+async function renderRouteInner(r, mine) {
   teardownRealtime();                                  // kill the previous view's subscriptions
   closeDetailsForNav();                                  // a nav closes any open details overlay (media keeps playing, B14 — an explicit ✕/Esc/backdrop close stops it instead, see details.js)
   closeSwitcher();                                      // …and any open quick-switcher
@@ -293,6 +311,24 @@ document.addEventListener("keydown", (e) => {
     openCreateServer();
   }
 }, true);
+
+// The route failed to load (network blip, an RLS 42501, a shape bug). Never leaves the user
+// staring at a frozen "eski!" loading screen — names it and offers a retry, matching the
+// .emptystate pattern already used for "no results"/"nothing here" states.
+function errorScreen(err, retry) {
+  const s = el("section.screen", { "data-screen": "error" });
+  const msg = err?.message || String(err || "Something went wrong");
+  const again = Button({ label: "Try again", onClick: () => { again.disabled = true; retry(); } });
+  const reload = el("button.aslink", { type: "button", style: "color:var(--soft);font-weight:600", onClick: () => location.reload() }, ["reload the page"]);
+  s.append(el(".emptystate", {}, [
+    iconEl("clock"),
+    el("h3", {}, ["Couldn’t load this"]),
+    el("p", {}, [msg]),
+    again,
+    el("p", { style: "margin-top:var(--s1)" }, ["Still stuck? ", reload, "."]),
+  ]));
+  return s;
+}
 
 function loading() {
   const s = document.createElement("section");

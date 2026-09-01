@@ -12,6 +12,10 @@
 <link rel="preconnect" href="https://zidqagrmxeawpasurpwi.supabase.co" crossorigin>
 <link rel="preconnect" href="https://cdn.eski.lol" crossorigin>
 
+<!-- The Jost variable face tokens.css declares — preloaded so the browser starts the fetch
+     immediately instead of discovering it only after parsing tokens.css (OPTIMIZATION.md §1.3). -->
+<link rel="preload" as="font" type="font/woff2" href="/styles/fonts/jost-variable.woff2" crossorigin>
+
 <!-- theme.js is a CLASSIC, BLOCKING script and MUST stay before the stylesheets:
      it stamps data-theme before first paint so there's no flash of the wrong theme. -->
 <script src="/app/theme.js"></script>
@@ -20,8 +24,18 @@
 <link rel="stylesheet" href="/styles/base.css">
 <link rel="stylesheet" href="/styles/primitives.css">
 <link rel="stylesheet" href="/styles/shell.css">
-<link rel="stylesheet" href="/styles/content.css">
-<link rel="stylesheet" href="/styles/landing.css">
+<!-- content.css (40 KB) paints the in-app screens; landing.css only the signed-out marketing
+     route. Neither needs to block first paint — deferred via the loadCSS media=print/onload swap
+     (OPTIMIZATION.md §1.5, web.dev "Defer non-critical CSS") so the shell (tokens/base/primitives/
+     shell above) can paint immediately while these load in parallel, non-blocking. By the time any
+     real screen renders, main.js has already spent longer on ready/route data than either file
+     takes to arrive, so there's no visible unstyled flash in practice — just a faster first paint. -->
+<link rel="stylesheet" href="/styles/content.css" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="/styles/landing.css" media="print" onload="this.media='all'">
+<noscript>
+  <link rel="stylesheet" href="/styles/content.css">
+  <link rel="stylesheet" href="/styles/landing.css">
+</noscript>
 <!-- favicon: the BLACK "e!" mark. The ?v bust forces a refetch past the 7-day
      cache (an earlier green logo got cached); favicon.ico covers the browser's
      default /favicon.ico request so it never falls back to a stale/green icon. -->

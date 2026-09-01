@@ -18,7 +18,8 @@ import { iconEl } from "../icons.js";
 import { parseTag, TAG_TYPES, tagChip, tagEditor, tagColor } from "../tags.js";
 import { addFolderTag, removeFolderTag } from "../data.js";
 import { navigate, reload } from "../router.js";
-import { createFolder, moveToFolder, moveFolderTo, renameFolder, deleteFolder, trashWorks, restoreWork, purgeWork, emptyTrash, loadTrash, starWork, unstarWork, saveToFiles, renameWork, setHidden, createShareLink, shareUrl, loadShareLinks, revokeShareLink, setVisibility, visFromDb, createFolderShare, folderShareUrl, requestToJoin, refreshStorage, searchFiles, addTag, removeTag } from "../data.js";
+import { createFolder, moveToFolder, moveFolderTo, renameFolder, deleteFolder, trashWorks, restoreWork, purgeWork, emptyTrash, loadTrash, starWork, unstarWork, saveToFiles, renameWork, setHidden, createShareLink, shareUrl, loadShareLinks, revokeShareLink, setVisibility, visFromDb, createFolderShare, folderShareUrl, requestToJoin, refreshStorage, searchFiles, addTag, removeTag, fetchExplorerFile } from "../data.js";
+import { subscribeExplorer } from "../realtime.js";
 import { workCard, folderCard, mediaUrl, KIND_ICON, downloadWork, baseName } from "../cards.js";
 import { channelColumn } from "./workspace.js";
 import { openUpload, enableDropUpload } from "./upload.js";
@@ -194,8 +195,8 @@ export function renderExplorer(data, view = {}) {
   // (getOpts reads state.folderId live). A `.dropping` overlay hints the target. Not on a
   // read-only shared view.
   if (!shared) enableDropUpload(layout, () => (personal
-    ? { visibility: "private", onDone: () => reload() }
-    : { visibility: "server", serverId: data.server.id, folderId: state.folderId, onDone: () => reload() }));
+    ? { visibility: "private", onDone: state._onUploadDone }
+    : { visibility: "server", serverId: data.server.id, folderId: state.folderId, onDone: state._onUploadDone }));
 
   // Server mount keeps the channel column beside the browser (Files is a channel,
   // never a dead-end). The personal My-files mount hides it — its own tree is the
@@ -252,6 +253,92 @@ export function renderExplorer(data, view = {}) {
     repaintBody();
   }
   state._runServerSearch = runServerSearch;
+
+  // P-RT (owner 2026-09-01: "real time changes so I don't have to reload the page to see a tag get
+  // applied or files get moved into a folder") — the explorer had NO realtime wiring at all before
+  // this. Every handler below only mutates `data.files`/`data.folders` (the same objects the local
+  // action handlers elsewhere in this file already mutate in place); scheduleSync() does the actual
+  // repaint, debounced so a burst of events (a multi-file upload landing) collapses into one
+  // rerender instead of one per row. main.js's teardownRealtime() (called before every route render)
+  // closes this channel — no explicit cleanup needed here. No-op on a read-only shared view, and a
+  // no-op in demo mode (subscribeExplorer bails without a real session).
+  if (!shared) {
+    let syncTimer = null;
+    const scheduleSync = () => { clearTimeout(syncTimer); syncTimer = setTimeout(rerender, 150); };
+    const findFile = (id) => (data.files || []).find((w) => w.id === id);
+    const findFolder = (id) => (data.folders || []).find((f) => f.id === id);
+    // Shared by the realtime works-INSERT handler below AND by a just-finished upload's own
+    // onDone (upload.js hands back the created work ids): both need the exact same "fetch the
+    // joined row, add it if it isn't already there" step, just triggered from two different
+    // places (someone else's upload landing vs. our own). Exposed on `state` because the toolbar's
+    // Upload button is built inside paint() — a separate top-level function, no closure over this
+    // scope — the same reason state._repaint/_refresh exist.
+    const addOrRefreshFile = async (workId) => {
+      if (findFile(workId)) return false;
+      const f = await fetchExplorerFile(workId, { source: data.source, serverId: data.server?.id, membersById: data.membersById });
+      if (f && !findFile(f.id)) { data.files.push(f); return true; }
+      return false;
+    };
+    state._addOrRefreshFile = addOrRefreshFile;
+    // Upload's onDone hands back exactly the ids it just created — add them straight into this
+    // view instead of the old "reload the whole route" (owner bug: "reload needed for things to
+    // update"). Falls back to reload() only if nothing came back (defensive — every success path
+    // through upload.js's doPost passes at least one id).
+    state._onUploadDone = async (ids) => {
+      if (!ids?.length) { reload(); return; }
+      const added = await Promise.all(ids.map(addOrRefreshFile));
+      if (added.some(Boolean)) rerender();
+    };
+    subscribeExplorer({ source: data.source, serverId: data.server?.id, userId: data.me?.id }, {
+      // INSERT/UPDATE both resolve to the same authoritative refetch (fetchExplorerFile) — a
+      // realtime payload carries only the changed table's own columns, never the joined
+      // placement/tags a card needs, so there's no cheaper way to shape a correct row.
+      onWorkInsert: async (row) => { if (await addOrRefreshFile(row.id)) scheduleSync(); },
+      onWorkUpdate: async (row) => {
+        const existing = findFile(row.id);
+        if (row.deleted_at) {   // trashed elsewhere — drop it from this view like the local trash flow does
+          if (existing) { data.files = data.files.filter((w) => w.id !== row.id); scheduleSync(); }
+          return;
+        }
+        const f = await fetchExplorerFile(row.id, { source: data.source, serverId: data.server?.id, membersById: data.membersById });
+        if (!f) return;
+        if (existing) Object.assign(existing, f); else data.files.push(f);
+        scheduleSync();
+      },
+      onWorkDelete: (old) => { if (findFile(old.id)) { data.files = data.files.filter((w) => w.id !== old.id); scheduleSync(); } },
+      // placement (server) / saved_items (personal): the one row that files a work into a folder.
+      // A folder's own ON DELETE SET NULL (schema-03/07) fires as an UPDATE here when the folder it
+      // pointed at is deleted, so a folder delete reparenting its contents to root falls out of this
+      // for free — no separate cascade handling needed.
+      onPlaceInsert: (row) => { const f = findFile(row.work_id); if (f) { f.folderId = row.folder_id || null; scheduleSync(); } },
+      onPlaceUpdate: (row) => { const f = findFile(row.work_id); if (f) { f.folderId = row.folder_id || null; scheduleSync(); } },
+      onPlaceDelete: (old) => { const f = findFile(old.work_id); if (f) { f.folderId = null; scheduleSync(); } },
+      // content_tags/folder_tags subscribe unfiltered (RLS still gates delivery) — same "whole
+      // table, filter to what's on screen" pattern realtime.js already uses for reactions.
+      onTagInsert: (row) => { const f = findFile(row.work_id); if (f && !f.tags.includes(row.tag)) { f.tags.push(row.tag); scheduleSync(); } },
+      onTagDelete: (old) => { const f = findFile(old.work_id); if (f) { const i = f.tags.indexOf(old.tag); if (i >= 0) { f.tags.splice(i, 1); scheduleSync(); } } },
+      onFolderTagInsert: (row) => { const fo = findFolder(row.folder_id || row.save_folder_id); if (fo && !fo.tags.includes(row.tag)) { fo.tags.push(row.tag); scheduleSync(); } },
+      onFolderTagDelete: (old) => { const fo = findFolder(old.folder_id || old.save_folder_id); if (fo) { const i = fo.tags.indexOf(old.tag); if (i >= 0) { fo.tags.splice(i, 1); scheduleSync(); } } },
+      onFolderInsert: (row) => {
+        if (findFolder(row.id)) return;
+        data.folders.push({ id: row.id, name: row.name, parentId: row.parent_id, archived: !!row.archived, locked: !!row.locked, count: 0, tags: [], createdAt: row.created_at });
+        scheduleSync();
+      },
+      onFolderUpdate: (row) => {
+        const fo = findFolder(row.id); if (!fo) return;
+        fo.name = row.name; fo.parentId = row.parent_id;
+        if ("archived" in row) fo.archived = !!row.archived;
+        if ("locked" in row) fo.locked = !!row.locked;
+        scheduleSync();
+      },
+      onFolderDelete: (old) => {
+        if (!findFolder(old.id)) return;
+        data.folders = data.folders.filter((f) => f.id !== old.id);
+        if (state.folderId === old.id) state.folderId = null;   // don't strand the view in a folder that's gone
+        scheduleSync();
+      },
+    });
+  }
 
   const rerender = () => { paint(tree, pane, data, state, rerender); syncUrl(); };
   rerender();
@@ -631,12 +718,13 @@ function paint(tree, pane, data, state, rerender) {
   // toolbar — search (+ its autocomplete helper + the filter rail below) · Sort/Group · New folder · Upload
   const personal = data.source === "personal";
   const { wrap: search } = searchWidget(data, state, () => repaintBody());
-  // onDone reloads the route so a just-uploaded file (or a whole uploaded folder) shows
-  // immediately — the explorer data is cached per render, so without a refetch the new work
-  // wouldn't appear until a manual reload (owner bug: "reload needed for things to update").
+  // onDone (state._onUploadDone, wired in renderExplorer) drops the just-created file(s) straight
+  // into `data.files` and rerenders — P-RT replaced the old "reload the whole route" fix for the
+  // owner bug "reload needed for things to update" now that the explorer has live sync to fall
+  // back on too.
   const uploadOpts = data.shared ? null : (personal
-    ? { visibility: "private", onDone: () => reload() }
-    : { visibility: "server", serverId: data.server.id, folderId: state.folderId, onDone: () => reload() });
+    ? { visibility: "private", onDone: state._onUploadDone }
+    : { visibility: "server", serverId: data.server.id, folderId: state.folderId, onDone: state._onUploadDone });
 
   const serverSource = data.source === "server";
 

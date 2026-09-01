@@ -8,7 +8,10 @@
 //                  realtime.js + workspace.js; this module does the initial reads.
 //  - signed out  → { needsAuth:true } so the shell shows a sign-in prompt.
 
-import { demoWorkspace, demoExplorer, demoProfile, demoComments, demoSharedWork, demoDMs, demoDMThread, demoNotifications, demoInvites, demoInviteCandidates, demoAudit, demoSharedFolder, demoJoinRequests } from "./demo.js";
+// demo.js (the Late Bloom LP fixture, ~25 KB) is NEVER statically imported — every real user
+// would otherwise download it and never use it. Each `isDemo()` branch below dynamic-imports it
+// on the spot instead (OPTIMIZATION.md §1.2); the module is fetched once and cached by the
+// browser/ESM loader, so a demo SESSION (which hits many of these branches) pays the cost once.
 import { supabase } from "./supabase.js";
 import { session } from "./supabase.js";
 
@@ -286,7 +289,7 @@ export async function loadEarlierMessages(channelId, beforeIso, data) {
 
 // ── the live read (P4.10) ───────────────────────────────────────────────────
 export async function loadWorkspace({ serverId, channelId } = {}) {
-  if (isDemo()) return demoWorkspace();
+  if (isDemo()) { const d = await import("./demo.js"); return d.demoWorkspace(); }
   const user = session();
   if (!user) return emptyWorkspace(serverId, channelId, /*needsAuth*/ true);
 
@@ -409,6 +412,34 @@ export async function fetchChannelAttachment(workId, membersById = {}, chanName 
   return shapeWork(w, null, membersById, chanName, (tags || []).map((t) => t.tag));
 }
 
+// P-RT: resolve one work into the EXPLORER's file shape (loadServerExplorer/loadPersonalExplorer's
+// per-row shape, not the channel-attachment one above) for a live works INSERT/UPDATE echo — the
+// postgres_changes payload carries only the changed columns, never the joined placement/tags a card
+// needs. Mirrors those two loaders' per-file shaping exactly so a realtime-added file renders
+// identically to one from the initial load. Returns null if it can't read the work (RLS) or it was
+// soft-deleted after the event fired.
+export async function fetchExplorerFile(workId, { source = "server", serverId = null, membersById = {} } = {}) {
+  if (!workId || isDemo()) return null;
+  const isServer = source === "server";
+  const [{ data: w }, { data: tagRows }, { data: place }] = await Promise.all([
+    supabase.from("works").select("id,title,kind,file_ext,blob_sha,bytes,author_id,hidden,visibility,created_at").eq("id", workId).is("deleted_at", null).maybeSingle(),
+    supabase.from("content_tags").select("tag").eq("work_id", workId),
+    isServer
+      ? supabase.from("placement").select("folder_id,channel_id").eq("work_id", workId).eq("surface", "server").eq("surface_id", serverId).maybeSingle()
+      : supabase.from("saved_items").select("folder_id").eq("work_id", workId).maybeSingle(),
+  ]);
+  if (!w) return null;
+  const tags = (tagRows || []).map((t) => t.tag);
+  if (isServer) return shapeWork(w, place, membersById, {}, tags);
+  return {
+    id: w.id, title: w.title, name: w.title,
+    kind: w.kind, file_ext: w.file_ext, blob_sha: w.blob_sha, bytes: w.bytes,
+    hidden: !!w.hidden, created_at: w.created_at, tags,
+    folderId: place?.folder_id || null, starred: false,
+    channelName: null, who: null,
+  };
+}
+
 // P24: server-side file search (the search_files RPC — schema-35). Does the heavy matching in
 // Postgres so it scales past the client-side substring filter: full-text over the filename +
 // tag-contains (B19), the P21 modifiers (exact tags, hastag types, sortby), plus Type(ext)/Date
@@ -450,7 +481,7 @@ export async function searchFiles(opts = {}) {
 }
 
 export async function loadExplorer({ serverId, folderId, source = "server" } = {}) {
-  if (isDemo()) return demoExplorer(source);
+  if (isDemo()) { const d = await import("./demo.js"); return d.demoExplorer(source); }
   const user = session();
   if (!user) return { needsAuth: true, live: false };
   if (source === "personal") return loadPersonalExplorer(user, folderId);
@@ -858,7 +889,7 @@ export async function isWorkSaved(workId) {
 // `comments.user_id` points at auth.users (no FK to profiles), so authors are fetched
 // SEPARATELY into a byId map — the same embed hazard the workspace hit (bug #1).
 export async function loadComments(workId) {
-  if (isDemo()) return demoComments(workId);
+  if (isDemo()) { const d = await import("./demo.js"); return d.demoComments(workId); }
   const user = session();
   const { data: rows, error } = await supabase.from("comments")
     .select("id,body,user_id,created_at")
@@ -979,7 +1010,7 @@ export async function createFolderShare(source, folderId) {
 // name as the crumb root, an empty folder tree, and the folder's works as `files`. Returns
 // `{ dead:true }` for a revoked/expired/invalid token (main.js shows the dead-link state).
 export async function loadSharedFolder(token) {
-  if (isDemo()) return demoSharedFolder(token);
+  if (isDemo()) { const d = await import("./demo.js"); return d.demoSharedFolder(token); }
   const { data, error } = await supabase.rpc("resolve_folder_share", { p_token: token });
   if (error || !data || !data.length) return { dead: true };
   const first = data[0];
@@ -1010,7 +1041,7 @@ export async function requestToJoin(serverId, message = null) {
 // Admin: the pending join requests for a server (jr_read RLS lets an admin read them), with the
 // requester's profile. Returns [] for a non-admin (RLS filters the rows out).
 export async function loadJoinRequests(serverId) {
-  if (isDemo()) return demoJoinRequests();
+  if (isDemo()) { const d = await import("./demo.js"); return d.demoJoinRequests(); }
   const { data: reqs } = await supabase.from("join_requests")
     .select("user_id,message,created_at").eq("server_id", serverId).eq("status", "pending")
     .order("created_at", { ascending: true });
@@ -1060,7 +1091,7 @@ export async function setVisibility(workId, uiVis) {
 // work; the client then reads tags + the author name (both allowed once the live link
 // grants can_read_work). Any failure collapses to { dead:true } → the "link expired" state.
 export async function loadSharedWork(token) {
-  if (isDemo()) return demoSharedWork(token);
+  if (isDemo()) { const d = await import("./demo.js"); return d.demoSharedWork(token); }
   const { data: w, error } = await supabase.rpc("resolve_share_link", { token });
   if (error || !w) return { dead: true };
   let who = null;
@@ -1107,7 +1138,7 @@ export async function postComment(workId, body) {
 // We compute the POV for chrome, but RLS is the real fence — the shelf queries only
 // return what the viewer may read, so we just group what comes back by visibility.
 export async function loadProfile(handle) {
-  if (isDemo()) return demoProfile(handle);
+  if (isDemo()) { const d = await import("./demo.js"); return d.demoProfile(handle); }
   const user = session();
   if (!user) return { needsAuth: true, live: false };
 
@@ -1277,7 +1308,7 @@ export async function updateServer(serverId, patch = {}) {
 // have no FK to each other (user_id → auth.users), so profiles are fetched SEPARATELY into a
 // byId map (the bug #1 embed hazard). No member hue — DMs/friends are outside any server.
 export async function loadDMsScreen() {
-  if (isDemo()) return demoDMs();
+  if (isDemo()) { const d = await import("./demo.js"); return d.demoDMs(); }
   const user = session();
   if (!user) return { needsAuth: true, live: false };
   const { servers, me } = await loadRail(user);
@@ -1401,7 +1432,7 @@ function shapeDM(r, byId, meId) {
   return { id: r.id, author: { name: nm, initials: initials(nm), avatar_key: p?.avatar_key || null }, time: fmtTime(r.created_at), body: r.body || "", mine: r.user_id === meId };
 }
 export async function loadDMThread(dmChannelId) {
-  if (isDemo()) return demoDMThread(dmChannelId);
+  if (isDemo()) { const d = await import("./demo.js"); return d.demoDMThread(dmChannelId); }
   const user = session();
   if (!user) return { messages: [], memberById: {}, dmChannelId };
   const { data: rows } = await supabase.from("dm_messages")
@@ -1484,7 +1515,7 @@ export async function shapeIncomingNotif(row) {
 }
 
 export async function loadNotifications() {
-  if (isDemo()) return demoNotifications();
+  if (isDemo()) { const d = await import("./demo.js"); return d.demoNotifications(); }
   const user = session();
   if (!user) return { needsAuth: true, live: false };
   const { servers, me } = await loadRail(user);
@@ -1516,7 +1547,7 @@ export async function markAllNotifsRead() {
 // NO FK to profiles, so names are fetched SEPARATELY into a byId map (the #1 embed hazard), never
 // PostgREST-embedded. Returns shaped rows: {id, action, actor, target, time, reason, until}.
 export async function loadAuditLog(serverId) {
-  if (isDemo()) return demoAudit();
+  if (isDemo()) { const d = await import("./demo.js"); return d.demoAudit(); }
   const { data: rows, error } = await supabase.from("audit_log")
     .select("id,action,actor_id,target_type,target_id,meta,created_at")
     .eq("server_id", serverId).order("created_at", { ascending: false }).limit(100);
@@ -1714,7 +1745,7 @@ export async function createInvite(serverId, { expiresDays = null, maxUses = nul
 // The active invite links for a server (admin-only read via si_read). Expired ones are dropped
 // so the list shows only links that still work; each carries its expiry + usage for the panel.
 export async function loadInvites(serverId) {
-  if (isDemo()) return demoInvites();
+  if (isDemo()) { const d = await import("./demo.js"); return d.demoInvites(); }
   const { data, error } = await supabase.from("server_invites")
     .select("code,expires_at,max_uses,uses,created_at")
     .eq("server_id", serverId)
@@ -1735,7 +1766,7 @@ export async function revokeInvite(code) {
 // server. Pure client query — friendships (fr_read: my edges) and server_members (sm_read: a
 // member sees the roster) are both readable to me, and profiles are world-readable.
 export async function loadInviteCandidates(serverId) {
-  if (isDemo()) return demoInviteCandidates();
+  if (isDemo()) { const d = await import("./demo.js"); return d.demoInviteCandidates(); }
   const user = session();
   if (!user) return [];
   const [{ data: friRows }, { data: memRows }] = await Promise.all([

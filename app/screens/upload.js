@@ -445,6 +445,8 @@ export async function openUpload(opts = {}) {
       // folder upload carries per-file tags too (was []); a file past the row cap uses its name + [].
       prog.set(0.88);
       let saved = 0;
+      const createdIds = [];   // handed to onDone so the caller can drop the new rows straight into
+                                // its own view instead of a full refetch (see explorer.js's addOrRefreshFile)
       for (let i = 0; i < hashed.length; i++) {
         const h = hashed[i];
         const meta = fileMeta[i];
@@ -464,6 +466,7 @@ export async function openUpload(opts = {}) {
           p_tags: (meta?.getTags?.() || []),
         });
         if (error) throw new Error(`couldn’t save the post (${error.code || "db"}): ${error.message}`);
+        createdIds.push(workId);
         // Collaborators still only make sense on a single loose post.
         if (!structured && files.length === 1)
           for (const c of collabs) await supabase.rpc("add_collaborator", { work_id: workId, handle: c.handle, role: c.role });
@@ -473,7 +476,7 @@ export async function openUpload(opts = {}) {
       prog.done();
       toast({ message: files.length > 1 ? `Uploaded ${files.length} files` : "Posted", icon: "check" });
       if (!prog.minimized()) close();   // if it was minimized the sheet's already gone; the chip shows "complete"
-      opts.onDone && opts.onDone();
+      opts.onDone && opts.onDone(createdIds);
     } catch (e) {
       uploading = false;
       prog.fail();
