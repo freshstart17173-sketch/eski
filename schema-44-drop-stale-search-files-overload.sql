@@ -1,0 +1,12 @@
+-- eski schema · 44 · drop the stale search_files(...) overload left behind by schema-42
+--
+-- schema-42 added p_folder_id as a 14th parameter via `create or replace function search_files(...)`
+-- — but CREATE OR REPLACE only replaces a function with the IDENTICAL parameter list; a changed
+-- signature creates a SEPARATE overload instead. The pre-schema-42, 13-arg version was never
+-- replaced, just shadowed — it sat there as a dead, confusing duplicate function (found while
+-- verifying schema-43's fuzzy-search change: a named-argument call omitting p_folder_id, which the
+-- app itself never does, was ambiguous between the two). This is exactly the "duplicate selector,
+-- source-order deciding the winner" failure mode CLAUDE.md calls out — just in SQL. The app's own
+-- RPC calls (app/data.js) always pass p_folder_id, so this was never reachable in real use; dropping
+-- it removes a landmine, not a behavior.
+drop function if exists search_files(text, uuid, text, text[], text[], text[], text, timestamptz, text, text, text, int, int);

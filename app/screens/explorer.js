@@ -157,6 +157,77 @@ function clipboardMatchesMount(data) {
   return !!clipboard && clipboard.source === data.source && (clipboard.serverId || null) === (data.server?.id || null);
 }
 
+// The ONE way to navigate to a folder (owner bug report 2026-09-01: "jumping to a new folder
+// doesn't remove the modifiers/search term so it keeps searching for things that fit the query and
+// all the folders look empty"). Before this, every navigation site (tree row, crumb, folder-card
+// Open, double-click) hand-rolled its own subset of `state.folderId = …; state.query = ""; …` —
+// most cleared query/activeQuery but NONE cleared state.modifiers, so a committed modifier (an
+// in:folder scope, a clicked tag) rode along into the new folder and kept filtering it. Some sites
+// (the crumb buttons) didn't even clear the free-text query. One function now owns the whole reset
+// so a future navigation site can't reintroduce the same gap piecemeal.
+function goToFolder(state, folderId) {
+  state.folderId = folderId;
+  state.query = ""; state.activeQuery = ""; state.modifiers = [];
+  state.selection.clear(); state.selFolders.clear();
+  state.trash = false;
+  state.lastIdx = -1; state.lastFolderIdx = -1;
+}
+
+// owner 2026-09-01: "should be able to search with just the filter modifiers. hastag:happy without
+// anything in the search bar still makes sense, i want to see everything with that tag. that's what
+// tapping a tag is supposed to do." Before this, `searching` (paint()'s pathline swap AND contents()'s
+// browse-vs-search branch) was keyed purely off activeQuery — a modifier committed with no free text
+// (exactly what clicking a tag chip produces, via commitModifier) left `searching` false, so the grid
+// stayed on the plain BROWSE branch, which only shows the CURRENT folder non-recursively — a clicked
+// tag's filter silently applied to nothing visible. `in:` alone is excluded on purpose: it's a SCOPE
+// for another search, not a search by itself — "in:beats" with nothing else doesn't say what to look
+// for inside beats, so it shouldn't flip the view into "search results" with everything in scope.
+function hasSearchCriteria(activeQuery, modifiers) {
+  if (activeQuery.trim()) return true;
+  const mods = splitModifiers(modifiers);
+  return !!(mods.tags.length || mods.hastypes.length || mods.exts.length || mods.by || mods.channel || mods.before || mods.after);
+}
+
+// owner 2026-09-01: "implement fuzzy search." The client-side path (demo mode, and the fallback when
+// a live search_files/search_folders RPC call errors — see contents()) only ever did an exact
+// substring check; the server-side path (schema-43, search_files/search_folders) now does real
+// typo-tolerant matching via pg_trgm trigram similarity. This is the client-side equivalent so the
+// two don't diverge in what counts as "found it" — a bounded Levenshtein check against each word (and
+// the whole string, for short titles), tolerant of the kind of single/double-character typo pg_trgm
+// also catches. Exact substring is tried FIRST and is the overwhelmingly common case — the fuzzy pass
+// only runs when that fails, so a normal correctly-typed search costs nothing extra.
+function fuzzyMatch(text, query) {
+  const t = (text || "").toLowerCase();
+  const q = (query || "").toLowerCase().trim();
+  if (!q) return true;   // no text constraint (a modifier-only search) — everything passes
+  if (t.includes(q)) return true;
+  const maxDist = q.length <= 4 ? 1 : q.length <= 8 ? 2 : 3;   // longer query → tolerate a bit more
+  for (const w of t.split(/[\s_.\-]+/)) if (w && levenshteinWithin(w, q, maxDist)) return true;
+  return levenshteinWithin(t, q, maxDist);   // also try the whole string (short titles, e.g. folder names)
+}
+// bounded edit distance: returns false as soon as it's certain the real distance exceeds maxDist,
+// instead of always computing the full O(a.length * b.length) table — a fuzzy pass over hundreds of
+// filenames needs to stay cheap since it's the FALLBACK path, run per-candidate on every keystroke's
+// worth of results.
+function levenshteinWithin(a, b, maxDist) {
+  if (Math.abs(a.length - b.length) > maxDist) return false;
+  let prev = new Array(b.length + 1);
+  for (let j = 0; j <= b.length; j++) prev[j] = j;
+  for (let i = 1; i <= a.length; i++) {
+    const cur = new Array(b.length + 1);
+    cur[0] = i;
+    let rowMin = cur[0];
+    for (let j = 1; j <= b.length; j++) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + cost);
+      if (cur[j] < rowMin) rowMin = cur[j];
+    }
+    if (rowMin > maxDist) return false;
+    prev = cur;
+  }
+  return prev[b.length] <= maxDist;
+}
+
 export function renderExplorer(data, view = {}) {
   const screen = el("section.screen", { "data-screen": "explorer" });
 
@@ -568,7 +639,7 @@ export function renderExplorer(data, view = {}) {
       state._refresh?.();
     }
     else if (e.key === "Enter") {   // open the selection: a folder walks in, a file opens the viewer
-      if (state.selFolders.size === 1) { e.preventDefault(); state.folderId = [...state.selFolders][0]; state.selFolders.clear(); state.query = ""; state.activeQuery = ""; rerender(); }
+      if (state.selFolders.size === 1) { e.preventDefault(); goToFolder(state, [...state.selFolders][0]); rerender(); }
       else { const sel = (state._files || []).filter((w) => state.selection.has(w.id)); if (sel.length) { e.preventDefault(); state._openFile?.(sel[0]); } }
     }
     else if ((e.key === "Delete" || (e.key === "Backspace" && (e.metaKey || e.ctrlKey))) && state.selection.size && !data.shared) {   // Delete / ⌘⌫ → trash the selected files
@@ -694,7 +765,7 @@ function paintTree(tree, data, state, rerender) {
     label: rootLabel(data), level: 0, on: rootOn, hasKids: childrenOf(null).length > 0,
     open: !state.collapsed.has("__root__"),
     onToggle: () => { toggle(state.collapsed, "__root__"); rerender(); },
-    onOpen: () => { state.folderId = null; state.trash = false; rerender(); },
+    onOpen: () => { goToFolder(state, null); rerender(); },
   }));
   if (!state.collapsed.has("__root__")) walk(null, 1);
 
@@ -706,7 +777,7 @@ function paintTree(tree, data, state, rerender) {
         label: f.name, level, on: state.folderId === f.id && !state.trash, hasKids: kids.length > 0, open,
         locked: f.locked, archived: f.archived,
         onToggle: () => { toggle(state.collapsed, f.id); rerender(); },
-        onOpen: () => { state.folderId = f.id; state.query = ""; state.activeQuery = ""; state.trash = false; rerender(); },
+        onOpen: () => { goToFolder(state, f.id); rerender(); },
       }));
       if (open && kids.length) walk(f.id, level + 1);
     }
@@ -761,7 +832,9 @@ function paint(tree, pane, data, state, rerender) {
 
   // "don't show any search UI until Enter" — this reads activeQuery (submitted), never query
   // (live-typed); typing alone must never flip the pathline to the search-results banner below.
-  const searching = state.activeQuery.trim().length > 0;
+  // hasSearchCriteria also counts a committed MODIFIER with no free text (owner 2026-09-01: "tapping
+  // a tag is supposed to" show everything with it — see that function's own comment).
+  const searching = hasSearchCriteria(state.activeQuery, state.modifiers);
 
   // breadcrumb (browsing) OR a search-results indicator (searching)
   const crumbs = el(".crumbs", { id: "exCrumbs" });
@@ -773,13 +846,13 @@ function paint(tree, pane, data, state, rerender) {
   // below ("" on the root button reads back as null, same convention as a folder card's own
   // data-folder-id="" for root elsewhere in this file).
   crumbs.append(data.source === "server"
-    ? el("button.crumbroot.home", { title: rootLabel(data), "aria-label": rootLabel(data), "data-crumb-folder": "", onClick: () => { state.folderId = null; rerender(); } }, [iconEl("folder", "sm")])
-    : el("button.crumbroot", { "data-crumb-folder": "", onClick: () => { state.folderId = null; rerender(); } }, [rootLabel(data)]));
+    ? el("button.crumbroot.home", { title: rootLabel(data), "aria-label": rootLabel(data), "data-crumb-folder": "", onClick: () => { goToFolder(state, null); rerender(); } }, [iconEl("folder", "sm")])
+    : el("button.crumbroot", { "data-crumb-folder": "", onClick: () => { goToFolder(state, null); rerender(); } }, [rootLabel(data)]));
   // C30: a deep path collapses its MIDDLE crumbs into a "…" menu so it never wraps/clips — root › … ›
   // parent › current (Windows/Drive). The last two folders always stay visible; everything between
   // root and them goes behind the overflow button. Shallow paths render in full.
   const sep = () => crumbs.append(el("span.sl", {}, ["/"]));
-  const crumbBtn = (f) => crumbs.append(el("button", { "data-crumb-folder": f.id, onClick: () => { state.folderId = f.id; rerender(); } }, [f.name]));
+  const crumbBtn = (f) => crumbs.append(el("button", { "data-crumb-folder": f.id, onClick: () => { goToFolder(state, f.id); rerender(); } }, [f.name]));
   const crumbCur = (f) => crumbs.append(el("b", {}, [f.name]));
   const MAXCRUMB = 3;   // trailing folders shown before the path collapses
   if (path.length <= MAXCRUMB) {
@@ -788,7 +861,7 @@ function paint(tree, pane, data, state, rerender) {
     const hidden = path.slice(0, -2), tail = path.slice(-2);
     sep();
     crumbs.append(el("button.crumbmore", { title: "Show path", "aria-label": "Show hidden folders", onClick: (e) =>
-      openMenu(e.currentTarget, hidden.map((f) => ({ label: f.name, icon: "folder", onClick: () => { state.folderId = f.id; rerender(); } }))) }, ["…"]));
+      openMenu(e.currentTarget, hidden.map((f) => ({ label: f.name, icon: "folder", onClick: () => { goToFolder(state, f.id); rerender(); } }))) }, ["…"]));
     tail.forEach((f, i) => { sep(); (i === tail.length - 1 ? crumbCur : crumbBtn)(f); });
   }
   // owner 2026-09-01: this whole banner only ever appears on a SUBMITTED search now (Enter), which
@@ -798,13 +871,20 @@ function paint(tree, pane, data, state, rerender) {
   // (auto-seeded when a search starts inside a folder, still removable) means the search stayed
   // scoped to that folder + its subtree; no in: modifier means it ran from the mount root.
   const searchScope = splitModifiers(state.modifiers).inFolder;
+  // owner 2026-09-01: a modifier-only "search" (no free text — see hasSearchCriteria) has no query
+  // word to show; "Search results for **''**" would read as broken. Name it by what's actually
+  // active instead.
+  const qtrim = state.activeQuery.trim();
   const searchState = el(".crumbs.exsearchstate", {}, [
     (() => { const s = iconEl("search", "sm"); s.style.color = "var(--muted)"; return s; })(),
     el("span", {}, [
-      "Search results for ", el("b", {}, [state.activeQuery]),
+      ...(qtrim ? ["Search results for ", el("b", {}, [qtrim])] : ["Filtered by your search modifiers"]),
       searchScope ? [" in ", el("b", {}, [searchScope]), " and its subfolders"] : [" — across all of ", rootLabel(data)],
     ].flat()),
-    el("button.btn.ghost.sm", { onClick: () => { state.query = ""; state.activeQuery = ""; rerender(); } }, ["Clear search"]),
+    // Clear search also drops modifiers now that they alone can drive this banner — leaving them
+    // behind would make the button look dead (the banner wouldn't go away, since a modifier alone
+    // still counts as "searching").
+    el("button.btn.ghost.sm", { onClick: () => { state.query = ""; state.activeQuery = ""; state.modifiers = []; rerender(); } }, ["Clear search"]),
   ]);
 
   // P32: the density slider replaces the Grid/List dropdown. Position 0 = List; 1..5 = grid stages
@@ -1337,6 +1417,8 @@ function searchWidget(data, state, repaintBody, rerender) {
   // to auto-seed the moment you do.
   const curFolder = state.folderId ? (data.folders || []).find((f) => f.id === state.folderId) : null;
   const input = el("input", {
+    id: "ex-search-input",   // C-focus: a stable handle rerenderKeepFocus can find on the FRESH input
+    // paint() rebuilds (this closure's own `input` var is detached the instant rerender() returns)
     value: state.query,
     placeholder: data.shared ? "Search this folder" : (curFolder ? `Search “${curFolder.name}”` : (data.source === "personal" ? "Search files…" : "Search this server…")),
     role: "combobox", "aria-autocomplete": "list", "aria-expanded": "false", "aria-controls": "exacpop",
@@ -1345,6 +1427,24 @@ function searchWidget(data, state, repaintBody, rerender) {
   const pop = el(".pop.exacpop", { id: "exacpop", role: "listbox", "aria-label": "Search modifier suggestions" });
   pop.hidden = true;
   const wrap = el(".searchcombo", {}, [search, pop]);
+
+  // owner 2026-09-01: "make sure there is no weird reloading/loss of focus issues" — a full rerender()
+  // (Enter submits, or now a space-committed modifier — see below) tears this whole widget down and
+  // rebuilds a BRAND NEW <input>, which silently steals focus/cursor away from whatever the user was
+  // mid-typing. Every call site below that needs the pathline/grid to actually flip on a commit goes
+  // through this instead of a bare rerender() — it captures focus, does the (unavoidable) rebuild,
+  // then restores focus + cursor onto the fresh input by #id (this closure's own `input` is stale by
+  // the time rerender() returns).
+  function rerenderKeepFocus(caretPos) {
+    const hadFocus = document.activeElement === input;
+    rerender();
+    if (!hadFocus) return;
+    const fresh = /** @type {HTMLInputElement|null} */ (document.getElementById("ex-search-input"));
+    if (!fresh) return;
+    const p = Math.max(0, Math.min(caretPos ?? fresh.value.length, fresh.value.length));
+    fresh.focus();
+    try { fresh.setSelectionRange(p, p); } catch { /* some input types don't support it — harmless */ }
+  }
 
   let suggestions = [], hi = -1;
 
@@ -1424,6 +1524,11 @@ function searchWidget(data, state, repaintBody, rerender) {
     // the rail immediately IF it parses as key:value; a plain free-text word lets the space through
     // untouched (search text is still space-separated the normal way). Works from any cursor
     // position, not just end-of-input, since a modifier can be edited mid-string.
+    // owner 2026-09-01 (same message as hasSearchCriteria): a modifier IS a search on its own — a
+    // space-commit now runs it immediately (rerenderKeepFocus), same as clicking a tag chip does,
+    // instead of leaving the grid on the stale browse view until a later Enter. Free TEXT still
+    // waits for Enter (the "deliberate/expensive" action, unchanged) — activeQuery is untouched
+    // here, so any free text still sitting in the field plays no part until it's actually submitted.
     if (e.key === " ") {
       const caret = input.selectionStart ?? input.value.length;
       const before = input.value.slice(0, caret);
@@ -1436,10 +1541,9 @@ function searchWidget(data, state, repaintBody, rerender) {
         const after = input.value.slice(caret);
         input.value = (newBefore ? newBefore + " " : "") + after;
         const newCaret = newBefore ? newBefore.length + 1 : 0;
-        input.setSelectionRange(newCaret, newCaret);
         state.query = input.value;
-        updateSuggestions();
-        state._updateMods?.();
+        closePop();
+        rerenderKeepFocus(newCaret);
       }
       return;
     }
@@ -1455,7 +1559,7 @@ function searchWidget(data, state, repaintBody, rerender) {
       // body-only repaint deliberately doesn't do (see repaintBody()'s own note).
       state.activeQuery = state.query.trim();
       closePop();
-      rerender();
+      rerenderKeepFocus(state.query.length);
     }
   });
   input.addEventListener("blur", () => setTimeout(closePop, 120));   // let a suggestion's mousedown land first
@@ -1465,12 +1569,13 @@ function searchWidget(data, state, repaintBody, rerender) {
 
 function contents(data, state, rerender, sel) {
   // "do not show any search UI until Enter" — activeQuery is the last SUBMITTED query; state.query
-  // (the live-typed value) never reaches this function at all.
-  const searching = state.activeQuery.trim().length > 0;
+  // (the live-typed value) never reaches this function at all. hasSearchCriteria: see its own
+  // comment — a committed modifier with no text is a real search too (owner 2026-09-01).
+  const searching = hasSearchCriteria(state.activeQuery, state.modifiers);
   const qtext = state.activeQuery.trim().toLowerCase();
   const mods = splitModifiers(state.modifiers);       // {exts,hastypes,tags,by,channel,before,after,inFolder}
 
-  const openFolder = (f) => { state.folderId = f.id; state.query = ""; state.activeQuery = ""; rerender(); };
+  const openFolder = (f) => { goToFolder(state, f.id); rerender(); };
 
   // "the search will go as deep as it needs to but never search above" — an in: modifier (typed,
   // or auto-seeded by searchWidget from the folder you started typing in) resolves to that folder's
@@ -1486,13 +1591,17 @@ function contents(data, state, rerender, sel) {
   let subfolders, files, serverPaged = null;
 
   // ── P24 server-side search ──────────────────────────────────────────────────
-  // Live, on free text, ask Postgres (search_files + search_folders) instead of filtering the
-  // loaded set — so it scales past what the client holds, and so folder-scoping (schema-42) is
-  // enforced server-side rather than as a client post-filter over an already-too-narrow page.
-  // by:/channel:/before: aren't in the RPC yet (K12 follow-up), applied client-side on the result
-  // either way (applyClientOnlyModifiers below). Demo, browse, starred, and RPC errors fall back
-  // to client filtering (which now mirrors the same folder-scope + folder-match logic below).
-  const useSrv = !isDemoQS() && !data.shared && !state.starred && qtext
+  // Live, on free text OR a tag/type/ext modifier, ask Postgres (search_files + search_folders)
+  // instead of filtering the loaded set — so it scales past what the client holds, and so folder-
+  // scoping (schema-42) is enforced server-side rather than as a client post-filter over an already-
+  // too-narrow page. owner 2026-09-01: this used to gate on `qtext` alone, so "hastag:happy" with an
+  // empty search box never reached the server at all — tags/hastypes/exts ARE RPC-supported
+  // (search_files' p_tags/p_hastypes/p_exts), so a modifier-only query gets the same scale-safe path
+  // real text does. by:/channel:/before: aren't in the RPC yet (K12 follow-up) — a query with ONLY
+  // one of those (no text, no tags/hastypes/exts) has nothing for the RPC to filter on, so it stays
+  // client-side (below), applied over the already-fully-loaded `data.files` for this mount.
+  const useSrv = !isDemoQS() && !data.shared && !state.starred
+    && (qtext || mods.tags.length || mods.hastypes.length || mods.exts.length)
     && (data.source === "server" || data.source === "personal");
   if (useSrv) {
     const args = {
@@ -1537,7 +1646,11 @@ function contents(data, state, rerender, sel) {
       const inScope = (w) => !scopeIds || scopeIds.has(w.folderId || null);
       files = data.files.filter(inScope);
       // B19: a bare term matches the filename OR any of the file's tags (was filename only).
-      files = files.filter((w) => (w.title || "").toLowerCase().includes(qtext) || (w.tags || []).some((t) => t.toLowerCase().includes(qtext)));
+      // fuzzyMatch (owner 2026-09-01: "implement fuzzy search") — typo-tolerant on the NAME, same as
+      // the server-side pg_trgm similarity check (schema-43); tags stay exact substring on purpose,
+      // both here and server-side (a fuzzy match on a short categorical label like "bpm:142" produces
+      // noise, not useful typo-tolerance).
+      files = files.filter((w) => fuzzyMatch(w.title, qtext) || (w.tags || []).some((t) => t.toLowerCase().includes(qtext)));
       if (mods.tags.length) files = files.filter((w) => mods.tags.every((t) => (w.tags || []).includes(t)));         // exact type:value / tag:value
       if (mods.hastypes.length) files = files.filter((w) => mods.hastypes.every((ty) => (w.tags || []).some((t) => parseTag(t).type === ty)));   // hastag:type
       if (mods.exts.length) files = files.filter((w) => mods.exts.includes((w.file_ext || "").toLowerCase()));       // ext:
@@ -1545,7 +1658,7 @@ function contents(data, state, rerender, sel) {
       // search_folders, same scope, same self-exclusion (never list the folder you searched from).
       subfolders = (scopeIds ? (data.folders || []).filter((f) => scopeIds.has(f.id)) : (data.folders || []))
         .filter((f) => f.id !== scopeFolderId)
-        .filter((f) => f.name.toLowerCase().includes(qtext) || (f.tags || []).some((t) => t.toLowerCase().includes(qtext)))
+        .filter((f) => fuzzyMatch(f.name, qtext) || (f.tags || []).some((t) => t.toLowerCase().includes(qtext)))
         .filter((f) => mods.tags.length === 0 || mods.tags.every((t) => (f.tags || []).includes(t)));
     } else {
       // P27: NO free text — browsing this folder. A modifier alone is FILTERING (screen-local, non-
@@ -1594,7 +1707,7 @@ function contents(data, state, rerender, sel) {
       ? emptyState("search", "No results", `Nothing here matches “${state.activeQuery.trim()}”.`)
       : data.shared
         ? emptyState("folder", "This folder is empty", "Nothing has been shared here yet.")
-        : emptyState("folder", "This folder is empty", "Drag files here to upload, or use New folder below.", { dropzone: true });
+        : emptyState("folder", "This folder is empty", "Drag files here to upload, or use New folder below.");
   }
 
   // Google-Drive selection (§C.6): single click selects (clears others), ⌘/Ctrl-click
@@ -1657,7 +1770,10 @@ function contents(data, state, rerender, sel) {
   // P23: ftctx carries data/state/rerender so a folder card can render + edit its own tags.
   const hooks = { openFile, openFolder, onFolderClick, onCardClick, onStar, onMenu, onShareFolder,
     showWho: data.source !== "personal", personal, ftctx: { data, state, rerender },
-    group: state.group, onSortCol, sortActive: activeSort, dir: effDir, density: state.density };
+    group: state.group, onSortCol, sortActive: activeSort, dir: effDir, density: state.density,
+    // C31 new-folder inline rename (owner 2026-09-01) — see wireInlineFolderNameEdit.
+    editingFolderId: state._editingFolderId ?? null,
+    onCommitFolderName: (folder, typedName) => commitInlineFolderName(data, state, rerender, folder, folder.parentId ?? null, typedName) };
   const view = state.mode === "list" ? listView(subfolders, files, hooks)
     : largeView(subfolders, files, hooks);
   // P24: a paged server search that has more rows gets a "Load more" footer (client-side folder
@@ -1684,7 +1800,7 @@ function shareFolderMenu(data, state, rerender, folder, anchor, at) {
   const canW = canWriteFolder(data) && !folder.locked;
   openMenu(anchor, [
     // P28: right-click a folder → Open (leads, like a native context menu) + share
-    { label: "Open", icon: "folder", onClick: () => { state.folderId = folder.id; state.query = ""; state.activeQuery = ""; rerender(); } },
+    { label: "Open", icon: "folder", onClick: () => { goToFolder(state, folder.id); rerender(); } },
     ...(canW ? [{ label: "Rename", icon: "pen", onClick: () => renameFolderFlow(data, state, rerender, folder) }] : []),
     ...(canW ? [{ label: "Cut", icon: "move", onClick: () => cutItems(data, state, rerender, [], [folder.id]) }] : []),
     ...(canW ? [{ label: "Move to…", icon: "move", onClick: () => openFolderMovePicker(data, state, rerender, [folder.id]) }] : []),
@@ -2164,7 +2280,31 @@ function largeFileCard(w, i, hooks) {
 function largeFolderCard(f, i, hooks) {
   const fcard = wireFolderEl(folderCard(f, { onShare: hooks.onShareFolder }), f, i, hooks);
   decorateFolderTags(fcard, f, hooks.ftctx);   // P23: the folder's first-few tags (Properties shows all)
+  if (hooks.editingFolderId === f.id) wireInlineFolderNameEdit(fcard.querySelector(".fname"), f, hooks);
   return fcard;
+}
+// newFolder()'s inline name edit (grid card + list row both call this — see their own sites). Swaps
+// the name display for a select-all-focused <input>; commits on blur/Enter, reverts-not-deletes on
+// Escape (see commitInlineFolderName's own comment for why). stopPropagation on click/keydown so
+// typing "n" doesn't trigger the grid's type-ahead, arrow keys don't move the selection cursor, etc.
+// — the same "an open editor owns its own keys" rule the rest of this file already follows (search
+// input, rename prompts).
+function wireInlineFolderNameEdit(nameEl, f, hooks) {
+  if (!nameEl) return;
+  const startName = f.name;
+  const input = el("input.inlineedit", { value: f.name, "aria-label": "Folder name", title: "" });
+  nameEl.replaceChildren(input);
+  let done = false;
+  const finish = (name) => { if (done) return; done = true; hooks.onCommitFolderName(f, name); };
+  input.addEventListener("blur", () => finish(input.value));
+  input.addEventListener("keydown", (e) => {
+    e.stopPropagation();
+    if (e.key === "Enter") { e.preventDefault(); finish(input.value); }
+    else if (e.key === "Escape") { e.preventDefault(); finish(startName); }
+  });
+  input.addEventListener("click", (e) => e.stopPropagation());
+  input.addEventListener("dblclick", (e) => e.stopPropagation());
+  setTimeout(() => { input.focus(); input.select(); }, 0);
 }
 
 // GRID — big content thumbnails. Optionally GROUPED (owner 2026-08-31): a Group-by dropdown buckets
@@ -2242,7 +2382,8 @@ function listView(subfolders, files, hooks) {
   const folderRow = (f, i) => {
     // P23: a list row can carry a few of the folder's tags inline after the name. The empty .flstar
     // spacer keeps the folder icon aligned with file rows (which lead with a star toggle).
-    const nameCell = el("span.flnm", {}, [el("span.flstar.spacer"), iconEl("folder", "sm"), el("span.flnmtxt", {}, [f.name])]);
+    const nameTxt = el("span.flnmtxt", {}, [f.name]);
+    const nameCell = el("span.flnm", {}, [el("span.flstar.spacer"), iconEl("folder", "sm"), nameTxt]);
     const tagPrev = hooks.ftctx ? folderTagPreview(f, hooks.ftctx) : null;
     if (tagPrev) { tagPrev.classList.add("flntags"); nameCell.append(tagPrev); }
     const cells = [
@@ -2251,7 +2392,9 @@ function listView(subfolders, files, hooks) {
       ...(showWho ? [el("span", {}, ["—"])] : []),
       el("span", {}, [`${f.count} file${f.count === 1 ? "" : "s"}`]),
     ];
-    return wireFolderEl(el(".flrow", {}, cells), f, i, hooks);
+    const row = wireFolderEl(el(".flrow", {}, cells), f, i, hooks);
+    if (hooks.editingFolderId === f.id) wireInlineFolderNameEdit(nameTxt, f, hooks);
+    return row;
   };
   const fileRow = (w, i) => {
     const star = el("button.flstar" + (w.starred ? ".on" : ""), { title: w.starred ? "Unstar" : "Star", onClick: (e) => { e.stopPropagation(); hooks.onStar(w); } }, [iconEl("star", "sm")]);
@@ -2461,12 +2604,14 @@ function openFilterMenu(anchor, options, selected, onChange) {
 }
 
 // ── shared empty state (CANON §C.6 reusable pattern) ─────────────────────────
-// C31: an empty FOLDER passes {dropzone:true} to read as a real drop target (a dashed panel) rather
-// than a bare line of text — the pane's enableDropUpload already accepts an OS-file drop anywhere, so
-// this is the visual affordance for it. Other empty states (search/starred/trash) stay plain.
-function emptyState(icon, title, sub, { dropzone = false } = {}) {
+// owner 2026-09-01: an empty folder used to render as a dashed .dropzone panel (C31) — "I don't
+// like an empty folder visibly looking like a dropzone, it should just have the functionality,
+// people will get it." The drop-anywhere behavior was never actually wired to this element anyway
+// (enableDropUpload binds the whole pane layout, not this specific node — see renderExplorer) so
+// dropping the visual changes nothing functional, just the look.
+function emptyState(icon, title, sub) {
   const eic = iconEl(icon); eic.classList.add("eic");
-  return el(".emptystate" + (dropzone ? ".dropzone" : ""), {}, [eic, el("h3", {}, [title]), el("p", {}, [sub])]);
+  return el(".emptystate", {}, [eic, el("h3", {}, [title]), el("p", {}, [sub])]);
 }
 
 function toggle(set, id) { set.has(id) ? set.delete(id) : set.add(id); }
@@ -2499,17 +2644,51 @@ async function doCreateFolder(data, state, rerender, parentId, name) {
   rerender();
   return folder;
 }
+// "New Folder", then "New Folder (2)", "New Folder (3)"… — Explorer/Finder's own dedup convention,
+// checked against SIBLINGS only (same parent), since a name only has to be unique among the folders
+// you'd actually see listed together.
+function uniqueFolderName(siblings) {
+  const taken = new Set(siblings.map((f) => f.name));
+  if (!taken.has("New Folder")) return "New Folder";
+  for (let n = 2; ; n++) if (!taken.has(`New Folder (${n})`)) return `New Folder (${n})`;
+}
+// owner 2026-09-01: "the new folder button shouldn't be a modal, should just spawn a folder with the
+// name field active and 'New Folder' already entered in like file explorer (folder should snap into
+// correct position after naming)" — create it for real immediately (a placeholder name is still a
+// real, valid folder — nothing here is fake/pending), then flip it into inline-edit mode the same
+// instant. state._editingFolderId is read by largeFolderCard/folderRow (below) to swap that one
+// folder's name display for an <input>. "Snap into position" needs no special-casing: every folder
+// list here is already sorted fresh on every render, so once the name actually changes, the next
+// rerender (in commitInlineFolderName) naturally re-sorts it to wherever the FINAL name belongs —
+// there's no separate "now move it" step because the position was never anything but a function of
+// the current name to begin with.
 function newFolder(data, state, rerender, parentId) {
-  promptFolderName(async (name) => {
-    const folder = await doCreateFolder(data, state, rerender, parentId, name);
-    toast({ message: `Folder “${name}” created` });
-    // redo recreates it — a NEW id, since nothing server-side lets us resurrect the exact old one,
-    // same acceptable tradeoff a fresh empty object always has (Finder/Drive do the same).
-    state._history?.push({
-      label: "New folder",
-      undo: () => doDeleteFolderSilent(data, state, rerender, folder.id),
-      redo: () => doCreateFolder(data, state, rerender, parentId, name),
-    });
+  const siblings = data.folders.filter((f) => (f.parentId || null) === (parentId ?? null));
+  const name = uniqueFolderName(siblings);
+  doCreateFolder(data, state, rerender, parentId, name).then((folder) => {
+    state._editingFolderId = folder.id;
+    rerender();
+  }).catch((e) => toast({ message: e?.message || "Couldn’t create the folder" }));
+}
+// Commit (blur/Enter) or cancel (Escape) the inline name edit that follows a fresh newFolder(). Empty
+// input or Escape keeps the placeholder name rather than deleting the folder (Finder's own behavior —
+// canceling the NAME doesn't undo the CREATE). Undo/redo is pushed HERE, once, covering create+name
+// as one step (Ctrl+Z on a just-made folder removes it outright, matching Finder/Explorer) — `ref`
+// tracks whichever id currently represents this folder across repeated undo→redo→undo cycles, since
+// each redo recreates it under a new id (same tradeoff plain re-creation always has).
+async function commitInlineFolderName(data, state, rerender, folder, parentId, typedName) {
+  state._editingFolderId = null;
+  const finalName = (typedName || "").trim() || folder.name;
+  if (finalName !== folder.name) {
+    try { await doRenameFolder(data, state, rerender, folder, finalName); }
+    catch (e) { toast({ message: e?.message || "Couldn’t rename the folder" }); }
+  }
+  rerender();
+  const ref = { id: folder.id };
+  state._history?.push({
+    label: "New folder",
+    undo: () => doDeleteFolderSilent(data, state, rerender, ref.id),
+    redo: async () => { const f = await doCreateFolder(data, state, rerender, parentId, finalName); ref.id = f.id; },
   });
 }
 

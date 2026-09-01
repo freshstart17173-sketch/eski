@@ -348,6 +348,12 @@
    tag-preview chip all stay flex:none, so narrowing the Name column (e.g. opening Details) eats
    into the name text, never into the tag chip sitting after it. */
 .flnmtxt{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1 1 auto;min-width:0}
+/* C31: newFolder()'s inline name edit — a plain field-styled input dropped in place of the static
+   name (grid card .fname or list row .flnmtxt), sized to read as "this text became editable", not
+   as a whole new control. --ink border (not --line2) so it reads active/focused immediately, no
+   separate :focus-within step needed since it's focused the instant it mounts. */
+.inlineedit{width:100%;min-width:0;font:inherit;font-size:var(--fs-sm);font-weight:600;color:var(--ink);
+  background:var(--paper);border:1px solid var(--ink);border-radius:var(--r);padding:1px 4px;outline:none}
 /* B33: the per-row star toggle in list view — muted at rest, gold when starred (matches the grid). */
 .flstar{flex:none;width:20px;height:20px;display:grid;place-items:center;border-radius:var(--r);color:var(--line2);opacity:.6;transition:color var(--t),opacity var(--t)}
 .flstar .ic{width:14px;height:14px}
