@@ -19,6 +19,15 @@ import { iconEl } from "./icons.js";
 // CUSTOM type nobody's told this module about (P38: any type:value self-defines a coloured tag).
 export const RESERVED_KEYS = ["in", "ext", "by", "channel", "hastag", "tag", "before", "after"];
 
+// owner 2026-09-01: "no logic stopping me from making illegal typed tags like in:folder or
+// hastag:tag" — a REAL content tag typed with one of these words as its type (content_tags.tag =
+// "in:folder") collides with the reserved grammar above: typing in:folder into the search box
+// always parses as the folder-scope modifier (parseModifierToken), never as a literal tag search,
+// so an unquoted search for that exact tag can never reach it. Shared by every tag-creation entry
+// point (tags.js's tagEditor, the folder-tag popover input in explorer.js) so the rule can't drift
+// between them the way a duplicated check would.
+export function isReservedTagType(type) { return RESERVED_KEYS.includes(String(type || "").toLowerCase()); }
+
 // the muted lead-in word a chip shows for each reserved key (the bold part is always the value)
 const RESERVED_LABEL = { in: "in", ext: "type", by: "by", channel: "in #", hastag: "has", tag: "tag", before: "before", after: "after" };
 

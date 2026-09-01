@@ -10,6 +10,7 @@
 // anywhere (explorer, feed, details). Required-tags-per-channel enforcement is D5 (separate).
 
 import { el } from "./ui.js";
+import { isReservedTagType } from "./search-modifiers.js";
 
 // the curated subset with hand-picked (not hashed) hex tokens — kept for the ones used often enough
 // to deserve a considered colour. Any OTHER type is still typed (P38), just hash-coloured.
@@ -101,7 +102,16 @@ export function tagEditor({ initial = [], required = [], placeholder = "add a ta
   let tags = (initial || []).map((x) => parseTag(x).raw);
   const chips = el(".tchips");
 
-  const commit = (raw) => { const t = parseTag(raw); if (!t.value || tags.includes(t.raw)) return; tags.push(t.raw); paint(); };
+  // owner 2026-09-01: reject a typed tag whose type is a reserved search word (in/ext/by/channel/
+  // hastag/tag/before/after) — see isReservedTagType's comment. Returns true/false so the input
+  // knows whether to clear itself or leave the rejected text in place with a hint explaining why.
+  const commit = (raw) => {
+    const t = parseTag(raw);
+    if (!t.value || tags.includes(t.raw)) return true;   // no-op (blank / dupe) — still "handled", clear the field
+    if (t.typed && isReservedTagType(t.type)) return false;
+    tags.push(t.raw); paint();
+    return true;
+  };
   const remove = (raw) => { tags = tags.filter((x) => x !== raw); paint(); };
 
   function paint() {
@@ -133,12 +143,22 @@ export function tagEditor({ initial = [], required = [], placeholder = "add a ta
     const a = (input.value.split(":")[0] || "").trim().toLowerCase();
     // P38: ANY colon-prefixed type colours live now (curated or custom), not just TAG_TYPES.
     if (input.value.includes(":") && a && input.value.slice(input.value.indexOf(":") + 1).trim()) {
-      input.style.color = tagColor(a); input.style.fontWeight = "600";
-      hint.textContent = `typed ${a} — press Enter to add`;
+      if (isReservedTagType(a)) {
+        input.style.color = "var(--danger)"; input.style.fontWeight = "600";
+        hint.textContent = `"${a}" is a reserved search word — pick a different type`;
+      } else {
+        input.style.color = tagColor(a); input.style.fontWeight = "600";
+        hint.textContent = `typed ${a} — press Enter to add`;
+      }
     } else { input.style.color = ""; input.style.fontWeight = ""; hint.textContent = input.value.trim() ? "tip: add a colon to type it (bpm:142)" : ""; }
   };
   input.addEventListener("input", recolor);
-  input.addEventListener("keydown", (e) => { if (e.key !== "Enter" || !input.value.trim()) return; e.preventDefault(); commit(input.value); input.value = ""; recolor(); });
+  input.addEventListener("keydown", (e) => {
+    if (e.key !== "Enter" || !input.value.trim()) return;
+    e.preventDefault();
+    if (commit(input.value)) { input.value = ""; recolor(); }
+    // rejected: leave the text so the owner can just fix the type, hint (set by recolor) explains why
+  });
 
   paint();
   return { node: el(".tageditor", {}, [chips, field, hint]), getTags: () => tags.slice() };

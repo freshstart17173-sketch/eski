@@ -1773,12 +1773,22 @@ function folderTagInput(data, state, rerender, folder, { onDone } = {}) {
   const recolor = () => {
     const a = (input.value.split(":")[0] || "").trim().toLowerCase();
     // P38: ANY colon-prefixed type colours live now (curated or custom), not just TAG_TYPES.
-    if (input.value.includes(":") && a && input.value.slice(input.value.indexOf(":") + 1).trim()) { input.style.color = tagColor(a); input.style.fontWeight = "600"; }
-    else { input.style.color = ""; input.style.fontWeight = ""; }
+    if (input.value.includes(":") && a && input.value.slice(input.value.indexOf(":") + 1).trim()) {
+      // owner 2026-09-01: same reserved-word guard as tags.js's tagEditor — in:/hastag:/etc. as a
+      // TAG type collides with the search grammar's reserved words (search-modifiers.js).
+      input.style.color = RESERVED_KEYS.includes(a) ? "var(--danger)" : tagColor(a);
+      input.style.fontWeight = "600";
+    } else { input.style.color = ""; input.style.fontWeight = ""; }
   };
   input.addEventListener("input", recolor);
   input.addEventListener("keydown", (e) => {
-    if (e.key === "Enter" && input.value.trim()) { e.preventDefault(); const v = input.value; input.value = ""; recolor(); addFolderTagUI(data, state, rerender, folder, v, onDone); }
+    if (e.key === "Enter" && input.value.trim()) {
+      e.preventDefault();
+      const v = input.value;
+      const type = (v.split(":")[0] || "").trim().toLowerCase();
+      if (v.includes(":") && RESERVED_KEYS.includes(type)) { toast({ message: `"${type}" is a reserved search word — pick a different type` }); return; }
+      input.value = ""; recolor(); addFolderTagUI(data, state, rerender, folder, v, onDone);
+    }
     else if (e.key === "Escape") { e.preventDefault(); onDone && onDone(); }
   });
   setTimeout(() => input.focus(), 0);
