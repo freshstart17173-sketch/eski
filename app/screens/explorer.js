@@ -1009,6 +1009,12 @@ function paint(tree, pane, data, state, rerender) {
         dragIds = [];
         e.dataTransfer.effectAllowed = "move";
         try { e.dataTransfer.setData("text/plain", dragFolderIds.join(",")); } catch { /* Safari */ }
+        // owner 2026-09-01: "dragging a folder to a new tab should open that folder in the new tab" —
+        // these cards are plain divs, not <a href> elements, so a native drag carries no URL by
+        // default (that's a browser feature specifically for text/uri-list-bearing drags — a real
+        // <a> gets it for free, this needs it set explicitly). Single-item only: a multi-select drag
+        // has no one URL to open. dropEffect stays "move" for our own in-app drop targets either way.
+        if (dragFolderIds.length === 1) { try { e.dataTransfer.setData("text/uri-list", location.origin + explorerUrl(data, { folderId: id })); } catch { /* Safari */ } }
         try {
           const ghost = el(".dragghost", {}, [iconEl("folder", "sm")]);
           if (dragFolderIds.length > 1) ghost.append(el(".dgcount", {}, [String(dragFolderIds.length)]));
@@ -1025,6 +1031,9 @@ function paint(tree, pane, data, state, rerender) {
       dragFolderIds = [];
       e.dataTransfer.effectAllowed = "move";
       try { e.dataTransfer.setData("text/plain", dragIds.join(",")); } catch { /* Safari */ }
+      // same as the folder case above — give a single-item drag a real URL (its details view) so
+      // dropping it on the browser's own tab strip opens it there.
+      if (dragIds.length === 1) { try { e.dataTransfer.setData("text/uri-list", location.origin + explorerUrl(data, { folderId: state.folderId, fileId: id })); } catch { /* Safari */ } }
       // B31: drag a small kind-icon token, NOT the full card thumbnail (owner: "miniaturized icons
       // every time"). Multi-drag shows the count. The ghost must be in the DOM when setDragImage
       // snapshots it, then it's removed on the next tick.
