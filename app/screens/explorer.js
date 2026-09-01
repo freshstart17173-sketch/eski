@@ -894,11 +894,18 @@ function paint(tree, pane, data, state, rerender) {
       // rect by whether it's a folder ([data-folder-id]) or a file ([data-id]).
       const rects = [...body.querySelectorAll("[data-id],[data-folder-id]")].map((c) => ({ id: c.dataset.id, fid: c.dataset.folderId, r: c.getBoundingClientRect() }));
       const box = el(".marquee"); let moved = false;
-      const move = (ev) => {
+      // The actual box-resize + hit-test + refreshSel() work is throttled to one pass per animation
+      // frame — it used to run on every raw pointermove, and refreshSel() walks every card in the
+      // view (querySelectorAll + a classList.toggle each), so on a grid of hundreds of files a fast
+      // mouse/trackpad firing pointermove far above 60Hz turned a marquee drag into a stutter. rafId
+      // coalesces a burst of events into the latest one; only the position (`lastEv`) is captured
+      // synchronously so the frame always uses fresh coordinates when it runs.
+      let rafId = null, lastEv = null;
+      const tick = () => {
+        rafId = null;
+        const ev = lastEv;
         const x = Math.min(ev.clientX, start.x), y = Math.min(ev.clientY, start.y);
         const w = Math.abs(ev.clientX - start.x), h = Math.abs(ev.clientY - start.y);
-        if (!moved && w + h > 5) { moved = true; body.appendChild(box); }
-        if (!moved) return;
         autoScroll(ev.clientY);   // C20: the pane auto-scrolls near its top/bottom edge, same as a native drag
         // rects were measured in viewport space at drag start; a since-then scroll moves every card by
         // the same delta, so shift the stale rects rather than re-measuring the whole grid every tick.
@@ -915,8 +922,18 @@ function paint(tree, pane, data, state, rerender) {
         }
         refreshSel();
       };
+      const move = (ev) => {
+        lastEv = ev;
+        if (!moved) {   // cheap "did the drag actually start" check stays synchronous, unthrottled
+          const w = Math.abs(ev.clientX - start.x), h = Math.abs(ev.clientY - start.y);
+          if (w + h <= 5) return;
+          moved = true; body.appendChild(box);
+        }
+        if (rafId == null) rafId = requestAnimationFrame(tick);
+      };
       const up = () => {
         window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up);
+        if (rafId != null) { cancelAnimationFrame(rafId); rafId = null; }
         box.remove(); if (moved) suppressClear = true;   // don't let the trailing click wipe the marquee selection
       };
       window.addEventListener("pointermove", move); window.addEventListener("pointerup", up);
@@ -2234,30 +2251,50 @@ function folderInSubtree(folders, maybeAncestor, folderId) {
   return false;
 }
 
+// Optimistic move (owner ask: a move shouldn't need a reload, or even feel like it's WAITING on
+// one — see the "batch move RPC + optimistic UI" pass 2026-09-01). Every move site below applies
+// the new folderId/parentId to `data` and rerenders BEFORE the network write settles, then fires
+// the write; a failure rolls the affected rows back to what these captured and rerenders again, so
+// the UI never keeps showing a move that didn't actually happen. Shared here since every site needs
+// the identical "snapshot for rollback, mutate now" shape.
+function applyFileMove(data, ids, destFolderId) {
+  const set = new Set(ids);
+  const prev = new Map();
+  for (const w of data.files) if (set.has(w.id)) { prev.set(w.id, w.folderId); w.folderId = destFolderId; }
+  return () => { for (const w of data.files) if (prev.has(w.id)) w.folderId = prev.get(w.id); };
+}
+function applyFolderMove(data, folderIds, destParentId) {
+  const prev = new Map();
+  for (const f of data.folders) if (folderIds.includes(f.id)) { prev.set(f.id, f.parentId); f.parentId = destParentId; }
+  return () => { for (const f of data.folders) if (prev.has(f.id)) f.parentId = prev.get(f.id); };
+}
+
 // owner 2026-08-31 — drag a folder card onto another folder to reparent it. Server folders reuse
 // move_to_folder (cycle-checked server-side too); personal folders are a direct save_folders update
 // (folderInSubtree above is the only cycle guard there — see moveFolderTo in data.js).
 async function moveFoldersInto(data, state, rerender, folderIds, destFolderId) {
+  const dest = destFolderId || null;
+  const destName = data.folders.find((f) => f.id === destFolderId)?.name || rootLabel(data);
+  const undo = applyFolderMove(data, folderIds, dest);
+  state.selFolders.clear();
+  rerender();
   try {
-    if (!isDemoQS()) { for (const id of folderIds) await moveFolderTo(data.source, id, destFolderId || null); }
-    for (const f of data.folders) if (folderIds.includes(f.id)) f.parentId = destFolderId || null;
-    state.selFolders.clear();
-    rerender();
-    const dest = data.folders.find((f) => f.id === destFolderId)?.name || rootLabel(data);
-    toast({ message: `Moved ${folderIds.length} folder${folderIds.length > 1 ? "s" : ""} to “${dest}”` });
-  } catch (e) { toast({ message: e?.message || "Couldn’t move the folder" }); }
+    if (!isDemoQS()) { for (const id of folderIds) await moveFolderTo(data.source, id, dest); }
+    toast({ message: `Moved ${folderIds.length} folder${folderIds.length > 1 ? "s" : ""} to “${destName}”` });
+  } catch (e) { undo(); rerender(); toast({ message: e?.message || "Couldn’t move the folder" }); }
 }
 
 // B10 — move works into an existing folder (drag onto a folder card).
 async function moveInto(data, state, rerender, ids, folderId) {
+  const dest = folderId || null;
+  const destName = data.folders.find((f) => f.id === folderId)?.name;
+  const undo = applyFileMove(data, ids, dest);
+  state.selection.clear(); state.lastIdx = -1;
+  rerender();
   try {
-    if (!isDemoQS()) await moveToFolder({ source: data.source, works: ids, destFolderId: folderId || null });
-    for (const w of data.files) if (ids.includes(w.id)) w.folderId = folderId || null;
-    state.selection.clear(); state.lastIdx = -1;
-    rerender();
-    const dest = data.folders.find((f) => f.id === folderId)?.name;
-    toast({ message: `Moved ${ids.length} file${ids.length > 1 ? "s" : ""}${dest ? ` to “${dest}”` : ""}` });
-  } catch (e) { toast({ message: e?.message || "Couldn’t move the files" }); }
+    if (!isDemoQS()) await moveToFolder({ source: data.source, works: ids, destFolderId: dest });
+    toast({ message: `Moved ${ids.length} file${ids.length > 1 ? "s" : ""}${destName ? ` to “${destName}”` : ""}` });
+  } catch (e) { undo(); rerender(); toast({ message: e?.message || "Couldn’t move the files" }); }
 }
 
 function promptFolderName(onSubmit, nested = false) {
@@ -2299,13 +2336,19 @@ function moveSelected(data, state, rerender) { moveIds(data, state, rerender, [.
 // Move a specific set of works (the bulk selection, or one card from its menu).
 function moveIds(data, state, rerender, ids) {
   if (!ids.length) return;
+  // NOTE: openMovePicker's own go-button handler awaits onPick and only closes the modal (and only
+  // toasts) on success — a throw here is what keeps the modal open with "Couldn't move…" so the
+  // user can retry, so a failure below rolls the optimistic mutation back and RE-THROWS rather than
+  // swallowing it (unlike the drag-and-drop move sites, which own their own toast/rollback because
+  // there's no modal to report back through).
   openMovePicker(data, state, async (destId) => {
-    if (!isDemoQS()) await moveToFolder({ source: data.source, works: ids, destFolderId: destId });
-    const set = new Set(ids);
-    for (const w of data.files) if (set.has(w.id)) w.folderId = destId;
+    const undo = applyFileMove(data, ids, destId);
     state.selection.clear(); state.lastIdx = -1;
     rerender();
-    toast({ message: `Moved ${ids.length} file${ids.length === 1 ? "" : "s"}` });
+    try {
+      if (!isDemoQS()) await moveToFolder({ source: data.source, works: ids, destFolderId: destId });
+      toast({ message: `Moved ${ids.length} file${ids.length === 1 ? "" : "s"}` });
+    } catch (e) { undo(); rerender(); throw e; }
   });
 }
 
@@ -2388,19 +2431,23 @@ function openMixedMovePicker(data, state, rerender, fileIds, folderIds) {
   go.addEventListener("click", async () => {
     if (!hasSel || busy) return;
     busy = true; go.disabled = true; go.textContent = "Moving…";
+    const dst = dest ?? null;
+    // Optimistic (see applyFileMove/applyFolderMove above): apply now, rerender the explorer behind
+    // this still-open modal, THEN fire the write — a failure below rolls both back before the modal's
+    // own catch reports it.
+    const undoFiles = fileIds.length ? applyFileMove(data, fileIds, dst) : null;
+    const undoFolders = folderIds.length ? applyFolderMove(data, folderIds, dst) : null;
+    state.selection.clear(); state.selFolders.clear(); state.lastIdx = -1; state.lastFolderIdx = -1;
+    rerender();
     try {
       if (!isDemoQS()) {
-        if (fileIds.length) await moveToFolder({ source: data.source, works: fileIds, destFolderId: dest });
-        for (const id of folderIds) await moveFolderTo(data.source, id, dest ?? null);
+        if (fileIds.length) await moveToFolder({ source: data.source, works: fileIds, destFolderId: dst });
+        for (const id of folderIds) await moveFolderTo(data.source, id, dst);
       }
-      const fset = new Set(fileIds);
-      for (const w of data.files) if (fset.has(w.id)) w.folderId = dest ?? null;
-      for (const f of data.folders) if (folderIds.includes(f.id)) f.parentId = dest ?? null;
-      state.selection.clear(); state.selFolders.clear(); state.lastIdx = -1; state.lastFolderIdx = -1;
       modal.close();
-      rerender();
       toast({ message: `Moved ${n} item${n === 1 ? "" : "s"}` });
     } catch (e) {
+      undoFiles?.(); undoFolders?.(); rerender();
       busy = false; go.disabled = false; go.textContent = "Move here";
       toast({ message: e?.message || "Couldn’t move the selection" });
     }

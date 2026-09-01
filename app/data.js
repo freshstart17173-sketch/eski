@@ -705,10 +705,11 @@ export async function moveToFolder({ source = "server", works = [], destFolderId
     if (error) throw error;
     return;
   }
-  for (const id of works) {
-    const { error } = await supabase.rpc("move_to_folder", { target: id, folder_id: destFolderId });
-    if (error) throw error;
-  }
+  // schema-40: one bulk RPC instead of one `move_to_folder` round trip per file — a multi-file move
+  // used to serialize N network round trips (Supabase is eu-north-1; each one ~100-250ms from a
+  // far client), which is most of why a big move used to feel slow.
+  const { error } = await supabase.rpc("move_works_to_folder", { work_ids: works, folder_id: destFolderId });
+  if (error) throw error;
 }
 
 // Reparent a FOLDER itself (not its contents) — server folders reuse the SAME `move_to_folder` RPC

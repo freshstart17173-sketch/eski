@@ -298,7 +298,9 @@
 /* P14 · LIST density (Windows "Details"): a column per field. .nowho drops the Uploader column
    (personal files have no uploader). Rows select on click / open on double-click like the other
    densities; a selected row is a background step (rows aren't cards, so no outline). */
-.flrow{display:grid;grid-template-columns:minmax(200px,1.6fr) 84px 88px 120px 96px;gap:14px;align-items:center;padding:8px 12px;font-size:var(--fs-sm);color:var(--soft);border-radius:var(--r);cursor:pointer}
+/* contain:layout style — same reasoning as .card above; a list of hundreds of rows shouldn't force
+   a layout recheck outside the one row that changed (hover/select/inline-rename). */
+.flrow{display:grid;grid-template-columns:minmax(200px,1.6fr) 84px 88px 120px 96px;gap:14px;align-items:center;padding:8px 12px;font-size:var(--fs-sm);color:var(--soft);border-radius:var(--r);cursor:pointer;contain:layout style}
 .exlist.nowho .flrow{grid-template-columns:minmax(200px,1.8fr) 84px 88px 96px}
 .flrow span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-variant-numeric:tabular-nums}
 .flrow+.flrow{box-shadow:inset 0 1px 0 var(--line)}
@@ -344,7 +346,12 @@
    selection count lives in .exstatus (below) and bulk actions are a right-click away — openBulkMenu
    in explorer.js.) */
 /* card selection + hover actions (grid) */
-.card{position:relative;z-index:0}
+/* contain:layout+style isolates each card from the rest of the grid — a hover/select/tag-chip-fit
+   change inside one card no longer forces the browser to re-check layout across the other hundreds
+   of siblings (OPTIMIZATION.md/"general jank": no CSS containment anywhere). layout ONLY, never
+   paint/content-visibility here: .card.sel::before below deliberately paints outside the card's own
+   box (a -6px halo) and paint containment would clip it. */
+.card{position:relative;z-index:0;contain:layout style}
 .card .media{position:relative;border-radius:var(--r)}   /* C16: media rounds to the chrome radius */
 /* C16 (owner-approved "new cards"): a selected card is the WHOLE tile — a --plate fill + a 2px ink
    ring drawn BEHIND the content (::before, so the media/title never shift), with CONCENTRIC corner
