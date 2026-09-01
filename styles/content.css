@@ -281,11 +281,19 @@
 /* P23/owner: every LARGE-view card fills its grid cell, so a row's cards are all the tallest card's
    height (was inline-block → content height, which tiled unevenly once tags varied). */
 .masonry.even.exlarge .card{display:flex;flex-direction:column;height:100%;margin-bottom:0}
-/* Group-by (grid): a labelled section per bucket (Kind/Type/Uploader/Date), each its own grid. */
+/* Group-by (grid): a labelled section per bucket (Kind/Type/Uploader/Date), each its own grid.
+   owner 2026-09-01: collapsible (the .egcaret button) + selectable-as-a-whole (clicking the header
+   row itself selects every item in the group, Windows-Explorer style) — see groupHeader in
+   explorer.js. .masonry.collapsed hides the section's body; the header always stays. */
 .exgroup{margin-bottom:var(--s5)}
 .exgroup:last-child{margin-bottom:0}
-.exgrouphd{display:flex;align-items:center;gap:var(--s2);margin:0 0 var(--s3);color:var(--muted);font-size:var(--fs-xs);font-weight:600;letter-spacing:.02em}
+.exgrouphd{display:flex;align-items:center;gap:var(--s2);margin:0 0 var(--s3);color:var(--muted);font-size:var(--fs-xs);font-weight:600;letter-spacing:.02em;cursor:pointer;border-radius:var(--r);padding:2px var(--s2);margin-left:calc(var(--s2) * -1)}
+.exgrouphd:hover{background:var(--surface);color:var(--ink)}
 .exgrouphd .egc{color:var(--line2);font-variant-numeric:tabular-nums}
+.egcaret{width:20px;height:20px;flex:none}
+.egcaret .ic{transition:transform var(--t)}
+.egcaret.collapsed .ic{transform:rotate(-90deg)}
+.exgroup .masonry.collapsed{display:none}
 /* list view */
 /* P14 · LIST density (Windows "Details"): a column per field. .nowho drops the Uploader column
    (personal files have no uploader). Rows select on click / open on double-click like the other
@@ -299,11 +307,14 @@
 .flrow.sel:hover{background:var(--plate)}
 .flrow.droptarget{outline:2px solid var(--ink);outline-offset:-2px}
 .flrow.ishidden{opacity:.55}.flrow.ishidden:hover{opacity:1}
-/* list-mode Group-by (owner 2026-09-01, matches .exgrouphd in the grid): a plain label+count row,
-   not a data row — overrides the grid template/cursor/hover the other .flrow rules set. */
-.exlist .flrow.flgrouphd{display:flex;align-items:center;gap:var(--s2);padding:10px 12px 4px;cursor:default;color:var(--muted);font-size:var(--fs-xs);font-weight:600;letter-spacing:.02em}
-.exlist .flrow.flgrouphd:hover{background:none}
+/* list-mode Group-by (owner 2026-09-01, matches .exgrouphd in the grid): collapsible + selectable-
+   as-a-whole, same as the grid — overrides the grid template/hover the other .flrow rules set (it's
+   a section header, not a data row). .flgroup wraps each group's own rows so the caret can hide/show
+   them as one unit; .collapsed hides it. */
+.exlist .flrow.flgrouphd{display:flex;align-items:center;gap:var(--s2);padding:10px 12px 4px;cursor:pointer;color:var(--muted);font-size:var(--fs-xs);font-weight:600;letter-spacing:.02em}
+.exlist .flrow.flgrouphd:hover{background:var(--surface);color:var(--ink)}
 .flgrouphd .egc{color:var(--line2);font-variant-numeric:tabular-nums}
+.flgroup.collapsed{display:none}
 .flhd{font-size:var(--fs-xs);color:var(--muted);font-weight:600;letter-spacing:.02em}
 /* C6: click a column header to sort by it; a caret on the active column shows the direction. */
 .flhd span{cursor:pointer;display:inline-flex;align-items:center;gap:4px;overflow:visible}

@@ -121,6 +121,7 @@ export function renderExplorer(data, view = {}) {
     density: parseView(VIEW_ALIAS[view.mode] || view.mode).density,   // P32: 0 = list, 1..5 = grid stages
     query: "",
     collapsed: new Set(),   // folder ids whose children are hidden in the tree
+    groupCollapsed: new Set(),   // owner 2026-09-01: Group-by section LABELS collapsed in grid/list
     selection: persistentSelection(data),   // selected work ids — persists across nav (§C.6, B6)
     selFolders: new Set(),  // selected FOLDER ids (single-click / ⌘-click / Shift-range / marquee); double-click opens
     lastIdx: -1,            // anchor for Shift-click range (files)
@@ -710,11 +711,17 @@ function paint(tree, pane, data, state, rerender) {
   pane.replaceChildren(...[pathline, toolbar, modrail, body, statusbar, fab].filter(Boolean));
   function updateStatus() {
     const items = body.querySelectorAll("[data-id], [data-folder-id]").length;
-    const n = state.selection.size;
+    // owner 2026-09-01: this only ever read state.selection (files) — a folder-only selection (e.g.
+    // selecting a whole "Folders" group, or just ⌘-clicking a folder card) showed as if nothing were
+    // selected at all. Count both, the same "N selected · X files, Y folders" split the retired
+    // selbar used to show.
+    const nFiles = state.selection.size, nFolders = state.selFolders.size;
+    const n = nFiles + nFolders;
     let left;
     if (n) {
       const bytes = (state._files || []).filter((w) => state.selection.has(w.id)).reduce((s, w) => s + (w.bytes || 0), 0);
-      left = el("span.stsel", {}, [`${n} selected${bytes ? " · " + fmtBytes(bytes) : ""}`]);
+      const kind = nFiles && nFolders ? ` · ${nFiles} file${nFiles === 1 ? "" : "s"}, ${nFolders} folder${nFolders === 1 ? "" : "s"}` : "";
+      left = el("span.stsel", {}, [`${n} selected${kind}${bytes ? " · " + fmtBytes(bytes) : ""}`]);
     } else {
       left = el("span", {}, [`${items} item${items === 1 ? "" : "s"}`]);
     }
@@ -726,13 +733,18 @@ function paint(tree, pane, data, state, rerender) {
   function updateInfo() { const p = state._infopanel; if (p && state.infoOpen) p.replaceChildren(...buildInfoPanel(data, state, rerender)); }
   state._updateInfo = updateInfo;
 
-  // B6: clicking an empty area of the pane (not a card, not the bulk bar) clears the selection —
+  // B6: clicking an empty area of the pane (not a card, not a group header) clears the selection —
   // the Google-Drive gesture. A card's own click handler stops here (closest('.card')). B10: a
   // marquee drag ends in a click on empty space too — `suppressClear` skips that one clear.
+  // owner 2026-09-01: a group header's OWN click handler (groupHeader, select-the-whole-group) runs
+  // first during the bubble phase and sets the selection correctly — but without this exclusion, THIS
+  // handler then ran right after (this listener is on body; the header is a descendant, so the same
+  // click bubbles up here too) and saw something with no [data-id]/[data-folder-id], which it reads
+  // as "empty space," instantly clearing the selection the header click had just made.
   let suppressClear = false;
   body.addEventListener("click", (e) => {
     if (suppressClear) { suppressClear = false; return; }
-    if (e.target.closest("[data-id]") || e.target.closest("[data-folder-id]")) return;
+    if (e.target.closest("[data-id]") || e.target.closest("[data-folder-id]") || e.target.closest(".exgrouphd") || e.target.closest(".flgrouphd")) return;
     if (state.selection.size || state.selFolders.size) { state.selection.clear(); state.selFolders.clear(); state.lastIdx = -1; state.lastFolderIdx = -1; refreshSel(); }
   });
 
@@ -740,7 +752,7 @@ function paint(tree, pane, data, state, rerender) {
   // card/folder contextmenus handle their own targets; this is the fallback for the background).
   // Read-only shared views (P9) get no menu.
   if (!data.shared) body.addEventListener("contextmenu", (e) => {
-    if (e.target.closest("[data-id]") || e.target.closest("[data-folder-id]") || e.target.closest(".exfab")) return;
+    if (e.target.closest("[data-id]") || e.target.closest("[data-folder-id]") || e.target.closest(".exfab") || e.target.closest(".exgrouphd") || e.target.closest(".flgrouphd")) return;
     e.preventDefault();
     const at = { x: e.clientX, y: e.clientY };
     // C18: select-all / deselect-all / invert affordances, over BOTH files and folders (the DOM holds
@@ -783,7 +795,7 @@ function paint(tree, pane, data, state, rerender) {
   let dragFolderIds = [];   // folder(s) being dragged — separate from dragIds (files)
   if (!data.shared) {
     body.addEventListener("pointerdown", (e) => {
-      if (e.button !== 0 || e.target.closest("[data-id]") || e.target.closest("[data-folder-id]") || e.target.closest(".exfab")) return;
+      if (e.button !== 0 || e.target.closest("[data-id]") || e.target.closest("[data-folder-id]") || e.target.closest(".exfab") || e.target.closest(".exgrouphd") || e.target.closest(".flgrouphd")) return;
       suppressClear = false;   // B15: never let a stale marquee flag eat this gesture's clear-click
       const start = { x: e.clientX, y: e.clientY };
       const startScrollTop = body.scrollTop;   // C20: rects are captured once, in THIS scroll position
@@ -1792,10 +1804,14 @@ function largeView(subfolders, files, hooks) {
     wrap.append(grid);
     return wrap;
   }
-  const groupSection = (label, count, nodes) => {
-    const g = el(".masonry.even.exlarge");
+  // owner 2026-09-01: groupSection now takes the group's own file/folder ids (for "select this
+  // group") and is collapsible — collapsed just hides the .masonry (the header, and the ability to
+  // re-expand or select-all, stay live either way).
+  const groupSection = (label, count, nodes, fileIds, folderIds) => {
+    const { head, collapsed } = groupHeader(".exgrouphd", label, count, { fileIds, folderIds }, hooks.ftctx);
+    const g = el(".masonry.even.exlarge" + (collapsed ? ".collapsed" : ""));
     nodes.forEach((n) => g.append(n));
-    return el(".exgroup", {}, [el(".exgrouphd", {}, [el("span.egn", {}, [label]), el("span.egc", {}, [String(count)])]), g]);
+    return el(".exgroup", {}, [head, g]);
   };
   // Date added genuinely applies to a folder too (owner 2026-08-31: "grouping works for files but
   // not folders") — bucket folders into the SAME date sections as files, each section folders-then-
@@ -1813,12 +1829,12 @@ function largeView(subfolders, files, hooks) {
     merged.sort((a, b) => (a.rank - b.rank) || a.label.localeCompare(b.label));
     for (const { label, folders: gf, files: gw } of merged) {
       const nodes = [...gf.map((f) => largeFolderCard(f, folderIdx.get(f.id), hooks)), ...gw.map((w) => largeFileCard(w, idxOf.get(w.id), hooks))];
-      wrap.append(groupSection(label, gf.length + gw.length, nodes));
+      wrap.append(groupSection(label, gf.length + gw.length, nodes, gw.map((w) => w.id), gf.map((f) => f.id)));
     }
     return wrap;
   }
-  if (subfolders.length) wrap.append(groupSection("Folders", subfolders.length, subfolders.map((f, i) => largeFolderCard(f, i, hooks))));
-  for (const { label, items } of groups) wrap.append(groupSection(label, items.length, items.map((w) => largeFileCard(w, idxOf.get(w.id), hooks))));
+  if (subfolders.length) wrap.append(groupSection("Folders", subfolders.length, subfolders.map((f, i) => largeFolderCard(f, i, hooks)), [], subfolders.map((f) => f.id)));
+  for (const { label, items } of groups) wrap.append(groupSection(label, items.length, items.map((w) => largeFileCard(w, idxOf.get(w.id), hooks)), items.map((w) => w.id), []));
   return wrap;
 }
 
@@ -1879,7 +1895,15 @@ function listView(subfolders, files, hooks) {
     files.forEach((w, i) => table.append(fileRow(w, i)));
     return table;
   }
-  const groupHead = (label, count) => el(".flrow.flgrouphd", {}, [el("span.egn", {}, [label]), el("span.egc", {}, [String(count)])]);
+  // owner 2026-09-01: collapsible + select-whole-group (list mirrors largeView's groupSection). Rows
+  // aren't naturally wrapped per group (they're flat siblings in the table), so each group's rows go
+  // into their own .flgroup container that the caret can hide/show as one unit.
+  const groupSection = (label, count, rows, fileIds, folderIds) => {
+    const { head, collapsed } = groupHeader(".flrow.flgrouphd", label, count, { fileIds, folderIds }, hooks.ftctx);
+    const body = el(".flgroup" + (collapsed ? ".collapsed" : ""));
+    rows.forEach((r) => body.append(r));
+    table.append(head, body);
+  };
   // same date-bucket merge as largeView (a folder's "added" date genuinely groups it; Kind/Type/
   // Uploader don't apply to a folder, so those stay one leading "Folders" section, as below).
   if (hooks.group === "date") {
@@ -1893,20 +1917,13 @@ function listView(subfolders, files, hooks) {
     });
     merged.sort((a, b) => (a.rank - b.rank) || a.label.localeCompare(b.label));
     for (const { label, folders: gf, files: gw } of merged) {
-      table.append(groupHead(label, gf.length + gw.length));
-      gf.forEach((f) => table.append(folderRow(f, folderIdx.get(f.id))));
-      gw.forEach((w) => table.append(fileRow(w, idxOf.get(w.id))));
+      const rows = [...gf.map((f) => folderRow(f, folderIdx.get(f.id))), ...gw.map((w) => fileRow(w, idxOf.get(w.id)))];
+      groupSection(label, gf.length + gw.length, rows, gw.map((w) => w.id), gf.map((f) => f.id));
     }
     return table;
   }
-  if (subfolders.length) {
-    table.append(groupHead("Folders", subfolders.length));
-    subfolders.forEach((f, i) => table.append(folderRow(f, i)));
-  }
-  for (const { label, items } of groups) {
-    table.append(groupHead(label, items.length));
-    items.forEach((w) => table.append(fileRow(w, idxOf.get(w.id))));
-  }
+  if (subfolders.length) groupSection("Folders", subfolders.length, subfolders.map((f, i) => folderRow(f, i)), [], subfolders.map((f) => f.id));
+  for (const { label, items } of groups) groupSection(label, items.length, items.map((w) => fileRow(w, idxOf.get(w.id))), items.map((w) => w.id), []);
   return table;
 }
 
@@ -1939,6 +1956,39 @@ function groupFiles(files, group) {
   const entries = [...map.entries()].map(([label, v]) => ({ label, rank: v.rank, items: v.items }));
   entries.sort((a, b) => (a.rank - b.rank) || a.label.localeCompare(b.label));
   return entries;
+}
+
+// owner 2026-09-01: "the groups should be collapsible and selectable as a whole group (like Windows
+// File Explorer)". One header builder shared by the grid (.exgrouphd) and list (.flrow.flgrouphd) — a
+// caret toggles state.groupCollapsed (persisted, so it survives a repaint the way the folder tree's
+// own collapse state does), and clicking the label/count selects every item in the group (⌘/Ctrl-click
+// adds to the existing selection instead of replacing it, same modifier convention as a card click).
+// Uses state._refresh (refreshSel) — NOT a repaint — since selecting doesn't change what's rendered,
+// only which items carry .sel (the density-slider bug is a fresh reminder not to reach for a heavier
+// rerender than an interaction actually needs).
+function groupHeader(cls, label, count, { fileIds = [], folderIds = [] }, ctx) {
+  const collapsed = ctx.state.groupCollapsed.has(label);
+  const caret = el("button.iconbtn.egcaret" + (collapsed ? ".collapsed" : ""), {
+    title: collapsed ? "Expand group" : "Collapse group",
+    "aria-expanded": collapsed ? "false" : "true",
+    onClick: (e) => {
+      e.stopPropagation();
+      if (ctx.state.groupCollapsed.has(label)) ctx.state.groupCollapsed.delete(label);
+      else ctx.state.groupCollapsed.add(label);
+      (ctx.state._repaint || ctx.rerender)();
+    },
+  }, [iconEl("chev", "sm")]);
+  const head = el(cls, {
+    role: "button", tabindex: "0", title: "Select this group",
+    onClick: (e) => {
+      if (!(e.metaKey || e.ctrlKey)) { ctx.state.selection.clear(); ctx.state.selFolders.clear(); }
+      for (const id of fileIds) ctx.state.selection.add(id);
+      for (const id of folderIds) ctx.state.selFolders.add(id);
+      ctx.state.lastIdx = -1; ctx.state.lastFolderIdx = -1;
+      ctx.state._refresh?.();
+    },
+  }, [caret, el("span.egn", {}, [label]), el("span.egc", {}, [String(count)])]);
+  return { head, collapsed };
 }
 
 // sort a file list by key + direction. Comparators are defined ASCENDING (name A→Z, size small→large,
