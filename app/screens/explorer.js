@@ -18,7 +18,7 @@ import { iconEl } from "../icons.js";
 import { parseTag, TAG_TYPES, tagChip, tagEditor, tagColor } from "../tags.js";
 import { addFolderTag, removeFolderTag } from "../data.js";
 import { navigate, reload } from "../router.js";
-import { createFolder, moveToFolder, moveFolderTo, renameFolder, deleteFolder, trashWorks, restoreWork, purgeWork, emptyTrash, loadTrash, starWork, unstarWork, saveToFiles, renameWork, setHidden, createShareLink, shareUrl, loadShareLinks, revokeShareLink, setVisibility, visFromDb, createFolderShare, folderShareUrl, requestToJoin, refreshStorage, searchFiles, searchFolders, addTag, removeTag, fetchExplorerFile } from "../data.js";
+import { createFolder, moveToFolder, moveFolderTo, renameFolder, deleteFolder, trashWorks, restoreWork, purgeWork, emptyTrash, loadTrash, starWork, unstarWork, saveToFiles, renameWork, setHidden, createShareLink, shareUrl, loadShareLinks, revokeShareLink, setVisibility, visFromDb, createFolderShare, folderShareUrl, requestToJoin, refreshStorage, searchFiles, searchFolders, addTag, removeTag, fetchExplorerFile, duplicateWork } from "../data.js";
 import { subscribeExplorer } from "../realtime.js";
 import { workCard, folderCard, mediaUrl, KIND_ICON, downloadWork, baseName } from "../cards.js";
 import { channelColumn } from "./workspace.js";
@@ -103,6 +103,59 @@ function persistentSelection(data) {
 // (syncUrl below), and a fresh mount / reload / back-forward reads it back (main.js → view.folderId).
 // The old in-memory _folderStore was removed — it overrode the URL (e.g. it defeated Back-to-root by
 // re-restoring the last folder), and the URL is the single source of truth now (and makes links work).
+
+// ── Undo/Redo (C21, Ctrl+Z / Ctrl+Shift+Z) ────────────────────────────────────
+// Owner ask: Cut/Copy/Paste and undo-redo, "implement them". A per-mount history stack of
+// reversible actions — move (file/folder), trash/restore, rename (file/folder), new folder, and
+// cut/copy/paste (below) all push an {label, undo, redo} entry after they succeed. undo()/redo()
+// are plain closures that call straight back into the SAME primitive the original action used
+// (doFileMove, doTrash, doRenameFile, …) — never a bespoke inverse — so undoing/redoing an action
+// applies the identical optimistic-mutate-then-write-then-rollback-on-fail shape every other write
+// in this file already uses, and can itself fail/roll back cleanly. A brand NEW action clears
+// anything ahead of the pointer (you can't redo a branch you've since diverged from — standard
+// editor semantics). Not wired to delete-folder (cascading, riskier to blindly reverse) or tag add/
+// remove (lower priority) — those still work, just aren't on the undo stack yet.
+const HISTORY_CAP = 50;
+function makeHistory() {
+  let stack = [], ptr = -1;   // stack[0..ptr] is what's been done; ptr+1.. is redoable
+  return {
+    push(entry) {
+      stack = stack.slice(0, ptr + 1);
+      stack.push(entry);
+      if (stack.length > HISTORY_CAP) { stack.shift(); } else { ptr++; }
+    },
+    canUndo: () => ptr >= 0,
+    canRedo: () => ptr < stack.length - 1,
+    async undo() {
+      if (ptr < 0) return;
+      const entry = stack[ptr];
+      try { await entry.undo(); }
+      catch (e) { toast({ message: e?.message || `Couldn’t undo “${entry.label}”` }); return; }
+      ptr--;
+      toast({ message: `Undid: ${entry.label}`, icon: "undo" });
+    },
+    async redo() {
+      if (ptr >= stack.length - 1) return;
+      const entry = stack[ptr + 1];
+      try { await entry.redo(); }
+      catch (e) { toast({ message: e?.message || `Couldn’t redo “${entry.label}”` }); return; }
+      ptr++;
+      toast({ message: `Redid: ${entry.label}` });
+    },
+  };
+}
+
+// ── Cut/Copy/Paste (C4) ────────────────────────────────────────────────────────
+// Module-level (not on `state`) so it survives navigating between folders AND between different
+// explorer mounts (server ↔ server ↔ My files) within the same page session — same reasoning
+// _selectionStore above uses for per-mount selection. Paste only works within the SAME mount it was
+// cut/copied from: moveToFolder/moveFolderTo/duplicateWork are all mount-scoped RPCs (duplicate_work's
+// own doc comment: "scoped to the SAME mount as the source") — there's no cross-mount move/duplicate
+// on the backend, checked at paste time via clipboardMatchesMount.
+let clipboard = null;   // { mode:'cut'|'copy', source, serverId, fileIds:[], folderIds:[] } | null
+function clipboardMatchesMount(data) {
+  return !!clipboard && clipboard.source === data.source && (clipboard.serverId || null) === (data.server?.id || null);
+}
 
 export function renderExplorer(data, view = {}) {
   const screen = el("section.screen", { "data-screen": "explorer" });
@@ -228,6 +281,8 @@ export function renderExplorer(data, view = {}) {
   // else (open/close a file, switch view mode) replaces in place. Bails when we've navigated off the
   // explorer, so a close-on-nav can't clobber the new route's URL. `shared` views keep their token
   // URL untouched.
+  state._history = makeHistory();
+
   let lastFolder = state.folderId;
   function syncUrl() {
     if (shared) return;
@@ -518,6 +573,23 @@ export function renderExplorer(data, view = {}) {
     }
     else if ((e.key === "Delete" || (e.key === "Backspace" && (e.metaKey || e.ctrlKey))) && state.selection.size && !data.shared) {   // Delete / ⌘⌫ → trash the selected files
       e.preventDefault(); trashSelected(data, state, rerender);
+    }
+    // C4 / C21 (owner 2026-09-01, "implement them"): Cut/Copy/Paste + Undo/Redo. All five are no-ops
+    // on a read-only shared view (data.shared) — none of them make sense without write access.
+    else if ((e.metaKey || e.ctrlKey) && !e.shiftKey && (e.key === "x" || e.key === "X") && !data.shared) {
+      e.preventDefault(); cutSelected(data, state, rerender);
+    }
+    else if ((e.metaKey || e.ctrlKey) && !e.shiftKey && (e.key === "c" || e.key === "C") && !data.shared) {
+      e.preventDefault(); copySelected(data, state, rerender);
+    }
+    else if ((e.metaKey || e.ctrlKey) && (e.key === "v" || e.key === "V") && !data.shared) {
+      e.preventDefault(); pasteClipboard(data, state, rerender);
+    }
+    else if ((e.metaKey || e.ctrlKey) && !e.shiftKey && (e.key === "z" || e.key === "Z") && !data.shared) {
+      e.preventDefault(); state._history?.undo();
+    }
+    else if ((e.metaKey || e.ctrlKey) && (((e.key === "z" || e.key === "Z") && e.shiftKey) || e.key === "y" || e.key === "Y") && !data.shared) {   // ⇧⌘Z or Ctrl+Y — redo
+      e.preventDefault(); state._history?.redo();
     }
     else if (e.key === " " && document.activeElement === document.body) {   // C33: Quick Look — Space previews the selected file
       const sel = (state._files || []).filter((w) => state.selection.has(w.id));
@@ -916,11 +988,14 @@ function paint(tree, pane, data, state, rerender) {
     };
     const hasSel = state.selection.size || state.selFolders.size;
     // C24: the desktop-style background menu (was just New folder + Upload). Sort/View open the same
-    // option lists as the toolbar dropdowns, at the cursor. (Paste → with C4 cut/copy/paste; Group by
-    // → with P33 — omitted until those land so no row is a dead control.)
+    // option lists as the toolbar dropdowns, at the cursor. (Group by → with P33 — omitted until it
+    // lands so no row is a dead control.) Paste (C4, landed 2026-09-01) only shows once something's
+    // actually on the clipboard AND it's from this same mount — clipboardMatchesMount also gates the
+    // action itself, this just keeps a doomed-to-fail row off the menu in the first place.
     openMenu(null, [
       { label: "New folder", icon: "plus", onClick: () => newFolder(data, state, rerender, state.folderId) },
       { label: "Upload…", icon: "download", onClick: () => openUpload(uploadOpts) },
+      ...(clipboardMatchesMount(data) ? [{ label: "Paste", icon: "plus", onClick: () => pasteClipboard(data, state, rerender) }] : []),
       { sep: true },
       { label: "Select all", icon: "check", onClick: selectAll },
       ...(hasSel ? [{ label: "Deselect all", icon: "x", onClick: deselectAll }] : []),
@@ -1164,6 +1239,14 @@ function paint(tree, pane, data, state, rerender) {
     // select by [data-id]/[data-folder-id] so both files and folders show the selection outline
     body.querySelectorAll("[data-id]").forEach((c) => c.classList.toggle("sel", state.selection.has(c.dataset.id)));
     body.querySelectorAll("[data-folder-id]").forEach((c) => c.classList.toggle("sel", state.selFolders.has(c.dataset.folderId)));
+    // C4: a card currently on the CUT clipboard (only cut dims — a copy leaves the original
+    // untouched and unmarked, since it isn't going anywhere) reads as a faded "already on its way
+    // out" state, the same idiom Finder/Explorer use. Cleared the instant it's pasted or replaced by
+    // a new cut/copy (both null the module-level `clipboard` first).
+    const cutFiles = clipboard?.mode === "cut" ? new Set(clipboard.fileIds) : null;
+    const cutFolders = clipboard?.mode === "cut" ? new Set(clipboard.folderIds) : null;
+    body.querySelectorAll("[data-id]").forEach((c) => c.classList.toggle("cutdim", !!cutFiles?.has(c.dataset.id)));
+    body.querySelectorAll("[data-folder-id]").forEach((c) => c.classList.toggle("cutdim", !!cutFolders?.has(c.dataset.folderId)));
     // B6/owner 2026-09-01: no more bulk-action BAR — it overlaid and occluded the whole toolbar
     // (couldn't sort/group/adjust density while anything was selected) and read as disconnected
     // chrome ("doesn't connect"). The count lives ONLY in the quiet .exstatus strip at the pane foot
@@ -1603,6 +1686,7 @@ function shareFolderMenu(data, state, rerender, folder, anchor, at) {
     // P28: right-click a folder → Open (leads, like a native context menu) + share
     { label: "Open", icon: "folder", onClick: () => { state.folderId = folder.id; state.query = ""; state.activeQuery = ""; rerender(); } },
     ...(canW ? [{ label: "Rename", icon: "pen", onClick: () => renameFolderFlow(data, state, rerender, folder) }] : []),
+    ...(canW ? [{ label: "Cut", icon: "move", onClick: () => cutItems(data, state, rerender, [], [folder.id]) }] : []),
     ...(canW ? [{ label: "Move to…", icon: "move", onClick: () => openFolderMovePicker(data, state, rerender, [folder.id]) }] : []),
     // owner 2026-09-01: the "Properties" menu item is gone — the same tags popover now opens straight
     // off the card face (hover the "+N" chip, or the new "+" add chip on a tag-free folder — see
@@ -1617,13 +1701,23 @@ function shareFolderMenu(data, state, rerender, folder, anchor, at) {
   ], { at });
 }
 
+// the rename PRIMITIVE, no history — the redo/undo closures below call straight back into it
+async function doRenameFolder(data, state, rerender, folder, name) {
+  if (!isDemoQS()) await renameFolder(data.source, folder.id, name);
+  folder.name = name.trim();
+  rerender();
+}
 // Rename a folder (owner 2026-08-31 — folders had no rename UI). Mirrors renameWork's prompt.
 function renameFolderFlow(data, state, rerender, folder) {
   promptText({ title: "Rename folder", value: folder.name, submit: "Save", busyLabel: "Saving…", fail: "Couldn’t rename the folder" }, async (name) => {
-    if (!isDemoQS()) await renameFolder(data.source, folder.id, name);
-    folder.name = name.trim();
-    rerender();   // a full repaint rebuilds the card (and the tree row) with the new name
+    const was = folder.name;
+    await doRenameFolder(data, state, rerender, folder, name);
     toast({ message: "Folder renamed" });
+    state._history?.push({
+      label: "Rename folder",
+      undo: () => doRenameFolder(data, state, rerender, folder, was),
+      redo: () => doRenameFolder(data, state, rerender, folder, name),
+    });
   });
 }
 
@@ -2383,20 +2477,39 @@ function toggle(set, id) { set.has(id) ? set.delete(id) : set.add(id); }
 // `?demo=1` fixture there is no network, so we insert optimistically only. On success
 // we push the row into `data.folders` and rerender from it — no refetch, matching the
 // explorer's one-fetch/client-nav model.
+// undo-a-create primitive: silently remove a folder by id, no confirm dialog (the confirm already
+// happened — creating it — undo is a deliberate reversal of that, not a fresh destructive act, same
+// reasoning trash/restore's history entries use no re-confirm either). Any file inside is un-filed
+// to root, never deleted (deleteFolder's own ON DELETE SET NULL, data.js) — safe even if something
+// was filed into the folder between create and undo.
+async function doDeleteFolderSilent(data, state, rerender, folderId) {
+  if (!isDemoQS()) await deleteFolder(data.source, folderId);
+  data.folders = data.folders.filter((f) => f.id !== folderId);
+  for (const w of data.files) if (w.folderId === folderId) w.folderId = null;
+  if (state.folderId === folderId) state.folderId = null;
+  rerender();
+}
+async function doCreateFolder(data, state, rerender, parentId, name) {
+  let folder;
+  if (isDemoQS()) folder = { id: "f-new-" + Date.now() + Math.random().toString(36).slice(2), name, parentId: parentId ?? null, archived: false, locked: false, count: 0, createdAt: new Date().toISOString() };
+  else folder = await createFolder({ source: data.source, serverId: data.server?.id, parentId: parentId ?? null, name });
+  data.folders.push(folder);
+  if (parentId != null) state.collapsed.delete(parentId);
+  state.collapsed.delete("__root__");
+  rerender();
+  return folder;
+}
 function newFolder(data, state, rerender, parentId) {
   promptFolderName(async (name) => {
-    let folder;
-    if (isDemoQS()) {
-      folder = { id: "f-new-" + Date.now(), name, parentId: parentId ?? null, archived: false, locked: false, count: 0, createdAt: new Date().toISOString() };
-    } else {
-      folder = await createFolder({ source: data.source, serverId: data.server?.id, parentId: parentId ?? null, name });
-    }
-    data.folders.push(folder);
-    // reveal the new child: expand the parent (and the root) so it isn't hidden
-    if (parentId != null) state.collapsed.delete(parentId);
-    state.collapsed.delete("__root__");
-    rerender();
+    const folder = await doCreateFolder(data, state, rerender, parentId, name);
     toast({ message: `Folder “${name}” created` });
+    // redo recreates it — a NEW id, since nothing server-side lets us resurrect the exact old one,
+    // same acceptable tradeoff a fresh empty object always has (Finder/Drive do the same).
+    state._history?.push({
+      label: "New folder",
+      undo: () => doDeleteFolderSilent(data, state, rerender, folder.id),
+      redo: () => doCreateFolder(data, state, rerender, parentId, name),
+    });
   });
 }
 
@@ -2439,17 +2552,68 @@ function folderInSubtree(folders, maybeAncestor, folderId) {
 // the new folderId/parentId to `data` and rerenders BEFORE the network write settles, then fires
 // the write; a failure rolls the affected rows back to what these captured and rerenders again, so
 // the UI never keeps showing a move that didn't actually happen. Shared here since every site needs
-// the identical "snapshot for rollback, mutate now" shape.
+// the identical "snapshot for rollback, mutate now" shape. The returned closure also carries `.prev`
+// (the PER-ITEM origin map) — C21's history entries key undo off the real previous location of each
+// item, not an assumed shared one, so a mixed-origin selection (rare, but possible via search
+// results spanning folders) still undoes correctly.
 function applyFileMove(data, ids, destFolderId) {
   const set = new Set(ids);
   const prev = new Map();
   for (const w of data.files) if (set.has(w.id)) { prev.set(w.id, w.folderId); w.folderId = destFolderId; }
-  return () => { for (const w of data.files) if (prev.has(w.id)) w.folderId = prev.get(w.id); };
+  const revert = () => { for (const w of data.files) if (prev.has(w.id)) w.folderId = prev.get(w.id); };
+  revert.prev = prev;
+  return revert;
 }
 function applyFolderMove(data, folderIds, destParentId) {
   const prev = new Map();
   for (const f of data.folders) if (folderIds.includes(f.id)) { prev.set(f.id, f.parentId); f.parentId = destParentId; }
-  return () => { for (const f of data.folders) if (prev.has(f.id)) f.parentId = prev.get(f.id); };
+  const revert = () => { for (const f of data.folders) if (prev.has(f.id)) f.parentId = prev.get(f.id); };
+  revert.prev = prev;
+  return revert;
+}
+
+// The move PRIMITIVE — mutate + network write + rollback-on-failure, no history. Every history
+// entry below (undo/redo) calls back into this directly so undoing/redoing a move never piles up
+// MORE history entries of its own. Returns the per-item origin map (applyFileMove's `.prev`) so the
+// caller can build a correct undo even over a mixed-origin selection.
+async function doFileMove(data, state, rerender, ids, destId) {
+  const revert = applyFileMove(data, ids, destId);
+  rerender();
+  try { if (!isDemoQS()) await moveToFolder({ source: data.source, works: ids, destFolderId: destId }); }
+  catch (e) { revert(); rerender(); throw e; }
+  return revert.prev;
+}
+async function doFolderMove(data, state, rerender, folderIds, destId) {
+  const revert = applyFolderMove(data, folderIds, destId);
+  rerender();
+  try { if (!isDemoQS()) { for (const id of folderIds) await moveFolderTo(data.source, id, destId); } }
+  catch (e) { revert(); rerender(); throw e; }
+  return revert.prev;
+}
+// group a per-item origin map by distinct origin, so undo issues ONE move call per distinct origin
+// folder instead of assuming every moved item came from the same place.
+function groupByOrigin(prevMap) {
+  const groups = new Map();
+  for (const [id, origin] of prevMap) { if (!groups.has(origin)) groups.set(origin, []); groups.get(origin).push(id); }
+  return groups;
+}
+// the move primitive + a Ctrl+Z/⇧Ctrl+Z history entry (C21). Throws exactly like doFileMove — a
+// caller that needs the modal-stays-open-on-failure behavior (moveIds below) still gets it.
+async function performFileMove(data, state, rerender, ids, destId, label) {
+  const prevMap = await doFileMove(data, state, rerender, ids, destId);
+  state._history?.push({
+    label,
+    undo: async () => { for (const [origin, gids] of groupByOrigin(prevMap)) await doFileMove(data, state, rerender, gids, origin); },
+    redo: async () => { await doFileMove(data, state, rerender, ids, destId); },
+  });
+}
+async function performFolderMove(data, state, rerender, folderIds, destId, label) {
+  const prevMap = await doFolderMove(data, state, rerender, folderIds, destId);
+  state._history?.push({
+    label,
+    undo: async () => { for (const [origin, gids] of groupByOrigin(prevMap)) await doFolderMove(data, state, rerender, gids, origin); },
+    redo: async () => { await doFolderMove(data, state, rerender, folderIds, destId); },
+  });
 }
 
 // owner 2026-08-31 — drag a folder card onto another folder to reparent it. Server folders reuse
@@ -2458,26 +2622,22 @@ function applyFolderMove(data, folderIds, destParentId) {
 async function moveFoldersInto(data, state, rerender, folderIds, destFolderId) {
   const dest = destFolderId || null;
   const destName = data.folders.find((f) => f.id === destFolderId)?.name || rootLabel(data);
-  const undo = applyFolderMove(data, folderIds, dest);
   state.selFolders.clear();
-  rerender();
   try {
-    if (!isDemoQS()) { for (const id of folderIds) await moveFolderTo(data.source, id, dest); }
+    await performFolderMove(data, state, rerender, folderIds, dest, `Move ${folderIds.length} folder${folderIds.length > 1 ? "s" : ""}`);
     toast({ message: `Moved ${folderIds.length} folder${folderIds.length > 1 ? "s" : ""} to “${destName}”` });
-  } catch (e) { undo(); rerender(); toast({ message: e?.message || "Couldn’t move the folder" }); }
+  } catch (e) { toast({ message: e?.message || "Couldn’t move the folder" }); }
 }
 
 // B10 — move works into an existing folder (drag onto a folder card).
 async function moveInto(data, state, rerender, ids, folderId) {
   const dest = folderId || null;
   const destName = data.folders.find((f) => f.id === folderId)?.name;
-  const undo = applyFileMove(data, ids, dest);
   state.selection.clear(); state.lastIdx = -1;
-  rerender();
   try {
-    if (!isDemoQS()) await moveToFolder({ source: data.source, works: ids, destFolderId: dest });
+    await performFileMove(data, state, rerender, ids, dest, `Move ${ids.length} file${ids.length > 1 ? "s" : ""}`);
     toast({ message: `Moved ${ids.length} file${ids.length > 1 ? "s" : ""}${destName ? ` to “${destName}”` : ""}` });
-  } catch (e) { undo(); rerender(); toast({ message: e?.message || "Couldn’t move the files" }); }
+  } catch (e) { toast({ message: e?.message || "Couldn’t move the files" }); }
 }
 
 function promptFolderName(onSubmit, nested = false) {
@@ -2525,13 +2685,9 @@ function moveIds(data, state, rerender, ids) {
   // swallowing it (unlike the drag-and-drop move sites, which own their own toast/rollback because
   // there's no modal to report back through).
   openMovePicker(data, state, async (destId) => {
-    const undo = applyFileMove(data, ids, destId);
     state.selection.clear(); state.lastIdx = -1;
-    rerender();
-    try {
-      if (!isDemoQS()) await moveToFolder({ source: data.source, works: ids, destFolderId: destId });
-      toast({ message: `Moved ${ids.length} file${ids.length === 1 ? "" : "s"}` });
-    } catch (e) { undo(); rerender(); throw e; }
+    await performFileMove(data, state, rerender, ids, destId, `Move ${ids.length} file${ids.length === 1 ? "" : "s"}`);
+    toast({ message: `Moved ${ids.length} file${ids.length === 1 ? "" : "s"}` });
   });
 }
 
@@ -2541,6 +2697,8 @@ function openBulkMenu(data, state, rerender, anchor, at) {
   const nFiles = state.selection.size, nFolders = state.selFolders.size;
   openMenu(anchor, [
     ...(nFiles && !nFolders ? [{ label: "Download", icon: "download", onClick: () => downloadSelected(state) }] : []),
+    { label: "Cut", icon: "move", onClick: () => cutSelected(data, state, rerender) },
+    ...(nFiles ? [{ label: "Copy", icon: "copy", onClick: () => copySelected(data, state, rerender) }] : []),
     { label: "Move to folder…", icon: "move", onClick: () => moveMixedSelected(data, state, rerender) },
     { sep: true },
     { label: "Delete", icon: "trash", danger: true, onClick: () => deleteMixedSelected(data, state, rerender) },
@@ -2560,6 +2718,93 @@ function deleteMixedSelected(data, state, rerender) {
   const fileIds = [...state.selection], folderIds = [...state.selFolders];
   if (folderIds.length) deleteFoldersFlow(data, state, rerender, folderIds, fileIds);   // one confirm covers both halves
   else trashSelected(data, state, rerender);
+}
+
+// ── Cut/Copy/Paste (C4) ──────────────────────────────────────────────────────
+// Cut = deferred move (files AND folders — the same doFileMove/doFolderMove primitives every drag/
+// picker move already uses). Copy = duplicate_work (schema-41), FILES ONLY — there is no recursive
+// folder-duplicate RPC on the backend (building one is its own schema addition, out of scope here);
+// a folder in a Copy selection is skipped with a toast explaining why, not silently dropped.
+// the item-level primitives — take explicit ids, since a right-click card menu can target an item
+// that ISN'T the active selection at all (openCardMenu/shareFolderMenu fire for exactly that case;
+// see inBulkSel above). cutSelected/copySelected below are the ⌘X/⌘C keyboard-shortcut callers,
+// which just hand in the current selection.
+function cutItems(data, state, rerender, fileIds, folderIds) {
+  const n = fileIds.length + folderIds.length;
+  if (!n) return;
+  clipboard = { mode: "cut", source: data.source, serverId: data.server?.id || null, fileIds, folderIds };
+  state._refresh?.();   // repaint the cut-dim outline (refreshSel reads `clipboard` — see below)
+  toast({ message: `${n} item${n === 1 ? "" : "s"} ready to move — paste to place ${n === 1 ? "it" : "them"}`, icon: "move" });
+}
+function copyItems(data, state, rerender, fileIds, folderIds = []) {
+  if (!fileIds.length) { if (folderIds.length) toast({ message: "Folders can’t be copied yet — cut and paste to move instead" }); return; }
+  clipboard = { mode: "copy", source: data.source, serverId: data.server?.id || null, fileIds, folderIds: [] };
+  state._refresh?.();
+  toast({ message: folderIds.length ? `Copied ${fileIds.length} file${fileIds.length === 1 ? "" : "s"} — folders in the selection were skipped` : `Copied ${fileIds.length} file${fileIds.length === 1 ? "" : "s"}`, icon: "copy" });
+}
+function cutSelected(data, state, rerender) { cutItems(data, state, rerender, [...state.selection], [...state.selFolders]); }
+function copySelected(data, state, rerender) { copyItems(data, state, rerender, [...state.selection], [...state.selFolders]); }
+async function pasteClipboard(data, state, rerender) {
+  if (!clipboard) return;
+  if (!clipboardMatchesMount(data)) { toast({ message: "Can’t paste here — the clipboard is from a different library" }); return; }
+  const destId = state.folderId ?? null;
+  const { mode, fileIds, folderIds } = clipboard;
+  if (mode === "cut") {
+    // dropping onto the folder it's already in, or a folder into its own subtree, is a silent no-op
+    // for that item (not an error) — the same guard the drag-drop path uses (folderInSubtree above).
+    const fIds = fileIds.filter((id) => (data.files.find((w) => w.id === id)?.folderId || null) !== destId);
+    const dIds = folderIds.filter((id) => {
+      const f = data.folders.find((x) => x.id === id);
+      return f && (f.parentId || null) !== destId && id !== destId && !folderInSubtree(data.folders, id, destId);
+    });
+    if (!fIds.length && !dIds.length) { clipboard = null; state._refresh?.(); return; }
+    let filePrev = null, folderPrev = null;
+    try {
+      if (fIds.length) filePrev = await doFileMove(data, state, rerender, fIds, destId);
+      if (dIds.length) folderPrev = await doFolderMove(data, state, rerender, dIds, destId);
+    } catch (e) { toast({ message: e?.message || "Couldn’t paste" }); return; }
+    const n = fIds.length + dIds.length;
+    clipboard = null;   // a cut is consumed once pasted — standard cut/paste behavior
+    state._history?.push({
+      label: `Paste ${n} item${n === 1 ? "" : "s"}`,
+      undo: async () => {
+        if (filePrev) for (const [origin, gids] of groupByOrigin(filePrev)) await doFileMove(data, state, rerender, gids, origin);
+        if (folderPrev) for (const [origin, gids] of groupByOrigin(folderPrev)) await doFolderMove(data, state, rerender, gids, origin);
+      },
+      redo: async () => {
+        if (fIds.length) await doFileMove(data, state, rerender, fIds, destId);
+        if (dIds.length) await doFolderMove(data, state, rerender, dIds, destId);
+      },
+    });
+    toast({ message: `Moved ${n} item${n === 1 ? "" : "s"} here` });
+  } else {   // copy — files only, each an independent duplicate (schema-41 duplicate_work)
+    const newIds = [];
+    try {
+      for (const id of fileIds) {
+        let wid;
+        if (isDemoQS()) {
+          wid = "w-copy-" + Date.now() + Math.random().toString(36).slice(2);
+          const src = data.files.find((w) => w.id === id);
+          if (src) data.files.push({ ...src, id: wid, folderId: destId, starred: false });
+        } else {
+          wid = await duplicateWork(id, destId);
+          const f = await fetchExplorerFile(wid, { source: data.source, serverId: data.server?.id, membersById: data.membersById });
+          if (f) data.files.push(f);
+        }
+        newIds.push(wid);
+      }
+    } catch (e) { toast({ message: e?.message || "Couldn’t paste" }); }
+    if (!newIds.length) return;
+    rerender();
+    toast({ message: `Pasted ${newIds.length} file${newIds.length === 1 ? "" : "s"}` });
+    // undo/redo reuse trash/restore (doTrash/doRestore) — a pasted copy is a real independent work
+    // row, so "undo the paste" IS "trash the copies", which is already reversible for 30 days too.
+    state._history?.push({
+      label: `Paste ${newIds.length} file${newIds.length === 1 ? "" : "s"}`,
+      undo: () => doTrash(data, state, rerender, newIds),
+      redo: () => doRestore(data, state, rerender, newIds),
+    });
+  }
 }
 
 // A mixed files+folders selection needs its own destination picker: files carry no restriction,
@@ -2615,22 +2860,32 @@ function openMixedMovePicker(data, state, rerender, fileIds, folderIds) {
     if (!hasSel || busy) return;
     busy = true; go.disabled = true; go.textContent = "Moving…";
     const dst = dest ?? null;
-    // Optimistic (see applyFileMove/applyFolderMove above): apply now, rerender the explorer behind
-    // this still-open modal, THEN fire the write — a failure below rolls both back before the modal's
-    // own catch reports it.
-    const undoFiles = fileIds.length ? applyFileMove(data, fileIds, dst) : null;
-    const undoFolders = folderIds.length ? applyFolderMove(data, folderIds, dst) : null;
     state.selection.clear(); state.selFolders.clear(); state.lastIdx = -1; state.lastFolderIdx = -1;
-    rerender();
+    // doFileMove/doFolderMove (see the block above openMoveFoldersInto) each apply-then-write-then-
+    // rollback-on-fail on their own half; a failure in either propagates up to this catch. One
+    // COMBINED history entry (not two separate performFileMove/performFolderMove pushes) so Ctrl+Z
+    // undoes this whole mixed move as a single step, matching what the user actually did.
+    let filePrev = null, folderPrev = null;
     try {
-      if (!isDemoQS()) {
-        if (fileIds.length) await moveToFolder({ source: data.source, works: fileIds, destFolderId: dst });
-        for (const id of folderIds) await moveFolderTo(data.source, id, dst);
-      }
+      if (fileIds.length) filePrev = await doFileMove(data, state, rerender, fileIds, dst);
+      if (folderIds.length) folderPrev = await doFolderMove(data, state, rerender, folderIds, dst);
+      state._history?.push({
+        label: `Move ${n} item${n === 1 ? "" : "s"}`,
+        undo: async () => {
+          if (filePrev) for (const [origin, gids] of groupByOrigin(filePrev)) await doFileMove(data, state, rerender, gids, origin);
+          if (folderPrev) for (const [origin, gids] of groupByOrigin(folderPrev)) await doFolderMove(data, state, rerender, gids, origin);
+        },
+        redo: async () => {
+          if (fileIds.length) await doFileMove(data, state, rerender, fileIds, dst);
+          if (folderIds.length) await doFolderMove(data, state, rerender, folderIds, dst);
+        },
+      });
       modal.close();
       toast({ message: `Moved ${n} item${n === 1 ? "" : "s"}` });
     } catch (e) {
-      undoFiles?.(); undoFolders?.(); rerender();
+      // a failure on the folder half after the file half already committed leaves the files moved —
+      // same partial-success shape the old per-half rollback already accepted (moveToFolder itself
+      // is one atomic RPC; only the per-folder moveFolderTo loop can partially fail mid-loop).
       busy = false; go.disabled = false; go.textContent = "Move here";
       toast({ message: e?.message || "Couldn’t move the selection" });
     }
@@ -2732,29 +2987,52 @@ function enterTrash(data, state, rerender) {
 // appear in Trash; an Undo toast restores them in one action.
 function trashSelected(data, state, rerender) { trashIds(data, state, rerender, [...state.selection]); }
 
+// trash/restore PRIMITIVES — mutate + network, no history/toast of their own. trashIds/restoreMany
+// below both push a history entry AND toast; undo/redo call straight back into these so undoing a
+// trash (or redoing it) never piles up more history entries.
+async function doTrash(data, state, rerender, ids) {
+  const set = new Set(ids);
+  const moved = data.files.filter((w) => set.has(w.id));
+  if (!isDemoQS()) await trashWorks(ids);
+  const now = new Date().toISOString();
+  data.files = data.files.filter((w) => !ids.includes(w.id));
+  for (const w of moved) data._trash.unshift({ ...w, deletedAt: now });
+  if (state) for (const id of ids) state.selection.delete(id);
+  rerender();
+}
+async function doRestore(data, state, rerender, ids) {
+  const set = new Set(ids);
+  const back = data._trash.filter((w) => set.has(w.id));
+  if (!isDemoQS()) await Promise.all(ids.map(restoreWork));
+  data._trash = data._trash.filter((w) => !set.has(w.id));
+  for (const w of back) { const { deletedAt, ...rest } = w; data.files.push(rest); }
+  rerender();
+}
+
 // Soft-delete a specific set of works → Trash (the bulk selection, or one card menu).
 function trashIds(data, state, rerender, ids) {
   if (!ids.length) return;
-  const set = new Set(ids);
-  const moved = data.files.filter((w) => set.has(w.id));
-  (isDemoQS() ? Promise.resolve() : trashWorks(ids)).then(() => {
-    const now = new Date().toISOString();
-    data.files = data.files.filter((w) => !ids.includes(w.id));
-    for (const w of moved) data._trash.unshift({ ...w, deletedAt: now });
-    state.selection.clear(); state.lastIdx = -1;
-    rerender();
-    toast({ message: `Moved ${ids.length} to Trash`, icon: "trash", action: { label: "Undo", onClick: () => restoreMany(data, state, rerender, ids) } });
+  state.lastIdx = -1;
+  doTrash(data, state, rerender, ids).then(() => {
+    toast({ message: `Moved ${ids.length} to Trash`, icon: "trash", action: { label: "Undo", onClick: () => doRestore(data, state, rerender, ids) } });
+    state._history?.push({
+      label: `Trash ${ids.length} file${ids.length === 1 ? "" : "s"}`,
+      undo: () => doRestore(data, state, rerender, ids),
+      redo: () => doTrash(data, state, rerender, ids),
+    });
   }).catch((e) => toast({ message: e?.message || "Couldn’t delete" }));
 }
 
-// restore several works out of Trash (the Undo path); each is a real deleted_at=null write
+// restore several works out of Trash (the Undo-toast path AND the Trash screen's own Restore
+// button) — a real deleted_at=null write. `state` is optional (trashRow's button has one now; kept
+// optional since a future caller with no explorer state should still be able to restore).
 function restoreMany(data, state, rerender, ids) {
-  const set = new Set(ids);
-  const back = data._trash.filter((w) => set.has(w.id));
-  (isDemoQS() ? Promise.resolve() : Promise.all(ids.map(restoreWork))).then(() => {
-    data._trash = data._trash.filter((w) => !set.has(w.id));
-    for (const w of back) { const { deletedAt, ...rest } = w; data.files.push(rest); }
-    rerender();
+  doRestore(data, state, rerender, ids).then(() => {
+    state?._history?.push({
+      label: `Restore ${ids.length} file${ids.length === 1 ? "" : "s"}`,
+      undo: () => doTrash(data, state, rerender, ids),
+      redo: () => doRestore(data, state, rerender, ids),
+    });
   }).catch((e) => toast({ message: e?.message || "Couldn’t restore" }));
 }
 
@@ -2765,14 +3043,14 @@ function paintTrash(pane, data, state, rerender) {
   const empty = el("button.btn.sm.danger", { disabled: !rows.length, onClick: () => emptyNow(data, rerender) }, [iconEl("trash", "sm"), "Empty trash now"]);
   view.append(el(".trashnote", {}, [iconEl("trash", "sm"), el("span", {}, ["Items are permanently deleted ", el("b", {}, ["30 days"]), " after they’re trashed."]), empty]));
   if (!rows.length) view.append(emptyState("trash", "Trash is empty", "Files you delete are kept here for 30 days, then removed."));
-  else for (const w of rows) view.append(trashRow(w, data, rerender));
+  else for (const w of rows) view.append(trashRow(w, data, state, rerender));
   pane.replaceChildren(panehd, el(".panebody", {}, [view]));
 }
 
-function trashRow(w, data, rerender) {
+function trashRow(w, data, state, rerender) {
   const left = daysLeft(w.deletedAt);
   const acts = el(".tacts", {}, [
-    el("button.btn.sm", { onClick: () => restoreMany(data, null, rerender, [w.id]) }, [iconEl("undo", "sm"), "Restore"]),
+    el("button.btn.sm", { onClick: () => restoreMany(data, state, rerender, [w.id]) }, [iconEl("undo", "sm"), "Restore"]),
     el("button.btn.sm.danger", { onClick: () => purgeRow(data, rerender, w) }, ["Delete forever"]),
   ]);
   return el(".trrow", {}, [
@@ -2842,6 +3120,7 @@ function openCardMenu(data, state, rerender, w, anchor, at) {
     ...(personal ? [] : [{ label: "Save to my files", icon: "save", onClick: () => saveOne(w) }]),
     { label: "Share…", icon: "users", onClick: () => openShareDialog(w) },
     { label: "Copy link", icon: "link", onClick: () => copyLink(w) },
+    { label: "Copy", icon: "copy", onClick: () => copyItems(data, state, rerender, [w.id]) },
     ...writeMenuItems(data, state, rerender, w),
   ], { at });
 }
@@ -2861,6 +3140,7 @@ function writeMenuItems(data, state, rerender, w, hooks) {
   return [
     { label: "Change visibility…", icon: "globe", onClick: () => openVisibilityDialog(w) },
     { label: "Rename", icon: "pen", onClick: () => renameFile(data, state, rerender, w, repaint) },
+    { label: "Cut", icon: "move", onClick: () => { close?.(); cutItems(data, state, rerender, [w.id], []); } },
     { label: "Move to…", icon: "folder", onClick: () => { close?.(); moveIds(data, state, rerender, [w.id]); } },
     { label: w.hidden ? "Show in library" : "Hide from library", icon: "hide", onClick: () => toggleHidden(data, state, rerender, w, repaint) },
     { sep: true },
@@ -2983,12 +3263,22 @@ function openShareDialog(w) {
   if (!demo) loadShareLinks(w.id).then((rows) => { list = rows; paint(); }).catch(() => {});
 }
 
+// the rename PRIMITIVE, no history — see doRenameFolder's identical reasoning
+async function doRenameFile(data, state, rerender, w, name, after) {
+  if (!isDemoQS()) await renameWork(w.id, name);
+  w.title = name; w.name = name;
+  rerender();
+  after?.();   // details pane repaints its title/filename from the mutated work
+}
 function renameFile(data, state, rerender, w, after) {
   promptText({ title: "Rename", placeholder: "Name", value: w.title || w.name || "", submit: "Rename", busyLabel: "Renaming…", fail: "Couldn’t rename" }, async (name) => {
-    if (!isDemoQS()) await renameWork(w.id, name);
-    w.title = name; w.name = name;
-    rerender();
+    const was = w.title || w.name || "";
+    await doRenameFile(data, state, rerender, w, name, after);
     toast({ message: "Renamed" });
-    after?.();   // details pane repaints its title/filename from the mutated work
+    state._history?.push({
+      label: "Rename file",
+      undo: () => doRenameFile(data, state, rerender, w, was, after),
+      redo: () => doRenameFile(data, state, rerender, w, name, after),
+    });
   });
 }

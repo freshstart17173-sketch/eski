@@ -93,8 +93,11 @@
 /* owner 2026-08-31: the explorer toolbar search field reads too tall next to its own row — the
    toolbar's buttons/iconbtns are all ~26px, the field stuck up past them. Thin it to match (scoped
    to the toolbar, not the shared .searchbar class other screens use — "the file explorer gets away
-   with it", not necessarily the standalone /search screen or the quick-switcher). */
-.toolbar .field.searchbar{padding:4px 9px}
+   with it", not necessarily the standalone /search screen or the quick-switcher).
+   owner 2026-09-01: thinner still — match .btn's own padding (3px, not 4px) so the field's total
+   box height comes out equal to a toolbar button's (3px*2 + 12px*1.3 line-height + 2px border ≈
+   23.6px both ways), not just close to it. */
+.toolbar .field.searchbar{padding:3px 9px}
 /* owner 2026-08-31: a hairline under the toolbar so it's obvious where the selectable pane begins
    (vs the chrome above, where a drag just highlights). B31: a file browser isn't text — marquee/drag
    must not highlight filenames (Finder/Drive). */
@@ -324,6 +327,7 @@
 .flrow.sel:hover{background:var(--plate)}
 .flrow.droptarget{outline:2px solid var(--ink);outline-offset:-2px}
 .flrow.ishidden{opacity:.55}.flrow.ishidden:hover{opacity:1}
+.flrow.cutdim{opacity:.5}.flrow.cutdim:hover{opacity:.75}
 /* list-mode Group-by (owner 2026-09-01, matches .exgrouphd in the grid): collapsible + selectable-
    as-a-whole, same as the grid — overrides the grid template/hover the other .flrow rules set (it's
    a section header, not a data row). .flgroup wraps each group's own rows so the caret can hide/show
@@ -412,6 +416,10 @@
    archived tree row) — no new chrome, just lowered presence. */
 .card.ishidden{opacity:.55}
 .card.ishidden:hover{opacity:1}
+/* C4: a card on the Cut clipboard reads dimmed — "already on its way out" — same idiom as
+   Finder/Explorer's cut-dim. Same opacity language as .ishidden above, on purpose. */
+.card.cutdim{opacity:.5}
+.card.cutdim:hover{opacity:.75}
 .card .media img.shot{object-fit:cover}
 .who .uchip{margin-right:2px}
 
