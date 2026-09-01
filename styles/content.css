@@ -436,6 +436,14 @@
 .sheet .dtype .ic,.sharedview .dtype .ic{width:46px;height:46px}
 .sheet .dtype .ext,.sharedview .dtype .ext{font-size:var(--fs-xl);font-weight:700;letter-spacing:.05em;color:var(--soft)}
 .sheet .dtype .nb,.sharedview .dtype .nb{font-size:11px;color:var(--muted)}
+/* PDF: the browser's own renderer fills the well, no chrome of ours needed */
+.sheet .dpdf,.sharedview .dpdf{width:100%;height:100%;border:0;background:var(--paper)}
+/* text/markdown/json/… preview: real monospace text, wrapped and scrollable, never HTML-rendered
+   (fillMedia sets it via textContent only — see the comment there on why). Left-aligned unlike the
+   centered dtype card since this IS the content, not a placeholder. */
+.sheet .dtext,.sharedview .dtext{position:absolute;inset:0;margin:0;overflow:auto;padding:28px 32px;
+  font:13px/1.6 ui-monospace,'SF Mono',Consolas,monospace;color:var(--ink);background:var(--paper);
+  white-space:pre-wrap;word-break:break-word;text-align:left}
 /* info rail */
 .sheet .dinfo{flex:none;width:380px;min-width:0;display:flex;flex-direction:column;overflow:hidden;background:var(--paper)}
 .sheet .dtop{position:relative;flex:none;display:flex;align-items:center;gap:6px;padding:var(--s3) var(--s4)}

@@ -13,7 +13,7 @@ import { iconEl } from "./icons.js";
 import { R2_PUBLIC_BASE_URL } from "./env.js";
 import { tagChip } from "./tags.js";
 
-export const KIND_ICON = { audio: "music", image: "image", video: "video", text: "type", other: "file" };
+export const KIND_ICON = { audio: "music", image: "image", video: "video", text: "type", pdf: "file", other: "file" };
 
 export function mediaUrl(work) {
   if (!work?.blob_sha || !work?.file_ext) return null;

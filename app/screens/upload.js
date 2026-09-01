@@ -29,7 +29,15 @@ const KIND = {
   png: "image", jpg: "image", jpeg: "image", webp: "image", gif: "image", avif: "image", svg: "image", bmp: "image", tiff: "image", heic: "image",
   mp3: "audio", m4a: "audio", ogg: "audio", opus: "audio", wav: "audio", flac: "audio", aac: "audio", webm: "audio", aiff: "audio", aif: "audio",
   mp4: "video", mov: "video", avi: "video", mkv: "video", m4v: "video",
-  txt: "text", md: "text",
+  // owner 2026-09-01: "make every possible file type previewable, not being able to preview an md
+  // file is so dumb" — details.js's fillMedia only ever branched on image/audio/video, so `text`
+  // (already classified here!) fell through to the generic "no preview, download to open" dtype
+  // card despite being tagged as previewable. Broadened past just txt/md to the rest of the
+  // plain-text-ish formats a creative-tools library actually holds (project/config/data files) —
+  // they all render through the same safe, plain <pre> preview (details.js), never as HTML.
+  txt: "text", md: "text", json: "text", csv: "text", tsv: "text", xml: "text", yml: "text", yaml: "text",
+  log: "text", ini: "text", cfg: "text", conf: "text", srt: "text", vtt: "text", diff: "text", patch: "text",
+  pdf: "pdf",   // browsers render PDFs natively — no library needed, just an <iframe>
 };
 // The safe object-key suffix for a file. The R2 key is `<sha>.<ext>`, so the ext must never carry
 // a slash, dot, or anything that could escape the key layout — we take only the segment after the

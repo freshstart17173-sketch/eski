@@ -145,6 +145,31 @@ export function fillMedia(mount, w, opts = {}) {
     playInto(mount, w, url, { title: w.title || baseName(w) || "Now playing", reopen: opts.onReopen });
     return;
   }
+  // Browsers render a PDF natively — no library, no parsing, just point an iframe at it. R2's GET
+  // CORS rule is AllowedOrigins:"*" (r2-cors.json), same rule downloadWork() already relies on for
+  // its own fetch, so this is a proven-safe cross-origin load.
+  if (w.kind === "pdf" && url) {
+    mount.classList.add("bare");
+    mount.replaceChildren(el("iframe.dpdf", { src: url, title: w.title || "PDF preview" }));
+    return;
+  }
+  // owner 2026-09-01: "not being able to preview an md file is so dumb" — text (md/txt/json/csv/…,
+  // upload.js's KIND map) was already classified as its own kind but fillMedia never actually
+  // rendered it, so it fell through to the generic dtype "download to open" card below. Fetches the
+  // raw bytes and renders them as PLAIN escaped text (el()'s textContent, never innerHTML) — real
+  // markdown rendering would need a sanitizer to be safe against uploaded HTML/script content, which
+  // this project doesn't have; a readable plain-text preview solves the actual complaint (see the
+  // content without downloading it) without that risk. Falls back to the type card on any failure
+  // (deleted blob, network) — same honesty rule as the image/video error paths above.
+  if (w.kind === "text" && url) {
+    mount.classList.add("bare");
+    const pre = el("pre.dtext", {}, ["Loading preview…"]);
+    mount.replaceChildren(pre);
+    fetch(url).then((r) => (r.ok ? r.text() : Promise.reject(r.status)))
+      .then((t) => { pre.textContent = t.length > 300000 ? t.slice(0, 300000) + "\n\n… truncated, download to see the rest" : t; })
+      .catch(() => { mount.classList.remove("bare"); mount.replaceChildren(typeCard(w)); });
+    return;
+  }
   mount.replaceChildren(typeCard(w));   // non-previewable, or no bytes yet
 }
 
