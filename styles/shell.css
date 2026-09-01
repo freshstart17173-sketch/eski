@@ -27,7 +27,10 @@
    theme automatically, and can't be clipped. Sized a touch under the button so it has air. */
 .railbtn.home,.railbtn.home.on{background:none}   /* the logo never becomes a solid inked tile */
 .railbtn.home:hover{background:var(--surface);color:var(--ink)}
-.railbtn.home.on .railogo{background:var(--ink)}   /* active on the Feed → the mark inks, no tile */
+/* owner 2026-09-01: the logo is a plain wordmark now (Feed, the route it used to open, is cut) —
+   it's a <span>, not a <button>, so it never carries .on; this rule is dormant, kept only in case
+   the mark ever needs an inked-active state again. */
+.railbtn.home.on .railogo{background:var(--ink)}
 /* eski_mark.png is the white e! on a TRANSPARENT background (derived from eski_logo.png). Use
    it as an alpha mask filled with `currentColor`, so the mark takes the button's own colour —
    --soft on the rail (matching the other icons), --on-ink when the button is active/inked, and
@@ -47,6 +50,10 @@
 .railbtn .ct{position:absolute;top:-2px;right:-2px;min-width:15px;height:15px;padding:0 4px;background:var(--ink);color:var(--on-ink);border-radius:var(--r);font-size:9px;font-weight:700;display:grid;place-items:center}
 .railbtn.on .ct{background:var(--paper);color:var(--ink)}
 .railbtn .rdot{position:absolute;top:-1px;right:-1px;width:9px;height:9px;border-radius:50%;background:var(--ink);box-shadow:0 0 0 2px var(--railbg)}
+/* owner 2026-09-01: servers deprioritized "for now" (file-explorer focus) — dimmed, not disabled;
+   full opacity + colour on hover so it never reads as broken, just quiet at rest. */
+.railbtn.dimmed{opacity:.4}
+.railbtn.dimmed:hover{opacity:1}
 .railsep{width:22px;height:1px;background:var(--line);flex:none;margin:1px 0}
 /* the profile button is a PERSON, not a server: round, and anchored to the
    bottom of the rail (away from the square server badges) so it never reads as

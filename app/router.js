@@ -10,7 +10,10 @@
 // (…/c/:channelId, …/settings) precede the bare /s/:serverId. `screen` is the
 // data-screen name from CANON §C.3.
 const ROUTES = [
-  { pattern: "/",                          screen: "feed" },
+  // owner 2026-09-01: Feed (friends' public posts) is cut — "/" now maps straight to the
+  // personal File explorer, same screen as /files (main.js redirects "/" to the canonical
+  // /files so explorer.js's own URL-sync can track folder/file/view in the address bar).
+  { pattern: "/",                          screen: "explorer" },
   { pattern: "/files",                     screen: "explorer" },   // personal My-files mount
   { pattern: "/messages",                  screen: "dms" },
   { pattern: "/notifications",             screen: "notifications" },

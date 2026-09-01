@@ -8,7 +8,7 @@
 //                  realtime.js + workspace.js; this module does the initial reads.
 //  - signed out  → { needsAuth:true } so the shell shows a sign-in prompt.
 
-import { demoWorkspace, demoExplorer, demoFeed, demoProfile, demoComments, demoSharedWork, demoDMs, demoDMThread, demoNotifications, demoInvites, demoInviteCandidates, demoAudit, demoSharedFolder, demoJoinRequests } from "./demo.js";
+import { demoWorkspace, demoExplorer, demoProfile, demoComments, demoSharedWork, demoDMs, demoDMThread, demoNotifications, demoInvites, demoInviteCandidates, demoAudit, demoSharedFolder, demoJoinRequests } from "./demo.js";
 import { supabase } from "./supabase.js";
 import { session } from "./supabase.js";
 
@@ -1098,46 +1098,8 @@ export async function postComment(workId, body) {
   return { id: row?.id, name: me.name, text: clean, time: fmtTime(row?.created_at), mine: true };
 }
 
-// The home Feed (CANON §C.5) — the friends-only portfolio grid: friends' PUBLIC
-// posts (visibility='public' and author ∈ accepted friends), same card renderer as
-// the explorer, NO member colour (public context). The same "one component, two
-// sources" pair as the explorer — this is the public source. Returns the rail shape
-// plus `posts` (card-shaped works) so the shell wraps it.
-export async function loadFeed() {
-  if (isDemo()) return demoFeed();
-  const user = session();
-  if (!user) return { needsAuth: true, live: false };
-
-  const { servers, me } = await loadRail(user);
-
-  // accepted friends (symmetric pair table: I'm a_user OR b_user)
-  const { data: friRows } = await supabase.from("friendships").select("a_user,b_user,status").or(`a_user.eq.${user.id},b_user.eq.${user.id}`).eq("status", "accepted");
-  const friendIds = (friRows || []).map((f) => (f.a_user === user.id ? f.b_user : f.a_user));
-
-  let posts = [];
-  if (friendIds.length) {
-    const { data: workRows } = await supabase.from("works")
-      .select("id,title,kind,file_ext,blob_sha,bytes,author_id,created_at")
-      .eq("visibility", "public").in("author_id", friendIds).is("deleted_at", null)
-      .order("created_at", { ascending: false }).limit(120);
-    const authorIds = [...new Set((workRows || []).map((w) => w.author_id))];
-    const profById = {};
-    if (authorIds.length) {
-      const { data: profs } = await supabase.from("profiles").select("id,handle,name").in("id", authorIds);
-      for (const p of profs || []) profById[p.id] = p;
-    }
-    posts = (workRows || []).map((w) => {
-      const a = profById[w.author_id];
-      return {
-        id: w.id, title: w.title, name: w.title, kind: w.kind, file_ext: w.file_ext,
-        blob_sha: w.blob_sha, bytes: w.bytes, created_at: w.created_at, tags: [],
-        who: a ? { name: a.name || a.handle, handle: a.handle } : null,   // no colorIdx — public, no hue
-      };
-    });
-  }
-
-  return { needsAuth: false, live: true, source: "feed", me, isAdmin: false, servers, dmUnread: 0, server: null, posts };
-}
+// (loadFeed — the home Feed / friends' public posts — was removed 2026-09-01: the Feed screen
+// is cut, "/" is the personal File explorer now. See main.js/router.js/shell.js for the redirect.)
 
 // A Profile (CANON §C.10) — a person's shelves. POV is viewer-dependent, enforced
 // server-side by works_read + friendships (not a UI toggle): owner sees all three

@@ -19,18 +19,25 @@ function withDemo(path) { return isDemo() ? path + "?demo=1" : path; }
 export function renderRail(data, route) {
   const rail = el("aside.rail");
 
-  // Feed / Messages / My-files
-  rail.append(railBtn({ logo: true, title: "Feed", on: route.screen === "feed", onClick: () => navigate(withDemo("/")) }));
+  // owner 2026-09-01: the Feed (friends' public posts) is cut — the logo is a plain wordmark
+  // now, not a nav duplicate of the "My files" button right next to it (it used to route to
+  // Feed at "/"). Messages / My-files.
+  rail.append(el("span.railbtn.home", { title: "eski", "aria-hidden": "true" }, [el("span.railogo", { "aria-label": "eski" })]));
   rail.append(railBtn({ icon: "mail", title: "Messages", on: route.screen === "dms", count: data.dmUnread, onClick: () => navigate(withDemo("/messages")) }));
   const onMyFiles = route.screen === "explorer" && !route.params?.serverId;
   rail.append(railBtn({ icon: "folder", title: "My files (your personal Drive)", on: onMyFiles, onClick: () => navigate(withDemo("/files")) }));
   rail.append(el(".railsep"));
 
-  // one badge per server the member is in
+  // owner 2026-09-01: servers are grayed out "for now" — the build's focus is the File explorer
+  // (personal + server file system), not the chat/server side. Still fully functional (opening one
+  // still works, so nothing already in a server is stranded) — just visually dimmed, via .dimmed,
+  // so the rail reads "not the current focus" rather than "broken" or "disabled".
   const activeServer = route.params?.serverId || (route.screen === "workspace" && data.server?.id) || (isDemo() ? data.server?.id : null);
   for (const s of data.servers) {
     const on = s.id === activeServer || (!activeServer && s.active);
-    rail.append(railBtn({ label: s.initials, img: avatarUrl(s.icon_key), title: s.name, on, count: s.mentions, dot: s.unread && !s.mentions, onClick: () => navigate(withDemo(`/s/${s.id}`)) }));
+    const b = railBtn({ label: s.initials, img: avatarUrl(s.icon_key), title: s.name, on, count: s.mentions, dot: s.unread && !s.mentions, onClick: () => navigate(withDemo(`/s/${s.id}`)) });
+    if (!on) b.classList.add("dimmed");   // the active one stays legible if you ARE on a server
+    rail.append(b);
   }
   rail.append(el(".railsep"));
 

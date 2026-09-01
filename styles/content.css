@@ -61,7 +61,7 @@
 .panehd .wm{font-weight:700;font-size:var(--fs-xl)}
 .panehd .title{font-weight:600;font-size:var(--fs-lg)}
 .panehd nav{margin-left:auto;display:flex;gap:var(--s4)}
-.toolbar{position:relative;flex:none;display:flex;align-items:center;gap:var(--s2);padding:var(--s3) var(--s4);background:var(--paper);flex-wrap:wrap}   /* position:relative anchors the .selbar overlay (B32) */
+.toolbar{position:relative;flex:none;display:flex;align-items:center;gap:var(--s2);padding:var(--s3) var(--s4);background:var(--paper);flex-wrap:wrap}
 .toolbar .field{flex:1;min-width:170px;max-width:340px}
 /* P27/P34/P38 (2026-08-31) — the search field's autocomplete helper wraps the field so the popover
    can anchor under it; the wrapper (not the inner field) is the toolbar's actual flex item now. */
@@ -281,6 +281,11 @@
 .flrow.sel:hover{background:var(--plate)}
 .flrow.droptarget{outline:2px solid var(--ink);outline-offset:-2px}
 .flrow.ishidden{opacity:.55}.flrow.ishidden:hover{opacity:1}
+/* list-mode Group-by (owner 2026-09-01, matches .exgrouphd in the grid): a plain label+count row,
+   not a data row — overrides the grid template/cursor/hover the other .flrow rules set. */
+.exlist .flrow.flgrouphd{display:flex;align-items:center;gap:var(--s2);padding:10px 12px 4px;cursor:default;color:var(--muted);font-size:var(--fs-xs);font-weight:600;letter-spacing:.02em}
+.exlist .flrow.flgrouphd:hover{background:none}
+.flgrouphd .egc{color:var(--line2);font-variant-numeric:tabular-nums}
 .flhd{font-size:var(--fs-xs);color:var(--muted);font-weight:600;letter-spacing:.02em}
 /* C6: click a column header to sort by it; a caret on the active column shows the direction. */
 .flhd span{cursor:pointer;display:inline-flex;align-items:center;gap:4px;overflow:visible}
@@ -305,22 +310,10 @@
 .capbanner .ic{flex:none;color:#fff}
 .capbanner .btn{margin-left:auto;background:rgba(255,255,255,.16);color:#fff}
 .capbanner .btn:hover{background:rgba(255,255,255,.28)}
-/* selection toolbar (bulk actions) — B32: OVERLAYS the toolbar (absolute, inset:0) instead of
-   claiming its own row, so turning multi-select on/off never reflows the grid. It's a child of
-   the position:relative .toolbar; the solid --ink fill fully occludes the filters underneath. */
-.selbar{position:absolute;inset:0;z-index:2;display:none;align-items:center;gap:var(--s2);padding:0 var(--s4);background:var(--ink);color:var(--on-ink)}
-.selbar.open{display:flex}
-.selbar .n{font-size:var(--fs-sm);font-weight:600;margin-right:var(--s2)}
-/* B27: the count reserves a fixed slot (tabular, min-width) so a 1→2→3 digit change doesn't
-   shift the action icons left/right. */
-.selbar .n .nn{display:inline-block;min-width:1.5em;text-align:right;font-variant-numeric:tabular-nums}
-/* a mixed files+folders selection spells out the split (e.g. "3 selected · 2 files, 1 folder") —
-   quieter than the count so the number stays the primary read */
-.selbar .n .selkind{font-weight:400;opacity:.7}
-.selbar .sp{flex:1}
-.selbar button{display:inline-flex;align-items:center;gap:6px;color:var(--on-ink);font-size:var(--fs-sm);padding:6px 10px;border-radius:var(--r)}
-.selbar button:hover{background:rgba(255,255,255,.14)}
-.selbar button .ic{color:var(--on-ink)}
+/* (The bulk-action selbar — B32, an ink bar overlaying the toolbar on selection — was retired
+   2026-09-01: it occluded the toolbar's own controls and read as disconnected chrome. The
+   selection count lives in .exstatus (below) and bulk actions are a right-click away — openBulkMenu
+   in explorer.js.) */
 /* card selection + hover actions (grid) */
 .card{position:relative;z-index:0}
 .card .media{position:relative;border-radius:var(--r)}   /* C16: media rounds to the chrome radius */

@@ -8,7 +8,7 @@ import { signal, effect } from "./signals.js";
 import { start, match, navigate } from "./router.js";
 import { ready, session, onChange } from "./supabase.js";
 import { icon } from "./icons.js";
-import { loadWorkspace, loadExplorer, loadFeed, loadProfile, loadSharedWork, loadSharedFolder, loadDMsScreen, loadNotifications, loadUserSettings, loadSearch, clearWorkspaceCache, isDemo, needsProfileSetup } from "./data.js";
+import { loadWorkspace, loadExplorer, loadProfile, loadSharedWork, loadSharedFolder, loadDMsScreen, loadNotifications, loadUserSettings, loadSearch, clearWorkspaceCache, isDemo, needsProfileSetup } from "./data.js";
 import { renderUserSettings } from "./screens/usersettings.js";
 import { renderServerSettings } from "./screens/settings.js";
 import { renderSearch } from "./screens/search.js";
@@ -18,7 +18,6 @@ import { renderRail, appFrame, openCreateServer } from "./shell.js";
 import { openUpload } from "./screens/upload.js";
 import { renderWorkspace } from "./screens/workspace.js";
 import { renderExplorer } from "./screens/explorer.js";
-import { renderFeed } from "./screens/feed.js";
 import { renderProfile } from "./screens/profile.js";
 import { closeDetailsForNav } from "./screens/details.js";
 import { renderSignin } from "./screens/signin.js";
@@ -37,9 +36,9 @@ const route = signal(match(location.pathname));   // current route match
 const authed = signal(false);                     // signed in? (post-ready)
 
 // Screens that live inside the three-pane shell (the rail is persistent).
-const IN_SHELL = new Set(["feed", "dms", "notifications", "search", "workspace", "explorer", "settings", "profile", "usersettings"]);
+const IN_SHELL = new Set(["dms", "notifications", "search", "workspace", "explorer", "settings", "profile", "usersettings"]);
 const LABELS = {
-  feed: "Feed", dms: "Messages", notifications: "Notifications", upload: "Upload",
+  dms: "Messages", notifications: "Notifications", upload: "Upload",
   create: "Create server", search: "Search", auth: "Sign in", join: "Join",
   profile: "Profile", workspace: "Workspace", settings: "Server settings",
   explorer: "File explorer", notfound: "404",
@@ -101,10 +100,16 @@ async function renderRoute(r) {
     swap(fData.dead ? renderSharedFolderDead() : renderExplorer(fData));
     return;
   }
-  // "/" with no session is the marketing home, not the in-shell Feed placeholder
-  // or the bare sign-in prompt — every other signed-out deep link still falls
-  // through to renderSignin() below via needsAuth.
-  if (r.screen === "feed" && r.path === "/" && !session() && !isDemo()) { swap(renderLanding()); return; }
+  // "/" with no session is the marketing home, not the bare sign-in prompt — every
+  // other signed-out deep link still falls through to renderSignin() below via needsAuth.
+  if (r.screen === "explorer" && r.path === "/" && !session() && !isDemo()) { swap(renderLanding()); return; }
+
+  // owner 2026-09-01: the Feed (friends' public posts) is cut — "/" now IS the personal
+  // File explorer (router.js maps it straight to the `explorer` screen), but it still
+  // redirects to its canonical `/files` so syncUrl (explorer.js) can track folder/file/view
+  // in the URL — syncUrl only ever rewrites the query string once the PATH already matches
+  // explorerBase(), so a bare "/" would otherwise never get folder navigation into the URL.
+  if (r.screen === "explorer" && r.path === "/" && (session() || isDemo())) { navigate(isDemo() ? "/files?demo=1" : "/files", { replace: true }); return; }
 
   // Signed in but no profile yet → the one-time create-profile step. Gates every in-app
   // route: a fresh Google/magic-link account has no profiles row, so it has no handle and
@@ -118,15 +123,17 @@ async function renderRoute(r) {
 
   // B4: /create and /upload are modal routes — typing them directly should open the modal OVER
   // the shell, not show the "not yet ported" placeholder (the plus-menu / composer normally open
-  // them as modals). Render the Feed as the backdrop, then open the modal; the route itself is
-  // ephemeral so we replaceState to "/" (the backdrop's own path). openModal enforces a single
-  // instance (B1), so a stray re-render of this route just re-shows the same modal — safe.
+  // them as modals). Render the personal File explorer as the backdrop (owner 2026-09-01: was the
+  // Feed, now cut — the explorer is "/"'s screen, so it's the natural backdrop too), then open the
+  // modal; the route itself is ephemeral so we replaceState to "/files" (the backdrop's own
+  // canonical path). openModal enforces a single instance (B1), so a stray re-render of this route
+  // just re-shows the same modal — safe.
   if (r.screen === "create" || r.screen === "upload") {
-    const feedData = await time("feed", loadFeed());
+    const exData = await time("explorer", loadExplorer({ source: "personal" }));
     if (mine !== token) return;
-    if (feedData.needsAuth) { swap(renderSignin()); return; }
-    swap(appFrame(renderRail(feedData, match("/")), renderFeed(feedData)));
-    history.replaceState({}, "", isDemo() ? "/?demo=1" : "/");
+    if (exData.needsAuth) { swap(renderSignin()); return; }
+    swap(appFrame(renderRail(exData, match("/files")), renderExplorer(exData, {})));
+    history.replaceState({}, "", isDemo() ? "/files?demo=1" : "/files");
     if (r.screen === "create") openCreateServer();
     else openUpload({});
     return;
@@ -156,15 +163,6 @@ async function renderRoute(r) {
     if (mine !== token) return;
     if (stData.needsAuth) { swap(renderSignin()); return; }
     swap(appFrame(renderRail(stData, r), renderServerSettings(stData)));
-    return;
-  }
-
-  // Home Feed (P5.1) — friends' public posts, same card grid as the explorer.
-  if (r.screen === "feed") {
-    const feedData = await time("feed", loadFeed());
-    if (mine !== token) return;
-    if (feedData.needsAuth) { swap(renderSignin()); return; }
-    swap(appFrame(renderRail(feedData, r), renderFeed(feedData)));
     return;
   }
 

@@ -658,9 +658,10 @@ function paint(tree, pane, data, state, rerender) {
   // without the docked panel. Not on a read-only shared view.
   const infoBtn = data.shared ? null : el("button.iconbtn.infobtn" + (state.infoOpen ? ".on" : ""),
     { title: state.infoOpen ? "Hide details" : "Show details", "aria-pressed": state.infoOpen ? "true" : "false", onClick: () => state._toggleInfo?.() }, [iconEl("info", "sm")]);
-  // Grid shows Sort/Group dropdowns; list has neither (its column headers sort). Search stays LEFT;
-  // controls group to the RIGHT (`.tbfilters` margin-left:auto).
-  const gridControls = state.mode === "list" ? [] : [sortByBtn, groupByBtn];
+  // Grid shows Sort + Group; list shows Group only (its column headers already sort — a second Sort
+  // control would just fight them) but DOES need Group, same as grid (owner 2026-09-01: list had
+  // no way to group at all). Search stays LEFT; controls group to the RIGHT (`.tbfilters` margin-left:auto).
+  const gridControls = state.mode === "list" ? [groupByBtn] : [sortByBtn, groupByBtn];
   const toolbar = el(".toolbar", {}, [
     search,
     el(".tbfilters", {}, [
@@ -669,12 +670,6 @@ function paint(tree, pane, data, state, rerender) {
     ].filter(Boolean)),
   ]);
 
-  // B32: the bulk-action bar OVERLAYS the toolbar instead of taking its own row — a bar that pushed
-  // the body (and every icon) down the moment a second item was picked read as the whole grid
-  // "jumping." Nested as an absolutely-positioned child of the (position:relative) toolbar, it covers
-  // the filters edge-to-edge while selecting and costs zero layout. Drive does the same.
-  const selbar = el(".selbar");
-  toolbar.append(selbar);
   const body = el(".panebody");
   // P13 (owner tweak): New folder + Upload live at the pane's bottom-right (Drive-style), floating
   // over the grid — not on a read-only shared view (P9). Square eski buttons: plain New folder +
@@ -728,7 +723,7 @@ function paint(tree, pane, data, state, rerender) {
   let suppressClear = false;
   body.addEventListener("click", (e) => {
     if (suppressClear) { suppressClear = false; return; }
-    if (e.target.closest("[data-id]") || e.target.closest("[data-folder-id]") || e.target.closest(".selbar")) return;
+    if (e.target.closest("[data-id]") || e.target.closest("[data-folder-id]")) return;
     if (state.selection.size || state.selFolders.size) { state.selection.clear(); state.selFolders.clear(); state.lastIdx = -1; state.lastFolderIdx = -1; refreshSel(); }
   });
 
@@ -736,7 +731,7 @@ function paint(tree, pane, data, state, rerender) {
   // card/folder contextmenus handle their own targets; this is the fallback for the background).
   // Read-only shared views (P9) get no menu.
   if (!data.shared) body.addEventListener("contextmenu", (e) => {
-    if (e.target.closest("[data-id]") || e.target.closest("[data-folder-id]") || e.target.closest(".selbar") || e.target.closest(".exfab")) return;
+    if (e.target.closest("[data-id]") || e.target.closest("[data-folder-id]") || e.target.closest(".exfab")) return;
     e.preventDefault();
     const at = { x: e.clientX, y: e.clientY };
     // C18: select-all / deselect-all / invert affordances, over BOTH files and folders (the DOM holds
@@ -779,7 +774,7 @@ function paint(tree, pane, data, state, rerender) {
   let dragFolderIds = [];   // folder(s) being dragged — separate from dragIds (files)
   if (!data.shared) {
     body.addEventListener("pointerdown", (e) => {
-      if (e.button !== 0 || e.target.closest("[data-id]") || e.target.closest("[data-folder-id]") || e.target.closest(".selbar") || e.target.closest(".exfab")) return;
+      if (e.button !== 0 || e.target.closest("[data-id]") || e.target.closest("[data-folder-id]") || e.target.closest(".exfab")) return;
       suppressClear = false;   // B15: never let a stale marquee flag eat this gesture's clear-click
       const start = { x: e.clientX, y: e.clientY };
       const startScrollTop = body.scrollTop;   // C20: rects are captured once, in THIS scroll position
@@ -867,6 +862,14 @@ function paint(tree, pane, data, state, rerender) {
     body.addEventListener("dragover", (e) => {
       const draggingFolder = dragFolderIds.length > 0;
       if (!dragIds.length && !draggingFolder) return;   // only our own drags (OS-file uploads are handled elsewhere)
+      // owner 2026-09-01: ALWAYS preventDefault while our own drag is over the pane, even off a
+      // real target — skipping it (the old code only did this over a valid [data-id]/[data-folder-id])
+      // makes the browser fall back to its native "not-allowed" cursor (a slashed circle) over every
+      // gap, the tree, the toolbar, or an invalid target, which read as "you're doing something
+      // illegal" for a perfectly normal drag. dropEffect stays "move" throughout; only the .droptarget
+      // highlight/pill is reserved for an actually-valid target.
+      e.preventDefault();
+      try { e.dataTransfer.dropEffect = "move"; } catch { /* Safari */ }
       autoScroll(e.clientY);
       const t = e.target.closest("[data-id], [data-folder-id]");
       if (!t) { clearDrop(); return; }
@@ -877,8 +880,6 @@ function paint(tree, pane, data, state, rerender) {
         const tid = t.dataset.folderId;
         const invalid = tid == null || dragFolderIds.includes(tid) || dragFolderIds.some((id) => folderInSubtree(data.folders, id, tid));
         if (invalid) { if (t !== curDrop) clearDrop(); return; }
-        e.preventDefault();
-        try { e.dataTransfer.dropEffect = "move"; } catch { /* Safari */ }
         if (t === curDrop) return;
         clearDrop(); curDrop = t;
         t.classList.add("droptarget", "dropfolder");
@@ -886,8 +887,6 @@ function paint(tree, pane, data, state, rerender) {
         return;
       }
       if (dragIds.includes(t.dataset.id)) { if (t !== curDrop) clearDrop(); return; }
-      e.preventDefault();
-      try { e.dataTransfer.dropEffect = "move"; } catch { /* Safari */ }
       if (t === curDrop) return;
       clearDrop();
       curDrop = t;
@@ -928,27 +927,13 @@ function paint(tree, pane, data, state, rerender) {
     // select by [data-id]/[data-folder-id] so both files and folders show the selection outline
     body.querySelectorAll("[data-id]").forEach((c) => c.classList.toggle("sel", state.selection.has(c.dataset.id)));
     body.querySelectorAll("[data-folder-id]").forEach((c) => c.classList.toggle("sel", state.selFolders.has(c.dataset.folderId)));
-    const nFiles = state.selection.size;
-    const nFolders = state.selFolders.size;
-    // B6: a single FILE selection stays quiet — its actions are on the card ⋯ and the details pane.
-    // A FOLDER selection pops the bar starting at ONE (owner 2026-08-31: "folders have no selection
-    // menu") — a folder card has no details-pane equivalent to fall back on, so 1 is its only
-    // reachable multi-action surface besides the card's own ⋯. Clear is always reachable via an
-    // empty-area click / Esc / plain click.
-    const showBar = nFiles > 1 || nFolders >= 1;
-    selbar.classList.toggle("open", showBar);
-    if (showBar) {
-      const total = nFiles + nFolders;
-      const kind = nFiles && nFolders ? `${nFiles} file${nFiles === 1 ? "" : "s"}, ${nFolders} folder${nFolders === 1 ? "" : "s"}` : null;
-      selbar.replaceChildren(
-        el("span.n", {}, [el("span.nn", {}, [String(total)]), " selected", kind ? el("span.selkind", {}, [" · " + kind]) : ""]),
-        ...(nFiles && !nFolders ? [selAct("download", "Download", () => downloadSelected(state))] : []),
-        selAct("move", "Move to folder", () => moveMixedSelected(data, state, rerender)),
-        selAct("trash", "Delete", () => deleteMixedSelected(data, state, rerender)),
-        el("span.sp"),
-        selAct("x", "Clear", () => { state.selection.clear(); state.selFolders.clear(); state.lastIdx = -1; state.lastFolderIdx = -1; refreshSel(); }),
-      );
-    }
+    // B6/owner 2026-09-01: no more bulk-action BAR — it overlaid and occluded the whole toolbar
+    // (couldn't sort/group/adjust density while anything was selected) and read as disconnected
+    // chrome ("doesn't connect"). The count lives ONLY in the quiet .exstatus strip at the pane foot
+    // (C17, updateStatus below) — a normal file browser's status-bar tally, not a bar of its own.
+    // Bulk actions (download/move/delete) are reachable the normal-file-browser way instead: right-
+    // click any item that's part of the active selection opens openBulkMenu (below) in place of its
+    // single-item menu, and Delete/⌘⌫ already trash the selection (screen-level key handler above).
     state._updateStatus?.();   // C17: keep the status strip's count/size/sort live
     state._updateInfo?.();      // C29: keep the docked info panel live to the selection
   }
@@ -974,15 +959,16 @@ function paint(tree, pane, data, state, rerender) {
   }
 }
 
-function selAct(icon, label, onClick) {
-  return el("button", { title: label, onClick }, [iconEl(icon, "sm"), label]);
-}
-
 // C29: the docked info-panel contents for the current selection. Reuses details.js metaRows() so the
 // metadata is IDENTICAL to the full viewer (Location · Uploaded by · Posted in · Added · Format · Size).
 function buildInfoPanel(data, state, rerender) {
+  // owner 2026-09-01: this used to set state.infoOpen=false then call the OUTER rerender() — but
+  // rerender() only repaints .pane's contents (see the "docked info panel" comment by .exinfo above);
+  // it never touches .hasinfo or the toolbar ⓘ button, so the panel's own ✕ silently did nothing and
+  // only the toolbar toggle (which flips .hasinfo itself) actually closed it. state._toggleInfo IS
+  // that incremental close (always a close here, since this button only exists while infoOpen=true).
   const head = el(".exihead", {}, [el("span.exititle", {}, ["Details"]),
-    el("button.iconbtn", { title: "Hide details", onClick: () => { state.infoOpen = false; rerender(); } }, [iconEl("x", "sm")])]);
+    el("button.iconbtn", { title: "Hide details", onClick: () => state._toggleInfo?.() }, [iconEl("x", "sm")])]);
   const ids = [...state.selection];
   if (ids.length > 1) {
     const bytes = (state._files || []).filter((w) => state.selection.has(w.id)).reduce((s, w) => s + (w.bytes || 0), 0);
@@ -1085,7 +1071,20 @@ function searchWidget(data, state, repaintBody) {
     return changed;
   }
 
-  input.addEventListener("input", () => { state.query = input.value; updateSuggestions(); repaintBody(); });
+  // owner 2026-09-01: "search is insanely slow" — repaintBody() (via contents()'s useSrv branch)
+  // fires a REAL Supabase round-trip on every keystroke with no debounce, so typing a 5-letter word
+  // queued 5 network requests, each showing the "Searching…" indeterminate bar again as the next
+  // keystroke re-triggered it — which reads as one long stuck/spinning search, not 5 fast ones.
+  // Suggestions stay instant (pure client compute); only the network-hitting repaint is delayed, and
+  // Enter/blur flush it immediately so a deliberate submit is never held up by the debounce.
+  let searchDebounce = null;
+  const flushSearch = () => { if (searchDebounce) { clearTimeout(searchDebounce); searchDebounce = null; } repaintBody(); };
+  input.addEventListener("input", () => {
+    state.query = input.value;
+    updateSuggestions();
+    if (searchDebounce) clearTimeout(searchDebounce);
+    searchDebounce = setTimeout(() => { searchDebounce = null; repaintBody(); }, 280);
+  });
   input.addEventListener("keydown", (e) => {
     if (e.key === "ArrowDown" && suggestions.length) { e.preventDefault(); hi = (hi + 1) % suggestions.length; renderPop(); return; }
     if (e.key === "ArrowUp" && suggestions.length) { e.preventDefault(); hi = (hi - 1 + suggestions.length) % suggestions.length; renderPop(); return; }
@@ -1097,7 +1096,7 @@ function searchWidget(data, state, repaintBody) {
       const lastComplete = parseModifierToken(tokens[tokens.length - 1] || "");
       if (hi >= 0 && suggestions[hi] && !lastComplete) { accept(suggestions[hi]); return; }   // still typing the key — complete it, don't promote
       const changed = promoteComplete();
-      repaintBody();
+      flushSearch();
       if (!changed) input.focus();
     }
   });
@@ -1248,8 +1247,20 @@ function contents(data, state, rerender, sel) {
   };
 
   const onStar = (w) => toggleStar(data, state, rerender, w);
-  const onMenu = data.shared ? null : (w, anchor, at) => openCardMenu(data, state, rerender, w, anchor, at);   // read-only shared view has no per-card owner menu (P9)
-  const onShareFolder = (folder, anchor, at) => shareFolderMenu(data, state, rerender, folder, anchor, at);
+  // owner 2026-09-01: right-clicking an item that's part of the ACTIVE multi-selection opens the
+  // bulk menu (download/move/delete the whole selection) instead of that one item's own menu — the
+  // normal-file-browser replacement for the retired selbar (see refreshSel above).
+  const inBulkSel = (kind, id) => {
+    const mine = kind === "folder" ? state.selFolders.has(id) : state.selection.has(id);
+    if (!mine) return false;
+    return state.selection.size + state.selFolders.size > 1;
+  };
+  const onMenu = data.shared ? null : (w, anchor, at) => inBulkSel("file", w.id)
+    ? openBulkMenu(data, state, rerender, anchor, at)
+    : openCardMenu(data, state, rerender, w, anchor, at);   // read-only shared view has no per-card owner menu (P9)
+  const onShareFolder = (folder, anchor, at) => inBulkSel("folder", folder.id)
+    ? openBulkMenu(data, state, rerender, anchor, at)
+    : shareFolderMenu(data, state, rerender, folder, anchor, at);
   // List column-header sort: which key is currently active (latest/oldest collapse to the "date"
   // column) + the effective direction, and the handler a header click calls (toggle dir if it's the
   // active column, else switch to it with a sensible default). Repaints the body only.
@@ -1294,8 +1305,9 @@ function shareFolderMenu(data, state, rerender, folder, anchor, at) {
     { label: "Open", icon: "folder", onClick: () => { state.folderId = folder.id; state.query = ""; rerender(); } },
     ...(canW ? [{ label: "Rename", icon: "pen", onClick: () => renameFolderFlow(data, state, rerender, folder) }] : []),
     ...(canW ? [{ label: "Move to…", icon: "move", onClick: () => openFolderMovePicker(data, state, rerender, [folder.id]) }] : []),
-    // P23: Properties opens the show-all / edit-all folder-tags popover (anchored on the folder card)
-    { label: "Properties", icon: "info", onClick: () => openFolderProperties(anchor, folder, { data, state, rerender }) },
+    // owner 2026-09-01: the "Properties" menu item is gone — the same tags popover now opens straight
+    // off the card face (hover the "+N" chip, or the new "+" add chip on a tag-free folder — see
+    // folderTagPreview below), so it no longer needs a menu door too.
     { label: "Copy folder link", icon: "users", onClick: async () => {
       try {
         const token = await createFolderShare(data.source, folder.id);
@@ -1473,16 +1485,28 @@ function folderTagInput(data, state, rerender, folder, { onDone } = {}) {
 }
 
 // the first-few read-only chips shown on a card / list row (click a chip → search). Kept to ONE
-// line so every folder card is the same height (B24-style even tiling); "+N" opens Properties.
+// line so every folder card is the same height (B24-style even tiling). owner 2026-09-01: "+N"
+// (or, on a tag-free folder, a bare "+" add chip) opens the tags popover on HOVER now, not just a
+// click — see wireTagTrigger below. There's no separate "Properties" entry point any more; this
+// chip is the only door in (plus the right-click menu keeps Copy folder link etc., minus Properties).
 function folderTagPreview(folder, ctx, { max = FOLDER_TAGS_ON_CARD } = {}) {
-  const { data, state, rerender } = ctx;
+  const { data } = ctx;
   const tags = folder.tags || [];
-  if (!tags.length) return null;
+  if (!tags.length) {
+    if (!canWriteFolder(data)) return null;   // a reader has nothing to add and nothing to show
+    const row = el(".ftags");
+    const add = el("button.ftmore", { title: "Add tags" }, ["+ tag"]);
+    wireTagTrigger(add, folder, ctx);
+    row.append(add);
+    row.addEventListener("click", (e) => e.stopPropagation());
+    row.addEventListener("dblclick", (e) => e.stopPropagation());
+    return row;
+  }
   const row = el(".ftags");
-  for (const raw of tags.slice(0, max)) row.append(tagChip(raw, { onSearch: (mod) => searchFolderTag(data, state, rerender, mod) }));
+  for (const raw of tags.slice(0, max)) row.append(tagChip(raw, { onSearch: (mod) => searchFolderTag(data, ctx.state, ctx.rerender, mod) }));
   if (tags.length > max) {
     const more = el("button.ftmore", { title: "Show all tags" }, [`+${tags.length - max}`]);
-    more.addEventListener("click", (e) => { e.stopPropagation(); openFolderProperties(more, folder, ctx); });
+    wireTagTrigger(more, folder, ctx);
     row.append(more);
   }
   // a click inside the tag row must not select/open the folder
@@ -1491,7 +1515,26 @@ function folderTagPreview(folder, ctx, { max = FOLDER_TAGS_ON_CARD } = {}) {
   return row;
 }
 
-// live re-decorate one folder card's tag row after an edit (Properties mutates folder.tags in place)
+// owner 2026-09-01: hovering the "+N"/"+ tag" chip opens the same popover a click does — no separate
+// "Properties" step. A short open-delay avoids flashing it on a passing mouse; the close is delayed
+// too and cancelled if the pointer lands on the popover itself, so moving from chip → popover doesn't
+// flicker it shut. Click still opens it immediately (keyboard/touch, and instant for anyone who clicks).
+function wireTagTrigger(trigger, folder, ctx) {
+  let openTimer = null, closeTimer = null;
+  const cancelClose = () => { if (closeTimer) clearTimeout(closeTimer); closeTimer = null; };
+  const scheduleClose = () => { cancelClose(); closeTimer = setTimeout(closeMenus, 220); };
+  const open = () => {
+    if (openTimer) { clearTimeout(openTimer); openTimer = null; }
+    const pop = openFolderProperties(trigger, folder, ctx);
+    pop.addEventListener("mouseenter", cancelClose);
+    pop.addEventListener("mouseleave", scheduleClose);
+  };
+  trigger.addEventListener("mouseenter", () => { cancelClose(); if (!openTimer) openTimer = setTimeout(open, 120); });
+  trigger.addEventListener("mouseleave", () => { if (openTimer) { clearTimeout(openTimer); openTimer = null; } scheduleClose(); });
+  trigger.addEventListener("click", (e) => { e.stopPropagation(); open(); });
+}
+
+// live re-decorate one folder card's tag row after an edit (the popover mutates folder.tags in place)
 function repaintFolderCardTags(folder, ctx) {
   const card = document.querySelector(`.foldercard[data-folder-id="${folder.id}"]`);
   if (!card) return;
@@ -1501,8 +1544,7 @@ function repaintFolderCardTags(folder, ctx) {
   if (row && frow) frow.prepend(row);   // tags left, file-count (who) right — same band as file cards
 }
 
-// the card decorator: the first-few preview (large view). Empty folders show nothing here — tags
-// are added via the right-click Properties popover, which is always available to a writer.
+// the card decorator: the first-few preview (large view).
 function decorateFolderTags(card, folder, ctx) {
   if (!ctx) return;
   const row = folderTagPreview(folder, ctx);
@@ -1510,8 +1552,9 @@ function decorateFolderTags(card, folder, ctx) {
   if (row && frow) frow.prepend(row);   // into the band's row (tags left, file-count right)
 }
 
-// Properties — the show-all / edit-all popover (opened from the folder right-click menu + a "+N"
-// chip). File count + every tag (removable for a writer) + a colon-aware add input.
+// The tags popover (opened by hovering/clicking the card's "+N"/"+ tag" chip). Folder name + file
+// count, every tag (removable for a writer), and a colon-aware add input. Returns the popover node
+// so wireTagTrigger can hook its own hover in/out.
 function openFolderProperties(anchor, folder, ctx) {
   const { data, state, rerender } = ctx;
   const canW = canWriteFolder(data);
@@ -1520,7 +1563,7 @@ function openFolderProperties(anchor, folder, ctx) {
   const paint = () => {
     pop.replaceChildren();
     pop.append(el(".ftpophd", {}, [
-      el("span.ftpopname", {}, [`Properties · ${folder.name}`]),
+      el("span.ftpopname", {}, [folder.name]),
       el("span.ftpopcount", {}, [`${folder.count ?? 0} file${folder.count === 1 ? "" : "s"}`]),
     ]));
     pop.append(el(".ftseclabel", {}, ["Tags"]));
@@ -1539,6 +1582,7 @@ function openFolderProperties(anchor, folder, ctx) {
   const onDoc = (e) => { if (!pop.contains(e.target) && e.target !== anchor && !anchor.contains(e.target)) closeMenus(); };
   pop._cleanup = () => document.removeEventListener("mousedown", onDoc, true);
   setTimeout(() => document.addEventListener("mousedown", onDoc, true));
+  return pop;
 }
 
 // ── P14 view densities (list / small / large) ────────────────────────────────
@@ -1546,8 +1590,8 @@ function openFolderProperties(anchor, folder, ctx) {
 // Shared select/open wiring so every density behaves identically (B26 Drive/Explorer model):
 // single click selects, double click opens; a file drags (make-folder / move), a folder is a drop
 // target; ⋯ / right-click opens the owner menu. Any element that carries data-id / data-folder-id
-// participates in the selection outline, the marquee, and the bulk bar (refreshSel/marquee below
-// select by [data-id], not only .card). `i` is the file's index for Shift-range selection.
+// participates in the selection outline and the marquee (refreshSel/marquee below select by
+// [data-id], not only .card). `i` is the file's index for Shift-range selection.
 function wireFileEl(node, w, i, { onCardClick, openFile, onMenu }) {
   node.dataset.id = w.id;
   if (onMenu) node.draggable = true;   // B10: drag a file onto another → make a folder
@@ -1631,8 +1675,10 @@ function largeView(subfolders, files, hooks) {
 }
 
 // LIST — the "Details" table: a column per field. Rows select/open like the grid and carry data-id
-// so selection / marquee / the bulk bar all work here too. Column headers are click-to-sort (C6),
-// and each file row leads with the same star toggle as the grid (B33).
+// so selection / marquee all work here too. Column headers are click-to-sort (C6), and each file row
+// leads with the same star toggle as the grid (B33). owner 2026-09-01: list now takes the same
+// Group-by dropdown as the grid (it had none — a real gap, not a deliberate "headers already group"
+// call: headers sort, they don't bucket).
 function listView(subfolders, files, hooks) {
   const { showWho } = hooks;
   const table = el(".exlist" + (showWho ? "" : ".nowho"), { "data-exview": "list" });
@@ -1646,7 +1692,8 @@ function listView(subfolders, files, hooks) {
     return cell;
   }));
   table.append(hd);
-  subfolders.forEach((f, i) => {
+
+  const folderRow = (f, i) => {
     // P23: a list row can carry a few of the folder's tags inline after the name. The empty .flstar
     // spacer keeps the folder icon aligned with file rows (which lead with a star toggle).
     const nameCell = el("span.flnm", {}, [el("span.flstar.spacer"), iconEl("folder", "sm"), el("span.flnmtxt", {}, [f.name])]);
@@ -1658,9 +1705,9 @@ function listView(subfolders, files, hooks) {
       ...(showWho ? [el("span", {}, ["—"])] : []),
       el("span", {}, [`${f.count} file${f.count === 1 ? "" : "s"}`]),
     ];
-    table.append(wireFolderEl(el(".flrow", {}, cells), f, i, hooks));
-  });
-  files.forEach((w, i) => {
+    return wireFolderEl(el(".flrow", {}, cells), f, i, hooks);
+  };
+  const fileRow = (w, i) => {
     const star = el("button.flstar" + (w.starred ? ".on" : ""), { title: w.starred ? "Unstar" : "Star", onClick: (e) => { e.stopPropagation(); hooks.onStar(w); } }, [iconEl("star", "sm")]);
     const cells = [
       el("span.flnm", {}, [star, iconEl(KIND_ICON[w.kind] || "file", "sm"), baseName(w)]),
@@ -1670,8 +1717,45 @@ function listView(subfolders, files, hooks) {
       el("span", {}, [w.created_at ? fmtDate(w.created_at) : "—"]),
     ];
     const row = el(".flrow" + (w.hidden ? ".ishidden" : ""), {}, cells);
-    table.append(wireFileEl(row, w, i, hooks));
-  });
+    return wireFileEl(row, w, i, hooks);
+  };
+
+  const idxOf = new Map(files.map((w, i) => [w.id, i]));
+  const folderIdx = new Map(subfolders.map((f, i) => [f.id, i]));
+  const groups = groupFiles(files, hooks.group);
+  if (!groups) {
+    subfolders.forEach((f, i) => table.append(folderRow(f, i)));
+    files.forEach((w, i) => table.append(fileRow(w, i)));
+    return table;
+  }
+  const groupHead = (label, count) => el(".flrow.flgrouphd", {}, [el("span.egn", {}, [label]), el("span.egc", {}, [String(count)])]);
+  // same date-bucket merge as largeView (a folder's "added" date genuinely groups it; Kind/Type/
+  // Uploader don't apply to a folder, so those stay one leading "Folders" section, as below).
+  if (hooks.group === "date") {
+    const folderBuckets = new Map();
+    for (const f of subfolders) { const { rank, label } = dateBucket(f.createdAt); if (!folderBuckets.has(label)) folderBuckets.set(label, { rank, items: [] }); folderBuckets.get(label).items.push(f); }
+    const labels = new Set([...groups.map((g) => g.label), ...folderBuckets.keys()]);
+    const merged = [...labels].map((label) => {
+      const g = groups.find((x) => x.label === label);
+      const fb = folderBuckets.get(label);
+      return { label, rank: (g || fb).rank, folders: fb ? fb.items : [], files: g ? g.items : [] };
+    });
+    merged.sort((a, b) => (a.rank - b.rank) || a.label.localeCompare(b.label));
+    for (const { label, folders: gf, files: gw } of merged) {
+      table.append(groupHead(label, gf.length + gw.length));
+      gf.forEach((f) => table.append(folderRow(f, folderIdx.get(f.id))));
+      gw.forEach((w) => table.append(fileRow(w, idxOf.get(w.id))));
+    }
+    return table;
+  }
+  if (subfolders.length) {
+    table.append(groupHead("Folders", subfolders.length));
+    subfolders.forEach((f, i) => table.append(folderRow(f, i)));
+  }
+  for (const { label, items } of groups) {
+    table.append(groupHead(label, items.length));
+    items.forEach((w) => table.append(fileRow(w, idxOf.get(w.id))));
+  }
   return table;
 }
 
@@ -1936,7 +2020,19 @@ function moveIds(data, state, rerender, ids) {
   });
 }
 
-// The bulk bar's Move-to-folder / Delete: route to the file-only or folder-only path unchanged when
+// owner 2026-09-01: the retired selbar's actions, now reached via right-click on a selected item
+// (openMenu picks its own on-screen position from `at`, same as every other context menu here).
+function openBulkMenu(data, state, rerender, anchor, at) {
+  const nFiles = state.selection.size, nFolders = state.selFolders.size;
+  openMenu(anchor, [
+    ...(nFiles && !nFolders ? [{ label: "Download", icon: "download", onClick: () => downloadSelected(state) }] : []),
+    { label: "Move to folder…", icon: "move", onClick: () => moveMixedSelected(data, state, rerender) },
+    { sep: true },
+    { label: "Delete", icon: "trash", danger: true, onClick: () => deleteMixedSelected(data, state, rerender) },
+  ], { at });
+}
+
+// Move-to-folder / Delete for a selection: route to the file-only or folder-only path unchanged when
 // the selection is pure, and to a combined flow when a marquee has picked up BOTH (owner 2026-08-31
 // — folders previously had no bulk actions at all).
 function moveMixedSelected(data, state, rerender) {
