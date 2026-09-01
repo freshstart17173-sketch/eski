@@ -77,8 +77,10 @@ kind lives in the same channel column so the whole server is one navigable rail.
 | **Voice channel** | `voice` | **Reserved in the enum; not built in v1** (calls deferred). Kill "voice room". |
 | **Files** | *(not a channel row)* | The server's **File explorer** — one fixed entry in the column (renamed from "Media", 2026-08-19), not a `channels` row. Kill "media channel". |
 
-Kill: "room" as an entity noun (a voice channel is a voice channel), "feed" for
-a channel (the Feed is the friends-only portfolio, §A.7).
+Kill: "room" as an entity noun (a voice channel is a voice channel). ("Feed" for
+a channel was killed for the same reason the Feed screen itself was cut for beta,
+2026-09-01, §A.4 — there's no "friends-only portfolio" screen for the word to
+collide with any more, but the naming rule still holds if it ever returns.)
 
 ### A.4 The uploaded thing — `work`
 
@@ -88,11 +90,11 @@ context-split:
 | Canonical | Context | DB |
 |---|---|---|
 | **work** | The data entity. Use in schema, RLS, RPCs, these docs. | `works` (+ `work_items` for a multi-item work) |
-| **post** | A `work` seen in a **public** context — the Feed, a public profile shelf. Has a title, appears to friends. | same row, `visibility='public'` |
+| **post** | A `work` seen in a **public** context — a public profile shelf (the Feed aggregator is cut for beta, 2026-09-01, §A.4 above). Has a title. | same row, `visibility='public'` |
 | **file** | A `work` seen in a **server/personal** context — a channel, the File explorer. Leads with its **file name**. | same row, `visibility in (server,personal)` |
 
-> **LOCKED:** the post/file split is kept (F9). Kimi prompts say **post** on the
-> Feed and public Profile shelves, **file** in every server/personal context (a
+> **LOCKED:** the post/file split is kept (F9). Kimi prompts say **post** on
+> public Profile shelves, **file** in every server/personal context (a
 > channel, the File explorer, the Upload sheet in server mode).
 
 Sub-terms (not renamed, pinned for clarity):
@@ -119,11 +121,26 @@ different thing** (private bookmark folders) and keep their name.
 > **Cut for beta (2026-08-30, P4):** **public-post commenting is removed** — the
 > **comment thread** on a post (Details pane) and the inline comment thread in the
 > Explorer **Feed** view are gone. The **post itself stays** (a public work, reached
-> from a user's profile Public shelf; the Feed grid stays too). The `comments` table,
+> from a user's profile Public shelf). The `comments` table,
 > the `post_comment` RPC, and the comment→notification trigger **stay in the schema,
 > dormant**, for a post-beta return (TODO **D1**). Below, rows that describe a comment
 > thread are marked **(commenting cut — D1)**; their schema lines stay as the dormant
 > contract.
+
+> **Cut for beta (2026-09-01):** **the Feed screen is removed** — the friends-only
+> aggregated grid of public posts (old Screen 2, §C.5) is gone: no rail entry, no
+> `/` route (`/` now redirects to the personal File explorer, the app's default
+> surface). This is a Feed **aggregator** cut, not a visibility cut — `visibility=
+> 'public'` and the **post** context-split (§A.4) are untouched; a public work is
+> still reachable from its owner's profile **Public** shelf and by direct link,
+> exactly as §B.3/§B.4 already specify. Old Screen 2 / §C.5 is retired (left as a
+> gap, same convention as §A.5/§A.6) rather than renumbered. The `friend` relationship
+> (§A.7) keeps its DM role; "surfaces their public posts in your Feed" is dormant
+> along with the screen that read it — **not** a change to friendship's other
+> effects (POV-gated profile access, etc). **Servers are a separate, non-cut
+> decision, §C.2:** dimmed in the rail "for now" while the build's focus is the
+> File explorer (personal + server) — fully functional, not a scope cut, and not
+> reflected as a screen/vocab change here.
 
 ### A.7 People & relationships
 
@@ -132,7 +149,7 @@ different thing** (private bookmark folders) and keep their name.
 | **profile** | A person's account: name, handle, bio, shelves, status. | `profiles` |
 | **handle** | The unique `@username`. The only way to find someone (no directory). | `profiles.handle` |
 | **member** | A profile inside a specific server. Carries a server colour and a role. | `server_members` |
-| **friend** | The **only** relationship. Mutual (pending → accepted), added by exact handle. Being friends does two things: enables **DMs** and surfaces their **public posts in your Feed**. | `friendships` |
+| **friend** | The **only** relationship. Mutual (pending → accepted), added by exact handle. Enables **DMs**; ~~surfaces their public posts in your Feed~~ is dormant with the Feed screen (cut 2026-09-01, above) — a friend's public posts are still reachable via their profile Public shelf, just not aggregated anywhere. | `friendships` |
 | **DM** | A direct conversation (1:1 or group DM). | `dm_channels` / `dm_members` / `dm_messages` |
 | **message** | A unit of chat, in a channel **or** a DM. | `messages` / `dm_messages` |
 
@@ -182,8 +199,7 @@ sharpest drift in the doc:
 
 The chrome is black/white/grey; the **only** colour is a member's per-server
 identity hue (F12a), and it renders **only inside that server** — on chat
-bylines, the Members rail, and collaborator chips. Never on a public profile or
-the Feed.
+bylines, the Members rail, and collaborator chips. Never on a public profile.
 
 **Scale (LOCKED approach — "add a lot"):** servers can hold many people, so the
 palette is **large, not the original six**. Store `server_members.color` as a
@@ -260,7 +276,7 @@ One policy, mirrored onto every server-scoped table:
 ```sql
 -- works (and mirrored on comments, messages, folders)
 create policy works_read on works for select using (
-  visibility = 'public'                              -- portfolio / Feed
+  visibility = 'public'                              -- portfolio (profile Public shelf)
   or owner_id = (select auth.uid())                  -- your own + Private
   or (visibility = 'server' and member_of(server_id))  -- native server file
   or exists (                                        -- readable via ANY placement
@@ -278,8 +294,10 @@ see the placement can read it, without changing the work's own `visibility`. A `
 placement grants read to the DM's members the same way.
 
 Consequences that drive the UI (§C references these):
-- **Feed** shows only `public` works by your **friends** (`friendships`
-  accepted). Server and Private never leak in.
+- ~~Feed shows only `public` works by your friends~~ — dormant; the Feed screen
+  is cut for beta (2026-09-01, §A.4). A `public` work is still only reachable
+  through its owner's profile Public shelf or a direct link (below); Server and
+  Private never leak into either.
 - **File explorer** shows a server's native files (`server_id`, `member_of`) **plus**
   anything placed into it (crossposts), gated the same way; folder location comes
   from `placement.folder_id`.
@@ -293,15 +311,15 @@ One relationship (`friendships`), one verb ("add friend"). No `follows` table.
 
 | Action | Rule | DB |
 |---|---|---|
-| See someone's public posts in your Feed | friendship `accepted` | `friendships.status='accepted'` |
+| ~~See someone's public posts in your Feed~~ | **Dormant — the Feed screen is cut for beta** (2026-09-01, §A.4); a public work is reachable via its owner's profile Public shelf regardless of friendship. | `friendships.status='accepted'` |
 | Open a DM with a handle | friendship `accepted` | `friendships`, `create_dm` *(rpc)* |
 | Add by handle | exact `@handle` match only; no search, no suggestions | `add_friend(handle)` *(rpc)* |
 | Respond to a request | accept / ignore | `respond_friend(user, accept)` *(rpc)* |
-| Block | hides both directions, revokes feed + DM | `friendships.status='blocked'` |
+| Block | hides both directions, revokes DM (~~+ feed~~, dormant — §A.4) | `friendships.status='blocked'` |
 
 **Public posts are still public** (anyone with the link / OG crawler sees a
-`public` work). Friendship gates *the Feed surface and DMs*, not the raw
-readability of a public work.
+`public` work). Friendship gates *DMs* (the Feed surface it used to also gate
+is dormant, §A.4), not the raw readability of a public work.
 
 ### B.5 Enforcement checklist (for the backend spec)
 
@@ -387,12 +405,14 @@ differs from this contract.
 Registry column points at the section that specifies each surface. **Canvas (old
 Screen 5) and Board (old Screen 6) are cut from the beta** — their rows, §C.8/§C.9
 sections and §E mechanics are removed; those screen numbers are retired (left as a
-gap) rather than renumbered. Screen 7 (Call) remains a v2 deferral.
+gap) rather than renumbered. **Feed (old Screen 2) is cut for beta too (2026-09-01,
+§A.4)** — same convention, its row and §C.5 section are removed and the number is
+retired as a gap; `/` now routes straight to the File explorer (§C.6). Screen 7
+(Call) remains a v2 deferral.
 
 | # | Screen | `data-screen` | Sub-states already mocked | Registry |
 |---|---|---|---|---|
 | 1 | Workspace | `workspace` | chat / pins / files (`chtab`), thread view | §C.4 (template) |
-| 2 | Feed | `feed` | — | §C.5 |
 | 3 | File explorer | `explorer` | files / folders | §C.6 |
 | 4 | Details pane | *(overlay)* | per-context comments | §C.7 |
 | 7 | Call | `vc` | chat / notes (`vctab`) | **v2 — deferred, not built** |
@@ -418,9 +438,11 @@ gap) rather than renumbered. Screen 7 (Call) remains a v2 deferral.
 | + | Server menu · notification-bell dropdown | *(menus)* | server-header dropdown; bell preview | §C.4, §C.13 |
 
 **Navigation & back-path contract (every surface has a way in AND a way back).**
-The **rail** is the always-present lateral switch for the top-level contexts — Feed,
-Messages, **My files** (personal Drive), each server, Create, and Profile — so those
-never dead-end. Sub-surfaces reached *from* a screen carry an explicit path back to
+The **rail** is the always-present lateral switch for the top-level contexts —
+Messages, **My files** (personal Drive, now `/`'s destination too — Feed is cut,
+§A.4), each server (**dimmed "for now," §A.4 above — not cut, just not this
+build's focus; still fully clickable**), Create, and Profile — so those never
+dead-end. Sub-surfaces reached *from* a screen carry an explicit path back to
 their parent:
 
 - **File explorer (server)** mounts **inside the workspace shell**: the server
@@ -448,7 +470,7 @@ The three-pane server view. Legend: **R**=reads, **W**=writes, **RT**=Realtime.
 
 | Element | Behaviour & states | DB | Desktop | Mobile |
 |---|---|---|---|---|
-| Home button | Go to Feed. Active = ink fill. | — | Top of rail | Bottom tab "Home" |
+| ~~Home button~~ | **Cut with Feed (2026-09-01, §A.4)** — the logo at the top of the rail is a plain wordmark now, not a nav control (My files, right below it, is the equivalent destination and already carries the active state for "/"). | — | Top of rail | Bottom tab "Home" |
 | Messages button | Go to DMs. Badge = unread DM count. | R `dm_members.last_read_at` vs `dm_messages` | Rail | Bottom tab "Messages" |
 | Server badge (one per server) | Open that server's Workspace. States: default / hover (tooltip = server name) / active (ink) / **unread dot** / **mention count**. | R `servers` (membership); RT `channel_reads` | Vertical list | Horizontal strip in "Servers" tab |
 | ＋ (create / join / add friend) | Menu → Create server · Join by link · Add friend. | opens `create` / `join` / `add_friend` | Below servers | In "Servers" tab header |
@@ -532,30 +554,25 @@ registered on the members rail (§C.4 above).
 
 ---
 
-### C.5 Screen 2 — Feed
-
-The friends-only portfolio grid.
-
-| Element | Behaviour & states | DB | Desktop | Mobile |
-|---|---|---|---|---|
-| Header nav (Feed / Notifications / You) | Switch top-level views; active = underline. | — | Top bar | Bottom tabs |
-| Search field | Filter posts by title/tag/handle; server-side. | R `search_all(q,'feed')` | Toolbar | Full-width, filters in a sheet |
-| Type / sort dropdowns | Filter by media type; sort newest/…; Reddit-style, no tag modifiers. | R `works` filters | Toolbar | In filter sheet |
-| Layout toggle | Switch **even square grid ⇄ masonry**; default even. | — (client) | Toolbar icon | Toolbar icon |
-| Post card | Square invisible cell (even) or natural aspect (masonry); media renders by kind (image thumb, video play-overlay, **audio → music-icon type card** (`#i-music` + ext; **no waveform anywhere**, gallery #52), text words, **non-previewable → type card** icon+ext); title + author below. Click → Details pane. | R `works` where `visibility='public'` and author ∈ friends | Grid, full width | 2-col grid |
-| Empty | "No posts yet — add friends to see their work." | — | Centered | Centered |
+(§C.5 — Screen 2, Feed, the friends-only portfolio grid — is **cut for beta**, 2026-09-01, §A.4.
+Retired as a gap, same convention as §A.5/§A.6/old Screens 5–6, rather than renumbered.)
 
 ### C.6 Screen 3 — File explorer
 
-**One explorer component, two mounts (gallery #60).** The server File explorer
-and the home **Feed** are the *same* component — same card renderer, same
-filters (search / type / tag / date / sort + the quick-filter chips), same view
-toggles (grid / list / feed), same details pane, same context menu, same
-loading/empty states. They differ in **one** parameter, the source: the server
-explorer reads that server's works (`server_id`, `member_of`); the home Feed
-reads **friends' public posts** (`visibility='public'` and author ∈ friends —
-the owner's "people you follow" = **friend**, the one mutual relationship; §A).
-Build it once, parameterised by source — don't fork two browsers.
+**One explorer component, two mounts (gallery #60).** The **server** File
+explorer and the **personal** My-files explorer are the *same* component — same
+card renderer, same filters (search / type / tag / date / sort + the
+quick-filter chips), same view toggles, same details pane, same context menu,
+same loading/empty states. They differ in **one** parameter, the source: the
+server explorer reads that server's works (`server_id`, `member_of`); the
+personal explorer reads the signed-in user's own works (`owner_id`). Build it
+once, parameterised by source — don't fork two browsers. (A **third** source —
+the home **Feed**, friends' public posts — used to share this component too;
+it's cut for beta, 2026-09-01, §A.4, so the app currently has the two mounts
+above. `/` now routes to the personal mount, same as `/files`.) The view toggle
+itself is **grid / list only** (owner 2026-08-31 — the old three-way grid/list/
+feed toggle's "feed" mode, a flattened previewable-only view with inline
+comments, was folded away; grid/list migrate old links).
 
 **Files is a channel, not a standalone server (owner 2026-08-22).** The server
 explorer mounts **inside the workspace shell**: the server's **channel column stays**
@@ -568,19 +585,24 @@ carries no server chrome (its footer reads *Your storage*, and the channel/uploa
 filters drop away since personal files have neither).
 
 The server's files as a **Discord-meets-Google-Drive file system**: a **nested
-folder tree** beside the channel column, the current folder's contents in the main pane, and a
-**three-way view toggle** — **grid** (default) · **list** · **feed**. The **feed**
-view is special: it **flattens the whole subtree** to only the **previewable** works
-(image / video / audio) newest-first, each with its **comments** shown inline — an
-Instagram-style server media feed (unpreviewable files like `.flp/.zip` are hidden in
-feed view; they appear in grid/list). Grid and list show subfolders + files of the
-**current** folder only.
+folder tree** beside the channel column, the current folder's contents in the main
+pane, and a **density slider** (owner 2026-08-31/2026-09-01) spanning **List →
+dense grid → large thumbnails** — position 0 is the List table, 1–5 are grid
+thumbnail-size stages; it replaces the old three-way grid/list/feed toggle (the
+**feed** mode — a flattened, previewable-only, comments-inline view — was folded
+away the same pass; old `?view=` links with `grid`/`feed`/`small` migrate to the
+large-grid default). Grid and list show subfolders + files of the **current**
+folder only.
 
 **Selection & open (Google-Drive model, owner 2026-08-22).** There is **no Select
 mode button**: a **single click selects** a card (deselecting the rest) and highlights
 it; **⌘/Ctrl-click** toggles, **Shift-click** ranges, **⌘/Ctrl-A** selects all,
 **Esc** clears, and a **drag on empty space marquees** (build tiny or buy `viselect`,
-§E.6); dragging a card is move-to-folder. A **double-click (or Enter) opens** the file.
+§E.6); dragging a card is move-to-folder. The browser's native "no-drop"
+cursor must **never** show during a normal drag over the pane (owner 2026-09-01:
+it read as "illegal action") — `preventDefault()` fires for the WHOLE drag
+gesture, not only while over a valid target; the drop-target highlight/pill
+stays reserved for an actually-valid target. A **double-click (or Enter) opens** the file.
 **Opening always uses the Details pane** (§C.7) — the media viewer + info rail; the
 old bare "lightbox / uploaded view" is retired. The **Sort** control carries an
 **ascending/descending** direction toggle beside it; Type/Channel/Uploader/Tag are
@@ -591,16 +613,17 @@ old bare "lightbox / uploaded view" is retired. The **Sort** control carries an
 | **Folder tree** | Collapsible nested tree of the server's folders (root → children); current folder highlighted; drag a file/folder onto a folder to move it; admin/perm can add/rename/delete a folder. | R `folders where server_id`; W `folders` · `move_to_folder` | Left rail | Drawer / breadcrumb sheet |
 | **Storage footer** (Drive touch) | Pinned to the foot of the tree: "**This server's storage** — X of Y GB used" + a bar + a **manage** link to §C.19. Always visible so the server's file-storage state reads at a glance. | R `storage_meters`/`storage_balance('server',id)` | Tree foot | Drawer foot |
 | **Breadcrumb** | The path to the current folder (`LP / beats / drums`); each segment navigates. | derived from `folders.parent_id` | Toolbar | Toolbar |
-| **View toggle** | **Grid** (default) · **List** (name/type/size/uploader/date columns) · **Feed** (flattened, previewable-only, comments inline). | — | Toolbar segmented | Toolbar |
+| **Density slider** | List → 5 grid stages (large default); replaces the old Grid/List/Feed toggle (feed mode cut, above). | — (client, `?view=`) | Toolbar | Toolbar |
+| **Sort / Group dropdowns** | Sort: Newest/Oldest/Name/Size/Type/Uploader + an asc/desc direction toggle. Group: none/Kind/File type/Uploader/Date added, bucketing the current (filtered/searched) view into labelled sections — **grid AND list both carry Group** (owner 2026-09-01: list previously had neither). A section header is a **caret to collapse/expand** it and, click-to-**select every item in the group** (Ctrl/Cmd-click adds to the existing selection) — Windows-Explorer style. | R `works` filters/client sort | Toolbar | Toolbar |
 | Search field | Search this server's files (whole tree, not just the current folder). | R `works where server_id` FTS | Toolbar | Full-width |
-| Filter dropdowns (Channel / Type / Uploader / **Tag** / **Date** / Sort) | Narrow the current view (gallery #33). | R `works` filters | Toolbar | Filter sheet |
+| Filter dropdowns (Channel / Type / Uploader / **Tag** / **Date**) | Narrow the current view (gallery #33). | R `works` filters | Toolbar | Filter sheet |
 | **Quick-filter chips** | A second row: **All / Images / Audio / Video / Projects / ★ Starred** kind-toggles, plus a **Show hidden** toggle that reveals untracked/hidden files (gallery #33; hidden-file model is #55). | R `works` filters · `works.kind` · `saved_items`/star · `works.hidden` | Toolbar row | Filter sheet |
 | **Loading / empty states** | While a folder loads, a **skeleton grid** (`.skel` shimmer cards) stands in (gallery #49). An empty container shows a centred **empty state** — icon + title + subtext — e.g. **Trash is empty** ("kept 30 days, then removed"), empty folder, no starred, no results (gallery #50). Both are reusable patterns applied across every async/empty surface (feed, profile, member rail, DMs, search). | — (client) | Grid area | Grid area |
 | **Trash view** (Trash smart-folder open) | A **retention notice** ("items are permanently deleted **30 days** after they're trashed", §D.2) + **Empty trash now**, over a list of trashed rows: name · who/when trashed · a **days-left countdown** that turns danger-red near expiry · hover **Restore** / **Delete forever** (gallery B19). Soft-delete only — nothing hard-deletes before 30 days except via *Delete forever* / *Empty now*; **Empty now** clears to the empty state above. Backed by `works.deleted_at` + the 30-day purge job + the trash writers in §E.3. | R trashed `works` (`deleted_at not null`); W `restore_work` · `purge_work` · `empty_trash` | List with row actions | List; actions in ⋯/long-press |
 | Folder row / card | A subfolder in the current folder — stacked-icon cover + item count; click → descend. | R `folders` (children) | In grid/list with files | 2-col / row |
-| File card / row | Grid: same card renderer as Feed; List: a dense row. Leads with **file name**; uploader chip (server colour) + channel tag. **Hover actions** (star, download, copy-link, ⋯) + a **selection checkbox** (multi-select → the selection toolbar). **Right-click / ⋯ → context menu** (gallery #19): Open · Star · Update visibility… (#61) · Save to my files · Download · Copy link · **Crosspost to server…** · Rename · Move to… · Hide from library (#55) · Delete. On touch the ⋯ / long-press stands in for right-click. | R `works` (in this folder via `placement.folder_id`); writes gated by role | Grid/List | 2-col / row |
-| **Feed item** | *(feed view only)* a previewable work at natural aspect, newest-first across the subtree. **(commenting cut — D1)** — the inline comment thread was removed; media + meta stay. | R `works` (previewable) | Column | Full-width |
-| Grid select + bulk bar | Multi-select → action bar (download / **move to folder** / delete). | — / RPCs | Hover checkbox | Long-press |
+| File card / row | Grid and list share one card renderer. Leads with **file name**; uploader chip (server colour) + channel tag. First few **tags inline + a "+N" chip** (or, tag-free, a bare "+ tag" chip) that opens a tags popover **on hover or click** to see/add/remove all of them (owner 2026-09-01 — folders had this, P23; files now do too) — no separate "Properties" step. **Hover actions** (⋯) — single click **selects** (no checkbox, Google-Drive model, below). **Right-click / ⋯ → context menu** (gallery #19): Open · Star · Update visibility… (#61) · Save to my files · Download · Copy link · **Crosspost to server…** · Rename · Move to… · Hide from library (#55) · Delete — **or, if the right-clicked item is part of the active multi-selection, the same menu operates on the whole selection** (Download/Move to folder…/Delete) instead, the normal-file-browser replacement for a dedicated bulk-action bar (below). On touch the ⋯ / long-press stands in for right-click. | R `works` (in this folder via `placement.folder_id`); writes gated by role; tags via `addTag`/`removeTag` | Grid/List | 2-col / row |
+| ~~Feed item~~ | **Cut with the Feed view (2026-08-31) and the Feed screen (2026-09-01).** | — | — | — |
+| Selection status | **No bulk-action bar** (owner 2026-09-01 — the retired `.selbar` used to overlay and occlude the whole toolbar). A quiet status strip at the pane foot reads "N selected · X files, Y folders · size" at rest "N items"; bulk actions are the context-menu-on-a-selected-item behaviour above, plus Delete/⌘⌫ for trash. | — (client) | Pane foot | Pane foot |
 | **Move-to-folder picker** | The destination surface behind **Move to…** (card ⋯), the bulk bar's **Move to folder**, and the details-pane location row: a **scrollable folder tree** of this server, one destination selected, **New folder** inline, **Move here**. A move re-places the file (`placement.folder_id`) — it changes **where the file lives, not who can see it**; **locked** folders (§C.6 archived/locked, gallery #58) are shown disabled and can't receive files. | W `move_to_folder(work, folder)` → `placement.folder_id`; gated by folder write-perm | Modal on scrim | Sheet |
 | Lightbox | Full media viewer + "shared in" strip. | R `works` | Overlay | Full-screen |
 
@@ -619,7 +642,8 @@ backdrop** (like any modal, owner 2026-08-22).
 arena shell serves two things; what differs is the discussion surface and which
 storage the bytes draw:
 
-- **Post** — a **public** work on a profile/Feed. Draws the owner's **personal
+- **Post** — a **public** work on a profile (the Feed it also used to reach is
+  cut for beta, §A.4). Draws the owner's **personal
   storage** (`storage_source='personal'`). Its pane is the classic one: a **public
   comment thread** (`comments`, context=public), tags, collaborators. **No channel** (it
   isn't in a server).
@@ -952,8 +976,9 @@ The per-GB price *drops* as the slider goes up.**
 5. **Storage and visibility coincide — that combo is the model's spine.** A work is
    in exactly one of three states; the details-pane badge shows it verbatim:
    - **Personal · Private** — your storage, only you.
-   - **Personal · Public** — your storage, world (portfolio / Feed). *A public post
-     draws your personal quota* — the price of a portfolio.
+   - **Personal · Public** — your storage, world (your profile's Public shelf; the
+     Feed aggregator is cut for beta, §A.4). *A public post draws your personal
+     quota* — the price of a portfolio.
    - **Server** — the **server's** storage, visible to the server's members. Native
      server files are **server-owned** (the server's slider pays), so storing-here
      and seeing-here are one act.
@@ -1214,6 +1239,9 @@ Smaller corrections from the gallery review — all fold into §C when it's fill
 ## §D.6 Feed, profile, layout & visibility (2026-08-17d)
 
 Gallery-review batch. All fold into §C/§E when filled; mockup screens updated where noted.
+**Historical — the Feed screen it was written against is cut for beta (2026-09-01, §A.4);**
+read its "Feed" mentions below as dormant, kept for the decisions that still apply
+(profile/explorer grid, non-previewable file types, folders).
 
 ### D.6.1 Feed / profile / explorer grid
 - **Full-width.** The card grid fills the pane width (no narrow max-width column).
@@ -1237,9 +1265,10 @@ mockup feed and a chat message.
 The server-level **Collections** are renamed **Folders** everywhere and made a
 **nested tree** — the File explorer (§C.6) is a Discord-meets-Drive file system:
 a folder has a `parent_id` (null = server root), a server file lives in exactly one
-folder per server (`placement.folder_id`, default root), and the explorer's **feed**
-view flattens the subtree to previewable media + comments. Kill the word
-"collection". (Distinct from personal **save folders**, which stay.)
+folder per server (`placement.folder_id`, default root). Kill the word
+"collection". (Distinct from personal **save folders**, which stay. The explorer's
+**feed** view — flattening the subtree to previewable media + comments — described
+here is itself cut, 2026-08-31, §C.6; folded into the density slider's grid mode.)
 
 ### D.6.4 Focused screens — create / join / sign-in / system
 **Superseded 2026-08-17f — all focus/system screens are scrim modals, no rail.**
@@ -1461,7 +1490,7 @@ Add the relevant tables to the `supabase_realtime` publication.
 - **Thread view**, `messages.parent_id`; `also_to_channel`.
 - **Channel Pins/Files**, `message_pins`; works placed in the channel (`placement where channel_id`) for Files.
 - **Search / quick switcher**, `search_all()` + FTS indexes, every hit filtered through the live read policy (`can_view_channel`).
-- **Feed**, `works` where `visibility='public'` and author ∈ friends (`friendships` accepted).
+- ~~Feed~~ — cut for beta (2026-09-01, §A.4); dormant query, `works` where `visibility='public'` and author ∈ friends (`friendships` accepted).
 - **File explorer (server mount)**, `works` + `placement.folder_id` + `folders where server_id`; `storage_meters`/`storage_balance` for the storage footer; the **Trash smart-folder** reads `works where deleted_at not null`; the **Starred smart-folder** reads `starred_items` (restore/purge/empty + star via §E.3). Mounts **inside the workspace shell** (the channel column stays; §C.6).
 - **File explorer (personal "My files" mount)**, the *same* component parameterised to the personal source: user-owned `works` (`owner_type='user'`) + `saved_items` + nested `save_folders`; `storage_meters`/`storage_balance` for `owner_type='user'` (the "Your storage" footer); its own Trash + Starred. No server chrome (the channel column, `channel`/`uploader` filters drop away).
 - **Details pane**, `works` + `content_tags` + `work_collaborators` + `comments(context=public)` (posts) or the channel link (server files) + `saved_items` + `starred_items` + `share_links` (Share dialog / update-visibility) + `duplicate_work` (Copy) + transcode.
@@ -1512,7 +1541,7 @@ permission gate on each write) and §E.1/§E.3 (the schema/RPCs named here).
 | **Details pane** | comments: add / reply / resolve | `comments` (`parent_id`,`resolved_at`) | ✅ |
 | | add tag · Save to my files | `content_tags` · `saved_items` (`save_to_files`) | ✅ |
 | | player speed/quality/seek/5s-skip | client; on-demand `transcode` for format | ⏳/n·a |
-| **Feed / Profile** | feed cards (friends' public) · shelves | `works` (visibility+friends) | read |
+| **Profile** | ~~feed cards~~ (Feed cut, §A.4) · shelves | `works` (visibility+friends) | read |
 | | layout toggle (grid⇄masonry) | client UI state | ⏳ ephemeral |
 | | Edit profile (name/handle/bio/avatar/banner) | `profiles` (+`banner_key`) | ✅ |
 | | custom status | `profiles.status_*` | ✅ |

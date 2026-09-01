@@ -20,7 +20,6 @@ export async function openSwitcher() {
   closeMenus();
   const data = await loadSwitcher().catch(() => ({ servers: [], friends: [] }));
   const entries = [
-    { icon: "home", label: "Feed", href: "/" },
     { icon: "mail", label: "Messages", href: "/messages" },
     { icon: "folder", label: "My files", href: "/files" },
     { icon: "bell", label: "Notifications", href: "/notifications" },

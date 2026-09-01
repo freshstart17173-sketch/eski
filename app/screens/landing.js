@@ -5,25 +5,26 @@
 //
 // Copy describes the product only — no audience targeting ("for bands", "for
 // creatives"). The pitch is mechanical: Discord, with a real file server
-// underneath. Every claim maps to a real CANON concept (Feed, server, File
-// explorer, comments, visibility, friends) so nothing here promises something
-// the contract doesn't back.
+// underneath. Every claim maps to a real CANON concept (server, File explorer,
+// visibility, friends) so nothing here promises something the contract doesn't
+// back. (owner 2026-09-01: the Feed pitch item is retired with the Feed screen,
+// §A.4 — File explorer is the product's front door now, so it leads.)
 
 import { icon } from "../icons.js";
 
 const FEATURES = [
-  { ic: "grid", title: "A feed, not a folder dump",
-    body: "Public posts show up like a feed. Scroll what's shared, not a file listing." },
+  { ic: "folder", title: "A real drive, not a folder dump",
+    body: "Nested folders, tags, and search give every file a permanent home, so nothing gets lost in scrollback." },
   { ic: "server", title: "Servers and channels",
     body: "Invite people into a server, split talk into channels, and keep every file that gets shared there." },
-  { ic: "folder", title: "A real drive underneath",
-    body: "Nested folders and search give every file a permanent home, so nothing gets lost in scrollback." },
+  { ic: "grid", title: "Files that read at a glance",
+    body: "Grid or list, dense or large — tags and who-uploaded-it show right on the card, not buried behind a click." },
   { ic: "comment", title: "Comments where the file lives",
-    body: "Comment on a post, or reply in the channel it was shared in, instead of chasing a file across five threads." },
+    body: "Reply in the channel a file was shared in, instead of chasing it across five threads." },
   { ic: "lock", title: "Public, server, or just you",
     body: "Every file picks one of three audiences, labelled the same way everywhere, so you always know who's looking." },
   { ic: "mail", title: "Friends and DMs",
-    body: "Friendship goes both ways. Add someone and their public posts show up in your feed, with DMs open too." },
+    body: "Friendship goes both ways. Add someone and DMs are open, no request either side has to chase." },
 ];
 
 const MOCK = [

@@ -53,7 +53,7 @@ function deadInvite(card2, message) {
     el("h1", { style: "font-size:var(--fs-xl);font-weight:600" }, ["This invite doesn't work"]),
     el("p", { style: "color:var(--muted);font-size:var(--fs-sm);margin:8px auto 0;max-width:300px" }, [message || "That invite link isn't valid anymore. Ask for a fresh one."]),
     el("div", { style: "margin-top:18px;display:flex;justify-content:center" }, [
-      Button({ label: "Go to your feed", variant: "primary", icon: "home", onClick: () => navigate(withDemo("/")) }),
+      Button({ label: "Go to your files", variant: "primary", icon: "home", onClick: () => navigate(withDemo("/")) }),
     ]),
   );
 }
