@@ -2151,7 +2151,7 @@ function listView(subfolders, files, hooks) {
   };
   const fileRow = (w, i) => {
     const star = el("button.flstar" + (w.starred ? ".on" : ""), { title: w.starred ? "Unstar" : "Star", onClick: (e) => { e.stopPropagation(); hooks.onStar(w); } }, [iconEl("star", "sm")]);
-    const nameCell = el("span.flnm", {}, [star, iconEl(KIND_ICON[w.kind] || "file", "sm"), baseName(w)]);
+    const nameCell = el("span.flnm", {}, [star, iconEl(KIND_ICON[w.kind] || "file", "sm"), el("span.flnmtxt", {}, [baseName(w)])]);
     const tagPrev = hooks.ftctx ? fileTagPreview(w, hooks.ftctx) : null;   // owner 2026-09-01: files get the same inline preview folders do
     if (tagPrev) { tagPrev.classList.add("flntags"); nameCell.append(tagPrev); }
     const cells = [

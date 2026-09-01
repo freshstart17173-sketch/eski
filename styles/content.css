@@ -270,8 +270,9 @@
 /* "+N more" → opens the tags popover (hover or click) */
 .ftmore{font-size:var(--fs-mi);font-weight:600;color:var(--muted);padding:1px 6px;border-radius:var(--r);background:var(--surface);flex:none}
 .ftmore:hover{background:var(--plate);color:var(--ink)}
-/* list-row tag preview: inline after the folder name */
-.flntags{margin-top:0;margin-left:var(--s3);overflow:hidden}
+/* list-row tag preview: inline after the folder name. flex:none — it must NEVER shrink to make
+   room; .flnmtxt (the filename) is the one that truncates when the Name column narrows. */
+.flntags{margin-top:0;margin-left:var(--s3);overflow:hidden;flex:none}
 .flntags .tchip{font-size:var(--fs-mi);padding:1px 6px}
 /* tags popover (a floating .menu variant → inherits the float shadow) */
 .ftpop{padding:10px 12px;min-width:220px;max-width:280px}
@@ -309,7 +310,14 @@
    a layout recheck outside the one row that changed (hover/select/inline-rename). */
 .flrow{display:grid;grid-template-columns:minmax(200px,1.6fr) 84px 88px 120px 96px;gap:14px;align-items:center;padding:8px 12px;font-size:var(--fs-sm);color:var(--soft);border-radius:var(--r);cursor:pointer;contain:layout style}
 .exlist.nowho .flrow{grid-template-columns:minmax(200px,1.8fr) 84px 88px 96px}
-.flrow span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-variant-numeric:tabular-nums}
+/* DIRECT children only (was `.flrow span`, a descendant selector — it also matched every span
+   NESTED inside .flnm, incl. the tag chip's own spans, clipping their text independently of the
+   row). Owner bug (2026-09-01, "tags in this example" clip when Details opens): narrowing the Name
+   column shrank .flnm as a whole, and this rule's overflow:hidden clipped the WHOLE flex box —
+   filename, icon and tag chip together — at whatever pixel it ran out of room, instead of letting
+   just the filename truncate. .flnm is excluded below so its child .flnmtxt can do that instead. */
+.flrow>span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-variant-numeric:tabular-nums}
+.flrow>span.flnm{overflow:visible;text-overflow:clip;white-space:normal}
 .flrow+.flrow{box-shadow:inset 0 1px 0 var(--line)}
 .flrow:hover:not(.flhd){background:var(--surface)}
 .flrow.sel{background:var(--plate)}
@@ -332,6 +340,10 @@
 .flhd .sortcar{width:12px;height:12px;color:var(--ink);transition:transform var(--t)}
 .flnm{display:inline-flex;align-items:center;gap:8px;font-weight:500;color:var(--ink);min-width:0}
 .flnm .ic{color:var(--muted);flex:none}
+/* the filename itself is the ONLY thing in .flnm allowed to shrink/truncate — the star, icon and
+   tag-preview chip all stay flex:none, so narrowing the Name column (e.g. opening Details) eats
+   into the name text, never into the tag chip sitting after it. */
+.flnmtxt{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1 1 auto;min-width:0}
 /* B33: the per-row star toggle in list view — muted at rest, gold when starred (matches the grid). */
 .flstar{flex:none;width:20px;height:20px;display:grid;place-items:center;border-radius:var(--r);color:var(--line2);opacity:.6;transition:color var(--t),opacity var(--t)}
 .flstar .ic{width:14px;height:14px}
@@ -433,21 +445,27 @@
 .sheet .scroll{flex:1;overflow-y:auto;padding:0 var(--s4) var(--s4)}
 .sheet .dinfo h2{font-size:var(--fs-lg);font-weight:600;margin:var(--s4) 0 var(--s3)}
 /* dense are.na metadata: key left (muted), value right (ink) */
-/* meta/tags rows are shared by the details pane (.sheet) and the shared-link viewer
-   (.sharedview) — one definition, two scopes, so the two can't drift apart. */
+/* meta/tags rows are shared by the details pane (.sheet), the shared-link viewer (.sharedview),
+   and the explorer's own docked details rail (.exinfo, C29) — one definition, three scopes, so
+   they can't drift apart. BUG (2026-09-01, owner: "the details side panel is styled horribly") —
+   .exinfo was added to the CONTAINER rule below when C29 landed but never to the .row/.k/.v rules
+   that actually lay a row out, so the docked panel's label and value rendered as plain inline
+   content with zero flex/gap between them (literally touching: "LocationMy files", "AddedAug 12").
+   metaRows() (screens/details.js) is the ONE shared builder for all three surfaces — this was
+   always a CSS scoping gap, never a markup difference. */
 .sheet .meta,.sharedview .meta,.exinfo .meta{display:flex;flex-direction:column;gap:var(--s1);margin:0 0 var(--s3);font-size:var(--fs-sm)}
 /* B29: align the key to the TOP so a long value can wrap cleanly beside it (was center + a
    nowrap/ellipsis value that truncated long filenames). */
-.sheet .meta .row,.sharedview .meta .row{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;min-height:22px}
-.sheet .meta .k,.sharedview .meta .k{flex:none;color:var(--muted);font-size:var(--fs-xs);line-height:1.35;padding-top:1px}
-.sheet .meta .v,.sharedview .meta .v{flex:1;min-width:0;color:var(--ink);text-align:right;line-height:1.35;overflow-wrap:anywhere;word-break:break-word}
-.sheet .metalink{padding:0;font-weight:600;color:var(--ink);font-size:var(--fs-sm);cursor:pointer}
-.sheet .metalink:hover{text-decoration:underline}
-.sheet .loccrumb{display:inline-flex;align-items:center;gap:5px;justify-content:flex-end;flex-wrap:wrap}
-.sheet .loccrumb button{color:var(--soft);line-height:1.2;display:inline-flex;align-items:center;gap:4px}
-.sheet .loccrumb button:hover{color:var(--ink)}
-.sheet .loccrumb .ic{width:13px;height:13px;color:var(--muted)}
-.sheet .loccrumb .sl{color:var(--line2)}
+.sheet .meta .row,.sharedview .meta .row,.exinfo .meta .row{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;min-height:22px}
+.sheet .meta .k,.sharedview .meta .k,.exinfo .meta .k{flex:none;color:var(--muted);font-size:var(--fs-xs);line-height:1.35;padding-top:1px}
+.sheet .meta .v,.sharedview .meta .v,.exinfo .meta .v{flex:1;min-width:0;color:var(--ink);text-align:right;line-height:1.35;overflow-wrap:anywhere;word-break:break-word}
+.sheet .metalink,.exinfo .metalink{padding:0;font-weight:600;color:var(--ink);font-size:var(--fs-sm);cursor:pointer}
+.sheet .metalink:hover,.exinfo .metalink:hover{text-decoration:underline}
+.sheet .loccrumb,.exinfo .loccrumb{display:inline-flex;align-items:center;gap:5px;justify-content:flex-end;flex-wrap:wrap}
+.sheet .loccrumb button,.exinfo .loccrumb button{color:var(--soft);line-height:1.2;display:inline-flex;align-items:center;gap:4px}
+.sheet .loccrumb button:hover,.exinfo .loccrumb button:hover{color:var(--ink)}
+.sheet .loccrumb .ic,.exinfo .loccrumb .ic{width:13px;height:13px;color:var(--muted)}
+.sheet .loccrumb .sl,.exinfo .loccrumb .sl{color:var(--line2)}
 /* sections (tags, comments) */
 .sheet .dsec,.sharedview .dsec{margin-top:var(--s4)}
 .sheet .dsec .lb,.sharedview .dsec .lb{color:var(--muted);font-size:var(--fs-xs);font-weight:600;margin-bottom:8px}
