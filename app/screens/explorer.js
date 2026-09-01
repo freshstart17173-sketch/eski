@@ -120,11 +120,15 @@ export function renderExplorer(data, view = {}) {
     folderId: (_restored && (data.folders || []).some((f) => f.id === _restored)) ? _restored : null,
     mode: parseView(VIEW_ALIAS[view.mode] || view.mode).mode,
     density: parseView(VIEW_ALIAS[view.mode] || view.mode).density,   // P32: 0 = list, 1..5 = grid stages
-    query: "",              // the LIVE text in the search field — never drives results by itself
+    // owner 2026-09-01: "the search shouldn't go away when i switch tabs and come back" — a
+    // SUBMITTED search restores from the URL (view.q/view.mods, written by syncUrl below) exactly
+    // like folderId/openFileId already do a few lines down, so a same-view re-render (e.g. a
+    // Supabase auth refresh firing on tab refocus) doesn't hand back a blank search field.
+    query: view.q || "",    // the LIVE text in the search field — never drives results by itself
     // owner 2026-09-01 search rework: "don't show any search UI until Enter" — activeQuery is the
     // last SUBMITTED query (set on Enter, cleared on Clear-search); contents()/paint() key off
     // this, never off `query` directly, so typing alone never changes what's on screen.
-    activeQuery: "",
+    activeQuery: view.q || "",
     collapsed: new Set(),   // folder ids whose children are hidden in the tree
     groupCollapsed: new Set(),   // owner 2026-09-01: Group-by section LABELS collapsed in grid/list
     selection: persistentSelection(data),   // selected work ids — persists across nav (§C.6, B6)
@@ -139,7 +143,9 @@ export function renderExplorer(data, view = {}) {
     // TEXT in the field searches deep (server-side, whole drive) — the rail vs. the field IS the
     // filter/search split now, not a hidden behavioural rule. Sort/Group stay as dropdowns (below) —
     // explicitly left out of the modifier grammar for now, still solid as-is.
-    modifiers: [],
+    // Restored from the URL's ?mods= (space-joined raw tokens, syncUrl's own output) the same way
+    // query/activeQuery are — see the URL-persistence comment above.
+    modifiers: (view.mods || "").split(/\s+/).filter(Boolean).map(parseModifierToken).filter(Boolean),
     sort: "latest",        // latest/oldest/name/size/type/uploader/date
     dir: "desc",           // sort direction
     group: "none",          // grid grouping: none/kind/type/uploader/date
@@ -226,7 +232,10 @@ export function renderExplorer(data, view = {}) {
   function syncUrl() {
     if (shared) return;
     if (location.pathname !== explorerBase(data)) return;
-    const desired = explorerUrl(data, { folderId: state.folderId, fileId: state.openFileId, mode: state.mode, density: state.density });
+    const desired = explorerUrl(data, {
+      folderId: state.folderId, fileId: state.openFileId, mode: state.mode, density: state.density,
+      query: state.activeQuery.trim(), mods: state.modifiers.map(modifierRaw).join(" "),
+    });
     if (desired === location.pathname + location.search) return;
     const push = state.folderId !== lastFolder;
     history[push ? "pushState" : "replaceState"]({}, "", desired);
@@ -332,9 +341,21 @@ export function renderExplorer(data, view = {}) {
       // A folder's own ON DELETE SET NULL (schema-03/07) fires as an UPDATE here when the folder it
       // pointed at is deleted, so a folder delete reparenting its contents to root falls out of this
       // for free — no separate cascade handling needed.
-      onPlaceInsert: (row) => { const f = findFile(row.work_id); if (f) { f.folderId = row.folder_id || null; scheduleSync(); } },
-      onPlaceUpdate: (row) => { const f = findFile(row.work_id); if (f) { f.folderId = row.folder_id || null; scheduleSync(); } },
-      onPlaceDelete: (old) => { const f = findFile(old.work_id); if (f) { f.folderId = null; scheduleSync(); } },
+      //
+      // BUG (found 2026-09-01, owner report "some files disappear and reappear, have to reload"):
+      // placement holds MULTIPLE surfaces per work_id (schema-03: a work can also carry a 'dm' or
+      // 'feed' placement independently of its home server — e.g. sharing the same file into a DM).
+      // These handlers used to react to ANY placement row for a work_id already loaded here, with no
+      // surface check — so sharing a file into a DM fired onPlaceInsert with folder_id=null and blew
+      // away this view's real folderId, making the file vanish from its folder until a reload re-ran
+      // fetchExplorerFile's correctly surface-scoped query. The subscribeExplorer filter (realtime.js)
+      // now narrows delivery to this server's surface_id, but a filter can't express the AND with
+      // surface itself. saved_items (personal) carries no surface/surface_id columns at all — one
+      // row per (user_id, work_id), already scoped by the filter above — so the guard only applies
+      // to the server/placement case; a personal row always passes through unchanged.
+      onPlaceInsert: (row) => { if (data.source === "server" && (row.surface !== "server" || row.surface_id !== data.server?.id)) return; const f = findFile(row.work_id); if (f) { f.folderId = row.folder_id || null; scheduleSync(); } },
+      onPlaceUpdate: (row) => { if (data.source === "server" && (row.surface !== "server" || row.surface_id !== data.server?.id)) return; const f = findFile(row.work_id); if (f) { f.folderId = row.folder_id || null; scheduleSync(); } },
+      onPlaceDelete: (old) => { if (data.source === "server" && (old.surface !== "server" || old.surface_id !== data.server?.id)) return; const f = findFile(old.work_id); if (f) { f.folderId = null; scheduleSync(); } },
       // content_tags/folder_tags subscribe unfiltered (RLS still gates delivery) — same "whole
       // table, filter to what's on screen" pattern realtime.js already uses for reactions.
       onTagInsert: (row) => { const f = findFile(row.work_id); if (f && !f.tags.includes(row.tag)) { f.tags.push(row.tag); scheduleSync(); } },
@@ -537,12 +558,20 @@ function explorerBase(data) { return data.source === "server" ? `/s/${data.serve
 // The URL for a given explorer VIEW STATE. Folder + open file + view-mode live in the query so the
 // address bar reflects where you are — reload / back-forward restore it (main.js reads these back)
 // and a copied link opens the same folder/file. `demo=1` is carried through when present.
-function explorerUrl(data, { folderId, fileId, mode, density } = {}) {
+function explorerUrl(data, { folderId, fileId, mode, density, query, mods } = {}) {
   const q = new URLSearchParams();
   if (folderId) q.set("folder", folderId);
   if (fileId) q.set("file", fileId);
   const vp = viewParam(mode, density);   // P32: list | d1..d5 (default grid omitted)
   if (vp) q.set("view", vp);
+  // owner 2026-09-01: "the search shouldn't go away when i switch tabs and come back" — a SUBMITTED
+  // search (activeQuery + the modifier rail) now rides in the URL exactly like folder/file/mode
+  // already do, so a same-view re-render (a Supabase auth refresh on tab refocus re-runs renderRoute
+  // — see main.js's B30 guard, which only covers a same-USER re-render, not this) restores it from
+  // the query string instead of constructing a brand-new blank `state`. Also means a copied link
+  // reproduces the exact search, and reload survives it too.
+  if (query) q.set("q", query);
+  if (mods) q.set("mods", mods);
   if (isDemoQS()) q.set("demo", "1");
   const s = q.toString();
   return explorerBase(data) + (s ? `?${s}` : "");
@@ -668,14 +697,17 @@ function paint(tree, pane, data, state, rerender) {
   // P13: the crumb root. On a SERVER file browser the server name is redundant (the channel column
   // already names the server) → drop it to a folder glyph (still clicks to root). Personal/shared
   // keep the text root ("My files" / the shared folder name) — it's the meaningful identity there.
+  // data-crumb-folder marks a valid "move OUT to here" drop target for the crumb-drag handler
+  // below ("" on the root button reads back as null, same convention as a folder card's own
+  // data-folder-id="" for root elsewhere in this file).
   crumbs.append(data.source === "server"
-    ? el("button.crumbroot.home", { title: rootLabel(data), "aria-label": rootLabel(data), onClick: () => { state.folderId = null; rerender(); } }, [iconEl("folder", "sm")])
-    : el("button.crumbroot", { onClick: () => { state.folderId = null; rerender(); } }, [rootLabel(data)]));
+    ? el("button.crumbroot.home", { title: rootLabel(data), "aria-label": rootLabel(data), "data-crumb-folder": "", onClick: () => { state.folderId = null; rerender(); } }, [iconEl("folder", "sm")])
+    : el("button.crumbroot", { "data-crumb-folder": "", onClick: () => { state.folderId = null; rerender(); } }, [rootLabel(data)]));
   // C30: a deep path collapses its MIDDLE crumbs into a "…" menu so it never wraps/clips — root › … ›
   // parent › current (Windows/Drive). The last two folders always stay visible; everything between
   // root and them goes behind the overflow button. Shallow paths render in full.
   const sep = () => crumbs.append(el("span.sl", {}, ["/"]));
-  const crumbBtn = (f) => crumbs.append(el("button", { onClick: () => { state.folderId = f.id; rerender(); } }, [f.name]));
+  const crumbBtn = (f) => crumbs.append(el("button", { "data-crumb-folder": f.id, onClick: () => { state.folderId = f.id; rerender(); } }, [f.name]));
   const crumbCur = (f) => crumbs.append(el("b", {}, [f.name]));
   const MAXCRUMB = 3;   // trailing folders shown before the path collapses
   if (path.length <= MAXCRUMB) {
@@ -1067,6 +1099,50 @@ function paint(tree, pane, data, state, rerender) {
       if (!ids.length) return;
       if (t.dataset.folderId != null) moveInto(data, state, rerender, ids, t.dataset.folderId || null);   // dropped on a folder
       else makeFolderFrom(data, state, rerender, [...ids, t.dataset.id]);                                   // dropped on a file
+    });
+
+    // C-out (owner 2026-09-01: "moving folders into folders is easy, out of folders doesn't work") —
+    // the drop handling above only recognizes [data-id]/[data-folder-id] CARDS inside the current
+    // folder's own grid, so there was never a target for "move this back OUT" — the folder/file
+    // you're dragging can't drop onto its own parent, because the parent isn't rendered as a card
+    // while you're standing inside it. The breadcrumb trail already names every ancestor + root, so
+    // (Finder/Drive convention) each crumb segment is a drop target too, delegated on `crumbs` the
+    // same way body's own handlers are delegated on `body`.
+    let curCrumbDrop = null;
+    const clearCrumbDrop = () => { if (curCrumbDrop) { curCrumbDrop.classList.remove("droptarget"); curCrumbDrop = null; } };
+    crumbs.addEventListener("dragover", (e) => {
+      const draggingFolder = dragFolderIds.length > 0;
+      if (!dragIds.length && !draggingFolder) return;
+      e.preventDefault();   // same reasoning as body's dragover: never show the OS "not-allowed" cursor mid-drag
+      try { e.dataTransfer.dropEffect = "move"; } catch { /* Safari */ }
+      const t = e.target.closest("[data-crumb-folder]");
+      if (!t) { clearCrumbDrop(); return; }
+      const tid = t.dataset.crumbFolder || null;
+      const invalid = tid === (state.folderId || null)   // already here
+        || (draggingFolder && (dragFolderIds.includes(tid) || dragFolderIds.some((id) => folderInSubtree(data.folders, id, tid))));
+      if (invalid) { if (t !== curCrumbDrop) clearCrumbDrop(); return; }
+      if (t === curCrumbDrop) return;
+      clearCrumbDrop(); curCrumbDrop = t;
+      t.classList.add("droptarget");
+    });
+    crumbs.addEventListener("dragleave", (e) => { const t = e.target.closest("[data-crumb-folder]"); if (t && t === curCrumbDrop && !t.contains(e.relatedTarget)) clearCrumbDrop(); });
+    crumbs.addEventListener("dragend", clearCrumbDrop);
+    crumbs.addEventListener("drop", (e) => {
+      const t = e.target.closest("[data-crumb-folder]");
+      clearCrumbDrop();
+      if (!t) return;
+      const tid = t.dataset.crumbFolder || null;
+      if (dragFolderIds.length) {
+        const ids = dragFolderIds; dragFolderIds = [];
+        if (ids.includes(tid) || ids.some((id) => folderInSubtree(data.folders, id, tid))) return;
+        e.preventDefault();
+        moveFoldersInto(data, state, rerender, ids, tid);
+        return;
+      }
+      if (!dragIds.length) return;
+      e.preventDefault();
+      const ids = dragIds; dragIds = [];
+      moveInto(data, state, rerender, ids, tid);
     });
   }
 

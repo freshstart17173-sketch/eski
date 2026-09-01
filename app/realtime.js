@@ -120,13 +120,22 @@ export function subscribeExplorer({ source, serverId, userId }, handlers = {}) {
   const placeTable = isServer ? "placement" : "saved_items";
   const folderTable = isServer ? "folders" : "save_folders";
   const folderFlt = isServer ? `server_id=eq.${serverId}` : `user_id=eq.${userId}`;
+  // placement carries MULTIPLE surfaces per work_id (schema-03: a work can also be placed into a
+  // dm/feed independently of its home server — e.g. sharing a server file into a DM) — an unfiltered
+  // listener here delivers every one of those unrelated placement changes for a work_id this view
+  // happens to have loaded. `surface_id` is the closest single-column postgres_changes filter can
+  // get (a dm id colliding with this serverId is a uuid-space impossibility); the handler in
+  // explorer.js additionally checks `row.surface === 'server'` since a filter alone can't express
+  // the AND. saved_items has no such multi-surface shape (one row per user+work), but it's scoped
+  // by user_id anyway for the same "don't deliver rows this view doesn't own" reason.
+  const placeFlt = isServer ? `surface_id=eq.${serverId}` : `user_id=eq.${userId}`;
   const ch = supabase.channel(`explorer:${source}:${scopeVal}`)
     .on("postgres_changes", { event: "INSERT", schema: "public", table: "works", filter: worksFlt }, (p) => handlers.onWorkInsert?.(p.new))
     .on("postgres_changes", { event: "UPDATE", schema: "public", table: "works", filter: worksFlt }, (p) => handlers.onWorkUpdate?.(p.new))
     .on("postgres_changes", { event: "DELETE", schema: "public", table: "works", filter: worksFlt }, (p) => handlers.onWorkDelete?.(p.old))
-    .on("postgres_changes", { event: "INSERT", schema: "public", table: placeTable }, (p) => handlers.onPlaceInsert?.(p.new))
-    .on("postgres_changes", { event: "UPDATE", schema: "public", table: placeTable }, (p) => handlers.onPlaceUpdate?.(p.new))
-    .on("postgres_changes", { event: "DELETE", schema: "public", table: placeTable }, (p) => handlers.onPlaceDelete?.(p.old))
+    .on("postgres_changes", { event: "INSERT", schema: "public", table: placeTable, filter: placeFlt }, (p) => handlers.onPlaceInsert?.(p.new))
+    .on("postgres_changes", { event: "UPDATE", schema: "public", table: placeTable, filter: placeFlt }, (p) => handlers.onPlaceUpdate?.(p.new))
+    .on("postgres_changes", { event: "DELETE", schema: "public", table: placeTable, filter: placeFlt }, (p) => handlers.onPlaceDelete?.(p.old))
     .on("postgres_changes", { event: "INSERT", schema: "public", table: "content_tags" }, (p) => handlers.onTagInsert?.(p.new))
     .on("postgres_changes", { event: "DELETE", schema: "public", table: "content_tags" }, (p) => handlers.onTagDelete?.(p.old))
     .on("postgres_changes", { event: "INSERT", schema: "public", table: "folder_tags" }, (p) => handlers.onFolderTagInsert?.(p.new))

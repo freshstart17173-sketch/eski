@@ -80,11 +80,15 @@
    body, its own thin row so it never competes with the toolbar's Sort/Group/view controls. */
 .exmods{flex:none;display:flex;flex-wrap:wrap;gap:6px;padding:0 var(--s4) var(--s3)}
 .exmods[hidden]{display:none}
-.mchip{display:inline-flex;align-items:center;gap:5px;background:color-mix(in srgb,var(--mod) 15%,var(--surface));
-  color:var(--mod);border-radius:var(--r);padding:3px 4px 3px 8px;font-size:var(--fs-xs);font-weight:600;white-space:nowrap}
+/* owner 2026-09-01: was a --mod (muted mauve) chip — still read as "just another colour" next to
+   the monochrome system (CANON prime directive: the ONLY colour is the member hue + --danger).
+   INVERTED ink instead — the same idiom already used for an active/pressed state (.btn:active,
+   .iconbtn:active, selected nav) — reads as "this filter is ON" without adding a hue. */
+.mchip{display:inline-flex;align-items:center;gap:5px;background:var(--ink);
+  color:var(--on-ink);border-radius:var(--r);padding:3px 4px 3px 8px;font-size:var(--fs-xs);font-weight:600;white-space:nowrap}
 .mchip .k{opacity:.72;font-weight:600}
 .mchip .x{display:grid;place-items:center;width:18px;height:18px;border-radius:2px;color:inherit;opacity:.75}
-.mchip .x:hover{background:color-mix(in srgb,var(--mod) 25%,var(--surface));opacity:1}
+.mchip .x:hover{background:color-mix(in srgb,var(--on-ink) 25%,transparent);opacity:1}
 .mchip .x .ic{width:11px;height:11px}
 /* owner 2026-08-31: the explorer toolbar search field reads too tall next to its own row — the
    toolbar's buttons/iconbtns are all ~26px, the field stuck up past them. Thin it to match (scoped
@@ -208,6 +212,9 @@
 .crumbs button{color:var(--soft)}.crumbs button:hover{color:var(--ink)}
 .crumbs b{color:var(--ink)}.crumbs .sl{color:var(--line2)}
 .crumbs .crumbmore{padding:0 3px;font-weight:700;letter-spacing:1px;line-height:1}   /* C30: overflow "…" opener */
+/* C-out: a crumb segment accepting a dragged file/folder — the same invert-on-drop idiom as a
+   card's .droptarget, scaled to a breadcrumb's small text button instead of a full media tile. */
+.crumbs button.droptarget{background:var(--ink);color:var(--on-ink);border-radius:var(--r);padding:1px 6px;margin:-1px -6px}
 .hdctl{margin-left:auto;display:flex;align-items:center;gap:var(--s2)}
 /* P32 · density slider (replaces the Grid/List dropdown). A compact range flanked by a rows icon
    (dense/list end) and a grid icon (large end). The thumb is a SQUARE (--r) ink handle, not a native

@@ -10,6 +10,16 @@
    means the fallback font paints immediately and swaps in once Jost lands — never invisible text. */
 @font-face{font-family:'Jost';src:url('fonts/jost-variable.woff2') format('woff2');font-weight:100 900;font-style:normal;font-display:swap}
 
+/* Gnomon (indestructible-type, OFL), subset to 'eski!' glyphs only — 2.5KB, so it's kept inline as
+   base64 rather than a separate binary file (an extra request would cost more than this saves,
+   and it's the loading-screen wordmark: it needs to be available the instant tokens.css itself is,
+   with no second round trip). REGRESSION FIX (2026-09-01, owner: "the eski loading logo isn't in
+   gnomon anymore"): --font-wordmark referenced 'Gnomon' but nothing ever @font-face'd it in this
+   file — the app used to get it for free via docs/design/_fonts.css's base64 @import (which also
+   carried this same stub), and that @import was removed when Jost became a direct binary reference
+   above without checking whether anything ELSE was riding along on the same import. */
+@font-face{font-family:'Gnomon';font-style:normal;font-weight:100 900;font-display:swap;src:url(data:font/woff2;base64,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) format('woff2')}
+
 /* --- LIGHT (the complete palette lives on bare :root) --------------------- */
 :root{
   /* planes: paper -> surface -> plate -> paper1, four background steps */
@@ -59,9 +69,8 @@
   /* type scale */
   --fs-mi:11px; --fs-xs:12px; --fs-sm:13px; --fs:14.5px; --fs-lg:16px; --fs-xl:20px;
   --font:'Jost','Avenir Next','Segoe UI',Arial,sans-serif;
-  /* the eski! wordmark face. Gnomon when its subset is embedded in _fonts.css
-     (see the @font-face stub there); falls back to the body face until then, so
-     nothing loads slow or breaks. One token → every wordmark switches at once. */
+  /* the eski! wordmark face — Gnomon (@font-face above), falls back to the body face if it ever
+     fails to load. One token → every wordmark switches at once. */
   --font-wordmark:'Gnomon',var(--font);
 
   /* space, radius, motion */
