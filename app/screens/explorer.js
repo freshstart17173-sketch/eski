@@ -590,19 +590,28 @@ function paint(tree, pane, data, state, rerender) {
   ]);
 
   // P32: the density slider replaces the Grid/List dropdown. Position 0 = List; 1..5 = grid stages
-  // (small→large). It flanks a rows-icon (dense) and a grid-icon (large) so the direction reads. A
-  // change to/from 0 flips the layout (list↔grid) so it needs a full rerender; a grid-stage change
-  // only needs to re-lay the grid, but rerender is cheap here (client-side, one held dataset) and
-  // keeps the URL/sort/group state in sync, so we rerender throughout.
+  // (small→large). It flanks a rows-icon (dense) and a grid-icon (large) so the direction reads.
+  // owner 2026-09-01 fix ("it can only go up or down one at a time" while dragging): this used to
+  // call the FULL rerender() on every input tick, which rebuilds the whole toolbar — including this
+  // very <input>, replacing it with a brand-new element mid-drag. That severs the browser's native
+  // pointer-capture on a range input (it's tied to the specific DOM node the mousedown started on),
+  // so a drag gesture could only ever move it one step before losing tracking — exactly the reported
+  // symptom. A plain STAGE change (1..5, still "large" mode) doesn't need the toolbar rebuilt at all
+  // (the Sort/Group buttons' presence only depends on list-vs-grid, not which grid stage) — repaint
+  // just the body instead, which leaves this input alone and keeps the drag continuous. Only the
+  // list↔grid BOUNDARY (crossing 0) actually needs the full rerender, since list mode drops Sort from
+  // the toolbar (§ gridControls below).
   const densityPos = () => (state.mode === "list" ? 0 : state.density);
   const densityInput = el("input.densityrange", {
     type: "range", min: "0", max: "5", step: "1", value: String(densityPos()),
     "aria-label": "View density", title: "View density",
     onInput: (e) => {
       const v = +e.target.value;
+      const wasList = state.mode === "list";
       if (v === 0) state.mode = "list";
       else { state.mode = "large"; state.density = v; }
-      rerender();
+      if (wasList !== (v === 0)) rerender();
+      else (state._repaint || rerender)();
     },
   });
   const viewBtn = el(".densityctl", { title: "View density" }, [
