@@ -239,7 +239,16 @@ export function renderExplorer(data, view = {}) {
     const prevItems = (append && state.srv?.sig === sig) ? (state.srv.items || []) : [];
     const offset = append ? prevItems.length : 0;
     state.srv = { sig, args, items: prevItems, total: state.srv?.total || 0, offset, loading: true, error: false };
-    if (!append) repaintBody();   // show the loading state immediately for a fresh query
+    // BUG (found via tsc --checkJs, 2026-09-01): this used to call a bare `repaintBody()` — but
+    // repaintBody only exists inside paint()'s own scope (defined ~800 lines below, in a DIFFERENT
+    // top-level function), not here. That was a guaranteed ReferenceError the instant a real,
+    // signed-in search ran: it threw synchronously on the very first call, before searchFiles() was
+    // even reached, which rejected runServerSearch's promise — uncaught, since callers fire it
+    // without awaiting. state.srv.loading was already set to true one line up, so contents() showed
+    // "Searching…" and then nothing ever cleared it: THIS is why search "genuinely doesn't work".
+    // state._repaint (assigned inside paint()) is the established cross-scope accessor every other
+    // out-of-paint() caller in this file already uses for the same reason.
+    if (!append) state._repaint?.();   // show the loading state immediately for a fresh query
     try {
       const starredIds = new Set((data.files || []).filter((f) => f.starred).map((f) => f.id));
       const { total, items } = await searchFiles({ ...args, membersById: data.membersById || {}, starredIds, limit: 60, offset });
@@ -250,7 +259,7 @@ export function renderExplorer(data, view = {}) {
       console.error("[eski search] server search failed, falling back to client:", e);
       state.srv = { sig, args, items: null, total: 0, offset: 0, loading: false, error: true };
     }
-    repaintBody();
+    state._repaint?.();
   }
   state._runServerSearch = runServerSearch;
 

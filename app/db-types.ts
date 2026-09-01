@@ -1,7 +1,9 @@
 // db-types.ts — generated from the live schema via Supabase MCP generate_typescript_types.
 // Source of truth is the DB + the schema-*.sql migrations; regenerate after any DDL
-// change (BUILDLOG GOTCHA E). The app is vanilla JS today (no TS consumer yet); this
-// is committed for editor/reference use and to keep types from drifting from schema.
+// change (BUILDLOG GOTCHA E). The app is vanilla JS today; app/supabase.js JSDoc-types
+// the client against this file so `tsc --checkJs` catches wrong column/RPC names and
+// shape drift statically (tsconfig.json). Regenerate: Supabase MCP generate_typescript_types
+// (project zidqagrmxeawpasurpwi), paste the `types` field body below this header.
 
 export type Json =
   | string
@@ -448,6 +450,45 @@ export type Database = {
           },
         ]
       }
+      folder_tags: {
+        Row: {
+          created_at: string
+          folder_id: string | null
+          id: string
+          save_folder_id: string | null
+          tag: string
+        }
+        Insert: {
+          created_at?: string
+          folder_id?: string | null
+          id?: string
+          save_folder_id?: string | null
+          tag: string
+        }
+        Update: {
+          created_at?: string
+          folder_id?: string | null
+          id?: string
+          save_folder_id?: string | null
+          tag?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "folder_tags_folder_id_fkey"
+            columns: ["folder_id"]
+            isOneToOne: false
+            referencedRelation: "folders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "folder_tags_save_folder_id_fkey"
+            columns: ["save_folder_id"]
+            isOneToOne: false
+            referencedRelation: "save_folders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       folders: {
         Row: {
           archived: boolean
@@ -552,6 +593,44 @@ export type Database = {
           stripe_invoice_id?: string | null
         }
         Relationships: []
+      }
+      join_requests: {
+        Row: {
+          created_at: string
+          decided_at: string | null
+          decided_by: string | null
+          message: string | null
+          server_id: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          message?: string | null
+          server_id: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          message?: string | null
+          server_id?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "join_requests_server_id_fkey"
+            columns: ["server_id"]
+            isOneToOne: false
+            referencedRelation: "servers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       media_blobs: {
         Row: {
@@ -708,9 +787,11 @@ export type Database = {
           created_at: string
           deleted_at: string | null
           edited_at: string | null
+          forwarded_from: string | null
           id: string
           parent_id: string | null
           user_id: string
+          work_id: string | null
         }
         Insert: {
           also_to_channel?: boolean
@@ -720,9 +801,11 @@ export type Database = {
           created_at?: string
           deleted_at?: string | null
           edited_at?: string | null
+          forwarded_from?: string | null
           id?: string
           parent_id?: string | null
           user_id: string
+          work_id?: string | null
         }
         Update: {
           also_to_channel?: boolean
@@ -732,9 +815,11 @@ export type Database = {
           created_at?: string
           deleted_at?: string | null
           edited_at?: string | null
+          forwarded_from?: string | null
           id?: string
           parent_id?: string | null
           user_id?: string
+          work_id?: string | null
         }
         Relationships: [
           {
@@ -745,10 +830,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "messages_forwarded_from_fkey"
+            columns: ["forwarded_from"]
+            isOneToOne: false
+            referencedRelation: "messages"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "messages_parent_id_fkey"
             columns: ["parent_id"]
             isOneToOne: false
             referencedRelation: "messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_work_id_fkey"
+            columns: ["work_id"]
+            isOneToOne: false
+            referencedRelation: "works"
             referencedColumns: ["id"]
           },
         ]
@@ -763,6 +862,7 @@ export type Database = {
           read_at: string | null
           server_id: string | null
           target_id: string | null
+          target_ref: string | null
           target_type: string | null
           user_id: string
         }
@@ -775,6 +875,7 @@ export type Database = {
           read_at?: string | null
           server_id?: string | null
           target_id?: string | null
+          target_ref?: string | null
           target_type?: string | null
           user_id: string
         }
@@ -787,6 +888,7 @@ export type Database = {
           read_at?: string | null
           server_id?: string | null
           target_id?: string | null
+          target_ref?: string | null
           target_type?: string | null
           user_id?: string
         }
@@ -1274,27 +1376,33 @@ export type Database = {
           created_at: string
           created_by: string | null
           expires_at: string | null
+          folder_id: string | null
+          folder_source: string | null
           revoked_at: string | null
           token: string
-          work_id: string
+          work_id: string | null
         }
         Insert: {
           access?: string
           created_at?: string
           created_by?: string | null
           expires_at?: string | null
+          folder_id?: string | null
+          folder_source?: string | null
           revoked_at?: string | null
           token: string
-          work_id: string
+          work_id?: string | null
         }
         Update: {
           access?: string
           created_at?: string
           created_by?: string | null
           expires_at?: string | null
+          folder_id?: string | null
+          folder_source?: string | null
           revoked_at?: string | null
           token?: string
-          work_id?: string
+          work_id?: string | null
         }
         Relationships: [
           {
@@ -1374,6 +1482,24 @@ export type Database = {
           owner_id?: string
           owner_type?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      upload_quota: {
+        Row: {
+          count: number
+          day: string
+          user_id: string
+        }
+        Insert: {
+          count?: number
+          day?: string
+          user_id: string
+        }
+        Update: {
+          count?: number
+          day?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -1538,6 +1664,22 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      add_folder_tag: {
+        Args: { p_folder: string; p_save_folder: string; p_tag: string }
+        Returns: {
+          created_at: string
+          folder_id: string | null
+          id: string
+          save_folder_id: string | null
+          tag: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "folder_tags"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       add_friend: {
         Args: { handle: string }
         Returns: {
@@ -1568,6 +1710,10 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      approve_join_request: {
+        Args: { p_server_id: string; p_user_id: string }
+        Returns: undefined
+      }
       ban_member: {
         Args: {
           reason?: string
@@ -1585,6 +1731,14 @@ export type Database = {
       can_view_channel: { Args: { cid: string }; Returns: boolean }
       can_view_message: { Args: { mid: string }; Returns: boolean }
       can_write_work: { Args: { wid: string }; Returns: boolean }
+      channel_unread_counts: {
+        Args: { p_server: string }
+        Returns: {
+          channel_id: string
+          unread: number
+        }[]
+      }
+      claim_upload_quota: { Args: { n: number }; Returns: Json }
       create_dm: {
         Args: { handle: string }
         Returns: {
@@ -1618,6 +1772,10 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      create_folder_share: {
+        Args: { p_folder_id: string; p_source: string }
+        Returns: string
+      }
       create_group_dm: {
         Args: { handles: string[] }
         Returns: {
@@ -1633,11 +1791,65 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      create_server: {
+        Args: { p_channels?: string[]; p_name: string }
+        Returns: {
+          cover_key: string | null
+          created_at: string
+          description: string | null
+          hide_posts_by_default: boolean
+          icon_key: string | null
+          id: string
+          name: string
+          owner_id: string
+          slug: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "servers"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      create_work: {
+        Args: {
+          p_blob_sha: string
+          p_bytes: number
+          p_channel_id?: string
+          p_file_ext: string
+          p_folder_id?: string
+          p_kind: string
+          p_owner_id: string
+          p_owner_type: string
+          p_server_id: string
+          p_tags?: string[]
+          p_title: string
+          p_visibility: string
+        }
+        Returns: string
+      }
+      decline_join_request: {
+        Args: { p_server_id: string; p_user_id: string }
+        Returns: undefined
+      }
+      delete_server: { Args: { p_server_id: string }; Returns: undefined }
       dm_member: { Args: { dm: string }; Returns: boolean }
       everyone_perms: { Args: never; Returns: number }
       export_manifest: { Args: { scope: string }; Returns: Json }
       extract_handles: { Args: { txt: string }; Returns: string[] }
+      folder_tag_readable: {
+        Args: { p_folder: string; p_save: string }
+        Returns: boolean
+      }
+      folder_tag_writable: {
+        Args: { p_folder: string; p_save: string }
+        Returns: boolean
+      }
       has_perm: { Args: { flag: number; sid: string }; Returns: boolean }
+      invite_user_to_server: {
+        Args: { p_server: string; p_target: string }
+        Returns: string
+      }
       is_friend: { Args: { other: string }; Returns: boolean }
       is_server_admin: { Args: { sid: string }; Returns: boolean }
       join_via_invite: {
@@ -1674,10 +1886,58 @@ export type Database = {
         Args: { folder_id: string; target: string }
         Returns: undefined
       }
+      move_works_to_folder: {
+        Args: { folder_id: string; work_ids: string[] }
+        Returns: undefined
+      }
       perm_bit: { Args: { flag: string }; Returns: number }
       pin_message: { Args: { message_id: string }; Returns: undefined }
+      post_comment: {
+        Args: { p_body: string; p_work_id: string }
+        Returns: {
+          created_at: string
+          id: string
+        }[]
+      }
+      preview_invite: {
+        Args: { p_code: string }
+        Returns: {
+          icon_key: string
+          inviter_name: string
+          member_count: number
+          server_id: string
+          server_name: string
+        }[]
+      }
       purge_trashed_works: { Args: never; Returns: number }
+      register_blob: {
+        Args: { p_bytes: number; p_sha: string }
+        Returns: undefined
+      }
       remove_collaborator: { Args: { work_id: string }; Returns: undefined }
+      remove_folder_tag: {
+        Args: { p_folder: string; p_save_folder: string; p_tag: string }
+        Returns: undefined
+      }
+      request_to_join_server: {
+        Args: { p_message?: string; p_server_id: string }
+        Returns: string
+      }
+      resolve_folder_share: {
+        Args: { p_token: string }
+        Returns: {
+          blob_sha: string
+          bytes: number
+          file_ext: string
+          file_id: string
+          folder_name: string
+          kind: string
+          server_id: string
+          server_name: string
+          source: string
+          title: string
+        }[]
+      }
       resolve_share_link: {
         Args: { token: string }
         Returns: {
@@ -1718,6 +1978,40 @@ export type Database = {
           snippet: string
           source: string
           title: string
+        }[]
+      }
+      search_files: {
+        Args: {
+          p_dir?: string
+          p_exts?: string[]
+          p_hastypes?: string[]
+          p_limit?: number
+          p_offset?: number
+          p_server?: string
+          p_since?: string
+          p_sort?: string
+          p_sort_tag?: string
+          p_source?: string
+          p_tags?: string[]
+          p_text?: string
+          p_uploader?: string
+        }
+        Returns: {
+          author_handle: string
+          author_id: string
+          author_name: string
+          blob_sha: string
+          bytes: number
+          channel_name: string
+          created_at: string
+          file_ext: string
+          folder_id: string
+          hidden: boolean
+          id: string
+          kind: string
+          tags: string[]
+          title: string
+          total: number
         }[]
       }
       set_channel_access: {

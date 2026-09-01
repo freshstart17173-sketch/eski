@@ -1,0 +1,37 @@
+name: checks
+
+# Runs on every push/PR. Two gates, both free (no build step, nothing ships differently to
+# users because of this file):
+#   typecheck — tsc --checkJs against db-types.ts (OPTIMIZATION.md §2), a ratchet: fails only if
+#     the error count goes UP vs typecheck-baseline.txt, so the existing backlog doesn't block
+#     unrelated work but a NEW type bug can't sneak in. This is what caught the search.js
+#     repaintBody ReferenceError (see scripts/typecheck.mjs's header).
+#   verify-app — a Playwright smoke test against the real app in demo mode (tests/verify-app.mjs)
+#     — the gap docs/VERIFICATION.md itself names ("a demo screenshot proves layout, never live
+#     data flow"): it drives real explorer interactions (navigate, select, group, move, search,
+#     upload-gate) and fails on any console/page error, not just a static render.
+on:
+  push:
+  pull_request:
+
+jobs:
+  typecheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci
+      - run: npm run typecheck
+
+  verify-app:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run verify:app

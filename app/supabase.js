@@ -5,6 +5,12 @@
 import { createClient } from "../vendor/supabase.js";
 import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from "./env.js";
 
+// The runtime client is the vendored build (../vendor/supabase.js, not the npm package — see
+// OPTIMIZATION.md §1.4 on why). @supabase/supabase-js is a devDependency ONLY for its TYPES
+// (tsconfig.json's `tsc --checkJs` pass) — this JSDoc cast gives every `.from("table")` call
+// real column-name/shape checking against db-types.ts (generated from the live schema) without
+// shipping an extra byte to the browser or touching the buildless runtime.
+/** @type {import("@supabase/supabase-js").SupabaseClient<import("./db-types").Database>} */
 export const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   auth: {
     persistSession: true,

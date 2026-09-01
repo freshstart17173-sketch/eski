@@ -1,6 +1,17 @@
 {
   "type": "module",
+  "scripts": {
+    "typecheck": "node scripts/typecheck.mjs",
+    "typecheck:update": "node scripts/typecheck.mjs --update",
+    "verify:gallery": "node docs/design/verify.mjs",
+    "verify:app": "node tests/verify-app.mjs"
+  },
   "dependencies": {
     "aws4fetch": "^1.0.20"
+  },
+  "devDependencies": {
+    "@supabase/supabase-js": "^2.112.4",
+    "playwright": "^1.56.1",
+    "typescript": "^5.9.3"
   }
 }

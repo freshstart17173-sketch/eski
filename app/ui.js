@@ -28,6 +28,7 @@ export function el(sel, attrs = {}, kids = []) {
 }
 
 // ── P3.1 Button ────────────────────────────────────────────────────────────
+/** @param {{label?: string, variant?: string, size?: string, icon?: string, onClick?: (e?: any) => any, disabled?: boolean, loading?: boolean, type?: string}} [opts] */
 export function Button({ label, variant = "", size, icon: ic, onClick, disabled, loading, type = "button" } = {}) {
   const cls = ["btn", ...variant.split(" ").filter(Boolean), size === "sm" && "sm", loading && "loading"].filter(Boolean);
   const b = el("button." + cls.join("."), { type, onClick, "aria-busy": loading ? "true" : null });
@@ -38,17 +39,20 @@ export function Button({ label, variant = "", size, icon: ic, onClick, disabled,
 }
 
 // ── P3.2 IconButton + CloseButton ───────────────────────────────────────────
+/** @param {{icon?: string, title?: string, onClick?: (e?: any) => any, disabled?: boolean}} [opts] */
 export function IconButton({ icon: ic, title, onClick, disabled } = {}) {
   const b = el("button.iconbtn", { onClick, title, "aria-label": title });
   if (disabled) b.disabled = true;
   b.append(iconEl(ic));
   return b;
 }
+/** @param {{title?: string, onClick?: (e?: any) => any}} [opts] */
 export function CloseButton(opts = {}) {
   return IconButton({ icon: "x", title: opts.title || "Close", onClick: opts.onClick });
 }
 
 // ── P3.3 Field ──────────────────────────────────────────────────────────────
+/** @param {{icon?: string, at?: boolean, placeholder?: string, value?: string, onChange?: (e?: any) => any, onInput?: (e?: any) => any, type?: string, error?: any, disabled?: boolean, required?: boolean}} [opts] */
 export function Field({ icon: ic, at, placeholder, value = "", onChange, onInput, type = "text", error, disabled, required } = {}) {
   const cls = ["field", error && "err", required && "req"].filter(Boolean).join(".");
   const wrap = el("." + cls, { "aria-disabled": disabled ? "true" : null });
@@ -71,6 +75,7 @@ export function Field({ icon: ic, at, placeholder, value = "", onChange, onInput
 // true` opts out for the one deliberate stack (the move-picker's New-folder prompt,
 // which must return to the picker underneath), so it neither closes nor becomes current.
 let currentModal = null;
+/** @param {{title?: string, body?: any, footer?: any, size?: string, onClose?: () => any, nested?: boolean}} [opts] */
 export function openModal({ title, body, footer, size, onClose, nested = false } = {}) {
   if (!nested && currentModal) currentModal.close();
   const closeBtn = CloseButton();
@@ -119,6 +124,7 @@ export function openModal({ title, body, footer, size, onClose, nested = false }
 // openMenu(anchor, items) — items: {label, icon?, danger?, onClick} | {sep:true}
 // | {header:"..."}. Positions to the anchor, closes on outside-click/Esc, and is
 // arrow-key navigable. Never overflows the viewport.
+/** @param {any} anchor @param {any[]} [items] @param {{at?: {x:number,y:number}}} [opts] */
 export function openMenu(anchor, items = [], opts = {}) {
   // P28: `opts.at = {x, y}` spawns the menu AT the cursor (a native-style context menu) instead of
   // under the anchor's rect. The anchor is still used for aria-expanded + focus return (may be null).
@@ -184,6 +190,7 @@ export function closeMenus() {
 }
 
 // ── P3.6 Avatar + PresenceDot ─────────────────────────────────────────────────
+/** @param {{name?: string, src?: string, size?: string, colorIdx?: number}} [opts] */
 export function Avatar({ name = "", src, size = "md", colorIdx } = {}) {
   const a = el("." + ["av", size].filter(Boolean).join("."));
   const initials = () => {
@@ -199,6 +206,7 @@ export function Avatar({ name = "", src, size = "md", colorIdx } = {}) {
   } else initials();
   return a;
 }
+/** @param {{state?: string, ring?: string}} [opts] */
 export function PresenceDot({ state = "online", ring } = {}) {
   const map = { online: "", idle: "idle", dnd: "dnd", offline: "off" };
   const d = el("." + ["pres", map[state]].filter(Boolean).join("."), { "aria-label": state });
@@ -207,6 +215,7 @@ export function PresenceDot({ state = "online", ring } = {}) {
 }
 
 // ── P3.7 Tag + Chip ───────────────────────────────────────────────────────────
+/** @param {{label?: string, removable?: boolean, onRemove?: (e?: any) => any}} [opts] */
 export function Tag({ label, removable, onRemove } = {}) {
   const t = el("span." + ["tag", removable && "rm"].filter(Boolean).join("."), {}, [label]);
   if (removable) {
@@ -216,6 +225,7 @@ export function Tag({ label, removable, onRemove } = {}) {
   }
   return t;
 }
+/** @param {{name?: string, colorIdx?: number, removable?: boolean, onRemove?: (e?: any) => any}} [opts] */
 export function Chip({ name, colorIdx, removable, onRemove } = {}) {
   const c = el("span.uchip", {}, [name]);
   if (colorIdx != null) c.style.color = `var(--m${colorIdx})`;   // member hue, server-scoped
@@ -224,6 +234,7 @@ export function Chip({ name, colorIdx, removable, onRemove } = {}) {
 }
 
 // ── P3.8 Toggle ────────────────────────────────────────────────────────────────
+/** @param {{on?: boolean, onChange?: (v: boolean) => any, disabled?: boolean}} [opts] */
 export function Toggle({ on = false, onChange, disabled } = {}) {
   const t = el(".tgl" + (on ? ".on" : ""), { role: "switch", tabindex: disabled ? "-1" : "0", "aria-checked": String(on), "aria-disabled": disabled ? "true" : null });
   function set(v) { t.classList.toggle("on", v); t.setAttribute("aria-checked", String(v)); onChange && onChange(v); }
@@ -236,6 +247,7 @@ export function Toggle({ on = false, onChange, disabled } = {}) {
 }
 
 // ── P3.9 Checkbox ──────────────────────────────────────────────────────────────
+/** @param {{checked?: boolean, onChange?: (v: boolean) => any, disabled?: boolean}} [opts] */
 export function Checkbox({ checked = false, onChange, disabled } = {}) {
   const c = el(".cbx" + (checked ? ".on" : ""), { role: "checkbox", tabindex: disabled ? "-1" : "0", "aria-checked": String(checked), "aria-disabled": disabled ? "true" : null }, [iconEl("check")]);
   function set(v) { c.classList.toggle("on", v); c.setAttribute("aria-checked", String(v)); onChange && onChange(v); }
@@ -248,6 +260,7 @@ export function Checkbox({ checked = false, onChange, disabled } = {}) {
 }
 
 // ── P3.10 UsageBar ─────────────────────────────────────────────────────────────
+/** @param {{pct?: number, tone?: string}} [opts] */
 export function UsageBar({ pct = 0, tone } = {}) {
   const p = Math.max(0, Math.min(100, pct));
   const b = el("." + ["bar", tone === "warn" && "warn"].filter(Boolean).join("."), { role: "progressbar", "aria-valuenow": String(Math.round(p)), "aria-valuemin": "0", "aria-valuemax": "100" });
@@ -262,6 +275,7 @@ function toastStack() {
   if (!s) { s = el(".toaststack"); document.body.append(s); }
   return s;
 }
+/** @param {{message?: string, action?: {label?: string, onClick?: () => any}, duration?: number, icon?: string}} [opts] */
 export function toast({ message, action, duration = 3200, icon: ic = "check" } = {}) {
   const t = el(".toast");
   if (ic) t.append(iconEl(ic));
@@ -460,6 +474,7 @@ export function uploadProgress({ title = "Uploading" } = {}) {
 // PUT a blob with real byte-level progress (fetch has no upload progress; XHR does). Resolves
 // on 2xx, rejects otherwise. onProgress(loaded, total) fires as bytes go out. Used by the upload
 // sheet so the bar tracks the actual R2 transfer, not just a stage label.
+/** @param {string} url @param {any} blob @param {{onProgress?: (loaded: number) => any, headers?: Record<string,string>}} [opts] */
 export function putWithProgress(url, blob, { onProgress, headers = {} } = {}) {
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
@@ -482,6 +497,7 @@ export async function copyToClipboard(text, { ok = "Copied", icon: ic = "link" }
 
 // ── P3.12 Tabs ────────────────────────────────────────────────────────────────
 // items: [{id,label,count?}]. Active shows the inset underline; keyboard-navigable.
+/** @param {{items?: any[], active?: any, onChange?: (id: any) => any}} [opts] */
 export function Tabs({ items = [], active, onChange } = {}) {
   const row = el(".tabrow", { role: "tablist", style: "display:inline-flex;gap:4px" });
   let cur = active ?? items[0]?.id;
@@ -511,6 +527,7 @@ export function Tabs({ items = [], active, onChange } = {}) {
 // ── P3.13 SegmentedControl ──────────────────────────────────────────────────
 // options: [{value,label,icon?}]. One active at a time. The visibility control
 // passes Public(globe)/Server(server — NOT users)/Private(lock).
+/** @param {{options?: any[], value?: any, onChange?: (v: any) => any}} [opts] */
 export function SegmentedControl({ options = [], value, onChange } = {}) {
   const seg = el(".seg", { role: "radiogroup" });
   let cur = value ?? options.find((o) => !o.disabled)?.value ?? options[0]?.value;
@@ -533,6 +550,7 @@ export function SegmentedControl({ options = [], value, onChange } = {}) {
   seg.select = select; seg.value = () => cur;
   return seg;
 }
+/** @param {{value?: string, onChange?: (v: string) => any, noServer?: boolean}} [opts] */
 export function VisibilitySeg({ value = "public", onChange, noServer } = {}) {
   return SegmentedControl({
     value, onChange,
@@ -547,6 +565,7 @@ export function VisibilitySeg({ value = "public", onChange, noServer } = {}) {
 // ── P3.14 SelectPill / Dropdown ─────────────────────────────────────────────
 // The pill shows the current value + chevron; opening shows a Menu; selection
 // updates the label. Square (--r), not round.
+/** @param {{label?: string, options?: any[], value?: any, onChange?: (v: any) => any, size?: string}} [opts] */
 export function SelectPill({ label, options = [], value, onChange, size } = {}) {
   let cur = value ?? options[0]?.value;
   const labelSpan = el("span", {}, [labelFor()]);
@@ -563,6 +582,7 @@ export function SelectPill({ label, options = [], value, onChange, size } = {}) 
 
 // ── P3.15 MediaPlayer ─────────────────────────────────────────────────────────
 // The one player. Every control drives the element. Options: {src, kind, poster}.
+/** @param {{src?: string, kind?: string, poster?: string}} [opts] */
 export function MediaPlayer({ src, kind = "audio", poster } = {}) {
   const media = kind === "video" ? el("video", { src, poster, playsinline: true }) : el("audio", { src });
   const bigIcon = iconEl("play");
