@@ -1834,9 +1834,19 @@ export type Database = {
       }
       delete_server: { Args: { p_server_id: string }; Returns: undefined }
       dm_member: { Args: { dm: string }; Returns: boolean }
+      duplicate_work: {
+        Args: { p_dest_folder_id?: string; p_work_id: string }
+        Returns: string
+      }
       everyone_perms: { Args: never; Returns: number }
       export_manifest: { Args: { scope: string }; Returns: Json }
       extract_handles: { Args: { txt: string }; Returns: string[] }
+      folder_search_scope: {
+        Args: { p_folder_id: string; p_server: string; p_source: string }
+        Returns: {
+          id: string
+        }[]
+      }
       folder_tag_readable: {
         Args: { p_folder: string; p_save: string }
         Returns: boolean
@@ -1980,38 +1990,91 @@ export type Database = {
           title: string
         }[]
       }
-      search_files: {
+      search_files:
+        | {
+            Args: {
+              p_dir?: string
+              p_exts?: string[]
+              p_hastypes?: string[]
+              p_limit?: number
+              p_offset?: number
+              p_server?: string
+              p_since?: string
+              p_sort?: string
+              p_sort_tag?: string
+              p_source?: string
+              p_tags?: string[]
+              p_text?: string
+              p_uploader?: string
+            }
+            Returns: {
+              author_handle: string
+              author_id: string
+              author_name: string
+              blob_sha: string
+              bytes: number
+              channel_name: string
+              created_at: string
+              file_ext: string
+              folder_id: string
+              hidden: boolean
+              id: string
+              kind: string
+              tags: string[]
+              title: string
+              total: number
+            }[]
+          }
+        | {
+            Args: {
+              p_dir?: string
+              p_exts?: string[]
+              p_folder_id?: string
+              p_hastypes?: string[]
+              p_limit?: number
+              p_offset?: number
+              p_server?: string
+              p_since?: string
+              p_sort?: string
+              p_sort_tag?: string
+              p_source?: string
+              p_tags?: string[]
+              p_text?: string
+              p_uploader?: string
+            }
+            Returns: {
+              author_handle: string
+              author_id: string
+              author_name: string
+              blob_sha: string
+              bytes: number
+              channel_name: string
+              created_at: string
+              file_ext: string
+              folder_id: string
+              hidden: boolean
+              id: string
+              kind: string
+              tags: string[]
+              title: string
+              total: number
+            }[]
+          }
+      search_folders: {
         Args: {
-          p_dir?: string
-          p_exts?: string[]
-          p_hastypes?: string[]
+          p_folder_id?: string
           p_limit?: number
-          p_offset?: number
           p_server?: string
-          p_since?: string
-          p_sort?: string
-          p_sort_tag?: string
           p_source?: string
           p_tags?: string[]
           p_text?: string
-          p_uploader?: string
         }
         Returns: {
-          author_handle: string
-          author_id: string
-          author_name: string
-          blob_sha: string
-          bytes: number
-          channel_name: string
           created_at: string
-          file_ext: string
-          folder_id: string
-          hidden: boolean
           id: string
-          kind: string
+          name: string
+          parent_id: string
           tags: string[]
-          title: string
-          total: number
         }[]
       }
       set_channel_access: {

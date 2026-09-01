@@ -452,13 +452,14 @@ export async function searchFiles(opts = {}) {
     source = "server", serverId = null, text = null, tags = [], hastypes = [], exts = [],
     uploader = null, since = null, sort = "latest", sortTag = null, dir = "desc",
     limit = 60, offset = 0, membersById = {}, starredIds = null,
+    folderId = null,   // schema-42: never search above this folder; null = the whole mount
   } = opts;
   const { data, error } = await supabase.rpc("search_files", {
     p_source: source, p_server: serverId, p_text: text || null,
     p_tags: tags || [], p_hastypes: hastypes || [], p_exts: exts || [],
     p_uploader: uploader || null, p_since: since || null,
     p_sort: sort || "latest", p_sort_tag: sortTag || null, p_dir: dir || "desc",
-    p_limit: limit, p_offset: offset,
+    p_limit: limit, p_offset: offset, p_folder_id: folderId,
   });
   if (error) throw error;
   const rows = data || [];
@@ -478,6 +479,23 @@ export async function searchFiles(opts = {}) {
     };
   });
   return { total, items };
+}
+
+// schema-42: the "if an entire folder matches, surface it too" half — a folder's own name/tags,
+// same downward-only scope as searchFiles (never above p_folder_id), the folder you're standing
+// in excluded from its own results. Shaped to match the explorer's normal folder rows so a search
+// result folder card renders identically to a browsed one.
+export async function searchFolders(opts = {}) {
+  const { source = "server", serverId = null, text = null, tags = [], folderId = null, limit = 30 } = opts;
+  const { data, error } = await supabase.rpc("search_folders", {
+    p_source: source, p_server: serverId, p_text: text || null, p_tags: tags || [],
+    p_folder_id: folderId, p_limit: limit,
+  });
+  if (error) throw error;
+  return (data || []).map((f) => ({
+    id: f.id, name: f.name, parentId: f.parent_id, archived: false, locked: false,
+    count: 0, tags: f.tags || [], createdAt: f.created_at,
+  }));
 }
 
 export async function loadExplorer({ serverId, folderId, source = "server" } = {}) {
@@ -710,6 +728,16 @@ export async function moveToFolder({ source = "server", works = [], destFolderId
   // far client), which is most of why a big move used to feel slow.
   const { error } = await supabase.rpc("move_works_to_folder", { work_ids: works, folder_id: destFolderId });
   if (error) throw error;
+}
+
+// schema-41: the Copy half of Cut/Copy/Paste (C4) — an independent duplicate (a new work row the
+// caller now owns, not another placement of the same one; content-addressed storage means it
+// costs zero extra billed bytes). Server-side only for now (no demo path) — the explorer's
+// clipboard flow checks isDemoQS() itself before calling this, same as every other write here.
+export async function duplicateWork(workId, destFolderId = null) {
+  const { data: newId, error } = await supabase.rpc("duplicate_work", { p_work_id: workId, p_dest_folder_id: destFolderId });
+  if (error) throw error;
+  return newId;
 }
 
 // Reparent a FOLDER itself (not its contents) — server folders reuse the SAME `move_to_folder` RPC
