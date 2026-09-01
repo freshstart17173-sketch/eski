@@ -18,7 +18,7 @@ import { iconEl } from "../icons.js";
 import { parseTag, TAG_TYPES, tagChip, tagEditor, tagColor } from "../tags.js";
 import { addFolderTag, removeFolderTag } from "../data.js";
 import { navigate, reload } from "../router.js";
-import { createFolder, moveToFolder, moveFolderTo, renameFolder, deleteFolder, trashWorks, restoreWork, purgeWork, emptyTrash, loadTrash, starWork, unstarWork, saveToFiles, renameWork, setHidden, createShareLink, shareUrl, loadShareLinks, revokeShareLink, setVisibility, visFromDb, createFolderShare, folderShareUrl, requestToJoin, refreshStorage, searchFiles } from "../data.js";
+import { createFolder, moveToFolder, moveFolderTo, renameFolder, deleteFolder, trashWorks, restoreWork, purgeWork, emptyTrash, loadTrash, starWork, unstarWork, saveToFiles, renameWork, setHidden, createShareLink, shareUrl, loadShareLinks, revokeShareLink, setVisibility, visFromDb, createFolderShare, folderShareUrl, requestToJoin, refreshStorage, searchFiles, addTag, removeTag } from "../data.js";
 import { workCard, folderCard, mediaUrl, KIND_ICON, downloadWork, baseName } from "../cards.js";
 import { channelColumn } from "./workspace.js";
 import { openUpload, enableDropUpload } from "./upload.js";
@@ -1425,14 +1425,16 @@ function deleteFoldersFlow(data, state, rerender, folderIds, alsoTrashFileIds = 
   });
 }
 
-// ── P23 folder tags ───────────────────────────────────────────────────────────
-// A folder carries its own tags (no inheritance to files, backend p28). Reuses the P11 tagChip:
-// an untyped tag reads as a GREY chip, a typed "type:value" tag (bpm/key/genre/mood/instrument) in
-// its own COLOUR. The card shows the FIRST FEW inline (read-only, click to search); a "+N" chip and
-// the folder's right-click "Properties" open the popover that shows/edits ALL tags. Small (icon)
-// view stays tag-free; list shows a few inline. Writer-gated: server folder → manage_channels
-// (≈ isAdmin here; server-side is the real fence), personal → owner, a read-only shared view never edits.
-const FOLDER_TAGS_ON_CARD = 3;   // how many tags the card face + a list row show before "+N"
+// ── P23 folder tags (+ file tags on the card face, owner 2026-09-01) ───────────
+// A folder carries its own tags (no inheritance to files, backend p28); a file's tags are its own
+// `works.tags`, the same ones the Details pane edits (data.js addTag/removeTag). Both reuse the P11
+// tagChip: an untyped tag reads as a GREY chip, a typed "type:value" tag (bpm/key/genre/mood/
+// instrument) in its own COLOUR. The card shows the FIRST FEW inline (read-only, click to search); a
+// "+N" chip (or, tag-free, a bare "+ tag" chip) opens the popover that shows/edits ALL tags, on hover
+// or click. Small (icon) view stays tag-free; list shows a few inline. Writer-gated: server folder →
+// manage_channels (≈ isAdmin here; server-side is the real fence) / a file → canWriteWork, personal →
+// owner, a read-only shared view never edits.
+const TAGS_ON_CARD = 3;   // how many tags the card face + a list row show before "+N"
 
 function canWriteFolder(data) { return !data.shared && (data.source === "personal" || !!data.isAdmin); }
 function folderTagTarget(data, folder) { return data.source === "personal" ? { saveFolderId: folder.id } : { folderId: folder.id }; }
@@ -1489,14 +1491,14 @@ function folderTagInput(data, state, rerender, folder, { onDone } = {}) {
 // (or, on a tag-free folder, a bare "+" add chip) opens the tags popover on HOVER now, not just a
 // click — see wireTagTrigger below. There's no separate "Properties" entry point any more; this
 // chip is the only door in (plus the right-click menu keeps Copy folder link etc., minus Properties).
-function folderTagPreview(folder, ctx, { max = FOLDER_TAGS_ON_CARD } = {}) {
+function folderTagPreview(folder, ctx, { max = TAGS_ON_CARD } = {}) {
   const { data } = ctx;
   const tags = folder.tags || [];
   if (!tags.length) {
     if (!canWriteFolder(data)) return null;   // a reader has nothing to add and nothing to show
     const row = el(".ftags");
     const add = el("button.ftmore", { title: "Add tags" }, ["+ tag"]);
-    wireTagTrigger(add, folder, ctx);
+    wireTagTrigger(add, () => openFolderProperties(add, folder, ctx));
     row.append(add);
     row.addEventListener("click", (e) => e.stopPropagation());
     row.addEventListener("dblclick", (e) => e.stopPropagation());
@@ -1506,7 +1508,7 @@ function folderTagPreview(folder, ctx, { max = FOLDER_TAGS_ON_CARD } = {}) {
   for (const raw of tags.slice(0, max)) row.append(tagChip(raw, { onSearch: (mod) => searchFolderTag(data, ctx.state, ctx.rerender, mod) }));
   if (tags.length > max) {
     const more = el("button.ftmore", { title: "Show all tags" }, [`+${tags.length - max}`]);
-    wireTagTrigger(more, folder, ctx);
+    wireTagTrigger(more, () => openFolderProperties(more, folder, ctx));
     row.append(more);
   }
   // a click inside the tag row must not select/open the folder
@@ -1515,17 +1517,19 @@ function folderTagPreview(folder, ctx, { max = FOLDER_TAGS_ON_CARD } = {}) {
   return row;
 }
 
-// owner 2026-09-01: hovering the "+N"/"+ tag" chip opens the same popover a click does — no separate
-// "Properties" step. A short open-delay avoids flashing it on a passing mouse; the close is delayed
-// too and cancelled if the pointer lands on the popover itself, so moving from chip → popover doesn't
-// flicker it shut. Click still opens it immediately (keyboard/touch, and instant for anyone who clicks).
-function wireTagTrigger(trigger, folder, ctx) {
+// owner 2026-09-01: hovering a "+N"/"+ tag" chip opens its tags popover the same as a click does — no
+// separate "Properties" step, and shared by both folder cards (openFolderProperties) and file cards
+// (openFileTagsPopover, below) via the `openFn` callback. A short open-delay avoids flashing it on a
+// passing mouse; the close is delayed too and cancelled if the pointer lands on the popover itself, so
+// moving from chip → popover doesn't flicker it shut. Click still opens it immediately (keyboard/touch,
+// and instant for anyone who clicks).
+function wireTagTrigger(trigger, openFn) {
   let openTimer = null, closeTimer = null;
   const cancelClose = () => { if (closeTimer) clearTimeout(closeTimer); closeTimer = null; };
   const scheduleClose = () => { cancelClose(); closeTimer = setTimeout(closeMenus, 220); };
   const open = () => {
     if (openTimer) { clearTimeout(openTimer); openTimer = null; }
-    const pop = openFolderProperties(trigger, folder, ctx);
+    const pop = openFn();
     pop.addEventListener("mouseenter", cancelClose);
     pop.addEventListener("mouseleave", scheduleClose);
   };
@@ -1541,7 +1545,7 @@ function repaintFolderCardTags(folder, ctx) {
   card.querySelector(".cardfoot .ftags")?.remove();
   const row = folderTagPreview(folder, ctx);
   const frow = card.querySelector(".cardfoot .frow");
-  if (row && frow) { frow.prepend(row); requestAnimationFrame(() => fitFolderTags(row, folder, ctx)); }
+  if (row && frow) { frow.prepend(row); requestAnimationFrame(() => fitTagsRow(row, folder.tags || [], (max) => folderTagPreview(folder, ctx, { max }))); }
 }
 
 // the card decorator: the first-few preview (large view).
@@ -1549,7 +1553,118 @@ function decorateFolderTags(card, folder, ctx) {
   if (!ctx) return;
   const row = folderTagPreview(folder, ctx);
   const frow = card.querySelector(".cardfoot .frow");
-  if (row && frow) { frow.prepend(row); requestAnimationFrame(() => fitFolderTags(row, folder, ctx)); }
+  if (row && frow) { frow.prepend(row); requestAnimationFrame(() => fitTagsRow(row, folder.tags || [], (max) => folderTagPreview(folder, ctx, { max }))); }
+}
+
+// ── file tags on the card face (owner 2026-09-01: "like the + tag on folders but files should have
+// them as well") — the exact same pattern as folderTagPreview/openFolderProperties above, just reading/
+// writing works.tags via data.js addTag/removeTag instead of the folder-tag RPCs, and gated by
+// canWriteWork (a file's own writer check — its author, or a server admin) instead of canWriteFolder.
+function fileTagPreview(w, ctx, { max = TAGS_ON_CARD } = {}) {
+  const { data } = ctx;
+  const tags = w.tags || [];
+  if (!tags.length) {
+    if (!canWriteWork(data, w)) return null;   // a reader has nothing to add and nothing to show
+    const row = el(".ftags");
+    const add = el("button.ftmore", { title: "Add tags" }, ["+ tag"]);
+    wireTagTrigger(add, () => openFileTagsPopover(add, w, ctx));
+    row.append(add);
+    row.addEventListener("click", (e) => e.stopPropagation());
+    row.addEventListener("dblclick", (e) => e.stopPropagation());
+    return row;
+  }
+  const row = el(".ftags");
+  for (const raw of tags.slice(0, max)) row.append(tagChip(raw, { onSearch: (mod) => commitModifier(data, ctx.state, ctx.rerender, mod) }));
+  if (tags.length > max) {
+    const more = el("button.ftmore", { title: "Show all tags" }, [`+${tags.length - max}`]);
+    wireTagTrigger(more, () => openFileTagsPopover(more, w, ctx));
+    row.append(more);
+  }
+  // a click inside the tag row must not select/open the file
+  row.addEventListener("click", (e) => e.stopPropagation());
+  row.addEventListener("dblclick", (e) => e.stopPropagation());
+  return row;
+}
+
+// live re-decorate one file card's tag row after an edit (the popover mutates w.tags in place)
+function repaintFileCardTags(w, ctx) {
+  const card = document.querySelector(`.card[data-id="${w.id}"]`);
+  if (!card) return;
+  card.querySelector(".cardfoot .ftags")?.remove();
+  const row = fileTagPreview(w, ctx);
+  const frow = card.querySelector(".cardfoot .frow");
+  if (row && frow) { frow.prepend(row); requestAnimationFrame(() => fitTagsRow(row, w.tags || [], (max) => fileTagPreview(w, ctx, { max }))); }
+}
+
+// the card decorator: the first-few preview (large view + list, mirroring decorateFolderTags).
+// workCard() (cards.js, shared with non-explorer contexts) already built its own plain read-only
+// .ftags via bandRow — unlike a folder card's .frow, which starts empty — so that has to come out
+// first or the row would carry two tag previews.
+function decorateFileTags(card, w, ctx) {
+  if (!ctx) return;
+  card.querySelector(".cardfoot .ftags")?.remove();
+  const row = fileTagPreview(w, ctx);
+  const frow = card.querySelector(".cardfoot .frow");
+  if (row && frow) { frow.prepend(row); requestAnimationFrame(() => fitTagsRow(row, w.tags || [], (max) => fileTagPreview(w, ctx, { max }))); }
+}
+
+// The tags popover for a FILE — same shape as openFolderProperties (name + a removable/addable tag
+// list), reading/writing works.tags via addTag/removeTag (the same pair the Details pane uses).
+function openFileTagsPopover(anchor, w, ctx) {
+  const { data, rerender } = ctx;
+  const canW = canWriteWork(data, w);
+  closeMenus();
+  const pop = el(".menu.open.ftpop", { role: "dialog" });
+  const paint = () => {
+    pop.replaceChildren();
+    pop.append(el(".ftpophd", {}, [el("span.ftpopname", {}, [baseName(w)])]));
+    pop.append(el(".ftseclabel", {}, ["Tags"]));
+    const chips = el(".ftags");
+    for (const raw of (w.tags || [])) {
+      chips.append(tagChip(raw, {
+        removable: canW,
+        onRemove: async (r) => {
+          try { if (!isDemoQS()) await removeTag(w.id, r); w.tags = (w.tags || []).filter((t) => t !== r); paint(); repaintFileCardTags(w, ctx); }
+          catch (e) { toast({ message: e?.message || "Couldn’t remove the tag" }); }
+        },
+        onSearch: (mod) => { closeMenus(); commitModifier(data, ctx.state, rerender, mod); },
+      }));
+    }
+    if (!(w.tags || []).length) chips.append(el(".ftempty", {}, ["No tags yet."]));
+    pop.append(chips);
+    if (canW) {
+      const input = el("input", { placeholder: "add a tag… (bpm:142)" });
+      const field = el(".field.searchbar.tagin.ftaddfield", {}, [input]);
+      const recolor = () => {
+        const a = (input.value.split(":")[0] || "").trim().toLowerCase();
+        if (input.value.includes(":") && a && input.value.slice(input.value.indexOf(":") + 1).trim()) { input.style.color = tagColor(a); input.style.fontWeight = "600"; }
+        else { input.style.color = ""; input.style.fontWeight = ""; }
+      };
+      input.addEventListener("input", recolor);
+      input.addEventListener("keydown", async (e) => {
+        if (e.key === "Enter" && input.value.trim()) {
+          e.preventDefault();
+          const clean = parseTag(input.value.replace(/^#/, "")).raw;
+          input.value = ""; recolor();
+          if (!clean || (w.tags || []).includes(clean)) { if (clean) toast({ message: "Already tagged" }); return; }
+          try { if (!isDemoQS()) await addTag(w.id, clean); (w.tags ||= []).push(clean); paint(); repaintFileCardTags(w, ctx); }
+          catch (err) { toast({ message: err?.message || "Couldn’t add the tag" }); }
+        } else if (e.key === "Escape") { e.preventDefault(); paint(); }
+      });
+      setTimeout(() => input.focus(), 0);
+      pop.append(field);
+    }
+  };
+  paint();
+  document.body.append(pop);
+  const r = anchor.getBoundingClientRect();
+  const pw = pop.offsetWidth, ph = pop.offsetHeight;
+  pop.style.left = Math.max(8, Math.min(r.left, window.innerWidth - pw - 8)) + "px";
+  pop.style.top = (r.bottom + ph > window.innerHeight - 8 ? Math.max(8, r.top - ph - 4) : r.bottom + 4) + "px";
+  const onDoc = (e) => { if (!pop.contains(e.target) && e.target !== anchor && !anchor.contains(e.target)) closeMenus(); };
+  pop._cleanup = () => document.removeEventListener("mousedown", onDoc, true);
+  setTimeout(() => document.addEventListener("mousedown", onDoc, true));
+  return pop;
 }
 
 // owner 2026-09-01: "the tags are too cramped, I can't even see the +1" — CSS alone can't guarantee
@@ -1562,13 +1677,14 @@ function decorateFolderTags(card, folder, ctx) {
 // being assembled (largeView builds the whole grid off-document before one `body.replaceChildren`
 // attaches it) — clientWidth/scrollWidth on a not-yet-connected element both read 0, so measuring
 // synchronously silently no-ops. By the next frame the tree is guaranteed attached and laid out.
-function fitFolderTags(row, folder, ctx) {
-  const tags = folder.tags || [];
+// `rebuild(max)` is folderTagPreview/fileTagPreview bound to its own owner + ctx — shared by both so
+// the fit logic (and its DOM-attachment gotcha above) is written once.
+function fitTagsRow(row, tags, rebuild) {
   if (!tags.length || !row.isConnected) return;   // "+ tag" case is already minimal; nothing to shrink
-  let max = Math.min(FOLDER_TAGS_ON_CARD, tags.length);
+  let max = Math.min(TAGS_ON_CARD, tags.length);
   while (max > 0 && row.scrollWidth > row.clientWidth + 1) {
     max--;
-    const next = folderTagPreview(folder, ctx, { max });
+    const next = rebuild(max);
     row.replaceWith(next);
     row = next;
   }
@@ -1639,6 +1755,7 @@ function largeFileCard(w, i, hooks) {
   card = workCard(w, { selectable: true, showWho: hooks.showWho, starred: !!w.starred, onStar: hooks.onStar, actions });
   if (w.hidden) card.classList.add("ishidden");
   wireFileEl(card, w, i, hooks);
+  decorateFileTags(card, w, hooks.ftctx);   // owner 2026-09-01: hover "+N"/"+ tag", same as a folder card
   return card;   // B33: the star (top-left, click-toggle) lives inside workCard now — no corner check
 }
 function largeFolderCard(f, i, hooks) {
@@ -1731,8 +1848,11 @@ function listView(subfolders, files, hooks) {
   };
   const fileRow = (w, i) => {
     const star = el("button.flstar" + (w.starred ? ".on" : ""), { title: w.starred ? "Unstar" : "Star", onClick: (e) => { e.stopPropagation(); hooks.onStar(w); } }, [iconEl("star", "sm")]);
+    const nameCell = el("span.flnm", {}, [star, iconEl(KIND_ICON[w.kind] || "file", "sm"), baseName(w)]);
+    const tagPrev = hooks.ftctx ? fileTagPreview(w, hooks.ftctx) : null;   // owner 2026-09-01: files get the same inline preview folders do
+    if (tagPrev) { tagPrev.classList.add("flntags"); nameCell.append(tagPrev); }
     const cells = [
-      el("span.flnm", {}, [star, iconEl(KIND_ICON[w.kind] || "file", "sm"), baseName(w)]),
+      nameCell,
       el("span", {}, [(w.file_ext || "").toLowerCase() || "—"]),
       el("span", {}, [fmtBytes(w.bytes)]),
       ...(showWho ? [el("span", {}, [w.who?.name || "—"])] : []),

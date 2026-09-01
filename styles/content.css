@@ -240,10 +240,12 @@
    the more-button's 3rd dot was rendering ~4px outside its own dark pill. */
 .foldercard .media.fold>.ic{width:34px;height:34px}
 
-/* ── P23 folder tags ───────────────────────────────────────────────────────────
+/* ── P23 card tags (folders, and files since owner 2026-09-01) ──────────────────
    Reuses the P11 .tchip soft chip (untyped = grey, typed = its colour). On a card the preview is
-   ONE line (first few + "+N") so every folder card is the same height; the full set + editing live
-   in the tags popover (hover/click "+N" — see explorer.js wireTagTrigger). */
+   ONE line (first few + "+N") so every card is the same height; the full set + editing live in the
+   tags popover (hover/click "+N" — see explorer.js wireTagTrigger). `.card` covers both — a folder
+   card is always `.card.foldercard`, a file card is `.card` alone — so one rule serves both without
+   a second near-duplicate for files. */
 .foldercard{position:relative}
 /* single-line preview inside the band's .frow (tags left, file-count right) — nowrap keeps every
    card the same height. No top margin: it's a row cell now, not stacked under the name.
@@ -252,12 +254,12 @@
    was the very first thing clipped away the instant the tags before it didn't fit (long tag words,
    or a narrower card) — the opposite of what's needed. A mid-word CSS ellipsis-shrink was tried and
    rejected: shrinking chips unevenly could reduce a short tag like "wip" to one unreadable letter.
-   Fixed properly in JS instead (fitFolderTags in explorer.js, called after the row is in the DOM,
-   where real measured widths are available): it drops WHOLE tags from the end — never a partial,
-   truncated one — bumping "+N"'s count until the row actually fits. overflow:hidden here is only a
-   safety net for that pass; it should never actually be the thing doing the clipping. */
-.foldercard .cardfoot .ftags{display:flex;flex-wrap:nowrap;gap:5px;align-items:center;overflow:hidden;min-width:0}
-.foldercard .cardfoot .ftags .tchip{font-size:var(--fs-mi);padding:1px 6px;flex:none}
+   Fixed properly in JS instead (fitTagsRow in explorer.js, called after the row is in the DOM, where
+   real measured widths are available): it drops WHOLE tags from the end — never a partial, truncated
+   one — bumping "+N"'s count until the row actually fits. overflow:hidden here is only a safety net
+   for that pass; it should never actually be the thing doing the clipping. */
+.card .cardfoot .ftags{display:flex;flex-wrap:nowrap;gap:5px;align-items:center;overflow:hidden;min-width:0}
+.card .cardfoot .ftags .tchip{font-size:var(--fs-mi);padding:1px 6px;flex:none}
 /* "+N more" → opens the tags popover (hover or click) */
 .ftmore{font-size:var(--fs-mi);font-weight:600;color:var(--muted);padding:1px 6px;border-radius:var(--r);background:var(--surface);flex:none}
 .ftmore:hover{background:var(--plate);color:var(--ink)}
