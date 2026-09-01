@@ -347,7 +347,15 @@
 /* the filename itself is the ONLY thing in .flnm allowed to shrink/truncate — the star, icon and
    tag-preview chip all stay flex:none, so narrowing the Name column (e.g. opening Details) eats
    into the name text, never into the tag chip sitting after it. */
-.flnmtxt{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1 1 auto;min-width:0}
+/* flex-GROW:0 is load-bearing (found in an eski-polish sweep, 2026-09-01): flex:1 here made the
+   filename stretch to fill the ENTIRE Name column whenever it was shorter than the column's
+   allocated width (Name is minmax(200px,1.6fr|1.8fr) — usually far wider than a short name needs),
+   shoving the trailing tag-chip preview (.flntags, flex:none, right after this in the DOM) off to
+   the column's far edge instead of sitting next to the name — "Saved from servers  ......  + tag"
+   with a huge gap, for every row whose name didn't happen to already fill the column. flex-SHRINK:1
+   is what the earlier clipping fix (narrow-column truncation, e.g. Details panel open) actually
+   needed — grow was never required for that and only caused this. */
+.flnmtxt{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:0 1 auto;min-width:0}
 /* C31: newFolder()'s inline name edit — a plain field-styled input dropped in place of the static
    name (grid card .fname or list row .flnmtxt), sized to read as "this text became editable", not
    as a whole new control. --ink border (not --line2) so it reads active/focused immediately, no
